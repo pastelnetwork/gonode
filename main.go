@@ -24,6 +24,9 @@ import (
 	"encoding/hex"
 
 	"golang.org/x/crypto/sha3"
+
+
+	"golang.org/x/image/font/inconsolata"
 )
 
 func set_up_google_authenticator_for_private_key_encryption_func() {
@@ -51,9 +54,8 @@ func set_up_google_authenticator_for_private_key_encryption_func() {
 	dc.SetRGB(255, 255, 255)
 	dc.Clear()
 	textColor := color.White
-	if err := dc.LoadFontFace("C:\\Windows\\Fonts\\arial.ttf", 22); err != nil {
-		panic(err)
-	}
+
+	dc.SetFontFace(inconsolata.Regular8x16)
 
 	warning_message := "You should take a picture of this screen on your phone, but make sure your camera roll is secure first!\nYou can also write down your Google Auth URI string (shown below) as a backup, which will allow you to regenerate the QR code image.\n\n"
 	textRightMargin := 60.0
@@ -65,9 +67,7 @@ func set_up_google_authenticator_for_private_key_encryption_func() {
 	dc.SetColor(textColor)
 	dc.DrawStringWrapped(warning_message, x, y, 0, 0, maxWidth, 1.5, gg.AlignLeft)
 
-	if err := dc.LoadFontFace("C:\\Windows\\Fonts\\arial.ttf", 28); err != nil {
-		panic(err)
-	}
+	dc.SetFontFace(inconsolata.Bold8x16)
 
 	dc.DrawStringWrapped(google_auth_uri, x, y+90, 0, 0, maxWidth, 1.5, gg.AlignLeft)
 
