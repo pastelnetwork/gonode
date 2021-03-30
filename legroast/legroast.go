@@ -28,9 +28,9 @@ func Keygen() ([]byte, []byte) {
 // It returns signed message data
 func Sign(pk []byte, sk []byte, message []byte) []byte {
 	signal := make([]byte, C.SIG_BYTES)
-	var signal_len C.ulong
+	var signal_len C.uint64_t
 
-	C.sign((*C.uchar)(&sk[0]), (*C.uchar)(&pk[0]), (*C.uchar)(&message[0]), (C.ulong)(len(message)), (*C.uchar)(&signal[0]), (*C.ulong)(&signal_len))
+	C.sign((*C.uchar)(&sk[0]), (*C.uchar)(&pk[0]), (*C.uchar)(&message[0]), (C.uint64_t)(len(message)), (*C.uchar)(&signal[0]), (*C.uint64_t)(&signal_len))
 
 	return signal
 }
@@ -38,5 +38,5 @@ func Sign(pk []byte, sk []byte, message []byte) []byte {
 // Verify validates previously signed message
 // It returns <= 0 if verification has failed
 func Verify(pk []byte, message []byte, signal []byte) int {
-	return (int)(C.verify((*C.uchar)(&pk[0]), (*C.uchar)(&message[0]), (C.ulong)(len(message)), (*C.uchar)(&signal[0])))
+	return (int)(C.verify((*C.uchar)(&pk[0]), (*C.uchar)(&message[0]), (C.uint64_t)(len(message)), (*C.uchar)(&signal[0])))
 }
