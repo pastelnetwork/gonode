@@ -5,6 +5,7 @@ package legroast
 #cgo CFLAGS: -g -Wall -I./include
 #cgo windows,amd64 LDFLAGS: -L./lib -llegroast-win
 #cgo linux,amd64 LDFLAGS: -static -L./lib -llegroast
+#cgo darwin LDFLAGS: -L./lib -llegroast-darwin
 #include "sign.h"
 */
 import "C"
