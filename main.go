@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"image/color"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/fogleman/gg"
 	"github.com/kevinburke/nacl"
@@ -24,7 +26,6 @@ import (
 	"encoding/hex"
 
 	"golang.org/x/crypto/sha3"
-
 
 	"golang.org/x/image/font/inconsolata"
 )
@@ -189,12 +190,111 @@ func pastel_id_verify_signature_with_public_key_func(input_data_or_string string
 	return verified
 }
 
-func main() {
-	set_up_google_authenticator_for_private_key_encryption_func()
+func conformsCharacterSet(value string, characterSet string) bool {
+	for _, rune := range characterSet {
+		if strings.ContainsRune(characterSet, rune) == false {
+			return false
+		}
+	}
+	return true
+}
 
-	generate_and_store_key_for_nacl_box_func()
+func generate_current_otp_string_func() string {
+	otp_secret := os.Getenv("PASTEL_OTP_SECRET")
+	if len(otp_secret) == 0 {
+		otp_secret_file_data, err := ioutil.ReadFile("otp_secret.txt")
+		if err != nil {
+			return ""
+		}
+		otp_secret = string(otp_secret_file_data)
+	}
+	otp_secret_character_set := "ABCDEF1234567890"
+	if conformsCharacterSet(otp_secret, otp_secret_character_set) == false {
+		return ""
+	}
+	return gotp.NewDefaultTOTP(otp_secret).Now()
+}
+
+func generate_current_otp_string_from_user_input_func() string {
+	fmt.Println("\n\nEnter your Google Authenticator Secret in all upper case and numbers:\n\n")
+	var otp_secret string
+	fmt.Scanln(&otp_secret)
+	if len(otp_secret) != 16 {
+		return ""
+	}
+	otp_secret_character_set := "ABCDEF1234567890"
+	if conformsCharacterSet(otp_secret, otp_secret_character_set) == false {
+		return ""
+	}
+	return gotp.NewDefaultTOTP(otp_secret).Now()
+}
+
+func import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path string) (string, string) {
+	key_file_path := "pastel_id_key_files"
+	if info, err := os.Stat(key_file_path); os.IsNotExist(err) || !info.IsDir() {
+		fmt.Printf("\nCan't find key storage directory, trying to use current working directory instead!")
+		key_file_path = "."
+	}
+	pastel_id_public_key_pem_filepath := key_file_path + "/pastel_id_legroast_public_key.pem"
+	pastel_id_private_key_pem_filepath := key_file_path + "/pastel_id_legroast_private_key.pem"
+
+	pastel_id_public_key_b16_encoded := ""
+	pastel_id_private_key_b16_encoded := ""
+	pastel_id_public_key_export_format := ""
+	pastel_id_private_key_export_format__encrypted := ""
+	otp_correct := false
+
+	infoPK, errPK := os.Stat(pastel_id_public_key_pem_filepath)
+	infoSK, errSK := os.Stat(pastel_id_private_key_pem_filepath)
+	if !os.IsNotExist(errPK) && !infoPK.IsDir() && !os.IsNotExist(errSK) && !infoSK.IsDir() {
+		pastel_id_public_key_export_data, errPK := ioutil.ReadFile(pastel_id_public_key_pem_filepath)
+		pastel_id_private_key_export_data_encrypted, errSK := ioutil.ReadFile(pastel_id_private_key_pem_filepath)
+		if errPK == nil && errSK == nil {
+			pastel_id_public_key_export_format = string(pastel_id_public_key_export_data)
+			pastel_id_private_key_export_format__encrypted = string(pastel_id_private_key_export_data_encrypted)
+
+			otp_string := generate_current_otp_string_func()
+			if otp_string == "" {
+				otp_string = generate_current_otp_string_from_user_input_func()
+			}
+			fmt.Println("\n\nPlease Enter your pastel Google Authenticator Code:")
+			fmt.Println(otp_string)
+
+			scanner := bufio.NewScanner(os.Stdin)
+			scanner.Scan()
+			otp_from_user_input := scanner.Text()
+
+			if len(otp_from_user_input) != 6 {
+				return "", ""
+			}
+			otp_correct = (otp_from_user_input == otp_string)
+		}
+	}
+
+	if otp_correct {
+		box_key := get_nacl_box_key_from_file_func(box_key_file_path)
+		var key [32]byte
+		copy(key[:], box_key)
+		pastel_id_private_key_export_format, _ := secretbox.EasyOpen(([]byte)(pastel_id_private_key_export_format__encrypted[:]), &key)
+		pastel_id_private_key := strings.ReplaceAll(string(pastel_id_private_key_export_format), "-----BEGIN LEGROAST PRIVATE KEY-----\n", "")
+		pastel_id_private_key_b16_encoded = strings.ReplaceAll(string(pastel_id_private_key), "\n-----END LEGROAST PRIVATE KEY-----", "")
+
+		pastel_id_public_key_export_format = strings.ReplaceAll(pastel_id_public_key_export_format, "-----BEGIN LEGROAST PUBLIC KEY-----\n", "")
+		pastel_id_public_key_b16_encoded = strings.ReplaceAll(pastel_id_public_key_export_format, "\n-----END LEGROAST PUBLIC KEY-----", "")
+	}
+	return pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded
+}
+
+func main() {
+	if _, err := os.Stat("otp_secret.txt"); os.IsNotExist(err) {
+		set_up_google_authenticator_for_private_key_encryption_func()
+	}
 
 	box_key_file_path := "box_key.bin"
+	if _, err := os.Stat(box_key_file_path); os.IsNotExist(err) {
+		generate_and_store_key_for_nacl_box_func()
+	}
+
 	sample_image_file_path := "sample_image2.png"
 
 	fmt.Printf("\nApplying signature to file %v", sample_image_file_path)
@@ -206,9 +306,12 @@ func main() {
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256_hash_of_image_to_sign)
 	//sample_input_data_to_be_signed := sha256_hash_of_image_to_sign.encode('utf-8')
 
-	pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded := pastel_id_keypair_generation_func()
-	write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded, box_key_file_path)
-	generate_qr_codes_from_pastel_keypair_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded)
+	pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded := import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path)
+	if pastel_id_public_key_b16_encoded == "" {
+		pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded = pastel_id_keypair_generation_func()
+		write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded, box_key_file_path)
+		generate_qr_codes_from_pastel_keypair_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded)
+	}
 
 	pastel_id_signature_b16_encoded := pastel_id_write_signature_on_data_func(sha256_hash_of_image_to_sign, pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded)
 	_ = pastel_id_verify_signature_with_public_key_func(sha256_hash_of_image_to_sign, pastel_id_signature_b16_encoded, pastel_id_public_key_b16_encoded)
