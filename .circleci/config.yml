@@ -24,5 +24,8 @@ jobs:
             gotestsum --junitfile /tmp/test-reports/unit-tests.xml
       - store_test_results:
           path: /tmp/test-reports
+      - run:
+          name: Build binary
+          command: go build -v
       - store_artifacts:
           path: ./pqSignatures
