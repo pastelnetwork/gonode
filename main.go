@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"image"
 	"image/color"
@@ -32,6 +34,8 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"golang.org/x/image/font/inconsolata"
+
+	"github.com/auyer/steganography"
 )
 
 func set_up_google_authenticator_for_private_key_encryption_func() {
@@ -47,6 +51,9 @@ func set_up_google_authenticator_for_private_key_encryption_func() {
 	google_auth_uri := gotp.NewDefaultTOTP(secret).ProvisioningUri("user@user.com", "pastel")
 
 	err = qrcode.WriteFile(google_auth_uri, qrcode.Medium, 256, "qr.png")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	const W = 1200
 	const H = 800
@@ -213,21 +220,23 @@ func generate_current_otp_string_func() string {
 		otp_secret = string(otp_secret_file_data)
 	}
 	otp_secret_character_set := "ABCDEF1234567890"
-	if conformsCharacterSet(otp_secret, otp_secret_character_set) == false {
+	if !conformsCharacterSet(otp_secret, otp_secret_character_set) {
 		return ""
 	}
 	return gotp.NewDefaultTOTP(otp_secret).Now()
 }
 
 func generate_current_otp_string_from_user_input_func() string {
-	fmt.Println("\n\nEnter your Google Authenticator Secret in all upper case and numbers:\n\n")
-	var otp_secret string
-	fmt.Scanln(&otp_secret)
+	fmt.Println("\n\nEnter your Google Authenticator Secret in all upper case and numbers:")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	otp_secret := scanner.Text()
+
 	if len(otp_secret) != 16 {
 		return ""
 	}
 	otp_secret_character_set := "ABCDEF1234567890"
-	if conformsCharacterSet(otp_secret, otp_secret_character_set) == false {
+	if !conformsCharacterSet(otp_secret, otp_secret_character_set) {
 		return ""
 	}
 	return gotp.NewDefaultTOTP(otp_secret).Now()
@@ -264,15 +273,14 @@ func import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path
 			fmt.Println("\n\nPlease Enter your pastel Google Authenticator Code:")
 			fmt.Println(otp_string)
 
-			/*scanner := bufio.NewScanner(os.Stdin)
+			scanner := bufio.NewScanner(os.Stdin)
 			scanner.Scan()
 			otp_from_user_input := scanner.Text()
 
 			if len(otp_from_user_input) != 6 {
 				return "", ""
 			}
-			otp_correct = (otp_from_user_input == otp_string)*/
-			otp_correct = true
+			otp_correct = (otp_from_user_input == otp_string)
 		}
 	}
 
@@ -394,7 +402,7 @@ func generate_signature_image_layer_func(pastel_id_public_key_b16_encoded string
 	max_height_of_qr_codes := maxHeight(list_of_qr_code_image_sizes)
 
 	if max_height_of_qr_codes > imageSize.Y {
-		panic(errors.New("Image height is too small."))
+		panic(errors.New("image height is too small"))
 	}
 
 	if imageSize.X < sum_of_widths_plus_borders {
@@ -434,6 +442,42 @@ func generate_signature_image_layer_func(pastel_id_public_key_b16_encoded string
 	return signature_layer_image_output_filepath
 }
 
+func hide_signature_image_in_sample_image_func(sample_image_file_path string, signature_layer_image_output_filepath string, signed_image_output_path string) {
+	img, err := gg.LoadImage(sample_image_file_path)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	signature_layer_image_data, err := ioutil.ReadFile(signature_layer_image_output_filepath)
+	if err != nil {
+		panic(err)
+	}
+
+	w := new(bytes.Buffer)
+	err = steganography.Encode(w, img, signature_layer_image_data)
+	if err != nil {
+		panic(err)
+	}
+	outFile, _ := os.Create(signed_image_output_path)
+	w.WriteTo(outFile)
+	outFile.Close()
+}
+
+func extract_signature_image_in_sample_image_func(signed_image_output_path string, extracted_signature_layer_image_output_filepath string) {
+	img, err := gg.LoadImage(signed_image_output_path)
+	if err != nil {
+		panic(err)
+	}
+
+	sizeOfMessage := steganography.GetMessageSizeFromImage(img)
+
+	decodedData := steganography.Decode(sizeOfMessage, img)
+	err = os.WriteFile(extracted_signature_layer_image_output_filepath, decodedData, 0644)
+	if err != nil {
+		panic(err)
+	}
+}
+
 func main() {
 	if _, err := os.Stat("otp_secret.txt"); os.IsNotExist(err) {
 		set_up_google_authenticator_for_private_key_encryption_func()
@@ -453,7 +497,6 @@ func main() {
 	}
 
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256_hash_of_image_to_sign)
-	//sample_input_data_to_be_signed := sha256_hash_of_image_to_sign.encode('utf-8')
 
 	pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded := import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path)
 	if pastel_id_public_key_b16_encoded == "" {
@@ -465,5 +508,10 @@ func main() {
 	pastel_id_signature_b16_encoded := pastel_id_write_signature_on_data_func(sha256_hash_of_image_to_sign, pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded)
 	_ = pastel_id_verify_signature_with_public_key_func(sha256_hash_of_image_to_sign, pastel_id_signature_b16_encoded, pastel_id_public_key_b16_encoded)
 
-	_ = generate_signature_image_layer_func(pastel_id_public_key_b16_encoded, pastel_id_signature_b16_encoded, sample_image_file_path)
+	signature_layer_image_output_filepath := generate_signature_image_layer_func(pastel_id_public_key_b16_encoded, pastel_id_signature_b16_encoded, sample_image_file_path)
+	signed_image_output_path := "final_watermarked_image.png"
+	hide_signature_image_in_sample_image_func(sample_image_file_path, signature_layer_image_output_filepath, signed_image_output_path)
+
+	extracted_signature_layer_image_output_filepath := "extracted_signature_image.png"
+	extract_signature_image_in_sample_image_func(signed_image_output_path, extracted_signature_layer_image_output_filepath)
 }
