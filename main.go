@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/PastelNetwork/pqSignatures/legroast"
+	"github.com/PastelNetwork/pqSignatures/qr"
 
 	qrcode "github.com/skip2/go-qrcode"
 	"github.com/xlzd/gotp"
@@ -156,16 +157,12 @@ func write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_e
 }
 
 func generate_qr_codes_from_pastel_keypair_func(pastel_id_public_key_b16_encoded string, pastel_id_private_key_b16_encoded string) {
-
 	key_file_path := "pastel_id_key_files"
-	if _, err := os.Stat(key_file_path); os.IsNotExist(err) {
-		os.MkdirAll(key_file_path, 0770)
-	}
-	err := qrcode.WriteFile(pastel_id_public_key_b16_encoded, qrcode.Medium, 3000, key_file_path+"/pastel_id_legroast_public_key_qr_code.png")
+	err := qr.Encode(pastel_id_public_key_b16_encoded, key_file_path, "pastel_id_legroast_public_key_qr_code")
 	if err != nil {
 		panic(err)
 	}
-	err = qrcode.WriteFile(pastel_id_private_key_b16_encoded, qrcode.Medium, 1000, key_file_path+"/pastel_id_legroast_private_key_qr_code.png")
+	err = qr.Encode(pastel_id_private_key_b16_encoded, key_file_path, "pastel_id_legroast_private_key_qr_code")
 	if err != nil {
 		panic(err)
 	}
@@ -298,40 +295,6 @@ func import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path
 	return pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded
 }
 
-func break_string_into_chunks_func(str string, size int) []string {
-	if len(str) <= size {
-		return []string{str}
-	}
-	var result []string
-	chunk := make([]rune, size)
-	pos := 0
-	for _, rune := range str {
-		chunk[pos] = rune
-		pos++
-		if pos == size {
-			pos = 0
-			result = append(result, string(chunk))
-		}
-	}
-	if pos > 0 {
-		result = append(result, string(chunk[:pos]))
-	}
-	return result
-}
-
-func qrCodes(s string, dataSize int) [][]byte {
-	chunks := break_string_into_chunks_func(s, dataSize)
-	var qrs [][]byte
-	for _, chunk := range chunks {
-		png, err := qrcode.Encode(chunk, qrcode.Medium, 250)
-		if err != nil {
-			panic(err)
-		}
-		qrs = append(qrs, png)
-	}
-	return qrs
-}
-
 func loadImageSizes(list_of_qr_code_file_paths []string) []image.Point {
 	var sizes []image.Point
 	for _, imagePath := range list_of_qr_code_file_paths {
@@ -366,7 +329,7 @@ func maxHeight(sizes []image.Point) int {
 func generate_signature_image_layer_func(pastel_id_public_key_b16_encoded string, pastel_id_signature_b16_encoded string, sample_image_file_path string) string {
 	max_chunk_length_for_qr_code := 2200
 
-	list_of_pastel_id_signature_b16_encoded_qr_code := qrCodes(pastel_id_signature_b16_encoded, max_chunk_length_for_qr_code)
+	list_of_pastel_id_signature_b16_encoded_qr_code, err := qr.ToPngs(pastel_id_signature_b16_encoded, max_chunk_length_for_qr_code)
 	number_of_signature_qr_codes := len(list_of_pastel_id_signature_b16_encoded_qr_code)
 	current_datetime_string := time.Now().Format("Jan_02_2006_15_04_05")
 
@@ -381,7 +344,7 @@ func generate_signature_image_layer_func(pastel_id_public_key_b16_encoded string
 		}
 	}
 
-	err := qrcode.WriteFile(pastel_id_public_key_b16_encoded, qrcode.Medium, 250, pastel_id_signatures_storage_file_path+"/pastel_id_legroast_public_key_qr_code"+current_datetime_string+".png")
+	err = qrcode.WriteFile(pastel_id_public_key_b16_encoded, qrcode.Medium, 250, pastel_id_signatures_storage_file_path+"/pastel_id_legroast_public_key_qr_code"+current_datetime_string+".png")
 	if err != nil {
 		panic(err)
 	}
@@ -500,7 +463,7 @@ func main() {
 
 	pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded := import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path)
 	if pastel_id_public_key_b16_encoded == "" {
-		pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded = pastel_id_keypair_generation_func()
+		pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded := pastel_id_keypair_generation_func()
 		write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded, box_key_file_path)
 		generate_qr_codes_from_pastel_keypair_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded)
 	}
