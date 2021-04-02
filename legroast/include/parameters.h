@@ -12,7 +12,7 @@
 #define PRIME_BYTES 16
 #define SEED_BYTES 16
 #define HASH_BYTES 32
-#define PK_DEPTH 13
+#define PK_DEPTH 15
 
 #ifdef LEGENDRE
 
