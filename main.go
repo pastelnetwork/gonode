@@ -3,15 +3,12 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"errors"
-	"image"
 	"image/color"
 	"io"
 	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/fogleman/gg"
@@ -39,12 +36,17 @@ import (
 	"github.com/auyer/steganography"
 )
 
+const (
+	PastelIdSignatureFilesFolder = "pastel_id_signature_files"
+	OTPSecretFile                = "otp_secret.txt"
+)
+
 func set_up_google_authenticator_for_private_key_encryption_func() {
 	secretLength := 16
 	secret := gotp.RandomSecret(secretLength)
 	fmt.Printf("\nThis is you Google Authenticor Secret:%v", secret)
 
-	err := os.WriteFile("otp_secret.txt", []byte(secret), 0644)
+	err := os.WriteFile(OTPSecretFile, []byte(secret), 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -156,16 +158,17 @@ func write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_e
 	}
 }
 
-func generate_qr_codes_from_pastel_keypair_func(pastel_id_public_key_b16_encoded string, pastel_id_private_key_b16_encoded string) {
+func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
 	key_file_path := "pastel_id_key_files"
-	err := qr.Encode(pastel_id_public_key_b16_encoded, key_file_path, "pastel_id_legroast_public_key_qr_code")
+	pkPngs, err := qr.Encode(pk, key_file_path, "Pastel Public Key", "pastel_id_legroast_public_key_qr_code", "")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
-	err = qr.Encode(pastel_id_private_key_b16_encoded, key_file_path, "pastel_id_legroast_private_key_qr_code")
+	_, err = qr.Encode(sk, key_file_path, "", "pastel_id_legroast_private_key_qr_code", "")
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
+	return pkPngs, nil
 }
 
 func pastel_id_write_signature_on_data_func(input_data_or_string string, pastel_id_private_key_b16_encoded string, pastel_id_public_key_b16_encoded string) string {
@@ -210,7 +213,7 @@ func conformsCharacterSet(value string, characterSet string) bool {
 func generate_current_otp_string_func() string {
 	otp_secret := os.Getenv("PASTEL_OTP_SECRET")
 	if len(otp_secret) == 0 {
-		otp_secret_file_data, err := ioutil.ReadFile("otp_secret.txt")
+		otp_secret_file_data, err := ioutil.ReadFile(OTPSecretFile)
 		if err != nil {
 			return ""
 		}
@@ -295,116 +298,6 @@ func import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path
 	return pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded
 }
 
-func loadImageSizes(list_of_qr_code_file_paths []string) []image.Point {
-	var sizes []image.Point
-	for _, imagePath := range list_of_qr_code_file_paths {
-		image, err := gg.LoadImage(imagePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		sizes = append(sizes, image.Bounds().Size())
-	}
-	return sizes
-}
-
-func totalWidth(sizes []image.Point) int {
-	width := 0
-	for _, size := range sizes {
-		width += size.X
-	}
-	width += 3 * (len(sizes) - 1)
-	return width
-}
-
-func maxHeight(sizes []image.Point) int {
-	maxHeight := 0
-	for _, size := range sizes {
-		if maxHeight < size.Y {
-			maxHeight = size.Y
-		}
-	}
-	return maxHeight
-}
-
-func generate_signature_image_layer_func(pastel_id_public_key_b16_encoded string, pastel_id_signature_b16_encoded string, sample_image_file_path string) string {
-	max_chunk_length_for_qr_code := 2200
-
-	list_of_pastel_id_signature_b16_encoded_qr_code, err := qr.ToPngs(pastel_id_signature_b16_encoded, max_chunk_length_for_qr_code)
-	number_of_signature_qr_codes := len(list_of_pastel_id_signature_b16_encoded_qr_code)
-	current_datetime_string := time.Now().Format("Jan_02_2006_15_04_05")
-
-	pastel_id_signatures_storage_file_path := "pastel_id_signature_files"
-	if _, err := os.Stat(pastel_id_signatures_storage_file_path); os.IsNotExist(err) {
-		os.MkdirAll(pastel_id_signatures_storage_file_path, 0770)
-	}
-	for i, imageData := range list_of_pastel_id_signature_b16_encoded_qr_code {
-		err := os.WriteFile(pastel_id_signatures_storage_file_path+"/pastel_id_legroast_signature_qr_code__part_"+strconv.Itoa(i)+"_of_"+strconv.Itoa(number_of_signature_qr_codes)+current_datetime_string+".png", []byte(imageData), 0644)
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	err = qrcode.WriteFile(pastel_id_public_key_b16_encoded, qrcode.Medium, 250, pastel_id_signatures_storage_file_path+"/pastel_id_legroast_public_key_qr_code"+current_datetime_string+".png")
-	if err != nil {
-		panic(err)
-	}
-
-	sample_image, err := gg.LoadImage(sample_image_file_path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	imageSize := sample_image.Bounds().Size()
-	list_of_qr_code_file_paths, err := filepath.Glob(pastel_id_signatures_storage_file_path + "/*" + current_datetime_string + "*")
-	if err != nil {
-		panic(err)
-	}
-
-	list_of_qr_code_image_sizes := loadImageSizes(list_of_qr_code_file_paths)
-
-	sum_of_widths_plus_borders := totalWidth(list_of_qr_code_image_sizes)
-	max_height_of_qr_codes := maxHeight(list_of_qr_code_image_sizes)
-
-	if max_height_of_qr_codes > imageSize.Y {
-		panic(errors.New("image height is too small"))
-	}
-
-	if imageSize.X < sum_of_widths_plus_borders {
-
-	}
-
-	signature_layer_image_dc := gg.NewContext(imageSize.X, imageSize.Y)
-	signature_layer_image_dc.SetRGB(255, 255, 255)
-	signature_layer_image_dc.Clear()
-	signature_layer_image_dc.SetColor(color.White)
-	padding_pixels := 2
-	current_qr_image_x_coordinate := 0
-	for i, current_qr_code_image := range list_of_qr_code_file_paths {
-		caption_text := ""
-		caption_x_position := 0
-
-		if i == 0 {
-			caption_text = "Pastel Public Key"
-			caption_x_position = list_of_qr_code_image_sizes[i].X / 2
-		} else {
-			current_qr_image_x_coordinate += list_of_qr_code_image_sizes[i-1].X + padding_pixels
-			caption_text = "Pastel Signature Part " + strconv.Itoa(i) + " of " + strconv.Itoa(len(list_of_qr_code_image_sizes)-1)
-			caption_x_position = list_of_qr_code_image_sizes[i-1].X / 2
-		}
-
-		image, err := gg.LoadImage(current_qr_code_image)
-		if err != nil {
-			log.Fatal(err)
-		}
-		signature_layer_image_dc.DrawStringAnchored(caption_text, float64(current_qr_image_x_coordinate+caption_x_position), 10, 0.5, 0.5)
-		signature_layer_image_dc.DrawImageAnchored(image, current_qr_image_x_coordinate+caption_x_position, 30+list_of_qr_code_image_sizes[i].Y/2, 0.5, 0.5)
-	}
-
-	signature_layer_image_output_filepath := pastel_id_signatures_storage_file_path + "/Complete_Signature_Image_Layer__" + current_datetime_string + ".png"
-	signature_layer_image_dc.SavePNG(signature_layer_image_output_filepath)
-
-	return signature_layer_image_output_filepath
-}
-
 func hide_signature_image_in_sample_image_func(sample_image_file_path string, signature_layer_image_output_filepath string, signed_image_output_path string) {
 	img, err := gg.LoadImage(sample_image_file_path)
 	if err != nil {
@@ -442,7 +335,7 @@ func extract_signature_image_in_sample_image_func(signed_image_output_path strin
 }
 
 func main() {
-	if _, err := os.Stat("otp_secret.txt"); os.IsNotExist(err) {
+	if _, err := os.Stat(OTPSecretFile); os.IsNotExist(err) {
 		set_up_google_authenticator_for_private_key_encryption_func()
 	}
 
@@ -460,20 +353,39 @@ func main() {
 	}
 
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256_hash_of_image_to_sign)
-
 	pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded := import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path)
 	if pastel_id_public_key_b16_encoded == "" {
 		pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded := pastel_id_keypair_generation_func()
 		write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded, box_key_file_path)
-		generate_qr_codes_from_pastel_keypair_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded)
+	}
+	keypairImgs, err := generateKeypairQRs(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded)
+	if err != nil {
+		panic(err)
 	}
 
 	pastel_id_signature_b16_encoded := pastel_id_write_signature_on_data_func(sha256_hash_of_image_to_sign, pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded)
 	_ = pastel_id_verify_signature_with_public_key_func(sha256_hash_of_image_to_sign, pastel_id_signature_b16_encoded, pastel_id_public_key_b16_encoded)
 
-	signature_layer_image_output_filepath := generate_signature_image_layer_func(pastel_id_public_key_b16_encoded, pastel_id_signature_b16_encoded, sample_image_file_path)
+	timestamp := time.Now().Format("Jan_02_2006_15_04_05")
+	signatureImags, err := qr.Encode(pastel_id_signature_b16_encoded, PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
+	if err != nil {
+		panic(err)
+	}
+
+	imgsToMap := append(keypairImgs, signatureImags...)
+
+	signatureLayerImageOutputFilepath := filepath.Join(PastelIdSignatureFilesFolder, fmt.Sprintf("Complete_Signature_Image_Layer__%v.png", timestamp))
+	sample_image, err := gg.LoadImage(sample_image_file_path)
+	if err != nil {
+		panic(err)
+	}
+	err = qr.MapImages(imgsToMap, sample_image.Bounds().Size(), signatureLayerImageOutputFilepath)
+	if err != nil {
+		panic(err)
+	}
+
 	signed_image_output_path := "final_watermarked_image.png"
-	hide_signature_image_in_sample_image_func(sample_image_file_path, signature_layer_image_output_filepath, signed_image_output_path)
+	hide_signature_image_in_sample_image_func(sample_image_file_path, signatureLayerImageOutputFilepath, signed_image_output_path)
 
 	extracted_signature_layer_image_output_filepath := "extracted_signature_image.png"
 	extract_signature_image_in_sample_image_func(signed_image_output_path, extracted_signature_layer_image_output_filepath)
