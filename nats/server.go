@@ -6,10 +6,12 @@ import (
 	natsserver "github.com/nats-io/nats-server/v2/server"
 )
 
+// Server represents nat-server
 type Server struct {
 	config *Config
 }
 
+// Run start nat server
 func (server *Server) Run(ctx context.Context) error {
 	srv, err := natsserver.NewServer(&natsserver.Options{
 		Host:   server.config.Hostname,
@@ -24,12 +26,13 @@ func (server *Server) Run(ctx context.Context) error {
 	srv.Start()
 
 	<-ctx.Done()
+
 	srv.Shutdown()
 	srv.WaitForShutdown()
-
 	return nil
 }
 
+// NewServer returns a new Server instance
 func NewServer(config *Config) *Server {
 	return &Server{
 		config: config,

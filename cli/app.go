@@ -18,7 +18,7 @@ import (
 
 const (
 	appName  = "supernode"
-	appUsage = ""
+	appUsage = "SuperNode" // TODO: Write a clear description.
 
 	defaultConfigFile = ""
 )
@@ -70,7 +70,7 @@ func run(config *config.Config) error {
 	log.Debug("[app] start")
 	defer log.Debug("[app] end")
 
-	log.Debugf("[app]config: %s", config)
+	log.Debugf("[app] config: %s", config)
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
