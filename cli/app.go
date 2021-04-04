@@ -30,12 +30,6 @@ func (app *App) AddFlags(flags ...*Flag) {
 	}
 }
 
-// SetPrepareFunc sets the Prepare fucntion for the cli.App.
-// The function runs immediately after the call `cli.Run()`.
-func (app *App) SetPrepareFunc(prepareFn func() error) {
-	app.prepareFn = prepareFn
-}
-
 // SetBeforeFunc sets the Before fucntion for the cli.App
 // An action to execute before any subcommands are run, but after the context is ready.
 func (app *App) SetBeforeFunc(beforeFn func() error) {

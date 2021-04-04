@@ -135,6 +135,11 @@ func Errorf(format string, args ...interface{}) {
 	logEntry().Errorf(format, args...)
 }
 
+// Tracef logs a message at level Trace.
+func Tracef(format string, args ...interface{}) {
+	logEntry().Tracef(format, args...)
+}
+
 // Panicf logs a message at level Panic.
 func Panicf(format string, args ...interface{}) {
 	logEntry().Panicf(format, args...)
