@@ -23,7 +23,7 @@ func (s *Flag) SetUsage(val string) *Flag {
 }
 
 // SetAliases sets 'Aliases' field for the cli.Flag
-func (s *Flag) SetAliases(val []string) *Flag {
+func (s *Flag) SetAliases(val ...string) *Flag {
 	s.setField("Aliases", func(v reflect.Value) {
 		v.Set(reflect.ValueOf(val))
 	})
@@ -31,7 +31,7 @@ func (s *Flag) SetAliases(val []string) *Flag {
 }
 
 // SetEnvVars sets 'EnvVars' field for the cli.Flag
-func (s *Flag) SetEnvVars(val []string) *Flag {
+func (s *Flag) SetEnvVars(val ...string) *Flag {
 	s.setField("EnvVars", func(v reflect.Value) {
 		v.Set(reflect.ValueOf(val))
 	})
@@ -46,7 +46,7 @@ func (s *Flag) SetRequired() *Flag {
 	return s
 }
 
-// SetValue sets 'Value' field for the  cli.Flag
+// SetValue sets 'Value' field for the cli.Flag
 func (s *Flag) SetValue(val interface{}) *Flag {
 	s.setField("Value", func(v reflect.Value) {
 		v.Set(reflect.ValueOf(val))
@@ -54,7 +54,7 @@ func (s *Flag) SetValue(val interface{}) *Flag {
 	return s
 }
 
-// SetHidden sets 'Hidden' field for the  cli.Flag
+// SetHidden sets 'Hidden' field for the cli.Flag
 func (s *Flag) SetHidden() *Flag {
 	s.setField("Hidden", func(v reflect.Value) {
 		v.SetBool(true)
@@ -62,27 +62,23 @@ func (s *Flag) SetHidden() *Flag {
 	return s
 }
 
-// Assign a value given from `setValue` callback func to the field of `Flag` by the given name.
+// Assign a value using callback func `setValue` to the field of `Flag` by the given name.
 func (s *Flag) setField(name string, setValue func(v reflect.Value)) reflect.Value {
-	v := reflect.ValueOf(&s.Flag).Elem()
-	tmp := reflect.New(v.Elem().Type()).Elem()
-	tmp.Set(v.Elem())
-	setValue(tmp.FieldByName(name))
-	v.Set(tmp)
+	val := reflect.ValueOf(&s.Flag).Elem()
+	tmp := reflect.New(val.Elem().Type()).Elem()
+	tmp.Set(val.Elem())
+	setValue(tmp.Elem().FieldByName(name))
+	val.Set(tmp)
 
-	return tmp.FieldByName(name)
+	return tmp.Elem().FieldByName(name)
 }
 
-// NewFlag create a new instance of the Flag struct
+// NewFlag returns a new Flag instance. Where the `name` is a flag name and
+// `destination` is a pointer to which the flag value will be assigned.
 func NewFlag(name string, destination interface{}) *Flag {
 	var flag cli.Flag
 
 	switch ptr := destination.(type) {
-	case *[]string:
-		flag = &cli.StringSliceFlag{
-			Name:        name,
-			Destination: cli.NewStringSlice(*ptr...),
-		}
 	case *string:
 		flag = &cli.StringFlag{
 			Name:        name,

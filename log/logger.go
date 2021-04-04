@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/pastelnetwork/go-commons/log/formatters"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,10 +17,10 @@ type Logger struct {
 // NewLogger returns a new Logger instance with default values
 func NewLogger() *Logger {
 	logger := logrus.New()
-	logger.SetFormatter(TextFormatter())
+	logger.SetFormatter(formatters.Terminal)
 	logger.SetLevel(defaultLevel)
 
 	return &Logger{
-		Logger: logrus.New(),
+		Logger: logger,
 	}
 }

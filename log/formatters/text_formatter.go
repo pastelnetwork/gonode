@@ -1,14 +1,29 @@
-package log
+package formatters
 
 import (
 	"github.com/sirupsen/logrus"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-func TextFormatter() logrus.Formatter {
+var (
+	LogFile  = NewFileFormatter()
+	Terminal = NewTerminalFormatter()
+)
+
+func NewFileFormatter() logrus.Formatter {
+	return &prefixed.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "Jan 02 15:04:05.000",
+		DisableColors:   true,
+		ForceFormatting: true,
+	}
+}
+
+func NewTerminalFormatter() logrus.Formatter {
 	formatter := &prefixed.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "Jan 02 15:04:05.000",
+		ForceFormatting: true,
 	}
 	formatter.SetColorScheme(&prefixed.ColorScheme{
 		InfoLevelStyle:  "green",

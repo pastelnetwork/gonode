@@ -23,15 +23,15 @@ func (cmd *Command) AddFlags(flags ...*Flag) {
 	}
 }
 
-// SetBefore sets the Before fucntion for the cli.Command
-func (cmd *Command) SetBefore(before func() error) {
+// SetBeforeFunc sets the Before fucntion for the cli.Command
+func (cmd *Command) SetBeforeFunc(before func() error) {
 	cmd.Before = func(c *cli.Context) error {
 		return before()
 	}
 }
 
-// SetAction sets the Action fucntion for the cli.Command
-func (cmd *Command) SetAction(run func(args []string) error) {
+// SetActionFunc sets the Action fucntion for the cli.Command
+func (cmd *Command) SetActionFunc(run func(args []string) error) {
 	cmd.Action = func(c *cli.Context) error {
 		args := []string(c.Args().Tail())
 		return run(args)
