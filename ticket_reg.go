@@ -1,4 +1,4 @@
-package models
+package pastel
 
 type RegTicket struct {
 	Version        int       `json:"version"`

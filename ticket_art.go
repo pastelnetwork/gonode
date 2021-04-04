@@ -1,4 +1,4 @@
-package models
+package pastel
 
 type ArtTicket struct {
 	AuthorPastelID string `json:"author_pastel_id"`

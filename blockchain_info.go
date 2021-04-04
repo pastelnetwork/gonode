@@ -1,4 +1,4 @@
-package models
+package pastel
 
 type BlockchainInfo struct {
 	Chain                string  `json:"chain"`

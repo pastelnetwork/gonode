@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/go-pastel/models"
 
 	"github.com/ybbus/jsonrpc/v2"
 )
@@ -14,34 +13,34 @@ type Client struct {
 	jsonrpc.RPCClient
 }
 
-func (client *Client) Getblockchaininfo() (*models.BlockchainInfo, error) {
-	info := &models.BlockchainInfo{}
-	err := client.callFor(info, "getblockchaininfo")
+func (client *Client) Getblockchaininfo() (*BlockchainInfo, error) {
+	info := &BlockchainInfo{}
+	err := client.callFor(&info, "getblockchaininfo")
 	return info, err
 }
 
-func (client *Client) ListIDTickets(idType string) (*[]models.IdTicket, error) {
-	tickets := &[]models.IdTicket{}
-	err := client.callFor(tickets, "tickets", "list", "id", idType)
+func (client *Client) ListIDTickets(idType string) (IDTickets, error) {
+	tickets := IDTickets{}
+	err := client.callFor(&tickets, "tickets", "list", "id", idType)
 	return tickets, err
 }
 
-func (client *Client) FindIDTicket(search string) (*models.IdTicket, error) {
-	tickets := &models.IdTicket{}
-	err := client.callFor(tickets, "tickets", "find", "id", search)
+func (client *Client) FindIDTicket(search string) (IDTickets, error) {
+	tickets := IDTickets{}
+	err := client.callFor(&tickets, "tickets", "find", "id", search)
 	return tickets, err
 }
 
-func (client *Client) FindIDTickets(search string) (*[]models.IdTicket, error) {
-	tickets := &[]models.IdTicket{}
-	err := client.callFor(tickets, "tickets", "find", "id", search)
+func (client *Client) FindIDTickets(search string) (IDTickets, error) {
+	tickets := IDTickets{}
+	err := client.callFor(&tickets, "tickets", "find", "id", search)
 	return tickets, err
 }
 
-func (client *Client) ListPastelIDs() (*[]models.PastelID, error) {
-	pastelids := &[]models.PastelID{}
-	err := client.callFor(pastelids, "pastelid", "list")
-	return pastelids, err
+func (client *Client) ListPastelIDs() (PastelIDs, error) {
+	pastelIDs := PastelIDs{}
+	err := client.callFor(&pastelIDs, "pastelid", "list")
+	return pastelIDs, err
 }
 
 func (client *Client) GetMNRegFee() (int, error) {
