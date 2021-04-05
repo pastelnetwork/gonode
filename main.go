@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"time"
 
+	pqtime "github.com/PastelNetwork/pqSignatures/internal/time"
 	"github.com/PastelNetwork/pqSignatures/legroast"
 	"github.com/PastelNetwork/pqSignatures/qr"
 
@@ -173,7 +174,7 @@ func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
 
 func pastel_id_write_signature_on_data_func(input_data_or_string string, pastel_id_private_key_b16_encoded string, pastel_id_public_key_b16_encoded string) string {
 	fmt.Printf("\nGenerating LegRoast signature now...")
-	//with MyTimer():
+	defer pqtime.Measure(time.Now())
 
 	pastel_id_private_key, _ := base64.StdEncoding.DecodeString(pastel_id_private_key_b16_encoded)
 	pastel_id_public_key, _ := base64.StdEncoding.DecodeString(pastel_id_public_key_b16_encoded)
@@ -186,7 +187,7 @@ func pastel_id_write_signature_on_data_func(input_data_or_string string, pastel_
 
 func pastel_id_verify_signature_with_public_key_func(input_data_or_string string, pastel_id_signature_b16_encoded string, pastel_id_public_key_b16_encoded string) int {
 	fmt.Printf("\nVerifying LegRoast signature now...")
-	//with MyTimer():
+	defer pqtime.Measure(time.Now())
 
 	pastel_id_signature, _ := base64.StdEncoding.DecodeString(pastel_id_signature_b16_encoded)
 	pastel_id_public_key, _ := base64.StdEncoding.DecodeString(pastel_id_public_key_b16_encoded)
