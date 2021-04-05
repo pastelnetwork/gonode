@@ -356,7 +356,7 @@ func main() {
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256_hash_of_image_to_sign)
 	pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded := import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path)
 	if pastel_id_public_key_b16_encoded == "" {
-		pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded := pastel_id_keypair_generation_func()
+		pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded = pastel_id_keypair_generation_func()
 		write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded, box_key_file_path)
 	}
 	keypairImgs, err := generateKeypairQRs(pastel_id_public_key_b16_encoded, pastel_id_private_key_b16_encoded)
