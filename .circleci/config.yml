@@ -28,4 +28,4 @@ jobs:
           name: Build binary
           command: go build -v ./cmd/pqsignatures
       - store_artifacts:
-          path: ./pqSignatures
+          path: ./pqsignatures
