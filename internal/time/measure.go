@@ -1,9 +1,9 @@
-// Package time provides internal functions to measure execution time
+// Package time provides internal functions to alter and measure execution time
 package time
 
 import (
 	"fmt"
-	"log"
+	"math/rand"
 	"regexp"
 	"runtime"
 	"time"
@@ -17,5 +17,11 @@ func Measure(start time.Time) {
 	pcFunc := runtime.FuncForPC(pc)
 	funcNameOnly := regexp.MustCompile(`^.*\.(.*)$`)
 	funcName := funcNameOnly.ReplaceAllString(pcFunc.Name(), "$1")
-	log.Println(fmt.Sprintf("\n%s took %s", funcName, elapsed))
+	fmt.Printf("\n%s took %s\n", funcName, elapsed)
+}
+
+// Sleep puts execution thread to sleep for pseudo-random number of milliseconds in range from 0 to 9
+func Sleep() {
+	r := rand.Intn(10)
+	time.Sleep(time.Duration(r) * time.Millisecond)
 }

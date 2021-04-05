@@ -178,10 +178,10 @@ func pastel_id_write_signature_on_data_func(input_data_or_string string, pastel_
 
 	pastel_id_private_key, _ := base64.StdEncoding.DecodeString(pastel_id_private_key_b16_encoded)
 	pastel_id_public_key, _ := base64.StdEncoding.DecodeString(pastel_id_public_key_b16_encoded)
-	//sleep(0.1*random.random()) #To combat side-channel attacks
+	pqtime.Sleep()
 	pastel_id_signature := legroast.Sign(pastel_id_public_key, pastel_id_private_key, ([]byte)(input_data_or_string[:]))
 	pastel_id_signature_b16_encoded := base64.StdEncoding.EncodeToString(pastel_id_signature)
-	//sleep(0.1*random.random())
+	pqtime.Sleep()
 	return pastel_id_signature_b16_encoded
 }
 
@@ -191,9 +191,9 @@ func pastel_id_verify_signature_with_public_key_func(input_data_or_string string
 
 	pastel_id_signature, _ := base64.StdEncoding.DecodeString(pastel_id_signature_b16_encoded)
 	pastel_id_public_key, _ := base64.StdEncoding.DecodeString(pastel_id_public_key_b16_encoded)
-	//sleep(0.1*random.random())
+	pqtime.Sleep()
 	verified := legroast.Verify(pastel_id_public_key, ([]byte)(input_data_or_string[:]), pastel_id_signature)
-	//sleep(0.1*random.random())
+	pqtime.Sleep()
 	if verified > 0 {
 		fmt.Printf("\nSignature is valid!")
 	} else {
