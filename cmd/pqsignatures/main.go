@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"time"
 
-	pqtime "github.com/PastelNetwork/pqSignatures/internal/time"
-	"github.com/PastelNetwork/pqSignatures/legroast"
-	"github.com/PastelNetwork/pqSignatures/qr"
+	pqtime "github.com/PastelNetwork/pqsignatures/internal/time"
+	"github.com/PastelNetwork/pqsignatures/legroast"
+	"github.com/PastelNetwork/pqsignatures/qr"
 
 	qrcode "github.com/skip2/go-qrcode"
 	"github.com/xlzd/gotp"

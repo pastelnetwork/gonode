@@ -1,8 +1,6 @@
-module github.com/PastelNetwork/pqSignatures
+module github.com/PastelNetwork/pqsignatures
 
 go 1.16
-
-replace github.com/PastelNetwork/pqSignatures/legroast => ./legroast
 
 require (
 	github.com/auyer/steganography v1.0.0
