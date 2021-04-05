@@ -79,7 +79,10 @@ func run(config *config.Config) error {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	sys.RegisterInterruptHandler(cancel)
+
+	sys.RegisterInterruptHandler(cancel, func() {
+		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
+	})
 
 	if err := pastel.Init(config.Pastel); err != nil {
 		return err

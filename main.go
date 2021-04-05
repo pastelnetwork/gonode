@@ -18,12 +18,12 @@ var (
 )
 
 func main() {
-	defer errors.Recover(sys.CheckErrorAndExit)
+	defer errors.Recover(errors.CheckErrorAndExit)
 
 	app := cli.NewApp()
 	err := app.Run(os.Args)
 
-	sys.CheckErrorAndExit(err)
+	errors.CheckErrorAndExit(err)
 }
 
 func init() {
