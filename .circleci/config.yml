@@ -22,8 +22,7 @@ jobs:
       - run:
           name: fetch dependencies
           command: >
-            go mod download
-            export GO111MODULE=on
+            go get -v ./...
       - run:
           name: run golint
           command: >
