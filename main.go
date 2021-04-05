@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/pastelnetwork/go-commons/errors"
@@ -19,28 +18,12 @@ var (
 )
 
 func main() {
-	defer errors.Recover(checkErrorAndExit)
+	defer errors.Recover(sys.CheckErrorAndExit)
 
 	app := cli.NewApp()
 	err := app.Run(os.Args)
 
-	checkErrorAndExit(err)
-}
-
-func checkErrorAndExit(err error) {
-	defer os.Exit(sys.ExitCode(err))
-
-	if err == nil || errors.IsContextCanceled(err) {
-		return
-	}
-
-	errorFields := errors.ExtractFields(err)
-
-	if debugMode {
-		log.WithError(err).WithFields(map[string]interface{}(errorFields)).Error(errors.ErrorStack(err))
-	} else {
-		fmt.Fprintf(os.Stderr, "ERROR: %s %s\n", errorFields.String(), err)
-	}
+	sys.CheckErrorAndExit(err)
 }
 
 func init() {

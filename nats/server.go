@@ -3,36 +3,36 @@ package nats
 import (
 	"context"
 
-	natsserver "github.com/nats-io/nats-server/v2/server"
+	"github.com/nats-io/nats-server/v2/server"
 )
 
-// Server represents nat-server
+// Server represents nat service.
 type Server struct {
 	config *Config
 }
 
-// Run start nat server
-func (server *Server) Run(ctx context.Context) error {
-	srv, err := natsserver.NewServer(&natsserver.Options{
-		Host:   server.config.Hostname,
-		Port:   server.config.Port,
+// Run starts nat service.
+func (srv *Server) Run(ctx context.Context) error {
+	nats, err := server.NewServer(&server.Options{
+		Host:   srv.config.Hostname,
+		Port:   srv.config.Port,
 		NoSigs: true,
 	})
 	if err != nil {
 		return err
 	}
 
-	srv.SetLoggerV2(&Logger{}, true, true, true)
-	srv.Start()
+	nats.SetLoggerV2(NewLogger(), true, true, true)
+	nats.Start()
 
 	<-ctx.Done()
 
-	srv.Shutdown()
-	srv.WaitForShutdown()
+	nats.Shutdown()
+	nats.WaitForShutdown()
 	return nil
 }
 
-// NewServer returns a new Server instance
+// NewServer returns a new Server instance.
 func NewServer(config *Config) *Server {
 	return &Server{
 		config: config,

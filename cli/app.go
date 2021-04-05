@@ -23,6 +23,7 @@ const (
 	defaultConfigFile = ""
 )
 
+// NewApp inits a new command line interface.
 func NewApp() *cli.App {
 	configFile := defaultConfigFile
 	config := config.New()
@@ -53,7 +54,7 @@ func NewApp() *cli.App {
 
 		if config.LogFile != "" {
 			fileHook := hooks.NewFileHook(config.LogFile)
-			log.AddHooks(fileHook)
+			log.AddHook(fileHook)
 		}
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {

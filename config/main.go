@@ -5,8 +5,8 @@ const (
 )
 
 type Main struct {
-	LogLevel string `mapstructure:"log-level" json:"log-level"`
-	LogFile  string `mapstructure:"log-file" json:"log-file"`
+	LogLevel string `mapstructure:"log-level" json:"log-level,omitempty"`
+	LogFile  string `mapstructure:"log-file" json:"log-file,omitempty"`
 	Quiet    bool   `mapstructure:"quiet" json:"quiet"`
 }
 
