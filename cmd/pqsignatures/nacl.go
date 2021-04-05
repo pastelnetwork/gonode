@@ -10,10 +10,14 @@ import (
 	"github.com/kevinburke/nacl"
 )
 
+const (
+	BoxKeyFilePath = "box_key.bin"
+)
+
 func generateAndStoreKeyForNacl() error {
 	box_key := nacl.NewKey()
 	box_key_base64 := base64.StdEncoding.EncodeToString(box_key[:])
-	err := os.WriteFile("box_key.bin", []byte(box_key_base64), 0644)
+	err := os.WriteFile(BoxKeyFilePath, []byte(box_key_base64), 0644)
 	if err != nil {
 		return fmt.Errorf("generateAndStoreKeyForNacl: %w", err)
 	}
