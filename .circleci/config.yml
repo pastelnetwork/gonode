@@ -1,4 +1,4 @@
-version: 2.1
+version: 2
 
 jobs:
   test:
@@ -24,7 +24,6 @@ jobs:
           command: >
             go mod download
             export GO111MODULE=on
-      # Only run gofmt, vet & lint against the latest Go version
       - run:
           name: run golint
           command: >
