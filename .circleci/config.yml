@@ -1,0 +1,65 @@
+version: 2.1
+
+jobs:
+  test:
+    parameters:
+      version:
+        type: string
+        default: "latest"
+      golint:
+        type: boolean
+        default: true
+    docker:
+      - image: "circleci/golang:<< parameters.version >>"
+    environment:
+      GO111MODULE: "on"
+    steps:
+      - checkout
+      - run:
+          name: print the go version
+          command: >
+            go version
+      - run:
+          name: fetch dependencies
+          command: >
+            go mod download
+            export GO111MODULE=on
+      # Only run gofmt, vet & lint against the latest Go version
+      - run:
+          name: run golint
+          command: >
+            go get -u golang.org/x/lint/golint
+            golint ./...
+      - run:
+          name: run gofmt
+          command: >
+            diff -u <(echo -n) <(gofmt -d -e .)
+      - run:
+          name: run go vet
+          command: >
+            go vet -v ./...
+      - run:
+          name: run go test (+ race detector)
+          command: >
+            go test -v -race ./...
+
+  release:
+    steps:
+      - checkout
+
+workflows:
+  tests:
+  build-and-test:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /^v.*/
+      - release:
+          requires:
+            - test
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/

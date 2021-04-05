@@ -110,6 +110,8 @@ log.SetDebugMode(true)
 This package contains utilities for logging from our apps. Instead of using Go's built-in logging library, we are using [logrus](github.com/sirupsen/logrus), as it supports log levels (INFO, WARN, DEBUG, etc), structured logging (making key=value pairs easier to parse), log formatting (including text and JSON), hooks to connect logging to a variety of external systems (e.g. syslog, airbrake, papertrail), and even hooks for automated testing.
 
 ```go
+import "github.com/pastelnetwork/go-commons/log"
+
 log.Info("Some info")
 log.Debugf("Debug message, %s", msg)
 ```
