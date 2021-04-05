@@ -33,10 +33,13 @@ func NewApp() *cli.App {
 	app.SetVersion(version.Version())
 
 	app.AddFlags(
+		// Main
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(configFile).SetAliases("c"),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
+		// Rest
+		cli.NewFlag("swagger", &config.Rest.Swagger).SetUsage("Enable swagger server."),
 	)
 
 	app.SetActionFunc(func(args []string) error {

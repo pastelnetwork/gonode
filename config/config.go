@@ -12,9 +12,9 @@ import (
 type Config struct {
 	Main `mapstructure:",squash"`
 
-	Pastel *pastel.Config `mapstructure:"pastel" json:"pastel"`
-	Nats   *nats.Config   `mapstructure:"nats" json:"nats"`
-	Rest   *rest.Config   `mapstructure:"rest" json:"rest"`
+	Pastel *pastel.Config `mapstructure:"pastel" json:"pastel,omitempty"`
+	Nats   *nats.Config   `mapstructure:"nats" json:"nats,omitempty"`
+	Rest   *rest.Config   `mapstructure:"rest" json:"rest,omitempty"`
 }
 
 func (config *Config) String() string {

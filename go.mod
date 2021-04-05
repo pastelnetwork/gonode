@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
+	github.com/getkin/kin-openapi v0.53.0 // indirect
 	github.com/pastelnetwork/go-commons v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/go-pastel v0.0.0-00010101000000-000000000000
 	github.com/rs/cors v1.7.0

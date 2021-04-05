@@ -4,6 +4,7 @@ package rest
 
 import (
 	"context"
+	"embed"
 	"net"
 	"net/http"
 	"strconv"
@@ -17,20 +18,28 @@ const (
 	defaultShutdownTimeout = time.Second * 30
 )
 
+//go:embed swagger
+var swagger embed.FS
+
+// Rest represents RESTAPI service.
 type Rest struct {
 	config          *Config
 	shutdownTimeout time.Duration
 }
 
-func Run(ctx context.Context) error {
-	return nil
-}
-
+// Run starts RESTAPI service.
 func (rest *Rest) Run(ctx context.Context) error {
 	addr := net.JoinHostPort(rest.config.Hostname, strconv.Itoa(rest.config.Port))
 
+	restHTTP := httpHandler()
+
 	mux := http.NewServeMux()
-	mux.Handle("/", httpHandler())
+	mux.Handle("/", restHTTP)
+	mux.Handle("/swagger/swagger.json", restHTTP)
+	if rest.config.Swagger {
+		mux.Handle("/swagger/", http.FileServer(http.FS(swagger)))
+	}
+
 	handler := cors.AllowAll().Handler(mux)
 
 	srv := &http.Server{Addr: addr, Handler: handler}
@@ -56,6 +65,7 @@ func (rest *Rest) Run(ctx context.Context) error {
 	return err
 }
 
+// New returns a new Rest instance.
 func New(config *Config) *Rest {
 	return &Rest{
 		config:          config,
