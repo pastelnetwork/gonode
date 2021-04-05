@@ -85,6 +85,9 @@ Here is how the `errors` package should be used:
 1. Any time you get back an error object from a function built into Go or a 3rd party library, immediately wrap it with `errros.New` or `errros.Errorf`. This gives us a stacktrace as close to the source as possible.
 1. If you need to get back the underlying error, you can use the `errors.Unwrap` function.
 
+
+Wrap the error object from a function built into Go:
+
 ``` go
 import "github.com/pastelnetwork/go-commons/errors"
 
@@ -97,12 +100,15 @@ To check the error and return the corresponding exit code, call the `CheckErrorA
 
 ``` go
 errors.CheckErrorAndExit(error)
+
+// The above function also displays stacktracke, if the `log.SetDebugMode` function was called before:
+log.SetDebugMode(true)
 ```
 
-The above function also displays stacktracke, if the `log.SetDebugMode` function was called before:
+This package also contains useful utilities such as takes control of a panicking goroutine.
 
-```go
-log.SetDebugMode(true)
+``` go
+defer errors.Recover(errors.CheckErrorAndExit)
 ```
 
 ### log
