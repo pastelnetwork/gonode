@@ -26,6 +26,6 @@ jobs:
           path: /tmp/test-reports
       - run:
           name: Build binary
-          command: go build -v
+          command: go build -v ./cmd/pqsignatures
       - store_artifacts:
           path: ./pqSignatures
