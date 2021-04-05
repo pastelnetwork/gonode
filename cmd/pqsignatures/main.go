@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"bytes"
-	"image/color"
 	"io"
 	"io/ioutil"
 	"log"
@@ -22,76 +21,17 @@ import (
 	"github.com/PastelNetwork/pqsignatures/legroast"
 	"github.com/PastelNetwork/pqsignatures/qr"
 
-	qrcode "github.com/skip2/go-qrcode"
-	"github.com/xlzd/gotp"
-
-	"github.com/skratchdot/open-golang/open"
-
 	"encoding/base64"
 	"encoding/hex"
 
 	"golang.org/x/crypto/sha3"
-
-	"golang.org/x/image/font/inconsolata"
 
 	"github.com/auyer/steganography"
 )
 
 const (
 	PastelIdSignatureFilesFolder = "pastel_id_signature_files"
-	OTPSecretFile                = "otp_secret.txt"
 )
-
-func set_up_google_authenticator_for_private_key_encryption_func() {
-	secretLength := 16
-	secret := gotp.RandomSecret(secretLength)
-	fmt.Printf("\nThis is you Google Authenticor Secret:%v", secret)
-
-	err := os.WriteFile(OTPSecretFile, []byte(secret), 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	google_auth_uri := gotp.NewDefaultTOTP(secret).ProvisioningUri("user@user.com", "pastel")
-
-	err = qrcode.WriteFile(google_auth_uri, qrcode.Medium, 256, "qr.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	const W = 1200
-	const H = 800
-	im, err := gg.LoadImage("qr.png")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	dc := gg.NewContext(W, H)
-	dc.SetRGB(255, 255, 255)
-	dc.Clear()
-	textColor := color.White
-
-	dc.SetFontFace(inconsolata.Regular8x16)
-
-	warning_message := "You should take a picture of this screen on your phone, but make sure your camera roll is secure first!\nYou can also write down your Google Auth URI string (shown below) as a backup, which will allow you to regenerate the QR code image.\n\n"
-	textRightMargin := 60.0
-	textTopMargin := 90.0
-	x := textRightMargin
-	y := textTopMargin
-	maxWidth := float64(dc.Width()) - textRightMargin - textRightMargin
-
-	dc.SetColor(textColor)
-	dc.DrawStringWrapped(warning_message, x, y, 0, 0, maxWidth, 1.5, gg.AlignLeft)
-
-	dc.SetFontFace(inconsolata.Bold8x16)
-
-	dc.DrawStringWrapped(google_auth_uri, x, y+90, 0, 0, maxWidth, 1.5, gg.AlignLeft)
-
-	dc.DrawImageAnchored(im, W/2, H/2, 0.5, 0.5)
-	dc.SavePNG("Google_Authenticator_QR_Code.png")
-
-	open.Start("Google_Authenticator_QR_Code.png")
-}
 
 func generate_and_store_key_for_nacl_box_func() {
 	box_key := nacl.NewKey()
@@ -120,7 +60,7 @@ func get_image_hash_from_image_file_path_func(sample_image_file_path string) (st
 }
 
 func pastel_id_keypair_generation_func() (string, string) {
-	fmt.Println("Generating LegRoast keypair now...")
+	fmt.Println("\nGenerating LegRoast keypair now...")
 	pk, sk := legroast.Keygen()
 	pastel_id_private_key_b16_encoded := base64.StdEncoding.EncodeToString(sk)
 	pastel_id_public_key_b16_encoded := base64.StdEncoding.EncodeToString(pk)
@@ -200,47 +140,6 @@ func pastel_id_verify_signature_with_public_key_func(input_data_or_string string
 		fmt.Printf("\nWarning! Signature was NOT valid!")
 	}
 	return verified
-}
-
-func conformsCharacterSet(value string, characterSet string) bool {
-	for _, rune := range characterSet {
-		if !strings.ContainsRune(characterSet, rune) {
-			return false
-		}
-	}
-	return true
-}
-
-func generate_current_otp_string_func() string {
-	otp_secret := os.Getenv("PASTEL_OTP_SECRET")
-	if len(otp_secret) == 0 {
-		otp_secret_file_data, err := ioutil.ReadFile(OTPSecretFile)
-		if err != nil {
-			return ""
-		}
-		otp_secret = string(otp_secret_file_data)
-	}
-	otp_secret_character_set := "ABCDEF1234567890"
-	if !conformsCharacterSet(otp_secret, otp_secret_character_set) {
-		return ""
-	}
-	return gotp.NewDefaultTOTP(otp_secret).Now()
-}
-
-func generate_current_otp_string_from_user_input_func() string {
-	fmt.Println("\n\nEnter your Google Authenticator Secret in all upper case and numbers:")
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	otp_secret := scanner.Text()
-
-	if len(otp_secret) != 16 {
-		return ""
-	}
-	otp_secret_character_set := "ABCDEF1234567890"
-	if !conformsCharacterSet(otp_secret, otp_secret_character_set) {
-		return ""
-	}
-	return gotp.NewDefaultTOTP(otp_secret).Now()
 }
 
 func import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path string) (string, string) {
@@ -337,7 +236,9 @@ func extract_signature_image_in_sample_image_func(signed_image_output_path strin
 
 func main() {
 	if _, err := os.Stat(OTPSecretFile); os.IsNotExist(err) {
-		set_up_google_authenticator_for_private_key_encryption_func()
+		if err := setupGoogleAuthenticatorForPrivateKeyEncryption(); err != nil {
+			panic(err)
+		}
 	}
 
 	box_key_file_path := "box_key.bin"
