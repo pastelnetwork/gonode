@@ -12,7 +12,6 @@ import (
 	letterssvr "github.com/pastelnetwork/walletnode/rest/gen/http/letters/server"
 	swaggersvr "github.com/pastelnetwork/walletnode/rest/gen/http/swagger/server"
 	letters "github.com/pastelnetwork/walletnode/rest/gen/letters"
-	"github.com/pastelnetwork/walletnode/rest/middleware"
 	"github.com/pastelnetwork/walletnode/rest/services"
 
 	goahttp "goa.design/goa/v3/http"
@@ -45,15 +44,15 @@ func httpHandler() http.Handler {
 	servers.Use(goahttpmiddleware.Debug(mux, os.Stdout))
 
 	for _, m := range lettersServer.Mounts {
-		log.Infof("[rest] HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
 	}
 	for _, m := range swaggerServer.Mounts {
-		log.Infof("[rest] HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
 	}
 
 	var handler http.Handler = mux
 
-	handler = middleware.Log()(handler)
+	handler = Log()(handler)
 	handler = goahttpmiddleware.RequestID()(handler)
 
 	return handler
@@ -80,6 +79,6 @@ func errorHandler() func(context.Context, http.ResponseWriter, error) {
 	return func(ctx context.Context, w http.ResponseWriter, err error) {
 		id := ctx.Value(goamiddleware.RequestIDKey).(string)
 		_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
-		log.Errorf("[rest] [%s] %s", id, err.Error())
+		log.Errorf("%s [%s] %s", logPrefix, id, err.Error())
 	}
 }

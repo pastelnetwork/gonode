@@ -37,13 +37,13 @@ func (rest *Rest) Run(ctx context.Context) error {
 
 	errCh := make(chan error)
 	go func() {
-		log.Infof("[rest] HTTP server listening on %q", addr)
+		log.Infof("%s HTTP server listening on %q", logPrefix, addr)
 		errCh <- srv.ListenAndServe()
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Infof("[rest] Shutting down HTTP server at %q", addr)
+		log.Infof("%s Shutting down HTTP server at %q", logPrefix, addr)
 	case err := <-errCh:
 		return err
 	}
