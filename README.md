@@ -24,7 +24,7 @@ This package contains useful helper methods for working with collections such as
 
 ### cli
 
-Most CLI apps built by PastelNetwork should use this package to run their app, as it takes care of common tasks such as setting the text template for app help topic. Under the hood, the `cli` package is using [urfave/cli](https://github.com/urfave/cli), which is currently our library of choice for CLI apps. It mostly works transparently. But it makes it possible to use another package without any changes in the applications themselves in the future.
+Most CLI apps built by PastelNetwork should use this package to run their app, as it takes care of common tasks such as setting the text template for app help topic. Under the hood, the `cli` package is using [urfave/cli](https://github.com/urfave/cli), which is currently our library of choice for CLI apps. It mostly works transparently, but it makes it possible to use another package without any changes in the applications themselves in the future.
 
 Here is the typical usage pattern in `cli/app.go`:
 
@@ -85,14 +85,24 @@ Here is how the `errors` package should be used:
 1. Any time you get back an error object from a function built into Go or a 3rd party library, immediately wrap it with `errros.New` or `errros.Errorf`. This gives us a stacktrace as close to the source as possible.
 1. If you need to get back the underlying error, you can use the `errors.Unwrap` function.
 
-Note that `sys.CheckErrorAndExit` takes care of showing stack traces and handling exit codes.
-
 ``` go
 import "github.com/pastelnetwork/go-commons/errors"
 
 if err := json.Unmarshal(data, &config); err != nil {
     return errors.Errorf("unable to decode into struct, %v", err)
 }
+```
+
+To check the error and return the corresponding exit code, call the `CheckErrorAndExit` function:
+
+``` go
+errors.CheckErrorAndExit(error)
+```
+
+The above function also displays stacktracke, if the `log.SetDebugMode` function was called before:
+
+```go
+log.SetDebugMode(true)
 ```
 
 ### log
@@ -120,17 +130,6 @@ log.SetDebugMode(true)
 
 This package contains useful helper methods for working with system environment and signals.
 
-Check the error and return the corresponding exit code, call the `CheckErrorAndExit` function:
-
-``` go
-sys.CheckErrorAndExit(error)
-```
-
-The above function also displays stacktracke, if the `log.SetDebugMode` function was called before:
-
-```go
-log.SetDebugMode(true)
-```
 
 ### version
 

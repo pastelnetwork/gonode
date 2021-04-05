@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-
-	"github.com/pastelnetwork/go-commons/log"
 )
 
 // RegisterSignalHandler registers a handler of signals from the OS.
@@ -34,14 +32,14 @@ func RegisterSignalHandler(cancel context.CancelFunc, sigs ...os.Signal) {
 
 // RegisterInterruptHandler registers a handler of interrupt signals from the OS.
 // When signal os.Interrupt is coming, it informs the user about it and calls func `cancelApp`.
-func RegisterInterruptHandler(cancelApp context.CancelFunc) {
+func RegisterInterruptHandler(cancelApp context.CancelFunc, eventFn func()) {
 	go func() {
 		ctx, cancel := context.WithCancel(context.Background())
 		RegisterSignalHandler(cancel, os.Interrupt)
 
 		<-ctx.Done()
 		fmt.Print("\r")
-		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
+		eventFn()
 
 		cancelApp()
 	}()

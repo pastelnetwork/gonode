@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
+
+	"github.com/pastelnetwork/go-commons/log"
 )
 
 // ErrorStack converts the given error to a string, including the stack trace if available
@@ -41,5 +44,23 @@ func Recover(onPanic func(cause error)) {
 			err = fmt.Errorf("%v", rec)
 		}
 		onPanic(newWithSkip(err, 4))
+	}
+}
+
+// CheckErrorAndExit checks if there is an error, display it in the console and exit with a non-zero exit code. Otherwise, exit 0.
+// Note that if the debugMode is true, this will print out the stack trace.
+func CheckErrorAndExit(err error) {
+	defer os.Exit(ExitCode(err))
+
+	if err == nil || IsContextCanceled(err) {
+		return
+	}
+
+	errorFields := ExtractFields(err)
+
+	if log.DebugMode() {
+		log.WithError(err).WithFields(map[string]interface{}(errorFields)).Error(ErrorStack(err))
+	} else {
+		fmt.Fprintf(os.Stderr, "ERROR: %s %s\n", errorFields.String(), err)
 	}
 }
