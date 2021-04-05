@@ -105,7 +105,7 @@ errors.CheckErrorAndExit(error)
 log.SetDebugMode(true)
 ```
 
-This package also contains useful utilities such as takes control of a panicking goroutine.
+This package also contains useful utilities such as taking control of a panicking goroutine.
 
 ``` go
 defer errors.Recover(errors.CheckErrorAndExit)
