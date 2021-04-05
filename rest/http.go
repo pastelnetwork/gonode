@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/go-commons/log"
-	letterssvr "github.com/pastelnetwork/walletnode/rest/gen/http/letters/server"
 	swaggersvr "github.com/pastelnetwork/walletnode/rest/gen/http/swagger/server"
-	letters "github.com/pastelnetwork/walletnode/rest/gen/letters"
+	ticketssvr "github.com/pastelnetwork/walletnode/rest/gen/http/tickets/server"
+	tickets "github.com/pastelnetwork/walletnode/rest/gen/tickets"
 	"github.com/pastelnetwork/walletnode/rest/services"
 
 	goahttp "goa.design/goa/v3/http"
@@ -30,20 +30,20 @@ func httpHandler() http.Handler {
 		errHandler = errorHandler()
 	)
 
-	lettersEndpoints := letters.NewEndpoints(services.NewLetters())
-	lettersServer := letterssvr.New(lettersEndpoints, mux, dec, enc, errHandler, nil)
-	letterssvr.Mount(mux, lettersServer)
+	ticketsEndpoints := tickets.NewEndpoints(services.NewTickets())
+	ticketsServer := ticketssvr.New(ticketsEndpoints, mux, dec, enc, errHandler, nil)
+	ticketssvr.Mount(mux, ticketsServer)
 
 	swaggerServer := swaggersvr.New(nil, mux, dec, enc, errHandler, nil)
 	mountSwagger(mux, swaggerServer)
 
 	servers := goahttp.Servers{
-		lettersServer,
+		ticketsServer,
 		swaggerServer,
 	}
 	servers.Use(goahttpmiddleware.Debug(mux, os.Stdout))
 
-	for _, m := range lettersServer.Mounts {
+	for _, m := range ticketsServer.Mounts {
 		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
 	}
 	for _, m := range swaggerServer.Mounts {

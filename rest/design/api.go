@@ -8,7 +8,7 @@ var _ = API("walletnode", func() {
 	Version("1.0")
 
 	Server("walletnode", func() {
-		Services("letters", "swagger")
+		Services("tickets", "swagger")
 
 		Host("localhost", func() {
 			URI("http://localhost:8080")

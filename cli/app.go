@@ -39,7 +39,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 		// Rest
-		cli.NewFlag("swagger", &config.Rest.Swagger).SetUsage("Enable swagger server."),
+		cli.NewFlag("swagger", &config.Rest.Swagger).SetUsage("Enable Swagger UI."),
 	)
 
 	app.SetActionFunc(func(args []string) error {
