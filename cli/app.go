@@ -13,7 +13,6 @@ const (
 // App is a wrapper of cli.App
 type App struct {
 	*cli.App
-	prepareFn func() error
 }
 
 // AddCommands adds subcommands
@@ -65,18 +64,6 @@ func (app *App) SetOutput(write io.Writer) {
 // SetError sets writer to write error output to.
 func (app *App) SetError(write io.Writer) {
 	app.ErrWriter = write
-}
-
-// Run is the entry point to the cli app. Parses the arguments slice and routes
-// to the proper flag/args combination
-func (app *App) Run(arguments []string) (err error) {
-	if app.prepareFn != nil {
-		if err := app.prepareFn(); err != nil {
-			return err
-		}
-	}
-
-	return app.App.Run(arguments)
 }
 
 // NewApp create a new instance of the App struct

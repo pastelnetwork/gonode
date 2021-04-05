@@ -21,6 +21,11 @@ func SetDebugMode(isEnabled bool) {
 	debugMode = isEnabled
 }
 
+// DebugMode returns the state of debug mode
+func DebugMode() bool {
+	return debugMode
+}
+
 func logEntryWithCallers(logger *Logger, skip int) *logrus.Entry {
 	entry := logrus.NewEntry(logger.Logger)
 	if debugMode {

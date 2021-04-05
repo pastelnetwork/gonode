@@ -41,7 +41,7 @@ func RegisterInterruptHandler(cancelApp context.CancelFunc) {
 
 		<-ctx.Done()
 		fmt.Print("\r")
-		log.Info("Signal received. Gracefully shutting down...")
+		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
 
 		cancelApp()
 	}()

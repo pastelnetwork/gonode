@@ -24,9 +24,7 @@ func SetOutput(output io.Writer) {
 	defaultLogger.SetOutput(output)
 }
 
-// AddHooks adds hooks to an instance of defaultLogger.
-func AddHooks(hooks ...logrus.Hook) {
-	for _, hook := range hooks {
-		defaultLogger.Hooks.Add(hook)
-	}
+// AddHook adds hook to an instance of defaultLogger.
+func AddHook(hook logrus.Hook) {
+	defaultLogger.Hooks.Add(hook)
 }
