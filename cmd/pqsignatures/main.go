@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/fogleman/gg"
-	"github.com/kevinburke/nacl"
 	"github.com/kevinburke/nacl/secretbox"
 
 	"fmt"
@@ -32,18 +31,6 @@ import (
 const (
 	PastelIdSignatureFilesFolder = "pastel_id_signature_files"
 )
-
-func generate_and_store_key_for_nacl_box_func() {
-	box_key := nacl.NewKey()
-	box_key_base64 := base64.StdEncoding.EncodeToString(box_key[:])
-	err := os.WriteFile("box_key.bin", []byte(box_key_base64), 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("\nThis is the key for encrypting the pastel ID private key (using NACL box) in Base64: %v", box_key)
-	fmt.Printf("\nThe key has been saved as a file in the working directory. You should also write this key down as a backup.")
-}
 
 func get_image_hash_from_image_file_path_func(sample_image_file_path string) (string, error) {
 	f, err := os.Open(sample_image_file_path)
@@ -67,20 +54,13 @@ func pastel_id_keypair_generation_func() (string, string) {
 	return pastel_id_private_key_b16_encoded, pastel_id_public_key_b16_encoded
 }
 
-func get_nacl_box_key_from_file_func(box_key_file_path string) []byte {
-	box_key_base64, err := ioutil.ReadFile(box_key_file_path)
-	if err != nil {
-		panic(err)
-	}
-	//assert(len(box_key_base64)==44)
-	box_key, _ := base64.StdEncoding.DecodeString(string(box_key_base64))
-	return box_key
-}
-
 func write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_encoded string, pastel_id_private_key_b16_encoded string, box_key_file_path string) {
 	pastel_id_public_key_export_format := "-----BEGIN LEGROAST PUBLIC KEY-----\n" + pastel_id_public_key_b16_encoded + "\n-----END LEGROAST PUBLIC KEY-----"
 	pastel_id_private_key_export_format := "-----BEGIN LEGROAST PRIVATE KEY-----\n" + pastel_id_private_key_b16_encoded + "\n-----END LEGROAST PRIVATE KEY-----"
-	box_key := get_nacl_box_key_from_file_func(box_key_file_path)
+	box_key, err := naclBoxKeyFromFile(box_key_file_path)
+	if err != nil {
+		log.Fatal(err)
+	}
 	var key [32]byte
 	copy(key[:], box_key)
 	encrypted := secretbox.EasySeal(([]byte)(pastel_id_private_key_export_format[:]), &key)
@@ -89,7 +69,7 @@ func write_pastel_public_and_private_key_to_file_func(pastel_id_public_key_b16_e
 	if _, err := os.Stat(key_file_path); os.IsNotExist(err) {
 		os.MkdirAll(key_file_path, 0770)
 	}
-	err := os.WriteFile(key_file_path+"/pastel_id_legroast_public_key.pem", []byte(pastel_id_public_key_export_format), 0644)
+	err = os.WriteFile(key_file_path+"/pastel_id_legroast_public_key.pem", []byte(pastel_id_public_key_export_format), 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -166,9 +146,9 @@ func import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path
 			pastel_id_public_key_export_format = string(pastel_id_public_key_export_data)
 			pastel_id_private_key_export_format__encrypted = string(pastel_id_private_key_export_data_encrypted)
 
-			otp_string := generate_current_otp_string_func()
+			otp_string := generateCurrentOtpString()
 			if otp_string == "" {
-				otp_string = generate_current_otp_string_from_user_input_func()
+				otp_string = generateCurrentOtpStringFromUserInput()
 			}
 			fmt.Println("\n\nPlease Enter your pastel Google Authenticator Code:")
 			fmt.Println(otp_string)
@@ -185,7 +165,7 @@ func import_pastel_public_and_private_keys_from_pem_files_func(box_key_file_path
 	}
 
 	if otp_correct {
-		box_key := get_nacl_box_key_from_file_func(box_key_file_path)
+		box_key, _ := naclBoxKeyFromFile(box_key_file_path)
 		var key [32]byte
 		copy(key[:], box_key)
 		pastel_id_private_key_export_format, _ := secretbox.EasyOpen(([]byte)(pastel_id_private_key_export_format__encrypted[:]), &key)
@@ -243,7 +223,9 @@ func main() {
 
 	box_key_file_path := "box_key.bin"
 	if _, err := os.Stat(box_key_file_path); os.IsNotExist(err) {
-		generate_and_store_key_for_nacl_box_func()
+		if err := generateAndStoreKeyForNacl(); err != nil {
+			panic(err)
+		}
 	}
 
 	sample_image_file_path := "sample_image2.png"

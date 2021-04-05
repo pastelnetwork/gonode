@@ -18,6 +18,7 @@ import (
 const (
 	OTPSecretFile   = "otp_secret.txt"
 	OTPSecretLength = 16
+	OTPEnvVarName   = "PASTEL_OTP_SECRET"
 )
 
 func setupGoogleAuthenticatorForPrivateKeyEncryption() error {
@@ -82,8 +83,8 @@ func conformsCharacterSet(value string, characterSet string) bool {
 	return true
 }
 
-func generate_current_otp_string_func() string {
-	otp_secret := os.Getenv("PASTEL_OTP_SECRET")
+func generateCurrentOtpString() string {
+	otp_secret := os.Getenv(OTPEnvVarName)
 	if len(otp_secret) == 0 {
 		otp_secret_file_data, err := ioutil.ReadFile(OTPSecretFile)
 		if err != nil {
@@ -98,7 +99,7 @@ func generate_current_otp_string_func() string {
 	return gotp.NewDefaultTOTP(otp_secret).Now()
 }
 
-func generate_current_otp_string_from_user_input_func() string {
+func generateCurrentOtpStringFromUserInput() string {
 	fmt.Println("\n\nEnter your Google Authenticator Secret in all upper case and numbers:")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
