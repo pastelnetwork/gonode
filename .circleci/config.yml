@@ -43,22 +43,10 @@ jobs:
           command: >
             go test -v -race ./...
 
-  release:
-    steps:
-      - checkout
-
 workflows:
   build-and-test:
     jobs:
       - test:
           filters:
-            tags:
-              only: /^v.*/
-      - release:
-          requires:
-            - test
-          filters:
-            branches:
-              ignore: /.*/
             tags:
               only: /^v.*/
