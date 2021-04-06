@@ -5,11 +5,13 @@ import (
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
+// Global formatters
 var (
 	LogFile  = NewFileFormatter()
 	Terminal = NewTerminalFormatter()
 )
 
+// NewFileFormatter returns a new Formatter instance for log file.
 func NewFileFormatter() logrus.Formatter {
 	return &prefixed.TextFormatter{
 		FullTimestamp:   true,
@@ -19,6 +21,7 @@ func NewFileFormatter() logrus.Formatter {
 	}
 }
 
+// NewTerminalFormatter returns a new Formatter instance for terminal.
 func NewTerminalFormatter() logrus.Formatter {
 	formatter := &prefixed.TextFormatter{
 		FullTimestamp:   true,
