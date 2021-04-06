@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"io"
-	"log"
 	"os"
 
 	"fmt"
@@ -34,56 +33,61 @@ func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 }
 
 func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
-	key_file_path := "pastel_id_key_files"
-	pkPngs, err := qr.Encode(pk, key_file_path, "Pastel Public Key", "pastel_id_legroast_public_key_qr_code", "")
+	keyFilePath := "pastel_id_key_files"
+	pkPngs, err := qr.Encode(pk, keyFilePath, "Pastel Public Key", "pastel_id_legroast_public_key_qr_code", "")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("generateKeypairQRs: %w", err)
 	}
-	_, err = qr.Encode(sk, key_file_path, "", "pastel_id_legroast_private_key_qr_code", "")
+	_, err = qr.Encode(sk, keyFilePath, "", "pastel_id_legroast_private_key_qr_code", "")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("generateKeypairQRs: %w", err)
 	}
 	return pkPngs, nil
 }
 
-func main() {
-
-	imagePathPtr := flag.String("image", "sample_image2.png", "an image file path")
-	flag.Parse()
-
+func sign(imagePath string) error {
 	if _, err := os.Stat(OTPSecretFile); os.IsNotExist(err) {
 		if err := setupGoogleAuthenticatorForPrivateKeyEncryption(); err != nil {
-			panic(err)
+			return fmt.Errorf("sign: %w", err)
 		}
 	}
 
 	if _, err := os.Stat(BoxKeyFilePath); os.IsNotExist(err) {
 		if err := generateAndStoreKeyForNacl(); err != nil {
-			panic(err)
+			return fmt.Errorf("sign: %w", err)
 		}
 	}
 
-	sampleImageFilePath := *imagePathPtr
-
-	fmt.Printf("\nApplying signature to file %v", sampleImageFilePath)
-	sha256HashOfImageToSign, err := getImageHashFromImageFilePath(sampleImageFilePath)
+	fmt.Printf("\nApplying signature to file %v", imagePath)
+	sha256HashOfImageToSign, err := getImageHashFromImageFilePath(imagePath)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("sign: %w", err)
 	}
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256HashOfImageToSign)
 
 	pkBase64, skBase64, err := pastelKeys()
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("sign: %w", err)
 	}
 
 	pastelIdSignatureBase64, err := signAndVerify(sha256HashOfImageToSign, skBase64, pkBase64)
 	if err != nil {
-		panic(err)
+		return fmt.Errorf("sign: %w", err)
 	}
 
-	err = demonstrateSignatureQRCodeSteganography(pkBase64, skBase64, pastelIdSignatureBase64, sampleImageFilePath)
+	err = demonstrateSignatureQRCodeSteganography(pkBase64, skBase64, pastelIdSignatureBase64, imagePath)
 	if err != nil {
+		return fmt.Errorf("sign: %w", err)
+	}
+	return nil
+}
+
+func main() {
+	imagePathPtr := flag.String("image", "sample_image2.png", "an image file path")
+	flag.Parse()
+
+	sampleImageFilePath := *imagePathPtr
+	if err := sign(sampleImageFilePath); err != nil {
 		panic(err)
 	}
 }

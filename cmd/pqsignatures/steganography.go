@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
+	pqtime "github.com/PastelNetwork/pqsignatures/internal/time"
 	"github.com/PastelNetwork/pqsignatures/qr"
 	"github.com/auyer/steganography"
 	"github.com/fogleman/gg"
@@ -57,6 +58,7 @@ func extractSignatureImageInSampleImage(signed_image_output_path string, extract
 }
 
 func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, pastelIdSignatureBase64 string, inputImagePath string) error {
+	defer pqtime.Measure(time.Now())
 	timestamp := time.Now().Format("Jan_02_2006_15_04_05")
 
 	keypairImgs, err := generateKeypairQRs(pkBase64, skBase64)
