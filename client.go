@@ -25,10 +25,10 @@ func (client *Client) ListIDTickets(idType string) (IDTickets, error) {
 	return tickets, err
 }
 
-func (client *Client) FindIDTicket(search string) (IDTickets, error) {
-	tickets := IDTickets{}
-	err := client.callFor(&tickets, "tickets", "find", "id", search)
-	return tickets, err
+func (client *Client) FindIDTicket(search string) (*IDTicket, error) {
+	ticket := IDTicket{}
+	err := client.callFor(&ticket, "tickets", "find", "id", search)
+	return &ticket, err
 }
 
 func (client *Client) FindIDTickets(search string) (IDTickets, error) {
