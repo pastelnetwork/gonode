@@ -26,7 +26,7 @@ jobs:
       - run:
           name: run golint
           command: >
-            go get -u golang.org/x/lint/golint
+            go install golang.org/x/lint/golint
             golint ./...
       - run:
           name: run gofmt
