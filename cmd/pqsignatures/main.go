@@ -1,26 +1,18 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
-	"path/filepath"
-
-	"github.com/fogleman/gg"
 
 	"fmt"
-	"time"
 
 	"github.com/PastelNetwork/pqsignatures/qr"
 
 	"encoding/hex"
 
 	"golang.org/x/crypto/sha3"
-
-	"github.com/auyer/steganography"
 )
 
 const (
@@ -54,42 +46,6 @@ func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
 	return pkPngs, nil
 }
 
-func hide_signature_image_in_sample_image_func(sample_image_file_path string, signature_layer_image_output_filepath string, signed_image_output_path string) {
-	img, err := gg.LoadImage(sample_image_file_path)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	signature_layer_image_data, err := ioutil.ReadFile(signature_layer_image_output_filepath)
-	if err != nil {
-		panic(err)
-	}
-
-	w := new(bytes.Buffer)
-	err = steganography.Encode(w, img, signature_layer_image_data)
-	if err != nil {
-		panic(err)
-	}
-	outFile, _ := os.Create(signed_image_output_path)
-	w.WriteTo(outFile)
-	outFile.Close()
-}
-
-func extract_signature_image_in_sample_image_func(signed_image_output_path string, extracted_signature_layer_image_output_filepath string) {
-	img, err := gg.LoadImage(signed_image_output_path)
-	if err != nil {
-		panic(err)
-	}
-
-	sizeOfMessage := steganography.GetMessageSizeFromImage(img)
-
-	decodedData := steganography.Decode(sizeOfMessage, img)
-	err = os.WriteFile(extracted_signature_layer_image_output_filepath, decodedData, 0644)
-	if err != nil {
-		panic(err)
-	}
-}
-
 func main() {
 
 	imagePathPtr := flag.String("image", "sample_image2.png", "an image file path")
@@ -121,37 +77,13 @@ func main() {
 		panic(err)
 	}
 
-	keypairImgs, err := generateKeypairQRs(pkBase64, skBase64)
-	if err != nil {
-		panic(err)
-	}
-
 	pastelIdSignatureBase64, err := signAndVerify(sha256HashOfImageToSign, skBase64, pkBase64)
 	if err != nil {
 		panic(err)
 	}
 
-	timestamp := time.Now().Format("Jan_02_2006_15_04_05")
-	signatureImags, err := qr.Encode(pastelIdSignatureBase64, PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
+	err = demonstrateSignatureQRCodeSteganography(pkBase64, skBase64, pastelIdSignatureBase64, sampleImageFilePath)
 	if err != nil {
 		panic(err)
 	}
-
-	imgsToMap := append(keypairImgs, signatureImags...)
-
-	signatureLayerImageOutputFilepath := filepath.Join(PastelIdSignatureFilesFolder, fmt.Sprintf("Complete_Signature_Image_Layer__%v.png", timestamp))
-	sample_image, err := gg.LoadImage(sampleImageFilePath)
-	if err != nil {
-		panic(err)
-	}
-	err = qr.MapImages(imgsToMap, sample_image.Bounds().Size(), signatureLayerImageOutputFilepath)
-	if err != nil {
-		panic(err)
-	}
-
-	signed_image_output_path := "final_watermarked_image.png"
-	hide_signature_image_in_sample_image_func(sampleImageFilePath, signatureLayerImageOutputFilepath, signed_image_output_path)
-
-	extracted_signature_layer_image_output_filepath := "extracted_signature_image.png"
-	extract_signature_image_in_sample_image_func(signed_image_output_path, extracted_signature_layer_image_output_filepath)
 }
