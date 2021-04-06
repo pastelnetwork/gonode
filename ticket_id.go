@@ -3,8 +3,8 @@ package pastel
 type IDTickets []IDTicket
 
 type IDTicket struct {
-	Height   int `json:"height"`
-	IDTicket struct {
+	Height int `json:"height"`
+	Ticket struct {
 		Address   string `json:"address"`
 		IDType    string `json:"id_type"`
 		PastelID  string `json:"pastelID"`
