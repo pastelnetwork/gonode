@@ -1,16 +1,13 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
+	"fmt"
 	"io"
 	"os"
 
-	"fmt"
-
 	"github.com/PastelNetwork/pqsignatures/qr"
-
-	"encoding/hex"
-
 	"golang.org/x/crypto/sha3"
 )
 
