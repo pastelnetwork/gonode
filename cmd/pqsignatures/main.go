@@ -14,11 +14,8 @@ import (
 	"fmt"
 	"time"
 
-	pqtime "github.com/PastelNetwork/pqsignatures/internal/time"
-	"github.com/PastelNetwork/pqsignatures/legroast"
 	"github.com/PastelNetwork/pqsignatures/qr"
 
-	"encoding/base64"
 	"encoding/hex"
 
 	"golang.org/x/crypto/sha3"
@@ -55,36 +52,6 @@ func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
 		return nil, err
 	}
 	return pkPngs, nil
-}
-
-func pastel_id_write_signature_on_data_func(input_data_or_string string, pastel_id_private_key_b16_encoded string, pastel_id_public_key_b16_encoded string) string {
-	fmt.Printf("\nGenerating LegRoast signature now...")
-	defer pqtime.Measure(time.Now())
-
-	pastel_id_private_key, _ := base64.StdEncoding.DecodeString(pastel_id_private_key_b16_encoded)
-	pastel_id_public_key, _ := base64.StdEncoding.DecodeString(pastel_id_public_key_b16_encoded)
-	pqtime.Sleep()
-	pastel_id_signature := legroast.Sign(pastel_id_public_key, pastel_id_private_key, ([]byte)(input_data_or_string[:]))
-	pastel_id_signature_b16_encoded := base64.StdEncoding.EncodeToString(pastel_id_signature)
-	pqtime.Sleep()
-	return pastel_id_signature_b16_encoded
-}
-
-func pastel_id_verify_signature_with_public_key_func(input_data_or_string string, pastel_id_signature_b16_encoded string, pastel_id_public_key_b16_encoded string) int {
-	fmt.Printf("\nVerifying LegRoast signature now...")
-	defer pqtime.Measure(time.Now())
-
-	pastel_id_signature, _ := base64.StdEncoding.DecodeString(pastel_id_signature_b16_encoded)
-	pastel_id_public_key, _ := base64.StdEncoding.DecodeString(pastel_id_public_key_b16_encoded)
-	pqtime.Sleep()
-	verified := legroast.Verify(pastel_id_public_key, ([]byte)(input_data_or_string[:]), pastel_id_signature)
-	pqtime.Sleep()
-	if verified > 0 {
-		fmt.Printf("\nSignature is valid!")
-	} else {
-		fmt.Printf("\nWarning! Signature was NOT valid!")
-	}
-	return verified
 }
 
 func hide_signature_image_in_sample_image_func(sample_image_file_path string, signature_layer_image_output_filepath string, signed_image_output_path string) {
@@ -159,11 +126,13 @@ func main() {
 		panic(err)
 	}
 
-	pastel_id_signature_b16_encoded := pastel_id_write_signature_on_data_func(sha256HashOfImageToSign, skBase64, pkBase64)
-	_ = pastel_id_verify_signature_with_public_key_func(sha256HashOfImageToSign, pastel_id_signature_b16_encoded, pkBase64)
+	pastelIdSignatureBase64, err := signAndVerify(sha256HashOfImageToSign, skBase64, pkBase64)
+	if err != nil {
+		panic(err)
+	}
 
 	timestamp := time.Now().Format("Jan_02_2006_15_04_05")
-	signatureImags, err := qr.Encode(pastel_id_signature_b16_encoded, PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
+	signatureImags, err := qr.Encode(pastelIdSignatureBase64, PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
 	if err != nil {
 		panic(err)
 	}

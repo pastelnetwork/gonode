@@ -63,7 +63,7 @@ func importPastelPublicAndPrivateKeysFromPemFiles(boxKeyFilePath string) (string
 		otp_from_user_input := scanner.Text()
 
 		if len(otp_from_user_input) != 6 {
-			return "", "", fmt.Errorf("importPastelPublicAndPrivateKeysFromPemFiles: %w", errors.New("One time password must contain 6 digits"))
+			return "", "", fmt.Errorf("importPastelPublicAndPrivateKeysFromPemFiles: %w", errors.New("one time password must contain 6 digits"))
 		}
 		otpCorrect = (otp_from_user_input == otp)
 	}
