@@ -23,12 +23,6 @@ jobs:
           name: Fetch dependencies
           command: >
             go get -v ./...
-            go get golang.org/x/lint/golint
-      - run:
-          name: Run golint
-          command: >
-            go get golang.org/x/lint/golint
-            golint ./...
       - run:
           name: Run gofmt
           command: >
