@@ -147,8 +147,6 @@ To inject a version of the app at build time, we use Go linker (go tool link) to
 go build -o my-app -ldflags "-X github.com/pastelnetwork/go-commons/version.version=v0.0.1"
 ```
 
-go build -o my-app -ldflags "-X github.com/pastelnetwork/go-commons/version.version=v0.0.1"
-
 To get the version, call the `Version` function:
 
 ``` go
