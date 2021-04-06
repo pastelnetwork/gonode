@@ -11,6 +11,7 @@ jobs:
         default: true
     docker:
       - image: "circleci/golang:<< parameters.version >>"
+    working_directory: /go/src/github.com/pastelnetwork/go-commons
     environment:
       GO111MODULE: "on"
     steps:
@@ -27,7 +28,7 @@ jobs:
           name: run golint
           command: >
             go get -u golang.org/x/lint/golint
-            ./golint ./...
+            golint ./...
       - run:
           name: run gofmt
           command: >
