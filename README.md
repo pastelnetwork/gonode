@@ -81,8 +81,8 @@ To accomplish these two goals, we have created an `errors` package that has seve
 
 Here is how the `errors` package should be used:
 
-1. Any time you want to create your own error, create a custom type for it, and when instantiating that type, wrap it with a call to `errros.New` or `errros.Errorf`. That way, any time you call a method defined in our own code, you know the error it returns already has a stacktrace and you don't have to wrap it yourself.
-1. Any time you get back an error object from a function built into Go or a 3rd party library, immediately wrap it with `errros.New` or `errros.Errorf`. This gives us a stacktrace as close to the source as possible.
+1. Any time you want to create your own error, create a custom type for it, and when instantiating that type, wrap it with a call to `errors.New` or `errors.Errorf`. That way, any time you call a method defined in our own code, you know the error it returns already has a stacktrace and you don't have to wrap it yourself.
+1. Any time you get back an error object from a function built into Go or a 3rd party library, immediately wrap it with `errors.New` or `errors.Errorf`. This gives us a stacktrace as close to the source as possible.
 1. If you need to get back the underlying error, you can use the `errors.Unwrap` function.
 
 
