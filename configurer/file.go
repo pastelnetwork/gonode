@@ -1,4 +1,4 @@
-package configer
+package configurer
 
 import (
 	"path/filepath"

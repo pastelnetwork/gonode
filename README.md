@@ -10,7 +10,7 @@ This repo contains the following packages:
 
 * [collection](#collection)
 * [cli](#cli)
-* [configer](#configer)
+* [configurer](#configurer)
 * [errors](#errors)
 * [log](#log)
 * [sys](#sys)
@@ -54,20 +54,20 @@ func NewApp() {
 }
 ```
 
-### configer
+### configurer
 
-The package contains utilites for load config from the file. Under the hood, the `configer` package is using the [spf13/viper](https://github.com/spf13/viper). Since the spf13/viper supports different configuration formats, you can use any of them: *json*, *toml*, *yaml*, *hcl*, *ini*.
+The package contains utilites for load config from a file. Under the hood, the `configurer` package is using the [spf13/viper](https://github.com/spf13/viper). Since the spf13/viper supports different configuration formats, you can use any of them: *json*, *toml*, *yaml*, *hcl*, *ini*.
 
 To load a configuration from a file:
 
 ``` go
-err := configer.ParseFile("./config.yml", &config)
+err := configurer.ParseFile("./config.yml", &config)
 ```
 
 If `configFile` you consist of the filename without a path, for example `config.yml`, then it will try to find the `configFile` in the paths defined by default: `.`, `$HOME/.pastel`. To change them, you can use the `SetDefaultConfigPaths` function:
 
 ``` go
-configer.SetDefaultConfigPaths("/etc/app-config.yml", "/usr/local/etc/app-config.json")
+configurer.SetDefaultConfigPaths("/etc/app-config.yml", "/usr/local/etc/app-config.json")
 ```
 
 ### errors
