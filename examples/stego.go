@@ -10,7 +10,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/auyer/steganography"
+	"github.com/pastelnetwork/steganography"
 )
 
 var pictureInputFile string
