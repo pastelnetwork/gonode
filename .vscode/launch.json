@@ -10,7 +10,8 @@
             "request": "launch",
             "mode": "debug",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/cmd/pqsignatures"
+            "program": "${workspaceFolder}/cmd/pqsignatures",
+            "args": ["-image=sample_image2.png"]
         }
     ]
 }

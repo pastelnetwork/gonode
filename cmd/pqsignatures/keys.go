@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/PastelNetwork/pqsignatures/legroast"
 	"github.com/kevinburke/nacl/secretbox"
+	"github.com/pastelnetwork/pqsignatures/legroast"
 )
 
 func pastelIdKeypairGeneration() (string, string) {

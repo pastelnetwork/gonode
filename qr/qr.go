@@ -98,12 +98,20 @@ func MapImages(images []Image, outputSize image.Point, outputFilePath string) er
 	dc.SetColor(color.White)
 	padding_pixels := 2
 	currentX := 0
+	currentY := 10
+	textYPadding := 20
+	rowYPadding := 50
 	for _, image := range images {
 		size := image.image.Bounds().Size()
 		captionX := size.X / 2
 
-		dc.DrawStringAnchored(image.title, float64(currentX+captionX), 10, 0.5, 0.5)
-		dc.DrawImageAnchored(image.image, currentX+captionX, 30+size.Y/2, 0.5, 0.5)
+		if currentX+size.X > outputSize.X {
+			currentX = 0
+			currentY += size.Y + rowYPadding
+		}
+
+		dc.DrawStringAnchored(image.title, float64(currentX+captionX), float64(currentY), 0.5, 0.5)
+		dc.DrawImageAnchored(image.image, currentX+captionX, currentY+textYPadding+size.Y/2, 0.5, 0.5)
 		currentX += size.X + padding_pixels
 	}
 

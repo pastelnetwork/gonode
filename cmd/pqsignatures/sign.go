@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	pqtime "github.com/PastelNetwork/pqsignatures/internal/time"
-	"github.com/PastelNetwork/pqsignatures/legroast"
+	pqtime "github.com/pastelnetwork/pqsignatures/internal/time"
+	"github.com/pastelnetwork/pqsignatures/legroast"
 )
 
 func pastelIdWriteSignatureOnData(inputData string, skBase64 string, pkBase64 string) (string, error) {

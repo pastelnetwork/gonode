@@ -7,7 +7,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/PastelNetwork/pqsignatures/qr"
+	"github.com/pastelnetwork/pqsignatures/qr"
 	"golang.org/x/crypto/sha3"
 )
 

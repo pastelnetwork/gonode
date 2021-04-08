@@ -8,10 +8,10 @@ import (
 	"path/filepath"
 	"time"
 
-	pqtime "github.com/PastelNetwork/pqsignatures/internal/time"
-	"github.com/PastelNetwork/pqsignatures/qr"
-	"github.com/auyer/steganography"
 	"github.com/fogleman/gg"
+	pqtime "github.com/pastelnetwork/pqsignatures/internal/time"
+	"github.com/pastelnetwork/pqsignatures/qr"
+	"github.com/pastelnetwork/steganography"
 )
 
 func hideSignatureImageInInputImage(sample_image_file_path string, signature_layer_image_output_filepath string, signed_image_output_path string) error {
