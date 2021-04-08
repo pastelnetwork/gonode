@@ -1,3 +1,3 @@
-module github.com/auyer/steganography
+module github.com/pastelnetwork/steganography
 
 go 1.12
