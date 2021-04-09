@@ -6,6 +6,7 @@ require (
 	github.com/fogleman/gg v1.3.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/kevinburke/nacl v0.0.0-20210321052800-030051251ea5
+	github.com/pastelnetwork/go-legroast v1.0.0
 	github.com/pastelnetwork/steganography v1.0.1
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966

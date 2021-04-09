@@ -10,12 +10,13 @@ import (
 	"strings"
 
 	"github.com/kevinburke/nacl/secretbox"
-	"github.com/pastelnetwork/pqsignatures/legroast"
+	legroast "github.com/pastelnetwork/go-legroast"
 )
 
 func pastelIdKeypairGeneration() (string, string) {
 	fmt.Println("\nGenerating LegRoast keypair now...")
 	pk, sk := legroast.Keygen()
+	fmt.Printf("\npk length: %v ;sk: %v", len(pk), len(sk))
 	skBase64 := base64.StdEncoding.EncodeToString(sk)
 	pkBase64 := base64.StdEncoding.EncodeToString(pk)
 	return skBase64, pkBase64
