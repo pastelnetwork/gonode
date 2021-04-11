@@ -1,0 +1,4 @@
+github.com/corona10/goimghdr v0.0.0-20190614101314-9af2afa93d77 h1:4ro0zGICf1edqP3P5ALnyBXBAuArKfWJ/3anuK5Mdxs=
+github.com/corona10/goimghdr v0.0.0-20190614101314-9af2afa93d77/go.mod h1:Bl3VRyiPvTH4LSlOMaRZ3BelmKvGCnu9zJNEQGIXWNk=
+github.com/mattn/go-sqlite3 v1.14.6 h1:dNPt6NO46WmLVt2DLNpwczCmdV5boIZ6g/tlDrlRUbg=
+github.com/mattn/go-sqlite3 v1.14.6/go.mod h1:NyWgC/yNuGj7Q9rpYnZvas74GogHl5/Z4A/KQRfk6bU=
