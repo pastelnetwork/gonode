@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -151,7 +152,10 @@ func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int6
 	msg.ID = id
 	rn.mutex.Unlock()
 
-	conn, err := rn.socket.DialTimeout("["+msg.Receiver.IP.String()+"]:"+strconv.Itoa(msg.Receiver.Port), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	conn, err := rn.socket.DialContext(ctx, "", "["+msg.Receiver.IP.String()+"]:"+strconv.Itoa(msg.Receiver.Port))
 	if err != nil {
 		return nil, err
 	}
