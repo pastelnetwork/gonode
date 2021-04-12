@@ -1,0 +1,45 @@
+version: 2.1
+
+jobs:
+  test:
+    parameters:
+      version:
+        type: string
+        default: "latest"
+      golint:
+        type: boolean
+        default: true
+    docker:
+      - image: "circleci/golang:<< parameters.version >>"
+    environment:
+      GO111MODULE: "on"
+    steps:
+      - checkout
+      - run:
+          name: Print the go version
+          command: >
+            go version
+      - run:
+          name: Fetch dependencies
+          command: >
+            go get -v ./...
+      - run:
+          name: Run gofmt
+          command: >
+            diff -u <(echo -n) <(gofmt -d -e .)
+      - run:
+          name: Run go vet
+          command: >
+            go vet -v ./...
+      - run:
+          name: Run go test (+ race detector)
+          command: >
+            go test -v -race ./...
+
+workflows:
+  build-and-test:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /^v.*/
