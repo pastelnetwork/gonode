@@ -3,6 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
+	"image"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -10,6 +12,11 @@ import (
 
 	"github.com/corona10/goimghdr"
 	_ "github.com/mattn/go-sqlite3"
+
+	tf "github.com/galeone/tensorflow/tensorflow/go"
+	tg "github.com/galeone/tfgo"
+
+	"github.com/disintegration/imaging"
 )
 
 var dupe_detection_image_fingerprint_database_file_path string
@@ -87,7 +94,54 @@ func get_all_valid_image_file_paths_in_folder_func(path_to_art_folder string) ([
 	return results, nil
 }
 
+func loadImage(imagePath string, width int, height int) (image.Image, error) {
+	reader, err := os.Open(imagePath)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+
+	img, _, err := image.Decode(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	img = imaging.Resize(img, width, height, imaging.Linear)
+	return img, nil
+}
+
 func compute_image_deep_learning_features_func(path_to_art_image_file string) error {
+	m, err := loadImage(path_to_art_image_file, 224, 224)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	bounds := m.Bounds()
+
+	var inputTensor [1][224][224][3]float32
+
+	for x := bounds.Min.X; x < bounds.Max.X; x++ {
+		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+			r, g, b, _ := m.At(x, y).RGBA()
+
+			// height = y and width = x
+			inputTensor[0][y][x][0] = float32(r >> 8)
+			inputTensor[0][y][x][1] = float32(g >> 8)
+			inputTensor[0][y][x][2] = float32(b >> 8)
+		}
+	}
+
+	model := tg.LoadModel("NASNetLarge.tf", []string{"serve"}, nil)
+
+	fakeInput, _ := tf.NewTensor(inputTensor)
+	results := model.Exec([]tf.Output{
+		model.Op("StatefulPartitionedCall", 0),
+	}, map[tf.Output]*tf.Tensor{
+		model.Op("serving_default_input_1", 0): fakeInput,
+	})
+
+	predictions := results[0]
+	fmt.Println(predictions.Value())
 	return nil
 }
 
@@ -138,5 +192,4 @@ func main() {
 		regenerate_empty_dupe_detection_image_fingerprint_database_func()
 		add_all_images_in_folder_to_image_fingerprint_database_func(path_to_all_registered_works_for_dupe_detection)
 	}
-
 }
