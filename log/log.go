@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// DefaultLogger is logger with default settings
 var DefaultLogger = NewLogger()
 
 // SetLevelName parses and sets the defaultLogger level.
