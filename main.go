@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"image"
 	"log"
@@ -17,6 +16,8 @@ import (
 	tg "github.com/galeone/tfgo"
 
 	"github.com/disintegration/imaging"
+
+	"github.com/pastelnetwork/go-commons/errors"
 )
 
 var dupe_detection_image_fingerprint_database_file_path string
@@ -30,7 +31,7 @@ func regenerate_empty_dupe_detection_image_fingerprint_database_func() error {
 
 	db, err := sql.Open("sqlite3", dupe_detection_image_fingerprint_database_file_path)
 	if err != nil {
-		return fmt.Errorf("regenerate_empty_dupe_detection_image_fingerprint_database_func: %w", err)
+		return errors.New(err)
 	}
 	defer db.Close()
 
@@ -41,7 +42,7 @@ func regenerate_empty_dupe_detection_image_fingerprint_database_func() error {
 	`
 	_, err = db.Exec(dupe_detection_image_fingerprint_database_creation_string)
 	if err != nil {
-		return fmt.Errorf("regenerate_empty_dupe_detection_image_fingerprint_database_func: %w", err)
+		return errors.New(err)
 	}
 	return nil
 }
@@ -61,27 +62,27 @@ func check_if_file_path_is_a_valid_image_func(path_to_file string) error {
 func get_all_valid_image_file_paths_in_folder_func(path_to_art_folder string) ([]string, error) {
 	jpgMatches, err := filepath.Glob(filepath.Join(path_to_art_folder, "*.jpg"))
 	if err != nil {
-		return nil, fmt.Errorf("get_all_valid_image_file_paths_in_folder_func: %w", err)
+		return nil, errors.New(err)
 	}
 
 	jpegMatches, err := filepath.Glob(filepath.Join(path_to_art_folder, "*.jpeg"))
 	if err != nil {
-		return nil, fmt.Errorf("get_all_valid_image_file_paths_in_folder_func: %w", err)
+		return nil, errors.New(err)
 	}
 
 	pngMatches, err := filepath.Glob(filepath.Join(path_to_art_folder, "*.png"))
 	if err != nil {
-		return nil, fmt.Errorf("get_all_valid_image_file_paths_in_folder_func: %w", err)
+		return nil, errors.New(err)
 	}
 
 	bmpMatches, err := filepath.Glob(filepath.Join(path_to_art_folder, "*.bmp"))
 	if err != nil {
-		return nil, fmt.Errorf("get_all_valid_image_file_paths_in_folder_func: %w", err)
+		return nil, errors.New(err)
 	}
 
 	gifMatches, err := filepath.Glob(filepath.Join(path_to_art_folder, "*.gif"))
 	if err != nil {
-		return nil, fmt.Errorf("get_all_valid_image_file_paths_in_folder_func: %w", err)
+		return nil, errors.New(err)
 	}
 
 	allMatches := append(append(append(append(jpgMatches, jpegMatches...), pngMatches...), bmpMatches...), gifMatches...)
@@ -137,7 +138,7 @@ func compute_image_deep_learning_features_func(path_to_art_image_file string) er
 	results := model.Exec([]tf.Output{
 		model.Op("StatefulPartitionedCall", 0),
 	}, map[tf.Output]*tf.Tensor{
-		model.Op("serving_default_input_1", 0): fakeInput,
+		model.Op("serving_default_input_6", 0): fakeInput,
 	})
 
 	predictions := results[0]
@@ -163,7 +164,7 @@ func add_image_fingerprints_to_dupe_detection_database_func(path_to_art_image_fi
 func add_all_images_in_folder_to_image_fingerprint_database_func(path_to_art_folder string) error {
 	valid_image_file_paths, err := get_all_valid_image_file_paths_in_folder_func(path_to_art_folder)
 	if err != nil {
-		return fmt.Errorf("add_all_images_in_folder_to_image_fingerprint_database_func: %w", err)
+		return errors.New(err)
 	}
 	for _, current_image_file_path := range valid_image_file_paths {
 		fmt.Printf("\nNow adding image file %v to image fingerprint database.", current_image_file_path)
