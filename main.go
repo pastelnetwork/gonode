@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"math"
 	"os"
 	"path/filepath"
 
@@ -230,7 +231,8 @@ func toBytes(data []float32) []byte {
 func fromBytes(data []byte) []float32 {
 	output := make([]float32, len(data)/4)
 	for i := range output {
-		output[i] = float32(binary.LittleEndian.Uint32(data[i*4 : (i+1)*4]))
+		bits := binary.LittleEndian.Uint32(data[i*4 : (i+1)*4])
+		output[i] = math.Float32frombits(bits)
 	}
 	return output
 }
@@ -290,6 +292,76 @@ func add_all_images_in_folder_to_image_fingerprint_database_func(path_to_art_fol
 	return nil
 }
 
+func get_list_of_all_registered_image_file_hashes_func() ([]string, error) {
+	db, err := sql.Open("sqlite3", dupe_detection_image_fingerprint_database_file_path)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	defer db.Close()
+
+	selectQuery := "SELECT sha256_hash_of_art_image_file FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC"
+	rows, err := db.Query(selectQuery)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	defer rows.Close()
+
+	var hashes []string
+	for rows.Next() {
+		var imageHash string
+		err = rows.Scan(&imageHash)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		hashes = append(hashes, imageHash)
+	}
+	return hashes, nil
+}
+
+func get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func() error {
+	hashes, err := get_list_of_all_registered_image_file_hashes_func()
+	if err != nil {
+		return errors.New(err)
+	}
+
+	db, err := sql.Open("sqlite3", dupe_detection_image_fingerprint_database_file_path)
+	if err != nil {
+		return errors.New(err)
+	}
+	defer db.Close()
+
+	var fingerprints [][]float32
+	for _, imgHash := range hashes {
+		selectQuery := `
+			SELECT model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector,
+				model_6_image_fingerprint_vector, model_7_image_fingerprint_vector FROM image_hash_to_image_fingerprint_table where sha256_hash_of_art_image_file = ? ORDER BY datetime_fingerprint_added_to_database DESC
+		`
+		rows, err := db.Query(selectQuery, imgHash)
+		if err != nil {
+			return errors.New(err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var fp1, fp2, fp3, fp4, fp5, fp6, fp7 []byte
+			err = rows.Scan(&fp1, &fp2, &fp3, &fp4, &fp5, &fp6, &fp7)
+			if err != nil {
+				return errors.New(err)
+			}
+			fingerprints = append(fingerprints, fromBytes(fp1), fromBytes(fp2), fromBytes(fp3), fromBytes(fp4), fromBytes(fp5), fromBytes(fp6), fromBytes(fp7))
+		}
+	}
+	return nil
+}
+
+func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
+	fmt.Printf("\nChecking if candidate image is a likely duplicate of a previously registered artwork:")
+	fmt.Printf("\nRetrieving image fingerprints of previously registered images from local database...")
+
+	get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func()
+	return false, nil
+}
+
 func main() {
 	root_pastel_folder_path := ""
 
@@ -329,5 +401,6 @@ func main() {
 	for _, nearDupeFilePath := range nearDuplicates {
 		fmt.Printf("\n________________________________________________________________________________________________________________")
 		fmt.Printf("\nCurrent Near Duplicate Image: %v", nearDupeFilePath)
+		measure_similarity_of_candidate_image_to_database_func(nearDupeFilePath)
 	}
 }
