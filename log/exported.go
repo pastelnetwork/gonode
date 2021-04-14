@@ -12,7 +12,7 @@ const (
 )
 
 func logEntry() *logrus.Entry {
-	return logEntryWithCallers(defaultLogger, defaultSkipCallers)
+	return logEntryWithCallers(DefaultLogger, defaultSkipCallers)
 }
 
 // WithError adds an error to log entry.
