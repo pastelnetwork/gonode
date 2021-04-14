@@ -9,4 +9,5 @@ require (
 	github.com/galeone/tfgo v0.0.0-20210204182614-84b9a5e77f79
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/pastelnetwork/go-commons v0.0.2
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 )

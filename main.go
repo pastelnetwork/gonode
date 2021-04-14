@@ -1,9 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"image"
-	"log"
+	"io"
 	"os"
 	"path/filepath"
 
@@ -18,12 +19,20 @@ import (
 	"github.com/disintegration/imaging"
 
 	"github.com/pastelnetwork/go-commons/errors"
+
+	"encoding/binary"
+	"encoding/hex"
+
+	"golang.org/x/crypto/sha3"
 )
 
 var dupe_detection_image_fingerprint_database_file_path string
 
-func get_list_of_all_registered_image_file_hashes_func() error {
-	return errors.New("Not implemented")
+func findDatabase() bool {
+	if _, err := os.Stat(dupe_detection_image_fingerprint_database_file_path); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
 
 func regenerate_empty_dupe_detection_image_fingerprint_database_func() error {
@@ -98,23 +107,70 @@ func get_all_valid_image_file_paths_in_folder_func(path_to_art_folder string) ([
 func loadImage(imagePath string, width int, height int) (image.Image, error) {
 	reader, err := os.Open(imagePath)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 	defer reader.Close()
 
 	img, _, err := image.Decode(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	img = imaging.Resize(img, width, height, imaging.Linear)
 	return img, nil
 }
 
-func compute_image_deep_learning_features_func(path_to_art_image_file string) error {
+var models = make(map[string]*tg.Model)
+
+type compute struct {
+	model string
+	input string
+}
+
+var fingerprintSources = []compute{
+	{
+		model: "EfficientNetB7.tf",
+		input: "serving_default_input_1",
+	},
+	{
+		model: "EfficientNetB6.tf",
+		input: "serving_default_input_2",
+	},
+	{
+		model: "InceptionResNetV2.tf",
+		input: "serving_default_input_3",
+	},
+	{
+		model: "DenseNet201.tf",
+		input: "serving_default_input_4",
+	},
+	{
+		model: "InceptionV3.tf",
+		input: "serving_default_input_5",
+	},
+	{
+		model: "NASNetLarge.tf",
+		input: "serving_default_input_6",
+	},
+	{
+		model: "ResNet152V2.tf",
+		input: "serving_default_input_7",
+	},
+}
+
+func tgModel(path string) *tg.Model {
+	m, ok := models[path]
+	if !ok {
+		m = tg.LoadModel(path, []string{"serve"}, nil)
+		models[path] = m
+	}
+	return m
+}
+
+func compute_image_deep_learning_features_func(path_to_art_image_file string) ([][]float32, error) {
 	m, err := loadImage(path_to_art_image_file, 224, 224)
 	if err != nil {
-		log.Fatal(err)
+		return nil, errors.New(err)
 	}
 
 	bounds := m.Bounds()
@@ -132,34 +188,92 @@ func compute_image_deep_learning_features_func(path_to_art_image_file string) er
 		}
 	}
 
-	model := tg.LoadModel("NASNetLarge.tf", []string{"serve"}, nil)
+	fingerprints := make([][]float32, len(fingerprintSources))
+	for i, source := range fingerprintSources {
+		model := tgModel(source.model)
 
-	fakeInput, _ := tf.NewTensor(inputTensor)
-	results := model.Exec([]tf.Output{
-		model.Op("StatefulPartitionedCall", 0),
-	}, map[tf.Output]*tf.Tensor{
-		model.Op("serving_default_input_6", 0): fakeInput,
-	})
+		fakeInput, _ := tf.NewTensor(inputTensor)
+		results := model.Exec([]tf.Output{
+			model.Op("StatefulPartitionedCall", 0),
+		}, map[tf.Output]*tf.Tensor{
+			model.Op(source.input, 0): fakeInput,
+		})
 
-	predictions := results[0]
-	fmt.Println(predictions.Value())
-	return nil
+		predictions := results[0].Value().([][]float32)[0]
+		fmt.Println(predictions)
+		fingerprints[i] = predictions
+	}
+
+	return fingerprints, nil
+}
+
+func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
+	f, err := os.Open(sampleImageFilePath)
+	if err != nil {
+		return "", errors.New(err)
+	}
+
+	defer f.Close()
+	hash := sha3.New256()
+	if _, err := io.Copy(hash, f); err != nil {
+		return "", errors.New(err)
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}
+
+func toBytes(data []float32) []byte {
+	output := new(bytes.Buffer)
+	_ = binary.Write(output, binary.LittleEndian, data)
+	return output.Bytes()
+}
+
+func fromBytes(data []byte) []float32 {
+	output := make([]float32, len(data)/4)
+	for i := range output {
+		output[i] = float32(binary.LittleEndian.Uint32(data[i*4 : (i+1)*4]))
+	}
+	return output
 }
 
 func add_image_fingerprints_to_dupe_detection_database_func(path_to_art_image_file string) error {
-	compute_image_deep_learning_features_func(path_to_art_image_file)
+	fingerprints, err := compute_image_deep_learning_features_func(path_to_art_image_file)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	imageHash, err := getImageHashFromImageFilePath(path_to_art_image_file)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	db, err := sql.Open("sqlite3", dupe_detection_image_fingerprint_database_file_path)
+	if err != nil {
+		return errors.New(err)
+	}
+	defer db.Close()
+
+	data_insertion_query_string := `
+		INSERT OR REPLACE INTO image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file, path_to_art_image_file,
+			model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector,
+			model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+	`
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.New(err)
+	}
+	stmt, err := tx.Prepare(data_insertion_query_string)
+	if err != nil {
+		return errors.New(err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(imageHash, path_to_art_image_file, toBytes(fingerprints[0]), toBytes(fingerprints[1]), toBytes(fingerprints[2]), toBytes(fingerprints[3]), toBytes(fingerprints[4]), toBytes(fingerprints[5]), toBytes(fingerprints[6]))
+	if err != nil {
+		return errors.New(err)
+	}
+	tx.Commit()
+
 	return nil
 }
-
-/*global dupe_detection_image_fingerprint_database_file_path
-  model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector,  sha256_hash_of_art_image_file, dupe_detection_model_1, dupe_detection_model_2, dupe_detection_model_3, dupe_detection_model_4, dupe_detection_model_5, dupe_detection_model_6, dupe_detection_model_7 = compute_image_deep_learning_features_func(path_to_art_image_file)
-  conn = sqlite3.connect(dupe_detection_image_fingerprint_database_file_path)
-  c = conn.cursor()
-  data_insertion_query_string = """INSERT OR REPLACE INTO image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file, path_to_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"""
-  c.execute(data_insertion_query_string, [sha256_hash_of_art_image_file, path_to_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector])
-  conn.commit()
-  conn.close()
-  return  model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector*/
 
 func add_all_images_in_folder_to_image_fingerprint_database_func(path_to_art_folder string) error {
 	valid_image_file_paths, err := get_all_valid_image_file_paths_in_folder_func(path_to_art_folder)
@@ -168,7 +282,10 @@ func add_all_images_in_folder_to_image_fingerprint_database_func(path_to_art_fol
 	}
 	for _, current_image_file_path := range valid_image_file_paths {
 		fmt.Printf("\nNow adding image file %v to image fingerprint database.", current_image_file_path)
-		add_image_fingerprints_to_dupe_detection_database_func(current_image_file_path)
+		err = add_image_fingerprints_to_dupe_detection_database_func(current_image_file_path)
+		if err != nil {
+			return errors.New(err)
+		}
 	}
 	return nil
 }
@@ -179,7 +296,7 @@ func main() {
 	misc_masternode_files_folder_path := filepath.Join(root_pastel_folder_path, "misc_masternode_files")
 	dupe_detection_image_fingerprint_database_file_path = filepath.Join(root_pastel_folder_path, "dupe_detection_image_fingerprint_database.sqlite")
 	path_to_all_registered_works_for_dupe_detection := filepath.Join(root_pastel_folder_path, "Animecoin_All_Finished_Works")
-	/*dupe_detection_test_images_base_folder_path*/ _ = filepath.Join(root_pastel_folder_path, "dupe_detector_test_images")
+	dupe_detection_test_images_base_folder_path := filepath.Join(root_pastel_folder_path, "dupe_detector_test_images")
 	/*non_dupe_test_images_base_folder_path*/ _ = filepath.Join(root_pastel_folder_path, "non_duplicate_test_images")
 
 	if _, err := os.Stat(misc_masternode_files_folder_path); os.IsNotExist(err) {
@@ -188,9 +305,29 @@ func main() {
 		}
 	}
 
-	err := get_list_of_all_registered_image_file_hashes_func()
-	if err != nil {
+	dbFound := findDatabase()
+	if !dbFound {
+		fmt.Printf("\nGenerating new image fingerprint database...")
 		regenerate_empty_dupe_detection_image_fingerprint_database_func()
-		add_all_images_in_folder_to_image_fingerprint_database_func(path_to_all_registered_works_for_dupe_detection)
+		err := add_all_images_in_folder_to_image_fingerprint_database_func(path_to_all_registered_works_for_dupe_detection)
+		if err != nil {
+			fmt.Println(err.(*errors.Error).ErrorStack())
+			panic(err)
+		}
+	} else {
+		fmt.Printf("\nFound existing image fingerprint database.")
+	}
+
+	fmt.Printf("\n\nNow testing duplicate-detection scheme on known near-duplicate images:")
+	nearDuplicates, err := get_all_valid_image_file_paths_in_folder_func(dupe_detection_test_images_base_folder_path)
+	if err != nil {
+		if err != nil {
+			fmt.Println(err.(*errors.Error).ErrorStack())
+			panic(err)
+		}
+	}
+	for _, nearDupeFilePath := range nearDuplicates {
+		fmt.Printf("\n________________________________________________________________________________________________________________")
+		fmt.Printf("\nCurrent Near Duplicate Image: %v", nearDupeFilePath)
 	}
 }
