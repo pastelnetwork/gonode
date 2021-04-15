@@ -6,7 +6,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var defaultLogger = NewLogger()
+// DefaultLogger is logger with default settings
+var DefaultLogger = NewLogger()
 
 // SetLevelName parses and sets the defaultLogger level.
 func SetLevelName(name string) error {
@@ -14,17 +15,17 @@ func SetLevelName(name string) error {
 	if err != nil {
 		return err
 	}
-	defaultLogger.SetLevel(level)
+	DefaultLogger.SetLevel(level)
 
 	return nil
 }
 
 // SetOutput sets the defaultLogger output.
 func SetOutput(output io.Writer) {
-	defaultLogger.SetOutput(output)
+	DefaultLogger.SetOutput(output)
 }
 
 // AddHook adds hook to an instance of defaultLogger.
 func AddHook(hook logrus.Hook) {
-	defaultLogger.Hooks.Add(hook)
+	DefaultLogger.Hooks.Add(hook)
 }
