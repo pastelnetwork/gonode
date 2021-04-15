@@ -33,7 +33,7 @@ jobs:
             go vet -v ./...
       - run:
           name: Run revive
-          command: >
+          command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
             revive ./...
       - run:
