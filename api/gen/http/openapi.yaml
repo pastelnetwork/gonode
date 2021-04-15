@@ -1,0 +1,221 @@
+swagger: "2.0"
+info:
+  title: WalletNode REST API
+  version: "1.0"
+host: localhost:8080
+consumes:
+- application/json
+- application/xml
+- application/gob
+produces:
+- application/json
+- application/xml
+- application/gob
+paths:
+  /arts/register:
+    post:
+      tags:
+      - arts
+      summary: Registers a new artwork
+      description: Registers a new art.
+      operationId: arts#register
+      parameters:
+      - name: RegisterRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/ArtsRegisterRequestBody'
+      responses:
+        "201":
+          description: Created response.
+          schema:
+            type: string
+      schemes:
+      - http
+  /arts/upload-image:
+    post:
+      tags:
+      - arts
+      summary: Uploads an image
+      description: Upload an image that is used when registering the artwork.
+      operationId: arts#uploadImage
+      consumes:
+      - multipart/form-data
+      parameters:
+      - name: UploadImageRequestBody
+        in: formData
+        required: true
+        schema:
+          $ref: '#/definitions/ArtsUploadImageRequestBody'
+          required:
+          - file
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            type: string
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/ArtsUploadImageBadRequestResponseBody'
+            required:
+            - error
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtsUploadImageInternalServerErrorResponseBody'
+            required:
+            - error
+      schemes:
+      - http
+definitions:
+  ArtsRegisterRequestBody:
+    title: ArtsRegisterRequestBody
+    type: object
+    properties:
+      address:
+        type: string
+        description: Spendable address
+        example: 12349231421309dsfdf
+        maxLength: 32
+      artist_name:
+        type: string
+        description: Name of the artist
+        example: Leonardo da Vinci
+        maxLength: 32
+      artwork_name:
+        type: string
+        description: Name of the artwork
+        example: Mona Lisa
+        maxLength: 32
+      fee:
+        type: number
+        example: 100
+        minimum: 1e-05
+      issued_copies:
+        type: integer
+        description: Number of copies issued
+        default: 1
+        example: 5
+        minimum: 1
+        maximum: 1000
+      pastel_id:
+        type: string
+        description: PastelID
+        example: "123456789"
+        maxLength: 32
+    example:
+      address: 12349231421309dsfdf
+      artist_name: Leonardo da Vinci
+      artwork_name: Mona Lisa
+      fee: 100
+      issued_copies: 5
+      pastel_id: "123456789"
+  ArtsUploadImageBadRequestResponseBody:
+    title: ArtsUploadImageBadRequestResponseBody
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            description: Code refers to a code number in the response header that
+              indicates the general classification of the response.
+            default: 400
+            example: 400
+            format: int64
+          message:
+            type: string
+            description: Message is a human-readable explanation specific to this
+              occurrence of the problem.
+            default: Bad Request
+            example: Bad Request
+        example:
+          code: 400
+          message: Bad Request
+        required:
+        - code
+    example:
+      error:
+        code: 400
+        message: Bad Request
+    required:
+    - error
+  ArtsUploadImageInternalServerErrorResponseBody:
+    title: ArtsUploadImageInternalServerErrorResponseBody
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          code:
+            type: integer
+            description: Code refers to a code number in the response header that
+              indicates the general classification of the response.
+            default: 500
+            example: 500
+            format: int64
+          message:
+            type: string
+            description: Message is a human-readable explanation specific to this
+              occurrence of the problem.
+            default: Internal Server Error
+            example: Internal Server Error
+        example:
+          code: 500
+          message: Internal Server Error
+        required:
+        - code
+    example:
+      error:
+        code: 500
+        message: Internal Server Error
+    required:
+    - error
+  ArtsUploadImageRequestBody:
+    title: ArtsUploadImageRequestBody
+    type: object
+    properties:
+      file:
+        type: string
+        description: File to upload
+        example:
+        - 81
+        - 117
+        - 105
+        - 97
+        - 32
+        - 101
+        - 116
+        - 32
+        - 102
+        - 117
+        - 103
+        - 105
+        - 116
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
+        - 109
+        - 46
+        format: byte
+    example:
+      file:
+      - 73
+      - 110
+      - 32
+      - 111
+      - 100
+      - 105
+      - 111
+      - 32
+      - 113
+      - 117
+      - 105
+      - 97
+      - 46
+    required:
+    - file

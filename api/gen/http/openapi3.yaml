@@ -1,0 +1,203 @@
+openapi: 3.0.3
+info:
+  title: WalletNode REST API
+  version: "1.0"
+servers:
+- url: http://localhost:8080
+paths:
+  /arts/register:
+    post:
+      tags:
+      - arts
+      summary: Registers a new artwork
+      description: Registers a new art.
+      operationId: arts#register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequestBody'
+            example:
+              address: 12349231421309dsfdf
+              artist_name: Leonardo da Vinci
+              artwork_name: Mona Lisa
+              fee: 100
+              issued_copies: 5
+              pastel_id: "123456789"
+      responses:
+        "201":
+          description: Created response.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: Architecto optio odio.
+              example: Ipsa quos omnis reprehenderit doloribus.
+  /arts/upload-image:
+    post:
+      tags:
+      - arts
+      summary: Uploads an image
+      description: Upload an image that is used when registering the artwork.
+      operationId: arts#uploadImage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UploadImageRequestBody'
+            example:
+              file:
+              - 77
+              - 97
+              - 120
+              - 105
+              - 109
+              - 101
+              - 32
+              - 101
+              - 116
+              - 46
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                type: string
+                example: Laborum labore nulla veniam atque qui.
+              example: Modi nisi eos blanditiis eius.
+        "400":
+          description: Bad Request response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                error:
+                  code: 400
+                  message: Bad Request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BadRequest'
+              example:
+                error:
+                  code: 500
+                  message: Internal Server Error
+components:
+  schemas:
+    BadRequest:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: integer
+              description: Code refers to a code number in the response header that
+                indicates the general classification of the response.
+              default: 400
+              example: 400
+              format: int64
+            message:
+              type: string
+              description: Message is a human-readable explanation specific to this
+                occurrence of the problem.
+              default: Bad Request
+              example: Bad Request
+          example:
+            code: 400
+            message: Bad Request
+          required:
+          - code
+      example:
+        error:
+          code: 400
+          message: Bad Request
+      required:
+      - error
+    RegisterRequestBody:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Spendable address
+          example: 12349231421309dsfdf
+          maxLength: 32
+        artist_name:
+          type: string
+          description: Name of the artist
+          example: Leonardo da Vinci
+          maxLength: 32
+        artwork_name:
+          type: string
+          description: Name of the artwork
+          example: Mona Lisa
+          maxLength: 32
+        fee:
+          type: number
+          example: 100
+          minimum: 1e-05
+        issued_copies:
+          type: integer
+          description: Number of copies issued
+          default: 1
+          example: 5
+          minimum: 1
+          maximum: 1000
+        pastel_id:
+          type: string
+          description: PastelID
+          example: "123456789"
+          maxLength: 32
+      example:
+        address: 12349231421309dsfdf
+        artist_name: Leonardo da Vinci
+        artwork_name: Mona Lisa
+        fee: 100
+        issued_copies: 5
+        pastel_id: "123456789"
+    UploadImageRequestBody:
+      type: object
+      properties:
+        file:
+          type: string
+          description: File to upload
+          example:
+          - 85
+          - 116
+          - 32
+          - 118
+          - 101
+          - 108
+          - 32
+          - 101
+          - 116
+          - 46
+          format: binary
+      example:
+        file:
+        - 69
+        - 116
+        - 32
+        - 101
+        - 117
+        - 109
+        - 32
+        - 97
+        - 117
+        - 116
+        - 32
+        - 105
+        - 116
+        - 97
+        - 113
+        - 117
+        - 101
+        - 46
+      required:
+      - file

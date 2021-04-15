@@ -6,7 +6,7 @@ import (
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/go-commons/log"
 	"github.com/pastelnetwork/go-commons/sys"
-	"github.com/pastelnetwork/walletnode/cli"
+	"github.com/pastelnetwork/walletnode/cmd"
 )
 
 const (
@@ -20,7 +20,7 @@ var (
 func main() {
 	defer errors.Recover(errors.CheckErrorAndExit)
 
-	app := cli.NewApp()
+	app := cmd.NewApp()
 	err := app.Run(os.Args)
 
 	errors.CheckErrorAndExit(err)
