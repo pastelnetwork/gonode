@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/walletnode/api/log"
 )
 
 const (
@@ -22,7 +22,7 @@ type Rest struct {
 	shutdownTimeout time.Duration
 }
 
-// Run starts RESTAPI service.
+// Run startworks RESTAPI service.
 func (rest *Rest) Run(ctx context.Context) error {
 	addr := net.JoinHostPort(rest.config.Hostname, strconv.Itoa(rest.config.Port))
 
@@ -40,13 +40,13 @@ func (rest *Rest) Run(ctx context.Context) error {
 
 	errCh := make(chan error)
 	go func() {
-		log.Infof("%s HTTP server listening on %q", logPrefix, addr)
+		log.Infof("HTTP server listening on %q", addr)
 		errCh <- srv.ListenAndServe()
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Infof("%s Shutting down HTTP server at %q", logPrefix, addr)
+		log.Infof("Shutting down HTTP server at %q", addr)
 	case err := <-errCh:
 		return err
 	}

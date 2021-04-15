@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 
 	"github.com/pastelnetwork/go-commons/cli"
-	"github.com/pastelnetwork/go-commons/configer"
+	"github.com/pastelnetwork/go-commons/configurer"
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/go-commons/log"
 	"github.com/pastelnetwork/go-commons/log/hooks"
@@ -44,7 +44,7 @@ func NewApp() *cli.App {
 
 	app.SetActionFunc(func(args []string) error {
 		if configFile != "" {
-			if err := configer.ParseFile(configFile, config); err != nil {
+			if err := configurer.ParseFile(configFile, config); err != nil {
 				return err
 			}
 		}

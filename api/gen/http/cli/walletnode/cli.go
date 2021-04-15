@@ -13,7 +13,7 @@ import (
 	"net/http"
 	"os"
 
-	artsc "github.com/pastelnetwork/walletnode/api/gen/http/arts/client"
+	artworksc "github.com/pastelnetwork/walletnode/api/gen/http/artworks/client"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -23,19 +23,25 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `arts (register|upload-image)
+	return `artworks (register|upload-image)
 `
 }
 
 // UsageExamples produces an example of a valid invocation of the CLI tool.
 func UsageExamples() string {
-	return os.Args[0] + ` arts register --body '{
-      "address": "12349231421309dsfdf",
+	return os.Args[0] + ` artworks register --body '{
       "artist_name": "Leonardo da Vinci",
-      "artwork_name": "Mona Lisa",
-      "fee": 100,
+      "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
+      "artist_website_url": "https://www.leonardodavinci.net",
+      "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
+      "image_id": "d93lsd0",
       "issued_copies": 5,
-      "pastel_id": "123456789"
+      "keywords": "Renaissance, sfumato, portrait",
+      "name": "Mona Lisa",
+      "network_fee": 100,
+      "series_name": "Famous Artist ",
+      "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
+      "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"
    }'` + "\n" +
 		""
 }
@@ -48,20 +54,20 @@ func ParseEndpoint(
 	enc func(*http.Request) goahttp.Encoder,
 	dec func(*http.Response) goahttp.Decoder,
 	restore bool,
-	artsUploadImageEncoderFn artsc.ArtsUploadImageEncoderFunc,
+	artworksUploadImageEncoderFn artworksc.ArtworksUploadImageEncoderFunc,
 ) (goa.Endpoint, interface{}, error) {
 	var (
-		artsFlags = flag.NewFlagSet("arts", flag.ContinueOnError)
+		artworksFlags = flag.NewFlagSet("artworks", flag.ContinueOnError)
 
-		artsRegisterFlags    = flag.NewFlagSet("register", flag.ExitOnError)
-		artsRegisterBodyFlag = artsRegisterFlags.String("body", "REQUIRED", "")
+		artworksRegisterFlags    = flag.NewFlagSet("register", flag.ExitOnError)
+		artworksRegisterBodyFlag = artworksRegisterFlags.String("body", "REQUIRED", "")
 
-		artsUploadImageFlags    = flag.NewFlagSet("upload-image", flag.ExitOnError)
-		artsUploadImageBodyFlag = artsUploadImageFlags.String("body", "REQUIRED", "")
+		artworksUploadImageFlags    = flag.NewFlagSet("upload-image", flag.ExitOnError)
+		artworksUploadImageBodyFlag = artworksUploadImageFlags.String("body", "REQUIRED", "")
 	)
-	artsFlags.Usage = artsUsage
-	artsRegisterFlags.Usage = artsRegisterUsage
-	artsUploadImageFlags.Usage = artsUploadImageUsage
+	artworksFlags.Usage = artworksUsage
+	artworksRegisterFlags.Usage = artworksRegisterUsage
+	artworksUploadImageFlags.Usage = artworksUploadImageUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		return nil, nil, err
@@ -78,8 +84,8 @@ func ParseEndpoint(
 	{
 		svcn = flag.Arg(0)
 		switch svcn {
-		case "arts":
-			svcf = artsFlags
+		case "artworks":
+			svcf = artworksFlags
 		default:
 			return nil, nil, fmt.Errorf("unknown service %q", svcn)
 		}
@@ -95,13 +101,13 @@ func ParseEndpoint(
 	{
 		epn = svcf.Arg(0)
 		switch svcn {
-		case "arts":
+		case "artworks":
 			switch epn {
 			case "register":
-				epf = artsRegisterFlags
+				epf = artworksRegisterFlags
 
 			case "upload-image":
-				epf = artsUploadImageFlags
+				epf = artworksUploadImageFlags
 
 			}
 
@@ -125,15 +131,15 @@ func ParseEndpoint(
 	)
 	{
 		switch svcn {
-		case "arts":
-			c := artsc.NewClient(scheme, host, doer, enc, dec, restore)
+		case "artworks":
+			c := artworksc.NewClient(scheme, host, doer, enc, dec, restore)
 			switch epn {
 			case "register":
 				endpoint = c.Register()
-				data, err = artsc.BuildRegisterPayload(*artsRegisterBodyFlag)
+				data, err = artworksc.BuildRegisterPayload(*artworksRegisterBodyFlag)
 			case "upload-image":
-				endpoint = c.UploadImage(artsUploadImageEncoderFn)
-				data, err = artsc.BuildUploadImagePayload(*artsUploadImageBodyFlag)
+				endpoint = c.UploadImage(artworksUploadImageEncoderFn)
+				data, err = artworksc.BuildUploadImagePayload(*artworksUploadImageBodyFlag)
 			}
 		}
 	}
@@ -144,46 +150,52 @@ func ParseEndpoint(
 	return endpoint, data, nil
 }
 
-// artsUsage displays the usage of the arts command and its subcommands.
-func artsUsage() {
+// artworksUsage displays the usage of the artworks command and its subcommands.
+func artworksUsage() {
 	fmt.Fprintf(os.Stderr, `Pastel Artwork
 Usage:
-    %s [globalflags] arts COMMAND [flags]
+    %s [globalflags] artworks COMMAND [flags]
 
 COMMAND:
     register: Registers a new art.
     upload-image: Upload an image that is used when registering the artwork.
 
 Additional help:
-    %s arts COMMAND --help
+    %s artworks COMMAND --help
 `, os.Args[0], os.Args[0])
 }
-func artsRegisterUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] arts register -body JSON
+func artworksRegisterUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks register -body JSON
 
 Registers a new art.
     -body JSON: 
 
 Example:
-    `+os.Args[0]+` arts register --body '{
-      "address": "12349231421309dsfdf",
+    `+os.Args[0]+` artworks register --body '{
       "artist_name": "Leonardo da Vinci",
-      "artwork_name": "Mona Lisa",
-      "fee": 100,
+      "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
+      "artist_website_url": "https://www.leonardodavinci.net",
+      "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
+      "image_id": "d93lsd0",
       "issued_copies": 5,
-      "pastel_id": "123456789"
+      "keywords": "Renaissance, sfumato, portrait",
+      "name": "Mona Lisa",
+      "network_fee": 100,
+      "series_name": "Famous Artist ",
+      "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
+      "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"
    }'
 `, os.Args[0])
 }
 
-func artsUploadImageUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] arts upload-image -body JSON
+func artworksUploadImageUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks upload-image -body JSON
 
 Upload an image that is used when registering the artwork.
     -body JSON: 
 
 Example:
-    `+os.Args[0]+` arts upload-image --body '{
+    `+os.Args[0]+` artworks upload-image --body '{
       "file": "TWF4aW1lIGV0Lg=="
    }'
 `, os.Args[0])

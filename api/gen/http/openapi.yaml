@@ -12,19 +12,27 @@ produces:
 - application/xml
 - application/gob
 paths:
-  /arts/register:
+  /artworks/register:
     post:
       tags:
-      - arts
+      - artworks
       summary: Registers a new artwork
       description: Registers a new art.
-      operationId: arts#register
+      operationId: artworks#register
       parameters:
       - name: RegisterRequestBody
         in: body
         required: true
         schema:
-          $ref: '#/definitions/ArtsRegisterRequestBody'
+          $ref: '#/definitions/ArtworksRegisterRequestBody'
+          required:
+          - artist_name
+          - name
+          - issued_copies
+          - image_id
+          - artist_pastelid
+          - spendable_address
+          - network_fee
       responses:
         "201":
           description: Created response.
@@ -32,13 +40,13 @@ paths:
             type: string
       schemes:
       - http
-  /arts/upload-image:
+  /artworks/upload-image:
     post:
       tags:
-      - arts
+      - artworks
       summary: Uploads an image
       description: Upload an image that is used when registering the artwork.
-      operationId: arts#uploadImage
+      operationId: artworks#uploadImage
       consumes:
       - multipart/form-data
       parameters:
@@ -46,7 +54,7 @@ paths:
         in: formData
         required: true
         schema:
-          $ref: '#/definitions/ArtsUploadImageRequestBody'
+          $ref: '#/definitions/ArtworksUploadImageRequestBody'
           required:
           - file
       responses:
@@ -57,41 +65,49 @@ paths:
         "400":
           description: Bad Request response.
           schema:
-            $ref: '#/definitions/ArtsUploadImageBadRequestResponseBody'
+            $ref: '#/definitions/ArtworksUploadImageBadRequestResponseBody'
             required:
             - error
         "500":
           description: Internal Server Error response.
           schema:
-            $ref: '#/definitions/ArtsUploadImageInternalServerErrorResponseBody'
+            $ref: '#/definitions/ArtworksUploadImageInternalServerErrorResponseBody'
             required:
             - error
       schemes:
       - http
 definitions:
-  ArtsRegisterRequestBody:
-    title: ArtsRegisterRequestBody
+  ArtworksRegisterRequestBody:
+    title: ArtworksRegisterRequestBody
     type: object
     properties:
-      address:
-        type: string
-        description: Spendable address
-        example: 12349231421309dsfdf
-        maxLength: 32
       artist_name:
         type: string
         description: Name of the artist
         example: Leonardo da Vinci
-        maxLength: 32
-      artwork_name:
+        maxLength: 256
+      artist_pastelid:
         type: string
-        description: Name of the artwork
-        example: Mona Lisa
-        maxLength: 32
-      fee:
-        type: number
-        example: 100
-        minimum: 1e-05
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        minLength: 86
+        maxLength: 86
+      artist_website_url:
+        type: string
+        description: Artist website URL
+        example: https://www.leonardodavinci.net
+        maxLength: 256
+      description:
+        type: string
+        description: Description of the artwork
+        example: The Mona Lisa is an oil painting by Italian artist, inventor, and
+          writer Leonardo da Vinci. Likely completed in 1506, the piece features a
+          portrait of a seated woman set against an imaginary landscape.
+        maxLength: 1024
+      image_id:
+        type: string
+        description: Uploaded Image ID
+        example: d93lsd0
       issued_copies:
         type: integer
         description: Number of copies issued
@@ -99,20 +115,62 @@ definitions:
         example: 5
         minimum: 1
         maximum: 1000
-      pastel_id:
+      keywords:
         type: string
-        description: PastelID
-        example: "123456789"
-        maxLength: 32
+        description: Keywords
+        example: Renaissance, sfumato, portrait
+        maxLength: 256
+      name:
+        type: string
+        description: Name of the artwork
+        example: Mona Lisa
+        maxLength: 256
+      network_fee:
+        type: number
+        default: 1
+        example: 100
+        minimum: 1e-05
+      series_name:
+        type: string
+        description: Series name
+        example: 'Famous Artist '
+        maxLength: 256
+      spendable_address:
+        type: string
+        description: Spendable address
+        example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+        minLength: 35
+        maxLength: 35
+      youtube_url:
+        type: string
+        description: Artwork creation video youtube URL
+        example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        maxLength: 128
     example:
-      address: 12349231421309dsfdf
       artist_name: Leonardo da Vinci
-      artwork_name: Mona Lisa
-      fee: 100
+      artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      artist_website_url: https://www.leonardodavinci.net
+      description: The Mona Lisa is an oil painting by Italian artist, inventor, and
+        writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
+        of a seated woman set against an imaginary landscape.
+      image_id: d93lsd0
       issued_copies: 5
-      pastel_id: "123456789"
-  ArtsUploadImageBadRequestResponseBody:
-    title: ArtsUploadImageBadRequestResponseBody
+      keywords: Renaissance, sfumato, portrait
+      name: Mona Lisa
+      network_fee: 100
+      series_name: 'Famous Artist '
+      spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+      youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+    required:
+    - artist_name
+    - name
+    - issued_copies
+    - image_id
+    - artist_pastelid
+    - spendable_address
+    - network_fee
+  ArtworksUploadImageBadRequestResponseBody:
+    title: ArtworksUploadImageBadRequestResponseBody
     type: object
     properties:
       error:
@@ -142,8 +200,8 @@ definitions:
         message: Bad Request
     required:
     - error
-  ArtsUploadImageInternalServerErrorResponseBody:
-    title: ArtsUploadImageInternalServerErrorResponseBody
+  ArtworksUploadImageInternalServerErrorResponseBody:
+    title: ArtworksUploadImageInternalServerErrorResponseBody
     type: object
     properties:
       error:
@@ -173,8 +231,8 @@ definitions:
         message: Internal Server Error
     required:
     - error
-  ArtsUploadImageRequestBody:
-    title: ArtsUploadImageRequestBody
+  ArtworksUploadImageRequestBody:
+    title: ArtworksUploadImageRequestBody
     type: object
     properties:
       file:

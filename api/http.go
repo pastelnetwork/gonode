@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/pastelnetwork/go-commons/log"
-	arts "github.com/pastelnetwork/walletnode/api/gen/arts"
-	artssvr "github.com/pastelnetwork/walletnode/api/gen/http/arts/server"
+	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
+	artworkssvr "github.com/pastelnetwork/walletnode/api/gen/http/artworks/server"
 	swaggersvr "github.com/pastelnetwork/walletnode/api/gen/http/swagger/server"
-	artsservice "github.com/pastelnetwork/walletnode/api/services/arts"
+	"github.com/pastelnetwork/walletnode/api/log"
+	artworksservice "github.com/pastelnetwork/walletnode/api/services/artworks"
 
 	goahttp "goa.design/goa/v3/http"
 	goahttpmiddleware "goa.design/goa/v3/http/middleware"
@@ -37,24 +37,24 @@ func apiHandler() http.Handler {
 		errHandler = errorHandler()
 	)
 
-	artsEndpoints := arts.NewEndpoints(artsservice.New())
-	artsServer := artssvr.New(artsEndpoints, mux, dec, enc, errHandler, nil, artsservice.UploadImageDecoderFunc)
-	artssvr.Mount(mux, artsServer)
+	artworksEndpoints := artworks.NewEndpoints(artworksservice.New())
+	artworksServer := artworkssvr.New(artworksEndpoints, mux, dec, enc, errHandler, nil, artworksservice.UploadImageDecoderFunc)
+	artworkssvr.Mount(mux, artworksServer)
 
 	swaggerServer := swaggersvr.New(nil, mux, dec, enc, errHandler, nil)
 	mountSwagger(mux, swaggerServer)
 
 	servers := goahttp.Servers{
-		artsServer,
+		artworksServer,
 		swaggerServer,
 	}
 	servers.Use(goahttpmiddleware.Debug(mux, os.Stdout))
 
-	for _, m := range artsServer.Mounts {
-		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
+	for _, m := range artworksServer.Mounts {
+		log.Infof("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 	for _, m := range swaggerServer.Mounts {
-		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
+		log.Infof("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 
 	var handler http.Handler = mux
@@ -86,6 +86,6 @@ func errorHandler() func(context.Context, http.ResponseWriter, error) {
 	return func(ctx context.Context, w http.ResponseWriter, err error) {
 		id := ctx.Value(goamiddleware.RequestIDKey).(string)
 		_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
-		log.Errorf("%s [%s] %s", logPrefix, id, err.Error())
+		log.Errorf("[%s] %s", id, err.Error())
 	}
 }

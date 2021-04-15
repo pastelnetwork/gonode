@@ -1,22 +1,19 @@
 package api
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
-	"io"
 	"net"
 	"net/http"
 	"time"
 
-	"github.com/pastelnetwork/go-commons/log"
+	commonlog "github.com/pastelnetwork/go-commons/log"
 	"github.com/pastelnetwork/go-commons/log/hooks"
+	"github.com/pastelnetwork/go-commons/random"
+	"github.com/pastelnetwork/walletnode/api/log"
 
 	httpmiddleware "goa.design/goa/v3/http/middleware"
 	"goa.design/goa/v3/middleware"
 )
-
-const logPrefix = "[rest]"
 
 // Log logs incoming HTTP requests and outgoing responses.
 // It uses the request ID set by the RequestID middleware or creates a short unique request ID if missing for each incoming request
@@ -26,21 +23,21 @@ func Log() func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			reqID := r.Context().Value(middleware.RequestIDKey)
 			if reqID == nil {
-				reqID = logShortID()
+				reqID, _ = random.String(8, random.Base62Chars)
 			}
 			started := time.Now()
 
-			log.WithField("from", logFrom(r)).
+			commonlog.WithField("from", logFrom(r)).
 				WithField("req", r.Method+" "+r.URL.String()).
-				Debugf("%v [%v] Request", logPrefix, reqID)
+				Debugf("%v [%v] Request", log.Prefix, reqID)
 
 			rw := httpmiddleware.CaptureResponse(w)
 			h.ServeHTTP(rw, r)
 
-			log.WithField("status", rw.StatusCode).
+			commonlog.WithField("status", rw.StatusCode).
 				WithField("bytes", rw.ContentLength).
 				WithField("time", time.Since(started).String()).
-				Debugf("%v [%v] Response", logPrefix, reqID)
+				Debugf("%v [%v] Response", log.Prefix, reqID)
 		})
 	}
 }
@@ -58,15 +55,8 @@ func logFrom(req *http.Request) string {
 	return ip
 }
 
-// logShortID produces a " unique" 6 bytes long string.
-func logShortID() string {
-	b := make([]byte, 6)
-	io.ReadFull(rand.Reader, b)
-	return base64.RawURLEncoding.EncodeToString(b)
-}
-
 func init() {
-	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(ctxValue interface{}, msg string) string {
-		return fmt.Sprintf("%v [%v] %s", logPrefix, ctxValue, msg)
+	commonlog.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(ctxValue interface{}, msg string) string {
+		return fmt.Sprintf("%v [%v] %s", log.Prefix, ctxValue, msg)
 	}))
 }
