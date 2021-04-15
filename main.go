@@ -8,6 +8,9 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"regexp"
+	"runtime"
+	"time"
 
 	"database/sql"
 
@@ -24,12 +27,25 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 
+	"github.com/go-gota/gota/dataframe"
+	"github.com/go-gota/gota/series"
 	"golang.org/x/crypto/sha3"
+
+	"github.com/gonum/matrix/mat64"
 )
+
+func Measure(start time.Time) {
+	elapsed := time.Since(start)
+	pc, _, _, _ := runtime.Caller(1)
+	pcFunc := runtime.FuncForPC(pc)
+	funcNameOnly := regexp.MustCompile(`^.*\.(.*)$`)
+	funcName := funcNameOnly.ReplaceAllString(pcFunc.Name(), "$1")
+	fmt.Printf("\n%s took %s\n", funcName, elapsed)
+}
 
 var dupe_detection_image_fingerprint_database_file_path string
 
-func findDatabase() bool {
+func tryToFindLocalDatabaseFile() bool {
 	if _, err := os.Stat(dupe_detection_image_fingerprint_database_file_path); os.IsNotExist(err) {
 		return false
 	}
@@ -37,6 +53,7 @@ func findDatabase() bool {
 }
 
 func regenerate_empty_dupe_detection_image_fingerprint_database_func() error {
+	defer Measure(time.Now())
 	os.Remove(dupe_detection_image_fingerprint_database_file_path)
 
 	db, err := sql.Open("sqlite3", dupe_detection_image_fingerprint_database_file_path)
@@ -168,7 +185,9 @@ func tgModel(path string) *tg.Model {
 	return m
 }
 
-func compute_image_deep_learning_features_func(path_to_art_image_file string) ([][]float32, error) {
+func compute_image_deep_learning_features_func(path_to_art_image_file string) ([][]float64, error) {
+	defer Measure(time.Now())
+
 	m, err := loadImage(path_to_art_image_file, 224, 224)
 	if err != nil {
 		return nil, errors.New(err)
@@ -189,7 +208,7 @@ func compute_image_deep_learning_features_func(path_to_art_image_file string) ([
 		}
 	}
 
-	fingerprints := make([][]float32, len(fingerprintSources))
+	fingerprints := make([][]float64, len(fingerprintSources))
 	for i, source := range fingerprintSources {
 		model := tgModel(source.model)
 
@@ -202,10 +221,18 @@ func compute_image_deep_learning_features_func(path_to_art_image_file string) ([
 
 		predictions := results[0].Value().([][]float32)[0]
 		fmt.Println(predictions)
-		fingerprints[i] = predictions
+		fingerprints[i] = fromFloat32To64(predictions)
 	}
 
 	return fingerprints, nil
+}
+
+func fromFloat32To64(input []float32) []float64 {
+	output := make([]float64, len(input))
+	for i, value := range input {
+		output[i] = float64(value)
+	}
+	return output
 }
 
 func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
@@ -222,17 +249,17 @@ func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func toBytes(data []float32) []byte {
+func toBytes(data []float64) []byte {
 	output := new(bytes.Buffer)
 	_ = binary.Write(output, binary.LittleEndian, data)
 	return output.Bytes()
 }
 
-func fromBytes(data []byte) []float32 {
-	output := make([]float32, len(data)/4)
+func fromBytes(data []byte) []float64 {
+	output := make([]float64, len(data)/8)
 	for i := range output {
-		bits := binary.LittleEndian.Uint32(data[i*4 : (i+1)*4])
-		output[i] = math.Float32frombits(bits)
+		bits := binary.LittleEndian.Uint64(data[i*8 : (i+1)*8])
+		output[i] = math.Float64frombits(bits)
 	}
 	return output
 }
@@ -318,48 +345,83 @@ func get_list_of_all_registered_image_file_hashes_func() ([]string, error) {
 	return hashes, nil
 }
 
-func get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func() error {
+func get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func() (*dataframe.DataFrame, error) {
+	defer Measure(time.Now())
+
 	hashes, err := get_list_of_all_registered_image_file_hashes_func()
 	if err != nil {
-		return errors.New(err)
+		return nil, errors.New(err)
 	}
 
 	db, err := sql.Open("sqlite3", dupe_detection_image_fingerprint_database_file_path)
 	if err != nil {
-		return errors.New(err)
+		return nil, errors.New(err)
 	}
 	defer db.Close()
 
-	var fingerprints [][]float32
-	for _, imgHash := range hashes {
+	var list_of_combined_image_fingerprint_rows [][]float64
+	combined_image_fingerprint_df := dataframe.New(
+		series.New([]string{}, series.String, "0"),
+		series.New([]string{}, series.String, "1"),
+	)
+
+	for _, current_image_file_hash := range hashes {
 		selectQuery := `
-			SELECT model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector,
+			SELECT path_to_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector,
 				model_6_image_fingerprint_vector, model_7_image_fingerprint_vector FROM image_hash_to_image_fingerprint_table where sha256_hash_of_art_image_file = ? ORDER BY datetime_fingerprint_added_to_database DESC
 		`
-		rows, err := db.Query(selectQuery, imgHash)
+		rows, err := db.Query(selectQuery, current_image_file_hash)
 		if err != nil {
-			return errors.New(err)
+			return nil, errors.New(err)
 		}
 		defer rows.Close()
 
 		for rows.Next() {
-			var fp1, fp2, fp3, fp4, fp5, fp6, fp7 []byte
-			err = rows.Scan(&fp1, &fp2, &fp3, &fp4, &fp5, &fp6, &fp7)
+			var current_image_file_path string
+			var model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector []byte
+			err = rows.Scan(&current_image_file_path, &model_1_image_fingerprint_vector, &model_2_image_fingerprint_vector, &model_3_image_fingerprint_vector, &model_4_image_fingerprint_vector, &model_5_image_fingerprint_vector, &model_6_image_fingerprint_vector, &model_7_image_fingerprint_vector)
 			if err != nil {
-				return errors.New(err)
+				return nil, errors.New(err)
 			}
-			fingerprints = append(fingerprints, fromBytes(fp1), fromBytes(fp2), fromBytes(fp3), fromBytes(fp4), fromBytes(fp5), fromBytes(fp6), fromBytes(fp7))
+			combined_image_fingerprint_vector := append(append(append(append(append(append(fromBytes(model_1_image_fingerprint_vector), fromBytes(model_2_image_fingerprint_vector)[:]...), fromBytes(model_3_image_fingerprint_vector)[:]...), fromBytes(model_4_image_fingerprint_vector)[:]...), fromBytes(model_5_image_fingerprint_vector)[:]...), fromBytes(model_6_image_fingerprint_vector)[:]...), fromBytes(model_7_image_fingerprint_vector)[:]...)
+			list_of_combined_image_fingerprint_rows = append(list_of_combined_image_fingerprint_rows, combined_image_fingerprint_vector)
+			current_combined_image_fingerprint_df_row := dataframe.LoadRecords(
+				[][]string{
+					{"0", "1"},
+					{current_image_file_hash, current_image_file_path},
+				},
+			)
+
+			combined_image_fingerprint_df = combined_image_fingerprint_df.RBind(current_combined_image_fingerprint_df_row)
 		}
 	}
-	return nil
+	var combined_image_fingerprint_df_vectors dataframe.DataFrame
+	for _, current_combined_image_fingerprint_vector := range list_of_combined_image_fingerprint_rows {
+
+		current_combined_image_fingerprint_vector_gonum := mat64.NewDense(1, len(current_combined_image_fingerprint_vector), current_combined_image_fingerprint_vector)
+		current_combined_image_fingerprint_vector_df := dataframe.LoadMatrix(current_combined_image_fingerprint_vector_gonum)
+
+		if rows, columns := combined_image_fingerprint_df_vectors.Dims(); rows == 0 && columns == 0 {
+			combined_image_fingerprint_df_vectors = current_combined_image_fingerprint_vector_df
+		} else {
+			combined_image_fingerprint_df_vectors = combined_image_fingerprint_df_vectors.RBind(current_combined_image_fingerprint_vector_df)
+		}
+	}
+
+	return &combined_image_fingerprint_df_vectors, nil
 }
 
 func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
 	fmt.Printf("\nChecking if candidate image is a likely duplicate of a previously registered artwork:")
 	fmt.Printf("\nRetrieving image fingerprints of previously registered images from local database...")
 
-	get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func()
-	return false, nil
+	final_combined_image_fingerprint_df, err := get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func()
+	if err != nil {
+		return false, errors.New(err)
+	}
+	rowCount, _ := final_combined_image_fingerprint_df.Dims()
+	fmt.Printf("\nComparing candidate image to the fingerprints of %v previously registered images.", rowCount)
+	return true, nil
 }
 
 func main() {
@@ -377,7 +439,7 @@ func main() {
 		}
 	}
 
-	dbFound := findDatabase()
+	dbFound := tryToFindLocalDatabaseFile()
 	if !dbFound {
 		fmt.Printf("\nGenerating new image fingerprint database...")
 		regenerate_empty_dupe_detection_image_fingerprint_database_func()
@@ -399,7 +461,7 @@ func main() {
 		}
 	}
 	for _, nearDupeFilePath := range nearDuplicates {
-		fmt.Printf("\n________________________________________________________________________________________________________________")
+		fmt.Printf("\n\n________________________________________________________________________________________________________________\n\n")
 		fmt.Printf("\nCurrent Near Duplicate Image: %v", nearDupeFilePath)
 		measure_similarity_of_candidate_image_to_database_func(nearDupeFilePath)
 	}
