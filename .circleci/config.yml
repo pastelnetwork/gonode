@@ -5,7 +5,7 @@ jobs:
     parameters:
       version:
         type: string
-        default: "latest"
+        default: "1.16.3"
       golint:
         type: boolean
         default: true
@@ -31,6 +31,11 @@ jobs:
           name: Run go vet
           command: >
             go vet -v ./...
+      - run:
+          name: Run revive
+          command: |
+            GO111MODULE=off go get -u github.com/mgechev/revive
+            revive ./...
       - run:
           name: Run go test (+ race detector)
           command: >

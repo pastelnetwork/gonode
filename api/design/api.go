@@ -2,8 +2,9 @@ package design
 
 import (
 	"net/http"
-
+	//revive:disable:dot-imports
 	. "goa.design/goa/v3/dsl"
+	//revive:enable:dot-imports
 )
 
 // API describes the global properties of the API server.
