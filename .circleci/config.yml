@@ -32,6 +32,11 @@ jobs:
           command: >
             go vet -v ./...
       - run:
+          name: Run revive
+          command: >
+            go get -u github.com/mgechev/revive
+            revive ./...
+      - run:
           name: Run go test (+ race detector)
           command: >
             go test -v -race ./...
