@@ -15,8 +15,8 @@ var _ = Service("artworks", func() {
 		Path("/artworks")
 	})
 
-	Error("BadRequest", BadRequest)
-	Error("InternalServerError", InternalServerError)
+	Error("BadRequest", ErrorResult)
+	Error("InternalServerError", ErrorResult)
 
 	Method("register", func() {
 		Description("Registers a new art.")
@@ -29,6 +29,8 @@ var _ = Service("artworks", func() {
 
 		HTTP(func() {
 			POST("/register")
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusCreated)
 		})
 	})
@@ -38,8 +40,7 @@ var _ = Service("artworks", func() {
 		Meta("swagger:summary", "Uploads an image")
 
 		Payload(ImageUploadPayload)
-
-		Result(String)
+		Result(ImageUploadResult)
 
 		HTTP(func() {
 			POST("/upload-image")
@@ -81,11 +82,14 @@ var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
 		Minimum(1)
 		Maximum(1000)
 		Default(1)
-		Example(5)
+		Example(1)
 	})
 	Attribute("image_id", String, func() {
-		Description("Uploaded Image ID")
-		Example("d93lsd0")
+		Description("Uploaded image ID")
+		MinLength(8)
+		MaxLength(8)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("d93lsd02")
 	})
 	Attribute("youtube_url", String, func() {
 		Description("Artwork creation video youtube URL")
@@ -94,9 +98,11 @@ var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
 	})
 
 	Attribute("artist_pastelid", String, func() {
+		Meta("struct:field:name", "ArtistPastelID")
 		Description("Artist's PastelID")
 		MinLength(86)
 		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
 	Attribute("artist_name", String, func() {
@@ -114,6 +120,7 @@ var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
 		Description("Spendable address")
 		MinLength(35)
 		MaxLength(35)
+		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j")
 	})
 	Attribute("network_fee", Float32, func() {
@@ -125,17 +132,29 @@ var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
 	Required("artist_name", "name", "issued_copies", "image_id", "artist_pastelid", "spendable_address", "network_fee")
 })
 
-// ImageUpload is an image upload element
-var ImageUpload = Type("ImageUpload", func() {
-	Description("Image upload type")
-	Attribute("file", Bytes, func() {
-		Description("File to upload")
-	})
-})
-
 // ImageUploadPayload is a list of files
 var ImageUploadPayload = Type("ImageUploadPayload", func() {
-	Extend(ImageUpload)
 	Description("Image upload payload")
+	Attribute("file", Bytes, func() {
+		Meta("struct:field:name", "Bytes")
+		Description("File to upload")
+	})
 	Required("file")
+})
+
+var ImageUploadResult = ResultType("application/vnd.walletnode.image", func() {
+	Attributes(func() {
+		Attribute("image_id", String, func() {
+			Description("Uploaded image ID")
+			MinLength(8)
+			MaxLength(8)
+			Example("d93lsd02")
+		})
+		Attribute("expires_in", String, func() {
+			Description("Image expiration")
+			Format(FormatDateTime)
+			Example("2019-10-12T07:20:50.52Z")
+		})
+	})
+	Required("image_id", "expires_in")
 })

@@ -25,8 +25,8 @@ paths:
               description: The Mona Lisa is an oil painting by Italian artist, inventor,
                 and writer Leonardo da Vinci. Likely completed in 1506, the piece
                 features a portrait of a seated woman set against an imaginary landscape.
-              image_id: d93lsd0
-              issued_copies: 5
+              image_id: d93lsd02
+              issued_copies: 1
               keywords: Renaissance, sfumato, portrait
               name: Mona Lisa
               network_fee: 100
@@ -40,8 +40,28 @@ paths:
             application/json:
               schema:
                 type: string
-                example: Architecto optio odio.
-              example: Ipsa quos omnis reprehenderit doloribus.
+                example: Qui veritatis ipsa quos omnis.
+              example: Totam est unde quia eius.
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
   /artworks/upload-image:
     post:
       tags:
@@ -57,15 +77,29 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 77
+              - 66
+              - 101
               - 97
-              - 120
-              - 105
-              - 109
+              - 116
+              - 97
               - 101
               - 32
+              - 97
+              - 108
+              - 105
+              - 97
+              - 115
+              - 32
+              - 100
               - 101
+              - 98
+              - 105
               - 116
+              - 105
+              - 115
+              - 32
+              - 105
+              - 100
               - 46
       responses:
         "200":
@@ -73,61 +107,72 @@ paths:
           content:
             application/json:
               schema:
-                type: string
-                example: Laborum labore nulla veniam atque qui.
-              example: Modi nisi eos blanditiis eius.
+                $ref: '#/components/schemas/WalletnodeImage'
+              example:
+                expires_in: "2019-10-12T07:20:50.52Z"
+                image_id: d93lsd02
         "400":
           description: Bad Request response.
           content:
-            application/json:
+            application/vnd.goa.error:
               schema:
-                $ref: '#/components/schemas/BadRequest'
+                $ref: '#/components/schemas/Error'
               example:
-                error:
-                  code: 400
-                  message: Bad Request
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
         "500":
           description: Internal Server Error response.
           content:
-            application/json:
+            application/vnd.goa.error:
               schema:
-                $ref: '#/components/schemas/BadRequest'
+                $ref: '#/components/schemas/Error'
               example:
-                error:
-                  code: 500
-                  message: Internal Server Error
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
 components:
   schemas:
-    BadRequest:
+    Error:
       type: object
       properties:
-        error:
-          type: object
-          properties:
-            code:
-              type: integer
-              description: Code refers to a code number in the response header that
-                indicates the general classification of the response.
-              default: 400
-              example: 400
-              format: int64
-            message:
-              type: string
-              description: Message is a human-readable explanation specific to this
-                occurrence of the problem.
-              default: Bad Request
-              example: Bad Request
-          example:
-            code: 400
-            message: Bad Request
-          required:
-          - code
+        fault:
+          type: boolean
+          description: Is the error a server-side fault?
+          example: false
+        id:
+          type: string
+          description: ID is a unique identifier for this particular occurrence of
+            the problem.
+          example: 123abc
+        message:
+          type: string
+          description: Message is a human-readable explanation specific to this occurrence
+            of the problem.
+          example: parameter 'p' must be an integer
+        name:
+          type: string
+          description: Name is the name of this class of errors.
+          example: bad_request
+        temporary:
+          type: boolean
+          description: Is the error temporary?
+          example: true
+        timeout:
+          type: boolean
+          description: Is the error a timeout?
+          example: true
       example:
-        error:
-          code: 400
-          message: Bad Request
+        id: 3F1FKVRR
+        message: Value of ID must be an integer
+        name: bad_request
       required:
-      - error
+      - name
+      - id
+      - message
+      - temporary
+      - timeout
+      - fault
     RegisterRequestBody:
       type: object
       properties:
@@ -140,6 +185,7 @@ components:
           type: string
           description: Artist's PastelID
           example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
           minLength: 86
           maxLength: 86
         artist_website_url:
@@ -156,13 +202,16 @@ components:
           maxLength: 1024
         image_id:
           type: string
-          description: Uploaded Image ID
-          example: d93lsd0
+          description: Uploaded image ID
+          example: d93lsd02
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 8
+          maxLength: 8
         issued_copies:
           type: integer
           description: Number of copies issued
           default: 1
-          example: 5
+          example: 1
           minimum: 1
           maximum: 1000
         keywords:
@@ -189,6 +238,7 @@ components:
           type: string
           description: Spendable address
           example: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          pattern: ^[a-zA-Z0-9]+$
           minLength: 35
           maxLength: 35
         youtube_url:
@@ -203,8 +253,8 @@ components:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
-        image_id: d93lsd0
-        issued_copies: 5
+        image_id: d93lsd02
+        issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         name: Mona Lisa
         network_fee: 100
@@ -226,36 +276,111 @@ components:
           type: string
           description: File to upload
           example:
-          - 85
-          - 116
+          - 78
+          - 105
+          - 115
+          - 105
           - 32
-          - 118
           - 101
+          - 111
+          - 115
+          - 32
+          - 98
           - 108
+          - 97
+          - 110
+          - 100
+          - 105
+          - 116
+          - 105
+          - 105
+          - 115
           - 32
           - 101
+          - 105
+          - 117
+          - 115
+          - 32
+          - 115
+          - 101
+          - 100
+          - 32
+          - 97
+          - 117
           - 116
           - 46
           format: binary
       example:
         file:
-        - 69
+        - 86
+        - 111
+        - 108
+        - 117
+        - 112
         - 116
-        - 32
+        - 97
+        - 116
         - 101
+        - 115
+        - 32
+        - 114
+        - 101
+        - 114
         - 117
         - 109
         - 32
-        - 97
+        - 118
+        - 111
+        - 108
         - 117
+        - 112
+        - 116
+        - 97
+        - 116
+        - 101
+        - 32
+        - 110
+        - 105
+        - 104
+        - 105
+        - 108
+        - 32
+        - 115
+        - 117
+        - 110
         - 116
         - 32
-        - 105
-        - 116
         - 97
-        - 113
+        - 99
+        - 99
         - 117
-        - 101
+        - 115
+        - 97
+        - 110
+        - 116
+        - 105
+        - 117
+        - 109
         - 46
       required:
       - file
+    WalletnodeImage:
+      type: object
+      properties:
+        expires_in:
+          type: string
+          description: Image expiration
+          example: "2019-10-12T07:20:50.52Z"
+          format: date-time
+        image_id:
+          type: string
+          description: Uploaded image ID
+          example: d93lsd02
+          minLength: 8
+          maxLength: 8
+      example:
+        expires_in: "2019-10-12T07:20:50.52Z"
+        image_id: d93lsd02
+      required:
+      - image_id
+      - expires_in

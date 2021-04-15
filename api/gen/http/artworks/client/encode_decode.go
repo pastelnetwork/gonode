@@ -16,6 +16,7 @@ import (
 	"net/url"
 
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
 	goahttp "goa.design/goa/v3/http"
 )
 
@@ -53,6 +54,10 @@ func EncodeRegisterRequest(encoder func(*http.Request) goahttp.Encoder) func(*ht
 // DecodeRegisterResponse returns a decoder for responses returned by the
 // artworks register endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
+// DecodeRegisterResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
 func DecodeRegisterResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
@@ -78,6 +83,34 @@ func DecodeRegisterResponse(decoder func(*http.Response) goahttp.Decoder, restor
 				return nil, goahttp.ErrDecodingError("artworks", "register", err)
 			}
 			return body, nil
+		case http.StatusBadRequest:
+			var (
+				body RegisterBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "register", err)
+			}
+			err = ValidateRegisterBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "register", err)
+			}
+			return nil, NewRegisterBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body RegisterInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "register", err)
+			}
+			err = ValidateRegisterInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "register", err)
+			}
+			return nil, NewRegisterInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("artworks", "register", resp.StatusCode, string(body))
@@ -137,8 +170,8 @@ func NewArtworksUploadImageEncoder(encoderFn ArtworksUploadImageEncoderFunc) fun
 // artworks uploadImage endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
 // DecodeUploadImageResponse may return the following errors:
-//	- "BadRequest" (type *artworks.BadRequest): http.StatusBadRequest
-//	- "InternalServerError" (type *artworks.InternalServerError): http.StatusInternalServerError
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
 func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
@@ -157,14 +190,21 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body string
+				body UploadImageResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("artworks", "uploadImage", err)
 			}
-			return body, nil
+			p := NewUploadImageWalletnodeImageOK(&body)
+			view := "default"
+			vres := &artworksviews.WalletnodeImage{Projected: p, View: view}
+			if err = artworksviews.ValidateWalletnodeImage(vres); err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "uploadImage", err)
+			}
+			res := artworks.NewWalletnodeImage(vres)
+			return res, nil
 		case http.StatusBadRequest:
 			var (
 				body UploadImageBadRequestResponseBody

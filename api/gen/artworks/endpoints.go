@@ -47,6 +47,11 @@ func NewRegisterEndpoint(s Service) goa.Endpoint {
 func NewUploadImageEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*ImageUploadPayload)
-		return s.UploadImage(ctx, p)
+		res, err := s.UploadImage(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedWalletnodeImage(res, "default")
+		return vres, nil
 	}
 }

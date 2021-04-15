@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
 	goa "goa.design/goa/v3/pkg"
 )
 
@@ -27,12 +28,12 @@ type RegisterRequestBody struct {
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
 	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
-	// Uploaded Image ID
+	// Uploaded image ID
 	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
-	ArtistPastelid *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
 	// Name of the artist
 	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
 	// Artist website URL
@@ -46,84 +47,154 @@ type RegisterRequestBody struct {
 // endpoint HTTP request body.
 type UploadImageRequestBody struct {
 	// File to upload
-	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+}
+
+// UploadImageResponseBody is the type of the "artworks" service "uploadImage"
+// endpoint HTTP response body.
+type UploadImageResponseBody struct {
+	// Uploaded image ID
+	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
+	// Image expiration
+	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
+}
+
+// RegisterBadRequestResponseBody is the type of the "artworks" service
+// "register" endpoint HTTP response body for the "BadRequest" error.
+type RegisterBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterInternalServerErrorResponseBody is the type of the "artworks"
+// service "register" endpoint HTTP response body for the "InternalServerError"
+// error.
+type RegisterInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
 // UploadImageBadRequestResponseBody is the type of the "artworks" service
 // "uploadImage" endpoint HTTP response body for the "BadRequest" error.
 type UploadImageBadRequestResponseBody struct {
-	InnerError *struct {
-		// Code refers to a code number in the response header that indicates the
-		// general classification of the response.
-		Code int `form:"code" json:"code" xml:"code"`
-		// Message is a human-readable explanation specific to this occurrence of the
-		// problem.
-		Message string `form:"message" json:"message" xml:"message"`
-	} `form:"error" json:"error" xml:"error"`
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
 // UploadImageInternalServerErrorResponseBody is the type of the "artworks"
 // service "uploadImage" endpoint HTTP response body for the
 // "InternalServerError" error.
 type UploadImageInternalServerErrorResponseBody struct {
-	InnerError *struct {
-		// Code refers to a code number in the response header that indicates the
-		// general classification of the response.
-		Code int `form:"code" json:"code" xml:"code"`
-		// Message is a human-readable explanation specific to this occurrence of the
-		// problem.
-		Message string `form:"message" json:"message" xml:"message"`
-	} `form:"error" json:"error" xml:"error"`
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// NewUploadImageResponseBody builds the HTTP response body from the result of
+// the "uploadImage" endpoint of the "artworks" service.
+func NewUploadImageResponseBody(res *artworksviews.WalletnodeImageView) *UploadImageResponseBody {
+	body := &UploadImageResponseBody{
+		ImageID:   *res.ImageID,
+		ExpiresIn: *res.ExpiresIn,
+	}
+	return body
+}
+
+// NewRegisterBadRequestResponseBody builds the HTTP response body from the
+// result of the "register" endpoint of the "artworks" service.
+func NewRegisterBadRequestResponseBody(res *goa.ServiceError) *RegisterBadRequestResponseBody {
+	body := &RegisterBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "register" endpoint of the "artworks" service.
+func NewRegisterInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterInternalServerErrorResponseBody {
+	body := &RegisterInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
 }
 
 // NewUploadImageBadRequestResponseBody builds the HTTP response body from the
 // result of the "uploadImage" endpoint of the "artworks" service.
-func NewUploadImageBadRequestResponseBody(res *artworks.BadRequest) *UploadImageBadRequestResponseBody {
-	body := &UploadImageBadRequestResponseBody{}
-	if res.InnerError != nil {
-		body.InnerError = &struct {
-			// Code refers to a code number in the response header that indicates the
-			// general classification of the response.
-			Code int `form:"code" json:"code" xml:"code"`
-			// Message is a human-readable explanation specific to this occurrence of the
-			// problem.
-			Message string `form:"message" json:"message" xml:"message"`
-		}{
-			Code:    res.InnerError.Code,
-			Message: res.InnerError.Message,
-		}
-		{
-			var zero string
-			if body.InnerError.Message == zero {
-				body.InnerError.Message = "Bad Request"
-			}
-		}
+func NewUploadImageBadRequestResponseBody(res *goa.ServiceError) *UploadImageBadRequestResponseBody {
+	body := &UploadImageBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
 	}
 	return body
 }
 
 // NewUploadImageInternalServerErrorResponseBody builds the HTTP response body
 // from the result of the "uploadImage" endpoint of the "artworks" service.
-func NewUploadImageInternalServerErrorResponseBody(res *artworks.InternalServerError) *UploadImageInternalServerErrorResponseBody {
-	body := &UploadImageInternalServerErrorResponseBody{}
-	if res.InnerError != nil {
-		body.InnerError = &struct {
-			// Code refers to a code number in the response header that indicates the
-			// general classification of the response.
-			Code int `form:"code" json:"code" xml:"code"`
-			// Message is a human-readable explanation specific to this occurrence of the
-			// problem.
-			Message string `form:"message" json:"message" xml:"message"`
-		}{
-			Code:    res.InnerError.Code,
-			Message: res.InnerError.Message,
-		}
-		{
-			var zero string
-			if body.InnerError.Message == zero {
-				body.InnerError.Message = "Internal Server Error"
-			}
-		}
+func NewUploadImageInternalServerErrorResponseBody(res *goa.ServiceError) *UploadImageInternalServerErrorResponseBody {
+	body := &UploadImageInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
 	}
 	return body
 }
@@ -138,7 +209,7 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 		IssuedCopies:     *body.IssuedCopies,
 		ImageID:          *body.ImageID,
 		YoutubeURL:       body.YoutubeURL,
-		ArtistPastelid:   *body.ArtistPastelid,
+		ArtistPastelID:   *body.ArtistPastelID,
 		ArtistName:       *body.ArtistName,
 		ArtistWebsiteURL: body.ArtistWebsiteURL,
 		SpendableAddress: *body.SpendableAddress,
@@ -152,7 +223,7 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 // endpoint payload.
 func NewUploadImageImageUploadPayload(body *UploadImageRequestBody) *artworks.ImageUploadPayload {
 	v := &artworks.ImageUploadPayload{
-		File: body.File,
+		Bytes: body.Bytes,
 	}
 
 	return v
@@ -173,7 +244,7 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	if body.ImageID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "body"))
 	}
-	if body.ArtistPastelid == nil {
+	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
 	}
 	if body.SpendableAddress == nil {
@@ -212,19 +283,35 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1000, false))
 		}
 	}
+	if body.ImageID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.image_id", *body.ImageID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.ImageID != nil {
+		if utf8.RuneCountInString(*body.ImageID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", *body.ImageID, utf8.RuneCountInString(*body.ImageID), 8, true))
+		}
+	}
+	if body.ImageID != nil {
+		if utf8.RuneCountInString(*body.ImageID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", *body.ImageID, utf8.RuneCountInString(*body.ImageID), 8, false))
+		}
+	}
 	if body.YoutubeURL != nil {
 		if utf8.RuneCountInString(*body.YoutubeURL) > 128 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
 		}
 	}
-	if body.ArtistPastelid != nil {
-		if utf8.RuneCountInString(*body.ArtistPastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelid, utf8.RuneCountInString(*body.ArtistPastelid), 86, true))
+	if body.ArtistPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", *body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, true))
 		}
 	}
-	if body.ArtistPastelid != nil {
-		if utf8.RuneCountInString(*body.ArtistPastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelid, utf8.RuneCountInString(*body.ArtistPastelid), 86, false))
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, false))
 		}
 	}
 	if body.ArtistName != nil {
@@ -236,6 +323,9 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 		if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
 		}
+	}
+	if body.SpendableAddress != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", *body.SpendableAddress, "^[a-zA-Z0-9]+$"))
 	}
 	if body.SpendableAddress != nil {
 		if utf8.RuneCountInString(*body.SpendableAddress) < 35 {
@@ -258,7 +348,7 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 // ValidateUploadImageRequestBody runs the validations defined on
 // UploadImageRequestBody
 func ValidateUploadImageRequestBody(body *UploadImageRequestBody) (err error) {
-	if body.File == nil {
+	if body.Bytes == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
 	}
 	return

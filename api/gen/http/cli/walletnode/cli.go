@@ -34,8 +34,8 @@ func UsageExamples() string {
       "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
       "artist_website_url": "https://www.leonardodavinci.net",
       "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
-      "image_id": "d93lsd0",
-      "issued_copies": 5,
+      "image_id": "d93lsd02",
+      "issued_copies": 1,
       "keywords": "Renaissance, sfumato, portrait",
       "name": "Mona Lisa",
       "network_fee": 100,
@@ -176,8 +176,8 @@ Example:
       "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
       "artist_website_url": "https://www.leonardodavinci.net",
       "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
-      "image_id": "d93lsd0",
-      "issued_copies": 5,
+      "image_id": "d93lsd02",
+      "issued_copies": 1,
       "keywords": "Renaissance, sfumato, portrait",
       "name": "Mona Lisa",
       "network_fee": 100,
@@ -196,7 +196,7 @@ Upload an image that is used when registering the artwork.
 
 Example:
     `+os.Args[0]+` artworks upload-image --body '{
-      "file": "TWF4aW1lIGV0Lg=="
+      "file": "QmVhdGFlIGFsaWFzIGRlYml0aXMgaWQu"
    }'
 `, os.Args[0])
 }

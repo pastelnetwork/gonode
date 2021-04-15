@@ -38,11 +38,11 @@ func (c *Client) Register(ctx context.Context, p *RegisterPayload) (res string, 
 }
 
 // UploadImage calls the "uploadImage" endpoint of the "artworks" service.
-func (c *Client) UploadImage(ctx context.Context, p *ImageUploadPayload) (res string, err error) {
+func (c *Client) UploadImage(ctx context.Context, p *ImageUploadPayload) (res *WalletnodeImage, err error) {
 	var ires interface{}
 	ires, err = c.UploadImageEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(string), nil
+	return ires.(*WalletnodeImage), nil
 }

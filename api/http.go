@@ -8,11 +8,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/pastelnetwork/go-commons/log"
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
 	artworkssvr "github.com/pastelnetwork/walletnode/api/gen/http/artworks/server"
 	swaggersvr "github.com/pastelnetwork/walletnode/api/gen/http/swagger/server"
-	"github.com/pastelnetwork/walletnode/api/log"
-	artworksservice "github.com/pastelnetwork/walletnode/api/services/artworks"
+	services "github.com/pastelnetwork/walletnode/api/services"
 
 	goahttp "goa.design/goa/v3/http"
 	goahttpmiddleware "goa.design/goa/v3/http/middleware"
@@ -37,8 +37,8 @@ func apiHandler() http.Handler {
 		errHandler = errorHandler()
 	)
 
-	artworksEndpoints := artworks.NewEndpoints(artworksservice.New())
-	artworksServer := artworkssvr.New(artworksEndpoints, mux, dec, enc, errHandler, nil, artworksservice.UploadImageDecoderFunc)
+	artworksEndpoints := artworks.NewEndpoints(services.NewArtwork())
+	artworksServer := artworkssvr.New(artworksEndpoints, mux, dec, enc, errHandler, nil, services.UploadImageDecoderFunc)
 	artworkssvr.Mount(mux, artworksServer)
 
 	swaggerServer := swaggersvr.New(nil, mux, dec, enc, errHandler, nil)
@@ -51,15 +51,15 @@ func apiHandler() http.Handler {
 	servers.Use(goahttpmiddleware.Debug(mux, os.Stdout))
 
 	for _, m := range artworksServer.Mounts {
-		log.Infof("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
 	}
 	for _, m := range swaggerServer.Mounts {
-		log.Infof("HTTP %q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
 	}
 
 	var handler http.Handler = mux
 
-	handler = log.Log()(handler)
+	handler = Log()(handler)
 	handler = goahttpmiddleware.RequestID()(handler)
 
 	return handler
@@ -86,6 +86,6 @@ func errorHandler() func(context.Context, http.ResponseWriter, error) {
 	return func(ctx context.Context, w http.ResponseWriter, err error) {
 		id := ctx.Value(goamiddleware.RequestIDKey).(string)
 		_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
-		log.Errorf("[%s] %s", id, err.Error())
+		log.Errorf("%s [%s] %s", logPrefix, id, err.Error())
 	}
 }

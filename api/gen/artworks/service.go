@@ -9,6 +9,9 @@ package artworks
 
 import (
 	"context"
+
+	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
+	goa "goa.design/goa/v3/pkg"
 )
 
 // Pastel Artwork
@@ -16,7 +19,7 @@ type Service interface {
 	// Registers a new art.
 	Register(context.Context, *RegisterPayload) (res string, err error)
 	// Upload an image that is used when registering the artwork.
-	UploadImage(context.Context, *ImageUploadPayload) (res string, err error)
+	UploadImage(context.Context, *ImageUploadPayload) (res *WalletnodeImage, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -41,12 +44,12 @@ type RegisterPayload struct {
 	SeriesName *string
 	// Number of copies issued
 	IssuedCopies int
-	// Uploaded Image ID
+	// Uploaded image ID
 	ImageID string
 	// Artwork creation video youtube URL
 	YoutubeURL *string
 	// Artist's PastelID
-	ArtistPastelid string
+	ArtistPastelID string
 	// Name of the artist
 	ArtistName string
 	// Artist website URL
@@ -60,47 +63,68 @@ type RegisterPayload struct {
 // method.
 type ImageUploadPayload struct {
 	// File to upload
-	File []byte
+	Bytes []byte
 }
 
-type BadRequest struct {
-	InnerError *struct {
-		// Code refers to a code number in the response header that indicates the
-		// general classification of the response.
-		Code int
-		// Message is a human-readable explanation specific to this occurrence of the
-		// problem.
-		Message string
+// WalletnodeImage is the result type of the artworks service uploadImage
+// method.
+type WalletnodeImage struct {
+	// Uploaded image ID
+	ImageID string
+	// Image expiration
+	ExpiresIn string
+}
+
+// MakeBadRequest builds a goa.ServiceError from an error.
+func MakeBadRequest(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "BadRequest",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
 	}
 }
 
-type InternalServerError struct {
-	InnerError *struct {
-		// Code refers to a code number in the response header that indicates the
-		// general classification of the response.
-		Code int
-		// Message is a human-readable explanation specific to this occurrence of the
-		// problem.
-		Message string
+// MakeInternalServerError builds a goa.ServiceError from an error.
+func MakeInternalServerError(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "InternalServerError",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
 	}
 }
 
-// Error returns an error description.
-func (e *BadRequest) Error() string {
-	return ""
+// NewWalletnodeImage initializes result type WalletnodeImage from viewed
+// result type WalletnodeImage.
+func NewWalletnodeImage(vres *artworksviews.WalletnodeImage) *WalletnodeImage {
+	return newWalletnodeImage(vres.Projected)
 }
 
-// ErrorName returns "BadRequest".
-func (e *BadRequest) ErrorName() string {
-	return "BadRequest"
+// NewViewedWalletnodeImage initializes viewed result type WalletnodeImage from
+// result type WalletnodeImage using the given view.
+func NewViewedWalletnodeImage(res *WalletnodeImage, view string) *artworksviews.WalletnodeImage {
+	p := newWalletnodeImageView(res)
+	return &artworksviews.WalletnodeImage{Projected: p, View: "default"}
 }
 
-// Error returns an error description.
-func (e *InternalServerError) Error() string {
-	return ""
+// newWalletnodeImage converts projected type WalletnodeImage to service type
+// WalletnodeImage.
+func newWalletnodeImage(vres *artworksviews.WalletnodeImageView) *WalletnodeImage {
+	res := &WalletnodeImage{}
+	if vres.ImageID != nil {
+		res.ImageID = *vres.ImageID
+	}
+	if vres.ExpiresIn != nil {
+		res.ExpiresIn = *vres.ExpiresIn
+	}
+	return res
 }
 
-// ErrorName returns "InternalServerError".
-func (e *InternalServerError) ErrorName() string {
-	return "InternalServerError"
+// newWalletnodeImageView projects result type WalletnodeImage to projected
+// type WalletnodeImageView using the "default" view.
+func newWalletnodeImageView(res *WalletnodeImage) *artworksviews.WalletnodeImageView {
+	vres := &artworksviews.WalletnodeImageView{
+		ImageID:   &res.ImageID,
+		ExpiresIn: &res.ExpiresIn,
+	}
+	return vres
 }

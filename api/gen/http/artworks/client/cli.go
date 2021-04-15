@@ -24,7 +24,7 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 	{
 		err = json.Unmarshal([]byte(artworksRegisterBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_name\": \"Leonardo da Vinci\",\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"image_id\": \"d93lsd0\",\n      \"issued_copies\": 5,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"name\": \"Mona Lisa\",\n      \"network_fee\": 100,\n      \"series_name\": \"Famous Artist \",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_name\": \"Leonardo da Vinci\",\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"image_id\": \"d93lsd02\",\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"name\": \"Mona Lisa\",\n      \"network_fee\": 100,\n      \"series_name\": \"Famous Artist \",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.Name) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", body.Name, utf8.RuneCountInString(body.Name), 256, false))
@@ -50,16 +50,24 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 		if body.IssuedCopies > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", body.IssuedCopies, 1000, false))
 		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.image_id", body.ImageID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.ImageID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", body.ImageID, utf8.RuneCountInString(body.ImageID), 8, true))
+		}
+		if utf8.RuneCountInString(body.ImageID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", body.ImageID, utf8.RuneCountInString(body.ImageID), 8, false))
+		}
 		if body.YoutubeURL != nil {
 			if utf8.RuneCountInString(*body.YoutubeURL) > 128 {
 				err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
 			}
 		}
-		if utf8.RuneCountInString(body.ArtistPastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", body.ArtistPastelid, utf8.RuneCountInString(body.ArtistPastelid), 86, true))
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.ArtistPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", body.ArtistPastelID, utf8.RuneCountInString(body.ArtistPastelID), 86, true))
 		}
-		if utf8.RuneCountInString(body.ArtistPastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", body.ArtistPastelid, utf8.RuneCountInString(body.ArtistPastelid), 86, false))
+		if utf8.RuneCountInString(body.ArtistPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", body.ArtistPastelID, utf8.RuneCountInString(body.ArtistPastelID), 86, false))
 		}
 		if utf8.RuneCountInString(body.ArtistName) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_name", body.ArtistName, utf8.RuneCountInString(body.ArtistName), 256, false))
@@ -69,6 +77,7 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 				err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
 			}
 		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", body.SpendableAddress, "^[a-zA-Z0-9]+$"))
 		if utf8.RuneCountInString(body.SpendableAddress) < 35 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", body.SpendableAddress, utf8.RuneCountInString(body.SpendableAddress), 35, true))
 		}
@@ -90,7 +99,7 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 		IssuedCopies:     body.IssuedCopies,
 		ImageID:          body.ImageID,
 		YoutubeURL:       body.YoutubeURL,
-		ArtistPastelid:   body.ArtistPastelid,
+		ArtistPastelID:   body.ArtistPastelID,
 		ArtistName:       body.ArtistName,
 		ArtistWebsiteURL: body.ArtistWebsiteURL,
 		SpendableAddress: body.SpendableAddress,
@@ -108,9 +117,9 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.ImageUpl
 	{
 		err = json.Unmarshal([]byte(artworksUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"TWF4aW1lIGV0Lg==\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"QmVhdGFlIGFsaWFzIGRlYml0aXMgaWQu\"\n   }'")
 		}
-		if body.File == nil {
+		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
 		}
 		if err != nil {
@@ -118,7 +127,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.ImageUpl
 		}
 	}
 	v := &artworks.ImageUploadPayload{
-		File: body.File,
+		Bytes: body.Bytes,
 	}
 
 	return v, nil

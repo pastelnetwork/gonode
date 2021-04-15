@@ -1,4 +1,4 @@
-package log
+package api
 
 import (
 	"fmt"
@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	prefix = "[rest]"
+	logPrefix = "[rest]"
 )
 
 // Log logs incoming HTTP requests and outgoing responses.
@@ -32,7 +32,7 @@ func Log() func(h http.Handler) http.Handler {
 
 			log.WithField("from", logFrom(r)).
 				WithField("req", r.Method+" "+r.URL.String()).
-				Debugf("%v [%v] Request", prefix, reqID)
+				Debugf("%v [%v] Request", logPrefix, reqID)
 
 			rw := httpmiddleware.CaptureResponse(w)
 			h.ServeHTTP(rw, r)
@@ -40,7 +40,7 @@ func Log() func(h http.Handler) http.Handler {
 			log.WithField("status", rw.StatusCode).
 				WithField("bytes", rw.ContentLength).
 				WithField("time", time.Since(started).String()).
-				Debugf("%v [%v] Response", prefix, reqID)
+				Debugf("%v [%v] Response", logPrefix, reqID)
 		})
 	}
 }
@@ -60,6 +60,6 @@ func logFrom(req *http.Request) string {
 
 func init() {
 	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(ctxValue interface{}, msg string) string {
-		return fmt.Sprintf("%v [%v] %s", prefix, ctxValue, msg)
+		return fmt.Sprintf("%v [%v] %s", logPrefix, ctxValue, msg)
 	}))
 }

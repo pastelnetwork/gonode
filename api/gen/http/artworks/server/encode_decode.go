@@ -13,6 +13,7 @@ import (
 	"net/http"
 
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -42,6 +43,14 @@ func DecodeRegisterRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 			if err == io.EOF {
 				return nil, goa.MissingPayloadError()
 			}
+			if en, ok := err.(ErrorNamer); ok {
+				switch en.ErrorName() {
+				case "BadRequest":
+					return nil, err
+				case "InternalServerError":
+					return nil, err
+				}
+			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
 		err = ValidateRegisterRequestBody(&body)
@@ -54,13 +63,53 @@ func DecodeRegisterRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 	}
 }
 
+// EncodeRegisterError returns an encoder for errors returned by the register
+// artworks endpoint.
+func EncodeRegisterError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewRegisterBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", "BadRequest")
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewRegisterInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeUploadImageResponse returns an encoder for responses returned by the
 // artworks uploadImage endpoint.
 func EncodeUploadImageResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(string)
+		res := v.(*artworksviews.WalletnodeImage)
 		enc := encoder(ctx, w)
-		body := res
+		body := NewUploadImageResponseBody(res.Projected)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
@@ -116,7 +165,7 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 		}
 		switch en.ErrorName() {
 		case "BadRequest":
-			res := v.(*artworks.BadRequest)
+			res := v.(*goa.ServiceError)
 			enc := encoder(ctx, w)
 			var body interface{}
 			if formatter != nil {
@@ -128,7 +177,7 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 			w.WriteHeader(http.StatusBadRequest)
 			return enc.Encode(body)
 		case "InternalServerError":
-			res := v.(*artworks.InternalServerError)
+			res := v.(*goa.ServiceError)
 			enc := encoder(ctx, w)
 			var body interface{}
 			if formatter != nil {
