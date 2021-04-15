@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/fogleman/gg"
+	"github.com/pastelnetwork/go-commons/errors"
 	qrcode "github.com/skip2/go-qrcode"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/xlzd/gotp"
@@ -27,21 +28,21 @@ func setupGoogleAuthenticatorForPrivateKeyEncryption() error {
 
 	err := os.WriteFile(OTPSecretFile, []byte(secret), 0644)
 	if err != nil {
-		return fmt.Errorf("setupGoogleAuthenticatorForPrivateKeyEncryption: %w", err)
+		return errors.New(err)
 	}
 
 	googleAuthUri := gotp.NewDefaultTOTP(secret).ProvisioningUri("user@user.com", "pastel")
 	const qrCodeFileName = "qr.png"
 	err = qrcode.WriteFile(googleAuthUri, qrcode.Medium, 256, qrCodeFileName)
 	if err != nil {
-		return fmt.Errorf("setupGoogleAuthenticatorForPrivateKeyEncryption: %w", err)
+		return errors.New(err)
 	}
 
 	const W = 1200
 	const H = 800
 	im, err := gg.LoadImage(qrCodeFileName)
 	if err != nil {
-		return fmt.Errorf("setupGoogleAuthenticatorForPrivateKeyEncryption: %w", err)
+		return errors.New(err)
 	}
 
 	dc := gg.NewContext(W, H)

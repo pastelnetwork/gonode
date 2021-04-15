@@ -3,15 +3,18 @@ package main
 import (
 	"bufio"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/pastelnetwork/go-commons/errors"
+
 	"github.com/kevinburke/nacl/secretbox"
 	legroast "github.com/pastelnetwork/go-legroast"
 )
+
+var WrongOTPFormat = errors.Errorf("one time password must contain 6 digits")
 
 func pastelIdKeypairGeneration() (string, string) {
 	fmt.Println("\nGenerating LegRoast keypair now...")
@@ -42,11 +45,11 @@ func importPastelPublicAndPrivateKeysFromPemFiles(boxKeyFilePath string) (string
 	if !os.IsNotExist(errPK) && !infoPK.IsDir() && !os.IsNotExist(errSK) && !infoSK.IsDir() {
 		pkExportData, errPK := ioutil.ReadFile(pkPemFilePath)
 		if errPK != nil {
-			return "", "", fmt.Errorf("importPastelPublicAndPrivateKeysFromPemFiles: %w", errPK)
+			return "", "", errors.New(errPK)
 		}
 		skExportDataEncrypted, errSK := ioutil.ReadFile(skPemFilePath)
 		if errSK != nil {
-			return "", "", fmt.Errorf("importPastelPublicAndPrivateKeysFromPemFiles: %w", errSK)
+			return "", "", errors.New(errSK)
 		}
 
 		pkExportFormat = string(pkExportData)
@@ -64,7 +67,7 @@ func importPastelPublicAndPrivateKeysFromPemFiles(boxKeyFilePath string) (string
 		otp_from_user_input := scanner.Text()
 
 		if len(otp_from_user_input) != 6 {
-			return "", "", fmt.Errorf("importPastelPublicAndPrivateKeysFromPemFiles: %w", errors.New("one time password must contain 6 digits"))
+			return "", "", errors.New(WrongOTPFormat)
 		}
 		otpCorrect = (otp_from_user_input == otp)
 	}
@@ -72,13 +75,13 @@ func importPastelPublicAndPrivateKeysFromPemFiles(boxKeyFilePath string) (string
 	if otpCorrect {
 		boxKey, err := naclBoxKeyFromFile(boxKeyFilePath)
 		if err != nil {
-			return "", "", fmt.Errorf("importPastelPublicAndPrivateKeysFromPemFiles: %w", err)
+			return "", "", errors.New(err)
 		}
 		var key [32]byte
 		copy(key[:], boxKey)
 		skExportFormat, err := secretbox.EasyOpen(([]byte)(skExportFormatEncrypted[:]), &key)
 		if err != nil {
-			return "", "", fmt.Errorf("importPastelPublicAndPrivateKeysFromPemFiles: %w", err)
+			return "", "", errors.New(err)
 		}
 		sk := strings.ReplaceAll(string(skExportFormat), "-----BEGIN LEGROAST PRIVATE KEY-----\n", "")
 		skBase64 = strings.ReplaceAll(string(sk), "\n-----END LEGROAST PRIVATE KEY-----", "")
@@ -94,7 +97,7 @@ func writePastelPublicAndPrivateKeyToFile(pkBase64 string, skBase64 string, boxK
 	skExportFormat := "-----BEGIN LEGROAST PRIVATE KEY-----\n" + skBase64 + "\n-----END LEGROAST PRIVATE KEY-----"
 	boxKey, err := naclBoxKeyFromFile(boxKeyFilePath)
 	if err != nil {
-		return fmt.Errorf("writePastelPublicAndPrivateKeyToFile: %w", err)
+		return errors.New(err)
 	}
 	var key [32]byte
 	copy(key[:], boxKey)
@@ -103,16 +106,16 @@ func writePastelPublicAndPrivateKeyToFile(pkBase64 string, skBase64 string, boxK
 	keyFilePath := "pastel_id_key_files"
 	if _, err := os.Stat(keyFilePath); os.IsNotExist(err) {
 		if err = os.MkdirAll(keyFilePath, 0770); err != nil {
-			return fmt.Errorf("writePastelPublicAndPrivateKeyToFile: %w", err)
+			return errors.New(err)
 		}
 	}
 	err = os.WriteFile(keyFilePath+"/pastel_id_legroast_public_key.pem", []byte(pkExportFormat), 0644)
 	if err != nil {
-		return fmt.Errorf("writePastelPublicAndPrivateKeyToFile: %w", err)
+		return errors.New(err)
 	}
 	err = os.WriteFile(keyFilePath+"/pastel_id_legroast_private_key.pem", []byte(encrypted), 0644)
 	if err != nil {
-		return fmt.Errorf("writePastelPublicAndPrivateKeyToFile: %w", err)
+		return errors.New(err)
 	}
 	return nil
 }
@@ -120,12 +123,12 @@ func writePastelPublicAndPrivateKeyToFile(pkBase64 string, skBase64 string, boxK
 func pastelKeys() (string, string, error) {
 	pkBase64, skBase64, err := importPastelPublicAndPrivateKeysFromPemFiles(BoxKeyFilePath)
 	if err != nil {
-		return "", "", fmt.Errorf("pastelKeys: %w", err)
+		return "", "", errors.New(err)
 	}
 	if pkBase64 == "" {
 		skBase64, pkBase64 = pastelIdKeypairGeneration()
 		if err = writePastelPublicAndPrivateKeyToFile(pkBase64, skBase64, BoxKeyFilePath); err != nil {
-			return "", "", fmt.Errorf("pastelKeys: %w", err)
+			return "", "", errors.New(err)
 		}
 	}
 	return pkBase64, skBase64, nil

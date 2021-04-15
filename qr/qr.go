@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/fogleman/gg"
+	"github.com/pastelnetwork/go-commons/errors"
 	qrcode "github.com/skip2/go-qrcode"
 )
 
@@ -27,12 +28,12 @@ type Image struct {
 func Encode(msg string, outputDir string, outputFileTitle string, outputFileNamePattern string, outputFileNameSuffix string) ([]Image, error) {
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(outputDir, 0770); err != nil {
-			return nil, err
+			return nil, errors.New(err)
 		}
 	}
 	pngs, err := toPngs(msg, MaxMsgLength)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 	var images []Image
 	for i, imageBytes := range pngs {
@@ -46,11 +47,11 @@ func Encode(msg string, outputDir string, outputFileTitle string, outputFileName
 		filePath := filepath.Join(outputDir, fmt.Sprintf("%v%v%v.png", outputFileNamePattern, filePathPartNumber, outputFileNameSuffix))
 		err := os.WriteFile(filePath, imageBytes, 0644)
 		if err != nil {
-			return nil, err
+			return nil, errors.New(err)
 		}
 		img, err := gg.LoadImage(filePath)
 		if err != nil {
-			return nil, err
+			return nil, errors.New(err)
 		}
 		images = append(images, Image{
 			raw:   imageBytes,
@@ -64,21 +65,21 @@ func Encode(msg string, outputDir string, outputFileTitle string, outputFileName
 func LoadImages(pattern string) ([]Image, error) {
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 	var images []Image
 	for _, filePath := range matches {
 		img, err := gg.LoadImage(filePath)
 		if err != nil {
-			return nil, err
+			return nil, errors.New(err)
 		}
 		fileInfo, err := os.Lstat(filePath)
 		if err != nil {
-			return nil, err
+			return nil, errors.New(err)
 		}
 		imageBytes, err := ioutil.ReadFile(filePath)
 		if err != nil {
-			return nil, err
+			return nil, errors.New(err)
 		}
 
 		images = append(images, Image{
@@ -116,7 +117,10 @@ func MapImages(images []Image, outputSize image.Point, outputFilePath string) er
 	}
 
 	err := dc.SavePNG(outputFilePath)
-	return err
+	if err != nil {
+		return errors.New(err)
+	}
+	return nil
 }
 
 func breakStringIntoChunks(str string, size int) []string {
@@ -146,7 +150,7 @@ func toPngs(s string, dataSize int) ([][]byte, error) {
 	for _, chunk := range chunks {
 		png, err := qrcode.Encode(chunk, qrcode.Medium, 250)
 		if err != nil {
-			return nil, err
+			return nil, errors.New(err)
 		}
 		qrs = append(qrs, png)
 	}
