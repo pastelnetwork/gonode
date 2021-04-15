@@ -1,6 +1,10 @@
 package design
 
-import . "goa.design/goa/v3/dsl"
+import (
+	//revive:disable:dot-imports
+	. "goa.design/goa/v3/dsl"
+	//revive:enable:dot-imports
+)
 
 // API describes the global properties of the API server.
 var _ = API("walletnode", func() {

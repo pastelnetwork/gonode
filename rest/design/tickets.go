@@ -1,7 +1,9 @@
 package design
 
 import (
+	//revive:disable:dot-imports
 	. "goa.design/goa/v3/dsl"
+	//revive:enable:dot-imports
 )
 
 var _ = Service("tickets", func() {

@@ -1,14 +1,18 @@
 package design
 
-import "goa.design/goa/v3/dsl"
+import (
+	//revive:disable:dot-imports
+	. "goa.design/goa/v3/dsl"
+	//revive:enable:dot-imports
+)
 
-var _ = dsl.Service("swagger", func() {
-	dsl.Description("The swagger service serves the API swagger definition.")
-	dsl.HTTP(func() {
-		dsl.Path("/swagger")
+var _ = Service("swagger", func() {
+	Description("The swagger service serves the API swagger definition.")
+	HTTP(func() {
+		Path("/swagger")
 	})
 
-	dsl.Files("/swagger.json", "gen/http/openapi3.json", func() {
-		dsl.Description("JSON document containing the API swagger definition")
+	Files("/swagger.json", "gen/http/openapi3.json", func() {
+		Description("JSON document containing the API swagger definition")
 	})
 })
