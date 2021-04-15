@@ -59,7 +59,7 @@ func apiHandler() http.Handler {
 
 	var handler http.Handler = mux
 
-	handler = Log()(handler)
+	handler = log.Log()(handler)
 	handler = goahttpmiddleware.RequestID()(handler)
 
 	return handler

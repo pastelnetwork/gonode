@@ -4,20 +4,22 @@ import (
 	"fmt"
 )
 
-var InnerError = func(code int, val ...interface{}) *struct {
+// InnerError generates an error by http status code.
+// `vals` is values for Sprintf, where the first index can be `format`, and the rest are values.
+func InnerError(code int, vals ...interface{}) *struct {
 	Code    int
 	Message string
 } {
 
 	var format string
-	if len(val) > 0 {
-		switch v := val[0].(type) {
+	if len(vals) > 0 {
+		switch v := vals[0].(type) {
 		case string:
 			format = v
 		case error:
 			format = v.Error()
 		}
-		val = val[1:]
+		vals = vals[1:]
 	}
 
 	return &struct {
@@ -25,6 +27,6 @@ var InnerError = func(code int, val ...interface{}) *struct {
 		Message string
 	}{
 		Code:    code,
-		Message: fmt.Sprintf(format, val...),
+		Message: fmt.Sprintf(format, vals...),
 	}
 }

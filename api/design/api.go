@@ -21,6 +21,7 @@ var _ = API("walletnode", func() {
 	})
 })
 
+// InnerError is common error
 var InnerError = func(code int) {
 	Attribute("code", Int, func() {
 		Description("Code refers to a code number in the response header that indicates the general classification of the response.")
@@ -35,6 +36,7 @@ var InnerError = func(code int) {
 	Required("code")
 }
 
+// BadRequest represents bad request error
 var BadRequest = Type("BadRequest", func() {
 	Attribute("error", func() {
 		InnerError(http.StatusBadRequest)
@@ -44,6 +46,7 @@ var BadRequest = Type("BadRequest", func() {
 
 })
 
+// InternalServerError represents internal server error
 var InternalServerError = Type("InternalServerError", func() {
 	Attribute("error", func() {
 		InnerError(http.StatusInternalServerError)

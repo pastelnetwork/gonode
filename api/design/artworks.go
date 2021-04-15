@@ -52,6 +52,7 @@ var _ = Service("artworks", func() {
 	})
 })
 
+// ArtworkRegisterPayload is artwork register payload
 var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
 	Description("Registration artwork")
 
