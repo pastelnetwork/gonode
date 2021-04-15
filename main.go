@@ -404,11 +404,17 @@ func get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func()
 		if rows, columns := combined_image_fingerprint_df_vectors.Dims(); rows == 0 && columns == 0 {
 			combined_image_fingerprint_df_vectors = current_combined_image_fingerprint_vector_df
 		} else {
-			combined_image_fingerprint_df_vectors = combined_image_fingerprint_df_vectors.RBind(current_combined_image_fingerprint_vector_df)
+			//combined_image_fingerprint_df_vectors = combined_image_fingerprint_df_vectors.RBind(current_combined_image_fingerprint_vector_df)
+			combined_image_fingerprint_df_vectors = bindRowsOfDataFrames(combined_image_fingerprint_df_vectors, current_combined_image_fingerprint_vector_df)
 		}
 	}
 
 	return &combined_image_fingerprint_df_vectors, nil
+}
+
+func bindRowsOfDataFrames(dataFrame dataframe.DataFrame, rBundDataDrame dataframe.DataFrame) dataframe.DataFrame {
+	defer Measure(time.Now())
+	return dataFrame.RBind(rBundDataDrame)
 }
 
 func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
