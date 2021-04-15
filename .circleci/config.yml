@@ -34,7 +34,7 @@ jobs:
       - run:
           name: Run revive
           command: >
-            go get -u github.com/mgechev/revive
+            GO111MODULE=off go get -u github.com/mgechev/revive
             revive ./...
       - run:
           name: Run go test (+ race detector)
