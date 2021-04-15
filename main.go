@@ -412,9 +412,9 @@ func get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func()
 	return &combined_image_fingerprint_df_vectors, nil
 }
 
-func bindRowsOfDataFrames(dataFrame dataframe.DataFrame, rBundDataDrame dataframe.DataFrame) dataframe.DataFrame {
+func bindRowsOfDataFrames(dataFrame dataframe.DataFrame, dataFrameToJoinRows dataframe.DataFrame) dataframe.DataFrame {
 	defer Measure(time.Now())
-	return dataFrame.RBind(rBundDataDrame)
+	return dataFrame.RBind(dataFrameToJoinRows)
 }
 
 func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
