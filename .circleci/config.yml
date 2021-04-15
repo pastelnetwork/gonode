@@ -5,7 +5,7 @@ jobs:
     parameters:
       version:
         type: string
-        default: "latest"
+        default: "1.16.3"
       golint:
         type: boolean
         default: true
