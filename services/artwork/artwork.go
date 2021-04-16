@@ -1,12 +1,13 @@
 package artwork
 
+// Artwork represents artwork data.
 type Artwork struct {
+	Image            []byte
 	Name             string
 	Description      *string
 	Keywords         *string
 	SeriesName       *string
 	IssuedCopies     int
-	Image            *Image
 	YoutubeURL       *string
 	ArtistPastelID   string
 	ArtistName       string

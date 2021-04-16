@@ -142,6 +142,7 @@ var ImageUploadPayload = Type("ImageUploadPayload", func() {
 	Required("file")
 })
 
+// ImageUploadResult is image upload result
 var ImageUploadResult = ResultType("application/vnd.walletnode.image", func() {
 	Attributes(func() {
 		Attribute("image_id", String, func() {

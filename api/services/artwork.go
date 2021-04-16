@@ -5,7 +5,10 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/go-commons/random"
 	"github.com/pastelnetwork/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/walletnode/dao"
+	"github.com/pastelnetwork/walletnode/dao/memory"
 	"github.com/pastelnetwork/walletnode/services/artwork"
 )
 
@@ -14,24 +17,27 @@ const (
 )
 
 type serviceArtwork struct {
-	store   *artwork.Store
+	storage dao.KeyValue
 	artwork *artwork.Service
 }
 
 // Add a new ticket and return its ID.
 func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res string, err error) {
-	image := service.store.Get(p.ImageID)
-	if image == nil {
+	image, err := service.storage.Get([]byte(p.ImageID))
+	if err == dao.ErrKeyNotFound {
 		return "", artworks.MakeBadRequest(errors.Errorf("invalid image_id %q", p.ImageID))
+	}
+	if err != nil {
+		return "", artworks.MakeInternalServerError(err)
 	}
 
 	artwork := &artwork.Artwork{
+		Image:            image,
 		Name:             p.Name,
 		Description:      p.Description,
 		Keywords:         p.Keywords,
 		SeriesName:       p.SeriesName,
 		IssuedCopies:     p.IssuedCopies,
-		Image:            image,
 		YoutubeURL:       p.YoutubeURL,
 		ArtistPastelID:   p.ArtistPastelID,
 		ArtistName:       p.ArtistName,
@@ -48,13 +54,19 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 }
 
 func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.ImageUploadPayload) (res *artworks.WalletnodeImage, err error) {
-	image := artwork.NewImage(p.Bytes)
-	id := service.store.Add(image)
+	id, err := random.String(8, random.Base62Chars)
+	if err != nil {
+		return nil, artworks.MakeInternalServerError(err)
+	}
+
+	if err := service.storage.Set([]byte(id), p.Bytes); err != nil {
+		return nil, artworks.MakeInternalServerError(err)
+	}
 	expiresIn := time.Now().Add(imageTTL)
 
 	go func() {
 		time.AfterFunc(time.Until(expiresIn), func() {
-			service.store.Remove(id)
+			service.storage.Delete([]byte(id))
 		})
 	}()
 
@@ -68,7 +80,7 @@ func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.Imag
 // NewArtwork returns the artworks serviceArtwork implementation.
 func NewArtwork() artworks.Service {
 	return &serviceArtwork{
-		store:   artwork.NewStore(),
+		storage: memory.NewKeyValue(),
 		artwork: artwork.NewService(),
 	}
 }
