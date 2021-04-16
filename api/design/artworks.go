@@ -37,8 +37,8 @@ var _ = Service("artworks", func() {
 	})
 
 	Method("registerStatus", func() {
-		Description("Streams the job of the new artwork registration.")
-		Meta("swagger:summary", "Returns a job of the registration artwork")
+		Description("Streams statuses of the artwork registration.")
+		Meta("swagger:summary", "Returns a status of the registration artwork")
 
 		Payload(func() {
 			Attribute("jobId", Int, "Job ID of the registration process", func() {

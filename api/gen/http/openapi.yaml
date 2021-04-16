@@ -52,8 +52,8 @@ paths:
     get:
       tags:
       - artworks
-      summary: Returns a job of the registration artwork
-      description: Streams the job of the new artwork registration.
+      summary: Returns a status of the registration artwork
+      description: Streams statuses of the artwork registration.
       operationId: artworks#registerStatus
       parameters:
       - name: jobId

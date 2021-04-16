@@ -170,7 +170,7 @@ Usage:
 
 COMMAND:
     register: Runs a new registration process for the new artwork.
-    register-status: Streams the job of the new artwork registration.
+    register-status: Streams statuses of the artwork registration.
     upload-image: Upload the image that is used when registering a new artwork.
 
 Additional help:
@@ -204,7 +204,7 @@ Example:
 func artworksRegisterStatusUsage() {
 	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-status -job-id INT
 
-Streams the job of the new artwork registration.
+Streams statuses of the artwork registration.
     -job-id INT: Job ID of the registration process
 
 Example:

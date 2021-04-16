@@ -18,7 +18,7 @@ import (
 type Service interface {
 	// Runs a new registration process for the new artwork.
 	Register(context.Context, *RegisterPayload) (res *RegisterResult, err error)
-	// Streams the job of the new artwork registration.
+	// Streams statuses of the artwork registration.
 	RegisterStatus(context.Context, *RegisterStatusPayload, RegisterStatusServerStream) (err error)
 	// Upload the image that is used when registering a new artwork.
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
