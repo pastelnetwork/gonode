@@ -67,7 +67,7 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 		return errors.New(err)
 	}
 
-	signatureImags, err := qr.Encode(pastelIdSignatureBase64, PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
+	signatureImags, err := qr.Encode(pastelIdSignatureBase64, "sig", PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -92,6 +92,11 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 
 	extractedSignatureLayerImageOutputFilepath := "extracted_signature_image.png"
 	err = extractSignatureImageInSampleImage(signedImageOutputPath, extractedSignatureLayerImageOutputFilepath)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	_, err = qr.Decode(extractedSignatureLayerImageOutputFilepath)
 	if err != nil {
 		return errors.New(err)
 	}

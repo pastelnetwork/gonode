@@ -32,11 +32,11 @@ func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 
 func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
 	keyFilePath := "pastel_id_key_files"
-	pkPngs, err := qr.Encode(pk, keyFilePath, "Pastel Public Key", "pastel_id_legroast_public_key_qr_code", "")
+	pkPngs, err := qr.Encode(pk, "pk", keyFilePath, "Pastel Public Key", "pastel_id_legroast_public_key_qr_code", "")
 	if err != nil {
 		return nil, errors.New(err)
 	}
-	_, err = qr.Encode(sk, keyFilePath, "", "pastel_id_legroast_private_key_qr_code", "")
+	_, err = qr.Encode(sk, "sk", keyFilePath, "", "pastel_id_legroast_private_key_qr_code", "")
 	if err != nil {
 		return nil, errors.New(err)
 	}

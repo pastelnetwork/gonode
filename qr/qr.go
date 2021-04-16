@@ -2,30 +2,49 @@
 package qr
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
+	_ "image/jpeg"
+	"image/png"
+	_ "image/png"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/fogleman/gg"
+	"github.com/makiuchi-d/gozxing"
+	"github.com/makiuchi-d/gozxing/qrcode"
 	"github.com/pastelnetwork/go-commons/errors"
-	qrcode "github.com/skip2/go-qrcode"
 )
 
 const (
-	MaxMsgLength = 2200
+	MaxMsgLength              = 600
+	DataQRImageSize           = 100
+	PositionVectorQRImageSize = 50
 )
 
 type Image struct {
 	raw   []byte
 	image image.Image
 	title string
+	alias string
 }
 
+type DecodedMessage struct {
+	alias   string
+	message string
+}
+
+var PositionVectorEncodingError = errors.Errorf("Position vector should be encoded as single qr code image")
+var CroppingError = errors.Errorf("Image interface doesn't support cropping")
+var MalformedPositionVector = errors.Errorf("Malformed position vector")
+
 // Encode splits input msg into chunks to fit max supported length of QR code message and generates an array of QR codes images
-func Encode(msg string, outputDir string, outputFileTitle string, outputFileNamePattern string, outputFileNameSuffix string) ([]Image, error) {
+func Encode(msg string, alias string, outputDir string, outputFileTitle string, outputFileNamePattern string, outputFileNameSuffix string) ([]Image, error) {
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(outputDir, 0770); err != nil {
 			return nil, errors.New(err)
@@ -57,6 +76,7 @@ func Encode(msg string, outputDir string, outputFileTitle string, outputFileName
 			raw:   imageBytes,
 			title: partTitle,
 			image: img,
+			alias: alias,
 		})
 	}
 	return images, nil
@@ -102,6 +122,8 @@ func MapImages(images []Image, outputSize image.Point, outputFilePath string) er
 	currentY := 10
 	textYPadding := 20
 	rowYPadding := 50
+	positionVector := fmt.Sprintf("%v;", len(images))
+	currentImageAlias := ""
 	for _, image := range images {
 		size := image.image.Bounds().Size()
 		captionX := size.X / 2
@@ -113,10 +135,32 @@ func MapImages(images []Image, outputSize image.Point, outputFilePath string) er
 
 		dc.DrawStringAnchored(image.title, float64(currentX+captionX), float64(currentY), 0.5, 0.5)
 		dc.DrawImageAnchored(image.image, currentX+captionX, currentY+textYPadding+size.Y/2, 0.5, 0.5)
+
+		if currentImageAlias != image.alias {
+			currentImageAlias = image.alias
+			positionVector += fmt.Sprintf("%v:", image.alias)
+		}
+
+		positionVector += fmt.Sprintf("%v,%v,%v;", currentX, currentY+textYPadding, size.X)
 		currentX += size.X + padding_pixels
 	}
+	positionVectorPngsBytes, err := toPngs(positionVector, MaxMsgLength)
+	if err != nil {
+		return errors.New(err)
+	}
 
-	err := dc.SavePNG(outputFilePath)
+	if len(positionVectorPngsBytes) != 1 {
+		return errors.New(PositionVectorEncodingError)
+	}
+
+	positionVectorImage, _, err := image.Decode(bytes.NewReader(positionVectorPngsBytes[0]))
+	if err != nil {
+		return errors.New(err)
+	}
+
+	dc.DrawImageAnchored(positionVectorImage, outputSize.X-positionVectorImage.Bounds().Size().X/2, outputSize.Y-positionVectorImage.Bounds().Size().Y/2, 0.5, 0.5)
+
+	err = dc.SavePNG(outputFilePath)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -148,11 +192,122 @@ func toPngs(s string, dataSize int) ([][]byte, error) {
 	chunks := breakStringIntoChunks(s, dataSize)
 	var qrs [][]byte
 	for _, chunk := range chunks {
-		png, err := qrcode.Encode(chunk, qrcode.Medium, 250)
+		enc := qrcode.NewQRCodeWriter()
+		image, err := enc.Encode(chunk, gozxing.BarcodeFormat_QR_CODE, DataQRImageSize, DataQRImageSize, nil)
 		if err != nil {
 			return nil, errors.New(err)
 		}
-		qrs = append(qrs, png)
+		pngBuffer := new(bytes.Buffer)
+		err = png.Encode(pngBuffer, image)
+		//png, err := qrcode.Encode(chunk, qrcode.Medium, DataQRImageSize)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		qrs = append(qrs, pngBuffer.Bytes())
 	}
 	return qrs, nil
+}
+
+func cropImage(img image.Image, rect image.Rectangle) (image.Image, error) {
+	type cropper interface {
+		SubImage(r image.Rectangle) image.Image
+	}
+	cropperImg, ok := img.(cropper)
+	if !ok {
+		return nil, errors.New(CroppingError)
+	}
+	return cropperImg.SubImage(rect), nil
+}
+
+func decodeImage(img image.Image) (string, error) {
+	bmp, err := gozxing.NewBinaryBitmapFromImage(img)
+	if err != nil {
+		return "", errors.New(err)
+	}
+	qrReader := qrcode.NewQRCodeReader()
+	result, err := qrReader.Decode(bmp, nil)
+	if err != nil {
+		return "", errors.New(err)
+	}
+
+	return result.GetText(), nil
+}
+
+func Decode(signatureLayerFilePath string) ([]DecodedMessage, error) {
+	signatureLayerImage, err := gg.LoadImage(signatureLayerFilePath)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	signatureRect := signatureLayerImage.Bounds()
+	positionVectorImageRectMin := image.Point{signatureRect.Max.X - DataQRImageSize, signatureRect.Max.Y - DataQRImageSize}
+	positionVectorImage, err := cropImage(signatureLayerImage, image.Rectangle{positionVectorImageRectMin, signatureRect.Max})
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	positionVector, err := decodeImage(positionVectorImage)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	fmt.Printf("\n" + positionVector)
+	tokens := strings.Split(positionVector, ";")
+	if len(tokens) <= 1 {
+		return nil, errors.New(MalformedPositionVector)
+	}
+	tokenCount, err := strconv.Atoi(tokens[0])
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	if tokenCount != len(tokens)-2 {
+		return nil, errors.New(MalformedPositionVector)
+	}
+
+	currentAlias := ""
+	for i := 1; i < len(tokens)-1; i++ {
+		token := tokens[i]
+		idx := strings.IndexByte(token, ':')
+		if idx >= 0 {
+			currentAlias = token[:idx]
+		}
+		if currentAlias == "" {
+			return nil, errors.New(MalformedPositionVector)
+		}
+		imageRectValues := strings.Split(token[idx+1:], ",")
+		if len(imageRectValues) != 3 {
+			return nil, errors.New(MalformedPositionVector)
+		}
+		rectX, err := strconv.Atoi(imageRectValues[0])
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		rectY, err := strconv.Atoi(imageRectValues[1])
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		rectSize, err := strconv.Atoi(imageRectValues[2])
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		qrImageRect := image.Rectangle{image.Point{rectX, rectY}, image.Point{rectX + rectSize, rectY + rectSize}}
+		qrImage, err := cropImage(signatureLayerImage, qrImageRect)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+
+		fd, err := os.Create("last-decoded.png")
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		defer fd.Close()
+		png.Encode(fd, qrImage)
+
+		decodedString, err := decodeImage(qrImage)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		fmt.Printf("\n" + decodedString)
+
+	}
+
+	return nil, nil
 }
