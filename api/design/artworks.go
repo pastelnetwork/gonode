@@ -37,8 +37,8 @@ var _ = Service("artworks", func() {
 	})
 
 	Method("registerStatus", func() {
-		Description("Streams statuses of the artwork registration.")
-		Meta("swagger:summary", "Returns a status of the registration artwork")
+		Description("WebSocket connection that is returning the statuses of the registration process.")
+		Meta("swagger:summary", "Returns statuses of the registration process")
 
 		Payload(func() {
 			Attribute("jobId", Int, "Job ID of the registration process", func() {
