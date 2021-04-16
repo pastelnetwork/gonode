@@ -54,7 +54,10 @@ func (s *RegisterStatusClientStream) Recv() (*artworks.Job, error) {
 		return rv, err
 	}
 	res := NewRegisterStatusJobOK(&body)
-	vres := &artworksviews.Job{res, "default"}
+	vres := &artworksviews.Job{
+		Projected: res,
+		View:      "default",
+	}
 	if err := artworksviews.ValidateJob(vres); err != nil {
 		return rv, goahttp.ErrValidationError("artworks", "registerStatus", err)
 	}

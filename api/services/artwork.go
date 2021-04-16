@@ -48,8 +48,6 @@ func (service *serviceArtwork) RegisterStatus(ctx context.Context, p *artworks.R
 
 		}
 	}
-
-	return nil
 }
 
 // Register runs registers process for the new artwork.
