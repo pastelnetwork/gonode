@@ -20,35 +20,35 @@ func (db *keyValue) Init() error {
 }
 
 // Get implements dao.KeyValue.Set
-func (db *keyValue) Get(key []byte) ([]byte, error) {
+func (db *keyValue) Get(key string) ([]byte, error) {
 	db.Lock()
 	defer db.Unlock()
 
-	if value, ok := db.values[string(key)]; ok {
+	if value, ok := db.values[key]; ok {
 		return value, nil
 	}
 	return nil, dao.ErrKeyNotFound
 }
 
 // Delete implements dao.KeyValue.Delete
-func (db *keyValue) Delete(key []byte) error {
+func (db *keyValue) Delete(key string) error {
 	db.Lock()
 	defer db.Unlock()
 
-	if _, ok := db.values[string(key)]; ok {
-		log.WithField("key", string(key)).Debugln(logPrefix, "Remove value")
-		delete(db.values, string(key))
+	if _, ok := db.values[key]; ok {
+		log.WithField("key", key).Debugln(logPrefix, "Remove value")
+		delete(db.values, key)
 	}
 	return nil
 }
 
 // Get implements dao.KeyValue.Set
-func (db *keyValue) Set(key, value []byte) error {
+func (db *keyValue) Set(key string, value []byte) error {
 	db.Lock()
 	defer db.Unlock()
 
-	log.WithField("key", string(key)).WithField("bytes", len(value)).Debugln(logPrefix, "Add value")
-	db.values[string(key)] = value
+	log.WithField("key", key).WithField("bytes", len(value)).Debugln(logPrefix, "Add value")
+	db.values[key] = value
 
 	return nil
 }

@@ -23,7 +23,7 @@ type serviceArtwork struct {
 
 // Add a new ticket and return its ID.
 func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res string, err error) {
-	image, err := service.storage.Get([]byte(p.ImageID))
+	image, err := service.storage.Get(p.ImageID)
 	if err == dao.ErrKeyNotFound {
 		return "", artworks.MakeBadRequest(errors.Errorf("invalid image_id %q", p.ImageID))
 	}
@@ -59,14 +59,14 @@ func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.Imag
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	if err := service.storage.Set([]byte(id), p.Bytes); err != nil {
+	if err := service.storage.Set(id, p.Bytes); err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 	expiresIn := time.Now().Add(imageTTL)
 
 	go func() {
 		time.AfterFunc(time.Until(expiresIn), func() {
-			service.storage.Delete([]byte(id))
+			service.storage.Delete(id)
 		})
 	}()
 

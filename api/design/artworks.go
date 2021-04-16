@@ -36,7 +36,7 @@ var _ = Service("artworks", func() {
 	})
 
 	Method("uploadImage", func() {
-		Description("Upload an image that is used when registering the artwork.")
+		Description("Upload the image that is used when registering a new artwork.")
 		Meta("swagger:summary", "Uploads an image")
 
 		Payload(ImageUploadPayload)
@@ -75,7 +75,7 @@ var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
 	Attribute("series_name", String, func() {
 		Description("Series name")
 		MaxLength(256)
-		Example("Famous Artist ")
+		Example("Famous artist")
 	})
 	Attribute("issued_copies", Int, func() {
 		Description("Number of copies issued")

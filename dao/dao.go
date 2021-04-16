@@ -14,11 +14,11 @@ type KeyValue interface {
 
 	// Get looks for key and returns corresponding Item.
 	// If key is not found, ErrKeyNotFound is returned.
-	Get(key []byte) (value []byte, err error)
+	Get(key string) (value []byte, err error)
 
 	// Set adds a key-value pair to the database.
-	Set(key, value []byte) (err error)
+	Set(key string, value []byte) (err error)
 
 	// Delete deletes a key.
-	Delete(key []byte) error
+	Delete(key string) error
 }
