@@ -16,10 +16,12 @@ import (
 
 // Pastel Artwork
 type Service interface {
-	// Registers a new art.
-	Register(context.Context, *RegisterPayload) (res string, err error)
-	// Upload an image that is used when registering the artwork.
-	UploadImage(context.Context, *ImageUploadPayload) (res *WalletnodeImage, err error)
+	// Runs a new registration process for the new artwork.
+	Register(context.Context, *RegisterPayload) (res *RegisterResult, err error)
+	// Streams the job of the new artwork registration.
+	RegisterStatus(context.Context, *RegisterStatusPayload, RegisterStatusServerStream) (err error)
+	// Upload the image that is used when registering a new artwork.
+	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -30,7 +32,23 @@ const ServiceName = "artworks"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"register", "uploadImage"}
+var MethodNames = [3]string{"register", "registerStatus", "uploadImage"}
+
+// RegisterStatusServerStream is the interface a "registerStatus" endpoint
+// server stream must satisfy.
+type RegisterStatusServerStream interface {
+	// Send streams instances of "Job".
+	Send(*Job) error
+	// Close closes the stream.
+	Close() error
+}
+
+// RegisterStatusClientStream is the interface a "registerStatus" endpoint
+// client stream must satisfy.
+type RegisterStatusClientStream interface {
+	// Recv reads instances of "Job" from the stream.
+	Recv() (*Job, error)
+}
 
 // RegisterPayload is the payload type of the artworks service register method.
 type RegisterPayload struct {
@@ -59,16 +77,38 @@ type RegisterPayload struct {
 	NetworkFee       float32
 }
 
-// ImageUploadPayload is the payload type of the artworks service uploadImage
+// RegisterResult is the result type of the artworks service register method.
+type RegisterResult struct {
+	// Job ID of the registration process
+	JobID int
+}
+
+// RegisterStatusPayload is the payload type of the artworks service
+// registerStatus method.
+type RegisterStatusPayload struct {
+	// Job ID of the registration process
+	JobID int
+}
+
+// Job is the result type of the artworks service registerStatus method.
+type Job struct {
+	// JOb ID of the registration process
+	ID int
+	// Status of the registration process
+	Status string
+	// txid
+	Txid *string
+}
+
+// UploadImagePayload is the payload type of the artworks service uploadImage
 // method.
-type ImageUploadPayload struct {
+type UploadImagePayload struct {
 	// File to upload
 	Bytes []byte
 }
 
-// WalletnodeImage is the result type of the artworks service uploadImage
-// method.
-type WalletnodeImage struct {
+// Image is the result type of the artworks service uploadImage method.
+type Image struct {
 	// Uploaded image ID
 	ImageID string
 	// Image expiration
@@ -84,6 +124,15 @@ func MakeBadRequest(err error) *goa.ServiceError {
 	}
 }
 
+// MakeNotFound builds a goa.ServiceError from an error.
+func MakeNotFound(err error) *goa.ServiceError {
+	return &goa.ServiceError{
+		Name:    "NotFound",
+		ID:      goa.NewErrorID(),
+		Message: err.Error(),
+	}
+}
+
 // MakeInternalServerError builds a goa.ServiceError from an error.
 func MakeInternalServerError(err error) *goa.ServiceError {
 	return &goa.ServiceError{
@@ -93,23 +142,90 @@ func MakeInternalServerError(err error) *goa.ServiceError {
 	}
 }
 
-// NewWalletnodeImage initializes result type WalletnodeImage from viewed
-// result type WalletnodeImage.
-func NewWalletnodeImage(vres *artworksviews.WalletnodeImage) *WalletnodeImage {
-	return newWalletnodeImage(vres.Projected)
+// NewRegisterResult initializes result type RegisterResult from viewed result
+// type RegisterResult.
+func NewRegisterResult(vres *artworksviews.RegisterResult) *RegisterResult {
+	return newRegisterResult(vres.Projected)
 }
 
-// NewViewedWalletnodeImage initializes viewed result type WalletnodeImage from
-// result type WalletnodeImage using the given view.
-func NewViewedWalletnodeImage(res *WalletnodeImage, view string) *artworksviews.WalletnodeImage {
-	p := newWalletnodeImageView(res)
-	return &artworksviews.WalletnodeImage{Projected: p, View: "default"}
+// NewViewedRegisterResult initializes viewed result type RegisterResult from
+// result type RegisterResult using the given view.
+func NewViewedRegisterResult(res *RegisterResult, view string) *artworksviews.RegisterResult {
+	p := newRegisterResultView(res)
+	return &artworksviews.RegisterResult{Projected: p, View: "default"}
 }
 
-// newWalletnodeImage converts projected type WalletnodeImage to service type
-// WalletnodeImage.
-func newWalletnodeImage(vres *artworksviews.WalletnodeImageView) *WalletnodeImage {
-	res := &WalletnodeImage{}
+// NewJob initializes result type Job from viewed result type Job.
+func NewJob(vres *artworksviews.Job) *Job {
+	return newJob(vres.Projected)
+}
+
+// NewViewedJob initializes viewed result type Job from result type Job using
+// the given view.
+func NewViewedJob(res *Job, view string) *artworksviews.Job {
+	p := newJobView(res)
+	return &artworksviews.Job{Projected: p, View: "default"}
+}
+
+// NewImage initializes result type Image from viewed result type Image.
+func NewImage(vres *artworksviews.Image) *Image {
+	return newImage(vres.Projected)
+}
+
+// NewViewedImage initializes viewed result type Image from result type Image
+// using the given view.
+func NewViewedImage(res *Image, view string) *artworksviews.Image {
+	p := newImageView(res)
+	return &artworksviews.Image{Projected: p, View: "default"}
+}
+
+// newRegisterResult converts projected type RegisterResult to service type
+// RegisterResult.
+func newRegisterResult(vres *artworksviews.RegisterResultView) *RegisterResult {
+	res := &RegisterResult{}
+	if vres.JobID != nil {
+		res.JobID = *vres.JobID
+	}
+	return res
+}
+
+// newRegisterResultView projects result type RegisterResult to projected type
+// RegisterResultView using the "default" view.
+func newRegisterResultView(res *RegisterResult) *artworksviews.RegisterResultView {
+	vres := &artworksviews.RegisterResultView{
+		JobID: &res.JobID,
+	}
+	return vres
+}
+
+// newJob converts projected type Job to service type Job.
+func newJob(vres *artworksviews.JobView) *Job {
+	res := &Job{
+		Txid: vres.Txid,
+	}
+	if vres.ID != nil {
+		res.ID = *vres.ID
+	}
+	if vres.Status != nil {
+		res.Status = *vres.Status
+	}
+	return res
+}
+
+// newJobView projects result type Job to projected type JobView using the
+// "default" view.
+func newJobView(res *Job) *artworksviews.JobView {
+	vres := &artworksviews.JobView{
+		ID:     &res.ID,
+		Status: &res.Status,
+		Txid:   res.Txid,
+	}
+	return vres
+}
+
+// newImage converts projected type Image to service type Image.
+func newImage(vres *artworksviews.ImageView) *Image {
+	res := &Image{}
 	if vres.ImageID != nil {
 		res.ImageID = *vres.ImageID
 	}
@@ -119,10 +235,10 @@ func newWalletnodeImage(vres *artworksviews.WalletnodeImageView) *WalletnodeImag
 	return res
 }
 
-// newWalletnodeImageView projects result type WalletnodeImage to projected
-// type WalletnodeImageView using the "default" view.
-func newWalletnodeImageView(res *WalletnodeImage) *artworksviews.WalletnodeImageView {
-	vres := &artworksviews.WalletnodeImageView{
+// newImageView projects result type Image to projected type ImageView using
+// the "default" view.
+func newImageView(res *Image) *artworksviews.ImageView {
+	vres := &artworksviews.ImageView{
 		ImageID:   &res.ImageID,
 		ExpiresIn: &res.ExpiresIn,
 	}

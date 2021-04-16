@@ -15,34 +15,46 @@ import (
 
 // Client is the "artworks" service client.
 type Client struct {
-	RegisterEndpoint    goa.Endpoint
-	UploadImageEndpoint goa.Endpoint
+	RegisterEndpoint       goa.Endpoint
+	RegisterStatusEndpoint goa.Endpoint
+	UploadImageEndpoint    goa.Endpoint
 }
 
 // NewClient initializes a "artworks" service client given the endpoints.
-func NewClient(register, uploadImage goa.Endpoint) *Client {
+func NewClient(register, registerStatus, uploadImage goa.Endpoint) *Client {
 	return &Client{
-		RegisterEndpoint:    register,
-		UploadImageEndpoint: uploadImage,
+		RegisterEndpoint:       register,
+		RegisterStatusEndpoint: registerStatus,
+		UploadImageEndpoint:    uploadImage,
 	}
 }
 
 // Register calls the "register" endpoint of the "artworks" service.
-func (c *Client) Register(ctx context.Context, p *RegisterPayload) (res string, err error) {
+func (c *Client) Register(ctx context.Context, p *RegisterPayload) (res *RegisterResult, err error) {
 	var ires interface{}
 	ires, err = c.RegisterEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(string), nil
+	return ires.(*RegisterResult), nil
+}
+
+// RegisterStatus calls the "registerStatus" endpoint of the "artworks" service.
+func (c *Client) RegisterStatus(ctx context.Context, p *RegisterStatusPayload) (res RegisterStatusClientStream, err error) {
+	var ires interface{}
+	ires, err = c.RegisterStatusEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(RegisterStatusClientStream), nil
 }
 
 // UploadImage calls the "uploadImage" endpoint of the "artworks" service.
-func (c *Client) UploadImage(ctx context.Context, p *ImageUploadPayload) (res *WalletnodeImage, err error) {
+func (c *Client) UploadImage(ctx context.Context, p *UploadImagePayload) (res *Image, err error) {
 	var ires interface{}
 	ires, err = c.UploadImageEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*WalletnodeImage), nil
+	return ires.(*Image), nil
 }

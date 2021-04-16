@@ -10,7 +10,7 @@ paths:
       tags:
       - artworks
       summary: Registers a new artwork
-      description: Registers a new art.
+      description: Runs a new registration process for the new artwork.
       operationId: artworks#register
       requestBody:
         required: true
@@ -30,7 +30,7 @@ paths:
               keywords: Renaissance, sfumato, portrait
               name: Mona Lisa
               network_fee: 100
-              series_name: 'Famous Artist '
+              series_name: Famous artist
               spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
               youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       responses:
@@ -39,9 +39,9 @@ paths:
           content:
             application/json:
               schema:
-                type: string
-                example: Qui veritatis ipsa quos omnis.
-              example: Totam est unde quia eius.
+                $ref: '#/components/schemas/RegisterResult'
+              example:
+                job_id: 5
         "400":
           description: Bad Request response.
           content:
@@ -62,12 +62,71 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
-  /artworks/upload-image:
+  /artworks/register/{jobId}:
+    get:
+      tags:
+      - artworks
+      summary: Returns a job of the registration artwork
+      description: Streams the job of the new artwork registration.
+      operationId: artworks#registerStatus
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID of the registration process
+        required: true
+        schema:
+          type: integer
+          description: Job ID of the registration process
+          example: 5
+          minimum: 1
+        example: 5
+      responses:
+        "101":
+          description: Switching Protocols response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+              example:
+                id: 5
+                status: Registration started
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "404":
+          description: Not Found response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /artworks/register/upload-image:
     post:
       tags:
       - artworks
       summary: Uploads an image
-      description: Upload an image that is used when registering the artwork.
+      description: Upload the image that is used when registering a new artwork.
       operationId: artworks#uploadImage
       requestBody:
         required: true
@@ -77,37 +136,19 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 66
-              - 101
-              - 97
-              - 116
-              - 97
-              - 101
-              - 32
-              - 97
-              - 108
-              - 105
-              - 97
-              - 115
-              - 32
+              - 73
               - 100
-              - 101
-              - 98
-              - 105
-              - 116
-              - 105
-              - 115
               - 32
-              - 105
-              - 100
+              - 117
+              - 116
               - 46
       responses:
-        "200":
-          description: OK response.
+        "201":
+          description: Created response.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WalletnodeImage'
+                $ref: '#/components/schemas/Image'
               example:
                 expires_in: "2019-10-12T07:20:50.52Z"
                 image_id: d93lsd02
@@ -139,7 +180,7 @@ components:
         fault:
           type: boolean
           description: Is the error a server-side fault?
-          example: false
+          example: true
         id:
           type: string
           description: ID is a unique identifier for this particular occurrence of
@@ -157,11 +198,11 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: true
+          example: false
         timeout:
           type: boolean
           description: Is the error a timeout?
-          example: true
+          example: false
       example:
         id: 3F1FKVRR
         message: Value of ID must be an integer
@@ -173,6 +214,51 @@ components:
       - temporary
       - timeout
       - fault
+    Image:
+      type: object
+      properties:
+        expires_in:
+          type: string
+          description: Image expiration
+          example: "2019-10-12T07:20:50.52Z"
+          format: date-time
+        image_id:
+          type: string
+          description: Uploaded image ID
+          example: d93lsd02
+          minLength: 8
+          maxLength: 8
+      example:
+        expires_in: "2019-10-12T07:20:50.52Z"
+        image_id: d93lsd02
+      required:
+      - image_id
+      - expires_in
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: JOb ID of the registration process
+          example: 5
+          format: int64
+        status:
+          type: string
+          description: Status of the registration process
+          example: Registration started
+        txid:
+          type: string
+          description: txid
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
+      example:
+        id: 5
+        status: Registration started
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      required:
+      - id
+      - status
     RegisterRequestBody:
       type: object
       properties:
@@ -232,7 +318,7 @@ components:
         series_name:
           type: string
           description: Series name
-          example: 'Famous Artist '
+          example: Famous artist
           maxLength: 256
         spendable_address:
           type: string
@@ -258,7 +344,7 @@ components:
         keywords: Renaissance, sfumato, portrait
         name: Mona Lisa
         network_fee: 100
-        series_name: 'Famous Artist '
+        series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       required:
@@ -269,6 +355,18 @@ components:
       - artist_pastelid
       - spendable_address
       - network_fee
+    RegisterResult:
+      type: object
+      properties:
+        job_id:
+          type: integer
+          description: Job ID of the registration process
+          example: 5
+          format: int64
+      example:
+        job_id: 5
+      required:
+      - job_id
     UploadImageRequestBody:
       type: object
       properties:
@@ -276,111 +374,77 @@ components:
           type: string
           description: File to upload
           example:
-          - 78
-          - 105
-          - 115
-          - 105
-          - 32
+          - 73
+          - 116
+          - 97
+          - 113
+          - 117
           - 101
-          - 111
-          - 115
           - 32
-          - 98
+          - 113
+          - 117
+          - 97
+          - 101
+          - 114
+          - 97
+          - 116
+          - 32
           - 108
           - 97
-          - 110
-          - 100
-          - 105
-          - 116
-          - 105
-          - 105
-          - 115
-          - 32
-          - 101
-          - 105
+          - 98
+          - 111
+          - 114
           - 117
-          - 115
+          - 109
           - 32
-          - 115
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
           - 101
-          - 100
+          - 32
+          - 110
+          - 117
+          - 108
+          - 108
+          - 97
+          - 32
+          - 118
+          - 101
+          - 110
+          - 105
+          - 97
+          - 109
           - 32
           - 97
-          - 117
           - 116
+          - 113
+          - 117
+          - 101
           - 46
           format: binary
       example:
         file:
         - 86
-        - 111
-        - 108
-        - 117
-        - 112
-        - 116
-        - 97
-        - 116
-        - 101
-        - 115
-        - 32
-        - 114
         - 101
         - 114
-        - 117
-        - 109
+        - 105
+        - 116
+        - 97
+        - 116
+        - 105
+        - 115
         - 32
-        - 118
-        - 111
-        - 108
-        - 117
+        - 105
         - 112
-        - 116
-        - 97
-        - 116
-        - 101
-        - 32
-        - 110
-        - 105
-        - 104
-        - 105
-        - 108
-        - 32
-        - 115
-        - 117
-        - 110
-        - 116
-        - 32
-        - 97
-        - 99
-        - 99
-        - 117
         - 115
         - 97
-        - 110
-        - 116
-        - 105
+        - 32
+        - 113
         - 117
-        - 109
+        - 111
+        - 115
         - 46
       required:
       - file
-    WalletnodeImage:
-      type: object
-      properties:
-        expires_in:
-          type: string
-          description: Image expiration
-          example: "2019-10-12T07:20:50.52Z"
-          format: date-time
-        image_id:
-          type: string
-          description: Uploaded image ID
-          example: d93lsd02
-          minLength: 8
-          maxLength: 8
-      example:
-        expires_in: "2019-10-12T07:20:50.52Z"
-        image_id: d93lsd02
-      required:
-      - image_id
-      - expires_in

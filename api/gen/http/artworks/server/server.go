@@ -12,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
@@ -20,10 +21,11 @@ import (
 
 // Server lists the artworks service endpoint HTTP handlers.
 type Server struct {
-	Mounts      []*MountPoint
-	Register    http.Handler
-	UploadImage http.Handler
-	CORS        http.Handler
+	Mounts         []*MountPoint
+	Register       http.Handler
+	RegisterStatus http.Handler
+	UploadImage    http.Handler
+	CORS           http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -45,7 +47,7 @@ type MountPoint struct {
 
 // ArtworksUploadImageDecoderFunc is the type to decode multipart request for
 // the "artworks" service "uploadImage" endpoint.
-type ArtworksUploadImageDecoderFunc func(*multipart.Reader, **artworks.ImageUploadPayload) error
+type ArtworksUploadImageDecoderFunc func(*multipart.Reader, **artworks.UploadImagePayload) error
 
 // New instantiates HTTP handlers for all the artworks service endpoints using
 // the provided encoder and decoder. The handlers are mounted on the given mux
@@ -60,18 +62,26 @@ func New(
 	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
+	upgrader goahttp.Upgrader,
+	configurer *ConnConfigurer,
 	artworksUploadImageDecoderFn ArtworksUploadImageDecoderFunc,
 ) *Server {
+	if configurer == nil {
+		configurer = &ConnConfigurer{}
+	}
 	return &Server{
 		Mounts: []*MountPoint{
 			{"Register", "POST", "/artworks/register"},
-			{"UploadImage", "POST", "/artworks/upload-image"},
+			{"RegisterStatus", "GET", "/artworks/register/{jobId}"},
+			{"UploadImage", "POST", "/artworks/register/upload-image"},
 			{"CORS", "OPTIONS", "/artworks/register"},
-			{"CORS", "OPTIONS", "/artworks/upload-image"},
+			{"CORS", "OPTIONS", "/artworks/register/{jobId}"},
+			{"CORS", "OPTIONS", "/artworks/register/upload-image"},
 		},
-		Register:    NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
-		UploadImage: NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
-		CORS:        NewCORSHandler(),
+		Register:       NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
+		RegisterStatus: NewRegisterStatusHandler(e.RegisterStatus, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterStatusFn),
+		UploadImage:    NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
+		CORS:           NewCORSHandler(),
 	}
 }
 
@@ -81,6 +91,7 @@ func (s *Server) Service() string { return "artworks" }
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.Register = m(s.Register)
+	s.RegisterStatus = m(s.RegisterStatus)
 	s.UploadImage = m(s.UploadImage)
 	s.CORS = m(s.CORS)
 }
@@ -88,6 +99,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 // Mount configures the mux to serve the artworks endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountRegisterHandler(mux, h.Register)
+	MountRegisterStatusHandler(mux, h.RegisterStatus)
 	MountUploadImageHandler(mux, h.UploadImage)
 	MountCORSHandler(mux, h.CORS)
 }
@@ -143,6 +155,70 @@ func NewRegisterHandler(
 	})
 }
 
+// MountRegisterStatusHandler configures the mux to serve the "artworks"
+// service "registerStatus" endpoint.
+func MountRegisterStatusHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/artworks/register/{jobId}", f)
+}
+
+// NewRegisterStatusHandler creates a HTTP handler which loads the HTTP request
+// and calls the "artworks" service "registerStatus" endpoint.
+func NewRegisterStatusHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+	upgrader goahttp.Upgrader,
+	configurer goahttp.ConnConfigureFunc,
+) http.Handler {
+	var (
+		decodeRequest = DecodeRegisterStatusRequest(mux, decoder)
+		encodeError   = EncodeRegisterStatusError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "registerStatus")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		v := &artworks.RegisterStatusEndpointInput{
+			Stream: &RegisterStatusServerStream{
+				upgrader:   upgrader,
+				configurer: configurer,
+				cancel:     cancel,
+				w:          w,
+				r:          r,
+			},
+			Payload: payload.(*artworks.RegisterStatusPayload),
+		}
+		_, err = endpoint(ctx, v)
+		if err != nil {
+			if _, ok := err.(websocket.HandshakeError); ok {
+				return
+			}
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+	})
+}
+
 // MountUploadImageHandler configures the mux to serve the "artworks" service
 // "uploadImage" endpoint.
 func MountUploadImageHandler(mux goahttp.Muxer, h http.Handler) {
@@ -152,7 +228,7 @@ func MountUploadImageHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("POST", "/artworks/upload-image", f)
+	mux.Handle("POST", "/artworks/register/upload-image", f)
 }
 
 // NewUploadImageHandler creates a HTTP handler which loads the HTTP request
@@ -205,7 +281,8 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 		}
 	}
 	mux.Handle("OPTIONS", "/artworks/register", f)
-	mux.Handle("OPTIONS", "/artworks/upload-image", f)
+	mux.Handle("OPTIONS", "/artworks/register/{jobId}", f)
+	mux.Handle("OPTIONS", "/artworks/register/upload-image", f)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

@@ -17,7 +17,7 @@ paths:
       tags:
       - artworks
       summary: Registers a new artwork
-      description: Registers a new art.
+      description: Runs a new registration process for the new artwork.
       operationId: artworks#register
       parameters:
       - name: RegisterRequestBody
@@ -37,7 +37,7 @@ paths:
         "201":
           description: Created response.
           schema:
-            type: string
+            $ref: '#/definitions/ArtworksRegisterResponseBody'
         "400":
           description: Bad Request response.
           schema:
@@ -48,12 +48,45 @@ paths:
             $ref: '#/definitions/ArtworksRegisterInternalServerErrorResponseBody'
       schemes:
       - http
-  /artworks/upload-image:
+  /artworks/register/{jobId}:
+    get:
+      tags:
+      - artworks
+      summary: Returns a job of the registration artwork
+      description: Streams the job of the new artwork registration.
+      operationId: artworks#registerStatus
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID of the registration process
+        required: true
+        type: integer
+        minimum: 1
+      responses:
+        "101":
+          description: Switching Protocols response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterStatusResponseBody'
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterStatusBadRequestResponseBody'
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterStatusNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterStatusInternalServerErrorResponseBody'
+      schemes:
+      - ws
+  /artworks/register/upload-image:
     post:
       tags:
       - artworks
       summary: Uploads an image
-      description: Upload an image that is used when registering the artwork.
+      description: Upload the image that is used when registering a new artwork.
       operationId: artworks#uploadImage
       consumes:
       - multipart/form-data
@@ -66,8 +99,8 @@ paths:
           required:
           - file
       responses:
-        "200":
-          description: OK response.
+        "201":
+          description: Created response.
           schema:
             $ref: '#/definitions/ArtworksUploadImageResponseBody'
         "400":
@@ -106,19 +139,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: register_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -151,19 +184,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
         example: true
     description: register_InternalServerError_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -231,7 +264,7 @@ definitions:
       series_name:
         type: string
         description: Series name
-        example: 'Famous Artist '
+        example: Famous artist
         maxLength: 256
       spendable_address:
         type: string
@@ -257,7 +290,7 @@ definitions:
       keywords: Renaissance, sfumato, portrait
       name: Mona Lisa
       network_fee: 100
-      series_name: 'Famous Artist '
+      series_name: Famous artist
       spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
       youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
     required:
@@ -268,6 +301,183 @@ definitions:
     - artist_pastelid
     - spendable_address
     - network_fee
+  ArtworksRegisterResponseBody:
+    title: 'Mediatype identifier: application/vnd.artwork.register; view=default'
+    type: object
+    properties:
+      job_id:
+        type: integer
+        description: Job ID of the registration process
+        example: 5
+        format: int64
+    description: RegisterResponseBody result type (default view)
+    example:
+      job_id: 5
+    required:
+    - job_id
+  ArtworksRegisterStatusBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: registerStatus_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksRegisterStatusInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: registerStatus_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksRegisterStatusNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: registerStatus_NotFound_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksRegisterStatusResponseBody:
+    title: 'Mediatype identifier: application/vnd.artwork.register.job; view=default'
+    type: object
+    properties:
+      id:
+        type: integer
+        description: JOb ID of the registration process
+        example: 5
+        format: int64
+      status:
+        type: string
+        description: Status of the registration process
+        example: Registration started
+      txid:
+        type: string
+        description: txid
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
+    description: RegisterStatusResponseBody result type (default view)
+    example:
+      id: 5
+      status: Registration started
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+    required:
+    - id
+    - status
   ArtworksUploadImageBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -304,7 +514,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -338,15 +548,15 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -367,83 +577,34 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 81
-        - 117
+        - 79
+        - 112
+        - 116
         - 105
+        - 111
         - 32
-        - 117
-        - 116
-        - 32
-        - 118
-        - 101
-        - 108
-        - 32
-        - 101
-        - 116
-        - 32
-        - 113
-        - 117
-        - 97
-        - 115
+        - 111
+        - 100
         - 105
-        - 32
-        - 101
-        - 116
+        - 111
         - 46
         format: byte
     example:
       file:
-      - 65
-      - 117
+      - 85
       - 116
-      - 32
-      - 105
-      - 116
-      - 97
-      - 113
-      - 117
-      - 101
-      - 32
-      - 113
-      - 117
-      - 97
-      - 101
-      - 114
-      - 97
-      - 116
-      - 32
-      - 108
-      - 97
-      - 98
-      - 111
-      - 114
-      - 117
-      - 109
-      - 32
-      - 108
-      - 97
-      - 98
-      - 111
-      - 114
-      - 101
-      - 32
-      - 110
-      - 117
-      - 108
-      - 108
-      - 97
       - 32
       - 118
       - 101
-      - 110
-      - 105
-      - 97
-      - 109
+      - 108
+      - 32
+      - 101
+      - 116
       - 46
     required:
     - file
   ArtworksUploadImageResponseBody:
-    title: 'Mediatype identifier: application/vnd.walletnode.image; view=default'
+    title: 'Mediatype identifier: application/vnd.artwork.upload-image; view=default'
     type: object
     properties:
       expires_in:

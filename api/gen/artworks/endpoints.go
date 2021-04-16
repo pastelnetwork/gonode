@@ -15,21 +15,33 @@ import (
 
 // Endpoints wraps the "artworks" service endpoints.
 type Endpoints struct {
-	Register    goa.Endpoint
-	UploadImage goa.Endpoint
+	Register       goa.Endpoint
+	RegisterStatus goa.Endpoint
+	UploadImage    goa.Endpoint
+}
+
+// RegisterStatusEndpointInput holds both the payload and the server stream of
+// the "registerStatus" method.
+type RegisterStatusEndpointInput struct {
+	// Payload is the method payload.
+	Payload *RegisterStatusPayload
+	// Stream is the server stream used by the "registerStatus" method to send data.
+	Stream RegisterStatusServerStream
 }
 
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		Register:    NewRegisterEndpoint(s),
-		UploadImage: NewUploadImageEndpoint(s),
+		Register:       NewRegisterEndpoint(s),
+		RegisterStatus: NewRegisterStatusEndpoint(s),
+		UploadImage:    NewUploadImageEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "artworks" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.Register = m(e.Register)
+	e.RegisterStatus = m(e.RegisterStatus)
 	e.UploadImage = m(e.UploadImage)
 }
 
@@ -38,7 +50,21 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 func NewRegisterEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*RegisterPayload)
-		return s.Register(ctx, p)
+		res, err := s.Register(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedRegisterResult(res, "default")
+		return vres, nil
+	}
+}
+
+// NewRegisterStatusEndpoint returns an endpoint function that calls the method
+// "registerStatus" of service "artworks".
+func NewRegisterStatusEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		ep := req.(*RegisterStatusEndpointInput)
+		return nil, s.RegisterStatus(ctx, ep.Payload, ep.Stream)
 	}
 }
 
@@ -46,12 +72,12 @@ func NewRegisterEndpoint(s Service) goa.Endpoint {
 // "uploadImage" of service "artworks".
 func NewUploadImageEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*ImageUploadPayload)
+		p := req.(*UploadImagePayload)
 		res, err := s.UploadImage(ctx, p)
 		if err != nil {
 			return nil, err
 		}
-		vres := NewViewedWalletnodeImage(res, "default")
+		vres := NewViewedImage(res, "default")
 		return vres, nil
 	}
 }

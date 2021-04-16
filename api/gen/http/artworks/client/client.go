@@ -11,7 +11,9 @@ import (
 	"context"
 	"mime/multipart"
 	"net/http"
+	"time"
 
+	"github.com/gorilla/websocket"
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
@@ -22,6 +24,10 @@ type Client struct {
 	// Register Doer is the HTTP client used to make requests to the register
 	// endpoint.
 	RegisterDoer goahttp.Doer
+
+	// RegisterStatus Doer is the HTTP client used to make requests to the
+	// registerStatus endpoint.
+	RegisterStatusDoer goahttp.Doer
 
 	// UploadImage Doer is the HTTP client used to make requests to the uploadImage
 	// endpoint.
@@ -34,15 +40,17 @@ type Client struct {
 	// decoding so they can be read again.
 	RestoreResponseBody bool
 
-	scheme  string
-	host    string
-	encoder func(*http.Request) goahttp.Encoder
-	decoder func(*http.Response) goahttp.Decoder
+	scheme     string
+	host       string
+	encoder    func(*http.Request) goahttp.Encoder
+	decoder    func(*http.Response) goahttp.Decoder
+	dialer     goahttp.Dialer
+	configurer *ConnConfigurer
 }
 
 // ArtworksUploadImageEncoderFunc is the type to encode multipart request for
 // the "artworks" service "uploadImage" endpoint.
-type ArtworksUploadImageEncoderFunc func(*multipart.Writer, *artworks.ImageUploadPayload) error
+type ArtworksUploadImageEncoderFunc func(*multipart.Writer, *artworks.UploadImagePayload) error
 
 // NewClient instantiates HTTP clients for all the artworks service servers.
 func NewClient(
@@ -52,9 +60,15 @@ func NewClient(
 	enc func(*http.Request) goahttp.Encoder,
 	dec func(*http.Response) goahttp.Decoder,
 	restoreBody bool,
+	dialer goahttp.Dialer,
+	cfn *ConnConfigurer,
 ) *Client {
+	if cfn == nil {
+		cfn = &ConnConfigurer{}
+	}
 	return &Client{
 		RegisterDoer:        doer,
+		RegisterStatusDoer:  doer,
 		UploadImageDoer:     doer,
 		CORSDoer:            doer,
 		RestoreResponseBody: restoreBody,
@@ -62,6 +76,8 @@ func NewClient(
 		host:                host,
 		decoder:             dec,
 		encoder:             enc,
+		dialer:              dialer,
+		configurer:          cfn,
 	}
 }
 
@@ -86,6 +102,43 @@ func (c *Client) Register() goa.Endpoint {
 			return nil, goahttp.ErrRequestError("artworks", "register", err)
 		}
 		return decodeResponse(resp)
+	}
+}
+
+// RegisterStatus returns an endpoint that makes HTTP requests to the artworks
+// service registerStatus server.
+func (c *Client) RegisterStatus() goa.Endpoint {
+	var (
+		decodeResponse = DecodeRegisterStatusResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildRegisterStatusRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
+		if err != nil {
+			if resp != nil {
+				return decodeResponse(resp)
+			}
+			return nil, goahttp.ErrRequestError("artworks", "registerStatus", err)
+		}
+		if c.configurer.RegisterStatusFn != nil {
+			conn = c.configurer.RegisterStatusFn(conn, cancel)
+		}
+		go func() {
+			<-ctx.Done()
+			conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "client closing connection"),
+				time.Now().Add(time.Second),
+			)
+			conn.Close()
+		}()
+		stream := &RegisterStatusClientStream{conn: conn}
+		return stream, nil
 	}
 }
 

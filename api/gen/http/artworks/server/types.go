@@ -50,6 +50,24 @@ type UploadImageRequestBody struct {
 	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
 }
 
+// RegisterResponseBody is the type of the "artworks" service "register"
+// endpoint HTTP response body.
+type RegisterResponseBody struct {
+	// Job ID of the registration process
+	JobID int `form:"job_id" json:"job_id" xml:"job_id"`
+}
+
+// RegisterStatusResponseBody is the type of the "artworks" service
+// "registerStatus" endpoint HTTP response body.
+type RegisterStatusResponseBody struct {
+	// JOb ID of the registration process
+	ID int `form:"id" json:"id" xml:"id"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+	// txid
+	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+}
+
 // UploadImageResponseBody is the type of the "artworks" service "uploadImage"
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
@@ -81,6 +99,61 @@ type RegisterBadRequestResponseBody struct {
 // service "register" endpoint HTTP response body for the "InternalServerError"
 // error.
 type RegisterInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterStatusNotFoundResponseBody is the type of the "artworks" service
+// "registerStatus" endpoint HTTP response body for the "NotFound" error.
+type RegisterStatusNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterStatusBadRequestResponseBody is the type of the "artworks" service
+// "registerStatus" endpoint HTTP response body for the "BadRequest" error.
+type RegisterStatusBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterStatusInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerStatus" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterStatusInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -133,9 +206,29 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// NewRegisterResponseBody builds the HTTP response body from the result of the
+// "register" endpoint of the "artworks" service.
+func NewRegisterResponseBody(res *artworksviews.RegisterResultView) *RegisterResponseBody {
+	body := &RegisterResponseBody{
+		JobID: *res.JobID,
+	}
+	return body
+}
+
+// NewRegisterStatusResponseBody builds the HTTP response body from the result
+// of the "registerStatus" endpoint of the "artworks" service.
+func NewRegisterStatusResponseBody(res *artworksviews.JobView) *RegisterStatusResponseBody {
+	body := &RegisterStatusResponseBody{
+		ID:     *res.ID,
+		Status: *res.Status,
+		Txid:   res.Txid,
+	}
+	return body
+}
+
 // NewUploadImageResponseBody builds the HTTP response body from the result of
 // the "uploadImage" endpoint of the "artworks" service.
-func NewUploadImageResponseBody(res *artworksviews.WalletnodeImageView) *UploadImageResponseBody {
+func NewUploadImageResponseBody(res *artworksviews.ImageView) *UploadImageResponseBody {
 	body := &UploadImageResponseBody{
 		ImageID:   *res.ImageID,
 		ExpiresIn: *res.ExpiresIn,
@@ -161,6 +254,49 @@ func NewRegisterBadRequestResponseBody(res *goa.ServiceError) *RegisterBadReques
 // from the result of the "register" endpoint of the "artworks" service.
 func NewRegisterInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterInternalServerErrorResponseBody {
 	body := &RegisterInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterStatusNotFoundResponseBody builds the HTTP response body from the
+// result of the "registerStatus" endpoint of the "artworks" service.
+func NewRegisterStatusNotFoundResponseBody(res *goa.ServiceError) *RegisterStatusNotFoundResponseBody {
+	body := &RegisterStatusNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterStatusBadRequestResponseBody builds the HTTP response body from
+// the result of the "registerStatus" endpoint of the "artworks" service.
+func NewRegisterStatusBadRequestResponseBody(res *goa.ServiceError) *RegisterStatusBadRequestResponseBody {
+	body := &RegisterStatusBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterStatusInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "registerStatus" endpoint of the "artworks"
+// service.
+func NewRegisterStatusInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterStatusInternalServerErrorResponseBody {
+	body := &RegisterStatusInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -219,10 +355,18 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	return v
 }
 
-// NewUploadImageImageUploadPayload builds a artworks service uploadImage
-// endpoint payload.
-func NewUploadImageImageUploadPayload(body *UploadImageRequestBody) *artworks.ImageUploadPayload {
-	v := &artworks.ImageUploadPayload{
+// NewRegisterStatusPayload builds a artworks service registerStatus endpoint
+// payload.
+func NewRegisterStatusPayload(jobID int) *artworks.RegisterStatusPayload {
+	v := &artworks.RegisterStatusPayload{}
+	v.JobID = jobID
+
+	return v
+}
+
+// NewUploadImagePayload builds a artworks service uploadImage endpoint payload.
+func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePayload {
+	v := &artworks.UploadImagePayload{
 		Bytes: body.Bytes,
 	}
 

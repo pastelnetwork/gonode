@@ -15,8 +15,8 @@ const contentTypePrefix = "image/"
 
 // UploadImageDecoderFunc implements the multipart decoder for service "artworks"
 // endpoint "UploadImage". The decoder must populate the argument p after encoding.
-func UploadImageDecoderFunc(reader *multipart.Reader, p **artworks.ImageUploadPayload) error {
-	var res artworks.ImageUploadPayload
+func UploadImageDecoderFunc(reader *multipart.Reader, p **artworks.UploadImagePayload) error {
+	var res artworks.UploadImagePayload
 
 	part, err := reader.NextPart()
 	if err == io.EOF {

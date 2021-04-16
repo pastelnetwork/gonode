@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/go-commons/log"
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
 	artworkssvr "github.com/pastelnetwork/walletnode/api/gen/http/artworks/server"
@@ -38,7 +39,8 @@ func apiHandler() http.Handler {
 	)
 
 	artworksEndpoints := artworks.NewEndpoints(services.NewArtwork())
-	artworksServer := artworkssvr.New(artworksEndpoints, mux, dec, enc, errHandler, nil, services.UploadImageDecoderFunc)
+	artworksUpgrader := &websocket.Upgrader{}
+	artworksServer := artworkssvr.New(artworksEndpoints, mux, dec, enc, errHandler, nil, artworksUpgrader, nil, services.UploadImageDecoderFunc)
 	artworkssvr.Mount(mux, artworksServer)
 
 	swaggerServer := swaggersvr.New(nil, mux, dec, enc, errHandler, nil)

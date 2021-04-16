@@ -7,12 +7,21 @@
 
 package server
 
+import (
+	"fmt"
+)
+
 // RegisterArtworksPath returns the URL path to the artworks service register HTTP endpoint.
 func RegisterArtworksPath() string {
 	return "/artworks/register"
 }
 
+// RegisterStatusArtworksPath returns the URL path to the artworks service registerStatus HTTP endpoint.
+func RegisterStatusArtworksPath(jobID int) string {
+	return fmt.Sprintf("/artworks/register/%v", jobID)
+}
+
 // UploadImageArtworksPath returns the URL path to the artworks service uploadImage HTTP endpoint.
 func UploadImageArtworksPath() string {
-	return "/artworks/upload-image"
+	return "/artworks/register/upload-image"
 }

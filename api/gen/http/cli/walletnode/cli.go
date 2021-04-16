@@ -23,7 +23,7 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `artworks (register|upload-image)
+	return `artworks (register|register-status|upload-image)
 `
 }
 
@@ -39,7 +39,7 @@ func UsageExamples() string {
       "keywords": "Renaissance, sfumato, portrait",
       "name": "Mona Lisa",
       "network_fee": 100,
-      "series_name": "Famous Artist ",
+      "series_name": "Famous artist",
       "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
       "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"
    }'` + "\n" +
@@ -54,6 +54,8 @@ func ParseEndpoint(
 	enc func(*http.Request) goahttp.Encoder,
 	dec func(*http.Response) goahttp.Decoder,
 	restore bool,
+	dialer goahttp.Dialer,
+	artworksConfigurer *artworksc.ConnConfigurer,
 	artworksUploadImageEncoderFn artworksc.ArtworksUploadImageEncoderFunc,
 ) (goa.Endpoint, interface{}, error) {
 	var (
@@ -62,11 +64,15 @@ func ParseEndpoint(
 		artworksRegisterFlags    = flag.NewFlagSet("register", flag.ExitOnError)
 		artworksRegisterBodyFlag = artworksRegisterFlags.String("body", "REQUIRED", "")
 
+		artworksRegisterStatusFlags     = flag.NewFlagSet("register-status", flag.ExitOnError)
+		artworksRegisterStatusJobIDFlag = artworksRegisterStatusFlags.String("job-id", "REQUIRED", "Job ID of the registration process")
+
 		artworksUploadImageFlags    = flag.NewFlagSet("upload-image", flag.ExitOnError)
 		artworksUploadImageBodyFlag = artworksUploadImageFlags.String("body", "REQUIRED", "")
 	)
 	artworksFlags.Usage = artworksUsage
 	artworksRegisterFlags.Usage = artworksRegisterUsage
+	artworksRegisterStatusFlags.Usage = artworksRegisterStatusUsage
 	artworksUploadImageFlags.Usage = artworksUploadImageUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
@@ -106,6 +112,9 @@ func ParseEndpoint(
 			case "register":
 				epf = artworksRegisterFlags
 
+			case "register-status":
+				epf = artworksRegisterStatusFlags
+
 			case "upload-image":
 				epf = artworksUploadImageFlags
 
@@ -132,11 +141,14 @@ func ParseEndpoint(
 	{
 		switch svcn {
 		case "artworks":
-			c := artworksc.NewClient(scheme, host, doer, enc, dec, restore)
+			c := artworksc.NewClient(scheme, host, doer, enc, dec, restore, dialer, artworksConfigurer)
 			switch epn {
 			case "register":
 				endpoint = c.Register()
 				data, err = artworksc.BuildRegisterPayload(*artworksRegisterBodyFlag)
+			case "register-status":
+				endpoint = c.RegisterStatus()
+				data, err = artworksc.BuildRegisterStatusPayload(*artworksRegisterStatusJobIDFlag)
 			case "upload-image":
 				endpoint = c.UploadImage(artworksUploadImageEncoderFn)
 				data, err = artworksc.BuildUploadImagePayload(*artworksUploadImageBodyFlag)
@@ -157,8 +169,9 @@ Usage:
     %s [globalflags] artworks COMMAND [flags]
 
 COMMAND:
-    register: Registers a new art.
-    upload-image: Upload an image that is used when registering the artwork.
+    register: Runs a new registration process for the new artwork.
+    register-status: Streams the job of the new artwork registration.
+    upload-image: Upload the image that is used when registering a new artwork.
 
 Additional help:
     %s artworks COMMAND --help
@@ -167,7 +180,7 @@ Additional help:
 func artworksRegisterUsage() {
 	fmt.Fprintf(os.Stderr, `%s [flags] artworks register -body JSON
 
-Registers a new art.
+Runs a new registration process for the new artwork.
     -body JSON: 
 
 Example:
@@ -181,22 +194,33 @@ Example:
       "keywords": "Renaissance, sfumato, portrait",
       "name": "Mona Lisa",
       "network_fee": 100,
-      "series_name": "Famous Artist ",
+      "series_name": "Famous artist",
       "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
       "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"
    }'
 `, os.Args[0])
 }
 
+func artworksRegisterStatusUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-status -job-id INT
+
+Streams the job of the new artwork registration.
+    -job-id INT: Job ID of the registration process
+
+Example:
+    `+os.Args[0]+` artworks register-status --job-id 5
+`, os.Args[0])
+}
+
 func artworksUploadImageUsage() {
 	fmt.Fprintf(os.Stderr, `%s [flags] artworks upload-image -body JSON
 
-Upload an image that is used when registering the artwork.
+Upload the image that is used when registering a new artwork.
     -body JSON: 
 
 Example:
     `+os.Args[0]+` artworks upload-image --body '{
-      "file": "QmVhdGFlIGFsaWFzIGRlYml0aXMgaWQu"
+      "file": "SWQgdXQu"
    }'
 `, os.Args[0])
 }

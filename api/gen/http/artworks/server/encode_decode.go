@@ -11,6 +11,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strconv"
 
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
 	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
@@ -22,9 +23,9 @@ import (
 // artworks register endpoint.
 func EncodeRegisterResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(string)
+		res := v.(*artworksviews.RegisterResult)
 		enc := encoder(ctx, w)
-		body := res
+		body := NewRegisterResponseBody(res.Projected)
 		w.WriteHeader(http.StatusCreated)
 		return enc.Encode(body)
 	}
@@ -103,14 +104,96 @@ func EncodeRegisterError(encoder func(context.Context, http.ResponseWriter) goah
 	}
 }
 
+// DecodeRegisterStatusRequest returns a decoder for requests sent to the
+// artworks registerStatus endpoint.
+func DecodeRegisterStatusRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			jobID int
+			err   error
+
+			params = mux.Vars(r)
+		)
+		{
+			jobIDRaw := params["jobId"]
+			v, err2 := strconv.ParseInt(jobIDRaw, 10, strconv.IntSize)
+			if err2 != nil {
+				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("jobID", jobIDRaw, "integer"))
+			}
+			jobID = int(v)
+		}
+		if jobID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("jobID", jobID, 1, true))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewRegisterStatusPayload(jobID)
+
+		return payload, nil
+	}
+}
+
+// EncodeRegisterStatusError returns an encoder for errors returned by the
+// registerStatus artworks endpoint.
+func EncodeRegisterStatusError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "NotFound":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewRegisterStatusNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", "NotFound")
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewRegisterStatusBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", "BadRequest")
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewRegisterStatusInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // EncodeUploadImageResponse returns an encoder for responses returned by the
 // artworks uploadImage endpoint.
 func EncodeUploadImageResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(*artworksviews.WalletnodeImage)
+		res := v.(*artworksviews.Image)
 		enc := encoder(ctx, w)
 		body := NewUploadImageResponseBody(res.Projected)
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusCreated)
 		return enc.Encode(body)
 	}
 }
@@ -119,7 +202,7 @@ func EncodeUploadImageResponse(encoder func(context.Context, http.ResponseWriter
 // uploadImage endpoint.
 func DecodeUploadImageRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
-		var payload *artworks.ImageUploadPayload
+		var payload *artworks.UploadImagePayload
 		if err := decoder(r).Decode(&payload); err != nil {
 			if en, ok := err.(ErrorNamer); ok {
 				switch en.ErrorName() {
@@ -145,7 +228,7 @@ func NewArtworksUploadImageDecoder(mux goahttp.Muxer, artworksUploadImageDecoder
 			if merr != nil {
 				return merr
 			}
-			p := v.(**artworks.ImageUploadPayload)
+			p := v.(**artworks.UploadImagePayload)
 			if err := artworksUploadImageDecoderFn(mr, p); err != nil {
 				return err
 			}

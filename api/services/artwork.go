@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	imageTTL = time.Second * 30
+	imageTTL = time.Second * 3600 // 1 hour
 )
 
 type serviceArtwork struct {
@@ -21,14 +21,45 @@ type serviceArtwork struct {
 	artwork *artwork.Service
 }
 
-// Add a new ticket and return its ID.
-func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res string, err error) {
+// RegisterStatus streams the job status of the new artwork registration.
+func (service *serviceArtwork) RegisterStatus(ctx context.Context, p *artworks.RegisterStatusPayload, stream artworks.RegisterStatusServerStream) (err error) {
+	job := service.artwork.RegisterJob(p.JobID)
+	if job == nil {
+		return artworks.MakeNotFound(errors.Errorf("invalid jobId: %d", p.JobID))
+	}
+	subscription := job.Subscribe()
+
+	defer stream.Close()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case sub, ok := <-subscription:
+			if !ok {
+				return nil
+			}
+			res := &artworks.Job{
+				ID:     job.ID,
+				Status: sub.Status.String(),
+			}
+			if err := stream.Send(res); err != nil {
+				return artworks.MakeBadRequest(err)
+			}
+
+		}
+	}
+
+	return nil
+}
+
+// Register runs registers process for the new artwork.
+func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	image, err := service.storage.Get(p.ImageID)
 	if err == dao.ErrKeyNotFound {
-		return "", artworks.MakeBadRequest(errors.Errorf("invalid image_id %q", p.ImageID))
+		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
 	if err != nil {
-		return "", artworks.MakeInternalServerError(err)
+		return nil, artworks.MakeInternalServerError(err)
 	}
 
 	artwork := &artwork.Artwork{
@@ -46,14 +77,18 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 		NetworkFee:       p.NetworkFee,
 	}
 
-	err = service.artwork.Register(artwork)
+	jobID, err := service.artwork.Register(artwork)
 	if err != nil {
-		return "", artworks.MakeInternalServerError(err)
+		return nil, artworks.MakeInternalServerError(err)
 	}
-	return
+	res = &artworks.RegisterResult{
+		JobID: jobID,
+	}
+	return res, nil
 }
 
-func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.ImageUploadPayload) (res *artworks.WalletnodeImage, err error) {
+// UploadImage uploads an image and return unique image id.
+func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
 	id, err := random.String(8, random.Base62Chars)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
@@ -70,7 +105,7 @@ func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.Imag
 		})
 	}()
 
-	res = &artworks.WalletnodeImage{
+	res = &artworks.Image{
 		ImageID:   id,
 		ExpiresIn: expiresIn.Format(time.RFC3339),
 	}
