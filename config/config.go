@@ -3,9 +3,9 @@ package config
 import (
 	"encoding/json"
 
+	"github.com/pastelnetwork/walletnode/api"
 	"github.com/pastelnetwork/walletnode/nats"
 	"github.com/pastelnetwork/walletnode/pastel"
-	"github.com/pastelnetwork/walletnode/rest"
 )
 
 // Config contains configuration of all components of the WalletNode.
@@ -14,7 +14,7 @@ type Config struct {
 
 	Pastel *pastel.Config `mapstructure:"pastel" json:"pastel,omitempty"`
 	Nats   *nats.Config   `mapstructure:"nats" json:"nats,omitempty"`
-	Rest   *rest.Config   `mapstructure:"rest" json:"rest,omitempty"`
+	Rest   *api.Config    `mapstructure:"api" json:"api,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -30,6 +30,6 @@ func New() *Config {
 		Main:   *NewMain(),
 		Pastel: pastel.NewConfig(),
 		Nats:   nats.NewConfig(),
-		Rest:   rest.NewConfig(),
+		Rest:   api.NewConfig(),
 	}
 }
