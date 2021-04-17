@@ -63,9 +63,9 @@ jobs:
       - run:
           name: Upload the binaries to GitHub
           command: |
-            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --file bin/walletnode-darwin-amd64
-            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --file bin/walletnode-linux-amd64
-            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --file bin/walletnode-windows-amd64
+            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --name walletnode-darwin-amd64 --file bin/walletnode-darwin-amd64
+            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --name walletnode-linux-amd64 --file bin/walletnode-linux-amd64
+            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --name walletnode-windows-amd64 --file bin/walletnode-windows-amd64
 
 workflows:
   build-and-test:
