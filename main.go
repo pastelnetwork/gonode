@@ -32,6 +32,8 @@ import (
 	"golang.org/x/crypto/sha3"
 
 	"github.com/gonum/matrix/mat64"
+
+	"github.com/montanaflynn/stats"
 )
 
 func Measure(start time.Time) {
@@ -220,7 +222,7 @@ func compute_image_deep_learning_features_func(path_to_art_image_file string) ([
 		})
 
 		predictions := results[0].Value().([][]float32)[0]
-		fmt.Println(predictions)
+		//fmt.Println(predictions)
 		fingerprints[i] = fromFloat32To64(predictions)
 	}
 
@@ -417,16 +419,141 @@ func bindRowsOfDataFrames(dataFrame dataframe.DataFrame, dataFrameToJoinRows dat
 	return dataFrame.RBind(dataFrameToJoinRows)
 }
 
+func get_all_image_fingerprints_from_dupe_detection_database_as_array() ([][]float64, error) {
+	defer Measure(time.Now())
+
+	hashes, err := get_list_of_all_registered_image_file_hashes_func()
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	db, err := sql.Open("sqlite3", dupe_detection_image_fingerprint_database_file_path)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	defer db.Close()
+
+	var list_of_combined_image_fingerprint_rows [][]float64
+
+	for _, current_image_file_hash := range hashes {
+		selectQuery := `
+			SELECT path_to_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector,
+				model_6_image_fingerprint_vector, model_7_image_fingerprint_vector FROM image_hash_to_image_fingerprint_table where sha256_hash_of_art_image_file = ? ORDER BY datetime_fingerprint_added_to_database DESC
+		`
+		rows, err := db.Query(selectQuery, current_image_file_hash)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var current_image_file_path string
+			var model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector []byte
+			err = rows.Scan(&current_image_file_path, &model_1_image_fingerprint_vector, &model_2_image_fingerprint_vector, &model_3_image_fingerprint_vector, &model_4_image_fingerprint_vector, &model_5_image_fingerprint_vector, &model_6_image_fingerprint_vector, &model_7_image_fingerprint_vector)
+			if err != nil {
+				return nil, errors.New(err)
+			}
+			combined_image_fingerprint_vector := append(append(append(append(append(append(fromBytes(model_1_image_fingerprint_vector), fromBytes(model_2_image_fingerprint_vector)[:]...), fromBytes(model_3_image_fingerprint_vector)[:]...), fromBytes(model_4_image_fingerprint_vector)[:]...), fromBytes(model_5_image_fingerprint_vector)[:]...), fromBytes(model_6_image_fingerprint_vector)[:]...), fromBytes(model_7_image_fingerprint_vector)[:]...)
+			list_of_combined_image_fingerprint_rows = append(list_of_combined_image_fingerprint_rows, combined_image_fingerprint_vector)
+		}
+	}
+	return list_of_combined_image_fingerprint_rows, nil
+}
+
+func get_image_deep_learning_features_combined_vector_for_single_image_func(path_to_art_image_file string) ([]float64, error) {
+	defer Measure(time.Now())
+	fingerprints, err := compute_image_deep_learning_features_func(path_to_art_image_file)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	var combined_image_fingerprint_vector []float64
+	for _, fingerprint := range fingerprints {
+		combined_image_fingerprint_vector = append(combined_image_fingerprint_vector, fingerprint...)
+	}
+	return combined_image_fingerprint_vector, err
+}
+
+func computePearsonRForAllFingerprintPairs(candidate_image_fingerprint []float64, final_combined_image_fingerprint_array [][]float64) ([]float64, error) {
+	defer Measure(time.Now())
+	var similarity_score_vector__pearson_all []float64
+	for _, fingerprint := range final_combined_image_fingerprint_array {
+		pearsonR, err := stats.Pearson(candidate_image_fingerprint, fingerprint)
+		if err != nil {
+			return nil, err
+		}
+		similarity_score_vector__pearson_all = append(similarity_score_vector__pearson_all, pearsonR)
+	}
+	return similarity_score_vector__pearson_all, nil
+}
+
+func computeSpearmanForAllFingerprintPairs(candidate_image_fingerprint []float64, final_combined_image_fingerprint_array [][]float64) ([]float64, error) {
+	defer Measure(time.Now())
+	var similarity_score_vector__spearman []float64
+	for _, fingerprint := range final_combined_image_fingerprint_array {
+		spearmanCorrelation, err := Spearman(candidate_image_fingerprint, fingerprint)
+		if err != nil {
+			return nil, err
+		}
+		similarity_score_vector__spearman = append(similarity_score_vector__spearman, spearmanCorrelation)
+	}
+	return similarity_score_vector__spearman, nil
+}
+
+func filterOutFingerprintsByTreshhold(similarity_score_vector__pearson_all []float64, threshold float64, final_combined_image_fingerprint_array [][]float64) [][]float64 {
+	defer Measure(time.Now())
+	var filteredByTreshholdCombinedImageFingerprintArray [][]float64
+	for i, valueToCheck := range similarity_score_vector__pearson_all {
+		if valueToCheck >= threshold {
+			filteredByTreshholdCombinedImageFingerprintArray = append(filteredByTreshholdCombinedImageFingerprintArray, final_combined_image_fingerprint_array[i])
+		}
+	}
+	return filteredByTreshholdCombinedImageFingerprintArray
+}
+
 func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
 	fmt.Printf("\nChecking if candidate image is a likely duplicate of a previously registered artwork:")
 	fmt.Printf("\nRetrieving image fingerprints of previously registered images from local database...")
 
-	final_combined_image_fingerprint_df, err := get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func()
+	pearson__dupe_threshold := 0.995
+	spearman__dupe_threshold := 0.79
+	strictness_factor := 0.985
+
+	final_combined_image_fingerprint_array, err := get_all_image_fingerprints_from_dupe_detection_database_as_array()
 	if err != nil {
 		return false, errors.New(err)
 	}
-	rowCount, _ := final_combined_image_fingerprint_df.Dims()
-	fmt.Printf("\nComparing candidate image to the fingerprints of %v previously registered images.", rowCount)
+	number_of_previously_registered_images_to_compare := len(final_combined_image_fingerprint_array)
+	length_of_each_image_fingerprint_vector := len(final_combined_image_fingerprint_array[0])
+	fmt.Printf("\nComparing candidate image to the fingerprints of %v previously registered images. Each fingerprint consists of %v numbers.", number_of_previously_registered_images_to_compare, length_of_each_image_fingerprint_vector)
+	fmt.Printf("\nComputing image fingerprint of candidate image...")
+
+	candidate_image_fingerprint, err := get_image_deep_learning_features_combined_vector_for_single_image_func(path_to_art_image_file)
+	length_of_candidate_image_fingerprint := len(candidate_image_fingerprint)
+	fmt.Printf("\nCandidate image fingerpint consists from %v numbers", length_of_candidate_image_fingerprint)
+	if err != nil {
+		return false, errors.New(err)
+	}
+	fmt.Printf("\nComputing Pearson's R, which is fast to compute (We only perform the slower tests on the fingerprints that have a high R).")
+	similarity_score_vector__pearson_all, err := computePearsonRForAllFingerprintPairs(candidate_image_fingerprint, final_combined_image_fingerprint_array)
+	if err != nil {
+		return false, errors.New(err)
+	}
+	pearson_max, _ := stats.Max(similarity_score_vector__pearson_all)
+
+	fmt.Printf("\nLength of computed pearson r vector: %v with max value %v", len(similarity_score_vector__pearson_all), pearson_max)
+
+	list_of_fingerprints_requiring_further_testing_1 := filterOutFingerprintsByTreshhold(similarity_score_vector__pearson_all, strictness_factor*pearson__dupe_threshold, final_combined_image_fingerprint_array)
+	percentage_of_fingerprints_requiring_further_testing_1 := float32(len(list_of_fingerprints_requiring_further_testing_1)) / float32(len(final_combined_image_fingerprint_array))
+	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_1), percentage_of_fingerprints_requiring_further_testing_1*100)
+
+	similarity_score_vector__spearman, err := computeSpearmanForAllFingerprintPairs(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_1)
+	if err != nil {
+		return false, errors.New(err)
+	}
+	list_of_fingerprints_requiring_further_testing_2 := filterOutFingerprintsByTreshhold(similarity_score_vector__spearman, strictness_factor*spearman__dupe_threshold, list_of_fingerprints_requiring_further_testing_1)
+	percentage_of_fingerprints_requiring_further_testing_2 := float32(len(list_of_fingerprints_requiring_further_testing_2)) / float32(len(final_combined_image_fingerprint_array))
+	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_2), percentage_of_fingerprints_requiring_further_testing_2*100)
+
 	return true, nil
 }
 

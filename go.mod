@@ -14,6 +14,7 @@ require (
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
 	github.com/mattn/go-sqlite3 v1.14.6
+	github.com/montanaflynn/stats v0.6.5
 	github.com/pastelnetwork/go-commons v0.0.2
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	gonum.org/v1/gonum v0.9.1 // indirect
