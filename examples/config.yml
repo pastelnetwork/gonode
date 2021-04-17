@@ -1,0 +1,10 @@
+pastel:
+  data-dir: "~/.pastel"
+  hostname: "127.0.0.1"
+  port: 9932
+  username: "rt"
+  password: "rt"
+
+api:
+  hostname: "localhost"
+  port: 8080
