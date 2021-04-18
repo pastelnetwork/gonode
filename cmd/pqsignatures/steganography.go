@@ -121,5 +121,6 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 		return errors.New(DecodedPublicKeyNotMatch)
 	}
 
+	fmt.Printf("\n\nBase64 public key and pastel id signature decoded from QR codes images match encoded\n")
 	return nil
 }

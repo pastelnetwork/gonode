@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/pastelnetwork/go-commons/errors"
+	pqtime "github.com/pastelnetwork/pqsignatures/internal/time"
 	"github.com/pastelnetwork/pqsignatures/qr"
 	"golang.org/x/crypto/sha3"
 )
@@ -44,6 +46,7 @@ func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
 }
 
 func sign(imagePath string) error {
+	defer pqtime.Measure(time.Now())
 	if _, err := os.Stat(OTPSecretFile); os.IsNotExist(err) {
 		if err := setupGoogleAuthenticatorForPrivateKeyEncryption(); err != nil {
 			return errors.New(err)

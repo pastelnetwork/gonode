@@ -199,7 +199,6 @@ func toPngs(s string, dataSize int) ([][]byte, error) {
 		}
 		pngBuffer := new(bytes.Buffer)
 		err = png.Encode(pngBuffer, image)
-		//png, err := qrcode.Encode(chunk, qrcode.Medium, DataQRImageSize)
 		if err != nil {
 			return nil, errors.New(err)
 		}
