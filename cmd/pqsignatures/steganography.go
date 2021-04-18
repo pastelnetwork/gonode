@@ -15,6 +15,9 @@ import (
 	"github.com/pastelnetwork/steganography"
 )
 
+var DecodedPublicKeyNotMatch = errors.Errorf("decoded base64 public key doesn't match")
+var DecodedSignatureNotMatch = errors.Errorf("decoded base64 pastel id signature doesn't match")
+
 func hideSignatureImageInInputImage(sample_image_file_path string, signature_layer_image_output_filepath string, signed_image_output_path string) error {
 	img, err := gg.LoadImage(sample_image_file_path)
 	if err != nil {
@@ -101,8 +104,21 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 		return errors.New(err)
 	}
 
+	var decodedPKBase64 string
+	var decodedSignatureBase64 string
 	for _, message := range decodedMessages {
 		fmt.Printf("\nDecoded message with alias:%v and content:%v", message.Alias, message.Content)
+		if message.Alias == "pk" {
+			decodedPKBase64 = message.Content
+		} else if message.Alias == "sig" {
+			decodedSignatureBase64 = message.Content
+		}
+	}
+	if pkBase64 != decodedPKBase64 {
+		return errors.New(DecodedPublicKeyNotMatch)
+	}
+	if pastelIdSignatureBase64 != decodedSignatureBase64 {
+		return errors.New(DecodedPublicKeyNotMatch)
 	}
 
 	return nil
