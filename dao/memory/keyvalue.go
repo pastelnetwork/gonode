@@ -14,12 +14,12 @@ type keyValue struct {
 	values map[string][]byte
 }
 
-// Init implements dao.KeyValue.Init
+// Init implements dao.KeyValue.Init().
 func (db *keyValue) Init() error {
 	return nil
 }
 
-// Get implements dao.KeyValue.Set
+// Get implements dao.KeyValue.Set().
 func (db *keyValue) Get(key string) ([]byte, error) {
 	db.Lock()
 	defer db.Unlock()
@@ -30,7 +30,7 @@ func (db *keyValue) Get(key string) ([]byte, error) {
 	return nil, dao.ErrKeyNotFound
 }
 
-// Delete implements dao.KeyValue.Delete
+// Delete implements dao.KeyValue.Delete().
 func (db *keyValue) Delete(key string) error {
 	db.Lock()
 	defer db.Unlock()
@@ -42,7 +42,7 @@ func (db *keyValue) Delete(key string) error {
 	return nil
 }
 
-// Get implements dao.KeyValue.Set
+// Get implements dao.KeyValue.Set().
 func (db *keyValue) Set(key string, value []byte) error {
 	db.Lock()
 	defer db.Unlock()
@@ -53,7 +53,7 @@ func (db *keyValue) Set(key string, value []byte) error {
 	return nil
 }
 
-// NewKeyValue returns a new KeyValue instance
+// NewKeyValue returns a new KeyValue instance.
 func NewKeyValue() dao.KeyValue {
 	return &keyValue{
 		values: make(map[string][]byte),

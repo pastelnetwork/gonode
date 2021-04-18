@@ -1,6 +1,6 @@
 package artwork
 
-// Artwork represents artwork data.
+// Artwork represents artwork properties.
 type Artwork struct {
 	Image            []byte
 	Name             string

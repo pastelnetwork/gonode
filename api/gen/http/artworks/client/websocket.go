@@ -12,19 +12,18 @@ import (
 
 	"github.com/gorilla/websocket"
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
-	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
 	goahttp "goa.design/goa/v3/http"
 )
 
 // ConnConfigurer holds the websocket connection configurer functions for the
 // streaming endpoints in "artworks" service.
 type ConnConfigurer struct {
-	RegisterStatusFn goahttp.ConnConfigureFunc
+	RegisterJobStateFn goahttp.ConnConfigureFunc
 }
 
-// RegisterStatusClientStream implements the
-// artworks.RegisterStatusClientStream interface.
-type RegisterStatusClientStream struct {
+// RegisterJobStateClientStream implements the
+// artworks.RegisterJobStateClientStream interface.
+type RegisterJobStateClientStream struct {
 	// conn is the underlying websocket connection.
 	conn *websocket.Conn
 }
@@ -33,16 +32,16 @@ type RegisterStatusClientStream struct {
 // with fn for all the streaming endpoints in "artworks" service.
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
-		RegisterStatusFn: fn,
+		RegisterJobStateFn: fn,
 	}
 }
 
-// Recv reads instances of "artworks.Job" from the "registerStatus" endpoint
-// websocket connection.
-func (s *RegisterStatusClientStream) Recv() (*artworks.Job, error) {
+// Recv reads instances of "artworks.JobState" from the "registerJobState"
+// endpoint websocket connection.
+func (s *RegisterJobStateClientStream) Recv() (*artworks.JobState, error) {
 	var (
-		rv   *artworks.Job
-		body RegisterStatusResponseBody
+		rv   *artworks.JobState
+		body RegisterJobStateResponseBody
 		err  error
 	)
 	err = s.conn.ReadJSON(&body)
@@ -53,13 +52,10 @@ func (s *RegisterStatusClientStream) Recv() (*artworks.Job, error) {
 	if err != nil {
 		return rv, err
 	}
-	res := NewRegisterStatusJobOK(&body)
-	vres := &artworksviews.Job{
-		Projected: res,
-		View:      "default",
+	err = ValidateRegisterJobStateResponseBody(&body)
+	if err != nil {
+		return rv, err
 	}
-	if err := artworksviews.ValidateJob(vres); err != nil {
-		return rv, goahttp.ErrValidationError("artworks", "registerStatus", err)
-	}
-	return artworks.NewJob(vres), nil
+	res := NewRegisterJobStateJobStateOK(&body)
+	return res, nil
 }

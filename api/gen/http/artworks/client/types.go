@@ -8,6 +8,8 @@
 package client
 
 import (
+	"unicode/utf8"
+
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
 	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
 	goa "goa.design/goa/v3/pkg"
@@ -55,16 +57,31 @@ type RegisterResponseBody struct {
 	JobID *int `form:"job_id,omitempty" json:"job_id,omitempty" xml:"job_id,omitempty"`
 }
 
-// RegisterStatusResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body.
-type RegisterStatusResponseBody struct {
+// RegisterJobStateResponseBody is the type of the "artworks" service
+// "registerJobState" endpoint HTTP response body.
+type RegisterJobStateResponseBody struct {
+	// Date of the status creation
+	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
+	// Status of the registration process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
+// RegisterJobResponseBody is the type of the "artworks" service "registerJob"
+// endpoint HTTP response body.
+type RegisterJobResponseBody struct {
 	// JOb ID of the registration process
 	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Status of the registration process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// List of states from the very beginning of the process
+	States []*JobStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// txid
 	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
 }
+
+// RegisterJobsResponseBody is the type of the "artworks" service
+// "registerJobs" endpoint HTTP response body.
+type RegisterJobsResponseBody []*JobResponse
 
 // UploadImageResponseBody is the type of the "artworks" service "uploadImage"
 // endpoint HTTP response body.
@@ -112,9 +129,9 @@ type RegisterInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// RegisterStatusNotFoundResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body for the "NotFound" error.
-type RegisterStatusNotFoundResponseBody struct {
+// RegisterJobStateNotFoundResponseBody is the type of the "artworks" service
+// "registerJobState" endpoint HTTP response body for the "NotFound" error.
+type RegisterJobStateNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -130,28 +147,66 @@ type RegisterStatusNotFoundResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// RegisterStatusBadRequestResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body for the "BadRequest" error.
-type RegisterStatusBadRequestResponseBody struct {
-	// Name is the name of this class of errors.
-	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
-	// Is the error temporary?
-	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
-	// Is the error a timeout?
-	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
-	// Is the error a server-side fault?
-	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
-}
-
-// RegisterStatusInternalServerErrorResponseBody is the type of the "artworks"
-// service "registerStatus" endpoint HTTP response body for the
+// RegisterJobStateInternalServerErrorResponseBody is the type of the
+// "artworks" service "registerJobState" endpoint HTTP response body for the
 // "InternalServerError" error.
-type RegisterStatusInternalServerErrorResponseBody struct {
+type RegisterJobStateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RegisterJobNotFoundResponseBody is the type of the "artworks" service
+// "registerJob" endpoint HTTP response body for the "NotFound" error.
+type RegisterJobNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RegisterJobInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerJob" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterJobInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RegisterJobsInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerJobs" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterJobsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -202,6 +257,34 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
 	// Is the error a server-side fault?
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// JobStateResponseBody is used to define fields on response body types.
+type JobStateResponseBody struct {
+	// Date of the status creation
+	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
+	// Status of the registration process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
+// JobResponse is used to define fields on response body types.
+type JobResponse struct {
+	// JOb ID of the registration process
+	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Status of the registration process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// List of states from the very beginning of the process
+	States []*JobStateResponse `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
+	// txid
+	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+}
+
+// JobStateResponse is used to define fields on response body types.
+type JobStateResponse struct {
+	// Date of the status creation
+	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
+	// Status of the registration process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 }
 
 // NewRegisterRequestBody builds the HTTP request body from the payload of the
@@ -273,21 +356,68 @@ func NewRegisterInternalServerError(body *RegisterInternalServerErrorResponseBod
 	return v
 }
 
-// NewRegisterStatusJobOK builds a "artworks" service "registerStatus" endpoint
+// NewRegisterJobStateJobStateOK builds a "artworks" service "registerJobState"
+// endpoint result from a HTTP "OK" response.
+func NewRegisterJobStateJobStateOK(body *RegisterJobStateResponseBody) *artworks.JobState {
+	v := &artworks.JobState{
+		Date:   *body.Date,
+		Status: *body.Status,
+	}
+
+	return v
+}
+
+// NewRegisterJobStateNotFound builds a artworks service registerJobState
+// endpoint NotFound error.
+func NewRegisterJobStateNotFound(body *RegisterJobStateNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRegisterJobStateInternalServerError builds a artworks service
+// registerJobState endpoint InternalServerError error.
+func NewRegisterJobStateInternalServerError(body *RegisterJobStateInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRegisterJobJobOK builds a "artworks" service "registerJob" endpoint
 // result from a HTTP "OK" response.
-func NewRegisterStatusJobOK(body *RegisterStatusResponseBody) *artworksviews.JobView {
+func NewRegisterJobJobOK(body *RegisterJobResponseBody) *artworksviews.JobView {
 	v := &artworksviews.JobView{
 		ID:     body.ID,
 		Status: body.Status,
 		Txid:   body.Txid,
 	}
+	if body.States != nil {
+		v.States = make([]*artworksviews.JobStateView, len(body.States))
+		for i, val := range body.States {
+			v.States[i] = unmarshalJobStateResponseBodyToArtworksviewsJobStateView(val)
+		}
+	}
 
 	return v
 }
 
-// NewRegisterStatusNotFound builds a artworks service registerStatus endpoint
+// NewRegisterJobNotFound builds a artworks service registerJob endpoint
 // NotFound error.
-func NewRegisterStatusNotFound(body *RegisterStatusNotFoundResponseBody) *goa.ServiceError {
+func NewRegisterJobNotFound(body *RegisterJobNotFoundResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -300,9 +430,9 @@ func NewRegisterStatusNotFound(body *RegisterStatusNotFoundResponseBody) *goa.Se
 	return v
 }
 
-// NewRegisterStatusBadRequest builds a artworks service registerStatus
-// endpoint BadRequest error.
-func NewRegisterStatusBadRequest(body *RegisterStatusBadRequestResponseBody) *goa.ServiceError {
+// NewRegisterJobInternalServerError builds a artworks service registerJob
+// endpoint InternalServerError error.
+func NewRegisterJobInternalServerError(body *RegisterJobInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -315,9 +445,19 @@ func NewRegisterStatusBadRequest(body *RegisterStatusBadRequestResponseBody) *go
 	return v
 }
 
-// NewRegisterStatusInternalServerError builds a artworks service
-// registerStatus endpoint InternalServerError error.
-func NewRegisterStatusInternalServerError(body *RegisterStatusInternalServerErrorResponseBody) *goa.ServiceError {
+// NewRegisterJobsJobCollectionOK builds a "artworks" service "registerJobs"
+// endpoint result from a HTTP "OK" response.
+func NewRegisterJobsJobCollectionOK(body RegisterJobsResponseBody) artworksviews.JobCollectionView {
+	v := make([]*artworksviews.JobView, len(body))
+	for i, val := range body {
+		v[i] = unmarshalJobResponseToArtworksviewsJobView(val)
+	}
+	return v
+}
+
+// NewRegisterJobsInternalServerError builds a artworks service registerJobs
+// endpoint InternalServerError error.
+func NewRegisterJobsInternalServerError(body *RegisterJobsInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -371,6 +511,18 @@ func NewUploadImageInternalServerError(body *UploadImageInternalServerErrorRespo
 	return v
 }
 
+// ValidateRegisterJobStateResponseBody runs the validations defined on
+// RegisterJobStateResponseBody
+func ValidateRegisterJobStateResponseBody(body *RegisterJobStateResponseBody) (err error) {
+	if body.Date == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	return
+}
+
 // ValidateRegisterBadRequestResponseBody runs the validations defined on
 // register_BadRequest_response_body
 func ValidateRegisterBadRequestResponseBody(body *RegisterBadRequestResponseBody) (err error) {
@@ -419,9 +571,9 @@ func ValidateRegisterInternalServerErrorResponseBody(body *RegisterInternalServe
 	return
 }
 
-// ValidateRegisterStatusNotFoundResponseBody runs the validations defined on
-// registerStatus_NotFound_response_body
-func ValidateRegisterStatusNotFoundResponseBody(body *RegisterStatusNotFoundResponseBody) (err error) {
+// ValidateRegisterJobStateNotFoundResponseBody runs the validations defined on
+// registerJobState_NotFound_response_body
+func ValidateRegisterJobStateNotFoundResponseBody(body *RegisterJobStateNotFoundResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -443,9 +595,9 @@ func ValidateRegisterStatusNotFoundResponseBody(body *RegisterStatusNotFoundResp
 	return
 }
 
-// ValidateRegisterStatusBadRequestResponseBody runs the validations defined on
-// registerStatus_BadRequest_response_body
-func ValidateRegisterStatusBadRequestResponseBody(body *RegisterStatusBadRequestResponseBody) (err error) {
+// ValidateRegisterJobStateInternalServerErrorResponseBody runs the validations
+// defined on registerJobState_InternalServerError_response_body
+func ValidateRegisterJobStateInternalServerErrorResponseBody(body *RegisterJobStateInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -467,9 +619,57 @@ func ValidateRegisterStatusBadRequestResponseBody(body *RegisterStatusBadRequest
 	return
 }
 
-// ValidateRegisterStatusInternalServerErrorResponseBody runs the validations
-// defined on registerStatus_InternalServerError_response_body
-func ValidateRegisterStatusInternalServerErrorResponseBody(body *RegisterStatusInternalServerErrorResponseBody) (err error) {
+// ValidateRegisterJobNotFoundResponseBody runs the validations defined on
+// registerJob_NotFound_response_body
+func ValidateRegisterJobNotFoundResponseBody(body *RegisterJobNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRegisterJobInternalServerErrorResponseBody runs the validations
+// defined on registerJob_InternalServerError_response_body
+func ValidateRegisterJobInternalServerErrorResponseBody(body *RegisterJobInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRegisterJobsInternalServerErrorResponseBody runs the validations
+// defined on registerJobs_InternalServerError_response_body
+func ValidateRegisterJobsInternalServerErrorResponseBody(body *RegisterJobsInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -535,6 +735,57 @@ func ValidateUploadImageInternalServerErrorResponseBody(body *UploadImageInterna
 	}
 	if body.Fault == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateJobStateResponseBody runs the validations defined on
+// JobStateResponseBody
+func ValidateJobStateResponseBody(body *JobStateResponseBody) (err error) {
+	if body.Date == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	return
+}
+
+// ValidateJobResponse runs the validations defined on JobResponse
+func ValidateJobResponse(body *JobResponse) (err error) {
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	for _, e := range body.States {
+		if e != nil {
+			if err2 := ValidateJobStateResponse(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	if body.Txid != nil {
+		if utf8.RuneCountInString(*body.Txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, true))
+		}
+	}
+	if body.Txid != nil {
+		if utf8.RuneCountInString(*body.Txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, false))
+		}
+	}
+	return
+}
+
+// ValidateJobStateResponse runs the validations defined on JobStateResponse
+func ValidateJobStateResponse(body *JobStateResponse) (err error) {
+	if body.Date == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	return
 }

@@ -5,6 +5,141 @@ info:
 servers:
 - url: http://localhost:8080
 paths:
+  /artworks/jobs:
+    get:
+      tags:
+      - artworks
+      summary: Returns list of jobs
+      description: List of all jobs.
+      operationId: artworks#registerJobs
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobResponseTinyCollection'
+              example:
+              - id: 5
+                status: Registration started
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+              - id: 5
+                status: Registration started
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /artworks/jobs/{jobId}:
+    get:
+      tags:
+      - artworks
+      summary: Find job by ID
+      description: Returns a single job.
+      operationId: artworks#registerJob
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID of the registration process
+        required: true
+        schema:
+          type: integer
+          description: Job ID of the registration process
+          example: 5
+          minimum: 1
+        example: 5
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterJobResponseBody'
+              example:
+                id: 5
+                states:
+                - date: "2019-10-12T07:20:50.52Z"
+                  status: Registration started
+                - date: "2019-10-12T07:20:50.52Z"
+                  status: Registration started
+                - date: "2019-10-12T07:20:50.52Z"
+                  status: Registration started
+                status: Registration started
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        "404":
+          description: Not Found response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /artworks/jobs/{jobId}/state:
+    get:
+      tags:
+      - artworks
+      summary: Streams state by job ID
+      description: Streams the state of the registration process.
+      operationId: artworks#registerJobState
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID of the registration process
+        required: true
+        schema:
+          type: integer
+          description: Job ID of the registration process
+          example: 5
+          minimum: 1
+        example: 5
+      responses:
+        "101":
+          description: Switching Protocols response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JobState'
+              example:
+                date: "2019-10-12T07:20:50.52Z"
+                status: Registration started
+        "404":
+          description: Not Found response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
   /artworks/register:
     post:
       tags:
@@ -62,66 +197,7 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
-  /artworks/register/{jobId}:
-    get:
-      tags:
-      - artworks
-      summary: Returns a status of the registration artwork
-      description: Streams statuses of the artwork registration.
-      operationId: artworks#registerStatus
-      parameters:
-      - name: jobId
-        in: path
-        description: Job ID of the registration process
-        required: true
-        schema:
-          type: integer
-          description: Job ID of the registration process
-          example: 5
-          minimum: 1
-        example: 5
-      responses:
-        "101":
-          description: Switching Protocols response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Job'
-              example:
-                id: 5
-                status: Registration started
-                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-        "400":
-          description: Bad Request response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-        "404":
-          description: Not Found response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-        "500":
-          description: Internal Server Error response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /artworks/register/upload-image:
+  /artworks/register/upload:
     post:
       tags:
       - artworks
@@ -136,11 +212,40 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 73
-              - 100
+              - 86
+              - 101
+              - 108
               - 32
+              - 118
+              - 111
+              - 108
               - 117
+              - 112
               - 116
+              - 97
+              - 116
+              - 101
+              - 109
+              - 32
+              - 112
+              - 114
+              - 111
+              - 118
+              - 105
+              - 100
+              - 101
+              - 110
+              - 116
+              - 32
+              - 100
+              - 111
+              - 108
+              - 111
+              - 114
+              - 105
+              - 98
+              - 117
+              - 115
               - 46
       responses:
         "201":
@@ -202,7 +307,7 @@ components:
         timeout:
           type: boolean
           description: Is the error a timeout?
-          example: false
+          example: true
       example:
         id: 3F1FKVRR
         message: Value of ID must be an integer
@@ -234,7 +339,7 @@ components:
       required:
       - image_id
       - expires_in
-    Job:
+    JobResponseTiny:
       type: object
       properties:
         id:
@@ -252,8 +357,82 @@ components:
           example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
           minLength: 64
           maxLength: 64
+      description: JobResponse result type (tiny view)
       example:
         id: 5
+        status: Registration started
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      required:
+      - id
+      - status
+    JobResponseTinyCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/JobResponseTiny'
+      description: RegisterJobsResponseBody is the result type for an array of JobResponse
+        (tiny view)
+      example:
+      - id: 5
+        status: Registration started
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      - id: 5
+        status: Registration started
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+    JobState:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date of the status creation
+          example: "2019-10-12T07:20:50.52Z"
+        status:
+          type: string
+          description: Status of the registration process
+          example: Registration started
+      example:
+        date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      required:
+      - date
+      - status
+    RegisterJobResponseBody:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: JOb ID of the registration process
+          example: 5
+          format: int64
+        states:
+          type: array
+          items:
+            $ref: '#/components/schemas/JobState'
+          description: List of states from the very beginning of the process
+          example:
+          - date: "2019-10-12T07:20:50.52Z"
+            status: Registration started
+          - date: "2019-10-12T07:20:50.52Z"
+            status: Registration started
+        status:
+          type: string
+          description: Status of the registration process
+          example: Registration started
+        txid:
+          type: string
+          description: txid
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
+      description: RegisterJobResponseBody result type (default view)
+      example:
+        id: 5
+        states:
+        - date: "2019-10-12T07:20:50.52Z"
+          status: Registration started
+        - date: "2019-10-12T07:20:50.52Z"
+          status: Registration started
+        - date: "2019-10-12T07:20:50.52Z"
+          status: Registration started
         status: Registration started
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       required:
@@ -374,77 +553,80 @@ components:
           type: string
           description: File to upload
           example:
-          - 73
-          - 116
-          - 97
-          - 113
+          - 83
           - 117
-          - 101
-          - 32
-          - 113
-          - 117
-          - 97
-          - 101
-          - 114
-          - 97
+          - 110
           - 116
           - 32
-          - 108
           - 97
-          - 98
-          - 111
-          - 114
+          - 99
+          - 99
           - 117
-          - 109
-          - 32
-          - 108
+          - 115
           - 97
-          - 98
-          - 111
-          - 114
-          - 101
-          - 32
           - 110
-          - 117
-          - 108
-          - 108
-          - 97
-          - 32
-          - 118
-          - 101
-          - 110
+          - 116
           - 105
+          - 117
+          - 109
+          - 32
+          - 105
+          - 112
+          - 115
+          - 117
+          - 109
+          - 32
+          - 116
+          - 111
+          - 116
           - 97
           - 109
           - 32
-          - 97
+          - 101
+          - 115
           - 116
-          - 113
+          - 32
           - 117
+          - 110
+          - 100
           - 101
           - 46
           format: binary
       example:
         file:
-        - 86
-        - 101
-        - 114
+        - 69
         - 105
-        - 116
-        - 97
-        - 116
-        - 105
-        - 115
-        - 32
-        - 105
-        - 112
-        - 115
-        - 97
-        - 32
-        - 113
         - 117
-        - 111
         - 115
+        - 32
+        - 99
+        - 117
+        - 109
+        - 32
+        - 104
+        - 97
+        - 114
+        - 117
+        - 109
+        - 32
+        - 105
+        - 108
+        - 108
+        - 117
+        - 109
+        - 32
+        - 118
+        - 101
+        - 108
+        - 105
+        - 116
+        - 32
+        - 118
+        - 101
+        - 110
+        - 105
+        - 97
+        - 109
         - 46
       required:
       - file

@@ -25,9 +25,17 @@ type Client struct {
 	// endpoint.
 	RegisterDoer goahttp.Doer
 
-	// RegisterStatus Doer is the HTTP client used to make requests to the
-	// registerStatus endpoint.
-	RegisterStatusDoer goahttp.Doer
+	// RegisterJobState Doer is the HTTP client used to make requests to the
+	// registerJobState endpoint.
+	RegisterJobStateDoer goahttp.Doer
+
+	// RegisterJob Doer is the HTTP client used to make requests to the registerJob
+	// endpoint.
+	RegisterJobDoer goahttp.Doer
+
+	// RegisterJobs Doer is the HTTP client used to make requests to the
+	// registerJobs endpoint.
+	RegisterJobsDoer goahttp.Doer
 
 	// UploadImage Doer is the HTTP client used to make requests to the uploadImage
 	// endpoint.
@@ -67,17 +75,19 @@ func NewClient(
 		cfn = &ConnConfigurer{}
 	}
 	return &Client{
-		RegisterDoer:        doer,
-		RegisterStatusDoer:  doer,
-		UploadImageDoer:     doer,
-		CORSDoer:            doer,
-		RestoreResponseBody: restoreBody,
-		scheme:              scheme,
-		host:                host,
-		decoder:             dec,
-		encoder:             enc,
-		dialer:              dialer,
-		configurer:          cfn,
+		RegisterDoer:         doer,
+		RegisterJobStateDoer: doer,
+		RegisterJobDoer:      doer,
+		RegisterJobsDoer:     doer,
+		UploadImageDoer:      doer,
+		CORSDoer:             doer,
+		RestoreResponseBody:  restoreBody,
+		scheme:               scheme,
+		host:                 host,
+		decoder:              dec,
+		encoder:              enc,
+		dialer:               dialer,
+		configurer:           cfn,
 	}
 }
 
@@ -105,27 +115,28 @@ func (c *Client) Register() goa.Endpoint {
 	}
 }
 
-// RegisterStatus returns an endpoint that makes HTTP requests to the artworks
-// service registerStatus server.
-func (c *Client) RegisterStatus() goa.Endpoint {
+// RegisterJobState returns an endpoint that makes HTTP requests to the
+// artworks service registerJobState server.
+func (c *Client) RegisterJobState() goa.Endpoint {
 	var (
-		decodeResponse = DecodeRegisterStatusResponse(c.decoder, c.RestoreResponseBody)
+		decodeResponse = DecodeRegisterJobStateResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildRegisterStatusRequest(ctx, v)
+		req, err := c.BuildRegisterJobStateRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
 		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
 				return decodeResponse(resp)
 			}
-			return nil, goahttp.ErrRequestError("artworks", "registerStatus", err)
+			return nil, goahttp.ErrRequestError("artworks", "registerJobState", err)
 		}
-		if c.configurer.RegisterStatusFn != nil {
-			conn = c.configurer.RegisterStatusFn(conn, cancel)
+		if c.configurer.RegisterJobStateFn != nil {
+			conn = c.configurer.RegisterJobStateFn(conn, cancel)
 		}
 		go func() {
 			<-ctx.Done()
@@ -136,8 +147,46 @@ func (c *Client) RegisterStatus() goa.Endpoint {
 			)
 			conn.Close()
 		}()
-		stream := &RegisterStatusClientStream{conn: conn}
+		stream := &RegisterJobStateClientStream{conn: conn}
 		return stream, nil
+	}
+}
+
+// RegisterJob returns an endpoint that makes HTTP requests to the artworks
+// service registerJob server.
+func (c *Client) RegisterJob() goa.Endpoint {
+	var (
+		decodeResponse = DecodeRegisterJobResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildRegisterJobRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.RegisterJobDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("artworks", "registerJob", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// RegisterJobs returns an endpoint that makes HTTP requests to the artworks
+// service registerJobs server.
+func (c *Client) RegisterJobs() goa.Endpoint {
+	var (
+		decodeResponse = DecodeRegisterJobsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildRegisterJobsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.RegisterJobsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("artworks", "registerJobs", err)
+		}
+		return decodeResponse(resp)
 	}
 }
 

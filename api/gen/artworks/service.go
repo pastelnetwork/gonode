@@ -18,8 +18,12 @@ import (
 type Service interface {
 	// Runs a new registration process for the new artwork.
 	Register(context.Context, *RegisterPayload) (res *RegisterResult, err error)
-	// Streams statuses of the artwork registration.
-	RegisterStatus(context.Context, *RegisterStatusPayload, RegisterStatusServerStream) (err error)
+	// Streams the state of the registration process.
+	RegisterJobState(context.Context, *RegisterJobStatePayload, RegisterJobStateServerStream) (err error)
+	// Returns a single job.
+	RegisterJob(context.Context, *RegisterJobPayload) (res *Job, err error)
+	// List of all jobs.
+	RegisterJobs(context.Context) (res JobCollection, err error)
 	// Upload the image that is used when registering a new artwork.
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
 }
@@ -32,22 +36,22 @@ const ServiceName = "artworks"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"register", "registerStatus", "uploadImage"}
+var MethodNames = [5]string{"register", "registerJobState", "registerJob", "registerJobs", "uploadImage"}
 
-// RegisterStatusServerStream is the interface a "registerStatus" endpoint
+// RegisterJobStateServerStream is the interface a "registerJobState" endpoint
 // server stream must satisfy.
-type RegisterStatusServerStream interface {
-	// Send streams instances of "Job".
-	Send(*Job) error
+type RegisterJobStateServerStream interface {
+	// Send streams instances of "JobState".
+	Send(*JobState) error
 	// Close closes the stream.
 	Close() error
 }
 
-// RegisterStatusClientStream is the interface a "registerStatus" endpoint
+// RegisterJobStateClientStream is the interface a "registerJobState" endpoint
 // client stream must satisfy.
-type RegisterStatusClientStream interface {
-	// Recv reads instances of "Job" from the stream.
-	Recv() (*Job, error)
+type RegisterJobStateClientStream interface {
+	// Recv reads instances of "JobState" from the stream.
+	Recv() (*JobState, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -83,22 +87,42 @@ type RegisterResult struct {
 	JobID int
 }
 
-// RegisterStatusPayload is the payload type of the artworks service
-// registerStatus method.
-type RegisterStatusPayload struct {
+// RegisterJobStatePayload is the payload type of the artworks service
+// registerJobState method.
+type RegisterJobStatePayload struct {
 	// Job ID of the registration process
 	JobID int
 }
 
-// Job is the result type of the artworks service registerStatus method.
+// JobState is the result type of the artworks service registerJobState method.
+type JobState struct {
+	// Date of the status creation
+	Date string
+	// Status of the registration process
+	Status string
+}
+
+// RegisterJobPayload is the payload type of the artworks service registerJob
+// method.
+type RegisterJobPayload struct {
+	// Job ID of the registration process
+	JobID int
+}
+
+// Job is the result type of the artworks service registerJob method.
 type Job struct {
 	// JOb ID of the registration process
 	ID int
 	// Status of the registration process
 	Status string
+	// List of states from the very beginning of the process
+	States []*JobState
 	// txid
 	Txid *string
 }
+
+// JobCollection is the result type of the artworks service registerJobs method.
+type JobCollection []*Job
 
 // UploadImagePayload is the payload type of the artworks service uploadImage
 // method.
@@ -157,14 +181,57 @@ func NewViewedRegisterResult(res *RegisterResult, view string) *artworksviews.Re
 
 // NewJob initializes result type Job from viewed result type Job.
 func NewJob(vres *artworksviews.Job) *Job {
-	return newJob(vres.Projected)
+	var res *Job
+	switch vres.View {
+	case "tiny":
+		res = newJobTiny(vres.Projected)
+	case "default", "":
+		res = newJob(vres.Projected)
+	}
+	return res
 }
 
 // NewViewedJob initializes viewed result type Job from result type Job using
 // the given view.
 func NewViewedJob(res *Job, view string) *artworksviews.Job {
-	p := newJobView(res)
-	return &artworksviews.Job{Projected: p, View: "default"}
+	var vres *artworksviews.Job
+	switch view {
+	case "tiny":
+		p := newJobViewTiny(res)
+		vres = &artworksviews.Job{Projected: p, View: "tiny"}
+	case "default", "":
+		p := newJobView(res)
+		vres = &artworksviews.Job{Projected: p, View: "default"}
+	}
+	return vres
+}
+
+// NewJobCollection initializes result type JobCollection from viewed result
+// type JobCollection.
+func NewJobCollection(vres artworksviews.JobCollection) JobCollection {
+	var res JobCollection
+	switch vres.View {
+	case "tiny":
+		res = newJobCollectionTiny(vres.Projected)
+	case "default", "":
+		res = newJobCollection(vres.Projected)
+	}
+	return res
+}
+
+// NewViewedJobCollection initializes viewed result type JobCollection from
+// result type JobCollection using the given view.
+func NewViewedJobCollection(res JobCollection, view string) artworksviews.JobCollection {
+	var vres artworksviews.JobCollection
+	switch view {
+	case "tiny":
+		p := newJobCollectionViewTiny(res)
+		vres = artworksviews.JobCollection{Projected: p, View: "tiny"}
+	case "default", "":
+		p := newJobCollectionView(res)
+		vres = artworksviews.JobCollection{Projected: p, View: "default"}
+	}
+	return vres
 }
 
 // NewImage initializes result type Image from viewed result type Image.
@@ -198,8 +265,8 @@ func newRegisterResultView(res *RegisterResult) *artworksviews.RegisterResultVie
 	return vres
 }
 
-// newJob converts projected type Job to service type Job.
-func newJob(vres *artworksviews.JobView) *Job {
+// newJobTiny converts projected type Job to service type Job.
+func newJobTiny(vres *artworksviews.JobView) *Job {
 	res := &Job{
 		Txid: vres.Txid,
 	}
@@ -212,6 +279,37 @@ func newJob(vres *artworksviews.JobView) *Job {
 	return res
 }
 
+// newJob converts projected type Job to service type Job.
+func newJob(vres *artworksviews.JobView) *Job {
+	res := &Job{
+		Txid: vres.Txid,
+	}
+	if vres.ID != nil {
+		res.ID = *vres.ID
+	}
+	if vres.Status != nil {
+		res.Status = *vres.Status
+	}
+	if vres.States != nil {
+		res.States = make([]*JobState, len(vres.States))
+		for i, val := range vres.States {
+			res.States[i] = transformArtworksviewsJobStateViewToJobState(val)
+		}
+	}
+	return res
+}
+
+// newJobViewTiny projects result type Job to projected type JobView using the
+// "tiny" view.
+func newJobViewTiny(res *Job) *artworksviews.JobView {
+	vres := &artworksviews.JobView{
+		ID:     &res.ID,
+		Status: &res.Status,
+		Txid:   res.Txid,
+	}
+	return vres
+}
+
 // newJobView projects result type Job to projected type JobView using the
 // "default" view.
 func newJobView(res *Job) *artworksviews.JobView {
@@ -219,6 +317,52 @@ func newJobView(res *Job) *artworksviews.JobView {
 		ID:     &res.ID,
 		Status: &res.Status,
 		Txid:   res.Txid,
+	}
+	if res.States != nil {
+		vres.States = make([]*artworksviews.JobStateView, len(res.States))
+		for i, val := range res.States {
+			vres.States[i] = transformJobStateToArtworksviewsJobStateView(val)
+		}
+	}
+	return vres
+}
+
+// newJobCollectionTiny converts projected type JobCollection to service type
+// JobCollection.
+func newJobCollectionTiny(vres artworksviews.JobCollectionView) JobCollection {
+	res := make(JobCollection, len(vres))
+	for i, n := range vres {
+		res[i] = newJobTiny(n)
+	}
+	return res
+}
+
+// newJobCollection converts projected type JobCollection to service type
+// JobCollection.
+func newJobCollection(vres artworksviews.JobCollectionView) JobCollection {
+	res := make(JobCollection, len(vres))
+	for i, n := range vres {
+		res[i] = newJob(n)
+	}
+	return res
+}
+
+// newJobCollectionViewTiny projects result type JobCollection to projected
+// type JobCollectionView using the "tiny" view.
+func newJobCollectionViewTiny(res JobCollection) artworksviews.JobCollectionView {
+	vres := make(artworksviews.JobCollectionView, len(res))
+	for i, n := range res {
+		vres[i] = newJobViewTiny(n)
+	}
+	return vres
+}
+
+// newJobCollectionView projects result type JobCollection to projected type
+// JobCollectionView using the "default" view.
+func newJobCollectionView(res JobCollection) artworksviews.JobCollectionView {
+	vres := make(artworksviews.JobCollectionView, len(res))
+	for i, n := range res {
+		vres[i] = newJobView(n)
 	}
 	return vres
 }
@@ -243,4 +387,32 @@ func newImageView(res *Image) *artworksviews.ImageView {
 		ExpiresIn: &res.ExpiresIn,
 	}
 	return vres
+}
+
+// transformArtworksviewsJobStateViewToJobState builds a value of type
+// *JobState from a value of type *artworksviews.JobStateView.
+func transformArtworksviewsJobStateViewToJobState(v *artworksviews.JobStateView) *JobState {
+	if v == nil {
+		return nil
+	}
+	res := &JobState{
+		Date:   *v.Date,
+		Status: *v.Status,
+	}
+
+	return res
+}
+
+// transformJobStateToArtworksviewsJobStateView builds a value of type
+// *artworksviews.JobStateView from a value of type *JobState.
+func transformJobStateToArtworksviewsJobStateView(v *JobState) *artworksviews.JobStateView {
+	if v == nil {
+		return nil
+	}
+	res := &artworksviews.JobStateView{
+		Date:   &v.Date,
+		Status: &v.Status,
+	}
+
+	return res
 }

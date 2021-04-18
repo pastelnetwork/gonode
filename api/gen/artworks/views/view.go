@@ -29,6 +29,14 @@ type Job struct {
 	View string
 }
 
+// JobCollection is the viewed result type that is projected based on a view.
+type JobCollection struct {
+	// Type to project
+	Projected JobCollectionView
+	// View to render
+	View string
+}
+
 // Image is the viewed result type that is projected based on a view.
 type Image struct {
 	// Type to project
@@ -49,9 +57,22 @@ type JobView struct {
 	ID *int
 	// Status of the registration process
 	Status *string
+	// List of states from the very beginning of the process
+	States []*JobStateView
 	// txid
 	Txid *string
 }
+
+// JobStateView is a type that runs validations on a projected type.
+type JobStateView struct {
+	// Date of the status creation
+	Date *string
+	// Status of the registration process
+	Status *string
+}
+
+// JobCollectionView is a type that runs validations on a projected type.
+type JobCollectionView []*JobView
 
 // ImageView is a type that runs validations on a projected type.
 type ImageView struct {
@@ -71,9 +92,30 @@ var (
 	}
 	// JobMap is a map of attribute names in result type Job indexed by view name.
 	JobMap = map[string][]string{
+		"tiny": []string{
+			"id",
+			"status",
+			"txid",
+		},
 		"default": []string{
 			"id",
 			"status",
+			"states",
+			"txid",
+		},
+	}
+	// JobCollectionMap is a map of attribute names in result type JobCollection
+	// indexed by view name.
+	JobCollectionMap = map[string][]string{
+		"tiny": []string{
+			"id",
+			"status",
+			"txid",
+		},
+		"default": []string{
+			"id",
+			"status",
+			"states",
 			"txid",
 		},
 	}
@@ -102,10 +144,26 @@ func ValidateRegisterResult(result *RegisterResult) (err error) {
 // ValidateJob runs the validations defined on the viewed result type Job.
 func ValidateJob(result *Job) (err error) {
 	switch result.View {
+	case "tiny":
+		err = ValidateJobViewTiny(result.Projected)
 	case "default", "":
 		err = ValidateJobView(result.Projected)
 	default:
-		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
+		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"tiny", "default"})
+	}
+	return
+}
+
+// ValidateJobCollection runs the validations defined on the viewed result type
+// JobCollection.
+func ValidateJobCollection(result JobCollection) (err error) {
+	switch result.View {
+	case "tiny":
+		err = ValidateJobCollectionViewTiny(result.Projected)
+	case "default", "":
+		err = ValidateJobCollectionView(result.Projected)
+	default:
+		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"tiny", "default"})
 	}
 	return
 }
@@ -130,9 +188,9 @@ func ValidateRegisterResultView(result *RegisterResultView) (err error) {
 	return
 }
 
-// ValidateJobView runs the validations defined on JobView using the "default"
+// ValidateJobViewTiny runs the validations defined on JobView using the "tiny"
 // view.
-func ValidateJobView(result *JobView) (err error) {
+func ValidateJobViewTiny(result *JobView) (err error) {
 	if result.ID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("id", "result"))
 	}
@@ -147,6 +205,68 @@ func ValidateJobView(result *JobView) (err error) {
 	if result.Txid != nil {
 		if utf8.RuneCountInString(*result.Txid) > 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.txid", *result.Txid, utf8.RuneCountInString(*result.Txid), 64, false))
+		}
+	}
+	return
+}
+
+// ValidateJobView runs the validations defined on JobView using the "default"
+// view.
+func ValidateJobView(result *JobView) (err error) {
+	if result.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "result"))
+	}
+	if result.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
+	}
+	for _, e := range result.States {
+		if e != nil {
+			if err2 := ValidateJobStateView(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	if result.Txid != nil {
+		if utf8.RuneCountInString(*result.Txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.txid", *result.Txid, utf8.RuneCountInString(*result.Txid), 64, true))
+		}
+	}
+	if result.Txid != nil {
+		if utf8.RuneCountInString(*result.Txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.txid", *result.Txid, utf8.RuneCountInString(*result.Txid), 64, false))
+		}
+	}
+	return
+}
+
+// ValidateJobStateView runs the validations defined on JobStateView.
+func ValidateJobStateView(result *JobStateView) (err error) {
+	if result.Date == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("date", "result"))
+	}
+	if result.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
+	}
+	return
+}
+
+// ValidateJobCollectionViewTiny runs the validations defined on
+// JobCollectionView using the "tiny" view.
+func ValidateJobCollectionViewTiny(result JobCollectionView) (err error) {
+	for _, item := range result {
+		if err2 := ValidateJobViewTiny(item); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateJobCollectionView runs the validations defined on JobCollectionView
+// using the "default" view.
+func ValidateJobCollectionView(result JobCollectionView) (err error) {
+	for _, item := range result {
+		if err2 := ValidateJobView(item); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	return

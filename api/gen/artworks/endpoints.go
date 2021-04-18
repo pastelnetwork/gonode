@@ -15,33 +15,40 @@ import (
 
 // Endpoints wraps the "artworks" service endpoints.
 type Endpoints struct {
-	Register       goa.Endpoint
-	RegisterStatus goa.Endpoint
-	UploadImage    goa.Endpoint
+	Register         goa.Endpoint
+	RegisterJobState goa.Endpoint
+	RegisterJob      goa.Endpoint
+	RegisterJobs     goa.Endpoint
+	UploadImage      goa.Endpoint
 }
 
-// RegisterStatusEndpointInput holds both the payload and the server stream of
-// the "registerStatus" method.
-type RegisterStatusEndpointInput struct {
+// RegisterJobStateEndpointInput holds both the payload and the server stream
+// of the "registerJobState" method.
+type RegisterJobStateEndpointInput struct {
 	// Payload is the method payload.
-	Payload *RegisterStatusPayload
-	// Stream is the server stream used by the "registerStatus" method to send data.
-	Stream RegisterStatusServerStream
+	Payload *RegisterJobStatePayload
+	// Stream is the server stream used by the "registerJobState" method to send
+	// data.
+	Stream RegisterJobStateServerStream
 }
 
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		Register:       NewRegisterEndpoint(s),
-		RegisterStatus: NewRegisterStatusEndpoint(s),
-		UploadImage:    NewUploadImageEndpoint(s),
+		Register:         NewRegisterEndpoint(s),
+		RegisterJobState: NewRegisterJobStateEndpoint(s),
+		RegisterJob:      NewRegisterJobEndpoint(s),
+		RegisterJobs:     NewRegisterJobsEndpoint(s),
+		UploadImage:      NewUploadImageEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "artworks" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.Register = m(e.Register)
-	e.RegisterStatus = m(e.RegisterStatus)
+	e.RegisterJobState = m(e.RegisterJobState)
+	e.RegisterJob = m(e.RegisterJob)
+	e.RegisterJobs = m(e.RegisterJobs)
 	e.UploadImage = m(e.UploadImage)
 }
 
@@ -59,12 +66,39 @@ func NewRegisterEndpoint(s Service) goa.Endpoint {
 	}
 }
 
-// NewRegisterStatusEndpoint returns an endpoint function that calls the method
-// "registerStatus" of service "artworks".
-func NewRegisterStatusEndpoint(s Service) goa.Endpoint {
+// NewRegisterJobStateEndpoint returns an endpoint function that calls the
+// method "registerJobState" of service "artworks".
+func NewRegisterJobStateEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		ep := req.(*RegisterStatusEndpointInput)
-		return nil, s.RegisterStatus(ctx, ep.Payload, ep.Stream)
+		ep := req.(*RegisterJobStateEndpointInput)
+		return nil, s.RegisterJobState(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewRegisterJobEndpoint returns an endpoint function that calls the method
+// "registerJob" of service "artworks".
+func NewRegisterJobEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*RegisterJobPayload)
+		res, err := s.RegisterJob(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedJob(res, "default")
+		return vres, nil
+	}
+}
+
+// NewRegisterJobsEndpoint returns an endpoint function that calls the method
+// "registerJobs" of service "artworks".
+func NewRegisterJobsEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		res, err := s.RegisterJobs(ctx)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedJobCollection(res, "tiny")
+		return vres, nil
 	}
 }
 

@@ -57,16 +57,31 @@ type RegisterResponseBody struct {
 	JobID int `form:"job_id" json:"job_id" xml:"job_id"`
 }
 
-// RegisterStatusResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body.
-type RegisterStatusResponseBody struct {
+// RegisterJobStateResponseBody is the type of the "artworks" service
+// "registerJobState" endpoint HTTP response body.
+type RegisterJobStateResponseBody struct {
+	// Date of the status creation
+	Date string `form:"date" json:"date" xml:"date"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
+// RegisterJobResponseBody is the type of the "artworks" service "registerJob"
+// endpoint HTTP response body.
+type RegisterJobResponseBody struct {
 	// JOb ID of the registration process
 	ID int `form:"id" json:"id" xml:"id"`
 	// Status of the registration process
 	Status string `form:"status" json:"status" xml:"status"`
+	// List of states from the very beginning of the process
+	States []*JobStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// txid
 	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
 }
+
+// JobResponseTinyCollection is the type of the "artworks" service
+// "registerJobs" endpoint HTTP response body.
+type JobResponseTinyCollection []*JobResponseTiny
 
 // UploadImageResponseBody is the type of the "artworks" service "uploadImage"
 // endpoint HTTP response body.
@@ -114,9 +129,9 @@ type RegisterInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// RegisterStatusNotFoundResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body for the "NotFound" error.
-type RegisterStatusNotFoundResponseBody struct {
+// RegisterJobStateNotFoundResponseBody is the type of the "artworks" service
+// "registerJobState" endpoint HTTP response body for the "NotFound" error.
+type RegisterJobStateNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -132,28 +147,66 @@ type RegisterStatusNotFoundResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// RegisterStatusBadRequestResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body for the "BadRequest" error.
-type RegisterStatusBadRequestResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// RegisterStatusInternalServerErrorResponseBody is the type of the "artworks"
-// service "registerStatus" endpoint HTTP response body for the
+// RegisterJobStateInternalServerErrorResponseBody is the type of the
+// "artworks" service "registerJobState" endpoint HTTP response body for the
 // "InternalServerError" error.
-type RegisterStatusInternalServerErrorResponseBody struct {
+type RegisterJobStateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterJobNotFoundResponseBody is the type of the "artworks" service
+// "registerJob" endpoint HTTP response body for the "NotFound" error.
+type RegisterJobNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterJobInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerJob" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterJobInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterJobsInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerJobs" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterJobsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -206,6 +259,24 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// JobStateResponseBody is used to define fields on response body types.
+type JobStateResponseBody struct {
+	// Date of the status creation
+	Date string `form:"date" json:"date" xml:"date"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
+// JobResponseTiny is used to define fields on response body types.
+type JobResponseTiny struct {
+	// JOb ID of the registration process
+	ID int `form:"id" json:"id" xml:"id"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+	// txid
+	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+}
+
 // NewRegisterResponseBody builds the HTTP response body from the result of the
 // "register" endpoint of the "artworks" service.
 func NewRegisterResponseBody(res *artworksviews.RegisterResultView) *RegisterResponseBody {
@@ -215,13 +286,39 @@ func NewRegisterResponseBody(res *artworksviews.RegisterResultView) *RegisterRes
 	return body
 }
 
-// NewRegisterStatusResponseBody builds the HTTP response body from the result
-// of the "registerStatus" endpoint of the "artworks" service.
-func NewRegisterStatusResponseBody(res *artworksviews.JobView) *RegisterStatusResponseBody {
-	body := &RegisterStatusResponseBody{
+// NewRegisterJobStateResponseBody builds the HTTP response body from the
+// result of the "registerJobState" endpoint of the "artworks" service.
+func NewRegisterJobStateResponseBody(res *artworks.JobState) *RegisterJobStateResponseBody {
+	body := &RegisterJobStateResponseBody{
+		Date:   res.Date,
+		Status: res.Status,
+	}
+	return body
+}
+
+// NewRegisterJobResponseBody builds the HTTP response body from the result of
+// the "registerJob" endpoint of the "artworks" service.
+func NewRegisterJobResponseBody(res *artworksviews.JobView) *RegisterJobResponseBody {
+	body := &RegisterJobResponseBody{
 		ID:     *res.ID,
 		Status: *res.Status,
 		Txid:   res.Txid,
+	}
+	if res.States != nil {
+		body.States = make([]*JobStateResponseBody, len(res.States))
+		for i, val := range res.States {
+			body.States[i] = marshalArtworksviewsJobStateViewToJobStateResponseBody(val)
+		}
+	}
+	return body
+}
+
+// NewJobResponseTinyCollection builds the HTTP response body from the result
+// of the "registerJobs" endpoint of the "artworks" service.
+func NewJobResponseTinyCollection(res artworksviews.JobCollectionView) JobResponseTinyCollection {
+	body := make([]*JobResponseTiny, len(res))
+	for i, val := range res {
+		body[i] = marshalArtworksviewsJobViewToJobResponseTiny(val)
 	}
 	return body
 }
@@ -264,10 +361,10 @@ func NewRegisterInternalServerErrorResponseBody(res *goa.ServiceError) *Register
 	return body
 }
 
-// NewRegisterStatusNotFoundResponseBody builds the HTTP response body from the
-// result of the "registerStatus" endpoint of the "artworks" service.
-func NewRegisterStatusNotFoundResponseBody(res *goa.ServiceError) *RegisterStatusNotFoundResponseBody {
-	body := &RegisterStatusNotFoundResponseBody{
+// NewRegisterJobStateNotFoundResponseBody builds the HTTP response body from
+// the result of the "registerJobState" endpoint of the "artworks" service.
+func NewRegisterJobStateNotFoundResponseBody(res *goa.ServiceError) *RegisterJobStateNotFoundResponseBody {
+	body := &RegisterJobStateNotFoundResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -278,25 +375,53 @@ func NewRegisterStatusNotFoundResponseBody(res *goa.ServiceError) *RegisterStatu
 	return body
 }
 
-// NewRegisterStatusBadRequestResponseBody builds the HTTP response body from
-// the result of the "registerStatus" endpoint of the "artworks" service.
-func NewRegisterStatusBadRequestResponseBody(res *goa.ServiceError) *RegisterStatusBadRequestResponseBody {
-	body := &RegisterStatusBadRequestResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewRegisterStatusInternalServerErrorResponseBody builds the HTTP response
-// body from the result of the "registerStatus" endpoint of the "artworks"
+// NewRegisterJobStateInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "registerJobState" endpoint of the "artworks"
 // service.
-func NewRegisterStatusInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterStatusInternalServerErrorResponseBody {
-	body := &RegisterStatusInternalServerErrorResponseBody{
+func NewRegisterJobStateInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterJobStateInternalServerErrorResponseBody {
+	body := &RegisterJobStateInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterJobNotFoundResponseBody builds the HTTP response body from the
+// result of the "registerJob" endpoint of the "artworks" service.
+func NewRegisterJobNotFoundResponseBody(res *goa.ServiceError) *RegisterJobNotFoundResponseBody {
+	body := &RegisterJobNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterJobInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "registerJob" endpoint of the "artworks" service.
+func NewRegisterJobInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterJobInternalServerErrorResponseBody {
+	body := &RegisterJobInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterJobsInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "registerJobs" endpoint of the "artworks" service.
+func NewRegisterJobsInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterJobsInternalServerErrorResponseBody {
+	body := &RegisterJobsInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -355,10 +480,18 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	return v
 }
 
-// NewRegisterStatusPayload builds a artworks service registerStatus endpoint
-// payload.
-func NewRegisterStatusPayload(jobID int) *artworks.RegisterStatusPayload {
-	v := &artworks.RegisterStatusPayload{}
+// NewRegisterJobStatePayload builds a artworks service registerJobState
+// endpoint payload.
+func NewRegisterJobStatePayload(jobID int) *artworks.RegisterJobStatePayload {
+	v := &artworks.RegisterJobStatePayload{}
+	v.JobID = jobID
+
+	return v
+}
+
+// NewRegisterJobPayload builds a artworks service registerJob endpoint payload.
+func NewRegisterJobPayload(jobID int) *artworks.RegisterJobPayload {
+	v := &artworks.RegisterJobPayload{}
 	v.JobID = jobID
 
 	return v

@@ -36,24 +36,52 @@ var _ = Service("artworks", func() {
 		})
 	})
 
-	Method("registerStatus", func() {
-		Description("WebSocket connection that is returning the statuses of the registration process.")
-		Meta("swagger:summary", "Returns statuses of the registration process")
+	Method("registerJobState", func() {
+		Description("Streams the state of the registration process.")
+		Meta("swagger:summary", "Streams state by job ID")
 
 		Payload(func() {
-			Attribute("jobId", Int, "Job ID of the registration process", func() {
-				TypeName("jobID")
-				Minimum(1)
-				Example(5)
-			})
-			Required("jobId")
+			Extend(RegisterJobPayload)
 		})
-		StreamingResult(ArtworkRegisterJobResult)
+		StreamingResult(ArtworkRegisterJobState)
 
 		HTTP(func() {
-			GET("/register/{jobId}")
+			GET("/jobs/{jobId}/state")
 			Response("NotFound", StatusNotFound)
-			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("registerJob", func() {
+		Description("Returns a single job.")
+		Meta("swagger:summary", "Find job by ID")
+
+		Payload(func() {
+			Extend(RegisterJobPayload)
+		})
+		Result(ArtworkRegisterJobResult, func() {
+			View("default")
+		})
+
+		HTTP(func() {
+			GET("/jobs/{jobId}")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("registerJobs", func() {
+		Description("List of all jobs.")
+		Meta("swagger:summary", "Returns list of jobs")
+
+		Result(CollectionOf(ArtworkRegisterJobResult), func() {
+			View("tiny")
+		})
+
+		HTTP(func() {
+			GET("/jobs")
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
 		})
@@ -69,7 +97,7 @@ var _ = Service("artworks", func() {
 		Result(ImageUploadResult)
 
 		HTTP(func() {
-			POST("/register/upload-image")
+			POST("/register/upload")
 			MultipartRequest()
 
 			// Define error HTTP statuses.
@@ -183,6 +211,9 @@ var ArtworkRegisterJobResult = ResultType("application/vnd.artwork.register.job"
 			Description("Status of the registration process")
 			Example("Registration started")
 		})
+		Attribute("states", ArrayOf(ArtworkRegisterJobState), func() {
+			Description("List of states from the very beginning of the process")
+		})
 		Attribute("txid", String, func() {
 			Description("txid")
 			MinLength(64)
@@ -190,10 +221,30 @@ var ArtworkRegisterJobResult = ResultType("application/vnd.artwork.register.job"
 			Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
 		})
 	})
+
+	View("tiny", func() {
+		Attribute("id")
+		Attribute("status")
+		Attribute("txid")
+	})
+
 	Required("id", "status")
 })
 
-// ImageUploadPayload is a list of files
+// ArtworkRegisterJobState is job streaming of the artwork registration
+var ArtworkRegisterJobState = Type("JobState", func() {
+	Attribute("date", String, func() {
+		Description("Date of the status creation")
+		Example("2019-10-12T07:20:50.52Z")
+	})
+	Attribute("status", String, func() {
+		Description("Status of the registration process")
+		Example("Registration started")
+	})
+	Required("date", "status")
+})
+
+// ImageUploadPayload represents a payload for uploading image
 var ImageUploadPayload = Type("ImageUploadPayload", func() {
 	Description("Image upload payload")
 	Attribute("file", Bytes, func() {
@@ -220,4 +271,14 @@ var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func(
 		})
 	})
 	Required("image_id", "expires_in")
+})
+
+// RegisterJobPayload represents a payload for returning job
+var RegisterJobPayload = Type("RegisterJobPayload", func() {
+	Attribute("jobId", Int, "Job ID of the registration process", func() {
+		TypeName("jobID")
+		Minimum(1)
+		Example(5)
+	})
+	Required("jobId")
 })

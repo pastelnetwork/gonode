@@ -21,33 +21,72 @@ type serviceArtwork struct {
 	artwork *artwork.Service
 }
 
-// RegisterStatus streams the job status of the new artwork registration.
-func (service *serviceArtwork) RegisterStatus(ctx context.Context, p *artworks.RegisterStatusPayload, stream artworks.RegisterStatusServerStream) (err error) {
-	job := service.artwork.RegisterJob(p.JobID)
+// RegisterJobState streams the state of the registration process.
+func (service *serviceArtwork) RegisterJobState(ctx context.Context, p *artworks.RegisterJobStatePayload, stream artworks.RegisterJobStateServerStream) (err error) {
+	defer stream.Close()
+
+	job := service.artwork.Job(p.JobID)
 	if job == nil {
 		return artworks.MakeNotFound(errors.Errorf("invalid jobId: %d", p.JobID))
 	}
-	subscription := job.Subscribe()
 
-	defer stream.Close()
+	sub, err := job.State.Subscribe()
+	if err != nil {
+		return artworks.MakeInternalServerError(err)
+	}
+	defer sub.Close()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case sub, ok := <-subscription:
-			if !ok {
-				return nil
-			}
-			res := &artworks.Job{
-				ID:     job.ID,
-				Status: sub.Status.String(),
+		case <-sub.Done():
+			return nil
+		case msg := <-sub.Msg():
+			res := &artworks.JobState{
+				Date:   msg.CreatedAt.Format(time.RFC3339),
+				Status: msg.Status.String(),
 			}
 			if err := stream.Send(res); err != nil {
-				return artworks.MakeBadRequest(err)
+				return artworks.MakeInternalServerError(err)
 			}
 
 		}
 	}
+}
+
+// RegisterJob returns a single job.
+func (service *serviceArtwork) RegisterJob(ctx context.Context, p *artworks.RegisterJobPayload) (res *artworks.Job, err error) {
+	job := service.artwork.Job(p.JobID)
+	if job == nil {
+		return nil, artworks.MakeNotFound(errors.Errorf("invalid jobId: %d", p.JobID))
+	}
+
+	res = &artworks.Job{
+		ID:     p.JobID,
+		Status: job.State.Latest().Status.String(),
+	}
+
+	for _, msg := range job.State.All() {
+		res.States = append(res.States, &artworks.JobState{
+			Date:   msg.CreatedAt.Format(time.RFC3339),
+			Status: msg.Status.String(),
+		})
+	}
+
+	return res, nil
+}
+
+// RegisterJob returns list of all jobs.
+func (service *serviceArtwork) RegisterJobs(ctx context.Context) (res artworks.JobCollection, err error) {
+	jobs := service.artwork.Jobs()
+	for _, job := range jobs {
+		res = append(res, &artworks.Job{
+			ID:     job.ID(),
+			Status: job.State.Latest().Status.String(),
+		})
+	}
+	return res, nil
 }
 
 // Register runs registers process for the new artwork.
@@ -75,7 +114,7 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 		NetworkFee:       p.NetworkFee,
 	}
 
-	jobID, err := service.artwork.Register(artwork)
+	jobID, err := service.artwork.Register(ctx, artwork)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}

@@ -23,7 +23,7 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `artworks (register|register-status|upload-image)
+	return `artworks (register|register-job-state|register-job|register-jobs|upload-image)
 `
 }
 
@@ -64,15 +64,22 @@ func ParseEndpoint(
 		artworksRegisterFlags    = flag.NewFlagSet("register", flag.ExitOnError)
 		artworksRegisterBodyFlag = artworksRegisterFlags.String("body", "REQUIRED", "")
 
-		artworksRegisterStatusFlags     = flag.NewFlagSet("register-status", flag.ExitOnError)
-		artworksRegisterStatusJobIDFlag = artworksRegisterStatusFlags.String("job-id", "REQUIRED", "Job ID of the registration process")
+		artworksRegisterJobStateFlags     = flag.NewFlagSet("register-job-state", flag.ExitOnError)
+		artworksRegisterJobStateJobIDFlag = artworksRegisterJobStateFlags.String("job-id", "REQUIRED", "Job ID of the registration process")
+
+		artworksRegisterJobFlags     = flag.NewFlagSet("register-job", flag.ExitOnError)
+		artworksRegisterJobJobIDFlag = artworksRegisterJobFlags.String("job-id", "REQUIRED", "Job ID of the registration process")
+
+		artworksRegisterJobsFlags = flag.NewFlagSet("register-jobs", flag.ExitOnError)
 
 		artworksUploadImageFlags    = flag.NewFlagSet("upload-image", flag.ExitOnError)
 		artworksUploadImageBodyFlag = artworksUploadImageFlags.String("body", "REQUIRED", "")
 	)
 	artworksFlags.Usage = artworksUsage
 	artworksRegisterFlags.Usage = artworksRegisterUsage
-	artworksRegisterStatusFlags.Usage = artworksRegisterStatusUsage
+	artworksRegisterJobStateFlags.Usage = artworksRegisterJobStateUsage
+	artworksRegisterJobFlags.Usage = artworksRegisterJobUsage
+	artworksRegisterJobsFlags.Usage = artworksRegisterJobsUsage
 	artworksUploadImageFlags.Usage = artworksUploadImageUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
@@ -112,8 +119,14 @@ func ParseEndpoint(
 			case "register":
 				epf = artworksRegisterFlags
 
-			case "register-status":
-				epf = artworksRegisterStatusFlags
+			case "register-job-state":
+				epf = artworksRegisterJobStateFlags
+
+			case "register-job":
+				epf = artworksRegisterJobFlags
+
+			case "register-jobs":
+				epf = artworksRegisterJobsFlags
 
 			case "upload-image":
 				epf = artworksUploadImageFlags
@@ -146,9 +159,15 @@ func ParseEndpoint(
 			case "register":
 				endpoint = c.Register()
 				data, err = artworksc.BuildRegisterPayload(*artworksRegisterBodyFlag)
-			case "register-status":
-				endpoint = c.RegisterStatus()
-				data, err = artworksc.BuildRegisterStatusPayload(*artworksRegisterStatusJobIDFlag)
+			case "register-job-state":
+				endpoint = c.RegisterJobState()
+				data, err = artworksc.BuildRegisterJobStatePayload(*artworksRegisterJobStateJobIDFlag)
+			case "register-job":
+				endpoint = c.RegisterJob()
+				data, err = artworksc.BuildRegisterJobPayload(*artworksRegisterJobJobIDFlag)
+			case "register-jobs":
+				endpoint = c.RegisterJobs()
+				data = nil
 			case "upload-image":
 				endpoint = c.UploadImage(artworksUploadImageEncoderFn)
 				data, err = artworksc.BuildUploadImagePayload(*artworksUploadImageBodyFlag)
@@ -170,7 +189,9 @@ Usage:
 
 COMMAND:
     register: Runs a new registration process for the new artwork.
-    register-status: Streams statuses of the artwork registration.
+    register-job-state: Streams the state of the registration process.
+    register-job: Returns a single job.
+    register-jobs: List of all jobs.
     upload-image: Upload the image that is used when registering a new artwork.
 
 Additional help:
@@ -201,14 +222,35 @@ Example:
 `, os.Args[0])
 }
 
-func artworksRegisterStatusUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-status -job-id INT
+func artworksRegisterJobStateUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-job-state -job-id INT
 
-Streams statuses of the artwork registration.
+Streams the state of the registration process.
     -job-id INT: Job ID of the registration process
 
 Example:
-    `+os.Args[0]+` artworks register-status --job-id 5
+    `+os.Args[0]+` artworks register-job-state --job-id 5
+`, os.Args[0])
+}
+
+func artworksRegisterJobUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-job -job-id INT
+
+Returns a single job.
+    -job-id INT: Job ID of the registration process
+
+Example:
+    `+os.Args[0]+` artworks register-job --job-id 5
+`, os.Args[0])
+}
+
+func artworksRegisterJobsUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-jobs
+
+List of all jobs.
+
+Example:
+    `+os.Args[0]+` artworks register-jobs
 `, os.Args[0])
 }
 
@@ -220,7 +262,7 @@ Upload the image that is used when registering a new artwork.
 
 Example:
     `+os.Args[0]+` artworks upload-image --body '{
-      "file": "SWQgdXQu"
+      "file": "VmVsIHZvbHVwdGF0ZW0gcHJvdmlkZW50IGRvbG9yaWJ1cy4="
    }'
 `, os.Args[0])
 }

@@ -110,14 +110,14 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 	return v, nil
 }
 
-// BuildRegisterStatusPayload builds the payload for the artworks
-// registerStatus endpoint from CLI flags.
-func BuildRegisterStatusPayload(artworksRegisterStatusJobID string) (*artworks.RegisterStatusPayload, error) {
+// BuildRegisterJobStatePayload builds the payload for the artworks
+// registerJobState endpoint from CLI flags.
+func BuildRegisterJobStatePayload(artworksRegisterJobStateJobID string) (*artworks.RegisterJobStatePayload, error) {
 	var err error
 	var jobID int
 	{
 		var v int64
-		v, err = strconv.ParseInt(artworksRegisterStatusJobID, 10, 64)
+		v, err = strconv.ParseInt(artworksRegisterJobStateJobID, 10, 64)
 		jobID = int(v)
 		if err != nil {
 			return nil, fmt.Errorf("invalid value for jobID, must be INT")
@@ -129,7 +129,32 @@ func BuildRegisterStatusPayload(artworksRegisterStatusJobID string) (*artworks.R
 			return nil, err
 		}
 	}
-	v := &artworks.RegisterStatusPayload{}
+	v := &artworks.RegisterJobStatePayload{}
+	v.JobID = jobID
+
+	return v, nil
+}
+
+// BuildRegisterJobPayload builds the payload for the artworks registerJob
+// endpoint from CLI flags.
+func BuildRegisterJobPayload(artworksRegisterJobJobID string) (*artworks.RegisterJobPayload, error) {
+	var err error
+	var jobID int
+	{
+		var v int64
+		v, err = strconv.ParseInt(artworksRegisterJobJobID, 10, 64)
+		jobID = int(v)
+		if err != nil {
+			return nil, fmt.Errorf("invalid value for jobID, must be INT")
+		}
+		if jobID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("jobID", jobID, 1, true))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &artworks.RegisterJobPayload{}
 	v.JobID = jobID
 
 	return v, nil
@@ -143,7 +168,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 	{
 		err = json.Unmarshal([]byte(artworksUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"SWQgdXQu\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVsIHZvbHVwdGF0ZW0gcHJvdmlkZW50IGRvbG9yaWJ1cy4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))

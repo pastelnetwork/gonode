@@ -9,7 +9,7 @@ var (
 
 // KeyValue represents database that uses a simple key-value method to store data.
 type KeyValue interface {
-	// Init initializes the database
+	// Init initializes the database.
 	Init() error
 
 	// Get looks for key and returns corresponding Item.

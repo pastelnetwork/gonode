@@ -12,6 +12,85 @@ produces:
 - application/xml
 - application/gob
 paths:
+  /artworks/jobs:
+    get:
+      tags:
+      - artworks
+      summary: Returns list of jobs
+      description: List of all jobs.
+      operationId: artworks#registerJobs
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/ArtworksJobResponseTinyCollection'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobsInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /artworks/jobs/{jobId}:
+    get:
+      tags:
+      - artworks
+      summary: Find job by ID
+      description: Returns a single job.
+      operationId: artworks#registerJob
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID of the registration process
+        required: true
+        type: integer
+        minimum: 1
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobResponseBody'
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /artworks/jobs/{jobId}/state:
+    get:
+      tags:
+      - artworks
+      summary: Streams state by job ID
+      description: Streams the state of the registration process.
+      operationId: artworks#registerJobState
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID of the registration process
+        required: true
+        type: integer
+        minimum: 1
+      responses:
+        "101":
+          description: Switching Protocols response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobStateResponseBody'
+            required:
+            - date
+            - status
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobStateNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobStateInternalServerErrorResponseBody'
+      schemes:
+      - ws
   /artworks/register:
     post:
       tags:
@@ -48,40 +127,7 @@ paths:
             $ref: '#/definitions/ArtworksRegisterInternalServerErrorResponseBody'
       schemes:
       - http
-  /artworks/register/{jobId}:
-    get:
-      tags:
-      - artworks
-      summary: Returns a status of the registration artwork
-      description: Streams statuses of the artwork registration.
-      operationId: artworks#registerStatus
-      parameters:
-      - name: jobId
-        in: path
-        description: Job ID of the registration process
-        required: true
-        type: integer
-        minimum: 1
-      responses:
-        "101":
-          description: Switching Protocols response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterStatusResponseBody'
-        "400":
-          description: Bad Request response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterStatusBadRequestResponseBody'
-        "404":
-          description: Not Found response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterStatusNotFoundResponseBody'
-        "500":
-          description: Internal Server Error response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterStatusInternalServerErrorResponseBody'
-      schemes:
-      - ws
-  /artworks/register/upload-image:
+  /artworks/register/upload:
     post:
       tags:
       - artworks
@@ -114,6 +160,45 @@ paths:
       schemes:
       - http
 definitions:
+  ArtworksJobResponseTinyCollection:
+    title: 'Mediatype identifier: application/vnd.artwork.register.job; type=collection;
+      view=tiny'
+    type: array
+    items:
+      $ref: '#/definitions/JobResponseTiny'
+    description: ArtworksJobResponseTinyCollection is the result type for an array
+      of JobResponseTiny (default view)
+    example:
+    - id: 5
+      states:
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      status: Registration started
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+    - id: 5
+      states:
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      status: Registration started
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+    - id: 5
+      states:
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      status: Registration started
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
   ArtworksRegisterBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -146,11 +231,11 @@ definitions:
         example: true
     description: register_BadRequest_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: false
     required:
     - name
@@ -160,6 +245,51 @@ definitions:
     - timeout
     - fault
   ArtworksRegisterInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: register_InternalServerError_response_body result type (default view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksRegisterJobInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -188,15 +318,262 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
+        example: false
+    description: registerJob_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksRegisterJobNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
         example: true
-    description: register_InternalServerError_response_body result type (default view)
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: registerJob_NotFound_response_body result type (default view)
     example:
       fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksRegisterJobResponseBody:
+    title: 'Mediatype identifier: application/vnd.artwork.register.job; view=default'
+    type: object
+    properties:
+      id:
+        type: integer
+        description: JOb ID of the registration process
+        example: 5
+        format: int64
+      states:
+        type: array
+        items:
+          $ref: '#/definitions/JobStateResponseBody'
+        description: List of states from the very beginning of the process
+        example:
+        - date: "2019-10-12T07:20:50.52Z"
+          status: Registration started
+        - date: "2019-10-12T07:20:50.52Z"
+          status: Registration started
+      status:
+        type: string
+        description: Status of the registration process
+        example: Registration started
+      txid:
+        type: string
+        description: txid
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
+    description: RegisterJobResponseBody result type (default view)
+    example:
+      id: 5
+      states:
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      - date: "2019-10-12T07:20:50.52Z"
+        status: Registration started
+      status: Registration started
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+    required:
+    - id
+    - status
+  ArtworksRegisterJobStateInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: registerJobState_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
       temporary: false
       timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksRegisterJobStateNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: registerJobState_NotFound_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksRegisterJobStateResponseBody:
+    title: ArtworksRegisterJobStateResponseBody
+    type: object
+    properties:
+      date:
+        type: string
+        description: Date of the status creation
+        example: "2019-10-12T07:20:50.52Z"
+      status:
+        type: string
+        description: Status of the registration process
+        example: Registration started
+    example:
+      date: "2019-10-12T07:20:50.52Z"
+      status: Registration started
+    required:
+    - date
+    - status
+  ArtworksRegisterJobsInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: registerJobs_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: true
     required:
     - name
     - id
@@ -315,169 +692,6 @@ definitions:
       job_id: 5
     required:
     - job_id
-  ArtworksRegisterStatusBadRequestResponseBody:
-    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
-    type: object
-    properties:
-      fault:
-        type: boolean
-        description: Is the error a server-side fault?
-        example: true
-      id:
-        type: string
-        description: ID is a unique identifier for this particular occurrence of the
-          problem.
-        example: 123abc
-      message:
-        type: string
-        description: Message is a human-readable explanation specific to this occurrence
-          of the problem.
-        example: parameter 'p' must be an integer
-      name:
-        type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
-      temporary:
-        type: boolean
-        description: Is the error temporary?
-        example: true
-      timeout:
-        type: boolean
-        description: Is the error a timeout?
-        example: true
-    description: registerStatus_BadRequest_response_body result type (default view)
-    example:
-      fault: false
-      id: 123abc
-      message: parameter 'p' must be an integer
-      name: bad_request
-      temporary: false
-      timeout: true
-    required:
-    - name
-    - id
-    - message
-    - temporary
-    - timeout
-    - fault
-  ArtworksRegisterStatusInternalServerErrorResponseBody:
-    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
-    type: object
-    properties:
-      fault:
-        type: boolean
-        description: Is the error a server-side fault?
-        example: false
-      id:
-        type: string
-        description: ID is a unique identifier for this particular occurrence of the
-          problem.
-        example: 123abc
-      message:
-        type: string
-        description: Message is a human-readable explanation specific to this occurrence
-          of the problem.
-        example: parameter 'p' must be an integer
-      name:
-        type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
-      temporary:
-        type: boolean
-        description: Is the error temporary?
-        example: true
-      timeout:
-        type: boolean
-        description: Is the error a timeout?
-        example: false
-    description: registerStatus_InternalServerError_response_body result type (default
-      view)
-    example:
-      fault: false
-      id: 123abc
-      message: parameter 'p' must be an integer
-      name: bad_request
-      temporary: true
-      timeout: false
-    required:
-    - name
-    - id
-    - message
-    - temporary
-    - timeout
-    - fault
-  ArtworksRegisterStatusNotFoundResponseBody:
-    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
-    type: object
-    properties:
-      fault:
-        type: boolean
-        description: Is the error a server-side fault?
-        example: false
-      id:
-        type: string
-        description: ID is a unique identifier for this particular occurrence of the
-          problem.
-        example: 123abc
-      message:
-        type: string
-        description: Message is a human-readable explanation specific to this occurrence
-          of the problem.
-        example: parameter 'p' must be an integer
-      name:
-        type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
-      temporary:
-        type: boolean
-        description: Is the error temporary?
-        example: true
-      timeout:
-        type: boolean
-        description: Is the error a timeout?
-        example: true
-    description: registerStatus_NotFound_response_body result type (default view)
-    example:
-      fault: false
-      id: 123abc
-      message: parameter 'p' must be an integer
-      name: bad_request
-      temporary: true
-      timeout: false
-    required:
-    - name
-    - id
-    - message
-    - temporary
-    - timeout
-    - fault
-  ArtworksRegisterStatusResponseBody:
-    title: 'Mediatype identifier: application/vnd.artwork.register.job; view=default'
-    type: object
-    properties:
-      id:
-        type: integer
-        description: JOb ID of the registration process
-        example: 5
-        format: int64
-      status:
-        type: string
-        description: Status of the registration process
-        example: Registration started
-      txid:
-        type: string
-        description: txid
-        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-        minLength: 64
-        maxLength: 64
-    description: RegisterStatusResponseBody result type (default view)
-    example:
-      id: 5
-      status: Registration started
-      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-    required:
-    - id
-    - status
   ArtworksUploadImageBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -503,19 +717,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: uploadImage_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -530,7 +744,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -552,11 +766,11 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -577,29 +791,78 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 79
+        - 73
         - 112
-        - 116
-        - 105
+        - 115
+        - 97
+        - 32
+        - 113
+        - 117
         - 111
+        - 115
         - 32
         - 111
-        - 100
+        - 109
+        - 110
         - 105
+        - 115
+        - 32
+        - 114
+        - 101
+        - 112
+        - 114
+        - 101
+        - 104
+        - 101
+        - 110
+        - 100
+        - 101
+        - 114
+        - 105
+        - 116
+        - 32
+        - 100
         - 111
+        - 108
+        - 111
+        - 114
+        - 105
+        - 98
+        - 117
+        - 115
         - 46
         format: byte
     example:
       file:
-      - 85
-      - 116
+      - 77
+      - 111
+      - 100
+      - 105
       - 32
-      - 118
+      - 110
+      - 105
+      - 115
+      - 105
+      - 32
       - 101
+      - 111
+      - 115
+      - 32
+      - 98
       - 108
+      - 97
+      - 110
+      - 100
+      - 105
+      - 116
+      - 105
+      - 105
+      - 115
       - 32
       - 101
-      - 116
+      - 105
+      - 117
+      - 115
       - 46
     required:
     - file
@@ -625,3 +888,48 @@ definitions:
     required:
     - image_id
     - expires_in
+  JobResponseTiny:
+    title: 'Mediatype identifier: application/vnd.artwork.register.job; view=default'
+    type: object
+    properties:
+      id:
+        type: integer
+        description: JOb ID of the registration process
+        example: 5
+        format: int64
+      status:
+        type: string
+        description: Status of the registration process
+        example: Registration started
+      txid:
+        type: string
+        description: txid
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
+    description: JobResponse result type (tiny view) (default view)
+    example:
+      id: 5
+      status: Registration started
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+    required:
+    - id
+    - status
+  JobStateResponseBody:
+    title: JobStateResponseBody
+    type: object
+    properties:
+      date:
+        type: string
+        description: Date of the status creation
+        example: "2019-10-12T07:20:50.52Z"
+      status:
+        type: string
+        description: Status of the registration process
+        example: Registration started
+    example:
+      date: "2019-10-12T07:20:50.52Z"
+      status: Registration started
+    required:
+    - date
+    - status
