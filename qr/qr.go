@@ -35,8 +35,8 @@ type Image struct {
 }
 
 type DecodedMessage struct {
-	alias   string
-	message string
+	Alias   string
+	Content string
 }
 
 var PositionVectorEncodingError = errors.Errorf("Position vector should be encoded as single qr code image")
@@ -262,12 +262,16 @@ func Decode(signatureLayerFilePath string) ([]DecodedMessage, error) {
 		return nil, errors.New(MalformedPositionVector)
 	}
 
+	var decoded []DecodedMessage
 	currentAlias := ""
 	for i := 1; i < len(tokens)-1; i++ {
 		token := tokens[i]
 		idx := strings.IndexByte(token, ':')
 		if idx >= 0 {
 			currentAlias = token[:idx]
+			decoded = append(decoded, DecodedMessage{
+				Alias: currentAlias,
+			})
 		}
 		if currentAlias == "" {
 			return nil, errors.New(MalformedPositionVector)
@@ -305,9 +309,9 @@ func Decode(signatureLayerFilePath string) ([]DecodedMessage, error) {
 		if err != nil {
 			return nil, errors.New(err)
 		}
+		decoded[len(decoded)-1].Content += decodedString
 		fmt.Printf("\n" + decodedString)
-
 	}
 
-	return nil, nil
+	return decoded, nil
 }

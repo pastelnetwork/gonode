@@ -96,9 +96,13 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 		return errors.New(err)
 	}
 
-	_, err = qr.Decode(extractedSignatureLayerImageOutputFilepath)
+	decodedMessages, err := qr.Decode(extractedSignatureLayerImageOutputFilepath)
 	if err != nil {
 		return errors.New(err)
+	}
+
+	for _, message := range decodedMessages {
+		fmt.Printf("\nDecoded message with alias:%v and content:%v", message.Alias, message.Content)
 	}
 
 	return nil
