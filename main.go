@@ -6,6 +6,7 @@ import (
 	"image"
 	"io"
 	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/corona10/goimghdr"
 	_ "github.com/mattn/go-sqlite3"
+	"gonum.org/v1/gonum/stat"
 
 	tf "github.com/galeone/tensorflow/tensorflow/go"
 	tg "github.com/galeone/tfgo"
@@ -510,12 +512,82 @@ func filterOutFingerprintsByTreshhold(similarity_score_vector__pearson_all []flo
 	return filteredByTreshholdCombinedImageFingerprintArray
 }
 
+func randInts(min int, max int, size int) []int {
+	output := make([]int, size)
+	for i := range output {
+		output[i] = rand.Intn(max-min) + min
+	}
+	return output
+}
+
+func arrayValuesFromIndexes(input []float64, indexes []int) []float64 {
+	output := make([]float64, len(indexes))
+	for i := range output {
+		output[i] = input[indexes[i]]
+	}
+	return output
+}
+
+func filterOutArrayValuesByRange(input []float64, min, max float64) []float64 {
+	var output []float64
+	for i := range input {
+		if input[i] > min && input[i] < max {
+			output = append(output, input[i])
+		}
+	}
+	return output
+}
+
+func compute_average_and_stdev_of_50th_to_90th_percentile_func(input_vector []float64) (float64, float64) {
+	percentile50, _ := stats.Percentile(input_vector, 50)
+	percentile90, _ := stats.Percentile(input_vector, 90)
+
+	trimmedVector := filterOutArrayValuesByRange(input_vector, percentile50, percentile90)
+	trimmedVectorAvg, _ := stats.Mean(trimmedVector)
+	trimmedVectorStdev, _ := stats.StdDevS(input_vector)
+
+	return trimmedVectorAvg, trimmedVectorStdev
+}
+
+func compute_parallel_bootstrapped_kendalls_tau_func(x []float64, list_of_fingerprints_requiring_further_testing_2 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64) {
+	original_length_of_input := len(x)
+	robust_average_tau := make([]float64, len(list_of_fingerprints_requiring_further_testing_2))
+	robust_stdev_tau := make([]float64, len(list_of_fingerprints_requiring_further_testing_2))
+
+	for fingerprintIdx, y := range list_of_fingerprints_requiring_further_testing_2 {
+		list_of_bootstrap_sample_indices := make([][]int, number_of_bootstraps)
+		x_bootstraps := make([][]float64, number_of_bootstraps)
+		y_bootstraps := make([][]float64, number_of_bootstraps)
+		bootstrapped_kendalltau_results := make([]float64, number_of_bootstraps)
+		for i := 0; i < number_of_bootstraps; i++ {
+			list_of_bootstrap_sample_indices[i] = randInts(0, original_length_of_input-1, sample_size)
+		}
+		for i, current_bootstrap_indices := range list_of_bootstrap_sample_indices {
+			x_bootstraps[i] = arrayValuesFromIndexes(x, current_bootstrap_indices)
+			y_bootstraps[i] = arrayValuesFromIndexes(y, current_bootstrap_indices)
+			bootstrapped_kendalltau_results[i] = stat.Kendall(x_bootstraps[i], y_bootstraps[i], nil)
+		}
+		robust_average_tau[fingerprintIdx], robust_stdev_tau[fingerprintIdx] = compute_average_and_stdev_of_50th_to_90th_percentile_func(bootstrapped_kendalltau_results)
+	}
+	return robust_average_tau, robust_stdev_tau
+}
+
+func computeAverageRatioOfArrays(numerator []float64, denominator []float64) float64 {
+	ratio := make([]float64, len(numerator))
+	for i := range ratio {
+		ratio[i] = numerator[i] / denominator[i]
+	}
+	averageRatio, _ := stats.Mean(ratio)
+	return averageRatio
+}
+
 func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
 	fmt.Printf("\nChecking if candidate image is a likely duplicate of a previously registered artwork:")
 	fmt.Printf("\nRetrieving image fingerprints of previously registered images from local database...")
 
 	pearson__dupe_threshold := 0.995
 	spearman__dupe_threshold := 0.79
+	kendall__dupe_threshold := 0.70
 	strictness_factor := 0.985
 
 	final_combined_image_fingerprint_array, err := get_all_image_fingerprints_from_dupe_detection_database_as_array()
@@ -553,6 +625,17 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 	list_of_fingerprints_requiring_further_testing_2 := filterOutFingerprintsByTreshhold(similarity_score_vector__spearman, strictness_factor*spearman__dupe_threshold, list_of_fingerprints_requiring_further_testing_1)
 	percentage_of_fingerprints_requiring_further_testing_2 := float32(len(list_of_fingerprints_requiring_further_testing_2)) / float32(len(final_combined_image_fingerprint_array))
 	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_2), percentage_of_fingerprints_requiring_further_testing_2*100)
+
+	fmt.Printf("\nNow computing Bootstrapped Kendall's Tau for selected fingerprints...")
+	sample_size__kendall := 50
+	number_of_bootstraps__kendall := 100
+	similarity_score_vector__kendall, similarity_score_vector__kendall__stdev := compute_parallel_bootstrapped_kendalls_tau_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_2, sample_size__kendall, number_of_bootstraps__kendall)
+	stdev_as_pct_of_robust_avg__kendall := computeAverageRatioOfArrays(similarity_score_vector__kendall__stdev, similarity_score_vector__kendall)
+	fmt.Printf("\nStandard Deviation as %% of Average Tau -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__kendall*100)
+
+	list_of_fingerprints_requiring_further_testing_3 := filterOutFingerprintsByTreshhold(similarity_score_vector__kendall, strictness_factor*kendall__dupe_threshold, list_of_fingerprints_requiring_further_testing_2)
+	percentage_of_fingerprints_requiring_further_testing_3 := float32(len(list_of_fingerprints_requiring_further_testing_3)) / float32(len(final_combined_image_fingerprint_array))
+	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_3), percentage_of_fingerprints_requiring_further_testing_3*100)
 
 	return true, nil
 }
