@@ -7,10 +7,10 @@ import (
 
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/storage"
-	"github.com/pastelnetwork/walletnode/storage/memory"
 	"github.com/pastelnetwork/walletnode/services/artwork"
 	"github.com/pastelnetwork/walletnode/services/artwork/register"
+	"github.com/pastelnetwork/walletnode/storage"
+	"github.com/pastelnetwork/walletnode/storage/memory"
 )
 
 const (
