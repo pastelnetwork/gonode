@@ -11,6 +11,7 @@ type Message struct {
 	Latest    bool
 }
 
+// NewMessage returns a new Message instance..
 func NewMessage(status Status) *Message {
 	return &Message{
 		CreatedAt: time.Now(),

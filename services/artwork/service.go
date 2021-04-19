@@ -3,8 +3,8 @@ package artwork
 import (
 	"context"
 
-	"github.com/pastelnetwork/walletnode/storage"
 	"github.com/pastelnetwork/walletnode/services/artwork/register"
+	"github.com/pastelnetwork/walletnode/storage"
 )
 
 // const logPrefix = "[artwork]"
@@ -21,6 +21,7 @@ func (service *Service) Tasks() []*register.Task {
 	return service.tasks
 }
 
+// Run starts worker
 func (service *Service) Run(ctx context.Context) error {
 	return service.worker.Run(ctx)
 }
