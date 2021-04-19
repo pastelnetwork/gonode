@@ -25,9 +25,17 @@ type Client struct {
 	// endpoint.
 	RegisterDoer goahttp.Doer
 
-	// RegisterStatus Doer is the HTTP client used to make requests to the
-	// registerStatus endpoint.
-	RegisterStatusDoer goahttp.Doer
+	// RegisterTaskState Doer is the HTTP client used to make requests to the
+	// registerTaskState endpoint.
+	RegisterTaskStateDoer goahttp.Doer
+
+	// RegisterTask Doer is the HTTP client used to make requests to the
+	// registerTask endpoint.
+	RegisterTaskDoer goahttp.Doer
+
+	// RegisterTasks Doer is the HTTP client used to make requests to the
+	// registerTasks endpoint.
+	RegisterTasksDoer goahttp.Doer
 
 	// UploadImage Doer is the HTTP client used to make requests to the uploadImage
 	// endpoint.
@@ -67,17 +75,19 @@ func NewClient(
 		cfn = &ConnConfigurer{}
 	}
 	return &Client{
-		RegisterDoer:        doer,
-		RegisterStatusDoer:  doer,
-		UploadImageDoer:     doer,
-		CORSDoer:            doer,
-		RestoreResponseBody: restoreBody,
-		scheme:              scheme,
-		host:                host,
-		decoder:             dec,
-		encoder:             enc,
-		dialer:              dialer,
-		configurer:          cfn,
+		RegisterDoer:          doer,
+		RegisterTaskStateDoer: doer,
+		RegisterTaskDoer:      doer,
+		RegisterTasksDoer:     doer,
+		UploadImageDoer:       doer,
+		CORSDoer:              doer,
+		RestoreResponseBody:   restoreBody,
+		scheme:                scheme,
+		host:                  host,
+		decoder:               dec,
+		encoder:               enc,
+		dialer:                dialer,
+		configurer:            cfn,
 	}
 }
 
@@ -105,27 +115,29 @@ func (c *Client) Register() goa.Endpoint {
 	}
 }
 
-// RegisterStatus returns an endpoint that makes HTTP requests to the artworks
-// service registerStatus server.
-func (c *Client) RegisterStatus() goa.Endpoint {
+// RegisterTaskState returns an endpoint that makes HTTP requests to the
+// artworks service registerTaskState server.
+func (c *Client) RegisterTaskState() goa.Endpoint {
 	var (
-		decodeResponse = DecodeRegisterStatusResponse(c.decoder, c.RestoreResponseBody)
+		decodeResponse = DecodeRegisterTaskStateResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildRegisterStatusRequest(ctx, v)
+		req, err := c.BuildRegisterTaskStateRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
-		var cancel context.CancelFunc
+
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
 				return decodeResponse(resp)
 			}
-			return nil, goahttp.ErrRequestError("artworks", "registerStatus", err)
+			return nil, goahttp.ErrRequestError("artworks", "registerTaskState", err)
 		}
-		if c.configurer.RegisterStatusFn != nil {
-			conn = c.configurer.RegisterStatusFn(conn, cancel)
+		if c.configurer.RegisterTaskStateFn != nil {
+			conn = c.configurer.RegisterTaskStateFn(conn, cancel)
 		}
 		go func() {
 			<-ctx.Done()
@@ -136,8 +148,46 @@ func (c *Client) RegisterStatus() goa.Endpoint {
 			)
 			conn.Close()
 		}()
-		stream := &RegisterStatusClientStream{conn: conn}
+		stream := &RegisterTaskStateClientStream{conn: conn}
 		return stream, nil
+	}
+}
+
+// RegisterTask returns an endpoint that makes HTTP requests to the artworks
+// service registerTask server.
+func (c *Client) RegisterTask() goa.Endpoint {
+	var (
+		decodeResponse = DecodeRegisterTaskResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildRegisterTaskRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.RegisterTaskDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("artworks", "registerTask", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// RegisterTasks returns an endpoint that makes HTTP requests to the artworks
+// service registerTasks server.
+func (c *Client) RegisterTasks() goa.Endpoint {
+	var (
+		decodeResponse = DecodeRegisterTasksResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildRegisterTasksRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.RegisterTasksDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("artworks", "registerTasks", err)
+		}
+		return decodeResponse(resp)
 	}
 }
 

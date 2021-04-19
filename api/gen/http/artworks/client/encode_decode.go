@@ -125,18 +125,18 @@ func DecodeRegisterResponse(decoder func(*http.Response) goahttp.Decoder, restor
 	}
 }
 
-// BuildRegisterStatusRequest instantiates a HTTP request object with method
-// and path set to call the "artworks" service "registerStatus" endpoint
-func (c *Client) BuildRegisterStatusRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+// BuildRegisterTaskStateRequest instantiates a HTTP request object with method
+// and path set to call the "artworks" service "registerTaskState" endpoint
+func (c *Client) BuildRegisterTaskStateRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
-		jobID int
+		taskID int
 	)
 	{
-		p, ok := v.(*artworks.RegisterStatusPayload)
+		p, ok := v.(*artworks.RegisterTaskStatePayload)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("artworks", "registerStatus", "*artworks.RegisterStatusPayload", v)
+			return nil, goahttp.ErrInvalidType("artworks", "registerTaskState", "*artworks.RegisterTaskStatePayload", v)
 		}
-		jobID = p.JobID
+		taskID = p.TaskID
 	}
 	scheme := c.scheme
 	switch c.scheme {
@@ -145,10 +145,10 @@ func (c *Client) BuildRegisterStatusRequest(ctx context.Context, v interface{}) 
 	case "https":
 		scheme = "wss"
 	}
-	u := &url.URL{Scheme: scheme, Host: c.host, Path: RegisterStatusArtworksPath(jobID)}
+	u := &url.URL{Scheme: scheme, Host: c.host, Path: RegisterTaskStateArtworksPath(taskID)}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("artworks", "registerStatus", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("artworks", "registerTaskState", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -157,15 +157,14 @@ func (c *Client) BuildRegisterStatusRequest(ctx context.Context, v interface{}) 
 	return req, nil
 }
 
-// DecodeRegisterStatusResponse returns a decoder for responses returned by the
-// artworks registerStatus endpoint. restoreBody controls whether the response
-// body should be restored after having been read.
-// DecodeRegisterStatusResponse may return the following errors:
+// DecodeRegisterTaskStateResponse returns a decoder for responses returned by
+// the artworks registerTaskState endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+// DecodeRegisterTaskStateResponse may return the following errors:
 //	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeRegisterStatusResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -182,66 +181,223 @@ func DecodeRegisterStatusResponse(decoder func(*http.Response) goahttp.Decoder, 
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body RegisterStatusResponseBody
+				body RegisterTaskStateResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerStatus", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTaskState", err)
 			}
-			p := NewRegisterStatusJobOK(&body)
-			view := "default"
-			vres := &artworksviews.Job{Projected: p, View: view}
-			if err = artworksviews.ValidateJob(vres); err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerStatus", err)
+			err = ValidateRegisterTaskStateResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "registerTaskState", err)
 			}
-			res := artworks.NewJob(vres)
+			res := NewRegisterTaskStateTaskStateOK(&body)
 			return res, nil
 		case http.StatusNotFound:
 			var (
-				body RegisterStatusNotFoundResponseBody
+				body RegisterTaskStateNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerStatus", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTaskState", err)
 			}
-			err = ValidateRegisterStatusNotFoundResponseBody(&body)
+			err = ValidateRegisterTaskStateNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerStatus", err)
+				return nil, goahttp.ErrValidationError("artworks", "registerTaskState", err)
 			}
-			return nil, NewRegisterStatusNotFound(&body)
-		case http.StatusBadRequest:
-			var (
-				body RegisterStatusBadRequestResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerStatus", err)
-			}
-			err = ValidateRegisterStatusBadRequestResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerStatus", err)
-			}
-			return nil, NewRegisterStatusBadRequest(&body)
+			return nil, NewRegisterTaskStateNotFound(&body)
 		case http.StatusInternalServerError:
 			var (
-				body RegisterStatusInternalServerErrorResponseBody
+				body RegisterTaskStateInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerStatus", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTaskState", err)
 			}
-			err = ValidateRegisterStatusInternalServerErrorResponseBody(&body)
+			err = ValidateRegisterTaskStateInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerStatus", err)
+				return nil, goahttp.ErrValidationError("artworks", "registerTaskState", err)
 			}
-			return nil, NewRegisterStatusInternalServerError(&body)
+			return nil, NewRegisterTaskStateInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("artworks", "registerStatus", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("artworks", "registerTaskState", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildRegisterTaskRequest instantiates a HTTP request object with method and
+// path set to call the "artworks" service "registerTask" endpoint
+func (c *Client) BuildRegisterTaskRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	var (
+		taskID int
+	)
+	{
+		p, ok := v.(*artworks.RegisterTaskPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("artworks", "registerTask", "*artworks.RegisterTaskPayload", v)
+		}
+		taskID = p.TaskID
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegisterTaskArtworksPath(taskID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("artworks", "registerTask", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// DecodeRegisterTaskResponse returns a decoder for responses returned by the
+// artworks registerTask endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeRegisterTaskResponse may return the following errors:
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeRegisterTaskResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body RegisterTaskResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "registerTask", err)
+			}
+			p := NewRegisterTaskTaskOK(&body)
+			view := "default"
+			vres := &artworksviews.Task{Projected: p, View: view}
+			if err = artworksviews.ValidateTask(vres); err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "registerTask", err)
+			}
+			res := artworks.NewTask(vres)
+			return res, nil
+		case http.StatusNotFound:
+			var (
+				body RegisterTaskNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "registerTask", err)
+			}
+			err = ValidateRegisterTaskNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "registerTask", err)
+			}
+			return nil, NewRegisterTaskNotFound(&body)
+		case http.StatusInternalServerError:
+			var (
+				body RegisterTaskInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "registerTask", err)
+			}
+			err = ValidateRegisterTaskInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "registerTask", err)
+			}
+			return nil, NewRegisterTaskInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("artworks", "registerTask", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildRegisterTasksRequest instantiates a HTTP request object with method and
+// path set to call the "artworks" service "registerTasks" endpoint
+func (c *Client) BuildRegisterTasksRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegisterTasksArtworksPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("artworks", "registerTasks", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// DecodeRegisterTasksResponse returns a decoder for responses returned by the
+// artworks registerTasks endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeRegisterTasksResponse may return the following errors:
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeRegisterTasksResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body RegisterTasksResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "registerTasks", err)
+			}
+			p := NewRegisterTasksTaskCollectionOK(body)
+			view := "tiny"
+			vres := artworksviews.TaskCollection{Projected: p, View: view}
+			if err = artworksviews.ValidateTaskCollection(vres); err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "registerTasks", err)
+			}
+			res := artworks.NewTaskCollection(vres)
+			return res, nil
+		case http.StatusInternalServerError:
+			var (
+				body RegisterTasksInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "registerTasks", err)
+			}
+			err = ValidateRegisterTasksInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "registerTasks", err)
+			}
+			return nil, NewRegisterTasksInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("artworks", "registerTasks", resp.StatusCode, string(body))
 		}
 	}
 }
@@ -366,4 +522,96 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 			return nil, goahttp.ErrInvalidResponse("artworks", "uploadImage", resp.StatusCode, string(body))
 		}
 	}
+}
+
+// unmarshalTaskStateResponseBodyToArtworksviewsTaskStateView builds a value of
+// type *artworksviews.TaskStateView from a value of type
+// *TaskStateResponseBody.
+func unmarshalTaskStateResponseBodyToArtworksviewsTaskStateView(v *TaskStateResponseBody) *artworksviews.TaskStateView {
+	if v == nil {
+		return nil
+	}
+	res := &artworksviews.TaskStateView{
+		Date:   v.Date,
+		Status: v.Status,
+	}
+
+	return res
+}
+
+// unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView builds a
+// value of type *artworksviews.ArtworkTicketView from a value of type
+// *ArtworkTicketResponseBody.
+func unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView(v *ArtworkTicketResponseBody) *artworksviews.ArtworkTicketView {
+	res := &artworksviews.ArtworkTicketView{
+		Name:             v.Name,
+		Description:      v.Description,
+		Keywords:         v.Keywords,
+		SeriesName:       v.SeriesName,
+		IssuedCopies:     v.IssuedCopies,
+		ImageID:          v.ImageID,
+		YoutubeURL:       v.YoutubeURL,
+		ArtistPastelID:   v.ArtistPastelID,
+		ArtistName:       v.ArtistName,
+		ArtistWebsiteURL: v.ArtistWebsiteURL,
+		SpendableAddress: v.SpendableAddress,
+		NetworkFee:       v.NetworkFee,
+	}
+
+	return res
+}
+
+// unmarshalTaskResponseToArtworksviewsTaskView builds a value of type
+// *artworksviews.TaskView from a value of type *TaskResponse.
+func unmarshalTaskResponseToArtworksviewsTaskView(v *TaskResponse) *artworksviews.TaskView {
+	res := &artworksviews.TaskView{
+		ID:     v.ID,
+		Status: v.Status,
+		Txid:   v.Txid,
+	}
+	if v.States != nil {
+		res.States = make([]*artworksviews.TaskStateView, len(v.States))
+		for i, val := range v.States {
+			res.States[i] = unmarshalTaskStateResponseToArtworksviewsTaskStateView(val)
+		}
+	}
+	res.Ticket = unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v.Ticket)
+
+	return res
+}
+
+// unmarshalTaskStateResponseToArtworksviewsTaskStateView builds a value of
+// type *artworksviews.TaskStateView from a value of type *TaskStateResponse.
+func unmarshalTaskStateResponseToArtworksviewsTaskStateView(v *TaskStateResponse) *artworksviews.TaskStateView {
+	if v == nil {
+		return nil
+	}
+	res := &artworksviews.TaskStateView{
+		Date:   v.Date,
+		Status: v.Status,
+	}
+
+	return res
+}
+
+// unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView builds a
+// value of type *artworksviews.ArtworkTicketView from a value of type
+// *ArtworkTicketResponse.
+func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTicketResponse) *artworksviews.ArtworkTicketView {
+	res := &artworksviews.ArtworkTicketView{
+		Name:             v.Name,
+		Description:      v.Description,
+		Keywords:         v.Keywords,
+		SeriesName:       v.SeriesName,
+		IssuedCopies:     v.IssuedCopies,
+		ImageID:          v.ImageID,
+		YoutubeURL:       v.YoutubeURL,
+		ArtistPastelID:   v.ArtistPastelID,
+		ArtistName:       v.ArtistName,
+		ArtistWebsiteURL: v.ArtistWebsiteURL,
+		SpendableAddress: v.SpendableAddress,
+		NetworkFee:       v.NetworkFee,
+	}
+
+	return res
 }

@@ -2,65 +2,112 @@ package services
 
 import (
 	"context"
+	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/go-commons/random"
 	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/dao"
-	"github.com/pastelnetwork/walletnode/dao/memory"
 	"github.com/pastelnetwork/walletnode/services/artwork"
+	"github.com/pastelnetwork/walletnode/services/artwork/register"
+	"github.com/pastelnetwork/walletnode/storage"
+	"github.com/pastelnetwork/walletnode/storage/memory"
 )
 
 const (
 	imageTTL = time.Second * 3600 // 1 hour
 )
 
+var (
+	imageID uint32
+)
+
 type serviceArtwork struct {
-	storage dao.KeyValue
 	artwork *artwork.Service
+	storage storage.KeyValue
 }
 
-// RegisterStatus streams the job status of the new artwork registration.
-func (service *serviceArtwork) RegisterStatus(ctx context.Context, p *artworks.RegisterStatusPayload, stream artworks.RegisterStatusServerStream) (err error) {
-	job := service.artwork.RegisterJob(p.JobID)
-	if job == nil {
-		return artworks.MakeNotFound(errors.Errorf("invalid jobId: %d", p.JobID))
-	}
-	subscription := job.Subscribe()
-
+// RegisterTaskState streams the state of the registration process.
+func (service *serviceArtwork) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
+
+	task := service.artwork.Task(p.TaskID)
+	if task == nil {
+		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
+	}
+
+	sub, err := task.State.Subscribe()
+	if err != nil {
+		return artworks.MakeInternalServerError(err)
+	}
+	defer sub.Close()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case sub, ok := <-subscription:
-			if !ok {
-				return nil
-			}
-			res := &artworks.Job{
-				ID:     job.ID,
-				Status: sub.Status.String(),
+		case <-sub.Done():
+			return nil
+		case msg := <-sub.Msg():
+			res := &artworks.TaskState{
+				Date:   msg.CreatedAt.Format(time.RFC3339),
+				Status: msg.Status.String(),
 			}
 			if err := stream.Send(res); err != nil {
-				return artworks.MakeBadRequest(err)
+				return artworks.MakeInternalServerError(err)
 			}
 
 		}
 	}
 }
 
+// RegisterTask returns a single task.
+func (service *serviceArtwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
+	task := service.artwork.Task(p.TaskID)
+	if task == nil {
+		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
+	}
+
+	res = &artworks.Task{
+		ID:     p.TaskID,
+		Status: task.State.Latest().Status.String(),
+	}
+
+	for _, msg := range task.State.All() {
+		res.States = append(res.States, &artworks.TaskState{
+			Date:   msg.CreatedAt.Format(time.RFC3339),
+			Status: msg.Status.String(),
+		})
+	}
+
+	return res, nil
+}
+
+// RegisterTask returns list of all tasks.
+func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.TaskCollection, err error) {
+	tasks := service.artwork.Tasks()
+	for _, task := range tasks {
+		res = append(res, &artworks.Task{
+			ID:     task.ID(),
+			Status: task.State.Latest().Status.String(),
+		})
+	}
+	return res, nil
+}
+
 // Register runs registers process for the new artwork.
 func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
-	image, err := service.storage.Get(p.ImageID)
-	if err == dao.ErrKeyNotFound {
+	key := strconv.Itoa(p.ImageID)
+
+	image, err := service.storage.Get(key)
+	if err == storage.ErrKeyNotFound {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	artwork := &artwork.Artwork{
+	ticket := &register.Ticket{
 		Image:            image,
 		Name:             p.Name,
 		Description:      p.Description,
@@ -75,31 +122,29 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 		NetworkFee:       p.NetworkFee,
 	}
 
-	jobID, err := service.artwork.Register(artwork)
+	taskID, err := service.artwork.Register(ctx, ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 	res = &artworks.RegisterResult{
-		JobID: jobID,
+		TaskID: taskID,
 	}
 	return res, nil
 }
 
 // UploadImage uploads an image and return unique image id.
 func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
-	id, err := random.String(8, random.Base62Chars)
-	if err != nil {
-		return nil, artworks.MakeInternalServerError(err)
-	}
+	id := int(atomic.AddUint32(&imageID, 1))
+	key := strconv.Itoa(id)
 
-	if err := service.storage.Set(id, p.Bytes); err != nil {
+	if err := service.storage.Set(key, p.Bytes); err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 	expiresIn := time.Now().Add(imageTTL)
 
 	go func() {
 		time.AfterFunc(time.Until(expiresIn), func() {
-			service.storage.Delete(id)
+			service.storage.Delete(key)
 		})
 	}()
 
@@ -111,9 +156,9 @@ func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.Uplo
 }
 
 // NewArtwork returns the artworks serviceArtwork implementation.
-func NewArtwork() artworks.Service {
+func NewArtwork(artworks *artwork.Service) artworks.Service {
 	return &serviceArtwork{
+		artwork: artworks,
 		storage: memory.NewKeyValue(),
-		artwork: artwork.NewService(),
 	}
 }

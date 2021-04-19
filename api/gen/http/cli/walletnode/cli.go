@@ -23,7 +23,7 @@ import (
 //    command (subcommand1|subcommand2|...)
 //
 func UsageCommands() string {
-	return `artworks (register|register-status|upload-image)
+	return `artworks (register|register-task-state|register-task|register-tasks|upload-image)
 `
 }
 
@@ -34,7 +34,7 @@ func UsageExamples() string {
       "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
       "artist_website_url": "https://www.leonardodavinci.net",
       "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
-      "image_id": "d93lsd02",
+      "image_id": 1,
       "issued_copies": 1,
       "keywords": "Renaissance, sfumato, portrait",
       "name": "Mona Lisa",
@@ -64,15 +64,22 @@ func ParseEndpoint(
 		artworksRegisterFlags    = flag.NewFlagSet("register", flag.ExitOnError)
 		artworksRegisterBodyFlag = artworksRegisterFlags.String("body", "REQUIRED", "")
 
-		artworksRegisterStatusFlags     = flag.NewFlagSet("register-status", flag.ExitOnError)
-		artworksRegisterStatusJobIDFlag = artworksRegisterStatusFlags.String("job-id", "REQUIRED", "Job ID of the registration process")
+		artworksRegisterTaskStateFlags      = flag.NewFlagSet("register-task-state", flag.ExitOnError)
+		artworksRegisterTaskStateTaskIDFlag = artworksRegisterTaskStateFlags.String("task-id", "REQUIRED", "Task ID of the registration process")
+
+		artworksRegisterTaskFlags      = flag.NewFlagSet("register-task", flag.ExitOnError)
+		artworksRegisterTaskTaskIDFlag = artworksRegisterTaskFlags.String("task-id", "REQUIRED", "Task ID of the registration process")
+
+		artworksRegisterTasksFlags = flag.NewFlagSet("register-tasks", flag.ExitOnError)
 
 		artworksUploadImageFlags    = flag.NewFlagSet("upload-image", flag.ExitOnError)
 		artworksUploadImageBodyFlag = artworksUploadImageFlags.String("body", "REQUIRED", "")
 	)
 	artworksFlags.Usage = artworksUsage
 	artworksRegisterFlags.Usage = artworksRegisterUsage
-	artworksRegisterStatusFlags.Usage = artworksRegisterStatusUsage
+	artworksRegisterTaskStateFlags.Usage = artworksRegisterTaskStateUsage
+	artworksRegisterTaskFlags.Usage = artworksRegisterTaskUsage
+	artworksRegisterTasksFlags.Usage = artworksRegisterTasksUsage
 	artworksUploadImageFlags.Usage = artworksUploadImageUsage
 
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
@@ -112,8 +119,14 @@ func ParseEndpoint(
 			case "register":
 				epf = artworksRegisterFlags
 
-			case "register-status":
-				epf = artworksRegisterStatusFlags
+			case "register-task-state":
+				epf = artworksRegisterTaskStateFlags
+
+			case "register-task":
+				epf = artworksRegisterTaskFlags
+
+			case "register-tasks":
+				epf = artworksRegisterTasksFlags
 
 			case "upload-image":
 				epf = artworksUploadImageFlags
@@ -146,9 +159,15 @@ func ParseEndpoint(
 			case "register":
 				endpoint = c.Register()
 				data, err = artworksc.BuildRegisterPayload(*artworksRegisterBodyFlag)
-			case "register-status":
-				endpoint = c.RegisterStatus()
-				data, err = artworksc.BuildRegisterStatusPayload(*artworksRegisterStatusJobIDFlag)
+			case "register-task-state":
+				endpoint = c.RegisterTaskState()
+				data, err = artworksc.BuildRegisterTaskStatePayload(*artworksRegisterTaskStateTaskIDFlag)
+			case "register-task":
+				endpoint = c.RegisterTask()
+				data, err = artworksc.BuildRegisterTaskPayload(*artworksRegisterTaskTaskIDFlag)
+			case "register-tasks":
+				endpoint = c.RegisterTasks()
+				data = nil
 			case "upload-image":
 				endpoint = c.UploadImage(artworksUploadImageEncoderFn)
 				data, err = artworksc.BuildUploadImagePayload(*artworksUploadImageBodyFlag)
@@ -170,7 +189,9 @@ Usage:
 
 COMMAND:
     register: Runs a new registration process for the new artwork.
-    register-status: Streams statuses of the artwork registration.
+    register-task-state: Streams the state of the registration process.
+    register-task: Returns a single task.
+    register-tasks: List of all tasks.
     upload-image: Upload the image that is used when registering a new artwork.
 
 Additional help:
@@ -189,7 +210,7 @@ Example:
       "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
       "artist_website_url": "https://www.leonardodavinci.net",
       "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
-      "image_id": "d93lsd02",
+      "image_id": 1,
       "issued_copies": 1,
       "keywords": "Renaissance, sfumato, portrait",
       "name": "Mona Lisa",
@@ -201,14 +222,35 @@ Example:
 `, os.Args[0])
 }
 
-func artworksRegisterStatusUsage() {
-	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-status -job-id INT
+func artworksRegisterTaskStateUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-task-state -task-id INT
 
-Streams statuses of the artwork registration.
-    -job-id INT: Job ID of the registration process
+Streams the state of the registration process.
+    -task-id INT: Task ID of the registration process
 
 Example:
-    `+os.Args[0]+` artworks register-status --job-id 5
+    `+os.Args[0]+` artworks register-task-state --task-id 5
+`, os.Args[0])
+}
+
+func artworksRegisterTaskUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-task -task-id INT
+
+Returns a single task.
+    -task-id INT: Task ID of the registration process
+
+Example:
+    `+os.Args[0]+` artworks register-task --task-id 5
+`, os.Args[0])
+}
+
+func artworksRegisterTasksUsage() {
+	fmt.Fprintf(os.Stderr, `%s [flags] artworks register-tasks
+
+List of all tasks.
+
+Example:
+    `+os.Args[0]+` artworks register-tasks
 `, os.Args[0])
 }
 
@@ -220,7 +262,7 @@ Upload the image that is used when registering a new artwork.
 
 Example:
     `+os.Args[0]+` artworks upload-image --body '{
-      "file": "SWQgdXQu"
+      "file": "VmVsIHZvbHVwdGF0ZW0gcHJvdmlkZW50IGRvbG9yaWJ1cy4="
    }'
 `, os.Args[0])
 }

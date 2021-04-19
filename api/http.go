@@ -30,7 +30,7 @@ func swaggerHandler() http.Handler {
 	return http.FileServer(http.FS(swaggerContent))
 }
 
-func apiHandler() http.Handler {
+func (api *API) handler() http.Handler {
 	var (
 		dec        = goahttp.RequestDecoder
 		enc        = goahttp.ResponseEncoder
@@ -38,7 +38,7 @@ func apiHandler() http.Handler {
 		errHandler = errorHandler()
 	)
 
-	artworksEndpoints := artworks.NewEndpoints(services.NewArtwork())
+	artworksEndpoints := artworks.NewEndpoints(services.NewArtwork(api.artwork))
 	artworksUpgrader := &websocket.Upgrader{}
 	artworksServer := artworkssvr.New(artworksEndpoints, mux, dec, enc, errHandler, nil, artworksUpgrader, nil, services.UploadImageDecoderFunc)
 	artworkssvr.Mount(mux, artworksServer)

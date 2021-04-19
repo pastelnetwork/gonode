@@ -21,12 +21,12 @@ import (
 // ConnConfigurer holds the websocket connection configurer functions for the
 // streaming endpoints in "artworks" service.
 type ConnConfigurer struct {
-	RegisterStatusFn goahttp.ConnConfigureFunc
+	RegisterTaskStateFn goahttp.ConnConfigureFunc
 }
 
-// RegisterStatusServerStream implements the
-// artworks.RegisterStatusServerStream interface.
-type RegisterStatusServerStream struct {
+// RegisterTaskStateServerStream implements the
+// artworks.RegisterTaskStateServerStream interface.
+type RegisterTaskStateServerStream struct {
 	once sync.Once
 	// upgrader is the websocket connection upgrader.
 	upgrader goahttp.Upgrader
@@ -47,13 +47,13 @@ type RegisterStatusServerStream struct {
 // with fn for all the streaming endpoints in "artworks" service.
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
-		RegisterStatusFn: fn,
+		RegisterTaskStateFn: fn,
 	}
 }
 
-// Send streams instances of "artworks.Job" to the "registerStatus" endpoint
-// websocket connection.
-func (s *RegisterStatusServerStream) Send(v *artworks.Job) error {
+// Send streams instances of "artworks.TaskState" to the "registerTaskState"
+// endpoint websocket connection.
+func (s *RegisterTaskStateServerStream) Send(v *artworks.TaskState) error {
 	var err error
 	// Upgrade the HTTP connection to a websocket connection only once. Connection
 	// upgrade is done here so that authorization logic in the endpoint is executed
@@ -72,13 +72,13 @@ func (s *RegisterStatusServerStream) Send(v *artworks.Job) error {
 	if err != nil {
 		return err
 	}
-	res := artworks.NewViewedJob(v, "default")
-	body := NewRegisterStatusResponseBody(res.Projected)
+	res := v
+	body := NewRegisterTaskStateResponseBody(res)
 	return s.conn.WriteJSON(body)
 }
 
-// Close closes the "registerStatus" endpoint websocket connection.
-func (s *RegisterStatusServerStream) Close() error {
+// Close closes the "registerTaskState" endpoint websocket connection.
+func (s *RegisterTaskStateServerStream) Close() error {
 	var err error
 	if s.conn == nil {
 		return nil

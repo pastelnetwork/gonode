@@ -21,11 +21,13 @@ import (
 
 // Server lists the artworks service endpoint HTTP handlers.
 type Server struct {
-	Mounts         []*MountPoint
-	Register       http.Handler
-	RegisterStatus http.Handler
-	UploadImage    http.Handler
-	CORS           http.Handler
+	Mounts            []*MountPoint
+	Register          http.Handler
+	RegisterTaskState http.Handler
+	RegisterTask      http.Handler
+	RegisterTasks     http.Handler
+	UploadImage       http.Handler
+	CORS              http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -72,16 +74,21 @@ func New(
 	return &Server{
 		Mounts: []*MountPoint{
 			{"Register", "POST", "/artworks/register"},
-			{"RegisterStatus", "GET", "/artworks/register/{jobId}"},
-			{"UploadImage", "POST", "/artworks/register/upload-image"},
+			{"RegisterTaskState", "GET", "/artworks/register/{taskId}/state"},
+			{"RegisterTask", "GET", "/artworks/register/{taskId}"},
+			{"RegisterTasks", "GET", "/artworks/register"},
+			{"UploadImage", "POST", "/artworks/register/upload"},
 			{"CORS", "OPTIONS", "/artworks/register"},
-			{"CORS", "OPTIONS", "/artworks/register/{jobId}"},
-			{"CORS", "OPTIONS", "/artworks/register/upload-image"},
+			{"CORS", "OPTIONS", "/artworks/register/{taskId}/state"},
+			{"CORS", "OPTIONS", "/artworks/register/{taskId}"},
+			{"CORS", "OPTIONS", "/artworks/register/upload"},
 		},
-		Register:       NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
-		RegisterStatus: NewRegisterStatusHandler(e.RegisterStatus, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterStatusFn),
-		UploadImage:    NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
-		CORS:           NewCORSHandler(),
+		Register:          NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
+		RegisterTaskState: NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
+		RegisterTask:      NewRegisterTaskHandler(e.RegisterTask, mux, decoder, encoder, errhandler, formatter),
+		RegisterTasks:     NewRegisterTasksHandler(e.RegisterTasks, mux, decoder, encoder, errhandler, formatter),
+		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
+		CORS:              NewCORSHandler(),
 	}
 }
 
@@ -91,7 +98,9 @@ func (s *Server) Service() string { return "artworks" }
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.Register = m(s.Register)
-	s.RegisterStatus = m(s.RegisterStatus)
+	s.RegisterTaskState = m(s.RegisterTaskState)
+	s.RegisterTask = m(s.RegisterTask)
+	s.RegisterTasks = m(s.RegisterTasks)
 	s.UploadImage = m(s.UploadImage)
 	s.CORS = m(s.CORS)
 }
@@ -99,7 +108,9 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 // Mount configures the mux to serve the artworks endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountRegisterHandler(mux, h.Register)
-	MountRegisterStatusHandler(mux, h.RegisterStatus)
+	MountRegisterTaskStateHandler(mux, h.RegisterTaskState)
+	MountRegisterTaskHandler(mux, h.RegisterTask)
+	MountRegisterTasksHandler(mux, h.RegisterTasks)
 	MountUploadImageHandler(mux, h.UploadImage)
 	MountCORSHandler(mux, h.CORS)
 }
@@ -155,21 +166,21 @@ func NewRegisterHandler(
 	})
 }
 
-// MountRegisterStatusHandler configures the mux to serve the "artworks"
-// service "registerStatus" endpoint.
-func MountRegisterStatusHandler(mux goahttp.Muxer, h http.Handler) {
+// MountRegisterTaskStateHandler configures the mux to serve the "artworks"
+// service "registerTaskState" endpoint.
+func MountRegisterTaskStateHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/artworks/register/{jobId}", f)
+	mux.Handle("GET", "/artworks/register/{taskId}/state", f)
 }
 
-// NewRegisterStatusHandler creates a HTTP handler which loads the HTTP request
-// and calls the "artworks" service "registerStatus" endpoint.
-func NewRegisterStatusHandler(
+// NewRegisterTaskStateHandler creates a HTTP handler which loads the HTTP
+// request and calls the "artworks" service "registerTaskState" endpoint.
+func NewRegisterTaskStateHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -180,12 +191,12 @@ func NewRegisterStatusHandler(
 	configurer goahttp.ConnConfigureFunc,
 ) http.Handler {
 	var (
-		decodeRequest = DecodeRegisterStatusRequest(mux, decoder)
-		encodeError   = EncodeRegisterStatusError(encoder, formatter)
+		decodeRequest = DecodeRegisterTaskStateRequest(mux, decoder)
+		encodeError   = EncodeRegisterTaskStateError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "registerStatus")
+		ctx = context.WithValue(ctx, goa.MethodKey, "registerTaskState")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -196,15 +207,15 @@ func NewRegisterStatusHandler(
 		}
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
-		v := &artworks.RegisterStatusEndpointInput{
-			Stream: &RegisterStatusServerStream{
+		v := &artworks.RegisterTaskStateEndpointInput{
+			Stream: &RegisterTaskStateServerStream{
 				upgrader:   upgrader,
 				configurer: configurer,
 				cancel:     cancel,
 				w:          w,
 				r:          r,
 			},
-			Payload: payload.(*artworks.RegisterStatusPayload),
+			Payload: payload.(*artworks.RegisterTaskStatePayload),
 		}
 		_, err = endpoint(ctx, v)
 		if err != nil {
@@ -219,6 +230,101 @@ func NewRegisterStatusHandler(
 	})
 }
 
+// MountRegisterTaskHandler configures the mux to serve the "artworks" service
+// "registerTask" endpoint.
+func MountRegisterTaskHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/artworks/register/{taskId}", f)
+}
+
+// NewRegisterTaskHandler creates a HTTP handler which loads the HTTP request
+// and calls the "artworks" service "registerTask" endpoint.
+func NewRegisterTaskHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeRegisterTaskRequest(mux, decoder)
+		encodeResponse = EncodeRegisterTaskResponse(encoder)
+		encodeError    = EncodeRegisterTaskError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "registerTask")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountRegisterTasksHandler configures the mux to serve the "artworks" service
+// "registerTasks" endpoint.
+func MountRegisterTasksHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/artworks/register", f)
+}
+
+// NewRegisterTasksHandler creates a HTTP handler which loads the HTTP request
+// and calls the "artworks" service "registerTasks" endpoint.
+func NewRegisterTasksHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		encodeResponse = EncodeRegisterTasksResponse(encoder)
+		encodeError    = EncodeRegisterTasksError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "registerTasks")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
+		var err error
+		res, err := endpoint(ctx, nil)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
 // MountUploadImageHandler configures the mux to serve the "artworks" service
 // "uploadImage" endpoint.
 func MountUploadImageHandler(mux goahttp.Muxer, h http.Handler) {
@@ -228,7 +334,7 @@ func MountUploadImageHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("POST", "/artworks/register/upload-image", f)
+	mux.Handle("POST", "/artworks/register/upload", f)
 }
 
 // NewUploadImageHandler creates a HTTP handler which loads the HTTP request
@@ -281,8 +387,9 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 		}
 	}
 	mux.Handle("OPTIONS", "/artworks/register", f)
-	mux.Handle("OPTIONS", "/artworks/register/{jobId}", f)
-	mux.Handle("OPTIONS", "/artworks/register/upload-image", f)
+	mux.Handle("OPTIONS", "/artworks/register/{taskId}/state", f)
+	mux.Handle("OPTIONS", "/artworks/register/{taskId}", f)
+	mux.Handle("OPTIONS", "/artworks/register/upload", f)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

@@ -15,33 +15,40 @@ import (
 
 // Endpoints wraps the "artworks" service endpoints.
 type Endpoints struct {
-	Register       goa.Endpoint
-	RegisterStatus goa.Endpoint
-	UploadImage    goa.Endpoint
+	Register          goa.Endpoint
+	RegisterTaskState goa.Endpoint
+	RegisterTask      goa.Endpoint
+	RegisterTasks     goa.Endpoint
+	UploadImage       goa.Endpoint
 }
 
-// RegisterStatusEndpointInput holds both the payload and the server stream of
-// the "registerStatus" method.
-type RegisterStatusEndpointInput struct {
+// RegisterTaskStateEndpointInput holds both the payload and the server stream
+// of the "registerTaskState" method.
+type RegisterTaskStateEndpointInput struct {
 	// Payload is the method payload.
-	Payload *RegisterStatusPayload
-	// Stream is the server stream used by the "registerStatus" method to send data.
-	Stream RegisterStatusServerStream
+	Payload *RegisterTaskStatePayload
+	// Stream is the server stream used by the "registerTaskState" method to send
+	// data.
+	Stream RegisterTaskStateServerStream
 }
 
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		Register:       NewRegisterEndpoint(s),
-		RegisterStatus: NewRegisterStatusEndpoint(s),
-		UploadImage:    NewUploadImageEndpoint(s),
+		Register:          NewRegisterEndpoint(s),
+		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
+		RegisterTask:      NewRegisterTaskEndpoint(s),
+		RegisterTasks:     NewRegisterTasksEndpoint(s),
+		UploadImage:       NewUploadImageEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "artworks" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.Register = m(e.Register)
-	e.RegisterStatus = m(e.RegisterStatus)
+	e.RegisterTaskState = m(e.RegisterTaskState)
+	e.RegisterTask = m(e.RegisterTask)
+	e.RegisterTasks = m(e.RegisterTasks)
 	e.UploadImage = m(e.UploadImage)
 }
 
@@ -59,12 +66,39 @@ func NewRegisterEndpoint(s Service) goa.Endpoint {
 	}
 }
 
-// NewRegisterStatusEndpoint returns an endpoint function that calls the method
-// "registerStatus" of service "artworks".
-func NewRegisterStatusEndpoint(s Service) goa.Endpoint {
+// NewRegisterTaskStateEndpoint returns an endpoint function that calls the
+// method "registerTaskState" of service "artworks".
+func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		ep := req.(*RegisterStatusEndpointInput)
-		return nil, s.RegisterStatus(ctx, ep.Payload, ep.Stream)
+		ep := req.(*RegisterTaskStateEndpointInput)
+		return nil, s.RegisterTaskState(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewRegisterTaskEndpoint returns an endpoint function that calls the method
+// "registerTask" of service "artworks".
+func NewRegisterTaskEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*RegisterTaskPayload)
+		res, err := s.RegisterTask(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedTask(res, "default")
+		return vres, nil
+	}
+}
+
+// NewRegisterTasksEndpoint returns an endpoint function that calls the method
+// "registerTasks" of service "artworks".
+func NewRegisterTasksEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		res, err := s.RegisterTasks(ctx)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedTaskCollection(res, "tiny")
+		return vres, nil
 	}
 }
 

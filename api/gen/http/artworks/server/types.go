@@ -29,7 +29,7 @@ type RegisterRequestBody struct {
 	// Number of copies issued
 	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
 	// Uploaded image ID
-	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
+	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
@@ -53,26 +53,42 @@ type UploadImageRequestBody struct {
 // RegisterResponseBody is the type of the "artworks" service "register"
 // endpoint HTTP response body.
 type RegisterResponseBody struct {
-	// Job ID of the registration process
-	JobID int `form:"job_id" json:"job_id" xml:"job_id"`
+	// Task ID of the registration process
+	TaskID int `form:"task_id" json:"task_id" xml:"task_id"`
 }
 
-// RegisterStatusResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body.
-type RegisterStatusResponseBody struct {
+// RegisterTaskStateResponseBody is the type of the "artworks" service
+// "registerTaskState" endpoint HTTP response body.
+type RegisterTaskStateResponseBody struct {
+	// Date of the status creation
+	Date string `form:"date" json:"date" xml:"date"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
+// RegisterTaskResponseBody is the type of the "artworks" service
+// "registerTask" endpoint HTTP response body.
+type RegisterTaskResponseBody struct {
 	// JOb ID of the registration process
 	ID int `form:"id" json:"id" xml:"id"`
 	// Status of the registration process
 	Status string `form:"status" json:"status" xml:"status"`
+	// List of states from the very beginning of the process
+	States []*TaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// txid
-	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Txid   *string                    `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Ticket *ArtworkTicketResponseBody `form:"ticket" json:"ticket" xml:"ticket"`
 }
+
+// TaskResponseTinyCollection is the type of the "artworks" service
+// "registerTasks" endpoint HTTP response body.
+type TaskResponseTinyCollection []*TaskResponseTiny
 
 // UploadImageResponseBody is the type of the "artworks" service "uploadImage"
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
 	// Uploaded image ID
-	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
+	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
 	// Image expiration
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 }
@@ -114,9 +130,9 @@ type RegisterInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// RegisterStatusNotFoundResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body for the "NotFound" error.
-type RegisterStatusNotFoundResponseBody struct {
+// RegisterTaskStateNotFoundResponseBody is the type of the "artworks" service
+// "registerTaskState" endpoint HTTP response body for the "NotFound" error.
+type RegisterTaskStateNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -132,28 +148,66 @@ type RegisterStatusNotFoundResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// RegisterStatusBadRequestResponseBody is the type of the "artworks" service
-// "registerStatus" endpoint HTTP response body for the "BadRequest" error.
-type RegisterStatusBadRequestResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// RegisterStatusInternalServerErrorResponseBody is the type of the "artworks"
-// service "registerStatus" endpoint HTTP response body for the
+// RegisterTaskStateInternalServerErrorResponseBody is the type of the
+// "artworks" service "registerTaskState" endpoint HTTP response body for the
 // "InternalServerError" error.
-type RegisterStatusInternalServerErrorResponseBody struct {
+type RegisterTaskStateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterTaskNotFoundResponseBody is the type of the "artworks" service
+// "registerTask" endpoint HTTP response body for the "NotFound" error.
+type RegisterTaskNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterTaskInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerTask" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterTaskInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterTasksInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerTasks" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterTasksInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -206,22 +260,96 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// TaskStateResponseBody is used to define fields on response body types.
+type TaskStateResponseBody struct {
+	// Date of the status creation
+	Date string `form:"date" json:"date" xml:"date"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
+// ArtworkTicketResponseBody is used to define fields on response body types.
+type ArtworkTicketResponseBody struct {
+	// Name of the artwork
+	Name string `form:"name" json:"name" xml:"name"`
+	// Description of the artwork
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies issued
+	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
+	// Uploaded image ID
+	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Name of the artist
+	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	// Spendable address
+	SpendableAddress string  `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
+	NetworkFee       float32 `form:"network_fee" json:"network_fee" xml:"network_fee"`
+}
+
+// TaskResponseTiny is used to define fields on response body types.
+type TaskResponseTiny struct {
+	// JOb ID of the registration process
+	ID int `form:"id" json:"id" xml:"id"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+	// txid
+	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+}
+
 // NewRegisterResponseBody builds the HTTP response body from the result of the
 // "register" endpoint of the "artworks" service.
 func NewRegisterResponseBody(res *artworksviews.RegisterResultView) *RegisterResponseBody {
 	body := &RegisterResponseBody{
-		JobID: *res.JobID,
+		TaskID: *res.TaskID,
 	}
 	return body
 }
 
-// NewRegisterStatusResponseBody builds the HTTP response body from the result
-// of the "registerStatus" endpoint of the "artworks" service.
-func NewRegisterStatusResponseBody(res *artworksviews.JobView) *RegisterStatusResponseBody {
-	body := &RegisterStatusResponseBody{
+// NewRegisterTaskStateResponseBody builds the HTTP response body from the
+// result of the "registerTaskState" endpoint of the "artworks" service.
+func NewRegisterTaskStateResponseBody(res *artworks.TaskState) *RegisterTaskStateResponseBody {
+	body := &RegisterTaskStateResponseBody{
+		Date:   res.Date,
+		Status: res.Status,
+	}
+	return body
+}
+
+// NewRegisterTaskResponseBody builds the HTTP response body from the result of
+// the "registerTask" endpoint of the "artworks" service.
+func NewRegisterTaskResponseBody(res *artworksviews.TaskView) *RegisterTaskResponseBody {
+	body := &RegisterTaskResponseBody{
 		ID:     *res.ID,
 		Status: *res.Status,
 		Txid:   res.Txid,
+	}
+	if res.States != nil {
+		body.States = make([]*TaskStateResponseBody, len(res.States))
+		for i, val := range res.States {
+			body.States[i] = marshalArtworksviewsTaskStateViewToTaskStateResponseBody(val)
+		}
+	}
+	if res.Ticket != nil {
+		body.Ticket = marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody(res.Ticket)
+	}
+	return body
+}
+
+// NewTaskResponseTinyCollection builds the HTTP response body from the result
+// of the "registerTasks" endpoint of the "artworks" service.
+func NewTaskResponseTinyCollection(res artworksviews.TaskCollectionView) TaskResponseTinyCollection {
+	body := make([]*TaskResponseTiny, len(res))
+	for i, val := range res {
+		body[i] = marshalArtworksviewsTaskViewToTaskResponseTiny(val)
 	}
 	return body
 }
@@ -264,10 +392,10 @@ func NewRegisterInternalServerErrorResponseBody(res *goa.ServiceError) *Register
 	return body
 }
 
-// NewRegisterStatusNotFoundResponseBody builds the HTTP response body from the
-// result of the "registerStatus" endpoint of the "artworks" service.
-func NewRegisterStatusNotFoundResponseBody(res *goa.ServiceError) *RegisterStatusNotFoundResponseBody {
-	body := &RegisterStatusNotFoundResponseBody{
+// NewRegisterTaskStateNotFoundResponseBody builds the HTTP response body from
+// the result of the "registerTaskState" endpoint of the "artworks" service.
+func NewRegisterTaskStateNotFoundResponseBody(res *goa.ServiceError) *RegisterTaskStateNotFoundResponseBody {
+	body := &RegisterTaskStateNotFoundResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -278,25 +406,54 @@ func NewRegisterStatusNotFoundResponseBody(res *goa.ServiceError) *RegisterStatu
 	return body
 }
 
-// NewRegisterStatusBadRequestResponseBody builds the HTTP response body from
-// the result of the "registerStatus" endpoint of the "artworks" service.
-func NewRegisterStatusBadRequestResponseBody(res *goa.ServiceError) *RegisterStatusBadRequestResponseBody {
-	body := &RegisterStatusBadRequestResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewRegisterStatusInternalServerErrorResponseBody builds the HTTP response
-// body from the result of the "registerStatus" endpoint of the "artworks"
+// NewRegisterTaskStateInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "registerTaskState" endpoint of the "artworks"
 // service.
-func NewRegisterStatusInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterStatusInternalServerErrorResponseBody {
-	body := &RegisterStatusInternalServerErrorResponseBody{
+func NewRegisterTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterTaskStateInternalServerErrorResponseBody {
+	body := &RegisterTaskStateInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterTaskNotFoundResponseBody builds the HTTP response body from the
+// result of the "registerTask" endpoint of the "artworks" service.
+func NewRegisterTaskNotFoundResponseBody(res *goa.ServiceError) *RegisterTaskNotFoundResponseBody {
+	body := &RegisterTaskNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterTaskInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "registerTask" endpoint of the "artworks" service.
+func NewRegisterTaskInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterTaskInternalServerErrorResponseBody {
+	body := &RegisterTaskInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterTasksInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "registerTasks" endpoint of the "artworks"
+// service.
+func NewRegisterTasksInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterTasksInternalServerErrorResponseBody {
+	body := &RegisterTasksInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -355,11 +512,20 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	return v
 }
 
-// NewRegisterStatusPayload builds a artworks service registerStatus endpoint
+// NewRegisterTaskStatePayload builds a artworks service registerTaskState
+// endpoint payload.
+func NewRegisterTaskStatePayload(taskID int) *artworks.RegisterTaskStatePayload {
+	v := &artworks.RegisterTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v
+}
+
+// NewRegisterTaskPayload builds a artworks service registerTask endpoint
 // payload.
-func NewRegisterStatusPayload(jobID int) *artworks.RegisterStatusPayload {
-	v := &artworks.RegisterStatusPayload{}
-	v.JobID = jobID
+func NewRegisterTaskPayload(taskID int) *artworks.RegisterTaskPayload {
+	v := &artworks.RegisterTaskPayload{}
+	v.TaskID = taskID
 
 	return v
 }
@@ -428,16 +594,8 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 		}
 	}
 	if body.ImageID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.image_id", *body.ImageID, "^[a-zA-Z0-9]+$"))
-	}
-	if body.ImageID != nil {
-		if utf8.RuneCountInString(*body.ImageID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", *body.ImageID, utf8.RuneCountInString(*body.ImageID), 8, true))
-		}
-	}
-	if body.ImageID != nil {
-		if utf8.RuneCountInString(*body.ImageID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", *body.ImageID, utf8.RuneCountInString(*body.ImageID), 8, false))
+		if *body.ImageID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
 		}
 	}
 	if body.YoutubeURL != nil {
