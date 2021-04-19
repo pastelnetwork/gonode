@@ -18,17 +18,17 @@ func RegisterArtworksPath() string {
 
 // RegisterJobStateArtworksPath returns the URL path to the artworks service registerJobState HTTP endpoint.
 func RegisterJobStateArtworksPath(jobID int) string {
-	return fmt.Sprintf("/artworks/jobs/%v/state", jobID)
+	return fmt.Sprintf("/artworks/register/%v/state", jobID)
 }
 
 // RegisterJobArtworksPath returns the URL path to the artworks service registerJob HTTP endpoint.
 func RegisterJobArtworksPath(jobID int) string {
-	return fmt.Sprintf("/artworks/jobs/%v", jobID)
+	return fmt.Sprintf("/artworks/register/%v", jobID)
 }
 
 // RegisterJobsArtworksPath returns the URL path to the artworks service registerJobs HTTP endpoint.
 func RegisterJobsArtworksPath() string {
-	return "/artworks/jobs"
+	return "/artworks/register"
 }
 
 // UploadImageArtworksPath returns the URL path to the artworks service uploadImage HTTP endpoint.

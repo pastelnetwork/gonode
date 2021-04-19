@@ -29,7 +29,7 @@ type RegisterRequestBody struct {
 	// Number of copies issued
 	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
 	// Uploaded image ID
-	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
+	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
@@ -87,7 +87,7 @@ type RegisterJobsResponseBody []*JobResponse
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
 	// Uploaded image ID
-	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
+	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Image expiration
 	ExpiresIn *string `form:"expires_in,omitempty" json:"expires_in,omitempty" xml:"expires_in,omitempty"`
 }

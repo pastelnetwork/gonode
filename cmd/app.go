@@ -12,8 +12,10 @@ import (
 	"github.com/pastelnetwork/go-commons/sys"
 	"github.com/pastelnetwork/go-commons/version"
 	"github.com/pastelnetwork/walletnode/api"
-	"github.com/pastelnetwork/walletnode/config"
-	"github.com/pastelnetwork/walletnode/pastel"
+	"github.com/pastelnetwork/walletnode/configs"
+	"github.com/pastelnetwork/walletnode/dao/memory"
+	"github.com/pastelnetwork/walletnode/services/artwork"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -26,7 +28,7 @@ const (
 // NewApp inits a new command line interface.
 func NewApp() *cli.App {
 	configFile := defaultConfigFile
-	config := config.New()
+	config := configs.New()
 
 	app := cli.NewApp(appName)
 	app.SetUsage(appUsage)
@@ -43,6 +45,8 @@ func NewApp() *cli.App {
 	)
 
 	app.SetActionFunc(func(args []string) error {
+		ctx := context.TODO()
+
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
 				return err
@@ -64,19 +68,18 @@ func NewApp() *cli.App {
 			return errors.Errorf("--log-level %q, %s", config.LogLevel, err)
 		}
 
-		return run(config)
+		return run(ctx, config)
 	})
 
 	return app
 }
 
-func run(config *config.Config) error {
+func run(ctx context.Context, config *configs.Config) error {
 	log.Debug("[app] start")
 	defer log.Debug("[app] end")
 
 	log.Debugf("[app] config: %s", config)
 
-	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -84,10 +87,24 @@ func run(config *config.Config) error {
 		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
 	})
 
-	if err := pastel.Init(config.Pastel); err != nil {
-		return err
+	//pastelClient := pastel.New(config.Pastel)
+	db := memory.NewKeyValue()
+	artwork := artwork.New(db)
+	api := api.New(config.Rest, artwork)
+
+	services := []interface{ Run(context.Context) error }{
+		artwork,
+		api,
 	}
 
-	err := api.New(config.Rest).Run(ctx)
+	group, ctx := errgroup.WithContext(ctx)
+	for _, service := range services {
+		service := service
+		group.Go(func() error {
+			return service.Run(ctx)
+		})
+	}
+
+	err := group.Wait()
 	return err
 }

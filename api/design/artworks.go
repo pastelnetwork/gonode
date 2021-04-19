@@ -46,7 +46,7 @@ var _ = Service("artworks", func() {
 		StreamingResult(ArtworkRegisterJobState)
 
 		HTTP(func() {
-			GET("/jobs/{jobId}/state")
+			GET("/register/{jobId}/state")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -65,7 +65,7 @@ var _ = Service("artworks", func() {
 		})
 
 		HTTP(func() {
-			GET("/jobs/{jobId}")
+			GET("/register/{jobId}")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -81,7 +81,7 @@ var _ = Service("artworks", func() {
 		})
 
 		HTTP(func() {
-			GET("/jobs")
+			GET("/register")
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
 		})
@@ -139,12 +139,10 @@ var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
 		Default(1)
 		Example(1)
 	})
-	Attribute("image_id", String, func() {
+	Attribute("image_id", Int, func() {
 		Description("Uploaded image ID")
-		MinLength(8)
-		MaxLength(8)
-		Pattern(`^[a-zA-Z0-9]+$`)
-		Example("d93lsd02")
+		Minimum(1)
+		Example(1)
 	})
 	Attribute("youtube_url", String, func() {
 		Description("Artwork creation video youtube URL")
@@ -258,11 +256,9 @@ var ImageUploadPayload = Type("ImageUploadPayload", func() {
 var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func() {
 	TypeName("Image")
 	Attributes(func() {
-		Attribute("image_id", String, func() {
+		Attribute("image_id", Int, func() {
 			Description("Uploaded image ID")
-			MinLength(8)
-			MaxLength(8)
-			Example("d93lsd02")
+			Example(1)
 		})
 		Attribute("expires_in", String, func() {
 			Description("Image expiration")

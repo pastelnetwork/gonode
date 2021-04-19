@@ -25,7 +25,7 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 	{
 		err = json.Unmarshal([]byte(artworksRegisterBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_name\": \"Leonardo da Vinci\",\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"image_id\": \"d93lsd02\",\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"name\": \"Mona Lisa\",\n      \"network_fee\": 100,\n      \"series_name\": \"Famous artist\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_name\": \"Leonardo da Vinci\",\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"image_id\": 1,\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"name\": \"Mona Lisa\",\n      \"network_fee\": 100,\n      \"series_name\": \"Famous artist\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.Name) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", body.Name, utf8.RuneCountInString(body.Name), 256, false))
@@ -51,12 +51,8 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 		if body.IssuedCopies > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", body.IssuedCopies, 1000, false))
 		}
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.image_id", body.ImageID, "^[a-zA-Z0-9]+$"))
-		if utf8.RuneCountInString(body.ImageID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", body.ImageID, utf8.RuneCountInString(body.ImageID), 8, true))
-		}
-		if utf8.RuneCountInString(body.ImageID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", body.ImageID, utf8.RuneCountInString(body.ImageID), 8, false))
+		if body.ImageID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", body.ImageID, 1, true))
 		}
 		if body.YoutubeURL != nil {
 			if utf8.RuneCountInString(*body.YoutubeURL) > 128 {

@@ -67,7 +67,7 @@ type RegisterPayload struct {
 	// Number of copies issued
 	IssuedCopies int
 	// Uploaded image ID
-	ImageID string
+	ImageID int
 	// Artwork creation video youtube URL
 	YoutubeURL *string
 	// Artist's PastelID
@@ -134,7 +134,7 @@ type UploadImagePayload struct {
 // Image is the result type of the artworks service uploadImage method.
 type Image struct {
 	// Uploaded image ID
-	ImageID string
+	ImageID int
 	// Image expiration
 	ExpiresIn string
 }

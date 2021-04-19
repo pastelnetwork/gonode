@@ -29,7 +29,7 @@ type RegisterRequestBody struct {
 	// Number of copies issued
 	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
 	// Uploaded image ID
-	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
+	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
@@ -87,7 +87,7 @@ type JobResponseTinyCollection []*JobResponseTiny
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
 	// Uploaded image ID
-	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
+	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
 	// Image expiration
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 }
@@ -561,16 +561,8 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 		}
 	}
 	if body.ImageID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.image_id", *body.ImageID, "^[a-zA-Z0-9]+$"))
-	}
-	if body.ImageID != nil {
-		if utf8.RuneCountInString(*body.ImageID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", *body.ImageID, utf8.RuneCountInString(*body.ImageID), 8, true))
-		}
-	}
-	if body.ImageID != nil {
-		if utf8.RuneCountInString(*body.ImageID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", *body.ImageID, utf8.RuneCountInString(*body.ImageID), 8, false))
+		if *body.ImageID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
 		}
 	}
 	if body.YoutubeURL != nil {

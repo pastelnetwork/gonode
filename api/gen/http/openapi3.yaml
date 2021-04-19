@@ -5,7 +5,7 @@ info:
 servers:
 - url: http://localhost:8080
 paths:
-  /artworks/jobs:
+  /artworks/register:
     get:
       tags:
       - artworks
@@ -36,7 +36,63 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
-  /artworks/jobs/{jobId}:
+    post:
+      tags:
+      - artworks
+      summary: Registers a new artwork
+      description: Runs a new registration process for the new artwork.
+      operationId: artworks#register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequestBody'
+            example:
+              artist_name: Leonardo da Vinci
+              artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+              artist_website_url: https://www.leonardodavinci.net
+              description: The Mona Lisa is an oil painting by Italian artist, inventor,
+                and writer Leonardo da Vinci. Likely completed in 1506, the piece
+                features a portrait of a seated woman set against an imaginary landscape.
+              image_id: 1
+              issued_copies: 1
+              keywords: Renaissance, sfumato, portrait
+              name: Mona Lisa
+              network_fee: 100
+              series_name: Famous artist
+              spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+              youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+      responses:
+        "201":
+          description: Created response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResult'
+              example:
+                job_id: 5
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /artworks/register/{jobId}:
     get:
       tags:
       - artworks
@@ -92,7 +148,7 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
-  /artworks/jobs/{jobId}/state:
+  /artworks/register/{jobId}/state:
     get:
       tags:
       - artworks
@@ -122,63 +178,6 @@ paths:
                 status: Registration started
         "404":
           description: Not Found response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-        "500":
-          description: Internal Server Error response.
-          content:
-            application/vnd.goa.error:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                id: 3F1FKVRR
-                message: Value of ID must be an integer
-                name: bad_request
-  /artworks/register:
-    post:
-      tags:
-      - artworks
-      summary: Registers a new artwork
-      description: Runs a new registration process for the new artwork.
-      operationId: artworks#register
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/RegisterRequestBody'
-            example:
-              artist_name: Leonardo da Vinci
-              artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-              artist_website_url: https://www.leonardodavinci.net
-              description: The Mona Lisa is an oil painting by Italian artist, inventor,
-                and writer Leonardo da Vinci. Likely completed in 1506, the piece
-                features a portrait of a seated woman set against an imaginary landscape.
-              image_id: d93lsd02
-              issued_copies: 1
-              keywords: Renaissance, sfumato, portrait
-              name: Mona Lisa
-              network_fee: 100
-              series_name: Famous artist
-              spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
-              youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-      responses:
-        "201":
-          description: Created response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RegisterResult'
-              example:
-                job_id: 5
-        "400":
-          description: Bad Request response.
           content:
             application/vnd.goa.error:
               schema:
@@ -256,7 +255,7 @@ paths:
                 $ref: '#/components/schemas/Image'
               example:
                 expires_in: "2019-10-12T07:20:50.52Z"
-                image_id: d93lsd02
+                image_id: 1
         "400":
           description: Bad Request response.
           content:
@@ -328,14 +327,13 @@ components:
           example: "2019-10-12T07:20:50.52Z"
           format: date-time
         image_id:
-          type: string
+          type: integer
           description: Uploaded image ID
-          example: d93lsd02
-          minLength: 8
-          maxLength: 8
+          example: 1
+          format: int64
       example:
         expires_in: "2019-10-12T07:20:50.52Z"
-        image_id: d93lsd02
+        image_id: 1
       required:
       - image_id
       - expires_in
@@ -466,12 +464,10 @@ components:
             a portrait of a seated woman set against an imaginary landscape.
           maxLength: 1024
         image_id:
-          type: string
+          type: integer
           description: Uploaded image ID
-          example: d93lsd02
-          pattern: ^[a-zA-Z0-9]+$
-          minLength: 8
-          maxLength: 8
+          example: 1
+          minimum: 1
         issued_copies:
           type: integer
           description: Number of copies issued
@@ -518,7 +514,7 @@ components:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
-        image_id: d93lsd02
+        image_id: 1
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         name: Mona Lisa

@@ -10,29 +10,31 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/walletnode/services/artwork"
 )
 
 const (
 	defaultShutdownTimeout = time.Second * 30
 )
 
-// Rest represents RESTAPI service.
-type Rest struct {
+// API represents RESTAPI service.
+type API struct {
 	config          *Config
 	shutdownTimeout time.Duration
+	artwork         *artwork.Service
 }
 
 // Run startworks RESTAPI service.
-func (rest *Rest) Run(ctx context.Context) error {
-	addr := net.JoinHostPort(rest.config.Hostname, strconv.Itoa(rest.config.Port))
+func (api *API) Run(ctx context.Context) error {
+	addr := net.JoinHostPort(api.config.Hostname, strconv.Itoa(api.config.Port))
 
-	apiHTTP := apiHandler()
+	apiHTTP := api.handler()
 
 	mux := http.NewServeMux()
 	mux.Handle("/", apiHTTP)
 	mux.Handle("/swagger/swagger.json", apiHTTP)
 
-	if rest.config.Swagger {
+	if api.config.Swagger {
 		mux.Handle("/swagger/", swaggerHandler())
 	}
 
@@ -52,17 +54,18 @@ func (rest *Rest) Run(ctx context.Context) error {
 	}
 
 	// Shutdown gracefully with a 30s timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), rest.shutdownTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), api.shutdownTimeout)
 	defer cancel()
 
 	err := srv.Shutdown(ctx)
 	return err
 }
 
-// New returns a new Rest instance.
-func New(config *Config) *Rest {
-	return &Rest{
+// New returns a new API instance.
+func New(config *Config, artwork *artwork.Service) *API {
+	return &API{
 		config:          config,
 		shutdownTimeout: defaultShutdownTimeout,
+		artwork:         artwork,
 	}
 }

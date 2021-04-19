@@ -74,14 +74,13 @@ func New(
 	return &Server{
 		Mounts: []*MountPoint{
 			{"Register", "POST", "/artworks/register"},
-			{"RegisterJobState", "GET", "/artworks/jobs/{jobId}/state"},
-			{"RegisterJob", "GET", "/artworks/jobs/{jobId}"},
-			{"RegisterJobs", "GET", "/artworks/jobs"},
+			{"RegisterJobState", "GET", "/artworks/register/{jobId}/state"},
+			{"RegisterJob", "GET", "/artworks/register/{jobId}"},
+			{"RegisterJobs", "GET", "/artworks/register"},
 			{"UploadImage", "POST", "/artworks/register/upload"},
 			{"CORS", "OPTIONS", "/artworks/register"},
-			{"CORS", "OPTIONS", "/artworks/jobs/{jobId}/state"},
-			{"CORS", "OPTIONS", "/artworks/jobs/{jobId}"},
-			{"CORS", "OPTIONS", "/artworks/jobs"},
+			{"CORS", "OPTIONS", "/artworks/register/{jobId}/state"},
+			{"CORS", "OPTIONS", "/artworks/register/{jobId}"},
 			{"CORS", "OPTIONS", "/artworks/register/upload"},
 		},
 		Register:         NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
@@ -176,7 +175,7 @@ func MountRegisterJobStateHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/artworks/jobs/{jobId}/state", f)
+	mux.Handle("GET", "/artworks/register/{jobId}/state", f)
 }
 
 // NewRegisterJobStateHandler creates a HTTP handler which loads the HTTP
@@ -240,7 +239,7 @@ func MountRegisterJobHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/artworks/jobs/{jobId}", f)
+	mux.Handle("GET", "/artworks/register/{jobId}", f)
 }
 
 // NewRegisterJobHandler creates a HTTP handler which loads the HTTP request
@@ -291,7 +290,7 @@ func MountRegisterJobsHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/artworks/jobs", f)
+	mux.Handle("GET", "/artworks/register", f)
 }
 
 // NewRegisterJobsHandler creates a HTTP handler which loads the HTTP request
@@ -388,9 +387,8 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 		}
 	}
 	mux.Handle("OPTIONS", "/artworks/register", f)
-	mux.Handle("OPTIONS", "/artworks/jobs/{jobId}/state", f)
-	mux.Handle("OPTIONS", "/artworks/jobs/{jobId}", f)
-	mux.Handle("OPTIONS", "/artworks/jobs", f)
+	mux.Handle("OPTIONS", "/artworks/register/{jobId}/state", f)
+	mux.Handle("OPTIONS", "/artworks/register/{jobId}", f)
 	mux.Handle("OPTIONS", "/artworks/register/upload", f)
 }
 

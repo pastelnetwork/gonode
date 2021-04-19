@@ -77,7 +77,7 @@ type JobCollectionView []*JobView
 // ImageView is a type that runs validations on a projected type.
 type ImageView struct {
 	// Uploaded image ID
-	ImageID *string
+	ImageID *int
 	// Image expiration
 	ExpiresIn *string
 }
@@ -280,16 +280,6 @@ func ValidateImageView(result *ImageView) (err error) {
 	}
 	if result.ExpiresIn == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("expires_in", "result"))
-	}
-	if result.ImageID != nil {
-		if utf8.RuneCountInString(*result.ImageID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, true))
-		}
-	}
-	if result.ImageID != nil {
-		if utf8.RuneCountInString(*result.ImageID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, false))
-		}
 	}
 	if result.ExpiresIn != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))

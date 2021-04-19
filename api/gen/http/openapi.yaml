@@ -12,7 +12,7 @@ produces:
 - application/xml
 - application/gob
 paths:
-  /artworks/jobs:
+  /artworks/register:
     get:
       tags:
       - artworks
@@ -30,68 +30,6 @@ paths:
             $ref: '#/definitions/ArtworksRegisterJobsInternalServerErrorResponseBody'
       schemes:
       - http
-  /artworks/jobs/{jobId}:
-    get:
-      tags:
-      - artworks
-      summary: Find job by ID
-      description: Returns a single job.
-      operationId: artworks#registerJob
-      parameters:
-      - name: jobId
-        in: path
-        description: Job ID of the registration process
-        required: true
-        type: integer
-        minimum: 1
-      responses:
-        "200":
-          description: OK response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterJobResponseBody'
-        "404":
-          description: Not Found response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterJobNotFoundResponseBody'
-        "500":
-          description: Internal Server Error response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterJobInternalServerErrorResponseBody'
-      schemes:
-      - http
-  /artworks/jobs/{jobId}/state:
-    get:
-      tags:
-      - artworks
-      summary: Streams state by job ID
-      description: Streams the state of the registration process.
-      operationId: artworks#registerJobState
-      parameters:
-      - name: jobId
-        in: path
-        description: Job ID of the registration process
-        required: true
-        type: integer
-        minimum: 1
-      responses:
-        "101":
-          description: Switching Protocols response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterJobStateResponseBody'
-            required:
-            - date
-            - status
-        "404":
-          description: Not Found response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterJobStateNotFoundResponseBody'
-        "500":
-          description: Internal Server Error response.
-          schema:
-            $ref: '#/definitions/ArtworksRegisterJobStateInternalServerErrorResponseBody'
-      schemes:
-      - ws
-  /artworks/register:
     post:
       tags:
       - artworks
@@ -127,6 +65,67 @@ paths:
             $ref: '#/definitions/ArtworksRegisterInternalServerErrorResponseBody'
       schemes:
       - http
+  /artworks/register/{jobId}:
+    get:
+      tags:
+      - artworks
+      summary: Find job by ID
+      description: Returns a single job.
+      operationId: artworks#registerJob
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID of the registration process
+        required: true
+        type: integer
+        minimum: 1
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobResponseBody'
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /artworks/register/{jobId}/state:
+    get:
+      tags:
+      - artworks
+      summary: Streams state by job ID
+      description: Streams the state of the registration process.
+      operationId: artworks#registerJobState
+      parameters:
+      - name: jobId
+        in: path
+        description: Job ID of the registration process
+        required: true
+        type: integer
+        minimum: 1
+      responses:
+        "101":
+          description: Switching Protocols response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobStateResponseBody'
+            required:
+            - date
+            - status
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobStateNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtworksRegisterJobStateInternalServerErrorResponseBody'
+      schemes:
+      - ws
   /artworks/register/upload:
     post:
       tags:
@@ -610,12 +609,10 @@ definitions:
           portrait of a seated woman set against an imaginary landscape.
         maxLength: 1024
       image_id:
-        type: string
+        type: integer
         description: Uploaded image ID
-        example: d93lsd02
-        pattern: ^[a-zA-Z0-9]+$
-        minLength: 8
-        maxLength: 8
+        example: 1
+        minimum: 1
       issued_copies:
         type: integer
         description: Number of copies issued
@@ -662,7 +659,7 @@ definitions:
       description: The Mona Lisa is an oil painting by Italian artist, inventor, and
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
-      image_id: d93lsd02
+      image_id: 1
       issued_copies: 1
       keywords: Renaissance, sfumato, portrait
       name: Mona Lisa
@@ -876,15 +873,14 @@ definitions:
         example: "2019-10-12T07:20:50.52Z"
         format: date-time
       image_id:
-        type: string
+        type: integer
         description: Uploaded image ID
-        example: d93lsd02
-        minLength: 8
-        maxLength: 8
+        example: 1
+        format: int64
     description: UploadImageResponseBody result type (default view)
     example:
       expires_in: "2019-10-12T07:20:50.52Z"
-      image_id: d93lsd02
+      image_id: 1
     required:
     - image_id
     - expires_in
