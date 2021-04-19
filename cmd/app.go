@@ -13,7 +13,7 @@ import (
 	"github.com/pastelnetwork/go-commons/version"
 	"github.com/pastelnetwork/walletnode/api"
 	"github.com/pastelnetwork/walletnode/configs"
-	"github.com/pastelnetwork/walletnode/storages/memory"
+	"github.com/pastelnetwork/walletnode/storage/memory"
 	"github.com/pastelnetwork/walletnode/services/artwork"
 	"golang.org/x/sync/errgroup"
 )

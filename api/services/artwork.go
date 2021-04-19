@@ -7,8 +7,8 @@ import (
 
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/storages"
-	"github.com/pastelnetwork/walletnode/storages/memory"
+	"github.com/pastelnetwork/walletnode/storage"
+	"github.com/pastelnetwork/walletnode/storage/memory"
 	"github.com/pastelnetwork/walletnode/services/artwork"
 	"github.com/pastelnetwork/walletnode/services/artwork/register"
 )
@@ -23,7 +23,7 @@ var (
 
 type serviceArtwork struct {
 	artwork *artwork.Service
-	storage storages.KeyValue
+	storage storage.KeyValue
 }
 
 // RegisterTaskState streams the state of the registration process.
@@ -97,7 +97,7 @@ func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.
 // Register runs registers process for the new artwork.
 func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	image, err := service.storage.Get(string(p.ImageID))
-	if err == storages.ErrKeyNotFound {
+	if err == storage.ErrKeyNotFound {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
 	if err != nil {

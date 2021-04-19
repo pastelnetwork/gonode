@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/pastelnetwork/go-commons/log"
-	"github.com/pastelnetwork/walletnode/storages"
+	"github.com/pastelnetwork/walletnode/storage"
 )
 
 const logPrefix = "[memory]"
@@ -14,12 +14,12 @@ type keyValue struct {
 	values map[string][]byte
 }
 
-// Init implements storages.KeyValue.Init().
+// Init implements storage.KeyValue.Init().
 func (db *keyValue) Init() error {
 	return nil
 }
 
-// Get implements storages.KeyValue.Set().
+// Get implements storage.KeyValue.Set().
 func (db *keyValue) Get(key string) ([]byte, error) {
 	db.Lock()
 	defer db.Unlock()
@@ -27,10 +27,10 @@ func (db *keyValue) Get(key string) ([]byte, error) {
 	if value, ok := db.values[key]; ok {
 		return value, nil
 	}
-	return nil, storages.ErrKeyNotFound
+	return nil, storage.ErrKeyNotFound
 }
 
-// Delete implements storages.KeyValue.Delete().
+// Delete implements storage.KeyValue.Delete().
 func (db *keyValue) Delete(key string) error {
 	db.Lock()
 	defer db.Unlock()
@@ -42,7 +42,7 @@ func (db *keyValue) Delete(key string) error {
 	return nil
 }
 
-// Get implements storages.KeyValue.Set().
+// Get implements storage.KeyValue.Set().
 func (db *keyValue) Set(key string, value []byte) error {
 	db.Lock()
 	defer db.Unlock()
@@ -54,7 +54,7 @@ func (db *keyValue) Set(key string, value []byte) error {
 }
 
 // NewKeyValue returns a new KeyValue instance.
-func NewKeyValue() storages.KeyValue {
+func NewKeyValue() storage.KeyValue {
 	return &keyValue{
 		values: make(map[string][]byte),
 	}
