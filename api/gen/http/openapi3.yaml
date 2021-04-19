@@ -487,7 +487,6 @@ components:
           - Waiting Activation
           - Activated
           - Error
-          - Finish
         ticket:
           $ref: '#/components/schemas/RegisterRequestBody'
         txid:
@@ -545,7 +544,6 @@ components:
           - Waiting Activation
           - Activated
           - Error
-          - Finish
         txid:
           type: string
           description: txid
@@ -590,7 +588,6 @@ components:
           - Waiting Activation
           - Activated
           - Error
-          - Finish
       example:
         date: "2019-10-12T07:20:50.52Z"
         status: Registration Started

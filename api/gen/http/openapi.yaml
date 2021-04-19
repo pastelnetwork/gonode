@@ -574,7 +574,6 @@ definitions:
         - Waiting Activation
         - Activated
         - Error
-        - Finish
       ticket:
         $ref: '#/definitions/ArtworkTicketResponseBody'
       txid:
@@ -725,7 +724,6 @@ definitions:
         - Waiting Activation
         - Activated
         - Error
-        - Finish
     example:
       date: "2019-10-12T07:20:50.52Z"
       status: Registration Started
@@ -1076,7 +1074,6 @@ definitions:
         - Waiting Activation
         - Activated
         - Error
-        - Finish
       txid:
         type: string
         description: txid
@@ -1109,7 +1106,6 @@ definitions:
         - Waiting Activation
         - Activated
         - Error
-        - Finish
     example:
       date: "2019-10-12T07:20:50.52Z"
       status: Registration Started

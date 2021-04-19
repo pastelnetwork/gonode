@@ -578,8 +578,8 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error" || *body.Status == "Finish") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
 		}
 	}
 	return
@@ -811,8 +811,8 @@ func ValidateTaskStateResponseBody(body *TaskStateResponseBody) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error" || *body.Status == "Finish") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
 		}
 	}
 	return
@@ -938,8 +938,8 @@ func ValidateTaskResponse(body *TaskResponse) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error" || *body.Status == "Finish") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
 		}
 	}
 	for _, e := range body.States {
@@ -976,8 +976,8 @@ func ValidateTaskStateResponse(body *TaskStateResponse) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error" || *body.Status == "Finish") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
 		}
 	}
 	return

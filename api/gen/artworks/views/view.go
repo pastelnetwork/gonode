@@ -228,8 +228,8 @@ func ValidateTaskViewTiny(result *TaskView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error" || *result.Status == "Finish") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
 		}
 	}
 	if result.Txid != nil {
@@ -258,8 +258,8 @@ func ValidateTaskView(result *TaskView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error" || *result.Status == "Finish") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
 		}
 	}
 	for _, e := range result.States {
@@ -296,8 +296,8 @@ func ValidateTaskStateView(result *TaskStateView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error" || *result.Status == "Finish") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
 		}
 	}
 	return

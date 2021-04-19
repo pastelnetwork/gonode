@@ -41,7 +41,6 @@ func (worker *Worker) Run(ctx context.Context) error {
 			}()
 		}
 	}
-	return nil
 }
 
 // NewWorker returns a new Worker instance.
