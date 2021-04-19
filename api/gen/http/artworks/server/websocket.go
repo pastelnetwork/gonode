@@ -21,12 +21,12 @@ import (
 // ConnConfigurer holds the websocket connection configurer functions for the
 // streaming endpoints in "artworks" service.
 type ConnConfigurer struct {
-	RegisterJobStateFn goahttp.ConnConfigureFunc
+	RegisterTaskStateFn goahttp.ConnConfigureFunc
 }
 
-// RegisterJobStateServerStream implements the
-// artworks.RegisterJobStateServerStream interface.
-type RegisterJobStateServerStream struct {
+// RegisterTaskStateServerStream implements the
+// artworks.RegisterTaskStateServerStream interface.
+type RegisterTaskStateServerStream struct {
 	once sync.Once
 	// upgrader is the websocket connection upgrader.
 	upgrader goahttp.Upgrader
@@ -47,13 +47,13 @@ type RegisterJobStateServerStream struct {
 // with fn for all the streaming endpoints in "artworks" service.
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
-		RegisterJobStateFn: fn,
+		RegisterTaskStateFn: fn,
 	}
 }
 
-// Send streams instances of "artworks.JobState" to the "registerJobState"
+// Send streams instances of "artworks.TaskState" to the "registerTaskState"
 // endpoint websocket connection.
-func (s *RegisterJobStateServerStream) Send(v *artworks.JobState) error {
+func (s *RegisterTaskStateServerStream) Send(v *artworks.TaskState) error {
 	var err error
 	// Upgrade the HTTP connection to a websocket connection only once. Connection
 	// upgrade is done here so that authorization logic in the endpoint is executed
@@ -73,12 +73,12 @@ func (s *RegisterJobStateServerStream) Send(v *artworks.JobState) error {
 		return err
 	}
 	res := v
-	body := NewRegisterJobStateResponseBody(res)
+	body := NewRegisterTaskStateResponseBody(res)
 	return s.conn.WriteJSON(body)
 }
 
-// Close closes the "registerJobState" endpoint websocket connection.
-func (s *RegisterJobStateServerStream) Close() error {
+// Close closes the "registerTaskState" endpoint websocket connection.
+func (s *RegisterTaskStateServerStream) Close() error {
 	var err error
 	if s.conn == nil {
 		return nil

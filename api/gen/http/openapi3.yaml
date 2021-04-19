@@ -9,22 +9,22 @@ paths:
     get:
       tags:
       - artworks
-      summary: Returns list of jobs
-      description: List of all jobs.
-      operationId: artworks#registerJobs
+      summary: Returns list of tasks
+      description: List of all tasks.
+      operationId: artworks#registerTasks
       responses:
         "200":
           description: OK response.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobResponseTinyCollection'
+                $ref: '#/components/schemas/TaskResponseTinyCollection'
               example:
               - id: 5
-                status: Registration started
+                status: Registration Started
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
               - id: 5
-                status: Registration started
+                status: Registration Started
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         "500":
           description: Internal Server Error response.
@@ -71,7 +71,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/RegisterResult'
               example:
-                job_id: 5
+                task_id: 5
         "400":
           description: Bad Request response.
           content:
@@ -92,21 +92,21 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
-  /artworks/register/{jobId}:
+  /artworks/register/{taskId}:
     get:
       tags:
       - artworks
-      summary: Find job by ID
-      description: Returns a single job.
-      operationId: artworks#registerJob
+      summary: Find task by ID
+      description: Returns a single task.
+      operationId: artworks#registerTask
       parameters:
-      - name: jobId
+      - name: taskId
         in: path
-        description: Job ID of the registration process
+        description: Task ID of the registration process
         required: true
         schema:
           type: integer
-          description: Job ID of the registration process
+          description: Task ID of the registration process
           example: 5
           minimum: 1
         example: 5
@@ -116,17 +116,33 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RegisterJobResponseBody'
+                $ref: '#/components/schemas/RegisterTaskResponseBody'
               example:
                 id: 5
                 states:
                 - date: "2019-10-12T07:20:50.52Z"
-                  status: Registration started
+                  status: Registration Started
                 - date: "2019-10-12T07:20:50.52Z"
-                  status: Registration started
+                  status: Registration Started
                 - date: "2019-10-12T07:20:50.52Z"
-                  status: Registration started
-                status: Registration started
+                  status: Registration Started
+                status: Registration Started
+                ticket:
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
+                  image_id: 1
+                  issued_copies: 1
+                  keywords: Renaissance, sfumato, portrait
+                  name: Mona Lisa
+                  network_fee: 100
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         "404":
           description: Not Found response.
@@ -148,21 +164,21 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
-  /artworks/register/{jobId}/state:
+  /artworks/register/{taskId}/state:
     get:
       tags:
       - artworks
-      summary: Streams state by job ID
+      summary: Streams state by task ID
       description: Streams the state of the registration process.
-      operationId: artworks#registerJobState
+      operationId: artworks#registerTaskState
       parameters:
-      - name: jobId
+      - name: taskId
         in: path
-        description: Job ID of the registration process
+        description: Task ID of the registration process
         required: true
         schema:
           type: integer
-          description: Job ID of the registration process
+          description: Task ID of the registration process
           example: 5
           minimum: 1
         example: 5
@@ -172,10 +188,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JobState'
+                $ref: '#/components/schemas/TaskState'
               example:
                 date: "2019-10-12T07:20:50.52Z"
-                status: Registration started
+                status: Registration Started
         "404":
           description: Not Found response.
           content:
@@ -337,105 +353,6 @@ components:
       required:
       - image_id
       - expires_in
-    JobResponseTiny:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: JOb ID of the registration process
-          example: 5
-          format: int64
-        status:
-          type: string
-          description: Status of the registration process
-          example: Registration started
-        txid:
-          type: string
-          description: txid
-          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-          minLength: 64
-          maxLength: 64
-      description: JobResponse result type (tiny view)
-      example:
-        id: 5
-        status: Registration started
-        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-      required:
-      - id
-      - status
-    JobResponseTinyCollection:
-      type: array
-      items:
-        $ref: '#/components/schemas/JobResponseTiny'
-      description: RegisterJobsResponseBody is the result type for an array of JobResponse
-        (tiny view)
-      example:
-      - id: 5
-        status: Registration started
-        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-      - id: 5
-        status: Registration started
-        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-    JobState:
-      type: object
-      properties:
-        date:
-          type: string
-          description: Date of the status creation
-          example: "2019-10-12T07:20:50.52Z"
-        status:
-          type: string
-          description: Status of the registration process
-          example: Registration started
-      example:
-        date: "2019-10-12T07:20:50.52Z"
-        status: Registration started
-      required:
-      - date
-      - status
-    RegisterJobResponseBody:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: JOb ID of the registration process
-          example: 5
-          format: int64
-        states:
-          type: array
-          items:
-            $ref: '#/components/schemas/JobState'
-          description: List of states from the very beginning of the process
-          example:
-          - date: "2019-10-12T07:20:50.52Z"
-            status: Registration started
-          - date: "2019-10-12T07:20:50.52Z"
-            status: Registration started
-        status:
-          type: string
-          description: Status of the registration process
-          example: Registration started
-        txid:
-          type: string
-          description: txid
-          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-          minLength: 64
-          maxLength: 64
-      description: RegisterJobResponseBody result type (default view)
-      example:
-        id: 5
-        states:
-        - date: "2019-10-12T07:20:50.52Z"
-          status: Registration started
-        - date: "2019-10-12T07:20:50.52Z"
-          status: Registration started
-        - date: "2019-10-12T07:20:50.52Z"
-          status: Registration started
-        status: Registration started
-        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-      required:
-      - id
-      - status
     RegisterRequestBody:
       type: object
       properties:
@@ -533,15 +450,153 @@ components:
     RegisterResult:
       type: object
       properties:
-        job_id:
+        task_id:
           type: integer
-          description: Job ID of the registration process
+          description: Task ID of the registration process
           example: 5
           format: int64
       example:
-        job_id: 5
+        task_id: 5
       required:
-      - job_id
+      - task_id
+    RegisterTaskResponseBody:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: JOb ID of the registration process
+          example: 5
+          format: int64
+        states:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskState'
+          description: List of states from the very beginning of the process
+          example:
+          - date: "2019-10-12T07:20:50.52Z"
+            status: Registration Started
+          - date: "2019-10-12T07:20:50.52Z"
+            status: Registration Started
+        status:
+          type: string
+          description: Status of the registration process
+          example: Registration Started
+          enum:
+          - Registration Started
+          - Artwork Accepted
+          - Waiting Activation
+          - Activated
+          - Error
+          - Finish
+        ticket:
+          $ref: '#/components/schemas/RegisterRequestBody'
+        txid:
+          type: string
+          description: txid
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
+      description: RegisterTaskResponseBody result type (default view)
+      example:
+        id: 5
+        states:
+        - date: "2019-10-12T07:20:50.52Z"
+          status: Registration Started
+        - date: "2019-10-12T07:20:50.52Z"
+          status: Registration Started
+        - date: "2019-10-12T07:20:50.52Z"
+          status: Registration Started
+        status: Registration Started
+        ticket:
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          image_id: 1
+          issued_copies: 1
+          keywords: Renaissance, sfumato, portrait
+          name: Mona Lisa
+          network_fee: 100
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      required:
+      - id
+      - status
+      - ticket
+    TaskResponseTiny:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: JOb ID of the registration process
+          example: 5
+          format: int64
+        status:
+          type: string
+          description: Status of the registration process
+          example: Registration Started
+          enum:
+          - Registration Started
+          - Artwork Accepted
+          - Waiting Activation
+          - Activated
+          - Error
+          - Finish
+        txid:
+          type: string
+          description: txid
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
+      description: TaskResponse result type (tiny view)
+      example:
+        id: 5
+        status: Registration Started
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      required:
+      - id
+      - status
+    TaskResponseTinyCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/TaskResponseTiny'
+      description: RegisterTasksResponseBody is the result type for an array of TaskResponse
+        (tiny view)
+      example:
+      - id: 5
+        status: Registration Started
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      - id: 5
+        status: Registration Started
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+    TaskState:
+      type: object
+      properties:
+        date:
+          type: string
+          description: Date of the status creation
+          example: "2019-10-12T07:20:50.52Z"
+        status:
+          type: string
+          description: Status of the registration process
+          example: Registration Started
+          enum:
+          - Registration Started
+          - Artwork Accepted
+          - Waiting Activation
+          - Activated
+          - Error
+          - Finish
+      example:
+        date: "2019-10-12T07:20:50.52Z"
+        status: Registration Started
+      required:
+      - date
+      - status
     UploadImageRequestBody:
       type: object
       properties:

@@ -104,39 +104,39 @@ func EncodeRegisterError(encoder func(context.Context, http.ResponseWriter) goah
 	}
 }
 
-// DecodeRegisterJobStateRequest returns a decoder for requests sent to the
-// artworks registerJobState endpoint.
-func DecodeRegisterJobStateRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+// DecodeRegisterTaskStateRequest returns a decoder for requests sent to the
+// artworks registerTaskState endpoint.
+func DecodeRegisterTaskStateRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			jobID int
-			err   error
+			taskID int
+			err    error
 
 			params = mux.Vars(r)
 		)
 		{
-			jobIDRaw := params["jobId"]
-			v, err2 := strconv.ParseInt(jobIDRaw, 10, strconv.IntSize)
+			taskIDRaw := params["taskId"]
+			v, err2 := strconv.ParseInt(taskIDRaw, 10, strconv.IntSize)
 			if err2 != nil {
-				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("jobID", jobIDRaw, "integer"))
+				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("taskID", taskIDRaw, "integer"))
 			}
-			jobID = int(v)
+			taskID = int(v)
 		}
-		if jobID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("jobID", jobID, 1, true))
+		if taskID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("taskID", taskID, 1, true))
 		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewRegisterJobStatePayload(jobID)
+		payload := NewRegisterTaskStatePayload(taskID)
 
 		return payload, nil
 	}
 }
 
-// EncodeRegisterJobStateError returns an encoder for errors returned by the
-// registerJobState artworks endpoint.
-func EncodeRegisterJobStateError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeRegisterTaskStateError returns an encoder for errors returned by the
+// registerTaskState artworks endpoint.
+func EncodeRegisterTaskStateError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		en, ok := v.(ErrorNamer)
@@ -151,7 +151,7 @@ func EncodeRegisterJobStateError(encoder func(context.Context, http.ResponseWrit
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewRegisterJobStateNotFoundResponseBody(res)
+				body = NewRegisterTaskStateNotFoundResponseBody(res)
 			}
 			w.Header().Set("goa-error", "NotFound")
 			w.WriteHeader(http.StatusNotFound)
@@ -163,7 +163,7 @@ func EncodeRegisterJobStateError(encoder func(context.Context, http.ResponseWrit
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewRegisterJobStateInternalServerErrorResponseBody(res)
+				body = NewRegisterTaskStateInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", "InternalServerError")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -174,51 +174,51 @@ func EncodeRegisterJobStateError(encoder func(context.Context, http.ResponseWrit
 	}
 }
 
-// EncodeRegisterJobResponse returns an encoder for responses returned by the
-// artworks registerJob endpoint.
-func EncodeRegisterJobResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+// EncodeRegisterTaskResponse returns an encoder for responses returned by the
+// artworks registerTask endpoint.
+func EncodeRegisterTaskResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(*artworksviews.Job)
+		res := v.(*artworksviews.Task)
 		enc := encoder(ctx, w)
-		body := NewRegisterJobResponseBody(res.Projected)
+		body := NewRegisterTaskResponseBody(res.Projected)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
 }
 
-// DecodeRegisterJobRequest returns a decoder for requests sent to the artworks
-// registerJob endpoint.
-func DecodeRegisterJobRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+// DecodeRegisterTaskRequest returns a decoder for requests sent to the
+// artworks registerTask endpoint.
+func DecodeRegisterTaskRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			jobID int
-			err   error
+			taskID int
+			err    error
 
 			params = mux.Vars(r)
 		)
 		{
-			jobIDRaw := params["jobId"]
-			v, err2 := strconv.ParseInt(jobIDRaw, 10, strconv.IntSize)
+			taskIDRaw := params["taskId"]
+			v, err2 := strconv.ParseInt(taskIDRaw, 10, strconv.IntSize)
 			if err2 != nil {
-				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("jobID", jobIDRaw, "integer"))
+				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("taskID", taskIDRaw, "integer"))
 			}
-			jobID = int(v)
+			taskID = int(v)
 		}
-		if jobID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("jobID", jobID, 1, true))
+		if taskID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("taskID", taskID, 1, true))
 		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewRegisterJobPayload(jobID)
+		payload := NewRegisterTaskPayload(taskID)
 
 		return payload, nil
 	}
 }
 
-// EncodeRegisterJobError returns an encoder for errors returned by the
-// registerJob artworks endpoint.
-func EncodeRegisterJobError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeRegisterTaskError returns an encoder for errors returned by the
+// registerTask artworks endpoint.
+func EncodeRegisterTaskError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		en, ok := v.(ErrorNamer)
@@ -233,7 +233,7 @@ func EncodeRegisterJobError(encoder func(context.Context, http.ResponseWriter) g
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewRegisterJobNotFoundResponseBody(res)
+				body = NewRegisterTaskNotFoundResponseBody(res)
 			}
 			w.Header().Set("goa-error", "NotFound")
 			w.WriteHeader(http.StatusNotFound)
@@ -245,7 +245,7 @@ func EncodeRegisterJobError(encoder func(context.Context, http.ResponseWriter) g
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewRegisterJobInternalServerErrorResponseBody(res)
+				body = NewRegisterTaskInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", "InternalServerError")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -256,21 +256,21 @@ func EncodeRegisterJobError(encoder func(context.Context, http.ResponseWriter) g
 	}
 }
 
-// EncodeRegisterJobsResponse returns an encoder for responses returned by the
-// artworks registerJobs endpoint.
-func EncodeRegisterJobsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+// EncodeRegisterTasksResponse returns an encoder for responses returned by the
+// artworks registerTasks endpoint.
+func EncodeRegisterTasksResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(artworksviews.JobCollection)
+		res := v.(artworksviews.TaskCollection)
 		enc := encoder(ctx, w)
-		body := NewJobResponseTinyCollection(res.Projected)
+		body := NewTaskResponseTinyCollection(res.Projected)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
 }
 
-// EncodeRegisterJobsError returns an encoder for errors returned by the
-// registerJobs artworks endpoint.
-func EncodeRegisterJobsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeRegisterTasksError returns an encoder for errors returned by the
+// registerTasks artworks endpoint.
+func EncodeRegisterTasksError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		en, ok := v.(ErrorNamer)
@@ -285,7 +285,7 @@ func EncodeRegisterJobsError(encoder func(context.Context, http.ResponseWriter) 
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewRegisterJobsInternalServerErrorResponseBody(res)
+				body = NewRegisterTasksInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", "InternalServerError")
 			w.WriteHeader(http.StatusInternalServerError)
@@ -387,13 +387,14 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 	}
 }
 
-// marshalArtworksviewsJobStateViewToJobStateResponseBody builds a value of
-// type *JobStateResponseBody from a value of type *artworksviews.JobStateView.
-func marshalArtworksviewsJobStateViewToJobStateResponseBody(v *artworksviews.JobStateView) *JobStateResponseBody {
+// marshalArtworksviewsTaskStateViewToTaskStateResponseBody builds a value of
+// type *TaskStateResponseBody from a value of type
+// *artworksviews.TaskStateView.
+func marshalArtworksviewsTaskStateViewToTaskStateResponseBody(v *artworksviews.TaskStateView) *TaskStateResponseBody {
 	if v == nil {
 		return nil
 	}
-	res := &JobStateResponseBody{
+	res := &TaskStateResponseBody{
 		Date:   *v.Date,
 		Status: *v.Status,
 	}
@@ -401,10 +402,32 @@ func marshalArtworksviewsJobStateViewToJobStateResponseBody(v *artworksviews.Job
 	return res
 }
 
-// marshalArtworksviewsJobViewToJobResponseTiny builds a value of type
-// *JobResponseTiny from a value of type *artworksviews.JobView.
-func marshalArtworksviewsJobViewToJobResponseTiny(v *artworksviews.JobView) *JobResponseTiny {
-	res := &JobResponseTiny{
+// marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody builds a
+// value of type *ArtworkTicketResponseBody from a value of type
+// *artworksviews.ArtworkTicketView.
+func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody(v *artworksviews.ArtworkTicketView) *ArtworkTicketResponseBody {
+	res := &ArtworkTicketResponseBody{
+		Name:             *v.Name,
+		Description:      v.Description,
+		Keywords:         v.Keywords,
+		SeriesName:       v.SeriesName,
+		IssuedCopies:     *v.IssuedCopies,
+		ImageID:          *v.ImageID,
+		YoutubeURL:       v.YoutubeURL,
+		ArtistPastelID:   *v.ArtistPastelID,
+		ArtistName:       *v.ArtistName,
+		ArtistWebsiteURL: v.ArtistWebsiteURL,
+		SpendableAddress: *v.SpendableAddress,
+		NetworkFee:       *v.NetworkFee,
+	}
+
+	return res
+}
+
+// marshalArtworksviewsTaskViewToTaskResponseTiny builds a value of type
+// *TaskResponseTiny from a value of type *artworksviews.TaskView.
+func marshalArtworksviewsTaskViewToTaskResponseTiny(v *artworksviews.TaskView) *TaskResponseTiny {
+	res := &TaskResponseTiny{
 		ID:     *v.ID,
 		Status: *v.Status,
 		Txid:   v.Txid,

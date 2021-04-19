@@ -15,40 +15,40 @@ import (
 
 // Endpoints wraps the "artworks" service endpoints.
 type Endpoints struct {
-	Register         goa.Endpoint
-	RegisterJobState goa.Endpoint
-	RegisterJob      goa.Endpoint
-	RegisterJobs     goa.Endpoint
-	UploadImage      goa.Endpoint
+	Register          goa.Endpoint
+	RegisterTaskState goa.Endpoint
+	RegisterTask      goa.Endpoint
+	RegisterTasks     goa.Endpoint
+	UploadImage       goa.Endpoint
 }
 
-// RegisterJobStateEndpointInput holds both the payload and the server stream
-// of the "registerJobState" method.
-type RegisterJobStateEndpointInput struct {
+// RegisterTaskStateEndpointInput holds both the payload and the server stream
+// of the "registerTaskState" method.
+type RegisterTaskStateEndpointInput struct {
 	// Payload is the method payload.
-	Payload *RegisterJobStatePayload
-	// Stream is the server stream used by the "registerJobState" method to send
+	Payload *RegisterTaskStatePayload
+	// Stream is the server stream used by the "registerTaskState" method to send
 	// data.
-	Stream RegisterJobStateServerStream
+	Stream RegisterTaskStateServerStream
 }
 
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		Register:         NewRegisterEndpoint(s),
-		RegisterJobState: NewRegisterJobStateEndpoint(s),
-		RegisterJob:      NewRegisterJobEndpoint(s),
-		RegisterJobs:     NewRegisterJobsEndpoint(s),
-		UploadImage:      NewUploadImageEndpoint(s),
+		Register:          NewRegisterEndpoint(s),
+		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
+		RegisterTask:      NewRegisterTaskEndpoint(s),
+		RegisterTasks:     NewRegisterTasksEndpoint(s),
+		UploadImage:       NewUploadImageEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "artworks" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.Register = m(e.Register)
-	e.RegisterJobState = m(e.RegisterJobState)
-	e.RegisterJob = m(e.RegisterJob)
-	e.RegisterJobs = m(e.RegisterJobs)
+	e.RegisterTaskState = m(e.RegisterTaskState)
+	e.RegisterTask = m(e.RegisterTask)
+	e.RegisterTasks = m(e.RegisterTasks)
 	e.UploadImage = m(e.UploadImage)
 }
 
@@ -66,38 +66,38 @@ func NewRegisterEndpoint(s Service) goa.Endpoint {
 	}
 }
 
-// NewRegisterJobStateEndpoint returns an endpoint function that calls the
-// method "registerJobState" of service "artworks".
-func NewRegisterJobStateEndpoint(s Service) goa.Endpoint {
+// NewRegisterTaskStateEndpoint returns an endpoint function that calls the
+// method "registerTaskState" of service "artworks".
+func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		ep := req.(*RegisterJobStateEndpointInput)
-		return nil, s.RegisterJobState(ctx, ep.Payload, ep.Stream)
+		ep := req.(*RegisterTaskStateEndpointInput)
+		return nil, s.RegisterTaskState(ctx, ep.Payload, ep.Stream)
 	}
 }
 
-// NewRegisterJobEndpoint returns an endpoint function that calls the method
-// "registerJob" of service "artworks".
-func NewRegisterJobEndpoint(s Service) goa.Endpoint {
+// NewRegisterTaskEndpoint returns an endpoint function that calls the method
+// "registerTask" of service "artworks".
+func NewRegisterTaskEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*RegisterJobPayload)
-		res, err := s.RegisterJob(ctx, p)
+		p := req.(*RegisterTaskPayload)
+		res, err := s.RegisterTask(ctx, p)
 		if err != nil {
 			return nil, err
 		}
-		vres := NewViewedJob(res, "default")
+		vres := NewViewedTask(res, "default")
 		return vres, nil
 	}
 }
 
-// NewRegisterJobsEndpoint returns an endpoint function that calls the method
-// "registerJobs" of service "artworks".
-func NewRegisterJobsEndpoint(s Service) goa.Endpoint {
+// NewRegisterTasksEndpoint returns an endpoint function that calls the method
+// "registerTasks" of service "artworks".
+func NewRegisterTasksEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		res, err := s.RegisterJobs(ctx)
+		res, err := s.RegisterTasks(ctx)
 		if err != nil {
 			return nil, err
 		}
-		vres := NewViewedJobCollection(res, "tiny")
+		vres := NewViewedTaskCollection(res, "tiny")
 		return vres, nil
 	}
 }

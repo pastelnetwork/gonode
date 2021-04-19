@@ -2,7 +2,9 @@ package design
 
 import (
 	//revive:disable:dot-imports
+	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
 	. "goa.design/goa/v3/dsl"
+
 	//revive:enable:dot-imports
 	cors "goa.design/plugins/v3/cors/dsl"
 )
@@ -24,7 +26,7 @@ var _ = Service("artworks", func() {
 		Meta("swagger:summary", "Registers a new artwork")
 
 		Payload(func() {
-			Extend(ArtworkRegisterPayload)
+			Extend(ArtworkTicket)
 		})
 		Result(ArtworkRegisterResult)
 
@@ -36,47 +38,47 @@ var _ = Service("artworks", func() {
 		})
 	})
 
-	Method("registerJobState", func() {
+	Method("registerTaskState", func() {
 		Description("Streams the state of the registration process.")
-		Meta("swagger:summary", "Streams state by job ID")
+		Meta("swagger:summary", "Streams state by task ID")
 
 		Payload(func() {
-			Extend(RegisterJobPayload)
+			Extend(RegisterTaskPayload)
 		})
-		StreamingResult(ArtworkRegisterJobState)
+		StreamingResult(ArtworkRegisterTaskState)
 
 		HTTP(func() {
-			GET("/register/{jobId}/state")
+			GET("/register/{taskId}/state")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
 		})
 	})
 
-	Method("registerJob", func() {
-		Description("Returns a single job.")
-		Meta("swagger:summary", "Find job by ID")
+	Method("registerTask", func() {
+		Description("Returns a single task.")
+		Meta("swagger:summary", "Find task by ID")
 
 		Payload(func() {
-			Extend(RegisterJobPayload)
+			Extend(RegisterTaskPayload)
 		})
-		Result(ArtworkRegisterJobResult, func() {
+		Result(ArtworkRegisterTaskResult, func() {
 			View("default")
 		})
 
 		HTTP(func() {
-			GET("/register/{jobId}")
+			GET("/register/{taskId}")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
 		})
 	})
 
-	Method("registerJobs", func() {
-		Description("List of all jobs.")
-		Meta("swagger:summary", "Returns list of jobs")
+	Method("registerTasks", func() {
+		Description("List of all tasks.")
+		Meta("swagger:summary", "Returns list of tasks")
 
-		Result(CollectionOf(ArtworkRegisterJobResult), func() {
+		Result(CollectionOf(ArtworkRegisterTaskResult), func() {
 			View("tiny")
 		})
 
@@ -108,9 +110,9 @@ var _ = Service("artworks", func() {
 	})
 })
 
-// ArtworkRegisterPayload is artwork register payload
-var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
-	Description("Registration artwork")
+// ArtworkTicket is artwork register payload.
+var ArtworkTicket = Type("ArtworkTicket", func() {
+	Description("Ticket of the registration artwork")
 
 	Attribute("name", String, func() {
 		Description("Name of the artwork")
@@ -185,21 +187,21 @@ var ArtworkRegisterPayload = Type("ArtworkRegisterPayload", func() {
 	Required("artist_name", "name", "issued_copies", "image_id", "artist_pastelid", "spendable_address", "network_fee")
 })
 
-// ArtworkRegisterResult is artwork registeration result
+// ArtworkRegisterResult is artwork registeration result.
 var ArtworkRegisterResult = ResultType("application/vnd.artwork.register", func() {
 	TypeName("RegisterResult")
 	Attributes(func() {
-		Attribute("job_id", Int, func() {
-			Description("Job ID of the registration process")
+		Attribute("task_id", Int, func() {
+			Description("Task ID of the registration process")
 			Example(5)
 		})
 	})
-	Required("job_id")
+	Required("task_id")
 })
 
-// ArtworkRegisterJobResult is job streaming of the artwork registration
-var ArtworkRegisterJobResult = ResultType("application/vnd.artwork.register.job", func() {
-	TypeName("Job")
+// ArtworkRegisterTaskResult is task streaming of the artwork registration.
+var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.task", func() {
+	TypeName("Task")
 	Attributes(func() {
 		Attribute("id", Int, func() {
 			Description("JOb ID of the registration process")
@@ -207,9 +209,10 @@ var ArtworkRegisterJobResult = ResultType("application/vnd.artwork.register.job"
 		})
 		Attribute("status", String, func() {
 			Description("Status of the registration process")
-			Example("Registration started")
+			Example(state.StatusNames()[0])
+			Enum(InterfaceSlice(state.StatusNames())...)
 		})
-		Attribute("states", ArrayOf(ArtworkRegisterJobState), func() {
+		Attribute("states", ArrayOf(ArtworkRegisterTaskState), func() {
 			Description("List of states from the very beginning of the process")
 		})
 		Attribute("txid", String, func() {
@@ -218,6 +221,7 @@ var ArtworkRegisterJobResult = ResultType("application/vnd.artwork.register.job"
 			MaxLength(64)
 			Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
 		})
+		Attribute("ticket", ArtworkTicket)
 	})
 
 	View("tiny", func() {
@@ -226,23 +230,24 @@ var ArtworkRegisterJobResult = ResultType("application/vnd.artwork.register.job"
 		Attribute("txid")
 	})
 
-	Required("id", "status")
+	Required("id", "status", "ticket")
 })
 
-// ArtworkRegisterJobState is job streaming of the artwork registration
-var ArtworkRegisterJobState = Type("JobState", func() {
+// ArtworkRegisterTaskState is task streaming of the artwork registration.
+var ArtworkRegisterTaskState = Type("TaskState", func() {
 	Attribute("date", String, func() {
 		Description("Date of the status creation")
 		Example("2019-10-12T07:20:50.52Z")
 	})
 	Attribute("status", String, func() {
 		Description("Status of the registration process")
-		Example("Registration started")
+		Example(state.StatusNames()[0])
+		Enum(InterfaceSlice(state.StatusNames())...)
 	})
 	Required("date", "status")
 })
 
-// ImageUploadPayload represents a payload for uploading image
+// ImageUploadPayload represents a payload for uploading image.
 var ImageUploadPayload = Type("ImageUploadPayload", func() {
 	Description("Image upload payload")
 	Attribute("file", Bytes, func() {
@@ -252,7 +257,7 @@ var ImageUploadPayload = Type("ImageUploadPayload", func() {
 	Required("file")
 })
 
-// ImageUploadResult is image upload result
+// ImageUploadResult is image upload result.
 var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func() {
 	TypeName("Image")
 	Attributes(func() {
@@ -269,12 +274,12 @@ var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func(
 	Required("image_id", "expires_in")
 })
 
-// RegisterJobPayload represents a payload for returning job
-var RegisterJobPayload = Type("RegisterJobPayload", func() {
-	Attribute("jobId", Int, "Job ID of the registration process", func() {
-		TypeName("jobID")
+// RegisterTaskPayload represents a payload for returning task.
+var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
+	Attribute("taskId", Int, "Task ID of the registration process", func() {
+		TypeName("taskID")
 		Minimum(1)
 		Example(5)
 	})
-	Required("jobId")
+	Required("taskId")
 })

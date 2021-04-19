@@ -1,7 +1,7 @@
-package artwork
+package register
 
-// Artwork represents artwork properties.
-type Artwork struct {
+// Ticket represents artwork registration ticket.
+type Ticket struct {
 	Image            []byte
 	Name             string
 	Description      *string

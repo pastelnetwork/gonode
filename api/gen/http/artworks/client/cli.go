@@ -106,52 +106,52 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 	return v, nil
 }
 
-// BuildRegisterJobStatePayload builds the payload for the artworks
-// registerJobState endpoint from CLI flags.
-func BuildRegisterJobStatePayload(artworksRegisterJobStateJobID string) (*artworks.RegisterJobStatePayload, error) {
+// BuildRegisterTaskStatePayload builds the payload for the artworks
+// registerTaskState endpoint from CLI flags.
+func BuildRegisterTaskStatePayload(artworksRegisterTaskStateTaskID string) (*artworks.RegisterTaskStatePayload, error) {
 	var err error
-	var jobID int
+	var taskID int
 	{
 		var v int64
-		v, err = strconv.ParseInt(artworksRegisterJobStateJobID, 10, 64)
-		jobID = int(v)
+		v, err = strconv.ParseInt(artworksRegisterTaskStateTaskID, 10, 64)
+		taskID = int(v)
 		if err != nil {
-			return nil, fmt.Errorf("invalid value for jobID, must be INT")
+			return nil, fmt.Errorf("invalid value for taskID, must be INT")
 		}
-		if jobID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("jobID", jobID, 1, true))
+		if taskID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("taskID", taskID, 1, true))
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	v := &artworks.RegisterJobStatePayload{}
-	v.JobID = jobID
+	v := &artworks.RegisterTaskStatePayload{}
+	v.TaskID = taskID
 
 	return v, nil
 }
 
-// BuildRegisterJobPayload builds the payload for the artworks registerJob
+// BuildRegisterTaskPayload builds the payload for the artworks registerTask
 // endpoint from CLI flags.
-func BuildRegisterJobPayload(artworksRegisterJobJobID string) (*artworks.RegisterJobPayload, error) {
+func BuildRegisterTaskPayload(artworksRegisterTaskTaskID string) (*artworks.RegisterTaskPayload, error) {
 	var err error
-	var jobID int
+	var taskID int
 	{
 		var v int64
-		v, err = strconv.ParseInt(artworksRegisterJobJobID, 10, 64)
-		jobID = int(v)
+		v, err = strconv.ParseInt(artworksRegisterTaskTaskID, 10, 64)
+		taskID = int(v)
 		if err != nil {
-			return nil, fmt.Errorf("invalid value for jobID, must be INT")
+			return nil, fmt.Errorf("invalid value for taskID, must be INT")
 		}
-		if jobID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("jobID", jobID, 1, true))
+		if taskID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("taskID", taskID, 1, true))
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	v := &artworks.RegisterJobPayload{}
-	v.JobID = jobID
+	v := &artworks.RegisterTaskPayload{}
+	v.TaskID = taskID
 
 	return v, nil
 }

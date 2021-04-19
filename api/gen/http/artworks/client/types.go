@@ -53,35 +53,36 @@ type UploadImageRequestBody struct {
 // RegisterResponseBody is the type of the "artworks" service "register"
 // endpoint HTTP response body.
 type RegisterResponseBody struct {
-	// Job ID of the registration process
-	JobID *int `form:"job_id,omitempty" json:"job_id,omitempty" xml:"job_id,omitempty"`
+	// Task ID of the registration process
+	TaskID *int `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
 }
 
-// RegisterJobStateResponseBody is the type of the "artworks" service
-// "registerJobState" endpoint HTTP response body.
-type RegisterJobStateResponseBody struct {
+// RegisterTaskStateResponseBody is the type of the "artworks" service
+// "registerTaskState" endpoint HTTP response body.
+type RegisterTaskStateResponseBody struct {
 	// Date of the status creation
 	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
 	// Status of the registration process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 }
 
-// RegisterJobResponseBody is the type of the "artworks" service "registerJob"
-// endpoint HTTP response body.
-type RegisterJobResponseBody struct {
+// RegisterTaskResponseBody is the type of the "artworks" service
+// "registerTask" endpoint HTTP response body.
+type RegisterTaskResponseBody struct {
 	// JOb ID of the registration process
 	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Status of the registration process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// List of states from the very beginning of the process
-	States []*JobStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
+	States []*TaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// txid
-	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Txid   *string                    `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Ticket *ArtworkTicketResponseBody `form:"ticket,omitempty" json:"ticket,omitempty" xml:"ticket,omitempty"`
 }
 
-// RegisterJobsResponseBody is the type of the "artworks" service
-// "registerJobs" endpoint HTTP response body.
-type RegisterJobsResponseBody []*JobResponse
+// RegisterTasksResponseBody is the type of the "artworks" service
+// "registerTasks" endpoint HTTP response body.
+type RegisterTasksResponseBody []*TaskResponse
 
 // UploadImageResponseBody is the type of the "artworks" service "uploadImage"
 // endpoint HTTP response body.
@@ -129,9 +130,9 @@ type RegisterInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// RegisterJobStateNotFoundResponseBody is the type of the "artworks" service
-// "registerJobState" endpoint HTTP response body for the "NotFound" error.
-type RegisterJobStateNotFoundResponseBody struct {
+// RegisterTaskStateNotFoundResponseBody is the type of the "artworks" service
+// "registerTaskState" endpoint HTTP response body for the "NotFound" error.
+type RegisterTaskStateNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -147,10 +148,10 @@ type RegisterJobStateNotFoundResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// RegisterJobStateInternalServerErrorResponseBody is the type of the
-// "artworks" service "registerJobState" endpoint HTTP response body for the
+// RegisterTaskStateInternalServerErrorResponseBody is the type of the
+// "artworks" service "registerTaskState" endpoint HTTP response body for the
 // "InternalServerError" error.
-type RegisterJobStateInternalServerErrorResponseBody struct {
+type RegisterTaskStateInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -166,9 +167,9 @@ type RegisterJobStateInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// RegisterJobNotFoundResponseBody is the type of the "artworks" service
-// "registerJob" endpoint HTTP response body for the "NotFound" error.
-type RegisterJobNotFoundResponseBody struct {
+// RegisterTaskNotFoundResponseBody is the type of the "artworks" service
+// "registerTask" endpoint HTTP response body for the "NotFound" error.
+type RegisterTaskNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -184,10 +185,10 @@ type RegisterJobNotFoundResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// RegisterJobInternalServerErrorResponseBody is the type of the "artworks"
-// service "registerJob" endpoint HTTP response body for the
+// RegisterTaskInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerTask" endpoint HTTP response body for the
 // "InternalServerError" error.
-type RegisterJobInternalServerErrorResponseBody struct {
+type RegisterTaskInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -203,10 +204,10 @@ type RegisterJobInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// RegisterJobsInternalServerErrorResponseBody is the type of the "artworks"
-// service "registerJobs" endpoint HTTP response body for the
+// RegisterTasksInternalServerErrorResponseBody is the type of the "artworks"
+// service "registerTasks" endpoint HTTP response body for the
 // "InternalServerError" error.
-type RegisterJobsInternalServerErrorResponseBody struct {
+type RegisterTasksInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -259,32 +260,87 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// JobStateResponseBody is used to define fields on response body types.
-type JobStateResponseBody struct {
+// TaskStateResponseBody is used to define fields on response body types.
+type TaskStateResponseBody struct {
 	// Date of the status creation
 	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
 	// Status of the registration process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 }
 
-// JobResponse is used to define fields on response body types.
-type JobResponse struct {
+// ArtworkTicketResponseBody is used to define fields on response body types.
+type ArtworkTicketResponseBody struct {
+	// Name of the artwork
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Description of the artwork
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies issued
+	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
+	// Uploaded image ID
+	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Name of the artist
+	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	// Spendable address
+	SpendableAddress *string  `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
+	NetworkFee       *float32 `form:"network_fee,omitempty" json:"network_fee,omitempty" xml:"network_fee,omitempty"`
+}
+
+// TaskResponse is used to define fields on response body types.
+type TaskResponse struct {
 	// JOb ID of the registration process
 	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Status of the registration process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// List of states from the very beginning of the process
-	States []*JobStateResponse `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
+	States []*TaskStateResponse `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// txid
-	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Txid   *string                `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Ticket *ArtworkTicketResponse `form:"ticket,omitempty" json:"ticket,omitempty" xml:"ticket,omitempty"`
 }
 
-// JobStateResponse is used to define fields on response body types.
-type JobStateResponse struct {
+// TaskStateResponse is used to define fields on response body types.
+type TaskStateResponse struct {
 	// Date of the status creation
 	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
 	// Status of the registration process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
+// ArtworkTicketResponse is used to define fields on response body types.
+type ArtworkTicketResponse struct {
+	// Name of the artwork
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// Description of the artwork
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies issued
+	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
+	// Uploaded image ID
+	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Name of the artist
+	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	// Spendable address
+	SpendableAddress *string  `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
+	NetworkFee       *float32 `form:"network_fee,omitempty" json:"network_fee,omitempty" xml:"network_fee,omitempty"`
 }
 
 // NewRegisterRequestBody builds the HTTP request body from the payload of the
@@ -320,7 +376,7 @@ func NewUploadImageRequestBody(p *artworks.UploadImagePayload) *UploadImageReque
 // result from a HTTP "Created" response.
 func NewRegisterResultViewCreated(body *RegisterResponseBody) *artworksviews.RegisterResultView {
 	v := &artworksviews.RegisterResultView{
-		JobID: body.JobID,
+		TaskID: body.TaskID,
 	}
 
 	return v
@@ -356,10 +412,10 @@ func NewRegisterInternalServerError(body *RegisterInternalServerErrorResponseBod
 	return v
 }
 
-// NewRegisterJobStateJobStateOK builds a "artworks" service "registerJobState"
-// endpoint result from a HTTP "OK" response.
-func NewRegisterJobStateJobStateOK(body *RegisterJobStateResponseBody) *artworks.JobState {
-	v := &artworks.JobState{
+// NewRegisterTaskStateTaskStateOK builds a "artworks" service
+// "registerTaskState" endpoint result from a HTTP "OK" response.
+func NewRegisterTaskStateTaskStateOK(body *RegisterTaskStateResponseBody) *artworks.TaskState {
+	v := &artworks.TaskState{
 		Date:   *body.Date,
 		Status: *body.Status,
 	}
@@ -367,9 +423,9 @@ func NewRegisterJobStateJobStateOK(body *RegisterJobStateResponseBody) *artworks
 	return v
 }
 
-// NewRegisterJobStateNotFound builds a artworks service registerJobState
+// NewRegisterTaskStateNotFound builds a artworks service registerTaskState
 // endpoint NotFound error.
-func NewRegisterJobStateNotFound(body *RegisterJobStateNotFoundResponseBody) *goa.ServiceError {
+func NewRegisterTaskStateNotFound(body *RegisterTaskStateNotFoundResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -382,9 +438,9 @@ func NewRegisterJobStateNotFound(body *RegisterJobStateNotFoundResponseBody) *go
 	return v
 }
 
-// NewRegisterJobStateInternalServerError builds a artworks service
-// registerJobState endpoint InternalServerError error.
-func NewRegisterJobStateInternalServerError(body *RegisterJobStateInternalServerErrorResponseBody) *goa.ServiceError {
+// NewRegisterTaskStateInternalServerError builds a artworks service
+// registerTaskState endpoint InternalServerError error.
+func NewRegisterTaskStateInternalServerError(body *RegisterTaskStateInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -397,27 +453,28 @@ func NewRegisterJobStateInternalServerError(body *RegisterJobStateInternalServer
 	return v
 }
 
-// NewRegisterJobJobOK builds a "artworks" service "registerJob" endpoint
+// NewRegisterTaskTaskOK builds a "artworks" service "registerTask" endpoint
 // result from a HTTP "OK" response.
-func NewRegisterJobJobOK(body *RegisterJobResponseBody) *artworksviews.JobView {
-	v := &artworksviews.JobView{
+func NewRegisterTaskTaskOK(body *RegisterTaskResponseBody) *artworksviews.TaskView {
+	v := &artworksviews.TaskView{
 		ID:     body.ID,
 		Status: body.Status,
 		Txid:   body.Txid,
 	}
 	if body.States != nil {
-		v.States = make([]*artworksviews.JobStateView, len(body.States))
+		v.States = make([]*artworksviews.TaskStateView, len(body.States))
 		for i, val := range body.States {
-			v.States[i] = unmarshalJobStateResponseBodyToArtworksviewsJobStateView(val)
+			v.States[i] = unmarshalTaskStateResponseBodyToArtworksviewsTaskStateView(val)
 		}
 	}
+	v.Ticket = unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView(body.Ticket)
 
 	return v
 }
 
-// NewRegisterJobNotFound builds a artworks service registerJob endpoint
+// NewRegisterTaskNotFound builds a artworks service registerTask endpoint
 // NotFound error.
-func NewRegisterJobNotFound(body *RegisterJobNotFoundResponseBody) *goa.ServiceError {
+func NewRegisterTaskNotFound(body *RegisterTaskNotFoundResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -430,9 +487,9 @@ func NewRegisterJobNotFound(body *RegisterJobNotFoundResponseBody) *goa.ServiceE
 	return v
 }
 
-// NewRegisterJobInternalServerError builds a artworks service registerJob
+// NewRegisterTaskInternalServerError builds a artworks service registerTask
 // endpoint InternalServerError error.
-func NewRegisterJobInternalServerError(body *RegisterJobInternalServerErrorResponseBody) *goa.ServiceError {
+func NewRegisterTaskInternalServerError(body *RegisterTaskInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -445,19 +502,19 @@ func NewRegisterJobInternalServerError(body *RegisterJobInternalServerErrorRespo
 	return v
 }
 
-// NewRegisterJobsJobCollectionOK builds a "artworks" service "registerJobs"
+// NewRegisterTasksTaskCollectionOK builds a "artworks" service "registerTasks"
 // endpoint result from a HTTP "OK" response.
-func NewRegisterJobsJobCollectionOK(body RegisterJobsResponseBody) artworksviews.JobCollectionView {
-	v := make([]*artworksviews.JobView, len(body))
+func NewRegisterTasksTaskCollectionOK(body RegisterTasksResponseBody) artworksviews.TaskCollectionView {
+	v := make([]*artworksviews.TaskView, len(body))
 	for i, val := range body {
-		v[i] = unmarshalJobResponseToArtworksviewsJobView(val)
+		v[i] = unmarshalTaskResponseToArtworksviewsTaskView(val)
 	}
 	return v
 }
 
-// NewRegisterJobsInternalServerError builds a artworks service registerJobs
+// NewRegisterTasksInternalServerError builds a artworks service registerTasks
 // endpoint InternalServerError error.
-func NewRegisterJobsInternalServerError(body *RegisterJobsInternalServerErrorResponseBody) *goa.ServiceError {
+func NewRegisterTasksInternalServerError(body *RegisterTasksInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -511,14 +568,19 @@ func NewUploadImageInternalServerError(body *UploadImageInternalServerErrorRespo
 	return v
 }
 
-// ValidateRegisterJobStateResponseBody runs the validations defined on
-// RegisterJobStateResponseBody
-func ValidateRegisterJobStateResponseBody(body *RegisterJobStateResponseBody) (err error) {
+// ValidateRegisterTaskStateResponseBody runs the validations defined on
+// RegisterTaskStateResponseBody
+func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) (err error) {
 	if body.Date == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
 	}
 	if body.Status == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	if body.Status != nil {
+		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error" || *body.Status == "Finish") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		}
 	}
 	return
 }
@@ -571,9 +633,9 @@ func ValidateRegisterInternalServerErrorResponseBody(body *RegisterInternalServe
 	return
 }
 
-// ValidateRegisterJobStateNotFoundResponseBody runs the validations defined on
-// registerJobState_NotFound_response_body
-func ValidateRegisterJobStateNotFoundResponseBody(body *RegisterJobStateNotFoundResponseBody) (err error) {
+// ValidateRegisterTaskStateNotFoundResponseBody runs the validations defined
+// on registerTaskState_NotFound_response_body
+func ValidateRegisterTaskStateNotFoundResponseBody(body *RegisterTaskStateNotFoundResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -595,9 +657,9 @@ func ValidateRegisterJobStateNotFoundResponseBody(body *RegisterJobStateNotFound
 	return
 }
 
-// ValidateRegisterJobStateInternalServerErrorResponseBody runs the validations
-// defined on registerJobState_InternalServerError_response_body
-func ValidateRegisterJobStateInternalServerErrorResponseBody(body *RegisterJobStateInternalServerErrorResponseBody) (err error) {
+// ValidateRegisterTaskStateInternalServerErrorResponseBody runs the
+// validations defined on registerTaskState_InternalServerError_response_body
+func ValidateRegisterTaskStateInternalServerErrorResponseBody(body *RegisterTaskStateInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -619,9 +681,9 @@ func ValidateRegisterJobStateInternalServerErrorResponseBody(body *RegisterJobSt
 	return
 }
 
-// ValidateRegisterJobNotFoundResponseBody runs the validations defined on
-// registerJob_NotFound_response_body
-func ValidateRegisterJobNotFoundResponseBody(body *RegisterJobNotFoundResponseBody) (err error) {
+// ValidateRegisterTaskNotFoundResponseBody runs the validations defined on
+// registerTask_NotFound_response_body
+func ValidateRegisterTaskNotFoundResponseBody(body *RegisterTaskNotFoundResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -643,9 +705,9 @@ func ValidateRegisterJobNotFoundResponseBody(body *RegisterJobNotFoundResponseBo
 	return
 }
 
-// ValidateRegisterJobInternalServerErrorResponseBody runs the validations
-// defined on registerJob_InternalServerError_response_body
-func ValidateRegisterJobInternalServerErrorResponseBody(body *RegisterJobInternalServerErrorResponseBody) (err error) {
+// ValidateRegisterTaskInternalServerErrorResponseBody runs the validations
+// defined on registerTask_InternalServerError_response_body
+func ValidateRegisterTaskInternalServerErrorResponseBody(body *RegisterTaskInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -667,9 +729,9 @@ func ValidateRegisterJobInternalServerErrorResponseBody(body *RegisterJobInterna
 	return
 }
 
-// ValidateRegisterJobsInternalServerErrorResponseBody runs the validations
-// defined on registerJobs_InternalServerError_response_body
-func ValidateRegisterJobsInternalServerErrorResponseBody(body *RegisterJobsInternalServerErrorResponseBody) (err error) {
+// ValidateRegisterTasksInternalServerErrorResponseBody runs the validations
+// defined on registerTasks_InternalServerError_response_body
+func ValidateRegisterTasksInternalServerErrorResponseBody(body *RegisterTasksInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -739,29 +801,150 @@ func ValidateUploadImageInternalServerErrorResponseBody(body *UploadImageInterna
 	return
 }
 
-// ValidateJobStateResponseBody runs the validations defined on
-// JobStateResponseBody
-func ValidateJobStateResponseBody(body *JobStateResponseBody) (err error) {
+// ValidateTaskStateResponseBody runs the validations defined on
+// TaskStateResponseBody
+func ValidateTaskStateResponseBody(body *TaskStateResponseBody) (err error) {
 	if body.Date == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
 	}
 	if body.Status == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
+	if body.Status != nil {
+		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error" || *body.Status == "Finish") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		}
+	}
 	return
 }
 
-// ValidateJobResponse runs the validations defined on JobResponse
-func ValidateJobResponse(body *JobResponse) (err error) {
+// ValidateArtworkTicketResponseBody runs the validations defined on
+// ArtworkTicketResponseBody
+func ValidateArtworkTicketResponseBody(body *ArtworkTicketResponseBody) (err error) {
+	if body.ArtistName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_name", "body"))
+	}
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.IssuedCopies == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
+	}
+	if body.ImageID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "body"))
+	}
+	if body.ArtistPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.SpendableAddress == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
+	}
+	if body.NetworkFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("network_fee", "body"))
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 256, false))
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 1024 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 1024, false))
+		}
+	}
+	if body.Keywords != nil {
+		if utf8.RuneCountInString(*body.Keywords) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.keywords", *body.Keywords, utf8.RuneCountInString(*body.Keywords), 256, false))
+		}
+	}
+	if body.SeriesName != nil {
+		if utf8.RuneCountInString(*body.SeriesName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
+		}
+	}
+	if body.IssuedCopies != nil {
+		if *body.IssuedCopies < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1, true))
+		}
+	}
+	if body.IssuedCopies != nil {
+		if *body.IssuedCopies > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1000, false))
+		}
+	}
+	if body.ImageID != nil {
+		if *body.ImageID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
+		}
+	}
+	if body.YoutubeURL != nil {
+		if utf8.RuneCountInString(*body.YoutubeURL) > 128 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", *body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, true))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, false))
+		}
+	}
+	if body.ArtistName != nil {
+		if utf8.RuneCountInString(*body.ArtistName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_name", *body.ArtistName, utf8.RuneCountInString(*body.ArtistName), 256, false))
+		}
+	}
+	if body.ArtistWebsiteURL != nil {
+		if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
+		}
+	}
+	if body.SpendableAddress != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", *body.SpendableAddress, "^[a-zA-Z0-9]+$"))
+	}
+	if body.SpendableAddress != nil {
+		if utf8.RuneCountInString(*body.SpendableAddress) < 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, true))
+		}
+	}
+	if body.SpendableAddress != nil {
+		if utf8.RuneCountInString(*body.SpendableAddress) > 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
+		}
+	}
+	if body.NetworkFee != nil {
+		if *body.NetworkFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.network_fee", *body.NetworkFee, 1e-05, true))
+		}
+	}
+	return
+}
+
+// ValidateTaskResponse runs the validations defined on TaskResponse
+func ValidateTaskResponse(body *TaskResponse) (err error) {
 	if body.ID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
 	}
 	if body.Status == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
+	if body.Ticket == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "body"))
+	}
+	if body.Status != nil {
+		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error" || *body.Status == "Finish") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		}
+	}
 	for _, e := range body.States {
 		if e != nil {
-			if err2 := ValidateJobStateResponse(e); err2 != nil {
+			if err2 := ValidateTaskStateResponse(e); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -776,16 +959,134 @@ func ValidateJobResponse(body *JobResponse) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, false))
 		}
 	}
+	if body.Ticket != nil {
+		if err2 := ValidateArtworkTicketResponse(body.Ticket); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	return
 }
 
-// ValidateJobStateResponse runs the validations defined on JobStateResponse
-func ValidateJobStateResponse(body *JobStateResponse) (err error) {
+// ValidateTaskStateResponse runs the validations defined on TaskStateResponse
+func ValidateTaskStateResponse(body *TaskStateResponse) (err error) {
 	if body.Date == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
 	}
 	if body.Status == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	if body.Status != nil {
+		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error" || *body.Status == "Finish") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error", "Finish"}))
+		}
+	}
+	return
+}
+
+// ValidateArtworkTicketResponse runs the validations defined on
+// ArtworkTicketResponse
+func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
+	if body.ArtistName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_name", "body"))
+	}
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.IssuedCopies == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
+	}
+	if body.ImageID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "body"))
+	}
+	if body.ArtistPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.SpendableAddress == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
+	}
+	if body.NetworkFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("network_fee", "body"))
+	}
+	if body.Name != nil {
+		if utf8.RuneCountInString(*body.Name) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.name", *body.Name, utf8.RuneCountInString(*body.Name), 256, false))
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 1024 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 1024, false))
+		}
+	}
+	if body.Keywords != nil {
+		if utf8.RuneCountInString(*body.Keywords) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.keywords", *body.Keywords, utf8.RuneCountInString(*body.Keywords), 256, false))
+		}
+	}
+	if body.SeriesName != nil {
+		if utf8.RuneCountInString(*body.SeriesName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
+		}
+	}
+	if body.IssuedCopies != nil {
+		if *body.IssuedCopies < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1, true))
+		}
+	}
+	if body.IssuedCopies != nil {
+		if *body.IssuedCopies > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1000, false))
+		}
+	}
+	if body.ImageID != nil {
+		if *body.ImageID < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
+		}
+	}
+	if body.YoutubeURL != nil {
+		if utf8.RuneCountInString(*body.YoutubeURL) > 128 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", *body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, true))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, false))
+		}
+	}
+	if body.ArtistName != nil {
+		if utf8.RuneCountInString(*body.ArtistName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_name", *body.ArtistName, utf8.RuneCountInString(*body.ArtistName), 256, false))
+		}
+	}
+	if body.ArtistWebsiteURL != nil {
+		if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
+		}
+	}
+	if body.SpendableAddress != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.spendable_address", *body.SpendableAddress, "^[a-zA-Z0-9]+$"))
+	}
+	if body.SpendableAddress != nil {
+		if utf8.RuneCountInString(*body.SpendableAddress) < 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, true))
+		}
+	}
+	if body.SpendableAddress != nil {
+		if utf8.RuneCountInString(*body.SpendableAddress) > 35 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
+		}
+	}
+	if body.NetworkFee != nil {
+		if *body.NetworkFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.network_fee", *body.NetworkFee, 1e-05, true))
+		}
 	}
 	return
 }

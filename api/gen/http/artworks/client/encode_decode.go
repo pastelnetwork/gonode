@@ -125,18 +125,18 @@ func DecodeRegisterResponse(decoder func(*http.Response) goahttp.Decoder, restor
 	}
 }
 
-// BuildRegisterJobStateRequest instantiates a HTTP request object with method
-// and path set to call the "artworks" service "registerJobState" endpoint
-func (c *Client) BuildRegisterJobStateRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+// BuildRegisterTaskStateRequest instantiates a HTTP request object with method
+// and path set to call the "artworks" service "registerTaskState" endpoint
+func (c *Client) BuildRegisterTaskStateRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
-		jobID int
+		taskID int
 	)
 	{
-		p, ok := v.(*artworks.RegisterJobStatePayload)
+		p, ok := v.(*artworks.RegisterTaskStatePayload)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("artworks", "registerJobState", "*artworks.RegisterJobStatePayload", v)
+			return nil, goahttp.ErrInvalidType("artworks", "registerTaskState", "*artworks.RegisterTaskStatePayload", v)
 		}
-		jobID = p.JobID
+		taskID = p.TaskID
 	}
 	scheme := c.scheme
 	switch c.scheme {
@@ -145,10 +145,10 @@ func (c *Client) BuildRegisterJobStateRequest(ctx context.Context, v interface{}
 	case "https":
 		scheme = "wss"
 	}
-	u := &url.URL{Scheme: scheme, Host: c.host, Path: RegisterJobStateArtworksPath(jobID)}
+	u := &url.URL{Scheme: scheme, Host: c.host, Path: RegisterTaskStateArtworksPath(taskID)}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("artworks", "registerJobState", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("artworks", "registerTaskState", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -157,14 +157,14 @@ func (c *Client) BuildRegisterJobStateRequest(ctx context.Context, v interface{}
 	return req, nil
 }
 
-// DecodeRegisterJobStateResponse returns a decoder for responses returned by
-// the artworks registerJobState endpoint. restoreBody controls whether the
+// DecodeRegisterTaskStateResponse returns a decoder for responses returned by
+// the artworks registerTaskState endpoint. restoreBody controls whether the
 // response body should be restored after having been read.
-// DecodeRegisterJobStateResponse may return the following errors:
+// DecodeRegisterTaskStateResponse may return the following errors:
 //	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeRegisterJobStateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -181,71 +181,71 @@ func DecodeRegisterJobStateResponse(decoder func(*http.Response) goahttp.Decoder
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body RegisterJobStateResponseBody
+				body RegisterTaskStateResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerJobState", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTaskState", err)
 			}
-			err = ValidateRegisterJobStateResponseBody(&body)
+			err = ValidateRegisterTaskStateResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerJobState", err)
+				return nil, goahttp.ErrValidationError("artworks", "registerTaskState", err)
 			}
-			res := NewRegisterJobStateJobStateOK(&body)
+			res := NewRegisterTaskStateTaskStateOK(&body)
 			return res, nil
 		case http.StatusNotFound:
 			var (
-				body RegisterJobStateNotFoundResponseBody
+				body RegisterTaskStateNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerJobState", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTaskState", err)
 			}
-			err = ValidateRegisterJobStateNotFoundResponseBody(&body)
+			err = ValidateRegisterTaskStateNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerJobState", err)
+				return nil, goahttp.ErrValidationError("artworks", "registerTaskState", err)
 			}
-			return nil, NewRegisterJobStateNotFound(&body)
+			return nil, NewRegisterTaskStateNotFound(&body)
 		case http.StatusInternalServerError:
 			var (
-				body RegisterJobStateInternalServerErrorResponseBody
+				body RegisterTaskStateInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerJobState", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTaskState", err)
 			}
-			err = ValidateRegisterJobStateInternalServerErrorResponseBody(&body)
+			err = ValidateRegisterTaskStateInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerJobState", err)
+				return nil, goahttp.ErrValidationError("artworks", "registerTaskState", err)
 			}
-			return nil, NewRegisterJobStateInternalServerError(&body)
+			return nil, NewRegisterTaskStateInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("artworks", "registerJobState", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("artworks", "registerTaskState", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// BuildRegisterJobRequest instantiates a HTTP request object with method and
-// path set to call the "artworks" service "registerJob" endpoint
-func (c *Client) BuildRegisterJobRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+// BuildRegisterTaskRequest instantiates a HTTP request object with method and
+// path set to call the "artworks" service "registerTask" endpoint
+func (c *Client) BuildRegisterTaskRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
-		jobID int
+		taskID int
 	)
 	{
-		p, ok := v.(*artworks.RegisterJobPayload)
+		p, ok := v.(*artworks.RegisterTaskPayload)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("artworks", "registerJob", "*artworks.RegisterJobPayload", v)
+			return nil, goahttp.ErrInvalidType("artworks", "registerTask", "*artworks.RegisterTaskPayload", v)
 		}
-		jobID = p.JobID
+		taskID = p.TaskID
 	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegisterJobArtworksPath(jobID)}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegisterTaskArtworksPath(taskID)}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("artworks", "registerJob", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("artworks", "registerTask", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -254,14 +254,14 @@ func (c *Client) BuildRegisterJobRequest(ctx context.Context, v interface{}) (*h
 	return req, nil
 }
 
-// DecodeRegisterJobResponse returns a decoder for responses returned by the
-// artworks registerJob endpoint. restoreBody controls whether the response
+// DecodeRegisterTaskResponse returns a decoder for responses returned by the
+// artworks registerTask endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
-// DecodeRegisterJobResponse may return the following errors:
+// DecodeRegisterTaskResponse may return the following errors:
 //	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeRegisterJobResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeRegisterTaskResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -278,63 +278,63 @@ func DecodeRegisterJobResponse(decoder func(*http.Response) goahttp.Decoder, res
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body RegisterJobResponseBody
+				body RegisterTaskResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerJob", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTask", err)
 			}
-			p := NewRegisterJobJobOK(&body)
+			p := NewRegisterTaskTaskOK(&body)
 			view := "default"
-			vres := &artworksviews.Job{Projected: p, View: view}
-			if err = artworksviews.ValidateJob(vres); err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerJob", err)
+			vres := &artworksviews.Task{Projected: p, View: view}
+			if err = artworksviews.ValidateTask(vres); err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "registerTask", err)
 			}
-			res := artworks.NewJob(vres)
+			res := artworks.NewTask(vres)
 			return res, nil
 		case http.StatusNotFound:
 			var (
-				body RegisterJobNotFoundResponseBody
+				body RegisterTaskNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerJob", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTask", err)
 			}
-			err = ValidateRegisterJobNotFoundResponseBody(&body)
+			err = ValidateRegisterTaskNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerJob", err)
+				return nil, goahttp.ErrValidationError("artworks", "registerTask", err)
 			}
-			return nil, NewRegisterJobNotFound(&body)
+			return nil, NewRegisterTaskNotFound(&body)
 		case http.StatusInternalServerError:
 			var (
-				body RegisterJobInternalServerErrorResponseBody
+				body RegisterTaskInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerJob", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTask", err)
 			}
-			err = ValidateRegisterJobInternalServerErrorResponseBody(&body)
+			err = ValidateRegisterTaskInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerJob", err)
+				return nil, goahttp.ErrValidationError("artworks", "registerTask", err)
 			}
-			return nil, NewRegisterJobInternalServerError(&body)
+			return nil, NewRegisterTaskInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("artworks", "registerJob", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("artworks", "registerTask", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// BuildRegisterJobsRequest instantiates a HTTP request object with method and
-// path set to call the "artworks" service "registerJobs" endpoint
-func (c *Client) BuildRegisterJobsRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegisterJobsArtworksPath()}
+// BuildRegisterTasksRequest instantiates a HTTP request object with method and
+// path set to call the "artworks" service "registerTasks" endpoint
+func (c *Client) BuildRegisterTasksRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: RegisterTasksArtworksPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("artworks", "registerJobs", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("artworks", "registerTasks", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -343,13 +343,13 @@ func (c *Client) BuildRegisterJobsRequest(ctx context.Context, v interface{}) (*
 	return req, nil
 }
 
-// DecodeRegisterJobsResponse returns a decoder for responses returned by the
-// artworks registerJobs endpoint. restoreBody controls whether the response
+// DecodeRegisterTasksResponse returns a decoder for responses returned by the
+// artworks registerTasks endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
-// DecodeRegisterJobsResponse may return the following errors:
+// DecodeRegisterTasksResponse may return the following errors:
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeRegisterJobsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeRegisterTasksResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -366,38 +366,38 @@ func DecodeRegisterJobsResponse(decoder func(*http.Response) goahttp.Decoder, re
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body RegisterJobsResponseBody
+				body RegisterTasksResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerJobs", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTasks", err)
 			}
-			p := NewRegisterJobsJobCollectionOK(body)
+			p := NewRegisterTasksTaskCollectionOK(body)
 			view := "tiny"
-			vres := artworksviews.JobCollection{Projected: p, View: view}
-			if err = artworksviews.ValidateJobCollection(vres); err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerJobs", err)
+			vres := artworksviews.TaskCollection{Projected: p, View: view}
+			if err = artworksviews.ValidateTaskCollection(vres); err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "registerTasks", err)
 			}
-			res := artworks.NewJobCollection(vres)
+			res := artworks.NewTaskCollection(vres)
 			return res, nil
 		case http.StatusInternalServerError:
 			var (
-				body RegisterJobsInternalServerErrorResponseBody
+				body RegisterTasksInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "registerJobs", err)
+				return nil, goahttp.ErrDecodingError("artworks", "registerTasks", err)
 			}
-			err = ValidateRegisterJobsInternalServerErrorResponseBody(&body)
+			err = ValidateRegisterTasksInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "registerJobs", err)
+				return nil, goahttp.ErrValidationError("artworks", "registerTasks", err)
 			}
-			return nil, NewRegisterJobsInternalServerError(&body)
+			return nil, NewRegisterTasksInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("artworks", "registerJobs", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("artworks", "registerTasks", resp.StatusCode, string(body))
 		}
 	}
 }
@@ -524,13 +524,14 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 	}
 }
 
-// unmarshalJobStateResponseBodyToArtworksviewsJobStateView builds a value of
-// type *artworksviews.JobStateView from a value of type *JobStateResponseBody.
-func unmarshalJobStateResponseBodyToArtworksviewsJobStateView(v *JobStateResponseBody) *artworksviews.JobStateView {
+// unmarshalTaskStateResponseBodyToArtworksviewsTaskStateView builds a value of
+// type *artworksviews.TaskStateView from a value of type
+// *TaskStateResponseBody.
+func unmarshalTaskStateResponseBodyToArtworksviewsTaskStateView(v *TaskStateResponseBody) *artworksviews.TaskStateView {
 	if v == nil {
 		return nil
 	}
-	res := &artworksviews.JobStateView{
+	res := &artworksviews.TaskStateView{
 		Date:   v.Date,
 		Status: v.Status,
 	}
@@ -538,33 +539,78 @@ func unmarshalJobStateResponseBodyToArtworksviewsJobStateView(v *JobStateRespons
 	return res
 }
 
-// unmarshalJobResponseToArtworksviewsJobView builds a value of type
-// *artworksviews.JobView from a value of type *JobResponse.
-func unmarshalJobResponseToArtworksviewsJobView(v *JobResponse) *artworksviews.JobView {
-	res := &artworksviews.JobView{
+// unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView builds a
+// value of type *artworksviews.ArtworkTicketView from a value of type
+// *ArtworkTicketResponseBody.
+func unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView(v *ArtworkTicketResponseBody) *artworksviews.ArtworkTicketView {
+	res := &artworksviews.ArtworkTicketView{
+		Name:             v.Name,
+		Description:      v.Description,
+		Keywords:         v.Keywords,
+		SeriesName:       v.SeriesName,
+		IssuedCopies:     v.IssuedCopies,
+		ImageID:          v.ImageID,
+		YoutubeURL:       v.YoutubeURL,
+		ArtistPastelID:   v.ArtistPastelID,
+		ArtistName:       v.ArtistName,
+		ArtistWebsiteURL: v.ArtistWebsiteURL,
+		SpendableAddress: v.SpendableAddress,
+		NetworkFee:       v.NetworkFee,
+	}
+
+	return res
+}
+
+// unmarshalTaskResponseToArtworksviewsTaskView builds a value of type
+// *artworksviews.TaskView from a value of type *TaskResponse.
+func unmarshalTaskResponseToArtworksviewsTaskView(v *TaskResponse) *artworksviews.TaskView {
+	res := &artworksviews.TaskView{
 		ID:     v.ID,
 		Status: v.Status,
 		Txid:   v.Txid,
 	}
 	if v.States != nil {
-		res.States = make([]*artworksviews.JobStateView, len(v.States))
+		res.States = make([]*artworksviews.TaskStateView, len(v.States))
 		for i, val := range v.States {
-			res.States[i] = unmarshalJobStateResponseToArtworksviewsJobStateView(val)
+			res.States[i] = unmarshalTaskStateResponseToArtworksviewsTaskStateView(val)
 		}
+	}
+	res.Ticket = unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v.Ticket)
+
+	return res
+}
+
+// unmarshalTaskStateResponseToArtworksviewsTaskStateView builds a value of
+// type *artworksviews.TaskStateView from a value of type *TaskStateResponse.
+func unmarshalTaskStateResponseToArtworksviewsTaskStateView(v *TaskStateResponse) *artworksviews.TaskStateView {
+	if v == nil {
+		return nil
+	}
+	res := &artworksviews.TaskStateView{
+		Date:   v.Date,
+		Status: v.Status,
 	}
 
 	return res
 }
 
-// unmarshalJobStateResponseToArtworksviewsJobStateView builds a value of type
-// *artworksviews.JobStateView from a value of type *JobStateResponse.
-func unmarshalJobStateResponseToArtworksviewsJobStateView(v *JobStateResponse) *artworksviews.JobStateView {
-	if v == nil {
-		return nil
-	}
-	res := &artworksviews.JobStateView{
-		Date:   v.Date,
-		Status: v.Status,
+// unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView builds a
+// value of type *artworksviews.ArtworkTicketView from a value of type
+// *ArtworkTicketResponse.
+func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTicketResponse) *artworksviews.ArtworkTicketView {
+	res := &artworksviews.ArtworkTicketView{
+		Name:             v.Name,
+		Description:      v.Description,
+		Keywords:         v.Keywords,
+		SeriesName:       v.SeriesName,
+		IssuedCopies:     v.IssuedCopies,
+		ImageID:          v.ImageID,
+		YoutubeURL:       v.YoutubeURL,
+		ArtistPastelID:   v.ArtistPastelID,
+		ArtistName:       v.ArtistName,
+		ArtistWebsiteURL: v.ArtistWebsiteURL,
+		SpendableAddress: v.SpendableAddress,
+		NetworkFee:       v.NetworkFee,
 	}
 
 	return res

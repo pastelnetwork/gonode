@@ -15,21 +15,21 @@ import (
 
 // Client is the "artworks" service client.
 type Client struct {
-	RegisterEndpoint         goa.Endpoint
-	RegisterJobStateEndpoint goa.Endpoint
-	RegisterJobEndpoint      goa.Endpoint
-	RegisterJobsEndpoint     goa.Endpoint
-	UploadImageEndpoint      goa.Endpoint
+	RegisterEndpoint          goa.Endpoint
+	RegisterTaskStateEndpoint goa.Endpoint
+	RegisterTaskEndpoint      goa.Endpoint
+	RegisterTasksEndpoint     goa.Endpoint
+	UploadImageEndpoint       goa.Endpoint
 }
 
 // NewClient initializes a "artworks" service client given the endpoints.
-func NewClient(register, registerJobState, registerJob, registerJobs, uploadImage goa.Endpoint) *Client {
+func NewClient(register, registerTaskState, registerTask, registerTasks, uploadImage goa.Endpoint) *Client {
 	return &Client{
-		RegisterEndpoint:         register,
-		RegisterJobStateEndpoint: registerJobState,
-		RegisterJobEndpoint:      registerJob,
-		RegisterJobsEndpoint:     registerJobs,
-		UploadImageEndpoint:      uploadImage,
+		RegisterEndpoint:          register,
+		RegisterTaskStateEndpoint: registerTaskState,
+		RegisterTaskEndpoint:      registerTask,
+		RegisterTasksEndpoint:     registerTasks,
+		UploadImageEndpoint:       uploadImage,
 	}
 }
 
@@ -43,35 +43,35 @@ func (c *Client) Register(ctx context.Context, p *RegisterPayload) (res *Registe
 	return ires.(*RegisterResult), nil
 }
 
-// RegisterJobState calls the "registerJobState" endpoint of the "artworks"
+// RegisterTaskState calls the "registerTaskState" endpoint of the "artworks"
 // service.
-func (c *Client) RegisterJobState(ctx context.Context, p *RegisterJobStatePayload) (res RegisterJobStateClientStream, err error) {
+func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayload) (res RegisterTaskStateClientStream, err error) {
 	var ires interface{}
-	ires, err = c.RegisterJobStateEndpoint(ctx, p)
+	ires, err = c.RegisterTaskStateEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(RegisterJobStateClientStream), nil
+	return ires.(RegisterTaskStateClientStream), nil
 }
 
-// RegisterJob calls the "registerJob" endpoint of the "artworks" service.
-func (c *Client) RegisterJob(ctx context.Context, p *RegisterJobPayload) (res *Job, err error) {
+// RegisterTask calls the "registerTask" endpoint of the "artworks" service.
+func (c *Client) RegisterTask(ctx context.Context, p *RegisterTaskPayload) (res *Task, err error) {
 	var ires interface{}
-	ires, err = c.RegisterJobEndpoint(ctx, p)
+	ires, err = c.RegisterTaskEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*Job), nil
+	return ires.(*Task), nil
 }
 
-// RegisterJobs calls the "registerJobs" endpoint of the "artworks" service.
-func (c *Client) RegisterJobs(ctx context.Context) (res JobCollection, err error) {
+// RegisterTasks calls the "registerTasks" endpoint of the "artworks" service.
+func (c *Client) RegisterTasks(ctx context.Context) (res TaskCollection, err error) {
 	var ires interface{}
-	ires, err = c.RegisterJobsEndpoint(ctx, nil)
+	ires, err = c.RegisterTasksEndpoint(ctx, nil)
 	if err != nil {
 		return
 	}
-	return ires.(JobCollection), nil
+	return ires.(TaskCollection), nil
 }
 
 // UploadImage calls the "uploadImage" endpoint of the "artworks" service.

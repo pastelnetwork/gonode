@@ -18,12 +18,12 @@ import (
 // ConnConfigurer holds the websocket connection configurer functions for the
 // streaming endpoints in "artworks" service.
 type ConnConfigurer struct {
-	RegisterJobStateFn goahttp.ConnConfigureFunc
+	RegisterTaskStateFn goahttp.ConnConfigureFunc
 }
 
-// RegisterJobStateClientStream implements the
-// artworks.RegisterJobStateClientStream interface.
-type RegisterJobStateClientStream struct {
+// RegisterTaskStateClientStream implements the
+// artworks.RegisterTaskStateClientStream interface.
+type RegisterTaskStateClientStream struct {
 	// conn is the underlying websocket connection.
 	conn *websocket.Conn
 }
@@ -32,16 +32,16 @@ type RegisterJobStateClientStream struct {
 // with fn for all the streaming endpoints in "artworks" service.
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
-		RegisterJobStateFn: fn,
+		RegisterTaskStateFn: fn,
 	}
 }
 
-// Recv reads instances of "artworks.JobState" from the "registerJobState"
+// Recv reads instances of "artworks.TaskState" from the "registerTaskState"
 // endpoint websocket connection.
-func (s *RegisterJobStateClientStream) Recv() (*artworks.JobState, error) {
+func (s *RegisterTaskStateClientStream) Recv() (*artworks.TaskState, error) {
 	var (
-		rv   *artworks.JobState
-		body RegisterJobStateResponseBody
+		rv   *artworks.TaskState
+		body RegisterTaskStateResponseBody
 		err  error
 	)
 	err = s.conn.ReadJSON(&body)
@@ -52,10 +52,10 @@ func (s *RegisterJobStateClientStream) Recv() (*artworks.JobState, error) {
 	if err != nil {
 		return rv, err
 	}
-	err = ValidateRegisterJobStateResponseBody(&body)
+	err = ValidateRegisterTaskStateResponseBody(&body)
 	if err != nil {
 		return rv, err
 	}
-	res := NewRegisterJobStateJobStateOK(&body)
+	res := NewRegisterTaskStateTaskStateOK(&body)
 	return res, nil
 }

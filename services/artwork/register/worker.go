@@ -2,18 +2,19 @@ package register
 
 import (
 	"context"
-	"fmt"
+	"time"
+
+	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
 )
 
 type Worker struct {
-	jobCh chan *Job
+	taskCh chan *Task
 }
 
-func (worker *Worker) AddJob(ctx context.Context, job *Job) {
+func (worker *Worker) AddTask(ctx context.Context, task *Task) {
 	select {
 	case <-ctx.Done():
-		fmt.Println("stop add job")
-	case worker.jobCh <- job:
+	case worker.taskCh <- task:
 	}
 }
 
@@ -22,9 +23,19 @@ func (worker *Worker) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case job := <-worker.jobCh:
-			fmt.Println(job)
-			return nil
+		case task := <-worker.taskCh:
+
+			go func() {
+				// NOTE: for testing
+				time.Sleep(time.Second)
+				task.State.Update(state.NewMessage(state.StatusAccepted))
+				time.Sleep(time.Second)
+				task.State.Update(state.NewMessage(state.StatusActivation))
+				time.Sleep(time.Second)
+				msg := state.NewMessage(state.StatusActivated)
+				msg.Latest = true
+				task.State.Update(msg)
+			}()
 		}
 	}
 	return nil
@@ -32,6 +43,6 @@ func (worker *Worker) Run(ctx context.Context) error {
 
 func NewWorker() *Worker {
 	return &Worker{
-		jobCh: make(chan *Job),
+		taskCh: make(chan *Task),
 	}
 }

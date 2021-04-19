@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/walletnode/dao"
 	"github.com/pastelnetwork/walletnode/dao/memory"
 	"github.com/pastelnetwork/walletnode/services/artwork"
+	"github.com/pastelnetwork/walletnode/services/artwork/register"
 )
 
 const (
@@ -25,16 +26,16 @@ type serviceArtwork struct {
 	storage dao.KeyValue
 }
 
-// RegisterJobState streams the state of the registration process.
-func (service *serviceArtwork) RegisterJobState(ctx context.Context, p *artworks.RegisterJobStatePayload, stream artworks.RegisterJobStateServerStream) (err error) {
+// RegisterTaskState streams the state of the registration process.
+func (service *serviceArtwork) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
-	job := service.artwork.Job(p.JobID)
-	if job == nil {
-		return artworks.MakeNotFound(errors.Errorf("invalid jobId: %d", p.JobID))
+	task := service.artwork.Task(p.TaskID)
+	if task == nil {
+		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
 	}
 
-	sub, err := job.State.Subscribe()
+	sub, err := task.State.Subscribe()
 	if err != nil {
 		return artworks.MakeInternalServerError(err)
 	}
@@ -47,7 +48,7 @@ func (service *serviceArtwork) RegisterJobState(ctx context.Context, p *artworks
 		case <-sub.Done():
 			return nil
 		case msg := <-sub.Msg():
-			res := &artworks.JobState{
+			res := &artworks.TaskState{
 				Date:   msg.CreatedAt.Format(time.RFC3339),
 				Status: msg.Status.String(),
 			}
@@ -59,20 +60,20 @@ func (service *serviceArtwork) RegisterJobState(ctx context.Context, p *artworks
 	}
 }
 
-// RegisterJob returns a single job.
-func (service *serviceArtwork) RegisterJob(ctx context.Context, p *artworks.RegisterJobPayload) (res *artworks.Job, err error) {
-	job := service.artwork.Job(p.JobID)
-	if job == nil {
-		return nil, artworks.MakeNotFound(errors.Errorf("invalid jobId: %d", p.JobID))
+// RegisterTask returns a single task.
+func (service *serviceArtwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
+	task := service.artwork.Task(p.TaskID)
+	if task == nil {
+		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
 	}
 
-	res = &artworks.Job{
-		ID:     p.JobID,
-		Status: job.State.Latest().Status.String(),
+	res = &artworks.Task{
+		ID:     p.TaskID,
+		Status: task.State.Latest().Status.String(),
 	}
 
-	for _, msg := range job.State.All() {
-		res.States = append(res.States, &artworks.JobState{
+	for _, msg := range task.State.All() {
+		res.States = append(res.States, &artworks.TaskState{
 			Date:   msg.CreatedAt.Format(time.RFC3339),
 			Status: msg.Status.String(),
 		})
@@ -81,13 +82,13 @@ func (service *serviceArtwork) RegisterJob(ctx context.Context, p *artworks.Regi
 	return res, nil
 }
 
-// RegisterJob returns list of all jobs.
-func (service *serviceArtwork) RegisterJobs(ctx context.Context) (res artworks.JobCollection, err error) {
-	jobs := service.artwork.Jobs()
-	for _, job := range jobs {
-		res = append(res, &artworks.Job{
-			ID:     job.ID(),
-			Status: job.State.Latest().Status.String(),
+// RegisterTask returns list of all tasks.
+func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.TaskCollection, err error) {
+	tasks := service.artwork.Tasks()
+	for _, task := range tasks {
+		res = append(res, &artworks.Task{
+			ID:     task.ID(),
+			Status: task.State.Latest().Status.String(),
 		})
 	}
 	return res, nil
@@ -103,7 +104,7 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	artwork := &artwork.Artwork{
+	ticket := &register.Ticket{
 		Image:            image,
 		Name:             p.Name,
 		Description:      p.Description,
@@ -118,12 +119,12 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 		NetworkFee:       p.NetworkFee,
 	}
 
-	jobID, err := service.artwork.Register(ctx, artwork)
+	taskID, err := service.artwork.Register(ctx, ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 	res = &artworks.RegisterResult{
-		JobID: jobID,
+		TaskID: taskID,
 	}
 	return res, nil
 }

@@ -1,13 +1,12 @@
 package state
 
-// List of job statuses.
+// List of task statuses.
 const (
 	StatusStarted Status = iota
 	StatusAccepted
 	StatusActivation
 	StatusActivated
 	StatusError
-	StatusFinish
 )
 
 var statusNames = map[Status]string{
@@ -16,10 +15,9 @@ var statusNames = map[Status]string{
 	StatusActivation: "Waiting Activation",
 	StatusActivated:  "Activated",
 	StatusError:      "Error",
-	StatusFinish:     "Finish",
 }
 
-// Status represents status of the job
+// Status represents status of the task
 type Status byte
 
 func (status Status) String() string {
@@ -27,4 +25,13 @@ func (status Status) String() string {
 		return name
 	}
 	return ""
+}
+
+// StatusNames returns a sorted list of status names.
+func StatusNames() []string {
+	list := make([]string, len(statusNames))
+	for i, name := range statusNames {
+		list[i] = name
+	}
+	return list
 }
