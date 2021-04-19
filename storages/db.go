@@ -1,4 +1,4 @@
-package dao
+package storages
 
 import "github.com/pastelnetwork/go-commons/errors"
 

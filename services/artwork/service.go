@@ -3,7 +3,7 @@ package artwork
 import (
 	"context"
 
-	"github.com/pastelnetwork/walletnode/dao"
+	"github.com/pastelnetwork/walletnode/storages"
 	"github.com/pastelnetwork/walletnode/services/artwork/register"
 )
 
@@ -11,7 +11,7 @@ import (
 
 // Service represent artwork service.
 type Service struct {
-	db     dao.KeyValue
+	db     storages.KeyValue
 	worker *register.Worker
 	tasks  []*register.Task
 }
@@ -46,7 +46,7 @@ func (service *Service) Register(ctx context.Context, ticket *register.Ticket) (
 }
 
 // New returns a new Service instance.
-func New(db dao.KeyValue) *Service {
+func New(db storages.KeyValue) *Service {
 	return &Service{
 		db:     db,
 		worker: register.NewWorker(),
