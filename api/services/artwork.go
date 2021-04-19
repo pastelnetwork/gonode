@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"strconv"
 	"sync/atomic"
 	"time"
 
@@ -96,7 +97,9 @@ func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.
 
 // Register runs registers process for the new artwork.
 func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
-	image, err := service.storage.Get(string(p.ImageID))
+	key := strconv.Itoa(p.ImageID)
+
+	image, err := service.storage.Get(key)
 	if err == storage.ErrKeyNotFound {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
@@ -131,21 +134,22 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 
 // UploadImage uploads an image and return unique image id.
 func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
-	id := atomic.AddUint32(&imageID, 1)
+	id := int(atomic.AddUint32(&imageID, 1))
+	key := strconv.Itoa(id)
 
-	if err := service.storage.Set(string(id), p.Bytes); err != nil {
+	if err := service.storage.Set(key, p.Bytes); err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 	expiresIn := time.Now().Add(imageTTL)
 
 	go func() {
 		time.AfterFunc(time.Until(expiresIn), func() {
-			service.storage.Delete(string(id))
+			service.storage.Delete(key)
 		})
 	}()
 
 	res = &artworks.Image{
-		ImageID:   int(id),
+		ImageID:   id,
 		ExpiresIn: expiresIn.Format(time.RFC3339),
 	}
 	return res, nil
