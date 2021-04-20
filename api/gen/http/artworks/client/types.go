@@ -18,6 +18,8 @@ import (
 // RegisterRequestBody is the type of the "artworks" service "register"
 // endpoint HTTP request body.
 type RegisterRequestBody struct {
+	// Uploaded image ID
+	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
 	// Name of the artwork
 	Name string `form:"name" json:"name" xml:"name"`
 	// Description of the artwork
@@ -28,8 +30,6 @@ type RegisterRequestBody struct {
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
 	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
-	// Uploaded image ID
-	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
@@ -280,8 +280,6 @@ type ArtworkTicketResponseBody struct {
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
 	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
-	// Uploaded image ID
-	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
@@ -328,8 +326,6 @@ type ArtworkTicketResponse struct {
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
 	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
-	// Uploaded image ID
-	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
@@ -347,12 +343,12 @@ type ArtworkTicketResponse struct {
 // "register" endpoint of the "artworks" service.
 func NewRegisterRequestBody(p *artworks.RegisterPayload) *RegisterRequestBody {
 	body := &RegisterRequestBody{
+		ImageID:          p.ImageID,
 		Name:             p.Name,
 		Description:      p.Description,
 		Keywords:         p.Keywords,
 		SeriesName:       p.SeriesName,
 		IssuedCopies:     p.IssuedCopies,
-		ImageID:          p.ImageID,
 		YoutubeURL:       p.YoutubeURL,
 		ArtistPastelID:   p.ArtistPastelID,
 		ArtistName:       p.ArtistName,
@@ -830,9 +826,6 @@ func ValidateArtworkTicketResponseBody(body *ArtworkTicketResponseBody) (err err
 	if body.IssuedCopies == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
 	}
-	if body.ImageID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "body"))
-	}
 	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
 	}
@@ -870,11 +863,6 @@ func ValidateArtworkTicketResponseBody(body *ArtworkTicketResponseBody) (err err
 	if body.IssuedCopies != nil {
 		if *body.IssuedCopies > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1000, false))
-		}
-	}
-	if body.ImageID != nil {
-		if *body.ImageID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
 		}
 	}
 	if body.YoutubeURL != nil {
@@ -995,9 +983,6 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 	if body.IssuedCopies == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
 	}
-	if body.ImageID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "body"))
-	}
 	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
 	}
@@ -1035,11 +1020,6 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 	if body.IssuedCopies != nil {
 		if *body.IssuedCopies > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1000, false))
-		}
-	}
-	if body.ImageID != nil {
-		if *body.ImageID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
 		}
 	}
 	if body.YoutubeURL != nil {

@@ -9,7 +9,6 @@ import (
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/walletnode/services/artwork"
-	"github.com/pastelnetwork/walletnode/services/artwork/register"
 	"github.com/pastelnetwork/walletnode/storage"
 	"github.com/pastelnetwork/walletnode/storage/memory"
 )
@@ -71,15 +70,9 @@ func (service *serviceArtwork) RegisterTask(ctx context.Context, p *artworks.Reg
 	res = &artworks.Task{
 		ID:     p.TaskID,
 		Status: task.State.Latest().Status.String(),
+		Ticket: toArtworkTicket(task.Ticket),
+		States: toArtworkStates(task.State.All()),
 	}
-
-	for _, msg := range task.State.All() {
-		res.States = append(res.States, &artworks.TaskState{
-			Date:   msg.CreatedAt.Format(time.RFC3339),
-			Status: msg.Status.String(),
-		})
-	}
-
 	return res, nil
 }
 
@@ -88,8 +81,9 @@ func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.
 	tasks := service.artwork.Tasks()
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
-			ID:     task.ID(),
+			ID:     task.ID,
 			Status: task.State.Latest().Status.String(),
+			Ticket: toArtworkTicket(task.Ticket),
 		})
 	}
 	return res, nil
@@ -97,29 +91,15 @@ func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.
 
 // Register runs registers process for the new artwork.
 func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
-	key := strconv.Itoa(p.ImageID)
+	ticket := fromRegisterPayload(p)
 
-	image, err := service.storage.Get(key)
+	key := strconv.Itoa(p.ImageID)
+	ticket.Image, err = service.storage.Get(key)
 	if err == storage.ErrKeyNotFound {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
-	}
-
-	ticket := &register.Ticket{
-		Image:            image,
-		Name:             p.Name,
-		Description:      p.Description,
-		Keywords:         p.Keywords,
-		SeriesName:       p.SeriesName,
-		IssuedCopies:     p.IssuedCopies,
-		YoutubeURL:       p.YoutubeURL,
-		ArtistPastelID:   p.ArtistPastelID,
-		ArtistName:       p.ArtistName,
-		ArtistWebsiteURL: p.ArtistWebsiteURL,
-		SpendableAddress: p.SpendableAddress,
-		NetworkFee:       p.NetworkFee,
 	}
 
 	taskID, err := service.artwork.Register(ctx, ticket)

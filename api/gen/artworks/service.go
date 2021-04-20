@@ -56,6 +56,8 @@ type RegisterTaskStateClientStream interface {
 
 // RegisterPayload is the payload type of the artworks service register method.
 type RegisterPayload struct {
+	// Uploaded image ID
+	ImageID int
 	// Name of the artwork
 	Name string
 	// Description of the artwork
@@ -66,8 +68,6 @@ type RegisterPayload struct {
 	SeriesName *string
 	// Number of copies issued
 	IssuedCopies int
-	// Uploaded image ID
-	ImageID int
 	// Artwork creation video youtube URL
 	YoutubeURL *string
 	// Artist's PastelID
@@ -154,8 +154,6 @@ type ArtworkTicket struct {
 	SeriesName *string
 	// Number of copies issued
 	IssuedCopies int
-	// Uploaded image ID
-	ImageID int
 	// Artwork creation video youtube URL
 	YoutubeURL *string
 	// Artist's PastelID
@@ -451,7 +449,6 @@ func transformArtworksviewsArtworkTicketViewToArtworkTicket(v *artworksviews.Art
 		Keywords:         v.Keywords,
 		SeriesName:       v.SeriesName,
 		IssuedCopies:     *v.IssuedCopies,
-		ImageID:          *v.ImageID,
 		YoutubeURL:       v.YoutubeURL,
 		ArtistPastelID:   *v.ArtistPastelID,
 		ArtistName:       *v.ArtistName,
@@ -486,7 +483,6 @@ func transformArtworkTicketToArtworksviewsArtworkTicketView(v *ArtworkTicket) *a
 		Keywords:         v.Keywords,
 		SeriesName:       v.SeriesName,
 		IssuedCopies:     &v.IssuedCopies,
-		ImageID:          &v.ImageID,
 		YoutubeURL:       v.YoutubeURL,
 		ArtistPastelID:   &v.ArtistPastelID,
 		ArtistName:       &v.ArtistName,

@@ -43,10 +43,10 @@ paths:
         schema:
           $ref: '#/definitions/ArtworksRegisterRequestBody'
           required:
+          - image_id
           - artist_name
           - name
           - issued_copies
-          - image_id
           - artist_pastelid
           - spendable_address
           - network_fee
@@ -187,11 +187,6 @@ definitions:
           writer Leonardo da Vinci. Likely completed in 1506, the piece features a
           portrait of a seated woman set against an imaginary landscape.
         maxLength: 1024
-      image_id:
-        type: integer
-        description: Uploaded image ID
-        example: 1
-        minimum: 1
       issued_copies:
         type: integer
         description: Number of copies issued
@@ -239,7 +234,6 @@ definitions:
       description: The Mona Lisa is an oil painting by Italian artist, inventor, and
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
-      image_id: 1
       issued_copies: 1
       keywords: Renaissance, sfumato, portrait
       name: Mona Lisa
@@ -251,7 +245,6 @@ definitions:
     - artist_name
     - name
     - issued_copies
-    - image_id
     - artist_pastelid
     - spendable_address
     - network_fee
@@ -433,10 +426,10 @@ definitions:
       spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
       youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
     required:
+    - image_id
     - artist_name
     - name
     - issued_copies
-    - image_id
     - artist_pastelid
     - spendable_address
     - network_fee
@@ -560,9 +553,9 @@ definitions:
           $ref: '#/definitions/TaskStateResponseBody'
         description: List of states from the very beginning of the process
         example:
-        - date: "2019-10-12T07:20:50.52Z"
+        - date: 2006-01-02T15:04:05Z07:00
           status: Registration Started
-        - date: "2019-10-12T07:20:50.52Z"
+        - date: 2006-01-02T15:04:05Z07:00
           status: Registration Started
       status:
         type: string
@@ -586,13 +579,13 @@ definitions:
     example:
       id: 5
       states:
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
       status: Registration Started
       ticket:
@@ -602,7 +595,6 @@ definitions:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
-        image_id: 1
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         name: Mona Lisa
@@ -713,7 +705,7 @@ definitions:
       date:
         type: string
         description: Date of the status creation
-        example: "2019-10-12T07:20:50.52Z"
+        example: 2006-01-02T15:04:05Z07:00
       status:
         type: string
         description: Status of the registration process
@@ -725,7 +717,7 @@ definitions:
         - Activated
         - Error
     example:
-      date: "2019-10-12T07:20:50.52Z"
+      date: 2006-01-02T15:04:05Z07:00
       status: Registration Started
     required:
     - date
@@ -787,11 +779,11 @@ definitions:
     example:
     - id: 5
       states:
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
       status: Registration Started
       ticket:
@@ -801,7 +793,6 @@ definitions:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
-        image_id: 1
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         name: Mona Lisa
@@ -812,11 +803,11 @@ definitions:
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     - id: 5
       states:
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
       status: Registration Started
       ticket:
@@ -826,7 +817,6 @@ definitions:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
-        image_id: 1
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         name: Mona Lisa
@@ -837,11 +827,11 @@ definitions:
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     - id: 5
       states:
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
-      - date: "2019-10-12T07:20:50.52Z"
+      - date: 2006-01-02T15:04:05Z07:00
         status: Registration Started
       status: Registration Started
       ticket:
@@ -851,7 +841,6 @@ definitions:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
-        image_id: 1
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         name: Mona Lisa
@@ -1041,7 +1030,7 @@ definitions:
       expires_in:
         type: string
         description: Image expiration
-        example: "2019-10-12T07:20:50.52Z"
+        example: 2006-01-02T15:04:05Z07:00
         format: date-time
       image_id:
         type: integer
@@ -1050,7 +1039,7 @@ definitions:
         format: int64
     description: UploadImageResponseBody result type (default view)
     example:
-      expires_in: "2019-10-12T07:20:50.52Z"
+      expires_in: 2006-01-02T15:04:05Z07:00
       image_id: 1
     required:
     - image_id
@@ -1095,7 +1084,7 @@ definitions:
       date:
         type: string
         description: Date of the status creation
-        example: "2019-10-12T07:20:50.52Z"
+        example: 2006-01-02T15:04:05Z07:00
       status:
         type: string
         description: Status of the registration process
@@ -1107,7 +1096,7 @@ definitions:
         - Activated
         - Error
     example:
-      date: "2019-10-12T07:20:50.52Z"
+      date: 2006-01-02T15:04:05Z07:00
       status: Registration Started
     required:
     - date

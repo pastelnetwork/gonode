@@ -412,7 +412,6 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody(v *artwork
 		Keywords:         v.Keywords,
 		SeriesName:       v.SeriesName,
 		IssuedCopies:     *v.IssuedCopies,
-		ImageID:          *v.ImageID,
 		YoutubeURL:       v.YoutubeURL,
 		ArtistPastelID:   *v.ArtistPastelID,
 		ArtistName:       *v.ArtistName,

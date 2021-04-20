@@ -1,11 +1,14 @@
 package design
 
 import (
-	//revive:disable:dot-imports
-	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
-	. "goa.design/goa/v3/dsl"
+	"time"
 
+	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
+
+	//revive:disable:dot-imports
+	. "goa.design/goa/v3/dsl"
 	//revive:enable:dot-imports
+
 	cors "goa.design/plugins/v3/cors/dsl"
 )
 
@@ -27,6 +30,12 @@ var _ = Service("artworks", func() {
 
 		Payload(func() {
 			Extend(ArtworkTicket)
+			Attribute("image_id", Int, func() {
+				Description("Uploaded image ID")
+				Minimum(1)
+				Example(1)
+			})
+			Required("image_id")
 		})
 		Result(ArtworkRegisterResult)
 
@@ -141,11 +150,6 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Default(1)
 		Example(1)
 	})
-	Attribute("image_id", Int, func() {
-		Description("Uploaded image ID")
-		Minimum(1)
-		Example(1)
-	})
 	Attribute("youtube_url", String, func() {
 		Description("Artwork creation video youtube URL")
 		MaxLength(128)
@@ -184,7 +188,7 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Example(100)
 	})
 
-	Required("artist_name", "name", "issued_copies", "image_id", "artist_pastelid", "spendable_address", "network_fee")
+	Required("artist_name", "name", "issued_copies", "artist_pastelid", "spendable_address", "network_fee")
 })
 
 // ArtworkRegisterResult is artwork registeration result.
@@ -237,7 +241,7 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 var ArtworkRegisterTaskState = Type("TaskState", func() {
 	Attribute("date", String, func() {
 		Description("Date of the status creation")
-		Example("2019-10-12T07:20:50.52Z")
+		Example(time.RFC3339)
 	})
 	Attribute("status", String, func() {
 		Description("Status of the registration process")
@@ -268,7 +272,7 @@ var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func(
 		Attribute("expires_in", String, func() {
 			Description("Image expiration")
 			Format(FormatDateTime)
-			Example("2019-10-12T07:20:50.52Z")
+			Example(time.RFC3339)
 		})
 	})
 	Required("image_id", "expires_in")

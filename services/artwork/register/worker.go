@@ -31,13 +31,13 @@ func (worker *Worker) Run(ctx context.Context) error {
 			go func() {
 				// NOTE: for testing
 				time.Sleep(time.Second)
-				task.State.Update(state.NewMessage(state.StatusAccepted))
+				task.State.Update(state.NewMessage(state.StatusTicketAccepted))
 				time.Sleep(time.Second)
-				task.State.Update(state.NewMessage(state.StatusActivation))
+				task.State.Update(state.NewMessage(state.StatusTicketRegistered))
 				time.Sleep(time.Second)
-				msg := state.NewMessage(state.StatusActivated)
-				msg.Latest = true
-				task.State.Update(msg)
+				task.State.Update(state.NewMessage(state.StatusTicketActivated))
+				time.Sleep(time.Second)
+				task.State.Update(state.NewMessage(state.StatusTaskCompleted))
 			}()
 		}
 	}

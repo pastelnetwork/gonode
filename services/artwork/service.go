@@ -29,7 +29,7 @@ func (service *Service) Run(ctx context.Context) error {
 // Task returns the task of the registration artwork.
 func (service *Service) Task(taskID int) *register.Task {
 	for _, task := range service.tasks {
-		if task.ID() == taskID {
+		if task.ID == taskID {
 			return task
 		}
 	}
@@ -43,7 +43,7 @@ func (service *Service) Register(ctx context.Context, ticket *register.Ticket) (
 	service.tasks = append(service.tasks, task)
 	service.worker.AddTask(ctx, task)
 
-	return task.ID(), nil
+	return task.ID, nil
 }
 
 // New returns a new Service instance.

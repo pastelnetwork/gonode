@@ -2,19 +2,28 @@ package state
 
 // List of task statuses.
 const (
-	StatusStarted Status = iota
-	StatusAccepted
-	StatusActivation
-	StatusActivated
-	StatusError
+	StatusTaskStarted Status = iota
+	// Ticket
+	StatusTicketAccepted
+	StatusTicketRegistered
+	StatusTicketActivated
+	// Error
+	StatusErrorTooLowFee
+	StatusErrorFGPTNotMatch
+	// Final
+	StatusTaskRejected
+	StatusTaskCompleted
 )
 
 var statusNames = map[Status]string{
-	StatusStarted:    "Registration Started",
-	StatusAccepted:   "Artwork Accepted",
-	StatusActivation: "Waiting Activation",
-	StatusActivated:  "Activated",
-	StatusError:      "Error",
+	StatusTaskStarted:       "Task Started",
+	StatusTicketAccepted:    "Ticket Accepted",
+	StatusTicketRegistered:  "Ticket Registered",
+	StatusTicketActivated:   "Ticket Activated",
+	StatusErrorTooLowFee:    "Error Too Low Fee",
+	StatusErrorFGPTNotMatch: "Error FGPT Not Match",
+	StatusTaskRejected:      "Task Rejected",
+	StatusTaskCompleted:     "Task Completed",
 }
 
 // Status represents status of the task

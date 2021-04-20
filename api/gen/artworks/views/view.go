@@ -84,8 +84,6 @@ type ArtworkTicketView struct {
 	SeriesName *string
 	// Number of copies issued
 	IssuedCopies *int
-	// Uploaded image ID
-	ImageID *int
 	// Artwork creation video youtube URL
 	YoutubeURL *string
 	// Artist's PastelID
@@ -314,9 +312,6 @@ func ValidateArtworkTicketView(result *ArtworkTicketView) (err error) {
 	if result.IssuedCopies == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "result"))
 	}
-	if result.ImageID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "result"))
-	}
 	if result.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "result"))
 	}
@@ -354,11 +349,6 @@ func ValidateArtworkTicketView(result *ArtworkTicketView) (err error) {
 	if result.IssuedCopies != nil {
 		if *result.IssuedCopies > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("result.issued_copies", *result.IssuedCopies, 1000, false))
-		}
-	}
-	if result.ImageID != nil {
-		if *result.ImageID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.image_id", *result.ImageID, 1, true))
 		}
 	}
 	if result.YoutubeURL != nil {

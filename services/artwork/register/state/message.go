@@ -8,7 +8,7 @@ import (
 type Message struct {
 	CreatedAt time.Time
 	Status    Status
-	Latest    bool
+	isFinal   bool
 }
 
 // NewMessage returns a new Message instance..
@@ -16,5 +16,6 @@ func NewMessage(status Status) *Message {
 	return &Message{
 		CreatedAt: time.Now(),
 		Status:    status,
+		isFinal:   status == StatusTaskCompleted || status == StatusTaskRejected,
 	}
 }
