@@ -3,12 +3,12 @@ package qr
 
 import (
 	"bytes"
+	"encoding/base64"
 	"fmt"
 	"image"
 	"image/color"
 	_ "image/jpeg"
 	"image/png"
-	_ "image/png"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -16,15 +16,16 @@ import (
 	"strings"
 
 	"github.com/fogleman/gg"
+	"github.com/klauspost/compress/zstd"
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
 	"github.com/pastelnetwork/go-commons/errors"
 )
 
 const (
-	MaxMsgLength              = 600
+	MaxMsgLength              = 2953
 	DataQRImageSize           = 100
-	PositionVectorQRImageSize = 50
+	PositionVectorQRImageSize = 185
 )
 
 type Image struct {
@@ -43,6 +44,26 @@ var PositionVectorEncodingError = errors.Errorf("Position vector should be encod
 var CroppingError = errors.Errorf("Image interface doesn't support cropping")
 var MalformedPositionVector = errors.Errorf("Malformed position vector")
 
+var encoder, _ = zstd.NewWriter(nil)
+var decoder, _ = zstd.NewReader(nil)
+
+func compress(src string) string {
+	output := encoder.EncodeAll(([]byte)(src), make([]byte, 0, len(src)))
+	return base64.StdEncoding.EncodeToString(output)
+}
+
+func decompress(src string) (string, error) {
+	input, err := base64.StdEncoding.DecodeString(src)
+	if err != nil {
+		return "", errors.New(err)
+	}
+	uncompressed, err := decoder.DecodeAll(input, nil)
+	if err != nil {
+		return "", errors.New(err)
+	}
+	return string(uncompressed), nil
+}
+
 // Encode splits input msg into chunks to fit max supported length of QR code message and generates an array of QR codes images
 func Encode(msg string, alias string, outputDir string, outputFileTitle string, outputFileNamePattern string, outputFileNameSuffix string) ([]Image, error) {
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
@@ -50,7 +71,7 @@ func Encode(msg string, alias string, outputDir string, outputFileTitle string, 
 			return nil, errors.New(err)
 		}
 	}
-	pngs, err := toPngs(msg, MaxMsgLength)
+	pngs, err := toPngs(msg, MaxMsgLength, DataQRImageSize)
 	if err != nil {
 		return nil, errors.New(err)
 	}
@@ -144,7 +165,8 @@ func MapImages(images []Image, outputSize image.Point, outputFilePath string) er
 		positionVector += fmt.Sprintf("%v,%v,%v;", currentX, currentY+textYPadding, size.X)
 		currentX += size.X + padding_pixels
 	}
-	positionVectorPngsBytes, err := toPngs(positionVector, MaxMsgLength)
+	compressedPositionVector := compress(positionVector)
+	positionVectorPngsBytes, err := toPngs(compressedPositionVector, MaxMsgLength, PositionVectorQRImageSize)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -188,12 +210,12 @@ func breakStringIntoChunks(str string, size int) []string {
 	return result
 }
 
-func toPngs(s string, dataSize int) ([][]byte, error) {
+func toPngs(s string, dataSize int, qrImageSize int) ([][]byte, error) {
 	chunks := breakStringIntoChunks(s, dataSize)
 	var qrs [][]byte
 	for _, chunk := range chunks {
 		enc := qrcode.NewQRCodeWriter()
-		image, err := enc.Encode(chunk, gozxing.BarcodeFormat_QR_CODE, DataQRImageSize, DataQRImageSize, nil)
+		image, err := enc.Encode(chunk, gozxing.BarcodeFormat_QR_CODE, qrImageSize, qrImageSize, nil)
 		if err != nil {
 			return nil, errors.New(err)
 		}
@@ -239,12 +261,16 @@ func Decode(signatureLayerFilePath string) ([]DecodedMessage, error) {
 	}
 
 	signatureRect := signatureLayerImage.Bounds()
-	positionVectorImageRectMin := image.Point{signatureRect.Max.X - DataQRImageSize, signatureRect.Max.Y - DataQRImageSize}
+	positionVectorImageRectMin := image.Point{signatureRect.Max.X - PositionVectorQRImageSize, signatureRect.Max.Y - PositionVectorQRImageSize}
 	positionVectorImage, err := cropImage(signatureLayerImage, image.Rectangle{positionVectorImageRectMin, signatureRect.Max})
 	if err != nil {
 		return nil, errors.New(err)
 	}
-	positionVector, err := decodeImage(positionVectorImage)
+	positionVectorCompressed, err := decodeImage(positionVectorImage)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	positionVector, err := decompress(positionVectorCompressed)
 	if err != nil {
 		return nil, errors.New(err)
 	}
