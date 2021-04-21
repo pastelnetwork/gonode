@@ -17,6 +17,8 @@ import (
 
 	"github.com/corona10/goimghdr"
 	_ "github.com/mattn/go-sqlite3"
+	"gonum.org/v1/gonum/mat"
+	_ "gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
 
 	tf "github.com/galeone/tensorflow/tensorflow/go"
@@ -36,6 +38,8 @@ import (
 	"github.com/gonum/matrix/mat64"
 
 	"github.com/montanaflynn/stats"
+
+	_ "gorgonia.org/tensor"
 )
 
 func Measure(start time.Time) {
@@ -544,7 +548,7 @@ func compute_average_and_stdev_of_50th_to_90th_percentile_func(input_vector []fl
 
 	trimmedVector := filterOutArrayValuesByRange(input_vector, percentile50, percentile90)
 	trimmedVectorAvg, _ := stats.Mean(trimmedVector)
-	trimmedVectorStdev, _ := stats.StdDevS(input_vector)
+	trimmedVectorStdev, _ := stats.StdDevS(trimmedVector)
 
 	return trimmedVectorAvg, trimmedVectorStdev
 }
@@ -579,6 +583,74 @@ func computeAverageRatioOfArrays(numerator []float64, denominator []float64) flo
 	}
 	averageRatio, _ := stats.Mean(ratio)
 	return averageRatio
+}
+
+func rankArrayOrdinalCopulaTransformation(input []float64) []float64 {
+	ranks := make([]float64, len(input)*2)
+	outputIdx := 0
+	for i := range input {
+		ranks[outputIdx] = 1
+		for j := range input {
+			if (i != j) && (input[j] <= input[i]) {
+				ranks[outputIdx] += 1
+			}
+		}
+		ranks[outputIdx] /= float64(len(input))
+		outputIdx++
+		ranks[outputIdx] = 1
+		outputIdx++
+	}
+	return ranks
+}
+
+func randomLinearProjection(s float64, size int) []float64 {
+	output := make([]float64, size*2)
+	for i := range output {
+		output[i] = s / 2 * rand.NormFloat64()
+	}
+	return output
+}
+
+func compute_randomized_dependence_func(x, y []float64) float64 {
+	s := 1.0 / 6.0
+	k := 20
+	cx := mat.NewDense(len(x), 2, rankArrayOrdinalCopulaTransformation(x))
+	cy := mat.NewDense(len(y), 2, rankArrayOrdinalCopulaTransformation(y))
+
+	Rx := mat.NewDense(2, k, randomLinearProjection(s, k))
+	Ry := mat.NewDense(2, k, randomLinearProjection(s, k))
+
+	var X, Y mat.Dense
+	X.Mul(cx, Rx)
+	Y.Mul(cy, Ry)
+
+	formattedX := mat.Formatted(&X, mat.Prefix(""), mat.Squeeze())
+	fmt.Printf("\n%v", formattedX)
+
+	return 0
+}
+
+func compute_parallel_bootstrapped_randomized_dependence_func(x []float64, list_of_fingerprints_requiring_further_testing_3 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64) {
+	original_length_of_input := len(x)
+	robust_average_randomized_dependence := make([]float64, len(list_of_fingerprints_requiring_further_testing_3))
+	robust_stdev_randomized_dependence := make([]float64, len(list_of_fingerprints_requiring_further_testing_3))
+
+	for fingerprintIdx, y := range list_of_fingerprints_requiring_further_testing_3 {
+		list_of_bootstrap_sample_indices := make([][]int, number_of_bootstraps)
+		x_bootstraps := make([][]float64, number_of_bootstraps)
+		y_bootstraps := make([][]float64, number_of_bootstraps)
+		bootstrapped_randomized_dependence_results := make([]float64, number_of_bootstraps)
+		for i := 0; i < number_of_bootstraps; i++ {
+			list_of_bootstrap_sample_indices[i] = randInts(0, original_length_of_input-1, sample_size)
+		}
+		for i, current_bootstrap_indices := range list_of_bootstrap_sample_indices {
+			x_bootstraps[i] = arrayValuesFromIndexes(x, current_bootstrap_indices)
+			y_bootstraps[i] = arrayValuesFromIndexes(y, current_bootstrap_indices)
+			bootstrapped_randomized_dependence_results[i] = compute_randomized_dependence_func(x_bootstraps[i], y_bootstraps[i])
+		}
+		robust_average_randomized_dependence[fingerprintIdx], robust_stdev_randomized_dependence[fingerprintIdx] = compute_average_and_stdev_of_50th_to_90th_percentile_func(bootstrapped_randomized_dependence_results)
+	}
+	return robust_average_randomized_dependence, robust_stdev_randomized_dependence
 }
 
 func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
@@ -636,6 +708,13 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 	list_of_fingerprints_requiring_further_testing_3 := filterOutFingerprintsByTreshhold(similarity_score_vector__kendall, strictness_factor*kendall__dupe_threshold, list_of_fingerprints_requiring_further_testing_2)
 	percentage_of_fingerprints_requiring_further_testing_3 := float32(len(list_of_fingerprints_requiring_further_testing_3)) / float32(len(final_combined_image_fingerprint_array))
 	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_3), percentage_of_fingerprints_requiring_further_testing_3*100)
+
+	fmt.Printf("\nNow computing Boostrapped Randomized Dependence Coefficient for selected fingerprints...")
+	sample_size__randomized_dep := 50
+	number_of_bootstraps__randomized_dep := 100
+	similarity_score_vector__randomized_dependence, similarity_score_vector__randomized_dependence__stdev := compute_parallel_bootstrapped_randomized_dependence_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_3, sample_size__randomized_dep, number_of_bootstraps__randomized_dep)
+	stdev_as_pct_of_robust_avg__randomized_dependence := computeAverageRatioOfArrays(similarity_score_vector__randomized_dependence__stdev, similarity_score_vector__randomized_dependence)
+	fmt.Printf("\nStandard Deviation as %% of Average Randomized Dependence -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__randomized_dependence*100)
 
 	return true, nil
 }
