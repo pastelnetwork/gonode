@@ -44,7 +44,7 @@ var PositionVectorEncodingError = errors.Errorf("Position vector should be encod
 var CroppingError = errors.Errorf("Image interface doesn't support cropping")
 var MalformedPositionVector = errors.Errorf("Malformed position vector")
 
-var encoder, _ = zstd.NewWriter(nil)
+var encoder, _ = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
 var decoder, _ = zstd.NewReader(nil)
 
 func compress(src string) string {
