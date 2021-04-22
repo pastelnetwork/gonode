@@ -496,7 +496,7 @@ func computeSpearmanForAllFingerprintPairs(candidate_image_fingerprint []float64
 	defer Measure(time.Now())
 	var similarity_score_vector__spearman []float64
 	for _, fingerprint := range final_combined_image_fingerprint_array {
-		spearmanCorrelation, err := Spearman(candidate_image_fingerprint, fingerprint)
+		spearmanCorrelation, err := Spearman2(candidate_image_fingerprint, fingerprint)
 		if err != nil {
 			return nil, err
 		}
@@ -554,6 +554,7 @@ func compute_average_and_stdev_of_50th_to_90th_percentile_func(input_vector []fl
 }
 
 func compute_parallel_bootstrapped_kendalls_tau_func(x []float64, list_of_fingerprints_requiring_further_testing_2 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64) {
+	defer Measure(time.Now())
 	original_length_of_input := len(x)
 	robust_average_tau := make([]float64, len(list_of_fingerprints_requiring_further_testing_2))
 	robust_stdev_tau := make([]float64, len(list_of_fingerprints_requiring_further_testing_2))
@@ -624,8 +625,8 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 	X.Mul(cx, Rx)
 	Y.Mul(cy, Ry)
 
-	formattedX := mat.Formatted(&X, mat.Prefix(""), mat.Squeeze())
-	fmt.Printf("\n%v", formattedX)
+	//ormattedX := mat.Formatted(&X, mat.Prefix(""), mat.Squeeze())
+	//fmt.Printf("\n%v", formattedX)
 
 	return 0
 }

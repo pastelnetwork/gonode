@@ -5,6 +5,7 @@ import (
 	"math"
 	"sort"
 
+	onlinestats "github.com/dgryski/go-onlinestats"
 	"github.com/montanaflynn/stats"
 )
 
@@ -21,7 +22,14 @@ func (f Float64Data) Len() int { return len(f) }
 
 func (f Float64Data) Get(i int) float64 { return f[i] }
 
+func Spearman2(data1, data2 Float64Data) (float64, error) {
+	//defer Measure(time.Now())
+	r, _ := onlinestats.Spearman(data1, data2)
+	return r, nil
+}
+
 func Spearman(data1, data2 Float64Data) (float64, error) {
+	//defer Measure(time.Now())
 	if data1.Len() < 3 || data2.Len() != data1.Len() {
 		return math.NaN(), errors.New("invalid size of data")
 	}
