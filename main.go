@@ -613,6 +613,9 @@ func randomLinearProjection(s float64, size int) []float64 {
 }
 
 func compute_randomized_dependence_func(x, y []float64) float64 {
+	sinFunc := func(i, j int, v float64) float64 {
+		return math.Sin(v)
+	}
 	s := 1.0 / 6.0
 	k := 20
 	cx := mat.NewDense(len(x), 2, rankArrayOrdinalCopulaTransformation(x))
@@ -624,6 +627,9 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 	var X, Y mat.Dense
 	X.Mul(cx, Rx)
 	Y.Mul(cy, Ry)
+
+	X.Apply(sinFunc, &X)
+	Y.Apply(sinFunc, &Y)
 
 	//ormattedX := mat.Formatted(&X, mat.Prefix(""), mat.Squeeze())
 	//fmt.Printf("\n%v", formattedX)
