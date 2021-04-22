@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+package supernode;
+
+option go_package = "github.com/pastelnetwork/supernode-proto";
+
+service RegisterArtworkInternal {
+    rpc SendRegTicket(SendRegTicketRequest) returns (Empty);
+}
+
+service RegisterArtwork {
+    rpc Connect(ConnectRequest) returns (ConnectReply);
+
+    rpc AcceptConnection(AcceptConnectionRequest) returns (AcceptConnectionReply);
+
+    rpc UploadImage(UploadImageRequest) returns (UploadImageReply);
+
+    rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
+}
+
+// Empty
+message Empty {
+}
+
+message Error {
+    enum Status {
+        OK = 0;
+        ERR = 1;
+    }
+    Status status = 1;
+    string errMsg = 2;
+}
+
+message SendRegTicketRequest {
+    string ticket_signature = 1;
+}
+
+message SendTicketRequest {
+    bytes ticket = 1;
+    string ticket_signature = 2;
+    string fgpt= 3;
+    string fgpt_signature = 4;
+    string fee_txid = 5;
+    bytes thumbnail = 6;
+}
+
+message SendTicketReply {
+    string ticket_txid = 1;
+    Error error = 2;
+}
+
+message UploadImageRequest {
+    bytes image = 1;
+}
+
+message UploadImageReply {
+    string fgpt = 1;
+    Error error = 2;
+}
+
+message ConnectRequest {
+    string connID = 1;
+    string peerID = 2;
+    string extKey = 3;
+}
+
+message ConnectReply {
+    Error error = 1;
+}
+
+message AcceptConnectionRequest {
+    string connID = 1;
+    int32 numberOfPeers = 2;
+}
+
+message AcceptConnectionReply {
+    repeated Peer peers = 1;
+}
+
+message Peer {
+    string peerID = 1;
+    string extKey = 2;
+}
