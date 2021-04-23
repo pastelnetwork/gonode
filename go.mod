@@ -3,10 +3,10 @@ module github.com/pastelnetwork/pqsignatures
 go 1.16
 
 require (
+	github.com/DataDog/zstd v1.4.8
 	github.com/fogleman/gg v1.3.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/kevinburke/nacl v0.0.0-20210321052800-030051251ea5
-	github.com/klauspost/compress v1.12.1
 	github.com/makiuchi-d/gozxing v0.0.0-20210324052758-57132e828831
 	github.com/pastelnetwork/go-commons v0.0.3
 	github.com/pastelnetwork/go-legroast v1.0.0

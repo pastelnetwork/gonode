@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/DataDog/zstd"
 	"github.com/fogleman/gg"
-	"github.com/klauspost/compress/zstd"
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
 	"github.com/pastelnetwork/go-commons/errors"
@@ -44,12 +44,12 @@ var PositionVectorEncodingError = errors.Errorf("Position vector should be encod
 var CroppingError = errors.Errorf("Image interface doesn't support cropping")
 var MalformedPositionVector = errors.Errorf("Malformed position vector")
 
-var encoder, _ = zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedBestCompression))
-var decoder, _ = zstd.NewReader(nil)
-
-func compress(src string) string {
-	output := encoder.EncodeAll(([]byte)(src), make([]byte, 0, len(src)))
-	return base64.StdEncoding.EncodeToString(output)
+func compress(src string) (string, error) {
+	output, err := zstd.CompressLevel(nil, []byte(src), 22)
+	if err != nil {
+		return "", errors.New(err)
+	}
+	return base64.StdEncoding.EncodeToString(output), nil
 }
 
 func decompress(src string) (string, error) {
@@ -57,7 +57,7 @@ func decompress(src string) (string, error) {
 	if err != nil {
 		return "", errors.New(err)
 	}
-	uncompressed, err := decoder.DecodeAll(input, nil)
+	uncompressed, err := zstd.Decompress(nil, input)
 	if err != nil {
 		return "", errors.New(err)
 	}
@@ -165,7 +165,10 @@ func MapImages(images []Image, outputSize image.Point, outputFilePath string) er
 		positionVector += fmt.Sprintf("%v,%v,%v;", currentX, currentY+textYPadding, size.X)
 		currentX += size.X + padding_pixels
 	}
-	compressedPositionVector := compress(positionVector)
+	compressedPositionVector, err := compress(positionVector)
+	if err != nil {
+		return errors.New(err)
+	}
 	positionVectorPngsBytes, err := toPngs(compressedPositionVector, MaxMsgLength, PositionVectorQRImageSize)
 	if err != nil {
 		return errors.New(err)
