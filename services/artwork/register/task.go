@@ -10,13 +10,15 @@ var taskID uint32
 
 // Task is the task of registering new artwork.
 type Task struct {
-	Ticket *Ticket
-	State  *state.State
+	*Service
+
 	ID     int
+	State  *state.State
+	Ticket *Ticket
 }
 
 // NewTask returns a new Task instance.
-func NewTask(Ticket *Ticket) *Task {
+func NewTask(service *Service, Ticket *Ticket) *Task {
 	return &Task{
 		ID:     int(atomic.AddUint32(&taskID, 1)),
 		Ticket: Ticket,

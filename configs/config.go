@@ -3,9 +3,9 @@ package configs
 import (
 	"encoding/json"
 
+	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/walletnode/api"
 	"github.com/pastelnetwork/walletnode/clients/nats"
-	"github.com/pastelnetwork/walletnode/clients/pastel"
 )
 
 // Config contains configuration of all components of the WalletNode.

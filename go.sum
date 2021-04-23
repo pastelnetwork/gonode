@@ -349,7 +349,6 @@ github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1y
 github.com/onsi/gomega v1.11.0 h1:+CqWgvj0OZycCaqclBD1pxKHAU+tOkHmQIWvDHq2aug=
 github.com/onsi/gomega v1.11.0/go.mod h1:azGKhqFUon9Vuj0YmTfLSmx0FUwqXYSTl5re8lQLTUg=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
-github.com/pastelnetwork/go-commons v0.0.1 h1:0GTECTnLm+LH0yefW3vqVRtL6iQ2mcXYpVZiuO+VG+g=
 github.com/pastelnetwork/go-commons v0.0.1/go.mod h1:ABVFReqhWnejbznPTdotSgCQ50jVEmKUyRLMpssFq2o=
 github.com/pastelnetwork/go-commons v0.0.3 h1:qXZewTAuEjHWKoa+/K8/Ow5Z7L4j/JwJC1I8R1ay8vA=
 github.com/pastelnetwork/go-commons v0.0.3/go.mod h1:ABVFReqhWnejbznPTdotSgCQ50jVEmKUyRLMpssFq2o=

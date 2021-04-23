@@ -1,4 +1,4 @@
-package services
+package api
 
 import (
 	"context"
@@ -6,11 +6,17 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/services/artwork"
+	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/walletnode/services/artwork/register"
 	"github.com/pastelnetwork/walletnode/storage"
 	"github.com/pastelnetwork/walletnode/storage/memory"
+
+	"github.com/pastelnetwork/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/walletnode/api/gen/http/artworks/server"
+
+	goahttp "goa.design/goa/v3/http"
 )
 
 const (
@@ -21,16 +27,17 @@ var (
 	imageID uint32
 )
 
-type serviceArtwork struct {
-	artwork *artwork.Service
-	storage storage.KeyValue
+// Artwork represents services for artworks endpoints.
+type Artwork struct {
+	register *register.Service
+	storage  storage.KeyValue
 }
 
 // RegisterTaskState streams the state of the registration process.
-func (service *serviceArtwork) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
+func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
-	task := service.artwork.Task(p.TaskID)
+	task := service.register.Task(p.TaskID)
 	if task == nil {
 		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
 	}
@@ -61,8 +68,8 @@ func (service *serviceArtwork) RegisterTaskState(ctx context.Context, p *artwork
 }
 
 // RegisterTask returns a single task.
-func (service *serviceArtwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
-	task := service.artwork.Task(p.TaskID)
+func (service *Artwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
+	task := service.register.Task(p.TaskID)
 	if task == nil {
 		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
 	}
@@ -76,9 +83,9 @@ func (service *serviceArtwork) RegisterTask(ctx context.Context, p *artworks.Reg
 	return res, nil
 }
 
-// RegisterTask returns list of all tasks.
-func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.TaskCollection, err error) {
-	tasks := service.artwork.Tasks()
+// RegisterTasks returns list of all tasks.
+func (service *Artwork) RegisterTasks(ctx context.Context) (res artworks.TaskCollection, err error) {
+	tasks := service.register.Tasks()
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
 			ID:     task.ID,
@@ -90,7 +97,7 @@ func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.
 }
 
 // Register runs registers process for the new artwork.
-func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
+func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	ticket := fromRegisterPayload(p)
 
 	key := strconv.Itoa(p.ImageID)
@@ -102,7 +109,7 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	taskID, err := service.artwork.Register(ctx, ticket)
+	taskID, err := service.register.Register(ctx, ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
@@ -113,7 +120,7 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 }
 
 // UploadImage uploads an image and return unique image id.
-func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
+func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
 	id := int(atomic.AddUint32(&imageID, 1))
 	key := strconv.Itoa(id)
 
@@ -135,10 +142,23 @@ func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.Uplo
 	return res, nil
 }
 
-// NewArtwork returns the artworks serviceArtwork implementation.
-func NewArtwork(artworks *artwork.Service) artworks.Service {
-	return &serviceArtwork{
-		artwork: artworks,
-		storage: memory.NewKeyValue(),
+// Mount configures the mux to serve the artworks endpoints.
+func (service *Artwork) Mount(mux goahttp.Muxer) goahttp.Server {
+	endpoints := artworks.NewEndpoints(service)
+	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, errorHandler(), nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc)
+	server.Mount(mux, srv)
+
+	for _, m := range srv.Mounts {
+		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
+	}
+
+	return srv
+}
+
+// NewArtwork returns the artworks Artwork implementation.
+func NewArtwork(register *register.Service) *Artwork {
+	return &Artwork{
+		register: register,
+		storage:  memory.NewKeyValue(),
 	}
 }

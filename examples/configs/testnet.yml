@@ -1,7 +1,6 @@
 pastel:
-  data-dir: "~/.pastel"
   hostname: "127.0.0.1"
-  port: 9932
+  port: 19932
   username: "rt"
   password: "rt"
 

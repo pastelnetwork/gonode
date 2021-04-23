@@ -11,11 +11,11 @@ import (
 	"github.com/pastelnetwork/go-commons/log/hooks"
 	"github.com/pastelnetwork/go-commons/sys"
 	"github.com/pastelnetwork/go-commons/version"
+	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/walletnode/api"
 	"github.com/pastelnetwork/walletnode/configs"
-	"github.com/pastelnetwork/walletnode/services/artwork"
+	"github.com/pastelnetwork/walletnode/services/artwork/register"
 	"github.com/pastelnetwork/walletnode/storage/memory"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -68,13 +68,13 @@ func NewApp() *cli.App {
 			return errors.Errorf("--log-level %q, %s", config.LogLevel, err)
 		}
 
-		return run(ctx, config)
+		return action(ctx, config)
 	})
 
 	return app
 }
 
-func run(ctx context.Context, config *configs.Config) error {
+func action(ctx context.Context, config *configs.Config) error {
 	log.Debug("[app] start")
 	defer log.Debug("[app] end")
 
@@ -87,24 +87,18 @@ func run(ctx context.Context, config *configs.Config) error {
 		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
 	})
 
-	//pastelClient := pastel.New(config.Pastel)
+	// periphery
+	pastel := pastel.NewClient(config.Pastel)
 	db := memory.NewKeyValue()
-	artwork := artwork.New(db)
-	api := api.New(config.Rest, artwork)
 
-	services := []interface{ Run(context.Context) error }{
-		artwork,
-		api,
-	}
+	// services
+	artwork := register.NewService(db, pastel)
 
-	group, ctx := errgroup.WithContext(ctx)
-	for _, service := range services {
-		service := service
-		group.Go(func() error {
-			return service.Run(ctx)
-		})
-	}
+	// api
+	api := api.New(config.Rest,
+		api.NewArtwork(artwork),
+		api.NewSwagger(),
+	)
 
-	err := group.Wait()
-	return err
+	return run(ctx, artwork, api)
 }

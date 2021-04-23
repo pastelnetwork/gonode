@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 )
 
 const (
-	logPrefix = "[rest]"
+	logPrefix = "[api]"
 )
 
 // Log logs incoming HTTP requests and outgoing responses.
@@ -56,6 +57,17 @@ func logFrom(req *http.Request) string {
 		return f
 	}
 	return ip
+}
+
+// errorHandler returns a function that writes and logs the given error.
+// The function also writes and logs the error unique ID so that it's possible
+// to correlate.
+func errorHandler() func(context.Context, http.ResponseWriter, error) {
+	return func(ctx context.Context, w http.ResponseWriter, err error) {
+		id := ctx.Value(middleware.RequestIDKey).(string)
+		_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
+		log.Errorf("%s [%s] %s", logPrefix, id, err.Error())
+	}
 }
 
 func init() {
