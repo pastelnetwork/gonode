@@ -21,10 +21,42 @@ paths:
                 $ref: '#/components/schemas/TaskResponseTinyCollection'
               example:
               - id: 5
-                status: Registration Started
+                status: Task Started
+                ticket:
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
+                  issued_copies: 1
+                  keywords: Renaissance, sfumato, portrait
+                  name: Mona Lisa
+                  network_fee: 100
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
               - id: 5
-                status: Registration Started
+                status: Task Started
+                ticket:
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
+                  issued_copies: 1
+                  keywords: Renaissance, sfumato, portrait
+                  name: Mona Lisa
+                  network_fee: 100
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         "500":
           description: Internal Server Error response.
@@ -51,6 +83,7 @@ paths:
             example:
               artist_name: Leonardo da Vinci
               artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+              artist_pastelid_passphrase: qwerasdf1234
               artist_website_url: https://www.leonardodavinci.net
               description: The Mona Lisa is an oil painting by Italian artist, inventor,
                 and writer Leonardo da Vinci. Likely completed in 1506, the piece
@@ -121,15 +154,16 @@ paths:
                 id: 5
                 states:
                 - date: 2006-01-02T15:04:05Z07:00
-                  status: Registration Started
+                  status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
-                  status: Registration Started
+                  status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
-                  status: Registration Started
-                status: Registration Started
+                  status: Task Started
+                status: Task Started
                 ticket:
                   artist_name: Leonardo da Vinci
                   artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
                   artist_website_url: https://www.leonardodavinci.net
                   description: The Mona Lisa is an oil painting by Italian artist,
                     inventor, and writer Leonardo da Vinci. Likely completed in 1506,
@@ -190,7 +224,7 @@ paths:
                 $ref: '#/components/schemas/TaskState'
               example:
                 date: 2006-01-02T15:04:05Z07:00
-                status: Registration Started
+                status: Task Started
         "404":
           description: Not Found response.
           content:
@@ -308,6 +342,10 @@ components:
           pattern: ^[a-zA-Z0-9]+$
           minLength: 86
           maxLength: 86
+        artist_pastelid_passphrase:
+          type: string
+          description: Passphrase of the artist's PastelID
+          example: qwerasdf1234
         artist_website_url:
           type: string
           description: Artist website URL
@@ -363,6 +401,7 @@ components:
       example:
         artist_name: Leonardo da Vinci
         artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_pastelid_passphrase: qwerasdf1234
         artist_website_url: https://www.leonardodavinci.net
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
@@ -379,6 +418,7 @@ components:
       - name
       - issued_copies
       - artist_pastelid
+      - artist_pastelid_passphrase
       - spendable_address
       - network_fee
     Error:
@@ -455,6 +495,10 @@ components:
           pattern: ^[a-zA-Z0-9]+$
           minLength: 86
           maxLength: 86
+        artist_pastelid_passphrase:
+          type: string
+          description: Passphrase of the artist's PastelID
+          example: qwerasdf1234
         artist_website_url:
           type: string
           description: Artist website URL
@@ -514,6 +558,7 @@ components:
       example:
         artist_name: Leonardo da Vinci
         artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_pastelid_passphrase: qwerasdf1234
         artist_website_url: https://www.leonardodavinci.net
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
@@ -532,6 +577,7 @@ components:
       - name
       - issued_copies
       - artist_pastelid
+      - artist_pastelid_passphrase
       - spendable_address
       - network_fee
     RegisterResult:
@@ -561,19 +607,22 @@ components:
           description: List of states from the very beginning of the process
           example:
           - date: 2006-01-02T15:04:05Z07:00
-            status: Registration Started
+            status: Task Started
           - date: 2006-01-02T15:04:05Z07:00
-            status: Registration Started
+            status: Task Started
         status:
           type: string
           description: Status of the registration process
-          example: Registration Started
+          example: Task Started
           enum:
-          - Registration Started
-          - Artwork Accepted
-          - Waiting Activation
-          - Activated
-          - Error
+          - Task Started
+          - Ticket Accepted
+          - Ticket Registered
+          - Ticket Activated
+          - Error Too Low Fee
+          - Error FGPT Not Match
+          - Task Rejected
+          - Task Completed
         ticket:
           $ref: '#/components/schemas/ArtworkTicket'
         txid:
@@ -587,15 +636,16 @@ components:
         id: 5
         states:
         - date: 2006-01-02T15:04:05Z07:00
-          status: Registration Started
+          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
-          status: Registration Started
+          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
-          status: Registration Started
-        status: Registration Started
+          status: Task Started
+        status: Task Started
         ticket:
           artist_name: Leonardo da Vinci
           artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
           artist_website_url: https://www.leonardodavinci.net
           description: The Mona Lisa is an oil painting by Italian artist, inventor,
             and writer Leonardo da Vinci. Likely completed in 1506, the piece features
@@ -623,13 +673,18 @@ components:
         status:
           type: string
           description: Status of the registration process
-          example: Registration Started
+          example: Task Started
           enum:
-          - Registration Started
-          - Artwork Accepted
-          - Waiting Activation
-          - Activated
-          - Error
+          - Task Started
+          - Ticket Accepted
+          - Ticket Registered
+          - Ticket Activated
+          - Error Too Low Fee
+          - Error FGPT Not Match
+          - Task Rejected
+          - Task Completed
+        ticket:
+          $ref: '#/components/schemas/ArtworkTicket'
         txid:
           type: string
           description: txid
@@ -639,11 +694,27 @@ components:
       description: TaskResponse result type (tiny view)
       example:
         id: 5
-        status: Registration Started
+        status: Task Started
+        ticket:
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          issued_copies: 1
+          keywords: Renaissance, sfumato, portrait
+          name: Mona Lisa
+          network_fee: 100
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       required:
       - id
       - status
+      - ticket
     TaskResponseTinyCollection:
       type: array
       items:
@@ -652,10 +723,40 @@ components:
         (tiny view)
       example:
       - id: 5
-        status: Registration Started
+        status: Task Started
+        ticket:
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          issued_copies: 1
+          keywords: Renaissance, sfumato, portrait
+          name: Mona Lisa
+          network_fee: 100
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       - id: 5
-        status: Registration Started
+        status: Task Started
+        ticket:
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          issued_copies: 1
+          keywords: Renaissance, sfumato, portrait
+          name: Mona Lisa
+          network_fee: 100
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     TaskState:
       type: object
@@ -667,16 +768,19 @@ components:
         status:
           type: string
           description: Status of the registration process
-          example: Registration Started
+          example: Task Started
           enum:
-          - Registration Started
-          - Artwork Accepted
-          - Waiting Activation
-          - Activated
-          - Error
+          - Task Started
+          - Ticket Accepted
+          - Ticket Registered
+          - Ticket Activated
+          - Error Too Low Fee
+          - Error FGPT Not Match
+          - Task Rejected
+          - Task Completed
       example:
         date: 2006-01-02T15:04:05Z07:00
-        status: Registration Started
+        status: Task Started
       required:
       - date
       - status

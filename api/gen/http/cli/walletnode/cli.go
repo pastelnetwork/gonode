@@ -32,6 +32,7 @@ func UsageExamples() string {
 	return os.Args[0] + ` artworks register --body '{
       "artist_name": "Leonardo da Vinci",
       "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
+      "artist_pastelid_passphrase": "qwerasdf1234",
       "artist_website_url": "https://www.leonardodavinci.net",
       "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
       "image_id": 1,
@@ -208,6 +209,7 @@ Example:
     `+os.Args[0]+` artworks register --body '{
       "artist_name": "Leonardo da Vinci",
       "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
+      "artist_pastelid_passphrase": "qwerasdf1234",
       "artist_website_url": "https://www.leonardodavinci.net",
       "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
       "image_id": 1,

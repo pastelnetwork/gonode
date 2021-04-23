@@ -164,6 +164,11 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
+	Attribute("artist_pastelid_passphrase", String, func() {
+		Meta("struct:field:name", "ArtistPastelIDPassphrase")
+		Description("Passphrase of the artist's PastelID")
+		Example("qwerasdf1234")
+	})
 	Attribute("artist_name", String, func() {
 		Description("Name of the artist")
 		MaxLength(256)
@@ -188,7 +193,7 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Example(100)
 	})
 
-	Required("artist_name", "name", "issued_copies", "artist_pastelid", "spendable_address", "network_fee")
+	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "network_fee")
 })
 
 // ArtworkRegisterResult is artwork registeration result.
@@ -232,6 +237,7 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 		Attribute("id")
 		Attribute("status")
 		Attribute("txid")
+		Attribute("ticket")
 	})
 
 	Required("id", "status", "ticket")

@@ -544,17 +544,18 @@ func unmarshalTaskStateResponseBodyToArtworksviewsTaskStateView(v *TaskStateResp
 // *ArtworkTicketResponseBody.
 func unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView(v *ArtworkTicketResponseBody) *artworksviews.ArtworkTicketView {
 	res := &artworksviews.ArtworkTicketView{
-		Name:             v.Name,
-		Description:      v.Description,
-		Keywords:         v.Keywords,
-		SeriesName:       v.SeriesName,
-		IssuedCopies:     v.IssuedCopies,
-		YoutubeURL:       v.YoutubeURL,
-		ArtistPastelID:   v.ArtistPastelID,
-		ArtistName:       v.ArtistName,
-		ArtistWebsiteURL: v.ArtistWebsiteURL,
-		SpendableAddress: v.SpendableAddress,
-		NetworkFee:       v.NetworkFee,
+		Name:                     v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           v.ArtistPastelID,
+		ArtistPastelIDPassphrase: v.ArtistPastelIDPassphrase,
+		ArtistName:               v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         v.SpendableAddress,
+		NetworkFee:               v.NetworkFee,
 	}
 
 	return res
@@ -598,17 +599,18 @@ func unmarshalTaskStateResponseToArtworksviewsTaskStateView(v *TaskStateResponse
 // *ArtworkTicketResponse.
 func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTicketResponse) *artworksviews.ArtworkTicketView {
 	res := &artworksviews.ArtworkTicketView{
-		Name:             v.Name,
-		Description:      v.Description,
-		Keywords:         v.Keywords,
-		SeriesName:       v.SeriesName,
-		IssuedCopies:     v.IssuedCopies,
-		YoutubeURL:       v.YoutubeURL,
-		ArtistPastelID:   v.ArtistPastelID,
-		ArtistName:       v.ArtistName,
-		ArtistWebsiteURL: v.ArtistWebsiteURL,
-		SpendableAddress: v.SpendableAddress,
-		NetworkFee:       v.NetworkFee,
+		Name:                     v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           v.ArtistPastelID,
+		ArtistPastelIDPassphrase: v.ArtistPastelIDPassphrase,
+		ArtistName:               v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         v.SpendableAddress,
+		NetworkFee:               v.NetworkFee,
 	}
 
 	return res

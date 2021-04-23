@@ -34,6 +34,8 @@ type RegisterRequestBody struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
 	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
 	// Name of the artist
 	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
 	// Artist website URL
@@ -284,6 +286,8 @@ type ArtworkTicketResponseBody struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
 	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
 	// Name of the artist
 	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
 	// Artist website URL
@@ -300,7 +304,35 @@ type TaskResponseTiny struct {
 	// Status of the registration process
 	Status string `form:"status" json:"status" xml:"status"`
 	// txid
-	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Txid   *string                `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Ticket *ArtworkTicketResponse `form:"ticket" json:"ticket" xml:"ticket"`
+}
+
+// ArtworkTicketResponse is used to define fields on response body types.
+type ArtworkTicketResponse struct {
+	// Name of the artwork
+	Name string `form:"name" json:"name" xml:"name"`
+	// Description of the artwork
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies issued
+	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
+	// Name of the artist
+	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	// Spendable address
+	SpendableAddress string  `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
+	NetworkFee       float32 `form:"network_fee" json:"network_fee" xml:"network_fee"`
 }
 
 // NewRegisterResponseBody builds the HTTP response body from the result of the
@@ -493,18 +525,19 @@ func NewUploadImageInternalServerErrorResponseBody(res *goa.ServiceError) *Uploa
 // NewRegisterPayload builds a artworks service register endpoint payload.
 func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	v := &artworks.RegisterPayload{
-		ImageID:          *body.ImageID,
-		Name:             *body.Name,
-		Description:      body.Description,
-		Keywords:         body.Keywords,
-		SeriesName:       body.SeriesName,
-		IssuedCopies:     *body.IssuedCopies,
-		YoutubeURL:       body.YoutubeURL,
-		ArtistPastelID:   *body.ArtistPastelID,
-		ArtistName:       *body.ArtistName,
-		ArtistWebsiteURL: body.ArtistWebsiteURL,
-		SpendableAddress: *body.SpendableAddress,
-		NetworkFee:       *body.NetworkFee,
+		ImageID:                  *body.ImageID,
+		Name:                     *body.Name,
+		Description:              body.Description,
+		Keywords:                 body.Keywords,
+		SeriesName:               body.SeriesName,
+		IssuedCopies:             *body.IssuedCopies,
+		YoutubeURL:               body.YoutubeURL,
+		ArtistPastelID:           *body.ArtistPastelID,
+		ArtistPastelIDPassphrase: *body.ArtistPastelIDPassphrase,
+		ArtistName:               *body.ArtistName,
+		ArtistWebsiteURL:         body.ArtistWebsiteURL,
+		SpendableAddress:         *body.SpendableAddress,
+		NetworkFee:               *body.NetworkFee,
 	}
 
 	return v
@@ -554,6 +587,9 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	}
 	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.ArtistPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
 	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))

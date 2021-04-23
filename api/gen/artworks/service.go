@@ -72,6 +72,8 @@ type RegisterPayload struct {
 	YoutubeURL *string
 	// Artist's PastelID
 	ArtistPastelID string
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string
 	// Name of the artist
 	ArtistName string
 	// Artist website URL
@@ -158,6 +160,8 @@ type ArtworkTicket struct {
 	YoutubeURL *string
 	// Artist's PastelID
 	ArtistPastelID string
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string
 	// Name of the artist
 	ArtistName string
 	// Artist website URL
@@ -304,6 +308,9 @@ func newTaskTiny(vres *artworksviews.TaskView) *Task {
 	if vres.Status != nil {
 		res.Status = *vres.Status
 	}
+	if vres.Ticket != nil {
+		res.Ticket = transformArtworksviewsArtworkTicketViewToArtworkTicket(vres.Ticket)
+	}
 	return res
 }
 
@@ -337,6 +344,9 @@ func newTaskViewTiny(res *Task) *artworksviews.TaskView {
 		ID:     &res.ID,
 		Status: &res.Status,
 		Txid:   res.Txid,
+	}
+	if res.Ticket != nil {
+		vres.Ticket = transformArtworkTicketToArtworksviewsArtworkTicketView(res.Ticket)
 	}
 	return vres
 }
@@ -423,6 +433,30 @@ func newImageView(res *Image) *artworksviews.ImageView {
 	return vres
 }
 
+// transformArtworksviewsArtworkTicketViewToArtworkTicket builds a value of
+// type *ArtworkTicket from a value of type *artworksviews.ArtworkTicketView.
+func transformArtworksviewsArtworkTicketViewToArtworkTicket(v *artworksviews.ArtworkTicketView) *ArtworkTicket {
+	if v == nil {
+		return nil
+	}
+	res := &ArtworkTicket{
+		Name:                     *v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             *v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           *v.ArtistPastelID,
+		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
+		ArtistName:               *v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         *v.SpendableAddress,
+		NetworkFee:               *v.NetworkFee,
+	}
+
+	return res
+}
+
 // transformArtworksviewsTaskStateViewToTaskState builds a value of type
 // *TaskState from a value of type *artworksviews.TaskStateView.
 func transformArtworksviewsTaskStateViewToTaskState(v *artworksviews.TaskStateView) *TaskState {
@@ -437,24 +471,22 @@ func transformArtworksviewsTaskStateViewToTaskState(v *artworksviews.TaskStateVi
 	return res
 }
 
-// transformArtworksviewsArtworkTicketViewToArtworkTicket builds a value of
-// type *ArtworkTicket from a value of type *artworksviews.ArtworkTicketView.
-func transformArtworksviewsArtworkTicketViewToArtworkTicket(v *artworksviews.ArtworkTicketView) *ArtworkTicket {
-	if v == nil {
-		return nil
-	}
-	res := &ArtworkTicket{
-		Name:             *v.Name,
-		Description:      v.Description,
-		Keywords:         v.Keywords,
-		SeriesName:       v.SeriesName,
-		IssuedCopies:     *v.IssuedCopies,
-		YoutubeURL:       v.YoutubeURL,
-		ArtistPastelID:   *v.ArtistPastelID,
-		ArtistName:       *v.ArtistName,
-		ArtistWebsiteURL: v.ArtistWebsiteURL,
-		SpendableAddress: *v.SpendableAddress,
-		NetworkFee:       *v.NetworkFee,
+// transformArtworkTicketToArtworksviewsArtworkTicketView builds a value of
+// type *artworksviews.ArtworkTicketView from a value of type *ArtworkTicket.
+func transformArtworkTicketToArtworksviewsArtworkTicketView(v *ArtworkTicket) *artworksviews.ArtworkTicketView {
+	res := &artworksviews.ArtworkTicketView{
+		Name:                     &v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             &v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           &v.ArtistPastelID,
+		ArtistPastelIDPassphrase: &v.ArtistPastelIDPassphrase,
+		ArtistName:               &v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         &v.SpendableAddress,
+		NetworkFee:               &v.NetworkFee,
 	}
 
 	return res
@@ -469,26 +501,6 @@ func transformTaskStateToArtworksviewsTaskStateView(v *TaskState) *artworksviews
 	res := &artworksviews.TaskStateView{
 		Date:   &v.Date,
 		Status: &v.Status,
-	}
-
-	return res
-}
-
-// transformArtworkTicketToArtworksviewsArtworkTicketView builds a value of
-// type *artworksviews.ArtworkTicketView from a value of type *ArtworkTicket.
-func transformArtworkTicketToArtworksviewsArtworkTicketView(v *ArtworkTicket) *artworksviews.ArtworkTicketView {
-	res := &artworksviews.ArtworkTicketView{
-		Name:             &v.Name,
-		Description:      v.Description,
-		Keywords:         v.Keywords,
-		SeriesName:       v.SeriesName,
-		IssuedCopies:     &v.IssuedCopies,
-		YoutubeURL:       v.YoutubeURL,
-		ArtistPastelID:   &v.ArtistPastelID,
-		ArtistName:       &v.ArtistName,
-		ArtistWebsiteURL: v.ArtistWebsiteURL,
-		SpendableAddress: &v.SpendableAddress,
-		NetworkFee:       &v.NetworkFee,
 	}
 
 	return res

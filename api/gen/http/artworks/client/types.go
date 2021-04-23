@@ -34,6 +34,8 @@ type RegisterRequestBody struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
 	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
 	// Name of the artist
 	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
 	// Artist website URL
@@ -284,6 +286,8 @@ type ArtworkTicketResponseBody struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
 	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
 	// Name of the artist
 	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
 	// Artist website URL
@@ -330,6 +334,8 @@ type ArtworkTicketResponse struct {
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
 	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
 	// Name of the artist
 	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
 	// Artist website URL
@@ -343,18 +349,19 @@ type ArtworkTicketResponse struct {
 // "register" endpoint of the "artworks" service.
 func NewRegisterRequestBody(p *artworks.RegisterPayload) *RegisterRequestBody {
 	body := &RegisterRequestBody{
-		ImageID:          p.ImageID,
-		Name:             p.Name,
-		Description:      p.Description,
-		Keywords:         p.Keywords,
-		SeriesName:       p.SeriesName,
-		IssuedCopies:     p.IssuedCopies,
-		YoutubeURL:       p.YoutubeURL,
-		ArtistPastelID:   p.ArtistPastelID,
-		ArtistName:       p.ArtistName,
-		ArtistWebsiteURL: p.ArtistWebsiteURL,
-		SpendableAddress: p.SpendableAddress,
-		NetworkFee:       p.NetworkFee,
+		ImageID:                  p.ImageID,
+		Name:                     p.Name,
+		Description:              p.Description,
+		Keywords:                 p.Keywords,
+		SeriesName:               p.SeriesName,
+		IssuedCopies:             p.IssuedCopies,
+		YoutubeURL:               p.YoutubeURL,
+		ArtistPastelID:           p.ArtistPastelID,
+		ArtistPastelIDPassphrase: p.ArtistPastelIDPassphrase,
+		ArtistName:               p.ArtistName,
+		ArtistWebsiteURL:         p.ArtistWebsiteURL,
+		SpendableAddress:         p.SpendableAddress,
+		NetworkFee:               p.NetworkFee,
 	}
 	return body
 }
@@ -574,8 +581,8 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -807,8 +814,8 @@ func ValidateTaskStateResponseBody(body *TaskStateResponseBody) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -828,6 +835,9 @@ func ValidateArtworkTicketResponseBody(body *ArtworkTicketResponseBody) (err err
 	}
 	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.ArtistPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
 	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
@@ -926,8 +936,8 @@ func ValidateTaskResponse(body *TaskResponse) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range body.States {
@@ -964,8 +974,8 @@ func ValidateTaskStateResponse(body *TaskStateResponse) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -985,6 +995,9 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 	}
 	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.ArtistPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
 	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))

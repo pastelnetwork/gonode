@@ -407,17 +407,18 @@ func marshalArtworksviewsTaskStateViewToTaskStateResponseBody(v *artworksviews.T
 // *artworksviews.ArtworkTicketView.
 func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody(v *artworksviews.ArtworkTicketView) *ArtworkTicketResponseBody {
 	res := &ArtworkTicketResponseBody{
-		Name:             *v.Name,
-		Description:      v.Description,
-		Keywords:         v.Keywords,
-		SeriesName:       v.SeriesName,
-		IssuedCopies:     *v.IssuedCopies,
-		YoutubeURL:       v.YoutubeURL,
-		ArtistPastelID:   *v.ArtistPastelID,
-		ArtistName:       *v.ArtistName,
-		ArtistWebsiteURL: v.ArtistWebsiteURL,
-		SpendableAddress: *v.SpendableAddress,
-		NetworkFee:       *v.NetworkFee,
+		Name:                     *v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             *v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           *v.ArtistPastelID,
+		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
+		ArtistName:               *v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         *v.SpendableAddress,
+		NetworkFee:               *v.NetworkFee,
 	}
 
 	return res
@@ -430,6 +431,31 @@ func marshalArtworksviewsTaskViewToTaskResponseTiny(v *artworksviews.TaskView) *
 		ID:     *v.ID,
 		Status: *v.Status,
 		Txid:   v.Txid,
+	}
+	if v.Ticket != nil {
+		res.Ticket = marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v.Ticket)
+	}
+
+	return res
+}
+
+// marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse builds a value
+// of type *ArtworkTicketResponse from a value of type
+// *artworksviews.ArtworkTicketView.
+func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v *artworksviews.ArtworkTicketView) *ArtworkTicketResponse {
+	res := &ArtworkTicketResponse{
+		Name:                     *v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             *v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           *v.ArtistPastelID,
+		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
+		ArtistName:               *v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         *v.SpendableAddress,
+		NetworkFee:               *v.NetworkFee,
 	}
 
 	return res
