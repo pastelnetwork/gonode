@@ -1,7 +1,9 @@
-package register
+package artworkregister
 
 import (
 	"context"
+
+	"golang.org/x/sync/errgroup"
 )
 
 // Worker represents a task handler of registering artworks.
@@ -19,24 +21,17 @@ func (worker *Worker) AddTask(ctx context.Context, task *Task) {
 
 // Run waits for new tasks, starts handling eche of them in a new goroutine.
 func (worker *Worker) Run(ctx context.Context) error {
+	group, ctx := errgroup.WithContext(ctx)
+
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
-		case task := <-worker.taskCh:
-			go task.Run(ctx)
+			return group.Wait()
 
-			// go func() {
-			// 	// NOTE: for testing
-			// 	time.Sleep(time.Second)
-			// 	task.State.Update(state.NewMessage(state.StatusTicketAccepted))
-			// 	time.Sleep(time.Second)
-			// 	task.State.Update(state.NewMessage(state.StatusTicketRegistered))
-			// 	time.Sleep(time.Second)
-			// 	task.State.Update(state.NewMessage(state.StatusTicketActivated))
-			// 	time.Sleep(time.Second)
-			// 	task.State.Update(state.NewMessage(state.StatusTaskCompleted))
-			// }()
+		case task := <-worker.taskCh:
+			group.Go(func() error {
+				return task.Run(ctx)
+			})
 		}
 	}
 }

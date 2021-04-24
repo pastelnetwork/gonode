@@ -15,7 +15,7 @@ import (
 	"github.com/pastelnetwork/walletnode/api"
 	"github.com/pastelnetwork/walletnode/api/endpoints"
 	"github.com/pastelnetwork/walletnode/configs"
-	"github.com/pastelnetwork/walletnode/services/artwork/register"
+	"github.com/pastelnetwork/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/walletnode/storage/memory"
 )
 
@@ -41,13 +41,11 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
-		// Rest
-		cli.NewFlag("swagger", &config.Rest.Swagger).SetUsage("Enable Swagger UI."),
+		// API
+		cli.NewFlag("swagger", &config.API.Swagger).SetUsage("Enable Swagger UI."),
 	)
 
-	app.SetActionFunc(func(args []string) error {
-		ctx := context.TODO()
-
+	app.SetActionFunc(func(ctx context.Context, args []string) error {
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
 				return err
@@ -88,17 +86,18 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
 	})
 
+	// entities
 	pastel := pastel.NewClient(config.Pastel)
 	db := memory.NewKeyValue()
 
-	// business logic
-	artwork := register.NewService(config.ArtworkRegister, db, pastel)
+	// business logic services
+	artworkRegister := artworkregister.NewService(db, pastel)
 
-	// api
-	api := api.New(config.Rest,
-		endpoints.NewArtwork(artwork),
+	// api service
+	api := api.New(config.API,
+		endpoints.NewArtwork(artworkRegister),
 		endpoints.NewSwagger(),
 	)
 
-	return runServices(ctx, artwork, api)
+	return runServices(ctx, artworkRegister, api)
 }

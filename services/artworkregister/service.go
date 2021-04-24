@@ -1,4 +1,4 @@
-package register
+package artworkregister
 
 import (
 	"context"
@@ -11,7 +11,6 @@ import (
 
 // Service represent artwork service.
 type Service struct {
-	config *Config
 	db     storage.KeyValue
 	pastel pastel.Client
 	worker *Worker
@@ -49,9 +48,8 @@ func (service *Service) Register(ctx context.Context, ticket *Ticket) (int, erro
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, pastel pastel.Client) *Service {
+func NewService(db storage.KeyValue, pastel pastel.Client) *Service {
 	return &Service{
-		config: config,
 		db:     db,
 		pastel: pastel,
 		worker: NewWorker(),

@@ -1,4 +1,4 @@
-package register
+package artworkregister
 
 type TaskError struct {
 	error

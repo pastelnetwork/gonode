@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/go-commons/log"
 	"github.com/pastelnetwork/walletnode/api"
-	"github.com/pastelnetwork/walletnode/services/artwork/register"
+	"github.com/pastelnetwork/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/walletnode/storage"
 	"github.com/pastelnetwork/walletnode/storage/memory"
 
@@ -30,7 +30,7 @@ var (
 
 // Artwork represents services for artworks endpoints.
 type Artwork struct {
-	register *register.Service
+	register *artworkregister.Service
 	storage  storage.KeyValue
 }
 
@@ -157,7 +157,7 @@ func (service *Artwork) Mount(mux goahttp.Muxer) goahttp.Server {
 }
 
 // NewArtwork returns the artworks Artwork implementation.
-func NewArtwork(register *register.Service) *Artwork {
+func NewArtwork(register *artworkregister.Service) *Artwork {
 	return &Artwork{
 		register: register,
 		storage:  memory.NewKeyValue(),

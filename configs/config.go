@@ -5,16 +5,14 @@ import (
 
 	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/walletnode/api"
-	"github.com/pastelnetwork/walletnode/services/artwork/register"
 )
 
 // Config contains configuration of all components of the WalletNode.
 type Config struct {
 	Main `mapstructure:",squash"`
 
-	Pastel          *pastel.Config   `mapstructure:"pastel" json:"pastel,omitempty"`
-	Rest            *api.Config      `mapstructure:"api" json:"api,omitempty"`
-	ArtworkRegister *register.Config `mapstructure:"artwork_register" json:"artwork_register,omitempty"`
+	Pastel *pastel.Config `mapstructure:"pastel" json:"pastel,omitempty"`
+	API    *api.Config    `mapstructure:"api" json:"api,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -29,8 +27,7 @@ func New() *Config {
 	return &Config{
 		Main: *NewMain(),
 
-		Pastel:          pastel.NewConfig(),
-		ArtworkRegister: register.NewConfig(),
-		Rest:            api.NewConfig(),
+		Pastel: pastel.NewConfig(),
+		API:    api.NewConfig(),
 	}
 }

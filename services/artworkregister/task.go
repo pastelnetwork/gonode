@@ -1,12 +1,11 @@
-package register
+package artworkregister
 
 import (
 	"context"
 	"sync/atomic"
 
-	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/go-commons/log"
-	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
+	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
 )
 
 var taskID uint32
@@ -42,10 +41,11 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
-	if len(superNodes) < task.config.NumberSuperNodes {
-		task.State.Update(state.NewMessage(state.StatusErrorTooLowFee))
-		return NewTaskError(errors.Errorf("not found %d SuperNodes with acceptable storage fee", task.config.NumberSuperNodes))
-	}
+	_ = superNodes
+	// if len(superNodes) < task.config.NumberSuperNodes {
+	// 	task.State.Update(state.NewMessage(state.StatusErrorTooLowFee))
+	// 	return NewTaskError(errors.Errorf("not found %d SuperNodes with acceptable storage fee", task.config.NumberSuperNodes))
+	// }
 
 	return nil
 }

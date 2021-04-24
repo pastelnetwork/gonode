@@ -4,12 +4,12 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/services/artwork/register"
-	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
+	"github.com/pastelnetwork/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
 )
 
-func fromRegisterPayload(payload *artworks.RegisterPayload) *register.Ticket {
-	return &register.Ticket{
+func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Ticket {
+	return &artworkregister.Ticket{
 		Name:                     payload.Name,
 		Description:              payload.Description,
 		Keywords:                 payload.Keywords,
@@ -25,7 +25,7 @@ func fromRegisterPayload(payload *artworks.RegisterPayload) *register.Ticket {
 	}
 }
 
-func toArtworkTicket(ticket *register.Ticket) *artworks.ArtworkTicket {
+func toArtworkTicket(ticket *artworkregister.Ticket) *artworks.ArtworkTicket {
 	return &artworks.ArtworkTicket{
 		Name:                     ticket.Name,
 		Description:              ticket.Description,

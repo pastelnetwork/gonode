@@ -1,4 +1,4 @@
-package register
+package artworkregister
 
 type SuperNode struct {
 	Address string  `json:"extAddress"`

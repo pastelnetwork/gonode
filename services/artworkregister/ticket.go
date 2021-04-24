@@ -1,4 +1,4 @@
-package register
+package artworkregister
 
 // Ticket represents artwork registration ticket.
 type Ticket struct {

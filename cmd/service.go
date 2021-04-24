@@ -21,6 +21,5 @@ func runServices(ctx context.Context, services ...service) error {
 		})
 	}
 
-	err := group.Wait()
-	return err
+	return group.Wait()
 }
