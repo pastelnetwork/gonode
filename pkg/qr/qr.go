@@ -1,4 +1,4 @@
-// Package qr generates image sequences of QR-codes from the input messages of any length
+// Package qr generates image sequences of QR-codes from the input messages of any length.
 package qr
 
 import (
@@ -64,7 +64,7 @@ func decompress(src string) (string, error) {
 	return string(uncompressed), nil
 }
 
-// Encode splits input msg into chunks to fit max supported length of QR code message and generates an array of QR codes images
+// Encode splits input msg into chunks to fit max supported length of QR code message and generates an array of QR codes images.
 func Encode(msg string, alias string, outputDir string, outputFileTitle string, outputFileNamePattern string, outputFileNameSuffix string) ([]Image, error) {
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
 		if err := os.MkdirAll(outputDir, 0770); err != nil {
@@ -132,7 +132,7 @@ func LoadImages(pattern string) ([]Image, error) {
 	return images, nil
 }
 
-// MapImages maps input images into output image of specified size
+// MapImages maps input images into output image of specified size.
 func MapImages(images []Image, outputSize image.Point, outputFilePath string) error {
 	dc := gg.NewContext(outputSize.X, outputSize.Y)
 	dc.SetRGB(255, 255, 255)
@@ -257,6 +257,7 @@ func decodeImage(img image.Image) (string, error) {
 	return result.GetText(), nil
 }
 
+// Decode decodes QR-codes sequences into messages.
 func Decode(signatureLayerFilePath string) ([]DecodedMessage, error) {
 	signatureLayerImage, err := gg.LoadImage(signatureLayerFilePath)
 	if err != nil {

@@ -1,4 +1,4 @@
-package main
+package pqsignatures
 
 import (
 	"bufio"
@@ -9,42 +9,40 @@ import (
 	"strings"
 
 	"github.com/fogleman/gg"
+	"github.com/makiuchi-d/gozxing"
+	"github.com/makiuchi-d/gozxing/qrcode"
 	"github.com/pastelnetwork/go-commons/errors"
-	qrcode "github.com/skip2/go-qrcode"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/xlzd/gotp"
 	"golang.org/x/image/font/inconsolata"
 )
 
 const (
-	OTPSecretFile   = "otp_secret.txt"
-	OTPSecretLength = 16
-	OTPEnvVarName   = "PASTEL_OTP_SECRET"
+	OTPSecretLength       = 16
+	otpSecretCharacterSet = "ABCDEF1234567890"
+	otpUriQRCodeSize      = 256
 )
 
-func setupGoogleAuthenticatorForPrivateKeyEncryption() error {
+// SetupOTPAuthenticator configures a one-time password authentication.
+func SetupOTPAuthenticator(userEmail, otpSecretFilePath, qrCodeFilePath string) error {
 	secret := gotp.RandomSecret(OTPSecretLength)
 	fmt.Printf("\nThis is you Google Authenticator Secret:%v", secret)
 
-	err := os.WriteFile(OTPSecretFile, []byte(secret), 0644)
+	err := os.WriteFile(otpSecretFilePath, []byte(secret), 0644)
 	if err != nil {
 		return errors.New(err)
 	}
 
-	googleAuthUri := gotp.NewDefaultTOTP(secret).ProvisioningUri("user@user.com", "pastel")
-	const qrCodeFileName = "qr.png"
-	err = qrcode.WriteFile(googleAuthUri, qrcode.Medium, 256, qrCodeFileName)
+	googleAuthUri := gotp.NewDefaultTOTP(secret).ProvisioningUri(userEmail, "pastel")
+
+	enc := qrcode.NewQRCodeWriter()
+	im, err := enc.Encode(googleAuthUri, gozxing.BarcodeFormat_QR_CODE, otpUriQRCodeSize, otpUriQRCodeSize, nil)
 	if err != nil {
 		return errors.New(err)
 	}
 
 	const W = 1200
 	const H = 800
-	im, err := gg.LoadImage(qrCodeFileName)
-	if err != nil {
-		return errors.New(err)
-	}
-
 	dc := gg.NewContext(W, H)
 	dc.SetRGB(255, 255, 255)
 	dc.Clear()
@@ -68,9 +66,8 @@ func setupGoogleAuthenticatorForPrivateKeyEncryption() error {
 
 	dc.DrawImageAnchored(im, W/2, H/2, 0.5, 0.5)
 
-	const resultFileName = "Google_Authenticator_QR_Code.png"
-	dc.SavePNG(resultFileName)
-	open.Start(resultFileName)
+	dc.SavePNG(qrCodeFilePath)
+	open.Start(qrCodeFilePath)
 
 	return nil
 }
@@ -84,34 +81,29 @@ func conformsCharacterSet(value string, characterSet string) bool {
 	return true
 }
 
-func generateCurrentOtpString() string {
-	otp_secret := os.Getenv(OTPEnvVarName)
-	if len(otp_secret) == 0 {
-		otp_secret_file_data, err := ioutil.ReadFile(OTPSecretFile)
-		if err != nil {
-			return ""
-		}
-		otp_secret = string(otp_secret_file_data)
-	}
-	otp_secret_character_set := "ABCDEF1234567890"
-	if !conformsCharacterSet(otp_secret, otp_secret_character_set) {
+func generateCurrentOtpString(otpSecretFilePath string) string {
+	otpSecretFileData, err := ioutil.ReadFile(otpSecretFilePath)
+	if err != nil {
 		return ""
 	}
-	return gotp.NewDefaultTOTP(otp_secret).Now()
+	otpSecret := string(otpSecretFileData)
+	if !conformsCharacterSet(otpSecret, otpSecretCharacterSet) {
+		return ""
+	}
+	return gotp.NewDefaultTOTP(otpSecret).Now()
 }
 
 func generateCurrentOtpStringFromUserInput() string {
 	fmt.Println("\n\nEnter your Google Authenticator Secret in all upper case and numbers:")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
-	otp_secret := scanner.Text()
+	otpSecret := scanner.Text()
 
-	if len(otp_secret) != OTPSecretLength {
+	if len(otpSecret) != OTPSecretLength {
 		return ""
 	}
-	otp_secret_character_set := "ABCDEF1234567890"
-	if !conformsCharacterSet(otp_secret, otp_secret_character_set) {
+	if !conformsCharacterSet(otpSecret, otpSecretCharacterSet) {
 		return ""
 	}
-	return gotp.NewDefaultTOTP(otp_secret).Now()
+	return gotp.NewDefaultTOTP(otpSecret).Now()
 }
