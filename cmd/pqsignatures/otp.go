@@ -24,7 +24,7 @@ const (
 
 func setupGoogleAuthenticatorForPrivateKeyEncryption() error {
 	secret := gotp.RandomSecret(OTPSecretLength)
-	fmt.Printf("\nThis is you Google Authenticor Secret:%v", secret)
+	fmt.Printf("\nThis is you Google Authenticator Secret:%v", secret)
 
 	err := os.WriteFile(OTPSecretFile, []byte(secret), 0644)
 	if err != nil {

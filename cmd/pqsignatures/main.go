@@ -36,11 +36,11 @@ func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
 	keyFilePath := "pastel_id_key_files"
 	pkPngs, err := qr.Encode(pk, "pk", keyFilePath, "Pastel Public Key", "pastel_id_legroast_public_key_qr_code", "")
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, err
 	}
 	_, err = qr.Encode(sk, "sk", keyFilePath, "", "pastel_id_legroast_private_key_qr_code", "")
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, err
 	}
 	return pkPngs, nil
 }
@@ -49,36 +49,36 @@ func sign(imagePath string) error {
 	defer pqtime.Measure(time.Now())
 	if _, err := os.Stat(OTPSecretFile); os.IsNotExist(err) {
 		if err := setupGoogleAuthenticatorForPrivateKeyEncryption(); err != nil {
-			return errors.New(err)
+			return err
 		}
 	}
 
 	if _, err := os.Stat(BoxKeyFilePath); os.IsNotExist(err) {
 		if err := generateAndStoreKeyForNacl(); err != nil {
-			return errors.New(err)
+			return err
 		}
 	}
 
 	fmt.Printf("\nApplying signature to file %v", imagePath)
 	sha256HashOfImageToSign, err := getImageHashFromImageFilePath(imagePath)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256HashOfImageToSign)
 
 	pkBase64, skBase64, err := pastelKeys()
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	pastelIdSignatureBase64, err := signAndVerify(sha256HashOfImageToSign, skBase64, pkBase64)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	err = demonstrateSignatureQRCodeSteganography(pkBase64, skBase64, pastelIdSignatureBase64, imagePath)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 	return nil
 }
@@ -89,7 +89,9 @@ func main() {
 
 	sampleImageFilePath := *imagePathPtr
 	if err := sign(sampleImageFilePath); err != nil {
-		fmt.Println(err.(*errors.Error).ErrorStack())
+		if err, isCommonError := err.(*errors.Error); isCommonError {
+			fmt.Println(err.ErrorStack())
+		}
 		panic(err)
 	}
 }

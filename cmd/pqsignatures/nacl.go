@@ -15,6 +15,8 @@ const (
 	BoxKeyFilePath = "box_key.bin"
 )
 
+var SecretBoxKeyWrongSize = errors.Errorf("nacl secret box key doesn't match its expected size")
+
 func generateAndStoreKeyForNacl() error {
 	box_key := nacl.NewKey()
 	box_key_base64 := base64.StdEncoding.EncodeToString(box_key[:])
@@ -40,7 +42,7 @@ func naclBoxKeyFromFile(boxKeyFilePath string) ([]byte, error) {
 	}
 
 	if len(box_key) != nacl.KeySize {
-		return nil, errors.New("naclBoxKeyFromFile: nacl secret box key doesn't match its expected size")
+		return nil, SecretBoxKeyWrongSize
 	}
 
 	return box_key, nil

@@ -53,11 +53,11 @@ func pastelIdVerifySignatureWithPublicKey(inputData string, pastelIdSignatureBas
 func signAndVerify(inputData string, skBase64 string, pkBase64 string) (string, error) {
 	pastelIdSignatureBase64, err := pastelIdWriteSignatureOnData(inputData, skBase64, pkBase64)
 	if err != nil {
-		return "", errors.New(err)
+		return "", err
 	}
 	verified, err := pastelIdVerifySignatureWithPublicKey(inputData, pastelIdSignatureBase64, pkBase64)
 	if err != nil {
-		return "", errors.New(err)
+		return "", err
 	}
 	if verified > 0 {
 		fmt.Printf("\nSignature is valid!")

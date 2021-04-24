@@ -67,12 +67,12 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 
 	keypairImgs, err := generateKeypairQRs(pkBase64, skBase64)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	signatureImags, err := qr.Encode(pastelIdSignatureBase64, "sig", PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	imgsToMap := append(keypairImgs, signatureImags...)
@@ -84,24 +84,24 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 	}
 	err = qr.MapImages(imgsToMap, inputImage.Bounds().Size(), signatureLayerImageOutputFilepath)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	signedImageOutputPath := "final_watermarked_image.png"
 	err = hideSignatureImageInInputImage(inputImagePath, signatureLayerImageOutputFilepath, signedImageOutputPath)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	extractedSignatureLayerImageOutputFilepath := "extracted_signature_image.png"
 	err = extractSignatureImageInSampleImage(signedImageOutputPath, extractedSignatureLayerImageOutputFilepath)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	decodedMessages, err := qr.Decode(extractedSignatureLayerImageOutputFilepath)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	var decodedPKBase64 string

@@ -73,7 +73,7 @@ func Encode(msg string, alias string, outputDir string, outputFileTitle string, 
 	}
 	pngs, err := toPngs(msg, MaxMsgLength, DataQRImageSize)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, err
 	}
 	var images []Image
 	for i, imageBytes := range pngs {
@@ -167,11 +167,11 @@ func MapImages(images []Image, outputSize image.Point, outputFilePath string) er
 	}
 	compressedPositionVector, err := compress(positionVector)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 	positionVectorPngsBytes, err := toPngs(compressedPositionVector, MaxMsgLength, PositionVectorQRImageSize)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
 	if len(positionVectorPngsBytes) != 1 {
@@ -267,15 +267,15 @@ func Decode(signatureLayerFilePath string) ([]DecodedMessage, error) {
 	positionVectorImageRectMin := image.Point{signatureRect.Max.X - PositionVectorQRImageSize, signatureRect.Max.Y - PositionVectorQRImageSize}
 	positionVectorImage, err := cropImage(signatureLayerImage, image.Rectangle{positionVectorImageRectMin, signatureRect.Max})
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, err
 	}
 	positionVectorCompressed, err := decodeImage(positionVectorImage)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, err
 	}
 	positionVector, err := decompress(positionVectorCompressed)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, err
 	}
 	fmt.Printf("\n" + positionVector)
 	tokens := strings.Split(positionVector, ";")
@@ -323,7 +323,7 @@ func Decode(signatureLayerFilePath string) ([]DecodedMessage, error) {
 		qrImageRect := image.Rectangle{image.Point{rectX, rectY}, image.Point{rectX + rectSize, rectY + rectSize}}
 		qrImage, err := cropImage(signatureLayerImage, qrImageRect)
 		if err != nil {
-			return nil, errors.New(err)
+			return nil, err
 		}
 
 		fd, err := os.Create("last-decoded.png")
@@ -335,7 +335,7 @@ func Decode(signatureLayerFilePath string) ([]DecodedMessage, error) {
 
 		decodedString, err := decodeImage(qrImage)
 		if err != nil {
-			return nil, errors.New(err)
+			return nil, err
 		}
 		decoded[len(decoded)-1].Content += decodedString
 		fmt.Printf("\n" + decodedString)

@@ -75,7 +75,7 @@ func importPastelPublicAndPrivateKeysFromPemFiles(boxKeyFilePath string) (string
 	if otpCorrect {
 		boxKey, err := naclBoxKeyFromFile(boxKeyFilePath)
 		if err != nil {
-			return "", "", errors.New(err)
+			return "", "", err
 		}
 		var key [32]byte
 		copy(key[:], boxKey)
@@ -97,7 +97,7 @@ func writePastelPublicAndPrivateKeyToFile(pkBase64 string, skBase64 string, boxK
 	skExportFormat := "-----BEGIN LEGROAST PRIVATE KEY-----\n" + skBase64 + "\n-----END LEGROAST PRIVATE KEY-----"
 	boxKey, err := naclBoxKeyFromFile(boxKeyFilePath)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 	var key [32]byte
 	copy(key[:], boxKey)
@@ -123,12 +123,12 @@ func writePastelPublicAndPrivateKeyToFile(pkBase64 string, skBase64 string, boxK
 func pastelKeys() (string, string, error) {
 	pkBase64, skBase64, err := importPastelPublicAndPrivateKeysFromPemFiles(BoxKeyFilePath)
 	if err != nil {
-		return "", "", errors.New(err)
+		return "", "", err
 	}
 	if pkBase64 == "" {
 		skBase64, pkBase64 = pastelIdKeypairGeneration()
 		if err = writePastelPublicAndPrivateKeyToFile(pkBase64, skBase64, BoxKeyFilePath); err != nil {
-			return "", "", errors.New(err)
+			return "", "", err
 		}
 	}
 	return pkBase64, skBase64, nil
