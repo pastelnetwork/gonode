@@ -1,14 +1,17 @@
 package main
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/fogleman/gg"
 	"github.com/pastelnetwork/go-commons/errors"
 	pqtime "github.com/pastelnetwork/pqsignatures/internal/time"
@@ -30,6 +33,7 @@ const (
 var InvalidSignature = errors.Errorf("signature is not valid")
 var DecodedPublicKeyNotMatch = errors.Errorf("decoded base64 public key doesn't match")
 var DecodedSignatureNotMatch = errors.Errorf("decoded base64 pastel id signature doesn't match")
+var DecodedFingerprintNotMatch = errors.Errorf("decoded base64 image fingerprint doesn't match")
 
 func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 	f, err := os.Open(sampleImageFilePath)
@@ -57,6 +61,19 @@ func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
 	return pkPngs, nil
 }
 
+func loadImageFingerprint(fingerprintFilePath string) (string, error) {
+	fingerprintData, err := ioutil.ReadFile(fingerprintFilePath)
+	if err != nil {
+		return "", errors.New(err)
+	}
+
+	output, err := zstd.CompressLevel(nil, fingerprintData, 22)
+	if err != nil {
+		return "", errors.New(err)
+	}
+	return base64.StdEncoding.EncodeToString(output), nil
+}
+
 func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, pastelIdSignatureBase64 string, inputImagePath string) error {
 	defer pqtime.Measure(time.Now())
 	timestamp := time.Now().Format("Jan_02_2006_15_04_05")
@@ -66,12 +83,23 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 		return err
 	}
 
-	signatureImags, err := qr.Encode(pastelIdSignatureBase64, "sig", PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
+	signatureImgs, err := qr.Encode(pastelIdSignatureBase64, "sig", PastelIdSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
 	if err != nil {
 		return err
 	}
 
-	imgsToMap := append(keypairImgs, signatureImags...)
+	imgsToMap := append(keypairImgs, signatureImgs...)
+
+	imgFingerprintBase64, err := loadImageFingerprint("fingerprint")
+	if err != nil {
+		return err
+	}
+	fingerprintImgs, err := qr.Encode(imgFingerprintBase64, "fin", PastelIdSignatureFilesFolder, "Fingerprint", "fingerprint_qr_code", timestamp)
+	if err != nil {
+		return err
+	}
+
+	imgsToMap = append(imgsToMap, fingerprintImgs...)
 
 	signatureLayerImageOutputFilepath := filepath.Join(PastelIdSignatureFilesFolder, fmt.Sprintf("Complete_Signature_Image_Layer__%v.png", timestamp))
 	inputImage, err := gg.LoadImage(inputImagePath)
@@ -102,19 +130,25 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 
 	var decodedPKBase64 string
 	var decodedSignatureBase64 string
+	var decodedFingerprintBase64 string
 	for _, message := range decodedMessages {
 		fmt.Printf("\nDecoded message with alias:%v and content:%v", message.Alias, message.Content)
 		if message.Alias == "pk" {
 			decodedPKBase64 = message.Content
 		} else if message.Alias == "sig" {
 			decodedSignatureBase64 = message.Content
+		} else if message.Alias == "fin" {
+			decodedFingerprintBase64 = message.Content
 		}
 	}
 	if pkBase64 != decodedPKBase64 {
 		return errors.New(DecodedPublicKeyNotMatch)
 	}
 	if pastelIdSignatureBase64 != decodedSignatureBase64 {
-		return errors.New(DecodedPublicKeyNotMatch)
+		return errors.New(DecodedSignatureNotMatch)
+	}
+	if imgFingerprintBase64 != decodedFingerprintBase64 {
+		return errors.New(DecodedFingerprintNotMatch)
 	}
 
 	fmt.Printf("\n\nBase64 public key and pastel id signature decoded from QR codes images are valid!\n")
