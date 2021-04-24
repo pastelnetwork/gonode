@@ -5,15 +5,17 @@ import (
 	"io/ioutil"
 
 	"github.com/pastelnetwork/go-commons/cli"
-	"github.com/pastelnetwork/go-commons/configer"
+	"github.com/pastelnetwork/go-commons/configurer"
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/go-commons/log"
 	"github.com/pastelnetwork/go-commons/log/hooks"
 	"github.com/pastelnetwork/go-commons/sys"
 	"github.com/pastelnetwork/go-commons/version"
-	"github.com/pastelnetwork/supernode/config"
-	"github.com/pastelnetwork/supernode/nats"
-	"github.com/pastelnetwork/supernode/pastel"
+	"github.com/pastelnetwork/go-pastel"
+	"github.com/pastelnetwork/supernode/configs"
+	"github.com/pastelnetwork/supernode/servers/grpc"
+	"github.com/pastelnetwork/supernode/services/artworkregister"
+	"github.com/pastelnetwork/supernode/storage/memory"
 )
 
 const (
@@ -26,22 +28,23 @@ const (
 // NewApp inits a new command line interface.
 func NewApp() *cli.App {
 	configFile := defaultConfigFile
-	config := config.New()
+	config := configs.New()
 
 	app := cli.NewApp(appName)
 	app.SetUsage(appUsage)
 	app.SetVersion(version.Version())
 
 	app.AddFlags(
+		// Main
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(configFile).SetAliases("c"),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 	)
 
-	app.SetActionFunc(func(args []string) error {
+	app.SetActionFunc(func(ctx context.Context, args []string) error {
 		if configFile != "" {
-			if err := configer.ParseFile(configFile, config); err != nil {
+			if err := configurer.ParseFile(configFile, config); err != nil {
 				return err
 			}
 		}
@@ -61,19 +64,18 @@ func NewApp() *cli.App {
 			return errors.Errorf("--log-level %q, %s", config.LogLevel, err)
 		}
 
-		return run(config)
+		return runApp(ctx, config)
 	})
 
 	return app
 }
 
-func run(config *config.Config) error {
+func runApp(ctx context.Context, config *configs.Config) error {
 	log.Debug("[app] start")
 	defer log.Debug("[app] end")
 
 	log.Debugf("[app] config: %s", config)
 
-	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -81,10 +83,16 @@ func run(config *config.Config) error {
 		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
 	})
 
-	if err := pastel.Init(config.Pastel); err != nil {
-		return err
-	}
+	// entities
+	pastel := pastel.NewClient(config.Pastel)
+	db := memory.NewKeyValue()
 
-	err := nats.NewServer(config.Nats).Run(ctx)
-	return err
+	// business logic services
+	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, pastel)
+
+	// servers
+	// nats := nats.NewServer(config.Nats)
+	grpc := grpc.NewServer(config.Server)
+
+	return runServices(ctx, artworkRegister, grpc)
 }
