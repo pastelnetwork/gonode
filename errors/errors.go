@@ -40,10 +40,7 @@ func (err *Error) WithField(key string, value interface{}) *Error {
 // as a drop-in replacement for fmt.Errorf() to provide descriptive
 // errors in return values.
 func Errorf(format string, vals ...interface{}) *Error {
-	return &Error{
-		goerror: goerrors.Wrap(fmt.Errorf(format, vals...), defaultCallersSkip),
-		fields:  make(Fields),
-	}
+	return newWithSkip(fmt.Errorf(format, vals...), defaultCallersSkip)
 }
 
 // New makes an Error from the given value. If that value is already an

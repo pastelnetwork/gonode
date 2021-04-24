@@ -39,10 +39,10 @@ func (app *App) SetBeforeFunc(beforeFn func() error) {
 
 // SetActionFunc sets the Action function for the cli.App
 // The action to execute when no subcommands are specified.
-func (app *App) SetActionFunc(actionFn func(args []string) error) {
+func (app *App) SetActionFunc(actionFn ActionFn) {
 	app.Action = func(c *cli.Context) error {
 		args := []string(c.Args().Tail())
-		return actionFn(args)
+		return actionFn(c.Context, args)
 	}
 }
 

@@ -31,10 +31,10 @@ func (cmd *Command) SetBeforeFunc(before func() error) {
 }
 
 // SetActionFunc sets the Action fucntion for the cli.Command
-func (cmd *Command) SetActionFunc(run func(args []string) error) {
+func (cmd *Command) SetActionFunc(actionFn ActionFn) {
 	cmd.Action = func(c *cli.Context) error {
 		args := []string(c.Args().Tail())
-		return run(args)
+		return actionFn(c.Context, args)
 	}
 }
 
