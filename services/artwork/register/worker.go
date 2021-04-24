@@ -2,9 +2,6 @@ package register
 
 import (
 	"context"
-	"time"
-
-	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
 )
 
 // Worker represents a task handler of registering artworks.
@@ -27,18 +24,19 @@ func (worker *Worker) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case task := <-worker.taskCh:
+			go task.Run(ctx)
 
-			go func() {
-				// NOTE: for testing
-				time.Sleep(time.Second)
-				task.State.Update(state.NewMessage(state.StatusTicketAccepted))
-				time.Sleep(time.Second)
-				task.State.Update(state.NewMessage(state.StatusTicketRegistered))
-				time.Sleep(time.Second)
-				task.State.Update(state.NewMessage(state.StatusTicketActivated))
-				time.Sleep(time.Second)
-				task.State.Update(state.NewMessage(state.StatusTaskCompleted))
-			}()
+			// go func() {
+			// 	// NOTE: for testing
+			// 	time.Sleep(time.Second)
+			// 	task.State.Update(state.NewMessage(state.StatusTicketAccepted))
+			// 	time.Sleep(time.Second)
+			// 	task.State.Update(state.NewMessage(state.StatusTicketRegistered))
+			// 	time.Sleep(time.Second)
+			// 	task.State.Update(state.NewMessage(state.StatusTicketActivated))
+			// 	time.Sleep(time.Second)
+			// 	task.State.Update(state.NewMessage(state.StatusTaskCompleted))
+			// }()
 		}
 	}
 }

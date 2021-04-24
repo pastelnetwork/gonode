@@ -16,7 +16,8 @@ import (
 )
 
 const (
-	logPrefix = "[api]"
+	// LogPrefix is the prefix used for all API log entries.
+	LogPrefix = "[api]"
 )
 
 // Log logs incoming HTTP requests and outgoing responses.
@@ -33,7 +34,7 @@ func Log() func(h http.Handler) http.Handler {
 
 			log.WithField("from", logFrom(r)).
 				WithField("req", r.Method+" "+r.URL.String()).
-				Debugf("%v [%v] Request", logPrefix, reqID)
+				Debugf("%v [%v] Request", LogPrefix, reqID)
 
 			rw := httpmiddleware.CaptureResponse(w)
 			h.ServeHTTP(rw, r)
@@ -41,7 +42,7 @@ func Log() func(h http.Handler) http.Handler {
 			log.WithField("status", rw.StatusCode).
 				WithField("bytes", rw.ContentLength).
 				WithField("time", time.Since(started).String()).
-				Debugf("%v [%v] Response", logPrefix, reqID)
+				Debugf("%v [%v] Response", LogPrefix, reqID)
 		})
 	}
 }
@@ -59,19 +60,17 @@ func logFrom(req *http.Request) string {
 	return ip
 }
 
-// errorHandler returns a function that writes and logs the given error.
+// ErrorHandler returns a function that writes and logs the given error.
 // The function also writes and logs the error unique ID so that it's possible
 // to correlate.
-func errorHandler() func(context.Context, http.ResponseWriter, error) {
-	return func(ctx context.Context, w http.ResponseWriter, err error) {
-		id := ctx.Value(middleware.RequestIDKey).(string)
-		_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
-		log.Errorf("%s [%s] %s", logPrefix, id, err.Error())
-	}
+func ErrorHandler(ctx context.Context, w http.ResponseWriter, err error) {
+	id := ctx.Value(middleware.RequestIDKey).(string)
+	_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
+	log.Errorf("%s [%s] %s", LogPrefix, id, err.Error())
 }
 
 func init() {
 	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(ctxValue interface{}, msg string) string {
-		return fmt.Sprintf("%v [%v] %s", logPrefix, ctxValue, msg)
+		return fmt.Sprintf("%v [%v] %s", LogPrefix, ctxValue, msg)
 	}))
 }

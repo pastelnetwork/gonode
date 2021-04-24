@@ -4,7 +4,6 @@ package api
 
 import (
 	"context"
-	"embed"
 	"net"
 	"net/http"
 	"os"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/walletnode/api/docs"
 
 	goahttp "goa.design/goa/v3/http"
 	goahttpmiddleware "goa.design/goa/v3/http/middleware"
@@ -20,9 +20,6 @@ import (
 const (
 	defaultShutdownTimeout = time.Second * 30
 )
-
-//go:embed swagger
-var swaggerContent embed.FS
 
 type service interface {
 	Mount(mux goahttp.Muxer) goahttp.Server
@@ -46,20 +43,20 @@ func (api *API) Run(ctx context.Context) error {
 	mux.Handle("/swagger/swagger.json", apiHTTP)
 
 	if api.config.Swagger {
-		mux.Handle("/swagger/", http.FileServer(http.FS(swaggerContent)))
+		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))
 	}
 
 	srv := &http.Server{Addr: addr, Handler: mux}
 
 	errCh := make(chan error)
 	go func() {
-		log.Infof("%s HTTP server listening on %q", logPrefix, addr)
+		log.Infof("%s HTTP server listening on %q", LogPrefix, addr)
 		errCh <- srv.ListenAndServe()
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Infof("%s Shutting down HTTP server at %q", logPrefix, addr)
+		log.Infof("%s Shutting down HTTP server at %q", LogPrefix, addr)
 	case err := <-errCh:
 		return err
 	}

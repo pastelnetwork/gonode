@@ -41,8 +41,9 @@ type RegisterRequestBody struct {
 	// Artist website URL
 	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 	// Spendable address
-	SpendableAddress *string  `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
-	NetworkFee       *float32 `form:"network_fee,omitempty" json:"network_fee,omitempty" xml:"network_fee,omitempty"`
+	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
 }
 
 // UploadImageRequestBody is the type of the "artworks" service "uploadImage"
@@ -293,8 +294,9 @@ type ArtworkTicketResponseBody struct {
 	// Artist website URL
 	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 	// Spendable address
-	SpendableAddress string  `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
-	NetworkFee       float32 `form:"network_fee" json:"network_fee" xml:"network_fee"`
+	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 }
 
 // TaskResponseTiny is used to define fields on response body types.
@@ -331,8 +333,9 @@ type ArtworkTicketResponse struct {
 	// Artist website URL
 	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 	// Spendable address
-	SpendableAddress string  `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
-	NetworkFee       float32 `form:"network_fee" json:"network_fee" xml:"network_fee"`
+	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 }
 
 // NewRegisterResponseBody builds the HTTP response body from the result of the
@@ -537,7 +540,7 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 		ArtistName:               *body.ArtistName,
 		ArtistWebsiteURL:         body.ArtistWebsiteURL,
 		SpendableAddress:         *body.SpendableAddress,
-		NetworkFee:               *body.NetworkFee,
+		MaximumFee:               *body.MaximumFee,
 	}
 
 	return v
@@ -594,8 +597,8 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
 	}
-	if body.NetworkFee == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("network_fee", "body"))
+	if body.MaximumFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "body"))
 	}
 	if body.ImageID != nil {
 		if *body.ImageID < 1 {
@@ -673,9 +676,9 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
 		}
 	}
-	if body.NetworkFee != nil {
-		if *body.NetworkFee < 1e-05 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.network_fee", *body.NetworkFee, 1e-05, true))
+	if body.MaximumFee != nil {
+		if *body.MaximumFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
 		}
 	}
 	return

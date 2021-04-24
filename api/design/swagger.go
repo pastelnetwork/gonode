@@ -16,7 +16,7 @@ var _ = Service("swagger", func() {
 		Path("/swagger")
 	})
 
-	Files("/swagger.json", "gen/http/openapi3.json", func() {
+	Files("/swagger.json", "http/openapi3.json", func() {
 		Description("JSON document containing the API swagger definition")
 	})
 })

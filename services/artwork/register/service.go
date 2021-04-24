@@ -2,7 +2,6 @@ package register
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/walletnode/storage"
@@ -12,6 +11,7 @@ import (
 
 // Service represent artwork service.
 type Service struct {
+	config *Config
 	db     storage.KeyValue
 	pastel pastel.Client
 	worker *Worker
@@ -20,14 +20,6 @@ type Service struct {
 
 // Run starts worker
 func (service *Service) Run(ctx context.Context) error {
-	mns, err := service.pastel.TopMasterNodes()
-	if err != nil {
-		return err
-	}
-	for _, mn := range mns {
-		fmt.Println(mn.ExtAddress)
-	}
-
 	return service.worker.Run(ctx)
 }
 
@@ -57,8 +49,9 @@ func (service *Service) Register(ctx context.Context, ticket *Ticket) (int, erro
 }
 
 // NewService returns a new Service instance.
-func NewService(db storage.KeyValue, pastel pastel.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, pastel pastel.Client) *Service {
 	return &Service{
+		config: config,
 		db:     db,
 		pastel: pastel,
 		worker: NewWorker(),

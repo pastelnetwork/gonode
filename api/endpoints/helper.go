@@ -1,4 +1,4 @@
-package api
+package endpoints
 
 import (
 	"time"
@@ -21,7 +21,7 @@ func fromRegisterPayload(payload *artworks.RegisterPayload) *register.Ticket {
 		ArtistName:               payload.ArtistName,
 		ArtistWebsiteURL:         payload.ArtistWebsiteURL,
 		SpendableAddress:         payload.SpendableAddress,
-		NetworkFee:               payload.NetworkFee,
+		MaximumFee:               payload.MaximumFee,
 	}
 }
 
@@ -38,7 +38,7 @@ func toArtworkTicket(ticket *register.Ticket) *artworks.ArtworkTicket {
 		ArtistName:               ticket.ArtistName,
 		ArtistWebsiteURL:         ticket.ArtistWebsiteURL,
 		SpendableAddress:         ticket.SpendableAddress,
-		NetworkFee:               ticket.NetworkFee,
+		MaximumFee:               ticket.MaximumFee,
 	}
 }
 

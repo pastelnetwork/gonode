@@ -33,8 +33,8 @@ paths:
                     imaginary landscape.
                   issued_copies: 1
                   keywords: Renaissance, sfumato, portrait
+                  maximum_fee: 100
                   name: Mona Lisa
-                  network_fee: 100
                   series_name: Famous artist
                   spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -52,8 +52,8 @@ paths:
                     imaginary landscape.
                   issued_copies: 1
                   keywords: Renaissance, sfumato, portrait
+                  maximum_fee: 100
                   name: Mona Lisa
-                  network_fee: 100
                   series_name: Famous artist
                   spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -91,8 +91,8 @@ paths:
               image_id: 1
               issued_copies: 1
               keywords: Renaissance, sfumato, portrait
+              maximum_fee: 100
               name: Mona Lisa
-              network_fee: 100
               series_name: Famous artist
               spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
               youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -171,8 +171,8 @@ paths:
                     imaginary landscape.
                   issued_copies: 1
                   keywords: Renaissance, sfumato, portrait
+                  maximum_fee: 100
                   name: Mona Lisa
-                  network_fee: 100
                   series_name: Famous artist
                   spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -370,16 +370,17 @@ components:
           description: Keywords
           example: Renaissance, sfumato, portrait
           maxLength: 256
+        maximum_fee:
+          type: number
+          description: Used to find a suitable masternode with a fee equal or less
+          default: 1
+          example: 100
+          minimum: 1e-05
         name:
           type: string
           description: Name of the artwork
           example: Mona Lisa
           maxLength: 256
-        network_fee:
-          type: number
-          default: 1
-          example: 100
-          minimum: 1e-05
         series_name:
           type: string
           description: Series name
@@ -408,8 +409,8 @@ components:
           a portrait of a seated woman set against an imaginary landscape.
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
+        maximum_fee: 100
         name: Mona Lisa
-        network_fee: 100
         series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -420,7 +421,7 @@ components:
       - artist_pastelid
       - artist_pastelid_passphrase
       - spendable_address
-      - network_fee
+      - maximum_fee
     Error:
       type: object
       properties:
@@ -528,16 +529,17 @@ components:
           description: Keywords
           example: Renaissance, sfumato, portrait
           maxLength: 256
+        maximum_fee:
+          type: number
+          description: Used to find a suitable masternode with a fee equal or less
+          default: 1
+          example: 100
+          minimum: 1e-05
         name:
           type: string
           description: Name of the artwork
           example: Mona Lisa
           maxLength: 256
-        network_fee:
-          type: number
-          default: 1
-          example: 100
-          minimum: 1e-05
         series_name:
           type: string
           description: Series name
@@ -566,8 +568,8 @@ components:
         image_id: 1
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
+        maximum_fee: 100
         name: Mona Lisa
-        network_fee: 100
         series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -579,7 +581,7 @@ components:
       - artist_pastelid
       - artist_pastelid_passphrase
       - spendable_address
-      - network_fee
+      - maximum_fee
     RegisterResult:
       type: object
       properties:
@@ -652,8 +654,8 @@ components:
             a portrait of a seated woman set against an imaginary landscape.
           issued_copies: 1
           keywords: Renaissance, sfumato, portrait
+          maximum_fee: 100
           name: Mona Lisa
-          network_fee: 100
           series_name: Famous artist
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -705,8 +707,8 @@ components:
             a portrait of a seated woman set against an imaginary landscape.
           issued_copies: 1
           keywords: Renaissance, sfumato, portrait
+          maximum_fee: 100
           name: Mona Lisa
-          network_fee: 100
           series_name: Famous artist
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -734,8 +736,8 @@ components:
             a portrait of a seated woman set against an imaginary landscape.
           issued_copies: 1
           keywords: Renaissance, sfumato, portrait
+          maximum_fee: 100
           name: Mona Lisa
-          network_fee: 100
           series_name: Famous artist
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -752,8 +754,8 @@ components:
             a portrait of a seated woman set against an imaginary landscape.
           issued_copies: 1
           keywords: Renaissance, sfumato, portrait
+          maximum_fee: 100
           name: Mona Lisa
-          network_fee: 100
           series_name: Famous artist
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0

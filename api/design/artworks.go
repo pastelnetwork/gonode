@@ -187,13 +187,14 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j")
 	})
-	Attribute("network_fee", Float32, func() {
+	Attribute("maximum_fee", Float64, func() {
+		Description("Used to find a suitable masternode with a fee equal or less")
 		Minimum(0.00001)
 		Default(1)
 		Example(100)
 	})
 
-	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "network_fee")
+	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 
 // ArtworkRegisterResult is artwork registeration result.

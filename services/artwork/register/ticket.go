@@ -14,5 +14,5 @@ type Ticket struct {
 	ArtistName               string
 	ArtistWebsiteURL         *string
 	SpendableAddress         string
-	NetworkFee               float32
+	MaximumFee               float64
 }

@@ -418,7 +418,7 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody(v *artwork
 		ArtistName:               *v.ArtistName,
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         *v.SpendableAddress,
-		NetworkFee:               *v.NetworkFee,
+		MaximumFee:               *v.MaximumFee,
 	}
 
 	return res
@@ -455,7 +455,7 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v *artworksvie
 		ArtistName:               *v.ArtistName,
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         *v.SpendableAddress,
-		NetworkFee:               *v.NetworkFee,
+		MaximumFee:               *v.MaximumFee,
 	}
 
 	return res

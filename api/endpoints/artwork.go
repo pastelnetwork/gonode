@@ -1,4 +1,4 @@
-package api
+package endpoints
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/walletnode/api"
 	"github.com/pastelnetwork/walletnode/services/artwork/register"
 	"github.com/pastelnetwork/walletnode/storage"
 	"github.com/pastelnetwork/walletnode/storage/memory"
@@ -145,11 +146,11 @@ func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImage
 // Mount configures the mux to serve the artworks endpoints.
 func (service *Artwork) Mount(mux goahttp.Muxer) goahttp.Server {
 	endpoints := artworks.NewEndpoints(service)
-	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, errorHandler(), nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc)
+	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc)
 	server.Mount(mux, srv)
 
 	for _, m := range srv.Mounts {
-		log.Infof("%s HTTP %q mounted on %s %s", logPrefix, m.Method, m.Verb, m.Pattern)
+		log.Infof("%s HTTP %q mounted on %s %s", api.LogPrefix, m.Method, m.Verb, m.Pattern)
 	}
 
 	return srv

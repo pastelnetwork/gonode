@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/go-commons/version"
 	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/walletnode/api"
+	"github.com/pastelnetwork/walletnode/api/endpoints"
 	"github.com/pastelnetwork/walletnode/configs"
 	"github.com/pastelnetwork/walletnode/services/artwork/register"
 	"github.com/pastelnetwork/walletnode/storage/memory"
@@ -68,13 +69,13 @@ func NewApp() *cli.App {
 			return errors.Errorf("--log-level %q, %s", config.LogLevel, err)
 		}
 
-		return action(ctx, config)
+		return runApp(ctx, config)
 	})
 
 	return app
 }
 
-func action(ctx context.Context, config *configs.Config) error {
+func runApp(ctx context.Context, config *configs.Config) error {
 	log.Debug("[app] start")
 	defer log.Debug("[app] end")
 
@@ -87,18 +88,17 @@ func action(ctx context.Context, config *configs.Config) error {
 		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
 	})
 
-	// periphery
 	pastel := pastel.NewClient(config.Pastel)
 	db := memory.NewKeyValue()
 
-	// services
-	artwork := register.NewService(db, pastel)
+	// business logic
+	artwork := register.NewService(config.ArtworkRegister, db, pastel)
 
 	// api
 	api := api.New(config.Rest,
-		api.NewArtwork(artwork),
-		api.NewSwagger(),
+		endpoints.NewArtwork(artwork),
+		endpoints.NewSwagger(),
 	)
 
-	return run(ctx, artwork, api)
+	return runServices(ctx, artwork, api)
 }

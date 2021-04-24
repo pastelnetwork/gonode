@@ -38,8 +38,8 @@ func UsageExamples() string {
       "image_id": 1,
       "issued_copies": 1,
       "keywords": "Renaissance, sfumato, portrait",
+      "maximum_fee": 100,
       "name": "Mona Lisa",
-      "network_fee": 100,
       "series_name": "Famous artist",
       "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
       "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"
@@ -215,8 +215,8 @@ Example:
       "image_id": 1,
       "issued_copies": 1,
       "keywords": "Renaissance, sfumato, portrait",
+      "maximum_fee": 100,
       "name": "Mona Lisa",
-      "network_fee": 100,
       "series_name": "Famous artist",
       "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
       "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"

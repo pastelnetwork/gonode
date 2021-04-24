@@ -555,7 +555,7 @@ func unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView(v *Artwo
 		ArtistName:               v.ArtistName,
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         v.SpendableAddress,
-		NetworkFee:               v.NetworkFee,
+		MaximumFee:               v.MaximumFee,
 	}
 
 	return res
@@ -610,7 +610,7 @@ func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTi
 		ArtistName:               v.ArtistName,
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         v.SpendableAddress,
-		NetworkFee:               v.NetworkFee,
+		MaximumFee:               v.MaximumFee,
 	}
 
 	return res

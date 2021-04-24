@@ -96,7 +96,8 @@ type ArtworkTicketView struct {
 	ArtistWebsiteURL *string
 	// Spendable address
 	SpendableAddress *string
-	NetworkFee       *float32
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee *float64
 }
 
 // TaskCollectionView is a type that runs validations on a projected type.
@@ -333,8 +334,8 @@ func ValidateArtworkTicketView(result *ArtworkTicketView) (err error) {
 	if result.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "result"))
 	}
-	if result.NetworkFee == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("network_fee", "result"))
+	if result.MaximumFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "result"))
 	}
 	if result.Name != nil {
 		if utf8.RuneCountInString(*result.Name) > 256 {
@@ -407,9 +408,9 @@ func ValidateArtworkTicketView(result *ArtworkTicketView) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.spendable_address", *result.SpendableAddress, utf8.RuneCountInString(*result.SpendableAddress), 35, false))
 		}
 	}
-	if result.NetworkFee != nil {
-		if *result.NetworkFee < 1e-05 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.network_fee", *result.NetworkFee, 1e-05, true))
+	if result.MaximumFee != nil {
+		if *result.MaximumFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.maximum_fee", *result.MaximumFee, 1e-05, true))
 		}
 	}
 	return

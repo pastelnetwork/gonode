@@ -80,7 +80,8 @@ type RegisterPayload struct {
 	ArtistWebsiteURL *string
 	// Spendable address
 	SpendableAddress string
-	NetworkFee       float32
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee float64
 }
 
 // RegisterResult is the result type of the artworks service register method.
@@ -168,7 +169,8 @@ type ArtworkTicket struct {
 	ArtistWebsiteURL *string
 	// Spendable address
 	SpendableAddress string
-	NetworkFee       float32
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee float64
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.
@@ -451,7 +453,7 @@ func transformArtworksviewsArtworkTicketViewToArtworkTicket(v *artworksviews.Art
 		ArtistName:               *v.ArtistName,
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         *v.SpendableAddress,
-		NetworkFee:               *v.NetworkFee,
+		MaximumFee:               *v.MaximumFee,
 	}
 
 	return res
@@ -486,7 +488,7 @@ func transformArtworkTicketToArtworksviewsArtworkTicketView(v *ArtworkTicket) *a
 		ArtistName:               &v.ArtistName,
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         &v.SpendableAddress,
-		NetworkFee:               &v.NetworkFee,
+		MaximumFee:               &v.MaximumFee,
 	}
 
 	return res
