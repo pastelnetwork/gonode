@@ -13,7 +13,7 @@ import (
 	"github.com/pastelnetwork/go-commons/version"
 	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/walletnode/api"
-	"github.com/pastelnetwork/walletnode/api/endpoints"
+	"github.com/pastelnetwork/walletnode/api/services"
 	"github.com/pastelnetwork/walletnode/configs"
 	"github.com/pastelnetwork/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/walletnode/storage/memory"
@@ -95,8 +95,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// api service
 	api := api.New(config.API,
-		endpoints.NewArtwork(artworkRegister),
-		endpoints.NewSwagger(),
+		services.NewArtwork(artworkRegister),
+		services.NewSwagger(),
 	)
 
 	return runServices(ctx, artworkRegister, api)

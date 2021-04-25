@@ -3,8 +3,10 @@ package artworkregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/walletnode/storage"
+	"golang.org/x/sync/errgroup"
 )
 
 // const logPrefix = "[artwork]"
@@ -19,7 +21,17 @@ type Service struct {
 
 // Run starts worker
 func (service *Service) Run(ctx context.Context) error {
-	return service.worker.Run(ctx)
+	//return service.worker.Run(ctx)
+
+	group, ctx := errgroup.WithContext(ctx)
+	group.Go(func() (err error) {
+		defer errors.Recover(func(rec error) { err = rec })
+		return service.worker.Run(ctx)
+	})
+	task := NewTask(service, &Ticket{})
+	service.worker.AddTask(ctx, task)
+
+	return group.Wait()
 }
 
 // Tasks returns all tasks.
