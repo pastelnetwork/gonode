@@ -13,7 +13,8 @@ import (
 	"github.com/pastelnetwork/go-commons/version"
 	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/supernode/configs"
-	"github.com/pastelnetwork/supernode/servers/grpc"
+	"github.com/pastelnetwork/supernode/server/grpc"
+	"github.com/pastelnetwork/supernode/server/grpc/services"
 	"github.com/pastelnetwork/supernode/services/artworkregister"
 	"github.com/pastelnetwork/supernode/storage/memory"
 )
@@ -90,9 +91,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, pastel)
 
-	// servers
-	// nats := nats.NewServer(config.Nats)
-	grpc := grpc.NewServer(config.Server)
+	// server
+	grpc := grpc.NewServer(config.Server,
+		services.NewArtwork(artworkRegister),
+	)
 
 	return runServices(ctx, artworkRegister, grpc)
 }

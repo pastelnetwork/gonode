@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/go-commons/errors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -33,7 +34,8 @@ func (worker *Worker) Run(ctx context.Context) error {
 			return group.Wait()
 
 		case task := <-worker.taskCh:
-			group.Go(func() error {
+			group.Go(func() (err error) {
+				defer errors.Recover(func(rec error) { err = rec })
 				return task.Run(ctx)
 			})
 		}

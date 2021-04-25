@@ -7,19 +7,20 @@ import (
 	"strings"
 
 	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/go-commons/log"
-	"github.com/pastelnetwork/supernode/servers/grpc/services"
+	"github.com/pastelnetwork/supernode/server"
+	"github.com/pastelnetwork/supernode/server/grpc/log"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
-
-	pb "github.com/pastelnetwork/supernode-proto"
 )
 
-const logPrefix = "[grpc]"
+type service interface {
+	Desc() *grpc.ServiceDesc
+}
 
 // Server represents supernode server
 type Server struct {
-	config *Config
+	config   *server.Config
+	services []service
 }
 
 // Run starts the server
@@ -27,30 +28,30 @@ func (server *Server) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	addresses := strings.Split(server.config.ListenAddresses, ",")
+	grpcServer := server.grpcServer()
+
 	for _, address := range addresses {
 		address = net.JoinHostPort(strings.TrimSpace(address), strconv.Itoa(server.config.Port))
 
-		group.Go(func() error {
-			return server.listen(ctx, address)
+		group.Go(func() (err error) {
+			defer errors.Recover(func(rec error) { err = rec })
+			return server.listen(ctx, address, grpcServer)
 		})
 	}
 
 	return group.Wait()
 }
 
-func (server *Server) listen(ctx context.Context, address string) error {
+func (server *Server) listen(ctx context.Context, address string, grpcServer *grpc.Server) (err error) {
 	listen, err := net.Listen("tcp", address)
 	if err != nil {
 		return errors.Errorf("failed to listen: %v", err).WithField("address", address)
 	}
 
-	var opts []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts...)
-	pb.RegisterArtworkRegisterServer(grpcServer, services.NewArtworkRegister())
-
 	errCh := make(chan error, 1)
 	go func() {
-		log.Infof("%s Server listening on %q", logPrefix, address)
+		defer errors.Recover(func(rec error) { err = rec })
+		log.Infof("Server listening on %q", address)
 		if err := grpcServer.Serve(listen); err != nil {
 			errCh <- errors.Errorf("failed to serve: %v", err).WithField("address", address)
 		}
@@ -58,7 +59,7 @@ func (server *Server) listen(ctx context.Context, address string) error {
 
 	select {
 	case <-ctx.Done():
-		log.Infof("%s Shutting down server at %q", logPrefix, address)
+		log.Infof("Shutting down server at %q", address)
 		grpcServer.GracefulStop()
 	case err := <-errCh:
 		return err
@@ -67,9 +68,21 @@ func (server *Server) listen(ctx context.Context, address string) error {
 	return nil
 }
 
+func (server *Server) grpcServer() *grpc.Server {
+	grpcServer := grpc.NewServer(recovery())
+
+	for _, service := range server.services {
+		log.Debugf("Register service %q", service.Desc().ServiceName)
+		grpcServer.RegisterService(service.Desc(), service)
+	}
+
+	return grpcServer
+}
+
 // NewServer returns a new Server instance.
-func NewServer(config *Config) *Server {
+func NewServer(config *server.Config, services ...service) *Server {
 	return &Server{
-		config: config,
+		config:   config,
+		services: services,
 	}
 }

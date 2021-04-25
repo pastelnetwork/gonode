@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 
+	"github.com/pastelnetwork/go-commons/errors"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -16,7 +17,8 @@ func runServices(ctx context.Context, services ...service) error {
 	for _, service := range services {
 		service := service
 
-		group.Go(func() error {
+		group.Go(func() (err error) {
+			defer errors.Recover(func(rec error) { err = rec })
 			return service.Run(ctx)
 		})
 	}
