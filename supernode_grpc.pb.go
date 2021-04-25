@@ -14,283 +14,188 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// RegisterArtworkInternalClient is the client API for RegisterArtworkInternal service.
+// ArtworkClient is the client API for Artwork service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RegisterArtworkInternalClient interface {
-	SendRegTicket(ctx context.Context, in *SendRegTicketRequest, opts ...grpc.CallOption) (*Empty, error)
+type ArtworkClient interface {
+	Register(ctx context.Context, opts ...grpc.CallOption) (Artwork_RegisterClient, error)
+	SuperNode(ctx context.Context, opts ...grpc.CallOption) (Artwork_SuperNodeClient, error)
 }
 
-type registerArtworkInternalClient struct {
+type artworkClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRegisterArtworkInternalClient(cc grpc.ClientConnInterface) RegisterArtworkInternalClient {
-	return &registerArtworkInternalClient{cc}
+func NewArtworkClient(cc grpc.ClientConnInterface) ArtworkClient {
+	return &artworkClient{cc}
 }
 
-func (c *registerArtworkInternalClient) SendRegTicket(ctx context.Context, in *SendRegTicketRequest, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/supernode.RegisterArtworkInternal/SendRegTicket", in, out, opts...)
+func (c *artworkClient) Register(ctx context.Context, opts ...grpc.CallOption) (Artwork_RegisterClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Artwork_ServiceDesc.Streams[0], "/supernode.Artwork/Register", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &artworkRegisterClient{stream}
+	return x, nil
 }
 
-// RegisterArtworkInternalServer is the server API for RegisterArtworkInternal service.
-// All implementations must embed UnimplementedRegisterArtworkInternalServer
-// for forward compatibility
-type RegisterArtworkInternalServer interface {
-	SendRegTicket(context.Context, *SendRegTicketRequest) (*Empty, error)
-	mustEmbedUnimplementedRegisterArtworkInternalServer()
+type Artwork_RegisterClient interface {
+	Send(*RegisterRequest) error
+	Recv() (*RegisterReply, error)
+	grpc.ClientStream
 }
 
-// UnimplementedRegisterArtworkInternalServer must be embedded to have forward compatible implementations.
-type UnimplementedRegisterArtworkInternalServer struct {
+type artworkRegisterClient struct {
+	grpc.ClientStream
 }
 
-func (UnimplementedRegisterArtworkInternalServer) SendRegTicket(context.Context, *SendRegTicketRequest) (*Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendRegTicket not implemented")
-}
-func (UnimplementedRegisterArtworkInternalServer) mustEmbedUnimplementedRegisterArtworkInternalServer() {
+func (x *artworkRegisterClient) Send(m *RegisterRequest) error {
+	return x.ClientStream.SendMsg(m)
 }
 
-// UnsafeRegisterArtworkInternalServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RegisterArtworkInternalServer will
-// result in compilation errors.
-type UnsafeRegisterArtworkInternalServer interface {
-	mustEmbedUnimplementedRegisterArtworkInternalServer()
-}
-
-func RegisterRegisterArtworkInternalServer(s grpc.ServiceRegistrar, srv RegisterArtworkInternalServer) {
-	s.RegisterService(&RegisterArtworkInternal_ServiceDesc, srv)
-}
-
-func _RegisterArtworkInternal_SendRegTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendRegTicketRequest)
-	if err := dec(in); err != nil {
+func (x *artworkRegisterClient) Recv() (*RegisterReply, error) {
+	m := new(RegisterReply)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(RegisterArtworkInternalServer).SendRegTicket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/supernode.RegisterArtworkInternal/SendRegTicket",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkInternalServer).SendRegTicket(ctx, req.(*SendRegTicketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
-// RegisterArtworkInternal_ServiceDesc is the grpc.ServiceDesc for RegisterArtworkInternal service.
+func (c *artworkClient) SuperNode(ctx context.Context, opts ...grpc.CallOption) (Artwork_SuperNodeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Artwork_ServiceDesc.Streams[1], "/supernode.Artwork/SuperNode", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &artworkSuperNodeClient{stream}
+	return x, nil
+}
+
+type Artwork_SuperNodeClient interface {
+	Send(*SuperNodeRequest) error
+	Recv() (*SuperNodeReply, error)
+	grpc.ClientStream
+}
+
+type artworkSuperNodeClient struct {
+	grpc.ClientStream
+}
+
+func (x *artworkSuperNodeClient) Send(m *SuperNodeRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *artworkSuperNodeClient) Recv() (*SuperNodeReply, error) {
+	m := new(SuperNodeReply)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// ArtworkServer is the server API for Artwork service.
+// All implementations must embed UnimplementedArtworkServer
+// for forward compatibility
+type ArtworkServer interface {
+	Register(Artwork_RegisterServer) error
+	SuperNode(Artwork_SuperNodeServer) error
+	mustEmbedUnimplementedArtworkServer()
+}
+
+// UnimplementedArtworkServer must be embedded to have forward compatible implementations.
+type UnimplementedArtworkServer struct {
+}
+
+func (UnimplementedArtworkServer) Register(Artwork_RegisterServer) error {
+	return status.Errorf(codes.Unimplemented, "method Register not implemented")
+}
+func (UnimplementedArtworkServer) SuperNode(Artwork_SuperNodeServer) error {
+	return status.Errorf(codes.Unimplemented, "method SuperNode not implemented")
+}
+func (UnimplementedArtworkServer) mustEmbedUnimplementedArtworkServer() {}
+
+// UnsafeArtworkServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ArtworkServer will
+// result in compilation errors.
+type UnsafeArtworkServer interface {
+	mustEmbedUnimplementedArtworkServer()
+}
+
+func RegisterArtworkServer(s grpc.ServiceRegistrar, srv ArtworkServer) {
+	s.RegisterService(&Artwork_ServiceDesc, srv)
+}
+
+func _Artwork_Register_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ArtworkServer).Register(&artworkRegisterServer{stream})
+}
+
+type Artwork_RegisterServer interface {
+	Send(*RegisterReply) error
+	Recv() (*RegisterRequest, error)
+	grpc.ServerStream
+}
+
+type artworkRegisterServer struct {
+	grpc.ServerStream
+}
+
+func (x *artworkRegisterServer) Send(m *RegisterReply) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *artworkRegisterServer) Recv() (*RegisterRequest, error) {
+	m := new(RegisterRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _Artwork_SuperNode_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ArtworkServer).SuperNode(&artworkSuperNodeServer{stream})
+}
+
+type Artwork_SuperNodeServer interface {
+	Send(*SuperNodeReply) error
+	Recv() (*SuperNodeRequest, error)
+	grpc.ServerStream
+}
+
+type artworkSuperNodeServer struct {
+	grpc.ServerStream
+}
+
+func (x *artworkSuperNodeServer) Send(m *SuperNodeReply) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *artworkSuperNodeServer) Recv() (*SuperNodeRequest, error) {
+	m := new(SuperNodeRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+// Artwork_ServiceDesc is the grpc.ServiceDesc for Artwork service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RegisterArtworkInternal_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "supernode.RegisterArtworkInternal",
-	HandlerType: (*RegisterArtworkInternalServer)(nil),
-	Methods: []grpc.MethodDesc{
+var Artwork_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "supernode.Artwork",
+	HandlerType: (*ArtworkServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "SendRegTicket",
-			Handler:    _RegisterArtworkInternal_SendRegTicket_Handler,
+			StreamName:    "Register",
+			Handler:       _Artwork_Register_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "SuperNode",
+			Handler:       _Artwork_SuperNode_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "supernode.proto",
-}
-
-// RegisterArtworkClient is the client API for RegisterArtwork service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RegisterArtworkClient interface {
-	Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*ConnectReply, error)
-	AcceptConnection(ctx context.Context, in *AcceptConnectionRequest, opts ...grpc.CallOption) (*AcceptConnectionReply, error)
-	UploadImage(ctx context.Context, in *UploadImageRequest, opts ...grpc.CallOption) (*UploadImageReply, error)
-	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
-}
-
-type registerArtworkClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewRegisterArtworkClient(cc grpc.ClientConnInterface) RegisterArtworkClient {
-	return &registerArtworkClient{cc}
-}
-
-func (c *registerArtworkClient) Connect(ctx context.Context, in *ConnectRequest, opts ...grpc.CallOption) (*ConnectReply, error) {
-	out := new(ConnectReply)
-	err := c.cc.Invoke(ctx, "/supernode.RegisterArtwork/Connect", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerArtworkClient) AcceptConnection(ctx context.Context, in *AcceptConnectionRequest, opts ...grpc.CallOption) (*AcceptConnectionReply, error) {
-	out := new(AcceptConnectionReply)
-	err := c.cc.Invoke(ctx, "/supernode.RegisterArtwork/AcceptConnection", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerArtworkClient) UploadImage(ctx context.Context, in *UploadImageRequest, opts ...grpc.CallOption) (*UploadImageReply, error) {
-	out := new(UploadImageReply)
-	err := c.cc.Invoke(ctx, "/supernode.RegisterArtwork/UploadImage", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerArtworkClient) SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error) {
-	out := new(SendTicketReply)
-	err := c.cc.Invoke(ctx, "/supernode.RegisterArtwork/SendTicket", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// RegisterArtworkServer is the server API for RegisterArtwork service.
-// All implementations must embed UnimplementedRegisterArtworkServer
-// for forward compatibility
-type RegisterArtworkServer interface {
-	Connect(context.Context, *ConnectRequest) (*ConnectReply, error)
-	AcceptConnection(context.Context, *AcceptConnectionRequest) (*AcceptConnectionReply, error)
-	UploadImage(context.Context, *UploadImageRequest) (*UploadImageReply, error)
-	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
-	mustEmbedUnimplementedRegisterArtworkServer()
-}
-
-// UnimplementedRegisterArtworkServer must be embedded to have forward compatible implementations.
-type UnimplementedRegisterArtworkServer struct {
-}
-
-func (UnimplementedRegisterArtworkServer) Connect(context.Context, *ConnectRequest) (*ConnectReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Connect not implemented")
-}
-func (UnimplementedRegisterArtworkServer) AcceptConnection(context.Context, *AcceptConnectionRequest) (*AcceptConnectionReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AcceptConnection not implemented")
-}
-func (UnimplementedRegisterArtworkServer) UploadImage(context.Context, *UploadImageRequest) (*UploadImageReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UploadImage not implemented")
-}
-func (UnimplementedRegisterArtworkServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
-}
-func (UnimplementedRegisterArtworkServer) mustEmbedUnimplementedRegisterArtworkServer() {}
-
-// UnsafeRegisterArtworkServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RegisterArtworkServer will
-// result in compilation errors.
-type UnsafeRegisterArtworkServer interface {
-	mustEmbedUnimplementedRegisterArtworkServer()
-}
-
-func RegisterRegisterArtworkServer(s grpc.ServiceRegistrar, srv RegisterArtworkServer) {
-	s.RegisterService(&RegisterArtwork_ServiceDesc, srv)
-}
-
-func _RegisterArtwork_Connect_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConnectRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegisterArtworkServer).Connect(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/supernode.RegisterArtwork/Connect",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).Connect(ctx, req.(*ConnectRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RegisterArtwork_AcceptConnection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AcceptConnectionRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegisterArtworkServer).AcceptConnection(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/supernode.RegisterArtwork/AcceptConnection",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).AcceptConnection(ctx, req.(*AcceptConnectionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RegisterArtwork_UploadImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UploadImageRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegisterArtworkServer).UploadImage(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/supernode.RegisterArtwork/UploadImage",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).UploadImage(ctx, req.(*UploadImageRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RegisterArtwork_SendTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendTicketRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegisterArtworkServer).SendTicket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/supernode.RegisterArtwork/SendTicket",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).SendTicket(ctx, req.(*SendTicketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// RegisterArtwork_ServiceDesc is the grpc.ServiceDesc for RegisterArtwork service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "supernode.RegisterArtwork",
-	HandlerType: (*RegisterArtworkServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Connect",
-			Handler:    _RegisterArtwork_Connect_Handler,
-		},
-		{
-			MethodName: "AcceptConnection",
-			Handler:    _RegisterArtwork_AcceptConnection_Handler,
-		},
-		{
-			MethodName: "UploadImage",
-			Handler:    _RegisterArtwork_UploadImage_Handler,
-		},
-		{
-			MethodName: "SendTicket",
-			Handler:    _RegisterArtwork_SendTicket_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "supernode.proto",
 }

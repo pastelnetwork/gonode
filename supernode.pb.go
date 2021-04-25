@@ -105,6 +105,7 @@ func (*Empty) Descriptor() ([]byte, []int) {
 	return file_supernode_proto_rawDescGZIP(), []int{0}
 }
 
+// Common Error
 type Error struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -160,16 +161,21 @@ func (x *Error) GetErrMsg() string {
 	return ""
 }
 
-type SendRegTicketRequest struct {
+type RegisterRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	TicketSignature string `protobuf:"bytes,1,opt,name=ticket_signature,json=ticketSignature,proto3" json:"ticket_signature,omitempty"`
+	// Types that are assignable to TestOneof:
+	//	*RegisterRequest_PrimaryNode
+	//	*RegisterRequest_SecondaryNode
+	//	*RegisterRequest_UploadImage
+	//	*RegisterRequest_SendTicket
+	TestOneof isRegisterRequest_TestOneof `protobuf_oneof:"test_oneof"`
 }
 
-func (x *SendRegTicketRequest) Reset() {
-	*x = SendRegTicketRequest{}
+func (x *RegisterRequest) Reset() {
+	*x = RegisterRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_supernode_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -177,13 +183,13 @@ func (x *SendRegTicketRequest) Reset() {
 	}
 }
 
-func (x *SendRegTicketRequest) String() string {
+func (x *RegisterRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendRegTicketRequest) ProtoMessage() {}
+func (*RegisterRequest) ProtoMessage() {}
 
-func (x *SendRegTicketRequest) ProtoReflect() protoreflect.Message {
+func (x *RegisterRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_supernode_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -195,19 +201,464 @@ func (x *SendRegTicketRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendRegTicketRequest.ProtoReflect.Descriptor instead.
-func (*SendRegTicketRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use RegisterRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest) Descriptor() ([]byte, []int) {
 	return file_supernode_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SendRegTicketRequest) GetTicketSignature() string {
+func (m *RegisterRequest) GetTestOneof() isRegisterRequest_TestOneof {
+	if m != nil {
+		return m.TestOneof
+	}
+	return nil
+}
+
+func (x *RegisterRequest) GetPrimaryNode() *RegisterRequest_PrimaryNodeRequest {
+	if x, ok := x.GetTestOneof().(*RegisterRequest_PrimaryNode); ok {
+		return x.PrimaryNode
+	}
+	return nil
+}
+
+func (x *RegisterRequest) GetSecondaryNode() *RegisterRequest_SecondaryNodeRequest {
+	if x, ok := x.GetTestOneof().(*RegisterRequest_SecondaryNode); ok {
+		return x.SecondaryNode
+	}
+	return nil
+}
+
+func (x *RegisterRequest) GetUploadImage() *RegisterRequest_UploadImageRequest {
+	if x, ok := x.GetTestOneof().(*RegisterRequest_UploadImage); ok {
+		return x.UploadImage
+	}
+	return nil
+}
+
+func (x *RegisterRequest) GetSendTicket() *RegisterRequest_SendTicketRequest {
+	if x, ok := x.GetTestOneof().(*RegisterRequest_SendTicket); ok {
+		return x.SendTicket
+	}
+	return nil
+}
+
+type isRegisterRequest_TestOneof interface {
+	isRegisterRequest_TestOneof()
+}
+
+type RegisterRequest_PrimaryNode struct {
+	PrimaryNode *RegisterRequest_PrimaryNodeRequest `protobuf:"bytes,1,opt,name=primary_node,json=primaryNode,proto3,oneof"`
+}
+
+type RegisterRequest_SecondaryNode struct {
+	SecondaryNode *RegisterRequest_SecondaryNodeRequest `protobuf:"bytes,2,opt,name=secondary_node,json=secondaryNode,proto3,oneof"`
+}
+
+type RegisterRequest_UploadImage struct {
+	UploadImage *RegisterRequest_UploadImageRequest `protobuf:"bytes,3,opt,name=upload_image,json=uploadImage,proto3,oneof"`
+}
+
+type RegisterRequest_SendTicket struct {
+	SendTicket *RegisterRequest_SendTicketRequest `protobuf:"bytes,4,opt,name=send_ticket,json=sendTicket,proto3,oneof"`
+}
+
+func (*RegisterRequest_PrimaryNode) isRegisterRequest_TestOneof() {}
+
+func (*RegisterRequest_SecondaryNode) isRegisterRequest_TestOneof() {}
+
+func (*RegisterRequest_UploadImage) isRegisterRequest_TestOneof() {}
+
+func (*RegisterRequest_SendTicket) isRegisterRequest_TestOneof() {}
+
+type RegisterReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to TestOneof:
+	//	*RegisterReply_PrimaryNode
+	//	*RegisterReply_SecondaryNode
+	//	*RegisterReply_UploadImage
+	//	*RegisterReply_SendTicket
+	TestOneof isRegisterReply_TestOneof `protobuf_oneof:"test_oneof"`
+}
+
+func (x *RegisterReply) Reset() {
+	*x = RegisterReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterReply) ProtoMessage() {}
+
+func (x *RegisterReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterReply.ProtoReflect.Descriptor instead.
+func (*RegisterReply) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{3}
+}
+
+func (m *RegisterReply) GetTestOneof() isRegisterReply_TestOneof {
+	if m != nil {
+		return m.TestOneof
+	}
+	return nil
+}
+
+func (x *RegisterReply) GetPrimaryNode() *RegisterReply_PrimaryNodeReply {
+	if x, ok := x.GetTestOneof().(*RegisterReply_PrimaryNode); ok {
+		return x.PrimaryNode
+	}
+	return nil
+}
+
+func (x *RegisterReply) GetSecondaryNode() *RegisterReply_SecondaryNodeReply {
+	if x, ok := x.GetTestOneof().(*RegisterReply_SecondaryNode); ok {
+		return x.SecondaryNode
+	}
+	return nil
+}
+
+func (x *RegisterReply) GetUploadImage() *RegisterReply_UploadImageReply {
+	if x, ok := x.GetTestOneof().(*RegisterReply_UploadImage); ok {
+		return x.UploadImage
+	}
+	return nil
+}
+
+func (x *RegisterReply) GetSendTicket() *RegisterReply_SendTicketReply {
+	if x, ok := x.GetTestOneof().(*RegisterReply_SendTicket); ok {
+		return x.SendTicket
+	}
+	return nil
+}
+
+type isRegisterReply_TestOneof interface {
+	isRegisterReply_TestOneof()
+}
+
+type RegisterReply_PrimaryNode struct {
+	PrimaryNode *RegisterReply_PrimaryNodeReply `protobuf:"bytes,1,opt,name=primary_node,json=primaryNode,proto3,oneof"`
+}
+
+type RegisterReply_SecondaryNode struct {
+	SecondaryNode *RegisterReply_SecondaryNodeReply `protobuf:"bytes,2,opt,name=secondary_node,json=secondaryNode,proto3,oneof"`
+}
+
+type RegisterReply_UploadImage struct {
+	UploadImage *RegisterReply_UploadImageReply `protobuf:"bytes,3,opt,name=upload_image,json=uploadImage,proto3,oneof"`
+}
+
+type RegisterReply_SendTicket struct {
+	SendTicket *RegisterReply_SendTicketReply `protobuf:"bytes,4,opt,name=send_ticket,json=sendTicket,proto3,oneof"`
+}
+
+func (*RegisterReply_PrimaryNode) isRegisterReply_TestOneof() {}
+
+func (*RegisterReply_SecondaryNode) isRegisterReply_TestOneof() {}
+
+func (*RegisterReply_UploadImage) isRegisterReply_TestOneof() {}
+
+func (*RegisterReply_SendTicket) isRegisterReply_TestOneof() {}
+
+type SuperNodeRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to TestOneof:
+	//	*SuperNodeRequest_Hello
+	TestOneof isSuperNodeRequest_TestOneof `protobuf_oneof:"test_oneof"`
+}
+
+func (x *SuperNodeRequest) Reset() {
+	*x = SuperNodeRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SuperNodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuperNodeRequest) ProtoMessage() {}
+
+func (x *SuperNodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SuperNodeRequest.ProtoReflect.Descriptor instead.
+func (*SuperNodeRequest) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{4}
+}
+
+func (m *SuperNodeRequest) GetTestOneof() isSuperNodeRequest_TestOneof {
+	if m != nil {
+		return m.TestOneof
+	}
+	return nil
+}
+
+func (x *SuperNodeRequest) GetHello() *SuperNodeRequest_HelloRequest {
+	if x, ok := x.GetTestOneof().(*SuperNodeRequest_Hello); ok {
+		return x.Hello
+	}
+	return nil
+}
+
+type isSuperNodeRequest_TestOneof interface {
+	isSuperNodeRequest_TestOneof()
+}
+
+type SuperNodeRequest_Hello struct {
+	Hello *SuperNodeRequest_HelloRequest `protobuf:"bytes,1,opt,name=hello,proto3,oneof"`
+}
+
+func (*SuperNodeRequest_Hello) isSuperNodeRequest_TestOneof() {}
+
+type SuperNodeReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// Types that are assignable to TestOneof:
+	//	*SuperNodeReply_Hello
+	TestOneof isSuperNodeReply_TestOneof `protobuf_oneof:"test_oneof"`
+}
+
+func (x *SuperNodeReply) Reset() {
+	*x = SuperNodeReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SuperNodeReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuperNodeReply) ProtoMessage() {}
+
+func (x *SuperNodeReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SuperNodeReply.ProtoReflect.Descriptor instead.
+func (*SuperNodeReply) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{5}
+}
+
+func (m *SuperNodeReply) GetTestOneof() isSuperNodeReply_TestOneof {
+	if m != nil {
+		return m.TestOneof
+	}
+	return nil
+}
+
+func (x *SuperNodeReply) GetHello() *SuperNodeReply_HelloReply {
+	if x, ok := x.GetTestOneof().(*SuperNodeReply_Hello); ok {
+		return x.Hello
+	}
+	return nil
+}
+
+type isSuperNodeReply_TestOneof interface {
+	isSuperNodeReply_TestOneof()
+}
+
+type SuperNodeReply_Hello struct {
+	Hello *SuperNodeReply_HelloReply `protobuf:"bytes,1,opt,name=hello,proto3,oneof"`
+}
+
+func (*SuperNodeReply_Hello) isSuperNodeReply_TestOneof() {}
+
+type RegisterRequest_PrimaryNodeRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ConnID string `protobuf:"bytes,1,opt,name=connID,proto3" json:"connID,omitempty"`
+}
+
+func (x *RegisterRequest_PrimaryNodeRequest) Reset() {
+	*x = RegisterRequest_PrimaryNodeRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterRequest_PrimaryNodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterRequest_PrimaryNodeRequest) ProtoMessage() {}
+
+func (x *RegisterRequest_PrimaryNodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterRequest_PrimaryNodeRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest_PrimaryNodeRequest) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{2, 0}
+}
+
+func (x *RegisterRequest_PrimaryNodeRequest) GetConnID() string {
 	if x != nil {
-		return x.TicketSignature
+		return x.ConnID
 	}
 	return ""
 }
 
-type SendTicketRequest struct {
+type RegisterRequest_SecondaryNodeRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ConnID     string `protobuf:"bytes,1,opt,name=connID,proto3" json:"connID,omitempty"`
+	PrimaryKey string `protobuf:"bytes,2,opt,name=primary_key,json=primaryKey,proto3" json:"primary_key,omitempty"`
+}
+
+func (x *RegisterRequest_SecondaryNodeRequest) Reset() {
+	*x = RegisterRequest_SecondaryNodeRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterRequest_SecondaryNodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterRequest_SecondaryNodeRequest) ProtoMessage() {}
+
+func (x *RegisterRequest_SecondaryNodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterRequest_SecondaryNodeRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest_SecondaryNodeRequest) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{2, 1}
+}
+
+func (x *RegisterRequest_SecondaryNodeRequest) GetConnID() string {
+	if x != nil {
+		return x.ConnID
+	}
+	return ""
+}
+
+func (x *RegisterRequest_SecondaryNodeRequest) GetPrimaryKey() string {
+	if x != nil {
+		return x.PrimaryKey
+	}
+	return ""
+}
+
+type RegisterRequest_UploadImageRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Image []byte `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
+}
+
+func (x *RegisterRequest_UploadImageRequest) Reset() {
+	*x = RegisterRequest_UploadImageRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterRequest_UploadImageRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterRequest_UploadImageRequest) ProtoMessage() {}
+
+func (x *RegisterRequest_UploadImageRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterRequest_UploadImageRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest_UploadImageRequest) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{2, 2}
+}
+
+func (x *RegisterRequest_UploadImageRequest) GetImage() []byte {
+	if x != nil {
+		return x.Image
+	}
+	return nil
+}
+
+type RegisterRequest_SendTicketRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -220,358 +671,8 @@ type SendTicketRequest struct {
 	Thumbnail       []byte `protobuf:"bytes,6,opt,name=thumbnail,proto3" json:"thumbnail,omitempty"`
 }
 
-func (x *SendTicketRequest) Reset() {
-	*x = SendTicketRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_supernode_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *SendTicketRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SendTicketRequest) ProtoMessage() {}
-
-func (x *SendTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_supernode_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SendTicketRequest.ProtoReflect.Descriptor instead.
-func (*SendTicketRequest) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *SendTicketRequest) GetTicket() []byte {
-	if x != nil {
-		return x.Ticket
-	}
-	return nil
-}
-
-func (x *SendTicketRequest) GetTicketSignature() string {
-	if x != nil {
-		return x.TicketSignature
-	}
-	return ""
-}
-
-func (x *SendTicketRequest) GetFgpt() string {
-	if x != nil {
-		return x.Fgpt
-	}
-	return ""
-}
-
-func (x *SendTicketRequest) GetFgptSignature() string {
-	if x != nil {
-		return x.FgptSignature
-	}
-	return ""
-}
-
-func (x *SendTicketRequest) GetFeeTxid() string {
-	if x != nil {
-		return x.FeeTxid
-	}
-	return ""
-}
-
-func (x *SendTicketRequest) GetThumbnail() []byte {
-	if x != nil {
-		return x.Thumbnail
-	}
-	return nil
-}
-
-type SendTicketReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	TicketTxid string `protobuf:"bytes,1,opt,name=ticket_txid,json=ticketTxid,proto3" json:"ticket_txid,omitempty"`
-	Error      *Error `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-}
-
-func (x *SendTicketReply) Reset() {
-	*x = SendTicketReply{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_supernode_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *SendTicketReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SendTicketReply) ProtoMessage() {}
-
-func (x *SendTicketReply) ProtoReflect() protoreflect.Message {
-	mi := &file_supernode_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SendTicketReply.ProtoReflect.Descriptor instead.
-func (*SendTicketReply) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *SendTicketReply) GetTicketTxid() string {
-	if x != nil {
-		return x.TicketTxid
-	}
-	return ""
-}
-
-func (x *SendTicketReply) GetError() *Error {
-	if x != nil {
-		return x.Error
-	}
-	return nil
-}
-
-type UploadImageRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Image []byte `protobuf:"bytes,1,opt,name=image,proto3" json:"image,omitempty"`
-}
-
-func (x *UploadImageRequest) Reset() {
-	*x = UploadImageRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_supernode_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *UploadImageRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UploadImageRequest) ProtoMessage() {}
-
-func (x *UploadImageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_supernode_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UploadImageRequest.ProtoReflect.Descriptor instead.
-func (*UploadImageRequest) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *UploadImageRequest) GetImage() []byte {
-	if x != nil {
-		return x.Image
-	}
-	return nil
-}
-
-type UploadImageReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Fgpt  string `protobuf:"bytes,1,opt,name=fgpt,proto3" json:"fgpt,omitempty"`
-	Error *Error `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-}
-
-func (x *UploadImageReply) Reset() {
-	*x = UploadImageReply{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_supernode_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *UploadImageReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UploadImageReply) ProtoMessage() {}
-
-func (x *UploadImageReply) ProtoReflect() protoreflect.Message {
-	mi := &file_supernode_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use UploadImageReply.ProtoReflect.Descriptor instead.
-func (*UploadImageReply) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *UploadImageReply) GetFgpt() string {
-	if x != nil {
-		return x.Fgpt
-	}
-	return ""
-}
-
-func (x *UploadImageReply) GetError() *Error {
-	if x != nil {
-		return x.Error
-	}
-	return nil
-}
-
-type ConnectRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ConnID string `protobuf:"bytes,1,opt,name=connID,proto3" json:"connID,omitempty"`
-	PeerID string `protobuf:"bytes,2,opt,name=peerID,proto3" json:"peerID,omitempty"`
-	ExtKey string `protobuf:"bytes,3,opt,name=extKey,proto3" json:"extKey,omitempty"`
-}
-
-func (x *ConnectRequest) Reset() {
-	*x = ConnectRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_supernode_proto_msgTypes[7]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ConnectRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ConnectRequest) ProtoMessage() {}
-
-func (x *ConnectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_supernode_proto_msgTypes[7]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ConnectRequest.ProtoReflect.Descriptor instead.
-func (*ConnectRequest) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *ConnectRequest) GetConnID() string {
-	if x != nil {
-		return x.ConnID
-	}
-	return ""
-}
-
-func (x *ConnectRequest) GetPeerID() string {
-	if x != nil {
-		return x.PeerID
-	}
-	return ""
-}
-
-func (x *ConnectRequest) GetExtKey() string {
-	if x != nil {
-		return x.ExtKey
-	}
-	return ""
-}
-
-type ConnectReply struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Error *Error `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
-}
-
-func (x *ConnectReply) Reset() {
-	*x = ConnectReply{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_supernode_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *ConnectReply) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ConnectReply) ProtoMessage() {}
-
-func (x *ConnectReply) ProtoReflect() protoreflect.Message {
-	mi := &file_supernode_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ConnectReply.ProtoReflect.Descriptor instead.
-func (*ConnectReply) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *ConnectReply) GetError() *Error {
-	if x != nil {
-		return x.Error
-	}
-	return nil
-}
-
-type AcceptConnectionRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	ConnID        string `protobuf:"bytes,1,opt,name=connID,proto3" json:"connID,omitempty"`
-	NumberOfPeers int32  `protobuf:"varint,2,opt,name=numberOfPeers,proto3" json:"numberOfPeers,omitempty"`
-}
-
-func (x *AcceptConnectionRequest) Reset() {
-	*x = AcceptConnectionRequest{}
+func (x *RegisterRequest_SendTicketRequest) Reset() {
+	*x = RegisterRequest_SendTicketRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_supernode_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -579,13 +680,13 @@ func (x *AcceptConnectionRequest) Reset() {
 	}
 }
 
-func (x *AcceptConnectionRequest) String() string {
+func (x *RegisterRequest_SendTicketRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AcceptConnectionRequest) ProtoMessage() {}
+func (*RegisterRequest_SendTicketRequest) ProtoMessage() {}
 
-func (x *AcceptConnectionRequest) ProtoReflect() protoreflect.Message {
+func (x *RegisterRequest_SendTicketRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_supernode_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -597,35 +698,64 @@ func (x *AcceptConnectionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AcceptConnectionRequest.ProtoReflect.Descriptor instead.
-func (*AcceptConnectionRequest) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{9}
+// Deprecated: Use RegisterRequest_SendTicketRequest.ProtoReflect.Descriptor instead.
+func (*RegisterRequest_SendTicketRequest) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{2, 3}
 }
 
-func (x *AcceptConnectionRequest) GetConnID() string {
+func (x *RegisterRequest_SendTicketRequest) GetTicket() []byte {
 	if x != nil {
-		return x.ConnID
+		return x.Ticket
+	}
+	return nil
+}
+
+func (x *RegisterRequest_SendTicketRequest) GetTicketSignature() string {
+	if x != nil {
+		return x.TicketSignature
 	}
 	return ""
 }
 
-func (x *AcceptConnectionRequest) GetNumberOfPeers() int32 {
+func (x *RegisterRequest_SendTicketRequest) GetFgpt() string {
 	if x != nil {
-		return x.NumberOfPeers
+		return x.Fgpt
 	}
-	return 0
+	return ""
 }
 
-type AcceptConnectionReply struct {
+func (x *RegisterRequest_SendTicketRequest) GetFgptSignature() string {
+	if x != nil {
+		return x.FgptSignature
+	}
+	return ""
+}
+
+func (x *RegisterRequest_SendTicketRequest) GetFeeTxid() string {
+	if x != nil {
+		return x.FeeTxid
+	}
+	return ""
+}
+
+func (x *RegisterRequest_SendTicketRequest) GetThumbnail() []byte {
+	if x != nil {
+		return x.Thumbnail
+	}
+	return nil
+}
+
+type RegisterReply_PrimaryNodeReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Peers []*Peer `protobuf:"bytes,1,rep,name=peers,proto3" json:"peers,omitempty"`
+	Peers []*RegisterReply_PrimaryNodeReply_Peer `protobuf:"bytes,1,rep,name=peers,proto3" json:"peers,omitempty"`
+	Error *Error                                 `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 }
 
-func (x *AcceptConnectionReply) Reset() {
-	*x = AcceptConnectionReply{}
+func (x *RegisterReply_PrimaryNodeReply) Reset() {
+	*x = RegisterReply_PrimaryNodeReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_supernode_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -633,13 +763,13 @@ func (x *AcceptConnectionReply) Reset() {
 	}
 }
 
-func (x *AcceptConnectionReply) String() string {
+func (x *RegisterReply_PrimaryNodeReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*AcceptConnectionReply) ProtoMessage() {}
+func (*RegisterReply_PrimaryNodeReply) ProtoMessage() {}
 
-func (x *AcceptConnectionReply) ProtoReflect() protoreflect.Message {
+func (x *RegisterReply_PrimaryNodeReply) ProtoReflect() protoreflect.Message {
 	mi := &file_supernode_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -651,29 +781,35 @@ func (x *AcceptConnectionReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AcceptConnectionReply.ProtoReflect.Descriptor instead.
-func (*AcceptConnectionReply) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{10}
+// Deprecated: Use RegisterReply_PrimaryNodeReply.ProtoReflect.Descriptor instead.
+func (*RegisterReply_PrimaryNodeReply) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{3, 0}
 }
 
-func (x *AcceptConnectionReply) GetPeers() []*Peer {
+func (x *RegisterReply_PrimaryNodeReply) GetPeers() []*RegisterReply_PrimaryNodeReply_Peer {
 	if x != nil {
 		return x.Peers
 	}
 	return nil
 }
 
-type Peer struct {
+func (x *RegisterReply_PrimaryNodeReply) GetError() *Error {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type RegisterReply_SecondaryNodeReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	PeerID string `protobuf:"bytes,1,opt,name=peerID,proto3" json:"peerID,omitempty"`
-	ExtKey string `protobuf:"bytes,2,opt,name=extKey,proto3" json:"extKey,omitempty"`
+	Error *Error `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
 }
 
-func (x *Peer) Reset() {
-	*x = Peer{}
+func (x *RegisterReply_SecondaryNodeReply) Reset() {
+	*x = RegisterReply_SecondaryNodeReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_supernode_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -681,13 +817,13 @@ func (x *Peer) Reset() {
 	}
 }
 
-func (x *Peer) String() string {
+func (x *RegisterReply_SecondaryNodeReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Peer) ProtoMessage() {}
+func (*RegisterReply_SecondaryNodeReply) ProtoMessage() {}
 
-func (x *Peer) ProtoReflect() protoreflect.Message {
+func (x *RegisterReply_SecondaryNodeReply) ProtoReflect() protoreflect.Message {
 	mi := &file_supernode_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -699,23 +835,267 @@ func (x *Peer) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Peer.ProtoReflect.Descriptor instead.
-func (*Peer) Descriptor() ([]byte, []int) {
-	return file_supernode_proto_rawDescGZIP(), []int{11}
+// Deprecated: Use RegisterReply_SecondaryNodeReply.ProtoReflect.Descriptor instead.
+func (*RegisterReply_SecondaryNodeReply) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{3, 1}
 }
 
-func (x *Peer) GetPeerID() string {
+func (x *RegisterReply_SecondaryNodeReply) GetError() *Error {
 	if x != nil {
-		return x.PeerID
+		return x.Error
+	}
+	return nil
+}
+
+type RegisterReply_UploadImageReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Fgpt  string `protobuf:"bytes,1,opt,name=fgpt,proto3" json:"fgpt,omitempty"`
+	Error *Error `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *RegisterReply_UploadImageReply) Reset() {
+	*x = RegisterReply_UploadImageReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[12]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterReply_UploadImageReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterReply_UploadImageReply) ProtoMessage() {}
+
+func (x *RegisterReply_UploadImageReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[12]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterReply_UploadImageReply.ProtoReflect.Descriptor instead.
+func (*RegisterReply_UploadImageReply) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{3, 2}
+}
+
+func (x *RegisterReply_UploadImageReply) GetFgpt() string {
+	if x != nil {
+		return x.Fgpt
 	}
 	return ""
 }
 
-func (x *Peer) GetExtKey() string {
+func (x *RegisterReply_UploadImageReply) GetError() *Error {
 	if x != nil {
-		return x.ExtKey
+		return x.Error
+	}
+	return nil
+}
+
+type RegisterReply_SendTicketReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	TicketTxid string `protobuf:"bytes,1,opt,name=ticket_txid,json=ticketTxid,proto3" json:"ticket_txid,omitempty"`
+	Error      *Error `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *RegisterReply_SendTicketReply) Reset() {
+	*x = RegisterReply_SendTicketReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[13]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterReply_SendTicketReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterReply_SendTicketReply) ProtoMessage() {}
+
+func (x *RegisterReply_SendTicketReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[13]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterReply_SendTicketReply.ProtoReflect.Descriptor instead.
+func (*RegisterReply_SendTicketReply) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{3, 3}
+}
+
+func (x *RegisterReply_SendTicketReply) GetTicketTxid() string {
+	if x != nil {
+		return x.TicketTxid
 	}
 	return ""
+}
+
+func (x *RegisterReply_SendTicketReply) GetError() *Error {
+	if x != nil {
+		return x.Error
+	}
+	return nil
+}
+
+type RegisterReply_PrimaryNodeReply_Peer struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	SecondaryKey string `protobuf:"bytes,1,opt,name=secondary_key,json=secondaryKey,proto3" json:"secondary_key,omitempty"`
+}
+
+func (x *RegisterReply_PrimaryNodeReply_Peer) Reset() {
+	*x = RegisterReply_PrimaryNodeReply_Peer{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[14]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RegisterReply_PrimaryNodeReply_Peer) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RegisterReply_PrimaryNodeReply_Peer) ProtoMessage() {}
+
+func (x *RegisterReply_PrimaryNodeReply_Peer) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[14]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RegisterReply_PrimaryNodeReply_Peer.ProtoReflect.Descriptor instead.
+func (*RegisterReply_PrimaryNodeReply_Peer) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{3, 0, 0}
+}
+
+func (x *RegisterReply_PrimaryNodeReply_Peer) GetSecondaryKey() string {
+	if x != nil {
+		return x.SecondaryKey
+	}
+	return ""
+}
+
+type SuperNodeRequest_HelloRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ConnID string `protobuf:"bytes,1,opt,name=connID,proto3" json:"connID,omitempty"`
+}
+
+func (x *SuperNodeRequest_HelloRequest) Reset() {
+	*x = SuperNodeRequest_HelloRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[15]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SuperNodeRequest_HelloRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuperNodeRequest_HelloRequest) ProtoMessage() {}
+
+func (x *SuperNodeRequest_HelloRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[15]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SuperNodeRequest_HelloRequest.ProtoReflect.Descriptor instead.
+func (*SuperNodeRequest_HelloRequest) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{4, 0}
+}
+
+func (x *SuperNodeRequest_HelloRequest) GetConnID() string {
+	if x != nil {
+		return x.ConnID
+	}
+	return ""
+}
+
+type SuperNodeReply_HelloReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Error *Error `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *SuperNodeReply_HelloReply) Reset() {
+	*x = SuperNodeReply_HelloReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_supernode_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SuperNodeReply_HelloReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SuperNodeReply_HelloReply) ProtoMessage() {}
+
+func (x *SuperNodeReply_HelloReply) ProtoReflect() protoreflect.Message {
+	mi := &file_supernode_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SuperNodeReply_HelloReply.ProtoReflect.Descriptor instead.
+func (*SuperNodeReply_HelloReply) Descriptor() ([]byte, []int) {
+	return file_supernode_proto_rawDescGZIP(), []int{5, 0}
+}
+
+func (x *SuperNodeReply_HelloReply) GetError() *Error {
+	if x != nil {
+		return x.Error
+	}
+	return nil
 }
 
 var File_supernode_proto protoreflect.FileDescriptor
@@ -730,88 +1110,132 @@ var file_supernode_proto_rawDesc = []byte{
 	0x16, 0x0a, 0x06, 0x65, 0x72, 0x72, 0x4d, 0x73, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
 	0x06, 0x65, 0x72, 0x72, 0x4d, 0x73, 0x67, 0x22, 0x19, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75,
 	0x73, 0x12, 0x06, 0x0a, 0x02, 0x4f, 0x4b, 0x10, 0x00, 0x12, 0x07, 0x0a, 0x03, 0x45, 0x52, 0x52,
-	0x10, 0x01, 0x22, 0x41, 0x0a, 0x14, 0x53, 0x65, 0x6e, 0x64, 0x52, 0x65, 0x67, 0x54, 0x69, 0x63,
-	0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x29, 0x0a, 0x10, 0x74, 0x69,
-	0x63, 0x6b, 0x65, 0x74, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x53, 0x69, 0x67, 0x6e,
-	0x61, 0x74, 0x75, 0x72, 0x65, 0x22, 0xca, 0x01, 0x0a, 0x11, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69,
-	0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x74,
-	0x69, 0x63, 0x6b, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x74, 0x69, 0x63,
-	0x6b, 0x65, 0x74, 0x12, 0x29, 0x0a, 0x10, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x5f, 0x73, 0x69,
-	0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x74,
-	0x69, 0x63, 0x6b, 0x65, 0x74, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x12,
-	0x0a, 0x04, 0x66, 0x67, 0x70, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x66, 0x67,
-	0x70, 0x74, 0x12, 0x25, 0x0a, 0x0e, 0x66, 0x67, 0x70, 0x74, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61,
-	0x74, 0x75, 0x72, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x66, 0x67, 0x70, 0x74,
-	0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x66, 0x65, 0x65,
-	0x5f, 0x74, 0x78, 0x69, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x66, 0x65, 0x65,
-	0x54, 0x78, 0x69, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x74, 0x68, 0x75, 0x6d, 0x62, 0x6e, 0x61, 0x69,
-	0x6c, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x74, 0x68, 0x75, 0x6d, 0x62, 0x6e, 0x61,
-	0x69, 0x6c, 0x22, 0x5a, 0x0a, 0x0f, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74,
+	0x10, 0x01, 0x22, 0xea, 0x05, 0x0a, 0x0f, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x52, 0x0a, 0x0c, 0x70, 0x72, 0x69, 0x6d, 0x61, 0x72,
+	0x79, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x73,
+	0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
+	0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x50, 0x72, 0x69, 0x6d, 0x61, 0x72, 0x79,
+	0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x0b, 0x70,
+	0x72, 0x69, 0x6d, 0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x12, 0x58, 0x0a, 0x0e, 0x73, 0x65,
+	0x63, 0x6f, 0x6e, 0x64, 0x61, 0x72, 0x79, 0x5f, 0x6e, 0x6f, 0x64, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x2f, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x53,
+	0x65, 0x63, 0x6f, 0x6e, 0x64, 0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x0d, 0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x61, 0x72, 0x79,
+	0x4e, 0x6f, 0x64, 0x65, 0x12, 0x52, 0x0a, 0x0c, 0x75, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x5f, 0x69,
+	0x6d, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2d, 0x2e, 0x73, 0x75, 0x70,
+	0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61,
+	0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x0b, 0x75, 0x70, 0x6c,
+	0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x12, 0x4f, 0x0a, 0x0b, 0x73, 0x65, 0x6e, 0x64,
+	0x5f, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2c, 0x2e,
+	0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
+	0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69,
+	0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x0a, 0x73,
+	0x65, 0x6e, 0x64, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x1a, 0x2c, 0x0a, 0x12, 0x50, 0x72, 0x69,
+	0x6d, 0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x16, 0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x6e, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x63, 0x6f, 0x6e, 0x6e, 0x49, 0x44, 0x1a, 0x4f, 0x0a, 0x14, 0x53, 0x65, 0x63, 0x6f, 0x6e,
+	0x64, 0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x16, 0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x6e, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x06, 0x63, 0x6f, 0x6e, 0x6e, 0x49, 0x44, 0x12, 0x1f, 0x0a, 0x0b, 0x70, 0x72, 0x69, 0x6d, 0x61,
+	0x72, 0x79, 0x5f, 0x6b, 0x65, 0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x70, 0x72,
+	0x69, 0x6d, 0x61, 0x72, 0x79, 0x4b, 0x65, 0x79, 0x1a, 0x2a, 0x0a, 0x12, 0x55, 0x70, 0x6c, 0x6f,
+	0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x14,
+	0x0a, 0x05, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x69,
+	0x6d, 0x61, 0x67, 0x65, 0x1a, 0xca, 0x01, 0x0a, 0x11, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69, 0x63,
+	0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x74, 0x69,
+	0x63, 0x6b, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x74, 0x69, 0x63, 0x6b,
+	0x65, 0x74, 0x12, 0x29, 0x0a, 0x10, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x5f, 0x73, 0x69, 0x67,
+	0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0f, 0x74, 0x69,
+	0x63, 0x6b, 0x65, 0x74, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x12, 0x0a,
+	0x04, 0x66, 0x67, 0x70, 0x74, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x66, 0x67, 0x70,
+	0x74, 0x12, 0x25, 0x0a, 0x0e, 0x66, 0x67, 0x70, 0x74, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74,
+	0x75, 0x72, 0x65, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0d, 0x66, 0x67, 0x70, 0x74, 0x53,
+	0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x19, 0x0a, 0x08, 0x66, 0x65, 0x65, 0x5f,
+	0x74, 0x78, 0x69, 0x64, 0x18, 0x05, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x66, 0x65, 0x65, 0x54,
+	0x78, 0x69, 0x64, 0x12, 0x1c, 0x0a, 0x09, 0x74, 0x68, 0x75, 0x6d, 0x62, 0x6e, 0x61, 0x69, 0x6c,
+	0x18, 0x06, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x74, 0x68, 0x75, 0x6d, 0x62, 0x6e, 0x61, 0x69,
+	0x6c, 0x42, 0x0c, 0x0a, 0x0a, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x6f, 0x6e, 0x65, 0x6f, 0x66, 0x22,
+	0xfa, 0x05, 0x0a, 0x0d, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x70, 0x6c,
+	0x79, 0x12, 0x4e, 0x0a, 0x0c, 0x70, 0x72, 0x69, 0x6d, 0x61, 0x72, 0x79, 0x5f, 0x6e, 0x6f, 0x64,
+	0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x29, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e,
+	0x6f, 0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x70, 0x6c,
+	0x79, 0x2e, 0x50, 0x72, 0x69, 0x6d, 0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x70,
+	0x6c, 0x79, 0x48, 0x00, 0x52, 0x0b, 0x70, 0x72, 0x69, 0x6d, 0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64,
+	0x65, 0x12, 0x54, 0x0a, 0x0e, 0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x61, 0x72, 0x79, 0x5f, 0x6e,
+	0x6f, 0x64, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x2b, 0x2e, 0x73, 0x75, 0x70, 0x65,
+	0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65,
+	0x70, 0x6c, 0x79, 0x2e, 0x53, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64,
+	0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x48, 0x00, 0x52, 0x0d, 0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64,
+	0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x12, 0x4e, 0x0a, 0x0c, 0x75, 0x70, 0x6c, 0x6f, 0x61,
+	0x64, 0x5f, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x29, 0x2e,
+	0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74,
+	0x65, 0x72, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x2e, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d,
+	0x61, 0x67, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x48, 0x00, 0x52, 0x0b, 0x75, 0x70, 0x6c, 0x6f,
+	0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x12, 0x4b, 0x0a, 0x0b, 0x73, 0x65, 0x6e, 0x64, 0x5f,
+	0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x28, 0x2e, 0x73,
+	0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65,
+	0x72, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x2e, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69, 0x63, 0x6b, 0x65,
+	0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x48, 0x00, 0x52, 0x0a, 0x73, 0x65, 0x6e, 0x64, 0x54, 0x69,
+	0x63, 0x6b, 0x65, 0x74, 0x1a, 0xad, 0x01, 0x0a, 0x10, 0x50, 0x72, 0x69, 0x6d, 0x61, 0x72, 0x79,
+	0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x44, 0x0a, 0x05, 0x70, 0x65, 0x65,
+	0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x2e, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72,
+	0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x70,
+	0x6c, 0x79, 0x2e, 0x50, 0x72, 0x69, 0x6d, 0x61, 0x72, 0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65,
+	0x70, 0x6c, 0x79, 0x2e, 0x50, 0x65, 0x65, 0x72, 0x52, 0x05, 0x70, 0x65, 0x65, 0x72, 0x73, 0x12,
+	0x26, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10,
+	0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72,
+	0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x1a, 0x2b, 0x0a, 0x04, 0x50, 0x65, 0x65, 0x72, 0x12,
+	0x23, 0x0a, 0x0d, 0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x61, 0x72, 0x79, 0x5f, 0x6b, 0x65, 0x79,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x73, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x61, 0x72,
+	0x79, 0x4b, 0x65, 0x79, 0x1a, 0x3c, 0x0a, 0x12, 0x53, 0x65, 0x63, 0x6f, 0x6e, 0x64, 0x61, 0x72,
+	0x79, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x26, 0x0a, 0x05, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x73, 0x75, 0x70, 0x65,
+	0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x1a, 0x4e, 0x0a, 0x10, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61, 0x67,
+	0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x12, 0x0a, 0x04, 0x66, 0x67, 0x70, 0x74, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x66, 0x67, 0x70, 0x74, 0x12, 0x26, 0x0a, 0x05, 0x65, 0x72,
+	0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x73, 0x75, 0x70, 0x65,
+	0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72,
+	0x6f, 0x72, 0x1a, 0x5a, 0x0a, 0x0f, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74,
 	0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x1f, 0x0a, 0x0b, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x5f,
 	0x74, 0x78, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x74, 0x69, 0x63, 0x6b,
 	0x65, 0x74, 0x54, 0x78, 0x69, 0x64, 0x12, 0x26, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18,
 	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64,
-	0x65, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x2a,
-	0x0a, 0x12, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x52, 0x65, 0x71,
-	0x75, 0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0c, 0x52, 0x05, 0x69, 0x6d, 0x61, 0x67, 0x65, 0x22, 0x4e, 0x0a, 0x10, 0x55, 0x70,
-	0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x12,
-	0x0a, 0x04, 0x66, 0x67, 0x70, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x66, 0x67,
-	0x70, 0x74, 0x12, 0x26, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28,
-	0x0b, 0x32, 0x10, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x45, 0x72,
-	0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x58, 0x0a, 0x0e, 0x43, 0x6f,
-	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06,
-	0x63, 0x6f, 0x6e, 0x6e, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x6f,
-	0x6e, 0x6e, 0x49, 0x44, 0x12, 0x16, 0x0a, 0x06, 0x70, 0x65, 0x65, 0x72, 0x49, 0x44, 0x18, 0x02,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70, 0x65, 0x65, 0x72, 0x49, 0x44, 0x12, 0x16, 0x0a, 0x06,
-	0x65, 0x78, 0x74, 0x4b, 0x65, 0x79, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x65, 0x78,
-	0x74, 0x4b, 0x65, 0x79, 0x22, 0x36, 0x0a, 0x0c, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x52,
-	0x65, 0x70, 0x6c, 0x79, 0x12, 0x26, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x01, 0x20,
-	0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e,
-	0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x57, 0x0a, 0x17,
-	0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x6e, 0x49,
-	0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x6f, 0x6e, 0x6e, 0x49, 0x44, 0x12,
-	0x24, 0x0a, 0x0d, 0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x4f, 0x66, 0x50, 0x65, 0x65, 0x72, 0x73,
-	0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x0d, 0x6e, 0x75, 0x6d, 0x62, 0x65, 0x72, 0x4f, 0x66,
-	0x50, 0x65, 0x65, 0x72, 0x73, 0x22, 0x3e, 0x0a, 0x15, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x43,
-	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x25,
-	0x0a, 0x05, 0x70, 0x65, 0x65, 0x72, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x0f, 0x2e,
-	0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x50, 0x65, 0x65, 0x72, 0x52, 0x05,
-	0x70, 0x65, 0x65, 0x72, 0x73, 0x22, 0x36, 0x0a, 0x04, 0x50, 0x65, 0x65, 0x72, 0x12, 0x16, 0x0a,
-	0x06, 0x70, 0x65, 0x65, 0x72, 0x49, 0x44, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x70,
-	0x65, 0x65, 0x72, 0x49, 0x44, 0x12, 0x16, 0x0a, 0x06, 0x65, 0x78, 0x74, 0x4b, 0x65, 0x79, 0x18,
-	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x65, 0x78, 0x74, 0x4b, 0x65, 0x79, 0x32, 0x5d, 0x0a,
-	0x17, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x41, 0x72, 0x74, 0x77, 0x6f, 0x72, 0x6b,
-	0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x12, 0x42, 0x0a, 0x0d, 0x53, 0x65, 0x6e, 0x64,
-	0x52, 0x65, 0x67, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x1f, 0x2e, 0x73, 0x75, 0x70, 0x65,
-	0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e, 0x64, 0x52, 0x65, 0x67, 0x54, 0x69, 0x63,
-	0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x10, 0x2e, 0x73, 0x75, 0x70,
-	0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x32, 0xbd, 0x02, 0x0a,
-	0x0f, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x41, 0x72, 0x74, 0x77, 0x6f, 0x72, 0x6b,
-	0x12, 0x3d, 0x0a, 0x07, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x12, 0x19, 0x2e, 0x73, 0x75,
-	0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x52,
-	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x17, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f,
-	0x64, 0x65, 0x2e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12,
-	0x58, 0x0a, 0x10, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74,
-	0x69, 0x6f, 0x6e, 0x12, 0x22, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e,
-	0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e,
-	0x6f, 0x64, 0x65, 0x2e, 0x41, 0x63, 0x63, 0x65, 0x70, 0x74, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x49, 0x0a, 0x0b, 0x55, 0x70, 0x6c,
-	0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x12, 0x1d, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72,
-	0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65,
-	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e,
-	0x6f, 0x64, 0x65, 0x2e, 0x55, 0x70, 0x6c, 0x6f, 0x61, 0x64, 0x49, 0x6d, 0x61, 0x67, 0x65, 0x52,
-	0x65, 0x70, 0x6c, 0x79, 0x12, 0x46, 0x0a, 0x0a, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69, 0x63, 0x6b,
-	0x65, 0x74, 0x12, 0x1c, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53,
-	0x65, 0x6e, 0x64, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x1a, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e,
-	0x64, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x42, 0x2a, 0x5a, 0x28,
-	0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x61, 0x73, 0x74, 0x65,
-	0x6c, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f,
-	0x64, 0x65, 0x2d, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x42, 0x0c,
+	0x0a, 0x0a, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x6f, 0x6e, 0x65, 0x6f, 0x66, 0x22, 0x8a, 0x01, 0x0a,
+	0x10, 0x53, 0x75, 0x70, 0x65, 0x72, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x40, 0x0a, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b,
+	0x32, 0x28, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x75, 0x70,
+	0x65, 0x72, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x48, 0x65,
+	0x6c, 0x6c, 0x6f, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x48, 0x00, 0x52, 0x05, 0x68, 0x65,
+	0x6c, 0x6c, 0x6f, 0x1a, 0x26, 0x0a, 0x0c, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x16, 0x0a, 0x06, 0x63, 0x6f, 0x6e, 0x6e, 0x49, 0x44, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x09, 0x52, 0x06, 0x63, 0x6f, 0x6e, 0x6e, 0x49, 0x44, 0x42, 0x0c, 0x0a, 0x0a, 0x74,
+	0x65, 0x73, 0x74, 0x5f, 0x6f, 0x6e, 0x65, 0x6f, 0x66, 0x22, 0x92, 0x01, 0x0a, 0x0e, 0x53, 0x75,
+	0x70, 0x65, 0x72, 0x4e, 0x6f, 0x64, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x3c, 0x0a, 0x05,
+	0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x24, 0x2e, 0x73, 0x75,
+	0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x75, 0x70, 0x65, 0x72, 0x4e, 0x6f, 0x64,
+	0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x2e, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x52, 0x65, 0x70, 0x6c,
+	0x79, 0x48, 0x00, 0x52, 0x05, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x1a, 0x34, 0x0a, 0x0a, 0x48, 0x65,
+	0x6c, 0x6c, 0x6f, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x26, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f,
+	0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x10, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e,
+	0x6f, 0x64, 0x65, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72,
+	0x42, 0x0c, 0x0a, 0x0a, 0x74, 0x65, 0x73, 0x74, 0x5f, 0x6f, 0x6e, 0x65, 0x6f, 0x66, 0x32, 0x98,
+	0x01, 0x0a, 0x07, 0x41, 0x72, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x12, 0x44, 0x0a, 0x08, 0x52, 0x65,
+	0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x12, 0x1a, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f,
+	0x64, 0x65, 0x2e, 0x52, 0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x18, 0x2e, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x52,
+	0x65, 0x67, 0x69, 0x73, 0x74, 0x65, 0x72, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x28, 0x01, 0x30, 0x01,
+	0x12, 0x47, 0x0a, 0x09, 0x53, 0x75, 0x70, 0x65, 0x72, 0x4e, 0x6f, 0x64, 0x65, 0x12, 0x1b, 0x2e,
+	0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x75, 0x70, 0x65, 0x72, 0x4e,
+	0x6f, 0x64, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x19, 0x2e, 0x73, 0x75, 0x70,
+	0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x75, 0x70, 0x65, 0x72, 0x4e, 0x6f, 0x64, 0x65,
+	0x52, 0x65, 0x70, 0x6c, 0x79, 0x28, 0x01, 0x30, 0x01, 0x42, 0x2a, 0x5a, 0x28, 0x67, 0x69, 0x74,
+	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x61, 0x73, 0x74, 0x65, 0x6c, 0x6e, 0x65,
+	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x73, 0x75, 0x70, 0x65, 0x72, 0x6e, 0x6f, 0x64, 0x65, 0x2d,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -827,43 +1251,54 @@ func file_supernode_proto_rawDescGZIP() []byte {
 }
 
 var file_supernode_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_supernode_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_supernode_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_supernode_proto_goTypes = []interface{}{
-	(Error_Status)(0),               // 0: supernode.Error.Status
-	(*Empty)(nil),                   // 1: supernode.Empty
-	(*Error)(nil),                   // 2: supernode.Error
-	(*SendRegTicketRequest)(nil),    // 3: supernode.SendRegTicketRequest
-	(*SendTicketRequest)(nil),       // 4: supernode.SendTicketRequest
-	(*SendTicketReply)(nil),         // 5: supernode.SendTicketReply
-	(*UploadImageRequest)(nil),      // 6: supernode.UploadImageRequest
-	(*UploadImageReply)(nil),        // 7: supernode.UploadImageReply
-	(*ConnectRequest)(nil),          // 8: supernode.ConnectRequest
-	(*ConnectReply)(nil),            // 9: supernode.ConnectReply
-	(*AcceptConnectionRequest)(nil), // 10: supernode.AcceptConnectionRequest
-	(*AcceptConnectionReply)(nil),   // 11: supernode.AcceptConnectionReply
-	(*Peer)(nil),                    // 12: supernode.Peer
+	(Error_Status)(0),                            // 0: supernode.Error.Status
+	(*Empty)(nil),                                // 1: supernode.Empty
+	(*Error)(nil),                                // 2: supernode.Error
+	(*RegisterRequest)(nil),                      // 3: supernode.RegisterRequest
+	(*RegisterReply)(nil),                        // 4: supernode.RegisterReply
+	(*SuperNodeRequest)(nil),                     // 5: supernode.SuperNodeRequest
+	(*SuperNodeReply)(nil),                       // 6: supernode.SuperNodeReply
+	(*RegisterRequest_PrimaryNodeRequest)(nil),   // 7: supernode.RegisterRequest.PrimaryNodeRequest
+	(*RegisterRequest_SecondaryNodeRequest)(nil), // 8: supernode.RegisterRequest.SecondaryNodeRequest
+	(*RegisterRequest_UploadImageRequest)(nil),   // 9: supernode.RegisterRequest.UploadImageRequest
+	(*RegisterRequest_SendTicketRequest)(nil),    // 10: supernode.RegisterRequest.SendTicketRequest
+	(*RegisterReply_PrimaryNodeReply)(nil),       // 11: supernode.RegisterReply.PrimaryNodeReply
+	(*RegisterReply_SecondaryNodeReply)(nil),     // 12: supernode.RegisterReply.SecondaryNodeReply
+	(*RegisterReply_UploadImageReply)(nil),       // 13: supernode.RegisterReply.UploadImageReply
+	(*RegisterReply_SendTicketReply)(nil),        // 14: supernode.RegisterReply.SendTicketReply
+	(*RegisterReply_PrimaryNodeReply_Peer)(nil),  // 15: supernode.RegisterReply.PrimaryNodeReply.Peer
+	(*SuperNodeRequest_HelloRequest)(nil),        // 16: supernode.SuperNodeRequest.HelloRequest
+	(*SuperNodeReply_HelloReply)(nil),            // 17: supernode.SuperNodeReply.HelloReply
 }
 var file_supernode_proto_depIdxs = []int32{
 	0,  // 0: supernode.Error.status:type_name -> supernode.Error.Status
-	2,  // 1: supernode.SendTicketReply.error:type_name -> supernode.Error
-	2,  // 2: supernode.UploadImageReply.error:type_name -> supernode.Error
-	2,  // 3: supernode.ConnectReply.error:type_name -> supernode.Error
-	12, // 4: supernode.AcceptConnectionReply.peers:type_name -> supernode.Peer
-	3,  // 5: supernode.RegisterArtworkInternal.SendRegTicket:input_type -> supernode.SendRegTicketRequest
-	8,  // 6: supernode.RegisterArtwork.Connect:input_type -> supernode.ConnectRequest
-	10, // 7: supernode.RegisterArtwork.AcceptConnection:input_type -> supernode.AcceptConnectionRequest
-	6,  // 8: supernode.RegisterArtwork.UploadImage:input_type -> supernode.UploadImageRequest
-	4,  // 9: supernode.RegisterArtwork.SendTicket:input_type -> supernode.SendTicketRequest
-	1,  // 10: supernode.RegisterArtworkInternal.SendRegTicket:output_type -> supernode.Empty
-	9,  // 11: supernode.RegisterArtwork.Connect:output_type -> supernode.ConnectReply
-	11, // 12: supernode.RegisterArtwork.AcceptConnection:output_type -> supernode.AcceptConnectionReply
-	7,  // 13: supernode.RegisterArtwork.UploadImage:output_type -> supernode.UploadImageReply
-	5,  // 14: supernode.RegisterArtwork.SendTicket:output_type -> supernode.SendTicketReply
-	10, // [10:15] is the sub-list for method output_type
-	5,  // [5:10] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	7,  // 1: supernode.RegisterRequest.primary_node:type_name -> supernode.RegisterRequest.PrimaryNodeRequest
+	8,  // 2: supernode.RegisterRequest.secondary_node:type_name -> supernode.RegisterRequest.SecondaryNodeRequest
+	9,  // 3: supernode.RegisterRequest.upload_image:type_name -> supernode.RegisterRequest.UploadImageRequest
+	10, // 4: supernode.RegisterRequest.send_ticket:type_name -> supernode.RegisterRequest.SendTicketRequest
+	11, // 5: supernode.RegisterReply.primary_node:type_name -> supernode.RegisterReply.PrimaryNodeReply
+	12, // 6: supernode.RegisterReply.secondary_node:type_name -> supernode.RegisterReply.SecondaryNodeReply
+	13, // 7: supernode.RegisterReply.upload_image:type_name -> supernode.RegisterReply.UploadImageReply
+	14, // 8: supernode.RegisterReply.send_ticket:type_name -> supernode.RegisterReply.SendTicketReply
+	16, // 9: supernode.SuperNodeRequest.hello:type_name -> supernode.SuperNodeRequest.HelloRequest
+	17, // 10: supernode.SuperNodeReply.hello:type_name -> supernode.SuperNodeReply.HelloReply
+	15, // 11: supernode.RegisterReply.PrimaryNodeReply.peers:type_name -> supernode.RegisterReply.PrimaryNodeReply.Peer
+	2,  // 12: supernode.RegisterReply.PrimaryNodeReply.error:type_name -> supernode.Error
+	2,  // 13: supernode.RegisterReply.SecondaryNodeReply.error:type_name -> supernode.Error
+	2,  // 14: supernode.RegisterReply.UploadImageReply.error:type_name -> supernode.Error
+	2,  // 15: supernode.RegisterReply.SendTicketReply.error:type_name -> supernode.Error
+	2,  // 16: supernode.SuperNodeReply.HelloReply.error:type_name -> supernode.Error
+	3,  // 17: supernode.Artwork.Register:input_type -> supernode.RegisterRequest
+	5,  // 18: supernode.Artwork.SuperNode:input_type -> supernode.SuperNodeRequest
+	4,  // 19: supernode.Artwork.Register:output_type -> supernode.RegisterReply
+	6,  // 20: supernode.Artwork.SuperNode:output_type -> supernode.SuperNodeReply
+	19, // [19:21] is the sub-list for method output_type
+	17, // [17:19] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_supernode_proto_init() }
@@ -897,7 +1332,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendRegTicketRequest); i {
+			switch v := v.(*RegisterRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -909,7 +1344,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendTicketRequest); i {
+			switch v := v.(*RegisterReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -921,7 +1356,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendTicketReply); i {
+			switch v := v.(*SuperNodeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -933,7 +1368,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadImageRequest); i {
+			switch v := v.(*SuperNodeReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -945,7 +1380,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadImageReply); i {
+			switch v := v.(*RegisterRequest_PrimaryNodeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -957,7 +1392,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ConnectRequest); i {
+			switch v := v.(*RegisterRequest_SecondaryNodeRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -969,7 +1404,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ConnectReply); i {
+			switch v := v.(*RegisterRequest_UploadImageRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -981,7 +1416,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AcceptConnectionRequest); i {
+			switch v := v.(*RegisterRequest_SendTicketRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -993,7 +1428,7 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AcceptConnectionReply); i {
+			switch v := v.(*RegisterReply_PrimaryNodeReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1005,7 +1440,67 @@ func file_supernode_proto_init() {
 			}
 		}
 		file_supernode_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Peer); i {
+			switch v := v.(*RegisterReply_SecondaryNodeReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_supernode_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RegisterReply_UploadImageReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_supernode_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RegisterReply_SendTicketReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_supernode_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RegisterReply_PrimaryNodeReply_Peer); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_supernode_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SuperNodeRequest_HelloRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_supernode_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SuperNodeReply_HelloReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1017,15 +1512,33 @@ func file_supernode_proto_init() {
 			}
 		}
 	}
+	file_supernode_proto_msgTypes[2].OneofWrappers = []interface{}{
+		(*RegisterRequest_PrimaryNode)(nil),
+		(*RegisterRequest_SecondaryNode)(nil),
+		(*RegisterRequest_UploadImage)(nil),
+		(*RegisterRequest_SendTicket)(nil),
+	}
+	file_supernode_proto_msgTypes[3].OneofWrappers = []interface{}{
+		(*RegisterReply_PrimaryNode)(nil),
+		(*RegisterReply_SecondaryNode)(nil),
+		(*RegisterReply_UploadImage)(nil),
+		(*RegisterReply_SendTicket)(nil),
+	}
+	file_supernode_proto_msgTypes[4].OneofWrappers = []interface{}{
+		(*SuperNodeRequest_Hello)(nil),
+	}
+	file_supernode_proto_msgTypes[5].OneofWrappers = []interface{}{
+		(*SuperNodeReply_Hello)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_supernode_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   12,
+			NumMessages:   17,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   1,
 		},
 		GoTypes:           file_supernode_proto_goTypes,
 		DependencyIndexes: file_supernode_proto_depIdxs,
