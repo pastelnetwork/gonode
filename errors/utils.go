@@ -64,3 +64,14 @@ func CheckErrorAndExit(err error) {
 		fmt.Fprintf(os.Stderr, "ERROR: %s %s\n", errorFields.String(), err)
 	}
 }
+
+// Log records a log statement of the given error. If log.DebugMode is true, the log record contains a stack of errors.
+func Log(err error) {
+	errorFields := ExtractFields(err)
+
+	if log.DebugMode() {
+		log.WithError(err).WithFields(map[string]interface{}(errorFields)).Error(ErrorStack(err))
+	} else {
+		log.WithFields(map[string]interface{}(errorFields)).Error(err)
+	}
+}
