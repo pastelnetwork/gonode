@@ -16,28 +16,33 @@ func logEntry() *logrus.Entry {
 }
 
 // WithError adds an error to log entry.
-func WithError(err error) *logrus.Entry {
-	return logEntry().WithError(err)
+func WithError(err error) *Entry {
+	return &Entry{logEntry().WithError(err)}
+}
+
+// WithPrefix adds a prefix to log entry.
+func WithPrefix(value string) *Entry {
+	return &Entry{logEntry().WithField("prefix", value)}
 }
 
 // WithContext adds an context to log entry, using the value defined inside of context.
-func WithContext(ctx context.Context) *logrus.Entry {
-	return logEntry().WithContext(ctx)
+func WithContext(ctx context.Context) *Entry {
+	return &Entry{logEntry().WithContext(ctx)}
 }
 
 // WithField adds a field to entry.
-func WithField(key string, value interface{}) *logrus.Entry {
-	return logEntry().WithField(key, value)
+func WithField(key string, value interface{}) *Entry {
+	return &Entry{logEntry().WithField(key, value)}
 }
 
 // WithFields adds multiple fields to entry.
-func WithFields(fields logrus.Fields) *logrus.Entry {
-	return logEntry().WithFields(fields)
+func WithFields(fields logrus.Fields) *Entry {
+	return &Entry{logEntry().WithFields(fields)}
 }
 
 // WithTime overrides the time of logs generated with it.
-func WithTime(t time.Time) *logrus.Entry {
-	return logEntry().WithTime(t)
+func WithTime(t time.Time) *Entry {
+	return &Entry{logEntry().WithTime(t)}
 }
 
 // Debug logs a message at level Debug.

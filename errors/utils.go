@@ -43,7 +43,7 @@ func Recover(onPanic func(cause error)) {
 		if !isError {
 			err = fmt.Errorf("%v", rec)
 		}
-		onPanic(newWithSkip(err, 4))
+		onPanic(newWithSkip(err, 3))
 	}
 }
 
