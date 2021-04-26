@@ -40,6 +40,8 @@ import (
 	"github.com/montanaflynn/stats"
 
 	_ "gorgonia.org/tensor"
+
+	"github.com/pastelnetwork/dupe-detection-golang/wdm"
 )
 
 func Measure(start time.Time) {
@@ -570,7 +572,11 @@ func compute_parallel_bootstrapped_kendalls_tau_func(x []float64, list_of_finger
 		for i, current_bootstrap_indices := range list_of_bootstrap_sample_indices {
 			x_bootstraps[i] = arrayValuesFromIndexes(x, current_bootstrap_indices)
 			y_bootstraps[i] = arrayValuesFromIndexes(y, current_bootstrap_indices)
+
 			bootstrapped_kendalltau_results[i] = stat.Kendall(x_bootstraps[i], y_bootstraps[i], nil)
+
+			wdmKendall := wdm.Wdm(x_bootstraps[i], y_bootstraps[i], "kendall", []float64{})
+			fmt.Printf("wdmKendall: %v", wdmKendall)
 		}
 		robust_average_tau[fingerprintIdx], robust_stdev_tau[fingerprintIdx] = compute_average_and_stdev_of_50th_to_90th_percentile_func(bootstrapped_kendalltau_results)
 	}
