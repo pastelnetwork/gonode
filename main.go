@@ -858,6 +858,7 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 }
 
 func main() {
+	defer Measure(time.Now())
 	root_pastel_folder_path := ""
 
 	misc_masternode_files_folder_path := filepath.Join(root_pastel_folder_path, "misc_masternode_files")
@@ -908,7 +909,7 @@ func main() {
 	}
 	fmt.Printf("\n\n________________________________________________________________________________________________________________")
 	fmt.Printf("\n________________________________________________________________________________________________________________")
-	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %%", float32(dupe_counter)/float32(len(nearDuplicates))*100.0)
+	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", float32(dupe_counter)/float32(len(nearDuplicates))*100.0, len(nearDuplicates))
 
 	fmt.Printf("\n\nNow testing duplicate-detection scheme on known non-duplicate images:")
 	nonDuplicates, err := get_all_valid_image_file_paths_in_folder_func(non_dupe_test_images_base_folder_path)
@@ -933,5 +934,5 @@ func main() {
 	}
 	fmt.Printf("\n\n________________________________________________________________________________________________________________")
 	fmt.Printf("\n________________________________________________________________________________________________________________")
-	fmt.Printf("\nAccuracy Percentage in Detecting Non-Duplicate Images: %.2f %%", float32(nondupe_counter)/float32(len(nonDuplicates))*100.0)
+	fmt.Printf("\nAccuracy Percentage in Detecting Non-Duplicate Images: %.2f %% from totally %v images", float32(nondupe_counter)/float32(len(nonDuplicates))*100.0, len(nonDuplicates))
 }
