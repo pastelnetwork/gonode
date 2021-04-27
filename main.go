@@ -17,6 +17,7 @@ import (
 
 	"github.com/corona10/goimghdr"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/pkg/profile"
 	"gonum.org/v1/gonum/mat"
 	_ "gonum.org/v1/gonum/mat"
 
@@ -859,6 +860,9 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 
 func main() {
 	defer Measure(time.Now())
+
+	defer profile.Start(profile.ProfilePath(".")).Stop()
+
 	root_pastel_folder_path := ""
 
 	misc_masternode_files_folder_path := filepath.Join(root_pastel_folder_path, "misc_masternode_files")
