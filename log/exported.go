@@ -2,155 +2,139 @@ package log
 
 import (
 	"context"
-	"time"
-
-	"github.com/sirupsen/logrus"
 )
-
-const (
-	defaultSkipCallers = 4
-)
-
-func logEntry() *logrus.Entry {
-	return logEntryWithCallers(DefaultLogger, defaultSkipCallers)
-}
 
 // WithError adds an error to log entry.
 func WithError(err error) *Entry {
-	return &Entry{logEntry().WithError(err)}
+	return NewDefaultEntry().WithError(err)
 }
 
 // WithPrefix adds a prefix to log entry.
 func WithPrefix(value string) *Entry {
-	return &Entry{logEntry().WithField("prefix", value)}
+	return NewDefaultEntry().WithField("prefix", value)
 }
 
 // WithContext adds an context to log entry, using the value defined inside of context.
 func WithContext(ctx context.Context) *Entry {
-	return &Entry{logEntry().WithContext(ctx)}
+	return NewDefaultEntry().WithContext(ctx)
 }
 
 // WithField adds a field to entry.
 func WithField(key string, value interface{}) *Entry {
-	return &Entry{logEntry().WithField(key, value)}
+	return NewDefaultEntry().WithField(key, value)
 }
 
 // WithFields adds multiple fields to entry.
-func WithFields(fields logrus.Fields) *Entry {
-	return &Entry{logEntry().WithFields(fields)}
-}
-
-// WithTime overrides the time of logs generated with it.
-func WithTime(t time.Time) *Entry {
-	return &Entry{logEntry().WithTime(t)}
+func WithFields(fields Fields) *Entry {
+	return NewDefaultEntry().WithFields(fields)
 }
 
 // Debug logs a message at level Debug.
 func Debug(args ...interface{}) {
-	logEntry().Debug(args...)
+	NewDefaultEntry().Debug(args...)
 }
 
 // Info logs a message at level Info.
 func Info(args ...interface{}) {
-	logEntry().Info(args...)
+	NewDefaultEntry().Info(args...)
 }
 
 // Print logs a message at level Info.
 func Print(args ...interface{}) {
-	logEntry().Print(args...)
+	NewDefaultEntry().Print(args...)
 }
 
 // Warn logs a message at level Warn.
 func Warn(args ...interface{}) {
-	logEntry().Warn(args...)
+	NewDefaultEntry().Warn(args...)
 }
 
 // Error logs a message at level Error.
 func Error(args ...interface{}) {
-	logEntry().Error(args...)
+	NewDefaultEntry().Error(args...)
 }
 
 // Panic logs a message at level Panic.
 func Panic(args ...interface{}) {
-	logEntry().Panic(args...)
+	NewDefaultEntry().Panic(args...)
 }
 
 // Fatal logs a message at level Fatal.
 func Fatal(args ...interface{}) {
-	logEntry().Fatal(args...)
+	NewDefaultEntry().Fatal(args...)
 }
 
 // Debugln logs a message at level Debug.
 func Debugln(args ...interface{}) {
-	logEntry().Debugln(args...)
+	NewDefaultEntry().Debugln(args...)
 }
 
 // Infoln logs a message at level Info.
 func Infoln(args ...interface{}) {
-	logEntry().Infoln(args...)
+	NewDefaultEntry().Infoln(args...)
 }
 
 // Println logs a message at level Info.
 func Println(args ...interface{}) {
-	logEntry().Println(args...)
+	NewDefaultEntry().Println(args...)
 }
 
 // Warnln logs a message at level Warn.
 func Warnln(args ...interface{}) {
-	logEntry().Warnln(args...)
+	NewDefaultEntry().Warnln(args...)
 }
 
 // Errorln logs a message at level Error.
 func Errorln(args ...interface{}) {
-	logEntry().Errorln(args...)
+	NewDefaultEntry().Errorln(args...)
 }
 
 // Panicln logs a message at level Panic.
 func Panicln(args ...interface{}) {
-	logEntry().Panicln(args...)
+	NewDefaultEntry().Panicln(args...)
 }
 
 // Fatalln logs a message at level Fatal then the process will exit with status set to 1.
 func Fatalln(args ...interface{}) {
-	logEntry().Fatalln(args...)
+	NewDefaultEntry().Fatalln(args...)
 }
 
 // Debugf logs a message at level Debug.
 func Debugf(format string, args ...interface{}) {
-	logEntry().Debugf(format, args...)
+	NewDefaultEntry().Debugf(format, args...)
 }
 
 // Infof logs a message at level Info.
 func Infof(format string, args ...interface{}) {
-	logEntry().Infof(format, args...)
+	NewDefaultEntry().Infof(format, args...)
 }
 
 // Printf logs a message at level Info.
 func Printf(args ...interface{}) {
-	logEntry().Print(args...)
+	NewDefaultEntry().Print(args...)
 }
 
 // Warnf logs a message at level Warn.
 func Warnf(format string, args ...interface{}) {
-	logEntry().Warnf(format, args...)
+	NewDefaultEntry().Warnf(format, args...)
 }
 
 // Errorf logs a message at level Error.
 func Errorf(format string, args ...interface{}) {
-	logEntry().Errorf(format, args...)
+	NewDefaultEntry().Errorf(format, args...)
 }
 
 // Tracef logs a message at level Trace.
 func Tracef(format string, args ...interface{}) {
-	logEntry().Tracef(format, args...)
+	NewDefaultEntry().Tracef(format, args...)
 }
 
 // Panicf logs a message at level Panic.
 func Panicf(format string, args ...interface{}) {
-	logEntry().Panicf(format, args...)
+	NewDefaultEntry().Panicf(format, args...)
 }
 
 // Fatalf logs a message at level Fatal then the process will exit with status set to 1.
 func Fatalf(format string, args ...interface{}) {
-	logEntry().Fatalf(format, args...)
+	NewDefaultEntry().Fatalf(format, args...)
 }

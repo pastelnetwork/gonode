@@ -1,6 +1,7 @@
 package hooks
 
 import (
+	"github.com/pastelnetwork/go-commons/log"
 	"github.com/sirupsen/logrus"
 )
 
@@ -9,8 +10,8 @@ type ContextHookFormatFn func(ctxValue interface{}, msg string) string
 
 // ContextHook represents a hook for logrus logger.
 type ContextHook struct {
-	formatFn   ContextHookFormatFn
 	contextKey interface{}
+	fn         func(entry *log.Entry, ctxValue interface{})
 }
 
 // Fire implements logrus.ContextHook.Fire()
@@ -19,9 +20,9 @@ func (hook *ContextHook) Fire(entry *logrus.Entry) error {
 		return nil
 	}
 
-	value := entry.Context.Value(hook.contextKey)
-	if value != nil {
-		entry.Message = hook.formatFn(value, entry.Message)
+	ctxValue := entry.Context.Value(hook.contextKey)
+	if ctxValue != nil {
+		hook.fn(&log.Entry{Entry: entry}, ctxValue)
 	}
 	return nil
 }
@@ -32,9 +33,9 @@ func (hook *ContextHook) Levels() []logrus.Level {
 }
 
 // NewContextHook creates a new ContextHook instance
-func NewContextHook(contextKey interface{}, formatFn ContextHookFormatFn) *ContextHook {
+func NewContextHook(contextKey interface{}, fn func(entry *log.Entry, ctxValue interface{})) *ContextHook {
 	return &ContextHook{
 		contextKey: contextKey,
-		formatFn:   formatFn,
+		fn:         fn,
 	}
 }

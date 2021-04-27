@@ -65,7 +65,7 @@ func CheckErrorAndExit(err error) {
 	}
 }
 
-// Log records a log statement of the given error. If log.DebugMode is true, the log record contains a stack of errors.
+// Log logs a statement of the given error. If log.DebugMode is true, the log record contains a stack of errors.
 func Log(err error) {
 	errorFields := ExtractFields(err)
 
