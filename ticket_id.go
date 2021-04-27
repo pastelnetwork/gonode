@@ -1,7 +1,9 @@
 package pastel
 
+// IDTickets is multiple IDTicket.
 type IDTickets []IDTicket
 
+// IDTicket represensts pastel id ticket.
 type IDTicket struct {
 	Height int `json:"height"`
 	Ticket struct {

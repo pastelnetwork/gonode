@@ -1,5 +1,6 @@
 package pastel
 
+// RegTicket represensts pastel reg ticket.
 type RegTicket struct {
 	Version        int       `json:"version"`
 	AuthorPastelID string    `json:"author_pastel_id"`
