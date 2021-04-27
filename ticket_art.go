@@ -1,5 +1,6 @@
 package pastel
 
+// ArtTicket represensts pastel art ticket.
 type ArtTicket struct {
 	AuthorPastelID string `json:"author_pastel_id"`
 	BlockTxID      string `json:"block_tx_id"`

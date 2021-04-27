@@ -1,5 +1,6 @@
 package pastel
 
+// BlockchainInfo represensts pastel blockchain info.
 type BlockchainInfo struct {
 	Chain                string  `json:"chain"`
 	Blocks               int     `json:"blocks"`
