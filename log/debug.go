@@ -5,8 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -24,14 +22,6 @@ func SetDebugMode(isEnabled bool) {
 // DebugMode returns the state of debug mode
 func DebugMode() bool {
 	return debugMode
-}
-
-func logEntryWithCallers(logger *Logger, skip int) *logrus.Entry {
-	entry := logrus.NewEntry(logger.Logger)
-	if debugMode {
-		entry.Data["file"] = fileInfo(skip)
-	}
-	return entry
 }
 
 func fileInfo(skip int) string {

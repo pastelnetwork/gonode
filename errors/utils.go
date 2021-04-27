@@ -43,7 +43,7 @@ func Recover(onPanic func(cause error)) {
 		if !isError {
 			err = fmt.Errorf("%v", rec)
 		}
-		onPanic(newWithSkip(err, 4))
+		onPanic(newWithSkip(err, 3))
 	}
 }
 
@@ -62,5 +62,16 @@ func CheckErrorAndExit(err error) {
 		log.WithError(err).WithFields(map[string]interface{}(errorFields)).Error(ErrorStack(err))
 	} else {
 		fmt.Fprintf(os.Stderr, "ERROR: %s %s\n", errorFields.String(), err)
+	}
+}
+
+// Log logs a statement of the given error. If log.DebugMode is true, the log record contains a stack of errors.
+func Log(err error) {
+	errorFields := ExtractFields(err)
+
+	if log.DebugMode() {
+		log.WithError(err).WithFields(map[string]interface{}(errorFields)).Error(ErrorStack(err))
+	} else {
+		log.WithFields(map[string]interface{}(errorFields)).Error(err)
 	}
 }
