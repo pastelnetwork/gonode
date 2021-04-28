@@ -44,14 +44,6 @@ func DecodeRegisterRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 			if err == io.EOF {
 				return nil, goa.MissingPayloadError()
 			}
-			if en, ok := err.(ErrorNamer); ok {
-				switch en.ErrorName() {
-				case "BadRequest":
-					return nil, err
-				case "InternalServerError":
-					return nil, err
-				}
-			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
 		err = ValidateRegisterRequestBody(&body)
@@ -314,14 +306,6 @@ func DecodeUploadImageRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 	return func(r *http.Request) (interface{}, error) {
 		var payload *artworks.UploadImagePayload
 		if err := decoder(r).Decode(&payload); err != nil {
-			if en, ok := err.(ErrorNamer); ok {
-				switch en.ErrorName() {
-				case "BadRequest":
-					return nil, err
-				case "InternalServerError":
-					return nil, err
-				}
-			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
 
@@ -407,18 +391,18 @@ func marshalArtworksviewsTaskStateViewToTaskStateResponseBody(v *artworksviews.T
 // *artworksviews.ArtworkTicketView.
 func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody(v *artworksviews.ArtworkTicketView) *ArtworkTicketResponseBody {
 	res := &ArtworkTicketResponseBody{
-		Name:             *v.Name,
-		Description:      v.Description,
-		Keywords:         v.Keywords,
-		SeriesName:       v.SeriesName,
-		IssuedCopies:     *v.IssuedCopies,
-		ImageID:          *v.ImageID,
-		YoutubeURL:       v.YoutubeURL,
-		ArtistPastelID:   *v.ArtistPastelID,
-		ArtistName:       *v.ArtistName,
-		ArtistWebsiteURL: v.ArtistWebsiteURL,
-		SpendableAddress: *v.SpendableAddress,
-		NetworkFee:       *v.NetworkFee,
+		Name:                     *v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             *v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           *v.ArtistPastelID,
+		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
+		ArtistName:               *v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         *v.SpendableAddress,
+		MaximumFee:               *v.MaximumFee,
 	}
 
 	return res
@@ -431,6 +415,31 @@ func marshalArtworksviewsTaskViewToTaskResponseTiny(v *artworksviews.TaskView) *
 		ID:     *v.ID,
 		Status: *v.Status,
 		Txid:   v.Txid,
+	}
+	if v.Ticket != nil {
+		res.Ticket = marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v.Ticket)
+	}
+
+	return res
+}
+
+// marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse builds a value
+// of type *ArtworkTicketResponse from a value of type
+// *artworksviews.ArtworkTicketView.
+func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v *artworksviews.ArtworkTicketView) *ArtworkTicketResponse {
+	res := &ArtworkTicketResponse{
+		Name:                     *v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             *v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           *v.ArtistPastelID,
+		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
+		ArtistName:               *v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         *v.SpendableAddress,
+		MaximumFee:               *v.MaximumFee,
 	}
 
 	return res

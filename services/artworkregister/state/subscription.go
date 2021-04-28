@@ -33,7 +33,7 @@ func (sub *Subscription) Pub(msgs ...*Message) {
 		case <-sub.Done():
 			return
 		case sub.msgCh <- msg:
-			if msg.Latest {
+			if msg.isFinal {
 				sub.Close()
 				return
 			}

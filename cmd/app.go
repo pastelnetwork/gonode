@@ -11,11 +11,12 @@ import (
 	"github.com/pastelnetwork/go-commons/log/hooks"
 	"github.com/pastelnetwork/go-commons/sys"
 	"github.com/pastelnetwork/go-commons/version"
+	"github.com/pastelnetwork/go-pastel"
 	"github.com/pastelnetwork/walletnode/api"
+	"github.com/pastelnetwork/walletnode/api/services"
 	"github.com/pastelnetwork/walletnode/configs"
-	"github.com/pastelnetwork/walletnode/services/artwork"
+	"github.com/pastelnetwork/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/walletnode/storage/memory"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -40,13 +41,11 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
-		// Rest
-		cli.NewFlag("swagger", &config.Rest.Swagger).SetUsage("Enable Swagger UI."),
+		// API
+		cli.NewFlag("swagger", &config.API.Swagger).SetUsage("Enable Swagger UI."),
 	)
 
-	app.SetActionFunc(func(args []string) error {
-		ctx := context.TODO()
-
+	app.SetActionFunc(func(ctx context.Context, args []string) error {
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
 				return err
@@ -68,13 +67,13 @@ func NewApp() *cli.App {
 			return errors.Errorf("--log-level %q, %s", config.LogLevel, err)
 		}
 
-		return run(ctx, config)
+		return runApp(ctx, config)
 	})
 
 	return app
 }
 
-func run(ctx context.Context, config *configs.Config) error {
+func runApp(ctx context.Context, config *configs.Config) error {
 	log.Debug("[app] start")
 	defer log.Debug("[app] end")
 
@@ -87,24 +86,18 @@ func run(ctx context.Context, config *configs.Config) error {
 		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
 	})
 
-	//pastelClient := pastel.New(config.Pastel)
+	// entities
+	pastel := pastel.NewClient(config.Pastel)
 	db := memory.NewKeyValue()
-	artwork := artwork.New(db)
-	api := api.New(config.Rest, artwork)
 
-	services := []interface{ Run(context.Context) error }{
-		artwork,
-		api,
-	}
+	// business logic services
+	artworkRegister := artworkregister.NewService(db, pastel)
 
-	group, ctx := errgroup.WithContext(ctx)
-	for _, service := range services {
-		service := service
-		group.Go(func() error {
-			return service.Run(ctx)
-		})
-	}
+	// api service
+	api := api.New(config.API,
+		services.NewArtwork(artworkRegister),
+		services.NewSwagger(),
+	)
 
-	err := group.Wait()
-	return err
+	return runServices(ctx, artworkRegister, api)
 }

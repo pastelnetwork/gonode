@@ -1,10 +1,10 @@
-package nats
+package grpc
 
 const (
-	defaultPort = 4222
+	defaultPort = 4444
 )
 
-// Config contains settings of the nats-server.
+// Config contains settings of the grpc client.
 type Config struct {
 	Hostname string `mapstructure:"hostname" json:"hostname,omitempty"`
 	Port     int    `mapstructure:"port" json:"port,omitempty"`

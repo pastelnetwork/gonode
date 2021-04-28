@@ -84,19 +84,20 @@ type ArtworkTicketView struct {
 	SeriesName *string
 	// Number of copies issued
 	IssuedCopies *int
-	// Uploaded image ID
-	ImageID *int
 	// Artwork creation video youtube URL
 	YoutubeURL *string
 	// Artist's PastelID
 	ArtistPastelID *string
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase *string
 	// Name of the artist
 	ArtistName *string
 	// Artist website URL
 	ArtistWebsiteURL *string
 	// Spendable address
 	SpendableAddress *string
-	NetworkFee       *float32
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee *float64
 }
 
 // TaskCollectionView is a type that runs validations on a projected type.
@@ -124,6 +125,7 @@ var (
 			"id",
 			"status",
 			"txid",
+			"ticket",
 		},
 		"default": []string{
 			"id",
@@ -140,6 +142,7 @@ var (
 			"id",
 			"status",
 			"txid",
+			"ticket",
 		},
 		"default": []string{
 			"id",
@@ -227,9 +230,12 @@ func ValidateTaskViewTiny(result *TaskView) (err error) {
 	if result.Status == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
 	}
+	if result.Ticket == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "result"))
+	}
 	if result.Status != nil {
-		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	if result.Txid != nil {
@@ -240,6 +246,11 @@ func ValidateTaskViewTiny(result *TaskView) (err error) {
 	if result.Txid != nil {
 		if utf8.RuneCountInString(*result.Txid) > 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.txid", *result.Txid, utf8.RuneCountInString(*result.Txid), 64, false))
+		}
+	}
+	if result.Ticket != nil {
+		if err2 := ValidateArtworkTicketView(result.Ticket); err2 != nil {
+			err = goa.MergeErrors(err, err2)
 		}
 	}
 	return
@@ -258,8 +269,8 @@ func ValidateTaskView(result *TaskView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range result.States {
@@ -296,8 +307,8 @@ func ValidateTaskStateView(result *TaskStateView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Registration Started" || *result.Status == "Artwork Accepted" || *result.Status == "Waiting Activation" || *result.Status == "Activated" || *result.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -314,17 +325,17 @@ func ValidateArtworkTicketView(result *ArtworkTicketView) (err error) {
 	if result.IssuedCopies == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "result"))
 	}
-	if result.ImageID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "result"))
-	}
 	if result.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "result"))
+	}
+	if result.ArtistPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "result"))
 	}
 	if result.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "result"))
 	}
-	if result.NetworkFee == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("network_fee", "result"))
+	if result.MaximumFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "result"))
 	}
 	if result.Name != nil {
 		if utf8.RuneCountInString(*result.Name) > 256 {
@@ -354,11 +365,6 @@ func ValidateArtworkTicketView(result *ArtworkTicketView) (err error) {
 	if result.IssuedCopies != nil {
 		if *result.IssuedCopies > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("result.issued_copies", *result.IssuedCopies, 1000, false))
-		}
-	}
-	if result.ImageID != nil {
-		if *result.ImageID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.image_id", *result.ImageID, 1, true))
 		}
 	}
 	if result.YoutubeURL != nil {
@@ -402,9 +408,9 @@ func ValidateArtworkTicketView(result *ArtworkTicketView) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("result.spendable_address", *result.SpendableAddress, utf8.RuneCountInString(*result.SpendableAddress), 35, false))
 		}
 	}
-	if result.NetworkFee != nil {
-		if *result.NetworkFee < 1e-05 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.network_fee", *result.NetworkFee, 1e-05, true))
+	if result.MaximumFee != nil {
+		if *result.MaximumFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.maximum_fee", *result.MaximumFee, 1e-05, true))
 		}
 	}
 	return

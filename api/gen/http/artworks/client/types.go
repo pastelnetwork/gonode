@@ -18,6 +18,8 @@ import (
 // RegisterRequestBody is the type of the "artworks" service "register"
 // endpoint HTTP request body.
 type RegisterRequestBody struct {
+	// Uploaded image ID
+	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
 	// Name of the artwork
 	Name string `form:"name" json:"name" xml:"name"`
 	// Description of the artwork
@@ -28,19 +30,20 @@ type RegisterRequestBody struct {
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
 	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
-	// Uploaded image ID
-	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
 	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
 	// Name of the artist
 	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
 	// Artist website URL
 	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 	// Spendable address
-	SpendableAddress string  `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
-	NetworkFee       float32 `form:"network_fee" json:"network_fee" xml:"network_fee"`
+	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 }
 
 // UploadImageRequestBody is the type of the "artworks" service "uploadImage"
@@ -280,19 +283,20 @@ type ArtworkTicketResponseBody struct {
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
 	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
-	// Uploaded image ID
-	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
 	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
 	// Name of the artist
 	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
 	// Artist website URL
 	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 	// Spendable address
-	SpendableAddress *string  `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
-	NetworkFee       *float32 `form:"network_fee,omitempty" json:"network_fee,omitempty" xml:"network_fee,omitempty"`
+	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
 }
 
 // TaskResponse is used to define fields on response body types.
@@ -328,37 +332,39 @@ type ArtworkTicketResponse struct {
 	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
 	// Number of copies issued
 	IssuedCopies *int `form:"issued_copies,omitempty" json:"issued_copies,omitempty" xml:"issued_copies,omitempty"`
-	// Uploaded image ID
-	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Artwork creation video youtube URL
 	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
 	// Artist's PastelID
 	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
 	// Name of the artist
 	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
 	// Artist website URL
 	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 	// Spendable address
-	SpendableAddress *string  `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
-	NetworkFee       *float32 `form:"network_fee,omitempty" json:"network_fee,omitempty" xml:"network_fee,omitempty"`
+	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
 }
 
 // NewRegisterRequestBody builds the HTTP request body from the payload of the
 // "register" endpoint of the "artworks" service.
 func NewRegisterRequestBody(p *artworks.RegisterPayload) *RegisterRequestBody {
 	body := &RegisterRequestBody{
-		Name:             p.Name,
-		Description:      p.Description,
-		Keywords:         p.Keywords,
-		SeriesName:       p.SeriesName,
-		IssuedCopies:     p.IssuedCopies,
-		ImageID:          p.ImageID,
-		YoutubeURL:       p.YoutubeURL,
-		ArtistPastelID:   p.ArtistPastelID,
-		ArtistName:       p.ArtistName,
-		ArtistWebsiteURL: p.ArtistWebsiteURL,
-		SpendableAddress: p.SpendableAddress,
-		NetworkFee:       p.NetworkFee,
+		ImageID:                  p.ImageID,
+		Name:                     p.Name,
+		Description:              p.Description,
+		Keywords:                 p.Keywords,
+		SeriesName:               p.SeriesName,
+		IssuedCopies:             p.IssuedCopies,
+		YoutubeURL:               p.YoutubeURL,
+		ArtistPastelID:           p.ArtistPastelID,
+		ArtistPastelIDPassphrase: p.ArtistPastelIDPassphrase,
+		ArtistName:               p.ArtistName,
+		ArtistWebsiteURL:         p.ArtistWebsiteURL,
+		SpendableAddress:         p.SpendableAddress,
+		MaximumFee:               p.MaximumFee,
 	}
 	return body
 }
@@ -578,8 +584,8 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -811,8 +817,8 @@ func ValidateTaskStateResponseBody(body *TaskStateResponseBody) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -830,17 +836,17 @@ func ValidateArtworkTicketResponseBody(body *ArtworkTicketResponseBody) (err err
 	if body.IssuedCopies == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
 	}
-	if body.ImageID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "body"))
-	}
 	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.ArtistPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
 	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
 	}
-	if body.NetworkFee == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("network_fee", "body"))
+	if body.MaximumFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "body"))
 	}
 	if body.Name != nil {
 		if utf8.RuneCountInString(*body.Name) > 256 {
@@ -870,11 +876,6 @@ func ValidateArtworkTicketResponseBody(body *ArtworkTicketResponseBody) (err err
 	if body.IssuedCopies != nil {
 		if *body.IssuedCopies > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1000, false))
-		}
-	}
-	if body.ImageID != nil {
-		if *body.ImageID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
 		}
 	}
 	if body.YoutubeURL != nil {
@@ -918,9 +919,9 @@ func ValidateArtworkTicketResponseBody(body *ArtworkTicketResponseBody) (err err
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
 		}
 	}
-	if body.NetworkFee != nil {
-		if *body.NetworkFee < 1e-05 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.network_fee", *body.NetworkFee, 1e-05, true))
+	if body.MaximumFee != nil {
+		if *body.MaximumFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
 		}
 	}
 	return
@@ -938,8 +939,8 @@ func ValidateTaskResponse(body *TaskResponse) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range body.States {
@@ -976,8 +977,8 @@ func ValidateTaskStateResponse(body *TaskStateResponse) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Registration Started" || *body.Status == "Artwork Accepted" || *body.Status == "Waiting Activation" || *body.Status == "Activated" || *body.Status == "Error") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Registration Started", "Artwork Accepted", "Waiting Activation", "Activated", "Error"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -995,17 +996,17 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 	if body.IssuedCopies == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("issued_copies", "body"))
 	}
-	if body.ImageID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "body"))
-	}
 	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.ArtistPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
 	}
 	if body.SpendableAddress == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("spendable_address", "body"))
 	}
-	if body.NetworkFee == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("network_fee", "body"))
+	if body.MaximumFee == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "body"))
 	}
 	if body.Name != nil {
 		if utf8.RuneCountInString(*body.Name) > 256 {
@@ -1035,11 +1036,6 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 	if body.IssuedCopies != nil {
 		if *body.IssuedCopies > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.issued_copies", *body.IssuedCopies, 1000, false))
-		}
-	}
-	if body.ImageID != nil {
-		if *body.ImageID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
 		}
 	}
 	if body.YoutubeURL != nil {
@@ -1083,9 +1079,9 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.spendable_address", *body.SpendableAddress, utf8.RuneCountInString(*body.SpendableAddress), 35, false))
 		}
 	}
-	if body.NetworkFee != nil {
-		if *body.NetworkFee < 1e-05 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.network_fee", *body.NetworkFee, 1e-05, true))
+	if body.MaximumFee != nil {
+		if *body.MaximumFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
 		}
 	}
 	return

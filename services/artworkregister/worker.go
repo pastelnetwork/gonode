@@ -1,10 +1,10 @@
-package register
+package artworkregister
 
 import (
 	"context"
-	"time"
 
-	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
+	"github.com/pastelnetwork/go-commons/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 // Worker represents a task handler of registering artworks.
@@ -22,23 +22,18 @@ func (worker *Worker) AddTask(ctx context.Context, task *Task) {
 
 // Run waits for new tasks, starts handling eche of them in a new goroutine.
 func (worker *Worker) Run(ctx context.Context) error {
+	group, ctx := errgroup.WithContext(ctx)
+
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
-		case task := <-worker.taskCh:
+			return group.Wait()
 
-			go func() {
-				// NOTE: for testing
-				time.Sleep(time.Second)
-				task.State.Update(state.NewMessage(state.StatusAccepted))
-				time.Sleep(time.Second)
-				task.State.Update(state.NewMessage(state.StatusActivation))
-				time.Sleep(time.Second)
-				msg := state.NewMessage(state.StatusActivated)
-				msg.Latest = true
-				task.State.Update(msg)
-			}()
+		case task := <-worker.taskCh:
+			group.Go(func() (err error) {
+				defer errors.Recover(func(rec error) { err = rec })
+				return task.Run(ctx)
+			})
 		}
 	}
 }

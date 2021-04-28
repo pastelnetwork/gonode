@@ -32,13 +32,14 @@ func UsageExamples() string {
 	return os.Args[0] + ` artworks register --body '{
       "artist_name": "Leonardo da Vinci",
       "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
+      "artist_pastelid_passphrase": "qwerasdf1234",
       "artist_website_url": "https://www.leonardodavinci.net",
       "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
       "image_id": 1,
       "issued_copies": 1,
       "keywords": "Renaissance, sfumato, portrait",
+      "maximum_fee": 100,
       "name": "Mona Lisa",
-      "network_fee": 100,
       "series_name": "Famous artist",
       "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
       "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"
@@ -208,13 +209,14 @@ Example:
     `+os.Args[0]+` artworks register --body '{
       "artist_name": "Leonardo da Vinci",
       "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
+      "artist_pastelid_passphrase": "qwerasdf1234",
       "artist_website_url": "https://www.leonardodavinci.net",
       "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
       "image_id": 1,
       "issued_copies": 1,
       "keywords": "Renaissance, sfumato, portrait",
+      "maximum_fee": 100,
       "name": "Mona Lisa",
-      "network_fee": 100,
       "series_name": "Famous artist",
       "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
       "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"

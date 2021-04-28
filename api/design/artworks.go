@@ -1,11 +1,14 @@
 package design
 
 import (
-	//revive:disable:dot-imports
-	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
-	. "goa.design/goa/v3/dsl"
+	"time"
 
+	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
+
+	//revive:disable:dot-imports
+	. "goa.design/goa/v3/dsl"
 	//revive:enable:dot-imports
+
 	cors "goa.design/plugins/v3/cors/dsl"
 )
 
@@ -27,6 +30,12 @@ var _ = Service("artworks", func() {
 
 		Payload(func() {
 			Extend(ArtworkTicket)
+			Attribute("image_id", Int, func() {
+				Description("Uploaded image ID")
+				Minimum(1)
+				Example(1)
+			})
+			Required("image_id")
 		})
 		Result(ArtworkRegisterResult)
 
@@ -141,11 +150,6 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Default(1)
 		Example(1)
 	})
-	Attribute("image_id", Int, func() {
-		Description("Uploaded image ID")
-		Minimum(1)
-		Example(1)
-	})
 	Attribute("youtube_url", String, func() {
 		Description("Artwork creation video youtube URL")
 		MaxLength(128)
@@ -159,6 +163,11 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		MaxLength(86)
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+	Attribute("artist_pastelid_passphrase", String, func() {
+		Meta("struct:field:name", "ArtistPastelIDPassphrase")
+		Description("Passphrase of the artist's PastelID")
+		Example("qwerasdf1234")
 	})
 	Attribute("artist_name", String, func() {
 		Description("Name of the artist")
@@ -178,13 +187,14 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j")
 	})
-	Attribute("network_fee", Float32, func() {
+	Attribute("maximum_fee", Float64, func() {
+		Description("Used to find a suitable masternode with a fee equal or less")
 		Minimum(0.00001)
 		Default(1)
 		Example(100)
 	})
 
-	Required("artist_name", "name", "issued_copies", "image_id", "artist_pastelid", "spendable_address", "network_fee")
+	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 
 // ArtworkRegisterResult is artwork registeration result.
@@ -228,6 +238,7 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 		Attribute("id")
 		Attribute("status")
 		Attribute("txid")
+		Attribute("ticket")
 	})
 
 	Required("id", "status", "ticket")
@@ -237,7 +248,7 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 var ArtworkRegisterTaskState = Type("TaskState", func() {
 	Attribute("date", String, func() {
 		Description("Date of the status creation")
-		Example("2019-10-12T07:20:50.52Z")
+		Example(time.RFC3339)
 	})
 	Attribute("status", String, func() {
 		Description("Status of the registration process")
@@ -268,7 +279,7 @@ var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func(
 		Attribute("expires_in", String, func() {
 			Description("Image expiration")
 			Format(FormatDateTime)
-			Example("2019-10-12T07:20:50.52Z")
+			Example(time.RFC3339)
 		})
 	})
 	Required("image_id", "expires_in")

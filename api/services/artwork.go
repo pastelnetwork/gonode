@@ -6,12 +6,17 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/services/artwork"
-	"github.com/pastelnetwork/walletnode/services/artwork/register"
+	"github.com/pastelnetwork/walletnode/api/log"
+	"github.com/pastelnetwork/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/walletnode/storage"
 	"github.com/pastelnetwork/walletnode/storage/memory"
+
+	"github.com/pastelnetwork/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/walletnode/api/gen/http/artworks/server"
+
+	goahttp "goa.design/goa/v3/http"
 )
 
 const (
@@ -22,16 +27,17 @@ var (
 	imageID uint32
 )
 
-type serviceArtwork struct {
-	artwork *artwork.Service
-	storage storage.KeyValue
+// Artwork represents services for artworks endpoints.
+type Artwork struct {
+	register *artworkregister.Service
+	storage  storage.KeyValue
 }
 
 // RegisterTaskState streams the state of the registration process.
-func (service *serviceArtwork) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
+func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.RegisterTaskStatePayload, stream artworks.RegisterTaskStateServerStream) (err error) {
 	defer stream.Close()
 
-	task := service.artwork.Task(p.TaskID)
+	task := service.register.Task(p.TaskID)
 	if task == nil {
 		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
 	}
@@ -62,8 +68,8 @@ func (service *serviceArtwork) RegisterTaskState(ctx context.Context, p *artwork
 }
 
 // RegisterTask returns a single task.
-func (service *serviceArtwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
-	task := service.artwork.Task(p.TaskID)
+func (service *Artwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
+	task := service.register.Task(p.TaskID)
 	if task == nil {
 		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
 	}
@@ -71,35 +77,31 @@ func (service *serviceArtwork) RegisterTask(ctx context.Context, p *artworks.Reg
 	res = &artworks.Task{
 		ID:     p.TaskID,
 		Status: task.State.Latest().Status.String(),
+		Ticket: toArtworkTicket(task.Ticket),
+		States: toArtworkStates(task.State.All()),
 	}
-
-	for _, msg := range task.State.All() {
-		res.States = append(res.States, &artworks.TaskState{
-			Date:   msg.CreatedAt.Format(time.RFC3339),
-			Status: msg.Status.String(),
-		})
-	}
-
 	return res, nil
 }
 
-// RegisterTask returns list of all tasks.
-func (service *serviceArtwork) RegisterTasks(ctx context.Context) (res artworks.TaskCollection, err error) {
-	tasks := service.artwork.Tasks()
+// RegisterTasks returns list of all tasks.
+func (service *Artwork) RegisterTasks(ctx context.Context) (res artworks.TaskCollection, err error) {
+	tasks := service.register.Tasks()
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
-			ID:     task.ID(),
+			ID:     task.ID,
 			Status: task.State.Latest().Status.String(),
+			Ticket: toArtworkTicket(task.Ticket),
 		})
 	}
 	return res, nil
 }
 
 // Register runs registers process for the new artwork.
-func (service *serviceArtwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
-	key := strconv.Itoa(p.ImageID)
+func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
+	ticket := fromRegisterPayload(p)
 
-	image, err := service.storage.Get(key)
+	key := strconv.Itoa(p.ImageID)
+	ticket.Image, err = service.storage.Get(key)
 	if err == storage.ErrKeyNotFound {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
@@ -107,22 +109,7 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	ticket := &register.Ticket{
-		Image:            image,
-		Name:             p.Name,
-		Description:      p.Description,
-		Keywords:         p.Keywords,
-		SeriesName:       p.SeriesName,
-		IssuedCopies:     p.IssuedCopies,
-		YoutubeURL:       p.YoutubeURL,
-		ArtistPastelID:   p.ArtistPastelID,
-		ArtistName:       p.ArtistName,
-		ArtistWebsiteURL: p.ArtistWebsiteURL,
-		SpendableAddress: p.SpendableAddress,
-		NetworkFee:       p.NetworkFee,
-	}
-
-	taskID, err := service.artwork.Register(ctx, ticket)
+	taskID, err := service.register.Register(ctx, ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
@@ -133,7 +120,7 @@ func (service *serviceArtwork) Register(ctx context.Context, p *artworks.Registe
 }
 
 // UploadImage uploads an image and return unique image id.
-func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
+func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
 	id := int(atomic.AddUint32(&imageID, 1))
 	key := strconv.Itoa(id)
 
@@ -155,10 +142,23 @@ func (service *serviceArtwork) UploadImage(ctx context.Context, p *artworks.Uplo
 	return res, nil
 }
 
-// NewArtwork returns the artworks serviceArtwork implementation.
-func NewArtwork(artworks *artwork.Service) artworks.Service {
-	return &serviceArtwork{
-		artwork: artworks,
-		storage: memory.NewKeyValue(),
+// Mount configures the mux to serve the artworks endpoints.
+func (service *Artwork) Mount(mux goahttp.Muxer) goahttp.Server {
+	endpoints := artworks.NewEndpoints(service)
+	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, log.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc)
+	server.Mount(mux, srv)
+
+	for _, m := range srv.Mounts {
+		log.Infof("%q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+	}
+
+	return srv
+}
+
+// NewArtwork returns the artworks Artwork implementation.
+func NewArtwork(register *artworkregister.Service) *Artwork {
+	return &Artwork{
+		register: register,
+		storage:  memory.NewKeyValue(),
 	}
 }

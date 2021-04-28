@@ -6,22 +6,30 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
-	"github.com/pastelnetwork/go-commons/log"
-	"github.com/pastelnetwork/walletnode/services/artwork"
+	"github.com/pastelnetwork/walletnode/api/docs"
+	"github.com/pastelnetwork/walletnode/api/log"
+
+	goahttp "goa.design/goa/v3/http"
+	goahttpmiddleware "goa.design/goa/v3/http/middleware"
 )
 
 const (
 	defaultShutdownTimeout = time.Second * 30
 )
 
+type service interface {
+	Mount(mux goahttp.Muxer) goahttp.Server
+}
+
 // API represents RESTAPI service.
 type API struct {
 	config          *Config
 	shutdownTimeout time.Duration
-	artwork         *artwork.Service
+	services        []service
 }
 
 // Run startworks RESTAPI service.
@@ -35,20 +43,20 @@ func (api *API) Run(ctx context.Context) error {
 	mux.Handle("/swagger/swagger.json", apiHTTP)
 
 	if api.config.Swagger {
-		mux.Handle("/swagger/", swaggerHandler())
+		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))
 	}
 
 	srv := &http.Server{Addr: addr, Handler: mux}
 
 	errCh := make(chan error)
 	go func() {
-		log.Infof("%s HTTP server listening on %q", logPrefix, addr)
+		log.Infof("Server listening on %q", addr)
 		errCh <- srv.ListenAndServe()
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Infof("%s Shutting down HTTP server at %q", logPrefix, addr)
+		log.Infof("Shutting down server at %q", addr)
 	case err := <-errCh:
 		return err
 	}
@@ -61,11 +69,28 @@ func (api *API) Run(ctx context.Context) error {
 	return err
 }
 
+func (api *API) handler() http.Handler {
+	mux := goahttp.NewMuxer()
+
+	var servers goahttp.Servers
+	for _, service := range api.services {
+		servers = append(servers, service.Mount(mux))
+	}
+	servers.Use(goahttpmiddleware.Debug(mux, os.Stdout))
+
+	var handler http.Handler = mux
+
+	handler = log.Log()(handler)
+	handler = goahttpmiddleware.RequestID()(handler)
+
+	return handler
+}
+
 // New returns a new API instance.
-func New(config *Config, artwork *artwork.Service) *API {
+func New(config *Config, services ...service) *API {
 	return &API{
 		config:          config,
 		shutdownTimeout: defaultShutdownTimeout,
-		artwork:         artwork,
+		services:        services,
 	}
 }

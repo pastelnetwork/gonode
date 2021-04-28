@@ -1,6 +1,7 @@
-package api
+package log
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -12,10 +13,6 @@ import (
 
 	httpmiddleware "goa.design/goa/v3/http/middleware"
 	"goa.design/goa/v3/middleware"
-)
-
-const (
-	logPrefix = "[rest]"
 )
 
 // Log logs incoming HTTP requests and outgoing responses.
@@ -30,17 +27,17 @@ func Log() func(h http.Handler) http.Handler {
 			}
 			started := time.Now()
 
-			log.WithField("from", logFrom(r)).
+			WithField("from", logFrom(r)).
 				WithField("req", r.Method+" "+r.URL.String()).
-				Debugf("%v [%v] Request", logPrefix, reqID)
+				Debugf("[%v] Request", reqID)
 
 			rw := httpmiddleware.CaptureResponse(w)
 			h.ServeHTTP(rw, r)
 
-			log.WithField("status", rw.StatusCode).
+			WithField("status", rw.StatusCode).
 				WithField("bytes", rw.ContentLength).
 				WithField("time", time.Since(started).String()).
-				Debugf("%v [%v] Response", logPrefix, reqID)
+				Debugf("[%v] Response", reqID)
 		})
 	}
 }
@@ -58,8 +55,17 @@ func logFrom(req *http.Request) string {
 	return ip
 }
 
+// ErrorHandler returns a function that writes and logs the given error.
+// The function also writes and logs the error unique ID so that it's possible
+// to correlate.
+func ErrorHandler(ctx context.Context, w http.ResponseWriter, err error) {
+	id := ctx.Value(middleware.RequestIDKey).(string)
+	_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
+	Errorf("[%s] %s", id, err.Error())
+}
+
 func init() {
-	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(ctxValue interface{}, msg string) string {
-		return fmt.Sprintf("%v [%v] %s", logPrefix, ctxValue, msg)
+	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(entry *log.Entry, ctxValue interface{}) {
+		entry.Message = fmt.Sprintf("[%v] %s", ctxValue, entry.Message)
 	}))
 }
