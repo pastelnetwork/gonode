@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pastelnetwork/kademlia"
+	"github.com/pastelnetwork/gonode/p2p"
 
 	"gopkg.in/readline.v1"
 )

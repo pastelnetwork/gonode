@@ -41,7 +41,7 @@ import (
 
 	_ "gorgonia.org/tensor"
 
-	"github.com/pastelnetwork/dupe-detection-golang/wdm"
+	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
 )
 
 func Measure(start time.Time) {

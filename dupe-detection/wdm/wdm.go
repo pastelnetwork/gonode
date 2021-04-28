@@ -1,7 +1,7 @@
 package wdm
 
 import (
-	"github.com/pastelnetwork/dupe-detection-golang/wdm/swig"
+	"github.com/pastelnetwork/gonode/dupe-detection/wdm/swig"
 )
 
 func Wdm(x, y []float64, method string, weights []float64) float64 {

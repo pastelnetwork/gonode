@@ -13,8 +13,8 @@ import (
 
 	"github.com/kevinburke/nacl/secretbox"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/go-legroast"
-	pqtime "github.com/pastelnetwork/pqsignatures/internal/time"
+	"github.com/pastelnetwork/gonode/legroast"
+	pqtime "github.com/pastelnetwork/gonode/pqsignatures/internal/time"
 )
 
 const (
