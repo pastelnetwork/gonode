@@ -3,7 +3,7 @@ package configs
 import (
 	"encoding/json"
 
-	"github.com/pastelnetwork/go-pastel"
+	"github.com/pastelnetwork/gonode/pastel-client"
 	"github.com/pastelnetwork/walletnode/api"
 )
 

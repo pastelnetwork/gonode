@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/pastelnetwork/go-pastel"
-	"github.com/pastelnetwork/supernode/storage"
+	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/gonode/supernode/storage"
 )
 
 // const logPrefix = "[artwork]"

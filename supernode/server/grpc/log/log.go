@@ -3,7 +3,7 @@ package log
 import (
 	"context"
 
-	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 const (

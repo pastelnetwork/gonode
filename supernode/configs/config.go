@@ -3,9 +3,9 @@ package configs
 import (
 	"encoding/json"
 
-	"github.com/pastelnetwork/go-pastel"
-	"github.com/pastelnetwork/supernode/server"
-	"github.com/pastelnetwork/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/gonode/supernode/server"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 
 // Config contains configuration of all components of the SuperNode.

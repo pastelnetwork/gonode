@@ -1,6 +1,6 @@
 package storage
 
-import "github.com/pastelnetwork/go-commons/errors"
+import "github.com/pastelnetwork/gonode/common/errors"
 
 var (
 	// ErrKeyNotFound is returned when key isn't found.

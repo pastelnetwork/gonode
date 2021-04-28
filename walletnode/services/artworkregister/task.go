@@ -5,9 +5,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/go-commons/log"
-	pb "github.com/pastelnetwork/supernode-proto"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	pb "github.com/pastelnetwork/gonode/proto"
 	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

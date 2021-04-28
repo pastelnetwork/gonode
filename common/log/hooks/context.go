@@ -1,7 +1,7 @@
 package hooks
 
 import (
-	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/sirupsen/logrus"
 )
 

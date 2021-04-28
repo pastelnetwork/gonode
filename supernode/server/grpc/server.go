@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/supernode/server"
-	"github.com/pastelnetwork/supernode/server/grpc/log"
-	"github.com/pastelnetwork/supernode/server/grpc/middleware"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/supernode/server"
+	"github.com/pastelnetwork/gonode/supernode/server/grpc/log"
+	"github.com/pastelnetwork/gonode/supernode/server/grpc/middleware"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )

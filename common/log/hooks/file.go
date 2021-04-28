@@ -4,8 +4,8 @@ import (
 	"math"
 	"time"
 
-	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/go-commons/log/formatters"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log/formatters"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
 )

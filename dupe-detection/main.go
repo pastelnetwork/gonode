@@ -26,7 +26,7 @@ import (
 
 	"github.com/disintegration/imaging"
 
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 
 	"encoding/binary"
 	"encoding/hex"

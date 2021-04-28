@@ -3,9 +3,9 @@ package middleware
 import (
 	"context"
 
-	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/go-commons/log"
-	"github.com/pastelnetwork/go-commons/log/hooks"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"

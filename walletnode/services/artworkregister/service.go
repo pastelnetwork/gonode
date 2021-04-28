@@ -3,8 +3,8 @@ package artworkregister
 import (
 	"context"
 
-	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/go-pastel"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/pastel-client"
 	"github.com/pastelnetwork/walletnode/storage"
 	"golang.org/x/sync/errgroup"
 )

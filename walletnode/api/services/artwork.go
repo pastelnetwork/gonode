@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/walletnode/api/log"
 	"github.com/pastelnetwork/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/walletnode/storage"

@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pastelnetwork/go-commons/log"
-	"github.com/pastelnetwork/go-commons/log/hooks"
-	"github.com/pastelnetwork/go-commons/random"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/log/hooks"
+	"github.com/pastelnetwork/gonode/common/random"
 
 	httpmiddleware "goa.design/goa/v3/http/middleware"
 	"goa.design/goa/v3/middleware"

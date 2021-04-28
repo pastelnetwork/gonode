@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/kevinburke/nacl"
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 var SecretBoxKeyWrongSize = errors.Errorf("nacl secret box key doesn't match its expected size")

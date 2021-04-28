@@ -7,7 +7,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // ErrorStack converts the given error to a string, including the stack trace if available

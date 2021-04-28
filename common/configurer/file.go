@@ -3,7 +3,7 @@ package configurer
 import (
 	"path/filepath"
 
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/spf13/viper"
 )
 

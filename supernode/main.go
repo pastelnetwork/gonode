@@ -3,10 +3,10 @@ package main
 import (
 	"os"
 
-	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/go-commons/log"
-	"github.com/pastelnetwork/go-commons/sys"
-	"github.com/pastelnetwork/supernode/cmd"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/sys"
+	"github.com/pastelnetwork/gonode/supernode/cmd"
 )
 
 const (

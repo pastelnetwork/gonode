@@ -3,8 +3,8 @@ package memory
 import (
 	"sync"
 
-	"github.com/pastelnetwork/go-commons/log"
-	"github.com/pastelnetwork/supernode/storage"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/supernode/storage"
 )
 
 const logPrefix = "[memory]"

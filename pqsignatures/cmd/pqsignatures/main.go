@@ -15,7 +15,7 @@ import (
 	"github.com/DataDog/zstd"
 	"github.com/fogleman/gg"
 	"github.com/nfnt/resize"
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 	pqtime "github.com/pastelnetwork/pqsignatures/internal/time"
 	pq "github.com/pastelnetwork/pqsignatures/pkg/pqsignatures"
 	"github.com/pastelnetwork/pqsignatures/pkg/qr"

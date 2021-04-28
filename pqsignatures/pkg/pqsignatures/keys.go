@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/kevinburke/nacl/secretbox"
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/go-legroast"
 	pqtime "github.com/pastelnetwork/pqsignatures/internal/time"
 )

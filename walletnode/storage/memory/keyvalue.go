@@ -3,7 +3,7 @@ package memory
 import (
 	"sync"
 
-	"github.com/pastelnetwork/go-commons/log"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/walletnode/storage"
 )
 

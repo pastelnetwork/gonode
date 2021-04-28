@@ -1,6 +1,6 @@
 package nats
 
-import "github.com/pastelnetwork/go-commons/log"
+import "github.com/pastelnetwork/gonode/common/log"
 
 const (
 	logPrefix = "[nats]"

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/pastelnetwork/go-commons/errors"
-	pb "github.com/pastelnetwork/supernode-proto"
-	"github.com/pastelnetwork/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/common/errors"
+	pb "github.com/pastelnetwork/gonode/proto"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

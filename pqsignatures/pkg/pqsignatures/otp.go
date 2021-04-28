@@ -11,7 +11,7 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/xlzd/gotp"
 	"golang.org/x/image/font/inconsolata"

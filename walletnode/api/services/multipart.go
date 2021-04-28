@@ -7,7 +7,7 @@ import (
 	"mime/multipart"
 	"strings"
 
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
 )
 

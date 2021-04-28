@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/fogleman/gg"
-	"github.com/pastelnetwork/go-commons/errors"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/steganography"
 )
 

@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/pastelnetwork/go-commons/log/formatters"
+	"github.com/pastelnetwork/gonode/common/log/formatters"
 	"github.com/sirupsen/logrus"
 )
 

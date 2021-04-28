@@ -6,8 +6,8 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/pastelnetwork/go-commons/errors"
-	"github.com/pastelnetwork/supernode/services/artworkregister/state"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkregister/state"
 )
 
 var taskID uint32
