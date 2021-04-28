@@ -1,0 +1,84 @@
+version: 2.1
+
+defaults: &defaults
+  parameters:
+    version:
+      type: string
+      default: "latest"
+  docker:
+    - image: "circleci/golang:<< parameters.version >>"
+  environment:
+    GO111MODULE: "on"
+
+jobs:
+  # Run automated tests
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: Print the go version
+          command: |
+            go version
+      - run:
+          name: Fetch dependencies
+          command: |
+            go get -v ./...
+            GO111MODULE=off go get -u github.com/mgechev/revive
+      - run:
+          name: Run gofmt
+          command: |
+            diff -u <(echo -n) <(gofmt -d -e .)
+      - run:
+          name: Run go vet
+          command: |
+            go vet -v ./...
+      - run:
+          name: Run revive
+          command: |
+            revive ./...
+      - run:
+          name: Run go test (+ race detector)
+          command: |
+            go test -v -race ./...
+
+  # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
+  release:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: Fetch dependencies
+          command: |
+            go get -v ./...
+            go get github.com/github-release/github-release
+
+      - run:
+          name: Build the binaries for each OS
+          command: |
+            CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -o bin/walletnode-darwin-amd64 -ldflags "-X github.com/pastelnetwork/go-commons/version.version=$CIRCLE_TAG -extldflags '-static'" .
+            CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/walletnode-linux-amd64 -ldflags "-X github.com/pastelnetwork/go-commons/version.version=$CIRCLE_TAG -extldflags '-static'" .
+            CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -o bin/walletnode-windows-amd64 -ldflags "-X github.com/pastelnetwork/go-commons/version.version=$CIRCLE_TAG -extldflags '-static'" .
+
+      - run:
+          name: Upload the binaries to GitHub
+          command: |
+            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --name walletnode-darwin-amd64 --file bin/walletnode-darwin-amd64
+            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --name walletnode-linux-amd64 --file bin/walletnode-linux-amd64
+            github-release upload --user pastelnetwork --repo walletnode --tag $CIRCLE_TAG --name walletnode-windows-amd64 --file bin/walletnode-windows-amd64
+
+workflows:
+  build-and-test:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /^v.*/
+      - release:
+          requires:
+            - test
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
