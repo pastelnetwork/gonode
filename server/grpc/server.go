@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/go-commons/errors"
 	"github.com/pastelnetwork/supernode/server"
 	"github.com/pastelnetwork/supernode/server/grpc/log"
+	"github.com/pastelnetwork/supernode/server/grpc/middleware"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
@@ -60,7 +61,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 	select {
 	case <-ctx.Done():
 		log.Infof("Shutting down server at %q", address)
-		grpcServer.GracefulStop()
+		grpcServer.Stop()
 	case err := <-errCh:
 		return err
 	}
@@ -69,7 +70,10 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 }
 
 func (server *Server) grpcServer() *grpc.Server {
-	grpcServer := grpc.NewServer(recovery())
+	grpcServer := grpc.NewServer(
+		middleware.UnaryInterceptor(),
+		middleware.StreamInterceptor(),
+	)
 
 	for _, service := range server.services {
 		log.Debugf("Register service %q", service.Desc().ServiceName)

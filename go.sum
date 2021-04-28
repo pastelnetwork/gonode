@@ -225,10 +225,16 @@ github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFSt
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
 github.com/pastelnetwork/go-commons v0.0.1 h1:0GTECTnLm+LH0yefW3vqVRtL6iQ2mcXYpVZiuO+VG+g=
 github.com/pastelnetwork/go-commons v0.0.1/go.mod h1:ABVFReqhWnejbznPTdotSgCQ50jVEmKUyRLMpssFq2o=
+github.com/pastelnetwork/go-commons v0.0.4 h1:7HnV437QVQBtR+etF5hthG5SceVEbhZNwNLzpwNNtsE=
+github.com/pastelnetwork/go-commons v0.0.4/go.mod h1:ABVFReqhWnejbznPTdotSgCQ50jVEmKUyRLMpssFq2o=
+github.com/pastelnetwork/go-commons v0.0.5 h1:jBtYv0ap0BNYLFjH02ywkPEFOaK6zvsHYr+V3R0xJLI=
+github.com/pastelnetwork/go-commons v0.0.5/go.mod h1:ABVFReqhWnejbznPTdotSgCQ50jVEmKUyRLMpssFq2o=
 github.com/pastelnetwork/go-jsonrpc/v2 v2.2.2 h1:IgiQsQyOJoeGfkL6yysozaQzOhS9RtocEPPWJPECJhc=
 github.com/pastelnetwork/go-jsonrpc/v2 v2.2.2/go.mod h1:K07NeZ/WDnJmAWPggaVyQKdrWfdrMTmfXz1OKPtZJuI=
 github.com/pastelnetwork/go-pastel v0.0.1 h1:vKP2MwmKSo1gjENe3KiIJIf02/1ezNL+jGpKQJdMfaE=
 github.com/pastelnetwork/go-pastel v0.0.1/go.mod h1:g3hMtZMnrUfDyPBYKlNN2IO5tWrwPUNvyGhMN0D5+Gk=
+github.com/pastelnetwork/go-pastel v0.0.4 h1:+gbBOpiT0lBboTvSjFeCTNo7xRv6+kHU8X3VMFFLSu8=
+github.com/pastelnetwork/go-pastel v0.0.4/go.mod h1:u/llUix+Wiyl7FwqJ6l1mRil6RZcWd4N/VsIEfHhN48=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
