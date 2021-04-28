@@ -31,7 +31,7 @@ message RegisterRequest {
     }
     message SecondaryNodeRequest {
         string connID = 1;
-        string primary_key = 2;
+        string primary_node_key = 2;
     }
     message UploadImageRequest {
         bytes image = 1;
@@ -84,6 +84,7 @@ message RegisterReply {
 message SuperNodeRequest {
     message HelloRequest {
         string connID = 1;
+        string secondary_node_key = 2;
     }
 
     oneof test_oneof {
