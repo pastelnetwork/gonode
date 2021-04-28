@@ -223,6 +223,7 @@ github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMyw
 github.com/google/go-cmp v0.4.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.0/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
+github.com/google/go-cmp v0.5.5 h1:Khx7svrCpmxxtHBq5j2mp/xVjsi8hQMfNLvJFAlrGgU=
 github.com/google/go-cmp v0.5.5/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=
 github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4 h1:OL2d27ueTKnlQJoqLW2fc9pWYulFnJYLWzomGV7HqZo=
 github.com/google/gxui v0.0.0-20151028112939-f85e0a97b3a4/go.mod h1:Pw1H1OjSNHiqeuxAduB1BKYXIwFtsyrY47nEqSgEiCM=
@@ -351,8 +352,14 @@ github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1y
 github.com/onsi/gomega v1.11.0 h1:+CqWgvj0OZycCaqclBD1pxKHAU+tOkHmQIWvDHq2aug=
 github.com/onsi/gomega v1.11.0/go.mod h1:azGKhqFUon9Vuj0YmTfLSmx0FUwqXYSTl5re8lQLTUg=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
-github.com/pastelnetwork/go-jsonrpc/v2 v2.2.2 h1:IgiQsQyOJoeGfkL6yysozaQzOhS9RtocEPPWJPECJhc=
+github.com/pastelnetwork/go-commons v0.0.4/go.mod h1:ABVFReqhWnejbznPTdotSgCQ50jVEmKUyRLMpssFq2o=
+github.com/pastelnetwork/go-commons v0.0.5 h1:jBtYv0ap0BNYLFjH02ywkPEFOaK6zvsHYr+V3R0xJLI=
+github.com/pastelnetwork/go-commons v0.0.5/go.mod h1:ABVFReqhWnejbznPTdotSgCQ50jVEmKUyRLMpssFq2o=
 github.com/pastelnetwork/go-jsonrpc/v2 v2.2.2/go.mod h1:K07NeZ/WDnJmAWPggaVyQKdrWfdrMTmfXz1OKPtZJuI=
+github.com/pastelnetwork/go-pastel v0.0.5 h1:1kDqU26MD8zMwc9ppsP4YNF1ylj8GtzsGxQaBO6JJmA=
+github.com/pastelnetwork/go-pastel v0.0.5/go.mod h1:u/llUix+Wiyl7FwqJ6l1mRil6RZcWd4N/VsIEfHhN48=
+github.com/pastelnetwork/supernode-proto v0.0.1 h1:Ndpco8JLBPdo0/2YKFvXEdOwg9tszI+D1gwLGnIKKFI=
+github.com/pastelnetwork/supernode-proto v0.0.1/go.mod h1:h9cnZ2w/iets2MeoDCfgEJ1pWtkm8e8gSlfUyj1aKCk=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pelletier/go-toml v1.4.0/go.mod h1:PN7xzY2wHTK0K9p34ErDQMlFxa51Fk0OUruD3k1mMwo=

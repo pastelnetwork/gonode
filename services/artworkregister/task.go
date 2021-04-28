@@ -55,7 +55,6 @@ func (task *Task) run(ctx context.Context) error {
 		if err := task.connect(ctx, superNode); err != nil {
 			return err
 		}
-		return nil
 	}
 	// if len(superNodes) < task.config.NumberSuperNodes {
 	// 	task.State.Update(state.NewMessage(state.StatusErrorTooLowFee))
@@ -89,18 +88,18 @@ func (task *Task) connect(ctx context.Context, superNode *SuperNode) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-time.After(time.Second * 60):
+		case <-time.After(time.Second):
 			req := &pb.RegisterRequest{
 				TestOneof: &pb.RegisterRequest_PrimaryNode{
-					&pb.RegisterRequest_PrimaryNodeRequest{
-						ConnID: superNode.PastelKey,
+					PrimaryNode: &pb.RegisterRequest_PrimaryNodeRequest{
+						ConnID: "12345",
 					},
 				},
 			}
 
 			if err := stream.Send(req); err != nil {
 				if status.Code(err) == codes.Canceled {
-					log.Println("stream closed (context cancelled)")
+					log.Debug("stream closed (context cancelled)")
 					return nil
 				}
 
@@ -108,8 +107,6 @@ func (task *Task) connect(ctx context.Context, superNode *SuperNode) error {
 			}
 		}
 	}
-
-	return nil
 }
 
 func (task *Task) findSuperNodes(ctx context.Context) (SuperNodes, error) {

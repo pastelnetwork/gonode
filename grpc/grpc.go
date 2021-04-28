@@ -1,5 +1,6 @@
 package grpc
 
+// Client represents grpc client
 type Client interface {
-	Connect(host string)
+	Connect(host string) error
 }

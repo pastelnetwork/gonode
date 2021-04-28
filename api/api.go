@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pastelnetwork/go-commons/log"
 	"github.com/pastelnetwork/walletnode/api/docs"
+	"github.com/pastelnetwork/walletnode/api/log"
 
 	goahttp "goa.design/goa/v3/http"
 	goahttpmiddleware "goa.design/goa/v3/http/middleware"
@@ -50,13 +50,13 @@ func (api *API) Run(ctx context.Context) error {
 
 	errCh := make(chan error)
 	go func() {
-		log.Infof("%s HTTP server listening on %q", LogPrefix, addr)
+		log.Infof("Server listening on %q", addr)
 		errCh <- srv.ListenAndServe()
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Infof("%s Shutting down HTTP server at %q", LogPrefix, addr)
+		log.Infof("Shutting down server at %q", addr)
 	case err := <-errCh:
 		return err
 	}
@@ -80,7 +80,7 @@ func (api *API) handler() http.Handler {
 
 	var handler http.Handler = mux
 
-	handler = Log()(handler)
+	handler = log.Log()(handler)
 	handler = goahttpmiddleware.RequestID()(handler)
 
 	return handler

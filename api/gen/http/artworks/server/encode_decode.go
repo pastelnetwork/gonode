@@ -44,14 +44,6 @@ func DecodeRegisterRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 			if err == io.EOF {
 				return nil, goa.MissingPayloadError()
 			}
-			if en, ok := err.(ErrorNamer); ok {
-				switch en.ErrorName() {
-				case "BadRequest":
-					return nil, err
-				case "InternalServerError":
-					return nil, err
-				}
-			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
 		err = ValidateRegisterRequestBody(&body)
@@ -314,14 +306,6 @@ func DecodeUploadImageRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 	return func(r *http.Request) (interface{}, error) {
 		var payload *artworks.UploadImagePayload
 		if err := decoder(r).Decode(&payload); err != nil {
-			if en, ok := err.(ErrorNamer); ok {
-				switch en.ErrorName() {
-				case "BadRequest":
-					return nil, err
-				case "InternalServerError":
-					return nil, err
-				}
-			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
 

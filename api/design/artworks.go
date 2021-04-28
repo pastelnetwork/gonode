@@ -3,7 +3,7 @@ package design
 import (
 	"time"
 
-	"github.com/pastelnetwork/walletnode/services/artwork/register/state"
+	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
 
 	//revive:disable:dot-imports
 	. "goa.design/goa/v3/dsl"

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/pastelnetwork/walletnode/api"
 	"github.com/pastelnetwork/walletnode/api/gen"
 	"github.com/pastelnetwork/walletnode/api/gen/http/swagger/server"
+	"github.com/pastelnetwork/walletnode/api/log"
 
 	goahttp "goa.design/goa/v3/http"
 )
@@ -17,7 +17,7 @@ type Swagger struct{}
 
 // Mount configures the mux to serve the swagger endpoints.
 func (service *Swagger) Mount(mux goahttp.Muxer) goahttp.Server {
-	srv := server.New(nil, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil)
+	srv := server.New(nil, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, log.ErrorHandler, nil)
 
 	for _, m := range srv.Mounts {
 		file, err := gen.OpenAPIContent.Open(m.Method)

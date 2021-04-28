@@ -1,4 +1,4 @@
-package api
+package log
 
 import (
 	"context"
@@ -15,11 +15,6 @@ import (
 	"goa.design/goa/v3/middleware"
 )
 
-const (
-	// LogPrefix is the prefix used for all API log entries.
-	LogPrefix = "[api]"
-)
-
 // Log logs incoming HTTP requests and outgoing responses.
 // It uses the request ID set by the RequestID middleware or creates a short unique request ID if missing for each incoming request
 // and logs it with the request and corresponding response details.
@@ -32,17 +27,17 @@ func Log() func(h http.Handler) http.Handler {
 			}
 			started := time.Now()
 
-			log.WithField("from", logFrom(r)).
+			WithField("from", logFrom(r)).
 				WithField("req", r.Method+" "+r.URL.String()).
-				Debugf("%v [%v] Request", LogPrefix, reqID)
+				Debugf("[%v] Request", reqID)
 
 			rw := httpmiddleware.CaptureResponse(w)
 			h.ServeHTTP(rw, r)
 
-			log.WithField("status", rw.StatusCode).
+			WithField("status", rw.StatusCode).
 				WithField("bytes", rw.ContentLength).
 				WithField("time", time.Since(started).String()).
-				Debugf("%v [%v] Response", LogPrefix, reqID)
+				Debugf("[%v] Response", reqID)
 		})
 	}
 }
@@ -66,11 +61,11 @@ func logFrom(req *http.Request) string {
 func ErrorHandler(ctx context.Context, w http.ResponseWriter, err error) {
 	id := ctx.Value(middleware.RequestIDKey).(string)
 	_, _ = w.Write([]byte("[" + id + "] encoding: " + err.Error()))
-	log.Errorf("%s [%s] %s", LogPrefix, id, err.Error())
+	Errorf("[%s] %s", id, err.Error())
 }
 
 func init() {
-	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(ctxValue interface{}, msg string) string {
-		return fmt.Sprintf("%v [%v] %s", LogPrefix, ctxValue, msg)
+	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(entry *log.Entry, ctxValue interface{}) {
+		entry.Message = fmt.Sprintf("[%v] %s", ctxValue, entry.Message)
 	}))
 }
