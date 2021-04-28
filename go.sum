@@ -235,6 +235,10 @@ github.com/pastelnetwork/go-pastel v0.0.1 h1:vKP2MwmKSo1gjENe3KiIJIf02/1ezNL+jGp
 github.com/pastelnetwork/go-pastel v0.0.1/go.mod h1:g3hMtZMnrUfDyPBYKlNN2IO5tWrwPUNvyGhMN0D5+Gk=
 github.com/pastelnetwork/go-pastel v0.0.4 h1:+gbBOpiT0lBboTvSjFeCTNo7xRv6+kHU8X3VMFFLSu8=
 github.com/pastelnetwork/go-pastel v0.0.4/go.mod h1:u/llUix+Wiyl7FwqJ6l1mRil6RZcWd4N/VsIEfHhN48=
+github.com/pastelnetwork/go-pastel v0.0.5 h1:1kDqU26MD8zMwc9ppsP4YNF1ylj8GtzsGxQaBO6JJmA=
+github.com/pastelnetwork/go-pastel v0.0.5/go.mod h1:u/llUix+Wiyl7FwqJ6l1mRil6RZcWd4N/VsIEfHhN48=
+github.com/pastelnetwork/supernode-proto v0.0.1 h1:Ndpco8JLBPdo0/2YKFvXEdOwg9tszI+D1gwLGnIKKFI=
+github.com/pastelnetwork/supernode-proto v0.0.1/go.mod h1:h9cnZ2w/iets2MeoDCfgEJ1pWtkm8e8gSlfUyj1aKCk=
 github.com/pelletier/go-toml v1.2.0 h1:T5zMGML61Wp+FlcbWjRDT7yAxhJNAiPPLOFECq181zc=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=
 github.com/pkg/errors v0.8.0/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
