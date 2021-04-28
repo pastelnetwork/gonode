@@ -1,0 +1,107 @@
+syntax = "proto3";
+
+package supernode;
+
+option go_package = "github.com/pastelnetwork/supernode-proto";
+
+
+service Artwork {
+    rpc Register(stream RegisterRequest) returns (stream RegisterReply);
+    
+    rpc SuperNode(stream SuperNodeRequest) returns (stream SuperNodeReply);
+}
+
+// Empty
+message Empty {
+}
+
+// Common Error
+message Error {
+    enum Status {
+        OK = 0;
+        ERR = 1;
+    }
+    Status status = 1;
+    string errMsg = 2;
+}
+
+message RegisterRequest {
+    message PrimaryNodeRequest {
+        string connID = 1;
+    }
+    message SecondaryNodeRequest {
+        string connID = 1;
+        string primary_node_key = 2;
+    }
+    message UploadImageRequest {
+        bytes image = 1;
+    }
+    message SendTicketRequest {
+        bytes ticket = 1;
+        string ticket_signature = 2;
+        string fgpt= 3;
+        string fgpt_signature = 4;
+        string fee_txid = 5;
+        bytes thumbnail = 6;
+    }
+
+    oneof test_oneof {
+        PrimaryNodeRequest primary_node = 1;
+        SecondaryNodeRequest secondary_node = 2;
+        UploadImageRequest upload_image = 3;
+        SendTicketRequest send_ticket = 4;
+    }
+}
+
+message RegisterReply {
+    message PrimaryNodeReply {
+        message Peer {
+            string secondary_key = 1;
+        }
+        repeated Peer peers = 1;
+        Error error = 2;
+    }
+    message SecondaryNodeReply {
+        Error error = 1;
+    }
+    message UploadImageReply {
+        string fgpt = 1;
+        Error error = 2;
+    }
+    message SendTicketReply {
+        string ticket_txid = 1;
+        Error error = 2;
+    }
+
+    oneof test_oneof {
+        PrimaryNodeReply primary_node = 1;
+        SecondaryNodeReply secondary_node = 2;
+        UploadImageReply upload_image = 3;
+        SendTicketReply send_ticket = 4;
+     }
+}
+
+message SuperNodeRequest {
+    message HelloRequest {
+        string connID = 1;
+        string secondary_node_key = 2;
+    }
+
+    oneof test_oneof {
+        HelloRequest hello = 1;
+    }
+}
+
+message SuperNodeReply {
+    message HelloReply {
+        Error error = 1;
+    }
+
+    oneof test_oneof {
+        HelloReply hello = 1;
+    }
+}
+
+
+
+
