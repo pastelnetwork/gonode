@@ -35,7 +35,7 @@ func (server *Server) Run(ctx context.Context) error {
 		address = net.JoinHostPort(strings.TrimSpace(address), strconv.Itoa(server.config.Port))
 
 		group.Go(func() (err error) {
-			defer errors.Recover(func(rec error) { err = rec })
+			defer errors.Recover(func(recErr error) { err = recErr })
 			return server.listen(ctx, address, grpcServer)
 		})
 	}
@@ -51,7 +51,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 
 	errCh := make(chan error, 1)
 	go func() {
-		defer errors.Recover(func(rec error) { err = rec })
+		defer errors.Recover(func(recErr error) { err = recErr })
 		log.Infof("Server listening on %q", address)
 		if err := grpcServer.Serve(listen); err != nil {
 			errCh <- errors.Errorf("failed to serve: %v", err).WithField("address", address)

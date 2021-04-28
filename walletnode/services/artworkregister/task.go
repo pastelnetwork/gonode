@@ -78,8 +78,8 @@ func (task *Task) connect(ctx context.Context, superNode *SuperNode) error {
 
 	log.Debugf("connected to %s", superNode.Address)
 
-	client := pb.NewArtworkClient(conn)
-	stream, err := client.Register(ctx)
+	client := pb.NewWalletNodeClient(conn)
+	stream, err := client.RegisterArtowrk(ctx)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -89,9 +89,9 @@ func (task *Task) connect(ctx context.Context, superNode *SuperNode) error {
 		case <-ctx.Done():
 			return nil
 		case <-time.After(time.Second):
-			req := &pb.RegisterRequest{
-				TestOneof: &pb.RegisterRequest_PrimaryNode{
-					PrimaryNode: &pb.RegisterRequest_PrimaryNodeRequest{
+			req := &pb.WalletNodeRegisterArtworkRequest{
+				TestOneof: &pb.WalletNodeRegisterArtworkRequest_PrimaryNode{
+					PrimaryNode: &pb.WalletNodeRegisterArtworkRequest_PrimaryNodeRequest{
 						ConnID: "12345",
 					},
 				},

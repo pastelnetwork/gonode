@@ -25,7 +25,7 @@ func (service *Service) Run(ctx context.Context) error {
 
 	group, ctx := errgroup.WithContext(ctx)
 	group.Go(func() (err error) {
-		defer errors.Recover(func(rec error) { err = rec })
+		defer errors.Recover(func(recErr error) { err = recErr })
 		return service.worker.Run(ctx)
 	})
 	task := NewTask(service, &Ticket{})
