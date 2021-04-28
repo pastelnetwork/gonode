@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
+	"image/png"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/DataDog/zstd"
 	"github.com/fogleman/gg"
+	"github.com/nfnt/resize"
 	"github.com/pastelnetwork/go-commons/errors"
 	pqtime "github.com/pastelnetwork/pqsignatures/internal/time"
 	pq "github.com/pastelnetwork/pqsignatures/pkg/pqsignatures"
@@ -106,6 +108,23 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 	if err != nil {
 		return errors.New(err)
 	}
+
+	inputImgSize := inputImage.Bounds().Size()
+	err = qr.ImagesFitOutputSize(imgsToMap, inputImgSize)
+	if err != nil {
+		if err == qr.OutputSizeTooSmall {
+			inputImage = resize.Resize(1700, 0, inputImage, resize.Lanczos3)
+			f, err := os.Create(inputImagePath)
+			if err != nil {
+				return errors.New(err)
+			}
+			defer f.Close()
+			png.Encode(f, inputImage)
+		} else {
+			return err
+		}
+	}
+
 	err = qr.MapImages(imgsToMap, inputImage.Bounds().Size(), signatureLayerImageOutputFilepath)
 	if err != nil {
 		return err

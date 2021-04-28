@@ -26,6 +26,8 @@ const (
 	MaxMsgLength              = 2953
 	DataQRImageSize           = 100
 	PositionVectorQRImageSize = 185
+	textYPadding              = 20
+	rowYPadding               = 50
 )
 
 type Image struct {
@@ -43,6 +45,7 @@ type DecodedMessage struct {
 var PositionVectorEncodingError = errors.Errorf("Position vector should be encoded as single qr code image")
 var CroppingError = errors.Errorf("Image interface doesn't support cropping")
 var MalformedPositionVector = errors.Errorf("Malformed position vector")
+var OutputSizeTooSmall = errors.Errorf("Output size is too small to map input images")
 
 func compress(src string) (string, error) {
 	output, err := zstd.CompressLevel(nil, []byte(src), 22)
@@ -132,24 +135,62 @@ func LoadImages(pattern string) ([]Image, error) {
 	return images, nil
 }
 
-// MapImages maps input images into output image of specified size.
-func MapImages(images []Image, outputSize image.Point, outputFilePath string) error {
-	dc := gg.NewContext(outputSize.X, outputSize.Y)
+func maxQRCodeSize(images []Image) image.Point {
+	maxQRCodeImageSideSizeX := 0
+	maxQRCodeImageSideSizeY := 0
+	for _, qrImage := range images {
+		x := qrImage.image.Bounds().Size().X
+		y := qrImage.image.Bounds().Size().Y
+		if maxQRCodeImageSideSizeX < x {
+			maxQRCodeImageSideSizeX = x
+		}
+		if maxQRCodeImageSideSizeY < y {
+			maxQRCodeImageSideSizeY = y
+		}
+	}
+	return image.Point{maxQRCodeImageSideSizeX, maxQRCodeImageSideSizeY + textYPadding + rowYPadding}
+}
+
+// ImagesFitOutputSize verifies if containerSize has enough capacity to accomodate all QR-codes images
+func ImagesFitOutputSize(images []Image, containerSize image.Point) error {
+	maxQRCodeSize := maxQRCodeSize(images)
+
+	capacityX := containerSize.X / maxQRCodeSize.X
+	capacityY := containerSize.Y / maxQRCodeSize.Y
+
+	if capacityX < 1 || capacityY < 1 {
+		return OutputSizeTooSmall
+	}
+
+	// Substract 1 to reserve it for position vector
+	totalCapacity := capacityX*capacityY - 1
+
+	if totalCapacity < len(images) {
+		return OutputSizeTooSmall
+	}
+
+	return nil
+}
+
+// MapImages maps input images into output container image of specified size.
+func MapImages(images []Image, containerSize image.Point, outputFilePath string) error {
+	if err := ImagesFitOutputSize(images, containerSize); err != nil {
+		return err
+	}
+	dc := gg.NewContext(containerSize.X, containerSize.Y)
 	dc.SetRGB(255, 255, 255)
 	dc.Clear()
 	dc.SetColor(color.White)
 	padding_pixels := 2
 	currentX := 0
 	currentY := 10
-	textYPadding := 20
-	rowYPadding := 50
 	positionVector := fmt.Sprintf("%v;", len(images))
 	currentImageAlias := ""
 	for _, image := range images {
 		size := image.image.Bounds().Size()
 		captionX := size.X / 2
 
-		if currentX+size.X > outputSize.X {
+		if currentX+size.X > containerSize.X {
 			currentX = 0
 			currentY += size.Y + rowYPadding
 		}
@@ -183,7 +224,7 @@ func MapImages(images []Image, outputSize image.Point, outputFilePath string) er
 		return errors.New(err)
 	}
 
-	dc.DrawImageAnchored(positionVectorImage, outputSize.X-positionVectorImage.Bounds().Size().X/2, outputSize.Y-positionVectorImage.Bounds().Size().Y/2, 0.5, 0.5)
+	dc.DrawImageAnchored(positionVectorImage, containerSize.X-positionVectorImage.Bounds().Size().X/2, containerSize.Y-positionVectorImage.Bounds().Size().Y/2, 0.5, 0.5)
 
 	err = dc.SavePNG(outputFilePath)
 	if err != nil {
