@@ -9,8 +9,7 @@ import (
 	"strings"
 
 	"github.com/pastelnetwork/go-commons/errors"
-
-	"github.com/pastelnetwork/go-jsonrpc/v2"
+	"github.com/pastelnetwork/go-pastel/jsonrpc"
 )
 
 type client struct {
