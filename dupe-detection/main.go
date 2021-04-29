@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/profile"
 	"gonum.org/v1/gonum/mat"
 	_ "gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat"
 
 	tf "github.com/galeone/tensorflow/tensorflow/go"
 	tg "github.com/galeone/tfgo"
@@ -43,6 +44,101 @@ import (
 
 	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
 )
+
+const (
+	cachedFingerprintsDB = "cachedFingerprints.sqlite"
+)
+
+func fingerprintFromCache(filePath string) ([]float64, error) {
+	if _, err := os.Stat(cachedFingerprintsDB); os.IsNotExist(err) {
+		return nil, errors.New(errors.Errorf("Cache database is not found."))
+	}
+	db, err := sql.Open("sqlite3", cachedFingerprintsDB)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	defer db.Close()
+
+	imageHash, err := getImageHashFromImageFilePath(filePath)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	selectQuery := `
+			SELECT path_to_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector,
+				model_6_image_fingerprint_vector, model_7_image_fingerprint_vector FROM image_hash_to_image_fingerprint_table where sha256_hash_of_art_image_file = ? ORDER BY datetime_fingerprint_added_to_database DESC
+		`
+	rows, err := db.Query(selectQuery, imageHash)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var current_image_file_path string
+		var model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector []byte
+		err = rows.Scan(&current_image_file_path, &model_1_image_fingerprint_vector, &model_2_image_fingerprint_vector, &model_3_image_fingerprint_vector, &model_4_image_fingerprint_vector, &model_5_image_fingerprint_vector, &model_6_image_fingerprint_vector, &model_7_image_fingerprint_vector)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		combined_image_fingerprint_vector := append(append(append(append(append(append(fromBytes(model_1_image_fingerprint_vector), fromBytes(model_2_image_fingerprint_vector)[:]...), fromBytes(model_3_image_fingerprint_vector)[:]...), fromBytes(model_4_image_fingerprint_vector)[:]...), fromBytes(model_5_image_fingerprint_vector)[:]...), fromBytes(model_6_image_fingerprint_vector)[:]...), fromBytes(model_7_image_fingerprint_vector)[:]...)
+		return combined_image_fingerprint_vector, nil
+	}
+	return nil, errors.New(errors.Errorf("Fingerprint is not found"))
+}
+
+func cacheFingerprint(fingerprints [][]float64, filePath string) error {
+	if _, err := os.Stat(cachedFingerprintsDB); os.IsNotExist(err) {
+		db, err := sql.Open("sqlite3", cachedFingerprintsDB)
+		if err != nil {
+			return errors.New(err)
+		}
+		defer db.Close()
+
+		dupe_detection_image_fingerprint_database_creation_string := `
+			CREATE TABLE image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text, path_to_art_image_file, model_1_image_fingerprint_vector array, model_2_image_fingerprint_vector array, model_3_image_fingerprint_vector array,
+				model_4_image_fingerprint_vector array, model_5_image_fingerprint_vector array, model_6_image_fingerprint_vector array, model_7_image_fingerprint_vector array, datetime_fingerprint_added_to_database TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY (sha256_hash_of_art_image_file));
+			`
+		_, err = db.Exec(dupe_detection_image_fingerprint_database_creation_string)
+		if err != nil {
+			return errors.New(err)
+		}
+	}
+
+	imageHash, err := getImageHashFromImageFilePath(filePath)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	db, err := sql.Open("sqlite3", cachedFingerprintsDB)
+	if err != nil {
+		return errors.New(err)
+	}
+	defer db.Close()
+
+	data_insertion_query_string := `
+		INSERT OR REPLACE INTO image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file, path_to_art_image_file,
+			model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector,
+			model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+	`
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.New(err)
+	}
+	stmt, err := tx.Prepare(data_insertion_query_string)
+	if err != nil {
+		return errors.New(err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(imageHash, filePath, toBytes(fingerprints[0]), toBytes(fingerprints[1]), toBytes(fingerprints[2]), toBytes(fingerprints[3]), toBytes(fingerprints[4]), toBytes(fingerprints[5]), toBytes(fingerprints[6]))
+	if err != nil {
+		return errors.New(err)
+	}
+	tx.Commit()
+
+	return nil
+}
 
 func Measure(start time.Time) {
 	elapsed := time.Since(start)
@@ -478,6 +574,7 @@ func get_image_deep_learning_features_combined_vector_for_single_image_func(path
 	for _, fingerprint := range fingerprints {
 		combined_image_fingerprint_vector = append(combined_image_fingerprint_vector, fingerprint...)
 	}
+	cacheFingerprint(fingerprints, path_to_art_image_file)
 	return combined_image_fingerprint_vector, err
 }
 
@@ -638,15 +735,28 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 	Rx := mat.NewDense(2, k, randomLinearProjection(s, k))
 	Ry := mat.NewDense(2, k, randomLinearProjection(s, k))
 
-	var X, Y mat.Dense
+	var X, Y, stackedH mat.Dense
 	X.Mul(cx, Rx)
 	Y.Mul(cy, Ry)
 
 	X.Apply(sinFunc, &X)
 	Y.Apply(sinFunc, &Y)
 
-	//ormattedX := mat.Formatted(&X, mat.Prefix(""), mat.Squeeze())
-	//fmt.Printf("\n%v", formattedX)
+	stackedH.Augment(&X, &Y)
+	stackedT := stackedH.T()
+
+	var C mat.SymDense
+
+	stat.CovarianceMatrix(&C, stackedT, nil)
+
+	fmt.Printf("\n%v", mat.Formatted(&C, mat.Prefix(""), mat.Squeeze()))
+
+	/*k0 := k
+	lb := 1
+	ub := k
+	for {
+
+	}*/
 
 	return 0
 }
@@ -773,7 +883,10 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 	fmt.Printf("\nComparing candidate image to the fingerprints of %v previously registered images. Each fingerprint consists of %v numbers.", number_of_previously_registered_images_to_compare, length_of_each_image_fingerprint_vector)
 	fmt.Printf("\nComputing image fingerprint of candidate image...")
 
-	candidate_image_fingerprint, err := get_image_deep_learning_features_combined_vector_for_single_image_func(path_to_art_image_file)
+	candidate_image_fingerprint, err := fingerprintFromCache(path_to_art_image_file)
+	if err != nil {
+		candidate_image_fingerprint, err = get_image_deep_learning_features_combined_vector_for_single_image_func(path_to_art_image_file)
+	}
 	length_of_candidate_image_fingerprint := len(candidate_image_fingerprint)
 	fmt.Printf("\nCandidate image fingerpint consists from %v numbers", length_of_candidate_image_fingerprint)
 	if err != nil {
@@ -811,12 +924,12 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 	percentage_of_fingerprints_requiring_further_testing_3 := float32(len(list_of_fingerprints_requiring_further_testing_3)) / float32(len(final_combined_image_fingerprint_array))
 	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_3), percentage_of_fingerprints_requiring_further_testing_3*100)
 
-	/*fmt.Printf("\nNow computing Boostrapped Randomized Dependence Coefficient for selected fingerprints...")
+	fmt.Printf("\nNow computing Boostrapped Randomized Dependence Coefficient for selected fingerprints...")
 	sample_size__randomized_dep := 50
 	number_of_bootstraps__randomized_dep := 100
 	similarity_score_vector__randomized_dependence, similarity_score_vector__randomized_dependence__stdev := compute_parallel_bootstrapped_randomized_dependence_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_3, sample_size__randomized_dep, number_of_bootstraps__randomized_dep)
 	stdev_as_pct_of_robust_avg__randomized_dependence := computeAverageRatioOfArrays(similarity_score_vector__randomized_dependence__stdev, similarity_score_vector__randomized_dependence)
-	fmt.Printf("\nStandard Deviation as %% of Average Randomized Dependence -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__randomized_dependence*100)*/
+	fmt.Printf("\nStandard Deviation as %% of Average Randomized Dependence -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__randomized_dependence*100)
 
 	fmt.Printf("\nNow computing bootstrapped Blomqvist's beta for selected fingerprints...")
 	sample_size_blomqvist := 100
