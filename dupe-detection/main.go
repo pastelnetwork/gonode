@@ -745,20 +745,71 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 	stackedH.Augment(&X, &Y)
 	stackedT := stackedH.T()
 
-	var C mat.SymDense
+	var CsymDense mat.SymDense
 
-	stat.CovarianceMatrix(&C, stackedT, nil)
+	stat.CovarianceMatrix(&CsymDense, stackedT, nil)
+	C := mat.DenseCopyOf(&CsymDense)
 
-	fmt.Printf("\n%v", mat.Formatted(&C, mat.Prefix(""), mat.Squeeze()))
+	//fmt.Printf("\n%v", mat.Formatted(C, mat.Prefix(""), mat.Squeeze()))
 
-	/*k0 := k
+	k0 := k
 	lb := 1
 	ub := k
+	var maxEigVal float64
 	for {
+		maxEigVal = 0
+		Cxx := C.Slice(0, k, 0, k).(*mat.Dense)
+		Cyy := C.Slice(k0, k0+k, k0, k0+k).(*mat.Dense)
+		Cxy := C.Slice(0, k, k0, k0+k).(*mat.Dense)
+		Cyx := C.Slice(k0, k0+k, 0, k).(*mat.Dense)
 
-	}*/
+		var CxxInversed, CyyInversed mat.Dense
+		CxxInversed.Inverse(Cxx)
+		CyyInversed.Inverse(Cyy)
 
-	return 0
+		var CxxInversedMulCxy, CyyInversedMulCyx, resultMul mat.Dense
+		CxxInversedMulCxy.Mul(&CxxInversed, Cxy)
+		CyyInversedMulCyx.Mul(&CyyInversed, Cyx)
+
+		resultMul.Mul(&CxxInversedMulCxy, &CyyInversedMulCyx)
+
+		var eigs mat.Eigen
+		eigs.Factorize(&resultMul, 0)
+
+		continueLoop := false
+		eigsVals := eigs.Values(nil)
+		for _, eigVal := range eigsVals {
+			realVal := real(eigVal)
+			imageVal := imag(eigVal)
+			if imageVal != 0.0 || 0 >= realVal || realVal >= 1 {
+				ub -= 1
+				k = (ub + lb) / 2
+				continueLoop = true
+				break
+			}
+			maxEigVal = math.Max(maxEigVal, realVal)
+		}
+
+		if continueLoop {
+			continue
+		}
+
+		if lb == ub {
+			break
+		}
+
+		lb = k
+
+		if ub == lb+1 {
+			k = ub
+		} else {
+			k = (ub + lb) / 2
+		}
+	}
+	sqrtResult := math.Sqrt(maxEigVal)
+	result := math.Pow(sqrtResult, 12)
+
+	return result
 }
 
 func compute_parallel_bootstrapped_randomized_dependence_func(x []float64, list_of_fingerprints_requiring_further_testing_3 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64) {
