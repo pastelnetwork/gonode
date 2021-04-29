@@ -728,12 +728,12 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 		return math.Sin(v)
 	}
 	s := 1.0 / 6.0
-	k := 20
+	k := 20.0
 	cx := mat.NewDense(len(x), 2, rankArrayOrdinalCopulaTransformation(x))
 	cy := mat.NewDense(len(y), 2, rankArrayOrdinalCopulaTransformation(y))
 
-	Rx := mat.NewDense(2, k, randomLinearProjection(s, k))
-	Ry := mat.NewDense(2, k, randomLinearProjection(s, k))
+	Rx := mat.NewDense(2, int(k), randomLinearProjection(s, int(k)))
+	Ry := mat.NewDense(2, int(k), randomLinearProjection(s, int(k)))
 
 	var X, Y, stackedH mat.Dense
 	X.Mul(cx, Rx)
@@ -743,25 +743,31 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 	Y.Apply(sinFunc, &Y)
 
 	stackedH.Augment(&X, &Y)
-	stackedT := stackedH.T()
+	//stackedT := mat.DenseCopyOf(stackedH.T())
 
 	var CsymDense mat.SymDense
 
-	stat.CovarianceMatrix(&CsymDense, stackedT, nil)
+	stat.CovarianceMatrix(&CsymDense, &stackedH, nil)
 	C := mat.DenseCopyOf(&CsymDense)
 
 	//fmt.Printf("\n%v", mat.Formatted(C, mat.Prefix(""), mat.Squeeze()))
 
-	k0 := k
-	lb := 1
+	k0 := int(k)
+	lb := 1.0
 	ub := k
+	counter := 0
 	var maxEigVal float64
 	for {
 		maxEigVal = 0
-		Cxx := C.Slice(0, k, 0, k).(*mat.Dense)
-		Cyy := C.Slice(k0, k0+k, k0, k0+k).(*mat.Dense)
-		Cxy := C.Slice(0, k, k0, k0+k).(*mat.Dense)
-		Cyx := C.Slice(k0, k0+k, 0, k).(*mat.Dense)
+		counter++
+		//fmt.Printf("\n%v", k)
+		if k == 4.5 {
+			//fmt.Printf("\n%v", k)
+		}
+		Cxx := mat.DenseCopyOf(C.Slice(0, int(k), 0, int(k)))
+		Cyy := C.Slice(k0, k0+int(k), k0, k0+int(k)).(*mat.Dense)
+		Cxy := C.Slice(0, int(k), k0, k0+int(k)).(*mat.Dense)
+		Cyx := C.Slice(k0, k0+int(k), 0, int(k)).(*mat.Dense)
 
 		var CxxInversed, CyyInversed mat.Dense
 		CxxInversed.Inverse(Cxx)
@@ -773,6 +779,8 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 
 		resultMul.Mul(&CxxInversedMulCxy, &CyyInversedMulCyx)
 
+		//fmt.Printf("\nresultMul: %v", mat.Formatted(&resultMul, mat.Prefix(""), mat.Squeeze()))
+
 		var eigs mat.Eigen
 		eigs.Factorize(&resultMul, 0)
 
@@ -781,13 +789,18 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 		for _, eigVal := range eigsVals {
 			realVal := real(eigVal)
 			imageVal := imag(eigVal)
-			if imageVal != 0.0 || 0 >= realVal || realVal >= 1 {
+			if !(imageVal == 0.0 && 0 <= realVal && realVal <= 1) {
 				ub -= 1
-				k = (ub + lb) / 2
+				k = (ub + lb) / 2.0
 				continueLoop = true
+				maxEigVal = 0
 				break
 			}
-			maxEigVal = math.Max(maxEigVal, realVal)
+			//maxEigVal = math.Max(maxEigVal, realVal)
+			if maxEigVal < realVal {
+				maxEigVal = realVal
+				//fmt.Printf("\n%v", maxEigVal)
+			}
 		}
 
 		if continueLoop {
@@ -803,7 +816,7 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 		if ub == lb+1 {
 			k = ub
 		} else {
-			k = (ub + lb) / 2
+			k = (ub + lb) / 2.0
 		}
 	}
 	sqrtResult := math.Sqrt(maxEigVal)
@@ -920,6 +933,7 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 	pearson__dupe_threshold := 0.995
 	spearman__dupe_threshold := 0.79
 	kendall__dupe_threshold := 0.70
+	randomized_dependence__dupe_threshold := 0.79
 	strictness_factor := 0.985
 	randomized_blomqvist__dupe_threshold := 0.7625
 	hoeffding__dupe_threshold := 0.35
@@ -981,15 +995,18 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 	similarity_score_vector__randomized_dependence, similarity_score_vector__randomized_dependence__stdev := compute_parallel_bootstrapped_randomized_dependence_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_3, sample_size__randomized_dep, number_of_bootstraps__randomized_dep)
 	stdev_as_pct_of_robust_avg__randomized_dependence := computeAverageRatioOfArrays(similarity_score_vector__randomized_dependence__stdev, similarity_score_vector__randomized_dependence)
 	fmt.Printf("\nStandard Deviation as %% of Average Randomized Dependence -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__randomized_dependence*100)
+	list_of_fingerprints_requiring_further_testing_4 := filterOutFingerprintsByTreshhold(similarity_score_vector__randomized_dependence, strictness_factor*randomized_dependence__dupe_threshold, list_of_fingerprints_requiring_further_testing_3)
+	percentage_of_fingerprints_requiring_further_testing_4 := float32(len(list_of_fingerprints_requiring_further_testing_4)) / float32(len(final_combined_image_fingerprint_array))
+	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_4), percentage_of_fingerprints_requiring_further_testing_4*100)
 
 	fmt.Printf("\nNow computing bootstrapped Blomqvist's beta for selected fingerprints...")
 	sample_size_blomqvist := 100
 	number_of_bootstraps_blomqvist := 100
-	similarity_score_vector__blomqvist := compute_parallel_bootstrapped_blomqvist_beta_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_3, sample_size_blomqvist, number_of_bootstraps_blomqvist)
+	similarity_score_vector__blomqvist := compute_parallel_bootstrapped_blomqvist_beta_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_4, sample_size_blomqvist, number_of_bootstraps_blomqvist)
 	similarity_score_vector__blomqvist_average, _ := stats.Mean(similarity_score_vector__blomqvist)
 	fmt.Printf("\n Average for Blomqvist's beta: %.4f", strictness_factor*similarity_score_vector__blomqvist_average)
 
-	list_of_fingerprints_requiring_further_testing_5 := filterOutFingerprintsByTreshhold(similarity_score_vector__blomqvist, strictness_factor*randomized_blomqvist__dupe_threshold, list_of_fingerprints_requiring_further_testing_3)
+	list_of_fingerprints_requiring_further_testing_5 := filterOutFingerprintsByTreshhold(similarity_score_vector__blomqvist, strictness_factor*randomized_blomqvist__dupe_threshold, list_of_fingerprints_requiring_further_testing_4)
 	percentage_of_fingerprints_requiring_further_testing_5 := float32(len(list_of_fingerprints_requiring_further_testing_5)) / float32(len(final_combined_image_fingerprint_array))
 	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_5), percentage_of_fingerprints_requiring_further_testing_5*100)
 
