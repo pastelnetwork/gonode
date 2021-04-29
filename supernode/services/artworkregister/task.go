@@ -20,9 +20,9 @@ type Task struct {
 	ConnID string
 	State  *state.State
 
+	sync.Mutex
 	nodes  map[string]*SuperNode
 	doneCh chan struct{}
-	sync.Mutex
 }
 
 // Run starts the task
@@ -45,6 +45,43 @@ func (task *Task) Done() <-chan struct{} {
 	return task.doneCh
 }
 
+// AcceptSecondaryNodes accepts secondary nodes
+func (task *Task) AcceptSecondaryNodes(ctx context.Context, connID string) ([]*SuperNode, error) {
+	if err := task.requiredStatus(state.StatusTaskStarted); err != nil {
+		return nil, err
+	}
+	task.ConnID = connID
+
+	task.State.Update(state.NewStatus(state.StatusWaitForSecondaryNodes))
+
+	// TODO: wait for two connections
+
+	task.State.Update(state.NewStatus(state.StatusAcceptedSecondaryNodes))
+
+	return nil, nil
+}
+
+// ConnectToPrimaryNode connects to primary node
+func (task *Task) ConnectToPrimaryNode(ctx context.Context, connID, nodeKey string) error {
+	if err := task.requiredStatus(state.StatusTaskStarted); err != nil {
+		return err
+	}
+	task.ConnID = connID
+
+	node, err := task.findNode(ctx, nodeKey)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(node.Address)
+
+	// TODO: connect to primary node
+
+	task.State.Update(state.NewStatus(state.StatusConnectedToPrimaryNode))
+
+	return nil
+}
+
 // RegisterSecondaryNode registers secondary node
 func (task *Task) RegisterSecondaryNode(ctx context.Context, nodeKey string) error {
 	task.Lock()
@@ -65,47 +102,6 @@ func (task *Task) RegisterSecondaryNode(ctx context.Context, nodeKey string) err
 	task.nodes[nodeKey] = node
 
 	fmt.Println("primary", nodeKey)
-	return nil
-}
-
-// AcceptSecondaryNodes accepts secondary nodes
-func (task *Task) AcceptSecondaryNodes(ctx context.Context) error {
-	if err := task.requiredStatus(state.StatusTaskStarted); err != nil {
-		return err
-	}
-
-	task.State.Update(state.NewStatus(state.StatusWaitForSecondaryNodes))
-
-	// TODO: wait for two connections
-
-	task.State.Update(state.NewStatus(state.StatusAcceptedSecondaryNodes))
-
-	return nil
-}
-
-// ConnectPrimaryNode connects to primary node
-func (task *Task) ConnectPrimaryNode(ctx context.Context, nodeKey string) error {
-	if err := task.requiredStatus(state.StatusTaskStarted); err != nil {
-		return err
-	}
-
-	node, err := task.findNode(ctx, nodeKey)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(node.Address)
-	// TODO: connect to primary node
-
-	task.State.Update(state.NewStatus(state.StatusConnectedToPrimaryNode))
-
-	return nil
-}
-
-// RegisterConnection registers a new connetion
-func (task *Task) RegisterConnection(ctx context.Context, connID string) error {
-	task.ConnID = connID
-
 	return nil
 }
 
@@ -149,5 +145,6 @@ func NewTask(service *Service) *Task {
 		ID:      int(atomic.AddUint32(&taskID, 1)),
 		State:   state.New(state.NewStatus(state.StatusTaskStarted)),
 		nodes:   make(map[string]*SuperNode),
+		doneCh:  make(chan struct{}),
 	}
 }

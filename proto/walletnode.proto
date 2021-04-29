@@ -9,10 +9,10 @@ service WalletNode {
 }
 
 message WalletNodeRegisterArtworkRequest {
-    message PrimaryNodeRequest {
+    message AcceptSecondaryNodesRequest {
         string connID = 1;
     }
-    message SecondaryNodeRequest {
+    message ConnectToPrimaryNodeRequest {
         string connID = 1;
         string primary_node_key = 2;
     }
@@ -29,8 +29,8 @@ message WalletNodeRegisterArtworkRequest {
     }
 
     oneof test_oneof {
-        PrimaryNodeRequest primary_node = 1;
-        SecondaryNodeRequest secondary_node = 2;
+        AcceptSecondaryNodesRequest accept_secondary_nodes = 1;
+        ConnectToPrimaryNodeRequest connect_to_primary_node = 2;
         UploadImageRequest upload_image = 3;
         SendTicketRequest send_ticket = 4;
     }
@@ -45,14 +45,14 @@ message WalletNodeRegisterArtworkReply {
         Status status = 1;
         string errMsg = 2;
     }
-    message PrimaryNodeReply {
+    message AcceptSecondaryNodesReply {
         message Peer {
             string secondary_key = 1;
         }
         repeated Peer peers = 1;
         Error error = 2;
     }
-    message SecondaryNodeReply {
+    message ConnectToPrimaryNodeReply {
         Error error = 1;
     }
     message UploadImageReply {
@@ -65,8 +65,8 @@ message WalletNodeRegisterArtworkReply {
     }
 
     oneof test_oneof {
-        PrimaryNodeReply primary_node = 1;
-        SecondaryNodeReply secondary_node = 2;
+        AcceptSecondaryNodesReply accept_secondary_nodes = 1;
+        ConnectToPrimaryNodeReply connect_to_primary_node = 2;
         UploadImageReply upload_image = 3;
         SendTicketReply send_ticket = 4;
      }

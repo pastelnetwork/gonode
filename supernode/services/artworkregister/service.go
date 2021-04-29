@@ -26,8 +26,8 @@ func (service *Service) Run(ctx context.Context) error {
 	return service.worker.Run(ctx)
 }
 
-// Task returns the task of the registration artwork by the given connID.
-func (service *Service) Task(connID string) *Task {
+// TaskByConnID returns the task of the registration artwork by the given connID.
+func (service *Service) TaskByConnID(connID string) *Task {
 	for _, task := range service.tasks {
 		if task.ConnID == connID {
 			return task
@@ -37,7 +37,7 @@ func (service *Service) Task(connID string) *Task {
 }
 
 // NewTask runs a new task of the registration artwork and returns its taskID.
-func (service *Service) NewTask(ctx context.Context, connID string) *Task {
+func (service *Service) NewTask(ctx context.Context) *Task {
 	service.Lock()
 	defer service.Unlock()
 

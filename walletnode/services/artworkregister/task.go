@@ -90,8 +90,8 @@ func (task *Task) connect(ctx context.Context, superNode *SuperNode) error {
 			return nil
 		case <-time.After(time.Second):
 			req := &pb.WalletNodeRegisterArtworkRequest{
-				TestOneof: &pb.WalletNodeRegisterArtworkRequest_PrimaryNode{
-					PrimaryNode: &pb.WalletNodeRegisterArtworkRequest_PrimaryNodeRequest{
+				TestOneof: &pb.WalletNodeRegisterArtworkRequest_AcceptSecondaryNodes{
+					AcceptSecondaryNodes: &pb.WalletNodeRegisterArtworkRequest_AcceptSecondaryNodesRequest{
 						ConnID: "12345",
 					},
 				},

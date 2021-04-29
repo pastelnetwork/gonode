@@ -2,31 +2,16 @@ package middleware
 
 import (
 	"context"
+	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/log/hooks"
+	"github.com/pastelnetwork/gonode/common/random"
+	"github.com/pastelnetwork/gonode/supernode/server/grpc/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
-
-type (
-	// private type used to define context keys
-	ctxKey int
-)
-
-const (
-	// AddressKey is the ip address of the connected peer
-	AddressKey ctxKey = iota + 1
-)
-
-func init() {
-	log.AddHook(hooks.NewContextHook(AddressKey, func(entry *log.Entry, ctxValue interface{}) {
-		entry.Data["address"] = ctxValue
-	}))
-}
 
 // UnaryInterceptor returns a ServerOption that sets the UnaryServerInterceptor for the server.
 func UnaryInterceptor() grpc.ServerOption {
@@ -36,17 +21,20 @@ func UnaryInterceptor() grpc.ServerOption {
 			err = status.Error(codes.Internal, "internal server error")
 		})
 
+		reqID, _ := random.String(8, random.Base62Chars)
+		ctx = context.WithValue(ctx, log.RequestIDKey, reqID)
+
+		method := strings.TrimPrefix(info.FullMethod, "/proto.")
+
+		var address string
 		if peer, ok := peer.FromContext(ctx); ok {
-			ctx = context.WithValue(ctx, AddressKey, peer.Addr.String())
+			address = peer.Addr.String()
 		}
 
-		log.WithContext(ctx).Debugf("Start unary")
-		defer log.WithContext(ctx).Debugf("End unary")
-
+		log.WithContext(ctx).WithField("address", address).WithField("method", method).Debugf("Start unary")
 		resp, err = handler(ctx, req)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Debug("Unary handler returned an error")
-		}
+		log.WithContext(ctx).WithError(err).Debugf("End unary")
+
 		return resp, err
 	})
 }
@@ -60,22 +48,26 @@ func StreamInterceptor() grpc.ServerOption {
 		})
 
 		ctx := ss.Context()
+
+		reqID, _ := random.String(8, random.Base62Chars)
+		ctx = context.WithValue(ctx, log.RequestIDKey, reqID)
+
+		ss = &WrappedServerStream{
+			ServerStream: ss,
+			ctx:          ctx,
+		}
+
+		method := strings.TrimPrefix(info.FullMethod, "/proto.")
+
+		var address string
 		if peer, ok := peer.FromContext(ctx); ok {
-			ctx = context.WithValue(ctx, AddressKey, peer.Addr.String())
-
-			ss = &WrappedServerStream{
-				ServerStream: ss,
-				ctx:          ctx,
-			}
+			address = peer.Addr.String()
 		}
 
-		log.WithContext(ctx).Debugf("Start stream")
-		defer log.WithContext(ctx).Debugf("End stream")
-
+		log.WithContext(ctx).WithField("address", address).WithField("method", method).Debugf("Start stream")
 		err = handler(srv, ss)
-		if err != nil {
-			log.WithContext(ss.Context()).WithError(err).Debug("Stream handler returned an error")
-		}
+		log.WithContext(ctx).WithError(err).Debugf("End stream")
+
 		return err
 	})
 }
