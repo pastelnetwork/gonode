@@ -44,7 +44,7 @@ func (states *State) Update(ctx context.Context, status *Status) {
 	defer states.Unlock()
 
 	states.statuses = append(states.statuses, status)
-	log.WithField("status", status.Type.String()).Debugf("[service] Status updated")
+	log.WithContext(ctx).WithField("status", status.Type.String()).Debugf("State updated")
 
 	close(states.updatedCh)
 	states.updatedCh = make(chan struct{})

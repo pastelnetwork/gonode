@@ -4,25 +4,31 @@ import (
 	"context"
 	"sync"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/storage"
 )
 
-// const logPrefix = "[artwork]"
+const (
+	logPrefix = "artwork"
+)
 
 // Service represent artwork service.
 type Service struct {
 	sync.Mutex
 
-	config *Config
-	db     storage.KeyValue
-	pastel pastel.Client
-	worker *Worker
-	tasks  []*Task
+	config       *Config
+	db           storage.KeyValue
+	pastelClient pastel.Client
+	nodeClient   node.Client
+	worker       *Worker
+	tasks        []*Task
 }
 
 // Run starts worker
 func (service *Service) Run(ctx context.Context) error {
+	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
 	return service.worker.Run(ctx)
 }
 
@@ -49,11 +55,12 @@ func (service *Service) NewTask(ctx context.Context) *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, pastel pastel.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
-		config: config,
-		db:     db,
-		pastel: pastel,
-		worker: NewWorker(),
+		config:       config,
+		db:           db,
+		pastelClient: pastelClient,
+		nodeClient:   nodeClient,
+		worker:       NewWorker(),
 	}
 }

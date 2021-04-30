@@ -58,9 +58,9 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 			case *pb.RegisterArtworkRequest_Handshake:
 				req := req.GetHandshake()
 
-				log.WithContext(ctx).WithField("connID", req.ConnID).Debugf("Request Handshake")
+				log.WithContext(ctx).WithField("connID", req.ConnID).WithField("isPrimary", req.IsPrimary).Debugf("Request Handshake")
 
-				if err := task.Handshake(ctx, req.ConnID, req.IsPrimary); err != nil {
+				if err := task.Handshake(task.Context(ctx), req.ConnID, req.IsPrimary); err != nil {
 					return err
 				}
 
@@ -78,7 +78,7 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 			case *pb.RegisterArtworkRequest_PrimaryAcceptSecondary:
 				log.WithContext(ctx).Debugf("Request PrimaryAcceptSecondary")
 
-				nodes, err := task.PrimaryWaitSecondary(ctx)
+				nodes, err := task.PrimaryWaitSecondary(task.Context(ctx))
 				if err != nil {
 					return err
 				}
@@ -112,7 +112,7 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 
 				log.WithContext(ctx).Debugf("Request SecondaryConnectToPrimary")
 
-				if err := task.SecondaryConnectToPrimary(ctx, req.NodeKey); err != nil {
+				if err := task.SecondaryConnectToPrimary(task.Context(ctx), req.NodeKey); err != nil {
 					return err
 				}
 				defer task.Cancel()

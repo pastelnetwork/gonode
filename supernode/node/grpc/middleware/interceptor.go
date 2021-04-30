@@ -29,8 +29,12 @@ func UnaryInterceptor() grpc.ServerOption {
 		defer log.WithContext(ctx).Debugf("End unary")
 
 		resp, err = handler(ctx, req)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Handler error")
+		if err != nil && !errors.IsContextCanceled(err) {
+			if errors.IsContextCanceled(err) {
+				log.WithContext(ctx).Debug("Closed by peer")
+			} else {
+				log.WithContext(ctx).WithError(err).Error("Handler error")
+			}
 		}
 		return resp, err
 	})
@@ -59,7 +63,11 @@ func StreamInterceptor() grpc.ServerOption {
 
 		err = handler(srv, ss)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Handler error")
+			if errors.IsContextCanceled(err) {
+				log.WithContext(ctx).Debug("Closed by peer")
+			} else {
+				log.WithContext(ctx).WithError(err).Error("Handler error")
+			}
 		}
 		return err
 	})
@@ -74,7 +82,7 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 		defer log.WithContext(ctx).Debugf("End unary client")
 
 		err := invoker(ctx, method, req, reply, cc, opts...)
-		if err != nil {
+		if err != nil && !errors.IsContextCanceled(err) {
 			log.WithContext(ctx).WithError(err).Error("Handler error")
 		}
 		return err
@@ -90,7 +98,7 @@ func StreamClientInterceptor() grpc.StreamClientInterceptor {
 		defer log.WithContext(ctx).Debugf("End stream")
 
 		clientStream, err := streamer(ctx, desc, cc, method, opts...)
-		if err != nil {
+		if err != nil && !errors.IsContextCanceled(err) {
 			log.WithContext(ctx).WithError(err).Error("Handler error")
 		}
 		return clientStream, err

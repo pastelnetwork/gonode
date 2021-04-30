@@ -35,7 +35,7 @@ func (client *client) TopMasterNodes(ctx context.Context) (MasterNodes, error) {
 	for i := 0; i < 10; i++ {
 		masterNodes = append(masterNodes, MasterNode{
 			Rank:       fmt.Sprintf("%d", i+1),
-			ExtAddress: fmt.Sprintf("172.0.0.1:%d", 4444+i),
+			ExtAddress: fmt.Sprintf("127.0.0.1:%d", 4444+i),
 			ExtKey:     fmt.Sprintf("qwerasdf%d", i),
 		})
 	}

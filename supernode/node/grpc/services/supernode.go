@@ -25,7 +25,7 @@ func (service *SuperNoder) RegisterArtowrk(stream pb.SuperNode_RegisterArtowrkSe
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	task := &artworkregister.Task{}
+	var task *artworkregister.Task
 
 	reqCh := make(chan *pb.RegisterArtworkRequest)
 	errCh := make(chan error)
@@ -67,7 +67,7 @@ func (service *SuperNoder) RegisterArtowrk(stream pb.SuperNode_RegisterArtowrkSe
 					return errors.Errorf("connID %q not found", req.GetHandshake().ConnID)
 				}
 
-				if err := task.PrimaryAcceptSecondary(ctx, req.GetHandshake().NodeKey); err != nil {
+				if err := task.PrimaryAcceptSecondary(task.Context(ctx), req.GetHandshake().NodeKey); err != nil {
 					return err
 				}
 				defer task.Cancel()

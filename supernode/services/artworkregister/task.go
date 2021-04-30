@@ -4,21 +4,20 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister/state"
 )
-
-var taskID uint32
 
 // Task is the task of registering new artwork.
 type Task struct {
 	*Service
 
-	ID     int
+	ID     string
 	ConnID string
 	State  *state.State
 
@@ -49,6 +48,10 @@ func (task *Task) Done() <-chan struct{} {
 	return task.doneCh
 }
 
+func (task *Task) Context(ctx context.Context) context.Context {
+	return context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, task.ID))
+}
+
 // Handshake is handshake wallet to supernode
 func (task *Task) Handshake(ctx context.Context, connID string, isPrimary bool) error {
 	if err := task.requiredStatus(state.StatusTaskStarted); err != nil {
@@ -57,12 +60,12 @@ func (task *Task) Handshake(ctx context.Context, connID string, isPrimary bool) 
 	task.ConnID = connID
 
 	if isPrimary {
-		log.Debugf("[service] task %d, handshake as primary node", task.ID)
+		log.WithContext(ctx).Debugf("Acts as primary node")
 		task.State.Update(ctx, state.NewStatus(state.StatusHandshakePrimaryNode))
 		return nil
 	}
 
-	log.Debugf("[service] task %d, handshake as secondary node", task.ID)
+	log.WithContext(ctx).Debugf("Acts as secondary node")
 	task.State.Update(ctx, state.NewStatus(state.StatusHandshakeSecondaryNode))
 	return nil
 }
@@ -72,6 +75,7 @@ func (task *Task) PrimaryWaitSecondary(ctx context.Context) (node.SuperNodes, er
 	if err := task.requiredStatus(state.StatusHandshakePrimaryNode); err != nil {
 		return nil, err
 	}
+	log.WithContext(ctx).Debugf("Waiting for secondary nodes to connect")
 
 	select {
 	case <-ctx.Done():
@@ -103,7 +107,7 @@ func (task *Task) PrimaryAcceptSecondary(ctx context.Context, nodeKey string) er
 	}
 	task.nodes.Add(node)
 
-	log.WithField("nodeKey", nodeKey).Debugf("[service] task %d, Accept secondary node", task.ID)
+	log.WithContext(ctx).WithField("nodeKey", nodeKey).Debugf("Accept secondary node")
 
 	if len(task.nodes) >= task.config.NumberSecondaryNodes {
 		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedSecondaryNodes))
@@ -125,17 +129,29 @@ func (task *Task) SecondaryConnectToPrimary(ctx context.Context, nodeKey string)
 		return err
 	}
 
-	fmt.Println(node.Address)
+	ctxConnect, cancel := context.WithTimeout(ctx, time.Second*2)
+	defer cancel()
 
-	// TODO: connect to primary node
+	conn, err := task.nodeClient.Connect(ctxConnect, node.Address)
+	if err != nil {
+		return err
+	}
+
+	stream, err := conn.RegisterArtowrk(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := stream.Handshake(ctx, task.ConnID, node.Key); err != nil {
+		return err
+	}
 
 	task.State.Update(ctx, state.NewStatus(state.StatusConnectedToPrimaryNode))
-
 	return nil
 }
 
 func (task *Task) findNode(ctx context.Context, nodeKey string) (*node.SuperNode, error) {
-	masterNodes, err := task.pastel.TopMasterNodes(ctx)
+	masterNodes, err := task.pastelClient.TopMasterNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -169,9 +185,11 @@ func (task *Task) requiredStatus(statusType state.StatusType) error {
 
 // NewTask returns a new Task instance.
 func NewTask(service *Service) *Task {
+	taskID, _ := random.String(8, random.Base62Chars)
+
 	return &Task{
 		Service: service,
-		ID:      int(atomic.AddUint32(&taskID, 1)),
+		ID:      taskID,
 		State:   state.New(state.NewStatus(state.StatusTaskStarted)),
 		doneCh:  make(chan struct{}),
 	}
