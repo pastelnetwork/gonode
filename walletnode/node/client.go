@@ -14,7 +14,7 @@ type Connection interface {
 }
 
 type RegisterArtowrk interface {
-	Handshake(connID string, IsPrimary bool) error
-	PrimaryAcceptSecondary() (SuperNodes, error)
-	SecondaryConnectToPrimary(nodeKey string) error
+	Handshake(ctx context.Context, connID string, IsPrimary bool) error
+	PrimaryAcceptSecondary(ctx context.Context) (SuperNodes, error)
+	SecondaryConnectToPrimary(ctx context.Context, nodeKey string) error
 }

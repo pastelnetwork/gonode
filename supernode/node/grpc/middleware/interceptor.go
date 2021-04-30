@@ -2,11 +2,9 @@ package middleware
 
 import (
 	"context"
-	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/log"
+	"github.com/pastelnetwork/gonode/common/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -21,20 +19,19 @@ func UnaryInterceptor() grpc.ServerOption {
 			err = status.Error(codes.Internal, "internal server error")
 		})
 
-		reqID, _ := random.String(8, random.Base62Chars)
-		ctx = context.WithValue(ctx, log.RequestIDKey, reqID)
+		ctx = WithRequestID(ctx)
+		peer, _ := peer.FromContext(ctx)
 
-		method := strings.TrimPrefix(info.FullMethod, "/proto.")
+		log.WithContext(ctx).
+			WithField("address", peer.Addr.String()).
+			WithField("method", info.FullMethod).
+			Debugf("Start unary")
+		defer log.WithContext(ctx).Debugf("End unary")
 
-		var address string
-		if peer, ok := peer.FromContext(ctx); ok {
-			address = peer.Addr.String()
-		}
-
-		log.WithContext(ctx).WithField("address", address).WithField("method", method).Debugf("Start unary")
 		resp, err = handler(ctx, req)
-		log.WithContext(ctx).WithError(err).Debugf("End unary")
-
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Handler error")
+		}
 		return resp, err
 	})
 }
@@ -47,27 +44,23 @@ func StreamInterceptor() grpc.ServerOption {
 			err = status.Error(codes.Internal, "internal server error")
 		})
 
-		ctx := ss.Context()
-
-		reqID, _ := random.String(8, random.Base62Chars)
-		ctx = context.WithValue(ctx, log.RequestIDKey, reqID)
-
+		ctx := WithRequestID(ss.Context())
 		ss = &WrappedServerStream{
 			ServerStream: ss,
 			ctx:          ctx,
 		}
+		peer, _ := peer.FromContext(ctx)
 
-		method := strings.TrimPrefix(info.FullMethod, "/proto.")
+		log.WithContext(ctx).
+			WithField("address", peer.Addr.String()).
+			WithField("method", info.FullMethod).
+			Debugf("Start stream")
+		defer log.WithContext(ctx).Debugf("End stream")
 
-		var address string
-		if peer, ok := peer.FromContext(ctx); ok {
-			address = peer.Addr.String()
-		}
-
-		log.WithContext(ctx).WithField("address", address).WithField("method", method).Debugf("Start stream")
 		err = handler(srv, ss)
-		log.WithContext(ctx).WithError(err).Debugf("End stream")
-
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Handler error")
+		}
 		return err
 	})
 }
@@ -75,19 +68,15 @@ func StreamInterceptor() grpc.ServerOption {
 // UnaryClientInterceptor returns a new unary client interceptor.
 func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		ctx = WithRequestID(ctx)
 
-		reqID, _ := random.String(8, random.Base62Chars)
-		ctx = context.WithValue(ctx, log.RequestIDKey, reqID)
+		log.WithContext(ctx).WithField("method", method).Debugf("Start unary client")
+		defer log.WithContext(ctx).Debugf("End unary client")
 
-		var address string
-		if peer, ok := peer.FromContext(ctx); ok {
-			address = peer.Addr.String()
-		}
-
-		log.WithContext(ctx).WithField("address", address).WithField("method", method).Debugf("Start unary client")
 		err := invoker(ctx, method, req, reply, cc, opts...)
-		log.WithContext(ctx).WithError(err).Debugf("End unary client")
-
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Handler error")
+		}
 		return err
 	}
 }
@@ -95,19 +84,15 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 // StreamClientInterceptor returns a new streaming client interceptor.
 func StreamClientInterceptor() grpc.StreamClientInterceptor {
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+		ctx = WithRequestID(ctx)
 
-		reqID, _ := random.String(8, random.Base62Chars)
-		ctx = context.WithValue(ctx, log.RequestIDKey, reqID)
+		log.WithContext(ctx).WithField("method", method).Debugf("Start stream")
+		defer log.WithContext(ctx).Debugf("End stream")
 
-		var address string
-		if peer, ok := peer.FromContext(ctx); ok {
-			address = peer.Addr.String()
-		}
-
-		log.WithContext(ctx).WithField("address", address).WithField("method", method).Debugf("Start stream")
 		clientStream, err := streamer(ctx, desc, cc, method, opts...)
-		log.WithContext(ctx).WithError(err).Debugf("End stream")
-
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("Handler error")
+		}
 		return clientStream, err
 	}
 }

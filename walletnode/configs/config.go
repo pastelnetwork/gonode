@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/pastel-client"
-	"github.com/pastelnetwork/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/api"
 )
 
 // Config contains configuration of all components of the WalletNode.

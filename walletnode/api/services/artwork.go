@@ -8,13 +8,14 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/walletnode/api/log"
-	"github.com/pastelnetwork/walletnode/services/artworkregister"
-	"github.com/pastelnetwork/walletnode/storage"
-	"github.com/pastelnetwork/walletnode/storage/memory"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/walletnode/storage"
+	"github.com/pastelnetwork/gonode/walletnode/storage/memory"
 
-	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/api/gen/http/artworks/server"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
 
 	goahttp "goa.design/goa/v3/http"
 )
@@ -143,13 +144,13 @@ func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImage
 }
 
 // Mount configures the mux to serve the artworks endpoints.
-func (service *Artwork) Mount(mux goahttp.Muxer) goahttp.Server {
+func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := artworks.NewEndpoints(service)
-	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, log.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc)
+	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc)
 	server.Mount(mux, srv)
 
 	for _, m := range srv.Mounts {
-		log.Infof("%q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+		log.WithContext(ctx).Infof("%q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 
 	return srv

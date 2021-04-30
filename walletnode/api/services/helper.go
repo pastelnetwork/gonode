@@ -3,9 +3,9 @@ package services
 import (
 	"time"
 
-	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/services/artworkregister"
-	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 )
 
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Ticket {

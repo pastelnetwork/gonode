@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/log"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

@@ -3,7 +3,7 @@
 // swagger client HTTP transport
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 

@@ -5,8 +5,8 @@ import (
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/log"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -56,9 +56,11 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 		case req := <-reqCh:
 			switch req.GetRequests().(type) {
 			case *pb.RegisterArtworkRequest_Handshake:
-				log.WithContext(ctx).Debugf("Request Handshake")
+				req := req.GetHandshake()
 
-				if err := task.Handshake(ctx, req.GetHandshake().ConnID, req.GetHandshake().IsPrimary); err != nil {
+				log.WithContext(ctx).WithField("connID", req.ConnID).Debugf("Request Handshake")
+
+				if err := task.Handshake(ctx, req.ConnID, req.IsPrimary); err != nil {
 					return err
 				}
 
@@ -106,9 +108,11 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 				}
 
 			case *pb.RegisterArtworkRequest_SecondaryConnectToPrimary:
+				req := req.GetSecondaryConnectToPrimary()
+
 				log.WithContext(ctx).Debugf("Request SecondaryConnectToPrimary")
 
-				if err := task.SecondaryConnectToPrimary(ctx, req.GetSecondaryConnectToPrimary().NodeKey); err != nil {
+				if err := task.SecondaryConnectToPrimary(ctx, req.NodeKey); err != nil {
 					return err
 				}
 				defer task.Cancel()

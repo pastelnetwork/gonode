@@ -2,13 +2,14 @@ package artworkregister
 
 import (
 	"context"
+	"fmt"
 	"sync/atomic"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/walletnode/node"
-	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
+	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 )
 
 var taskID uint32
@@ -30,7 +31,7 @@ func (task *Task) Run(ctx context.Context) error {
 	if err := task.run(ctx); err != nil {
 		if err, ok := err.(*TaskError); ok {
 			task.State.Update(state.NewMessage(state.StatusTaskRejected))
-			log.WithField("error", err).Debugf("Task %d is rejected", task.ID)
+			log.WithField("error", err).Warnf("Task %d is rejected", task.ID)
 			return nil
 		}
 		return err
@@ -52,6 +53,7 @@ func (task *Task) run(ctx context.Context) error {
 		if err := task.connect(ctx, superNode); err != nil {
 			return err
 		}
+		break
 	}
 	// if len(superNodes) < task.config.NumberSuperNodes {
 	// 	task.State.Update(state.NewMessage(state.StatusErrorTooLowFee))
@@ -80,8 +82,17 @@ func (task *Task) connect(ctx context.Context, superNode *node.SuperNode) error 
 	}
 
 	connID, _ := random.String(8, random.Base62Chars)
-	if err := stream.Handshake(connID, true); err != nil {
-		return err
+	if err := stream.Handshake(ctx, connID, true); err != nil {
+		return NewTaskError(err)
+	}
+
+	nodes, err := stream.PrimaryAcceptSecondary(ctx)
+	if err != nil {
+		return NewTaskError(err)
+	}
+
+	for _, node := range nodes {
+		fmt.Println(node.Key)
 	}
 
 	return nil

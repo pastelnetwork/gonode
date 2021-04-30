@@ -7,10 +7,14 @@ import (
 	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/log"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/middleware"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
+)
+
+const (
+	logPrefix = "grpc"
 )
 
 type service interface {
@@ -25,10 +29,12 @@ type Server struct {
 
 // Run starts the server
 func (server *Server) Run(ctx context.Context) error {
+	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
+
 	group, ctx := errgroup.WithContext(ctx)
 
 	addresses := strings.Split(server.config.ListenAddresses, ",")
-	grpcServer := server.grpcServer()
+	grpcServer := server.grpcServer(ctx)
 
 	for _, address := range addresses {
 		address = net.JoinHostPort(strings.TrimSpace(address), strconv.Itoa(server.config.Port))
@@ -51,7 +57,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 	errCh := make(chan error, 1)
 	go func() {
 		defer errors.Recover(func(recErr error) { err = recErr })
-		log.Infof("Server listening on %q", address)
+		log.WithContext(ctx).Infof("Server listening on %q", address)
 		if err := grpcServer.Serve(listen); err != nil {
 			errCh <- errors.Errorf("failed to serve: %v", err).WithField("address", address)
 		}
@@ -59,7 +65,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 
 	select {
 	case <-ctx.Done():
-		log.Infof("Shutting down server at %q", address)
+		log.WithContext(ctx).Infof("Shutting down server at %q", address)
 		grpcServer.Stop()
 	case err := <-errCh:
 		return err
@@ -68,14 +74,14 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 	return nil
 }
 
-func (server *Server) grpcServer() *grpc.Server {
+func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 	grpcServer := grpc.NewServer(
 		middleware.UnaryInterceptor(),
 		middleware.StreamInterceptor(),
 	)
 
 	for _, service := range server.services {
-		log.Debugf("Register service %q", service.Desc().ServiceName)
+		log.WithContext(ctx).Debugf("Register service %q", service.Desc().ServiceName)
 		grpcServer.RegisterService(service.Desc(), service)
 	}
 

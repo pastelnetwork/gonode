@@ -108,7 +108,6 @@ func (task *Task) PrimaryAcceptSecondary(ctx context.Context, nodeKey string) er
 	if len(task.nodes) >= task.config.NumberSecondaryNodes {
 		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedSecondaryNodes))
 	}
-
 	return nil
 }
 

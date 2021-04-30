@@ -4,15 +4,22 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
-	"github.com/pastelnetwork/walletnode/node"
-	"github.com/pastelnetwork/walletnode/node/grpc/middleware"
+	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/node/grpc/middleware"
 	"google.golang.org/grpc"
+)
+
+const (
+	logPrefix = "grpc"
 )
 
 type Client struct{}
 
 func (client *Client) Connect(ctx context.Context, address string) (node.Connection, error) {
+	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
+
 	conn, err := grpc.DialContext(ctx, address,
 		grpc.WithInsecure(),
 		grpc.WithBlock(),

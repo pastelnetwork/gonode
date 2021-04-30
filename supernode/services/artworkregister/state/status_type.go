@@ -19,6 +19,8 @@ const (
 
 var statusNames = map[StatusType]string{
 	StatusTaskStarted:            "Task started",
+	StatusHandshakePrimaryNode:   "Handshake Primary Node",
+	StatusHandshakeSecondaryNode: "Handshake Secondary Node",
 	StatusAcceptedSecondaryNodes: "Accepted Secondary Nodes",
 	StatusConnectedToPrimaryNode: "Connected to Primary Node",
 	StatusTaskCanceled:           "Task Canceled",

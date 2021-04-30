@@ -5,8 +5,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/pastel-client"
-	"github.com/pastelnetwork/walletnode/node"
-	"github.com/pastelnetwork/walletnode/storage"
+	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/storage"
 	"golang.org/x/sync/errgroup"
 )
 

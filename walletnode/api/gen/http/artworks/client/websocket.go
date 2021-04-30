@@ -3,7 +3,7 @@
 // artworks WebSocket client streaming
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
@@ -11,7 +11,7 @@ import (
 	"io"
 
 	"github.com/gorilla/websocket"
-	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
+	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	goahttp "goa.design/goa/v3/http"
 )
 

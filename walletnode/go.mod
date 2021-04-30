@@ -1,4 +1,4 @@
-module github.com/pastelnetwork/walletnode
+module github.com/pastelnetwork/gonode/walletnode
 
 go 1.16
 

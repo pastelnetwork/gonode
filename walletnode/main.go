@@ -6,7 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/sys"
-	"github.com/pastelnetwork/walletnode/cmd"
+	"github.com/pastelnetwork/gonode/walletnode/cmd"
 )
 
 const (

@@ -3,7 +3,7 @@
 // artworks HTTP server encoders and decoders
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package server
 
@@ -13,8 +13,8 @@ import (
 	"net/http"
 	"strconv"
 
-	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
-	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
+	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )

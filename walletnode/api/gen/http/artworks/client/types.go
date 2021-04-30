@@ -3,15 +3,15 @@
 // artworks HTTP client types
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
 import (
 	"unicode/utf8"
 
-	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
-	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
+	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goa "goa.design/goa/v3/pkg"
 )
 

@@ -3,14 +3,14 @@
 // artworks service
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package artworks
 
 import (
 	"context"
 
-	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
+	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goa "goa.design/goa/v3/pkg"
 )
 

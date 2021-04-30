@@ -1,17 +1,19 @@
 package hooks
 
 import (
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/sirupsen/logrus"
 )
 
-// ContextHookFormatFn is the callback function for formating message
-type ContextHookFormatFn func(ctxValue interface{}, msg string) string
+// ContextHookFields is log fields
+type ContextHookFields map[string]interface{}
+
+// ContextHookFn is the callback function for formating message
+type ContextHookFn func(ctxValue interface{}, msg string, fields ContextHookFields) (string, ContextHookFields)
 
 // ContextHook represents a hook for logrus logger.
 type ContextHook struct {
 	contextKey interface{}
-	fn         func(entry *log.Entry, ctxValue interface{})
+	fn         ContextHookFn
 }
 
 // Fire implements logrus.ContextHook.Fire()
@@ -22,7 +24,10 @@ func (hook *ContextHook) Fire(entry *logrus.Entry) error {
 
 	ctxValue := entry.Context.Value(hook.contextKey)
 	if ctxValue != nil {
-		hook.fn(&log.Entry{Entry: entry}, ctxValue)
+		msg, fields := hook.fn(ctxValue, entry.Message, ContextHookFields(entry.Data))
+
+		entry.Message = msg
+		entry.Data = logrus.Fields(fields)
 	}
 	return nil
 }
@@ -33,7 +38,7 @@ func (hook *ContextHook) Levels() []logrus.Level {
 }
 
 // NewContextHook creates a new ContextHook instance
-func NewContextHook(contextKey interface{}, fn func(entry *log.Entry, ctxValue interface{})) *ContextHook {
+func NewContextHook(contextKey interface{}, fn ContextHookFn) *ContextHook {
 	return &ContextHook{
 		contextKey: contextKey,
 		fn:         fn,
