@@ -13,8 +13,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel-client"
 	"github.com/pastelnetwork/gonode/supernode/configs"
-	"github.com/pastelnetwork/gonode/supernode/server/grpc"
-	"github.com/pastelnetwork/gonode/supernode/server/grpc/services"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/services"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/supernode/storage/memory"
 )

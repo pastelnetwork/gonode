@@ -5,6 +5,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/walletnode/node"
 	"github.com/pastelnetwork/walletnode/storage"
 	"golang.org/x/sync/errgroup"
 )
@@ -13,10 +14,11 @@ import (
 
 // Service represent artwork service.
 type Service struct {
-	db     storage.KeyValue
-	pastel pastel.Client
-	worker *Worker
-	tasks  []*Task
+	db           storage.KeyValue
+	pastelClient pastel.Client
+	worker       *Worker
+	tasks        []*Task
+	nodeClient   node.Client
 }
 
 // Run starts worker
@@ -60,10 +62,11 @@ func (service *Service) Register(ctx context.Context, ticket *Ticket) (int, erro
 }
 
 // NewService returns a new Service instance.
-func NewService(db storage.KeyValue, pastel pastel.Client) *Service {
+func NewService(db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
-		db:     db,
-		pastel: pastel,
-		worker: NewWorker(),
+		db:           db,
+		pastelClient: pastelClient,
+		nodeClient:   nodeClient,
+		worker:       NewWorker(),
 	}
 }

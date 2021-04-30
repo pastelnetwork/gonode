@@ -1,17 +1,17 @@
 package artworkregister
 
 const (
-	defaultNumberSuperNodes = 3
+	defaultNumberSecondaryNodes = 3
 )
 
 // Config contains settings of the registering artwork.
 type Config struct {
-	NumberSuperNodes int `mapstructure:"number_supernodes" json:"number_supernodes,omitempty"`
+	NumberSecondaryNodes int `mapstructure:"number_secondary_nodes" json:"number_secondary_nodes,omitempty"`
 }
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		NumberSuperNodes: defaultNumberSuperNodes,
+		NumberSecondaryNodes: defaultNumberSecondaryNodes,
 	}
 }

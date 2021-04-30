@@ -7,9 +7,8 @@ import (
 	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/supernode/server"
-	"github.com/pastelnetwork/gonode/supernode/server/grpc/log"
-	"github.com/pastelnetwork/gonode/supernode/server/grpc/middleware"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/log"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/middleware"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
@@ -20,7 +19,7 @@ type service interface {
 
 // Server represents supernode server
 type Server struct {
-	config   *server.Config
+	config   *Config
 	services []service
 }
 
@@ -84,7 +83,7 @@ func (server *Server) grpcServer() *grpc.Server {
 }
 
 // NewServer returns a new Server instance.
-func NewServer(config *server.Config, services ...service) *Server {
+func NewServer(config *Config, services ...service) *Server {
 	return &Server{
 		config:   config,
 		services: services,

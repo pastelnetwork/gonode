@@ -1,0 +1,80 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto";
+
+package walletnode;
+
+service WalletNode {
+    rpc RegisterArtowrk(stream RegisterArtworkRequest) returns (stream RegisterArtworkReply);
+}
+
+message RegisterArtworkRequest {
+    message HandshakeRequest {
+        string connID = 1;
+        bool is_primary = 2;
+    }
+    message PrimaryAcceptSecondaryRequest {
+    }
+    message SecondaryConnectToPrimaryRequest {
+        string node_key = 1;
+    }
+    message UploadImageRequest {
+        bytes image = 1;
+    }
+    message SendTicketRequest {
+        bytes ticket = 1;
+        string ticket_signature = 2;
+        string fgpt= 3;
+        string fgpt_signature = 4;
+        string fee_txid = 5;
+        bytes thumbnail = 6;
+    }
+
+    oneof requests {
+        HandshakeRequest handshake = 1;
+        PrimaryAcceptSecondaryRequest primary_accept_secondary = 2;
+        SecondaryConnectToPrimaryRequest secondary_connect_to_primary = 3;
+        UploadImageRequest upload_image = 4;
+        SendTicketRequest send_ticket = 5;
+    }
+}
+
+message RegisterArtworkReply {
+    message Error {
+        enum Status {
+            OK = 0;
+            ERR = 1;
+        }
+        Status status = 1;
+        string errMsg = 2;
+    }
+    message HandshakeReply {
+        Error error = 1;
+    }
+    message PrimaryAcceptSecondaryReply {
+        message Peer {
+            string node_key = 1;
+        }
+        repeated Peer peers = 1;
+        Error error = 2;
+    }
+    message SecondaryConnectToPrimaryReply {
+        Error error = 1;
+    }
+    message UploadImageReply {
+        string fgpt = 1;
+        Error error = 2;
+    }
+    message SendTicketReply {
+        string ticket_txid = 1;
+        Error error = 2;
+    }
+
+    oneof replies {
+        HandshakeReply handshake = 1;
+        PrimaryAcceptSecondaryReply primay_accept_secondary = 2;
+        SecondaryConnectToPrimaryReply secondary_connect_to_primary = 3;
+        UploadImageReply upload_image = 4;
+        SendTicketReply send_ticket = 5;
+     }
+}

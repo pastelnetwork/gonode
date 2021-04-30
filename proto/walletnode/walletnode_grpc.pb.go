@@ -30,7 +30,7 @@ func NewWalletNodeClient(cc grpc.ClientConnInterface) WalletNodeClient {
 }
 
 func (c *walletNodeClient) RegisterArtowrk(ctx context.Context, opts ...grpc.CallOption) (WalletNode_RegisterArtowrkClient, error) {
-	stream, err := c.cc.NewStream(ctx, &WalletNode_ServiceDesc.Streams[0], "/proto.WalletNode/RegisterArtowrk", opts...)
+	stream, err := c.cc.NewStream(ctx, &WalletNode_ServiceDesc.Streams[0], "/walletnode.WalletNode/RegisterArtowrk", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +39,8 @@ func (c *walletNodeClient) RegisterArtowrk(ctx context.Context, opts ...grpc.Cal
 }
 
 type WalletNode_RegisterArtowrkClient interface {
-	Send(*WalletNodeRegisterArtworkRequest) error
-	Recv() (*WalletNodeRegisterArtworkReply, error)
+	Send(*RegisterArtworkRequest) error
+	Recv() (*RegisterArtworkReply, error)
 	grpc.ClientStream
 }
 
@@ -48,12 +48,12 @@ type walletNodeRegisterArtowrkClient struct {
 	grpc.ClientStream
 }
 
-func (x *walletNodeRegisterArtowrkClient) Send(m *WalletNodeRegisterArtworkRequest) error {
+func (x *walletNodeRegisterArtowrkClient) Send(m *RegisterArtworkRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *walletNodeRegisterArtowrkClient) Recv() (*WalletNodeRegisterArtworkReply, error) {
-	m := new(WalletNodeRegisterArtworkReply)
+func (x *walletNodeRegisterArtowrkClient) Recv() (*RegisterArtworkReply, error) {
+	m := new(RegisterArtworkReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -93,8 +93,8 @@ func _WalletNode_RegisterArtowrk_Handler(srv interface{}, stream grpc.ServerStre
 }
 
 type WalletNode_RegisterArtowrkServer interface {
-	Send(*WalletNodeRegisterArtworkReply) error
-	Recv() (*WalletNodeRegisterArtworkRequest, error)
+	Send(*RegisterArtworkReply) error
+	Recv() (*RegisterArtworkRequest, error)
 	grpc.ServerStream
 }
 
@@ -102,12 +102,12 @@ type walletNodeRegisterArtowrkServer struct {
 	grpc.ServerStream
 }
 
-func (x *walletNodeRegisterArtowrkServer) Send(m *WalletNodeRegisterArtworkReply) error {
+func (x *walletNodeRegisterArtowrkServer) Send(m *RegisterArtworkReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *walletNodeRegisterArtowrkServer) Recv() (*WalletNodeRegisterArtworkRequest, error) {
-	m := new(WalletNodeRegisterArtworkRequest)
+func (x *walletNodeRegisterArtowrkServer) Recv() (*RegisterArtworkRequest, error) {
+	m := new(RegisterArtworkRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (x *walletNodeRegisterArtowrkServer) Recv() (*WalletNodeRegisterArtworkRequ
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var WalletNode_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.WalletNode",
+	ServiceName: "walletnode.WalletNode",
 	HandlerType: (*WalletNodeServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
@@ -129,5 +129,5 @@ var WalletNode_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "walletnode.proto",
+	Metadata: "walletnode/walletnode.proto",
 }

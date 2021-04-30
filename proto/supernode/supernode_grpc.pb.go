@@ -30,7 +30,7 @@ func NewSuperNodeClient(cc grpc.ClientConnInterface) SuperNodeClient {
 }
 
 func (c *superNodeClient) RegisterArtowrk(ctx context.Context, opts ...grpc.CallOption) (SuperNode_RegisterArtowrkClient, error) {
-	stream, err := c.cc.NewStream(ctx, &SuperNode_ServiceDesc.Streams[0], "/proto.SuperNode/RegisterArtowrk", opts...)
+	stream, err := c.cc.NewStream(ctx, &SuperNode_ServiceDesc.Streams[0], "/supernode.SuperNode/RegisterArtowrk", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +39,8 @@ func (c *superNodeClient) RegisterArtowrk(ctx context.Context, opts ...grpc.Call
 }
 
 type SuperNode_RegisterArtowrkClient interface {
-	Send(*SuperNodeRegisterArtworkRequest) error
-	Recv() (*SuperNodeRegisterArtworkReply, error)
+	Send(*RegisterArtworkRequest) error
+	Recv() (*RegisterArtworkReply, error)
 	grpc.ClientStream
 }
 
@@ -48,12 +48,12 @@ type superNodeRegisterArtowrkClient struct {
 	grpc.ClientStream
 }
 
-func (x *superNodeRegisterArtowrkClient) Send(m *SuperNodeRegisterArtworkRequest) error {
+func (x *superNodeRegisterArtowrkClient) Send(m *RegisterArtworkRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *superNodeRegisterArtowrkClient) Recv() (*SuperNodeRegisterArtworkReply, error) {
-	m := new(SuperNodeRegisterArtworkReply)
+func (x *superNodeRegisterArtowrkClient) Recv() (*RegisterArtworkReply, error) {
+	m := new(RegisterArtworkReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -93,8 +93,8 @@ func _SuperNode_RegisterArtowrk_Handler(srv interface{}, stream grpc.ServerStrea
 }
 
 type SuperNode_RegisterArtowrkServer interface {
-	Send(*SuperNodeRegisterArtworkReply) error
-	Recv() (*SuperNodeRegisterArtworkRequest, error)
+	Send(*RegisterArtworkReply) error
+	Recv() (*RegisterArtworkRequest, error)
 	grpc.ServerStream
 }
 
@@ -102,12 +102,12 @@ type superNodeRegisterArtowrkServer struct {
 	grpc.ServerStream
 }
 
-func (x *superNodeRegisterArtowrkServer) Send(m *SuperNodeRegisterArtworkReply) error {
+func (x *superNodeRegisterArtowrkServer) Send(m *RegisterArtworkReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *superNodeRegisterArtowrkServer) Recv() (*SuperNodeRegisterArtworkRequest, error) {
-	m := new(SuperNodeRegisterArtworkRequest)
+func (x *superNodeRegisterArtowrkServer) Recv() (*RegisterArtworkRequest, error) {
+	m := new(RegisterArtworkRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (x *superNodeRegisterArtowrkServer) Recv() (*SuperNodeRegisterArtworkReques
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var SuperNode_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.SuperNode",
+	ServiceName: "supernode.SuperNode",
 	HandlerType: (*SuperNodeServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
@@ -129,5 +129,5 @@ var SuperNode_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "supernode.proto",
+	Metadata: "supernode/supernode.proto",
 }

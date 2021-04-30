@@ -5,13 +5,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	pb "github.com/pastelnetwork/gonode/proto"
+	"github.com/pastelnetwork/gonode/common/random"
+	"github.com/pastelnetwork/walletnode/node"
 	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var taskID uint32
@@ -64,55 +61,36 @@ func (task *Task) run(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) connect(ctx context.Context, superNode *SuperNode) error {
+func (task *Task) connect(ctx context.Context, superNode *node.SuperNode) error {
 	log.Debugf("connect to %s", superNode.Address)
 
 	ctxConnect, cancel := context.WithTimeout(ctx, time.Second*2)
 	defer cancel()
 
-	conn, err := grpc.DialContext(ctxConnect, superNode.Address, grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := task.nodeClient.Connect(ctxConnect, superNode.Address)
 	if err != nil {
-		return NewTaskError(errors.Errorf("fail to dial: %v", err).WithField("address", superNode.Address))
+		return err
 	}
 	defer conn.Close()
-
 	log.Debugf("connected to %s", superNode.Address)
 
-	client := pb.NewWalletNodeClient(conn)
-	stream, err := client.RegisterArtowrk(ctx)
+	stream, err := conn.RegisterArtowrk(ctx)
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-time.After(time.Second):
-			req := &pb.WalletNodeRegisterArtworkRequest{
-				TestOneof: &pb.WalletNodeRegisterArtworkRequest_AcceptSecondaryNodes{
-					AcceptSecondaryNodes: &pb.WalletNodeRegisterArtworkRequest_AcceptSecondaryNodesRequest{
-						ConnID: "12345",
-					},
-				},
-			}
-
-			if err := stream.Send(req); err != nil {
-				if status.Code(err) == codes.Canceled {
-					log.Debug("stream closed (context cancelled)")
-					return nil
-				}
-
-				return NewTaskError(errors.Errorf("could not perform connect command: %v", err).WithField("address", superNode.Address))
-			}
-		}
+	connID, _ := random.String(8, random.Base62Chars)
+	if err := stream.Handshake(connID, true); err != nil {
+		return err
 	}
+
+	return nil
 }
 
-func (task *Task) findSuperNodes(ctx context.Context) (SuperNodes, error) {
-	var superNodes SuperNodes
+func (task *Task) findSuperNodes(ctx context.Context) (node.SuperNodes, error) {
+	var superNodes node.SuperNodes
 
-	mns, err := task.pastel.TopMasterNodes(ctx)
+	mns, err := task.pastelClient.TopMasterNodes(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -120,10 +98,10 @@ func (task *Task) findSuperNodes(ctx context.Context) (SuperNodes, error) {
 		if mn.Fee > task.Ticket.MaximumFee {
 			continue
 		}
-		superNodes = append(superNodes, &SuperNode{
-			Address:   mn.ExtAddress,
-			PastelKey: mn.ExtKey,
-			Fee:       mn.Fee,
+		superNodes = append(superNodes, &node.SuperNode{
+			Address: mn.ExtAddress,
+			Key:     mn.ExtKey,
+			Fee:     mn.Fee,
 		})
 	}
 

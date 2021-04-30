@@ -1,4 +1,4 @@
-package server
+package grpc
 
 const (
 	defaultListenAddresses = "0.0.0.0"

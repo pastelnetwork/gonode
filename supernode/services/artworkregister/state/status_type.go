@@ -5,10 +5,11 @@ const (
 	StatusTaskStarted StatusType = iota
 
 	// Primary node statuses
-	StatusWaitForSecondaryNodes
+	StatusHandshakePrimaryNode
 	StatusAcceptedSecondaryNodes
 
 	// Secondary node statuses
+	StatusHandshakeSecondaryNode
 	StatusConnectedToPrimaryNode
 
 	// Final
@@ -18,7 +19,6 @@ const (
 
 var statusNames = map[StatusType]string{
 	StatusTaskStarted:            "Task started",
-	StatusWaitForSecondaryNodes:  "Wait for Secondary Nodes",
 	StatusAcceptedSecondaryNodes: "Accepted Secondary Nodes",
 	StatusConnectedToPrimaryNode: "Connected to Primary Node",
 	StatusTaskCanceled:           "Task Canceled",

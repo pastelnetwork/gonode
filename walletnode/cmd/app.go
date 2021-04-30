@@ -15,6 +15,7 @@ import (
 	"github.com/pastelnetwork/walletnode/api"
 	"github.com/pastelnetwork/walletnode/api/services"
 	"github.com/pastelnetwork/walletnode/configs"
+	"github.com/pastelnetwork/walletnode/node/grpc"
 	"github.com/pastelnetwork/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/walletnode/storage/memory"
 )
@@ -87,11 +88,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastel := pastel.NewClient(config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel)
+	nodeClient := grpc.NewClient()
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(db, pastel)
+	artworkRegister := artworkregister.NewService(db, pastelClient, nodeClient)
 
 	// api service
 	api := api.New(config.API,

@@ -1,6 +1,9 @@
-package artworkregister
+package node
 
-// SuperNode represents supernode
+// SuperNodes is muptiple SuperNode
+type SuperNodes []*SuperNode
+
+// SuperNode represents supernode.
 type SuperNode struct {
 	Address string  `json:"extAddress"`
 	Key     string  `json:"extKey"`
