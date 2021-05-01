@@ -10,7 +10,9 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// const logPrefix = "[artwork]"
+const (
+	logPrefix = "artwork"
+)
 
 // Service represent artwork service.
 type Service struct {
@@ -42,7 +44,7 @@ func (service *Service) Tasks() []*Task {
 }
 
 // Task returns the task of the registration artwork.
-func (service *Service) Task(taskID int) *Task {
+func (service *Service) Task(taskID string) *Task {
 	for _, task := range service.tasks {
 		if task.ID == taskID {
 			return task
@@ -52,7 +54,7 @@ func (service *Service) Task(taskID int) *Task {
 }
 
 // Register runs a new task of the registration artwork and returns its taskID.
-func (service *Service) Register(ctx context.Context, ticket *Ticket) (int, error) {
+func (service *Service) Register(ctx context.Context, ticket *Ticket) (string, error) {
 	// NOTE: for testing
 	task := NewTask(service, ticket)
 	service.tasks = append(service.tasks, task)

@@ -2,7 +2,7 @@ package artworkregister
 
 import (
 	"context"
-	"sync/atomic"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -12,30 +12,30 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var taskID uint32
-
 // Task is the task of registering new artwork.
 type Task struct {
 	*Service
 
-	ID     int
+	ID     string
 	State  *state.State
 	Ticket *Ticket
 }
 
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
-	log.Debugf("Start task %v", task.ID)
-	defer log.Debugf("End task %v", task.ID)
+	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, task.ID))
+
+	log.WithContext(ctx).Debugf("Start task")
+	defer log.WithContext(ctx).Debugf("End task")
 
 	if err := task.run(ctx); err != nil {
 		task.State.Update(state.NewMessage(state.StatusTaskRejected))
-		log.WithField("error", err).Warnf("Task %d is rejected", task.ID)
+		log.WithContext(ctx).WithField("error", err).Warnf("Task is rejected")
 		return nil
 	}
 
 	task.State.Update(state.NewMessage(state.StatusTaskCompleted))
-	log.Debugf("Task %d is completed", task.ID)
+	log.WithContext(ctx).Debugf("Task is completed")
 	return nil
 }
 
@@ -79,7 +79,7 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 		}
 
 		for _, node := range nodes {
-			log.WithContext(ctx).Debugf("Primary accepted %d secondary node", node.Key)
+			log.WithContext(ctx).Debugf("Primary accepted %q secondary node", node.Key)
 		}
 
 		return nil
@@ -159,9 +159,11 @@ func (task *Task) findSuperNodes(ctx context.Context) (node.SuperNodes, error) {
 
 // NewTask returns a new Task instance.
 func NewTask(service *Service, Ticket *Ticket) *Task {
+	taskID, _ := random.String(8, random.Base62Chars)
+
 	return &Task{
 		Service: service,
-		ID:      int(atomic.AddUint32(&taskID, 1)),
+		ID:      taskID,
 		Ticket:  Ticket,
 		State:   state.New(state.NewMessage(state.StatusTaskStarted)),
 	}

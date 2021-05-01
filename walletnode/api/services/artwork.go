@@ -2,13 +2,12 @@ package services
 
 import (
 	"context"
-	"strconv"
-	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/walletnode/storage"
@@ -22,10 +21,6 @@ import (
 
 const (
 	imageTTL = time.Second * 3600 // 1 hour
-)
-
-var (
-	imageID uint32
 )
 
 // Artwork represents services for artworks endpoints.
@@ -101,8 +96,7 @@ func (service *Artwork) RegisterTasks(ctx context.Context) (res artworks.TaskCol
 func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	ticket := fromRegisterPayload(p)
 
-	key := strconv.Itoa(p.ImageID)
-	ticket.Image, err = service.storage.Get(key)
+	ticket.Image, err = service.storage.Get(p.ImageID)
 	if err == storage.ErrKeyNotFound {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
@@ -122,17 +116,16 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 
 // UploadImage uploads an image and return unique image id.
 func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
-	id := int(atomic.AddUint32(&imageID, 1))
-	key := strconv.Itoa(id)
+	id, _ := random.String(8, random.Base62Chars)
 
-	if err := service.storage.Set(key, p.Bytes); err != nil {
+	if err := service.storage.Set(id, p.Bytes); err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 	expiresIn := time.Now().Add(imageTTL)
 
 	go func() {
 		time.AfterFunc(time.Until(expiresIn), func() {
-			service.storage.Delete(key)
+			service.storage.Delete(id)
 		})
 	}()
 

@@ -48,13 +48,13 @@ type Image struct {
 // RegisterResultView is a type that runs validations on a projected type.
 type RegisterResultView struct {
 	// Task ID of the registration process
-	TaskID *int
+	TaskID *string
 }
 
 // TaskView is a type that runs validations on a projected type.
 type TaskView struct {
 	// JOb ID of the registration process
-	ID *int
+	ID *string
 	// Status of the registration process
 	Status *string
 	// List of states from the very beginning of the process
@@ -106,7 +106,7 @@ type TaskCollectionView []*TaskView
 // ImageView is a type that runs validations on a projected type.
 type ImageView struct {
 	// Uploaded image ID
-	ImageID *int
+	ImageID *string
 	// Image expiration
 	ExpiresIn *string
 }
@@ -218,6 +218,16 @@ func ValidateRegisterResultView(result *RegisterResultView) (err error) {
 	if result.TaskID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("task_id", "result"))
 	}
+	if result.TaskID != nil {
+		if utf8.RuneCountInString(*result.TaskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, true))
+		}
+	}
+	if result.TaskID != nil {
+		if utf8.RuneCountInString(*result.TaskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, false))
+		}
+	}
 	return
 }
 
@@ -232,6 +242,16 @@ func ValidateTaskViewTiny(result *TaskView) (err error) {
 	}
 	if result.Ticket == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "result"))
+	}
+	if result.ID != nil {
+		if utf8.RuneCountInString(*result.ID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.id", *result.ID, utf8.RuneCountInString(*result.ID), 8, true))
+		}
+	}
+	if result.ID != nil {
+		if utf8.RuneCountInString(*result.ID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.id", *result.ID, utf8.RuneCountInString(*result.ID), 8, false))
+		}
 	}
 	if result.Status != nil {
 		if !(*result.Status == "Task Started" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
@@ -267,6 +287,16 @@ func ValidateTaskView(result *TaskView) (err error) {
 	}
 	if result.Ticket == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "result"))
+	}
+	if result.ID != nil {
+		if utf8.RuneCountInString(*result.ID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.id", *result.ID, utf8.RuneCountInString(*result.ID), 8, true))
+		}
+	}
+	if result.ID != nil {
+		if utf8.RuneCountInString(*result.ID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.id", *result.ID, utf8.RuneCountInString(*result.ID), 8, false))
+		}
 	}
 	if result.Status != nil {
 		if !(*result.Status == "Task Started" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
@@ -446,6 +476,16 @@ func ValidateImageView(result *ImageView) (err error) {
 	}
 	if result.ExpiresIn == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("expires_in", "result"))
+	}
+	if result.ImageID != nil {
+		if utf8.RuneCountInString(*result.ImageID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, true))
+		}
+	}
+	if result.ImageID != nil {
+		if utf8.RuneCountInString(*result.ImageID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, false))
+		}
 	}
 	if result.ExpiresIn != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))

@@ -77,6 +77,7 @@ func (service *SuperNoder) RegisterArtowrk(stream pb.SuperNode_RegisterArtowrkSe
 					cancel()
 				}()
 
+				log.WithContext(ctx).Debugf("Response Handshake")
 				repl := &pb.RegisterArtworkReply{
 					Replies: &pb.RegisterArtworkReply_Handshake{
 						Handshake: &pb.RegisterArtworkReply_HandshakeReply{

@@ -19,7 +19,7 @@ import (
 // endpoint HTTP request body.
 type RegisterRequestBody struct {
 	// Uploaded image ID
-	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
+	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
 	// Name of the artwork
 	Name string `form:"name" json:"name" xml:"name"`
 	// Description of the artwork
@@ -57,7 +57,7 @@ type UploadImageRequestBody struct {
 // endpoint HTTP response body.
 type RegisterResponseBody struct {
 	// Task ID of the registration process
-	TaskID *int `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
+	TaskID *string `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
 }
 
 // RegisterTaskStateResponseBody is the type of the "artworks" service
@@ -73,7 +73,7 @@ type RegisterTaskStateResponseBody struct {
 // "registerTask" endpoint HTTP response body.
 type RegisterTaskResponseBody struct {
 	// JOb ID of the registration process
-	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Status of the registration process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// List of states from the very beginning of the process
@@ -91,7 +91,7 @@ type RegisterTasksResponseBody []*TaskResponse
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
 	// Uploaded image ID
-	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
+	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Image expiration
 	ExpiresIn *string `form:"expires_in,omitempty" json:"expires_in,omitempty" xml:"expires_in,omitempty"`
 }
@@ -302,7 +302,7 @@ type ArtworkTicketResponseBody struct {
 // TaskResponse is used to define fields on response body types.
 type TaskResponse struct {
 	// JOb ID of the registration process
-	ID *int `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
 	// Status of the registration process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// List of states from the very beginning of the process
@@ -937,6 +937,16 @@ func ValidateTaskResponse(body *TaskResponse) (err error) {
 	}
 	if body.Ticket == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("ticket", "body"))
+	}
+	if body.ID != nil {
+		if utf8.RuneCountInString(*body.ID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.id", *body.ID, utf8.RuneCountInString(*body.ID), 8, true))
+		}
+	}
+	if body.ID != nil {
+		if utf8.RuneCountInString(*body.ID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.id", *body.ID, utf8.RuneCountInString(*body.ID), 8, false))
+		}
 	}
 	if body.Status != nil {
 		if !(*body.Status == "Task Started" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Too Low Fee" || *body.Status == "Error FGPT Not Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
