@@ -40,6 +40,9 @@ func (task *Task) Run(ctx context.Context) error {
 }
 
 func (task *Task) run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	superNodes, err := task.findSuperNodes(ctx)
 	if err != nil {
 		return err
@@ -48,6 +51,8 @@ func (task *Task) run(ctx context.Context) error {
 	if err := task.connect(ctx, superNodes[0], superNodes[1:3]); err != nil {
 		return err
 	}
+
+	<-ctx.Done()
 
 	// if len(superNodes) < task.config.NumberSuperNodes {
 	// 	task.State.Update(state.NewMessage(state.StatusErrorTooLowFee))
@@ -59,22 +64,20 @@ func (task *Task) run(ctx context.Context) error {
 
 func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, secondaryNodes node.SuperNodes) error {
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	connID, _ := random.String(8, random.Base62Chars)
-
-	stream, err := task.nodeStream(ctx, primaryNode.Address, connID, true)
+	stream, err := task.openStream(ctx, primaryNode.Address, connID, true)
 	if err != nil {
 		return err
 	}
 
-	group, ctx := errgroup.WithContext(ctx)
-
+	group, _ := errgroup.WithContext(ctx)
 	group.Go(func() (err error) {
 		defer errors.Recover(func(recErr error) { err = recErr })
 
 		nodes, err := stream.PrimaryAcceptSecondary(ctx)
 		if err != nil {
+			cancel()
 			return err
 		}
 
@@ -91,7 +94,7 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 		group.Go(func() (err error) {
 			defer errors.Recover(func(recErr error) { err = recErr })
 
-			stream, err := task.nodeStream(ctx, node.Address, connID, false)
+			stream, err := task.openStream(ctx, node.Address, connID, false)
 			if err != nil {
 				return err
 			}
@@ -103,13 +106,14 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 
 			return nil
 		})
+
 	}
 
 	return group.Wait()
 
 }
 
-func (task *Task) nodeStream(ctx context.Context, address, connID string, isPrimary bool) (node.RegisterArtowrk, error) {
+func (task *Task) openStream(ctx context.Context, address, connID string, isPrimary bool) (node.RegisterArtowrk, error) {
 	conn, err := task.nodeClient.Connect(ctx, address)
 	if err != nil {
 		return nil, err
@@ -119,7 +123,7 @@ func (task *Task) nodeStream(ctx context.Context, address, connID string, isPrim
 		select {
 		case <-ctx.Done():
 			conn.Close()
-		case <-conn.Done():
+		case <-conn.Closed():
 			// TODO Remove from the `nodes` list
 		}
 	}()

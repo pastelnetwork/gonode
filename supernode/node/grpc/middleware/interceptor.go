@@ -26,6 +26,7 @@ func UnaryInterceptor() grpc.ServerOption {
 			WithField("address", peer.Addr.String()).
 			WithField("method", info.FullMethod).
 			Debugf("Start unary")
+
 		defer log.WithContext(ctx).Debugf("End unary")
 
 		resp, err = handler(ctx, req)
@@ -59,6 +60,7 @@ func StreamInterceptor() grpc.ServerOption {
 			WithField("address", peer.Addr.String()).
 			WithField("method", info.FullMethod).
 			Debugf("Start stream")
+
 		defer log.WithContext(ctx).Debugf("End stream")
 
 		err = handler(srv, ss)

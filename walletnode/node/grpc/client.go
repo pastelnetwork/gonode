@@ -41,7 +41,7 @@ func (client *Client) Connect(ctx context.Context, address string) (node.Connect
 	conn := NewConnection(id, grpcConn)
 	go conn.waitForStateChange()
 	go func() {
-		<-conn.Done()
+		<-conn.Closed()
 		log.WithContext(ctx).Debugf("Disconnected %s", conn.Target())
 	}()
 	return conn, nil
@@ -55,12 +55,12 @@ type Connection struct {
 	*grpc.ClientConn
 	pb.WalletNodeClient
 
-	id     string
-	doneCh chan struct{}
+	id       string
+	closedCh chan struct{}
 }
 
 func (conn *Connection) waitForStateChange() {
-	defer close(conn.doneCh)
+	defer close(conn.closedCh)
 
 	for {
 		conn.WaitForStateChange(context.Background(), conn.GetState())
@@ -73,17 +73,25 @@ func (conn *Connection) waitForStateChange() {
 	}
 }
 
-func (conn *Connection) Done() <-chan struct{} {
-	return conn.doneCh
+func (conn *Connection) Closed() <-chan struct{} {
+	return conn.closedCh
 }
 
 func (conn *Connection) RegisterArtowrk(ctx context.Context) (node.RegisterArtowrk, error) {
+	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, conn.id))
+
 	stream, err := conn.WalletNodeClient.RegisterArtowrk(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("address", conn.Target()).Errorf("Could not start stream")
 		return nil, errors.New(err)
 	}
-	return NewRegisterArtowrk(conn, stream), nil
+
+	regArtwork := NewRegisterArtowrk(conn, stream)
+	if err := regArtwork.Start(ctx); err != nil {
+		return nil, err
+	}
+
+	return regArtwork, nil
 }
 
 func NewConnection(id string, conn *grpc.ClientConn) *Connection {
@@ -91,6 +99,6 @@ func NewConnection(id string, conn *grpc.ClientConn) *Connection {
 		ClientConn:       conn,
 		WalletNodeClient: pb.NewWalletNodeClient(conn),
 		id:               id,
-		doneCh:           make(chan struct{}),
+		closedCh:         make(chan struct{}),
 	}
 }

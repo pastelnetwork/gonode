@@ -27,10 +27,12 @@ func Log(ctx context.Context) func(h http.Handler) http.Handler {
 			}
 			started := time.Now()
 
+			ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, reqID))
+
 			log.WithContext(ctx).
 				WithField("from", logFrom(r)).
 				WithField("req", r.Method+" "+r.URL.String()).
-				Debugf("[%v] Request", reqID)
+				Debugf("Request")
 
 			rw := httpmiddleware.CaptureResponse(w)
 			h.ServeHTTP(rw, r)
@@ -39,7 +41,7 @@ func Log(ctx context.Context) func(h http.Handler) http.Handler {
 				WithField("status", rw.StatusCode).
 				WithField("bytes", rw.ContentLength).
 				WithField("time", time.Since(started).String()).
-				Debugf("[%v] Response", reqID)
+				Debugf("Response")
 		})
 	}
 }
@@ -68,6 +70,7 @@ func ErrorHandler(ctx context.Context, w http.ResponseWriter, err error) {
 
 func init() {
 	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
-		return fmt.Sprintf("[%v] %s", ctxValue, msg), fields
+		fields["preifx"] = fmt.Sprintf("%s-%s", logPrefix, ctxValue)
+		return msg, fields
 	}))
 }

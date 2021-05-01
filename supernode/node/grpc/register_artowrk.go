@@ -7,6 +7,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type RegisterArtowrk struct {
@@ -28,13 +30,21 @@ func (stream *RegisterArtowrk) Handshake(ctx context.Context, connID, nodeKey st
 
 	log.WithContext(ctx).Debugf("Request Handshake")
 	if err := stream.Send(req); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Request Handshake")
+		if status.Code(err) == codes.Canceled {
+			log.WithContext(ctx).Debugf("Canceled request Handshake")
+		} else {
+			log.WithContext(ctx).WithError(err).Errorf("Request Handshake")
+		}
 		return errors.New(err)
 	}
 
 	res, err := stream.Recv()
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Response Handshake")
+		if status.Code(err) == codes.Canceled {
+			log.WithContext(ctx).Debugf("Canceled response Handshake")
+		} else {
+			log.WithContext(ctx).WithError(err).Errorf("Response Handshake")
+		}
 		return errors.New(err)
 	}
 	resp := res.GetHandshake()

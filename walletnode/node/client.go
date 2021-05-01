@@ -10,7 +10,7 @@ type Client interface {
 
 type Connection interface {
 	Close() error
-	Done() <-chan struct{}
+	Closed() <-chan struct{}
 	RegisterArtowrk(ctx context.Context) (RegisterArtowrk, error)
 }
 

@@ -77,6 +77,7 @@ func (conn *Connection) RegisterArtowrk(ctx context.Context) (node.RegisterArtow
 	if err != nil {
 		return nil, errors.New(err)
 	}
+
 	return NewRegisterArtowrk(conn, stream), nil
 }
 
