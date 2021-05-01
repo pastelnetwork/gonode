@@ -57,17 +57,18 @@ func (service *SuperNoder) RegisterArtowrk(stream pb.SuperNode_RegisterArtowrkSe
 			switch req.GetRequests().(type) {
 			case *pb.RegisterArtworkRequest_Handshake:
 				log.WithContext(ctx).Debugf("Request Handshake")
+				req := req.GetHandshake()
 
 				if task != nil {
 					return errors.New("task is already registered")
 				}
 
-				task = service.artworkRegister.TaskByConnID(req.GetHandshake().ConnID)
+				task = service.artworkRegister.TaskByConnID(req.ConnID)
 				if task == nil {
-					return errors.Errorf("connID %q not found", req.GetHandshake().ConnID)
+					return errors.Errorf("connID %q not found", req.ConnID)
 				}
 
-				if err := task.PrimaryAcceptSecondary(task.Context(ctx), req.GetHandshake().NodeKey); err != nil {
+				if err := task.PrimaryAcceptSecondary(task.Context(ctx), req.NodeKey); err != nil {
 					return err
 				}
 				defer task.Cancel()

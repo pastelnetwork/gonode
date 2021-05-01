@@ -27,7 +27,8 @@ const (
 
 func init() {
 	log.AddHook(hooks.NewContextHook(RequestIDKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
-		return fmt.Sprintf("%v: %s", ctxValue, msg), fields
+		fields["reqID"] = ctxValue
+		return msg, fields
 	}))
 
 	log.AddHook(hooks.NewContextHook(AddressKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
@@ -43,7 +44,8 @@ func init() {
 
 func WithRequestID(ctx context.Context) context.Context {
 	reqID, _ := random.String(8, random.Base62Chars)
-	ctx = context.WithValue(ctx, log.PrefixKey, "grpc-"+reqID)
+	ctx = context.WithValue(ctx, RequestIDKey, reqID)
+	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("grpc-%s", reqID))
 
 	return ctx
 }

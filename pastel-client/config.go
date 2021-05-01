@@ -11,6 +11,8 @@ type Config struct {
 	Port     int    `mapstructure:"port" json:"port,omitempty"`
 	Username string `mapstructure:"username" json:"username,omitempty"`
 	Password string `mapstructure:"password" json:"-"`
+
+	ExtKey string `mapstructure:"ext_key" json:"ext_key,omitempty"`
 }
 
 // NewConfig returns a new Config instance.

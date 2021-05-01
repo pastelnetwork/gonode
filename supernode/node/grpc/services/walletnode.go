@@ -67,7 +67,7 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 				repl := &pb.RegisterArtworkReply{
 					Replies: &pb.RegisterArtworkReply_Handshake{
 						Handshake: &pb.RegisterArtworkReply_HandshakeReply{
-							Error: service.NewEmptyError(),
+							Error: service.NewNoError(),
 						},
 					},
 				}
@@ -99,7 +99,7 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 					Replies: &pb.RegisterArtworkReply_PrimayAcceptSecondary{
 						PrimayAcceptSecondary: &pb.RegisterArtworkReply_PrimaryAcceptSecondaryReply{
 							Peers: peers,
-							Error: service.NewEmptyError(),
+							Error: service.NewNoError(),
 						},
 					},
 				}
@@ -124,7 +124,7 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 				repl := &pb.RegisterArtworkReply{
 					Replies: &pb.RegisterArtworkReply_SecondaryConnectToPrimary{
 						SecondaryConnectToPrimary: &pb.RegisterArtworkReply_SecondaryConnectToPrimaryReply{
-							Error: service.NewEmptyError(),
+							Error: service.NewNoError(),
 						},
 					},
 				}
@@ -140,7 +140,7 @@ func (service *WalletNode) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkS
 	}
 }
 
-func (service *WalletNode) NewEmptyError() *pb.RegisterArtworkReply_Error {
+func (service *WalletNode) NewNoError() *pb.RegisterArtworkReply_Error {
 	return &pb.RegisterArtworkReply_Error{
 		Status: pb.RegisterArtworkReply_Error_OK,
 	}

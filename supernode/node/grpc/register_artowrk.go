@@ -2,16 +2,21 @@ package grpc
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
 type RegisterArtowrk struct {
+	conn *Connection
 	pb.SuperNode_RegisterArtowrkClient
 }
 
 func (stream *RegisterArtowrk) Handshake(ctx context.Context, connID, nodeKey string) error {
+	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+
 	req := &pb.RegisterArtworkRequest{
 		Requests: &pb.RegisterArtworkRequest_Handshake{
 			Handshake: &pb.RegisterArtworkRequest_HandshakeRequest{
@@ -21,15 +26,22 @@ func (stream *RegisterArtowrk) Handshake(ctx context.Context, connID, nodeKey st
 		},
 	}
 
+	log.WithContext(ctx).Debugf("Request Handshake")
 	if err := stream.Send(req); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("Request Handshake")
 		return errors.New(err)
 	}
 
 	res, err := stream.Recv()
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("Response Handshake")
 		return errors.New(err)
 	}
 	resp := res.GetHandshake()
+	if resp == nil {
+		return errors.New("Wrong response type, Handshake")
+	}
+	log.WithContext(ctx).Debugf("Response Handshake")
 
 	if err := resp.Error; err.Status == pb.RegisterArtworkReply_Error_ERR {
 		return errors.New(err.ErrMsg)
@@ -37,8 +49,9 @@ func (stream *RegisterArtowrk) Handshake(ctx context.Context, connID, nodeKey st
 	return nil
 }
 
-func NewRegisterArtowrk(stream pb.SuperNode_RegisterArtowrkClient) *RegisterArtowrk {
+func NewRegisterArtowrk(conn *Connection, stream pb.SuperNode_RegisterArtowrkClient) *RegisterArtowrk {
 	return &RegisterArtowrk{
+		conn:                            conn,
 		SuperNode_RegisterArtowrkClient: stream,
 	}
 }

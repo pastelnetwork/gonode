@@ -1,7 +1,7 @@
 package artworkregister
 
 const (
-	defaultNumberSecondaryNodes = 3
+	defaultNumberSecondaryNodes = 2
 )
 
 // Config contains settings of the registering artwork.

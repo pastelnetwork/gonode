@@ -2,9 +2,7 @@ package artworkregister
 
 import (
 	"context"
-	"fmt"
 	"sync/atomic"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -47,7 +45,7 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
-	if err := task.connect(ctx, superNodes[0], superNodes[1:2]); err != nil {
+	if err := task.connect(ctx, superNodes[0], superNodes[1:3]); err != nil {
 		return err
 	}
 
@@ -67,7 +65,6 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 
 	stream, err := task.nodeStream(ctx, primaryNode.Address, connID, true)
 	if err != nil {
-		log.WithContext(ctx).Errorf("Could not get stream with primary node %s", primaryNode.Address)
 		return err
 	}
 
@@ -78,38 +75,34 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 
 		nodes, err := stream.PrimaryAcceptSecondary(ctx)
 		if err != nil {
-			log.WithContext(ctx).Errorf("Could not primary to accept secondary nodes")
 			return err
 		}
-		log.WithContext(ctx).Debugf("Primary accepted %d secondary nodes", len(nodes))
 
 		for _, node := range nodes {
-			fmt.Println(node.Key)
+			log.WithContext(ctx).Debugf("Primary accepted %d secondary node", node.Key)
 		}
 
 		return nil
 	})
 
 	for _, node := range secondaryNodes {
+		node := node
+
 		group.Go(func() (err error) {
 			defer errors.Recover(func(recErr error) { err = recErr })
 
 			stream, err := task.nodeStream(ctx, node.Address, connID, false)
 			if err != nil {
-				log.WithContext(ctx).Errorf("Could not get stream with secondary %s", node.Address)
 				return err
 			}
 
 			if err := stream.SecondaryConnectToPrimary(ctx, primaryNode.Key); err != nil {
-				log.WithContext(ctx).Errorf("Could not seconary %s connected to primary", node.Address)
 				return err
 			}
 			log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
 
 			return nil
 		})
-
-		break
 	}
 
 	return group.Wait()
@@ -117,21 +110,19 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 }
 
 func (task *Task) nodeStream(ctx context.Context, address, connID string, isPrimary bool) (node.RegisterArtowrk, error) {
-	log.WithContext(ctx).Debugf("Connecting to %s", address)
-
-	ctxConnect, cancel := context.WithTimeout(ctx, time.Second*2)
-	defer cancel()
-
-	conn, err := task.nodeClient.Connect(ctxConnect, address)
+	conn, err := task.nodeClient.Connect(ctx, address)
 	if err != nil {
 		return nil, err
 	}
-	go func() {
-		<-ctx.Done()
-		conn.Close()
-	}()
 
-	log.WithContext(ctx).Debugf("Connected to %s", address)
+	go func() {
+		select {
+		case <-ctx.Done():
+			conn.Close()
+		case <-conn.Done():
+			// TODO Remove from the `nodes` list
+		}
+	}()
 
 	stream, err := conn.RegisterArtowrk(ctx)
 	if err != nil {

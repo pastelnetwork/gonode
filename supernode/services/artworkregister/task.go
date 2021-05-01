@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -129,20 +128,26 @@ func (task *Task) SecondaryConnectToPrimary(ctx context.Context, nodeKey string)
 		return err
 	}
 
-	ctxConnect, cancel := context.WithTimeout(ctx, time.Second*2)
-	defer cancel()
-
-	conn, err := task.nodeClient.Connect(ctxConnect, node.Address)
+	conn, err := task.nodeClient.Connect(ctx, node.Address)
 	if err != nil {
 		return err
 	}
+
+	go func() {
+		select {
+		case <-ctx.Done():
+			conn.Close()
+		case <-conn.Done():
+			// TODO Remove from the `nodes` list
+		}
+	}()
 
 	stream, err := conn.RegisterArtowrk(ctx)
 	if err != nil {
 		return err
 	}
 
-	if err := stream.Handshake(ctx, task.ConnID, node.Key); err != nil {
+	if err := stream.Handshake(ctx, task.ConnID, task.myNode.Key); err != nil {
 		return err
 	}
 

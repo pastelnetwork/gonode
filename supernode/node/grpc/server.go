@@ -13,10 +13,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	logPrefix = "grpc"
-)
-
 type service interface {
 	Desc() *grpc.ServiceDesc
 }

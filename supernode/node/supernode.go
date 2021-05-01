@@ -15,6 +15,15 @@ func (nodes SuperNodes) FindByKey(key string) *SuperNode {
 	return nil
 }
 
+func (nodes *SuperNodes) Remove(key string) {
+	for i, node := range *nodes {
+		if node.Key == key {
+			*nodes = append((*nodes)[:i], (*nodes)[:i+1]...)
+			break
+		}
+	}
+}
+
 // SuperNode represents supernode
 type SuperNode struct {
 	Address string  `json:"extAddress"`

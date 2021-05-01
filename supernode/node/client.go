@@ -8,6 +8,7 @@ type Client interface {
 
 type Connection interface {
 	Close() error
+	Done() <-chan struct{}
 	RegisterArtowrk(ctx context.Context) (RegisterArtowrk, error)
 }
 
