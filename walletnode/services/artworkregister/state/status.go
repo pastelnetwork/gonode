@@ -3,6 +3,7 @@ package state
 // List of task statuses.
 const (
 	StatusTaskStarted Status = iota
+	StatusConnected
 	// Ticket
 	StatusTicketAccepted
 	StatusTicketRegistered
@@ -17,6 +18,7 @@ const (
 
 var statusNames = map[Status]string{
 	StatusTaskStarted:       "Task Started",
+	StatusConnected:         "Connected",
 	StatusTicketAccepted:    "Ticket Accepted",
 	StatusTicketRegistered:  "Ticket Registered",
 	StatusTicketActivated:   "Ticket Activated",

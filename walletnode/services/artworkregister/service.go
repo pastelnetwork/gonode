@@ -16,6 +16,7 @@ const (
 
 // Service represent artwork service.
 type Service struct {
+	config       *Config
 	db           storage.KeyValue
 	pastelClient pastel.Client
 	worker       *Worker
@@ -64,8 +65,9 @@ func (service *Service) Register(ctx context.Context, ticket *Ticket) (string, e
 }
 
 // NewService returns a new Service instance.
-func NewService(db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
+		config:       config,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,

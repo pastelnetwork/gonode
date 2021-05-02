@@ -88,7 +88,6 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 				if stream.task == nil {
 					return errors.Errorf("connID %q not found", req.ConnID)
 				}
-				defer stream.task.Cancel()
 				go func() {
 					<-stream.task.Done()
 					cancel()

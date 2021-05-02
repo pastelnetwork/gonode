@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -10,6 +11,12 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 	"golang.org/x/sync/errgroup"
+)
+
+const (
+	connectToNextNodeDelay = time.Millisecond * 200
+	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
+	connectToNodeTimeout   = time.Second * 1
 )
 
 // Task is the task of registering new artwork.
@@ -29,12 +36,12 @@ func (task *Task) Run(ctx context.Context) error {
 	defer log.WithContext(ctx).Debugf("End task")
 
 	if err := task.run(ctx); err != nil {
-		task.State.Update(state.NewMessage(state.StatusTaskRejected))
+		task.State.Update(ctx, state.NewMessage(state.StatusTaskRejected))
 		log.WithContext(ctx).WithField("error", err).Warnf("Task is rejected")
 		return nil
 	}
 
-	task.State.Update(state.NewMessage(state.StatusTaskCompleted))
+	task.State.Update(ctx, state.NewMessage(state.StatusTaskCompleted))
 	log.WithContext(ctx).Debugf("Task is completed")
 	return nil
 }
@@ -47,17 +54,23 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	if err := task.connect(ctx, superNodes[0], superNodes[1:3]); err != nil {
-		return err
+	if len(superNodes) < task.config.NumberSuperNodes {
+		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
+		return errors.Errorf("not found enough available SuperNodes with acceptable storage fee", task.config.NumberSuperNodes)
 	}
 
-	<-ctx.Done()
+	secondaryNodes := make(node.SuperNodes, len(superNodes)-1)
+	for i, primaryNode := range superNodes {
+		copy(secondaryNodes, superNodes[:i])
+		copy(secondaryNodes[i:], superNodes[i+1:])
 
-	// if len(superNodes) < task.config.NumberSuperNodes {
-	// 	task.State.Update(state.NewMessage(state.StatusErrorTooLowFee))
-	// 	return NewTaskError(errors.Errorf("not found enough available SuperNodes with acceptable storage fee", task.config.NumberSuperNodes))
-	// }
+		if err := task.connect(ctx, primaryNode, secondaryNodes); err == nil {
+			break
+		}
+	}
+	task.State.Update(ctx, state.NewMessage(state.StatusConnected))
+
+	<-ctx.Done()
 
 	return nil
 }
@@ -66,46 +79,54 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 	ctx, cancel := context.WithCancel(ctx)
 
 	connID, _ := random.String(8, random.Base62Chars)
-	stream, err := task.openStream(ctx, primaryNode.Address, connID, true)
+	stream, err := task.connectStream(ctx, primaryNode.Address, connID, true)
 	if err != nil {
 		return err
 	}
 
 	group, _ := errgroup.WithContext(ctx)
+	connCtx, connCancel := context.WithCancel(ctx)
+
 	group.Go(func() (err error) {
 		defer errors.Recover(func(recErr error) { err = recErr })
+		defer connCancel()
 
-		nodes, err := stream.AcceptedNodes(ctx)
+		acceptCtx, _ := context.WithTimeout(ctx, acceptNodesTimeout)
+		nodes, err := stream.AcceptedNodes(acceptCtx)
 		if err != nil {
-			cancel()
+			defer cancel()
 			return err
 		}
 
 		for _, node := range nodes {
 			log.WithContext(ctx).Debugf("Primary accepted %q secondary node", node.Key)
 		}
-
 		return nil
 	})
 
 	for _, node := range secondaryNodes {
 		node := node
 
-		group.Go(func() (err error) {
-			defer errors.Recover(func(recErr error) { err = recErr })
-
-			stream, err := task.openStream(ctx, node.Address, connID, false)
-			if err != nil {
-				return err
-			}
-
-			if err := stream.ConnectTo(ctx, primaryNode.Key); err != nil {
-				return err
-			}
-			log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
-
+		select {
+		case <-connCtx.Done():
 			return nil
-		})
+		case <-time.After(connectToNextNodeDelay):
+			group.Go(func() (err error) {
+				defer errors.Recover(func(recErr error) { err = recErr })
+
+				stream, err := task.connectStream(ctx, node.Address, connID, false)
+				if err != nil {
+					return nil
+				}
+
+				if err := stream.ConnectTo(ctx, primaryNode.Key); err != nil {
+					return nil
+				}
+				log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
+
+				return nil
+			})
+		}
 
 	}
 
@@ -113,19 +134,16 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 
 }
 
-func (task *Task) openStream(ctx context.Context, address, connID string, isPrimary bool) (node.RegisterArtowrk, error) {
-	conn, err := task.nodeClient.Connect(ctx, address)
+func (task *Task) connectStream(ctx context.Context, address, connID string, isPrimary bool) (node.RegisterArtowrk, error) {
+	connCtx, _ := context.WithTimeout(ctx, connectToNodeTimeout)
+	conn, err := task.nodeClient.Connect(connCtx, address)
 	if err != nil {
 		return nil, err
 	}
 
 	go func() {
-		select {
-		case <-ctx.Done():
-			conn.Close()
-		case <-conn.Done():
-			// TODO Remove from the `nodes` list
-		}
+		<-ctx.Done()
+		conn.Close()
 	}()
 
 	stream, err := conn.RegisterArtowrk(ctx)

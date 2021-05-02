@@ -93,7 +93,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(db, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// api service
 	api := api.New(config.API,
