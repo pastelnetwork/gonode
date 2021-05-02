@@ -3,7 +3,7 @@
 // artworks HTTP server encoders and decoders
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package server
 
@@ -11,10 +11,10 @@ import (
 	"context"
 	"io"
 	"net/http"
-	"strconv"
+	"unicode/utf8"
 
-	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
-	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
+	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 )
@@ -101,21 +101,17 @@ func EncodeRegisterError(encoder func(context.Context, http.ResponseWriter) goah
 func DecodeRegisterTaskStateRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			taskID int
+			taskID string
 			err    error
 
 			params = mux.Vars(r)
 		)
-		{
-			taskIDRaw := params["taskId"]
-			v, err2 := strconv.ParseInt(taskIDRaw, 10, strconv.IntSize)
-			if err2 != nil {
-				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("taskID", taskIDRaw, "integer"))
-			}
-			taskID = int(v)
+		taskID = params["taskId"]
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
 		}
-		if taskID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("taskID", taskID, 1, true))
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
 		}
 		if err != nil {
 			return nil, err
@@ -183,21 +179,17 @@ func EncodeRegisterTaskResponse(encoder func(context.Context, http.ResponseWrite
 func DecodeRegisterTaskRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			taskID int
+			taskID string
 			err    error
 
 			params = mux.Vars(r)
 		)
-		{
-			taskIDRaw := params["taskId"]
-			v, err2 := strconv.ParseInt(taskIDRaw, 10, strconv.IntSize)
-			if err2 != nil {
-				err = goa.MergeErrors(err, goa.InvalidFieldTypeError("taskID", taskIDRaw, "integer"))
-			}
-			taskID = int(v)
+		taskID = params["taskId"]
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
 		}
-		if taskID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("taskID", taskID, 1, true))
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
 		}
 		if err != nil {
 			return nil, err

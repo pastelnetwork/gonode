@@ -1,5 +1,11 @@
 package state
 
+import (
+	"context"
+
+	"github.com/pastelnetwork/gonode/common/log"
+)
+
 // State represents a states of the registering process.
 type State struct {
 	msgs []*Message
@@ -20,10 +26,11 @@ func (states *State) Latest() *Message {
 }
 
 // Update updates the last states of the states by adding the message that contains properties of the current states.
-func (states *State) Update(msg *Message) {
+func (states *State) Update(ctx context.Context, msg *Message) {
 	for _, sub := range states.subs {
 		go sub.Pub(msg)
 	}
+	log.WithContext(ctx).WithField("status", msg.Status.String()).Debugf("State updated")
 	states.msgs = append(states.msgs, msg)
 }
 

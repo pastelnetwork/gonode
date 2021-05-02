@@ -3,7 +3,7 @@
 // artworks HTTP server
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package server
 
@@ -13,7 +13,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
+	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
 	"goa.design/plugins/v3/cors"

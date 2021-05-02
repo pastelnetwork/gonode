@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/walletnode/storage"
+	"github.com/pastelnetwork/gonode/walletnode/storage"
 )
 
 const logPrefix = "[memory]"

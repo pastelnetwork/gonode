@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	defaultSkipCallers = 5
+	defaultSkipCallers = 4
 )
 
 // Fields type, used to pass to `WithFields`.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -14,18 +15,38 @@ import (
 
 type client struct {
 	jsonrpc.RPCClient
+	extKey string
 }
 
+// func (client *client) TopMasterNodes(ctx context.Context) (MasterNodes, error) {
+// 	blocknumMNs := make(map[string]MasterNodes)
+// 	err := client.callFor(ctx, &blocknumMNs, "masternode", "top")
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	for _, masterNodes := range blocknumMNs {
+// 		return masterNodes, nil
+// 	}
+// 	return nil, nil
+// }
+
 func (client *client) TopMasterNodes(ctx context.Context) (MasterNodes, error) {
-	blocknumMNs := make(map[string]MasterNodes)
-	err := client.callFor(ctx, &blocknumMNs, "masternode", "top")
-	if err != nil {
-		return nil, err
+	var masterNodes MasterNodes
+
+	for i := 0; i < 10; i++ {
+		masterNodes = append(masterNodes, MasterNode{
+			Rank:       fmt.Sprintf("%d", i+1),
+			ExtAddress: fmt.Sprintf("127.0.0.1:%d", 4444+i),
+			ExtKey:     fmt.Sprintf("masternode-key-%d", i),
+		})
 	}
-	for _, masterNodes := range blocknumMNs {
-		return masterNodes, nil
-	}
-	return nil, nil
+	return masterNodes, nil
+}
+
+func (client *client) MyMasterNode(ctx context.Context) (*MasterNode, error) {
+	return &MasterNode{
+		ExtKey: client.extKey,
+	}, nil
 }
 
 func (client *client) Getblockchaininfo(ctx context.Context) (*BlockchainInfo, error) {
@@ -112,5 +133,6 @@ func NewClient(config *Config) Client {
 
 	return &client{
 		RPCClient: jsonrpc.NewClientWithOpts(endpoint, opts),
+		extKey:    config.ExtKey,
 	}
 }

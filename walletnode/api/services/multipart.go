@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
+	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 )
 
 const contentTypePrefix = "image/"

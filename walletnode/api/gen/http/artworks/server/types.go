@@ -3,15 +3,15 @@
 // artworks HTTP server types
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package server
 
 import (
 	"unicode/utf8"
 
-	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
-	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
+	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goa "goa.design/goa/v3/pkg"
 )
 
@@ -19,7 +19,7 @@ import (
 // endpoint HTTP request body.
 type RegisterRequestBody struct {
 	// Uploaded image ID
-	ImageID *int `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
+	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
 	// Name of the artwork
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// Description of the artwork
@@ -57,7 +57,7 @@ type UploadImageRequestBody struct {
 // endpoint HTTP response body.
 type RegisterResponseBody struct {
 	// Task ID of the registration process
-	TaskID int `form:"task_id" json:"task_id" xml:"task_id"`
+	TaskID string `form:"task_id" json:"task_id" xml:"task_id"`
 }
 
 // RegisterTaskStateResponseBody is the type of the "artworks" service
@@ -73,7 +73,7 @@ type RegisterTaskStateResponseBody struct {
 // "registerTask" endpoint HTTP response body.
 type RegisterTaskResponseBody struct {
 	// JOb ID of the registration process
-	ID int `form:"id" json:"id" xml:"id"`
+	ID string `form:"id" json:"id" xml:"id"`
 	// Status of the registration process
 	Status string `form:"status" json:"status" xml:"status"`
 	// List of states from the very beginning of the process
@@ -91,7 +91,7 @@ type TaskResponseTinyCollection []*TaskResponseTiny
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
 	// Uploaded image ID
-	ImageID int `form:"image_id" json:"image_id" xml:"image_id"`
+	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
 	// Image expiration
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 }
@@ -302,7 +302,7 @@ type ArtworkTicketResponseBody struct {
 // TaskResponseTiny is used to define fields on response body types.
 type TaskResponseTiny struct {
 	// JOb ID of the registration process
-	ID int `form:"id" json:"id" xml:"id"`
+	ID string `form:"id" json:"id" xml:"id"`
 	// Status of the registration process
 	Status string `form:"status" json:"status" xml:"status"`
 	// txid
@@ -548,7 +548,7 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 
 // NewRegisterTaskStatePayload builds a artworks service registerTaskState
 // endpoint payload.
-func NewRegisterTaskStatePayload(taskID int) *artworks.RegisterTaskStatePayload {
+func NewRegisterTaskStatePayload(taskID string) *artworks.RegisterTaskStatePayload {
 	v := &artworks.RegisterTaskStatePayload{}
 	v.TaskID = taskID
 
@@ -557,7 +557,7 @@ func NewRegisterTaskStatePayload(taskID int) *artworks.RegisterTaskStatePayload 
 
 // NewRegisterTaskPayload builds a artworks service registerTask endpoint
 // payload.
-func NewRegisterTaskPayload(taskID int) *artworks.RegisterTaskPayload {
+func NewRegisterTaskPayload(taskID string) *artworks.RegisterTaskPayload {
 	v := &artworks.RegisterTaskPayload{}
 	v.TaskID = taskID
 
@@ -601,8 +601,13 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("maximum_fee", "body"))
 	}
 	if body.ImageID != nil {
-		if *body.ImageID < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("body.image_id", *body.ImageID, 1, true))
+		if utf8.RuneCountInString(*body.ImageID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", *body.ImageID, utf8.RuneCountInString(*body.ImageID), 8, true))
+		}
+	}
+	if body.ImageID != nil {
+		if utf8.RuneCountInString(*body.ImageID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", *body.ImageID, utf8.RuneCountInString(*body.ImageID), 8, false))
 		}
 	}
 	if body.Name != nil {

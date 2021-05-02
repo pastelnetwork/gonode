@@ -1,10 +1,10 @@
 package hooks
 
 import (
+	"fmt"
 	"math"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log/formatters"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -44,7 +44,7 @@ func (hook *FileHook) SetMaxSize(maxSize int) {
 func (hook *FileHook) Fire(entry *logrus.Entry) error {
 	msg, err := hook.formatter.Format(entry)
 	if err != nil {
-		return errors.Errorf("failed to generate string for entry, %s", err)
+		return fmt.Errorf("failed to generate string for entry, %s", err)
 	}
 
 	_, err = hook.fileLogger.Write(msg)

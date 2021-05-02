@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/ioutil"
 
-	"github.com/pastelnetwork/gonode/pastel-client"
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -12,9 +11,11 @@ import (
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	"github.com/pastelnetwork/gonode/pastel-client"
 	"github.com/pastelnetwork/gonode/supernode/configs"
-	"github.com/pastelnetwork/gonode/supernode/server/grpc"
-	"github.com/pastelnetwork/gonode/supernode/server/grpc/services"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/supernode"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/supernode/storage/memory"
 )
@@ -85,15 +86,17 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastel := pastel.NewClient(config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel)
+	nodeClient := grpc.NewClient()
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, pastel)
+	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// server
 	grpc := grpc.NewServer(config.Server,
-		services.NewArtwork(artworkRegister),
+		walletnode.NewService(artworkRegister),
+		supernode.NewService(artworkRegister),
 	)
 
 	return runServices(ctx, artworkRegister, grpc)

@@ -1,9 +1,0 @@
-pastel:
-  hostname: "127.0.0.1"
-  port: 19932
-  username: "rt"
-  password: "rt"
-
-server:
-  listen_addresses: "127.0.0.1"
-  port: 4444
