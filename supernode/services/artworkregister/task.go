@@ -47,12 +47,14 @@ func (task *Task) Done() <-chan struct{} {
 	return task.doneCh
 }
 
-func (task *Task) Context(ctx context.Context) context.Context {
+func (task *Task) context(ctx context.Context) context.Context {
 	return context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, task.ID))
 }
 
 // Handshake is handshake wallet to supernode
 func (task *Task) Handshake(ctx context.Context, connID string, isPrimary bool) error {
+	ctx = task.context(ctx)
+
 	if err := task.requiredStatus(state.StatusTaskStarted); err != nil {
 		return err
 	}
@@ -71,6 +73,8 @@ func (task *Task) Handshake(ctx context.Context, connID string, isPrimary bool) 
 
 // PrimaryWaitSecondary waits for connections of the secondary nodes.
 func (task *Task) PrimaryWaitSecondary(ctx context.Context) (node.SuperNodes, error) {
+	ctx = task.context(ctx)
+
 	if err := task.requiredStatus(state.StatusHandshakePrimaryNode); err != nil {
 		return nil, err
 	}
@@ -87,8 +91,10 @@ func (task *Task) PrimaryWaitSecondary(ctx context.Context) (node.SuperNodes, er
 	}
 }
 
-// PrimaryAcceptSecondary accepts secondary node
-func (task *Task) PrimaryAcceptSecondary(ctx context.Context, nodeKey string) error {
+// SecondaryNodes accepts secondary node
+func (task *Task) SecondaryNodes(ctx context.Context, nodeKey string) error {
+	ctx = task.context(ctx)
+
 	task.acceptMu.Lock()
 	defer task.acceptMu.Unlock()
 
@@ -114,8 +120,10 @@ func (task *Task) PrimaryAcceptSecondary(ctx context.Context, nodeKey string) er
 	return nil
 }
 
-// SecondaryConnectToPrimary connects to primary node
-func (task *Task) SecondaryConnectToPrimary(ctx context.Context, nodeKey string) error {
+// ConnectToPrimary connects to primary node
+func (task *Task) ConnectToPrimary(ctx context.Context, nodeKey string) error {
+	ctx = task.context(ctx)
+
 	task.connectMu.Lock()
 	defer task.connectMu.Unlock()
 

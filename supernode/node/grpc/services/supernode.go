@@ -68,7 +68,7 @@ func (service *SuperNoder) RegisterArtowrk(stream pb.SuperNode_RegisterArtowrkSe
 					return errors.Errorf("connID %q not found", req.ConnID)
 				}
 
-				if err := task.PrimaryAcceptSecondary(task.Context(ctx), req.NodeKey); err != nil {
+				if err := task.SecondaryNodes(ctx, req.NodeKey); err != nil {
 					return err
 				}
 				defer task.Cancel()

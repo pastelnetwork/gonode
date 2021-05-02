@@ -13,17 +13,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type RegisterArtowrk struct {
-	conn *Connection
+type registerArtowrk struct {
+	conn *clientConn
 	pb.WalletNode_RegisterArtowrkClient
 
 	isClosed bool
 
-	recvCh chan interface{}
+	recvCh chan *pb.RegisterArtworkReply
 	errCh  chan error
 }
 
-func (stream *RegisterArtowrk) Handshake(ctx context.Context, connID string, IsPrimary bool) error {
+// Handshake implements node.RegisterArtowrk.Handshake()
+func (stream *registerArtowrk) Handshake(ctx context.Context, connID string, IsPrimary bool) error {
 	req := &pb.RegisterArtworkRequest{
 		Requests: &pb.RegisterArtworkRequest_Handshake{
 			Handshake: &pb.RegisterArtworkRequest_HandshakeRequest{
@@ -48,12 +49,13 @@ func (stream *RegisterArtowrk) Handshake(ctx context.Context, connID string, IsP
 	return nil
 }
 
-func (stream *RegisterArtowrk) PrimaryAcceptSecondary(ctx context.Context) (node.SuperNodes, error) {
+// SecondaryNodes implements node.RegisterArtowrk.SecondaryNodes()
+func (stream *registerArtowrk) SecondaryNodes(ctx context.Context) (node.SuperNodes, error) {
 	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_PrimaryAcceptSecondary{
-			PrimaryAcceptSecondary: &pb.RegisterArtworkRequest_PrimaryAcceptSecondaryRequest{},
+		Requests: &pb.RegisterArtworkRequest_SecondaryNodes{
+			SecondaryNodes: &pb.RegisterArtworkRequest_SecondaryNodesRequest{},
 		},
 	}
 
@@ -62,7 +64,7 @@ func (stream *RegisterArtowrk) PrimaryAcceptSecondary(ctx context.Context) (node
 		return nil, err
 	}
 
-	resp := res.GetPrimayAcceptSecondary()
+	resp := res.GetSecondaryNodes()
 	if resp == nil {
 		return nil, errors.Errorf("wrong response, %q", res.String())
 	}
@@ -79,12 +81,13 @@ func (stream *RegisterArtowrk) PrimaryAcceptSecondary(ctx context.Context) (node
 	return nodes, nil
 }
 
-func (stream *RegisterArtowrk) SecondaryConnectToPrimary(ctx context.Context, nodeKey string) error {
+// ConnectToPrimary implements node.RegisterArtowrk.ConnectToPrimary()
+func (stream *registerArtowrk) ConnectToPrimary(ctx context.Context, nodeKey string) error {
 	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_SecondaryConnectToPrimary{
-			SecondaryConnectToPrimary: &pb.RegisterArtworkRequest_SecondaryConnectToPrimaryRequest{
+		Requests: &pb.RegisterArtworkRequest_ConnectToPrimary{
+			ConnectToPrimary: &pb.RegisterArtworkRequest_ConnectToPrimaryRequest{
 				NodeKey: nodeKey,
 			},
 		},
@@ -95,7 +98,7 @@ func (stream *RegisterArtowrk) SecondaryConnectToPrimary(ctx context.Context, no
 		return err
 	}
 
-	resp := res.GetSecondaryConnectToPrimary()
+	resp := res.GetConnectToPrimary()
 	if resp == nil {
 		return errors.Errorf("wrong response, %q", res.String())
 	}
@@ -105,7 +108,7 @@ func (stream *RegisterArtowrk) SecondaryConnectToPrimary(ctx context.Context, no
 	return nil
 }
 
-func (stream *RegisterArtowrk) sendRecv(ctx context.Context, req *pb.RegisterArtworkRequest) (*pb.RegisterArtworkReply, error) {
+func (stream *registerArtowrk) sendRecv(ctx context.Context, req *pb.RegisterArtworkRequest) (*pb.RegisterArtworkReply, error) {
 	if err := stream.send(ctx, req); err != nil {
 		return nil, err
 	}
@@ -117,7 +120,7 @@ func (stream *RegisterArtowrk) sendRecv(ctx context.Context, req *pb.RegisterArt
 	return resp, nil
 }
 
-func (stream *RegisterArtowrk) send(ctx context.Context, req *pb.RegisterArtworkRequest) error {
+func (stream *registerArtowrk) send(ctx context.Context, req *pb.RegisterArtworkRequest) error {
 	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	if stream.isClosed {
@@ -125,8 +128,7 @@ func (stream *RegisterArtowrk) send(ctx context.Context, req *pb.RegisterArtwork
 	}
 
 	log.WithContext(ctx).WithField("req", req.String()).Debugf("Sending")
-
-	if err := stream.Send(req); err != nil {
+	if err := stream.SendMsg(req); err != nil {
 		switch status.Code(err) {
 		case codes.Canceled:
 			log.WithContext(ctx).WithError(err).Debugf("Sending canceled")
@@ -139,18 +141,18 @@ func (stream *RegisterArtowrk) send(ctx context.Context, req *pb.RegisterArtwork
 	return nil
 }
 
-func (stream *RegisterArtowrk) recv(ctx context.Context) (*pb.RegisterArtworkReply, error) {
+func (stream *registerArtowrk) recv(ctx context.Context) (*pb.RegisterArtworkReply, error) {
 	select {
 	case <-ctx.Done():
 		return nil, nil
 	case resp := <-stream.recvCh:
-		return resp.(*pb.RegisterArtworkReply), nil
+		return resp, nil
 	case err := <-stream.errCh:
 		return nil, err
 	}
 }
 
-func (stream *RegisterArtowrk) Start(ctx context.Context) error {
+func (stream *registerArtowrk) start(ctx context.Context) error {
 	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	go func() {
@@ -185,12 +187,12 @@ func (stream *RegisterArtowrk) Start(ctx context.Context) error {
 	return nil
 }
 
-func NewRegisterArtowrk(conn *Connection, stream pb.WalletNode_RegisterArtowrkClient) *RegisterArtowrk {
-	return &RegisterArtowrk{
+func newRegisterArtowrk(conn *clientConn, client pb.WalletNode_RegisterArtowrkClient) node.RegisterArtowrk {
+	return &registerArtowrk{
 		conn:                             conn,
-		WalletNode_RegisterArtowrkClient: stream,
+		WalletNode_RegisterArtowrkClient: client,
 
-		recvCh: make(chan interface{}),
+		recvCh: make(chan *pb.RegisterArtworkReply),
 		errCh:  make(chan error),
 	}
 }

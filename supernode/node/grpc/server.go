@@ -13,6 +13,10 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	logServerPrefix = "server"
+)
+
 type service interface {
 	Desc() *grpc.ServiceDesc
 }
@@ -25,7 +29,7 @@ type Server struct {
 
 // Run starts the server
 func (server *Server) Run(ctx context.Context) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
+	ctx = context.WithValue(ctx, log.PrefixKey, logServerPrefix)
 
 	group, ctx := errgroup.WithContext(ctx)
 

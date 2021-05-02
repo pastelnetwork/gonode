@@ -75,7 +75,7 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 	group.Go(func() (err error) {
 		defer errors.Recover(func(recErr error) { err = recErr })
 
-		nodes, err := stream.PrimaryAcceptSecondary(ctx)
+		nodes, err := stream.SecondaryNodes(ctx)
 		if err != nil {
 			cancel()
 			return err
@@ -99,7 +99,7 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 				return err
 			}
 
-			if err := stream.SecondaryConnectToPrimary(ctx, primaryNode.Key); err != nil {
+			if err := stream.ConnectToPrimary(ctx, primaryNode.Key); err != nil {
 				return err
 			}
 			log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
@@ -123,7 +123,7 @@ func (task *Task) openStream(ctx context.Context, address, connID string, isPrim
 		select {
 		case <-ctx.Done():
 			conn.Close()
-		case <-conn.Closed():
+		case <-conn.Done():
 			// TODO Remove from the `nodes` list
 		}
 	}()

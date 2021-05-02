@@ -45,7 +45,7 @@ func init() {
 func WithRequestID(ctx context.Context) context.Context {
 	reqID, _ := random.String(8, random.Base62Chars)
 	ctx = context.WithValue(ctx, RequestIDKey, reqID)
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("grpc-%s", reqID))
+	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("server-%s", reqID))
 
 	return ctx
 }
