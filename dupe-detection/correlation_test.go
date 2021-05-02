@@ -167,10 +167,12 @@ func TestCollerations(t *testing.T) {
 	fmt.Printf("\nNumber of inputs loaded: %v", len(inputs1))
 	differentsCount = 0
 	for i := range inputs1 {
-		result := compute_randomized_dependence_func(inputs1[i], inputs2[i])
-		if result != outputs[i] {
-			differentsCount++
-			t.Errorf("RDC Calculated correlation doesn't match the expected result (diff is %v):\n%v\n%v", math.Abs(result-outputs[i]), result, outputs[i])
+		for repeat := 0; repeat < 10; repeat++ {
+			result := compute_randomized_dependence_func(inputs1[i], inputs2[i])
+			if result != outputs[i] {
+				differentsCount++
+				t.Errorf("RDC Calculated correlation doesn't match the expected result (diff is %v):\n%v\n%v", math.Abs(result-outputs[i]), result, outputs[i])
+			}
 		}
 	}
 	fmt.Printf("\nRDC - Found calculation differences: %v from total number of %v with floating point accuracy %v", differentsCount, len(inputs1), kendallFloatingPointAccuracy)
