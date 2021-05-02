@@ -3,7 +3,6 @@ package grpc
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -23,7 +22,6 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	id, _ := random.String(8, random.Base62Chars)
 	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logClientPrefix, id))
 
-	ctx, _ = context.WithTimeout(ctx, time.Second*2)
 	grpcConn, err := grpc.DialContext(ctx, address,
 		grpc.WithInsecure(),
 		grpc.WithBlock(),

@@ -42,6 +42,7 @@ func init() {
 	}))
 }
 
+// WithRequestID returns a context with RequestID value.
 func WithRequestID(ctx context.Context) context.Context {
 	reqID, _ := random.String(8, random.Base62Chars)
 	ctx = context.WithValue(ctx, RequestIDKey, reqID)

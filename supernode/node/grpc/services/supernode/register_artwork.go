@@ -96,6 +96,7 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 				if err := stream.handshake(ctx, req); err != nil {
 					return err
 				}
+				defer stream.task.Cancel()
 
 			default:
 				return errors.New("unsupported call")

@@ -35,7 +35,7 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 
 	task := service.register.Task(p.TaskID)
 	if task == nil {
-		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
+		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
 	sub, err := task.State.Subscribe()
@@ -67,7 +67,7 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 func (service *Artwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
 	task := service.register.Task(p.TaskID)
 	if task == nil {
-		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
+		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
 	res = &artworks.Task{

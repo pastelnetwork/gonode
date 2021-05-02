@@ -47,26 +47,28 @@ func (task *Task) Run(ctx context.Context) error {
 }
 
 func (task *Task) run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	superNodes, err := task.findSuperNodes(ctx)
 	if err != nil {
 		return err
 	}
 	if len(superNodes) < task.config.NumberSuperNodes {
 		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
-		return errors.Errorf("not found enough available SuperNodes with acceptable storage fee", task.config.NumberSuperNodes)
+		return errors.New("not found enough available SuperNodes with acceptable storage fee")
 	}
 
-	secondaryNodes := make(node.SuperNodes, len(superNodes)-1)
+	ctx, connCancel := context.WithCancel(ctx)
+	defer connCancel()
+
 	for i, primaryNode := range superNodes {
+		secondaryNodes := make(node.SuperNodes, len(superNodes)-1)
 		copy(secondaryNodes, superNodes[:i])
 		copy(secondaryNodes[i:], superNodes[i+1:])
 
-		if err := task.connect(ctx, primaryNode, secondaryNodes); err == nil {
-			break
+		if err := task.connect(ctx, primaryNode, secondaryNodes); err != nil {
+			connCancel()
+			continue
 		}
+		break
 	}
 	task.State.Update(ctx, state.NewMessage(state.StatusConnected))
 
@@ -75,26 +77,28 @@ func (task *Task) run(ctx context.Context) error {
 	return nil
 }
 
+// connect establishes communication between all supernodes.
 func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, secondaryNodes node.SuperNodes) error {
-	ctx, cancel := context.WithCancel(ctx)
-
 	connID, _ := random.String(8, random.Base62Chars)
+
+	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
+	defer nextConnCancel()
+
 	stream, err := task.connectStream(ctx, primaryNode.Address, connID, true)
 	if err != nil {
 		return err
 	}
 
 	group, _ := errgroup.WithContext(ctx)
-	connCtx, connCancel := context.WithCancel(ctx)
-
 	group.Go(func() (err error) {
 		defer errors.Recover(func(recErr error) { err = recErr })
-		defer connCancel()
+		defer nextConnCancel()
 
-		acceptCtx, _ := context.WithTimeout(ctx, acceptNodesTimeout)
+		acceptCtx, acceptCancel := context.WithTimeout(ctx, acceptNodesTimeout)
+		defer acceptCancel()
+
 		nodes, err := stream.AcceptedNodes(acceptCtx)
 		if err != nil {
-			defer cancel()
 			return err
 		}
 
@@ -108,7 +112,7 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 		node := node
 
 		select {
-		case <-connCtx.Done():
+		case <-nextConnCtx.Done():
 			return nil
 		case <-time.After(connectToNextNodeDelay):
 			group.Go(func() (err error) {
@@ -129,21 +133,25 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 		}
 
 	}
-
 	return group.Wait()
-
 }
 
 func (task *Task) connectStream(ctx context.Context, address, connID string, isPrimary bool) (node.RegisterArtowrk, error) {
-	connCtx, _ := context.WithTimeout(ctx, connectToNodeTimeout)
+	connCtx, connCancel := context.WithTimeout(ctx, connectToNodeTimeout)
+	defer connCancel()
+
 	conn, err := task.nodeClient.Connect(connCtx, address)
 	if err != nil {
 		return nil, err
 	}
 
 	go func() {
-		<-ctx.Done()
-		conn.Close()
+		select {
+		case <-ctx.Done():
+			conn.Close()
+		case <-conn.Done():
+			// TODO: reject task
+		}
 	}()
 
 	stream, err := conn.RegisterArtowrk(ctx)

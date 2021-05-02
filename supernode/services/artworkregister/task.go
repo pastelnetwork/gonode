@@ -4,12 +4,17 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister/state"
+)
+
+const (
+	connectToNodeTimeout = time.Second * 1
 )
 
 // Task is the task of registering new artwork.
@@ -136,7 +141,10 @@ func (task *Task) ConnectTo(ctx context.Context, nodeKey string) error {
 		return err
 	}
 
-	conn, err := task.nodeClient.Connect(ctx, node.Address)
+	connCtx, connCancel := context.WithTimeout(ctx, connectToNodeTimeout)
+	defer connCancel()
+
+	conn, err := task.nodeClient.Connect(connCtx, node.Address)
 	if err != nil {
 		return err
 	}
