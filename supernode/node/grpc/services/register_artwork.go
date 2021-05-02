@@ -28,7 +28,7 @@ func (stream *registerArtowrk) handshake(ctx context.Context, req *pb.RegisterAr
 	resp := &pb.RegisterArtworkReply{
 		Replies: &pb.RegisterArtworkReply_Handshake{
 			Handshake: &pb.RegisterArtworkReply_HandshakeReply{
-				Error: stream.newNoError(),
+				Error: stream.newError(),
 			},
 		},
 	}
@@ -57,7 +57,7 @@ func (stream *registerArtowrk) secondaryNodes(ctx context.Context, req *pb.Regis
 		Replies: &pb.RegisterArtworkReply_SecondaryNodes{
 			SecondaryNodes: &pb.RegisterArtworkReply_SecondaryNodesReply{
 				Peers: peers,
-				Error: stream.newNoError(),
+				Error: stream.newError(),
 			},
 		},
 	}
@@ -77,7 +77,7 @@ func (stream *registerArtowrk) connectToPrimary(ctx context.Context, req *pb.Reg
 	resp := &pb.RegisterArtworkReply{
 		Replies: &pb.RegisterArtworkReply_ConnectToPrimary{
 			ConnectToPrimary: &pb.RegisterArtworkReply_ConnectToPrimaryReply{
-				Error: stream.newNoError(),
+				Error: stream.newError(),
 			},
 		},
 	}
@@ -89,7 +89,7 @@ func (stream *registerArtowrk) connectToPrimary(ctx context.Context, req *pb.Reg
 	return nil
 }
 
-func (stream *registerArtowrk) newNoError() *pb.RegisterArtworkReply_Error {
+func (stream *registerArtowrk) newError() *pb.RegisterArtworkReply_Error {
 	return &pb.RegisterArtworkReply_Error{
 		Status: pb.RegisterArtworkReply_Error_OK,
 	}

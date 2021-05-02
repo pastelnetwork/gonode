@@ -146,7 +146,7 @@ func (task *Task) ConnectToPrimary(ctx context.Context, nodeKey string) error {
 		case <-ctx.Done():
 			conn.Close()
 		case <-conn.Done():
-			// TODO Remove from the `nodes` list
+			task.Cancel()
 		}
 	}()
 
