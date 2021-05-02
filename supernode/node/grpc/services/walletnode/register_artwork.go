@@ -1,4 +1,4 @@
-package services
+package walletnode
 
 import (
 	"context"
@@ -40,22 +40,22 @@ func (stream *registerArtowrk) handshake(ctx context.Context, req *pb.RegisterAr
 	return nil
 }
 
-func (stream *registerArtowrk) secondaryNodes(ctx context.Context, req *pb.RegisterArtworkRequest_ConnectedNodesRequest) error {
-	nodes, err := stream.task.PrimaryWaitSecondary(ctx)
+func (stream *registerArtowrk) acceptedNodes(ctx context.Context, req *pb.RegisterArtworkRequest_AcceptedNodesRequest) error {
+	nodes, err := stream.task.AcceptedNodes(ctx)
 	if err != nil {
 		return err
 	}
 
-	var peers []*pb.RegisterArtworkReply_ConnectedNodesReply_Peer
+	var peers []*pb.RegisterArtworkReply_AcceptedNodesReply_Peer
 	for _, node := range nodes {
-		peers = append(peers, &pb.RegisterArtworkReply_ConnectedNodesReply_Peer{
+		peers = append(peers, &pb.RegisterArtworkReply_AcceptedNodesReply_Peer{
 			NodeKey: node.Key,
 		})
 	}
 
 	resp := &pb.RegisterArtworkReply{
-		Replies: &pb.RegisterArtworkReply_ConnectedNodes{
-			ConnectedNodes: &pb.RegisterArtworkReply_ConnectedNodesReply{
+		Replies: &pb.RegisterArtworkReply_AcceptedNodes{
+			AcceptedNodes: &pb.RegisterArtworkReply_AcceptedNodesReply{
 				Peers: peers,
 				Error: stream.newError(),
 			},
@@ -69,7 +69,7 @@ func (stream *registerArtowrk) secondaryNodes(ctx context.Context, req *pb.Regis
 	return nil
 }
 
-func (stream *registerArtowrk) connectToPrimary(ctx context.Context, req *pb.RegisterArtworkRequest_ConnectToRequest) error {
+func (stream *registerArtowrk) connectTo(ctx context.Context, req *pb.RegisterArtworkRequest_ConnectToRequest) error {
 	if err := stream.task.ConnectTo(ctx, req.NodeKey); err != nil {
 		return err
 	}
@@ -138,13 +138,13 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 					return err
 				}
 
-			case *pb.RegisterArtworkRequest_ConnectedNodes:
-				if err := stream.secondaryNodes(ctx, req.GetConnectedNodes()); err != nil {
+			case *pb.RegisterArtworkRequest_AcceptedNodes:
+				if err := stream.acceptedNodes(ctx, req.GetAcceptedNodes()); err != nil {
 					return err
 				}
 
 			case *pb.RegisterArtworkRequest_ConnectTo:
-				if err := stream.connectToPrimary(ctx, req.GetConnectTo()); err != nil {
+				if err := stream.connectTo(ctx, req.GetConnectTo()); err != nil {
 					return err
 				}
 

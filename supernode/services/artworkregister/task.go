@@ -71,28 +71,28 @@ func (task *Task) Handshake(ctx context.Context, connID string, isPrimary bool) 
 	return nil
 }
 
-// PrimaryWaitSecondary waits for connections of the secondary nodes.
-func (task *Task) PrimaryWaitSecondary(ctx context.Context) (node.SuperNodes, error) {
+// AcceptedNodes waits for connection supernodes, as soon as there is the required amount returns them.
+func (task *Task) AcceptedNodes(ctx context.Context) (node.SuperNodes, error) {
 	ctx = task.context(ctx)
 
 	if err := task.requiredStatus(state.StatusHandshakePrimaryNode); err != nil {
 		return nil, err
 	}
-	log.WithContext(ctx).Debugf("Waiting for secondary nodes to connect")
+	log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
 
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-task.State.Updated():
-		if err := task.requiredStatus(state.StatusAcceptedConnectedNodes); err != nil {
+		if err := task.requiredStatus(state.StatusAcceptedNodes); err != nil {
 			return nil, err
 		}
 		return task.nodes, nil
 	}
 }
 
-// ConnectedNodes accepts secondary node
-func (task *Task) ConnectedNodes(ctx context.Context, nodeKey string) error {
+// HandshakeNode accepts secondary node
+func (task *Task) HandshakeNode(ctx context.Context, nodeKey string) error {
 	ctx = task.context(ctx)
 
 	task.acceptMu.Lock()
@@ -115,7 +115,7 @@ func (task *Task) ConnectedNodes(ctx context.Context, nodeKey string) error {
 	log.WithContext(ctx).WithField("nodeKey", nodeKey).Debugf("Accept secondary node")
 
 	if len(task.nodes) >= task.config.NumberConnectedNodes {
-		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedConnectedNodes))
+		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedNodes))
 	}
 	return nil
 }
@@ -159,7 +159,7 @@ func (task *Task) ConnectTo(ctx context.Context, nodeKey string) error {
 		return err
 	}
 
-	task.State.Update(ctx, state.NewStatus(state.StatusConnectedToPrimaryNode))
+	task.State.Update(ctx, state.NewStatus(state.StatusConnectedToNode))
 	return nil
 }
 

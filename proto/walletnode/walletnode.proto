@@ -13,7 +13,7 @@ message RegisterArtworkRequest {
         string connID = 1;
         bool is_primary = 2;
     }
-    message ConnectedNodesRequest {
+    message AcceptedNodesRequest {
     }
     message ConnectToRequest {
         string node_key = 1;
@@ -32,7 +32,7 @@ message RegisterArtworkRequest {
 
     oneof requests {
         HandshakeRequest handshake = 1;
-        ConnectedNodesRequest connected_nodes = 2;
+        AcceptedNodesRequest accepted_nodes = 2;
         ConnectToRequest connect_to = 3;
         UploadImageRequest upload_image = 4;
         SendTicketRequest send_ticket = 5;
@@ -51,7 +51,7 @@ message RegisterArtworkReply {
     message HandshakeReply {
         Error error = 1;
     }
-    message ConnectedNodesReply {
+    message AcceptedNodesReply {
         message Peer {
             string node_key = 1;
         }
@@ -72,7 +72,7 @@ message RegisterArtworkReply {
 
     oneof replies {
         HandshakeReply handshake = 1;
-        ConnectedNodesReply connected_nodes = 2;
+        AcceptedNodesReply accepted_nodes = 2;
         ConnectToReply connect_to = 3;
         UploadImageReply upload_image = 4;
         SendTicketReply send_ticket = 5;

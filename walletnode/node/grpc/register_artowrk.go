@@ -49,13 +49,13 @@ func (stream *registerArtowrk) Handshake(ctx context.Context, connID string, IsP
 	return nil
 }
 
-// ConnectedNodes implements node.RegisterArtowrk.ConnectedNodes()
-func (stream *registerArtowrk) ConnectedNodes(ctx context.Context) (node.SuperNodes, error) {
+// AcceptedNodes implements node.RegisterArtowrk.AcceptedNodes()
+func (stream *registerArtowrk) AcceptedNodes(ctx context.Context) (node.SuperNodes, error) {
 	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_ConnectedNodes{
-			ConnectedNodes: &pb.RegisterArtworkRequest_ConnectedNodesRequest{},
+		Requests: &pb.RegisterArtworkRequest_AcceptedNodes{
+			AcceptedNodes: &pb.RegisterArtworkRequest_AcceptedNodesRequest{},
 		},
 	}
 
@@ -64,7 +64,7 @@ func (stream *registerArtowrk) ConnectedNodes(ctx context.Context) (node.SuperNo
 		return nil, err
 	}
 
-	resp := res.GetConnectedNodes()
+	resp := res.GetAcceptedNodes()
 	if resp == nil {
 		return nil, errors.Errorf("wrong response, %q", res.String())
 	}

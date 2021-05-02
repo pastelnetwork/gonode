@@ -14,7 +14,8 @@ import (
 	"github.com/pastelnetwork/gonode/pastel-client"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/services"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/supernode"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/supernode/storage/memory"
 )
@@ -94,8 +95,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// server
 	grpc := grpc.NewServer(config.Server,
-		services.NewWalletNode(artworkRegister),
-		services.NewSuperNode(artworkRegister),
+		walletnode.NewService(artworkRegister),
+		supernode.NewService(artworkRegister),
 	)
 
 	return runServices(ctx, artworkRegister, grpc)

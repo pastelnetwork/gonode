@@ -24,8 +24,8 @@ type Connection interface {
 type RegisterArtowrk interface {
 	// Handshake sets up an initial connection with supernode, by telling connection id and supernode mode, primary or secondary.
 	Handshake(ctx context.Context, connID string, IsPrimary bool) error
-	// ConnectedNodes requests information about connected secondary nodes.
-	ConnectedNodes(ctx context.Context) (SuperNodes, error)
+	// AcceptedNodes requests information about connected secondary nodes.
+	AcceptedNodes(ctx context.Context) (SuperNodes, error)
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
 	ConnectTo(ctx context.Context, nodeKey string) error
 }

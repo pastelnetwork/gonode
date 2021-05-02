@@ -75,7 +75,7 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 	group.Go(func() (err error) {
 		defer errors.Recover(func(recErr error) { err = recErr })
 
-		nodes, err := stream.ConnectedNodes(ctx)
+		nodes, err := stream.AcceptedNodes(ctx)
 		if err != nil {
 			cancel()
 			return err
