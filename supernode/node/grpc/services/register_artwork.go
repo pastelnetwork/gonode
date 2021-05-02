@@ -40,22 +40,22 @@ func (stream *registerArtowrk) handshake(ctx context.Context, req *pb.RegisterAr
 	return nil
 }
 
-func (stream *registerArtowrk) secondaryNodes(ctx context.Context, req *pb.RegisterArtworkRequest_SecondaryNodesRequest) error {
+func (stream *registerArtowrk) secondaryNodes(ctx context.Context, req *pb.RegisterArtworkRequest_ConnectedNodesRequest) error {
 	nodes, err := stream.task.PrimaryWaitSecondary(ctx)
 	if err != nil {
 		return err
 	}
 
-	var peers []*pb.RegisterArtworkReply_SecondaryNodesReply_Peer
+	var peers []*pb.RegisterArtworkReply_ConnectedNodesReply_Peer
 	for _, node := range nodes {
-		peers = append(peers, &pb.RegisterArtworkReply_SecondaryNodesReply_Peer{
+		peers = append(peers, &pb.RegisterArtworkReply_ConnectedNodesReply_Peer{
 			NodeKey: node.Key,
 		})
 	}
 
 	resp := &pb.RegisterArtworkReply{
-		Replies: &pb.RegisterArtworkReply_SecondaryNodes{
-			SecondaryNodes: &pb.RegisterArtworkReply_SecondaryNodesReply{
+		Replies: &pb.RegisterArtworkReply_ConnectedNodes{
+			ConnectedNodes: &pb.RegisterArtworkReply_ConnectedNodesReply{
 				Peers: peers,
 				Error: stream.newError(),
 			},
@@ -69,14 +69,14 @@ func (stream *registerArtowrk) secondaryNodes(ctx context.Context, req *pb.Regis
 	return nil
 }
 
-func (stream *registerArtowrk) connectToPrimary(ctx context.Context, req *pb.RegisterArtworkRequest_ConnectToPrimaryRequest) error {
-	if err := stream.task.ConnectToPrimary(ctx, req.NodeKey); err != nil {
+func (stream *registerArtowrk) connectToPrimary(ctx context.Context, req *pb.RegisterArtworkRequest_ConnectToRequest) error {
+	if err := stream.task.ConnectTo(ctx, req.NodeKey); err != nil {
 		return err
 	}
 
 	resp := &pb.RegisterArtworkReply{
-		Replies: &pb.RegisterArtworkReply_ConnectToPrimary{
-			ConnectToPrimary: &pb.RegisterArtworkReply_ConnectToPrimaryReply{
+		Replies: &pb.RegisterArtworkReply_ConnectTo{
+			ConnectTo: &pb.RegisterArtworkReply_ConnectToReply{
 				Error: stream.newError(),
 			},
 		},
@@ -138,13 +138,13 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 					return err
 				}
 
-			case *pb.RegisterArtworkRequest_SecondaryNodes:
-				if err := stream.secondaryNodes(ctx, req.GetSecondaryNodes()); err != nil {
+			case *pb.RegisterArtworkRequest_ConnectedNodes:
+				if err := stream.secondaryNodes(ctx, req.GetConnectedNodes()); err != nil {
 					return err
 				}
 
-			case *pb.RegisterArtworkRequest_ConnectToPrimary:
-				if err := stream.connectToPrimary(ctx, req.GetConnectToPrimary()); err != nil {
+			case *pb.RegisterArtworkRequest_ConnectTo:
+				if err := stream.connectToPrimary(ctx, req.GetConnectTo()); err != nil {
 					return err
 				}
 

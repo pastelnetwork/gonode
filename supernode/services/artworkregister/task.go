@@ -84,15 +84,15 @@ func (task *Task) PrimaryWaitSecondary(ctx context.Context) (node.SuperNodes, er
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-task.State.Updated():
-		if err := task.requiredStatus(state.StatusAcceptedSecondaryNodes); err != nil {
+		if err := task.requiredStatus(state.StatusAcceptedConnectedNodes); err != nil {
 			return nil, err
 		}
 		return task.nodes, nil
 	}
 }
 
-// SecondaryNodes accepts secondary node
-func (task *Task) SecondaryNodes(ctx context.Context, nodeKey string) error {
+// ConnectedNodes accepts secondary node
+func (task *Task) ConnectedNodes(ctx context.Context, nodeKey string) error {
 	ctx = task.context(ctx)
 
 	task.acceptMu.Lock()
@@ -114,14 +114,14 @@ func (task *Task) SecondaryNodes(ctx context.Context, nodeKey string) error {
 
 	log.WithContext(ctx).WithField("nodeKey", nodeKey).Debugf("Accept secondary node")
 
-	if len(task.nodes) >= task.config.NumberSecondaryNodes {
-		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedSecondaryNodes))
+	if len(task.nodes) >= task.config.NumberConnectedNodes {
+		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedConnectedNodes))
 	}
 	return nil
 }
 
-// ConnectToPrimary connects to primary node
-func (task *Task) ConnectToPrimary(ctx context.Context, nodeKey string) error {
+// ConnectTo connects to primary node
+func (task *Task) ConnectTo(ctx context.Context, nodeKey string) error {
 	ctx = task.context(ctx)
 
 	task.connectMu.Lock()

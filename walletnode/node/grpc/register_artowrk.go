@@ -49,13 +49,13 @@ func (stream *registerArtowrk) Handshake(ctx context.Context, connID string, IsP
 	return nil
 }
 
-// SecondaryNodes implements node.RegisterArtowrk.SecondaryNodes()
-func (stream *registerArtowrk) SecondaryNodes(ctx context.Context) (node.SuperNodes, error) {
+// ConnectedNodes implements node.RegisterArtowrk.ConnectedNodes()
+func (stream *registerArtowrk) ConnectedNodes(ctx context.Context) (node.SuperNodes, error) {
 	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_SecondaryNodes{
-			SecondaryNodes: &pb.RegisterArtworkRequest_SecondaryNodesRequest{},
+		Requests: &pb.RegisterArtworkRequest_ConnectedNodes{
+			ConnectedNodes: &pb.RegisterArtworkRequest_ConnectedNodesRequest{},
 		},
 	}
 
@@ -64,7 +64,7 @@ func (stream *registerArtowrk) SecondaryNodes(ctx context.Context) (node.SuperNo
 		return nil, err
 	}
 
-	resp := res.GetSecondaryNodes()
+	resp := res.GetConnectedNodes()
 	if resp == nil {
 		return nil, errors.Errorf("wrong response, %q", res.String())
 	}
@@ -81,13 +81,13 @@ func (stream *registerArtowrk) SecondaryNodes(ctx context.Context) (node.SuperNo
 	return nodes, nil
 }
 
-// ConnectToPrimary implements node.RegisterArtowrk.ConnectToPrimary()
-func (stream *registerArtowrk) ConnectToPrimary(ctx context.Context, nodeKey string) error {
+// ConnectTo implements node.RegisterArtowrk.ConnectTo()
+func (stream *registerArtowrk) ConnectTo(ctx context.Context, nodeKey string) error {
 	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_ConnectToPrimary{
-			ConnectToPrimary: &pb.RegisterArtworkRequest_ConnectToPrimaryRequest{
+		Requests: &pb.RegisterArtworkRequest_ConnectTo{
+			ConnectTo: &pb.RegisterArtworkRequest_ConnectToRequest{
 				NodeKey: nodeKey,
 			},
 		},
@@ -98,7 +98,7 @@ func (stream *registerArtowrk) ConnectToPrimary(ctx context.Context, nodeKey str
 		return err
 	}
 
-	resp := res.GetConnectToPrimary()
+	resp := res.GetConnectTo()
 	if resp == nil {
 		return errors.Errorf("wrong response, %q", res.String())
 	}
