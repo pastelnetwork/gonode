@@ -1,0 +1,131 @@
+version: 2.1
+
+defaults: &defaults
+  parameters:
+    version:
+      type: string
+      default: "latest"
+  docker:
+    - image: "circleci/golang:<< parameters.version >>"
+  environment:
+    GO111MODULE: "on"
+
+commands:
+  test:
+    parameters:
+      package:
+        type: string
+    steps:
+      - run:
+          name: "<< parameters.package >>: Fetch dependencies"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            go get -v ./...
+      - run:
+          name: "<< parameters.package >>: Run gofmt"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            diff -u <(echo -n) <(gofmt -d -e .)
+      - run:
+          name: "<< parameters.package >>: Run go vet"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            go vet -v ./...
+      - run:
+          name: "<< parameters.package >>: Run revive"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            revive ./...
+      - run:
+          name: "<< parameters.package >>: Run go test (+ race detector)"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            go test -v -race ./...
+
+  release-os:
+    parameters:
+      package:
+        type: string
+      goos:
+        type: string
+    steps:
+      - run:
+          name: "<< parameters.package >>: Build binary for << parameters.goos >>"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            CGO_ENABLED=0 GOOS=<< parameters.goos >> GOARCH=amd64 go build -o bin/<< parameters.package >>-<< parameters.goos >>-amd64 -ldflags "-X github.com/pastelnetwork/gonode/common/version.version=$CIRCLE_TAG -extldflags '-static'" .
+      - run:
+          name: "<< parameters.package >>: Upload << parameters.package >>-<< parameters.goos >>-amd64 to GitHub"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            github-release upload --user pastelnetwork --repo gonode --tag $CIRCLE_TAG --name << parameters.package >>-<< parameters.goos >>-amd64 --file bin/<< parameters.package >>-<< parameters.goos >>-amd64
+  release:
+    parameters:
+      package:
+        type: string
+    steps:
+      - release-os:
+          package: << parameters.package >>
+          goos: "darwin"
+      - release-os:
+          package: << parameters.package >>
+          goos: "linux"
+      - release-os:
+          package: << parameters.package >>
+          goos: "windows"
+
+jobs:
+  # Run automated tests
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: Print the go version
+          command: |
+            go version
+      - run:
+          name: Install revive
+          command: |
+            GO111MODULE=off go get -u github.com/mgechev/revive
+      - test:
+          package: "common"
+      - test:
+          package: "pastel-client"
+      - test:
+          package: "proto"
+      - test:
+          package: "walletnode"
+      - test:
+          package: "supernode"
+
+  # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
+  release:
+    <<: *defaults
+    steps:
+      - checkout
+      - run:
+          name: Fetch dependencies
+          command: |
+            go get -v ./...
+            go get github.com/github-release/github-release
+      - release:
+          package: "walletnode"
+      - release:
+          package: "supernode"
+
+workflows:
+  build-and-test:
+    jobs:
+      - test:
+          filters:
+            tags:
+              only: /^v.*/
+      - release:
+          requires:
+            - test
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^v.*/
