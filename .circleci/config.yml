@@ -19,7 +19,7 @@ commands:
     steps:
       - persist_to_workspace:
           root: /root/project
-          paths: ~/<< parameters.module >>
+          paths: << parameters.module >>
       - run:
           name: Fetch dependencies
           command: |
