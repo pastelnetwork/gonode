@@ -17,9 +17,7 @@ commands:
       module:
         type: string
     steps:
-      - persist_to_workspace:
-          root: /home/circleci/project
-          paths: << parameters.module >>
+      - working_directory: ~/<< parameters.module >>
       - run:
           name: Fetch dependencies
           command: |
