@@ -3,7 +3,7 @@
 // artworks HTTP client encoders and decoders
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package client
 
@@ -15,8 +15,8 @@ import (
 	"net/http"
 	"net/url"
 
-	artworks "github.com/pastelnetwork/walletnode/api/gen/artworks"
-	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
+	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goahttp "goa.design/goa/v3/http"
 )
 
@@ -129,7 +129,7 @@ func DecodeRegisterResponse(decoder func(*http.Response) goahttp.Decoder, restor
 // and path set to call the "artworks" service "registerTaskState" endpoint
 func (c *Client) BuildRegisterTaskStateRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
-		taskID int
+		taskID string
 	)
 	{
 		p, ok := v.(*artworks.RegisterTaskStatePayload)
@@ -233,7 +233,7 @@ func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decode
 // path set to call the "artworks" service "registerTask" endpoint
 func (c *Client) BuildRegisterTaskRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
-		taskID int
+		taskID string
 	)
 	{
 		p, ok := v.(*artworks.RegisterTaskPayload)

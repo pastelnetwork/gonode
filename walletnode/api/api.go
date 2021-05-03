@@ -1,4 +1,4 @@
-//go:generate goa gen github.com/pastelnetwork/walletnode/api/design
+//go:generate goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package api
 
@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/pastelnetwork/walletnode/api/docs"
-	"github.com/pastelnetwork/walletnode/api/log"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/walletnode/api/docs"
 
 	goahttp "goa.design/goa/v3/http"
 	goahttpmiddleware "goa.design/goa/v3/http/middleware"
@@ -19,10 +19,11 @@ import (
 
 const (
 	defaultShutdownTimeout = time.Second * 30
+	logPrefix              = "api"
 )
 
 type service interface {
-	Mount(mux goahttp.Muxer) goahttp.Server
+	Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server
 }
 
 // API represents RESTAPI service.
@@ -34,9 +35,11 @@ type API struct {
 
 // Run startworks RESTAPI service.
 func (api *API) Run(ctx context.Context) error {
+	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
+
 	addr := net.JoinHostPort(api.config.Hostname, strconv.Itoa(api.config.Port))
 
-	apiHTTP := api.handler()
+	apiHTTP := api.handler(ctx)
 
 	mux := http.NewServeMux()
 	mux.Handle("/", apiHTTP)
@@ -50,13 +53,13 @@ func (api *API) Run(ctx context.Context) error {
 
 	errCh := make(chan error)
 	go func() {
-		log.Infof("Server listening on %q", addr)
+		log.WithContext(ctx).Infof("Server listening on %q", addr)
 		errCh <- srv.ListenAndServe()
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Infof("Shutting down server at %q", addr)
+		log.WithContext(ctx).Infof("Shutting down server at %q", addr)
 	case err := <-errCh:
 		return err
 	}
@@ -69,18 +72,18 @@ func (api *API) Run(ctx context.Context) error {
 	return err
 }
 
-func (api *API) handler() http.Handler {
+func (api *API) handler(ctx context.Context) http.Handler {
 	mux := goahttp.NewMuxer()
 
 	var servers goahttp.Servers
 	for _, service := range api.services {
-		servers = append(servers, service.Mount(mux))
+		servers = append(servers, service.Mount(ctx, mux))
 	}
 	servers.Use(goahttpmiddleware.Debug(mux, os.Stdout))
 
 	var handler http.Handler = mux
 
-	handler = log.Log()(handler)
+	handler = Log(ctx)(handler)
 	handler = goahttpmiddleware.RequestID()(handler)
 
 	return handler

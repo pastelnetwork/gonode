@@ -18,7 +18,7 @@ func runServices(ctx context.Context, services ...service) error {
 		service := service
 
 		group.Go(func() (err error) {
-			defer errors.Recover(func(rec error) { err = rec })
+			defer errors.Recover(func(recErr error) { err = recErr })
 			return service.Run(ctx)
 		})
 	}

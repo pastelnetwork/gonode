@@ -12,11 +12,12 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel-client"
-	"github.com/pastelnetwork/walletnode/api"
-	"github.com/pastelnetwork/walletnode/api/services"
-	"github.com/pastelnetwork/walletnode/configs"
-	"github.com/pastelnetwork/walletnode/services/artworkregister"
-	"github.com/pastelnetwork/walletnode/storage/memory"
+	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/api/services"
+	"github.com/pastelnetwork/gonode/walletnode/configs"
+	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/walletnode/storage/memory"
 )
 
 const (
@@ -87,17 +88,20 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastel := pastel.NewClient(config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel)
+	nodeClient := grpc.NewClient()
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(db, pastel)
+	artworkRegisterService := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
+
+	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 200}) }()
 
 	// api service
 	api := api.New(config.API,
-		services.NewArtwork(artworkRegister),
+		services.NewArtwork(artworkRegisterService),
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, artworkRegister, api)
+	return runServices(ctx, artworkRegisterService, api)
 }

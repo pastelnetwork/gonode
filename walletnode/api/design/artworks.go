@@ -3,7 +3,7 @@ package design
 import (
 	"time"
 
-	"github.com/pastelnetwork/walletnode/services/artworkregister/state"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 
 	//revive:disable:dot-imports
 	. "goa.design/goa/v3/dsl"
@@ -30,10 +30,11 @@ var _ = Service("artworks", func() {
 
 		Payload(func() {
 			Extend(ArtworkTicket)
-			Attribute("image_id", Int, func() {
+			Attribute("image_id", String, func() {
 				Description("Uploaded image ID")
-				Minimum(1)
-				Example(1)
+				MinLength(8)
+				MaxLength(8)
+				Example("VK7mpAqZ")
 			})
 			Required("image_id")
 		})
@@ -201,9 +202,11 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 var ArtworkRegisterResult = ResultType("application/vnd.artwork.register", func() {
 	TypeName("RegisterResult")
 	Attributes(func() {
-		Attribute("task_id", Int, func() {
+		Attribute("task_id", String, func() {
 			Description("Task ID of the registration process")
-			Example(5)
+			MinLength(8)
+			MaxLength(8)
+			Example("n6Qn6TFM")
 		})
 	})
 	Required("task_id")
@@ -213,9 +216,11 @@ var ArtworkRegisterResult = ResultType("application/vnd.artwork.register", func(
 var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.task", func() {
 	TypeName("Task")
 	Attributes(func() {
-		Attribute("id", Int, func() {
+		Attribute("id", String, func() {
 			Description("JOb ID of the registration process")
-			Example(5)
+			MinLength(8)
+			MaxLength(8)
+			Example("n6Qn6TFM")
 		})
 		Attribute("status", String, func() {
 			Description("Status of the registration process")
@@ -272,9 +277,11 @@ var ImageUploadPayload = Type("ImageUploadPayload", func() {
 var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func() {
 	TypeName("Image")
 	Attributes(func() {
-		Attribute("image_id", Int, func() {
+		Attribute("image_id", String, func() {
 			Description("Uploaded image ID")
-			Example(1)
+			MinLength(8)
+			MaxLength(8)
+			Example("VK7mpAqZ")
 		})
 		Attribute("expires_in", String, func() {
 			Description("Image expiration")
@@ -287,10 +294,11 @@ var ImageUploadResult = ResultType("application/vnd.artwork.upload-image", func(
 
 // RegisterTaskPayload represents a payload for returning task.
 var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
-	Attribute("taskId", Int, "Task ID of the registration process", func() {
+	Attribute("taskId", String, "Task ID of the registration process", func() {
 		TypeName("taskID")
-		Minimum(1)
-		Example(5)
+		MinLength(8)
+		MaxLength(8)
+		Example("n6Qn6TFM")
 	})
 	Required("taskId")
 })

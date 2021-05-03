@@ -15,12 +15,10 @@ require (
 	github.com/gonum/internal v0.0.0-20181124074243-f884aa714029 // indirect
 	github.com/gonum/lapack v0.0.0-20181123203213-e4cdc5a0bff9 // indirect
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
-	github.com/google/pprof v0.0.0-20210423192551-a2663126120b // indirect
-	github.com/ianlancetaylor/demangle v0.0.0-20210406231658-61c622dd7d50 // indirect
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/montanaflynn/stats v0.6.5
 	github.com/pastelnetwork/gonode/common v0.0.0
-	github.com/pkg/profile v1.5.0 // indirect
+	github.com/pkg/profile v1.5.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
 	gonum.org/v1/gonum v0.9.1

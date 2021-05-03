@@ -78,8 +78,9 @@ paths:
         in: path
         description: Task ID of the registration process
         required: true
-        type: integer
-        minimum: 1
+        type: string
+        maxLength: 8
+        minLength: 8
       responses:
         "200":
           description: OK response.
@@ -107,8 +108,9 @@ paths:
         in: path
         description: Task ID of the registration process
         required: true
-        type: integer
-        minimum: 1
+        type: string
+        maxLength: 8
+        minLength: 8
       responses:
         "101":
           description: Switching Protocols response.
@@ -475,10 +477,11 @@ definitions:
           portrait of a seated woman set against an imaginary landscape.
         maxLength: 1024
       image_id:
-        type: integer
+        type: string
         description: Uploaded image ID
-        example: 1
-        minimum: 1
+        example: VK7mpAqZ
+        minLength: 8
+        maxLength: 8
       issued_copies:
         type: integer
         description: Number of copies issued
@@ -527,7 +530,7 @@ definitions:
       description: The Mona Lisa is an oil painting by Italian artist, inventor, and
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
-      image_id: 1
+      image_id: VK7mpAqZ
       issued_copies: 1
       keywords: Renaissance, sfumato, portrait
       maximum_fee: 100
@@ -549,13 +552,14 @@ definitions:
     type: object
     properties:
       task_id:
-        type: integer
+        type: string
         description: Task ID of the registration process
-        example: 5
-        format: int64
+        example: n6Qn6TFM
+        minLength: 8
+        maxLength: 8
     description: RegisterResponseBody result type (default view)
     example:
-      task_id: 5
+      task_id: n6Qn6TFM
     required:
     - task_id
   ArtworksRegisterTaskInternalServerErrorResponseBody:
@@ -654,10 +658,11 @@ definitions:
     type: object
     properties:
       id:
-        type: integer
+        type: string
         description: JOb ID of the registration process
-        example: 5
-        format: int64
+        example: n6Qn6TFM
+        minLength: 8
+        maxLength: 8
       states:
         type: array
         items:
@@ -691,7 +696,7 @@ definitions:
         maxLength: 64
     description: RegisterTaskResponseBody result type (default view)
     example:
-      id: 5
+      id: n6Qn6TFM
       states:
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
@@ -895,7 +900,7 @@ definitions:
     description: ArtworksTaskResponseTinyCollection is the result type for an array
       of TaskResponseTiny (default view)
     example:
-    - id: 5
+    - id: n6Qn6TFM
       states:
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
@@ -920,7 +925,7 @@ definitions:
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-    - id: 5
+    - id: n6Qn6TFM
       states:
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
@@ -945,7 +950,7 @@ definitions:
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-    - id: 5
+    - id: n6Qn6TFM
       states:
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
@@ -1154,14 +1159,15 @@ definitions:
         example: 2006-01-02T15:04:05Z07:00
         format: date-time
       image_id:
-        type: integer
+        type: string
         description: Uploaded image ID
-        example: 1
-        format: int64
+        example: VK7mpAqZ
+        minLength: 8
+        maxLength: 8
     description: UploadImageResponseBody result type (default view)
     example:
       expires_in: 2006-01-02T15:04:05Z07:00
-      image_id: 1
+      image_id: VK7mpAqZ
     required:
     - image_id
     - expires_in
@@ -1170,10 +1176,11 @@ definitions:
     type: object
     properties:
       id:
-        type: integer
+        type: string
         description: JOb ID of the registration process
-        example: 5
-        format: int64
+        example: n6Qn6TFM
+        minLength: 8
+        maxLength: 8
       status:
         type: string
         description: Status of the registration process
@@ -1197,7 +1204,7 @@ definitions:
         maxLength: 64
     description: TaskResponse result type (tiny view) (default view)
     example:
-      id: 5
+      id: n6Qn6TFM
       status: Task Started
       ticket:
         artist_name: Leonardo da Vinci

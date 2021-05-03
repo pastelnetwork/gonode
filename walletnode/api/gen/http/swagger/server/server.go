@@ -3,7 +3,7 @@
 // swagger HTTP server
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package server
 
@@ -11,7 +11,7 @@ import (
 	"context"
 	"net/http"
 
-	swagger "github.com/pastelnetwork/walletnode/api/gen/swagger"
+	swagger "github.com/pastelnetwork/gonode/walletnode/api/gen/swagger"
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/plugins/v3/cors"
 )

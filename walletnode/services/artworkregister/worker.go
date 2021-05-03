@@ -31,7 +31,7 @@ func (worker *Worker) Run(ctx context.Context) error {
 
 		case task := <-worker.taskCh:
 			group.Go(func() (err error) {
-				defer errors.Recover(func(rec error) { err = rec })
+				defer errors.Recover(func(recErr error) { err = recErr })
 				return task.Run(ctx)
 			})
 		}

@@ -2,29 +2,25 @@ package services
 
 import (
 	"context"
-	"strconv"
-	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/walletnode/api/log"
-	"github.com/pastelnetwork/walletnode/services/artworkregister"
-	"github.com/pastelnetwork/walletnode/storage"
-	"github.com/pastelnetwork/walletnode/storage/memory"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/random"
+	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/walletnode/storage"
+	"github.com/pastelnetwork/gonode/walletnode/storage/memory"
 
-	"github.com/pastelnetwork/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/walletnode/api/gen/http/artworks/server"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
 
 	goahttp "goa.design/goa/v3/http"
 )
 
 const (
 	imageTTL = time.Second * 3600 // 1 hour
-)
-
-var (
-	imageID uint32
 )
 
 // Artwork represents services for artworks endpoints.
@@ -39,7 +35,7 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 
 	task := service.register.Task(p.TaskID)
 	if task == nil {
-		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
+		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
 	sub, err := task.State.Subscribe()
@@ -71,7 +67,7 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 func (service *Artwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
 	task := service.register.Task(p.TaskID)
 	if task == nil {
-		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %d", p.TaskID))
+		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
 	res = &artworks.Task{
@@ -100,8 +96,7 @@ func (service *Artwork) RegisterTasks(ctx context.Context) (res artworks.TaskCol
 func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	ticket := fromRegisterPayload(p)
 
-	key := strconv.Itoa(p.ImageID)
-	ticket.Image, err = service.storage.Get(key)
+	ticket.Image, err = service.storage.Get(p.ImageID)
 	if err == storage.ErrKeyNotFound {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
@@ -109,7 +104,7 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	taskID, err := service.register.Register(ctx, ticket)
+	taskID, err := service.register.AddTask(ctx, ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
@@ -121,17 +116,16 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 
 // UploadImage uploads an image and return unique image id.
 func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
-	id := int(atomic.AddUint32(&imageID, 1))
-	key := strconv.Itoa(id)
+	id, _ := random.String(8, random.Base62Chars)
 
-	if err := service.storage.Set(key, p.Bytes); err != nil {
+	if err := service.storage.Set(id, p.Bytes); err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 	expiresIn := time.Now().Add(imageTTL)
 
 	go func() {
 		time.AfterFunc(time.Until(expiresIn), func() {
-			service.storage.Delete(key)
+			service.storage.Delete(id)
 		})
 	}()
 
@@ -143,13 +137,13 @@ func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImage
 }
 
 // Mount configures the mux to serve the artworks endpoints.
-func (service *Artwork) Mount(mux goahttp.Muxer) goahttp.Server {
+func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := artworks.NewEndpoints(service)
-	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, log.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc)
+	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc)
 	server.Mount(mux, srv)
 
 	for _, m := range srv.Mounts {
-		log.Infof("%q mounted on %s %s", m.Method, m.Verb, m.Pattern)
+		log.WithContext(ctx).Infof("%q mounted on %s %s", m.Method, m.Verb, m.Pattern)
 	}
 
 	return srv

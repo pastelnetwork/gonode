@@ -3,14 +3,14 @@
 // artworks service
 //
 // Command:
-// $ goa gen github.com/pastelnetwork/walletnode/api/design
+// $ goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package artworks
 
 import (
 	"context"
 
-	artworksviews "github.com/pastelnetwork/walletnode/api/gen/artworks/views"
+	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goa "goa.design/goa/v3/pkg"
 )
 
@@ -57,7 +57,7 @@ type RegisterTaskStateClientStream interface {
 // RegisterPayload is the payload type of the artworks service register method.
 type RegisterPayload struct {
 	// Uploaded image ID
-	ImageID int
+	ImageID string
 	// Name of the artwork
 	Name string
 	// Description of the artwork
@@ -87,14 +87,14 @@ type RegisterPayload struct {
 // RegisterResult is the result type of the artworks service register method.
 type RegisterResult struct {
 	// Task ID of the registration process
-	TaskID int
+	TaskID string
 }
 
 // RegisterTaskStatePayload is the payload type of the artworks service
 // registerTaskState method.
 type RegisterTaskStatePayload struct {
 	// Task ID of the registration process
-	TaskID int
+	TaskID string
 }
 
 // TaskState is the result type of the artworks service registerTaskState
@@ -110,13 +110,13 @@ type TaskState struct {
 // method.
 type RegisterTaskPayload struct {
 	// Task ID of the registration process
-	TaskID int
+	TaskID string
 }
 
 // Task is the result type of the artworks service registerTask method.
 type Task struct {
 	// JOb ID of the registration process
-	ID int
+	ID string
 	// Status of the registration process
 	Status string
 	// List of states from the very beginning of the process
@@ -140,7 +140,7 @@ type UploadImagePayload struct {
 // Image is the result type of the artworks service uploadImage method.
 type Image struct {
 	// Uploaded image ID
-	ImageID int
+	ImageID string
 	// Image expiration
 	ExpiresIn string
 }

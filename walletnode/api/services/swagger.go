@@ -1,13 +1,14 @@
 package services
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"time"
 
-	"github.com/pastelnetwork/walletnode/api/gen"
-	"github.com/pastelnetwork/walletnode/api/gen/http/swagger/server"
-	"github.com/pastelnetwork/walletnode/api/log"
+	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/swagger/server"
 
 	goahttp "goa.design/goa/v3/http"
 )
@@ -16,8 +17,8 @@ import (
 type Swagger struct{}
 
 // Mount configures the mux to serve the swagger endpoints.
-func (service *Swagger) Mount(mux goahttp.Muxer) goahttp.Server {
-	srv := server.New(nil, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, log.ErrorHandler, nil)
+func (service *Swagger) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+	srv := server.New(nil, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil)
 
 	for _, m := range srv.Mounts {
 		file, err := gen.OpenAPIContent.Open(m.Method)

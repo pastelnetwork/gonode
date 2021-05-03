@@ -1,0 +1,10 @@
+pastel:
+  hostname: "127.0.0.1"
+  port: 19932
+  username: "rt"
+  password: "rt"
+  ext_key: "masternode-key-2"
+
+server:
+  listen_addresses: "127.0.0.1"
+  port: 4446

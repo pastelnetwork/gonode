@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/pastel-client"
-	"github.com/pastelnetwork/gonode/supernode/server"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 
@@ -13,7 +13,7 @@ type Config struct {
 	Main `mapstructure:",squash"`
 
 	Pastel          *pastel.Config          `mapstructure:"pastel" json:"pastel,omitempty"`
-	Server          *server.Config          `mapstructure:"server" json:"server,omitempty"`
+	Server          *grpc.Config            `mapstructure:"server" json:"server,omitempty"`
 	ArtworkRegister *artworkregister.Config `mapstructure:"artwork_register" json:"artwork_register,omitempty"`
 }
 
@@ -29,7 +29,7 @@ func New() *Config {
 	return &Config{
 		Main:            *NewMain(),
 		Pastel:          pastel.NewConfig(),
-		Server:          server.NewConfig(),
+		Server:          grpc.NewConfig(),
 		ArtworkRegister: artworkregister.NewConfig(),
 	}
 }

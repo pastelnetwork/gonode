@@ -14,6 +14,7 @@ import (
 
 type client struct {
 	jsonrpc.RPCClient
+	extKey string
 }
 
 func (client *client) TopMasterNodes(ctx context.Context) (MasterNodes, error) {
@@ -26,6 +27,21 @@ func (client *client) TopMasterNodes(ctx context.Context) (MasterNodes, error) {
 		return masterNodes, nil
 	}
 	return nil, nil
+}
+
+func (client *client) StorageFee(ctx context.Context) (*StorageFee, error) {
+	var storagefee StorageFee
+	err := client.callFor(ctx, &storagefee, "storagefee", "getnetworkfee")
+	if err != nil {
+		return nil, err
+	}
+	return &storagefee, nil
+}
+
+func (client *client) MyMasterNode(ctx context.Context) (*MasterNode, error) {
+	return &MasterNode{
+		ExtKey: client.extKey,
+	}, nil
 }
 
 func (client *client) Getblockchaininfo(ctx context.Context) (*BlockchainInfo, error) {
@@ -112,5 +128,6 @@ func NewClient(config *Config) Client {
 
 	return &client{
 		RPCClient: jsonrpc.NewClientWithOpts(endpoint, opts),
+		extKey:    config.ExtKey,
 	}
 }
