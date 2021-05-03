@@ -59,7 +59,7 @@ jobs:
       - test:
           package: "common"
       - test:
-          package: "pastel-cli"
+          package: "pastel-client"
       - test:
           package: "proto"
       - test:
