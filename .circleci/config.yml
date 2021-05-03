@@ -13,8 +13,12 @@ defaults: &defaults
 commands:
   test:
     description: "Test module  '<< parameters.name >>'"
-    working_directory: "~/<< parameters.name >>"
+    parameters:
+      name:
+        type: string
     steps:
+      - attach_workspace:
+          at: ~/<< parameters.name >>
       - run:
           name: Fetch dependencies
           command: |
@@ -51,9 +55,9 @@ jobs:
           command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
       - test:
-          name: walletnode
+          name: "walletnode"
       - test:
-          name: supernode
+          name: "supernode"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
