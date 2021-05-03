@@ -19,6 +19,7 @@ commands:
     steps:
       - run:
           name: Fetch dependencies
+          working_directory: ~/project/<< parameters.module >>
           command: |
             go get -v ./...
       - run:
@@ -53,7 +54,6 @@ jobs:
           command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
       - test:
-          working_directory: ~/project/walletnode
           module: "walletnode"
       - test:
           module: "supernode"
