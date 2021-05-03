@@ -53,7 +53,7 @@ commands:
           name: "<< parameters.package >>: Build binary for << parameters.goos >>"
           working_directory: ~/project/<< parameters.package >>
           command: |
-            CGO_ENABLED=0 GOOS=<< parameters.goos >> GOARCH=amd64 go build -o bin/<< parameters.package >>-<< parameters.goos >>-amd64 -ldflags "-X github.com/pastelnetwork/go-commons/version.version=$CIRCLE_TAG -extldflags '-static'" .
+            CGO_ENABLED=0 GOOS=<< parameters.goos >> GOARCH=amd64 go build -o bin/<< parameters.package >>-<< parameters.goos >>-amd64 -ldflags "-X github.com/pastelnetwork/gonode/common/version.version=$CIRCLE_TAG -extldflags '-static'" .
       - run:
           name: "<< parameters.package >>: Upload << parameters.package >>-<< parameters.goos >>-amd64 to GitHub"
           working_directory: ~/project/<< parameters.package >>
