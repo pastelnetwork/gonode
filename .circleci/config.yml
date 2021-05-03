@@ -24,18 +24,22 @@ commands:
             go get -v ./...
       - run:
           name: Run gofmt
+          working_directory: ~/project/<< parameters.module >>
           command: |
             diff -u <(echo -n) <(gofmt -d -e .)
       - run:
           name: Run go vet
+          working_directory: ~/project/<< parameters.module >>
           command: |
             go vet -v ./...
       - run:
           name: Run revive
+          working_directory: ~/project/<< parameters.module >>
           command: |
             revive ./...
       - run:
           name: Run go test (+ race detector)
+          working_directory: ~/project/<< parameters.module >>
           command: |
             go test -v -race ./...
 
