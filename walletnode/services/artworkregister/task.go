@@ -47,6 +47,13 @@ func (task *Task) Run(ctx context.Context) error {
 }
 
 func (task *Task) run(ctx context.Context) error {
+	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
+		return err
+	} else if !ok {
+		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
+		return errors.New("network storage fee is higher than specified in the ticket")
+	}
+
 	superNodes, err := task.findSuperNodes(ctx)
 	if err != nil {
 		return err
@@ -163,6 +170,15 @@ func (task *Task) connectStream(ctx context.Context, address, connID string, isP
 		return nil, err
 	}
 	return stream, nil
+}
+
+func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
+	fee, err := task.pastelClient.StorageFee(ctx)
+	if err != nil {
+		log.WithContext(ctx).Errorf("Could not get pastel storagefee")
+		return false, err
+	}
+	return fee.NetworkFee <= task.Ticket.MaximumFee, nil
 }
 
 func (task *Task) findSuperNodes(ctx context.Context) (node.SuperNodes, error) {

@@ -34,7 +34,7 @@ func UnaryInterceptor() grpc.ServerOption {
 			if errors.IsContextCanceled(err) {
 				log.WithContext(ctx).Debug("Closed by peer")
 			} else {
-				log.WithContext(ctx).WithError(err).Error("Handler error")
+				log.WithContext(ctx).WithError(err).Warn("Unary error")
 			}
 		}
 		return resp, err
@@ -68,7 +68,7 @@ func StreamInterceptor() grpc.ServerOption {
 			if errors.IsContextCanceled(err) {
 				log.WithContext(ctx).Debug("Closed by peer")
 			} else {
-				log.WithContext(ctx).WithError(err).Error("Handler error")
+				log.WithContext(ctx).WithError(err).Warn("Stream error")
 			}
 		}
 		return err
