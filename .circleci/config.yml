@@ -17,7 +17,7 @@ commands:
         type: string
     steps:
       - run:
-          name: Fetch dependencies '<< parameters.package >>'
+          name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
           command: |
             go get -v ./...
@@ -27,7 +27,7 @@ commands:
           command: |
             diff -u <(echo -n) <(gofmt -d -e .)
       - run:
-          name: Run go vet << parameters.package >>
+          name: "<< parameters.package >>: Run go vet"
           working_directory: ~/project/<< parameters.package >>
           command: |
             go vet -v ./...
