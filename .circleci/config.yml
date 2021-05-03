@@ -50,6 +50,11 @@ commands:
         type: string
     steps:
       - run:
+          name: "<< parameters.package >>: Fetch dependencies"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            go get -v ./...
+      - run:
           name: "<< parameters.package >>: Build binary for << parameters.goos >>"
           working_directory: ~/project/<< parameters.package >>
           command: |
@@ -105,10 +110,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Fetch dependencies
+          name: Install github-release
           command: |
-            go get -v ./...
-            go get github.com/github-release/github-release
+            GO111MODULE=off go get github.com/github-release/github-release
       - release:
           package: "walletnode"
       - release:
@@ -129,3 +133,5 @@ workflows:
               ignore: /.*/
             tags:
               only: /^v.*/
+          context:
+            - Release
