@@ -17,7 +17,6 @@ commands:
       module:
         type: string
     steps:
-      - working_directory: ~/<< parameters.module >>
       - run:
           name: Fetch dependencies
           command: |
@@ -54,6 +53,7 @@ jobs:
           command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
       - test:
+          working_directory: ~/project/walletnode
           module: "walletnode"
       - test:
           module: "supernode"
