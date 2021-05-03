@@ -12,34 +12,33 @@ defaults: &defaults
 
 commands:
   test:
-    description: "Test module  '<< parameters.module >>'"
     parameters:
-      module:
+      package:
         type: string
     steps:
       - run:
-          name: Fetch dependencies
-          working_directory: ~/project/<< parameters.module >>
+          name: Fetch dependencies '<< parameters.package >>'
+          working_directory: ~/project/<< parameters.package >>
           command: |
             go get -v ./...
       - run:
-          name: Run gofmt
-          working_directory: ~/project/<< parameters.module >>
+          name: Run gofmt "<< parameters.package >>"
+          working_directory: ~/project/<< parameters.package >>
           command: |
             diff -u <(echo -n) <(gofmt -d -e .)
       - run:
-          name: Run go vet
-          working_directory: ~/project/<< parameters.module >>
+          name: Run go vet << parameters.package >>
+          working_directory: ~/project/<< parameters.package >>
           command: |
             go vet -v ./...
       - run:
           name: Run revive
-          working_directory: ~/project/<< parameters.module >>
+          working_directory: ~/project/<< parameters.package >>
           command: |
             revive ./...
       - run:
           name: Run go test (+ race detector)
-          working_directory: ~/project/<< parameters.module >>
+          working_directory: ~/project/<< parameters.package >>
           command: |
             go test -v -race ./...
 
@@ -58,9 +57,9 @@ jobs:
           command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
       - test:
-          module: "walletnode"
+          package: "walletnode"
       - test:
-          module: "supernode"
+          package: "supernode"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
