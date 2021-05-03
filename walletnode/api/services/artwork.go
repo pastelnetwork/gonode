@@ -104,7 +104,7 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	taskID, err := service.register.Register(ctx, ticket)
+	taskID, err := service.register.AddTask(ctx, ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}

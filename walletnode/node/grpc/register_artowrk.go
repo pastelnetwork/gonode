@@ -165,20 +165,20 @@ func (stream *registerArtowrk) start(ctx context.Context) error {
 			resp, err := stream.Recv()
 			if err != nil {
 				if err == io.EOF {
-					log.WithContext(ctx).Debugf("Stream closed by peer")
+					log.WithContext(ctx).Debug("Stream closed by peer")
 					return
 				}
 				switch status.Code(err) {
 				case codes.Canceled, codes.Unavailable:
-					log.WithContext(ctx).WithError(err).Debugf("Stream closed")
+					log.WithContext(ctx).WithError(err).Debug("Stream closed")
 				default:
-					log.WithContext(ctx).WithError(err).Errorf("Stream")
+					log.WithContext(ctx).WithError(err).Warn("Stream")
 				}
 
 				stream.errCh <- errors.New(err)
 				break
 			}
-			log.WithContext(ctx).WithField("resp", resp.String()).Debugf("Receiving")
+			log.WithContext(ctx).WithField("resp", resp.String()).Debug("Receiving")
 
 			stream.recvCh <- resp
 		}
