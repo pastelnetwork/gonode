@@ -20,6 +20,7 @@ import (
 	"github.com/pkg/profile"
 	"gonum.org/v1/gonum/mat"
 	_ "gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat"
 
 	tf "github.com/galeone/tensorflow/tensorflow/go"
 	tg "github.com/galeone/tfgo"
@@ -43,6 +44,102 @@ import (
 
 	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
 )
+
+const (
+	cachedFingerprintsDB = "cachedFingerprints.sqlite"
+	strictness_factor    = 0.985
+)
+
+func fingerprintFromCache(filePath string) ([]float64, error) {
+	if _, err := os.Stat(cachedFingerprintsDB); os.IsNotExist(err) {
+		return nil, errors.New(errors.Errorf("Cache database is not found."))
+	}
+	db, err := sql.Open("sqlite3", cachedFingerprintsDB)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	defer db.Close()
+
+	imageHash, err := getImageHashFromImageFilePath(filePath)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+
+	selectQuery := `
+			SELECT path_to_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector,
+				model_6_image_fingerprint_vector, model_7_image_fingerprint_vector FROM image_hash_to_image_fingerprint_table where sha256_hash_of_art_image_file = ? ORDER BY datetime_fingerprint_added_to_database DESC
+		`
+	rows, err := db.Query(selectQuery, imageHash)
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var current_image_file_path string
+		var model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector, model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector []byte
+		err = rows.Scan(&current_image_file_path, &model_1_image_fingerprint_vector, &model_2_image_fingerprint_vector, &model_3_image_fingerprint_vector, &model_4_image_fingerprint_vector, &model_5_image_fingerprint_vector, &model_6_image_fingerprint_vector, &model_7_image_fingerprint_vector)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		combined_image_fingerprint_vector := append(append(append(append(append(append(fromBytes(model_1_image_fingerprint_vector), fromBytes(model_2_image_fingerprint_vector)[:]...), fromBytes(model_3_image_fingerprint_vector)[:]...), fromBytes(model_4_image_fingerprint_vector)[:]...), fromBytes(model_5_image_fingerprint_vector)[:]...), fromBytes(model_6_image_fingerprint_vector)[:]...), fromBytes(model_7_image_fingerprint_vector)[:]...)
+		return combined_image_fingerprint_vector, nil
+	}
+	return nil, errors.New(errors.Errorf("Fingerprint is not found"))
+}
+
+func cacheFingerprint(fingerprints [][]float64, filePath string) error {
+	if _, err := os.Stat(cachedFingerprintsDB); os.IsNotExist(err) {
+		db, err := sql.Open("sqlite3", cachedFingerprintsDB)
+		if err != nil {
+			return errors.New(err)
+		}
+		defer db.Close()
+
+		dupe_detection_image_fingerprint_database_creation_string := `
+			CREATE TABLE image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file text, path_to_art_image_file, model_1_image_fingerprint_vector array, model_2_image_fingerprint_vector array, model_3_image_fingerprint_vector array,
+				model_4_image_fingerprint_vector array, model_5_image_fingerprint_vector array, model_6_image_fingerprint_vector array, model_7_image_fingerprint_vector array, datetime_fingerprint_added_to_database TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+				PRIMARY KEY (sha256_hash_of_art_image_file));
+			`
+		_, err = db.Exec(dupe_detection_image_fingerprint_database_creation_string)
+		if err != nil {
+			return errors.New(err)
+		}
+	}
+
+	imageHash, err := getImageHashFromImageFilePath(filePath)
+	if err != nil {
+		return errors.New(err)
+	}
+
+	db, err := sql.Open("sqlite3", cachedFingerprintsDB)
+	if err != nil {
+		return errors.New(err)
+	}
+	defer db.Close()
+
+	data_insertion_query_string := `
+		INSERT OR REPLACE INTO image_hash_to_image_fingerprint_table (sha256_hash_of_art_image_file, path_to_art_image_file,
+			model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector,
+			model_5_image_fingerprint_vector, model_6_image_fingerprint_vector, model_7_image_fingerprint_vector) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+	`
+	tx, err := db.Begin()
+	if err != nil {
+		return errors.New(err)
+	}
+	stmt, err := tx.Prepare(data_insertion_query_string)
+	if err != nil {
+		return errors.New(err)
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(imageHash, filePath, toBytes(fingerprints[0]), toBytes(fingerprints[1]), toBytes(fingerprints[2]), toBytes(fingerprints[3]), toBytes(fingerprints[4]), toBytes(fingerprints[5]), toBytes(fingerprints[6]))
+	if err != nil {
+		return errors.New(err)
+	}
+	tx.Commit()
+
+	return nil
+}
 
 func Measure(start time.Time) {
 	elapsed := time.Since(start)
@@ -150,12 +247,12 @@ func loadImage(imagePath string, width int, height int) (image.Image, error) {
 
 var models = make(map[string]*tg.Model)
 
-type compute struct {
+type modelData struct {
 	model string
 	input string
 }
 
-var fingerprintSources = []compute{
+var fingerprintSources = []modelData{
 	{
 		model: "EfficientNetB7.tf",
 		input: "serving_default_input_1",
@@ -478,44 +575,47 @@ func get_image_deep_learning_features_combined_vector_for_single_image_func(path
 	for _, fingerprint := range fingerprints {
 		combined_image_fingerprint_vector = append(combined_image_fingerprint_vector, fingerprint...)
 	}
+	cacheFingerprint(fingerprints, path_to_art_image_file)
 	return combined_image_fingerprint_vector, err
 }
 
 func computePearsonRForAllFingerprintPairs(candidate_image_fingerprint []float64, final_combined_image_fingerprint_array [][]float64) ([]float64, error) {
 	defer Measure(time.Now())
-	var similarity_score_vector__pearson_all []float64
-	for _, fingerprint := range final_combined_image_fingerprint_array {
-		pearsonR, err := stats.Pearson(candidate_image_fingerprint, fingerprint)
+	similarity_score_vector__pearson_all := make([]float64, len(final_combined_image_fingerprint_array))
+	var err error
+	for i, fingerprint := range final_combined_image_fingerprint_array {
+		//similarity_score_vector__pearson_all[i] = wdm.Wdm(candidate_image_fingerprint, fingerprint, "pearson", []float64{})
+		similarity_score_vector__pearson_all[i], err = stats.Pearson(candidate_image_fingerprint, fingerprint)
 		if err != nil {
 			return nil, err
 		}
-		similarity_score_vector__pearson_all = append(similarity_score_vector__pearson_all, pearsonR)
 	}
 	return similarity_score_vector__pearson_all, nil
 }
 
 func computeSpearmanForAllFingerprintPairs(candidate_image_fingerprint []float64, final_combined_image_fingerprint_array [][]float64) ([]float64, error) {
 	defer Measure(time.Now())
-	var similarity_score_vector__spearman []float64
-	for _, fingerprint := range final_combined_image_fingerprint_array {
-		spearmanCorrelation, err := Spearman2(candidate_image_fingerprint, fingerprint)
+	similarity_score_vector__spearman := make([]float64, len(final_combined_image_fingerprint_array))
+	var err error
+	for i, fingerprint := range final_combined_image_fingerprint_array {
+		//similarity_score_vector__spearman[i] = wdm.Wdm(candidate_image_fingerprint, fingerprint, "spearman", []float64{})
+		similarity_score_vector__spearman[i], err = Spearman2(candidate_image_fingerprint, fingerprint)
 		if err != nil {
 			return nil, err
 		}
-		similarity_score_vector__spearman = append(similarity_score_vector__spearman, spearmanCorrelation)
 	}
 	return similarity_score_vector__spearman, nil
 }
 
-func filterOutFingerprintsByTreshhold(similarity_score_vector__pearson_all []float64, threshold float64, final_combined_image_fingerprint_array [][]float64) [][]float64 {
+func filterOutFingerprintsByThreshold(similarity_score_vector__pearson_all []float64, threshold float64, final_combined_image_fingerprint_array [][]float64) [][]float64 {
 	defer Measure(time.Now())
-	var filteredByTreshholdCombinedImageFingerprintArray [][]float64
+	var filteredByThresholdCombinedImageFingerprintArray [][]float64
 	for i, valueToCheck := range similarity_score_vector__pearson_all {
 		if !math.IsNaN(valueToCheck) && valueToCheck >= threshold {
-			filteredByTreshholdCombinedImageFingerprintArray = append(filteredByTreshholdCombinedImageFingerprintArray, final_combined_image_fingerprint_array[i])
+			filteredByThresholdCombinedImageFingerprintArray = append(filteredByThresholdCombinedImageFingerprintArray, final_combined_image_fingerprint_array[i])
 		}
 	}
-	return filteredByTreshholdCombinedImageFingerprintArray
+	return filteredByThresholdCombinedImageFingerprintArray
 }
 
 func randInts(min int, max int, size int) []int {
@@ -566,7 +666,7 @@ func compute_average_and_stdev_of_50th_to_90th_percentile_func(input_vector []fl
 	return trimmedVectorAvg, trimmedVectorStdev
 }
 
-func compute_parallel_bootstrapped_kendalls_tau_func(x []float64, list_of_fingerprints_requiring_further_testing_2 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64) {
+func compute_parallel_bootstrapped_kendalls_tau_func(x []float64, list_of_fingerprints_requiring_further_testing_2 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
 	defer Measure(time.Now())
 	original_length_of_input := len(x)
 	robust_average_tau := make([]float64, len(list_of_fingerprints_requiring_further_testing_2))
@@ -588,7 +688,7 @@ func compute_parallel_bootstrapped_kendalls_tau_func(x []float64, list_of_finger
 		}
 		robust_average_tau[fingerprintIdx], robust_stdev_tau[fingerprintIdx] = compute_average_and_stdev_of_50th_to_90th_percentile_func(bootstrapped_kendalltau_results)
 	}
-	return robust_average_tau, robust_stdev_tau
+	return robust_average_tau, robust_stdev_tau, nil
 }
 
 func computeAverageRatioOfArrays(numerator []float64, denominator []float64) float64 {
@@ -631,27 +731,104 @@ func compute_randomized_dependence_func(x, y []float64) float64 {
 		return math.Sin(v)
 	}
 	s := 1.0 / 6.0
-	k := 20
+	k := 20.0
 	cx := mat.NewDense(len(x), 2, rankArrayOrdinalCopulaTransformation(x))
 	cy := mat.NewDense(len(y), 2, rankArrayOrdinalCopulaTransformation(y))
 
-	Rx := mat.NewDense(2, k, randomLinearProjection(s, k))
-	Ry := mat.NewDense(2, k, randomLinearProjection(s, k))
+	Rx := mat.NewDense(2, int(k), randomLinearProjection(s, int(k)))
+	Ry := mat.NewDense(2, int(k), randomLinearProjection(s, int(k)))
 
-	var X, Y mat.Dense
+	var X, Y, stackedH mat.Dense
 	X.Mul(cx, Rx)
 	Y.Mul(cy, Ry)
 
 	X.Apply(sinFunc, &X)
 	Y.Apply(sinFunc, &Y)
 
-	//ormattedX := mat.Formatted(&X, mat.Prefix(""), mat.Squeeze())
-	//fmt.Printf("\n%v", formattedX)
+	stackedH.Augment(&X, &Y)
+	//stackedT := mat.DenseCopyOf(stackedH.T())
 
-	return 0
+	var CsymDense mat.SymDense
+
+	stat.CovarianceMatrix(&CsymDense, &stackedH, nil)
+	C := mat.DenseCopyOf(&CsymDense)
+
+	//fmt.Printf("\n%v", mat.Formatted(C, mat.Prefix(""), mat.Squeeze()))
+
+	k0 := int(k)
+	lb := 1.0
+	ub := k
+	counter := 0
+	var maxEigVal float64
+	for {
+		maxEigVal = 0
+		counter++
+		//fmt.Printf("\n%v", k)
+		if k == 4.5 {
+			//fmt.Printf("\n%v", k)
+		}
+		Cxx := mat.DenseCopyOf(C.Slice(0, int(k), 0, int(k)))
+		Cyy := C.Slice(k0, k0+int(k), k0, k0+int(k)).(*mat.Dense)
+		Cxy := C.Slice(0, int(k), k0, k0+int(k)).(*mat.Dense)
+		Cyx := C.Slice(k0, k0+int(k), 0, int(k)).(*mat.Dense)
+
+		var CxxInversed, CyyInversed mat.Dense
+		CxxInversed.Inverse(Cxx)
+		CyyInversed.Inverse(Cyy)
+
+		var CxxInversedMulCxy, CyyInversedMulCyx, resultMul mat.Dense
+		CxxInversedMulCxy.Mul(&CxxInversed, Cxy)
+		CyyInversedMulCyx.Mul(&CyyInversed, Cyx)
+
+		resultMul.Mul(&CxxInversedMulCxy, &CyyInversedMulCyx)
+
+		//fmt.Printf("\nresultMul: %v", mat.Formatted(&resultMul, mat.Prefix(""), mat.Squeeze()))
+
+		var eigs mat.Eigen
+		eigs.Factorize(&resultMul, 0)
+
+		continueLoop := false
+		eigsVals := eigs.Values(nil)
+		for _, eigVal := range eigsVals {
+			realVal := real(eigVal)
+			imageVal := imag(eigVal)
+			if !(imageVal == 0.0 && 0 <= realVal && realVal <= 1) {
+				ub -= 1
+				k = (ub + lb) / 2.0
+				continueLoop = true
+				maxEigVal = 0
+				break
+			}
+			//maxEigVal = math.Max(maxEigVal, realVal)
+			if maxEigVal < realVal {
+				maxEigVal = realVal
+				//fmt.Printf("\n%v", maxEigVal)
+			}
+		}
+
+		if continueLoop {
+			continue
+		}
+
+		if lb == ub {
+			break
+		}
+
+		lb = k
+
+		if ub == lb+1 {
+			k = ub
+		} else {
+			k = (ub + lb) / 2.0
+		}
+	}
+	sqrtResult := math.Sqrt(maxEigVal)
+	result := math.Pow(sqrtResult, 12)
+
+	return result
 }
 
-func compute_parallel_bootstrapped_randomized_dependence_func(x []float64, list_of_fingerprints_requiring_further_testing_3 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64) {
+func compute_parallel_bootstrapped_randomized_dependence_func(x []float64, list_of_fingerprints_requiring_further_testing_3 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
 	original_length_of_input := len(x)
 	robust_average_randomized_dependence := make([]float64, len(list_of_fingerprints_requiring_further_testing_3))
 	robust_stdev_randomized_dependence := make([]float64, len(list_of_fingerprints_requiring_further_testing_3))
@@ -671,10 +848,10 @@ func compute_parallel_bootstrapped_randomized_dependence_func(x []float64, list_
 		}
 		robust_average_randomized_dependence[fingerprintIdx], robust_stdev_randomized_dependence[fingerprintIdx] = compute_average_and_stdev_of_50th_to_90th_percentile_func(bootstrapped_randomized_dependence_results)
 	}
-	return robust_average_randomized_dependence, robust_stdev_randomized_dependence
+	return robust_average_randomized_dependence, robust_stdev_randomized_dependence, nil
 }
 
-func compute_parallel_bootstrapped_bagged_hoeffdings_d_smaller_sample_size_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) []float64 {
+func compute_parallel_bootstrapped_bagged_hoeffdings_d_smaller_sample_size_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
 	defer Measure(time.Now())
 	original_length_of_input := len(x)
 	robust_average_D := make([]float64, len(list_of_fingerprints_requiring_further_testing))
@@ -696,10 +873,10 @@ func compute_parallel_bootstrapped_bagged_hoeffdings_d_smaller_sample_size_func(
 		}
 		robust_average_D[fingerprintIdx], robust_stdev_D[fingerprintIdx] = compute_average_and_stdev_of_25th_to_75th_percentile_func(bootstrapped_hoeffdings_d_results)
 	}
-	return robust_average_D
+	return robust_average_D, robust_stdev_D, nil
 }
 
-func compute_parallel_bootstrapped_bagged_hoeffdings_d_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) []float64 {
+func compute_parallel_bootstrapped_bagged_hoeffdings_d_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
 	defer Measure(time.Now())
 	original_length_of_input := len(x)
 	robust_average_D := make([]float64, len(list_of_fingerprints_requiring_further_testing))
@@ -721,10 +898,10 @@ func compute_parallel_bootstrapped_bagged_hoeffdings_d_func(x []float64, list_of
 		}
 		robust_average_D[fingerprintIdx], robust_stdev_D[fingerprintIdx] = compute_average_and_stdev_of_50th_to_90th_percentile_func(bootstrapped_hoeffdings_d_results)
 	}
-	return robust_average_D
+	return robust_average_D, robust_stdev_D, nil
 }
 
-func compute_parallel_bootstrapped_blomqvist_beta_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) []float64 {
+func compute_parallel_bootstrapped_blomqvist_beta_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
 	defer Measure(time.Now())
 	original_length_of_input := len(x)
 	robust_average_blomqvist := make([]float64, len(list_of_fingerprints_requiring_further_testing))
@@ -749,7 +926,80 @@ func compute_parallel_bootstrapped_blomqvist_beta_func(x []float64, list_of_fing
 		}
 		robust_average_blomqvist[fingerprintIdx], robust_stdev_blomqvist[fingerprintIdx] = compute_average_and_stdev_of_50th_to_90th_percentile_func(bootstrapped_blomqvist_results)
 	}
-	return robust_average_blomqvist
+	return robust_average_blomqvist, robust_stdev_blomqvist, nil
+}
+
+type printInfo func([]float64)
+type bootstrappedPrintInfo func([]float64, []float64)
+type correlation func([]float64, [][]float64) ([]float64, error)
+type bootstrappedCorrelation func([]float64, [][]float64, int, int) ([]float64, []float64, error)
+
+type computeData struct {
+	title                       string
+	computeFunc                 correlation
+	printFunc                   printInfo
+	bootstrappedComputeFunc     bootstrappedCorrelation
+	bootstrappedPrintFunc       bootstrappedPrintInfo
+	sampleSize, bootstrapsCount int
+	threshold                   float64
+	totalFingerprintsCount      int
+}
+
+func computeSimilarity(candidateImageFingerprint []float64, fingerprints [][]float64, data computeData) ([][]float64, error) {
+	if len(fingerprints) == 0 {
+		return [][]float64{}, nil
+	}
+	defer Measure(time.Now())
+	fmt.Printf("\n\n-->Computing %v", data.title)
+
+	var similarityScore, similarityScoreStdev []float64
+	var err error
+
+	if data.computeFunc != nil {
+		similarityScore, err = data.computeFunc(candidateImageFingerprint, fingerprints)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		if data.printFunc != nil {
+			data.printFunc(similarityScore)
+		}
+	}
+
+	if data.bootstrappedComputeFunc != nil {
+		similarityScore, similarityScoreStdev, err = data.bootstrappedComputeFunc(candidateImageFingerprint, fingerprints, data.sampleSize, data.bootstrapsCount)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+
+		if data.bootstrappedPrintFunc != nil {
+			data.bootstrappedPrintFunc(similarityScore, similarityScoreStdev)
+		}
+	}
+
+	fingerprintsRequiringFurtherTesting := filterOutFingerprintsByThreshold(similarityScore, data.threshold, fingerprints)
+	percentageOfFingerprintsRequiringFurtherTesting := float32(len(fingerprintsRequiringFurtherTesting)) / float32(data.totalFingerprintsCount)
+	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(fingerprintsRequiringFurtherTesting), percentageOfFingerprintsRequiringFurtherTesting*100)
+	return fingerprintsRequiringFurtherTesting, nil
+}
+
+func printPearsonRCalculationResults(results []float64) {
+	pearson_max, _ := stats.Max(results)
+	fmt.Printf("\nLength of computed pearson r vector: %v with max value %v", len(results), pearson_max)
+}
+
+func printKendallTauCalculationResults(similarityScore, similarityScoreStdev []float64) {
+	stdev_as_pct_of_robust_avg__kendall := computeAverageRatioOfArrays(similarityScoreStdev, similarityScore)
+	fmt.Printf("\nStandard Deviation as %% of Average Tau -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__kendall*100)
+}
+
+func printRDCCalculationResults(similarityScore, similarityScoreStdev []float64) {
+	stdev_as_pct_of_robust_avg__randomized_dependence := computeAverageRatioOfArrays(similarityScoreStdev, similarityScore)
+	fmt.Printf("\nStandard Deviation as %% of Average Randomized Dependence -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__randomized_dependence*100)
+}
+
+func printBlomqvistBetaCalculationResults(similarityScore, similarityScoreStdev []float64) {
+	similarity_score_vector__blomqvist_average, _ := stats.Mean(similarityScore)
+	fmt.Printf("\n Average for Blomqvist's beta: %.4f", strictness_factor*similarity_score_vector__blomqvist_average)
 }
 
 func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
@@ -759,7 +1009,7 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 	pearson__dupe_threshold := 0.995
 	spearman__dupe_threshold := 0.79
 	kendall__dupe_threshold := 0.70
-	strictness_factor := 0.985
+	randomized_dependence__dupe_threshold := 0.79
 	randomized_blomqvist__dupe_threshold := 0.7625
 	hoeffding__dupe_threshold := 0.35
 	hoeffding_round2__dupe_threshold := 0.23
@@ -773,89 +1023,122 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 	fmt.Printf("\nComparing candidate image to the fingerprints of %v previously registered images. Each fingerprint consists of %v numbers.", number_of_previously_registered_images_to_compare, length_of_each_image_fingerprint_vector)
 	fmt.Printf("\nComputing image fingerprint of candidate image...")
 
-	candidate_image_fingerprint, err := get_image_deep_learning_features_combined_vector_for_single_image_func(path_to_art_image_file)
+	candidate_image_fingerprint, err := fingerprintFromCache(path_to_art_image_file)
+	if err != nil {
+		candidate_image_fingerprint, err = get_image_deep_learning_features_combined_vector_for_single_image_func(path_to_art_image_file)
+	}
 	length_of_candidate_image_fingerprint := len(candidate_image_fingerprint)
 	fmt.Printf("\nCandidate image fingerpint consists from %v numbers", length_of_candidate_image_fingerprint)
 	if err != nil {
 		return false, errors.New(err)
 	}
-	fmt.Printf("\nComputing Pearson's R, which is fast to compute (We only perform the slower tests on the fingerprints that have a high R).")
-	similarity_score_vector__pearson_all, err := computePearsonRForAllFingerprintPairs(candidate_image_fingerprint, final_combined_image_fingerprint_array)
+
+	totalFingerprintsCount := len(final_combined_image_fingerprint_array)
+
+	fingerprintsForFurtherTesting, err := computeSimilarity(candidate_image_fingerprint, final_combined_image_fingerprint_array, computeData{
+		title:                  "Pearson's R, which is fast to compute (We only perform the slower tests on the fingerprints that have a high R).",
+		computeFunc:            computePearsonRForAllFingerprintPairs,
+		printFunc:              printPearsonRCalculationResults,
+		threshold:              strictness_factor * pearson__dupe_threshold,
+		totalFingerprintsCount: totalFingerprintsCount,
+	})
 	if err != nil {
 		return false, errors.New(err)
 	}
-	pearson_max, _ := stats.Max(similarity_score_vector__pearson_all)
 
-	fmt.Printf("\nLength of computed pearson r vector: %v with max value %v", len(similarity_score_vector__pearson_all), pearson_max)
-
-	list_of_fingerprints_requiring_further_testing_1 := filterOutFingerprintsByTreshhold(similarity_score_vector__pearson_all, strictness_factor*pearson__dupe_threshold, final_combined_image_fingerprint_array)
-	percentage_of_fingerprints_requiring_further_testing_1 := float32(len(list_of_fingerprints_requiring_further_testing_1)) / float32(len(final_combined_image_fingerprint_array))
-	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_1), percentage_of_fingerprints_requiring_further_testing_1*100)
-
-	similarity_score_vector__spearman, err := computeSpearmanForAllFingerprintPairs(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_1)
+	fingerprintsForFurtherTesting, err = computeSimilarity(candidate_image_fingerprint, fingerprintsForFurtherTesting, computeData{
+		title:                  "Spearman's Rho for selected fingerprints...",
+		computeFunc:            computeSpearmanForAllFingerprintPairs,
+		printFunc:              nil,
+		threshold:              strictness_factor * spearman__dupe_threshold,
+		totalFingerprintsCount: totalFingerprintsCount,
+	})
 	if err != nil {
 		return false, errors.New(err)
 	}
-	list_of_fingerprints_requiring_further_testing_2 := filterOutFingerprintsByTreshhold(similarity_score_vector__spearman, strictness_factor*spearman__dupe_threshold, list_of_fingerprints_requiring_further_testing_1)
-	percentage_of_fingerprints_requiring_further_testing_2 := float32(len(list_of_fingerprints_requiring_further_testing_2)) / float32(len(final_combined_image_fingerprint_array))
-	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_2), percentage_of_fingerprints_requiring_further_testing_2*100)
 
-	fmt.Printf("\nNow computing Bootstrapped Kendall's Tau for selected fingerprints...")
-	sample_size__kendall := 50
-	number_of_bootstraps__kendall := 100
-	similarity_score_vector__kendall, similarity_score_vector__kendall__stdev := compute_parallel_bootstrapped_kendalls_tau_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_2, sample_size__kendall, number_of_bootstraps__kendall)
-	stdev_as_pct_of_robust_avg__kendall := computeAverageRatioOfArrays(similarity_score_vector__kendall__stdev, similarity_score_vector__kendall)
-	fmt.Printf("\nStandard Deviation as %% of Average Tau -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__kendall*100)
+	fingerprintsForFurtherTesting, err = computeSimilarity(candidate_image_fingerprint, fingerprintsForFurtherTesting, computeData{
+		title:                   "Bootstrapped Kendall's Tau for selected fingerprints...",
+		computeFunc:             nil,
+		printFunc:               nil,
+		bootstrappedComputeFunc: compute_parallel_bootstrapped_kendalls_tau_func,
+		bootstrappedPrintFunc:   printKendallTauCalculationResults,
+		sampleSize:              50,
+		bootstrapsCount:         100,
+		threshold:               strictness_factor * kendall__dupe_threshold,
+		totalFingerprintsCount:  totalFingerprintsCount,
+	})
+	if err != nil {
+		return false, errors.New(err)
+	}
 
-	list_of_fingerprints_requiring_further_testing_3 := filterOutFingerprintsByTreshhold(similarity_score_vector__kendall, strictness_factor*kendall__dupe_threshold, list_of_fingerprints_requiring_further_testing_2)
-	percentage_of_fingerprints_requiring_further_testing_3 := float32(len(list_of_fingerprints_requiring_further_testing_3)) / float32(len(final_combined_image_fingerprint_array))
-	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_3), percentage_of_fingerprints_requiring_further_testing_3*100)
+	fingerprintsForFurtherTesting, err = computeSimilarity(candidate_image_fingerprint, fingerprintsForFurtherTesting, computeData{
+		title:                   "Boostrapped Randomized Dependence Coefficient for selected fingerprints...",
+		computeFunc:             nil,
+		printFunc:               nil,
+		bootstrappedComputeFunc: compute_parallel_bootstrapped_randomized_dependence_func,
+		bootstrappedPrintFunc:   printRDCCalculationResults,
+		sampleSize:              50,
+		bootstrapsCount:         100,
+		threshold:               strictness_factor * randomized_dependence__dupe_threshold,
+		totalFingerprintsCount:  totalFingerprintsCount,
+	})
+	if err != nil {
+		return false, errors.New(err)
+	}
 
-	/*fmt.Printf("\nNow computing Boostrapped Randomized Dependence Coefficient for selected fingerprints...")
-	sample_size__randomized_dep := 50
-	number_of_bootstraps__randomized_dep := 100
-	similarity_score_vector__randomized_dependence, similarity_score_vector__randomized_dependence__stdev := compute_parallel_bootstrapped_randomized_dependence_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_3, sample_size__randomized_dep, number_of_bootstraps__randomized_dep)
-	stdev_as_pct_of_robust_avg__randomized_dependence := computeAverageRatioOfArrays(similarity_score_vector__randomized_dependence__stdev, similarity_score_vector__randomized_dependence)
-	fmt.Printf("\nStandard Deviation as %% of Average Randomized Dependence -- average across all fingerprints: %.2f%%", stdev_as_pct_of_robust_avg__randomized_dependence*100)*/
+	fingerprintsForFurtherTesting, err = computeSimilarity(candidate_image_fingerprint, fingerprintsForFurtherTesting, computeData{
+		title:                   "bootstrapped Blomqvist's beta for selected fingerprints...",
+		computeFunc:             nil,
+		printFunc:               nil,
+		bootstrappedComputeFunc: compute_parallel_bootstrapped_blomqvist_beta_func,
+		bootstrappedPrintFunc:   printBlomqvistBetaCalculationResults,
+		sampleSize:              100,
+		bootstrapsCount:         100,
+		threshold:               strictness_factor * randomized_blomqvist__dupe_threshold,
+		totalFingerprintsCount:  totalFingerprintsCount,
+	})
+	if err != nil {
+		return false, errors.New(err)
+	}
 
-	fmt.Printf("\nNow computing bootstrapped Blomqvist's beta for selected fingerprints...")
-	sample_size_blomqvist := 100
-	number_of_bootstraps_blomqvist := 100
-	similarity_score_vector__blomqvist := compute_parallel_bootstrapped_blomqvist_beta_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_3, sample_size_blomqvist, number_of_bootstraps_blomqvist)
-	similarity_score_vector__blomqvist_average, _ := stats.Mean(similarity_score_vector__blomqvist)
-	fmt.Printf("\n Average for Blomqvist's beta: %.4f", strictness_factor*similarity_score_vector__blomqvist_average)
+	fingerprintsForFurtherTesting, err = computeSimilarity(candidate_image_fingerprint, fingerprintsForFurtherTesting, computeData{
+		title:                   "Hoeffding's D Round 1",
+		computeFunc:             nil,
+		printFunc:               nil,
+		bootstrappedComputeFunc: compute_parallel_bootstrapped_bagged_hoeffdings_d_smaller_sample_size_func,
+		bootstrappedPrintFunc:   nil,
+		sampleSize:              20,
+		bootstrapsCount:         50,
+		threshold:               strictness_factor * hoeffding__dupe_threshold,
+		totalFingerprintsCount:  totalFingerprintsCount,
+	})
+	if err != nil {
+		return false, errors.New(err)
+	}
 
-	list_of_fingerprints_requiring_further_testing_5 := filterOutFingerprintsByTreshhold(similarity_score_vector__blomqvist, strictness_factor*randomized_blomqvist__dupe_threshold, list_of_fingerprints_requiring_further_testing_3)
-	percentage_of_fingerprints_requiring_further_testing_5 := float32(len(list_of_fingerprints_requiring_further_testing_5)) / float32(len(final_combined_image_fingerprint_array))
-	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_5), percentage_of_fingerprints_requiring_further_testing_5*100)
+	fingerprintsForFurtherTesting, err = computeSimilarity(candidate_image_fingerprint, fingerprintsForFurtherTesting, computeData{
+		title:                   "Hoeffding's D Round 2",
+		computeFunc:             nil,
+		printFunc:               nil,
+		bootstrappedComputeFunc: compute_parallel_bootstrapped_bagged_hoeffdings_d_func,
+		bootstrappedPrintFunc:   nil,
+		sampleSize:              75,
+		bootstrapsCount:         20,
+		threshold:               strictness_factor * hoeffding_round2__dupe_threshold,
+		totalFingerprintsCount:  totalFingerprintsCount,
+	})
+	if err != nil {
+		return false, errors.New(err)
+	}
 
-	fmt.Printf("\nNow computing bootstrapped Hoeffding's D for selected fingerprints...")
-	sample_size := 20
-	number_of_bootstraps := 50
-	fmt.Printf("\nHoeffding Round 1 | Sample Size: %v; Number of Bootstraps: %v", sample_size, number_of_bootstraps)
-	similarity_score_vector__hoeffding := compute_parallel_bootstrapped_bagged_hoeffdings_d_smaller_sample_size_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_5, sample_size, number_of_bootstraps)
-
-	list_of_fingerprints_requiring_further_testing_6 := filterOutFingerprintsByTreshhold(similarity_score_vector__hoeffding, strictness_factor*hoeffding__dupe_threshold, list_of_fingerprints_requiring_further_testing_5)
-	percentage_of_fingerprints_requiring_further_testing_6 := float32(len(list_of_fingerprints_requiring_further_testing_6)) / float32(len(final_combined_image_fingerprint_array))
-	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_6), percentage_of_fingerprints_requiring_further_testing_6*100)
-
-	fmt.Printf("\nNow computing second round of bootstrapped Hoeffding's D for selected fingerprints using smaller sample size...")
-	sample_size__round2 := 75
-	number_of_bootstraps__round2 := 20
-	fmt.Printf("\nHoeffding Round 2 | Sample Size: %v; Number of Bootstraps: %v", sample_size, number_of_bootstraps)
-	similarity_score_vector__hoeffding_round2 := compute_parallel_bootstrapped_bagged_hoeffdings_d_func(candidate_image_fingerprint, list_of_fingerprints_requiring_further_testing_6, sample_size__round2, number_of_bootstraps__round2)
-
-	list_of_fingerprints_requiring_further_testing_7 := filterOutFingerprintsByTreshhold(similarity_score_vector__hoeffding_round2, strictness_factor*hoeffding_round2__dupe_threshold, list_of_fingerprints_requiring_further_testing_6)
-	percentage_of_fingerprints_requiring_further_testing_7 := float32(len(list_of_fingerprints_requiring_further_testing_7)) / float32(len(final_combined_image_fingerprint_array))
-	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(list_of_fingerprints_requiring_further_testing_7), percentage_of_fingerprints_requiring_further_testing_7*100)
-
-	if len(list_of_fingerprints_requiring_further_testing_7) > 0 {
+	if len(fingerprintsForFurtherTesting) > 0 {
 		fmt.Printf("\n\nWARNING! Art image file appears to be a duplicate!")
 	} else {
 		fmt.Printf("\n\nArt image file appears to be original! (i.e., not a duplicate of an existing image in the image fingerprint database)")
 	}
 
-	return len(list_of_fingerprints_requiring_further_testing_7) != 0, nil
+	return len(fingerprintsForFurtherTesting) != 0, nil
 }
 
 func main() {

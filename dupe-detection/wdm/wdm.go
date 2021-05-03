@@ -4,6 +4,12 @@ import (
 	"github.com/pastelnetwork/gonode/dupe-detection/wdm/swig"
 )
 
+// Wdm compute correlation for specified method. List of supported methods:
+//   - `"pearson"`, `"prho"`, `"cor"`: Pearson correlation
+//   - `"spearman"`, `"srho"`, `"rho"`: Spearman's
+//   - `"kendall"`, `"ktau"`, `"tau"`: Kendall's tau
+//   - `"blomqvist"`, `"bbeta"`, `"beta"`: Blomqvist's beta
+//   - `"hoeffding"`, `"hoeffd"`, `"d"`: Hoeffding's D
 func Wdm(x, y []float64, method string, weights []float64) float64 {
 	xVector := swig.NewDoubleVector(int64(len(x)))
 	for i := range x {
