@@ -22,7 +22,7 @@ commands:
           command: |
             go get -v ./...
       - run:
-          name: Run gofmt "<< parameters.package >>"
+          name: "<< parameters.package >>: Run gofmt"
           working_directory: ~/project/<< parameters.package >>
           command: |
             diff -u <(echo -n) <(gofmt -d -e .)
@@ -32,12 +32,12 @@ commands:
           command: |
             go vet -v ./...
       - run:
-          name: Run revive
+          name: "<< parameters.package >>: Run revive"
           working_directory: ~/project/<< parameters.package >>
           command: |
             revive ./...
       - run:
-          name: Run go test (+ race detector)
+          name: "<< parameters.package >>: Run go test (+ race detector)"
           working_directory: ~/project/<< parameters.package >>
           command: |
             go test -v -race ./...
@@ -56,6 +56,12 @@ jobs:
           name: Install revive
           command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
+      - test:
+          package: "common"
+      - test:
+          package: "pastel-cli"
+      - test:
+          package: "proto"
       - test:
           package: "walletnode"
       - test:
