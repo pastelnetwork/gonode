@@ -17,8 +17,8 @@ commands:
       module:
         type: string
     steps:
-      - attach_workspace:
-          at: ~/<< parameters.module >>
+      - persist_to_workspace:
+          paths: ~/<< parameters.module >>
       - run:
           name: Fetch dependencies
           command: |
