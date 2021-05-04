@@ -11,20 +11,15 @@ import (
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	"github.com/pastelnetwork/gonode/pastel-client"
-	"github.com/pastelnetwork/gonode/supernode/configs"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/supernode"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/walletnode"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
-	"github.com/pastelnetwork/gonode/supernode/storage/memory"
+	"github.com/pastelnetwork/gonode/tools/fake-pastel-api/configs"
+	"github.com/pastelnetwork/gonode/tools/fake-pastel-api/server"
 )
 
 const (
-	appName  = "supernode"
-	appUsage = "SuperNode" // TODO: Write a clear description.
+	appName  = "pastel-api"
+	appUsage = "Pastel RPC API"
 
-	defaultConfigFile = ""
+	defaultConfigFile = "./examples/configs/default.yml"
 )
 
 // NewApp inits a new command line interface.
@@ -85,19 +80,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
 	})
 
-	// entities
-	pastelClient := pastel.NewClient(config.Pastel)
-	nodeClient := grpc.NewClient()
-	db := memory.NewKeyValue()
-
-	// business logic services
-	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
-
-	// server
-	grpc := grpc.NewServer(config.Server,
-		walletnode.NewService(artworkRegister),
-		supernode.NewService(artworkRegister),
-	)
-
-	return runServices(ctx, artworkRegister, grpc)
+	err := server.New().Run(ctx, config.Server)
+	return err
 }

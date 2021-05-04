@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/walletnode/api/docs"
 
@@ -37,8 +38,6 @@ type API struct {
 func (api *API) Run(ctx context.Context) error {
 	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
 
-	addr := net.JoinHostPort(api.config.Hostname, strconv.Itoa(api.config.Port))
-
 	apiHTTP := api.handler(ctx)
 
 	mux := http.NewServeMux()
@@ -49,26 +48,32 @@ func (api *API) Run(ctx context.Context) error {
 		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))
 	}
 
+	addr := net.JoinHostPort(api.config.Hostname, strconv.Itoa(api.config.Port))
 	srv := &http.Server{Addr: addr, Handler: mux}
 
-	errCh := make(chan error)
+	errCh := make(chan error, 1)
 	go func() {
-		log.WithContext(ctx).Infof("Server listening on %q", addr)
-		errCh <- srv.ListenAndServe()
+		<-ctx.Done()
+		log.WithContext(ctx).Infof("Server is shutting down...")
+
+		ctx, cancel := context.WithTimeout(ctx, api.shutdownTimeout)
+		defer cancel()
+
+		srv.SetKeepAlivesEnabled(false)
+		if err := srv.Shutdown(ctx); err != nil {
+			errCh <- errors.Errorf("gracefully shutdown the server: %w", err)
+
+		}
+		close(errCh)
 	}()
 
-	select {
-	case <-ctx.Done():
-		log.WithContext(ctx).Infof("Shutting down server at %q", addr)
-	case err := <-errCh:
-		return err
+	log.WithContext(ctx).Infof("Server is ready to handle requests at %q", addr)
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return errors.Errorf("error starting server: %w", err)
 	}
+	defer log.WithContext(ctx).Infof("Server stoped")
 
-	// Shutdown gracefully with a 30s timeout.
-	ctx, cancel := context.WithTimeout(context.Background(), api.shutdownTimeout)
-	defer cancel()
-
-	err := srv.Shutdown(ctx)
+	err := <-errCh
 	return err
 }
 

@@ -65,7 +65,7 @@ func NewApp() *cli.App {
 		}
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
-			return errors.Errorf("--log-level %q, %s", config.LogLevel, err)
+			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
 		}
 
 		return runApp(ctx, config)

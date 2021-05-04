@@ -10,7 +10,6 @@ const defaultCallersSkip = 2
 
 // Error is a custom error
 type Error struct {
-	Err     error
 	goerror *goerrors.Error
 	fields  Fields
 }
@@ -28,9 +27,6 @@ func (err *Error) ErrorStack() string {
 
 // Unwrap unpacks wrapped native errors
 func (err *Error) Unwrap() error {
-	if err.Err != nil {
-		return err.Err
-	}
 	return err.goerror.Err
 }
 
@@ -44,13 +40,7 @@ func (err *Error) WithField(key string, value interface{}) *Error {
 // as a drop-in replacement for fmt.Errorf() to provide descriptive
 // errors in return values.
 func Errorf(format string, vals ...interface{}) *Error {
-	err := newWithSkip(fmt.Errorf(format, vals...), defaultCallersSkip)
-	for _, val := range vals {
-		if valErr, ok := val.(error); ok {
-			err.Err = valErr
-		}
-	}
-	return err
+	return newWithSkip(fmt.Errorf(format, vals...), defaultCallersSkip)
 }
 
 // New makes an Error from the given value. If that value is already an
