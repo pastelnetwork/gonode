@@ -1,4 +1,4 @@
-//go:generate goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+//go:generate goa gen github.com/pastelnetwork/gonode/walletnode/server/design
 
 package api
 
@@ -20,35 +20,35 @@ import (
 
 const (
 	defaultShutdownTimeout = time.Second * 30
-	logPrefix              = "api"
+	logPrefix              = "server"
 )
 
 type service interface {
 	Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server
 }
 
-// API represents RESTAPI service.
-type API struct {
+// Server represents RESTAPI service.
+type Server struct {
 	config          *Config
 	shutdownTimeout time.Duration
 	services        []service
 }
 
 // Run startworks RESTAPI service.
-func (api *API) Run(ctx context.Context) error {
+func (server *Server) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
-	apiHTTP := api.handler(ctx)
+	apiHTTP := server.handler(ctx)
 
 	mux := http.NewServeMux()
 	mux.Handle("/", apiHTTP)
 	mux.Handle("/swagger/swagger.json", apiHTTP)
 
-	if api.config.Swagger {
+	if server.config.Swagger {
 		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))
 	}
 
-	addr := net.JoinHostPort(api.config.Hostname, strconv.Itoa(api.config.Port))
+	addr := net.JoinHostPort(server.config.Hostname, strconv.Itoa(server.config.Port))
 	srv := &http.Server{Addr: addr, Handler: mux}
 
 	errCh := make(chan error, 1)
@@ -56,7 +56,7 @@ func (api *API) Run(ctx context.Context) error {
 		<-ctx.Done()
 		log.WithContext(ctx).Infof("Server is shutting down...")
 
-		ctx, cancel := context.WithTimeout(ctx, api.shutdownTimeout)
+		ctx, cancel := context.WithTimeout(ctx, server.shutdownTimeout)
 		defer cancel()
 
 		srv.SetKeepAlivesEnabled(false)
@@ -77,11 +77,11 @@ func (api *API) Run(ctx context.Context) error {
 	return err
 }
 
-func (api *API) handler(ctx context.Context) http.Handler {
+func (server *Server) handler(ctx context.Context) http.Handler {
 	mux := goahttp.NewMuxer()
 
 	var servers goahttp.Servers
-	for _, service := range api.services {
+	for _, service := range server.services {
 		servers = append(servers, service.Mount(ctx, mux))
 	}
 	servers.Use(goahttpmiddleware.Debug(mux, os.Stdout))
@@ -94,9 +94,9 @@ func (api *API) handler(ctx context.Context) http.Handler {
 	return handler
 }
 
-// New returns a new API instance.
-func New(config *Config, services ...service) *API {
-	return &API{
+// New returns a new Server instance.
+func New(config *Config, services ...service) *Server {
+	return &Server{
 		config:          config,
 		shutdownTimeout: defaultShutdownTimeout,
 		services:        services,

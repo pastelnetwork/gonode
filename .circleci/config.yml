@@ -47,7 +47,8 @@ commands:
       package:
         type: string
       goos:
-        type: string
+        type: enum
+        enum: ["darwin", "linux", "windows"]
     steps:
       - run:
           name: "<< parameters.package >>: Fetch dependencies"

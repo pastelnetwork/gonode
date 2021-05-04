@@ -11,15 +11,15 @@ import (
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/api"
 	"github.com/pastelnetwork/gonode/tools/pastel-api/configs"
-	"github.com/pastelnetwork/gonode/tools/pastel-api/server"
 )
 
 const (
 	appName  = "pastel-api"
 	appUsage = "Pastel API (Fake)"
 
-	defaultConfigFile = "./examples/configs/default.yml"
+	defaultConfigFile = ""
 )
 
 // NewApp inits a new command line interface.
@@ -73,7 +73,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
 
-	log.WithContext(ctx).Debugf("Config: %s", config)
+	log.WithContext(ctx).Infof("Config: %s", config)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -82,6 +82,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
-	err := server.New().Run(ctx, config.Server)
+	err := api.NewServer().Run(ctx, config.Server)
 	return err
 }

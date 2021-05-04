@@ -3,14 +3,14 @@ package configs
 import (
 	"encoding/json"
 
-	"github.com/pastelnetwork/gonode/tools/pastel-api/server"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/api"
 )
 
 // Config contains configuration of all components of the WalletNode.
 type Config struct {
 	Main `mapstructure:",squash"`
 
-	Server *server.Config `mapstructure:"server" json:"server,omitempty"`
+	Server *api.Config `mapstructure:"api" json:"api,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -24,6 +24,6 @@ func (config *Config) String() string {
 func New() *Config {
 	return &Config{
 		Main:   *NewMain(),
-		Server: server.NewConfig(),
+		Server: api.NewConfig(),
 	}
 }

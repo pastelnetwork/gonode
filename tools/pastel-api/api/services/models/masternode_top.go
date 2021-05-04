@@ -1,12 +1,8 @@
-package methods
+package models
 
-type MasterNodes []*MasterNode
+type TopMasterNodes map[int][]TopMasterNode
 
-func (nodes *MasterNodes) Top() MasterNodes {
-	return nil
-}
-
-type MasterNode struct {
+type TopMasterNode struct {
 	Rank          string `json:"rank"`
 	IPPort        string `json:"IP:Port"`
 	Protocol      int    `json:"protocol"`
