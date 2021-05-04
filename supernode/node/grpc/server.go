@@ -29,7 +29,7 @@ type Server struct {
 
 // Run starts the server
 func (server *Server) Run(ctx context.Context) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, logServerPrefix)
+	ctx = log.ContextWithPrefix(ctx, logServerPrefix)
 
 	group, ctx := errgroup.WithContext(ctx)
 

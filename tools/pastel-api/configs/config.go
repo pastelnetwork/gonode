@@ -3,7 +3,7 @@ package configs
 import (
 	"encoding/json"
 
-	"github.com/pastelnetwork/gonode/tools/fake-pastel-api/server"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/server"
 )
 
 // Config contains configuration of all components of the WalletNode.

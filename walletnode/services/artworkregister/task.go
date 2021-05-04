@@ -30,7 +30,7 @@ type Task struct {
 
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, task.ID))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
 
 	log.WithContext(ctx).Debugf("Start task")
 	defer log.WithContext(ctx).Debugf("End task")

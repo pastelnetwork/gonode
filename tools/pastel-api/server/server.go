@@ -37,7 +37,7 @@ func New() *Server {
 }
 
 func (s *Server) Run(ctx context.Context, config *Config) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	mux := http.NewServeMux()
 	//mux.Handle("/", apiHTTP)

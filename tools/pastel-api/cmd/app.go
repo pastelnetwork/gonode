@@ -11,13 +11,13 @@ import (
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	"github.com/pastelnetwork/gonode/tools/fake-pastel-api/configs"
-	"github.com/pastelnetwork/gonode/tools/fake-pastel-api/server"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/configs"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/server"
 )
 
 const (
 	appName  = "pastel-api"
-	appUsage = "Pastel RPC API"
+	appUsage = "Pastel API (Fake)"
 
 	defaultConfigFile = "./examples/configs/default.yml"
 )
@@ -68,16 +68,18 @@ func NewApp() *cli.App {
 }
 
 func runApp(ctx context.Context, config *configs.Config) error {
-	log.Debug("[app] start")
-	defer log.Debug("[app] end")
+	ctx = log.ContextWithPrefix(ctx, "app")
 
-	log.Debugf("[app] config: %s", config)
+	log.WithContext(ctx).Info("Start")
+	defer log.WithContext(ctx).Info("End")
+
+	log.WithContext(ctx).Debugf("Config: %s", config)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	sys.RegisterInterruptHandler(cancel, func() {
-		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
+		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
 	err := server.New().Run(ctx, config.Server)

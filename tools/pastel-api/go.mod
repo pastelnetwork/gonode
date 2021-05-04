@@ -1,4 +1,4 @@
-module github.com/pastelnetwork/gonode/tools/fake-pastel-api
+module github.com/pastelnetwork/gonode/tools/pastel-api
 
 go 1.16
 

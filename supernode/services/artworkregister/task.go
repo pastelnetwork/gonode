@@ -53,7 +53,7 @@ func (task *Task) Done() <-chan struct{} {
 }
 
 func (task *Task) context(ctx context.Context) context.Context {
-	return context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, task.ID))
+	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
 }
 
 // Handshake is handshake wallet to supernode

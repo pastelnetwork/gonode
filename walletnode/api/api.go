@@ -36,7 +36,7 @@ type API struct {
 
 // Run startworks RESTAPI service.
 func (api *API) Run(ctx context.Context) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	apiHTTP := api.handler(ctx)
 

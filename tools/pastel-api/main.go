@@ -6,11 +6,11 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/sys"
-	"github.com/pastelnetwork/gonode/tools/fake-pastel-api/cmd"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/cmd"
 )
 
 const (
-	debugModeEnvName = "FAKE_PASTEL_API"
+	debugModeEnvName = "PASTEL_API"
 )
 
 var (

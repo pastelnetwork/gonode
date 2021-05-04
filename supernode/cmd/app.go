@@ -73,16 +73,18 @@ func NewApp() *cli.App {
 }
 
 func runApp(ctx context.Context, config *configs.Config) error {
-	log.Debug("[app] start")
-	defer log.Debug("[app] end")
+	ctx = log.ContextWithPrefix(ctx, "app")
 
-	log.Debugf("[app] config: %s", config)
+	log.WithContext(ctx).Info("Start")
+	defer log.WithContext(ctx).Info("End")
+
+	log.WithContext(ctx).Debugf("Config: %s", config)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	sys.RegisterInterruptHandler(cancel, func() {
-		log.Info("[app] Interrupt signal received. Gracefully shutting down...")
+		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
 	// entities
