@@ -26,16 +26,11 @@ type Service struct {
 
 // Run starts worker
 func (service *Service) Run(ctx context.Context) error {
-	//return service.worker.Run(ctx)
-
 	group, ctx := errgroup.WithContext(ctx)
 	group.Go(func() (err error) {
 		defer errors.Recover(func(recErr error) { err = recErr })
 		return service.worker.Run(ctx)
 	})
-	task := NewTask(service, &Ticket{})
-	service.worker.AddTask(ctx, task)
-
 	return group.Wait()
 }
 
@@ -54,8 +49,8 @@ func (service *Service) Task(taskID string) *Task {
 	return nil
 }
 
-// Register runs a new task of the registration artwork and returns its taskID.
-func (service *Service) Register(ctx context.Context, ticket *Ticket) (string, error) {
+// AddTask runs a new task of the registration artwork and returns its taskID.
+func (service *Service) AddTask(ctx context.Context, ticket *Ticket) (string, error) {
 	// NOTE: for testing
 	task := NewTask(service, ticket)
 	service.tasks = append(service.tasks, task)

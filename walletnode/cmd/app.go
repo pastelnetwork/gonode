@@ -93,13 +93,15 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
+	artworkRegisterService := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
+
+	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 200}) }()
 
 	// api service
 	api := api.New(config.API,
-		services.NewArtwork(artworkRegister),
+		services.NewArtwork(artworkRegisterService),
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, artworkRegister, api)
+	return runServices(ctx, artworkRegisterService, api)
 }

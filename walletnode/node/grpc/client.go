@@ -27,7 +27,7 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).WithField("address", address).Errorf("fail to dial")
+		log.WithContext(ctx).WithError(err).WithField("address", address).Warn("fail to dial")
 		return nil, errors.New(err)
 	}
 	log.WithContext(ctx).Debugf("Connected to %s", address)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -18,29 +17,25 @@ type client struct {
 	extKey string
 }
 
-// func (client *client) TopMasterNodes(ctx context.Context) (MasterNodes, error) {
-// 	blocknumMNs := make(map[string]MasterNodes)
-// 	err := client.callFor(ctx, &blocknumMNs, "masternode", "top")
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	for _, masterNodes := range blocknumMNs {
-// 		return masterNodes, nil
-// 	}
-// 	return nil, nil
-// }
-
 func (client *client) TopMasterNodes(ctx context.Context) (MasterNodes, error) {
-	var masterNodes MasterNodes
-
-	for i := 0; i < 10; i++ {
-		masterNodes = append(masterNodes, MasterNode{
-			Rank:       fmt.Sprintf("%d", i+1),
-			ExtAddress: fmt.Sprintf("127.0.0.1:%d", 4444+i),
-			ExtKey:     fmt.Sprintf("masternode-key-%d", i),
-		})
+	blocknumMNs := make(map[string]MasterNodes)
+	err := client.callFor(ctx, &blocknumMNs, "masternode", "top")
+	if err != nil {
+		return nil, err
 	}
-	return masterNodes, nil
+	for _, masterNodes := range blocknumMNs {
+		return masterNodes, nil
+	}
+	return nil, nil
+}
+
+func (client *client) StorageFee(ctx context.Context) (*StorageFee, error) {
+	var storagefee StorageFee
+	err := client.callFor(ctx, &storagefee, "storagefee", "getnetworkfee")
+	if err != nil {
+		return nil, err
+	}
+	return &storagefee, nil
 }
 
 func (client *client) MyMasterNode(ctx context.Context) (*MasterNode, error) {
