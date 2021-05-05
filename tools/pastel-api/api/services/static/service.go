@@ -10,11 +10,12 @@ import (
 //go:embed data/*.json
 var fs embed.FS
 
-type Service struct {
+// service represents a service that returns a static data.
+type service struct {
 	*services.Common
 }
 
-func (service *Service) Handle(ctx context.Context, method string, params []string) (interface{}, error) {
+func (service *service) Handle(ctx context.Context, method string, params []string) (interface{}, error) {
 	switch service.RoutePath(method, params) {
 	case "masternode_top":
 		return service.topMasterNode()
@@ -25,7 +26,7 @@ func (service *Service) Handle(ctx context.Context, method string, params []stri
 	return nil, services.ErrNotFoundMethod
 }
 
-func (service *Service) topMasterNode() (interface{}, error) {
+func (service *service) topMasterNode() (interface{}, error) {
 	var response TopMasterNodes
 
 	if err := service.UnmarshalFile(fs, "data/masternode_top.json", &response); err != nil {
@@ -34,7 +35,7 @@ func (service *Service) topMasterNode() (interface{}, error) {
 	return &response, nil
 }
 
-func (service *Service) storageFeeGetNetworkFee() (interface{}, error) {
+func (service *service) storageFeeGetNetworkFee() (interface{}, error) {
 	var response StorageFeeGetNetworkFee
 
 	if err := service.UnmarshalFile(fs, "data/storagefee_getnetworkfee.json", &response); err != nil {
@@ -43,8 +44,9 @@ func (service *Service) storageFeeGetNetworkFee() (interface{}, error) {
 	return &response, nil
 }
 
+// New returns a new Service instance.
 func New() services.Service {
-	return &Service{
+	return &service{
 		Common: services.NewCommon(),
 	}
 }

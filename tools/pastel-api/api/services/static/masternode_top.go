@@ -1,7 +1,9 @@
 package static
 
+// TopMasterNodes represents the API response that can be retrieved using the command `masternode top`.
 type TopMasterNodes map[int][]TopMasterNode
 
+// TopMasterNode represents a single masternode from top list.
 type TopMasterNode struct {
 	Rank          string `json:"rank"`
 	IPPort        string `json:"IP:Port"`

@@ -7,17 +7,20 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
+// Error represents an API error.
 type Error struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
+// Response represents an API response.
 type Response struct {
-	ID     string      `json:"id"`
-	Error  *Error      `json:"error"`
+	*Error `json:"error"`
+	ID     interface{} `json:"id"`
 	Result interface{} `json:"result"`
 }
 
+// Bytes returns the response in json string format.
 func (resp *Response) Bytes() ([]byte, error) {
 	data, err := json.Marshal(resp)
 	if err != nil {
@@ -33,14 +36,14 @@ func (resp *Response) Bytes() ([]byte, error) {
 	return data, nil
 }
 
-func newResponse(id string, result interface{}) *Response {
+func newResponse(id interface{}, result interface{}) *Response {
 	return &Response{
 		ID:     id,
 		Result: result,
 	}
 }
 
-func newErrorResponse(id string, code int, message string) *Response {
+func newErrorResponse(id interface{}, code int, message string) *Response {
 	return &Response{
 		ID: id,
 		Error: &Error{

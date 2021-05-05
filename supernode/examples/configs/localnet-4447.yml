@@ -3,7 +3,7 @@ pastel:
   port: 29932
   username: "rt"
   password: "rt"
-  ext_key: "masternode-key-3"
+  ext_key: "jXZDyPoescC4pgWMeD2qMzyPi5gaxMkkggrwGFAK2izTQgEkrjKqHSbG1HCfCFY9n3pAQ9q4VFHLrakL89bvfR"
 
 server:
   listen_addresses: "127.0.0.1"

@@ -99,6 +99,8 @@ jobs:
       - test:
           package: "pastel-client"
       - test:
+          package: "tools/pastel-api"
+      - test:
           package: "proto"
       - test:
           package: "walletnode"

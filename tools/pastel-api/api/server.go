@@ -18,10 +18,12 @@ const (
 	logPrefix       = "api"
 )
 
+// Server represents RPC API server.
 type Server struct {
 	services services.Services
 }
 
+// Run starts server.
 func (server *Server) Run(ctx context.Context, config *Config) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
@@ -104,6 +106,7 @@ func (server *Server) write(ctx context.Context, w http.ResponseWriter, code int
 
 }
 
+// NewServer returns a new Server instance.
 func NewServer(services ...services.Service) *Server {
 	return &Server{
 		services: services,
