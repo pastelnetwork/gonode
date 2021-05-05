@@ -7,6 +7,11 @@ import (
 type handshakerMock struct {
 	clientCipher *X448Cipher
 	serverCipher *X448Cipher
+	isClient     bool
+}
+
+func (h handshakerMock) IsClient() bool {
+	return h.isClient
 }
 
 func (h handshakerMock) ClientHello() ([]byte, error) {
@@ -29,11 +34,11 @@ func (h *handshakerMock) ClientKeyExchange() ([]byte, error) {
 func (h *handshakerMock) ServerKeyVerify(bytes []byte) (Cipher, error) {
 	// TODO: verify signature
 	vi, err := h.ClientHello()
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	vi = vi[:aes.BlockSize]
-	if err := h.serverCipher.SetShared(bytes[:], vi); err != nil{
+	if err := h.serverCipher.SetSharedAndConfigureAES(bytes[:], vi); err != nil {
 		return nil, err
 	}
 	return h.serverCipher, nil
@@ -48,19 +53,20 @@ func (h *handshakerMock) ServerKeyExchange() ([]byte, error) {
 func (h handshakerMock) ClientKeyVerify(bytes []byte) (Cipher, error) {
 	// verify client's signature
 	vi, err := h.ClientHello()
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	vi = vi[:aes.BlockSize]
-	if err := h.clientCipher.SetShared(bytes[:], vi); err != nil{
+	if err := h.clientCipher.SetSharedAndConfigureAES(bytes[:], vi); err != nil {
 		return nil, err
 	}
 	return h.clientCipher, nil
 }
 
-func NewHandshakerMock(clientCipher *X448Cipher, serverCipher *X448Cipher) Handshaker {
+func NewHandshakerMock(clientCipher *X448Cipher, serverCipher *X448Cipher, isClient bool) Handshaker {
 	return &handshakerMock{
 		clientCipher: clientCipher,
 		serverCipher: serverCipher,
+		isClient:     isClient,
 	}
 }

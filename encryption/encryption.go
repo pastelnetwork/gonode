@@ -1,10 +1,7 @@
 package encryption
 
-import (
-	"io"
-)
-
 type Handshaker interface {
+	IsClient() bool
 	ClientHello() ([]byte, error)           // returns artistID
 	ServerHello() ([]byte, error)           // returns OK
 	ClientKeyExchange() ([]byte, error)     // returns signature+publicKey
@@ -14,6 +11,7 @@ type Handshaker interface {
 }
 
 type Cipher interface {
-	WrapWriter(writer io.Writer) (io.Writer, error)
-	WrapReader(reader io.Reader) (io.Reader, error)
+	Encrypt(dst, plaintext []byte) ([]byte, error)
+	MaxOverhead() int
+	Decrypt(dst, ciphertext []byte) ([]byte, error)
 }

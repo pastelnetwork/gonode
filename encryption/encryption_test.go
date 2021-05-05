@@ -4,17 +4,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/pastelnetwork/gonode/encryption/proto"
+	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/grpclog"
-	"io/ioutil"
 	"net"
-	"strings"
 	"testing"
 	"time"
 )
 
-type serverMock struct{
+type serverMock struct {
 	proto.UnsafeReverseServer
 }
 
@@ -37,7 +36,6 @@ func (s *serverMock) Do(c context.Context, request *proto.Request) (response *pr
 	return response, nil
 }
 
-
 func makeTestServer(t *testing.T, transport credentials.TransportCredentials) {
 	listener, err := net.Listen("tcp", ":5300")
 	fmt.Printf("test server started\n")
@@ -49,16 +47,25 @@ func makeTestServer(t *testing.T, transport credentials.TransportCredentials) {
 	}
 	grpcServer := grpc.NewServer(opts...)
 	proto.RegisterReverseServer(grpcServer, &serverMock{})
-	grpcServer.Serve(listener)
+	fmt.Printf("test server listen\n")
+	if err := grpcServer.Serve(listener); err != nil {
+		t.Fatalf("%s", err)
+	}
+	fmt.Printf("test server finished\n")
+
 	time.Sleep(1 * time.Second)
 }
 
 func TestClientAndServer(t *testing.T) {
 	clientCipher := NewX448Cipher()
 	serverCipher := NewX448Cipher()
-	handshaker := NewHandshakerMock(clientCipher, serverCipher)
+	handshaker := NewHandshakerMock(clientCipher, serverCipher, true)
 	transport := NewTransportCredentials(handshaker)
-	go makeTestServer(t, transport)
+
+	serverHandshaker := NewHandshakerMock(clientCipher, serverCipher, false)
+	serverTransport := NewTransportCredentials(serverHandshaker)
+
+	go makeTestServer(t, serverTransport)
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(transport),
 	}
@@ -76,46 +83,5 @@ func TestClientAndServer(t *testing.T) {
 		grpclog.Fatalf("fail to dial: %v", err)
 	}
 	fmt.Println(response.Message)
-	if response.Message != "egassem"{
-		t.Fatalf("unexpected response from server %s", request.Message)
-	}
-}
-
-type WriterMock struct {
-	buff []byte
-}
-
-func (w *WriterMock) Write(p []byte) (n int, err error) {
-	w.buff = append(w.buff, p...)
-	return len(p), nil
-}
-
-func TestEncrypter(t *testing.T) {
-	defKey := []byte("testsomekeytest1")
-	//vi := []byte("smstsomekeytest1")
-	w := new(WriterMock)
-	encrypter, err := NewStreamEncrypter(defKey, defKey, w)
-	if err != nil{
-		t.Fatal(err)
-	}
-	testData := []byte("somebuffer")
-	_, err = encrypter.Write(testData)
-	if err != nil{
-		t.Fatal(err)
-	}
-	//b, err := ioutil.ReadAll(strings.NewReader(string(w.buff)))
-	//if err != nil{
-	//	t.Fatal(err)
-	//}
-	sd, err := NewStreamDecrypter(defKey, defKey, strings.NewReader(string(w.buff)))
-	if err != nil{
-		t.Fatal(err)
-	}
-	d, err := ioutil.ReadAll(sd)
-	if err != nil{
-		t.Fatal(err)
-	}
-	if string(d) != string(testData){
-		t.Fatalf("value is not expected %s %s", d, testData)
-	}
+	assert.Equal(t, "egassem", response.Message)
 }
