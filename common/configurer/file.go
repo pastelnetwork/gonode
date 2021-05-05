@@ -31,11 +31,11 @@ func ParseFile(filename string, config interface{}) error {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		return errors.Errorf("could not read config file: %s", err)
+		return errors.Errorf("could not read config file: %w", err)
 	}
 
 	if err := viper.Unmarshal(&config); err != nil {
-		return errors.Errorf("unable to decode into struct, %v", err)
+		return errors.Errorf("unable to decode into struct, %w", err)
 	}
 
 	return nil

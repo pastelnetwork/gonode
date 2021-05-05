@@ -20,7 +20,7 @@ type client struct{}
 // Connect implements node.Client.Connect()
 func (client *client) Connect(ctx context.Context, address string) (node.Connection, error) {
 	id, _ := random.String(8, random.Base62Chars)
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logClientPrefix, id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, id))
 
 	grpcConn, err := grpc.DialContext(ctx, address,
 		grpc.WithInsecure(),

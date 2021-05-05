@@ -51,7 +51,7 @@ func (stream *registerArtowrk) Handshake(ctx context.Context, connID string, IsP
 
 // AcceptedNodes implements node.RegisterArtowrk.AcceptedNodes()
 func (stream *registerArtowrk) AcceptedNodes(ctx context.Context) (node.SuperNodes, error) {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
 		Requests: &pb.RegisterArtworkRequest_AcceptedNodes{
@@ -83,7 +83,7 @@ func (stream *registerArtowrk) AcceptedNodes(ctx context.Context) (node.SuperNod
 
 // ConnectTo implements node.RegisterArtowrk.ConnectTo()
 func (stream *registerArtowrk) ConnectTo(ctx context.Context, nodeKey string) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
 		Requests: &pb.RegisterArtworkRequest_ConnectTo{
@@ -121,7 +121,7 @@ func (stream *registerArtowrk) sendRecv(ctx context.Context, req *pb.RegisterArt
 }
 
 func (stream *registerArtowrk) send(ctx context.Context, req *pb.RegisterArtworkRequest) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	if stream.isClosed {
 		return errors.New("stream closed")
@@ -153,7 +153,7 @@ func (stream *registerArtowrk) recv(ctx context.Context) (*pb.RegisterArtworkRep
 }
 
 func (stream *registerArtowrk) start(ctx context.Context) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	go func() {
 		defer func() {

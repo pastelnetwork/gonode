@@ -31,7 +31,7 @@ type Service struct {
 
 // Run starts worker
 func (service *Service) Run(ctx context.Context) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, logPrefix)
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	masterNode, err := service.pastelClient.MyMasterNode(ctx)
 	if err != nil {

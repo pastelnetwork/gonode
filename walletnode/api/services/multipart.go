@@ -23,17 +23,17 @@ func UploadImageDecoderFunc(reader *multipart.Reader, p **artworks.UploadImagePa
 		return nil
 	}
 	if err != nil {
-		return artworks.MakeInternalServerError(errors.Errorf("could not read next part, %s", err))
+		return artworks.MakeInternalServerError(errors.Errorf("could not read next part, %w", err))
 	}
 
 	_, params, err := mime.ParseMediaType(part.Header.Get("Content-Disposition"))
 	if err != nil {
-		return artworks.MakeBadRequest(errors.Errorf("could not parse Content-Disposition, %s", err))
+		return artworks.MakeBadRequest(errors.Errorf("could not parse Content-Disposition, %w", err))
 	}
 
 	contentType, _, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
 	if err != nil {
-		return artworks.MakeBadRequest(errors.Errorf("could not parse Content-Type, %s", err))
+		return artworks.MakeBadRequest(errors.Errorf("could not parse Content-Type, %w", err))
 	}
 
 	if !strings.HasPrefix(contentType, contentTypePrefix) {
@@ -43,7 +43,7 @@ func UploadImageDecoderFunc(reader *multipart.Reader, p **artworks.UploadImagePa
 	if params["name"] == "file" {
 		bytes, err := ioutil.ReadAll(part)
 		if err != nil {
-			return artworks.MakeInternalServerError(errors.Errorf("could not read multipart file, %s", err))
+			return artworks.MakeInternalServerError(errors.Errorf("could not read multipart file, %w", err))
 		}
 		res.Bytes = bytes
 	}

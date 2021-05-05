@@ -11,18 +11,14 @@ import (
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	"github.com/pastelnetwork/gonode/pastel-client"
-	"github.com/pastelnetwork/gonode/walletnode/api"
-	"github.com/pastelnetwork/gonode/walletnode/api/services"
-	"github.com/pastelnetwork/gonode/walletnode/configs"
-	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
-	"github.com/pastelnetwork/gonode/walletnode/storage/memory"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/api"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services/static"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/configs"
 )
 
 const (
-	appName  = "walletnode"
-	appUsage = "WalletNode" // TODO: Write a clear description.
+	appName  = "pastel-api"
+	appUsage = "Pastel API (Fake)"
 
 	defaultConfigFile = ""
 )
@@ -42,8 +38,6 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
-		// API
-		cli.NewFlag("swagger", &config.API.Swagger).SetUsage("Enable Swagger UI."),
 	)
 
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
@@ -89,21 +83,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
-	// entities
-	pastelClient := pastel.NewClient(config.Pastel)
-	nodeClient := grpc.NewClient()
-	db := memory.NewKeyValue()
-
-	// business logic services
-	artworkRegisterService := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
-
-	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 200}) }()
-
-	// api service
-	server := api.NewServer(config.API,
-		services.NewArtwork(artworkRegisterService),
-		services.NewSwagger(),
+	server := api.NewServer(
+		static.New(),
 	)
-
-	return runServices(ctx, artworkRegisterService, server)
+	return server.Run(ctx, config.Server)
 }

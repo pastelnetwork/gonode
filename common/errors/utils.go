@@ -50,11 +50,10 @@ func Recover(onPanic func(cause error)) {
 // CheckErrorAndExit checks if there is an error, display it in the console and exit with a non-zero exit code. Otherwise, exit 0.
 // Note that if the debugMode is true, this will print out the stack trace.
 func CheckErrorAndExit(err error) {
-	defer os.Exit(ExitCode(err))
-
 	if err == nil || IsContextCanceled(err) {
 		return
 	}
+	defer os.Exit(ExitCode(err))
 
 	errorFields := ExtractFields(err)
 

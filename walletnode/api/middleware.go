@@ -27,7 +27,7 @@ func Log(ctx context.Context) func(h http.Handler) http.Handler {
 			}
 			started := time.Now()
 
-			ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logPrefix, reqID))
+			ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, reqID))
 
 			log.WithContext(ctx).
 				WithField("from", logFrom(r)).

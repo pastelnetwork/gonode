@@ -29,7 +29,7 @@ type Server struct {
 
 // Run starts the server
 func (server *Server) Run(ctx context.Context) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, logServerPrefix)
+	ctx = log.ContextWithPrefix(ctx, logServerPrefix)
 
 	group, ctx := errgroup.WithContext(ctx)
 
@@ -51,7 +51,7 @@ func (server *Server) Run(ctx context.Context) error {
 func (server *Server) listen(ctx context.Context, address string, grpcServer *grpc.Server) (err error) {
 	listen, err := net.Listen("tcp", address)
 	if err != nil {
-		return errors.Errorf("failed to listen: %v", err).WithField("address", address)
+		return errors.Errorf("failed to listen: %w", err).WithField("address", address)
 	}
 
 	errCh := make(chan error, 1)
@@ -59,7 +59,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 		defer errors.Recover(func(recErr error) { err = recErr })
 		log.WithContext(ctx).Infof("Server listening on %q", address)
 		if err := grpcServer.Serve(listen); err != nil {
-			errCh <- errors.Errorf("failed to serve: %v", err).WithField("address", address)
+			errCh <- errors.Errorf("failed to serve: %w", err).WithField("address", address)
 		}
 	}()
 

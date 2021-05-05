@@ -92,7 +92,7 @@ Wrap the error object from a function built into Go:
 import "github.com/pastelnetwork/go-commons/errors"
 
 if err := json.Unmarshal(data, &config); err != nil {
-    return errors.Errorf("unable to decode into struct, %v", err)
+    return errors.Errorf("unable to decode into struct, %w", err)
 }
 ```
 

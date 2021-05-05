@@ -24,7 +24,7 @@ type registerArtowrk struct {
 }
 
 func (stream *registerArtowrk) Handshake(ctx context.Context, connID, nodeKey string) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
 		Requests: &pb.RegisterArtworkRequest_Handshake{
@@ -63,7 +63,7 @@ func (stream *registerArtowrk) sendRecv(ctx context.Context, req *pb.RegisterArt
 }
 
 func (stream *registerArtowrk) send(ctx context.Context, req *pb.RegisterArtworkRequest) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
 
 	if stream.isClosed {
 		return errors.New("stream closed")
@@ -95,7 +95,7 @@ func (stream *registerArtowrk) recv(ctx context.Context) (*pb.RegisterArtworkRep
 }
 
 func (stream *registerArtowrk) start(ctx context.Context) error {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
 
 	go func() {
 		defer func() {

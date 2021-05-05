@@ -26,7 +26,7 @@ type clientConn struct {
 
 // RegisterArtowrk implements node.Connection.RegisterArtowrk()
 func (conn *clientConn) RegisterArtowrk(ctx context.Context) (node.RegisterArtowrk, error) {
-	ctx = context.WithValue(ctx, log.PrefixKey, fmt.Sprintf("%s-%s", logClientPrefix, conn.id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, conn.id))
 
 	client, err := conn.SuperNodeClient.RegisterArtowrk(ctx)
 	if err != nil {

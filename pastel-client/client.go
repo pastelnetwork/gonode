@@ -88,7 +88,7 @@ func (client *client) callFor(ctx context.Context, object interface{}, method st
 		if err, ok := err.(*json.UnmarshalTypeError); ok {
 			return errors.New(err)
 		}
-		return errors.Errorf("could not call method %q, %s", method, err)
+		return errors.Errorf("could not call method %q, %w", method, err)
 	}
 	if object == nil {
 		return errors.New("nothing found")
@@ -99,7 +99,7 @@ func (client *client) callFor(ctx context.Context, object interface{}, method st
 func (client *client) call(ctx context.Context, method string, params ...interface{}) (*jsonrpc.RPCResponse, error) {
 	response, err := client.CallWithContext(ctx, method, params)
 	if err != nil {
-		return nil, errors.Errorf("could not call %q, %s", method, err)
+		return nil, errors.Errorf("could not call %q, %w", method, err)
 	}
 	if response == nil {
 		return nil, errors.Errorf("empty response on call %q", method)
