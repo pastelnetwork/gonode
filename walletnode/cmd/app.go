@@ -97,7 +97,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegisterService := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
 
-	go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 200}) }()
+	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 200}) }()
 
 	// api service
 	server := api.NewServer(config.API,
