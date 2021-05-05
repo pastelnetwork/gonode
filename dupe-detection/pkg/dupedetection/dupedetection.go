@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	pfmt "github.com/pastelnetwork/gonode/common/fmt"
+	pruntime "github.com/pastelnetwork/gonode/common/runtime"
 
 	"github.com/disintegration/imaging"
 	tf "github.com/galeone/tensorflow/tensorflow/go"
@@ -87,7 +87,7 @@ func loadImage(imagePath string, width int, height int) (image.Image, error) {
 
 // ComputeImageDeepLearningFeatures computes dupe detection fingerprints for image with imagePath
 func ComputeImageDeepLearningFeatures(imagePath string) ([][]float64, error) {
-	defer pfmt.PrintExecutionTime(time.Now())
+	defer pruntime.PrintExecutionTime(time.Now())
 
 	m, err := loadImage(imagePath, 224, 224)
 	if err != nil {
