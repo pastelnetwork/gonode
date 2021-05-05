@@ -3,14 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"image"
 	"io"
 	"math"
 	"math/rand"
 	"os"
 	"path/filepath"
-	"regexp"
-	"runtime"
 	"time"
 
 	"database/sql"
@@ -22,12 +19,9 @@ import (
 	_ "gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
 
-	tf "github.com/galeone/tensorflow/tensorflow/go"
-	tg "github.com/galeone/tfgo"
-
-	"github.com/disintegration/imaging"
-
 	"github.com/pastelnetwork/gonode/common/errors"
+	pfmt "github.com/pastelnetwork/gonode/common/fmt"
+	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 
 	"encoding/binary"
 	"encoding/hex"
@@ -141,15 +135,6 @@ func cacheFingerprint(fingerprints [][]float64, filePath string) error {
 	return nil
 }
 
-func Measure(start time.Time) {
-	elapsed := time.Since(start)
-	pc, _, _, _ := runtime.Caller(1)
-	pcFunc := runtime.FuncForPC(pc)
-	funcNameOnly := regexp.MustCompile(`^.*\.(.*)$`)
-	funcName := funcNameOnly.ReplaceAllString(pcFunc.Name(), "$1")
-	fmt.Printf("\n%s took %s\n", funcName, elapsed)
-}
-
 var dupe_detection_image_fingerprint_database_file_path string
 
 func tryToFindLocalDatabaseFile() bool {
@@ -160,7 +145,7 @@ func tryToFindLocalDatabaseFile() bool {
 }
 
 func regenerate_empty_dupe_detection_image_fingerprint_database_func() error {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	os.Remove(dupe_detection_image_fingerprint_database_file_path)
 
 	db, err := sql.Open("sqlite3", dupe_detection_image_fingerprint_database_file_path)
@@ -229,119 +214,6 @@ func get_all_valid_image_file_paths_in_folder_func(path_to_art_folder string) ([
 	return results, nil
 }
 
-func loadImage(imagePath string, width int, height int) (image.Image, error) {
-	reader, err := os.Open(imagePath)
-	if err != nil {
-		return nil, errors.New(err)
-	}
-	defer reader.Close()
-
-	img, _, err := image.Decode(reader)
-	if err != nil {
-		return nil, errors.New(err)
-	}
-
-	img = imaging.Resize(img, width, height, imaging.Linear)
-	return img, nil
-}
-
-var models = make(map[string]*tg.Model)
-
-type modelData struct {
-	model string
-	input string
-}
-
-var fingerprintSources = []modelData{
-	{
-		model: "EfficientNetB7.tf",
-		input: "serving_default_input_1",
-	},
-	{
-		model: "EfficientNetB6.tf",
-		input: "serving_default_input_2",
-	},
-	{
-		model: "InceptionResNetV2.tf",
-		input: "serving_default_input_3",
-	},
-	{
-		model: "DenseNet201.tf",
-		input: "serving_default_input_4",
-	},
-	{
-		model: "InceptionV3.tf",
-		input: "serving_default_input_5",
-	},
-	{
-		model: "NASNetLarge.tf",
-		input: "serving_default_input_6",
-	},
-	{
-		model: "ResNet152V2.tf",
-		input: "serving_default_input_7",
-	},
-}
-
-func tgModel(path string) *tg.Model {
-	m, ok := models[path]
-	if !ok {
-		m = tg.LoadModel(path, []string{"serve"}, nil)
-		models[path] = m
-	}
-	return m
-}
-
-func compute_image_deep_learning_features_func(path_to_art_image_file string) ([][]float64, error) {
-	defer Measure(time.Now())
-
-	m, err := loadImage(path_to_art_image_file, 224, 224)
-	if err != nil {
-		return nil, errors.New(err)
-	}
-
-	bounds := m.Bounds()
-
-	var inputTensor [1][224][224][3]float32
-
-	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			r, g, b, _ := m.At(x, y).RGBA()
-
-			// height = y and width = x
-			inputTensor[0][y][x][0] = float32(r >> 8)
-			inputTensor[0][y][x][1] = float32(g >> 8)
-			inputTensor[0][y][x][2] = float32(b >> 8)
-		}
-	}
-
-	fingerprints := make([][]float64, len(fingerprintSources))
-	for i, source := range fingerprintSources {
-		model := tgModel(source.model)
-
-		fakeInput, _ := tf.NewTensor(inputTensor)
-		results := model.Exec([]tf.Output{
-			model.Op("StatefulPartitionedCall", 0),
-		}, map[tf.Output]*tf.Tensor{
-			model.Op(source.input, 0): fakeInput,
-		})
-
-		predictions := results[0].Value().([][]float32)[0]
-		//fmt.Println(predictions)
-		fingerprints[i] = fromFloat32To64(predictions)
-	}
-
-	return fingerprints, nil
-}
-
-func fromFloat32To64(input []float32) []float64 {
-	output := make([]float64, len(input))
-	for i, value := range input {
-		output[i] = float64(value)
-	}
-	return output
-}
-
 func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 	f, err := os.Open(sampleImageFilePath)
 	if err != nil {
@@ -372,7 +244,7 @@ func fromBytes(data []byte) []float64 {
 }
 
 func add_image_fingerprints_to_dupe_detection_database_func(path_to_art_image_file string) error {
-	fingerprints, err := compute_image_deep_learning_features_func(path_to_art_image_file)
+	fingerprints, err := dupedetection.ComputeImageDeepLearningFeatures(path_to_art_image_file)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -453,7 +325,7 @@ func get_list_of_all_registered_image_file_hashes_func() ([]string, error) {
 }
 
 func get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func() (*dataframe.DataFrame, error) {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 
 	hashes, err := get_list_of_all_registered_image_file_hashes_func()
 	if err != nil {
@@ -520,12 +392,12 @@ func get_all_image_fingerprints_from_dupe_detection_database_as_dataframe_func()
 }
 
 func bindRowsOfDataFrames(dataFrame dataframe.DataFrame, dataFrameToJoinRows dataframe.DataFrame) dataframe.DataFrame {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	return dataFrame.RBind(dataFrameToJoinRows)
 }
 
 func get_all_image_fingerprints_from_dupe_detection_database_as_array() ([][]float64, error) {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 
 	hashes, err := get_list_of_all_registered_image_file_hashes_func()
 	if err != nil {
@@ -566,8 +438,8 @@ func get_all_image_fingerprints_from_dupe_detection_database_as_array() ([][]flo
 }
 
 func get_image_deep_learning_features_combined_vector_for_single_image_func(path_to_art_image_file string) ([]float64, error) {
-	defer Measure(time.Now())
-	fingerprints, err := compute_image_deep_learning_features_func(path_to_art_image_file)
+	defer pfmt.PrintExecutionTime(time.Now())
+	fingerprints, err := dupedetection.ComputeImageDeepLearningFeatures(path_to_art_image_file)
 	if err != nil {
 		return nil, errors.New(err)
 	}
@@ -580,7 +452,7 @@ func get_image_deep_learning_features_combined_vector_for_single_image_func(path
 }
 
 func computePearsonRForAllFingerprintPairs(candidate_image_fingerprint []float64, final_combined_image_fingerprint_array [][]float64) ([]float64, error) {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	similarity_score_vector__pearson_all := make([]float64, len(final_combined_image_fingerprint_array))
 	var err error
 	for i, fingerprint := range final_combined_image_fingerprint_array {
@@ -594,7 +466,7 @@ func computePearsonRForAllFingerprintPairs(candidate_image_fingerprint []float64
 }
 
 func computeSpearmanForAllFingerprintPairs(candidate_image_fingerprint []float64, final_combined_image_fingerprint_array [][]float64) ([]float64, error) {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	similarity_score_vector__spearman := make([]float64, len(final_combined_image_fingerprint_array))
 	var err error
 	for i, fingerprint := range final_combined_image_fingerprint_array {
@@ -608,7 +480,7 @@ func computeSpearmanForAllFingerprintPairs(candidate_image_fingerprint []float64
 }
 
 func filterOutFingerprintsByThreshold(similarity_score_vector__pearson_all []float64, threshold float64, final_combined_image_fingerprint_array [][]float64) [][]float64 {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	var filteredByThresholdCombinedImageFingerprintArray [][]float64
 	for i, valueToCheck := range similarity_score_vector__pearson_all {
 		if !math.IsNaN(valueToCheck) && valueToCheck >= threshold {
@@ -667,7 +539,7 @@ func compute_average_and_stdev_of_50th_to_90th_percentile_func(input_vector []fl
 }
 
 func compute_parallel_bootstrapped_kendalls_tau_func(x []float64, list_of_fingerprints_requiring_further_testing_2 [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	original_length_of_input := len(x)
 	robust_average_tau := make([]float64, len(list_of_fingerprints_requiring_further_testing_2))
 	robust_stdev_tau := make([]float64, len(list_of_fingerprints_requiring_further_testing_2))
@@ -852,7 +724,7 @@ func compute_parallel_bootstrapped_randomized_dependence_func(x []float64, list_
 }
 
 func compute_parallel_bootstrapped_bagged_hoeffdings_d_smaller_sample_size_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	original_length_of_input := len(x)
 	robust_average_D := make([]float64, len(list_of_fingerprints_requiring_further_testing))
 	robust_stdev_D := make([]float64, len(list_of_fingerprints_requiring_further_testing))
@@ -877,7 +749,7 @@ func compute_parallel_bootstrapped_bagged_hoeffdings_d_smaller_sample_size_func(
 }
 
 func compute_parallel_bootstrapped_bagged_hoeffdings_d_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	original_length_of_input := len(x)
 	robust_average_D := make([]float64, len(list_of_fingerprints_requiring_further_testing))
 	robust_stdev_D := make([]float64, len(list_of_fingerprints_requiring_further_testing))
@@ -902,7 +774,7 @@ func compute_parallel_bootstrapped_bagged_hoeffdings_d_func(x []float64, list_of
 }
 
 func compute_parallel_bootstrapped_blomqvist_beta_func(x []float64, list_of_fingerprints_requiring_further_testing [][]float64, sample_size int, number_of_bootstraps int) ([]float64, []float64, error) {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	original_length_of_input := len(x)
 	robust_average_blomqvist := make([]float64, len(list_of_fingerprints_requiring_further_testing))
 	robust_stdev_blomqvist := make([]float64, len(list_of_fingerprints_requiring_further_testing))
@@ -949,7 +821,7 @@ func computeSimilarity(candidateImageFingerprint []float64, fingerprints [][]flo
 	if len(fingerprints) == 0 {
 		return [][]float64{}, nil
 	}
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 	fmt.Printf("\n\n-->Computing %v", data.title)
 
 	var similarityScore, similarityScoreStdev []float64
@@ -1003,6 +875,7 @@ func printBlomqvistBetaCalculationResults(similarityScore, similarityScoreStdev 
 }
 
 func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_file string) (bool, error) {
+	defer pfmt.PrintExecutionTime(time.Now())
 	fmt.Printf("\nChecking if candidate image is a likely duplicate of a previously registered artwork:")
 	fmt.Printf("\nRetrieving image fingerprints of previously registered images from local database...")
 
@@ -1142,7 +1015,7 @@ func measure_similarity_of_candidate_image_to_database_func(path_to_art_image_fi
 }
 
 func main() {
-	defer Measure(time.Now())
+	defer pfmt.PrintExecutionTime(time.Now())
 
 	defer profile.Start(profile.ProfilePath(".")).Stop()
 
