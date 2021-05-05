@@ -1,10 +1,10 @@
 pastel:
   hostname: "127.0.0.1"
-  port: 19932
+  port: 29932
   username: "rt"
   password: "rt"
-  ext_key: "masternode-key-4"
+  ext_key: "masternode-key-0"
 
 server:
   listen_addresses: "127.0.0.1"
-  port: 4448
+  port: 4444

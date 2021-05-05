@@ -100,10 +100,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 200}) }()
 
 	// api service
-	api := api.New(config.API,
+	server := api.NewServer(config.API,
 		services.NewArtwork(artworkRegisterService),
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, artworkRegisterService, api)
+	return runServices(ctx, artworkRegisterService, server)
 }

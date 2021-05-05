@@ -19,7 +19,7 @@ const (
 )
 
 type Server struct {
-	services map[string]services.Service
+	services services.Services
 }
 
 func (server *Server) Run(ctx context.Context, config *Config) error {
@@ -46,7 +46,7 @@ func (server *Server) Run(ctx context.Context, config *Config) error {
 		close(errCh)
 	}()
 
-	log.WithContext(ctx).Infof("Server is ready to handle requests at %q", addr)
+	log.WithContext(ctx).Infof("Server is listening on %q", addr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return errors.Errorf("error starting server: %w", err)
 	}
@@ -71,35 +71,41 @@ func (server *Server) httpHandler(ctx context.Context) http.Handler {
 
 		log.WithContext(ctx).WithField("req", req).Debug("Received new request")
 
-		service, ok := server.services[req.Method]
-		if !ok {
-			resp := newErrorResponse(req.ID, -32601, "Method not found")
-			if err := resp.Write(w, http.StatusNotImplemented); err != nil {
-				log.WithContext(ctx).WithError(err).Error("Could not write response")
-			}
-			return
-		}
-
-		data, err := service.Handle(ctx, req.Params)
+		data, err := server.services.Handle(ctx, req.Method, req.Params)
 		if err != nil {
-			resp := newErrorResponse(req.ID, -1, err.Error())
-			if err := resp.Write(w, http.StatusInternalServerError); err != nil {
-				log.WithContext(ctx).WithError(err).Error("Could not write response")
+			if err == services.ErrNotFoundMethod {
+				resp := newErrorResponse(req.ID, -32601, err.Error())
+				server.write(ctx, w, http.StatusNotImplemented, resp)
+			} else {
+				resp := newErrorResponse(req.ID, -1, err.Error())
+				server.write(ctx, w, http.StatusInternalServerError, resp)
 			}
 			return
 		}
 
 		resp := newResponse(req.ID, data)
-		if err := resp.Write(w, http.StatusOK); err != nil {
-			log.WithContext(ctx).WithError(err).Error("Could not write response")
-		}
+		server.write(ctx, w, http.StatusOK, resp)
 	})
 }
 
-func NewServer() *Server {
+func (server *Server) write(ctx context.Context, w http.ResponseWriter, code int, resp *Response) http.Handler {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(code)
+
+	data, err := resp.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to generate response")
+	}
+	if _, err := w.Write(data); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to send response")
+	}
+	return nil
+
+}
+
+func NewServer(services ...services.Service) *Server {
 	return &Server{
-		services: map[string]services.Service{
-			"masternode": services.NewMasterNode(),
-		},
+		services: services,
 	}
 }

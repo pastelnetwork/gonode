@@ -67,7 +67,7 @@ func (server *Server) Run(ctx context.Context) error {
 		close(errCh)
 	}()
 
-	log.WithContext(ctx).Infof("Server is ready to handle requests at %q", addr)
+	log.WithContext(ctx).Infof("Server is listening on %q", addr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return errors.Errorf("error starting server: %w", err)
 	}
@@ -94,8 +94,8 @@ func (server *Server) handler(ctx context.Context) http.Handler {
 	return handler
 }
 
-// New returns a new Server instance.
-func New(config *Config, services ...service) *Server {
+// NewServer returns a new Server instance.
+func NewServer(config *Config, services ...service) *Server {
 	return &Server{
 		config:          config,
 		shutdownTimeout: defaultShutdownTimeout,

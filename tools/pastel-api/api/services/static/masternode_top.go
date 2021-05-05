@@ -1,4 +1,4 @@
-package models
+package static
 
 type TopMasterNodes map[int][]TopMasterNode
 

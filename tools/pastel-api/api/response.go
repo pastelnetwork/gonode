@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"net/http"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )
@@ -19,26 +18,19 @@ type Response struct {
 	Result interface{} `json:"result"`
 }
 
-func (resp *Response) Write(w http.ResponseWriter, code int) error {
+func (resp *Response) Bytes() ([]byte, error) {
 	data, err := json.Marshal(resp)
 	if err != nil {
-		return errors.New(err)
+		return nil, errors.New(err)
 	}
 
 	buffer := new(bytes.Buffer)
 	if err := json.Compact(buffer, data); err != nil {
-		return errors.New(err)
+		return nil, errors.New(err)
 	}
+	data = append(buffer.Bytes(), []byte("\n")...)
 
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.WriteHeader(code)
-
-	res := append(buffer.Bytes(), []byte("\n")...)
-	if _, err := w.Write(res); err != nil {
-		return errors.New(err)
-	}
-	return nil
+	return data, nil
 }
 
 func newResponse(id string, result interface{}) *Response {

@@ -12,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/tools/pastel-api/api"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services/static"
 	"github.com/pastelnetwork/gonode/tools/pastel-api/configs"
 )
 
@@ -82,6 +83,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
-	err := api.NewServer().Run(ctx, config.Server)
-	return err
+	server := api.NewServer(
+		static.New(),
+	)
+	return server.Run(ctx, config.Server)
 }
