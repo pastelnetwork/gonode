@@ -1,4 +1,4 @@
-package encryption
+package net
 
 import (
 	"encoding/binary"

@@ -1,4 +1,4 @@
-package encryption
+package net
 
 import "errors"
 
@@ -41,18 +41,12 @@ func (c *Counter) Inc() {
 	}
 }
 
-// NewOutCounter returns an outgoing counter initialized to the starting sequence
-// number for the client/server side of a connection.
 func NewOutCounter(overflowLen int) (c Counter) {
 	c.overflowLen = overflowLen
 	c.value[counterLen-1] = 0x80
 	return
 }
 
-// NewInCounter returns an incoming counter initialized to the starting sequence
-// number for the client/server side of a connection. This is used in ALTS record
-// to check that incoming counters are as expected, since ALTS record guarantees
-// that messages are unwrapped in the same order that the peer wrapped them.
 func NewInCounter(overflowLen int) (c Counter) {
 	c.overflowLen = overflowLen
 	c.value[counterLen-1] = 0x80

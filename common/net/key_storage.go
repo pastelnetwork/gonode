@@ -1,4 +1,4 @@
-package encryption
+package net
 
 import (
 	"crypto/aes"
@@ -14,49 +14,45 @@ import (
 
 const GcmTagSize = 16
 
-type X448Cipher struct {
-	prv, pub   x448.Key
-	shared     x448.Key
-	vi         []byte
+type KeyStorage struct {
+	prv, pub x448.Key
+	shared   x448.Key
+
 	aead       cipher.AEAD
 	inCounter  Counter
 	outCounter Counter
 }
 
-func NewX448Cipher() *X448Cipher {
+func NewKeyStorage() *KeyStorage {
 	var pub, prv x448.Key
 	_, _ = io.ReadFull(rand.Reader, prv[:])
 	x448.KeyGen(&pub, &prv)
-	return &X448Cipher{
+	return &KeyStorage{
 		pub: pub,
 		prv: prv,
 	}
 }
 
 // PubKey method returns x448 public key
-func (c *X448Cipher) PubKey() x448.Key {
+func (c *KeyStorage) PubKey() x448.Key {
 	return c.pub
 }
 
 // Shared method generates a shared x448 key based on own private
 // and shared public key
-func (c *X448Cipher) Shared(pubKey x448.Key) (shared x448.Key) {
+func (c *KeyStorage) Shared(pubKey x448.Key) (shared x448.Key) {
 	x448.Shared(&shared, &(c.prv), &pubKey)
 	return
 }
 
 // SetShared method installs shared key from public
-func (c *X448Cipher) SetSharedAndConfigureAES(rawPubKey, vi []byte) error {
+func (c *KeyStorage) SetSharedAndConfigureAES(rawPubKey []byte) error {
 	if len(rawPubKey) != x448.Size {
 		return fmt.Errorf("not correct size of public key")
-	}
-	if len(vi) < aes.BlockSize {
-		return fmt.Errorf("vi shouldn't be less than %d", aes.BlockSize)
 	}
 	var pubKey x448.Key
 	copy(pubKey[:], rawPubKey[:x448.Size])
 	c.shared = c.Shared(pubKey)
-	c.vi = vi
 	h := sha3.New256()
 	h.Write(c.shared[:])
 	hash := h.Sum(nil)
@@ -74,7 +70,7 @@ func (c *X448Cipher) SetSharedAndConfigureAES(rawPubKey, vi []byte) error {
 	return nil
 }
 
-func (c *X448Cipher) Encrypt(dst, plaintext []byte) ([]byte, error) {
+func (c *KeyStorage) Encrypt(dst, plaintext []byte) ([]byte, error) {
 	// If we need to allocate an output buffer, we want to include space for
 	// GCM tag to avoid forcing ALTS record to reallocate as well.
 	dlen := len(dst)
@@ -96,12 +92,12 @@ func (c *X448Cipher) Encrypt(dst, plaintext []byte) ([]byte, error) {
 }
 
 // MaxOverhead implements Cipher.
-func (c *X448Cipher) MaxOverhead() int {
+func (c *KeyStorage) MaxOverhead() int {
 	return GcmTagSize
 }
 
 // Decrypt method decrypts message using  private key
-func (c *X448Cipher) Decrypt(dst, ciphertext []byte) ([]byte, error) {
+func (c *KeyStorage) Decrypt(dst, ciphertext []byte) ([]byte, error) {
 	seq, err := c.inCounter.Value()
 	if err != nil {
 		return nil, err

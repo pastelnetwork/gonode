@@ -1,4 +1,4 @@
-package encryption
+package net
 
 type Handshaker interface {
 	IsClient() bool
