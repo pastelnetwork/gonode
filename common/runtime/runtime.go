@@ -1,5 +1,5 @@
-// Package fmt provides functions to print various useful information
-package fmt
+// Package runtime provides functions to print various useful information
+package runtime
 
 import (
 	"fmt"
