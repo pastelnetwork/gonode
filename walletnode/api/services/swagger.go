@@ -17,7 +17,7 @@ import (
 type Swagger struct{}
 
 // Mount configures the mux to serve the swagger endpoints.
-func (service *Swagger) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+func (service *Swagger) Mount(_ context.Context, mux goahttp.Muxer) goahttp.Server {
 	srv := server.New(nil, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil)
 
 	for _, m := range srv.Mounts {

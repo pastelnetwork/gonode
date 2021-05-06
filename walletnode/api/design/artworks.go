@@ -6,6 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 
 	//revive:disable:dot-imports
+	//lint:ignore ST1001 disable warning dot import
 	. "goa.design/goa/v3/dsl"
 	//revive:enable:dot-imports
 

@@ -2,6 +2,7 @@ package design
 
 import (
 	//revive:disable:dot-imports
+	//lint:ignore ST1001 disable warning dot import
 	. "goa.design/goa/v3/dsl"
 	//revive:enable:dot-imports
 	cors "goa.design/plugins/v3/cors/dsl"
