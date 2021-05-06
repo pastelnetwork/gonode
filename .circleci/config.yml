@@ -96,6 +96,16 @@ jobs:
           command: |
             go version
       - run:
+          name: Install swig
+          command: |
+            sudo apt-get install -y swig
+      - run:
+          name: Install libtensorflow
+          command: |
+            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo /sbin/ldconfig -v
+      - run:
           name: Install revive
           command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
@@ -111,6 +121,12 @@ jobs:
           package: "tools/pastel-api"
       - test:
           package: "proto"
+      # - test:
+      #     package: "legroast"
+      # - test:
+      #     package: "dupe-detection"
+      # - test:
+      #     package: "pqsignatures"
       - test:
           package: "walletnode"
       - test:
