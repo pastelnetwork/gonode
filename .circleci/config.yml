@@ -35,7 +35,12 @@ commands:
           name: "<< parameters.package >>: Run revive"
           working_directory: ~/project/<< parameters.package >>
           command: |
-            revive ./...
+            revive -config ~/project/.circleci/revive.toml ./...
+      - run:
+          name: "<< parameters.package >>: Run staticcheck"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            staticcheck ./...
       - run:
           name: "<< parameters.package >>: Run go test (+ race detector)"
           working_directory: ~/project/<< parameters.package >>
@@ -94,6 +99,10 @@ jobs:
           name: Install revive
           command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
+      - run:
+          name: Install staticcheck
+          command: |
+            GO111MODULE=off go get -u honnef.co/go/tools/cmd/staticcheck@latest
       - test:
           package: "common"
       - test:
