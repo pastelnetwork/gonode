@@ -121,6 +121,12 @@ jobs:
           package: "tools/pastel-api"
       - test:
           package: "proto"
+      # - test:
+      #     package: "legroast"
+      # - test:
+      #     package: "dupe-detection"
+      # - test:
+      #     package: "pqsignatures"
       - test:
           package: "walletnode"
       - test:
