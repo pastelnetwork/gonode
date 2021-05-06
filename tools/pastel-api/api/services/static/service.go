@@ -15,7 +15,7 @@ type service struct {
 	*services.Common
 }
 
-func (service *service) Handle(ctx context.Context, method string, params []string) (interface{}, error) {
+func (service *service) Handle(_ context.Context, method string, params []string) (interface{}, error) {
 	switch service.RoutePath(method, params) {
 	case "masternode_top":
 		return service.topMasterNode()

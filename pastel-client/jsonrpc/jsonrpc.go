@@ -253,7 +253,7 @@ type RPCResponses []*RPCResponse
 
 // AsMap returns the responses as map with response id as key.
 func (res RPCResponses) AsMap() map[int]*RPCResponse {
-	resMap := make(map[int]*RPCResponse, 0)
+	resMap := make(map[int]*RPCResponse)
 	for _, r := range res {
 		resMap[r.ID] = r
 	}
@@ -531,6 +531,7 @@ func Params(params ...interface{}) interface{} {
 
 				// traverse until nil or not a pointer type
 				for typeOf = reflect.TypeOf(params[0]); typeOf != nil && typeOf.Kind() == reflect.Ptr; typeOf = typeOf.Elem() {
+					continue
 				}
 
 				if typeOf != nil {

@@ -38,7 +38,7 @@ func (client *client) StorageFee(ctx context.Context) (*StorageFee, error) {
 	return &storagefee, nil
 }
 
-func (client *client) MyMasterNode(ctx context.Context) (*MasterNode, error) {
+func (client *client) MyMasterNode(context.Context) (*MasterNode, error) {
 	return &MasterNode{
 		ExtKey: client.extKey,
 	}, nil

@@ -64,7 +64,7 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 }
 
 // RegisterTask returns a single task.
-func (service *Artwork) RegisterTask(ctx context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
+func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTaskPayload) (res *artworks.Task, err error) {
 	task := service.register.Task(p.TaskID)
 	if task == nil {
 		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
@@ -80,7 +80,7 @@ func (service *Artwork) RegisterTask(ctx context.Context, p *artworks.RegisterTa
 }
 
 // RegisterTasks returns list of all tasks.
-func (service *Artwork) RegisterTasks(ctx context.Context) (res artworks.TaskCollection, err error) {
+func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskCollection, err error) {
 	tasks := service.register.Tasks()
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
@@ -115,7 +115,7 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 }
 
 // UploadImage uploads an image and return unique image id.
-func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
+func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
 	id, _ := random.String(8, random.Base62Chars)
 
 	if err := service.storage.Set(id, p.Bytes); err != nil {

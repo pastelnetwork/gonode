@@ -40,7 +40,7 @@ func (stream *registerArtowrk) handshake(ctx context.Context, req *pb.RegisterAr
 	return nil
 }
 
-func (stream *registerArtowrk) acceptedNodes(ctx context.Context, req *pb.RegisterArtworkRequest_AcceptedNodesRequest) error {
+func (stream *registerArtowrk) acceptedNodes(ctx context.Context, _ *pb.RegisterArtworkRequest_AcceptedNodesRequest) error {
 	nodes, err := stream.task.AcceptedNodes(ctx)
 	if err != nil {
 		return err

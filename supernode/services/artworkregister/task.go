@@ -33,7 +33,7 @@ type Task struct {
 }
 
 // Run starts the task
-func (task *Task) Run(ctx context.Context) error {
+func (task *Task) Run(_ context.Context) error {
 	return nil
 }
 
