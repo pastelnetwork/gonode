@@ -102,7 +102,7 @@ jobs:
       - run:
           name: Install libtensorflow
           command: |
-            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.g
+            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
             sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
             sudo /sbin/ldconfig -v
       - run:
