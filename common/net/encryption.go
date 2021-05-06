@@ -1,7 +1,6 @@
 package net
 
 type Handshaker interface {
-	IsClient() bool
 	ClientHello() ([]byte, error)           // returns artistID
 	ServerHello() ([]byte, error)           // returns OK
 	ClientKeyExchange() ([]byte, error)     // returns signature+publicKey

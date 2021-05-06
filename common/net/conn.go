@@ -2,9 +2,11 @@ package net
 
 import (
 	"encoding/binary"
-	"fmt"
 	"math"
 	"net"
+
+	"github.com/pastelnetwork/gonode/common/core"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 const (
@@ -48,18 +50,18 @@ type conn struct {
 
 // NewConn creates a new secure channel instance given the other party role and
 // handshaking result.
-func NewConn(c net.Conn, handshaker Handshaker) (net.Conn, error) {
+func NewConn(c net.Conn, side core.Side, handshaker Handshaker) (net.Conn, error) {
 	var cipher Cipher
 	var err error
-	if handshaker.IsClient() {
+	if side == core.SideClient {
 		cipher, err = ClientHandshake(c, handshaker)
 		if err != nil {
-			return nil, fmt.Errorf("client key verification failed %s", err)
+			return nil, errors.Errorf("client key verification failed %s", err)
 		}
 	} else {
 		cipher, err = ServerHandshake(c, handshaker)
 		if err != nil {
-			return nil, fmt.Errorf("server key verification failed %s", err)
+			return nil, errors.Errorf("server key verification failed %s", err)
 		}
 	}
 
@@ -117,7 +119,7 @@ func (p *conn) Read(b []byte) (n int, err error) {
 		msg := framedMsg[MsgLenFieldSize:]
 		msgType := binary.LittleEndian.Uint32(msg[:msgTypeFieldSize])
 		if msgType&0xff != recordMsgType {
-			return 0, fmt.Errorf("received frame with incorrect message type %v, expected lower byte %v",
+			return 0, errors.Errorf("received frame with incorrect message type %v, expected lower byte %v",
 				msgType, recordMsgType)
 		}
 		ciphertext := msg[msgTypeFieldSize:]

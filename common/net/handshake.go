@@ -2,11 +2,13 @@ package net
 
 import (
 	"bufio"
-	"fmt"
 	"net"
 
 	"github.com/cloudflare/circl/dh/x448"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
+
+const okResponse = "ok"
 
 func ServerHandshake(c net.Conn, h Handshaker) (Cipher, error) {
 	reader := bufio.NewReader(c)
@@ -15,6 +17,9 @@ func ServerHandshake(c net.Conn, h Handshaker) (Cipher, error) {
 		return nil, err
 	}
 	ok, err := h.ServerHello()
+	if err != nil {
+		return nil, err
+	}
 	if _, err := c.Write(prepareLine(ok)); err != nil {
 		return nil, err
 	}
@@ -28,6 +33,9 @@ func ServerHandshake(c net.Conn, h Handshaker) (Cipher, error) {
 		return nil, err
 	}
 	serverKey, err := h.ServerKeyExchange()
+	if err != nil {
+		return nil, err
+	}
 	if _, err := c.Write(prepareLine(serverKey)); err != nil {
 		return nil, err
 	}
@@ -49,8 +57,8 @@ func ClientHandshake(c net.Conn, h Handshaker) (Cipher, error) {
 	if err != nil {
 		return nil, err
 	}
-	if string(serverOK) != "ok" {
-		return nil, fmt.Errorf("not expected server response")
+	if string(serverOK) != okResponse {
+		return nil, errors.Errorf("not expected server response")
 	}
 	clientsKey, err := h.ClientKeyExchange()
 	if err != nil {

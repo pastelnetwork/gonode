@@ -1,20 +1,26 @@
-package net
+package crypto
 
 import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"fmt"
 	"io"
 
-	"golang.org/x/crypto/sha3"
-
 	"github.com/cloudflare/circl/dh/x448"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"golang.org/x/crypto/sha3"
 )
 
+// GcmTagSize is the GCM tag size is the difference in length between
+// plaintext and ciphertext. From crypto/cipher/gcm.go in Go crypto library.
 const GcmTagSize = 16
 
-type KeyStorage struct {
+const (
+	// Overflow length n in bytes, never encrypt more than 2^(n*8) frames (in each direction).
+	overflowLenAES256 = 5
+)
+
+type Cipher struct {
 	prv, pub x448.Key
 	shared   x448.Key
 
@@ -23,38 +29,42 @@ type KeyStorage struct {
 	outCounter Counter
 }
 
-func NewKeyStorage() *KeyStorage {
+func NewCipher() *Cipher {
 	var pub, prv x448.Key
 	_, _ = io.ReadFull(rand.Reader, prv[:])
 	x448.KeyGen(&pub, &prv)
-	return &KeyStorage{
-		pub: pub,
-		prv: prv,
+	return &Cipher{
+		pub:        pub,
+		prv:        prv,
+		outCounter: NewCounter(overflowLenAES256),
+		inCounter:  NewCounter(overflowLenAES256),
 	}
 }
 
 // PubKey method returns x448 public key
-func (c *KeyStorage) PubKey() x448.Key {
+func (c *Cipher) PubKey() x448.Key {
 	return c.pub
 }
 
 // Shared method generates a shared x448 key based on own private
 // and shared public key
-func (c *KeyStorage) Shared(pubKey x448.Key) (shared x448.Key) {
+func (c *Cipher) Shared(pubKey x448.Key) (shared x448.Key) {
 	x448.Shared(&shared, &(c.prv), &pubKey)
 	return
 }
 
-// SetShared method installs shared key from public
-func (c *KeyStorage) SetSharedAndConfigureAES(rawPubKey []byte) error {
+// SetSharedAndConfigureAES method installs shared key from public
+func (c *Cipher) SetSharedAndConfigureAES(rawPubKey []byte) error {
 	if len(rawPubKey) != x448.Size {
-		return fmt.Errorf("not correct size of public key")
+		return errors.Errorf("not correct size of public key")
 	}
 	var pubKey x448.Key
 	copy(pubKey[:], rawPubKey[:x448.Size])
 	c.shared = c.Shared(pubKey)
 	h := sha3.New256()
-	h.Write(c.shared[:])
+	if _, err := h.Write(c.shared[:]); err != nil {
+		return err
+	}
 	hash := h.Sum(nil)
 	block, err := aes.NewCipher(hash)
 	if err != nil {
@@ -65,12 +75,10 @@ func (c *KeyStorage) SetSharedAndConfigureAES(rawPubKey []byte) error {
 		return err
 	}
 	c.aead = a
-	c.outCounter = NewOutCounter(GcmTagSize)
-	c.inCounter = NewInCounter(GcmTagSize)
 	return nil
 }
 
-func (c *KeyStorage) Encrypt(dst, plaintext []byte) ([]byte, error) {
+func (c *Cipher) Encrypt(dst, plaintext []byte) ([]byte, error) {
 	// If we need to allocate an output buffer, we want to include space for
 	// GCM tag to avoid forcing ALTS record to reallocate as well.
 	dlen := len(dst)
@@ -92,12 +100,12 @@ func (c *KeyStorage) Encrypt(dst, plaintext []byte) ([]byte, error) {
 }
 
 // MaxOverhead implements Cipher.
-func (c *KeyStorage) MaxOverhead() int {
+func (c *Cipher) MaxOverhead() int {
 	return GcmTagSize
 }
 
 // Decrypt method decrypts message using  private key
-func (c *KeyStorage) Decrypt(dst, ciphertext []byte) ([]byte, error) {
+func (c *Cipher) Decrypt(dst, ciphertext []byte) ([]byte, error) {
 	seq, err := c.inCounter.Value()
 	if err != nil {
 		return nil, err

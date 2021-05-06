@@ -31,14 +31,3 @@ func ParseFramedMsg(b []byte, maxLen uint32) ([]byte, []byte, error) {
 	}
 	return b[:MsgLenFieldSize+length], b[MsgLenFieldSize+length:], nil
 }
-
-func SliceForAppend(in []byte, n int) (head, tail []byte) {
-	if total := len(in) + n; cap(in) >= total {
-		head = in[:total]
-	} else {
-		head = make([]byte, total)
-		copy(head, in)
-	}
-	tail = head[len(in):]
-	return head, tail
-}

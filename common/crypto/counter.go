@@ -1,11 +1,15 @@
-package net
+package crypto
 
-import "errors"
-
-const counterLen = 12
+import (
+	"errors"
+)
 
 var (
-	errInvalidCounter = errors.New("invalid counter")
+	ErrInvalidCounter = errors.New("invalid counter")
+)
+
+const (
+	counterLen = 12
 )
 
 // Counter is a 96-bit, little-endian counter.
@@ -18,7 +22,7 @@ type Counter struct {
 // Value returns the current value of the counter as a byte slice.
 func (c *Counter) Value() ([]byte, error) {
 	if c.invalid {
-		return nil, errInvalidCounter
+		return nil, ErrInvalidCounter
 	}
 	return c.value[:], nil
 }
@@ -41,13 +45,9 @@ func (c *Counter) Inc() {
 	}
 }
 
-func NewOutCounter(overflowLen int) (c Counter) {
-	c.overflowLen = overflowLen
-	c.value[counterLen-1] = 0x80
-	return
-}
-
-func NewInCounter(overflowLen int) (c Counter) {
+// NewCounter returns a counter initialized to the starting sequence
+// number for the client/server side of a connection.
+func NewCounter(overflowLen int) (c Counter) {
 	c.overflowLen = overflowLen
 	c.value[counterLen-1] = 0x80
 	return
