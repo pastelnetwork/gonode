@@ -253,7 +253,7 @@ type RPCResponses []*RPCResponse
 
 // AsMap returns the responses as map with response id as key.
 func (res RPCResponses) AsMap() map[int]*RPCResponse {
-	resMap := make(map[int]*RPCResponse, 0)
+	resMap := make(map[int]*RPCResponse)
 	for _, r := range res {
 		resMap[r.ID] = r
 	}

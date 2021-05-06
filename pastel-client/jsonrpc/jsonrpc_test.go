@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 		// put request and body to channel for the client to investigate them
 		requestChan <- &RequestData{r, string(data)}
 
-		fmt.Fprintf(w, responseBody)
+		fmt.Fprint(w, responseBody)
 	}))
 	defer httpServer.Close()
 
@@ -657,7 +657,7 @@ func TestRpcBatchJsonResponseStruct(t *testing.T) {
 
 	// result must be wrapped in array on batch request
 	responseBody = `{"result": null}`
-	res, err = rpcClient.CallBatch(RPCRequests{
+	_, err = rpcClient.CallBatch(RPCRequests{
 		NewRequest("something", 1, 2, 3),
 	})
 	<-requestChan
@@ -816,11 +816,11 @@ func TestRpcBatchJsonResponseStruct(t *testing.T) {
 	Expect(res[1].Error).To(BeNil())
 	Expect(res[1].ID).To(Equal(2))
 
-	err = res[0].GetObject(&p)
+	_ = res[0].GetObject(&p)
 	Expect(p.Name).To(Equal("Alex"))
 	Expect(p.Age).To(Equal(35))
 
-	err = res[1].GetObject(&p)
+	_ = res[1].GetObject(&p)
 	Expect(p.Name).To(Equal("Lena"))
 	Expect(p.Age).To(Equal(2))
 
