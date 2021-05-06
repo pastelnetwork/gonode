@@ -529,6 +529,11 @@ func Params(params ...interface{}) interface{} {
 			if params[0] != nil {
 				var typeOf reflect.Type
 
+				// traverse until nil or not a pointer type
+				for typeOf = reflect.TypeOf(params[0]); typeOf != nil && typeOf.Kind() == reflect.Ptr; typeOf = typeOf.Elem() {
+					continue
+				}
+
 				if typeOf != nil {
 					// now check if we can directly marshal the type or if it must be wrapped in an array
 					switch typeOf.Kind() {
