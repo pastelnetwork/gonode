@@ -17,9 +17,11 @@ require (
 	github.com/gonum/matrix v0.0.0-20181209220409-c518dec07be9
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/montanaflynn/stats v0.6.5
+	github.com/pa-m/sklearn v0.0.0-20200711083454-beb861ee48b1
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pkg/profile v1.5.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
+	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
 	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
 	gonum.org/v1/gonum v0.9.1
 	gorgonia.org/tensor v0.9.20
