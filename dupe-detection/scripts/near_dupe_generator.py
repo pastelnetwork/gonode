@@ -1,10 +1,12 @@
 # import the necessary packages
 import argparse
+import json
 import os
 from random import randrange
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance
 import PIL
 import numpy as np
+import hashlib
 
 # Anaconda package was not existing before and porting a package from Pypi
 # was the easiest way to have lots of instagram filters in an easy-to-apply format.
@@ -23,7 +25,7 @@ ORIGINAL_FILE_PATH = ''
 TRANSFORMED_FILE_PATH = ''
 
 # Crop size ratio used by random_crop function
-CROP_RATIO = 0.3
+CROP_RATIO = 0.5
 # Stretch width ratio used by random_stretch function
 STRETCH_WIDTH_RATIO = 0.4
 # Stretch height ratio used by random_stretch function
@@ -44,6 +46,41 @@ GRID_SIZE = 100
 REUSE_IMAGES = True
 # Mosaic: List of images which will be contained in the mosaic
 INPUT_IMG_LIST = []
+# Store every kind of information related to transformations
+# and store it in JSON format
+LOGGER = None
+# Maximum nr. of transformations/image
+MAXIMUM_NR_OF_TRANSFORMATIONS = 4
+
+
+class JsonLogger:
+    """Logger class for JSON export"""
+    root_info = {}
+    asset_level = {}
+
+    def __init__(self):
+        pass
+
+    def add_element(self, img_name, transformation_info):
+        """Add an element to the root dictionary
+        Parameters
+        ----------
+        img_name : str
+            The name of the image
+        transformation_info : dict (nested dictionary)
+            transformation_info: containing: hashes (input, output), transformation parameters, and informations
+        """
+        self.asset_level[img_name] = transformation_info
+
+    def add_top_lvl(self):
+        self.root_info['assets'] = self.asset_level
+
+
+# Function to create random number of iterations, transformations
+def randomizer(lower_incl, upper_excl):
+    irand = randrange(lower_incl, upper_excl)
+
+    return irand
 
 
 def insta_filter_types(i):
@@ -101,6 +138,18 @@ def enhancement_types(i):
     }
     return enhancement_map.get(i, "Invalid")
 
+
+def get_hash(filename) -> object:
+    print("Filename: {}".format(filename))
+
+    with open(filename, "rb") as f:
+        bytes = f.read()
+        calculated_hash = hashlib.sha256(bytes).hexdigest();
+        print(calculated_hash)
+
+    return calculated_hash
+
+
 def parse_folders():
     global ORIGINAL_FILE_PATH
     global TRANSFORMED_FILE_PATH
@@ -123,19 +172,19 @@ def parse_folders():
 
 # Function which shall be used to save images
 # based on transformation
-def save_image(transform_type, filename, to_be_saved):
+def save_image(transform_type, filename, to_be_saved, img_transformation_dict):
     file = os.path.splitext(filename)[0]
     file_extension = os.path.splitext(filename)[1]
 
     new_filename = file + transform_type + file_extension
     to_be_saved.save(TRANSFORMED_FILE_PATH + new_filename)
     to_be_saved.close()
+    img_transformation_dict['transformed_img_name'] = new_filename
+    return get_hash(TRANSFORMED_FILE_PATH + new_filename)
 
 
-def crop(img, filename):
+def crop(cropped_img):
     print("Cropping image")
-    # Make a copy which will be saved later on
-    cropped_img = img.copy()
 
     # get image size
     x, y = cropped_img.size
@@ -150,14 +199,14 @@ def crop(img, filename):
 
     cropped_img = cropped_img.crop((x1, y1, x1 + matrix_x, y1 + matrix_y))
 
-    # Save image
-    save_image('_cropped', filename, cropped_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_cropped', filename, cropped_img)
+
+    return cropped_img
 
 
-def flip(img, filename):
+def flip(flipped_img):
     print("Flipping image")
-    # Make a copy which will be saved later on
-    flipped_img = img.copy()
 
     # random nr. between horizontally vs. vertically flipping
     irand = randrange(0, 2)
@@ -168,13 +217,14 @@ def flip(img, filename):
         # flip image horizontally
         flipped_img = flipped_img.transpose(PIL.Image.FLIP_TOP_BOTTOM)
 
-    save_image('_flipped', filename, flipped_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_flipped', filename, flipped_img)
+
+    return flipped_img
 
 
-def stretch(img, filename):
+def stretch(stretched_img):
     print("Stretching image")
-    # Make a copy which will be saved later on
-    stretched_img = img.copy()
 
     # get image size
     x, y = stretched_img.size
@@ -184,12 +234,13 @@ def stretch(img, filename):
 
     stretched_img = stretched_img.resize((new_width, new_height), Image.ANTIALIAS)
 
-    save_image('_stretched', filename, stretched_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_stretched', filename, stretched_img)
+
+    return stretched_img
 
 
-def base_filter(img, filename):
-    # Make a copy which will be saved later on
-    filtered_img = img.copy()
+def base_filter(filtered_img):
     irand = randrange(0, 9)
 
     filter_type = base_filter_types(irand)
@@ -200,12 +251,13 @@ def base_filter(img, filename):
     else:
         filtered_img = filtered_img.filter(filter_attribute)
 
-    save_image('_base_filtered_{}'.format(filter_type), filename, filtered_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_base_filtered_{}'.format(filter_type), filename, filtered_img)
+
+    return filtered_img
 
 
-def insta_filter(img, filename):
-    # Make a copy which will be saved later on
-    filtered_img = img.copy()
+def insta_filter(filtered_img, filename):
     irand = randrange(0, 26)
 
     filter_type = insta_filter_types(irand)
@@ -218,33 +270,36 @@ def insta_filter(img, filename):
     except AttributeError:
         print("Function not found")
 
-    save_image('_insta_filtered_{}'.format(filter_type), filename, filtered_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_insta_filtered_{}'.format(filter_type), filename, filtered_img)
+
+    return filtered_img
 
 
-def edges(img, filename):
+def edges(filtered_img, filename):
     print("Finding edges")
-    # Make a copy which will be saved later on
-    filtered_img = img.copy()
 
     filtered_img = filtered_img.filter(ImageFilter.FIND_EDGES)
 
-    save_image('_edges', filename, filtered_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_edges', filename, filtered_img)
+
+    return filtered_img
 
 
-def invert(img, filename):
+def invert(inverted_img, filename):
     print("Invert")
-    # Make a copy which will be saved later on
-    inverted_img = img.copy()
 
     inverted_img = ImageOps.invert(inverted_img)
 
-    save_image('_inverted', filename, inverted_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_inverted', filename, inverted_img)
+
+    return inverted_img
 
 
-def image_enhance(img, filename):
+def image_enhance(saturated_img, filename):
     print("Saturate")
-    # Make a copy which will be saved later on
-    saturated_img = img.copy()
 
     irand = randrange(0, 3)
 
@@ -255,16 +310,18 @@ def image_enhance(img, filename):
     converter = filter_attribute(saturated_img)
     saturated_img = converter.enhance(ENHANCEMENT_FACTOR)
 
-    save_image('_enhanced_{}'.format(filter_type), filename, saturated_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_enhanced_{}'.format(filter_type), filename, saturated_img)
+
+    return saturated_img
 
 
-def pixelate(img, filename):
+def pixelate(pixelated_img, filename):
     # Simply put pixelation is:
     # 1. Resize to a smaller size with the help of PIXELATE_SCALING (smaller the number the more pixelated the result
     # 2. Scale it back to original using nearest neighbour interpolation
     print("Pixelate")
-    # Make a copy which will be saved later on
-    pixelated_img = img.copy()
+
     original_width = pixelated_img.size[0]
     original_height = pixelated_img.size[1]
 
@@ -274,7 +331,10 @@ def pixelate(img, filename):
     # scaling back
     pixelated_img = pixelated_img.resize((original_width, original_height), Image.NEAREST)
 
-    save_image('_pixelated', filename, pixelated_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_pixelated', filename, pixelated_img)
+
+    return pixelated_img
 
 
 # Mosaic helper functions start here
@@ -381,14 +441,13 @@ def get_images(images_directory):
 # Mosaic helper functions end here
 
 
-def mosaic(base_path, img, filename):
+def mosaic(base_path, mosaic_img, filename):
     # Having it global just not to load many times, only once / run
     global INPUT_IMG_LIST
 
     if not INPUT_IMG_LIST:
         INPUT_IMG_LIST = get_images(base_path)
-    # Make a copy which will be saved later on
-    mosaic_img = img.copy()
+
     print("Mosaic")
     if RESIZE_INPUT:
         # print('resizing image...')
@@ -402,24 +461,80 @@ def mosaic(base_path, img, filename):
     # Make a copy which will be saved later on
     mosaic_img = create_photomosaic(mosaic_img, INPUT_IMG_LIST, GRID_SIZE, REUSE_IMAGES)
 
-    save_image('_mosaic', filename, mosaic_img)
+    # No saving of individual image required. Left it here maybe future need..
+    # save_image('_mosaic', filename, mosaic_img)
+    return mosaic_img
+
+
+# Function for applying transformations per image
+def get_random_transformation_name(lower_incl, upper_excl, random_transformation_functions):
+    function_name = None
+    while True:
+        function_idx = randomizer(lower_incl, upper_excl)
+        if transformation_functions[function_idx] not in random_transformation_functions:
+            # Return the name of the function
+            function_name = transformation_functions[function_idx]
+            break
+
+    return function_name
+
+
+def transform_each_image(transformation_nr, img_transformation_dict,
+                         image, base_path, img_name):
+
+    # THis will hold the sequence of transformation function names
+    random_transformation_functions = []
+    for i in range(transformation_nr):
+        func_name = get_random_transformation_name(0, transformation_nr+1, random_transformation_functions)
+        random_transformation_functions.append(func_name)
+
+    # Here we already have a randomized number and sequence of transformations
+    i = 0;
+    for transformer in random_transformation_functions:
+
+        try:
+            i += 1
+            print("{}. transformation is: {}".format(i, transformer.__qualname__))
+            if 'mosaic' == transformer.__qualname__:
+                image = transformer(base_path, image, img_name)
+            else:
+                image = transformer(image, img_name)
+
+            # PARAMS: TO BE IMPLEMENTED
+            #transformation_params = ("transformation_{}_name".format(i))
+            transformation_name = ("transformation_{}_name".format(i))
+            img_transformation_dict[transformation_name] = transformer.__qualname__
+        except Exception as base_ex:
+            print(base_ex)
+
+    new_hash = save_image('_transformed', img_name, image, img_transformation_dict)
+    img_transformation_dict['transformed_img_hash'] = new_hash
 
 
 def transform_images(base_path, img_name):
+    
+    # Image related information dictionary where we keep track of every single transformation on them
+    img_transformation_dict = dict()
+
+    # Get SHA256 calculated hash
+    img_transformation_dict['original_hash'] = get_hash(base_path+img_name)
+    
     # Opens a image in RGB mode
     with Image.open(base_path + img_name) as image:
-        for transformer in transformation_functions:
-            try:
-                if 'mosaic' == transformer.__qualname__:
-                    transformer(base_path, image, img_name)
-                else:
-                    transformer(image, img_name)
-            except Exception as base_ex:
-                print(base_ex)
+
+        # Get a random number, how many transformations shall be performed per asset
+        transformation_nr = randomizer(1, MAXIMUM_NR_OF_TRANSFORMATIONS+1)
+
+        # Perform transformation
+        transform_each_image(transformation_nr, img_transformation_dict,
+                             image, base_path, img_name)
+
+        # Add each image to the 'asset' level of the LOGGER dictionary
+        LOGGER.add_element(img_name, img_transformation_dict)
 
 
 def transform_files():
-    # load files one-by-one
+    # Load files one-by-one and transform them
     print("[INFO] loading images from source: {}".format(ORIGINAL_FILE_PATH))
     i = 0
     for filename in os.listdir(ORIGINAL_FILE_PATH):
@@ -441,4 +556,13 @@ if __name__ == "__main__":
     # Collect input / output folders with having the
     # option to have command line arguments or constants
     parse_folders()
+    # Create JsonLogger instance to story every transformation
+    LOGGER = JsonLogger()
+    # It does the main work :)
     transform_files()
+    # Add 'asset' child to the root
+    LOGGER.add_top_lvl()
+    # Save it to file
+    with open("transformation.json", "w") as outfile:
+        json.dump(LOGGER.root_info, outfile, indent=4)
+
