@@ -30,6 +30,7 @@ func (err *Error) Unwrap() error {
 	return err.goerror.Err
 }
 
+// Goerr returns goerrors.Error
 func (err *Error) Goerr() *goerrors.Error {
 	return err.goerror
 }
