@@ -73,7 +73,7 @@ func (server *Server) httpHandler(ctx context.Context) http.Handler {
 
 		log.WithContext(ctx).WithField("req", req).Debug("Received new request")
 
-		data, err := server.services.Handle(ctx, req.Method, req.Params)
+		data, err := server.services.Handle(ctx, r, req.Method, req.Params)
 		if err != nil {
 			if err == services.ErrNotFoundMethod {
 				resp := newErrorResponse(req.ID, -32601, err.Error())

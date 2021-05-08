@@ -12,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/tools/pastel-api/api"
-	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services/static"
+	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services/fake"
 	"github.com/pastelnetwork/gonode/tools/pastel-api/configs"
 )
 
@@ -84,7 +84,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	server := api.NewServer(
-		static.New(),
+		fake.New(),
 	)
 	return server.Run(ctx, config.Server)
 }
