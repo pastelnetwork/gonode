@@ -12,6 +12,7 @@ require (
 	github.com/galeone/tfgo v0.0.0-20210204182614-84b9a5e77f79
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/montanaflynn/stats v0.6.5
+	github.com/mxschmitt/golang-combinations v1.1.0 // indirect
 	github.com/pa-m/sklearn v0.0.0-20200711083454-beb861ee48b1
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pkg/profile v1.5.0

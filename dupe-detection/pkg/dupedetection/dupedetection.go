@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/montanaflynn/stats"
@@ -559,6 +560,7 @@ type correlation func([]float64, [][]float64) ([]float64, error)
 type bootstrappedCorrelation func([]float64, [][]float64, int, int) ([]float64, []float64, error)
 
 type computeData struct {
+	name                        string
 	title                       string
 	computeFunc                 correlation
 	printFunc                   printInfo
@@ -627,6 +629,8 @@ func printBlomqvistBetaCalculationResults(similarityScore, similarityScoreStdev 
 }
 
 type ComputeConfig struct {
+	CorrelationMethodNameArray        []string
+	CorrelationMethodsOrder           string
 	PearsonDupeThreshold              float64
 	SpearmanDupeThreshold             float64
 	KendallDupeThreshold              float64
@@ -638,13 +642,24 @@ type ComputeConfig struct {
 
 func NewComputeConfig() ComputeConfig {
 	config := ComputeConfig{}
-	config.PearsonDupeThreshold = 0.645170
-	config.SpearmanDupeThreshold = 0.740759
+	config.PearsonDupeThreshold = 0.995
+	config.SpearmanDupeThreshold = 0.79
 	config.KendallDupeThreshold = 0.70
 	config.RandomizedDependenceDupeThreshold = 0.79
 	config.RandomizedBlomqvistDupeThreshold = 0.7625
 	config.HoeffdingDupeThreshold = 0.35
 	config.HoeffdingRound2DupeThreshold = 0.23
+
+	config.CorrelationMethodNameArray = []string{
+		"PearsonR",
+		"SpearmanRho",
+		"BootstrappedKendallTau",
+		"BootstrappedRDC",
+		"BootstrappedBlomqvistBeta",
+		"BootstrappedHoeffdingD1",
+		"BootstrappedHoeffdingD2",
+	}
+	config.CorrelationMethodsOrder = strings.Join(config.CorrelationMethodNameArray, " ")
 
 	return config
 }
@@ -655,80 +670,104 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 	var err error
 	totalFingerprintsCount := len(fingerprintsArrayToCompareWith)
 
-	computeBlocks := []computeData{
-		{
-			title:                  "Pearson's R, which is fast to compute (We only perform the slower tests on the fingerprints that have a high R).",
-			computeFunc:            computePearsonRForAllFingerprintPairs,
-			printFunc:              printPearsonRCalculationResults,
-			threshold:              strictnessFactor * config.PearsonDupeThreshold,
-			totalFingerprintsCount: totalFingerprintsCount,
-		},
-		{
-			title:                  "Spearman's Rho for selected fingerprints...",
-			computeFunc:            computeSpearmanForAllFingerprintPairs,
-			printFunc:              nil,
-			threshold:              strictnessFactor * config.SpearmanDupeThreshold,
-			totalFingerprintsCount: totalFingerprintsCount,
-		},
-		{
-			title:                   "Bootstrapped Kendall's Tau for selected fingerprints...",
-			computeFunc:             nil,
-			printFunc:               nil,
-			bootstrappedComputeFunc: computeParallelBootstrappedKendallsTau,
-			bootstrappedPrintFunc:   printKendallTauCalculationResults,
-			sampleSize:              50,
-			bootstrapsCount:         100,
-			threshold:               strictnessFactor * config.KendallDupeThreshold,
-			totalFingerprintsCount:  totalFingerprintsCount,
-		},
-		{
-			title:                   "Boostrapped Randomized Dependence Coefficient for selected fingerprints...",
-			computeFunc:             nil,
-			printFunc:               nil,
-			bootstrappedComputeFunc: computeParallelBootstrappedRandomizedDependence,
-			bootstrappedPrintFunc:   printRDCCalculationResults,
-			sampleSize:              50,
-			bootstrapsCount:         100,
-			threshold:               strictnessFactor * config.RandomizedDependenceDupeThreshold,
-			totalFingerprintsCount:  totalFingerprintsCount,
-		},
-		{
-			title:                   "bootstrapped Blomqvist's beta for selected fingerprints...",
-			computeFunc:             nil,
-			printFunc:               nil,
-			bootstrappedComputeFunc: computeParallelBootstrappedBlomqvistBeta,
-			bootstrappedPrintFunc:   printBlomqvistBetaCalculationResults,
-			sampleSize:              100,
-			bootstrapsCount:         100,
-			threshold:               strictnessFactor * config.RandomizedBlomqvistDupeThreshold,
-			totalFingerprintsCount:  totalFingerprintsCount,
-		},
-		{
-			title:                   "Hoeffding's D Round 1",
-			computeFunc:             nil,
-			printFunc:               nil,
-			bootstrappedComputeFunc: computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize,
-			bootstrappedPrintFunc:   nil,
-			sampleSize:              20,
-			bootstrapsCount:         50,
-			threshold:               strictnessFactor * config.HoeffdingDupeThreshold,
-			totalFingerprintsCount:  totalFingerprintsCount,
-		},
-		{
-			title:                   "Hoeffding's D Round 2",
-			computeFunc:             nil,
-			printFunc:               nil,
-			bootstrappedComputeFunc: computeParallelBootstrappedBaggedHoeffdingsD,
-			bootstrappedPrintFunc:   nil,
-			sampleSize:              75,
-			bootstrapsCount:         20,
-			threshold:               strictnessFactor * config.HoeffdingRound2DupeThreshold,
-			totalFingerprintsCount:  totalFingerprintsCount,
-		},
+	fmt.Printf("\nConfigured CorrelationMethodsOrder: %v", config.CorrelationMethodsOrder)
+
+	var orderedComputeBlocks []computeData
+	orderedCorrelationMethods := strings.Split(config.CorrelationMethodsOrder, " ")
+	for _, computeBlockName := range orderedCorrelationMethods {
+		var nextComputeBlock computeData
+		switch {
+		case computeBlockName == "PearsonR":
+			nextComputeBlock = computeData{
+				name:                   "PearsonR",
+				title:                  "Pearson's R, which is fast to compute (We only perform the slower tests on the fingerprints that have a high R).",
+				computeFunc:            computePearsonRForAllFingerprintPairs,
+				printFunc:              printPearsonRCalculationResults,
+				threshold:              strictnessFactor * config.PearsonDupeThreshold,
+				totalFingerprintsCount: totalFingerprintsCount,
+			}
+		case computeBlockName == "SpearmanRho":
+			nextComputeBlock = computeData{
+				name:                   "SpearmanRho",
+				title:                  "Spearman's Rho for selected fingerprints...",
+				computeFunc:            computeSpearmanForAllFingerprintPairs,
+				printFunc:              nil,
+				threshold:              strictnessFactor * config.SpearmanDupeThreshold,
+				totalFingerprintsCount: totalFingerprintsCount,
+			}
+		case computeBlockName == "BootstrappedKendallTau":
+			nextComputeBlock = computeData{
+				name:                    "BootstrappedKendallTau",
+				title:                   "Bootstrapped Kendall's Tau for selected fingerprints...",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedKendallsTau,
+				bootstrappedPrintFunc:   printKendallTauCalculationResults,
+				sampleSize:              50,
+				bootstrapsCount:         100,
+				threshold:               strictnessFactor * config.KendallDupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "BootstrappedRDC":
+			nextComputeBlock = computeData{
+				name:                    "BootstrappedRDC",
+				title:                   "Boostrapped Randomized Dependence Coefficient for selected fingerprints...",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedRandomizedDependence,
+				bootstrappedPrintFunc:   printRDCCalculationResults,
+				sampleSize:              50,
+				bootstrapsCount:         100,
+				threshold:               strictnessFactor * config.RandomizedDependenceDupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "BootstrappedBlomqvistBeta":
+			nextComputeBlock = computeData{
+				name:                    "BootstrappedBlomqvistBeta",
+				title:                   "bootstrapped Blomqvist's beta for selected fingerprints...",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedBlomqvistBeta,
+				bootstrappedPrintFunc:   printBlomqvistBetaCalculationResults,
+				sampleSize:              100,
+				bootstrapsCount:         100,
+				threshold:               strictnessFactor * config.RandomizedBlomqvistDupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "BootstrappedHoeffdingD1":
+			nextComputeBlock = computeData{
+				name:                    "BootstrappedHoeffdingD1",
+				title:                   "Hoeffding's D Round 1",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize,
+				bootstrappedPrintFunc:   nil,
+				sampleSize:              20,
+				bootstrapsCount:         50,
+				threshold:               strictnessFactor * config.HoeffdingDupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "BootstrappedHoeffdingD2":
+			nextComputeBlock = computeData{
+				name:                    "BootstrappedHoeffdingD2",
+				title:                   "Hoeffding's D Round 2",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedBaggedHoeffdingsD,
+				bootstrappedPrintFunc:   nil,
+				sampleSize:              75,
+				bootstrapsCount:         20,
+				threshold:               strictnessFactor * config.HoeffdingRound2DupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		default:
+			return 0, errors.New(errors.Errorf("Unrecognized similarity computation block name \"%v\"", computeBlockName))
+		}
+		orderedComputeBlocks = append(orderedComputeBlocks, nextComputeBlock)
 	}
 
 	fingerprintsForFurtherTesting := fingerprintsArrayToCompareWith
-	for _, computeBlock := range computeBlocks {
+	for _, computeBlock := range orderedComputeBlocks {
 		fingerprintsForFurtherTesting, err = computeSimilarity(candidateImageFingerprint, fingerprintsForFurtherTesting, computeBlock)
 		if err != nil {
 			return 0, errors.New(err)
