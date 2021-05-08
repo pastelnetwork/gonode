@@ -10,9 +10,10 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/galeone/tensorflow v2.4.0-rc0.0.20210202175351-640a390c2283+incompatible
 	github.com/galeone/tfgo v0.0.0-20210204182614-84b9a5e77f79
+	github.com/jinzhu/gorm v1.9.16
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/montanaflynn/stats v0.6.5
-	github.com/mxschmitt/golang-combinations v1.1.0 // indirect
+	github.com/mxschmitt/golang-combinations v1.1.0
 	github.com/pa-m/sklearn v0.0.0-20200711083454-beb861ee48b1
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pkg/profile v1.5.0
@@ -21,6 +22,8 @@ require (
 	golang.org/x/sys v0.0.0-20210426230700-d19ff857e887 // indirect
 	gonum.org/v1/gonum v0.9.1
 	gorgonia.org/tensor v0.9.20
+	gorm.io/driver/mysql v1.0.3
+	gorm.io/gorm v1.20.12
 )
 
 replace github.com/pastelnetwork/gonode/common => ../common
