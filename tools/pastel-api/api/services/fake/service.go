@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"net/http"
-	"sync"
 
 	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services"
 	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services/fake/models"
@@ -16,17 +15,12 @@ var fs embed.FS
 // service represents a service that returns a static data.
 type service struct {
 	*services.Common
-	once                    sync.Once
 	topMasterNodes          models.TopMasterNodes
 	idTicketRecords         models.IDTicketRecords
 	storageFeeGetNetworkFee *models.StorageFeeGetNetworkFee
 }
 
-func (service *service) Handle(_ context.Context, r *http.Request, method string, params []string) (interface{}, error) {
-	service.once.Do(func() {
-		service.loadFiles()
-	})
-
+func (service *service) Handle(_ context.Context, r *http.Request, method string, params []string) (resp interface{}, err error) {
 	routePath := service.RoutePath(method, params)
 
 	user, _, _ := r.BasicAuth()
@@ -52,7 +46,7 @@ func (service *service) Handle(_ context.Context, r *http.Request, method string
 
 	switch routePath {
 	case "tickets_list_id_mine":
-		return newTicketsListIDMine(*node, *personalPastelIDTicket), nil
+		return newTicketsListIDMine(service.idTicketRecords, *node), nil
 	case "masternode_status":
 		return newMasterNodeStatusByNode(node), nil
 	}
@@ -70,14 +64,17 @@ func (service *service) loadFiles() error {
 	if err := service.UnmarshalFile(fs, "data/tickets_list_id_mine.json", &service.idTicketRecords); err != nil {
 		return err
 	}
-
 	return nil
-
 }
 
 // New returns a new fake Service instance.
-func New() services.Service {
-	return &service{
+func New() (services.Service, error) {
+	service := &service{
 		Common: services.NewCommon(),
 	}
+
+	if err := service.loadFiles(); err != nil {
+		return nil, err
+	}
+	return service, nil
 }

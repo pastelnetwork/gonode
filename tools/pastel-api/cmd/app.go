@@ -18,7 +18,7 @@ import (
 
 const (
 	appName  = "pastel-api"
-	appUsage = "Pastel API (Fake)"
+	appUsage = "Pastel API"
 
 	defaultConfigFile = ""
 )
@@ -83,8 +83,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
+	fakeService, err := fake.New()
+	if err != nil {
+		return err
+	}
+
 	server := api.NewServer(
-		fake.New(),
+		fakeService,
 	)
 	return server.Run(ctx, config.Server)
 }
