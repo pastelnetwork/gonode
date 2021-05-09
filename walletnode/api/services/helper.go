@@ -42,13 +42,13 @@ func toArtworkTicket(ticket *artworkregister.Ticket) *artworks.ArtworkTicket {
 	}
 }
 
-func toArtworkStates(msgs []*state.Message) []*artworks.TaskState {
+func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 	var states []*artworks.TaskState
 
-	for _, msg := range msgs {
+	for _, status := range statuses {
 		states = append(states, &artworks.TaskState{
-			Date:   msg.CreatedAt.Format(time.RFC3339),
-			Status: msg.Status.String(),
+			Date:   status.CreatedAt.Format(time.RFC3339),
+			Status: status.Type.String(),
 		})
 	}
 	return states

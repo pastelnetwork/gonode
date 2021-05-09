@@ -19,6 +19,7 @@ type MasterNode struct {
 // MasterNodes represents the API response that can be retrieved using the command `masternode top`.
 type MasterNodes []MasterNode
 
+// ByPort returns single masternode by the given `port`
 func (nodes MasterNodes) ByPort(port string) *MasterNode {
 	for _, node := range nodes {
 		_, nodePort, _ := net.SplitHostPort(node.ExtAddress)

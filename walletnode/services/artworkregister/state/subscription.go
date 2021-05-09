@@ -2,13 +2,13 @@ package state
 
 // Subscription represents the state of the task consumed by subscribers each time the state changes.
 type Subscription struct {
-	msgCh  chan *Message
-	doneCh chan struct{}
+	statusCh chan *Status
+	doneCh   chan struct{}
 }
 
-// Msg returns message channel.
-func (sub *Subscription) Msg() chan *Message {
-	return sub.msgCh
+// Status returns status channel.
+func (sub *Subscription) Status() chan *Status {
+	return sub.statusCh
 }
 
 // Close closes the subsription.
@@ -27,12 +27,12 @@ func (sub *Subscription) Done() <-chan struct{} {
 }
 
 // Pub publishes messages to subscriber.
-func (sub *Subscription) Pub(msgs ...*Message) {
+func (sub *Subscription) Pub(msgs ...*Status) {
 	for _, msg := range msgs {
 		select {
 		case <-sub.Done():
 			return
-		case sub.msgCh <- msg:
+		case sub.statusCh <- msg:
 			if msg.isFinal {
 				sub.Close()
 				return
@@ -44,7 +44,7 @@ func (sub *Subscription) Pub(msgs ...*Message) {
 // NewSubscription returns a new Subscription instance.
 func NewSubscription() *Subscription {
 	return &Subscription{
-		msgCh:  make(chan *Message),
-		doneCh: make(chan struct{}),
+		statusCh: make(chan *Status),
+		doneCh:   make(chan struct{}),
 	}
 }

@@ -55,14 +55,16 @@ func (service *service) Handle(_ context.Context, r *http.Request, method string
 }
 
 func (service *service) loadFiles() error {
-	if err := service.UnmarshalFile(fs, "data/storagefee_getnetworkfee.json", &service.storageFeeGetNetworkFee); err != nil {
-		return err
+	files := map[string]interface{}{
+		"data/storagefee_getnetworkfee.json": &service.storageFeeGetNetworkFee,
+		"data/masternode_top.json":           &service.topMasterNodes,
+		"data/tickets_list_id_mine.json":     &service.idTicketRecords,
 	}
-	if err := service.UnmarshalFile(fs, "data/masternode_top.json", &service.topMasterNodes); err != nil {
-		return err
-	}
-	if err := service.UnmarshalFile(fs, "data/tickets_list_id_mine.json", &service.idTicketRecords); err != nil {
-		return err
+
+	for filepath, obj := range files {
+		if err := service.UnmarshalFile(fs, filepath, obj); err != nil {
+			return err
+		}
 	}
 	return nil
 }
