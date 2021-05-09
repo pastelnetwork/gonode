@@ -4,13 +4,19 @@ import "context"
 
 // Client represents pastel RPC client.
 type Client interface {
-	MyMasterNode(ctx context.Context) (*MasterNode, error)
-	TopMasterNodes(ctx context.Context) (MasterNodes, error)
+	MasterNodesTop(ctx context.Context) (MasterNodes, error)
+	MasterNodeStatus(ctx context.Context) (*MasterNodeStatus, error)
+
 	StorageFee(ctx context.Context) (*StorageFee, error)
-	Getblockchaininfo(ctx context.Context) (*BlockchainInfo, error)
-	ListIDTickets(ctx context.Context, idType string) (IDTickets, error)
-	FindIDTicket(ctx context.Context, search string) (*IDTicket, error)
-	FindIDTickets(ctx context.Context, search string) (IDTickets, error)
-	ListPastelIDs(ctx context.Context) (PastelIDs, error)
-	GetMNRegFee(ctx context.Context) (int, error)
+
+	IDTickets(ctx context.Context, idType IDTicketType) (IDTickets, error)
 }
+
+type IDTicketType string
+
+const (
+	IDTicketAll      IDTicketType = "all"
+	IDTicketMine     IDTicketType = "mine"
+	IDTicketMN       IDTicketType = "mn"
+	IDTicketPersonal IDTicketType = "personal"
+)

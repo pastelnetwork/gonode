@@ -75,13 +75,13 @@ func (server *Server) httpHandler(ctx context.Context) http.Handler {
 
 		data, err := server.services.Handle(ctx, r, req.Method, req.Params)
 		if err != nil {
-			if err == services.ErrNotFoundMethod {
-				resp := newErrorResponse(req.ID, -32601, err.Error())
+			if _, ok := err.(*services.Error); ok {
+				resp := newErrorResponse(req.ID, err)
 				server.write(ctx, w, http.StatusNotImplemented, resp)
-			} else {
-				resp := newErrorResponse(req.ID, -1, err.Error())
-				server.write(ctx, w, http.StatusInternalServerError, resp)
+				return
 			}
+			resp := newErrorResponse(req.ID, err)
+			server.write(ctx, w, http.StatusInternalServerError, resp)
 			return
 		}
 

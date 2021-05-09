@@ -3,14 +3,6 @@ package services
 import (
 	"context"
 	"net/http"
-
-	"github.com/pastelnetwork/gonode/common/errors"
-)
-
-// API errors.
-var (
-	ErrNotFoundMethod = errors.New("method not found")
-	ErrUnauthorized   = errors.New("request not authorized")
 )
 
 // Service represents a service for handling API request.

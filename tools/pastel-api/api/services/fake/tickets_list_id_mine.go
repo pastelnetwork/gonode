@@ -2,10 +2,14 @@ package fake
 
 import "github.com/pastelnetwork/gonode/tools/pastel-api/api/services/fake/models"
 
-func newTicketsListIDMine(records models.IDTicketRecords, node models.MasterNode) models.IDTicketRecords {
-	return append(records, models.IDTicketRecord{
+func newTicketsListIDMine(tickets models.IDTickets, node *models.MasterNode) models.IDTickets {
+	if node == nil {
+		return tickets
+	}
+
+	return append(tickets, models.IDTicket{
 		Height: 19377,
-		Ticket: models.IDTicket{
+		Ticket: models.IDTicketProp{
 			Address:  node.Payee,
 			IDType:   "masternode",
 			PastelID: node.ExtKey,

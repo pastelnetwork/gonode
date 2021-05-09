@@ -1,13 +1,16 @@
-package models
+package pastel
 
-// IDTicket represents a record of the ticket in the blockchain.
+// IDTickets represents multiple IDTicket.
+type IDTickets []IDTicket
+
+// IDTicket represensts pastel id ticket.
 type IDTicket struct {
 	Height int          `json:"height"`
 	Ticket IDTicketProp `json:"ticket"`
 	TXID   string       `json:"txid"`
 }
 
-// IDTicketProp represents properties of the ticket.
+// IDTicketProp represents properties of the id ticket.
 type IDTicketProp struct {
 	Address   string `json:"address"`
 	IDType    string `json:"id_type"`
@@ -17,6 +20,3 @@ type IDTicketProp struct {
 	TimeStamp string `json:"timeStamp"`
 	Type      string `json:"type"`
 }
-
-// IDTickets represents the API response that can be retrieved using the command `tickets list id mine`.
-type IDTickets []IDTicket

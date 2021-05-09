@@ -19,9 +19,9 @@ type Service struct {
 	config       *Config
 	db           storage.KeyValue
 	pastelClient pastel.Client
+	nodeClient   node.Client
 	worker       *Worker
 	tasks        []*Task
-	nodeClient   node.Client
 }
 
 // Run starts worker.
