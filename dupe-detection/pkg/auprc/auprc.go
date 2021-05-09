@@ -396,7 +396,7 @@ func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, config du
 	return dupedetection.MeasureImageSimilarity(candidateImageFingerprint, finalCombinedImageFingerprintArray, config)
 }
 
-func MeasureAUPRC(config dupedetection.ComputeConfig) float64 {
+func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
 	rootPastelFolderPath := ""
@@ -409,7 +409,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) float64 {
 
 	if _, err := os.Stat(miscMasternodeFilesFolderPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(miscMasternodeFilesFolderPath, 0770); err != nil {
-			panic(err)
+			return 0, errors.New(err)
 		}
 	}
 
@@ -419,8 +419,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) float64 {
 		regenerateEmptyDupeDetectionImageFingerprintDatabase()
 		err := addAllImagesInFolderToImageFingerprintDatabase(pathToAllRegisteredWorksForDupeDetection)
 		if err != nil {
-			fmt.Println(err.(*errors.Error).ErrorStack())
-			panic(err)
+			return 0, errors.New(err)
 		}
 	} else {
 		fmt.Printf("\nFound existing image fingerprint database.")
@@ -430,8 +429,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) float64 {
 	nearDuplicates, err := getAllValidImageFilePathsInFolder(dupeDetectionTestImagesBaseFolderPath)
 	if err != nil {
 		if err != nil {
-			fmt.Println(err.(*errors.Error).ErrorStack())
-			panic(err)
+			return 0, errors.New(err)
 		}
 	}
 	dupeCounter := 0
@@ -441,8 +439,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) float64 {
 		fmt.Printf("\nCurrent Near Duplicate Image: %v", nearDupeFilePath)
 		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nearDupeFilePath, config)
 		if err != nil {
-			fmt.Println(err.(*errors.Error).ErrorStack())
-			panic(err)
+			return 0, errors.New(err)
 		}
 		dupeCounter += isLikelyDupe
 		predictedY = append(predictedY, float64(isLikelyDupe))
@@ -455,8 +452,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) float64 {
 	nonDuplicates, err := getAllValidImageFilePathsInFolder(nonDupeTestImagesBaseFolderPath)
 	if err != nil {
 		if err != nil {
-			fmt.Println(err.(*errors.Error).ErrorStack())
-			panic(err)
+			return 0, errors.New(err)
 		}
 	}
 	nondupeCounter := 0
@@ -465,8 +461,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) float64 {
 		fmt.Printf("\nCurrent Non-Duplicate Test Image: %v", nonDupeFilePath)
 		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nonDupeFilePath, config)
 		if err != nil {
-			fmt.Println(err.(*errors.Error).ErrorStack())
-			panic(err)
+			return 0, errors.New(err)
 		}
 
 		if isLikelyDupe == 0 {
@@ -495,5 +490,5 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) float64 {
 	sort.Float64s(recall)
 	auprcMetric := metrics.AUC(recall, precision)
 	fmt.Printf("\nAcross all near-duplicate and non-duplicate test images, precision is %v and the Area Under the Precision-Recall Curve (AUPRC) is %.3f\n", precision, auprcMetric)
-	return auprcMetric
+	return auprcMetric, nil
 }

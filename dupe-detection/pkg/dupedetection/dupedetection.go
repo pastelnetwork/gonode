@@ -651,13 +651,13 @@ func NewComputeConfig() ComputeConfig {
 	config.HoeffdingRound2DupeThreshold = 0.23
 
 	config.CorrelationMethodNameArray = []string{
-		"PR",
-		"SRho",
-		"BKT",
-		"BRDC",
-		"BBB",
-		"BHD1",
-		"BHD2",
+		"PearsonR",
+		"SpearmanRho",
+		"BootstrappedKendallTau",
+		"BootstrappedRDC",
+		"BootstrappedBlomqvistBeta",
+		"HoeffdingDRound1",
+		"HoeffdingDRound2",
 	}
 	config.CorrelationMethodsOrder = strings.Join(config.CorrelationMethodNameArray, " ")
 
@@ -677,27 +677,27 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 	for _, computeBlockName := range orderedCorrelationMethods {
 		var nextComputeBlock computeData
 		switch {
-		case computeBlockName == "PR":
+		case computeBlockName == "PearsonR":
 			nextComputeBlock = computeData{
-				name:                   "PR",
+				name:                   "PearsonR",
 				title:                  "Pearson's R, which is fast to compute (We only perform the slower tests on the fingerprints that have a high R).",
 				computeFunc:            computePearsonRForAllFingerprintPairs,
 				printFunc:              printPearsonRCalculationResults,
 				threshold:              strictnessFactor * config.PearsonDupeThreshold,
 				totalFingerprintsCount: totalFingerprintsCount,
 			}
-		case computeBlockName == "SRho":
+		case computeBlockName == "SpearmanRho":
 			nextComputeBlock = computeData{
-				name:                   "SRho",
+				name:                   "SpearmanRho",
 				title:                  "Spearman's Rho for selected fingerprints...",
 				computeFunc:            computeSpearmanForAllFingerprintPairs,
 				printFunc:              nil,
 				threshold:              strictnessFactor * config.SpearmanDupeThreshold,
 				totalFingerprintsCount: totalFingerprintsCount,
 			}
-		case computeBlockName == "BKT":
+		case computeBlockName == "BootstrappedKendallTau":
 			nextComputeBlock = computeData{
-				name:                    "BKT",
+				name:                    "BootstrappedKendallTau",
 				title:                   "Bootstrapped Kendall's Tau for selected fingerprints...",
 				computeFunc:             nil,
 				printFunc:               nil,
@@ -708,9 +708,9 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.KendallDupeThreshold,
 				totalFingerprintsCount:  totalFingerprintsCount,
 			}
-		case computeBlockName == "BRDC":
+		case computeBlockName == "BootstrappedRDC":
 			nextComputeBlock = computeData{
-				name:                    "BRDC",
+				name:                    "BootstrappedRDC",
 				title:                   "Boostrapped Randomized Dependence Coefficient for selected fingerprints...",
 				computeFunc:             nil,
 				printFunc:               nil,
@@ -721,10 +721,10 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.RandomizedDependenceDupeThreshold,
 				totalFingerprintsCount:  totalFingerprintsCount,
 			}
-		case computeBlockName == "BBB":
+		case computeBlockName == "BootstrappedBlomqvistBeta":
 			nextComputeBlock = computeData{
-				name:                    "BBB",
-				title:                   "bootstrapped Blomqvist's beta for selected fingerprints...",
+				name:                    "BootstrappedBlomqvistBeta",
+				title:                   "Bootstrapped Blomqvist's beta for selected fingerprints...",
 				computeFunc:             nil,
 				printFunc:               nil,
 				bootstrappedComputeFunc: computeParallelBootstrappedBlomqvistBeta,
@@ -734,9 +734,9 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.RandomizedBlomqvistDupeThreshold,
 				totalFingerprintsCount:  totalFingerprintsCount,
 			}
-		case computeBlockName == "BHD1":
+		case computeBlockName == "HoeffdingDRound1":
 			nextComputeBlock = computeData{
-				name:                    "BHD1",
+				name:                    "HoeffdingDRound1",
 				title:                   "Hoeffding's D Round 1",
 				computeFunc:             nil,
 				printFunc:               nil,
@@ -747,9 +747,9 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.HoeffdingDupeThreshold,
 				totalFingerprintsCount:  totalFingerprintsCount,
 			}
-		case computeBlockName == "BHD2":
+		case computeBlockName == "HoeffdingDRound2":
 			nextComputeBlock = computeData{
-				name:                    "BHD2",
+				name:                    "HoeffdingDRound2",
 				title:                   "Hoeffding's D Round 2",
 				computeFunc:             nil,
 				printFunc:               nil,

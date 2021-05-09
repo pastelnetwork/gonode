@@ -1,9 +1,11 @@
 package main
 
 import (
+	"log"
 	"math/rand"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/auprc"
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
@@ -17,5 +19,8 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
-	auprc.MeasureAUPRC(dupedetection.NewComputeConfig())
+	if _, err := auprc.MeasureAUPRC(dupedetection.NewComputeConfig()); err != nil {
+		log.Printf(errors.ErrorStack(err))
+		panic(err)
+	}
 }
