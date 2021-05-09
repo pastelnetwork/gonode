@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
