@@ -2,17 +2,29 @@
 package dupedetection
 
 import (
+	"context"
+	"fmt"
 	"image"
+	"math"
+	"math/rand"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/montanaflynn/stats"
 	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
+	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
+	"golang.org/x/sync/errgroup"
+	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat"
 
 	"github.com/disintegration/imaging"
 	tf "github.com/galeone/tensorflow/tensorflow/go"
 	tg "github.com/galeone/tfgo"
 )
+
+const strictnessFactor = 0.985
 
 var models = make(map[string]*tg.Model)
 
@@ -125,4 +137,655 @@ func ComputeImageDeepLearningFeatures(imagePath string) ([][]float64, error) {
 	}
 
 	return fingerprints, nil
+}
+
+func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+	defer pruntime.PrintExecutionTime(time.Now())
+	similarityScoreVectorPearsonAll := make([]float64, len(finalCombinedImageFingerprintArray))
+	var err error
+	g, _ := errgroup.WithContext(context.Background())
+	for i, fingerprint := range finalCombinedImageFingerprintArray {
+		currentIndex := i
+		currentFingerprint := fingerprint
+		g.Go(func() error {
+			//similarityScoreVectorPearsonAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "pearson", []float64{})
+			similarityScoreVectorPearsonAll[currentIndex], err = stats.Pearson(candidateImageFingerprint, currentFingerprint)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+	err = g.Wait()
+	if err != nil {
+		return nil, err
+	}
+	return similarityScoreVectorPearsonAll, nil
+}
+
+func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+	defer pruntime.PrintExecutionTime(time.Now())
+	similarityScoreVectorSpearmanAll := make([]float64, len(finalCombinedImageFingerprintArray))
+	var err error
+	g, _ := errgroup.WithContext(context.Background())
+	for i, fingerprint := range finalCombinedImageFingerprintArray {
+		currentIndex := i
+		currentFingerprint := fingerprint
+		g.Go(func() error {
+			//similarityScoreVectorSpearmanAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "spearman", []float64{})
+			similarityScoreVectorSpearmanAll[currentIndex], err = Spearman2(candidateImageFingerprint, currentFingerprint)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+	err = g.Wait()
+	if err != nil {
+		return nil, err
+	}
+	return similarityScoreVectorSpearmanAll, nil
+}
+
+func filterOutFingerprintsByThreshold(similarityScoreVector []float64, threshold float64, combinedImageFingerprintArray [][]float64) [][]float64 {
+	defer pruntime.PrintExecutionTime(time.Now())
+	var filteredByThresholdCombinedImageFingerprintArray [][]float64
+	for i, valueToCheck := range similarityScoreVector {
+		if !math.IsNaN(valueToCheck) && valueToCheck >= threshold {
+			filteredByThresholdCombinedImageFingerprintArray = append(filteredByThresholdCombinedImageFingerprintArray, combinedImageFingerprintArray[i])
+		}
+	}
+	return filteredByThresholdCombinedImageFingerprintArray
+}
+
+func randInts(min int, max int, size int) []int {
+	output := make([]int, size)
+	for i := range output {
+		output[i] = rand.Intn(max-min) + min
+	}
+	return output
+}
+
+func arrayValuesFromIndexes(input []float64, indexes []int) []float64 {
+	output := make([]float64, len(indexes))
+	for i := range output {
+		output[i] = input[indexes[i]]
+	}
+	return output
+}
+
+func filterOutArrayValuesByRange(input []float64, min, max float64) []float64 {
+	var output []float64
+	for i := range input {
+		if input[i] >= min && input[i] <= max {
+			output = append(output, input[i])
+		}
+	}
+	return output
+}
+
+func computeAverageAndStdevOf25thTo75thPercentile(inputVector []float64) (float64, float64) {
+	percentile25, _ := stats.Percentile(inputVector, 25)
+	percentile75, _ := stats.Percentile(inputVector, 75)
+
+	trimmedVector := filterOutArrayValuesByRange(inputVector, percentile25, percentile75)
+	trimmedVectorAvg, _ := stats.Mean(trimmedVector)
+	trimmedVectorStdev, _ := stats.StdDevS(trimmedVector)
+
+	return trimmedVectorAvg, trimmedVectorStdev
+}
+
+func computeAverageAndStdevOf50thTo90thPercentile(inputVector []float64) (float64, float64) {
+	percentile50, _ := stats.Percentile(inputVector, 50)
+	percentile90, _ := stats.Percentile(inputVector, 90)
+
+	trimmedVector := filterOutArrayValuesByRange(inputVector, percentile50, percentile90)
+	trimmedVectorAvg, _ := stats.Mean(trimmedVector)
+	trimmedVectorStdev, _ := stats.StdDevS(trimmedVector)
+
+	return trimmedVectorAvg, trimmedVectorStdev
+}
+
+func computeParallelBootstrappedKendallsTau(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+	defer pruntime.PrintExecutionTime(time.Now())
+	originalLengthOfInput := len(x)
+	robustAverageTau := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+	robustStdevTau := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+
+	g, _ := errgroup.WithContext(context.Background())
+	for i, y := range arrayOfFingerprintsRequiringFurtherTesting {
+		fingerprintIdx := i
+		currentFingerprint := y
+		g.Go(func() error {
+			arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
+			xBootstraps := make([][]float64, numberOfBootstraps)
+			yBootstraps := make([][]float64, numberOfBootstraps)
+			bootstrappedKendallTauResults := make([]float64, numberOfBootstraps)
+			for i := 0; i < numberOfBootstraps; i++ {
+				arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
+			}
+			for i, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
+				xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
+				yBootstraps[i] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
+
+				bootstrappedKendallTauResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "kendall", []float64{})
+			}
+			robustAverageTau[fingerprintIdx], robustStdevTau[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedKendallTauResults)
+			return nil
+		})
+	}
+	err := g.Wait()
+	if err != nil {
+		return nil, nil, err
+	}
+	return robustAverageTau, robustStdevTau, nil
+}
+
+func computeAverageRatioOfArrays(numerator []float64, denominator []float64) float64 {
+	ratio := make([]float64, len(numerator))
+	for i := range ratio {
+		ratio[i] = numerator[i] / denominator[i]
+	}
+	averageRatio, _ := stats.Mean(ratio)
+	return averageRatio
+}
+
+func rankArrayOrdinalCopulaTransformation(input []float64) []float64 {
+	ranks := make([]float64, len(input)*2)
+	outputIdx := 0
+	for i := range input {
+		ranks[outputIdx] = 1
+		for j := range input {
+			if (i != j) && (input[j] <= input[i]) {
+				ranks[outputIdx] += 1
+			}
+		}
+		ranks[outputIdx] /= float64(len(input))
+		outputIdx++
+		ranks[outputIdx] = 1
+		outputIdx++
+	}
+	return ranks
+}
+
+func randomLinearProjection(s float64, size int) []float64 {
+	output := make([]float64, size*2)
+	for i := range output {
+		output[i] = s / 2 * rand.NormFloat64()
+	}
+	return output
+}
+
+func computeRandomizedDependence(x, y []float64) float64 {
+	sinFunc := func(i, j int, v float64) float64 {
+		return math.Sin(v)
+	}
+	s := 1.0 / 6.0
+	k := 20.0
+	cx := mat.NewDense(len(x), 2, rankArrayOrdinalCopulaTransformation(x))
+	cy := mat.NewDense(len(y), 2, rankArrayOrdinalCopulaTransformation(y))
+
+	Rx := mat.NewDense(2, int(k), randomLinearProjection(s, int(k)))
+	Ry := mat.NewDense(2, int(k), randomLinearProjection(s, int(k)))
+
+	var X, Y, stackedH mat.Dense
+	X.Mul(cx, Rx)
+	Y.Mul(cy, Ry)
+
+	X.Apply(sinFunc, &X)
+	Y.Apply(sinFunc, &Y)
+
+	stackedH.Augment(&X, &Y)
+	//stackedT := mat.DenseCopyOf(stackedH.T())
+
+	var CsymDense mat.SymDense
+
+	stat.CovarianceMatrix(&CsymDense, &stackedH, nil)
+	C := mat.DenseCopyOf(&CsymDense)
+
+	//fmt.Printf("\n%v", mat.Formatted(C, mat.Prefix(""), mat.Squeeze()))
+
+	k0 := int(k)
+	lb := 1.0
+	ub := k
+	counter := 0
+	var maxEigVal float64
+	for {
+		maxEigVal = 0
+		counter++
+		//fmt.Printf("\n%v", k)
+		if k == 4.5 {
+			//fmt.Printf("\n%v", k)
+		}
+		Cxx := mat.DenseCopyOf(C.Slice(0, int(k), 0, int(k)))
+		Cyy := C.Slice(k0, k0+int(k), k0, k0+int(k)).(*mat.Dense)
+		Cxy := C.Slice(0, int(k), k0, k0+int(k)).(*mat.Dense)
+		Cyx := C.Slice(k0, k0+int(k), 0, int(k)).(*mat.Dense)
+
+		var CxxInversed, CyyInversed mat.Dense
+		CxxInversed.Inverse(Cxx)
+		CyyInversed.Inverse(Cyy)
+
+		var CxxInversedMulCxy, CyyInversedMulCyx, resultMul mat.Dense
+		CxxInversedMulCxy.Mul(&CxxInversed, Cxy)
+		CyyInversedMulCyx.Mul(&CyyInversed, Cyx)
+
+		resultMul.Mul(&CxxInversedMulCxy, &CyyInversedMulCyx)
+
+		//fmt.Printf("\nresultMul: %v", mat.Formatted(&resultMul, mat.Prefix(""), mat.Squeeze()))
+
+		var eigs mat.Eigen
+		eigs.Factorize(&resultMul, 0)
+
+		continueLoop := false
+		eigsVals := eigs.Values(nil)
+		for _, eigVal := range eigsVals {
+			realVal := real(eigVal)
+			imageVal := imag(eigVal)
+			if !(imageVal == 0.0 && 0 <= realVal && realVal <= 1) {
+				ub -= 1
+				k = (ub + lb) / 2.0
+				continueLoop = true
+				maxEigVal = 0
+				break
+			}
+			//maxEigVal = math.Max(maxEigVal, realVal)
+			if maxEigVal < realVal {
+				maxEigVal = realVal
+				//fmt.Printf("\n%v", maxEigVal)
+			}
+		}
+
+		if continueLoop {
+			continue
+		}
+
+		if lb == ub {
+			break
+		}
+
+		lb = k
+
+		if ub == lb+1 {
+			k = ub
+		} else {
+			k = (ub + lb) / 2.0
+		}
+	}
+	sqrtResult := math.Sqrt(maxEigVal)
+	result := math.Pow(sqrtResult, 12)
+
+	return result
+}
+
+func computeParallelBootstrappedRandomizedDependence(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+	originalLengthOfInput := len(x)
+	robustAverageRandomizedDependence := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+	robustStdevRandomizedDependence := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+
+	g, _ := errgroup.WithContext(context.Background())
+	for i, y := range arrayOfFingerprintsRequiringFurtherTesting {
+		fingerprintIdx := i
+		currentFingerprint := y
+
+		g.Go(func() error {
+			arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
+			xBootstraps := make([][]float64, numberOfBootstraps)
+			yBootstraps := make([][]float64, numberOfBootstraps)
+			bootstrappedRandomizedDependenceResults := make([]float64, numberOfBootstraps)
+			for i := 0; i < numberOfBootstraps; i++ {
+				arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
+			}
+
+			for currentIdx, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
+				xBootstraps[currentIdx] = arrayValuesFromIndexes(x, currentBootstrapIndices)
+				yBootstraps[currentIdx] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
+
+				/*var rdcProbes []float64
+				const probeCount = 3
+				for probe := 0; probe < probeCount; probe++ {
+					rdcProbes = append(rdcProbes, computeRandomizedDependence(xBootstraps[current], yBootstraps[current]))
+				}
+				var err error
+				bootstrappedRandomizedDependenceResults[current], err = stats.Trimean(rdcProbes)
+				if err != nil {
+					return errors.New(err)
+				}*/
+
+				bootstrappedRandomizedDependenceResults[currentIdx] = computeRandomizedDependence(xBootstraps[currentIdx], yBootstraps[currentIdx])
+
+			}
+
+			robustAverageRandomizedDependence[fingerprintIdx], robustStdevRandomizedDependence[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedRandomizedDependenceResults)
+			return nil
+		})
+	}
+	err := g.Wait()
+	if err != nil {
+		return nil, nil, err
+	}
+	return robustAverageRandomizedDependence, robustStdevRandomizedDependence, nil
+}
+
+func computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+	defer pruntime.PrintExecutionTime(time.Now())
+	originalLengthOfInput := len(x)
+	robustAverageD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+	robustStdevD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+
+	for fingerprintIdx, y := range arrayOfFingerprintsRequiringFurtherTesting {
+		arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
+		xBootstraps := make([][]float64, numberOfBootstraps)
+		yBootstraps := make([][]float64, numberOfBootstraps)
+		bootstrappedHoeffdingsDResults := make([]float64, numberOfBootstraps)
+		for i := 0; i < numberOfBootstraps; i++ {
+			arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
+		}
+		for i, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
+			xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
+			yBootstraps[i] = arrayValuesFromIndexes(y, currentBootstrapIndices)
+
+			bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding", []float64{})
+		}
+		robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf25thTo75thPercentile(bootstrappedHoeffdingsDResults)
+	}
+	return robustAverageD, robustStdevD, nil
+}
+
+func computeParallelBootstrappedBaggedHoeffdingsD(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+	defer pruntime.PrintExecutionTime(time.Now())
+	originalLengthOfInput := len(x)
+	robustAverageD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+	robustStdevD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+
+	for fingerprintIdx, y := range arrayOfFingerprintsRequiringFurtherTesting {
+		arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
+		xBootstraps := make([][]float64, numberOfBootstraps)
+		yBootstraps := make([][]float64, numberOfBootstraps)
+		bootstrappedHoeffdingsDResults := make([]float64, numberOfBootstraps)
+		for i := 0; i < numberOfBootstraps; i++ {
+			arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
+		}
+		for i, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
+			xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
+			yBootstraps[i] = arrayValuesFromIndexes(y, currentBootstrapIndices)
+
+			bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding", []float64{})
+		}
+		robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedHoeffdingsDResults)
+	}
+	return robustAverageD, robustStdevD, nil
+}
+
+func computeParallelBootstrappedBlomqvistBeta(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+	defer pruntime.PrintExecutionTime(time.Now())
+	originalLengthOfInput := len(x)
+	robustAverageBlomqvist := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+	robustStdevBlomqvist := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
+
+	g, _ := errgroup.WithContext(context.Background())
+	for i, y := range arrayOfFingerprintsRequiringFurtherTesting {
+		fingerprintIdx := i
+		currentFingerprint := y
+		g.Go(func() error {
+			arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
+			xBootstraps := make([][]float64, numberOfBootstraps)
+			yBootstraps := make([][]float64, numberOfBootstraps)
+			var bootstrappedBlomqvistResults []float64
+			for i := 0; i < numberOfBootstraps; i++ {
+				arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
+			}
+			for i, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
+				xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
+				yBootstraps[i] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
+
+				blomqvistValue := wdm.Wdm(xBootstraps[i], yBootstraps[i], "blomqvist", []float64{})
+				if !math.IsNaN(blomqvistValue) {
+					bootstrappedBlomqvistResults = append(bootstrappedBlomqvistResults, blomqvistValue)
+				}
+			}
+			robustAverageBlomqvist[fingerprintIdx], robustStdevBlomqvist[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedBlomqvistResults)
+			return nil
+		})
+	}
+	if err := g.Wait(); err != nil {
+		return nil, nil, errors.New(err)
+	}
+	return robustAverageBlomqvist, robustStdevBlomqvist, nil
+}
+
+type printInfo func([]float64)
+type bootstrappedPrintInfo func([]float64, []float64)
+type correlation func([]float64, [][]float64) ([]float64, error)
+type bootstrappedCorrelation func([]float64, [][]float64, int, int) ([]float64, []float64, error)
+
+type computeData struct {
+	name                        string
+	title                       string
+	computeFunc                 correlation
+	printFunc                   printInfo
+	bootstrappedComputeFunc     bootstrappedCorrelation
+	bootstrappedPrintFunc       bootstrappedPrintInfo
+	sampleSize, bootstrapsCount int
+	threshold                   float64
+	totalFingerprintsCount      int
+}
+
+func computeSimilarity(candidateImageFingerprint []float64, fingerprints [][]float64, data computeData) ([][]float64, error) {
+	if len(fingerprints) == 0 {
+		return [][]float64{}, nil
+	}
+	defer pruntime.PrintExecutionTime(time.Now())
+	fmt.Printf("\n\n-->Computing %v", data.title)
+
+	var similarityScore, similarityScoreStdev []float64
+	var err error
+
+	if data.computeFunc != nil {
+		similarityScore, err = data.computeFunc(candidateImageFingerprint, fingerprints)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+		if data.printFunc != nil {
+			data.printFunc(similarityScore)
+		}
+	}
+
+	if data.bootstrappedComputeFunc != nil {
+		similarityScore, similarityScoreStdev, err = data.bootstrappedComputeFunc(candidateImageFingerprint, fingerprints, data.sampleSize, data.bootstrapsCount)
+		if err != nil {
+			return nil, errors.New(err)
+		}
+
+		if data.bootstrappedPrintFunc != nil {
+			data.bootstrappedPrintFunc(similarityScore, similarityScoreStdev)
+		}
+	}
+
+	fingerprintsRequiringFurtherTesting := filterOutFingerprintsByThreshold(similarityScore, data.threshold, fingerprints)
+	percentageOfFingerprintsRequiringFurtherTesting := float32(len(fingerprintsRequiringFurtherTesting)) / float32(data.totalFingerprintsCount)
+	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(fingerprintsRequiringFurtherTesting), percentageOfFingerprintsRequiringFurtherTesting*100)
+	return fingerprintsRequiringFurtherTesting, nil
+}
+
+func printPearsonRCalculationResults(results []float64) {
+	pearsonMax, _ := stats.Max(results)
+	fmt.Printf("\nLength of computed pearson r vector: %v with max value %v", len(results), pearsonMax)
+}
+
+func printKendallTauCalculationResults(similarityScore, similarityScoreStdev []float64) {
+	stdevAsPctOfRobustAvgKendall := computeAverageRatioOfArrays(similarityScoreStdev, similarityScore)
+	fmt.Printf("\nStandard Deviation as %% of Average Tau -- average across all fingerprints: %.2f%%", stdevAsPctOfRobustAvgKendall*100)
+}
+
+func printRDCCalculationResults(similarityScore, similarityScoreStdev []float64) {
+	stdevAsPctOfRobustAvgRandomizedDependence := computeAverageRatioOfArrays(similarityScoreStdev, similarityScore)
+	fmt.Printf("\nStandard Deviation as %% of Average Randomized Dependence -- average across all fingerprints: %.2f%%", stdevAsPctOfRobustAvgRandomizedDependence*100)
+}
+
+func printBlomqvistBetaCalculationResults(similarityScore, similarityScoreStdev []float64) {
+	similarityScoreVectorBlomqvistAverage, _ := stats.Mean(similarityScore)
+	fmt.Printf("\n Average for Blomqvist's beta: %.4f", strictnessFactor*similarityScoreVectorBlomqvistAverage)
+}
+
+type ComputeConfig struct {
+	CorrelationMethodNameArray        []string
+	CorrelationMethodsOrder           string
+	PearsonDupeThreshold              float64
+	SpearmanDupeThreshold             float64
+	KendallDupeThreshold              float64
+	RandomizedDependenceDupeThreshold float64
+	RandomizedBlomqvistDupeThreshold  float64
+	HoeffdingDupeThreshold            float64
+	HoeffdingRound2DupeThreshold      float64
+}
+
+func NewComputeConfig() ComputeConfig {
+	config := ComputeConfig{}
+	config.PearsonDupeThreshold = 0.995
+	config.SpearmanDupeThreshold = 0.79
+	config.KendallDupeThreshold = 0.70
+	config.RandomizedDependenceDupeThreshold = 0.79
+	config.RandomizedBlomqvistDupeThreshold = 0.7625
+	config.HoeffdingDupeThreshold = 0.35
+	config.HoeffdingRound2DupeThreshold = 0.23
+
+	config.CorrelationMethodNameArray = []string{
+		"PR",
+		"SRho",
+		"BKT",
+		"BRDC",
+		"BBB",
+		"BHD1",
+		"BHD2",
+	}
+	config.CorrelationMethodsOrder = strings.Join(config.CorrelationMethodNameArray, " ")
+
+	return config
+}
+
+func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArrayToCompareWith [][]float64, config ComputeConfig) (int, error) {
+	defer pruntime.PrintExecutionTime(time.Now())
+
+	var err error
+	totalFingerprintsCount := len(fingerprintsArrayToCompareWith)
+
+	fmt.Printf("\nConfigured CorrelationMethodsOrder: %v", config.CorrelationMethodsOrder)
+
+	var orderedComputeBlocks []computeData
+	orderedCorrelationMethods := strings.Split(config.CorrelationMethodsOrder, " ")
+	for _, computeBlockName := range orderedCorrelationMethods {
+		var nextComputeBlock computeData
+		switch {
+		case computeBlockName == "PR":
+			nextComputeBlock = computeData{
+				name:                   "PR",
+				title:                  "Pearson's R, which is fast to compute (We only perform the slower tests on the fingerprints that have a high R).",
+				computeFunc:            computePearsonRForAllFingerprintPairs,
+				printFunc:              printPearsonRCalculationResults,
+				threshold:              strictnessFactor * config.PearsonDupeThreshold,
+				totalFingerprintsCount: totalFingerprintsCount,
+			}
+		case computeBlockName == "SRho":
+			nextComputeBlock = computeData{
+				name:                   "SRho",
+				title:                  "Spearman's Rho for selected fingerprints...",
+				computeFunc:            computeSpearmanForAllFingerprintPairs,
+				printFunc:              nil,
+				threshold:              strictnessFactor * config.SpearmanDupeThreshold,
+				totalFingerprintsCount: totalFingerprintsCount,
+			}
+		case computeBlockName == "BKT":
+			nextComputeBlock = computeData{
+				name:                    "BKT",
+				title:                   "Bootstrapped Kendall's Tau for selected fingerprints...",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedKendallsTau,
+				bootstrappedPrintFunc:   printKendallTauCalculationResults,
+				sampleSize:              50,
+				bootstrapsCount:         100,
+				threshold:               strictnessFactor * config.KendallDupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "BRDC":
+			nextComputeBlock = computeData{
+				name:                    "BRDC",
+				title:                   "Boostrapped Randomized Dependence Coefficient for selected fingerprints...",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedRandomizedDependence,
+				bootstrappedPrintFunc:   printRDCCalculationResults,
+				sampleSize:              50,
+				bootstrapsCount:         100,
+				threshold:               strictnessFactor * config.RandomizedDependenceDupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "BBB":
+			nextComputeBlock = computeData{
+				name:                    "BBB",
+				title:                   "bootstrapped Blomqvist's beta for selected fingerprints...",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedBlomqvistBeta,
+				bootstrappedPrintFunc:   printBlomqvistBetaCalculationResults,
+				sampleSize:              100,
+				bootstrapsCount:         100,
+				threshold:               strictnessFactor * config.RandomizedBlomqvistDupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "BHD1":
+			nextComputeBlock = computeData{
+				name:                    "BHD1",
+				title:                   "Hoeffding's D Round 1",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize,
+				bootstrappedPrintFunc:   nil,
+				sampleSize:              20,
+				bootstrapsCount:         50,
+				threshold:               strictnessFactor * config.HoeffdingDupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "BHD2":
+			nextComputeBlock = computeData{
+				name:                    "BHD2",
+				title:                   "Hoeffding's D Round 2",
+				computeFunc:             nil,
+				printFunc:               nil,
+				bootstrappedComputeFunc: computeParallelBootstrappedBaggedHoeffdingsD,
+				bootstrappedPrintFunc:   nil,
+				sampleSize:              75,
+				bootstrapsCount:         20,
+				threshold:               strictnessFactor * config.HoeffdingRound2DupeThreshold,
+				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		default:
+			return 0, errors.New(errors.Errorf("Unrecognized similarity computation block name \"%v\"", computeBlockName))
+		}
+		orderedComputeBlocks = append(orderedComputeBlocks, nextComputeBlock)
+	}
+
+	fingerprintsForFurtherTesting := fingerprintsArrayToCompareWith
+	for _, computeBlock := range orderedComputeBlocks {
+		fingerprintsForFurtherTesting, err = computeSimilarity(candidateImageFingerprint, fingerprintsForFurtherTesting, computeBlock)
+		if err != nil {
+			return 0, errors.New(err)
+		}
+		if len(fingerprintsForFurtherTesting) == 0 {
+			break
+		}
+	}
+
+	if len(fingerprintsForFurtherTesting) > 0 {
+		fmt.Printf("\n\nWARNING! Art image file appears to be a duplicate!")
+	} else {
+		fmt.Printf("\n\nArt image file appears to be original! (i.e., not a duplicate of an existing image in the image fingerprint database)")
+	}
+
+	result := 1
+	if len(fingerprintsForFurtherTesting) == 0 {
+		result = 0
+	}
+	return result, nil
 }
