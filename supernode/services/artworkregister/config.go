@@ -1,5 +1,7 @@
 package artworkregister
 
+import "github.com/pastelnetwork/gonode/pastel"
+
 const (
 	defaultNumberConnectedNodes = 2
 )
@@ -7,6 +9,8 @@ const (
 // Config contains settings of the registering artwork.
 type Config struct {
 	NumberConnectedNodes int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
+
+	node *pastel.MasterNodeConfig `json:"masternode,omitempty"`
 }
 
 // NewConfig returns a new Config instance.

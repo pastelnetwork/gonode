@@ -1,13 +1,24 @@
 package pastel
 
+// IDTicketType represents a type of the id ticket.
+type IDTicketType string
+
+// List of types of id ticket.
+const (
+	IDTicketAll      IDTicketType = "all"
+	IDTicketMine     IDTicketType = "mine"
+	IDTicketMN       IDTicketType = "mn"
+	IDTicketPersonal IDTicketType = "personal"
+)
+
 // IDTickets represents multiple IDTicket.
 type IDTickets []IDTicket
 
-// IDTicket represensts pastel id ticket.
+// IDTicket represents pastel id ticket.
 type IDTicket struct {
-	Height int          `json:"height"`
-	Ticket IDTicketProp `json:"ticket"`
-	TXID   string       `json:"txid"`
+	IDTicketProp `json:"ticket"`
+	Height       int    `json:"height"`
+	TXID         string `json:"txid"`
 }
 
 // IDTicketProp represents properties of the id ticket.

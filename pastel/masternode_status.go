@@ -1,6 +1,6 @@
 package pastel
 
-// MasterNodeStatus represensts pastel masternode status.
+// MasterNodeStatus represents pastel masternode status.
 type MasterNodeStatus struct {
 	Outpoint string `json:"outpoint"`
 	Service  string `json:"service"`

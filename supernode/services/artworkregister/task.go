@@ -163,7 +163,7 @@ func (task *Task) ConnectTo(ctx context.Context, nodeKey string) error {
 		return err
 	}
 
-	if err := stream.Handshake(ctx, task.ConnID, task.myNode.Key); err != nil {
+	if err := stream.Handshake(ctx, task.ConnID, task.config.node.ExtKey); err != nil {
 		return err
 	}
 
@@ -172,7 +172,7 @@ func (task *Task) ConnectTo(ctx context.Context, nodeKey string) error {
 }
 
 func (task *Task) findNode(ctx context.Context, nodeKey string) (*node.SuperNode, error) {
-	masterNodes, err := task.pastelClient.TopMasterNodes(ctx)
+	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		return nil, err
 	}

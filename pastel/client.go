@@ -9,19 +9,33 @@ import (
 	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/pastel-client/jsonrpc"
+	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 )
 
 type client struct {
 	jsonrpc.RPCClient
-	extKey string
 }
 
+// MasterNodeConfig implements pastel.Client.MasterNodeConfig()
+func (client *client) MasterNodeConfig(ctx context.Context) (*MasterNodeConfig, error) {
+	listConf := make(map[string]MasterNodeConfig)
+	err := client.callFor(ctx, &listConf, "masternode", "list-conf")
+	if err != nil {
+		return nil, errors.Errorf("failed to get masternode configuration: %w", err)
+	}
+
+	if masterNodeConfig, ok := listConf["masternode"]; ok {
+		return &masterNodeConfig, nil
+	}
+	return nil, errors.New("not found masternode configuration")
+}
+
+// MasterNodesTop implements pastel.Client.MasterNodesTop()
 func (client *client) MasterNodesTop(ctx context.Context) (MasterNodes, error) {
 	blocknumMNs := make(map[string]MasterNodes)
 	err := client.callFor(ctx, &blocknumMNs, "masternode", "top")
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to get top masternodes: %w", err)
 	}
 	for _, masterNodes := range blocknumMNs {
 		return masterNodes, nil
@@ -29,28 +43,34 @@ func (client *client) MasterNodesTop(ctx context.Context) (MasterNodes, error) {
 	return nil, nil
 }
 
+// MasterNodesTop implements pastel.Client.MasterNodeStatus()
 func (client *client) MasterNodeStatus(ctx context.Context) (*MasterNodeStatus, error) {
 	var status MasterNodeStatus
 	err := client.callFor(ctx, &status, "masternode", "status")
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to get masternode status: %w", err)
 	}
 	return &status, nil
 }
 
+// StorageFee implements pastel.Client.StorageFee()
 func (client *client) StorageFee(ctx context.Context) (*StorageFee, error) {
 	var storagefee StorageFee
 	err := client.callFor(ctx, &storagefee, "storagefee", "getnetworkfee")
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to get storage fee: %w", err)
 	}
 	return &storagefee, nil
 }
 
+// IDTickets implements pastel.Client.IDTickets()
 func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTickets, error) {
 	tickets := IDTickets{}
 	err := client.callFor(ctx, &tickets, "tickets", "list", "id", string(idType))
-	return tickets, err
+	if err != nil {
+		errors.Errorf("failed to get id tickets: %w", err)
+	}
+	return tickets, nil
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
@@ -99,6 +119,5 @@ func NewClient(config *Config) Client {
 
 	return &client{
 		RPCClient: jsonrpc.NewClientWithOpts(endpoint, opts),
-		extKey:    config.ExtKey,
 	}
 }

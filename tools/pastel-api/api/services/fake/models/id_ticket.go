@@ -18,5 +18,5 @@ type IDTicketProp struct {
 	Type      string `json:"type"`
 }
 
-// IDTickets represents the API response that can be retrieved using the command `tickets list id mine`.
+// IDTickets represents pastel id ticket, that can be retrieved using the command `tickets list id mine`.
 type IDTickets []IDTicket

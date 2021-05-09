@@ -11,7 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"

@@ -31,6 +31,8 @@ func (service *service) Handle(_ context.Context, r *http.Request, method string
 		return newStorageFeeGetNetworkFee(service.storageFeeGetNetworkFee), nil
 	case "tickets_list_id_mine":
 		return newTicketsListIDMine(service.idTickets, node), nil
+	case "masternode_list-conf":
+		return newMasterNodeListConfByNode(node), nil
 	case "masternode_status":
 		if node == nil {
 			return nil, services.ErrNotMasterNode

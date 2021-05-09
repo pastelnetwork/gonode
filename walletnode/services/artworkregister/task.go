@@ -37,7 +37,7 @@ func (task *Task) Run(ctx context.Context) error {
 
 	if err := task.run(ctx); err != nil {
 		task.State.Update(ctx, state.NewMessage(state.StatusTaskRejected))
-		log.WithContext(ctx).WithField("error", err).Warnf("Task is rejected")
+		log.WithContext(ctx).WithError(err).Warnf("Task is rejected")
 		return nil
 	}
 
@@ -51,7 +51,7 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	} else if !ok {
 		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
-		return errors.New("network storage fee is higher than specified in the ticket")
+		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
 	superNodes, err := task.findSuperNodes(ctx)
@@ -60,7 +60,7 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	if len(superNodes) < task.config.NumberSuperNodes {
 		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
-		return errors.New("not found enough available SuperNodes with acceptable storage fee")
+		return errors.New("not found enough available SuperNodes with acceptable storage fee: %f")
 	}
 
 	ctx, connCancel := context.WithCancel(ctx)
@@ -111,6 +111,7 @@ func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, seco
 
 		for _, node := range nodes {
 			log.WithContext(ctx).Debugf("Primary accepted %q secondary node", node.Key)
+			// TODO: disconnect all not accepted connections by primary supernode.
 		}
 		return nil
 	})
@@ -175,7 +176,6 @@ func (task *Task) connectStream(ctx context.Context, address, connID string, isP
 func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
 	fee, err := task.pastelClient.StorageFee(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("Could not get pastel storagefee")
 		return false, err
 	}
 	return fee.NetworkFee <= task.Ticket.MaximumFee, nil
@@ -184,9 +184,8 @@ func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
 func (task *Task) findSuperNodes(ctx context.Context) (node.SuperNodes, error) {
 	var superNodes node.SuperNodes
 
-	mns, err := task.pastelClient.TopMasterNodes(ctx)
+	mns, err := task.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("Could not get pastel top masternodes")
 		return nil, err
 	}
 	for _, mn := range mns {

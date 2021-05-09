@@ -16,7 +16,7 @@ type MasterNode struct {
 	ExtCfg        string `json:"extCfg"`
 }
 
-// MasterNodes represents the API response that can be retrieved using the command `masternode top`.
+// MasterNodes represents pastel masternodes.
 type MasterNodes []MasterNode
 
 // ByPort returns single masternode by the given `port`

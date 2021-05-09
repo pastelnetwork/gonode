@@ -1,6 +1,6 @@
 package models
 
-// MasterNodeStatus represents the API response that can be retrieved using the command `masternode status`.
+// MasterNodeStatus represents pastel masternode status, that can be retrieved using the command `masternode status`.
 type MasterNodeStatus struct {
 	Outpoint string `json:"outpoint"`
 	Service  string `json:"service"`
