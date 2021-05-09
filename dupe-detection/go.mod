@@ -10,7 +10,6 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/galeone/tensorflow v2.4.0-rc0.0.20210202175351-640a390c2283+incompatible
 	github.com/galeone/tfgo v0.0.0-20210204182614-84b9a5e77f79
-	github.com/jinzhu/gorm v1.9.16
 	github.com/mattn/go-sqlite3 v1.14.6
 	github.com/montanaflynn/stats v0.6.5
 	github.com/mxschmitt/golang-combinations v1.1.0
