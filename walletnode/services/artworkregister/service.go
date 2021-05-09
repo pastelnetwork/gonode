@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/storage/definition"
+	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel-client"
 
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -18,7 +18,7 @@ const (
 // Service represent artwork service.
 type Service struct {
 	config       *Config
-	db           definition.KeyValue
+	db           storage.KeyValue
 	pastelClient pastel.Client
 	worker       *Worker
 	tasks        []*Task
@@ -61,7 +61,7 @@ func (service *Service) AddTask(ctx context.Context, ticket *Ticket) (string, er
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db definition.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,

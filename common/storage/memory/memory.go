@@ -4,7 +4,7 @@ import (
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/storage/definition"
+	"github.com/pastelnetwork/gonode/common/storage"
 )
 
 const logPrefix = "[memory]"
@@ -27,7 +27,7 @@ func (db *keyValue) Get(key string) ([]byte, error) {
 	if value, ok := db.values[key]; ok {
 		return value, nil
 	}
-	return nil, definition.ErrKeyNotFound
+	return nil, storage.ErrKeyNotFound
 }
 
 // Delete implements storage.KeyValue.Delete().
@@ -53,8 +53,8 @@ func (db *keyValue) Set(key string, value []byte) error {
 	return nil
 }
 
-// NewMemory create new memory instance
-func NewMemory() definition.KeyValue {
+// NewKeyValue return new instance key value storage
+func NewKeyValue() storage.KeyValue {
 	return &keyValue{
 		values: make(map[string][]byte),
 	}

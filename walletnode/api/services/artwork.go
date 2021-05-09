@@ -9,7 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/common/storage/definition"
+	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
@@ -26,7 +26,7 @@ const (
 // Artwork represents services for artworks endpoints.
 type Artwork struct {
 	register *artworkregister.Service
-	storage  definition.KeyValue
+	storage  storage.KeyValue
 }
 
 // RegisterTaskState streams the state of the registration process.
@@ -97,7 +97,7 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 	ticket := fromRegisterPayload(p)
 
 	ticket.Image, err = service.storage.Get(p.ImageID)
-	if err == definition.ErrKeyNotFound {
+	if err == storage.ErrKeyNotFound {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
 	if err != nil {
@@ -153,6 +153,6 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 func NewArtwork(register *artworkregister.Service) *Artwork {
 	return &Artwork{
 		register: register,
-		storage:  storage.NewKeyValue(),
+		storage:  memory.NewKeyValue(),
 	}
 }
