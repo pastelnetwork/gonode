@@ -6,9 +6,9 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage/definition"
 	"github.com/pastelnetwork/gonode/pastel-client"
 	"github.com/pastelnetwork/gonode/supernode/node"
-	"github.com/pastelnetwork/gonode/supernode/storage"
 )
 
 const (
@@ -22,7 +22,7 @@ type Service struct {
 	myNode *node.SuperNode
 
 	config       *Config
-	db           storage.KeyValue
+	db           definition.KeyValue
 	pastelClient pastel.Client
 	nodeClient   node.Client
 	worker       *Worker
@@ -75,7 +75,7 @@ func (service *Service) NewTask(ctx context.Context) *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db definition.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,

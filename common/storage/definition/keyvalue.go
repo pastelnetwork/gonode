@@ -1,4 +1,4 @@
-package storage
+package definition
 
 import "github.com/pastelnetwork/gonode/common/errors"
 
