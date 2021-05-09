@@ -21,7 +21,7 @@ func TestErrorf(t *testing.T) {
 }
 
 func TestErrorStack(t *testing.T) {
-	err := errors.Errorf("foo")
-	assert.Equal(t, "foo", err.Error())
+	err := errors.Errorf("foo: %w", errors.New("bar"))
+	assert.Equal(t, "foo: bar", err.Error())
 	assert.Equal(t, err.Error()+"\n"+err.Stack(), err.ErrorStack())
 }
