@@ -53,7 +53,7 @@ func (db *keyValue) Set(key string, value []byte) error {
 	return nil
 }
 
-// NewKeyValue new memory instance
+// NewMemory create new memory instance
 func NewMemory() definition.KeyValue {
 	return &keyValue{
 		values: make(map[string][]byte),
