@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services"
 )
 
@@ -60,6 +62,8 @@ func (server *Server) Run(ctx context.Context, config *Config) error {
 
 func (server *Server) httpHandler(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer errors.Recover(errors.CheckErrorAndExit)
+
 		w.Header().Set("Content-Type", "application/json")
 
 		var req Request
@@ -71,17 +75,16 @@ func (server *Server) httpHandler(ctx context.Context) http.Handler {
 		}
 		r.Body.Close()
 
-		log.WithContext(ctx).WithField("req", req).Debug("Received new request")
+		reqID, _ := random.String(8, random.Base62Chars)
+		ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%v", logPrefix, reqID))
 
-		data, err := server.services.Handle(ctx, req.Method, req.Params)
+		username, _, _ := r.BasicAuth()
+		log.WithContext(ctx).WithField("username", username).WithField("req", req).Debug("Request")
+
+		data, err := server.services.Handle(ctx, r, req.Method, req.Params)
 		if err != nil {
-			if err == services.ErrNotFoundMethod {
-				resp := newErrorResponse(req.ID, -32601, err.Error())
-				server.write(ctx, w, http.StatusNotImplemented, resp)
-			} else {
-				resp := newErrorResponse(req.ID, -1, err.Error())
-				server.write(ctx, w, http.StatusInternalServerError, resp)
-			}
+			resp := newErrorResponse(req.ID, err)
+			server.write(ctx, w, http.StatusBadRequest, resp)
 			return
 		}
 
@@ -90,7 +93,7 @@ func (server *Server) httpHandler(ctx context.Context) http.Handler {
 	})
 }
 
-func (server *Server) write(ctx context.Context, w http.ResponseWriter, code int, resp *Response) http.Handler {
+func (server *Server) write(ctx context.Context, w http.ResponseWriter, code int, resp *Response) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(code)
@@ -98,12 +101,14 @@ func (server *Server) write(ctx context.Context, w http.ResponseWriter, code int
 	data, err := resp.Bytes()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to generate response")
+		return
 	}
 	if _, err := w.Write(data); err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to send response")
+		return
 	}
-	return nil
 
+	log.WithContext(ctx).WithField("resp", resp.Result).Debug("Response")
 }
 
 // NewServer returns a new Server instance.

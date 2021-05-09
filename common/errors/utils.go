@@ -60,7 +60,11 @@ func CheckErrorAndExit(err error) {
 	if log.DebugMode() {
 		log.WithError(err).WithFields(map[string]interface{}(errorFields)).Error(ErrorStack(err))
 	} else {
-		fmt.Fprintf(os.Stderr, "ERROR: %s %s\n", errorFields.String(), err)
+		if fields := errorFields.String(); fields != "" {
+			fmt.Fprintf(os.Stderr, "ERROR: %s %s\n", err, fields)
+			return
+		}
+		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 	}
 }
 

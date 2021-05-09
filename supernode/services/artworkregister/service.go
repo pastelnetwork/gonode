@@ -7,7 +7,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
@@ -18,8 +18,6 @@ const (
 // Service represent artwork service.
 type Service struct {
 	sync.Mutex
-
-	myNode *node.SuperNode
 
 	config       *Config
 	db           storage.KeyValue
@@ -33,18 +31,14 @@ type Service struct {
 func (service *Service) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
-	masterNode, err := service.pastelClient.MyMasterNode(ctx)
+	nodeConfig, err := service.pastelClient.MasterNodeConfig(ctx)
 	if err != nil {
 		return err
-	} else if masterNode == nil {
-		return errors.Errorf("node not found myNode")
 	}
-
-	service.myNode = &node.SuperNode{
-		Address: masterNode.ExtAddress,
-		Key:     masterNode.ExtKey,
-		Fee:     masterNode.Fee,
+	if nodeConfig.ExtKey == "" {
+		return errors.New("masternode configuration: \"extKey\" cannot be empty, check \"masternode list-conf\"")
 	}
+	service.config.node = nodeConfig
 
 	return service.worker.Run(ctx)
 }

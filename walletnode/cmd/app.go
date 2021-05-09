@@ -12,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"
@@ -97,7 +97,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegisterService := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
 
-	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 200}) }()
+	// NOTE: for testing to bypass REST API
+	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 100}) }()
 
 	// api service
 	server := api.NewServer(config.API,

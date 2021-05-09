@@ -6,7 +6,7 @@ require (
 	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/pastelnetwork/gonode/common v0.0.0
-	github.com/pastelnetwork/gonode/pastel-client v0.0.0
+	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/sergi/go-diff v1.2.0 // indirect
 	goa.design/goa/v3 v3.3.1
@@ -22,4 +22,4 @@ replace github.com/pastelnetwork/gonode/common => ../common
 
 replace github.com/pastelnetwork/gonode/proto => ../proto
 
-replace github.com/pastelnetwork/gonode/pastel-client => ../pastel-client
+replace github.com/pastelnetwork/gonode/pastel => ../pastel

@@ -25,7 +25,10 @@ func (service *Common) UnmarshalFile(fs embed.FS, filename string, model interfa
 		return errors.New(err)
 	}
 
-	return json.Unmarshal(data, &model)
+	if err := json.Unmarshal(data, &model); err != nil {
+		return errors.New(err)
+	}
+	return nil
 }
 
 // NewCommon returns a new Common instance.

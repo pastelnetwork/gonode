@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	debugModeEnvName = "PASTEL_API"
+	debugModeEnvName = "PASTEL_API_DEBUG"
 )
 
 var (

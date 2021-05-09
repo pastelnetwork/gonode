@@ -16,7 +16,7 @@ type (
 
 const (
 	// AddressKey is the ip address of the connected peer
-	AddressKey ctxKey = iota + 1
+	AddressKey ctxKey = iota
 
 	// MethodKey is proto rpc
 	MethodKey

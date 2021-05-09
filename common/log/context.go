@@ -13,7 +13,7 @@ type (
 
 const (
 	// PrefixKey is the prefix of the log record
-	PrefixKey ctxKey = iota + 1
+	PrefixKey ctxKey = iota
 )
 
 // ContextWithPrefix returns a new context with PrefixKey value.

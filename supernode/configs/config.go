@@ -3,7 +3,7 @@ package configs
 import (
 	"encoding/json"
 
-	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )

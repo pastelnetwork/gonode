@@ -8,30 +8,30 @@ import (
 
 // State represents a states of the registering process.
 type State struct {
-	msgs []*Message
-	subs []*Subscription
+	statuses []*Status
+	subs     []*Subscription
 }
 
 // All returns all states from the very beginning.
-func (states *State) All() []*Message {
-	return states.msgs
+func (states *State) All() []*Status {
+	return states.statuses
 }
 
 // Latest returns the message of the latest states.
-func (states *State) Latest() *Message {
-	if last := len(states.msgs); last > 0 {
-		return states.msgs[last-1]
+func (states *State) Latest() *Status {
+	if last := len(states.statuses); last > 0 {
+		return states.statuses[last-1]
 	}
 	return nil
 }
 
 // Update updates the last states of the states by adding the message that contains properties of the current states.
-func (states *State) Update(ctx context.Context, msg *Message) {
+func (states *State) Update(ctx context.Context, status *Status) {
 	for _, sub := range states.subs {
-		go sub.Pub(msg)
+		go sub.Pub(status)
 	}
-	log.WithContext(ctx).WithField("status", msg.Status.String()).Debugf("State updated")
-	states.msgs = append(states.msgs, msg)
+	log.WithContext(ctx).WithField("statuses", status.Type.String()).Debugf("State updated")
+	states.statuses = append(states.statuses, status)
 }
 
 // Subscribe returns a new subscription of the states.
@@ -40,7 +40,7 @@ func (states *State) Subscribe() (*Subscription, error) {
 	states.subs = append(states.subs, sub)
 
 	go func() {
-		sub.Pub(states.msgs...)
+		sub.Pub(states.statuses...)
 		<-sub.Done()
 		states.unsubscribe(sub)
 	}()
@@ -58,8 +58,8 @@ func (states *State) unsubscribe(elem *Subscription) {
 }
 
 // New returns a new State instance.
-func New(msg *Message) *State {
+func New(status *Status) *State {
 	return &State{
-		msgs: []*Message{msg},
+		statuses: []*Status{status},
 	}
 }

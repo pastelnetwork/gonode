@@ -1,0 +1,27 @@
+[
+  {
+    "height": 19376,
+    "ticket": {
+      "address": "tPRmkzMRw8b2VpZfZzwMLFEsakUB1mmuJrT",
+      "id_type": "masternode",
+      "outpoint": "1234567890123456789012345678901234567890123456789012345678901234-1",
+      "pastelID": "jXXk5k99wK1ca5ZqC6cXSwiiUv57NNiEAApUBtQCNYPbgXDTVwo1k4vVb8J9CAMtnUC4QrNED4DhUGqKyEZCQS",
+      "signature": "79c04e94ce0ec18b8b1dbe6f09de2b2c1334609b0a6646f1acf712669739274516412c3dd9b67f4dafaa72e368db9ebcfd56c688be2c350c80f6ef547ebe8614b6d87878eff8b64f722d478bc616a36438c1c3e74008e267f2f175b937a09f8e2568d003d5a6237e172ecba01294d2d81b00",
+      "timeStamp": "1620248750",
+      "type": "pastelid"
+    },
+    "txid": "fff9b49126dfe2b6380b4a14057a15a71323fd000c8ad0db11638f68482bd5ce"
+  },
+  {
+    "height": 19441,
+    "ticket": {
+      "address": "tPnjq6Cu1ZYrcehFypvp8wHg7s5dK81XkP2",
+      "id_type": "personal",
+      "pastelID": "jXZrYioHF1vF1RHt2P4HxhMNg9ZA54C1YFAbFsX7yTCGuMXLpLbu9U4btLKmaq8Ev2AyVbho8nY2E61z9eRNC2",
+      "signature": "886e146d80708cd96e65e0585e51facbc9f5c5737d5dd44793094a94580fc22f13630754076af78654f954274ebebb2b8cb854d93bd06c9280082b3b377361b466eee7c2657bd8710fd5a5f5b433a3f597063732cce94f4ff0670a9b27d0f8892bf34c48f199c3882d0f3fed3eabe5f12700",
+      "timeStamp": "1620259955",
+      "type": "pastelid"
+    },
+    "txid": "53e6f0a01d9a7a309552dfe4a80003f50db585b3f200723825f5587a4a06c02e"
+  }
+]
