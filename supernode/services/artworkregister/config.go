@@ -10,7 +10,7 @@ const (
 type Config struct {
 	NumberConnectedNodes int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
 
-	node *pastel.MasterNodeConfig `json:"masternode,omitempty"`
+	node *pastel.MasterNodeConfig
 }
 
 // NewConfig returns a new Config instance.
