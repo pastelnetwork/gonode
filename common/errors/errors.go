@@ -35,11 +35,6 @@ func (err *Error) Unwrap() error {
 	return err.goerror.Err
 }
 
-// Goerr returns goerrors.Error
-func (err *Error) Goerr() *goerrors.Error {
-	return err.goerror
-}
-
 // WithField adds a new field
 func (err *Error) WithField(key string, value interface{}) *Error {
 	err.fields[key] = value
