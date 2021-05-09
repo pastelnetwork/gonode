@@ -116,7 +116,7 @@ jobs:
       - test:
           package: "common"
       - test:
-          package: "pastel-client"
+          package: "pastel"
       - test:
           package: "tools/pastel-api"
       - test:
