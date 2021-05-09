@@ -17,4 +17,5 @@ require (
 	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
 	google.golang.org/grpc v1.37.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gotest.tools v2.2.0+incompatible
 )

@@ -19,6 +19,11 @@ func (err *Error) Error() string {
 	return err.goerror.Error()
 }
 
+// Stack returns a string that contains the callstack.
+func (err *Error) Stack() string {
+	return string(err.goerror.Stack())
+}
+
 // ErrorStack returns a string that contains both the
 // error message and the callstack.
 func (err *Error) ErrorStack() string {
