@@ -1,4 +1,4 @@
-module github.com/pastelnetwork/gonode/pastel-client
+module github.com/pastelnetwork/gonode/pastel
 
 go 1.16
 

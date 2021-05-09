@@ -1,6 +1,6 @@
 package pastel
 
-// StorageFee represensts pastel storagefee.
+// StorageFee represents pastel storagefee.
 type StorageFee struct {
 	NetworkFee float64 `json:"networkfee"`
 }

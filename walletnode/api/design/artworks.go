@@ -225,8 +225,8 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 		})
 		Attribute("status", String, func() {
 			Description("Status of the registration process")
-			Example(state.StatusNames()[0])
-			Enum(InterfaceSlice(state.StatusNames())...)
+			Example(state.StatusTypeNames()[0])
+			Enum(InterfaceSlice(state.StatusTypeNames())...)
 		})
 		Attribute("states", ArrayOf(ArtworkRegisterTaskState), func() {
 			Description("List of states from the very beginning of the process")
@@ -258,8 +258,8 @@ var ArtworkRegisterTaskState = Type("TaskState", func() {
 	})
 	Attribute("status", String, func() {
 		Description("Status of the registration process")
-		Example(state.StatusNames()[0])
-		Enum(InterfaceSlice(state.StatusNames())...)
+		Example(state.StatusTypeNames()[0])
+		Enum(InterfaceSlice(state.StatusTypeNames())...)
 	})
 	Required("date", "status")
 })

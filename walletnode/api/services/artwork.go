@@ -50,10 +50,10 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 			return nil
 		case <-sub.Done():
 			return nil
-		case msg := <-sub.Msg():
+		case status := <-sub.Status():
 			res := &artworks.TaskState{
-				Date:   msg.CreatedAt.Format(time.RFC3339),
-				Status: msg.Status.String(),
+				Date:   status.CreatedAt.Format(time.RFC3339),
+				Status: status.Type.String(),
 			}
 			if err := stream.Send(res); err != nil {
 				return artworks.MakeInternalServerError(err)
@@ -72,7 +72,7 @@ func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTask
 
 	res = &artworks.Task{
 		ID:     p.TaskID,
-		Status: task.State.Latest().Status.String(),
+		Status: task.State.Latest().Type.String(),
 		Ticket: toArtworkTicket(task.Ticket),
 		States: toArtworkStates(task.State.All()),
 	}
@@ -85,7 +85,7 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
 			ID:     task.ID,
-			Status: task.State.Latest().Status.String(),
+			Status: task.State.Latest().Type.String(),
 			Ticket: toArtworkTicket(task.Ticket),
 		})
 	}

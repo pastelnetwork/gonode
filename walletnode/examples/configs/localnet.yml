@@ -1,8 +1,8 @@
 pastel:
   hostname: "127.0.0.1"
   port: 29932
-  username: "rt"
-  password: "rt"
+  username: ""
+  password: ""
 
 api:
   hostname: "localhost"

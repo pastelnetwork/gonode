@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/pastel-client"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"github.com/pastelnetwork/gonode/walletnode/storage"
 	"golang.org/x/sync/errgroup"
@@ -14,17 +14,17 @@ const (
 	logPrefix = "artwork"
 )
 
-// Service represent artwork service.
+// Service represents a service for the registration artwork.
 type Service struct {
 	config       *Config
 	db           storage.KeyValue
 	pastelClient pastel.Client
+	nodeClient   node.Client
 	worker       *Worker
 	tasks        []*Task
-	nodeClient   node.Client
 }
 
-// Run starts worker
+// Run starts worker.
 func (service *Service) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 	group.Go(func() (err error) {
@@ -51,7 +51,6 @@ func (service *Service) Task(taskID string) *Task {
 
 // AddTask runs a new task of the registration artwork and returns its taskID.
 func (service *Service) AddTask(ctx context.Context, ticket *Ticket) (string, error) {
-	// NOTE: for testing
 	task := NewTask(service, ticket)
 	service.tasks = append(service.tasks, task)
 	service.worker.AddTask(ctx, task)

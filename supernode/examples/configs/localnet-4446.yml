@@ -1,9 +1,8 @@
 pastel:
   hostname: "127.0.0.1"
   port: 29932
-  username: "rt"
-  password: "rt"
-  ext_key: "jXa9V7SpRAvyJx53Jh3ffrEXxutuAeXUToePpzCsg8ucwB4rRf2zfuhQsdfKB8SEV4dTbE1HFGCdmWk4P9TENZ"
+  username: "4446"
+  password: ""
 
 server:
   listen_addresses: "127.0.0.1"

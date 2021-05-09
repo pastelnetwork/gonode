@@ -1,9 +1,9 @@
 package pastel
 
-// MasterNodes is multiple MasterNode.
+// MasterNodes represents multiple MasterNode.
 type MasterNodes []MasterNode
 
-// MasterNode represensts pastel masternode.
+// MasterNode represents pastel top masternode.
 type MasterNode struct {
 	Rank       string  `json:"rank"`
 	Address    string  `json:"address"`
