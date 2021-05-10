@@ -1,84 +1,66 @@
 package memory
 
 import (
-	"sort"
+	"fmt"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMemoryStorage(t *testing.T) {
-	testCase := map[string]struct {
-		operation              string
-		needCheckExpectedValue bool
-		expectedError          bool
-		keyValue               string
-		inputValue             string
-		expectedValue          string
+	t.Parallel()
+
+	testCases := []struct {
+		operation     string
+		err           error
+		keyValue      string
+		inputValue    []byte
+		expectedValue []byte
 	}{
-		"1. Set": {
-			operation:     "Set",
-			expectedError: false,
-			keyValue:      "test",
-			inputValue:    "value",
+		{
+			operation:  "Set",
+			err:        nil,
+			keyValue:   "test",
+			inputValue: []byte("value"),
 		},
-		"2. Get": {
-			operation:              "Get",
-			expectedError:          false,
-			needCheckExpectedValue: true,
-			keyValue:               "test",
-			expectedValue:          "value",
-		},
-		"3. Delete": {
-			operation:     "Delete",
-			expectedError: false,
-			keyValue:      "test",
-		},
-		"4. Get Deleted key": {
+		{
 			operation:     "Get",
-			expectedError: true,
+			err:           nil,
 			keyValue:      "test",
+			expectedValue: []byte("value"),
+		}, {
+			operation: "Delete",
+			err:       nil,
+			keyValue:  "test",
+		}, {
+			operation:     "Get",
+			err:           storage.ErrKeyNotFound,
+			keyValue:      "test",
+			expectedValue: nil,
 		},
 	}
 
 	memStore := NewKeyValue()
-	var (
-		err  error
-		data []byte
-	)
-	//sorting map for consistently order
-	//https://blog.golang.org/maps#TOC_7.
-	var keys []string
-	for k := range testCase {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
 
-	for _, name := range keys {
-		//reset all variable
-		err, data = nil, nil
-
-		tc := testCase[name]
-		t.Run(name, func(ts *testing.T) {
-			switch tc.operation {
+	for _, testCase := range testCases {
+		testCase := testCase
+		var (
+			err  error
+			data []byte
+		)
+		//run test in sequence order
+		t.Run(fmt.Sprintf("operation-%s-expected-val%v", testCase.operation, testCase.expectedValue), func(t *testing.T) {
+			switch testCase.operation {
 			case "Set":
-				err = memStore.Set(tc.keyValue, []byte(tc.inputValue))
+				err = memStore.Set(testCase.keyValue, testCase.inputValue)
 			case "Get":
-				data, err = memStore.Get(tc.keyValue)
+				data, err = memStore.Get(testCase.keyValue)
 			case "Delete":
-				err = memStore.Delete(tc.keyValue)
+				err = memStore.Delete(testCase.keyValue)
 			}
-
-			if tc.expectedError {
-				assert.Error(ts, err)
-			} else {
-				assert.NoError(ts, err)
-			}
-
-			if tc.needCheckExpectedValue {
-				assert.Equal(ts, tc.expectedValue, string(data))
-			}
-
+			assert.Equal(t, testCase.err, err)
+			assert.Equal(t, testCase.expectedValue, data)
 		})
 
 	}
