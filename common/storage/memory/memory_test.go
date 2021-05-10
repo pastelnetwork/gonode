@@ -8,60 +8,126 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMemoryStorage(t *testing.T) {
+func TestGet(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		operation     string
-		err           error
-		keyValue      string
-		inputValue    []byte
+		key           string
+		expectedError error
 		expectedValue []byte
 	}{
 		{
-			operation:  "Set",
-			err:        nil,
-			keyValue:   "test",
-			inputValue: []byte("value"),
-		},
-		{
-			operation:     "Get",
-			err:           nil,
-			keyValue:      "test",
-			expectedValue: []byte("value"),
+			key:           "exist",
+			expectedError: nil,
+			expectedValue: []byte("value-exist"),
 		}, {
-			operation: "Delete",
-			err:       nil,
-			keyValue:  "test",
-		}, {
-			operation:     "Get",
-			err:           storage.ErrKeyNotFound,
-			keyValue:      "test",
+			key:           "not-exist",
+			expectedError: storage.ErrKeyNotFound,
 			expectedValue: nil,
 		},
 	}
 
-	memStore := NewKeyValue()
+	t.Run("group", func(t *testing.T) {
+		db := &keyValue{
+			values: map[string][]byte{
+				"exist": []byte("value-exist"),
+			},
+		}
 
-	for _, testCase := range testCases {
-		testCase := testCase
-		var (
-			err  error
-			data []byte
-		)
-		//run test in sequence order
-		t.Run(fmt.Sprintf("operation-%s-expected-val%v", testCase.operation, testCase.expectedValue), func(t *testing.T) {
-			switch testCase.operation {
-			case "Set":
-				err = memStore.Set(testCase.keyValue, testCase.inputValue)
-			case "Get":
-				data, err = memStore.Get(testCase.keyValue)
-			case "Delete":
-				err = memStore.Delete(testCase.keyValue)
-			}
-			assert.Equal(t, testCase.err, err)
-			assert.Equal(t, testCase.expectedValue, data)
-		})
+		for _, testCase := range testCases {
+			testCase := testCase
+			testName := fmt.Sprintf("key:%s/value:%v/err:%v", testCase.key, testCase.expectedValue, testCase.expectedError)
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
 
+				val, err := db.Get(testCase.key)
+				assert.Equal(t, testCase.expectedError, err)
+				assert.Equal(t, testCase.expectedValue, val)
+			})
+		}
+
+	})
+}
+
+func TestSet(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		key                  string
+		value                []byte
+		expectedError        error
+		expectedLengthValues int
+	}{
+		{
+			key:                  "foo",
+			value:                []byte("bar"),
+			expectedError:        nil,
+			expectedLengthValues: 1,
+		}, {
+			key:                  "foo",
+			value:                []byte("grid"),
+			expectedError:        nil,
+			expectedLengthValues: 1,
+		},
 	}
+
+	t.Run("group", func(t *testing.T) {
+		db := &keyValue{
+			values: make(map[string][]byte),
+		}
+
+		for _, testCase := range testCases {
+			testCase := testCase
+			testName := fmt.Sprintf("key:%s/value:%v/length:%d/err:%v", testCase.key, testCase.value, testCase.expectedLengthValues, testCase.expectedError)
+
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
+				err := db.Set(testCase.key, testCase.value)
+				assert.Equal(t, testCase.expectedError, err)
+				value := db.values[testCase.key]
+				assert.Equal(t, testCase.value, value)
+				assert.Equal(t, testCase.expectedLengthValues, len(db.values))
+			})
+		}
+	})
+}
+
+func TestDelete(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		key                  string
+		expectedError        error
+		expectedLengthValues int
+	}{
+		{
+			key:                  "exist-key",
+			expectedError:        nil,
+			expectedLengthValues: 1,
+		}, {
+			key:                  "not-exist-key",
+			expectedError:        nil,
+			expectedLengthValues: 1,
+		},
+	}
+
+	t.Run("group", func(t *testing.T) {
+		db := &keyValue{
+			values: map[string][]byte{
+				"exist-key":   []byte("bar"),
+				"exist-key-1": []byte("foo"),
+			},
+		}
+		for _, testCase := range testCases {
+			testCase := testCase
+			testName := fmt.Sprintf("key:%s/length:%d/err:%v", testCase.key, testCase.expectedLengthValues, testCase.expectedError)
+
+			t.Run(testName, func(t *testing.T) {
+				t.Parallel()
+				err := db.Delete(testCase.key)
+				assert.Equal(t, testCase.expectedError, err)
+				assert.Equal(t, testCase.expectedLengthValues, len(db.values))
+			})
+		}
+	})
 }
