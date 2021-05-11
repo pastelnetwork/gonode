@@ -67,7 +67,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	var nodes Nodes
 	for primaryRank := range topNodes {
-		nodes, err = task.connect(ctx, topNodes, primaryRank)
+		nodes, err = task.meshNodes(ctx, topNodes, primaryRank)
 		if err == nil {
 			break
 		}
@@ -96,9 +96,9 @@ func (task *Task) run(ctx context.Context) error {
 	return group.Wait()
 }
 
-// connect establishes communication between all supernodes.
-func (task *Task) connect(ctx context.Context, nodes Nodes, primaryIndex int) (Nodes, error) {
-	var mesh Nodes
+// connect establishes communication between supernodes.
+func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) (Nodes, error) {
+	var meshNodes Nodes
 
 	connID, _ := random.String(8, random.Base62Chars)
 
@@ -148,7 +148,7 @@ func (task *Task) connect(ctx context.Context, nodes Nodes, primaryIndex int) (N
 		return nil, err
 	}
 
-	mesh.add(primary)
+	meshNodes.add(primary)
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 
@@ -156,9 +156,9 @@ func (task *Task) connect(ctx context.Context, nodes Nodes, primaryIndex int) (N
 		if node == nil {
 			return nil, errors.New("not found accepted node")
 		}
-		mesh.add(node)
+		meshNodes.add(node)
 	}
-	return mesh, nil
+	return meshNodes, nil
 }
 
 func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
