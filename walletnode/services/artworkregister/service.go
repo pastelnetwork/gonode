@@ -4,9 +4,9 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"github.com/pastelnetwork/gonode/walletnode/storage"
 	"golang.org/x/sync/errgroup"
 )
 

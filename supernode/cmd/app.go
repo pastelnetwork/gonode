@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
+	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -17,7 +18,6 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
-	"github.com/pastelnetwork/gonode/supernode/storage/memory"
 )
 
 const (
