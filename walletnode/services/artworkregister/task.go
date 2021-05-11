@@ -84,7 +84,7 @@ func (task *Task) run(ctx context.Context) error {
 			case <-ctx.Done():
 				return errors.Errorf("task was canceled")
 			case <-node.conn.Done():
-				return errors.Errorf("prematurely closing the connection by %q", node.address)
+				return errors.Errorf("%q closed the connection", node.address)
 			}
 		})
 	}
