@@ -58,21 +58,18 @@ func TestSet(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		key                  string
-		value                []byte
-		expectedError        error
-		expectedLengthValues int
+		key           string
+		value         []byte
+		expectedError error
 	}{
 		{
-			key:                  "exist",
-			value:                []byte("baz"),
-			expectedError:        nil,
-			expectedLengthValues: 1,
+			key:           "exist",
+			value:         []byte("baz"),
+			expectedError: nil,
 		}, {
-			key:                  "foo",
-			value:                []byte("grid"),
-			expectedError:        nil,
-			expectedLengthValues: 2,
+			key:           "foo",
+			value:         []byte("grid"),
+			expectedError: nil,
 		},
 	}
 
@@ -80,15 +77,15 @@ func TestSet(t *testing.T) {
 		for _, testCase := range testCases {
 
 			testCase := testCase
-			testName := fmt.Sprintf("key:%s/value:%v/length:%d/err:%v", testCase.key, testCase.value, testCase.expectedLengthValues, testCase.expectedError)
+			testName := fmt.Sprintf("key:%s/value:%v/err:%v", testCase.key, testCase.value, testCase.expectedError)
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
 				db := newTestDB()
 				err := db.Set(testCase.key, testCase.value)
 				assert.Equal(t, testCase.expectedError, err)
-				value := db.values[testCase.key]
+				value, ok := db.values[testCase.key]
+				assert.True(t, ok, "not found new key")
 				assert.Equal(t, testCase.value, value)
-				assert.Equal(t, testCase.expectedLengthValues, len(db.values))
 			})
 		}
 	})
@@ -98,18 +95,15 @@ func TestDelete(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		key                  string
-		expectedError        error
-		expectedLengthValues int
+		key           string
+		expectedError error
 	}{
 		{
-			key:                  "exist",
-			expectedError:        nil,
-			expectedLengthValues: 0,
+			key:           "exist",
+			expectedError: nil,
 		}, {
-			key:                  "not-exist",
-			expectedError:        nil,
-			expectedLengthValues: 1,
+			key:           "not-exist",
+			expectedError: nil,
 		},
 	}
 
@@ -117,13 +111,14 @@ func TestDelete(t *testing.T) {
 		for _, testCase := range testCases {
 
 			testCase := testCase
-			testName := fmt.Sprintf("key:%s/length:%d/err:%v", testCase.key, testCase.expectedLengthValues, testCase.expectedError)
+			testName := fmt.Sprintf("key:%s/err:%v", testCase.key, testCase.expectedError)
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
 				db := newTestDB()
 				err := db.Delete(testCase.key)
+				_, ok := db.values[testCase.key]
 				assert.Equal(t, testCase.expectedError, err)
-				assert.Equal(t, testCase.expectedLengthValues, len(db.values))
+				assert.False(t, ok, "found deleted key")
 			})
 		}
 	})
