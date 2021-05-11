@@ -8,7 +8,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func NewTestDB() *keyValue {
+// newTestDB. need keep as private method to prevent CI error:
+// exported func NewTestDB returns unexported type *memory.keyValue, which can be annoying to use
+func newTestDB() *keyValue {
 	return &keyValue{
 		values: map[string][]byte{
 			"exist": []byte("bar"),
@@ -42,7 +44,7 @@ func TestGet(t *testing.T) {
 			testName := fmt.Sprintf("key:%s/value:%v/err:%v", testCase.key, testCase.expectedValue, testCase.expectedError)
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
-				db := NewTestDB()
+				db := newTestDB()
 				val, err := db.Get(testCase.key)
 				assert.Equal(t, testCase.expectedError, err)
 				assert.Equal(t, testCase.expectedValue, val)
@@ -81,7 +83,7 @@ func TestSet(t *testing.T) {
 			testName := fmt.Sprintf("key:%s/value:%v/length:%d/err:%v", testCase.key, testCase.value, testCase.expectedLengthValues, testCase.expectedError)
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
-				db := NewTestDB()
+				db := newTestDB()
 				err := db.Set(testCase.key, testCase.value)
 				assert.Equal(t, testCase.expectedError, err)
 				value := db.values[testCase.key]
@@ -118,7 +120,7 @@ func TestDelete(t *testing.T) {
 			testName := fmt.Sprintf("key:%s/length:%d/err:%v", testCase.key, testCase.expectedLengthValues, testCase.expectedError)
 			t.Run(testName, func(t *testing.T) {
 				t.Parallel()
-				db := NewTestDB()
+				db := newTestDB()
 				err := db.Delete(testCase.key)
 				assert.Equal(t, testCase.expectedError, err)
 				assert.Equal(t, testCase.expectedLengthValues, len(db.values))
