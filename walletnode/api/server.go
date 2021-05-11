@@ -1,4 +1,4 @@
-//go:generate goa gen github.com/pastelnetwork/gonode/walletnode/server/design
+//go:generate goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package api
 
@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/walletnode/api/docs"
+	"golang.org/x/sync/errgroup"
 
 	goahttp "goa.design/goa/v3/http"
 	goahttpmiddleware "goa.design/goa/v3/http/middleware"
@@ -25,6 +26,7 @@ const (
 
 type service interface {
 	Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server
+	Run(ctx context.Context) error
 }
 
 // Server represents RESTAPI service.
@@ -38,11 +40,28 @@ type Server struct {
 func (server *Server) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
-	apiHTTP := server.handler(ctx)
+	goamux := goahttp.NewMuxer()
+
+	groupServices, ctx := errgroup.WithContext(ctx)
+	var servers goahttp.Servers
+	for _, service := range server.services {
+		groupServices.Go(func() (err error) {
+			defer errors.Recover(func(recErr error) { err = recErr })
+			return service.Run(ctx)
+		})
+		servers = append(servers, service.Mount(ctx, goamux))
+	}
+	servers.Use(goahttpmiddleware.Debug(goamux, os.Stdout))
+
+	var handler http.Handler = goamux
+
+	handler = Recovery()(handler)
+	handler = Log(ctx)(handler)
+	handler = goahttpmiddleware.RequestID()(handler)
 
 	mux := http.NewServeMux()
-	mux.Handle("/", apiHTTP)
-	mux.Handle("/swagger/swagger.json", apiHTTP)
+	mux.Handle("/", handler)
+	mux.Handle("/swagger/swagger.json", handler)
 
 	if server.config.Swagger {
 		mux.Handle("/swagger/", http.FileServer(http.FS(docs.SwaggerContent)))
@@ -53,6 +72,8 @@ func (server *Server) Run(ctx context.Context) error {
 
 	errCh := make(chan error, 1)
 	go func() {
+		defer errors.Recover(errors.CheckErrorAndExit)
+
 		<-ctx.Done()
 		log.WithContext(ctx).Infof("Server is shutting down...")
 
@@ -73,25 +94,10 @@ func (server *Server) Run(ctx context.Context) error {
 	}
 	defer log.WithContext(ctx).Infof("Server stoped")
 
-	err := <-errCh
-	return err
-}
-
-func (server *Server) handler(ctx context.Context) http.Handler {
-	mux := goahttp.NewMuxer()
-
-	var servers goahttp.Servers
-	for _, service := range server.services {
-		servers = append(servers, service.Mount(ctx, mux))
+	if err := groupServices.Wait(); err != nil {
+		return err
 	}
-	servers.Use(goahttpmiddleware.Debug(mux, os.Stdout))
-
-	var handler http.Handler = mux
-
-	handler = Log(ctx)(handler)
-	handler = goahttpmiddleware.RequestID()(handler)
-
-	return handler
+	return <-errCh
 }
 
 // NewServer returns a new Server instance.

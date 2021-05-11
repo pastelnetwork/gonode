@@ -35,12 +35,12 @@ func (task *Task) Run(ctx context.Context) error {
 	defer log.WithContext(ctx).Debugf("End task")
 
 	if err := task.run(ctx); err != nil {
-		task.State.Update(ctx, state.NewMessage(state.StatusTaskRejected))
+		task.State.Update(ctx, state.NewStatus(state.StatusTaskRejected))
 		log.WithContext(ctx).WithError(err).Warnf("Task is rejected")
 		return nil
 	}
 
-	task.State.Update(ctx, state.NewMessage(state.StatusTaskCompleted))
+	task.State.Update(ctx, state.NewStatus(state.StatusTaskCompleted))
 	log.WithContext(ctx).Debugf("Task is completed")
 	return nil
 }
@@ -52,7 +52,7 @@ func (task *Task) run(ctx context.Context) error {
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
 		return err
 	} else if !ok {
-		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
+		task.State.Update(ctx, state.NewStatus(state.StatusErrorTooLowFee))
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
@@ -61,7 +61,7 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 	if len(topNodes) < task.config.NumberSuperNodes {
-		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
+		task.State.Update(ctx, state.NewStatus(state.StatusErrorTooLowFee))
 		return errors.New("not found enough available SuperNodes with acceptable storage fee: %f")
 	}
 
@@ -89,7 +89,7 @@ func (task *Task) run(ctx context.Context) error {
 		})
 	}
 
-	task.State.Update(ctx, state.NewMessage(state.StatusConnected))
+	task.State.Update(ctx, state.NewStatus(state.StatusConnected))
 
 	<-ctx.Done()
 
@@ -198,6 +198,6 @@ func NewTask(service *Service, Ticket *Ticket) *Task {
 		Service: service,
 		ID:      taskID,
 		Ticket:  Ticket,
-		State:   state.New(state.NewMessage(state.StatusTaskStarted)),
+		State:   state.New(state.NewStatus(state.StatusTaskStarted)),
 	}
 }

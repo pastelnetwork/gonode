@@ -11,8 +11,8 @@ type Status struct {
 	isFinal   bool
 }
 
-// NewMessage returns a new Status instance..
-func NewMessage(statusType StatusType) *Status {
+// NewStatus returns a new Status instance..
+func NewStatus(statusType StatusType) *Status {
 	return &Status{
 		CreatedAt: time.Now(),
 		Type:      statusType,

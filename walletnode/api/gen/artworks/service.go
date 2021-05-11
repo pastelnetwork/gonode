@@ -135,6 +135,8 @@ type TaskCollection []*Task
 type UploadImagePayload struct {
 	// File to upload
 	Bytes []byte
+	// Path to file
+	Filepath *string
 }
 
 // Image is the result type of the artworks service uploadImage method.

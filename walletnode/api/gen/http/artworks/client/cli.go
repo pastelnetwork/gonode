@@ -165,15 +165,10 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 		if err != nil {
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVsIHZvbHVwdGF0ZW0gcHJvdmlkZW50IGRvbG9yaWJ1cy4=\"\n   }'")
 		}
-		if body.Bytes == nil {
-			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
-		}
-		if err != nil {
-			return nil, err
-		}
 	}
 	v := &artworks.UploadImagePayload{
-		Bytes: body.Bytes,
+		Bytes:    body.Bytes,
+		Filepath: body.Filepath,
 	}
 
 	return v, nil

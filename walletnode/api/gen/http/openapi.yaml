@@ -144,8 +144,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/ArtworksUploadImageRequestBody'
-          required:
-          - file
       responses:
         "201":
           description: Created response.
@@ -679,6 +677,7 @@ definitions:
         example: Task Started
         enum:
         - Task Started
+        - Connected
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -832,6 +831,7 @@ definitions:
         example: Task Started
         enum:
         - Task Started
+        - Connected
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -1115,6 +1115,9 @@ definitions:
         - 115
         - 46
         format: byte
+      filepath:
+        type: string
+        description: Path to file
     example:
       file:
       - 77
@@ -1147,8 +1150,6 @@ definitions:
       - 117
       - 115
       - 46
-    required:
-    - file
   ArtworksUploadImageResponseBody:
     title: 'Mediatype identifier: application/vnd.artwork.upload-image; view=default'
     type: object
@@ -1187,6 +1188,7 @@ definitions:
         example: Task Started
         enum:
         - Task Started
+        - Connected
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -1240,6 +1242,7 @@ definitions:
         example: Task Started
         enum:
         - Task Started
+        - Connected
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated

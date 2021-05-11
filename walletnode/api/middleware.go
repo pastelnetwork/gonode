@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/random"
@@ -14,6 +15,16 @@ import (
 	httpmiddleware "goa.design/goa/v3/http/middleware"
 	"goa.design/goa/v3/middleware"
 )
+
+// Recovery is a method that tries to recover from panics.
+func Recovery() func(h http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer errors.Recover(errors.CheckErrorAndExit)
+			h.ServeHTTP(w, r)
+		})
+	}
+}
 
 // Log logs incoming HTTP requests and outgoing responses.
 // It uses the request ID set by the RequestID middleware or creates a short unique request ID if missing for each incoming request
@@ -70,7 +81,7 @@ func ErrorHandler(ctx context.Context, w http.ResponseWriter, err error) {
 
 func init() {
 	log.AddHook(hooks.NewContextHook(middleware.RequestIDKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
-		fields["preifx"] = fmt.Sprintf("%s-%s", logPrefix, ctxValue)
+		fields["prefix"] = fmt.Sprintf("%s-%s", logPrefix, ctxValue)
 		return msg, fields
 	}))
 }
