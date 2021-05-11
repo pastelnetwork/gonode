@@ -50,7 +50,7 @@ func (stream *registerArtowrk) Handshake(ctx context.Context, connID string, IsP
 }
 
 // AcceptedNodes implements node.RegisterArtowrk.AcceptedNodes()
-func (stream *registerArtowrk) AcceptedNodes(ctx context.Context) (node.SuperNodes, error) {
+func (stream *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
 
 	req := &pb.RegisterArtworkRequest{
@@ -72,13 +72,11 @@ func (stream *registerArtowrk) AcceptedNodes(ctx context.Context) (node.SuperNod
 		return nil, errors.New(err.ErrMsg)
 	}
 
-	var nodes node.SuperNodes
+	var ids []string
 	for _, peer := range resp.Peers {
-		nodes = append(nodes, &node.SuperNode{
-			Key: peer.NodeKey,
-		})
+		ids = append(ids, peer.NodeKey)
 	}
-	return nodes, nil
+	return ids, nil
 }
 
 // ConnectTo implements node.RegisterArtowrk.ConnectTo()

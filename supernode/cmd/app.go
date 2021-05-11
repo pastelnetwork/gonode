@@ -93,10 +93,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(config.Node.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// server
-	grpc := grpc.NewServer(config.Server,
+	grpc := grpc.NewServer(config.Node.Server,
 		walletnode.NewService(artworkRegister),
 		supernode.NewService(artworkRegister),
 	)

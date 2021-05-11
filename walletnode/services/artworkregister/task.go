@@ -8,7 +8,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/walletnode/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 	"golang.org/x/sync/errgroup"
 )
@@ -47,6 +46,9 @@ func (task *Task) Run(ctx context.Context) error {
 }
 
 func (task *Task) run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
 		return err
 	} else if !ok {
@@ -54,123 +56,109 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
-	superNodes, err := task.findSuperNodes(ctx)
+	topNodes, err := task.findTopNodes(ctx)
 	if err != nil {
 		return err
 	}
-	if len(superNodes) < task.config.NumberSuperNodes {
+	if len(topNodes) < task.config.NumberSuperNodes {
 		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
 		return errors.New("not found enough available SuperNodes with acceptable storage fee: %f")
 	}
 
-	ctx, connCancel := context.WithCancel(ctx)
-	defer connCancel()
-
-	for i, primaryNode := range superNodes {
-		secondaryNodes := make(node.SuperNodes, len(superNodes)-1)
-		copy(secondaryNodes, superNodes[:i])
-		copy(secondaryNodes[i:], superNodes[i+1:])
-
-		if err := task.connect(ctx, primaryNode, secondaryNodes); err != nil {
-			connCancel()
-			continue
+	var nodes Nodes
+	for primaryRank := range topNodes {
+		nodes, err = task.connect(ctx, topNodes, primaryRank)
+		if err == nil {
+			break
 		}
-		break
 	}
+	nodes.activate()
+	topNodes.disconnectInactive()
+
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range nodes {
+		group.Go(func() (err error) {
+			defer cancel()
+
+			select {
+			case <-ctx.Done():
+				return errors.Errorf("task was canceled")
+			case <-node.conn.Done():
+				return errors.Errorf("prematurely closing the connection by %q", node.address)
+			}
+		})
+	}
+
 	task.State.Update(ctx, state.NewMessage(state.StatusConnected))
 
 	<-ctx.Done()
 
-	return nil
+	return group.Wait()
 }
 
 // connect establishes communication between all supernodes.
-func (task *Task) connect(ctx context.Context, primaryNode *node.SuperNode, secondaryNodes node.SuperNodes) error {
+func (task *Task) connect(ctx context.Context, nodes Nodes, primaryIndex int) (Nodes, error) {
+	var mesh Nodes
+
 	connID, _ := random.String(8, random.Base62Chars)
+
+	primary := nodes[primaryIndex]
+	if err := primary.connect(ctx, connID, true); err != nil {
+		return nil, err
+	}
 
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
 
-	stream, err := task.connectStream(ctx, primaryNode.Address, connID, true)
-	if err != nil {
-		return err
-	}
-
-	group, _ := errgroup.WithContext(ctx)
-	group.Go(func() (err error) {
-		defer errors.Recover(func(recErr error) { err = recErr })
-		defer nextConnCancel()
-
-		acceptCtx, acceptCancel := context.WithTimeout(ctx, acceptNodesTimeout)
-		defer acceptCancel()
-
-		nodes, err := stream.AcceptedNodes(acceptCtx)
-		if err != nil {
-			return err
-		}
-
-		for _, node := range nodes {
-			log.WithContext(ctx).Debugf("Primary accepted %q secondary node", node.Key)
-			// TODO: disconnect all not accepted connections by primary supernode.
-		}
-		return nil
-	})
-
-	for _, node := range secondaryNodes {
-		node := node
-
-		select {
-		case <-nextConnCtx.Done():
-			return nil
-		case <-time.After(connectToNextNodeDelay):
-			group.Go(func() (err error) {
-				defer errors.Recover(func(recErr error) { err = recErr })
-
-				stream, err := task.connectStream(ctx, node.Address, connID, false)
-				if err != nil {
-					return nil
-				}
-
-				if err := stream.ConnectTo(ctx, primaryNode.Key); err != nil {
-					return nil
-				}
-				log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
-
-				return nil
-			})
-		}
-
-	}
-	return group.Wait()
-}
-
-func (task *Task) connectStream(ctx context.Context, address, connID string, isPrimary bool) (node.RegisterArtowrk, error) {
-	connCtx, connCancel := context.WithTimeout(ctx, connectToNodeTimeout)
-	defer connCancel()
-
-	conn, err := task.nodeClient.Connect(connCtx, address)
-	if err != nil {
-		return nil, err
-	}
-
+	var secondaries Nodes
 	go func() {
-		select {
-		case <-ctx.Done():
-			conn.Close()
-		case <-conn.Done():
-			// TODO: reject task
+		for i, node := range nodes {
+			node := node
+
+			if i == primaryIndex {
+				continue
+			}
+
+			select {
+			case <-nextConnCtx.Done():
+				return
+			case <-time.After(connectToNextNodeDelay):
+				go func() {
+					defer errors.Recover(errors.CheckErrorAndExit)
+
+					if err := node.connect(ctx, connID, false); err != nil {
+						return
+					}
+					secondaries.add(node)
+
+					if err := node.ConnectTo(ctx, primary.pastelID); err != nil {
+						return
+					}
+					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.address)
+				}()
+			}
 		}
 	}()
 
-	stream, err := conn.RegisterArtowrk(ctx)
+	acceptCtx, acceptCancel := context.WithTimeout(ctx, acceptNodesTimeout)
+	defer acceptCancel()
+
+	accepted, err := primary.AcceptedNodes(acceptCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := stream.Handshake(ctx, connID, isPrimary); err != nil {
-		return nil, err
+	mesh.add(primary)
+	for _, pastelID := range accepted {
+		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
+
+		node := secondaries.findByPastelID(pastelID)
+		if node == nil {
+			return nil, errors.New("not found accepted node")
+		}
+		mesh.add(node)
 	}
-	return stream, nil
+	return mesh, nil
 }
 
 func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
@@ -181,8 +169,8 @@ func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
 	return fee.NetworkFee <= task.Ticket.MaximumFee, nil
 }
 
-func (task *Task) findSuperNodes(ctx context.Context) (node.SuperNodes, error) {
-	var superNodes node.SuperNodes
+func (task *Task) findTopNodes(ctx context.Context) (Nodes, error) {
+	var nodes Nodes
 
 	mns, err := task.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -192,14 +180,14 @@ func (task *Task) findSuperNodes(ctx context.Context) (node.SuperNodes, error) {
 		if mn.Fee > task.Ticket.MaximumFee {
 			continue
 		}
-		superNodes = append(superNodes, &node.SuperNode{
-			Address: mn.ExtAddress,
-			Key:     mn.ExtKey,
-			Fee:     mn.Fee,
+		nodes = append(nodes, &Node{
+			client:   task.Service.nodeClient,
+			address:  mn.ExtAddress,
+			pastelID: mn.ExtKey,
 		})
 	}
 
-	return superNodes, nil
+	return nodes, nil
 }
 
 // NewTask returns a new Task instance.

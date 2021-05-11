@@ -163,7 +163,7 @@ func (task *Task) ConnectTo(ctx context.Context, nodeKey string) error {
 		return err
 	}
 
-	if err := stream.Handshake(ctx, task.ConnID, task.config.node.ExtKey); err != nil {
+	if err := stream.Handshake(ctx, task.ConnID, task.config.PastelID); err != nil {
 		return err
 	}
 
