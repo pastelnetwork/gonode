@@ -33,7 +33,7 @@ func parseFile(filename, configType string, config interface{}) error {
 	conf := viper.New()
 
 	for _, configPath := range defaultConfigPaths {
-		conf.AddConfigPath(configPath)
+		conf.AddConfigPath(filepath.FromSlash(configPath))
 	}
 
 	if dir, _ := filepath.Split(filename); dir != "" {
