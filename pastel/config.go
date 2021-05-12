@@ -20,54 +20,51 @@ type ExternalConfig struct {
 type Config struct {
 	*ExternalConfig
 
-	ConfigFile string `mapstructure:"config-file" json:"config-file,omitempty"`
-
-	Raw struct {
-		Hostname *string `mapstructure:"hostname" json:"hostname,omitempty"`
-		Port     *int    `mapstructure:"port" json:"port,omitempty"`
-		Username *string `mapstructure:"username" json:"username,omitempty"`
-		Password *string `mapstructure:"password" json:"-"`
-	} `mapstructure:",squash" json:"-"`
+	ConfigFile string  `mapstructure:"config-file" json:"config-file,omitempty"`
+	Hostname   *string `mapstructure:"hostname" json:"hostname,omitempty"`
+	Port       *int    `mapstructure:"port" json:"port,omitempty"`
+	Username   *string `mapstructure:"username" json:"username,omitempty"`
+	Password   *string `mapstructure:"password" json:"-"`
 }
 
 // MarshalJSON returns the JSON encoding.
 func (config *Config) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&ExternalConfig{
-		Hostname: config.Hostname(),
-		Port:     config.Port(),
-		Username: config.Username(),
-		Password: config.Password(),
+		Hostname: config.hostname(),
+		Port:     config.port(),
+		Username: config.username(),
+		Password: config.password(),
 	})
 }
 
 // Hostname returns node hostname if it is specified, otherwise returns hostname from external config.
-func (config *Config) Hostname() string {
-	if config.Raw.Hostname != nil {
-		return *config.Raw.Hostname
+func (config *Config) hostname() string {
+	if config.Hostname != nil {
+		return *config.Hostname
 	}
 	return config.ExternalConfig.Hostname
 }
 
 // Port returns node port if it is specified, otherwise returns port from external config.
-func (config *Config) Port() int {
-	if config.Raw.Port != nil {
-		return *config.Raw.Port
+func (config *Config) port() int {
+	if config.Port != nil {
+		return *config.Port
 	}
 	return config.ExternalConfig.Port
 }
 
 // Username returns username port if it is specified, otherwise returns username from external config.
-func (config *Config) Username() string {
-	if config.Raw.Username != nil {
-		return *config.Raw.Username
+func (config *Config) username() string {
+	if config.Username != nil {
+		return *config.Username
 	}
 	return config.ExternalConfig.Username
 }
 
 // Password returns password port if it is specified, otherwise returns password from external config.
-func (config *Config) Password() string {
-	if config.Raw.Password != nil {
-		return *config.Raw.Password
+func (config *Config) password() string {
+	if config.Password != nil {
+		return *config.Password
 	}
 	return config.ExternalConfig.Password
 }
