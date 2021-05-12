@@ -4,6 +4,8 @@ import json
 import os
 import random
 from random import randrange
+from zipfile import ZipFile
+
 from PIL import Image, ImageOps, ImageFilter, ImageEnhance
 import PIL
 import numpy as np
@@ -16,6 +18,10 @@ import hashlib
 # by running the following command in terminal 'conda install -c adaki2004 pilgram'
 import pilgram
 
+from skimage import metrics
+import argparse
+import cv2
+
 # Global variables / switches
 # If switch is 0 then we shall fill up
 # the constants in def parse_folders()
@@ -26,21 +32,21 @@ ORIGINAL_FILE_PATH = ''
 TRANSFORMED_FILE_PATH = ''
 
 # Crop size ratio used by random_crop function
-CROP_RATIO = random.uniform(0.01, 0.5)
+CROP_RATIO = random.uniform(0.5, 0.75)
 # Stretch width ratio used by random_stretch function
-STRETCH_WIDTH_RATIO = random.uniform(0.1, 2.0)
+STRETCH_WIDTH_RATIO = random.uniform(0.5, 1.5)
 # Stretch height ratio used by random_stretch function
-STRETCH_HEIGHT_RATIO = random.uniform(0.1, 2.0)
+STRETCH_HEIGHT_RATIO = random.uniform(0.5, 1.5)
 # Radius parameter for GaussianBlur
-BLUR_RADIUS = randrange(1, 30)
+BLUR_RADIUS = randrange(3, 15)
 # Determines the scaling factor for step1 in pixelation
-PIXELATE_SCALING = random.uniform(0.05, 0.2)
+PIXELATE_SCALING = random.uniform(0.3, 0.6)
 # Enhancement ratio: (min 0, max 1)
 # Factor 1.0 always returns a copy of the original image.
 # Lower factors mean less color (brightness, contrast, etc).
-ENHANCEMENT_FACTOR = random.uniform(0.01, 10.0)
+ENHANCEMENT_FACTOR = random.uniform(0.3, 1.5)
 # Mosaic: resize the input to fit original image size?
-RESIZE_INPUT = True # Not recommended to have this parameter random !!!!
+RESIZE_INPUT = True  # Not recommended to have this parameter random !!!!
 # Mosaic: grid size. THe bigger this number the the more detailed the image (and slower the process)
 GRID_SIZE = randrange(50, 150)
 # Mosaic: re-use any image in input
@@ -50,8 +56,9 @@ INPUT_IMG_LIST = []
 # Store every kind of information related to transformations
 # and store it in JSON format
 LOGGER = None
-# Maximum nr. of transformations/image
-MAXIMUM_NR_OF_TRANSFORMATIONS = 4
+# Maximum \ minimum nr. of transformations/image
+MAXIMUM_NR_OF_TRANSFORMATIONS = 5
+MIN_NR_OF_TRANFORMATIONS = 2
 
 
 class JsonLogger:
@@ -87,24 +94,24 @@ def randomizer(lower_incl, upper_excl):
 def randomize_global_params():
     # Crop size ratio used by random_crop function
     global CROP_RATIO
-    CROP_RATIO = random.uniform(0.01, 0.5)
+    CROP_RATIO = random.uniform(0.5, 0.75)
     # Stretch width ratio used by random_stretch function
     global STRETCH_WIDTH_RATIO
-    STRETCH_WIDTH_RATIO = random.uniform(0.1, 2.0)
+    STRETCH_WIDTH_RATIO = random.uniform(0.5, 1.5)
     # Stretch height ratio used by random_stretch function
     global STRETCH_HEIGHT_RATIO
-    STRETCH_HEIGHT_RATIO = random.uniform(0.1, 2.0)
+    STRETCH_HEIGHT_RATIO = random.uniform(0.5, 1.5)
     # Radius parameter for GaussianBlur
     global BLUR_RADIUS
-    BLUR_RADIUS = randrange(1, 30)
+    BLUR_RADIUS = randrange(3, 15)
     # Determines the scaling factor for step1 in pixelation
     global PIXELATE_SCALING
-    PIXELATE_SCALING = random.uniform(0.05, 0.2)
+    PIXELATE_SCALING = random.uniform(0.3, 0.6)
     # Enhancement ratio: (min 0, max 1)
     # Factor 1.0 always returns a copy of the original image.
     # Lower factors mean less color (brightness, contrast, etc).
     global ENHANCEMENT_FACTOR
-    ENHANCEMENT_FACTOR = random.uniform(0.01, 10.0)
+    ENHANCEMENT_FACTOR = random.uniform(0.3, 1.5)
     # Mosaic: grid size. THe bigger this number the the more detailed the image (and slower the process)
     global GRID_SIZE
     GRID_SIZE = randrange(50, 150)
@@ -145,14 +152,14 @@ def insta_filter_types(i):
 def base_filter_types(i):
     filter_map = {
         0: 'BLUR',
-        1: 'CONTOUR',
-        2: 'DETAIL',
-        3: 'EDGE_ENHANCE',
-        4: 'EDGE_ENHANCE_MORE',
-        5: 'EMBOSS',
-        6: 'SHARPEN',
-        7: 'SMOOTH',
-        8: 'SMOOTH_MORE'
+        1: 'DETAIL',
+        2: 'EDGE_ENHANCE',
+        3: 'EDGE_ENHANCE_MORE',
+        4: 'SHARPEN',
+        5: 'SMOOTH',
+        6: 'SMOOTH_MORE',
+        #5: 'EMBOSS' -> victim of compromise
+        #1: 'CONTOUR', -> victim of compromise
     }
     return filter_map.get(i, "Invalid")
 
@@ -193,19 +200,24 @@ def parse_folders():
         ORIGINAL_FILE_PATH = args["inputFolder"]
         TRANSFORMED_FILE_PATH = args["outputFolder"]
     else:
-        ORIGINAL_FILE_PATH = "input_folder/"
-        TRANSFORMED_FILE_PATH = "output_folder/"
+        ORIGINAL_FILE_PATH = "dir_1/"
+        TRANSFORMED_FILE_PATH = "dir_2/"
 
 
 # Function which shall be used to save images
 # based on transformation
-def save_image(transform_type, filename, to_be_saved, img_transformation_dict):
+def save_image(transform_type, filename, to_be_saved, img_transformation_dict, base_path):
     file = os.path.splitext(filename)[0]
     file_extension = os.path.splitext(filename)[1]
 
     new_filename = file + transform_type + file_extension
     to_be_saved.save(TRANSFORMED_FILE_PATH + new_filename)
     to_be_saved.close()
+
+    # Currently out of usage !
+    # get_compression_ratio(TRANSFORMED_FILE_PATH + new_filename, False)
+    # get_SSIM(base_path + filename,TRANSFORMED_FILE_PATH + new_filename)
+
     img_transformation_dict['transformed_img_name'] = new_filename
     return get_hash(TRANSFORMED_FILE_PATH + new_filename)
 
@@ -223,6 +235,14 @@ def crop(cropped_img, filename):
     matrix_y = int(y * CROP_RATIO)
     x1 = randrange(0, x - matrix_x)
     y1 = randrange(0, y - matrix_y)
+
+    # We have a rectangle and wee need to place it onto the origo
+    # give more recognizable transformations
+    x_offset = int(x / 2) - int(x1 + (matrix_x / 2))
+    y_offset = int(y / 2) - int(y1 + ( matrix_y / 2))
+
+    x1 += x_offset
+    y1 += y_offset
 
     param_dictionary['crop_ratio'] = CROP_RATIO
     param_dictionary['crop_left_coord'] = x1
@@ -285,7 +305,7 @@ def stretch(stretched_img, filename):
 
 
 def base_filter(filtered_img, filename):
-    irand = randrange(0, 9)
+    irand = randrange(0, 7)
 
     param_dict = {}
 
@@ -361,8 +381,6 @@ def invert(inverted_img, filename):
     except Exception as bs:
         print("Problem in inversion is: {}".format(bs))
         return None, None
-
-
 
     # No saving of individual image required. Left it here maybe future need..
     # save_image('_inverted', filename, inverted_img)
@@ -566,15 +584,19 @@ def mosaic(base_path, mosaic_img, filename):
         print("Problem during mosaic creation is: {}".format(bs))
         return None, None
 
-
     # No saving of individual image required. Left it here maybe future need..
     # save_image('_mosaic', filename, mosaic_img)
     return mosaic_img, param_dictionary
 
 
 # Function for applying transformations per image
-def get_random_transformation_name(lower_incl, upper_excl, random_transformation_functions):
+def get_random_transformation_name(lower_incl, upper_excl, random_transformation_functions, mosaic_already_applied):
     function_name = None
+
+    #If mosaic is already applied we shall not allow it once more
+    if mosaic_already_applied:
+        upper_excl -= 1
+
     while True:
         function_idx = randomizer(lower_incl, upper_excl)
         if transformation_functions[function_idx] not in random_transformation_functions:
@@ -585,67 +607,169 @@ def get_random_transformation_name(lower_incl, upper_excl, random_transformation
     return function_name
 
 
-def transform_each_image(transformation_nr, img_transformation_dict,
-                         image, base_path, img_name):
+#Currently out of usage !!
+def get_SSIM(original_img, transformed_img):
+    imageA = cv2.imread(original_img)
+    imageB = cv2.imread(transformed_img)
+    #Resizing image to have eaten by the function
+    (H, W) = imageA.shape[:-1]
+    print ("H and W : {} , {}".format(H, W))
+    # to resize and set the new width and height
+    imageB = cv2.resize(imageB, (W, H))
 
-    # THis will hold the sequence of transformation function names
-    random_transformation_functions = []
-    for i in range(transformation_nr):
-        func_name = get_random_transformation_name(0, len(transformation_functions), random_transformation_functions)
-        random_transformation_functions.append(func_name)
+    grayA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
+    grayB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
 
-    # We need to randomize global parmeters
-    randomize_global_params()
-    # Here we already have a randomized number and sequence of transformations as well
-    i = 0;
-    for transformer in random_transformation_functions:
-        try:
-            image_copy = image.copy()
-            i += 1
-            print("{}. transformation is: {}".format(i, transformer.__qualname__))
-            if 'mosaic' == transformer.__qualname__:
-                image_copy, param_dictionary = transformer(base_path, image_copy, img_name)
+    (score, diff) = metrics.structural_similarity(grayA, grayB, full=True)
+
+    diff = (diff * 255).astype("uint8")
+
+    # 6. You can print only the score if you want
+    print("SSIM for original vs transformed:  {}".format(score))
+
+
+# Currently out of usage !!
+def get_compression_ratio(starter_img, is_original):
+
+    #Save image as bmp
+    temp_filepath = 'temp_file.bmp'
+    Image.open(starter_img).save(temp_filepath)
+    #image = Image.open(starter_img).convert('RGB').convert('L')
+
+    # Grayed bitmap
+    img = Image.open(starter_img).convert('RGB')
+    ary = np.array(img)
+
+    # Split the three channels
+    r, g, b = np.split(ary, 3, axis=2)
+    r = r.reshape(-1)
+    g = r.reshape(-1)
+    b = r.reshape(-1)
+
+    # Standard RGB to grayscale
+    bitmap = list(map(lambda x: 0.299 * x[0] + 0.587 * x[1] + 0.114 * x[2],
+                      zip(r, g, b)))
+    bitmap = np.array(bitmap).reshape([ary.shape[0], ary.shape[1]])
+    bitmap = np.dot((bitmap > 128).astype(float), 255)
+    im = Image.fromarray(bitmap.astype(np.uint8))
+    im.save('black_and_white.bmp')
+
+    #Get the size of this BMP image
+    bmp_size = os.path.getsize('black_and_white.bmp')
+    #Compress with zip
+    with ZipFile('black_and_white.zip', mode='w') as zf:
+        zf.write('black_and_white.bmp')
+
+    zipped_size = os.path.getsize("black_and_white.zip")
+
+    compression_ratio =  zipped_size / bmp_size
+
+    appendix = 'transformed'
+    if is_original:
+        appendix = 'original'
+    print('Compression ratio for {} file is: {}'.format(appendix, compression_ratio))
+    return bmp_size / zipped_size
+
+
+def transform_each_image(img_transformation_dict_list,
+                         image, base_path, img_name, nr_of_new_files_per_image, original_hash):
+
+    # Iterate through images and apply X (nr_of_new_files_per_image) times
+    starter_img = image.copy()
+
+
+
+    mosaic_already_applied = False
+    for tr_idx in range (nr_of_new_files_per_image):
+        image_copy = starter_img.copy()
+        transformation_nr = randomizer(MIN_NR_OF_TRANFORMATIONS, MAXIMUM_NR_OF_TRANSFORMATIONS)
+        img_transformation_dict = dict()
+        img_transformation_dict['original_hash'] = original_hash
+        # This will hold the sequence of transformation function names
+        random_transformation_functions = []
+        for i in range(transformation_nr):
+            func_name = get_random_transformation_name(0, len(transformation_functions),
+                                                       random_transformation_functions, mosaic_already_applied)
+            if(func_name.__qualname__ == 'mosaic'):
+                # Mosaic is too complex in itself to be able to perform with multiple operations
+                random_transformation_functions.clear()
+                random_transformation_functions.append(func_name)
+                mosaic_already_applied = True
+                break
             else:
-                image_copy, param_dictionary = transformer(image_copy, img_name)
+                random_transformation_functions.append(func_name)
 
-            # PARAMS: TO BE IMPLEMENTED
-            if image is not None and param_dictionary is not None:
-                # Rewrite into the image since it will
-                image = image_copy.copy()
-                transformation_params = ("transformation_{}_params".format(i))
-                transformation_name = ("transformation_{}_name".format(i))
-                img_transformation_dict[transformation_name] = transformer.__qualname__
-                img_transformation_dict[transformation_params] = param_dictionary
-            else:
-                i -= 1
+        # We need to randomize global parmeters
+        randomize_global_params()
+        # Here we already have a randomized number and sequence of transformations as well
+        i = 0;
+        image_copy_to_be_restored = image_copy.copy()
+        for transformer in random_transformation_functions:
+            try:
+                #In case one of the transformations getting wrong..
+                image_copy_to_be_restored = image_copy.copy()
+                i += 1
+                print("Within {} transf. pipeline per image {}. transformation is: {}".format(tr_idx, i, transformer.__qualname__))
+                if 'mosaic' == transformer.__qualname__:
+                    image_copy, param_dictionary = transformer(base_path, image_copy, img_name)
+                else:
+                    image_copy, param_dictionary = transformer(image_copy, img_name)
 
-        except Exception as base_ex:
-            print(base_ex)
+                # PARAMS: TO BE IMPLEMENTED
+                if image_copy is not None and param_dictionary is not None:
+                    # This case means everything was 'fine' during generation
+                    transformation_params = ("NR_{}_transformation_{}_params".format(tr_idx, i))
+                    transformation_name = ("NR_{}_transformation_{}_name".format(tr_idx, i))
+                    img_transformation_dict[transformation_name] = transformer.__qualname__
+                    img_transformation_dict[transformation_params] = param_dictionary
+                else:
+                    i -= 1
+                    # Restore image to its last state
+                    print("Image restored in transform_each_image inner catch")
+                    image_copy = image_copy_to_be_restored.copy()
 
-    new_hash = save_image('_transformed', img_name, image, img_transformation_dict)
-    img_transformation_dict['transformed_img_hash'] = new_hash
+            except Exception as base_ex:
+                # Restore image to its last state
+                print("Image restored in transform_each_image outter catch")
+                image_copy = image_copy_to_be_restored.copy()
+                print(base_ex)
+        new_hash = save_image('_{}_transformed'.format(tr_idx), img_name, image_copy, img_transformation_dict, base_path)
+        img_transformation_dict['{}_transformed_img_hash'.format(tr_idx)] = new_hash
+
+        img_transformation_dict_list.append(img_transformation_dict)
+
+
+def transform_each_image_multiple_times(img_transformation_dict_list, image, base_path, img_name, original_hash):
+    nr_of_new_files_per_image = randomizer(2, 4)
+
+    # Get compression ratio 1 per original image
+    # Currenlty out of usage !!
+    #get_compression_ratio(base_path + img_name, True)
+
+    transform_each_image(img_transformation_dict_list, image, base_path, img_name,
+                         nr_of_new_files_per_image, original_hash)
 
 
 def transform_images(base_path, img_name):
-    
     # Image related information dictionary where we keep track of every single transformation on them
-    img_transformation_dict = dict()
+    img_transformation_dict_list = []
 
     # Get SHA256 calculated hash
-    img_transformation_dict['original_hash'] = get_hash(base_path+img_name)
-    
+    original_hash = get_hash(base_path + img_name)
+
     # Opens a image in RGB mode
     with Image.open(base_path + img_name) as image:
-
         # Get a random number, how many transformations shall be performed per asset
-        transformation_nr = randomizer(1, MAXIMUM_NR_OF_TRANSFORMATIONS+1)
+
 
         # Perform transformation
-        transform_each_image(transformation_nr, img_transformation_dict,
-                             image, base_path, img_name)
+        transform_each_image_multiple_times(img_transformation_dict_list,
+                                            image, base_path, img_name, original_hash)
+        # transform_each_image(transformation_nr, img_transformation_dict,
+        #                     image, base_path, img_name)
 
         # Add each image to the 'asset' level of the LOGGER dictionary
-        LOGGER.add_element(img_name, img_transformation_dict)
+        LOGGER.add_element(img_name, img_transformation_dict_list)
 
 
 def transform_files():
@@ -664,8 +788,8 @@ def transform_files():
             continue
 
 
-transformation_functions = [image_enhance, mosaic, pixelate, invert, crop, flip, stretch,
-                            base_filter, edges, insta_filter]
+transformation_functions = [image_enhance, pixelate, invert, crop, flip, stretch,
+                            base_filter, insta_filter, mosaic] #Leave out for now: edges,
 
 if __name__ == "__main__":
     # Collect input / output folders with having the
@@ -680,4 +804,3 @@ if __name__ == "__main__":
     # Save it to file
     with open("transformation.json", "w") as outfile:
         json.dump(LOGGER.root_info, outfile, indent=4)
-
