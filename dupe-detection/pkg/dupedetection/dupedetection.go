@@ -154,17 +154,7 @@ func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalC
 			miInputPair[0] = candidateImageFingerprint
 			miInputPair[1] = currentFingerprint
 
-			var r float64
-			if r = discrete.MutualInformationBase2(miInputPair); r != 0.0 {
-				fmt.Println(r)
-			}
-
-			similarityScoreVectorMI[currentIndex] = math.Abs(r)
-
-			if r = discrete.MutualInformationBaseE(miInputPair); r != 0.0 {
-				//fmt.Println(r)
-			}
-
+			similarityScoreVectorMI[currentIndex] = math.Abs(discrete.MutualInformationBase2(miInputPair))
 			return nil
 		})
 	}
