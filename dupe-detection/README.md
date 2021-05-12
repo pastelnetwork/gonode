@@ -38,3 +38,45 @@ unzip dupe_detector_test_images.zip
 wget https://www.dropbox.com/s/yjqsxsz97msai4e/non_duplicate_test_images.zip
 unzip non_duplicate_test_images.zip
 ```
+
+## Goptuna Optimizer
+
+[Optimizer application](./cmd/optimizer) is configured with cmaes sampler to find the maximum AUPRC.
+
+# Pre-requisites
+
+`goptuna` cli tool executable should be downloaded from [the project's GitHub Releases](https://github.com/c-bata/goptuna/releases) page.
+
+# Workflow
+
+Goptuna studies results are saved into MySQL database.
+
+Default setup would work with Docker MySQL images:
+
+```
+docker pull mysql:8.0
+
+docker run   -d   --rm   -p 3306:3306   -e MYSQL_USER=goptuna   -e MYSQL_DATABASE=goptuna   -e MYSQL_PASSWORD=password   -e MYSQL_ALLOW_EMPTY_PASSWORD=yes   --name goptuna-mysql   mysql:8.0
+```
+
+Create initial goptuna database structure and empty study:
+
+```
+./goptuna create-study --storage mysql://goptuna:password@localhost:3306/goptuna --study dupe-detection-aurpc
+```
+
+Run goptuna dashboard to observe studies results:
+```
+./goptuna dashboard --storage mysql://goptuna:password@127.0.0.1:3306/goptuna
+```
+
+Backup goptuna database data before it is vanished with termination of docker container:
+
+```
+docker exec $GOPTUNA_CONTAINER sh -c 'exec mysqldump --no-tablespaces --databases goptuna -ugoptuna -ppassword' > backup.sql
+```
+
+Restore goptuna database data from backup:
+```
+docker exec -i $GOPTUNA_CONTAINER sh -c 'exec mysql -ugoptuna -ppassword' < ./backup.sql
+```
