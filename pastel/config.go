@@ -10,26 +10,31 @@ const (
 
 // ExternalConfig represents the structure of the `pastel.conf` file.
 type ExternalConfig struct {
-	Hostname string `mapstructure:"rpcconnect" json:"hostname,omitempty"`
-	Port     int    `mapstructure:"rpcport" json:"port,omitempty"`
-	Username string `mapstructure:"rpcuser" json:"username,omitempty"`
-	Password string `mapstructure:"rpcpassword" json:"-"`
+	Hostname string `mapstructure:"rpcconnect"`
+	Port     int    `mapstructure:"rpcport"`
+	Username string `mapstructure:"rpcuser"`
+	Password string `mapstructure:"rpcpassword"`
 }
 
 // Config contains settings of the Pastel client.
 type Config struct {
 	*ExternalConfig
 
-	ConfigFile string  `mapstructure:"config-file" json:"config-file,omitempty"`
-	Hostname   *string `mapstructure:"hostname" json:"hostname,omitempty"`
-	Port       *int    `mapstructure:"port" json:"port,omitempty"`
-	Username   *string `mapstructure:"username" json:"username,omitempty"`
-	Password   *string `mapstructure:"password" json:"-"`
+	ConfigFile string  `mapstructure:"config-file"`
+	Hostname   *string `mapstructure:"hostname"`
+	Port       *int    `mapstructure:"port"`
+	Username   *string `mapstructure:"username"`
+	Password   *string `mapstructure:"password"`
 }
 
 // MarshalJSON returns the JSON encoding.
 func (config *Config) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&ExternalConfig{
+	return json.Marshal(&struct {
+		Hostname string `json:"hostname,omitempty"`
+		Port     int    `json:"port,omitempty"`
+		Username string `json:"username,omitempty"`
+		Password string `json:"-"`
+	}{
 		Hostname: config.hostname(),
 		Port:     config.port(),
 		Username: config.username(),
