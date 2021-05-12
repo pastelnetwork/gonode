@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kzahedi/goent/discrete"
 	"github.com/montanaflynn/stats"
 	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
@@ -139,6 +140,41 @@ func ComputeImageDeepLearningFeatures(imagePath string) ([][]float64, error) {
 	return fingerprints, nil
 }
 
+func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+	defer pruntime.PrintExecutionTime(time.Now())
+	similarityScoreVectorMI := make([]float64, len(finalCombinedImageFingerprintArray))
+	var err error
+	g, _ := errgroup.WithContext(context.Background())
+	for i, fingerprint := range finalCombinedImageFingerprintArray {
+		currentIndex := i
+		currentFingerprint := fingerprint
+		g.Go(func() error {
+
+			miInputPair := make([][]float64, 2)
+			miInputPair[0] = candidateImageFingerprint
+			miInputPair[1] = currentFingerprint
+
+			var r float64
+			if r = discrete.MutualInformationBase2(miInputPair); r != 0.0 {
+				fmt.Println(r)
+			}
+
+			similarityScoreVectorMI[currentIndex] = math.Abs(r)
+
+			if r = discrete.MutualInformationBaseE(miInputPair); r != 0.0 {
+				//fmt.Println(r)
+			}
+
+			return nil
+		})
+	}
+	err = g.Wait()
+	if err != nil {
+		return nil, err
+	}
+	return similarityScoreVectorMI, nil
+}
+
 func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorPearsonAll := make([]float64, len(finalCombinedImageFingerprintArray))
@@ -187,11 +223,11 @@ func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, 
 	return similarityScoreVectorSpearmanAll, nil
 }
 
-func filterOutFingerprintsByThreshold(similarityScoreVector []float64, threshold float64, combinedImageFingerprintArray [][]float64) [][]float64 {
+func filterOutFingerprintsByThreshold(similarityScoreVector []float64, threshold float64, cutAboveThreshold bool, combinedImageFingerprintArray [][]float64) [][]float64 {
 	defer pruntime.PrintExecutionTime(time.Now())
 	var filteredByThresholdCombinedImageFingerprintArray [][]float64
 	for i, valueToCheck := range similarityScoreVector {
-		if !math.IsNaN(valueToCheck) && valueToCheck >= threshold {
+		if !math.IsNaN(valueToCheck) && ((cutAboveThreshold && valueToCheck >= threshold) || (!cutAboveThreshold && valueToCheck < threshold)) {
 			filteredByThresholdCombinedImageFingerprintArray = append(filteredByThresholdCombinedImageFingerprintArray, combinedImageFingerprintArray[i])
 		}
 	}
@@ -590,6 +626,7 @@ type computeData struct {
 	bootstrappedPrintFunc       bootstrappedPrintInfo
 	sampleSize, bootstrapsCount int
 	threshold                   float64
+	cutAboveThreshold           bool
 	totalFingerprintsCount      int
 }
 
@@ -624,7 +661,7 @@ func computeSimilarity(candidateImageFingerprint []float64, fingerprints [][]flo
 		}
 	}
 
-	fingerprintsRequiringFurtherTesting := filterOutFingerprintsByThreshold(similarityScore, data.threshold, fingerprints)
+	fingerprintsRequiringFurtherTesting := filterOutFingerprintsByThreshold(similarityScore, data.threshold, data.cutAboveThreshold, fingerprints)
 	percentageOfFingerprintsRequiringFurtherTesting := float32(len(fingerprintsRequiringFurtherTesting)) / float32(data.totalFingerprintsCount)
 	fmt.Printf("\nSelected %v fingerprints for further testing(%.2f%% of the total registered fingerprints).", len(fingerprintsRequiringFurtherTesting), percentageOfFingerprintsRequiringFurtherTesting*100)
 	return fingerprintsRequiringFurtherTesting, nil
@@ -662,6 +699,7 @@ type ComputeConfig struct {
 	RandomizedBlomqvistDupeThreshold  float64
 	HoeffdingDupeThreshold            float64
 	HoeffdingRound2DupeThreshold      float64
+	MIThreshold                       float64
 }
 
 func NewComputeConfig() ComputeConfig {
@@ -673,12 +711,14 @@ func NewComputeConfig() ComputeConfig {
 	config.RandomizedBlomqvistDupeThreshold = 0.7625
 	config.HoeffdingDupeThreshold = 0.35
 	config.HoeffdingRound2DupeThreshold = 0.23
+	config.MIThreshold = 14000000.0
 
 	config.CorrelationMethodNameArray = []string{
+		"MI",
 		"PearsonR",
 		"SpearmanRho",
 		"BootstrappedKendallTau",
-		"BootstrappedRDC",
+		//"BootstrappedRDC",
 		"BootstrappedBlomqvistBeta",
 		"HoeffdingDRound1",
 		"HoeffdingDRound2",
@@ -720,6 +760,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				computeFunc:            computePearsonRForAllFingerprintPairs,
 				printFunc:              printPearsonRCalculationResults,
 				threshold:              strictnessFactor * config.PearsonDupeThreshold,
+				cutAboveThreshold:      true,
 				totalFingerprintsCount: totalFingerprintsCount,
 			}
 		case computeBlockName == "SpearmanRho":
@@ -729,6 +770,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				computeFunc:            computeSpearmanForAllFingerprintPairs,
 				printFunc:              nil,
 				threshold:              strictnessFactor * config.SpearmanDupeThreshold,
+				cutAboveThreshold:      true,
 				totalFingerprintsCount: totalFingerprintsCount,
 			}
 		case computeBlockName == "BootstrappedKendallTau":
@@ -742,6 +784,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				sampleSize:              50,
 				bootstrapsCount:         100,
 				threshold:               strictnessFactor * config.KendallDupeThreshold,
+				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
 			}
 		case computeBlockName == "BootstrappedRDC":
@@ -755,6 +798,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				sampleSize:              50,
 				bootstrapsCount:         100,
 				threshold:               strictnessFactor * config.RandomizedDependenceDupeThreshold,
+				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
 			}
 		case computeBlockName == "BootstrappedBlomqvistBeta":
@@ -768,6 +812,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				sampleSize:              100,
 				bootstrapsCount:         100,
 				threshold:               strictnessFactor * config.RandomizedBlomqvistDupeThreshold,
+				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
 			}
 		case computeBlockName == "HoeffdingDRound1":
@@ -781,6 +826,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				sampleSize:              20,
 				bootstrapsCount:         50,
 				threshold:               strictnessFactor * config.HoeffdingDupeThreshold,
+				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
 			}
 		case computeBlockName == "HoeffdingDRound2":
@@ -794,7 +840,18 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				sampleSize:              75,
 				bootstrapsCount:         20,
 				threshold:               strictnessFactor * config.HoeffdingRound2DupeThreshold,
+				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
+			}
+		case computeBlockName == "MI":
+			nextComputeBlock = computeData{
+				name:                   "MI",
+				title:                  "Mutual Information",
+				computeFunc:            computeMIForAllFingerprintPairs,
+				printFunc:              nil,
+				threshold:              strictnessFactor * config.MIThreshold,
+				cutAboveThreshold:      false,
+				totalFingerprintsCount: totalFingerprintsCount,
 			}
 		default:
 			return 0, errors.New(errors.Errorf("Unrecognized similarity computation block name \"%v\"", computeBlockName))
@@ -804,6 +861,9 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 
 	fingerprintsForFurtherTesting := fingerprintsArrayToCompareWith
 	for _, computeBlock := range orderedComputeBlocks {
+
+		//goent.ConditionalMutualInformationBaseE()
+
 		fingerprintsForFurtherTesting, err = computeSimilarity(candidateImageFingerprint, fingerprintsForFurtherTesting, computeBlock)
 		if err != nil {
 			return 0, errors.New(err)

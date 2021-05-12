@@ -22,7 +22,7 @@ import (
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 )
 
-const EvaluateNumberOfTimes = 10
+const EvaluateNumberOfTimes = 100
 
 // objective defines the objective of the study - find out the best aurpc value
 func objective(trial goptuna.Trial) (float64, error) {
@@ -68,7 +68,7 @@ func objective(trial goptuna.Trial) (float64, error) {
 		}
 	}
 
-	correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allOrderedCombinationsOfUnstableMethodsAsStrings)-1, 1)
+	/*correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allOrderedCombinationsOfUnstableMethodsAsStrings)-1, 1)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -76,7 +76,9 @@ func objective(trial goptuna.Trial) (float64, error) {
 	config.CorrelationMethodsOrder = strings.Join(correlationMethodsOrder, " ")
 	if err != nil {
 		return 0, errors.New(err)
-	}
+	}*/
+
+	config.CorrelationMethodsOrder = "PearsonR SpearmanRho BootstrappedKendallTau BootstrappedBlomqvistBeta HoeffdingDRound1 HoeffdingDRound2"
 
 	err = trial.SetUserAttr("CorrelationMethodsOrder", config.CorrelationMethodsOrder)
 	if err != nil {
@@ -100,7 +102,7 @@ func runStudy() error {
 
 	storage := rdb.NewStorage(db)
 	study, err := goptuna.CreateStudy(
-		"dupe-detection-aurpc-3",
+		"dupe-detection-aurpc",
 		goptuna.StudyOptionStorage(storage),
 		goptuna.StudyOptionRelativeSampler(cmaes.NewSampler()),
 		goptuna.StudyOptionDirection(goptuna.StudyDirectionMaximize),
