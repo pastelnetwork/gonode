@@ -2,4 +2,10 @@
 
 package configurer
 
-var defaultConfigPaths = []string{".", "$HOME/.pastel"}
+import "path/filepath"
+
+var defaultConfigPaths = []string{
+	".",
+	filepath.FromSlash("C:/Documents and Settings/Username/Application Data/Pastel"),
+	filepath.FromSlash("C:/Users/Username/AppData/Roaming/Pastel"),
+}
