@@ -4,8 +4,9 @@ import "encoding/json"
 
 const (
 	defaultConfigFile = "pastel.conf"
-	defaultHostname   = "localhost"
-	defaultPort       = 9932
+
+	defaultHostname = "localhost"
+	defaultPort     = 9932
 )
 
 // ExternalConfig represents the structure of the `pastel.conf` file.
@@ -20,11 +21,12 @@ type ExternalConfig struct {
 type Config struct {
 	*ExternalConfig
 
-	ConfigFile string  `mapstructure:"config-file"`
-	Hostname   *string `mapstructure:"hostname"`
-	Port       *int    `mapstructure:"port"`
-	Username   *string `mapstructure:"username"`
-	Password   *string `mapstructure:"password"`
+	ConfigFile string `mapstructure:"config-file"`
+
+	Hostname *string `mapstructure:"hostname"`
+	Port     *int    `mapstructure:"port"`
+	Username *string `mapstructure:"username"`
+	Password *string `mapstructure:"password"`
 }
 
 // MarshalJSON returns the JSON encoding.
