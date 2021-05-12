@@ -7,10 +7,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-var (
-	defaultConfigPaths = []string{".", "$HOME/.pastel"}
-)
-
 // SetDefaultConfigPaths sets default paths for Viper to search for the config file in.
 func SetDefaultConfigPaths(paths ...string) {
 	defaultConfigPaths = paths
@@ -18,23 +14,43 @@ func SetDefaultConfigPaths(paths ...string) {
 
 // ParseFile parses the config file from the given path `filename`, and assign it to the struct `config`.
 func ParseFile(filename string, config interface{}) error {
-	viper := viper.New()
+	var configType string
+
+	switch filepath.Ext(filename) {
+	case ".conf":
+		configType = "env"
+	}
+
+	return parseFile(filename, configType, config)
+}
+
+// ParseJSONFile parses json config file from the given path `filename`, and assign it to the struct `config`.
+func ParseJSONFile(filename string, config interface{}) error {
+	return parseFile(filename, "json", config)
+}
+
+func parseFile(filename, configType string, config interface{}) error {
+	conf := viper.New()
 
 	for _, configPath := range defaultConfigPaths {
-		viper.AddConfigPath(configPath)
+		conf.AddConfigPath(filepath.FromSlash(configPath))
 	}
 
 	if dir, _ := filepath.Split(filename); dir != "" {
-		viper.SetConfigFile(filename)
+		conf.SetConfigFile(filename)
 	} else {
-		viper.SetConfigName(filename)
+		conf.SetConfigName(filename)
 	}
 
-	if err := viper.ReadInConfig(); err != nil {
+	if configType != "" {
+		conf.SetConfigType(configType)
+	}
+
+	if err := conf.ReadInConfig(); err != nil {
 		return errors.Errorf("could not read config file: %w", err)
 	}
 
-	if err := viper.Unmarshal(&config); err != nil {
+	if err := conf.Unmarshal(&config); err != nil {
 		return errors.Errorf("unable to decode into struct, %w", err)
 	}
 

@@ -84,7 +84,7 @@ func (task *Task) run(ctx context.Context) error {
 			case <-ctx.Done():
 				return errors.Errorf("task was canceled")
 			case <-node.conn.Done():
-				return errors.Errorf("%q closed the connection", node.address)
+				return errors.Errorf("%q unexpectedly closed the connection", node.address)
 			}
 		})
 	}
@@ -96,7 +96,7 @@ func (task *Task) run(ctx context.Context) error {
 	return group.Wait()
 }
 
-// connect establishes communication between supernodes.
+// meshNodes establishes communication between supernodes.
 func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) (Nodes, error) {
 	var meshNodes Nodes
 
