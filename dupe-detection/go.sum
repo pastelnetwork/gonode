@@ -96,6 +96,8 @@ github.com/galeone/tensorflow v2.4.0-rc0.0.20210202175351-640a390c2283+incompati
 github.com/galeone/tfgo v0.0.0-20210204182614-84b9a5e77f79 h1:FqeRBi0Ju7Uv/01BWt5YhHjzQ76MM+kM2T73C8MD2o8=
 github.com/galeone/tfgo v0.0.0-20210204182614-84b9a5e77f79/go.mod h1:iXe7mY1vKyD1+70cKIwO+7BH18AQ79U0akU5IrgW3GU=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
+github.com/gitchander/permutation v0.0.0-20210302120832-6ab79d7de174 h1:jDzjvDor5f0IMUz63ghkFrki7erEOJ4GqU9IUUA+tDg=
+github.com/gitchander/permutation v0.0.0-20210302120832-6ab79d7de174/go.mod h1:HMJdsfdGgnh5ncvocKE6H8ATmoIQDmBFAgjY+6u/dm0=
 github.com/go-errors/errors v1.1.1 h1:ljK/pL5ltg3qoN+OtN6yCv9HWSfMwxSx90GJCZQxYNg=
 github.com/go-errors/errors v1.1.1/go.mod h1:psDX2osz5VnTOnFWbDeWwS7yejl+uV3FEWEp4lssFEs=
 github.com/go-fonts/dejavu v0.1.0/go.mod h1:4Wt4I4OU2Nq9asgDCteaAaWZOV24E+0/Pwo0gppep4g=

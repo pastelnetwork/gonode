@@ -473,21 +473,32 @@ func computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize(x []float64, 
 	robustAverageD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
 	robustStdevD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
 
-	for fingerprintIdx, y := range arrayOfFingerprintsRequiringFurtherTesting {
-		arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
-		xBootstraps := make([][]float64, numberOfBootstraps)
-		yBootstraps := make([][]float64, numberOfBootstraps)
-		bootstrappedHoeffdingsDResults := make([]float64, numberOfBootstraps)
-		for i := 0; i < numberOfBootstraps; i++ {
-			arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
-		}
-		for i, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
-			xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
-			yBootstraps[i] = arrayValuesFromIndexes(y, currentBootstrapIndices)
+	g, _ := errgroup.WithContext(context.Background())
+	for i, y := range arrayOfFingerprintsRequiringFurtherTesting {
+		fingerprintIdx := i
+		currentFingerprint := y
 
-			bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding", []float64{})
-		}
-		robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf25thTo75thPercentile(bootstrappedHoeffdingsDResults)
+		g.Go(func() error {
+			arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
+			xBootstraps := make([][]float64, numberOfBootstraps)
+			yBootstraps := make([][]float64, numberOfBootstraps)
+			bootstrappedHoeffdingsDResults := make([]float64, numberOfBootstraps)
+			for i := 0; i < numberOfBootstraps; i++ {
+				arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
+			}
+			for i, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
+				xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
+				yBootstraps[i] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
+
+				bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding", []float64{})
+			}
+			robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf25thTo75thPercentile(bootstrappedHoeffdingsDResults)
+			return nil
+		})
+	}
+	err := g.Wait()
+	if err != nil {
+		return nil, nil, err
 	}
 	return robustAverageD, robustStdevD, nil
 }
@@ -498,21 +509,32 @@ func computeParallelBootstrappedBaggedHoeffdingsD(x []float64, arrayOfFingerprin
 	robustAverageD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
 	robustStdevD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
 
-	for fingerprintIdx, y := range arrayOfFingerprintsRequiringFurtherTesting {
-		arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
-		xBootstraps := make([][]float64, numberOfBootstraps)
-		yBootstraps := make([][]float64, numberOfBootstraps)
-		bootstrappedHoeffdingsDResults := make([]float64, numberOfBootstraps)
-		for i := 0; i < numberOfBootstraps; i++ {
-			arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
-		}
-		for i, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
-			xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
-			yBootstraps[i] = arrayValuesFromIndexes(y, currentBootstrapIndices)
+	g, _ := errgroup.WithContext(context.Background())
+	for i, y := range arrayOfFingerprintsRequiringFurtherTesting {
+		fingerprintIdx := i
+		currentFingerprint := y
 
-			bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding", []float64{})
-		}
-		robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedHoeffdingsDResults)
+		g.Go(func() error {
+			arrayOfBootstrapSampleIndices := make([][]int, numberOfBootstraps)
+			xBootstraps := make([][]float64, numberOfBootstraps)
+			yBootstraps := make([][]float64, numberOfBootstraps)
+			bootstrappedHoeffdingsDResults := make([]float64, numberOfBootstraps)
+			for i := 0; i < numberOfBootstraps; i++ {
+				arrayOfBootstrapSampleIndices[i] = randInts(0, originalLengthOfInput-1, sampleSize)
+			}
+			for i, currentBootstrapIndices := range arrayOfBootstrapSampleIndices {
+				xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
+				yBootstraps[i] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
+
+				bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding", []float64{})
+			}
+			robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedHoeffdingsDResults)
+			return nil
+		})
+	}
+	err := g.Wait()
+	if err != nil {
+		return nil, nil, err
 	}
 	return robustAverageD, robustStdevD, nil
 }
@@ -630,6 +652,8 @@ func printBlomqvistBetaCalculationResults(similarityScore, similarityScoreStdev 
 
 type ComputeConfig struct {
 	CorrelationMethodNameArray        []string
+	StableOrderOfCorrelationMethods   []string
+	UnstableOrderOfCorrelationMethods []string
 	CorrelationMethodsOrder           string
 	PearsonDupeThreshold              float64
 	SpearmanDupeThreshold             float64
@@ -660,6 +684,18 @@ func NewComputeConfig() ComputeConfig {
 		"HoeffdingDRound2",
 	}
 	config.CorrelationMethodsOrder = strings.Join(config.CorrelationMethodNameArray, " ")
+
+	config.StableOrderOfCorrelationMethods = []string{
+		"PearsonR",
+		"SpearmanRho",
+		"BootstrappedKendallTau",
+	}
+
+	config.UnstableOrderOfCorrelationMethods = []string{
+		"BootstrappedBlomqvistBeta",
+		"HoeffdingDRound1",
+		"HoeffdingDRound2",
+	}
 
 	return config
 }

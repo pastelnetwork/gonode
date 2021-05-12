@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/c-bata/goptuna"
 	"github.com/c-bata/goptuna/cmaes"
+	"github.com/gitchander/permutation"
 	combinations "github.com/mxschmitt/golang-combinations"
 	"gorm.io/driver/mysql"
 
@@ -21,7 +23,6 @@ import (
 )
 
 const EvaluateNumberOfTimes = 10
-const MinNumberOfCorrelationMethodsInChain = 4
 
 // objective defines the objective of the study - find out the best aurpc value
 func objective(trial goptuna.Trial) (float64, error) {
@@ -40,11 +41,11 @@ func objective(trial goptuna.Trial) (float64, error) {
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	config.RandomizedDependenceDupeThreshold, _ = trial.SuggestFloat("RDC", 0.5, 0.99999)
+	/*config.RandomizedDependenceDupeThreshold, _ = trial.SuggestFloat("RDC", 0.5, 0.99999)
 	if err != nil {
 		return 0, errors.New(err)
-	}
-	config.RandomizedBlomqvistDupeThreshold, _ = trial.SuggestFloat("Blomqvist", 0.5, 0.99999)
+	}*/
+	config.RandomizedBlomqvistDupeThreshold, _ = trial.SuggestFloat("Blomqvist", 0.1, 0.99999)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -57,18 +58,22 @@ func objective(trial goptuna.Trial) (float64, error) {
 		return 0, errors.New(err)
 	}
 
-	allCombinationsOfOrderedMethods := combinations.All(config.CorrelationMethodNameArray)
-	var allCombinationsOfOrderedMethodsAsStrings []string
-	for _, orderedMethods := range allCombinationsOfOrderedMethods {
-		if len(orderedMethods) >= MinNumberOfCorrelationMethodsInChain {
-			allCombinationsOfOrderedMethodsAsStrings = append(allCombinationsOfOrderedMethodsAsStrings, strings.Join(orderedMethods, " "))
+	allCombinationsOfUnstableMethods := combinations.All(config.UnstableOrderOfCorrelationMethods)
+	var allOrderedCombinationsOfUnstableMethodsAsStrings []string
+	for _, combination := range allCombinationsOfUnstableMethods {
+		permutator := permutation.New(permutation.StringSlice(combination))
+		for permutator.Next() {
+			fmt.Println(combination)
+			allOrderedCombinationsOfUnstableMethodsAsStrings = append(allOrderedCombinationsOfUnstableMethodsAsStrings, strings.Join(combination, " "))
 		}
 	}
-	correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allCombinationsOfOrderedMethods)-1, 1)
+
+	correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allOrderedCombinationsOfUnstableMethodsAsStrings)-1, 1)
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	config.CorrelationMethodsOrder = allCombinationsOfOrderedMethodsAsStrings[correlationMethodIndex]
+	correlationMethodsOrder := append(config.StableOrderOfCorrelationMethods, allOrderedCombinationsOfUnstableMethodsAsStrings[correlationMethodIndex])
+	config.CorrelationMethodsOrder = strings.Join(correlationMethodsOrder, " ")
 	if err != nil {
 		return 0, errors.New(err)
 	}
