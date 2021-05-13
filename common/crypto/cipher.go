@@ -63,16 +63,16 @@ func (c *Cipher) SetSharedAndConfigureAES(rawPubKey []byte) error {
 	c.shared = c.Shared(pubKey)
 	h := sha3.New256()
 	if _, err := h.Write(c.shared[:]); err != nil {
-		return err
+		return errors.Errorf("unable to write bytes %w", err)
 	}
 	hash := h.Sum(nil)
 	block, err := aes.NewCipher(hash)
 	if err != nil {
-		return err
+		return errors.Errorf("unable to create a new cipher block, %w", err)
 	}
 	a, err := cipher.NewGCM(block)
 	if err != nil {
-		return err
+		return errors.Errorf("could not create New GCM, %w", err)
 	}
 	c.aead = a
 	return nil
@@ -113,7 +113,7 @@ func (c *Cipher) Decrypt(dst, ciphertext []byte) ([]byte, error) {
 	// If dst is equal to ciphertext[:0], ciphertext storage is reused.
 	plaintext, err := c.aead.Open(dst, seq, ciphertext, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("could not decrypt the ciphertext, %w", err)
 	}
 	c.inCounter.Inc()
 	return plaintext, nil

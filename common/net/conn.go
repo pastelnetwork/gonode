@@ -56,12 +56,12 @@ func NewConn(c net.Conn, side core.Side, handshaker Handshaker) (net.Conn, error
 	if side == core.SideClient {
 		cipher, err = ClientHandshake(c, handshaker)
 		if err != nil {
-			return nil, errors.Errorf("client key verification failed %s", err)
+			return nil, err
 		}
 	} else {
 		cipher, err = ServerHandshake(c, handshaker)
 		if err != nil {
-			return nil, errors.Errorf("server key verification failed %s", err)
+			return nil, err
 		}
 	}
 
@@ -107,7 +107,7 @@ func (p *conn) Read(b []byte) (n int, err error) {
 			}
 			n, err = p.Conn.Read(p.protected[len(p.protected):min(cap(p.protected), len(p.protected)+recordDefaultLength)])
 			if err != nil {
-				return 0, err
+				return 0, errors.Errorf("could not read the data from connection, %w", err)
 			}
 			p.protected = p.protected[:len(p.protected)+n]
 			framedMsg, p.nextFrame, err = ParseFramedMsg(p.protected, recordLengthLimit)
