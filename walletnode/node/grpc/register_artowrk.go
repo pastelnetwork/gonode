@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -11,6 +12,10 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+)
+
+const (
+	uploadImageBufferSize = 32 * 1024
 )
 
 type registerArtowrk struct {
@@ -106,6 +111,48 @@ func (stream *registerArtowrk) ConnectTo(ctx context.Context, nodeKey string) er
 	return nil
 }
 
+// UploadImage implements node.RegisterArtowrk.UploadImage()
+func (stream *registerArtowrk) UploadImage(ctx context.Context, filename string) error {
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+
+	file, err := os.Open(filename)
+	if err != nil {
+		return errors.Errorf("failed to open file %q: %w", filename, err)
+	}
+	defer file.Close()
+
+	log.WithContext(ctx).WithField("filename", filename).Debugf("Start uploading image")
+	buffer := make([]byte, uploadImageBufferSize)
+	for {
+		n, err := file.Read(buffer)
+		if err == io.EOF {
+			break
+		}
+
+		req := &pb.RegisterArtworkRequest{
+			Requests: &pb.RegisterArtworkRequest_UploadImage{
+				UploadImage: &pb.RegisterArtworkRequest_UploadImageRequest{
+					Payload: buffer[:n],
+				},
+			},
+		}
+
+		if err := stream.send(ctx, req); err != nil {
+			return err
+		}
+	}
+	log.WithContext(ctx).Debugf("Uploaded image")
+
+	// resp := res.GetUploadImage()
+	// if resp == nil {
+	// 	return errors.Errorf("wrong response, %q", res.String())
+	// }
+	// if err := resp.Error; err.Status == pb.RegisterArtworkReply_Error_ERR {
+	// 	return errors.New(err.ErrMsg)
+	// }
+	return nil
+}
+
 func (stream *registerArtowrk) sendRecv(ctx context.Context, req *pb.RegisterArtworkRequest) (*pb.RegisterArtworkReply, error) {
 	if err := stream.send(ctx, req); err != nil {
 		return nil, err
@@ -125,7 +172,12 @@ func (stream *registerArtowrk) send(ctx context.Context, req *pb.RegisterArtwork
 		return errors.New("stream closed")
 	}
 
-	log.WithContext(ctx).WithField("req", req.String()).Debugf("Sending")
+	switch req.Requests.(type) {
+	case *pb.RegisterArtworkRequest_UploadImage:
+	default:
+		log.WithContext(ctx).WithField("req", req.String()).Debugf("Sending")
+	}
+
 	if err := stream.SendMsg(req); err != nil {
 		switch status.Code(err) {
 		case codes.Canceled:

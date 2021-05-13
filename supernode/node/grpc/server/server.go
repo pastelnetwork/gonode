@@ -1,4 +1,4 @@
-package grpc
+package server
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/middleware"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/middleware"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
@@ -88,8 +88,8 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 	return grpcServer
 }
 
-// NewServer returns a new Server instance.
-func NewServer(config *Config, services ...service) *Server {
+// New returns a new Server instance.
+func New(config *Config, services ...service) *Server {
 	return &Server{
 		config:   config,
 		services: services,

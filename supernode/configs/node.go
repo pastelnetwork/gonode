@@ -1,7 +1,7 @@
 package configs
 
 import (
-	"github.com/pastelnetwork/gonode/supernode/node/grpc"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	servicescommon "github.com/pastelnetwork/gonode/supernode/services/common"
 )
@@ -17,7 +17,7 @@ type NodeServices struct {
 type Node struct {
 	NodeServices `mapstructure:",squash"`
 
-	Server *grpc.Config `mapstructure:"server" json:"server,omitempty"`
+	Server *server.Config `mapstructure:"server" json:"server,omitempty"`
 }
 
 // NewNode returns a new Node instance
@@ -27,7 +27,7 @@ func NewNode() *Node {
 			Config:          *servicescommon.NewConfig(),
 			ArtworkRegister: artworkregister.NewConfig(),
 		},
-		Server: grpc.NewConfig(),
+		Server: server.NewConfig(),
 	}
 	node.ArtworkRegister.Config = &node.Config
 

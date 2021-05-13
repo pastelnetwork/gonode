@@ -10,12 +10,13 @@ import (
 type Service struct {
 	pb.UnimplementedWalletNodeServer
 	artworkRegister *artworkregister.Service
+	workDir         string
 }
 
 // RegisterArtowrk is a stream for registration artwork.
 func (service *Service) RegisterArtowrk(stream pb.WalletNode_RegisterArtowrkServer) error {
 	registerArtwork := newRegisterArtowrk(stream)
-	return registerArtwork.start(stream.Context(), service.artworkRegister)
+	return registerArtwork.handle(stream.Context(), service.artworkRegister, service.workDir)
 }
 
 // Desc returns a description of the service.
@@ -24,8 +25,9 @@ func (service *Service) Desc() *grpc.ServiceDesc {
 }
 
 // NewService returns a new Service instance.
-func NewService(artworkRegister *artworkregister.Service) *Service {
+func NewService(artworkRegister *artworkregister.Service, workDir string) *Service {
 	return &Service{
 		artworkRegister: artworkRegister,
+		workDir:         workDir,
 	}
 }

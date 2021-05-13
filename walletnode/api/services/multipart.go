@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -27,15 +28,17 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 
 		for {
 			part, err := reader.NextPart()
-			if err == io.EOF {
-				break
-			}
 			if err != nil {
+				if err == io.EOF {
+					break
+				}
 				return artworks.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
 			}
 
 			switch part.FormName() {
 			case "filepath":
+				// image sent as file path
+
 				data, err := ioutil.ReadAll(part)
 				if err != nil {
 					return artworks.MakeInternalServerError(errors.Errorf("could not read multipart \"filepath\": %w", err))
@@ -48,6 +51,8 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 				res.Filepath = &filepath
 
 			case "file":
+				// image sent as binary data
+
 				if res.Filepath != nil || part.Header.Get("Content-Type") == "" {
 					continue
 				}
@@ -62,21 +67,33 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 				}
 
 				fileID, _ := random.String(16, random.Base62Chars)
-				filePath := filepath.Join(service.workDir, fileID+filepath.Ext(part.FileName()))
+				filename := filepath.Join(service.workDir, fileID+filepath.Ext(part.FileName()))
 
-				file, err := os.Create(filePath)
+				file, err := os.Create(filename)
 				if err != nil {
-					return artworks.MakeInternalServerError(errors.Errorf("failed to create temp file %q: %w", filePath, err))
+					return artworks.MakeInternalServerError(errors.Errorf("failed to create temp file %q: %w", filename, err))
 				}
 				defer file.Close()
 
 				if _, err := io.Copy(file, part); err != nil {
-					return artworks.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filePath, err))
+					return artworks.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filename, err))
 				}
-				log.WithContext(ctx).Debugf("Uploaded image to %q", filePath)
+				log.WithContext(ctx).Debugf("Uploaded image to %q", filename)
+				res.Filepath = &filename
 
-				res.Filepath = &filePath
-				service.filePathCh <- filePath
+				service.wg.Add(1)
+				go func() {
+					defer service.wg.Done()
+
+					select {
+					case <-ctx.Done():
+					case <-time.After(service.imageTTL):
+					}
+
+					os.Remove(filename)
+					log.WithContext(ctx).Debugf("Removed image to %q", filename)
+				}()
+
 			}
 		}
 

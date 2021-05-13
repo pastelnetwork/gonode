@@ -29,14 +29,14 @@ type service interface {
 	Run(ctx context.Context) error
 }
 
-// Server represents RESTAPI service.
+// Server represents REST API server.
 type Server struct {
 	config          *Config
 	shutdownTimeout time.Duration
 	services        []service
 }
 
-// Run startworks RESTAPI service.
+// Run starts listening for the requests.
 func (server *Server) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
@@ -83,7 +83,6 @@ func (server *Server) Run(ctx context.Context) error {
 		srv.SetKeepAlivesEnabled(false)
 		if err := srv.Shutdown(ctx); err != nil {
 			errCh <- errors.Errorf("gracefully shutdown the server: %w", err)
-
 		}
 		close(errCh)
 	}()

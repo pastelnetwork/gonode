@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -13,7 +14,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
-	"golang.org/x/sync/errgroup"
 
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
@@ -28,11 +28,11 @@ const (
 // Artwork represents services for artworks endpoints.
 type Artwork struct {
 	*Common
-	register   *artworkregister.Service
-	storage    storage.KeyValue
-	workDir    string
-	imageTTL   time.Duration
-	filePathCh chan string
+	register *artworkregister.Service
+	storage  storage.KeyValue
+	workDir  string
+	imageTTL time.Duration
+	wg       sync.WaitGroup
 }
 
 // RegisterTaskState streams the state of the registration process.
@@ -102,13 +102,14 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	ticket := fromRegisterPayload(p)
 
-	ticket.Image, err = service.storage.Get(p.ImageID)
-	if err == storage.ErrKeyNotFound {
-		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
-	}
+	imagePath, err := service.storage.Get(p.ImageID)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
+	if _, err := os.Stat(string(imagePath)); os.IsNotExist(err) {
+		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
+	}
+	ticket.ImagePath = string(imagePath)
 
 	taskID, err := service.register.AddTask(ctx, ticket)
 	if err != nil {
@@ -127,17 +128,10 @@ func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImage
 	if err := service.storage.Set(id, []byte(*p.Filepath)); err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
-	expiresIn := time.Now().Add(service.imageTTL)
-
-	go func() {
-		time.AfterFunc(time.Until(expiresIn), func() {
-			service.storage.Delete(id)
-		})
-	}()
 
 	res = &artworks.Image{
 		ImageID:   id,
-		ExpiresIn: expiresIn.Format(time.RFC3339),
+		ExpiresIn: time.Now().Add(service.imageTTL).Format(time.RFC3339),
 	}
 	return res, nil
 }
@@ -154,42 +148,20 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 	return srv
 }
 
+// Run returns the call only when all images have been removed.
 func (service *Artwork) Run(ctx context.Context) error {
-	group, ctx := errgroup.WithContext(ctx)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return group.Wait()
-
-		case filePath := <-service.filePathCh:
-			group.Go(func() (err error) {
-				defer errors.Recover(func(recErr error) { err = recErr })
-
-				expiresIn := time.Now().Add(service.imageTTL)
-				select {
-				case <-ctx.Done():
-				case <-time.After(time.Until(expiresIn)):
-				}
-
-				if err := os.Remove(filePath); err != nil {
-					return errors.Errorf("could not remove file %q: %w", filePath, err)
-				}
-				log.WithContext(ctx).Debugf("Removed image to %q", filePath)
-				return nil
-			})
-		}
-	}
+	<-ctx.Done()
+	service.wg.Wait()
+	return nil
 }
 
 // NewArtwork returns the artworks Artwork implementation.
 func NewArtwork(register *artworkregister.Service, workDir string) *Artwork {
 	return &Artwork{
-		Common:     NewCommon(),
-		register:   register,
-		storage:    memory.NewKeyValue(),
-		workDir:    workDir,
-		imageTTL:   defaultImageTTL,
-		filePathCh: make(chan string),
+		Common:   NewCommon(),
+		register: register,
+		storage:  memory.NewKeyValue(),
+		workDir:  workDir,
+		imageTTL: defaultImageTTL,
 	}
 }

@@ -28,4 +28,6 @@ type RegisterArtowrk interface {
 	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
 	ConnectTo(ctx context.Context, nodeKey string) error
+	// UploadImage uploads image to supernode.
+	UploadImage(ctx context.Context, filename string) error
 }

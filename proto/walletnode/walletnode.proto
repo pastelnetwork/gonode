@@ -19,7 +19,7 @@ message RegisterArtworkRequest {
         string node_key = 1;
     }
     message UploadImageRequest {
-        bytes image = 1;
+        bytes payload = 1;
     }
     message SendTicketRequest {
         bytes ticket = 1;

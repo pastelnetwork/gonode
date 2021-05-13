@@ -2,7 +2,7 @@ package artworkregister
 
 // Ticket represents artwork registration ticket.
 type Ticket struct {
-	Image                    []byte
+	ImagePath                string
 	Name                     string
 	Description              *string
 	Keywords                 *string

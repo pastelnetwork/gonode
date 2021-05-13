@@ -1,4 +1,4 @@
-package grpc
+package client
 
 import (
 	"context"
@@ -40,7 +40,7 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	return conn, nil
 }
 
-// NewClient returns a new client instance.
-func NewClient() node.Client {
+// New returns a new client instance.
+func New() node.Client {
 	return &client{}
 }

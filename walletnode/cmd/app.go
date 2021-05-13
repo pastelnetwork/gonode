@@ -108,7 +108,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	artworkRegisterService := artworkregister.NewService(config.Node.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// NOTE: to bypass REST API (for testing)
-	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 100}) }()
+	go func() {
+		artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{
+			ImagePath:  "/Users/levko/Downloads/my.jpeg",
+			MaximumFee: 100,
+		})
+	}()
 
 	// api service
 	server := api.NewServer(config.Node.API,

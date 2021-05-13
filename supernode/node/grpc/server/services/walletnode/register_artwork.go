@@ -1,11 +1,15 @@
 package walletnode
 
 import (
+	"bufio"
 	"context"
 	"io"
+	"os"
+	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/random"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"google.golang.org/grpc/codes"
@@ -16,8 +20,7 @@ type registerArtowrk struct {
 	pb.WalletNode_RegisterArtowrkServer
 	task *artworkregister.Task
 
-	reqCh chan *pb.RegisterArtworkRequest
-	errCh chan error
+	fileWriter *bufio.Writer
 }
 
 func (stream *registerArtowrk) handshake(ctx context.Context, req *pb.RegisterArtworkRequest_HandshakeRequest) error {
@@ -32,12 +35,7 @@ func (stream *registerArtowrk) handshake(ctx context.Context, req *pb.RegisterAr
 			},
 		},
 	}
-
-	log.WithContext(ctx).WithField("resp", resp.String()).Debugf("Sending")
-	if err := stream.Send(resp); err != nil {
-		return errors.New(err)
-	}
-	return nil
+	return stream.send(ctx, resp)
 }
 
 func (stream *registerArtowrk) acceptedNodes(ctx context.Context, _ *pb.RegisterArtworkRequest_AcceptedNodesRequest) error {
@@ -61,12 +59,7 @@ func (stream *registerArtowrk) acceptedNodes(ctx context.Context, _ *pb.Register
 			},
 		},
 	}
-
-	log.WithContext(ctx).WithField("resp", resp.String()).Debugf("Sending")
-	if err := stream.Send(resp); err != nil {
-		return errors.New(err)
-	}
-	return nil
+	return stream.send(ctx, resp)
 }
 
 func (stream *registerArtowrk) connectTo(ctx context.Context, req *pb.RegisterArtworkRequest_ConnectToRequest) error {
@@ -81,11 +74,27 @@ func (stream *registerArtowrk) connectTo(ctx context.Context, req *pb.RegisterAr
 			},
 		},
 	}
+	return stream.send(ctx, resp)
+}
 
-	log.WithContext(ctx).WithField("resp", resp.String()).Debugf("Sending")
-	if err := stream.Send(resp); err != nil {
-		return errors.New(err)
+func (stream *registerArtowrk) uploadImage(ctx context.Context, req *pb.RegisterArtworkRequest_UploadImageRequest) error {
+
+	if _, err := stream.fileWriter.Write(req.Payload); err != nil {
+		return errors.Errorf("failed to write: %w", err)
 	}
+
+	// resp := &pb.RegisterArtworkReply{
+	// 	Replies: &pb.RegisterArtworkReply_ConnectTo{
+	// 		ConnectTo: &pb.RegisterArtworkReply_ConnectToReply{
+	// 			Error: stream.newError(),
+	// 		},
+	// 	},
+	// }
+
+	// log.WithContext(ctx).WithField("resp", resp.String()).Debugf("Sending")
+	// if err := stream.Send(resp); err != nil {
+	// 	return errors.New(err)
+	// }
 	return nil
 }
 
@@ -95,7 +104,16 @@ func (stream *registerArtowrk) newError() *pb.RegisterArtworkReply_Error {
 	}
 }
 
-func (stream *registerArtowrk) start(ctx context.Context, service *artworkregister.Service) error {
+func (stream *registerArtowrk) send(ctx context.Context, resp *pb.RegisterArtworkReply) error {
+	log.WithContext(ctx).WithField("resp", resp.String()).Debugf("Sending")
+
+	if err := stream.Send(resp); err != nil {
+		return errors.New(err)
+	}
+	return nil
+}
+
+func (stream *registerArtowrk) handle(ctx context.Context, service *artworkregister.Service, workDir string) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -106,6 +124,23 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 		cancel()
 	}()
 
+	fileID, _ := random.String(16, random.Base62Chars)
+	filename := filepath.Join(workDir, fileID)
+	file, err := os.Create(filename)
+	if err != nil {
+		return errors.Errorf("failed to open file %q: %w", filename, err)
+	}
+	defer func() {
+		os.Remove(filename)
+		log.WithContext(ctx).Debugf("Removed temp file %a", filename)
+	}()
+	defer file.Close()
+	log.WithContext(ctx).Debugf("Created temp file %a for uploading image", filename)
+
+	stream.fileWriter = bufio.NewWriter(file)
+
+	reqCh := make(chan *pb.RegisterArtworkRequest)
+	errCh := make(chan error)
 	go func() {
 		for {
 			req, err := stream.Recv()
@@ -116,10 +151,10 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 				if status.Code(err) == codes.Canceled {
 					err = errors.New("connection closed")
 				}
-				stream.errCh <- errors.New(err)
+				errCh <- errors.New(err)
 				return
 			}
-			stream.reqCh <- req
+			reqCh <- req
 		}
 	}()
 
@@ -127,10 +162,14 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 		select {
 		case <-ctx.Done():
 			return nil
-		case err := <-stream.errCh:
+		case err := <-errCh:
 			return err
-		case req := <-stream.reqCh:
-			log.WithContext(ctx).WithField("req", req.String()).Debugf("Receiving")
+		case req := <-reqCh:
+			switch req.GetRequests().(type) {
+			case *pb.RegisterArtworkRequest_UploadImage:
+			default:
+				log.WithContext(ctx).WithField("req", req.String()).Debugf("Receiving")
+			}
 
 			switch req.GetRequests().(type) {
 			case *pb.RegisterArtworkRequest_Handshake:
@@ -148,6 +187,11 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 					return err
 				}
 
+			case *pb.RegisterArtworkRequest_UploadImage:
+				if err := stream.uploadImage(ctx, req.GetUploadImage()); err != nil {
+					return err
+				}
+
 			default:
 				return errors.New("unsupported call")
 			}
@@ -158,7 +202,5 @@ func (stream *registerArtowrk) start(ctx context.Context, service *artworkregist
 func newRegisterArtowrk(stream pb.WalletNode_RegisterArtowrkServer) *registerArtowrk {
 	return &registerArtowrk{
 		WalletNode_RegisterArtowrkServer: stream,
-		reqCh:                            make(chan *pb.RegisterArtworkRequest),
-		errCh:                            make(chan error),
 	}
 }

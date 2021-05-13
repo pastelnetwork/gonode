@@ -88,8 +88,12 @@ func (task *Task) run(ctx context.Context) error {
 			}
 		})
 	}
-
 	task.State.Update(ctx, state.NewStatus(state.StatusConnected))
+
+	if err := nodes.uploadImage(ctx, task.Ticket.ImagePath); err != nil {
+		return err
+	}
+	task.State.Update(ctx, state.NewStatus(state.StatusUploadedImage))
 
 	<-ctx.Done()
 
@@ -103,7 +107,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 	connID, _ := random.String(8, random.Base62Chars)
 
 	primary := nodes[primaryIndex]
-	if err := primary.connect(ctx, connID, true); err != nil {
+	if err := primary.openStream(ctx, connID, true); err != nil {
 		return nil, err
 	}
 
@@ -126,7 +130,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 				go func() {
 					defer errors.Recover(errors.CheckErrorAndExit)
 
-					if err := node.connect(ctx, connID, false); err != nil {
+					if err := node.openStream(ctx, connID, false); err != nil {
 						return
 					}
 					secondaries.add(node)

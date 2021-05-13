@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"io/ioutil"
+	"os"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -14,9 +15,10 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/configs"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/supernode"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/services/walletnode"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 
@@ -42,6 +44,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
+		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Directory for storing working data.").SetValue(config.WorkDir),
 	)
 
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
@@ -64,6 +67,10 @@ func NewApp() *cli.App {
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
+		}
+
+		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
 		}
 
 		return runApp(ctx, config)
@@ -89,15 +96,15 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// entities
 	pastelClient := pastel.NewClient(config.Pastel)
-	nodeClient := grpc.NewClient()
+	nodeClient := client.New()
 	db := memory.NewKeyValue()
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(config.Node.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// server
-	grpc := grpc.NewServer(config.Node.Server,
-		walletnode.NewService(artworkRegister),
+	grpc := server.New(config.Node.Server,
+		walletnode.NewService(artworkRegister, config.WorkDir),
 		supernode.NewService(artworkRegister),
 	)
 
