@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -16,11 +17,11 @@ type registerArtowrk struct {
 	conn   *clientConn
 	client pb.RegisterArtowrkClient
 
-	connID string
+	taskID string
 }
 
-func (service *registerArtowrk) ConndID() string {
-	return service.connID
+func (service *registerArtowrk) TaskID() string {
+	return service.taskID
 }
 
 func (service *registerArtowrk) Handshake(ctx context.Context, nodeKey string) error {
@@ -59,24 +60,27 @@ func (service *registerArtowrk) Handshake(ctx context.Context, nodeKey string) e
 
 	select {
 	case resp := <-respCh:
-		service.connID = resp.ConnID
+		service.taskID = resp.TaskID
 	case err := <-errCh:
+		if err == io.EOF {
+			return nil
+		}
 		return errors.Errorf("failed to receive Handshake: %w", err)
 	}
 	return nil
 }
 
 func (service *registerArtowrk) context(ctx context.Context) context.Context {
-	md := metadata.Pairs(proto.MetadataKeyConnID, service.connID)
+	md := metadata.Pairs(proto.MetadataKeyTaskID, service.taskID)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 	return ctx
 }
 
-func newRegisterArtowrk(conn *clientConn, connID string) node.RegisterArtowrk {
+func newRegisterArtowrk(conn *clientConn, taskID string) node.RegisterArtowrk {
 	return &registerArtowrk{
-		connID: connID,
+		taskID: taskID,
 		conn:   conn,
 		client: pb.NewRegisterArtowrkClient(conn),
 	}

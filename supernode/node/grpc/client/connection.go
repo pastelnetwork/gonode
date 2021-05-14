@@ -14,8 +14,8 @@ type clientConn struct {
 }
 
 // RegisterArtowrk implements node.Connection.RegisterArtowrk()
-func (conn *clientConn) RegisterArtowrk(connID string) node.RegisterArtowrk {
-	return newRegisterArtowrk(conn, connID)
+func (conn *clientConn) RegisterArtowrk(taskID string) node.RegisterArtowrk {
+	return newRegisterArtowrk(conn, taskID)
 }
 
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {

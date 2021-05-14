@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/proto"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"google.golang.org/grpc/metadata"
@@ -20,16 +21,18 @@ func (service *RegisterArtowrk) Task(ctx context.Context) (*artworkregister.Task
 		return nil, errors.New("not found metadata")
 	}
 
-	mdVals := md.Get(proto.MetadataKeyConnID)
+	mdVals := md.Get(proto.MetadataKeyTaskID)
 	if len(mdVals) == 0 {
-		return nil, errors.Errorf("not found %q in metadata", proto.MetadataKeyConnID)
+		return nil, errors.Errorf("not found %q in metadata", proto.MetadataKeyTaskID)
 	}
-	connID := mdVals[0]
+	taskID := mdVals[0]
+	log.WithContext(ctx).WithField("taskID", taskID).Debugf("Metadata")
 
-	task := service.Service.Task(connID)
+	task := service.Service.Task(taskID)
 	if task == nil {
-		return nil, errors.Errorf("not found %q task", connID)
+		return nil, errors.Errorf("not found %q task", taskID)
 	}
+
 	return task, nil
 }
 

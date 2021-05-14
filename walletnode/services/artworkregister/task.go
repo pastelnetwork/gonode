@@ -90,10 +90,10 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.State.Update(ctx, state.NewStatus(state.StatusConnected))
 
-	if err := nodes.uploadImage(ctx, task.Ticket.ImagePath); err != nil {
-		return err
-	}
-	task.State.Update(ctx, state.NewStatus(state.StatusUploadedImage))
+	// if err := nodes.uploadImage(ctx, task.Ticket.ImagePath); err != nil {
+	// 	return err
+	// }
+	// task.State.Update(ctx, state.NewStatus(state.StatusUploadedImage))
 
 	<-ctx.Done()
 
@@ -139,7 +139,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 					}
 					secondaries.add(node)
 
-					if err := node.ConnectTo(ctx, primary.pastelID, primary.ConnID()); err != nil {
+					if err := node.ConnectTo(ctx, primary.pastelID, primary.TaskID()); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.address)

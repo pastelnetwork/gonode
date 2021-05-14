@@ -42,6 +42,7 @@ func (task *Task) Cancel() {
 	case <-task.Done():
 		return
 	default:
+		fmt.Println("Task cancel", task.ID)
 		close(task.doneCh)
 	}
 }
@@ -124,7 +125,7 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeKey string) error {
 }
 
 // ConnectTo connects to primary node
-func (task *Task) ConnectTo(ctx context.Context, connID, nodeKey string) error {
+func (task *Task) ConnectTo(ctx context.Context, nodeTaskID, nodeKey string) error {
 	ctx = task.context(ctx)
 
 	task.connectMu.Lock()
@@ -147,17 +148,18 @@ func (task *Task) ConnectTo(ctx context.Context, connID, nodeKey string) error {
 		return err
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		select {
-		case <-ctx.Done():
-			conn.Close()
+		case <-task.Done():
+			cancel()
 		case <-conn.Done():
 			task.Cancel()
 		}
 	}()
 
-	client := conn.RegisterArtowrk()
-	if err := client.Handshake(ctx, connID, task.config.PastelID); err != nil {
+	client := conn.RegisterArtowrk(nodeTaskID)
+	if err := client.Handshake(ctx, task.config.PastelID); err != nil {
 		return err
 	}
 

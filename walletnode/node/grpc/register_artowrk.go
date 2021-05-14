@@ -22,11 +22,11 @@ type registerArtowrk struct {
 	conn   *clientConn
 	client pb.RegisterArtowrkClient
 
-	connID string
+	taskID string
 }
 
-func (service *registerArtowrk) ConndID() string {
-	return service.connID
+func (service *registerArtowrk) TaskID() string {
+	return service.taskID
 }
 
 // Handshake implements node.RegisterArtowrk.Handshake()
@@ -66,8 +66,11 @@ func (service *registerArtowrk) Handshake(ctx context.Context, IsPrimary bool) e
 
 	select {
 	case resp := <-respCh:
-		service.connID = resp.ConnID
+		service.taskID = resp.TaskID
 	case err := <-errCh:
+		if err == io.EOF {
+			return nil
+		}
 		return errors.Errorf("failed to receive Handshake: %w", err)
 	}
 	return nil
@@ -94,12 +97,12 @@ func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []
 }
 
 // ConnectTo implements node.RegisterArtowrk.ConnectTo()
-func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeKey, connID string) error {
+func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeKey, taskID string) error {
 	ctx = service.context(ctx)
 
 	req := &pb.ConnectToRequest{
 		NodeKey: nodeKey,
-		ConnID:  connID,
+		TaskID:  taskID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 
@@ -149,7 +152,7 @@ func (service *registerArtowrk) SendImage(ctx context.Context, filename string) 
 }
 
 func (service *registerArtowrk) context(ctx context.Context) context.Context {
-	md := metadata.Pairs(proto.MetadataKeyConnID, service.connID)
+	md := metadata.Pairs(proto.MetadataKeyTaskID, service.taskID)
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))

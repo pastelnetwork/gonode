@@ -19,16 +19,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// registerArtowrk represents grpc service for registration artowrk.
-type registerArtowrk struct {
+// RegisterArtowrk represents grpc service for registration artowrk.
+type RegisterArtowrk struct {
 	pb.UnimplementedRegisterArtowrkServer
 
 	*common.RegisterArtowrk
-
 	workDir string
 }
 
-func (service *registerArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeServer) error {
+func (service *RegisterArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
@@ -43,12 +42,7 @@ func (service *registerArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeSer
 				if err == io.EOF {
 					return nil
 				}
-				if status.Code(err) == codes.Canceled {
-					return errors.New("connection closed")
-				}
-
-				log.WithContext(ctx).WithError(err).Errorf("Handshake receving")
-				return errors.Errorf("failed to receive Handshake: %w", err)
+				return errors.Errorf("failed to receive Handshake request: %w", err)
 			}
 			log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
@@ -57,23 +51,19 @@ func (service *registerArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeSer
 			}
 
 			resp := &pb.HandshakeReply{
-				ConnID: task.ID,
-				Error: &pb.Error{
-					Status: pb.Error_OK,
-				},
+				TaskID: task.ID,
 			}
-			if err := stream.SendAndClose(resp); err != nil {
-				log.WithContext(ctx).WithError(err).Errorf("Handshake sending")
+			if err := stream.Send(resp); err != nil {
 				return errors.Errorf("failed to send Handshake response: %w", err)
 			}
-			log.WithContext(ctx).WithField("resp", resp).Debugf("HandshakeNodes response")
+			log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
 		}
 	})
 
 	return group.Wait()
 }
 
-func (service *registerArtowrk) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
+func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
 	task, err := service.Task(ctx)
 	if err != nil {
@@ -94,36 +84,30 @@ func (service *registerArtowrk) AcceptedNodes(ctx context.Context, req *pb.Accep
 
 	resp := &pb.AcceptedNodesReply{
 		Peers: peers,
-		Error: &pb.Error{
-			Status: pb.Error_OK,
-		},
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
 	return resp, nil
 }
 
-func (service *registerArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
+func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 	task, err := service.Task(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.ConnID, req.NodeKey); err != nil {
+	if err := task.ConnectTo(ctx, req.TaskID, req.NodeKey); err != nil {
 		return nil, err
 	}
 
-	resp := &pb.ConnectToReply{
-		Error: &pb.Error{
-			Status: pb.Error_OK,
-		},
-	}
+	resp := &pb.ConnectToReply{}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
 	return resp, nil
 }
 
-func (service *registerArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageServer) error {
+func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageServer) error {
 	ctx := stream.Context()
+
 	task, err := service.Task(ctx)
 	if err != nil {
 		return err
@@ -135,10 +119,13 @@ func (service *registerArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 	if err != nil {
 		return errors.Errorf("failed to open file %q: %w", filename, err)
 	}
+
+	// TODO: remove file at the end of work
 	// defer func() {
 	// 	os.Remove(filename)
 	// 	log.WithContext(ctx).Debugf("Removed temp file %a", filename)
 	// }()
+
 	defer file.Close()
 	log.WithContext(ctx).Debugf("Created temp file %a for uploading image", filename)
 
@@ -169,13 +156,8 @@ func (service *registerArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 	// TODO: pass filename to the task
 	_ = task
 
-	resp := &pb.SendImageReply{
-		Error: &pb.Error{
-			Status: pb.Error_OK,
-		},
-	}
+	resp := &pb.SendImageReply{}
 	if err := stream.SendAndClose(resp); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("SendImage send error")
 		return errors.New("failed to send SendImage response")
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("SendImage response")
@@ -183,13 +165,13 @@ func (service *registerArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 }
 
 // Desc returns a description of the service.
-func (service *registerArtowrk) Desc() *grpc.ServiceDesc {
+func (service *RegisterArtowrk) Desc() *grpc.ServiceDesc {
 	return &pb.RegisterArtowrk_ServiceDesc
 }
 
-// NewRegisterArtowrk returns a new registerArtowrk instance.
-func NewRegisterArtowrk(service *artworkregister.Service, workDir string) pb.RegisterArtowrkServer {
-	return &registerArtowrk{
+// NewRegisterArtowrk returns a new RegisterArtowrk instance.
+func NewRegisterArtowrk(service *artworkregister.Service, workDir string) *RegisterArtowrk {
+	return &RegisterArtowrk{
 		RegisterArtowrk: common.NewRegisterArtowrk(service),
 		workDir:         workDir,
 	}

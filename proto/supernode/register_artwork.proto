@@ -12,7 +12,7 @@ message HandshakeRequest {
     string node_key = 1;
 }
 message HandshakeReply {
-    string connID = 1;
+    string taskID = 1;
 }
 
 
