@@ -10,9 +10,11 @@ from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 
 from DataSetClasses import OriginalImagesDataset, collate_skip_empty, colors_per_class
-from ImageWithCoordinates import ImageWithCoordinates
+from ImageWithCoordinates import ImageWithCoordinates, EuclideanDistanceMap
 from resnet import ResNet101
 
+#GLobal varaibles / switches
+euclidean_distance_map = None
 
 # To get the same results for every run on the same images
 def fix_random_seeds():
@@ -52,7 +54,6 @@ def get_features(dataset, batch, num_images):
         labels += batch['label']
         image_paths += batch['image_path']
 
-
         with torch.no_grad():
             output = model.forward(images)
 
@@ -61,7 +62,7 @@ def get_features(dataset, batch, num_images):
             features = np.concatenate((features, current_features))
         else:
             features = current_features
-    print ("Imagehossz bazzeg:{}".format(len(labels)))
+
     return features, labels, image_paths
 
 
@@ -119,6 +120,9 @@ def compute_plot_coordinates(image, x, y, image_centers_area_size, offset):
     return tl_x, tl_y, br_x, br_y
 
 
+# Keep in mind that we do not have such feature in 'live'.
+# So we won't know the image's parent (the original) because
+# this is what we are trying to reach
 def is_parents_euclidean_distance_big(child_img, images, tx, ty):
     # now we'll put a small copy of every image to its corresponding T-SNE coordinate
 
@@ -130,9 +134,65 @@ def is_parents_euclidean_distance_big(child_img, images, tx, ty):
 
         if image_path == child_img.parentName:
             distance = math.sqrt((x - child_img.x)**2+(y-child_img.y)**2)
-            print('Euclidean distance between parent{} and child{}: {}'.format(child_img.parentName, child_img.image_name, distance))
+            print('Euclidean distance between parent{} and child{}: {}'.format(child_img.parentName, child_img.imageName, distance))
             return
 
+
+# Building up the EuclideanDistanceMap class instance to be able to search via
+# filenames
+def build_up_euclidean_distance_matrix(list_of_image_coordinates):
+    global euclidean_distance_map
+    # build a complex array of your cells
+    z = np.array([complex(image.x, image.y) for image in list_of_image_coordinates])
+
+    # Euclidean distance numpy array
+    # mesh this array so that you will have all combinations
+    m, n = np.meshgrid(z, z)
+    # get the distance via the norm
+    euclidean_map = abs(m - n)
+
+    # Init class euclidean_distance_map
+    euclidean_distance_map = EuclideanDistanceMap(list_of_image_coordinates, euclidean_map)
+    print('Euclidean average distance: {}'.format(euclidean_distance_map.get_mean_eu_distance()))
+
+
+# Get the names of the images which are the top N closest in terms of tSNE
+def retrieve_closest_N_images_per_image(image_name, number):
+    list_filenames = []
+    list_topN_closests_file_idx=[]
+    if euclidean_distance_map:
+        #Getting the index value we use the find the 'column' in the Euclidean distance array
+        index = next((i for i, item in enumerate(euclidean_distance_map.image_list) if item.imageName == image_name), -1)
+
+        if index != -1:
+            temp_list = euclidean_distance_map.eu_distances[:,index]
+
+            # Remove zeros because it is 'itself'
+            # This list will contain all the indexes which are the top N closest to the requested image
+            delted_itself = np.delete(temp_list, np.where(temp_list == [0]), axis=0)
+            # Now we need the top 'number' indexes with which we can locate the filenames:
+            list_topN_closests_file_idx = delted_itself.argsort()[:number]
+
+            # Now that we have the indexes, let's collect the names
+            for idx in list_topN_closests_file_idx:
+                list_filenames.append(euclidean_distance_map.image_list[idx].imageName)
+
+    print("These are the top {} images close to this {} image:\n".format(number,image_name))
+    for image in list_filenames:
+        print ("{}".format(image))
+
+
+
+# Keep in mind that we do not have such feature in 'live'.
+# So we won't know the image's parent (the original) because
+# this is what we are trying to reach
+def get_euclidean_distances_of_transformed_images(list_of_images_where_transformation_happenned):
+    global euclidean_distance_map
+
+    if euclidean_distance_map:
+        for image in list_of_images_where_transformation_happenned:
+            distance = euclidean_distance_map.get_eu_distance_bw_2_images(image.imageName, image.parentName)
+            print ("Euclidean distance between {} and child : {} is : {}".format(image.parentName, image.imageName, distance))
 
 
 def visualize_tsne_images(tx, ty, images, labels, plot_size=1000, max_image_size=100):
@@ -142,6 +202,8 @@ def visualize_tsne_images(tx, ty, images, labels, plot_size=1000, max_image_size
     image_centers_area_size = plot_size - 2 * offset
 
     tsne_plot = 255 * np.ones((plot_size, plot_size, 3), np.uint8)
+    list_of_image_coordinates = []
+    list_of_images_where_transformation_happenned = []
 
     # now we'll put a small copy of every image to its corresponding T-SNE coordinate
     for image_path, label, x, y in tqdm(
@@ -151,12 +213,19 @@ def visualize_tsne_images(tx, ty, images, labels, plot_size=1000, max_image_size
     ):
         #print("How many images we have: {}".format(len(images)))
         image_w_coord = ImageWithCoordinates(image_path, x, y)
-
+        list_of_image_coordinates.append(image_w_coord)
         # Search for parent and get the euclidean distance.
         # If big enough we can say that it shall be thrown.
-        if image_w_coord.isOriginal == False:
-            print ("Child found")
+
+        # Keep in mind that in live we don't have the possibility
+        # to have the child-parent images defined. This is exactly
+        # we are trying to reach, so labellig with names is just
+        # for data sampling
+        if not image_w_coord.isOriginal:
+            # Debug print
+            #print ("Child found")
             is_parents_euclidean_distance_big(image_w_coord, images, tx, ty)
+            list_of_images_where_transformation_happenned.append(image_w_coord)
 
         image = cv2.imread(image_path)
 
@@ -171,6 +240,14 @@ def visualize_tsne_images(tx, ty, images, labels, plot_size=1000, max_image_size
 
         # put the image to its TSNE coordinates using numpy subarray indices
         tsne_plot[tl_y:br_y, tl_x:br_x, :] = image
+
+    build_up_euclidean_distance_matrix(list_of_image_coordinates)
+    # Example
+    retrieve_closest_N_images_per_image('dataset/opensea_dataset/openseaio_reduced/reduced/https___opensea.io_assets_0x7c40c393dc0f283f318791d746d894ddd3693572_8246.png', 15)
+
+    # Keep in mind that we do not have such information 'live' as original vs. fake
+    # For creating dataset, sure !
+    get_euclidean_distances_of_transformed_images(list_of_images_where_transformation_happenned)
 
     plt.imshow(tsne_plot[:, :, ::-1])
     plt.show()
@@ -223,7 +300,7 @@ def visualize_tsne(tsne, images, labels, plot_size=1000, max_image_size=100):
 def do_tsne_calc():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--path', type=str, default='dataset/opensea_dataset/openseaio')
+    parser.add_argument('--path', type=str, default='dataset/opensea_dataset/openseaio_reduced')
     parser.add_argument('--batch', type=int, default=64)
     parser.add_argument('--num_images', type=int, default=500)
     args = parser.parse_args()
