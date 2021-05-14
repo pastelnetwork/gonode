@@ -8,10 +8,10 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/metadata"
 )
 
 const (
@@ -19,63 +19,72 @@ const (
 )
 
 type registerArtowrk struct {
-	conn *clientConn
-	pb.WalletNode_RegisterArtowrkClient
+	conn   *clientConn
+	client pb.RegisterArtowrkClient
 
-	isClosed bool
+	connID string
+}
 
-	recvCh chan *pb.RegisterArtworkReply
-	errCh  chan error
+func (service *registerArtowrk) ConndID() string {
+	return service.connID
 }
 
 // Handshake implements node.RegisterArtowrk.Handshake()
-func (stream *registerArtowrk) Handshake(ctx context.Context, connID string, IsPrimary bool) error {
-	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_Handshake{
-			Handshake: &pb.RegisterArtworkRequest_HandshakeRequest{
-				ConnID:    connID,
-				IsPrimary: IsPrimary,
-			},
-		},
-	}
+func (service *registerArtowrk) Handshake(ctx context.Context, IsPrimary bool) error {
+	ctx = service.context(ctx)
 
-	res, err := stream.sendRecv(ctx, req)
+	stream, err := service.client.Handshake(ctx)
 	if err != nil {
-		return err
+		return errors.New("failed to open handshake stream")
 	}
 
-	resp := res.GetHandshake()
-	if resp == nil {
-		return errors.Errorf("wrong response, %q", res.String())
+	req := &pb.HandshakeRequest{
+		IsPrimary: IsPrimary,
 	}
-	if err := resp.Error; err.Status == pb.RegisterArtworkReply_Error_ERR {
-		return errors.New(err.ErrMsg)
+	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
+
+	if err := stream.Send(req); err != nil {
+		return errors.New("failed to send handshake request")
+	}
+
+	errCh := make(chan error)
+	respCh := make(chan *pb.HandshakeReply)
+
+	go func() {
+		defer service.conn.Close()
+
+		for {
+			resp, err := stream.Recv()
+			if err != nil {
+				errCh <- err
+				return
+			}
+			log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
+			respCh <- resp
+		}
+	}()
+
+	select {
+	case resp := <-respCh:
+		service.connID = resp.ConnID
+	case err := <-errCh:
+		return errors.Errorf("failed to receive Handshake: %w", err)
 	}
 	return nil
 }
 
 // AcceptedNodes implements node.RegisterArtowrk.AcceptedNodes()
-func (stream *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
+	ctx = service.context(ctx)
 
-	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_AcceptedNodes{
-			AcceptedNodes: &pb.RegisterArtworkRequest_AcceptedNodesRequest{},
-		},
-	}
+	req := &pb.AcceptedNodesRequest{}
+	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
 
-	res, err := stream.sendRecv(ctx, req)
+	resp, err := service.client.AcceptedNodes(ctx, req)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("failed to request to accepted secondary nodes")
 	}
-
-	resp := res.GetAcceptedNodes()
-	if resp == nil {
-		return nil, errors.Errorf("wrong response, %q", res.String())
-	}
-	if err := resp.Error; err.Status == pb.RegisterArtworkReply_Error_ERR {
-		return nil, errors.New(err.ErrMsg)
-	}
+	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
 
 	var ids []string
 	for _, peer := range resp.Peers {
@@ -85,35 +94,33 @@ func (stream *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []s
 }
 
 // ConnectTo implements node.RegisterArtowrk.ConnectTo()
-func (stream *registerArtowrk) ConnectTo(ctx context.Context, nodeKey string) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeKey, connID string) error {
+	ctx = service.context(ctx)
 
-	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_ConnectTo{
-			ConnectTo: &pb.RegisterArtworkRequest_ConnectToRequest{
-				NodeKey: nodeKey,
-			},
-		},
+	req := &pb.ConnectToRequest{
+		NodeKey: nodeKey,
+		ConnID:  connID,
 	}
+	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 
-	res, err := stream.sendRecv(ctx, req)
+	resp, err := service.client.ConnectTo(ctx, req)
 	if err != nil {
-		return err
+		return errors.New("failed to request to connect to primary node")
 	}
+	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
 
-	resp := res.GetConnectTo()
-	if resp == nil {
-		return errors.Errorf("wrong response, %q", res.String())
-	}
-	if err := resp.Error; err.Status == pb.RegisterArtworkReply_Error_ERR {
-		return errors.New(err.ErrMsg)
-	}
 	return nil
 }
 
-// UploadImage implements node.RegisterArtowrk.UploadImage()
-func (stream *registerArtowrk) UploadImage(ctx context.Context, filename string) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
+// SendImage implements node.RegisterArtowrk.SendImage()
+func (service *registerArtowrk) SendImage(ctx context.Context, filename string) error {
+	ctx = service.context(ctx)
+
+	stream, err := service.client.SendImage(ctx)
+	if err != nil {
+		return errors.New("failed to open stream")
+	}
+	defer stream.CloseSend()
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -121,7 +128,7 @@ func (stream *registerArtowrk) UploadImage(ctx context.Context, filename string)
 	}
 	defer file.Close()
 
-	log.WithContext(ctx).WithField("filename", filename).Debugf("Start uploading image")
+	log.WithContext(ctx).WithField("filename", filename).Debugf("SendImage uploading")
 	buffer := make([]byte, uploadImageBufferSize)
 	for {
 		n, err := file.Read(buffer)
@@ -129,120 +136,29 @@ func (stream *registerArtowrk) UploadImage(ctx context.Context, filename string)
 			break
 		}
 
-		req := &pb.RegisterArtworkRequest{
-			Requests: &pb.RegisterArtworkRequest_UploadImage{
-				UploadImage: &pb.RegisterArtworkRequest_UploadImageRequest{
-					Payload: buffer[:n],
-				},
-			},
+		req := &pb.SendImageRequest{
+			Payload: buffer[:n],
 		}
-
-		if err := stream.send(ctx, req); err != nil {
-			return err
+		if err := stream.Send(req); err != nil {
+			return errors.New("failed to send image data")
 		}
 	}
-	log.WithContext(ctx).Debugf("Uploaded image")
-
-	// resp := res.GetUploadImage()
-	// if resp == nil {
-	// 	return errors.Errorf("wrong response, %q", res.String())
-	// }
-	// if err := resp.Error; err.Status == pb.RegisterArtworkReply_Error_ERR {
-	// 	return errors.New(err.ErrMsg)
-	// }
-	return nil
-}
-
-func (stream *registerArtowrk) sendRecv(ctx context.Context, req *pb.RegisterArtworkRequest) (*pb.RegisterArtworkReply, error) {
-	if err := stream.send(ctx, req); err != nil {
-		return nil, err
-	}
-
-	resp, err := stream.recv(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (stream *registerArtowrk) send(ctx context.Context, req *pb.RegisterArtworkRequest) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
-
-	if stream.isClosed {
-		return errors.New("stream closed")
-	}
-
-	switch req.Requests.(type) {
-	case *pb.RegisterArtworkRequest_UploadImage:
-	default:
-		log.WithContext(ctx).WithField("req", req.String()).Debugf("Sending")
-	}
-
-	if err := stream.SendMsg(req); err != nil {
-		switch status.Code(err) {
-		case codes.Canceled:
-			log.WithContext(ctx).WithError(err).Debugf("Sending canceled")
-		default:
-			log.WithContext(ctx).WithError(err).Errorf("Sending")
-		}
-		return err
-	}
+	log.WithContext(ctx).Debugf("SendImage uploaded")
 
 	return nil
 }
 
-func (stream *registerArtowrk) recv(ctx context.Context) (*pb.RegisterArtworkReply, error) {
-	select {
-	case <-ctx.Done():
-		return nil, nil
-	case resp := <-stream.recvCh:
-		return resp, nil
-	case err := <-stream.errCh:
-		return nil, err
-	}
+func (service *registerArtowrk) context(ctx context.Context) context.Context {
+	md := metadata.Pairs(proto.MetadataKeyConnID, service.connID)
+	ctx = metadata.NewOutgoingContext(ctx, md)
+
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
+	return ctx
 }
 
-func (stream *registerArtowrk) start(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, stream.conn.id))
-
-	go func() {
-		defer func() {
-			stream.isClosed = true
-			stream.conn.Close()
-		}()
-
-		for {
-			resp, err := stream.Recv()
-			if err != nil {
-				if err == io.EOF {
-					log.WithContext(ctx).Debug("Stream closed by peer")
-					return
-				}
-				switch status.Code(err) {
-				case codes.Canceled, codes.Unavailable:
-					log.WithContext(ctx).WithError(err).Debug("Stream closed")
-				default:
-					log.WithContext(ctx).WithError(err).Warn("Stream")
-				}
-
-				stream.errCh <- errors.New(err)
-				break
-			}
-			log.WithContext(ctx).WithField("resp", resp.String()).Debug("Receiving")
-
-			stream.recvCh <- resp
-		}
-	}()
-
-	return nil
-}
-
-func newRegisterArtowrk(conn *clientConn, client pb.WalletNode_RegisterArtowrkClient) node.RegisterArtowrk {
+func newRegisterArtowrk(conn *clientConn) node.RegisterArtowrk {
 	return &registerArtowrk{
-		conn:                             conn,
-		WalletNode_RegisterArtowrkClient: client,
-
-		recvCh: make(chan *pb.RegisterArtworkReply),
-		errCh:  make(chan error),
+		conn:   conn,
+		client: pb.NewRegisterArtowrkClient(conn),
 	}
 }

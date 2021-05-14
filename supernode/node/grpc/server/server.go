@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	logServerPrefix = "server"
+	logPrefix = "server"
 )
 
 type service interface {
@@ -29,7 +29,7 @@ type Server struct {
 
 // Run starts the server
 func (server *Server) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, logServerPrefix)
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	group, ctx := errgroup.WithContext(ctx)
 

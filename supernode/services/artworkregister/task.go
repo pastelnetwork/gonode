@@ -21,9 +21,8 @@ const (
 type Task struct {
 	*Service
 
-	ID     string
-	ConnID string
-	State  *state.State
+	ID    string
+	State *state.State
 
 	acceptMu  sync.Mutex
 	connectMu sync.Mutex
@@ -57,13 +56,12 @@ func (task *Task) context(ctx context.Context) context.Context {
 }
 
 // Handshake is handshake wallet to supernode
-func (task *Task) Handshake(ctx context.Context, connID string, isPrimary bool) error {
+func (task *Task) Handshake(ctx context.Context, isPrimary bool) error {
 	ctx = task.context(ctx)
 
 	if err := task.requiredStatus(state.StatusTaskStarted); err != nil {
 		return err
 	}
-	task.ConnID = connID
 
 	if isPrimary {
 		log.WithContext(ctx).Debugf("Acts as primary node")
@@ -126,7 +124,7 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeKey string) error {
 }
 
 // ConnectTo connects to primary node
-func (task *Task) ConnectTo(ctx context.Context, nodeKey string) error {
+func (task *Task) ConnectTo(ctx context.Context, connID, nodeKey string) error {
 	ctx = task.context(ctx)
 
 	task.connectMu.Lock()
@@ -158,12 +156,8 @@ func (task *Task) ConnectTo(ctx context.Context, nodeKey string) error {
 		}
 	}()
 
-	stream, err := conn.RegisterArtowrk(ctx)
-	if err != nil {
-		return err
-	}
-
-	if err := stream.Handshake(ctx, task.ConnID, task.config.PastelID); err != nil {
+	client := conn.RegisterArtowrk()
+	if err := client.Handshake(ctx, connID, task.config.PastelID); err != nil {
 		return err
 	}
 

@@ -8,107 +8,98 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
+const (
+	metadataConnID = "connID"
+)
+
+// registerArtowrk represents grpc service for registration artowrk.
 type registerArtowrk struct {
-	pb.SuperNode_RegisterArtowrkServer
-	task *artworkregister.Task
+	pb.UnimplementedRegisterArtowrkServer
 
-	reqCh chan *pb.RegisterArtworkRequest
-	errCh chan error
+	*artworkregister.Service
 }
 
-func (stream *registerArtowrk) handshake(ctx context.Context, req *pb.RegisterArtworkRequest_HandshakeRequest) error {
-	if err := stream.task.HandshakeNode(ctx, req.NodeKey); err != nil {
-		return err
-	}
-
-	resp := &pb.RegisterArtworkReply{
-		Replies: &pb.RegisterArtworkReply_Handshake{
-			Handshake: &pb.RegisterArtworkReply_HandshakeReply{
-				Error: stream.newError(),
-			},
-		},
-	}
-
-	log.WithContext(ctx).WithField("resp", resp.String()).Debugf("Sending")
-	if err := stream.Send(resp); err != nil {
-		return errors.New(err)
-	}
-	return nil
-}
-
-func (stream *registerArtowrk) newError() *pb.RegisterArtworkReply_Error {
-	return &pb.RegisterArtworkReply_Error{
-		Status: pb.RegisterArtworkReply_Error_OK,
-	}
-}
-
-func (stream *registerArtowrk) start(ctx context.Context, service *artworkregister.Service) error {
-	ctx, cancel := context.WithCancel(ctx)
+func (service *registerArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeServer) error {
+	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
-	go func() {
+	group, _ := errgroup.WithContext(ctx)
+	group.Go(func() (err error) {
 		for {
 			req, err := stream.Recv()
 			if err != nil {
 				if err == io.EOF {
-					err = nil
+					return nil
 				}
 				if status.Code(err) == codes.Canceled {
-					err = errors.New("connection closed")
+					return errors.New("connection closed")
 				}
-				stream.errCh <- errors.New(err)
-				return
+
+				log.WithContext(ctx).WithError(err).Errorf("Handshake receving")
+				return errors.Errorf("failed to receive Handshake: %w", err)
 			}
-			stream.reqCh <- req
-		}
-	}()
+			log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case err := <-stream.errCh:
-			return err
-		case req := <-stream.reqCh:
-			log.WithContext(ctx).WithField("req", req.String()).Debugf("Receiving")
-
-			switch req.GetRequests().(type) {
-			case *pb.RegisterArtworkRequest_Handshake:
-				req := req.GetHandshake()
-
-				if stream.task != nil {
-					return errors.New("task is already registered")
-				}
-
-				stream.task = service.TaskByConnID(req.ConnID)
-				if stream.task == nil {
-					return errors.Errorf("connID %q not found", req.ConnID)
-				}
-				go func() {
-					<-stream.task.Done()
-					cancel()
-				}()
-
-				if err := stream.handshake(ctx, req); err != nil {
-					return err
-				}
-				defer stream.task.Cancel()
-
-			default:
-				return errors.New("unsupported call")
+			task, err := service.task(ctx)
+			if err != nil {
+				return err
 			}
+			defer task.Cancel()
+
+			if err := task.HandshakeNode(ctx, req.NodeKey); err != nil {
+				return err
+			}
+
+			resp := &pb.HandshakeReply{
+				Error: &pb.Error{
+					Status: pb.Error_OK,
+				},
+			}
+			if err := stream.SendAndClose(resp); err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("Handshake sending")
+				return errors.Errorf("failed to send Handshake response: %w", err)
+			}
+			log.WithContext(ctx).WithField("resp", resp).Debugf("HandshakeNodes response")
 		}
-	}
+	})
+
+	return group.Wait()
 }
 
-func newRegisterArtowrk(stream pb.SuperNode_RegisterArtowrkServer) *registerArtowrk {
+func (service *registerArtowrk) task(ctx context.Context) (*artworkregister.Task, error) {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return nil, errors.New("not found metadata")
+	}
+
+	mdVals := md.Get(metadataConnID)
+	if len(mdVals) == 0 {
+		return nil, errors.Errorf("not found %q in metadata", metadataConnID)
+	}
+	connID := mdVals[0]
+
+	task := service.Task(connID)
+	if task == nil {
+		return nil, errors.Errorf("not found %q task", connID)
+	}
+	return task, nil
+}
+
+// Desc returns a description of the service.
+func (service *registerArtowrk) Desc() *grpc.ServiceDesc {
+	return &pb.RegisterArtowrk_ServiceDesc
+}
+
+// NewRegisterArtowrk returns a new registerArtowrk instance.
+func NewRegisterArtowrk(service *artworkregister.Service) pb.RegisterArtowrkServer {
 	return &registerArtowrk{
-		SuperNode_RegisterArtowrkServer: stream,
-		reqCh:                           make(chan *pb.RegisterArtworkRequest),
-		errCh:                           make(chan error),
+		Service: service,
 	}
 }

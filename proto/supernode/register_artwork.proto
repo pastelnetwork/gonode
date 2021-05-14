@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto";
+
+package supernode;
+
+service RegisterArtowrk {
+    rpc Handshake(stream HandshakeRequest) returns (stream HandshakeReply);
+}
+
+message HandshakeRequest {
+    string node_key = 1;
+}
+message HandshakeReply {
+    string connID = 1;
+}
+
+
+

@@ -42,7 +42,7 @@ func (nodes *Nodes) uploadImage(ctx context.Context, filename string) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			return node.UploadImage(ctx, filename)
+			return node.SendImage(ctx, filename)
 		})
 	}
 	return group.Wait()
@@ -59,20 +59,6 @@ type Node struct {
 
 	address  string
 	pastelID string
-}
-
-func (node *Node) openStream(ctx context.Context, connID string, isPrimary bool) error {
-	if err := node.connect(ctx); err != nil {
-		return err
-	}
-
-	stream, err := node.conn.RegisterArtowrk(ctx)
-	if err != nil {
-		return err
-	}
-	node.RegisterArtowrk = stream
-
-	return stream.Handshake(ctx, connID, isPrimary)
 }
 
 func (node *Node) connect(ctx context.Context) error {
@@ -94,5 +80,7 @@ func (node *Node) connect(ctx context.Context) error {
 		conn.Close()
 		node.conn = nil
 	}()
+
+	node.RegisterArtowrk = conn.RegisterArtowrk()
 	return nil
 }

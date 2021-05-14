@@ -3,138 +3,81 @@ package client
 import (
 	"context"
 	"fmt"
-	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/metadata"
 )
 
 type registerArtowrk struct {
-	conn *clientConn
-	pb.SuperNode_RegisterArtowrkClient
+	conn   *clientConn
+	client pb.RegisterArtowrkClient
 
-	isClosed bool
-
-	recvCh chan *pb.RegisterArtworkReply
-	errCh  chan error
+	connID string
 }
 
-func (stream *registerArtowrk) Handshake(ctx context.Context, connID, nodeKey string) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
+func (service *registerArtowrk) ConndID() string {
+	return service.connID
+}
 
-	req := &pb.RegisterArtworkRequest{
-		Requests: &pb.RegisterArtworkRequest_Handshake{
-			Handshake: &pb.RegisterArtworkRequest_HandshakeRequest{
-				ConnID:  connID,
-				NodeKey: nodeKey,
-			},
-		},
-	}
+func (service *registerArtowrk) Handshake(ctx context.Context, nodeKey string) error {
+	ctx = service.context(ctx)
 
-	res, err := stream.sendRecv(ctx, req)
+	stream, err := service.client.Handshake(ctx)
 	if err != nil {
-		return err
+		return errors.New("failed to open handshake stream")
 	}
 
-	resp := res.GetHandshake()
-	if resp == nil {
-		return errors.Errorf("wrong response, %q", res.String())
+	req := &pb.HandshakeRequest{
+		NodeKey: nodeKey,
 	}
-	if err := resp.Error; err.Status == pb.RegisterArtworkReply_Error_ERR {
-		return errors.New(err.ErrMsg)
-	}
-	return nil
-}
+	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
-func (stream *registerArtowrk) sendRecv(ctx context.Context, req *pb.RegisterArtworkRequest) (*pb.RegisterArtworkReply, error) {
-	if err := stream.send(ctx, req); err != nil {
-		return nil, err
+	if err := stream.Send(req); err != nil {
+		return errors.New("failed to send handshake request")
 	}
 
-	resp, err := stream.recv(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
-}
-
-func (stream *registerArtowrk) send(ctx context.Context, req *pb.RegisterArtworkRequest) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
-
-	if stream.isClosed {
-		return errors.New("stream closed")
-	}
-
-	log.WithContext(ctx).WithField("req", req.String()).Debugf("Sending")
-	if err := stream.SendMsg(req); err != nil {
-		switch status.Code(err) {
-		case codes.Canceled:
-			log.WithContext(ctx).WithError(err).Debugf("Sending canceled")
-		default:
-			log.WithContext(ctx).WithError(err).Errorf("Sending")
-		}
-		return err
-	}
-
-	return nil
-}
-
-func (stream *registerArtowrk) recv(ctx context.Context) (*pb.RegisterArtworkReply, error) {
-	select {
-	case <-ctx.Done():
-		return nil, nil
-	case resp := <-stream.recvCh:
-		return resp, nil
-	case err := <-stream.errCh:
-		return nil, err
-	}
-}
-
-func (stream *registerArtowrk) start(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, stream.conn.id))
+	errCh := make(chan error)
+	respCh := make(chan *pb.HandshakeReply)
 
 	go func() {
-		defer func() {
-			stream.isClosed = true
-			stream.conn.Close()
-		}()
+		defer service.conn.Close()
 
 		for {
 			resp, err := stream.Recv()
 			if err != nil {
-				if err == io.EOF {
-					log.WithContext(ctx).Debug("Stream closed by peer")
-					return
-				}
-				switch status.Code(err) {
-				case codes.Canceled, codes.Unavailable:
-					log.WithContext(ctx).WithError(err).Debug("Stream closed")
-				default:
-					log.WithContext(ctx).WithError(err).Warn("Stream")
-				}
-
-				stream.errCh <- errors.New(err)
-				break
+				errCh <- err
+				return
 			}
-			log.WithContext(ctx).WithField("resp", resp.String()).Debug("Receiving")
-
-			stream.recvCh <- resp
+			log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
+			respCh <- resp
 		}
 	}()
 
+	select {
+	case resp := <-respCh:
+		service.connID = resp.ConnID
+	case err := <-errCh:
+		return errors.Errorf("failed to receive Handshake: %w", err)
+	}
 	return nil
 }
 
-func newRegisterArtowrk(conn *clientConn, client pb.SuperNode_RegisterArtowrkClient) node.RegisterArtowrk {
-	return &registerArtowrk{
-		conn:                            conn,
-		SuperNode_RegisterArtowrkClient: client,
+func (service *registerArtowrk) context(ctx context.Context) context.Context {
+	md := metadata.Pairs(proto.MetadataKeyConnID, service.connID)
+	ctx = metadata.NewOutgoingContext(ctx, md)
 
-		recvCh: make(chan *pb.RegisterArtworkReply),
-		errCh:  make(chan error),
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
+	return ctx
+}
+
+func newRegisterArtowrk(conn *clientConn, connID string) node.RegisterArtowrk {
+	return &registerArtowrk{
+		connID: connID,
+		conn:   conn,
+		client: pb.NewRegisterArtowrkClient(conn),
 	}
 }

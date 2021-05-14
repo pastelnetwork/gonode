@@ -1,8 +1,8 @@
-package client
+package grpc
 
 import (
 	commongrpc "github.com/pastelnetwork/gonode/common/net/grpc"
-	"github.com/pastelnetwork/gonode/supernode/node"
+	"github.com/pastelnetwork/gonode/walletnode/node"
 	"google.golang.org/grpc"
 )
 
@@ -14,8 +14,8 @@ type clientConn struct {
 }
 
 // RegisterArtowrk implements node.Connection.RegisterArtowrk()
-func (conn *clientConn) RegisterArtowrk(connID string) node.RegisterArtowrk {
-	return newRegisterArtowrk(conn, connID)
+func (conn *clientConn) RegisterArtowrk() node.RegisterArtowrk {
+	return newRegisterArtowrk(conn)
 }
 
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {

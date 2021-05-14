@@ -104,10 +104,11 @@ func (task *Task) run(ctx context.Context) error {
 func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) (Nodes, error) {
 	var meshNodes Nodes
 
-	connID, _ := random.String(8, random.Base62Chars)
-
 	primary := nodes[primaryIndex]
-	if err := primary.openStream(ctx, connID, true); err != nil {
+	if err := primary.connect(ctx); err != nil {
+		return nil, err
+	}
+	if err := primary.Handshake(ctx, true); err != nil {
 		return nil, err
 	}
 
@@ -130,12 +131,15 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 				go func() {
 					defer errors.Recover(errors.CheckErrorAndExit)
 
-					if err := node.openStream(ctx, connID, false); err != nil {
+					if err := node.connect(ctx); err != nil {
+						return
+					}
+					if err := node.Handshake(ctx, false); err != nil {
 						return
 					}
 					secondaries.add(node)
 
-					if err := node.ConnectTo(ctx, primary.pastelID); err != nil {
+					if err := node.ConnectTo(ctx, primary.pastelID, primary.ConnID()); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.address)

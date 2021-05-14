@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto";
+
+package walletnode;
+
+service RegisterArtowrk {
+    rpc Handshake(stream HandshakeRequest) returns (stream HandshakeReply);
+
+    rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
+
+    rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
+
+    rpc SendImage(stream SendImageRequest) returns (SendImageReply);
+
+    rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
+}
+
+message HandshakeRequest {
+    bool is_primary = 1;
+}
+message HandshakeReply {
+    string connID = 1;
+}
+
+message AcceptedNodesRequest {
+}
+message AcceptedNodesReply {
+    message Peer {
+        string node_key = 1;
+    }
+    repeated Peer peers = 1;
+}
+
+message ConnectToRequest {
+    string connID = 1;
+    string node_key = 2;
+}
+message ConnectToReply {
+}
+
+message SendImageRequest {
+    bytes payload = 1;
+}
+message SendImageReply {
+    string fgpt = 1;
+}
+
+message SendTicketRequest {
+    bytes ticket = 1;
+    string ticket_signature = 2;
+    string fgpt= 3;
+    string fgpt_signature = 4;
+    string fee_txid = 5;
+    bytes thumbnail = 6;
+}
+message SendTicketReply {
+    string ticket_txid = 1;
+}
+
