@@ -104,7 +104,7 @@ func objective(trial goptuna.Trial) (float64, error) {
 	return aurpc, nil
 }
 
-func runStudy() error {
+func runStudy(studyName string) error {
 	db, err := gorm.Open(mysql.Open("goptuna:password@tcp(localhost:3306)/goptuna?parseTime=true"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
@@ -114,7 +114,7 @@ func runStudy() error {
 
 	storage := rdb.NewStorage(db)
 	study, err := goptuna.CreateStudy(
-		"dupe-detection-aurpc-15",
+		studyName,
 		goptuna.StudyOptionStorage(storage),
 		goptuna.StudyOptionRelativeSampler(cmaes.NewSampler()),
 		//goptuna.StudyOptionSampler(tpe.NewSampler()),
@@ -149,13 +149,14 @@ func runStudy() error {
 
 func main() {
 	rootDirPtr := flag.String("rootDir", "", "a path to the directory with the test corpus of images.")
+	goptunaStudyNamePtr := flag.String("studyName", "dupe-detection-aurpc", "a name of the Goptuna study to create or continue available.")
 	flag.Parse()
 
 	rand.Seed(time.Now().UnixNano())
 
 	rootDir = *rootDirPtr
 
-	if err := runStudy(); err != nil {
+	if err := runStudy(*goptunaStudyNamePtr); err != nil {
 		log.Printf(errors.ErrorStack(err))
 		panic(err)
 	}
