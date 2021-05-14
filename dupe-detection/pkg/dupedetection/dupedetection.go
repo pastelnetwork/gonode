@@ -760,6 +760,8 @@ type ComputeConfig struct {
 	HoeffdingRound1DupeThreshold      float64
 	HoeffdingRound2DupeThreshold      float64
 	MIThreshold                       float64
+
+	RootDir string
 }
 
 func NewComputeConfig() ComputeConfig {

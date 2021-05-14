@@ -404,13 +404,11 @@ func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, config du
 func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
-	rootPastelFolderPath := "./test_corpus"
-
-	miscMasternodeFilesFolderPath := filepath.Join(rootPastelFolderPath, "misc_masternode_files")
-	dupeDetectionImageFingerprintDatabaseFilePath = filepath.Join(rootPastelFolderPath, "dupe_detection_image_fingerprint_database.sqlite")
-	pathToAllRegisteredWorksForDupeDetection := filepath.Join(rootPastelFolderPath, "dir_1")
-	dupeDetectionTestImagesBaseFolderPath := filepath.Join(rootPastelFolderPath, "dir_2")
-	nonDupeTestImagesBaseFolderPath := filepath.Join(rootPastelFolderPath, "dir_3")
+	miscMasternodeFilesFolderPath := filepath.Join(config.RootDir, "misc_masternode_files")
+	dupeDetectionImageFingerprintDatabaseFilePath = filepath.Join(config.RootDir, "dupe_detection_image_fingerprint_database.sqlite")
+	pathToAllRegisteredWorksForDupeDetection := filepath.Join(config.RootDir, "allRegisteredWorks")
+	dupeDetectionTestImagesBaseFolderPath := filepath.Join(config.RootDir, "dupes")
+	nonDupeTestImagesBaseFolderPath := filepath.Join(config.RootDir, "originals")
 
 	if _, err := os.Stat(miscMasternodeFilesFolderPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(miscMasternodeFilesFolderPath, 0770); err != nil {

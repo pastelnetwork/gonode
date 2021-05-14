@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"math/rand"
 	"time"
@@ -20,11 +21,15 @@ import (
 
 const EvaluateNumberOfTimes = 500
 
+var rootDir = ""
+
 // objective defines the objective of the study - find out the best aurpc value
 func objective(trial goptuna.Trial) (float64, error) {
 	var err error
 	// Define the search space via Suggest APIs.
 	config := dupedetection.NewComputeConfig()
+
+	config.RootDir = rootDir
 
 	config.MIThreshold, err = trial.SuggestFloat("MIThreshold", 5.2, 5.4)
 	if err != nil {
@@ -143,7 +148,12 @@ func runStudy() error {
 }
 
 func main() {
+	rootDirPtr := flag.String("rootDir", "", "a path to the directory with the test corpus of images.")
+	flag.Parse()
+
 	rand.Seed(time.Now().UnixNano())
+
+	rootDir = *rootDirPtr
 
 	if err := runStudy(); err != nil {
 		log.Printf(errors.ErrorStack(err))
