@@ -201,6 +201,11 @@ func getAllValidImageFilePathsInFolder(artFolderPath string) ([]string, error) {
 			results = append(results, match)
 		}
 	}
+
+	if len(results) > 30 {
+		return results[:30], nil
+	}
+
 	return results, nil
 }
 
@@ -399,13 +404,13 @@ func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, config du
 func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
-	rootPastelFolderPath := ""
+	rootPastelFolderPath := "./test_corpus"
 
 	miscMasternodeFilesFolderPath := filepath.Join(rootPastelFolderPath, "misc_masternode_files")
 	dupeDetectionImageFingerprintDatabaseFilePath = filepath.Join(rootPastelFolderPath, "dupe_detection_image_fingerprint_database.sqlite")
-	pathToAllRegisteredWorksForDupeDetection := filepath.Join(rootPastelFolderPath, "Animecoin_All_Finished_Works")
-	dupeDetectionTestImagesBaseFolderPath := filepath.Join(rootPastelFolderPath, "dupe_detector_test_images")
-	nonDupeTestImagesBaseFolderPath := filepath.Join(rootPastelFolderPath, "non_duplicate_test_images")
+	pathToAllRegisteredWorksForDupeDetection := filepath.Join(rootPastelFolderPath, "dir_1")
+	dupeDetectionTestImagesBaseFolderPath := filepath.Join(rootPastelFolderPath, "dir_2")
+	nonDupeTestImagesBaseFolderPath := filepath.Join(rootPastelFolderPath, "dir_3")
 
 	if _, err := os.Stat(miscMasternodeFilesFolderPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(miscMasternodeFilesFolderPath, 0770); err != nil {
@@ -478,6 +483,10 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	fmt.Printf("\n\n\n_______________________________Summary:_______________________________\n\n")
 	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", float32(dupeCounter)/float32(len(nearDuplicates))*100.0, len(nearDuplicates))
 	fmt.Printf("\nAccuracy Percentage in Detecting Non-Duplicate Images: %.2f %% from totally %v images\n", float32(nondupeCounter)/float32(len(nonDuplicates))*100.0, len(nonDuplicates))
+
+	if len(predictedY) == 0 {
+		return 0, nil
+	}
 
 	actualY := make([]float64, len(predictedY))
 	for i := range actualY {

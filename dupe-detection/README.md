@@ -17,7 +17,7 @@ sudo apt-get install -y swig
 Install [relevant tensoflow C library](https://www.tensorflow.org/install/lang_c):
 
 ```
-wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.g
+wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
 sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
 sudo /sbin/ldconfig -v
 ```
@@ -37,6 +37,12 @@ unzip dupe_detector_test_images.zip
 
 wget https://www.dropbox.com/s/yjqsxsz97msai4e/non_duplicate_test_images.zip
 unzip non_duplicate_test_images.zip
+```
+
+Download the latest test corpus of images:
+```
+~/.local/bin/gdown https://drive.google.com/uc?id=19UsLBtiFivSoMoqfv3ztlFgdeiu0ZEor
+unzip test_corpus.zip -d ./test_corpus
 ```
 
 ## Goptuna Optimizer

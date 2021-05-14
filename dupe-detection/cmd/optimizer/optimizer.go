@@ -31,7 +31,7 @@ func objective(trial goptuna.Trial) (float64, error) {
 		return 0, errors.New(err)
 	}
 
-	/*config.PearsonDupeThreshold, err = trial.SuggestFloat("Pearson", 0.99, 0.99999)
+	config.PearsonDupeThreshold, err = trial.SuggestFloat("Pearson", 0.99, 0.99999)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -42,19 +42,19 @@ func objective(trial goptuna.Trial) (float64, error) {
 	config.KendallDupeThreshold, _ = trial.SuggestFloat("Kendall", 0.68, 0.72)
 	if err != nil {
 		return 0, errors.New(err)
-	}*/
+	}
 	/*config.RandomizedDependenceDupeThreshold, _ = trial.SuggestFloat("RDC", 0.5, 0.99999)
 	if err != nil {
 		return 0, errors.New(err)
 	}*/
-	/*config.HoeffdingDupeThreshold, _ = trial.SuggestFloat("Hoeffding", 0.2, 0.6)
+	config.HoeffdingDupeThreshold, _ = trial.SuggestFloat("Hoeffding", 0.2, 0.6)
 	if err != nil {
 		return 0, errors.New(err)
 	}
 	config.BlomqvistDupeThreshold, _ = trial.SuggestFloat("Blomqvist", 0.6, 0.8)
 	if err != nil {
 		return 0, errors.New(err)
-	}*/
+	}
 	/*config.HoeffdingDupeThreshold, _ = trial.SuggestFloat("HoeffdingD1", 0.1, 0.99999)
 	if err != nil {
 		return 0, errors.New(err)
