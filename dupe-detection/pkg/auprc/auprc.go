@@ -168,7 +168,7 @@ func checkIfFilePathIsAValidImage(filePath string) error {
 	return errors.New("Image header is not supported.")
 }
 
-func getAllValidImageFilePathsInFolder(artFolderPath string) ([]string, error) {
+func getAllValidImageFilePathsInFolder(artFolderPath string, imageMaxCount int) ([]string, error) {
 	jpgMatches, err := filepath.Glob(filepath.Join(artFolderPath, "*.jpg"))
 	if err != nil {
 		return nil, errors.New(err)
@@ -202,8 +202,8 @@ func getAllValidImageFilePathsInFolder(artFolderPath string) ([]string, error) {
 		}
 	}
 
-	if len(results) > 30 {
-		return results[:30], nil
+	if imageMaxCount != 0 && len(results) > imageMaxCount {
+		return results[:imageMaxCount], nil
 	}
 
 	return results, nil
@@ -279,7 +279,7 @@ func addImageFingerprintsToDupeDetectionDatabase(imageFilePath string) error {
 }
 
 func addAllImagesInFolderToImageFingerprintDatabase(artFolderPath string) error {
-	validImageFilePaths, err := getAllValidImageFilePathsInFolder(artFolderPath)
+	validImageFilePaths, err := getAllValidImageFilePathsInFolder(artFolderPath, 0)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -429,7 +429,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	}
 
 	fmt.Printf("\n\nNow testing duplicate-detection scheme on known near-duplicate images:")
-	nearDuplicates, err := getAllValidImageFilePathsInFolder(dupeDetectionTestImagesBaseFolderPath)
+	nearDuplicates, err := getAllValidImageFilePathsInFolder(dupeDetectionTestImagesBaseFolderPath, config.NumberOfImagesToValidate)
 	if err != nil {
 		if err != nil {
 			return 0, errors.New(err)
@@ -452,7 +452,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", float32(dupeCounter)/float32(len(nearDuplicates))*100.0, len(nearDuplicates))
 
 	fmt.Printf("\n\nNow testing duplicate-detection scheme on known non-duplicate images:")
-	nonDuplicates, err := getAllValidImageFilePathsInFolder(nonDupeTestImagesBaseFolderPath)
+	nonDuplicates, err := getAllValidImageFilePathsInFolder(nonDupeTestImagesBaseFolderPath, config.NumberOfImagesToValidate)
 	if err != nil {
 		if err != nil {
 			return 0, errors.New(err)

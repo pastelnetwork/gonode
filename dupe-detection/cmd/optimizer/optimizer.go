@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"math/rand"
 	"time"
@@ -19,9 +20,9 @@ import (
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 )
 
-const EvaluateNumberOfTimes = 500
-
+var evaluateNumberOfTimes = 500
 var rootDir = ""
+var numberOfImagesToValidate = 0
 
 // objective defines the objective of the study - find out the best aurpc value
 func objective(trial goptuna.Trial) (float64, error) {
@@ -30,6 +31,16 @@ func objective(trial goptuna.Trial) (float64, error) {
 	config := dupedetection.NewComputeConfig()
 
 	config.RootDir = rootDir
+	err = trial.SetUserAttr("RootDir", config.RootDir)
+	if err != nil {
+		return 0, errors.New(err)
+	}
+
+	config.NumberOfImagesToValidate = numberOfImagesToValidate
+	err = trial.SetUserAttr("MaxImageCountToEvaluate", fmt.Sprintf("%v", config.NumberOfImagesToValidate*2))
+	if err != nil {
+		return 0, errors.New(err)
+	}
 
 	config.MIThreshold, err = trial.SuggestFloat("MIThreshold", 5.2, 5.4)
 	if err != nil {
@@ -113,6 +124,8 @@ func runStudy(studyName string) error {
 	}
 
 	storage := rdb.NewStorage(db)
+
+	// Creates new study or loads available
 	study, err := goptuna.CreateStudy(
 		studyName,
 		goptuna.StudyOptionStorage(storage),
@@ -126,7 +139,7 @@ func runStudy(studyName string) error {
 	}
 
 	// Evaluate objective function specified number of times
-	err = study.Optimize(objective, EvaluateNumberOfTimes)
+	err = study.Optimize(objective, evaluateNumberOfTimes)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -150,11 +163,15 @@ func runStudy(studyName string) error {
 func main() {
 	rootDirPtr := flag.String("rootDir", "", "a path to the directory with the test corpus of images.")
 	goptunaStudyNamePtr := flag.String("studyName", "dupe-detection-aurpc", "a name of the Goptuna study to create or continue available.")
+	numberOfImagesToValidatePtr := flag.Int("imageCount", 0, "limits the number of dupes and original images to validate.")
+	evaluateNumberOfTimesPtr := flag.Int("runCount", 0, "defines the number of times goptuna will evaluate optimization objective.")
 	flag.Parse()
 
 	rand.Seed(time.Now().UnixNano())
 
 	rootDir = *rootDirPtr
+	numberOfImagesToValidate = *numberOfImagesToValidatePtr
+	evaluateNumberOfTimes = *evaluateNumberOfTimesPtr
 
 	if err := runStudy(*goptunaStudyNamePtr); err != nil {
 		log.Printf(errors.ErrorStack(err))

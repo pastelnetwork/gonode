@@ -761,7 +761,8 @@ type ComputeConfig struct {
 	HoeffdingRound2DupeThreshold      float64
 	MIThreshold                       float64
 
-	RootDir string
+	RootDir                  string
+	NumberOfImagesToValidate int
 }
 
 func NewComputeConfig() ComputeConfig {
