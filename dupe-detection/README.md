@@ -62,7 +62,7 @@ Default setup would work with Docker MySQL images:
 ```
 docker pull mysql:8.0
 
-docker run   -d   --rm   -p 3306:3306   -e MYSQL_USER=goptuna   -e MYSQL_DATABASE=goptuna   -e MYSQL_PASSWORD=password   -e MYSQL_ALLOW_EMPTY_PASSWORD=yes   --name goptuna-mysql   mysql:8.0
+export GOPTUNA_CONTAINER=$(docker run   -d   --rm   -p 3306:3306   -e MYSQL_USER=goptuna   -e MYSQL_DATABASE=goptuna   -e MYSQL_PASSWORD=password   -e MYSQL_ALLOW_EMPTY_PASSWORD=yes   --name goptuna-mysql   mysql:8.0)
 ```
 
 Create initial goptuna database structure and empty study:
@@ -85,4 +85,12 @@ docker exec $GOPTUNA_CONTAINER sh -c 'exec mysqldump --no-tablespaces --database
 Restore goptuna database data from backup:
 ```
 docker exec -i $GOPTUNA_CONTAINER sh -c 'exec mysql -ugoptuna -ppassword' < ./backup.sql
+```
+
+Run optimizer with `imageCount` parameter to limit number of analyzed images per trial;  
+`runCount` defines the number of trials per run;  
+`studyName` defines the name of Goptuna study;  
+`rootDir` defines the directory from where to load the corpus of images and where during the first run to generate sqlite database with fingerprints.
+```
+go run ./cmd/optimizer/ -rootDir "./test_corpus" -imageCount 30 -runCount 100 -studyName "dupe-detection-aurpc"
 ```

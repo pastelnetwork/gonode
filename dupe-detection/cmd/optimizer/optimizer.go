@@ -164,7 +164,7 @@ func main() {
 	rootDirPtr := flag.String("rootDir", "", "a path to the directory with the test corpus of images.")
 	goptunaStudyNamePtr := flag.String("studyName", "dupe-detection-aurpc", "a name of the Goptuna study to create or continue available.")
 	numberOfImagesToValidatePtr := flag.Int("imageCount", 0, "limits the number of dupes and original images to validate.")
-	evaluateNumberOfTimesPtr := flag.Int("runCount", 0, "defines the number of times goptuna will evaluate optimization objective.")
+	evaluateNumberOfTimesPtr := flag.Int("runCount", 500, "defines the number of times goptuna will evaluate optimization objective.")
 	flag.Parse()
 
 	rand.Seed(time.Now().UnixNano())
