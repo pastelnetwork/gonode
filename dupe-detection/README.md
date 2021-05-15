@@ -30,19 +30,19 @@ pip install gdown
 unzip ./SavedMLModels.zip -d ./
 
 wget https://www.dropbox.com/s/6ohzgvz418rhl4l/Animecoin_All_Finished_Works.zip
-unzip Animecoin_All_Finished_Works.zip
+unzip Animecoin_All_Finished_Works.zip -d ./allRegisteredWorks
 
 wget https://www.dropbox.com/s/4uajzyh09bc0rp3/dupe_detector_test_images.zip
-unzip dupe_detector_test_images.zip
+unzip dupe_detector_test_images.zip -d ./dupes
 
 wget https://www.dropbox.com/s/yjqsxsz97msai4e/non_duplicate_test_images.zip
-unzip non_duplicate_test_images.zip
+unzip non_duplicate_test_images.zip -d ./originals
 ```
 
 Download the latest test corpus of images:
 ```
-~/.local/bin/gdown https://drive.google.com/uc?id=19UsLBtiFivSoMoqfv3ztlFgdeiu0ZEor
-unzip test_corpus.zip -d ./test_corpus
+~/.local/bin/gdown https://drive.google.com/uc?id=1BslINgdqs8ik7PiDjKKL1wlrRfQanVjQ
+unzip test_corpus_opens_1.zip -d ./test_corpus
 ```
 
 ## Goptuna Optimizer
