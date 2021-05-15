@@ -11,7 +11,9 @@ import (
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -22,63 +24,69 @@ type registerArtowrk struct {
 	conn   *clientConn
 	client pb.RegisterArtowrkClient
 
-	taskID string
+	connID string
 }
 
-func (service *registerArtowrk) TaskID() string {
-	return service.taskID
+func (service *registerArtowrk) ConnID() string {
+	return service.connID
+}
+
+func (service *registerArtowrk) healthCheck(ctx context.Context) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDConnID(ctx)
+
+	stream, err := service.client.HealthCheck(ctx)
+	if err != nil {
+		return errors.New("failed to open HealthCheck stream")
+	}
+
+	go func() {
+		defer service.conn.Close()
+
+		for {
+			_, err := stream.Recv()
+			if err != nil {
+				if err == io.EOF {
+					log.WithContext(ctx).Debug("Stream closed by peer")
+				}
+
+				switch status.Code(err) {
+				case codes.Canceled, codes.Unavailable:
+					log.WithContext(ctx).WithError(err).Debug("Stream closed")
+				default:
+					log.WithContext(ctx).WithError(err).Error("Stream closed")
+				}
+				return
+			}
+		}
+	}()
+
+	return nil
 }
 
 // Handshake implements node.RegisterArtowrk.Handshake()
 func (service *registerArtowrk) Handshake(ctx context.Context, IsPrimary bool) error {
-	ctx = service.context(ctx)
-
-	stream, err := service.client.Handshake(ctx)
-	if err != nil {
-		return errors.New("failed to open handshake stream")
-	}
+	ctx = service.contextWithLogPrefix(ctx)
 
 	req := &pb.HandshakeRequest{
 		IsPrimary: IsPrimary,
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
-	if err := stream.Send(req); err != nil {
-		return errors.New("failed to send handshake request")
+	resp, err := service.client.Handshake(ctx, req)
+	if err != nil {
+		return errors.New("failed to reqeust Handshake")
 	}
+	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
 
-	errCh := make(chan error)
-	respCh := make(chan *pb.HandshakeReply)
-
-	go func() {
-		defer service.conn.Close()
-
-		for {
-			resp, err := stream.Recv()
-			if err != nil {
-				errCh <- err
-				return
-			}
-			log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
-			respCh <- resp
-		}
-	}()
-
-	select {
-	case resp := <-respCh:
-		service.taskID = resp.TaskID
-	case err := <-errCh:
-		if err == io.EOF {
-			return nil
-		}
-		return errors.Errorf("failed to receive Handshake: %w", err)
-	}
-	return nil
+	service.connID = resp.ConnID
+	return service.healthCheck(ctx)
 }
 
 // AcceptedNodes implements node.RegisterArtowrk.AcceptedNodes()
 func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
-	ctx = service.context(ctx)
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDConnID(ctx)
 
 	req := &pb.AcceptedNodesRequest{}
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
@@ -91,18 +99,19 @@ func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []
 
 	var ids []string
 	for _, peer := range resp.Peers {
-		ids = append(ids, peer.NodeKey)
+		ids = append(ids, peer.NodeID)
 	}
 	return ids, nil
 }
 
 // ConnectTo implements node.RegisterArtowrk.ConnectTo()
-func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeKey, taskID string) error {
-	ctx = service.context(ctx)
+func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeID, connID string) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDConnID(ctx)
 
 	req := &pb.ConnectToRequest{
-		NodeKey: nodeKey,
-		TaskID:  taskID,
+		NodeID: nodeID,
+		ConnID: connID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 
@@ -117,7 +126,8 @@ func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeKey, taskID s
 
 // SendImage implements node.RegisterArtowrk.SendImage()
 func (service *registerArtowrk) SendImage(ctx context.Context, filename string) error {
-	ctx = service.context(ctx)
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDConnID(ctx)
 
 	stream, err := service.client.SendImage(ctx)
 	if err != nil {
@@ -151,12 +161,13 @@ func (service *registerArtowrk) SendImage(ctx context.Context, filename string) 
 	return nil
 }
 
-func (service *registerArtowrk) context(ctx context.Context) context.Context {
-	md := metadata.Pairs(proto.MetadataKeyTaskID, service.taskID)
-	ctx = metadata.NewOutgoingContext(ctx, md)
+func (service *registerArtowrk) contextWithMDConnID(ctx context.Context) context.Context {
+	md := metadata.Pairs(proto.MetadataKeyConnID, service.connID)
+	return metadata.NewOutgoingContext(ctx, md)
+}
 
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
-	return ctx
+func (service *registerArtowrk) contextWithLogPrefix(ctx context.Context) context.Context {
+	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
 func newRegisterArtowrk(conn *clientConn) node.RegisterArtowrk {

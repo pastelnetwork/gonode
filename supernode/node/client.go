@@ -17,13 +17,13 @@ type Connection interface {
 	// Done returns a channel that's closed when connection is shutdown.
 	Done() <-chan struct{}
 	// RegisterArtowrk returns a new RegisterArtowrk stream.
-	RegisterArtowrk(taskID string) RegisterArtowrk
+	RegisterArtowrk(nodeID, connID string) RegisterArtowrk
 }
 
 // RegisterArtowrk represents an interaction stream with supernodes for registering artwork.
 type RegisterArtowrk interface {
-	// TaskID returns the taskID received from the server during the handshake.
-	TaskID() (taskID string)
+	// ConnID returns the taskID received from the server during the handshake.
+	ConnID() (taskID string)
 	// Handshake secondary sets up an initial connection with primary supernode, by telling connection id and its own node key.
-	Handshake(ctx context.Context, nodeKey string) (err error)
+	Handshake(ctx context.Context) (err error)
 }

@@ -27,45 +27,58 @@ type RegisterArtowrk struct {
 	workDir string
 }
 
-func (service *RegisterArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeServer) error {
-	ctx, cancel := context.WithCancel(stream.Context())
-	defer cancel()
+func (service *RegisterArtowrk) HealthCheck(stream pb.RegisterArtowrk_HealthCheckServer) error {
+	ctx := stream.Context()
 
-	task := service.NewTask(ctx)
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return err
+	}
 	defer task.Cancel()
 
-	group, _ := errgroup.WithContext(ctx)
-	group.Go(func() (err error) {
+	go func() {
+		defer task.Cancel()
+
 		for {
-			req, err := stream.Recv()
+			_, err := stream.Recv()
 			if err != nil {
 				if err == io.EOF {
-					return nil
+					log.WithContext(ctx).Debug("Stream closed by peer")
 				}
-				return errors.Errorf("failed to receive Handshake request: %w", err)
-			}
-			log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
-			if err := task.Handshake(ctx, req.IsPrimary); err != nil {
-				return err
+				switch status.Code(err) {
+				case codes.Canceled, codes.Unavailable:
+					log.WithContext(ctx).WithError(err).Debug("Stream closed")
+				default:
+					log.WithContext(ctx).WithError(err).Error("Stream closed")
+				}
+				return
 			}
-
-			resp := &pb.HandshakeReply{
-				TaskID: task.ID,
-			}
-			if err := stream.Send(resp); err != nil {
-				return errors.Errorf("failed to send Handshake response: %w", err)
-			}
-			log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
 		}
-	})
+	}()
 
-	return group.Wait()
+	<-task.Done()
+	return nil
+}
+
+func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.HandshakeRequest) (*pb.HandshakeReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
+
+	task := service.NewTask(ctx)
+	if err := task.Handshake(ctx, req.IsPrimary); err != nil {
+		return nil, err
+	}
+
+	resp := &pb.HandshakeReply{
+		ConnID: task.ID,
+	}
+	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
+	return resp, nil
 }
 
 func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
-	task, err := service.Task(ctx)
+	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +91,7 @@ func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.Accep
 	var peers []*pb.AcceptedNodesReply_Peer
 	for _, node := range nodes {
 		peers = append(peers, &pb.AcceptedNodesReply_Peer{
-			NodeKey: node.Key,
+			NodeID: node.Key,
 		})
 	}
 
@@ -91,12 +104,12 @@ func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.Accep
 
 func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
-	task, err := service.Task(ctx)
+	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.TaskID, req.NodeKey); err != nil {
+	if err := task.ConnectTo(ctx, req.NodeID, req.ConnID); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +121,7 @@ func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectTo
 func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageServer) error {
 	ctx := stream.Context()
 
-	task, err := service.Task(ctx)
+	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return err
 	}

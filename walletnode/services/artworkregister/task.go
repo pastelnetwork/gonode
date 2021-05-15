@@ -139,7 +139,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 					}
 					secondaries.add(node)
 
-					if err := node.ConnectTo(ctx, primary.pastelID, primary.TaskID()); err != nil {
+					if err := node.ConnectTo(ctx, primary.pastelID, primary.ConnID()); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.address)

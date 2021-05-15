@@ -10,6 +10,8 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // RegisterArtowrk represents grpc service for registration artowrk.
@@ -19,57 +21,55 @@ type RegisterArtowrk struct {
 	*common.RegisterArtowrk
 }
 
-func (service *RegisterArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeServer) error {
-	ctx, cancel := context.WithCancel(stream.Context())
-	defer cancel()
+func (service *RegisterArtowrk) HealthCheck(stream pb.RegisterArtowrk_HealthCheckServer) error {
+	ctx := stream.Context()
 
-	errCh := make(chan error)
-	reqCh := make(chan *pb.HandshakeRequest)
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return err
+	}
+	defer task.Cancel()
 
 	go func() {
-		defer cancel()
+		defer task.Cancel()
+
 		for {
-			req, err := stream.Recv()
+			_, err := stream.Recv()
 			if err != nil {
-				errCh <- err
+				if err == io.EOF {
+					log.WithContext(ctx).Debug("Stream closed by peer")
+				}
+
+				switch status.Code(err) {
+				case codes.Canceled, codes.Unavailable:
+					log.WithContext(ctx).WithError(err).Debug("Stream closed")
+				default:
+					log.WithContext(ctx).WithError(err).Error("Stream closed")
+				}
 				return
 			}
-			reqCh <- req
 		}
 	}()
 
-	select {
-	case err := <-errCh:
-		if err == io.EOF {
-			return nil
-		}
-		return errors.Errorf("failed to receive Handshake request: %w", err)
-	case req := <-reqCh:
-		log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
-
-		task, err := service.Task(ctx)
-		if err != nil {
-			return err
-		}
-		defer task.Cancel()
-		go func() {
-			<-task.Done()
-			cancel()
-		}()
-
-		if err := task.HandshakeNode(ctx, req.NodeKey); err != nil {
-			return err
-		}
-
-		resp := &pb.HandshakeReply{}
-		if err := stream.Send(resp); err != nil {
-			return errors.Errorf("failed to send Handshake response: %w", err)
-		}
-		log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
-
-		<-ctx.Done()
-	}
+	<-task.Done()
 	return nil
+}
+
+func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.HandshakeRequest) (*pb.HandshakeReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
+
+	task := service.Task(req.ConnID)
+	if task == nil {
+		return nil, errors.Errorf("not found %q task", req.ConnID)
+	}
+
+	if err := task.HandshakeNode(ctx, req.NodeID); err != nil {
+		return nil, err
+	}
+
+	resp := &pb.HandshakeReply{}
+	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
+	return resp, nil
 }
 
 // Desc returns a description of the service.

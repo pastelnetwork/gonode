@@ -5,14 +5,18 @@ option go_package = "github.com/pastelnetwork/gonode/proto";
 package supernode;
 
 service RegisterArtowrk {
-    rpc Handshake(stream HandshakeRequest) returns (stream HandshakeReply);
+    rpc HealthCheck(stream Empty) returns (stream Empty);
+    
+    rpc Handshake(HandshakeRequest) returns (HandshakeReply);
 }
 
+message Empty {}
+
 message HandshakeRequest {
-    string node_key = 1;
+    string nodeID = 1;
+    string connID = 2;
 }
 message HandshakeReply {
-    string taskID = 1;
 }
 
 

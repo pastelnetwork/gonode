@@ -15,24 +15,30 @@ type RegisterArtowrk struct {
 	*artworkregister.Service
 }
 
-func (service *RegisterArtowrk) Task(ctx context.Context) (*artworkregister.Task, error) {
+func (service *RegisterArtowrk) ConnID(ctx context.Context) (string, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return nil, errors.New("not found metadata")
+		return "", errors.New("not found metadata")
 	}
 
-	mdVals := md.Get(proto.MetadataKeyTaskID)
+	mdVals := md.Get(proto.MetadataKeyConnID)
 	if len(mdVals) == 0 {
-		return nil, errors.Errorf("not found %q in metadata", proto.MetadataKeyTaskID)
+		return "", errors.Errorf("not found %q in metadata", proto.MetadataKeyConnID)
 	}
-	taskID := mdVals[0]
-	log.WithContext(ctx).WithField("taskID", taskID).Debugf("Metadata")
+	return mdVals[0], nil
+}
 
-	task := service.Service.Task(taskID)
+func (service *RegisterArtowrk) TaskFromMD(ctx context.Context) (*artworkregister.Task, error) {
+	connID, err := service.ConnID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	log.WithContext(ctx).WithField("connID", connID).Debugf("Metadata")
+
+	task := service.Task(connID)
 	if task == nil {
-		return nil, errors.Errorf("not found %q task", taskID)
+		return nil, errors.Errorf("not found %q task", connID)
 	}
-
 	return task, nil
 }
 

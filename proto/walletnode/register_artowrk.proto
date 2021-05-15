@@ -5,7 +5,9 @@ option go_package = "github.com/pastelnetwork/gonode/proto";
 package walletnode;
 
 service RegisterArtowrk {
-    rpc Handshake(stream HandshakeRequest) returns (stream HandshakeReply);
+    rpc HealthCheck(stream Empty) returns (stream Empty);
+    
+    rpc Handshake(HandshakeRequest) returns (HandshakeReply);
 
     rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
 
@@ -16,25 +18,27 @@ service RegisterArtowrk {
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
 }
 
+message Empty {}
+
 message HandshakeRequest {
     bool is_primary = 1;
 }
 message HandshakeReply {
-    string taskID = 1;
+    string connID = 1;
 }
 
 message AcceptedNodesRequest {
 }
 message AcceptedNodesReply {
     message Peer {
-        string node_key = 1;
+        string nodeID = 1;
     }
     repeated Peer peers = 1;
 }
 
 message ConnectToRequest {
-    string taskID = 1;
-    string node_key = 2;
+    string connID = 1;
+    string nodeID = 2;
 }
 message ConnectToReply {
 }

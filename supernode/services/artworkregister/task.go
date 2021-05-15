@@ -96,7 +96,7 @@ func (task *Task) AcceptedNodes(ctx context.Context) (node.SuperNodes, error) {
 }
 
 // HandshakeNode accepts secondary node
-func (task *Task) HandshakeNode(ctx context.Context, nodeKey string) error {
+func (task *Task) HandshakeNode(ctx context.Context, nodeID string) error {
 	ctx = task.context(ctx)
 
 	task.acceptMu.Lock()
@@ -106,17 +106,17 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeKey string) error {
 		return err
 	}
 
-	if node := task.nodes.FindByKey(nodeKey); node != nil {
-		return errors.Errorf("node %q is already registered", nodeKey)
+	if node := task.nodes.FindByKey(nodeID); node != nil {
+		return errors.Errorf("node %q is already registered", nodeID)
 	}
 
-	node, err := task.findNode(ctx, nodeKey)
+	node, err := task.findNode(ctx, nodeID)
 	if err != nil {
 		return err
 	}
 	task.nodes.Add(node)
 
-	log.WithContext(ctx).WithField("nodeKey", nodeKey).Debugf("Accept secondary node")
+	log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
 
 	if len(task.nodes) >= task.config.NumberConnectedNodes {
 		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedNodes))
@@ -125,7 +125,7 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeKey string) error {
 }
 
 // ConnectTo connects to primary node
-func (task *Task) ConnectTo(ctx context.Context, nodeTaskID, nodeKey string) error {
+func (task *Task) ConnectTo(ctx context.Context, nodeID, connID string) error {
 	ctx = task.context(ctx)
 
 	task.connectMu.Lock()
@@ -135,7 +135,7 @@ func (task *Task) ConnectTo(ctx context.Context, nodeTaskID, nodeKey string) err
 		return err
 	}
 
-	node, err := task.findNode(ctx, nodeKey)
+	node, err := task.findNode(ctx, nodeID)
 	if err != nil {
 		return err
 	}
@@ -158,8 +158,8 @@ func (task *Task) ConnectTo(ctx context.Context, nodeTaskID, nodeKey string) err
 		}
 	}()
 
-	client := conn.RegisterArtowrk(nodeTaskID)
-	if err := client.Handshake(ctx, task.config.PastelID); err != nil {
+	client := conn.RegisterArtowrk(task.config.PastelID, connID)
+	if err := client.Handshake(ctx); err != nil {
 		return err
 	}
 
@@ -167,14 +167,14 @@ func (task *Task) ConnectTo(ctx context.Context, nodeTaskID, nodeKey string) err
 	return nil
 }
 
-func (task *Task) findNode(ctx context.Context, nodeKey string) (*node.SuperNode, error) {
+func (task *Task) findNode(ctx context.Context, nodeID string) (*node.SuperNode, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, masterNode := range masterNodes {
-		if masterNode.ExtKey != nodeKey {
+		if masterNode.ExtKey != nodeID {
 			continue
 		}
 		node := &node.SuperNode{
@@ -185,7 +185,7 @@ func (task *Task) findNode(ctx context.Context, nodeKey string) (*node.SuperNode
 		return node, nil
 	}
 
-	return nil, errors.Errorf("node %q not found", nodeKey)
+	return nil, errors.Errorf("node %q not found", nodeID)
 }
 
 func (task *Task) requiredStatus(statusType state.StatusType) error {

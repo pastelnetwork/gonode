@@ -1,5 +1,5 @@
 package proto
 
 const (
-	MetadataKeyTaskID = "taskID"
+	MetadataKeyConnID = "connID"
 )

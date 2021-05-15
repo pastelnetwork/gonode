@@ -22,14 +22,14 @@ type Connection interface {
 
 // RegisterArtowrk contains methods for registering artwork.
 type RegisterArtowrk interface {
-	// TaskID returns the taskID received from the server during the handshake.
-	TaskID() (taskID string)
+	// ConnID returns the connID received from the server during the handshake.
+	ConnID() (connID string)
 	// Handshake sets up an initial connection with supernode, by telling connection id and supernode mode, primary or secondary.
 	Handshake(ctx context.Context, IsPrimary bool) (err error)
 	// AcceptedNodes requests information about connected secondary nodes.
 	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
-	ConnectTo(ctx context.Context, nodeKey, taskID string) error
+	ConnectTo(ctx context.Context, nodeKey, connID string) error
 	// SendImage uploads image to supernode.
 	SendImage(ctx context.Context, filename string) error
 }
