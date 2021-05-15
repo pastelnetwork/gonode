@@ -7,22 +7,21 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/random"
+	"github.com/pastelnetwork/gonode/proto"
+	"google.golang.org/grpc/metadata"
 )
 
 type (
-	// private type used to define context keys
+	// private type used to define context keys.
 	ctxKey int
 )
 
 const (
-	// AddressKey is the ip address of the connected peer
-	AddressKey ctxKey = iota
+	// RequestIDKey is unique numeric for every request.
+	RequestIDKey ctxKey = iota
 
-	// MethodKey is proto rpc
-	MethodKey
-
-	// RequestIDKey is unique numeric for every request
-	RequestIDKey
+	// ConnIDKey is unique numeric for every regiration process.
+	ConnIDKey
 )
 
 func init() {
@@ -30,14 +29,8 @@ func init() {
 		fields["reqID"] = ctxValue
 		return msg, fields
 	}))
-
-	log.AddHook(hooks.NewContextHook(AddressKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
-		fields["address"] = ctxValue
-		return msg, fields
-	}))
-
-	log.AddHook(hooks.NewContextHook(MethodKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
-		fields["method"] = ctxValue
+	log.AddHook(hooks.NewContextHook(ConnIDKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
+		fields["ConnID"] = ctxValue
 		return msg, fields
 	}))
 }
@@ -45,8 +38,19 @@ func init() {
 // WithRequestID returns a context with RequestID value.
 func WithRequestID(ctx context.Context) context.Context {
 	reqID, _ := random.String(8, random.Base62Chars)
-	ctx = context.WithValue(ctx, RequestIDKey, reqID)
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("server-%s", reqID))
+	return log.ContextWithPrefix(ctx, fmt.Sprintf("server-%s", reqID))
+}
 
-	return ctx
+// WithConnID returns a context with ConnID value.
+func WithConnID(ctx context.Context) context.Context {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if !ok {
+		return ctx
+	}
+
+	mdVals := md.Get(proto.MetadataKeyConnID)
+	if len(mdVals) == 0 {
+		return ctx
+	}
+	return context.WithValue(ctx, ConnIDKey, mdVals[0])
 }

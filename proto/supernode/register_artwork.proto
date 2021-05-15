@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/proto";
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
 
 package supernode;
 
 service RegisterArtowrk {
-    rpc HealthCheck(stream Empty) returns (stream Empty);
+    rpc Health(stream Empty) returns (stream Empty);
     
     rpc Handshake(HandshakeRequest) returns (HandshakeReply);
 }

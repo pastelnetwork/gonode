@@ -16,6 +16,7 @@ import (
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -27,7 +28,8 @@ type RegisterArtowrk struct {
 	workDir string
 }
 
-func (service *RegisterArtowrk) HealthCheck(stream pb.RegisterArtowrk_HealthCheckServer) error {
+// Health implements supernode.RegisterArtowrkServer.Health()
+func (service *RegisterArtowrk) Health(stream pb.RegisterArtowrk_HealthServer) error {
 	ctx := stream.Context()
 
 	task, err := service.TaskFromMD(ctx)
@@ -36,22 +38,14 @@ func (service *RegisterArtowrk) HealthCheck(stream pb.RegisterArtowrk_HealthChec
 	}
 	defer task.Cancel()
 
+	peer, _ := peer.FromContext(ctx)
+	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Helath stream")
+	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Helath stream closed")
+
 	go func() {
 		defer task.Cancel()
-
 		for {
-			_, err := stream.Recv()
-			if err != nil {
-				if err == io.EOF {
-					log.WithContext(ctx).Debug("Stream closed by peer")
-				}
-
-				switch status.Code(err) {
-				case codes.Canceled, codes.Unavailable:
-					log.WithContext(ctx).WithError(err).Debug("Stream closed")
-				default:
-					log.WithContext(ctx).WithError(err).Error("Stream closed")
-				}
+			if _, err := stream.Recv(); err != nil {
 				return
 			}
 		}
@@ -61,6 +55,7 @@ func (service *RegisterArtowrk) HealthCheck(stream pb.RegisterArtowrk_HealthChec
 	return nil
 }
 
+// Handshake implements supernode.RegisterArtowrkServer.Handshake()
 func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.HandshakeRequest) (*pb.HandshakeReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
@@ -76,6 +71,7 @@ func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.Handshake
 	return resp, nil
 }
 
+// AcceptedNodes implements supernode.RegisterArtowrkServer.AcceptedNodes()
 func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
 	task, err := service.TaskFromMD(ctx)
@@ -102,6 +98,7 @@ func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.Accep
 	return resp, nil
 }
 
+// ConnectTo implements supernode.RegisterArtowrkServer.ConnectTo()
 func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 	task, err := service.TaskFromMD(ctx)
@@ -118,6 +115,7 @@ func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
+// SendImage implements supernode.RegisterArtowrkServer.SendImage()
 func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageServer) error {
 	ctx := stream.Context()
 
@@ -140,7 +138,7 @@ func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 	// }()
 
 	defer file.Close()
-	log.WithContext(ctx).Debugf("Created temp file %a for uploading image", filename)
+	log.WithContext(ctx).Debugf("Created temp file %q for uploading image", filename)
 
 	wr := bufio.NewWriter(file)
 

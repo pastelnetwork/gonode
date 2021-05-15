@@ -4,10 +4,8 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
 )
 
@@ -20,24 +18,9 @@ func UnaryInterceptor() grpc.ServerOption {
 		})
 
 		ctx = WithRequestID(ctx)
-		peer, _ := peer.FromContext(ctx)
+		ctx = WithConnID(ctx)
 
-		log.WithContext(ctx).
-			WithField("address", peer.Addr.String()).
-			WithField("method", info.FullMethod).
-			Debugf("Start unary")
-
-		defer log.WithContext(ctx).Debugf("End unary")
-
-		resp, err = handler(ctx, req)
-		if err != nil && !errors.IsContextCanceled(err) {
-			if errors.IsContextCanceled(err) {
-				log.WithContext(ctx).Debug("Closed by peer")
-			} else {
-				log.WithContext(ctx).WithError(err).Warn("Unary error")
-			}
-		}
-		return resp, err
+		return handler(ctx, req)
 	})
 }
 
@@ -49,28 +32,14 @@ func StreamInterceptor() grpc.ServerOption {
 			err = status.Error(codes.Internal, "internal server error")
 		})
 
-		ctx := WithRequestID(ss.Context())
+		ctx := ss.Context()
+		ctx = WithRequestID(ctx)
+		ctx = WithConnID(ctx)
+
 		ss = &WrappedServerStream{
 			ServerStream: ss,
 			ctx:          ctx,
 		}
-		peer, _ := peer.FromContext(ctx)
-
-		log.WithContext(ctx).
-			WithField("address", peer.Addr.String()).
-			WithField("method", info.FullMethod).
-			Debugf("Start stream")
-
-		defer log.WithContext(ctx).Debugf("End stream")
-
-		err = handler(srv, ss)
-		if err != nil {
-			if errors.IsContextCanceled(err) {
-				log.WithContext(ctx).Debug("Closed by peer")
-			} else {
-				log.WithContext(ctx).WithError(err).Warn("Stream error")
-			}
-		}
-		return err
+		return handler(srv, ss)
 	})
 }

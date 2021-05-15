@@ -42,7 +42,7 @@ func (task *Task) Cancel() {
 	case <-task.Done():
 		return
 	default:
-		fmt.Println("Task cancel", task.ID)
+		log.WithPrefix(fmt.Sprintf("%s-%s", logPrefix, task.ID)).Debug("Task canceled")
 		close(task.doneCh)
 	}
 }

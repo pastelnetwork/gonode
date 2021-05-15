@@ -2,7 +2,6 @@ package supernode
 
 import (
 	"context"
-	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -10,8 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/peer"
 )
 
 // RegisterArtowrk represents grpc service for registration artowrk.
@@ -21,7 +19,8 @@ type RegisterArtowrk struct {
 	*common.RegisterArtowrk
 }
 
-func (service *RegisterArtowrk) HealthCheck(stream pb.RegisterArtowrk_HealthCheckServer) error {
+// Health implements supernode.RegisterArtowrkServer.Health()
+func (service *RegisterArtowrk) Health(stream pb.RegisterArtowrk_HealthServer) error {
 	ctx := stream.Context()
 
 	task, err := service.TaskFromMD(ctx)
@@ -30,22 +29,14 @@ func (service *RegisterArtowrk) HealthCheck(stream pb.RegisterArtowrk_HealthChec
 	}
 	defer task.Cancel()
 
+	peer, _ := peer.FromContext(ctx)
+	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Helath stream")
+	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Helath stream closed")
+
 	go func() {
 		defer task.Cancel()
-
 		for {
-			_, err := stream.Recv()
-			if err != nil {
-				if err == io.EOF {
-					log.WithContext(ctx).Debug("Stream closed by peer")
-				}
-
-				switch status.Code(err) {
-				case codes.Canceled, codes.Unavailable:
-					log.WithContext(ctx).WithError(err).Debug("Stream closed")
-				default:
-					log.WithContext(ctx).WithError(err).Error("Stream closed")
-				}
+			if _, err := stream.Recv(); err != nil {
 				return
 			}
 		}
@@ -55,6 +46,7 @@ func (service *RegisterArtowrk) HealthCheck(stream pb.RegisterArtowrk_HealthChec
 	return nil
 }
 
+// Handshake implements supernode.RegisterArtowrkServer.Handshake()
 func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.HandshakeRequest) (*pb.HandshakeReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 

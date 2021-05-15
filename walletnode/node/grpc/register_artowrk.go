@@ -11,9 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/grpc/status"
 )
 
 const (
@@ -35,27 +33,16 @@ func (service *registerArtowrk) healthCheck(ctx context.Context) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDConnID(ctx)
 
-	stream, err := service.client.HealthCheck(ctx)
+	stream, err := service.client.Health(ctx)
 	if err != nil {
-		return errors.New("failed to open HealthCheck stream")
+		return errors.New("failed to open Health stream")
 	}
 
 	go func() {
 		defer service.conn.Close()
 
 		for {
-			_, err := stream.Recv()
-			if err != nil {
-				if err == io.EOF {
-					log.WithContext(ctx).Debug("Stream closed by peer")
-				}
-
-				switch status.Code(err) {
-				case codes.Canceled, codes.Unavailable:
-					log.WithContext(ctx).WithError(err).Debug("Stream closed")
-				default:
-					log.WithContext(ctx).WithError(err).Error("Stream closed")
-				}
+			if _, err := stream.Recv(); err != nil {
 				return
 			}
 		}

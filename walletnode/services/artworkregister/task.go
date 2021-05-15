@@ -77,6 +77,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range nodes {
+		node := node
 		group.Go(func() (err error) {
 			defer cancel()
 
