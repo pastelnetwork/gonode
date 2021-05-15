@@ -17,7 +17,7 @@ const GcmTagSize = 16
 
 const (
 	// Overflow length n in bytes, never encrypt more than 2^(n*8) frames (in each direction).
-	overflowLenAES256 = 5
+	OverflowLenAES256 = 5
 )
 
 type Cipher struct {
@@ -36,8 +36,8 @@ func NewCipher() *Cipher {
 	return &Cipher{
 		pub:        pub,
 		prv:        prv,
-		outCounter: NewCounter(overflowLenAES256),
-		inCounter:  NewCounter(overflowLenAES256),
+		outCounter: NewCounter(OverflowLenAES256),
+		inCounter:  NewCounter(OverflowLenAES256),
 	}
 }
 
@@ -63,16 +63,16 @@ func (c *Cipher) SetSharedAndConfigureAES(rawPubKey []byte) error {
 	c.shared = c.Shared(pubKey)
 	h := sha3.New256()
 	if _, err := h.Write(c.shared[:]); err != nil {
-		return errors.Errorf("unable to write bytes %w", err)
+		return err
 	}
 	hash := h.Sum(nil)
 	block, err := aes.NewCipher(hash)
 	if err != nil {
-		return errors.Errorf("unable to create a new cipher block, %w", err)
+		return err
 	}
 	a, err := cipher.NewGCM(block)
 	if err != nil {
-		return errors.Errorf("could not create New GCM, %w", err)
+		return err
 	}
 	c.aead = a
 	return nil
@@ -113,7 +113,7 @@ func (c *Cipher) Decrypt(dst, ciphertext []byte) ([]byte, error) {
 	// If dst is equal to ciphertext[:0], ciphertext storage is reused.
 	plaintext, err := c.aead.Open(dst, seq, ciphertext, nil)
 	if err != nil {
-		return nil, errors.Errorf("could not decrypt the ciphertext, %w", err)
+		return nil, err
 	}
 	c.inCounter.Inc()
 	return plaintext, nil

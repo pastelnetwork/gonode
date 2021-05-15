@@ -1,8 +1,6 @@
 package net
 
-import (
-	"github.com/pastelnetwork/gonode/common/crypto"
-)
+import "github.com/pastelnetwork/gonode/common/crypto"
 
 type handshakerMock struct {
 	clientCipher *crypto.Cipher

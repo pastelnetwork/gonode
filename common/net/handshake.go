@@ -10,77 +10,92 @@ import (
 
 const okResponse = "ok"
 
-func ServerHandshake(c net.Conn, h Handshaker) (Cipher, error) {
-	reader := bufio.NewReader(c)
+type handShake struct {
+	Conn 				net.Conn
+	HandshakeService 	Handshaker
+}
+
+type HandShake interface {
+	ServerHandshake() (Cipher, error)
+	ClientHandshake() (Cipher, error)
+}
+
+
+func (service *handShake) ServerHandshake() (Cipher, error) {
+	reader := bufio.NewReader(service.Conn)
 	_, _, err := reader.ReadLine()
-	if err != nil {
-		return nil, errors.Errorf("unable to return a line, %w", err)
-	}
-	ok, err := h.ServerHello()
 	if err != nil {
 		return nil, err
 	}
-	if _, err := c.Write(prepareLine(ok)); err != nil {
-		return nil, errors.Errorf("unable to write a data to a connection, %w", err)
+	ok, err := service.HandshakeService.ServerHello()
+	if err != nil {
+		return nil, err
+	}
+	if _, err := service.Conn.Write(prepareLine(ok)); err != nil {
+		return nil, err
 	}
 	clientPublicKey := make([]byte, x448.Size)
 	_, err = reader.Read(clientPublicKey)
 	if err != nil {
-		return nil, errors.Errorf("unable to read a data, %w", err)
+		return nil, err
 	}
-	cipher, err := h.ServerKeyVerify(clientPublicKey)
+	cipher, err := service.HandshakeService.ServerKeyVerify(clientPublicKey)
 	if err != nil {
 		return nil, err
 	}
-	serverKey, err := h.ServerKeyExchange()
+	serverKey, err := service.HandshakeService.ServerKeyExchange()
 	if err != nil {
 		return nil, err
 	}
-	if _, err := c.Write(prepareLine(serverKey)); err != nil {
-		return nil, errors.Errorf("unable to write a data to a connection, %w", err)
+	if _, err := service.Conn.Write(prepareLine(serverKey)); err != nil {
+		return nil, err
 	}
 	return cipher, nil
 }
 
-func ClientHandshake(c net.Conn, h Handshaker) (Cipher, error) {
-	cl, err := h.ClientHello()
+func (service *handShake) ClientHandshake() (Cipher, error) {
+	cl, err := service.HandshakeService.ClientHello()
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.Write(prepareLine(cl))
+	_, err = service.Conn.Write(prepareLine(cl))
 	if err != nil {
-		return nil, errors.Errorf("could not to write a data to a connection, %w", err)
+		return nil, err
 	}
 
-	reader := bufio.NewReader(c)
+	reader := bufio.NewReader(service.Conn)
 	serverOK, _, err := reader.ReadLine()
 	if err != nil {
-		return nil, errors.Errorf("unable to return a line, %w", err)
+		return nil, err
 	}
 	if string(serverOK) != okResponse {
 		return nil, errors.Errorf("not expected server response")
 	}
-	clientsKey, err := h.ClientKeyExchange()
+	clientsKey, err := service.HandshakeService.ClientKeyExchange()
 	if err != nil {
 		return nil, err
 	}
-	_, err = c.Write(clientsKey)
+	_, err = service.Conn.Write(clientsKey)
 	if err != nil {
-		return nil, errors.Errorf("unable to write a data to a connection, %w", err)
+		return nil, err
 	}
 
 	serverPublicKey := make([]byte, x448.Size)
 	_, err = reader.Read(serverPublicKey)
 	if err != nil {
-		return nil, errors.Errorf("unable to read a data into serverPublicKey, %w", err)
+		return nil, err
 	}
-	cipher, err := h.ClientKeyVerify(serverPublicKey)
+	cipher, err := service.HandshakeService.ClientKeyVerify(serverPublicKey)
 	if err != nil {
 		return nil, err
 	}
 	return cipher, nil
 }
 
-func prepareLine(r []byte) []byte {
-	return append(r, []byte("\n")...)
+
+func NewHandShake(conn net.Conn, h Handshaker) HandShake{
+	return &handShake {
+		Conn: conn,
+		HandshakeService: h,
+	}
 }

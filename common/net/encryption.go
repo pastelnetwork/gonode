@@ -1,5 +1,7 @@
 package net
 
+import "github.com/cloudflare/circl/dh/x448"
+
 type Handshaker interface {
 	ClientHello() ([]byte, error)           // returns artistID
 	ServerHello() ([]byte, error)           // returns OK
@@ -13,4 +15,7 @@ type Cipher interface {
 	Encrypt(dst, plaintext []byte) ([]byte, error)
 	MaxOverhead() int
 	Decrypt(dst, ciphertext []byte) ([]byte, error)
+	PubKey() x448.Key
+	Shared(pubKey x448.Key) (shared x448.Key)
+	SetSharedAndConfigureAES(rawPubKey []byte) error
 }

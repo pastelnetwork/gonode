@@ -13,14 +13,19 @@ const (
 )
 
 // Counter is a 96-bit, little-endian counter.
-type Counter struct {
+type counter struct {
 	value       [counterLen]byte
 	invalid     bool
 	overflowLen int
 }
 
+type Counter interface {
+	Value() ([]byte, error)
+	Inc()
+}
+
 // Value returns the current value of the counter as a byte slice.
-func (c *Counter) Value() ([]byte, error) {
+func (c *counter) Value() ([]byte, error) {
 	if c.invalid {
 		return nil, ErrInvalidCounter
 	}
@@ -28,7 +33,7 @@ func (c *Counter) Value() ([]byte, error) {
 }
 
 // Inc increments the counter and checks for overflow.
-func (c *Counter) Inc() {
+func (c *counter) Inc() {
 	// If the counter is already invalid, there is no need to increase it.
 	if c.invalid {
 		return
@@ -47,8 +52,9 @@ func (c *Counter) Inc() {
 
 // NewCounter returns a counter initialized to the starting sequence
 // number for the client/server side of a connection.
-func NewCounter(overflowLen int) (c Counter) {
+func NewCounter(overflowLen int) Counter {
+	c := new (counter)
 	c.overflowLen = overflowLen
 	c.value[counterLen-1] = 0x80
-	return
+	return c
 }

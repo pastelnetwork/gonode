@@ -51,17 +51,18 @@ type conn struct {
 // NewConn creates a new secure channel instance given the other party role and
 // handshaking result.
 func NewConn(c net.Conn, side core.Side, handshaker Handshaker) (net.Conn, error) {
+	handshake := NewHandShake(c, handshaker)
 	var cipher Cipher
 	var err error
 	if side == core.SideClient {
-		cipher, err = ClientHandshake(c, handshaker)
+		cipher, err = handshake.ClientHandshake()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("client key verification failed %s", err)
 		}
 	} else {
-		cipher, err = ServerHandshake(c, handshaker)
+		cipher, err = handshake.ServerHandshake()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("server key verification failed %s", err)
 		}
 	}
 
@@ -107,7 +108,7 @@ func (p *conn) Read(b []byte) (n int, err error) {
 			}
 			n, err = p.Conn.Read(p.protected[len(p.protected):min(cap(p.protected), len(p.protected)+recordDefaultLength)])
 			if err != nil {
-				return 0, errors.Errorf("could not read the data from connection, %w", err)
+				return 0, err
 			}
 			p.protected = p.protected[:len(p.protected)+n]
 			framedMsg, p.nextFrame, err = ParseFramedMsg(p.protected, recordLengthLimit)
