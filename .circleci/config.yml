@@ -121,8 +121,8 @@ jobs:
           package: "tools/pastel-api"
       - test:
           package: "proto"
-      # - test:
-      #     package: "legroast"
+      - test:
+          package: "legroast"
       # - test:
       #     package: "dupe-detection"
       # - test:
