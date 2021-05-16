@@ -139,8 +139,7 @@ func (dht *DHT) getExpirationTime(key []byte) time.Time {
 
 // Store stores data on the network. This will trigger an iterateStore message.
 // The base58 encoded identifier will be returned if the store is successful.
-func (dht *DHT) Store(data []byte) (id string, err error) {
-	key := dht.store.GetKey(data)
+func (dht *DHT) Store(data []byte, key []byte) (id string, err error) {
 	expiration := dht.getExpirationTime(key)
 	replication := time.Now().Add(dht.options.TReplicate)
 	dht.store.Store(key, data, replication, expiration, true)
@@ -619,7 +618,8 @@ func (dht *DHT) listen() {
 			case messageTypeStore:
 				data := msg.Data.(*queryDataStore)
 				dht.addNode(newNode(msg.Sender))
-				key := dht.store.GetKey(data.Data)
+				//TODO: Get pastel generated key
+				key := []byte("sample key")
 				expiration := dht.getExpirationTime(key)
 				replication := time.Now().Add(dht.options.TReplicate)
 				dht.store.Store(key, data.Data, replication, expiration, false)

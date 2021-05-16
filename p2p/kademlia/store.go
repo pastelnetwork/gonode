@@ -18,7 +18,7 @@ type Store interface {
 	Delete(key []byte)
 
 	// Init initializes the Store
-	Init()
+	Init() error
 
 	// GetAllKeysForReplication should return the keys of all data to be
 	// replicated across the network. Typically all data should be
@@ -27,7 +27,4 @@ type Store interface {
 
 	// ExpireKeys should expire all key/values due for expiration.
 	ExpireKeys()
-
-	// GetKey returns the key for data
-	GetKey(data []byte) []byte
 }
