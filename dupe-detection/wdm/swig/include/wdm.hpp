@@ -57,6 +57,18 @@ inline double wdm(std::vector<double> x,
     throw std::runtime_error("method not implemented.");
 }
 
+inline double wdm(double* x,
+                  int sizeX,
+                  double* y,
+                  int sizeY,
+                  std::string method)
+{
+    std::vector<double> xVector(x, x+sizeX);
+    std::vector<double> yVector(y, y+sizeY);
+
+    return wdm(xVector, yVector, method);
+}
+
 
 //! Independence test
 //!

@@ -18,4 +18,10 @@ namespace wdm {
                   std::string method,
                   std::vector<double> weights = std::vector<double>(),
                   bool remove_missing = true);
+
+   double wdm(double* x,
+                  int sizeX,
+                  double* y,
+                  int sizeY,
+                  std::string method);
 }
