@@ -31,15 +31,6 @@ func (ss *SQLiteStore) GetAllKeysForReplication() [][]byte {
 
 // ExpireKeys should expire all key/values due for expiration.
 func (ss *SQLiteStore) ExpireKeys() {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
-	for k, v := range ms.expireMap {
-		if time.Now().After(v) {
-			delete(ms.replicateMap, k)
-			delete(ms.expireMap, k)
-			delete(ms.data, k)
-		}
-	}
 }
 
 // Init initializes the Store
@@ -50,14 +41,10 @@ func (ss *SQLiteStore) Init() error {
 	}
 	defer db.Close()
 
-	_, err = db.Exec(
-		"CREATE TABLE IF NOT EXISTS `keys` (
-        `uid` INTEGER PRIMARY KEY AUTOINCREMENT,
-        `key` VARCHAR(64) NULL,
-        `replication` DATE NULL
-        `expiration` DATE NULL"
-    );
-   	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)  
+	defer cancel()
+	
+	if err := migrate(ctx, ss.db); err != nil {
 		return err
 	}
 
@@ -65,17 +52,21 @@ func (ss *SQLiteStore) Init() error {
 	return nil
 }
 
-
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
 func (ss *SQLiteStore) Store(key []byte, data []byte, replication time.Time, expiration time.Time, publisher bool) error {
-	return nil
+	return store(ss.db, key, replication, expiration)
 }
 
 
 // Retrieve will return the local key/value if it exists
 func (ss *SQLiteStore) Retrieve(key []byte) (data []byte, found bool) {
-	return []byte, false
+	data, err := retrieve(ss.db, key)
+	if err != nil {
+		return data, false
+	}
+
+	return data, true
 }
 
 // Delete deletes a key/value pair from the MemoryStore
