@@ -103,38 +103,52 @@ func TestStateLatest(t *testing.T) {
 func TestStateSubscribe(t *testing.T) {
 	t.Parallel()
 
-	testCases := []*Status{
-		newTestStatus("2020-01-02 00:00:00", StatusTaskStarted, false),
-		newTestStatus("2020-01-02 00:00:05", StatusConnected, false),
-		newTestStatus("2020-01-02 00:00:10", StatusTaskCompleted, true),
-	}
-
-	t.Run("group", func(t *testing.T) {
-		t.Parallel()
-
-		states := &State{
-			statuses: []*Status{
+	testCases := []struct {
+		state    *State
+		update   *Status
+		expected []*Status
+	}{
+		{
+			state: &State{
+				statuses: []*Status{
+					newTestStatus("2020-01-02 00:00:00", StatusTaskStarted, false),
+					newTestStatus("2020-01-02 00:00:05", StatusConnected, false),
+				},
+			},
+			update: newTestStatus("2020-01-02 00:00:10", StatusTaskCompleted, true),
+			expected: []*Status{
 				newTestStatus("2020-01-02 00:00:00", StatusTaskStarted, false),
 				newTestStatus("2020-01-02 00:00:05", StatusConnected, false),
 				newTestStatus("2020-01-02 00:00:10", StatusTaskCompleted, true),
 			},
-		}
+		},
+	}
 
-		sub, err := states.Subscribe()
-		assert.NoError(t, err)
+	for i, testCase := range testCases {
+		testCase := testCase
 
-		for i, testCase := range testCases {
-			testCase := testCase
+		t.Run(fmt.Sprintf("test-case:%d", i), func(t *testing.T) {
+			t.Parallel()
 
-			//no need run in parallel as only check status value
-			t.Run(fmt.Sprintf("test-case:%d", i), func(t *testing.T) {
+			sub, err := testCase.state.Subscribe()
+			assert.NoError(t, err)
 
-				status := <-sub.statusCh
-				assert.Equal(t, testCase, status)
-			})
-		}
-	})
+			testCase.state.Update(context.Background(), testCase.update)
 
+			var statuses []*Status
+			for {
+				select {
+				case status := <-sub.statusCh:
+					statuses = append(statuses, status)
+					continue
+				default:
+				}
+				break
+			}
+
+			assert.Equal(t, testCase.expected, statuses)
+		})
+	}
 }
 
 func TestStateUpdate(t *testing.T) {
