@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"math/rand"
 	"time"
@@ -13,13 +14,21 @@ import (
 )
 
 func main() {
+	rootDirPtr := flag.String("rootDir", "", "a path to the directory with the test corpus of images.")
+	numberOfImagesToValidate := flag.Int("imageCount", 0, "limits the number of dupes and original images to validate.")
+	flag.Parse()
+
 	defer pruntime.PrintExecutionTime(time.Now())
 
 	defer profile.Start(profile.ProfilePath(".")).Stop()
 
 	rand.Seed(time.Now().UnixNano())
 
-	if _, err := auprc.MeasureAUPRC(dupedetection.NewComputeConfig()); err != nil {
+	config := dupedetection.NewComputeConfig()
+	config.RootDir = *rootDirPtr
+	config.NumberOfImagesToValidate = *numberOfImagesToValidate
+
+	if _, err := auprc.MeasureAUPRC(config); err != nil {
 		log.Printf(errors.ErrorStack(err))
 		panic(err)
 	}

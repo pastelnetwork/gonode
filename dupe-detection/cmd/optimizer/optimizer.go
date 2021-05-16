@@ -1,18 +1,16 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
-	"strings"
 	"time"
 
 	"github.com/c-bata/goptuna"
-	"github.com/c-bata/goptuna/cmaes"
-	"github.com/gitchander/permutation"
-	combinations "github.com/mxschmitt/golang-combinations"
 	"gorm.io/driver/mysql"
 
+	"github.com/c-bata/goptuna/cmaes"
 	"github.com/c-bata/goptuna/rdb.v2"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -22,22 +20,42 @@ import (
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 )
 
-const EvaluateNumberOfTimes = 100
+var evaluateNumberOfTimes = 500
+var rootDir = ""
+var numberOfImagesToValidate = 0
 
 // objective defines the objective of the study - find out the best aurpc value
 func objective(trial goptuna.Trial) (float64, error) {
 	var err error
 	// Define the search space via Suggest APIs.
 	config := dupedetection.NewComputeConfig()
-	config.PearsonDupeThreshold, err = trial.SuggestFloat("Pearson", 0.5, 0.99999)
+
+	config.RootDir = rootDir
+	err = trial.SetUserAttr("RootDir", config.RootDir)
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	config.SpearmanDupeThreshold, err = trial.SuggestFloat("Spearman", 0.5, 0.99999)
+
+	config.NumberOfImagesToValidate = numberOfImagesToValidate
+	err = trial.SetUserAttr("MaxImageCountToEvaluate", fmt.Sprintf("%v", config.NumberOfImagesToValidate*2))
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	config.KendallDupeThreshold, _ = trial.SuggestFloat("Kendall", 0.5, 0.99999)
+
+	config.MIThreshold, err = trial.SuggestFloat("MIThreshold", 5.2, 5.4)
+	if err != nil {
+		return 0, errors.New(err)
+	}
+
+	config.PearsonDupeThreshold, err = trial.SuggestFloat("Pearson", 0.99, 0.99999)
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	config.SpearmanDupeThreshold, err = trial.SuggestFloat("Spearman", 0.75, 0.85)
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	config.KendallDupeThreshold, _ = trial.SuggestFloat("Kendall", 0.68, 0.72)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -45,11 +63,15 @@ func objective(trial goptuna.Trial) (float64, error) {
 	if err != nil {
 		return 0, errors.New(err)
 	}*/
-	config.RandomizedBlomqvistDupeThreshold, _ = trial.SuggestFloat("Blomqvist", 0.1, 0.99999)
+	config.HoeffdingDupeThreshold, _ = trial.SuggestFloat("Hoeffding", 0.2, 0.6)
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	config.HoeffdingDupeThreshold, _ = trial.SuggestFloat("HoeffdingD1", 0.1, 0.99999)
+	config.BlomqvistDupeThreshold, _ = trial.SuggestFloat("Blomqvist", 0.6, 0.8)
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	/*config.HoeffdingDupeThreshold, _ = trial.SuggestFloat("HoeffdingD1", 0.1, 0.99999)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -66,7 +88,7 @@ func objective(trial goptuna.Trial) (float64, error) {
 			fmt.Println(combination)
 			allOrderedCombinationsOfUnstableMethodsAsStrings = append(allOrderedCombinationsOfUnstableMethodsAsStrings, strings.Join(combination, " "))
 		}
-	}
+	}*/
 
 	/*correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allOrderedCombinationsOfUnstableMethodsAsStrings)-1, 1)
 	if err != nil {
@@ -78,7 +100,8 @@ func objective(trial goptuna.Trial) (float64, error) {
 		return 0, errors.New(err)
 	}*/
 
-	config.CorrelationMethodsOrder = "PearsonR SpearmanRho BootstrappedKendallTau BootstrappedBlomqvistBeta HoeffdingDRound1 HoeffdingDRound2"
+	//config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho BootstrappedKendallTau BootstrappedBlomqvistBeta HoeffdingDRound1 HoeffdingDRound2"
+	config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
 
 	err = trial.SetUserAttr("CorrelationMethodsOrder", config.CorrelationMethodsOrder)
 	if err != nil {
@@ -92,7 +115,7 @@ func objective(trial goptuna.Trial) (float64, error) {
 	return aurpc, nil
 }
 
-func runStudy() error {
+func runStudy(studyName string) error {
 	db, err := gorm.Open(mysql.Open("goptuna:password@tcp(localhost:3306)/goptuna?parseTime=true"), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
@@ -101,10 +124,13 @@ func runStudy() error {
 	}
 
 	storage := rdb.NewStorage(db)
+
+	// Creates new study or loads available
 	study, err := goptuna.CreateStudy(
-		"dupe-detection-aurpc",
+		studyName,
 		goptuna.StudyOptionStorage(storage),
 		goptuna.StudyOptionRelativeSampler(cmaes.NewSampler()),
+		//goptuna.StudyOptionSampler(tpe.NewSampler()),
 		goptuna.StudyOptionDirection(goptuna.StudyDirectionMaximize),
 		goptuna.StudyOptionLoadIfExists(true),
 	)
@@ -113,7 +139,7 @@ func runStudy() error {
 	}
 
 	// Evaluate objective function specified number of times
-	err = study.Optimize(objective, EvaluateNumberOfTimes)
+	err = study.Optimize(objective, evaluateNumberOfTimes)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -135,9 +161,19 @@ func runStudy() error {
 }
 
 func main() {
+	rootDirPtr := flag.String("rootDir", "", "a path to the directory with the test corpus of images.")
+	goptunaStudyNamePtr := flag.String("studyName", "dupe-detection-aurpc", "a name of the Goptuna study to create or continue available.")
+	numberOfImagesToValidatePtr := flag.Int("imageCount", 0, "limits the number of dupes and original images to validate.")
+	evaluateNumberOfTimesPtr := flag.Int("runCount", 500, "defines the number of times goptuna will evaluate optimization objective.")
+	flag.Parse()
+
 	rand.Seed(time.Now().UnixNano())
 
-	if err := runStudy(); err != nil {
+	rootDir = *rootDirPtr
+	numberOfImagesToValidate = *numberOfImagesToValidatePtr
+	evaluateNumberOfTimes = *evaluateNumberOfTimesPtr
+
+	if err := runStudy(*goptunaStudyNamePtr); err != nil {
 		log.Printf(errors.ErrorStack(err))
 		panic(err)
 	}

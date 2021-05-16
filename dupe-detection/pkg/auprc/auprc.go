@@ -168,7 +168,7 @@ func checkIfFilePathIsAValidImage(filePath string) error {
 	return errors.New("Image header is not supported.")
 }
 
-func getAllValidImageFilePathsInFolder(artFolderPath string) ([]string, error) {
+func getAllValidImageFilePathsInFolder(artFolderPath string, imageMaxCount int) ([]string, error) {
 	jpgMatches, err := filepath.Glob(filepath.Join(artFolderPath, "*.jpg"))
 	if err != nil {
 		return nil, errors.New(err)
@@ -201,6 +201,11 @@ func getAllValidImageFilePathsInFolder(artFolderPath string) ([]string, error) {
 			results = append(results, match)
 		}
 	}
+
+	if imageMaxCount != 0 && len(results) > imageMaxCount {
+		return results[:imageMaxCount], nil
+	}
+
 	return results, nil
 }
 
@@ -274,7 +279,7 @@ func addImageFingerprintsToDupeDetectionDatabase(imageFilePath string) error {
 }
 
 func addAllImagesInFolderToImageFingerprintDatabase(artFolderPath string) error {
-	validImageFilePaths, err := getAllValidImageFilePathsInFolder(artFolderPath)
+	validImageFilePaths, err := getAllValidImageFilePathsInFolder(artFolderPath, 0)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -369,15 +374,10 @@ func getImageDeepLearningFeaturesCombinedVectorForSingleImage(artImageFilePath s
 	return combinedImageFingerprintVector, err
 }
 
-func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, config dupedetection.ComputeConfig) (int, error) {
+func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, finalCombinedImageFingerprintArray [][]float64, config dupedetection.ComputeConfig) (int, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	fmt.Printf("\nChecking if candidate image is a likely duplicate of a previously registered artwork:")
-	fmt.Printf("\nRetrieving image fingerprints of previously registered images from local database...")
 
-	finalCombinedImageFingerprintArray, err := getAllImageFingerprintsFromDupeDetectionDatabaseAsArray()
-	if err != nil {
-		return 0, errors.New(err)
-	}
 	numberOfPreviouslyRegisteredImagesToCompare := len(finalCombinedImageFingerprintArray)
 	lengthOfEachImageFingerprintVector := len(finalCombinedImageFingerprintArray[0])
 	fmt.Printf("\nComparing candidate image to the fingerprints of %v previously registered images. Each fingerprint consists of %v numbers.", numberOfPreviouslyRegisteredImagesToCompare, lengthOfEachImageFingerprintVector)
@@ -399,13 +399,11 @@ func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, config du
 func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
-	rootPastelFolderPath := ""
-
-	miscMasternodeFilesFolderPath := filepath.Join(rootPastelFolderPath, "misc_masternode_files")
-	dupeDetectionImageFingerprintDatabaseFilePath = filepath.Join(rootPastelFolderPath, "dupe_detection_image_fingerprint_database.sqlite")
-	pathToAllRegisteredWorksForDupeDetection := filepath.Join(rootPastelFolderPath, "Animecoin_All_Finished_Works")
-	dupeDetectionTestImagesBaseFolderPath := filepath.Join(rootPastelFolderPath, "dupe_detector_test_images")
-	nonDupeTestImagesBaseFolderPath := filepath.Join(rootPastelFolderPath, "non_duplicate_test_images")
+	miscMasternodeFilesFolderPath := filepath.Join(config.RootDir, "misc_masternode_files")
+	dupeDetectionImageFingerprintDatabaseFilePath = filepath.Join(config.RootDir, "dupe_detection_image_fingerprint_database.sqlite")
+	pathToAllRegisteredWorksForDupeDetection := filepath.Join(config.RootDir, "allRegisteredWorks")
+	dupeDetectionTestImagesBaseFolderPath := filepath.Join(config.RootDir, "dupes")
+	nonDupeTestImagesBaseFolderPath := filepath.Join(config.RootDir, "originals")
 
 	if _, err := os.Stat(miscMasternodeFilesFolderPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(miscMasternodeFilesFolderPath, 0770); err != nil {
@@ -425,8 +423,15 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 		fmt.Printf("\nFound existing image fingerprint database.")
 	}
 
+	fmt.Printf("\nRetrieving image fingerprints of previously registered images from local database...")
+
+	finalCombinedImageFingerprintArray, err := getAllImageFingerprintsFromDupeDetectionDatabaseAsArray()
+	if err != nil {
+		return 0, errors.New(err)
+	}
+
 	fmt.Printf("\n\nNow testing duplicate-detection scheme on known near-duplicate images:")
-	nearDuplicates, err := getAllValidImageFilePathsInFolder(dupeDetectionTestImagesBaseFolderPath)
+	nearDuplicates, err := getAllValidImageFilePathsInFolder(dupeDetectionTestImagesBaseFolderPath, config.NumberOfImagesToValidate)
 	if err != nil {
 		if err != nil {
 			return 0, errors.New(err)
@@ -437,7 +442,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	for _, nearDupeFilePath := range nearDuplicates {
 		fmt.Printf("\n\n________________________________________________________________________________________________________________\n\n")
 		fmt.Printf("\nCurrent Near Duplicate Image: %v", nearDupeFilePath)
-		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nearDupeFilePath, config)
+		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nearDupeFilePath, finalCombinedImageFingerprintArray, config)
 		if err != nil {
 			return 0, errors.New(err)
 		}
@@ -449,7 +454,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", float32(dupeCounter)/float32(len(nearDuplicates))*100.0, len(nearDuplicates))
 
 	fmt.Printf("\n\nNow testing duplicate-detection scheme on known non-duplicate images:")
-	nonDuplicates, err := getAllValidImageFilePathsInFolder(nonDupeTestImagesBaseFolderPath)
+	nonDuplicates, err := getAllValidImageFilePathsInFolder(nonDupeTestImagesBaseFolderPath, config.NumberOfImagesToValidate)
 	if err != nil {
 		if err != nil {
 			return 0, errors.New(err)
@@ -459,7 +464,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	for _, nonDupeFilePath := range nonDuplicates {
 		fmt.Printf("\n\n________________________________________________________________________________________________________________\n\n")
 		fmt.Printf("\nCurrent Non-Duplicate Test Image: %v", nonDupeFilePath)
-		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nonDupeFilePath, config)
+		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nonDupeFilePath, finalCombinedImageFingerprintArray, config)
 		if err != nil {
 			return 0, errors.New(err)
 		}
@@ -478,6 +483,10 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	fmt.Printf("\n\n\n_______________________________Summary:_______________________________\n\n")
 	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", float32(dupeCounter)/float32(len(nearDuplicates))*100.0, len(nearDuplicates))
 	fmt.Printf("\nAccuracy Percentage in Detecting Non-Duplicate Images: %.2f %% from totally %v images\n", float32(nondupeCounter)/float32(len(nonDuplicates))*100.0, len(nonDuplicates))
+
+	if len(predictedY) == 0 {
+		return 0, nil
+	}
 
 	actualY := make([]float64, len(predictedY))
 	for i := range actualY {
