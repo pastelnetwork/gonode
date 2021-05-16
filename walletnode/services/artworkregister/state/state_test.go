@@ -1,6 +1,8 @@
 package state
 
 import (
+	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -9,7 +11,7 @@ import (
 
 const timeTestLayout = "2006-01-02 15:04:05"
 
-func newTestState() *State {
+func newTestStates() *State {
 	timeList := createTestTimeList()
 
 	return &State{
@@ -68,17 +70,28 @@ func TestStatesAll(t *testing.T) {
 		},
 	}
 
-	states := newTestState().All()
+	t.Run("group", func(t *testing.T) {
+		t.Parallel()
 
-	for _, testCase := range testCases {
+		states := newTestStates().All()
 
-		testCase := testCase
-		state := states[testCase.key]
+		for _, testCase := range testCases {
 
-		assert.Equal(t, testCase.expectedCreatedAt, state.CreatedAt)
-		assert.Equal(t, testCase.exptectedType, state.Type)
-		assert.Equal(t, testCase.expectedIsFinal, state.isFinal)
-	}
+			testCase := testCase
+
+			t.Run(fmt.Sprintf("created:%v/type:%v/final:%t", testCase.expectedCreatedAt, testCase.exptectedType, testCase.expectedIsFinal), func(t *testing.T) {
+				t.Parallel()
+
+				state := states[testCase.key]
+
+				assert.Equal(t, testCase.expectedCreatedAt, state.CreatedAt)
+				assert.Equal(t, testCase.exptectedType, state.Type)
+				assert.Equal(t, testCase.expectedIsFinal, state.isFinal)
+			})
+
+		}
+
+	})
 
 }
 
@@ -92,7 +105,7 @@ func TestStatesLatest(t *testing.T) {
 		status *Status
 	}{
 		{
-			state: newTestState(),
+			state: newTestStates(),
 			status: &Status{
 				CreatedAt: timeList[2],
 				Type:      StatusTaskCompleted,
@@ -104,11 +117,118 @@ func TestStatesLatest(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
-		testCase := testCase
-		latest := testCase.state.Latest()
+	t.Run("group", func(t *testing.T) {
+		t.Parallel()
 
-		assert.Equal(t, testCase.status, latest)
+		for _, testCase := range testCases {
+			testCase := testCase
+
+			t.Run(fmt.Sprintf("status:%v", testCase.status), func(t *testing.T) {
+				t.Parallel()
+
+				latest := testCase.state.Latest()
+
+				assert.Equal(t, testCase.status, latest)
+			})
+		}
+
+	})
+
+}
+
+func TestStateSubscribe(t *testing.T) {
+	t.Parallel()
+
+	timeList := createTestTimeList()
+
+	testCases := []struct {
+		expectedCreatedAt time.Time
+		exptectedType     StatusType
+		expectedIsFinal   bool
+	}{
+		{
+			expectedCreatedAt: timeList[0],
+			exptectedType:     StatusTaskStarted,
+			expectedIsFinal:   false,
+		}, {
+			expectedCreatedAt: timeList[1],
+			exptectedType:     StatusConnected,
+			expectedIsFinal:   false,
+		}, {
+			expectedCreatedAt: timeList[2],
+			exptectedType:     StatusTaskCompleted,
+			expectedIsFinal:   true,
+		},
 	}
 
+	t.Run("group", func(t *testing.T) {
+		t.Parallel()
+
+		states := newTestStates()
+		sub, err := states.Subscribe()
+
+		assert.NoError(t, err)
+
+		for _, testCase := range testCases {
+			testCase := testCase
+
+			//no need run in parallel as only check state value
+			t.Run(fmt.Sprintf("created:%v/type:%v/final/%t", testCase.expectedCreatedAt, testCase.exptectedType, testCase.expectedIsFinal), func(t *testing.T) {
+				state := <-sub.statusCh
+
+				assert.Equal(t, testCase.expectedCreatedAt, state.CreatedAt)
+				assert.Equal(t, testCase.exptectedType, state.Type)
+				assert.Equal(t, testCase.expectedIsFinal, state.isFinal)
+			})
+		}
+	})
+
+}
+
+func TestStateUpdate(t *testing.T) {
+	t.Parallel()
+
+	t1, t2 := time.Now(), time.Now().Add(time.Second*10)
+
+	testCases := []struct {
+		createdAt  time.Time
+		typeStatus StatusType
+		isFinal    bool
+	}{
+		{
+			createdAt:  t1,
+			typeStatus: StatusTicketRegistered,
+			isFinal:    false,
+		}, {
+			createdAt:  t2,
+			typeStatus: StatusTaskRejected,
+			isFinal:    true,
+		},
+	}
+
+	t.Run("group", func(t *testing.T) {
+		t.Parallel()
+
+		for _, testCase := range testCases {
+			testCase := testCase
+
+			t.Run(fmt.Sprintf("created:%v/type:%v/final/%t", testCase.createdAt, testCase.typeStatus, testCase.isFinal), func(t *testing.T) {
+				t.Parallel()
+
+				states := newTestStates()
+
+				states.Update(context.Background(), &Status{
+					CreatedAt: testCase.createdAt,
+					Type:      testCase.typeStatus,
+					isFinal:   testCase.isFinal,
+				})
+
+				lastState := states.statuses[len(states.statuses)-1]
+
+				assert.Equal(t, testCase.createdAt, lastState.CreatedAt)
+				assert.Equal(t, testCase.typeStatus, lastState.Type)
+				assert.Equal(t, testCase.isFinal, lastState.isFinal)
+			})
+		}
+	})
 }
