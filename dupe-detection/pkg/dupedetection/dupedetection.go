@@ -174,7 +174,7 @@ func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, 
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			//similarityScoreVectorPearsonAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "pearson", []float64{})
+			//similarityScoreVectorPearsonAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "pearson")
 			similarityScoreVectorPearsonAll[currentIndex], err = stats.Pearson(candidateImageFingerprint, currentFingerprint)
 			if err != nil {
 				return err
@@ -198,7 +198,7 @@ func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, 
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			//similarityScoreVectorSpearmanAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "spearman", []float64{})
+			//similarityScoreVectorSpearmanAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "spearman")
 			similarityScoreVectorSpearmanAll[currentIndex], err = Spearman2(candidateImageFingerprint, currentFingerprint)
 			if err != nil {
 				return err
@@ -222,7 +222,7 @@ func computeKendallForAllFingerprintPairs(candidateImageFingerprint []float64, f
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			similarityScoreVectorKendallAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "kendall", []float64{})
+			similarityScoreVectorKendallAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "kendall")
 			if err != nil {
 				return err
 			}
@@ -245,7 +245,7 @@ func computeHoeffdingDForAllFingerprintPairs(candidateImageFingerprint []float64
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			similarityScoreVectorHoeffdingBetaAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "hoeffding", []float64{})
+			similarityScoreVectorHoeffdingBetaAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "hoeffding")
 			if err != nil {
 				return err
 			}
@@ -268,7 +268,7 @@ func computeBlomqvistBetaForAllFingerprintPairs(candidateImageFingerprint []floa
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			similarityScoreVectorBlomqvistBetaAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "blomqvist", []float64{})
+			similarityScoreVectorBlomqvistBetaAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "blomqvist")
 			if err != nil {
 				return err
 			}
@@ -363,7 +363,7 @@ func computeParallelBootstrappedKendallsTau(x []float64, arrayOfFingerprintsRequ
 				xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
 				yBootstraps[i] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
 
-				bootstrappedKendallTauResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "kendall", []float64{})
+				bootstrappedKendallTauResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "kendall")
 			}
 			robustAverageTau[fingerprintIdx], robustStdevTau[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedKendallTauResults)
 			return nil
@@ -411,7 +411,7 @@ func randomLinearProjection(s float64, size int) []float64 {
 	return output
 }
 
-func computeRandomizedDependence(x, y []float64) float64 {
+func ComputeRandomizedDependence(x, y []float64) float64 {
 	sinFunc := func(i, j int, v float64) float64 {
 		return math.Sin(v)
 	}
@@ -547,7 +547,7 @@ func computeParallelBootstrappedRandomizedDependence(x []float64, arrayOfFingerp
 					return errors.New(err)
 				}*/
 
-				bootstrappedRandomizedDependenceResults[currentIdx] = computeRandomizedDependence(xBootstraps[currentIdx], yBootstraps[currentIdx])
+				bootstrappedRandomizedDependenceResults[currentIdx] = ComputeRandomizedDependence(xBootstraps[currentIdx], yBootstraps[currentIdx])
 
 			}
 
@@ -585,7 +585,7 @@ func computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize(x []float64, 
 				xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
 				yBootstraps[i] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
 
-				bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding", []float64{})
+				bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding")
 			}
 			robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf25thTo75thPercentile(bootstrappedHoeffdingsDResults)
 			return nil
@@ -621,7 +621,7 @@ func computeParallelBootstrappedBaggedHoeffdingsD(x []float64, arrayOfFingerprin
 				xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
 				yBootstraps[i] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
 
-				bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding", []float64{})
+				bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding")
 			}
 			robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedHoeffdingsDResults)
 			return nil
@@ -656,7 +656,7 @@ func computeParallelBootstrappedBlomqvistBeta(x []float64, arrayOfFingerprintsRe
 				xBootstraps[i] = arrayValuesFromIndexes(x, currentBootstrapIndices)
 				yBootstraps[i] = arrayValuesFromIndexes(currentFingerprint, currentBootstrapIndices)
 
-				blomqvistValue := wdm.Wdm(xBootstraps[i], yBootstraps[i], "blomqvist", []float64{})
+				blomqvistValue := wdm.Wdm(xBootstraps[i], yBootstraps[i], "blomqvist")
 				if !math.IsNaN(blomqvistValue) {
 					bootstrappedBlomqvistResults = append(bootstrappedBlomqvistResults, blomqvistValue)
 				}
