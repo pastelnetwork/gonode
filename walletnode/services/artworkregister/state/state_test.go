@@ -41,7 +41,7 @@ func createTestTimeList() []time.Time {
 	return []time.Time{time1, time2, time3}
 }
 
-func TestStatesAll(t *testing.T) {
+func TestStateAll(t *testing.T) {
 	t.Parallel()
 
 	timeList := createTestTimeList()
@@ -95,7 +95,7 @@ func TestStatesAll(t *testing.T) {
 
 }
 
-func TestStatesLatest(t *testing.T) {
+func TestStateLatest(t *testing.T) {
 	t.Parallel()
 
 	timeList := createTestTimeList()
