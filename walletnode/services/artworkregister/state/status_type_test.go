@@ -53,7 +53,6 @@ func TestStatusTypeNames(t *testing.T) {
 			t.Parallel()
 
 			statusType := statusTypes[testCase.key]
-
 			assert.Equal(t, testCase.expectedStatusTypeName, statusType)
 		})
 
