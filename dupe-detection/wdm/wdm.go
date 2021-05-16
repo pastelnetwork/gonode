@@ -15,16 +15,19 @@ func Wdm(x, y []float64, method string, weights []float64) float64 {
 	for i := range x {
 		xVector.Set(i, x[i])
 	}
+	defer swig.DeleteDoubleVector(xVector)
 
 	yVector := swig.NewDoubleVector(int64(len(y)))
 	for i := range y {
 		yVector.Set(i, y[i])
 	}
+	defer swig.DeleteDoubleVector(yVector)
 
 	weightsVector := swig.NewDoubleVector(int64(len(weights)))
 	for i := range weights {
 		weightsVector.Set(i, weights[i])
 	}
+	defer swig.DeleteDoubleVector(weightsVector)
 
 	return swig.Wdm(xVector, yVector, method, weightsVector)
 }
