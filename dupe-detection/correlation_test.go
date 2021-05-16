@@ -83,7 +83,7 @@ func readInputFileIntoArrays(inputFile string) ([][]float64, [][]float64, []floa
 	return inputs1, inputs2, outputs, nil
 }
 
-func TestCollerations(t *testing.T) {
+func TestCorrelations(t *testing.T) {
 
 	spearmanFloatingPointAccuracy := 0.000000000000001
 	pearsonFloatingPointAccuracy := 0.000000000001
