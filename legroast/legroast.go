@@ -11,7 +11,10 @@ package legroast
 import "C"
 
 const (
+	// PKBytes defines the size of LegRoast public key in bytes
 	PKBytes = C.PK_BYTES
+
+	// SKBytes defines the size of LegRoast private key in bytes
 	SKBytes = C.SK_BYTES
 )
 
@@ -29,9 +32,9 @@ func Keygen() ([]byte, []byte) {
 // It returns signed message data
 func Sign(pk []byte, sk []byte, message []byte) []byte {
 	signal := make([]byte, C.SIG_BYTES)
-	var signal_len C.uint64_t
+	var signalLen C.uint64_t
 
-	C.sign((*C.uchar)(&sk[0]), (*C.uchar)(&pk[0]), (*C.uchar)(&message[0]), (C.uint64_t)(len(message)), (*C.uchar)(&signal[0]), (*C.uint64_t)(&signal_len))
+	C.sign((*C.uchar)(&sk[0]), (*C.uchar)(&pk[0]), (*C.uchar)(&message[0]), (C.uint64_t)(len(message)), (*C.uchar)(&signal[0]), (*C.uint64_t)(&signalLen))
 
 	return signal
 }
