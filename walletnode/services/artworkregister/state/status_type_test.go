@@ -11,48 +11,39 @@ func TestStatusTypeNames(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		key                    int
 		expectedStatusTypeName string
 	}{
 		{
-			key:                    0,
 			expectedStatusTypeName: statusNames[StatusTaskStarted],
 		}, {
-			key:                    1,
 			expectedStatusTypeName: statusNames[StatusConnected],
 		}, {
-			key:                    2,
 			expectedStatusTypeName: statusNames[StatusTicketAccepted],
 		}, {
-			key:                    3,
 			expectedStatusTypeName: statusNames[StatusTicketRegistered],
 		}, {
-			key:                    4,
 			expectedStatusTypeName: statusNames[StatusTicketActivated],
 		}, {
-			key:                    5,
 			expectedStatusTypeName: statusNames[StatusErrorTooLowFee],
 		}, {
-			key:                    6,
 			expectedStatusTypeName: statusNames[StatusErrorFGPTNotMatch],
 		}, {
-			key:                    7,
 			expectedStatusTypeName: statusNames[StatusTaskRejected],
 		}, {
-			key:                    8,
 			expectedStatusTypeName: statusNames[StatusTaskCompleted],
 		},
 	}
 
 	statusTypes := StatusTypeNames()
 
-	for _, testCase := range testCases {
+	for key, testCase := range testCases {
 		testCase := testCase
+		key := key
 
-		t.Run(fmt.Sprintf("key:%d/type:%s", testCase.key, testCase.expectedStatusTypeName), func(t *testing.T) {
+		t.Run(fmt.Sprintf("key:%d/type:%s", key, testCase.expectedStatusTypeName), func(t *testing.T) {
 			t.Parallel()
 
-			statusType := statusTypes[testCase.key]
+			statusType := statusTypes[key]
 			assert.Equal(t, testCase.expectedStatusTypeName, statusType)
 		})
 
