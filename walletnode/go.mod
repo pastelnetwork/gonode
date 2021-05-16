@@ -9,6 +9,7 @@ require (
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/sergi/go-diff v1.2.0 // indirect
+	github.com/stretchr/testify v1.7.0
 	goa.design/goa/v3 v3.3.1
 	goa.design/plugins/v3 v3.3.1
 	golang.org/x/net v0.0.0-20210428140749-89ef3d95e781 // indirect

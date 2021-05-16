@@ -44,7 +44,7 @@ func (sub *Subscription) Pub(msgs ...*Status) {
 // NewSubscription returns a new Subscription instance.
 func NewSubscription() *Subscription {
 	return &Subscription{
-		statusCh: make(chan *Status),
+		statusCh: make(chan *Status, len(statusNames)),
 		doneCh:   make(chan struct{}),
 	}
 }

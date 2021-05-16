@@ -28,7 +28,7 @@ func (states *State) Latest() *Status {
 // Update updates the last states of the states by adding the message that contains properties of the current states.
 func (states *State) Update(ctx context.Context, status *Status) {
 	for _, sub := range states.subs {
-		go sub.Pub(status)
+		sub.Pub(status)
 	}
 	log.WithContext(ctx).WithField("statuses", status.Type.String()).Debugf("State updated")
 	states.statuses = append(states.statuses, status)
@@ -38,9 +38,9 @@ func (states *State) Update(ctx context.Context, status *Status) {
 func (states *State) Subscribe() (*Subscription, error) {
 	sub := NewSubscription()
 	states.subs = append(states.subs, sub)
+	sub.Pub(states.statuses...)
 
 	go func() {
-		sub.Pub(states.statuses...)
 		<-sub.Done()
 		states.unsubscribe(sub)
 	}()
