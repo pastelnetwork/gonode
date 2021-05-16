@@ -104,7 +104,6 @@ func TestStatusTypeString(t *testing.T) {
 			t.Parallel()
 
 			value := testCase.status.String()
-
 			assert.Equal(t, testCase.expectedValue, value)
 		})
 	}
