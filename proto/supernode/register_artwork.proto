@@ -5,9 +5,11 @@ option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
 package supernode;
 
 service RegisterArtowrk {
-    rpc Health(stream Empty) returns (stream Empty);
-    
+    // Handshake informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
     rpc Handshake(HandshakeRequest) returns (HandshakeReply);
+
+    // Health stream is used by the server to detect client disconnection.
+    rpc Health(stream Empty) returns (stream Empty);
 }
 
 message Empty {}

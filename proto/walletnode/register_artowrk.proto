@@ -5,16 +5,23 @@ option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
 package walletnode;
 
 service RegisterArtowrk {
-    rpc Health(stream Empty) returns (stream Empty);
-    
+    // Handshake informs the supernode its position (primary/secondary).
+    // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
     rpc Handshake(HandshakeRequest) returns (HandshakeReply);
+    
+    // Health stream is used by the server to detect client disconnection.
+    rpc Health(stream Empty) returns (stream Empty);
 
+    // AcceptedNodes returns peers of the secondary supernodes connected to it.
     rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
 
+    // ConnectTo is a request to connect to the primary supernode.
     rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
 
+    // SendImage uploads an image to the supernode.
     rpc SendImage(stream SendImageRequest) returns (SendImageReply);
 
+    // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
 }
 
