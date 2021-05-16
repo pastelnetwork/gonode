@@ -22,11 +22,17 @@ const (
 	privateKeyFileName = "pastel_id_legroast_private_key.pem"
 )
 
+// WrongOTPFormat describes errors message for wrong format of entered OTP password
 var WrongOTPFormat = errors.Errorf("one time password must contain 6 digits")
+
+// IncorrectEnteredOTP describes errors message if entered OTP doesn't match expected one
 var IncorrectEnteredOTP = errors.Errorf("entered OTP is incorrect")
+
+// KeyNotFound describes errors message if public or private keys are not found on their import attempt
 var KeyNotFound = errors.Errorf("public or private key is not found")
+
+// KeyReadError describes errors message if public or private keys files are not readable
 var KeyReadError = errors.Errorf("public or private key file read error")
-var InvalidSignature = errors.Errorf("signature is not valid")
 
 // ImportPastelKeys imports previously generated public and private keys.
 func ImportPastelKeys(importDirectoryPath, naclBoxKeyFilePath, otpSecretFilePath string) (string, string, error) {
@@ -60,12 +66,12 @@ func ImportPastelKeys(importDirectoryPath, naclBoxKeyFilePath, otpSecretFilePath
 
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
-	otp_from_user_input := scanner.Text()
+	otpFromUserInput := scanner.Text()
 
-	if len(otp_from_user_input) != 6 {
+	if len(otpFromUserInput) != 6 {
 		return "", "", errors.New(WrongOTPFormat)
 	}
-	if otp_from_user_input != otp {
+	if otpFromUserInput != otp {
 		return "", "", IncorrectEnteredOTP
 	}
 
@@ -133,17 +139,17 @@ func Sign(data string, skBase64 string, pkBase64 string) (string, error) {
 		return "", errors.New(err)
 	}
 	pqtime.Sleep()
-	pastelIdSignature := legroast.Sign(pk, sk, ([]byte)(data[:]))
-	pastelIdSignatureBase64 := base64.StdEncoding.EncodeToString(pastelIdSignature)
+	pastelIDSignature := legroast.Sign(pk, sk, ([]byte)(data[:]))
+	pastelIDSignatureBase64 := base64.StdEncoding.EncodeToString(pastelIDSignature)
 	pqtime.Sleep()
-	return pastelIdSignatureBase64, nil
+	return pastelIDSignatureBase64, nil
 }
 
 // Verify validates previously signed data.
 func Verify(data string, signedData string, pkBase64 string) (int, error) {
 	defer pqtime.Measure(time.Now())
 
-	pastelIdSignature, err := base64.StdEncoding.DecodeString(signedData)
+	pastelIDSignature, err := base64.StdEncoding.DecodeString(signedData)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -152,7 +158,7 @@ func Verify(data string, signedData string, pkBase64 string) (int, error) {
 		return 0, errors.New(err)
 	}
 	pqtime.Sleep()
-	verified := legroast.Verify(pk, ([]byte)(data[:]), pastelIdSignature)
+	verified := legroast.Verify(pk, ([]byte)(data[:]), pastelIDSignature)
 	pqtime.Sleep()
 	return verified, nil
 }

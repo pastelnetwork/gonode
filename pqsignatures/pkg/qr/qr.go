@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	_ "image/jpeg"
+	_ "image/jpeg" // Imports jpeg decoders
 	"image/png"
 	"io/ioutil"
 	"os"
@@ -23,13 +23,20 @@ import (
 )
 
 const (
-	MaxMsgLength              = 2953
-	DataQRImageSize           = 100
+	// MaxMsgLength defines the maximum character length of a message to be encoded with a single QR-code
+	MaxMsgLength = 2953
+
+	// DataQRImageSize defines a preferable size of a QR-code image
+	DataQRImageSize = 100
+
+	// PositionVectorQRImageSize defines the size for the QR-code of the position vector
 	PositionVectorQRImageSize = 185
-	textYPadding              = 20
-	rowYPadding               = 50
+
+	textYPadding = 20
+	rowYPadding  = 50
 )
 
+// Image contains a QR-code image data
 type Image struct {
 	raw   []byte
 	image image.Image
@@ -37,14 +44,22 @@ type Image struct {
 	alias string
 }
 
+// DecodedMessage represents a single message decoded from the sequence of QR-codes
 type DecodedMessage struct {
 	Alias   string
 	Content string
 }
 
+// PositionVectorEncodingError describes errors message if position vector can't encoded with a single QR-code image
 var PositionVectorEncodingError = errors.Errorf("Position vector should be encoded as single qr code image")
+
+// CroppingError describes errors message if Image doesn't support cropping
 var CroppingError = errors.Errorf("Image interface doesn't support cropping")
+
+// MalformedPositionVector describes errors message for a malformed position vector
 var MalformedPositionVector = errors.Errorf("Malformed position vector")
+
+// OutputSizeTooSmall describes errors message if output image size is too small to contain all input images
 var OutputSizeTooSmall = errors.Errorf("Output size is too small to map input images")
 
 func compress(src string) (string, error) {
@@ -106,6 +121,7 @@ func Encode(msg string, alias string, outputDir string, outputFileTitle string, 
 	return images, nil
 }
 
+// LoadImages loads all QR-Code images under input pattern file path
 func LoadImages(pattern string) ([]Image, error) {
 	matches, err := filepath.Glob(pattern)
 	if err != nil {
@@ -181,7 +197,7 @@ func MapImages(images []Image, containerSize image.Point, outputFilePath string)
 	dc.SetRGB(255, 255, 255)
 	dc.Clear()
 	dc.SetColor(color.White)
-	padding_pixels := 2
+	paddingPixels := 2
 	currentX := 0
 	currentY := 10
 	positionVector := fmt.Sprintf("%v;", len(images))
@@ -204,7 +220,7 @@ func MapImages(images []Image, containerSize image.Point, outputFilePath string)
 		}
 
 		positionVector += fmt.Sprintf("%v,%v,%v;", currentX, currentY+textYPadding, size.X)
-		currentX += size.X + padding_pixels
+		currentX += size.X + paddingPixels
 	}
 	compressedPositionVector, err := compress(positionVector)
 	if err != nil {
