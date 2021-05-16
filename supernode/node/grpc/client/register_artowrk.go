@@ -15,8 +15,6 @@ import (
 type registerArtowrk struct {
 	conn   *clientConn
 	client pb.RegisterArtowrkClient
-
-	nodeID string
 	sessID string
 }
 
@@ -46,12 +44,12 @@ func (service *registerArtowrk) healthCheck(ctx context.Context) error {
 	return nil
 }
 
-func (service *registerArtowrk) Handshake(ctx context.Context) error {
+func (service *registerArtowrk) Handshake(ctx context.Context, nodeID, sessID string) error {
 	ctx = service.contextWithLogPrefix(ctx)
 
 	req := &pb.HandshakeRequest{
-		NodeID: service.nodeID,
-		SessID: service.sessID,
+		NodeID: nodeID,
+		SessID: sessID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
@@ -60,6 +58,7 @@ func (service *registerArtowrk) Handshake(ctx context.Context) error {
 		return errors.Errorf("failed to reqeust Handshake: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
+	service.sessID = sessID
 
 	return service.healthCheck(ctx)
 }
@@ -73,10 +72,8 @@ func (service *registerArtowrk) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newRegisterArtowrk(conn *clientConn, nodeID, sessID string) node.RegisterArtowrk {
+func newRegisterArtowrk(conn *clientConn) node.RegisterArtowrk {
 	return &registerArtowrk{
-		nodeID: nodeID,
-		sessID: sessID,
 		conn:   conn,
 		client: pb.NewRegisterArtowrkClient(conn),
 	}

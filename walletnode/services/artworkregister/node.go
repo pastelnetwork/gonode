@@ -30,7 +30,7 @@ func (nodes *Nodes) disconnectInactive() {
 
 func (nodes Nodes) findByPastelID(id string) *Node {
 	for _, node := range nodes {
-		if node.pastelID == id {
+		if node.PastelID == id {
 			return node
 		}
 	}
@@ -51,14 +51,13 @@ func (nodes *Nodes) sendImage(ctx context.Context, filename string) error {
 // Node represent supernode connection.
 type Node struct {
 	node.RegisterArtowrk
-
 	client node.Client
 	conn   node.Connection
 
 	activated bool
 
-	address  string
-	pastelID string
+	Address  string
+	PastelID string
 }
 
 func (node *Node) connect(ctx context.Context) error {
@@ -69,7 +68,7 @@ func (node *Node) connect(ctx context.Context) error {
 	connCtx, connCancel := context.WithTimeout(ctx, connectToNodeTimeout)
 	defer connCancel()
 
-	conn, err := node.client.Connect(connCtx, node.address)
+	conn, err := node.client.Connect(connCtx, node.Address)
 	if err != nil {
 		return err
 	}

@@ -4,17 +4,11 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/supernode/node"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister/state"
-)
-
-const (
-	connectToNodeTimeout = time.Second * 1
 )
 
 // Task is the task of registering new artwork.
@@ -24,18 +18,31 @@ type Task struct {
 	ID    string
 	State *state.State
 
-	acceptMu  sync.Mutex
-	connectMu sync.Mutex
+	acceptMu    sync.Mutex
+	accpetNodes Nodes
 
-	nodes node.SuperNodes
+	connectNode *Node
+
+	actionCh chan func(ctx context.Context) error
 
 	doneMu sync.Mutex
 	doneCh chan struct{}
 }
 
 // Run starts the task
-func (task *Task) Run(_ context.Context) error {
-	return nil
+func (task *Task) Run(ctx context.Context) error {
+	defer task.Cancel()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case action := <-task.actionCh:
+			if err := action(ctx); err != nil {
+				return err
+			}
+		}
+	}
 }
 
 // Cancel stops the task, which causes all connections associated with that task to be closed.
@@ -81,7 +88,7 @@ func (task *Task) Handshake(ctx context.Context, isPrimary bool) error {
 }
 
 // AcceptedNodes waits for connection supernodes, as soon as there is the required amount returns them.
-func (task *Task) AcceptedNodes(ctx context.Context) (node.SuperNodes, error) {
+func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 	ctx = task.context(ctx)
 
 	if err := task.requiredStatus(state.StatusHandshakePrimaryNode); err != nil {
@@ -96,7 +103,7 @@ func (task *Task) AcceptedNodes(ctx context.Context) (node.SuperNodes, error) {
 		if err := task.requiredStatus(state.StatusAcceptedNodes); err != nil {
 			return nil, err
 		}
-		return task.nodes, nil
+		return task.accpetNodes, nil
 	}
 }
 
@@ -111,68 +118,67 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeID string) error {
 		return err
 	}
 
-	if node := task.nodes.FindByKey(nodeID); node != nil {
+	if node := task.accpetNodes.ByID(nodeID); node != nil {
 		return errors.Errorf("node %q is already registered", nodeID)
 	}
 
-	node, err := task.findNode(ctx, nodeID)
+	node, err := task.pastelNodeByExtKey(ctx, nodeID)
 	if err != nil {
 		return err
 	}
-	task.nodes.Add(node)
+	task.accpetNodes.Add(node)
 
 	log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
 
-	if len(task.nodes) >= task.config.NumberConnectedNodes {
+	if len(task.accpetNodes) >= task.config.NumberConnectedNodes {
 		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedNodes))
 	}
 	return nil
 }
 
 // ConnectTo connects to primary node
-func (task *Task) ConnectTo(ctx context.Context, nodeID, sessID string) error {
-	ctx = task.context(ctx)
-
-	task.connectMu.Lock()
-	defer task.connectMu.Unlock()
-
+func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 	if err := task.requiredStatus(state.StatusHandshakeSecondaryNode); err != nil {
 		return err
 	}
 
-	node, err := task.findNode(ctx, nodeID)
+	task.actionCh <- func(ctx context.Context) error {
+		return task.connectTo(ctx, nodeID, sessID)
+	}
+	return nil
+}
+
+func (task *Task) connectTo(ctx context.Context, nodeID, sessID string) error {
+	ctx = task.context(ctx)
+
+	node, err := task.pastelNodeByExtKey(ctx, nodeID)
 	if err != nil {
 		return err
 	}
 
-	connCtx, connCancel := context.WithTimeout(ctx, connectToNodeTimeout)
-	defer connCancel()
-
-	conn, err := task.nodeClient.Connect(connCtx, node.Address)
-	if err != nil {
+	if err := node.connect(ctx); err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
 	go func() {
 		select {
 		case <-task.Done():
-			cancel()
-		case <-conn.Done():
+			node.conn.Close()
+		case <-node.conn.Done():
 			task.Cancel()
 		}
 	}()
 
-	client := conn.RegisterArtowrk(task.config.PastelID, sessID)
-	if err := client.Handshake(ctx); err != nil {
+	if err := node.Handshake(ctx, task.config.PastelID, sessID); err != nil {
 		return err
 	}
 
+	task.connectNode = node
 	task.State.Update(ctx, state.NewStatus(state.StatusConnectedToNode))
 	return nil
 }
 
-func (task *Task) findNode(ctx context.Context, nodeID string) (*node.SuperNode, error) {
+func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		return nil, err
@@ -182,10 +188,10 @@ func (task *Task) findNode(ctx context.Context, nodeID string) (*node.SuperNode,
 		if masterNode.ExtKey != nodeID {
 			continue
 		}
-		node := &node.SuperNode{
+		node := &Node{
+			client:  task.Service.nodeClient,
+			ID:      masterNode.ExtKey,
 			Address: masterNode.ExtAddress,
-			Key:     masterNode.ExtKey,
-			Fee:     masterNode.Fee,
 		}
 		return node, nil
 	}
@@ -210,9 +216,10 @@ func NewTask(service *Service) *Task {
 	taskID, _ := random.String(8, random.Base62Chars)
 
 	return &Task{
-		Service: service,
-		ID:      taskID,
-		State:   state.New(state.NewStatus(state.StatusTaskStarted)),
-		doneCh:  make(chan struct{}),
+		Service:  service,
+		ID:       taskID,
+		State:    state.New(state.NewStatus(state.StatusTaskStarted)),
+		doneCh:   make(chan struct{}),
+		actionCh: make(chan func(ctx context.Context) error),
 	}
 }

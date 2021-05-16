@@ -56,7 +56,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
-	topNodes, err := task.findTopNodes(ctx)
+	topNodes, err := task.pastelTopNodes(ctx)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,7 @@ func (task *Task) run(ctx context.Context) error {
 			case <-ctx.Done():
 				return errors.Errorf("task was canceled")
 			case <-node.conn.Done():
-				return errors.Errorf("%q unexpectedly closed the connection", node.address)
+				return errors.Errorf("%q unexpectedly closed the connection", node.Address)
 			}
 		})
 	}
@@ -140,10 +140,10 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 					}
 					secondaries.add(node)
 
-					if err := node.ConnectTo(ctx, primary.pastelID, primary.SessID()); err != nil {
+					if err := node.ConnectTo(ctx, primary.PastelID, primary.SessID()); err != nil {
 						return
 					}
-					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.address)
+					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
 				}()
 			}
 		}
@@ -178,7 +178,7 @@ func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
 	return fee.NetworkFee <= task.Ticket.MaximumFee, nil
 }
 
-func (task *Task) findTopNodes(ctx context.Context) (Nodes, error) {
+func (task *Task) pastelTopNodes(ctx context.Context) (Nodes, error) {
 	var nodes Nodes
 
 	mns, err := task.pastelClient.MasterNodesTop(ctx)
@@ -191,8 +191,8 @@ func (task *Task) findTopNodes(ctx context.Context) (Nodes, error) {
 		}
 		nodes = append(nodes, &Node{
 			client:   task.Service.nodeClient,
-			address:  mn.ExtAddress,
-			pastelID: mn.ExtKey,
+			Address:  mn.ExtAddress,
+			PastelID: mn.ExtKey,
 		})
 	}
 

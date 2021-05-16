@@ -86,7 +86,7 @@ func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.Accep
 	var peers []*pb.AcceptedNodesReply_Peer
 	for _, node := range nodes {
 		peers = append(peers, &pb.AcceptedNodesReply_Peer{
-			NodeID: node.Key,
+			NodeID: node.ID,
 		})
 	}
 
