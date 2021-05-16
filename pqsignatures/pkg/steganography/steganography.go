@@ -18,13 +18,13 @@ func Encode(imageFilePath string, imageToHideFilePath string, encodedFilePath st
 		return errors.New(err)
 	}
 
-	signature_layer_image_data, err := ioutil.ReadFile(imageToHideFilePath)
+	signatureLayerImageData, err := ioutil.ReadFile(imageToHideFilePath)
 	if err != nil {
 		return errors.New(err)
 	}
 
 	w := new(bytes.Buffer)
-	err = steganography.Encode(w, img, signature_layer_image_data)
+	err = steganography.Encode(w, img, signatureLayerImageData)
 	if err != nil {
 		return errors.New(err)
 	}

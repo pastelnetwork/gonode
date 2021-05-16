@@ -8,7 +8,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/kevinburke/nacl v0.0.0-20210321052800-030051251ea5
 	github.com/makiuchi-d/gozxing v0.0.0-20210324052758-57132e828831
-	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/legroast v0.0.0
 	github.com/pastelnetwork/steganography v1.0.1
@@ -20,4 +20,5 @@ require (
 )
 
 replace github.com/pastelnetwork/gonode/common => ../common
+
 replace github.com/pastelnetwork/gonode/legroast => ../legroast
