@@ -13,7 +13,6 @@ import (
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -126,6 +125,7 @@ func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 
 	fileID, _ := random.String(16, random.Base62Chars)
 	filename := filepath.Join(service.workDir, fileID)
+
 	file, err := os.Create(filename)
 	if err != nil {
 		return errors.Errorf("failed to open file %q: %w", filename, err)
@@ -142,34 +142,29 @@ func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 
 	wr := bufio.NewWriter(file)
 
-	group, _ := errgroup.WithContext(ctx)
-	group.Go(func() (err error) {
-		for {
-			req, err := stream.Recv()
-			if err != nil {
-				if err == io.EOF {
-					return nil
-				}
-				if status.Code(err) == codes.Canceled {
-					return errors.New("connection closed")
-				}
-
-				log.WithContext(ctx).WithError(err).Errorf("SendImage receving")
-				return errors.Errorf("failed to receive SendImage: %w", err)
+	for {
+		req, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
 			}
-
-			if _, err := wr.Write(req.Payload); err != nil {
-				return errors.Errorf("failed to write to file %q: %w", filename, err)
+			if status.Code(err) == codes.Canceled {
+				return errors.New("connection closed")
 			}
+			return errors.Errorf("failed to receive SendImage: %w", err)
 		}
-	})
+
+		if _, err := wr.Write(req.Payload); err != nil {
+			return errors.Errorf("failed to write to file %q: %w", filename, err)
+		}
+	}
 
 	// TODO: pass filename to the task
 	_ = task
 
 	resp := &pb.SendImageReply{}
 	if err := stream.SendAndClose(resp); err != nil {
-		return errors.New("failed to send SendImage response")
+		return errors.Errorf("failed to send SendImage response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("SendImage response")
 	return nil

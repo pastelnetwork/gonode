@@ -35,7 +35,7 @@ func (service *registerArtowrk) healthCheck(ctx context.Context) error {
 
 	stream, err := service.client.Health(ctx)
 	if err != nil {
-		return errors.New("failed to open Health stream")
+		return errors.Errorf("failed to open Health stream: %w", err)
 	}
 
 	go func() {
@@ -62,7 +62,7 @@ func (service *registerArtowrk) Handshake(ctx context.Context, IsPrimary bool) e
 
 	resp, err := service.client.Handshake(ctx, req)
 	if err != nil {
-		return errors.New("failed to reqeust Handshake")
+		return errors.Errorf("failed to reqeust Handshake: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
 
@@ -80,7 +80,7 @@ func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
 	if err != nil {
-		return nil, errors.New("failed to request to accepted secondary nodes")
+		return nil, errors.Errorf("failed to request to accepted secondary nodes: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
 
@@ -104,7 +104,7 @@ func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeID, connID st
 
 	resp, err := service.client.ConnectTo(ctx, req)
 	if err != nil {
-		return errors.New("failed to request to connect to primary node")
+		return errors.Errorf("failed to request to connect to primary node: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
 
@@ -118,7 +118,7 @@ func (service *registerArtowrk) SendImage(ctx context.Context, filename string) 
 
 	stream, err := service.client.SendImage(ctx)
 	if err != nil {
-		return errors.New("failed to open stream")
+		return errors.Errorf("failed to open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
@@ -140,10 +140,16 @@ func (service *registerArtowrk) SendImage(ctx context.Context, filename string) 
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return errors.New("failed to send image data")
+			return errors.Errorf("failed to send image data: %w", err).WithField("reqID", service.conn.id)
 		}
 	}
 	log.WithContext(ctx).Debugf("SendImage uploaded")
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return errors.Errorf("failed to receive send image response: %w", err)
+	}
+	log.WithContext(ctx).WithField("resp", resp).Debugf("SendImage response")
 
 	return nil
 }

@@ -9,6 +9,11 @@ func WithError(err error) *Entry {
 	return NewDefaultEntry().WithError(err)
 }
 
+// WithErrorStack adds an `error` and `stack` to log Entry.
+func WithErrorStack(err error) *Entry {
+	return NewDefaultEntry().WithErrorStack(err)
+}
+
 // WithPrefix adds a prefix to log entry.
 func WithPrefix(value string) *Entry {
 	return NewDefaultEntry().WithField("prefix", value)
@@ -52,6 +57,15 @@ func Warn(args ...interface{}) {
 // Error logs a message at level Error.
 func Error(args ...interface{}) {
 	NewDefaultEntry().Error(args...)
+}
+
+// Recover logs a message at level Panic with error stack.
+func Recover(err error) {
+	entry := NewDefaultEntry()
+	if debugMode {
+		entry.WithErrorStack(err)
+	}
+	entry.Panic(err)
 }
 
 // Panic logs a message at level Panic.

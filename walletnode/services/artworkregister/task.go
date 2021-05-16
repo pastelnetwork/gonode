@@ -91,10 +91,10 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.State.Update(ctx, state.NewStatus(state.StatusConnected))
 
-	// if err := nodes.uploadImage(ctx, task.Ticket.ImagePath); err != nil {
-	// 	return err
-	// }
-	// task.State.Update(ctx, state.NewStatus(state.StatusUploadedImage))
+	if err := nodes.sendImage(ctx, task.Ticket.ImagePath); err != nil {
+		return err
+	}
+	task.State.Update(ctx, state.NewStatus(state.StatusUploadedImage))
 
 	<-ctx.Done()
 
@@ -130,7 +130,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 				return
 			case <-time.After(connectToNextNodeDelay):
 				go func() {
-					defer errors.Recover(errors.CheckErrorAndExit)
+					defer errors.Recover(log.Recover)
 
 					if err := node.connect(ctx); err != nil {
 						return

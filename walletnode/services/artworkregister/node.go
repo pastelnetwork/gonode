@@ -37,7 +37,7 @@ func (nodes Nodes) findByPastelID(id string) *Node {
 	return nil
 }
 
-func (nodes *Nodes) uploadImage(ctx context.Context, filename string) error {
+func (nodes *Nodes) sendImage(ctx context.Context, filename string) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node

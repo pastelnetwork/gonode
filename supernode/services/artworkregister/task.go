@@ -27,7 +27,9 @@ type Task struct {
 	acceptMu  sync.Mutex
 	connectMu sync.Mutex
 
-	nodes  node.SuperNodes
+	nodes node.SuperNodes
+
+	doneMu sync.Mutex
 	doneCh chan struct{}
 }
 
@@ -38,6 +40,9 @@ func (task *Task) Run(_ context.Context) error {
 
 // Cancel stops the task, which causes all connections associated with that task to be closed.
 func (task *Task) Cancel() {
+	task.doneMu.Lock()
+	defer task.doneMu.Unlock()
+
 	select {
 	case <-task.Done():
 		return

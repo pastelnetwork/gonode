@@ -30,7 +30,7 @@ func (service *registerArtowrk) healthCheck(ctx context.Context) error {
 
 	stream, err := service.client.Health(ctx)
 	if err != nil {
-		return errors.New("failed to open Health stream")
+		return errors.Errorf("failed to open Health stream: %w", err)
 	}
 
 	go func() {
@@ -57,7 +57,7 @@ func (service *registerArtowrk) Handshake(ctx context.Context) error {
 
 	resp, err := service.client.Handshake(ctx, req)
 	if err != nil {
-		return errors.New("failed to reqeust Handshake")
+		return errors.Errorf("failed to reqeust Handshake: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
 

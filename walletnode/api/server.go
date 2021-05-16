@@ -72,7 +72,7 @@ func (server *Server) Run(ctx context.Context) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		defer errors.Recover(errors.CheckErrorAndExit)
+		defer errors.Recover(log.Recover)
 
 		<-ctx.Done()
 		log.WithContext(ctx).Infof("Server is shutting down...")
