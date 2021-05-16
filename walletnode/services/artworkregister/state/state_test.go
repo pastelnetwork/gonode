@@ -44,23 +44,17 @@ func TestStateAll(t *testing.T) {
 		},
 	}
 
-	t.Run("group", func(t *testing.T) {
-		t.Parallel()
+	for i, testCase := range testCases {
+		testCase := testCase
 
-		for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("test-case:%d", i), func(t *testing.T) {
+			t.Parallel()
 
-			testCase := testCase
+			states := testCase.state.All()
+			assert.Equal(t, testCase.expected, states)
+		})
 
-			t.Run(fmt.Sprintf("test-case:%d", i), func(t *testing.T) {
-				t.Parallel()
-
-				states := testCase.state.All()
-				assert.Equal(t, testCase.expected, states)
-			})
-
-		}
-
-	})
+	}
 
 }
 
@@ -82,21 +76,16 @@ func TestStateLatest(t *testing.T) {
 		},
 	}
 
-	t.Run("group", func(t *testing.T) {
-		t.Parallel()
+	for i, testCase := range testCases {
+		testCase := testCase
 
-		for i, testCase := range testCases {
-			testCase := testCase
+		t.Run(fmt.Sprintf("test-case:%d", i), func(t *testing.T) {
+			t.Parallel()
 
-			t.Run(fmt.Sprintf("test-case:%d", i), func(t *testing.T) {
-				t.Parallel()
-
-				latest := testCase.state.Latest()
-				assert.Equal(t, testCase.status, latest)
-			})
-		}
-
-	})
+			latest := testCase.state.Latest()
+			assert.Equal(t, testCase.status, latest)
+		})
+	}
 
 }
 
@@ -176,24 +165,21 @@ func TestStateUpdate(t *testing.T) {
 		},
 	}
 
-	t.Run("group", func(t *testing.T) {
-		t.Parallel()
+	for i, testCase := range testCases {
+		testCase := testCase
 
-		for i, testCase := range testCases {
-			testCase := testCase
+		t.Run(fmt.Sprintf("test-case:%d", i), func(t *testing.T) {
+			t.Parallel()
 
-			t.Run(fmt.Sprintf("test-case:%d", i), func(t *testing.T) {
-				t.Parallel()
+			states := testCase.states
+			status := testCase.status
+			states.Update(context.Background(), status)
 
-				states := testCase.states
-				status := testCase.status
-				states.Update(context.Background(), status)
+			lastState := states.statuses[len(states.statuses)-1]
+			assert.Equal(t, testCase.status.CreatedAt, lastState.CreatedAt)
+			assert.Equal(t, testCase.status.Type, lastState.Type)
+			assert.Equal(t, testCase.status.isFinal, lastState.isFinal)
+		})
+	}
 
-				lastState := states.statuses[len(states.statuses)-1]
-				assert.Equal(t, testCase.status.CreatedAt, lastState.CreatedAt)
-				assert.Equal(t, testCase.status.Type, lastState.Type)
-				assert.Equal(t, testCase.status.isFinal, lastState.isFinal)
-			})
-		}
-	})
 }
