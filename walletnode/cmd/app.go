@@ -39,14 +39,17 @@ func NewApp() *cli.App {
 	app.AddFlags(
 		// Main
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(configFile).SetAliases("c"),
+		cli.NewFlag("pastel-config-file", &config.Pastel.ConfigFile).SetUsage("Set `path` to the pastel config file.").SetValue(config.Pastel.ConfigFile),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 		// API
-		cli.NewFlag("swagger", &config.API.Swagger).SetUsage("Enable Swagger UI."),
+		cli.NewFlag("swagger", &config.Node.API.Swagger).SetUsage("Enable Swagger UI."),
 	)
 
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
+		ctx = log.ContextWithPrefix(ctx, "app")
+
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
 				return err
@@ -75,11 +78,12 @@ func NewApp() *cli.App {
 }
 
 func runApp(ctx context.Context, config *configs.Config) error {
-	ctx = log.ContextWithPrefix(ctx, "app")
-
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
 
+	if err := configurer.ParseFile(config.Pastel.ConfigFile, config.Pastel.ExternalConfig); err != nil {
+		log.WithContext(ctx).Debug(err)
+	}
 	log.WithContext(ctx).Infof("Config: %s", config)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -95,13 +99,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegisterService := artworkregister.NewService(config.ArtworkRegister, db, pastelClient, nodeClient)
+	artworkRegisterService := artworkregister.NewService(config.Node.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// NOTE: for testing to bypass REST API
 	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 100}) }()
 
 	// api service
-	server := api.NewServer(config.API,
+	server := api.NewServer(config.Node.API,
 		services.NewArtwork(artworkRegisterService),
 		services.NewSwagger(),
 	)

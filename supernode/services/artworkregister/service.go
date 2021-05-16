@@ -31,14 +31,9 @@ type Service struct {
 func (service *Service) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
-	nodeConfig, err := service.pastelClient.MasterNodeConfig(ctx)
-	if err != nil {
-		return err
+	if service.config.PastelID == "" {
+		return errors.New("PastelID is not specified in the config file")
 	}
-	if nodeConfig.ExtKey == "" {
-		return errors.New("masternode configuration: \"extKey\" cannot be empty, check \"masternode list-conf\"")
-	}
-	service.config.node = nodeConfig
 
 	return service.worker.Run(ctx)
 }
