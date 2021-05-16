@@ -122,7 +122,7 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 }
 
 // UploadImage uploads an image and return unique image id.
-func (service *Artwork) UploadImage(ctx context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
+func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePayload) (res *artworks.Image, err error) {
 	id, _ := random.String(8, random.Base62Chars)
 
 	if err := service.storage.Set(id, []byte(*p.Filepath)); err != nil {

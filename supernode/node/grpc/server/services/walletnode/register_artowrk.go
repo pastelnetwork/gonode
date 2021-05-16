@@ -64,7 +64,7 @@ func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.Handshake
 	}
 
 	resp := &pb.HandshakeReply{
-		ConnID: task.ID,
+		SessID: task.ID,
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
 	return resp, nil
@@ -105,7 +105,7 @@ func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectTo
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.NodeID, req.ConnID); err != nil {
+	if err := task.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
 		return nil, err
 	}
 

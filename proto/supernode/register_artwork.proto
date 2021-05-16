@@ -14,7 +14,7 @@ message Empty {}
 
 message HandshakeRequest {
     string nodeID = 1;
-    string connID = 2;
+    string sessID = 2;
 }
 message HandshakeReply {
 }

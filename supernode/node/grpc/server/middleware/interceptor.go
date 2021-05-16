@@ -19,7 +19,7 @@ func UnaryInterceptor() grpc.ServerOption {
 		})
 
 		ctx = WithRequestID(ctx)
-		ctx = WithConnID(ctx)
+		ctx = WithSessID(ctx)
 
 		return handler(ctx, req)
 	})
@@ -35,7 +35,7 @@ func StreamInterceptor() grpc.ServerOption {
 
 		ctx := ss.Context()
 		ctx = WithRequestID(ctx)
-		ctx = WithConnID(ctx)
+		ctx = WithSessID(ctx)
 
 		ss = &WrappedServerStream{
 			ServerStream: ss,

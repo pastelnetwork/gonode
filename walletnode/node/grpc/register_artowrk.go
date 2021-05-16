@@ -22,16 +22,16 @@ type registerArtowrk struct {
 	conn   *clientConn
 	client pb.RegisterArtowrkClient
 
-	connID string
+	sessID string
 }
 
-func (service *registerArtowrk) ConnID() string {
-	return service.connID
+func (service *registerArtowrk) SessID() string {
+	return service.sessID
 }
 
 func (service *registerArtowrk) healthCheck(ctx context.Context) error {
 	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDConnID(ctx)
+	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.Health(ctx)
 	if err != nil {
@@ -66,14 +66,14 @@ func (service *registerArtowrk) Handshake(ctx context.Context, IsPrimary bool) e
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
 
-	service.connID = resp.ConnID
+	service.sessID = resp.SessID
 	return service.healthCheck(ctx)
 }
 
 // AcceptedNodes implements node.RegisterArtowrk.AcceptedNodes()
 func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDConnID(ctx)
+	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.AcceptedNodesRequest{}
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
@@ -92,13 +92,13 @@ func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []
 }
 
 // ConnectTo implements node.RegisterArtowrk.ConnectTo()
-func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeID, connID string) error {
+func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeID, sessID string) error {
 	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDConnID(ctx)
+	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.ConnectToRequest{
 		NodeID: nodeID,
-		ConnID: connID,
+		SessID: sessID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 
@@ -114,7 +114,7 @@ func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeID, connID st
 // SendImage implements node.RegisterArtowrk.SendImage()
 func (service *registerArtowrk) SendImage(ctx context.Context, filename string) error {
 	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDConnID(ctx)
+	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.SendImage(ctx)
 	if err != nil {
@@ -154,8 +154,8 @@ func (service *registerArtowrk) SendImage(ctx context.Context, filename string) 
 	return nil
 }
 
-func (service *registerArtowrk) contextWithMDConnID(ctx context.Context) context.Context {
-	md := metadata.Pairs(proto.MetadataKeyConnID, service.connID)
+func (service *registerArtowrk) contextWithMDSessID(ctx context.Context) context.Context {
+	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)
 }
 

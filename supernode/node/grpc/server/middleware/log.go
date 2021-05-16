@@ -20,8 +20,8 @@ const (
 	// RequestIDKey is unique numeric for every request.
 	RequestIDKey ctxKey = iota
 
-	// ConnIDKey is unique numeric for every regiration process.
-	ConnIDKey
+	// SessIDKey is unique numeric for every regiration process.
+	SessIDKey
 )
 
 func init() {
@@ -29,8 +29,8 @@ func init() {
 		fields["reqID"] = ctxValue
 		return msg, fields
 	}))
-	log.AddHook(hooks.NewContextHook(ConnIDKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
-		fields["ConnID"] = ctxValue
+	log.AddHook(hooks.NewContextHook(SessIDKey, func(ctxValue interface{}, msg string, fields hooks.ContextHookFields) (string, hooks.ContextHookFields) {
+		fields["SessID"] = ctxValue
 		return msg, fields
 	}))
 }
@@ -41,16 +41,16 @@ func WithRequestID(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("server-%s", reqID))
 }
 
-// WithConnID returns a context with ConnID value.
-func WithConnID(ctx context.Context) context.Context {
+// WithSessID returns a context with SessID value.
+func WithSessID(ctx context.Context) context.Context {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return ctx
 	}
 
-	mdVals := md.Get(proto.MetadataKeyConnID)
+	mdVals := md.Get(proto.MetadataKeySessID)
 	if len(mdVals) == 0 {
 		return ctx
 	}
-	return context.WithValue(ctx, ConnIDKey, mdVals[0])
+	return context.WithValue(ctx, SessIDKey, mdVals[0])
 }

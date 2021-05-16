@@ -130,7 +130,7 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeID string) error {
 }
 
 // ConnectTo connects to primary node
-func (task *Task) ConnectTo(ctx context.Context, nodeID, connID string) error {
+func (task *Task) ConnectTo(ctx context.Context, nodeID, sessID string) error {
 	ctx = task.context(ctx)
 
 	task.connectMu.Lock()
@@ -163,7 +163,7 @@ func (task *Task) ConnectTo(ctx context.Context, nodeID, connID string) error {
 		}
 	}()
 
-	client := conn.RegisterArtowrk(task.config.PastelID, connID)
+	client := conn.RegisterArtowrk(task.config.PastelID, sessID)
 	if err := client.Handshake(ctx); err != nil {
 		return err
 	}

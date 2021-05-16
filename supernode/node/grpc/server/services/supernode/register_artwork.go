@@ -50,9 +50,9 @@ func (service *RegisterArtowrk) Health(stream pb.RegisterArtowrk_HealthServer) e
 func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.HandshakeRequest) (*pb.HandshakeReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
-	task := service.Task(req.ConnID)
+	task := service.Task(req.SessID)
 	if task == nil {
-		return nil, errors.Errorf("not found %q task", req.ConnID)
+		return nil, errors.Errorf("not found %q task", req.SessID)
 	}
 
 	if err := task.HandshakeNode(ctx, req.NodeID); err != nil {

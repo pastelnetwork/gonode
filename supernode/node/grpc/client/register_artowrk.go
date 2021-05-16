@@ -17,16 +17,16 @@ type registerArtowrk struct {
 	client pb.RegisterArtowrkClient
 
 	nodeID string
-	connID string
+	sessID string
 }
 
-func (service *registerArtowrk) ConnID() string {
-	return service.connID
+func (service *registerArtowrk) SessID() string {
+	return service.sessID
 }
 
 func (service *registerArtowrk) healthCheck(ctx context.Context) error {
 	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDConnID(ctx)
+	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.Health(ctx)
 	if err != nil {
@@ -51,7 +51,7 @@ func (service *registerArtowrk) Handshake(ctx context.Context) error {
 
 	req := &pb.HandshakeRequest{
 		NodeID: service.nodeID,
-		ConnID: service.connID,
+		SessID: service.sessID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
@@ -64,8 +64,8 @@ func (service *registerArtowrk) Handshake(ctx context.Context) error {
 	return service.healthCheck(ctx)
 }
 
-func (service *registerArtowrk) contextWithMDConnID(ctx context.Context) context.Context {
-	md := metadata.Pairs(proto.MetadataKeyConnID, service.connID)
+func (service *registerArtowrk) contextWithMDSessID(ctx context.Context) context.Context {
+	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
@@ -73,10 +73,10 @@ func (service *registerArtowrk) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newRegisterArtowrk(conn *clientConn, nodeID, connID string) node.RegisterArtowrk {
+func newRegisterArtowrk(conn *clientConn, nodeID, sessID string) node.RegisterArtowrk {
 	return &registerArtowrk{
 		nodeID: nodeID,
-		connID: connID,
+		sessID: sessID,
 		conn:   conn,
 		client: pb.NewRegisterArtowrkClient(conn),
 	}

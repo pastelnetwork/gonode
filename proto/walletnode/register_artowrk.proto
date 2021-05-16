@@ -24,7 +24,7 @@ message HandshakeRequest {
     bool is_primary = 1;
 }
 message HandshakeReply {
-    string connID = 1;
+    string sessID = 1;
 }
 
 message AcceptedNodesRequest {
@@ -37,7 +37,7 @@ message AcceptedNodesReply {
 }
 
 message ConnectToRequest {
-    string connID = 1;
+    string sessID = 1;
     string nodeID = 2;
 }
 message ConnectToReply {

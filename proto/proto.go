@@ -1,6 +1,6 @@
 package proto
 
 const (
-	// MetadataKeyConnID is unique numeric for every regiration process, encompasses for all connections.
-	MetadataKeyConnID = "connID"
+	// MetadataKeySessID is unique numeric for every regiration process, encompasses for all connections.
+	MetadataKeySessID = "sessID"
 )
