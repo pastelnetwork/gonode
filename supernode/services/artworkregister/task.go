@@ -76,10 +76,6 @@ func (task *Task) Done() <-chan struct{} {
 	return task.doneCh
 }
 
-func (task *Task) context(ctx context.Context) context.Context {
-	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
-}
-
 // Handshake is handshake wallet to supernode
 func (task *Task) Handshake(ctx context.Context, isPrimary bool) error {
 	ctx = task.context(ctx)
@@ -148,18 +144,6 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeID string) error {
 	return nil
 }
 
-// UploadImage uploads an image
-func (task *Task) UploadImage(_ context.Context, filename string) error {
-	if err := task.requiredLatestStatus(state.StatusAcceptedNodes, state.StatusConnectedToNode); err != nil {
-		return err
-	}
-
-	task.actCh <- func(ctx context.Context) error {
-		return task.uploadImage(ctx, filename)
-	}
-	return nil
-}
-
 // ConnectTo connects to primary node
 func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 	if err := task.requiredLatestStatus(state.StatusHandshakeSecondaryNode); err != nil {
@@ -167,44 +151,48 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 	}
 
 	task.actCh <- func(ctx context.Context) error {
-		return task.connectTo(ctx, nodeID, sessID)
+		ctx = task.context(ctx)
+
+		node, err := task.pastelNodeByExtKey(ctx, nodeID)
+		if err != nil {
+			return err
+		}
+
+		if err := node.connect(ctx); err != nil {
+			return err
+		}
+
+		if err := node.Handshake(ctx, task.config.PastelID, sessID); err != nil {
+			return err
+		}
+
+		task.connectNode = node
+		task.State.Update(ctx, state.NewStatus(state.StatusConnectedToNode))
+		return nil
 	}
 	return nil
 }
 
-func (task *Task) uploadImage(ctx context.Context, filename string) error {
-	ctx = task.context(ctx)
-
-	task.ImagePath = filename
-	task.State.Update(ctx, state.NewStatus(state.StatusImageUploaded))
-
-	<-ctx.Done()
-
-	if err := os.Remove(filename); err != nil {
-		return errors.Errorf("failed to remove temp file %q: %w", filename, err)
-	}
-	log.WithContext(ctx).Debugf("Removed temp file %q", filename)
-	return nil
-}
-
-func (task *Task) connectTo(ctx context.Context, nodeID, sessID string) error {
-	ctx = task.context(ctx)
-
-	node, err := task.pastelNodeByExtKey(ctx, nodeID)
-	if err != nil {
+// UploadImage uploads an image
+func (task *Task) UploadImage(_ context.Context, filename string) error {
+	if err := task.requiredLatestStatus(state.StatusAcceptedNodes, state.StatusConnectedToNode); err != nil {
 		return err
 	}
 
-	if err := node.connect(ctx); err != nil {
-		return err
-	}
+	task.actCh <- func(ctx context.Context) error {
+		ctx = task.context(ctx)
 
-	if err := node.Handshake(ctx, task.config.PastelID, sessID); err != nil {
-		return err
-	}
+		task.ImagePath = filename
+		task.State.Update(ctx, state.NewStatus(state.StatusImageUploaded))
 
-	task.connectNode = node
-	task.State.Update(ctx, state.NewStatus(state.StatusConnectedToNode))
+		<-ctx.Done()
+
+		if err := os.Remove(filename); err != nil {
+			return errors.Errorf("failed to remove temp file %q: %w", filename, err)
+		}
+		log.WithContext(ctx).Debugf("Removed temp file %q", filename)
+		return nil
+	}
 	return nil
 }
 
@@ -241,6 +229,10 @@ func (task *Task) requiredLatestStatus(statusTypes ...state.StatusType) error {
 		}
 	}
 	return errors.Errorf("wrong order, current task status %q, ", latest.Type)
+}
+
+func (task *Task) context(ctx context.Context) context.Context {
+	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
 }
 
 // NewTask returns a new Task instance.
