@@ -1,5 +1,3 @@
-// nolint:staticcheck
-
 package design
 
 import (

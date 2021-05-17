@@ -1,4 +1,4 @@
-package grpc
+package client
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	logClientPrefix = "client"
+	logPrefix = "client"
 )
 
 type client struct{}
@@ -20,7 +20,7 @@ type client struct{}
 // Connect implements node.Client.Connect()
 func (client *client) Connect(ctx context.Context, address string) (node.Connection, error) {
 	id, _ := random.String(8, random.Base62Chars)
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logClientPrefix, id))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 
 	grpcConn, err := grpc.DialContext(ctx, address,
 		grpc.WithInsecure(),
@@ -40,7 +40,7 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	return conn, nil
 }
 
-// NewClient returns a new client instance.
-func NewClient() node.Client {
+// New returns a new client instance.
+func New() node.Client {
 	return &client{}
 }

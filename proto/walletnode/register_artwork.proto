@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
+
+package walletnode;
+
+service RegisterArtwork {
+    // Session informs the supernode its position (primary/secondary).
+    // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
+    // The stream is used by the parties to inform each other about the cancellation of the task.
+    rpc Session(stream SessionRequest) returns (stream SessionReply);
+
+    // AcceptedNodes returns peers of the secondary supernodes connected to it.
+    rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
+
+    // ConnectTo is a request to connect to the primary supernode.
+    rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
+
+    // UploadImage uploads an image to the supernode.
+    rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
+
+    // SendTicket sends a ticket to the supernode.
+    rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
+}
+
+message SessionRequest {
+    bool is_primary = 1;
+}
+message SessionReply {
+    string sessID = 1;
+}
+
+message AcceptedNodesRequest {
+}
+message AcceptedNodesReply {
+    message Peer {
+        string nodeID = 1;
+    }
+    repeated Peer peers = 1;
+}
+
+message ConnectToRequest {
+    string sessID = 1;
+    string nodeID = 2;
+}
+message ConnectToReply {
+}
+
+message UploadImageRequest {
+    bytes payload = 1;
+}
+message UploadImageReply {
+    string fgpt = 1;
+}
+
+message SendTicketRequest {
+    bytes ticket = 1;
+    string ticket_signature = 2;
+    string fgpt= 3;
+    string fgpt_signature = 4;
+    string fee_txid = 5;
+    bytes thumbnail = 6;
+}
+message SendTicketReply {
+    string ticket_txid = 1;
+}
+

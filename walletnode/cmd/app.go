@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"io/ioutil"
+	"os"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -43,6 +44,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
+		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Directory for storing working data.").SetValue(config.WorkDir),
 		// API
 		cli.NewFlag("swagger", &config.Node.API.Swagger).SetUsage("Enable Swagger UI."),
 	)
@@ -69,6 +71,10 @@ func NewApp() *cli.App {
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
+		}
+
+		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
 		}
 
 		return runApp(ctx, config)
@@ -101,12 +107,17 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegisterService := artworkregister.NewService(config.Node.ArtworkRegister, db, pastelClient, nodeClient)
 
-	// NOTE: for testing to bypass REST API
-	// go func() { artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{MaximumFee: 100}) }()
+	// NOTE: to bypass REST API (for testing)
+	go func() {
+		artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{
+			ImagePath:  "/Users/levko/Downloads/my.jpeg",
+			MaximumFee: 100,
+		})
+	}()
 
 	// api service
 	server := api.NewServer(config.Node.API,
-		services.NewArtwork(artworkRegisterService),
+		services.NewArtwork(artworkRegisterService, config.WorkDir),
 		services.NewSwagger(),
 	)
 

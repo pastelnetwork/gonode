@@ -62,7 +62,7 @@ func (server *Server) Run(ctx context.Context, config *Config) error {
 
 func (server *Server) httpHandler(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer errors.Recover(errors.CheckErrorAndExit)
+		defer errors.Recover(log.Fatal)
 
 		w.Header().Set("Content-Type", "application/json")
 

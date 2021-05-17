@@ -4,6 +4,7 @@ package state
 const (
 	StatusTaskStarted StatusType = iota
 	StatusConnected
+	StatusUploadedImage
 	// Ticket
 	StatusTicketAccepted
 	StatusTicketRegistered
@@ -19,6 +20,7 @@ const (
 var statusNames = map[StatusType]string{
 	StatusTaskStarted:       "Task Started",
 	StatusConnected:         "Connected",
+	StatusUploadedImage:     "Uploaded Image",
 	StatusTicketAccepted:    "Ticket Accepted",
 	StatusTicketRegistered:  "Ticket Registered",
 	StatusTicketActivated:   "Ticket Activated",

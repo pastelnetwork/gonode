@@ -3,6 +3,7 @@ package log
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -28,9 +29,15 @@ func (entry *Entry) WithFields(fields Fields) *Entry {
 	return &Entry{Entry: entry.Entry.WithFields(logrus.Fields(fields))}
 }
 
-// WithError adds an field error to the Entry.
+// WithErrorStack adds an field `error` and `stack` to the Entry.
+func (entry *Entry) WithErrorStack(err error) *Entry {
+	return entry.WithError(err).WithField("stack", errors.ErrorStack(err))
+}
+
+// WithError adds an field `error` to the Entry.
 func (entry *Entry) WithError(err error) *Entry {
-	return &Entry{Entry: entry.Entry.WithError(err)}
+	fields := errors.ExtractFields(err)
+	return &Entry{Entry: entry.Entry.WithError(err).WithFields(map[string]interface{}(fields))}
 }
 
 // WithContext adds a context to the Entry.
@@ -75,12 +82,7 @@ func (entry *Entry) Error(args ...interface{}) {
 
 // Fatal logs a message at level Fatal.
 func (entry *Entry) Fatal(args ...interface{}) {
-	entry.Entry.Fatal(args...)
-}
-
-// Panic logs a message at level Panic.
-func (entry *Entry) Panic(args ...interface{}) {
-	entry.Entry.Panic(args...)
+	entry.Entry.Log(logrus.FatalLevel, args...)
 }
 
 // Entry Printf family functions
@@ -120,11 +122,6 @@ func (entry *Entry) Fatalf(format string, args ...interface{}) {
 	entry.Entry.Fatalf(format, args...)
 }
 
-// Panicf logs a message at level Panic.
-func (entry *Entry) Panicf(format string, args ...interface{}) {
-	entry.Entry.Panicf(format, args...)
-}
-
 // Entry Println family functions
 
 // Traceln logs a message at level Trace.
@@ -160,11 +157,6 @@ func (entry *Entry) Errorln(args ...interface{}) {
 // Fatalln logs a message at level Fatal.
 func (entry *Entry) Fatalln(args ...interface{}) {
 	entry.Entry.Fatalln(args...)
-}
-
-// Panicln logs a message at level Panic.
-func (entry *Entry) Panicln(args ...interface{}) {
-	entry.Entry.Panicln(args...)
 }
 
 // WithCaller adds caller field to the Entry.

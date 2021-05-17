@@ -18,12 +18,12 @@ var (
 )
 
 func main() {
-	defer errors.Recover(errors.CheckErrorAndExit)
+	defer errors.Recover(log.FatalAndExit)
 
 	app := cmd.NewApp()
 	err := app.Run(os.Args)
 
-	errors.CheckErrorAndExit(err)
+	log.FatalAndExit(err)
 }
 
 func init() {

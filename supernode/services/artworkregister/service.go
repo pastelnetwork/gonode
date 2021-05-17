@@ -2,7 +2,6 @@ package artworkregister
 
 import (
 	"context"
-	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -17,14 +16,12 @@ const (
 
 // Service represent artwork service.
 type Service struct {
-	sync.Mutex
+	*Worker
 
 	config       *Config
 	db           storage.KeyValue
 	pastelClient pastel.Client
 	nodeClient   node.Client
-	worker       *Worker
-	tasks        []*Task
 }
 
 // Run starts worker
@@ -35,30 +32,13 @@ func (service *Service) Run(ctx context.Context) error {
 		return errors.New("PastelID is not specified in the config file")
 	}
 
-	return service.worker.Run(ctx)
-}
-
-// TaskByConnID returns the task of the registration artwork by the given connID.
-func (service *Service) TaskByConnID(connID string) *Task {
-	service.Lock()
-	defer service.Unlock()
-
-	for _, task := range service.tasks {
-		if task.ConnID == connID {
-			return task
-		}
-	}
-	return nil
+	return service.Worker.Run(ctx)
 }
 
 // NewTask runs a new task of the registration artwork and returns its taskID.
 func (service *Service) NewTask(ctx context.Context) *Task {
-	service.Lock()
-	defer service.Unlock()
-
 	task := NewTask(service)
-	service.tasks = append(service.tasks, task)
-	service.worker.AddTask(ctx, task)
+	service.Worker.AddTask(ctx, task)
 
 	return task
 }
@@ -70,6 +50,6 @@ func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
-		worker:       NewWorker(),
+		Worker:       NewWorker(),
 	}
 }

@@ -5,12 +5,14 @@ const (
 	StatusTaskStarted StatusType = iota
 
 	// Primary node statuses
-	StatusHandshakePrimaryNode
+	StatusSessionPrimaryNode
 	StatusAcceptedNodes
 
 	// Secondary node statuses
-	StatusHandshakeSecondaryNode
+	StatusSessionSecondaryNode
 	StatusConnectedToNode
+
+	StatusImageUploaded
 
 	// Final
 	StatusTaskCanceled
@@ -18,13 +20,14 @@ const (
 )
 
 var statusNames = map[StatusType]string{
-	StatusTaskStarted:            "Task started",
-	StatusHandshakePrimaryNode:   "Handshake Primary Node",
-	StatusHandshakeSecondaryNode: "Handshake Secondary Node",
-	StatusAcceptedNodes:          "Accepted Secondary Nodes",
-	StatusConnectedToNode:        "Connected to Primary Node",
-	StatusTaskCanceled:           "Task Canceled",
-	StatusTaskCompleted:          "Task Completed",
+	StatusTaskStarted:          "Task started",
+	StatusSessionPrimaryNode:   "Session Primary Node",
+	StatusSessionSecondaryNode: "Session Secondary Node",
+	StatusAcceptedNodes:        "Accepted Secondary Nodes",
+	StatusConnectedToNode:      "Connected to Primary Node",
+	StatusImageUploaded:        "Image Uploaded",
+	StatusTaskCanceled:         "Task Canceled",
+	StatusTaskCompleted:        "Task Completed",
 }
 
 // StatusType represents statusType type of the state.

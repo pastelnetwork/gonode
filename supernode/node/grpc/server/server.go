@@ -1,4 +1,4 @@
-package grpc
+package server
 
 import (
 	"context"
@@ -8,13 +8,13 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/middleware"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/middleware"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
 const (
-	logServerPrefix = "server"
+	logPrefix = "server"
 )
 
 type service interface {
@@ -29,7 +29,7 @@ type Server struct {
 
 // Run starts the server
 func (server *Server) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, logServerPrefix)
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	group, ctx := errgroup.WithContext(ctx)
 
@@ -66,7 +66,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 	select {
 	case <-ctx.Done():
 		log.WithContext(ctx).Infof("Shutting down server at %q", address)
-		grpcServer.Stop()
+		grpcServer.GracefulStop()
 	case err := <-errCh:
 		return err
 	}
@@ -88,8 +88,8 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 	return grpcServer
 }
 
-// NewServer returns a new Server instance.
-func NewServer(config *Config, services ...service) *Server {
+// New returns a new Server instance.
+func New(config *Config, services ...service) *Server {
 	return &Server{
 		config:   config,
 		services: services,
