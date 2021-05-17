@@ -29,7 +29,7 @@ func main() {
 	config.NumberOfImagesToValidate = *numberOfImagesToValidate
 
 	if _, err := auprc.MeasureAUPRC(config); err != nil {
-		log.Printf(errors.ErrorStack(err))
+		log.Print(errors.ErrorStack(err))
 		panic(err)
 	}
 }

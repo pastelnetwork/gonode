@@ -174,7 +174,7 @@ func main() {
 	evaluateNumberOfTimes = *evaluateNumberOfTimesPtr
 
 	if err := runStudy(*goptunaStudyNamePtr); err != nil {
-		log.Printf(errors.ErrorStack(err))
+		log.Print(errors.ErrorStack(err))
 		panic(err)
 	}
 }

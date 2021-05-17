@@ -199,7 +199,7 @@ func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, 
 		currentFingerprint := fingerprint
 		g.Go(func() error {
 			//similarityScoreVectorSpearmanAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "spearman")
-			similarityScoreVectorSpearmanAll[currentIndex], err = Spearman2(candidateImageFingerprint, currentFingerprint)
+			similarityScoreVectorSpearmanAll[currentIndex], err = Spearman(candidateImageFingerprint, currentFingerprint)
 			if err != nil {
 				return err
 			}
@@ -392,7 +392,7 @@ func rankArrayOrdinalCopulaTransformation(input []float64) []float64 {
 		ranks[outputIdx] = 1
 		for j := range input {
 			if (i != j) && (input[j] <= input[i]) {
-				ranks[outputIdx] += 1
+				ranks[outputIdx]++
 			}
 		}
 		ranks[outputIdx] /= float64(len(input))
@@ -411,6 +411,7 @@ func randomLinearProjection(s float64, size int) []float64 {
 	return output
 }
 
+// ComputeRandomizedDependence computes RDC correlation between input arrays of data
 func ComputeRandomizedDependence(x, y []float64) float64 {
 	sinFunc := func(i, j int, v float64) float64 {
 		return math.Sin(v)
@@ -449,9 +450,6 @@ func ComputeRandomizedDependence(x, y []float64) float64 {
 		maxEigVal = 0
 		counter++
 		//fmt.Printf("\n%v", k)
-		if k == 4.5 {
-			//fmt.Printf("\n%v", k)
-		}
 		Cxx := mat.DenseCopyOf(C.Slice(0, int(k), 0, int(k)))
 		Cyy := C.Slice(k0, k0+int(k), k0, k0+int(k)).(*mat.Dense)
 		Cxy := C.Slice(0, int(k), k0, k0+int(k)).(*mat.Dense)
@@ -478,7 +476,7 @@ func ComputeRandomizedDependence(x, y []float64) float64 {
 			realVal := real(eigVal)
 			imageVal := imag(eigVal)
 			if !(imageVal == 0.0 && 0 <= realVal && realVal <= 1) {
-				ub -= 1
+				ub--
 				k = (ub + lb) / 2.0
 				continueLoop = true
 				maxEigVal = 0
@@ -742,10 +740,12 @@ func printRDCCalculationResults(similarityScore, similarityScoreStdev []float64)
 }
 
 func printBlomqvistBetaCalculationResults(similarityScore, similarityScoreStdev []float64) {
+	_ = similarityScoreStdev
 	similarityScoreVectorBlomqvistAverage, _ := stats.Mean(similarityScore)
 	fmt.Printf("\n Average for Blomqvist's beta: %.4f", strictnessFactor*similarityScoreVectorBlomqvistAverage)
 }
 
+// ComputeConfig contains configurable parameters to calculate AUPRC of image similariy measurement
 type ComputeConfig struct {
 	CorrelationMethodNameArray        []string
 	StableOrderOfCorrelationMethods   []string
@@ -765,6 +765,7 @@ type ComputeConfig struct {
 	NumberOfImagesToValidate int
 }
 
+// NewComputeConfig retirieves new ComputeConfig with default values
 func NewComputeConfig() ComputeConfig {
 	config := ComputeConfig{}
 	config.PearsonDupeThreshold = 0.995
@@ -808,6 +809,7 @@ func NewComputeConfig() ComputeConfig {
 	return config
 }
 
+// MeasureImageSimilarity calculates similarity between candidateImageFingerprint and each value in fingerprintsArrayToCompareWith
 func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArrayToCompareWith [][]float64, config ComputeConfig) (int, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
