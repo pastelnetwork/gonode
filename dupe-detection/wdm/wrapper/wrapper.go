@@ -57,22 +57,19 @@ extern double _wrap_wdm__SWIG_3_wrapper_d8938e3a6795767e(swig_voidp arg1, swig_i
 */
 import "C"
 
-import "unsafe"
-import _ "runtime/cgo"
-import "sync"
-
+import (
+	_ "runtime/cgo"
+	"sync"
+	"unsafe"
+)
 
 type _ unsafe.Pointer
-
-
 
 var Swig_escape_always_false bool
 var Swig_escape_val interface{}
 
-
 type _swig_fnptr *byte
 type _swig_memberptr *byte
-
 
 type _ sync.Mutex
 
@@ -277,5 +274,3 @@ check_3:
 	}
 	panic("No match for overloaded function call")
 }
-
-
