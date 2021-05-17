@@ -20,14 +20,14 @@ const (
 )
 
 var statusNames = map[StatusType]string{
-	StatusTaskStarted:            "Task started",
+	StatusTaskStarted:          "Task started",
 	StatusSessionPrimaryNode:   "Session Primary Node",
 	StatusSessionSecondaryNode: "Session Secondary Node",
-	StatusAcceptedNodes:          "Accepted Secondary Nodes",
-	StatusConnectedToNode:        "Connected to Primary Node",
-	StatusImageUploaded:          "Image Uploaded",
-	StatusTaskCanceled:           "Task Canceled",
-	StatusTaskCompleted:          "Task Completed",
+	StatusAcceptedNodes:        "Accepted Secondary Nodes",
+	StatusConnectedToNode:      "Connected to Primary Node",
+	StatusImageUploaded:        "Image Uploaded",
+	StatusTaskCanceled:         "Task Canceled",
+	StatusTaskCompleted:        "Task Completed",
 }
 
 // StatusType represents statusType type of the state.
