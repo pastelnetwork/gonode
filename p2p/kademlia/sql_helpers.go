@@ -10,12 +10,14 @@ import (
 )
 
 func migrate(ctx context.Context, db *sql.DB) error {
-	_, err = db.ExecContext(ctx,
-		"CREATE TABLE IF NOT EXISTS `keys` (`uid` INTEGER PRIMARY KEY AUTOINCREMENT, `key` VARCHAR(64) NULL, `data` BLOB NULL, `replication` DATE NULL, `expiration` DATE NULL")
+	_, err := db.ExecContext(ctx,
+		"CREATE TABLE IF NOT EXISTS `keys` (`uid` INTEGER PRIMARY KEY AUTOINCREMENT, `key` VARCHAR(64) NULL, `data` BLOB NULL, `replication` DATE NULL, `expiration` DATE NULL)")
 	if err != nil {
 		log.Printf("Error %s when creating keys table", err)
 		return err
 	}
+
+	return nil
 }
 
 func store(db *sql.DB, key []byte, data []byte, replication, expiration time.Time) error {
@@ -36,7 +38,7 @@ func store(db *sql.DB, key []byte, data []byte, replication, expiration time.Tim
 		return err
 	}
 
-	rows, err := res.RowsAffected()
+	_, err = res.RowsAffected()
 	if err != nil {
 		log.Printf("Error %s when finding rows affected", err)
 		return err
@@ -72,7 +74,7 @@ func retrieve(db *sql.DB, key []byte) ([]byte, error) {
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		log.Printf("Error %s after scanning rows", rerr)
+		log.Printf("Error %s after scanning rows", err)
 		return []byte{}, err
 	}
 
@@ -80,7 +82,6 @@ func retrieve(db *sql.DB, key []byte) ([]byte, error) {
 }
 
 func expireKeys(db *sql.DB) error {
-	var data []byte
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -105,11 +106,6 @@ func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 	}
 	defer rows.Close()
 
-	if err := rows.Scan(&data); err != nil {
-		log.Printf("Error %s when scanning rows", err)
-		return [][]byte{}, err
-	}
-
 	for rows.Next() {
 		var key string
 		if err := rows.Scan(&key); err != nil {
@@ -117,7 +113,7 @@ func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 			// Query rows will be closed with defer.
 			log.Fatal(err)
 		}
-		names = append(keys, key)
+		keys = append(keys, []byte(key))
 	}
 
 	// If the database is being written to ensure to check for Close
@@ -130,7 +126,9 @@ func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		log.Printf("Error %s after scanning rows", rerr)
+		log.Printf("Error %s after scanning rows", err)
 		return [][]byte{}, err
 	}
+
+	return keys, nil
 }

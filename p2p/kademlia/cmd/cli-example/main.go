@@ -106,7 +106,8 @@ func main() {
 				displayHelp()
 				continue
 			}
-			id, err := dht.Store([]byte(input[1]))
+			key := []byte("sample key")
+			id, err := dht.Store([]byte(input[1]), key)
 			if err != nil {
 				fmt.Println(err.Error())
 			}

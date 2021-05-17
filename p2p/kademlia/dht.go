@@ -559,7 +559,11 @@ func (dht *DHT) timers() {
 			}
 
 			// Replication
-			keys := dht.store.GetAllKeysForReplication()
+			keys, err := dht.store.GetAllKeysForReplication()
+			if err != nil {
+				log.Fatal(err)
+			}
+			
 			for _, key := range keys {
 				value, _ := dht.store.Retrieve(key)
 				dht.iterate(iterateStore, key, value)
