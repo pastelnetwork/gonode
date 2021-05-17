@@ -1,7 +1,7 @@
 package wdm
 
 import (
-	"github.com/pastelnetwork/gonode/dupe-detection/wdm/swig"
+	"github.com/pastelnetwork/gonode/dupe-detection/wdm/wrapper"
 )
 
 // Wdm compute correlation for specified method. List of supported methods:
@@ -15,5 +15,5 @@ func Wdm(x, y []float64, method string) float64 {
 		return 0
 	}
 
-	return swig.Wdm(&x[0], len(x), &y[0], len(y), method)
+	return wrapper.Wdm(&x[0], len(x), &y[0], len(y), method)
 }

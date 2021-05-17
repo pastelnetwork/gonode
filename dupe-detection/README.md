@@ -94,3 +94,10 @@ Run optimizer with `imageCount` parameter to limit number of analyzed images per
 ```
 go run ./cmd/optimizer/ -rootDir "./test_corpus" -imageCount 30 -runCount 100 -studyName "dupe-detection-aurpc"
 ```
+
+## Regenerate swig wrapper files
+
+```
+cd wdm/wrapper
+swig -go -cgo -c++ -intgosize 64 wrapper.i
+```
