@@ -86,12 +86,12 @@ func (task *Task) Session(ctx context.Context, isPrimary bool) error {
 
 	if isPrimary {
 		log.WithContext(ctx).Debugf("Acts as primary node")
-		task.State.Update(ctx, state.NewStatus(state.StatusSessionPrimaryNode))
+		task.State.Update(ctx, state.NewStatus(state.StatusPrimaryMode))
 		return nil
 	}
 
 	log.WithContext(ctx).Debugf("Acts as secondary node")
-	task.State.Update(ctx, state.NewStatus(state.StatusSessionSecondaryNode))
+	task.State.Update(ctx, state.NewStatus(state.StatusSecondaryMode))
 	return nil
 }
 
@@ -99,7 +99,7 @@ func (task *Task) Session(ctx context.Context, isPrimary bool) error {
 func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 	ctx = task.context(ctx)
 
-	if err := task.requiredLatestStatus(state.StatusSessionPrimaryNode); err != nil {
+	if err := task.requiredLatestStatus(state.StatusPrimaryMode); err != nil {
 		return nil, err
 	}
 	log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
@@ -122,7 +122,7 @@ func (task *Task) SessionNode(ctx context.Context, nodeID string) error {
 	task.acceptMu.Lock()
 	defer task.acceptMu.Unlock()
 
-	if err := task.requiredLatestStatus(state.StatusSessionPrimaryNode); err != nil {
+	if err := task.requiredLatestStatus(state.StatusPrimaryMode); err != nil {
 		return err
 	}
 
@@ -146,7 +146,7 @@ func (task *Task) SessionNode(ctx context.Context, nodeID string) error {
 
 // ConnectTo connects to primary node
 func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
-	if err := task.requiredLatestStatus(state.StatusSessionSecondaryNode); err != nil {
+	if err := task.requiredLatestStatus(state.StatusSecondaryMode); err != nil {
 		return err
 	}
 
