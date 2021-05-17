@@ -102,7 +102,7 @@ func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, "SELECT key FROM keys WHERE expiration > ?", time.Now())
+	rows, err := db.QueryContext(ctx, "SELECT key FROM keys WHERE replication > ?", time.Now())
 	if err != nil {
 		log.Printf("Error %s while selecting keys for replication", err)
 		return [][]byte{}, err
