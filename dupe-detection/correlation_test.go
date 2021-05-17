@@ -102,7 +102,7 @@ func TestCorrelations(t *testing.T) {
 	fmt.Printf("\nNumber of inputs loaded: %v", len(inputs1))
 	differentsCount := 0
 	for i := range inputs1 {
-		result, err := dupedetection.Spearman2(inputs1[i], inputs2[i])
+		result, err := dupedetection.Spearman(inputs1[i], inputs2[i])
 		if err != nil {
 			t.Error(err)
 		}

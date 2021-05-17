@@ -13,10 +13,9 @@ import (
 	"database/sql"
 
 	"github.com/corona10/goimghdr"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mattn/go-sqlite3" // Imports sqlite db drivers
 	"github.com/pa-m/sklearn/metrics"
 	"gonum.org/v1/gonum/mat"
-	_ "gonum.org/v1/gonum/mat"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
@@ -26,8 +25,6 @@ import (
 	"encoding/hex"
 
 	"golang.org/x/crypto/sha3"
-
-	_ "gorgonia.org/tensor"
 )
 
 const (
@@ -165,7 +162,7 @@ func checkIfFilePathIsAValidImage(filePath string) error {
 	if imageHeader == "gif" || imageHeader == "jpeg" || imageHeader == "png" || imageHeader == "bmp" {
 		return nil
 	}
-	return errors.New("Image header is not supported.")
+	return errors.New("Image header is not supported")
 }
 
 func getAllValidImageFilePathsInFolder(artFolderPath string, imageMaxCount int) ([]string, error) {
@@ -396,6 +393,7 @@ func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, finalComb
 	return dupedetection.MeasureImageSimilarity(candidateImageFingerprint, finalCombinedImageFingerprintArray, config)
 }
 
+// MeasureAUPRC calculates AUPRC for a test corpus of the images
 func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
@@ -470,7 +468,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 		}
 
 		if isLikelyDupe == 0 {
-			nondupeCounter += 1
+			nondupeCounter++
 			predictedY = append(predictedY, 1.0)
 		} else {
 			predictedY = append(predictedY, 0.0)

@@ -123,8 +123,8 @@ jobs:
           package: "proto"
       - test:
           package: "legroast"
-      # - test:
-      #     package: "dupe-detection"
+      - test:
+          package: "dupe-detection"
       - test:
           package: "pqsignatures"
       - test:
