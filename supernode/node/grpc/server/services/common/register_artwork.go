@@ -15,24 +15,24 @@ type RegisterArtowrk struct {
 }
 
 // SessID retrieves SessID from the metadata.
-func (service *RegisterArtowrk) SessID(ctx context.Context) (string, error) {
+func (service *RegisterArtowrk) SessID(ctx context.Context) (string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
-		return "", errors.New("not found metadata")
+		return "", false
 	}
 
 	mdVals := md.Get(proto.MetadataKeySessID)
 	if len(mdVals) == 0 {
-		return "", errors.Errorf("not found %q in metadata", proto.MetadataKeySessID)
+		return "", false
 	}
-	return mdVals[0], nil
+	return mdVals[0], true
 }
 
 // TaskFromMD returns task by SessID from the metadata.
 func (service *RegisterArtowrk) TaskFromMD(ctx context.Context) (*artworkregister.Task, error) {
-	sessID, err := service.SessID(ctx)
-	if err != nil {
-		return nil, err
+	sessID, ok := service.SessID(ctx)
+	if !ok {
+		return nil, errors.New("not found sessID in metadata")
 	}
 
 	task := service.Task(sessID)

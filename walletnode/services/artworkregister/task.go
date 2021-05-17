@@ -79,6 +79,7 @@ func (task *Task) run(ctx context.Context) error {
 	for _, node := range nodes {
 		node := node
 		group.Go(func() (err error) {
+			defer errors.Recover(func(recErr error) { err = recErr })
 			defer cancel()
 
 			select {

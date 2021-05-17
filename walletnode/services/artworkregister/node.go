@@ -42,7 +42,7 @@ func (nodes *Nodes) sendImage(ctx context.Context, filename string) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			return node.SendImage(ctx, filename)
+			return node.UploadImage(ctx, filename)
 		})
 	}
 	return group.Wait()
@@ -73,13 +73,6 @@ func (node *Node) connect(ctx context.Context) error {
 		return err
 	}
 	node.conn = conn
-
-	go func() {
-		<-ctx.Done()
-		conn.Close()
-		node.conn = nil
-	}()
-
 	node.RegisterArtowrk = conn.RegisterArtowrk()
 	return nil
 }

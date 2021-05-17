@@ -50,10 +50,6 @@ type Node struct {
 }
 
 func (node *Node) connect(ctx context.Context) error {
-	if node.conn != nil {
-		return nil
-	}
-
 	connCtx, connCancel := context.WithTimeout(ctx, connectToNodeTimeout)
 	defer connCancel()
 
@@ -61,13 +57,8 @@ func (node *Node) connect(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+
 	node.conn = conn
-
-	go func() {
-		<-node.conn.Done()
-		node.conn = nil
-	}()
-
 	node.RegisterArtowrk = conn.RegisterArtowrk()
 	return nil
 }

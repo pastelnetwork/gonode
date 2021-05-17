@@ -57,12 +57,10 @@ func (worker *Worker) RemoveTask(subTask *Task) {
 // Run waits for new tasks, starts handling eche of them in a new goroutine.
 func (worker *Worker) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
-
 	for {
 		select {
 		case <-ctx.Done():
 			return group.Wait()
-
 		case task := <-worker.taskCh:
 			group.Go(func() (err error) {
 				defer errors.Recover(func(recErr error) { err = recErr })

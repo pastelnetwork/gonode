@@ -11,7 +11,9 @@ import (
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 const (
@@ -29,18 +31,40 @@ func (service *registerArtowrk) SessID() string {
 	return service.sessID
 }
 
-func (service *registerArtowrk) healthCheck(ctx context.Context) error {
+// Handshake implements node.RegisterArtowrk.Handshake()
+func (service *registerArtowrk) Handshake(ctx context.Context, isPrimary bool) error {
 	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDSessID(ctx)
 
-	stream, err := service.client.Health(ctx)
+	stream, err := service.client.Handshake(ctx)
 	if err != nil {
 		return errors.Errorf("failed to open Health stream: %w", err)
 	}
 
+	req := &pb.HandshakeRequest{
+		IsPrimary: isPrimary,
+	}
+	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
+
+	if err := stream.Send(req); err != nil {
+		return errors.Errorf("failed to send Handshake request: %w", err)
+	}
+
+	resp, err := stream.Recv()
+	if err != nil {
+		if err == io.EOF {
+			return nil
+		}
+		switch status.Code(err) {
+		case codes.Canceled, codes.Unavailable:
+			return nil
+		}
+		return errors.Errorf("failed to receive Handshake response: %w", err)
+	}
+	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
+	service.sessID = resp.SessID
+
 	go func() {
 		defer service.conn.Close()
-
 		for {
 			if _, err := stream.Recv(); err != nil {
 				return
@@ -49,25 +73,6 @@ func (service *registerArtowrk) healthCheck(ctx context.Context) error {
 	}()
 
 	return nil
-}
-
-// Handshake implements node.RegisterArtowrk.Handshake()
-func (service *registerArtowrk) Handshake(ctx context.Context, IsPrimary bool) error {
-	ctx = service.contextWithLogPrefix(ctx)
-
-	req := &pb.HandshakeRequest{
-		IsPrimary: IsPrimary,
-	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
-
-	resp, err := service.client.Handshake(ctx, req)
-	if err != nil {
-		return errors.Errorf("failed to reqeust Handshake: %w", err)
-	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
-
-	service.sessID = resp.SessID
-	return service.healthCheck(ctx)
 }
 
 // AcceptedNodes implements node.RegisterArtowrk.AcceptedNodes()
@@ -111,12 +116,12 @@ func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeID, sessID st
 	return nil
 }
 
-// SendImage implements node.RegisterArtowrk.SendImage()
-func (service *registerArtowrk) SendImage(ctx context.Context, filename string) error {
+// UploadImage implements node.RegisterArtowrk.UploadImage()
+func (service *registerArtowrk) UploadImage(ctx context.Context, filename string) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	stream, err := service.client.SendImage(ctx)
+	stream, err := service.client.UploadImage(ctx)
 	if err != nil {
 		return errors.Errorf("failed to open stream: %w", err)
 	}
@@ -128,7 +133,7 @@ func (service *registerArtowrk) SendImage(ctx context.Context, filename string) 
 	}
 	defer file.Close()
 
-	log.WithContext(ctx).WithField("filename", filename).Debugf("SendImage uploading")
+	log.WithContext(ctx).WithField("filename", filename).Debugf("UploadImage uploading")
 	buffer := make([]byte, uploadImageBufferSize)
 	for {
 		n, err := file.Read(buffer)
@@ -136,20 +141,20 @@ func (service *registerArtowrk) SendImage(ctx context.Context, filename string) 
 			break
 		}
 
-		req := &pb.SendImageRequest{
+		req := &pb.UploadImageRequest{
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
 			return errors.Errorf("failed to send image data: %w", err).WithField("reqID", service.conn.id)
 		}
 	}
-	log.WithContext(ctx).Debugf("SendImage uploaded")
+	log.WithContext(ctx).Debugf("UploadImage uploaded")
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
 		return errors.Errorf("failed to receive send image response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("SendImage response")
+	log.WithContext(ctx).WithField("resp", resp).Debugf("UploadImage response")
 
 	return nil
 }

@@ -27,50 +27,63 @@ type RegisterArtowrk struct {
 	workDir string
 }
 
-// Health implements supernode.RegisterArtowrkServer.Health()
-func (service *RegisterArtowrk) Health(stream pb.RegisterArtowrk_HealthServer) error {
-	ctx := stream.Context()
+// Handshake implements walletnode.RegisterArtowrkServer.Handshake()
+func (service *RegisterArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeServer) error {
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
 
-	task, err := service.TaskFromMD(ctx)
-	if err != nil {
-		return err
+	var task *artworkregister.Task
+
+	if sessID, ok := service.SessID(ctx); ok {
+		if task = service.Task(sessID); task == nil {
+			return errors.Errorf("not found %q task", sessID)
+		}
+	} else {
+		task = service.NewTask(ctx)
 	}
+	go func() {
+		<-task.Done()
+		cancel()
+	}()
 	defer task.Cancel()
 
 	peer, _ := peer.FromContext(ctx)
-	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Helath stream")
-	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Helath stream closed")
+	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Handshake stream")
+	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Handshake stream closed")
 
-	go func() {
-		defer task.Cancel()
-		for {
-			if _, err := stream.Recv(); err != nil {
-				return
-			}
-		}
-	}()
-
-	<-task.Done()
-	return nil
-}
-
-// Handshake implements supernode.RegisterArtowrkServer.Handshake()
-func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.HandshakeRequest) (*pb.HandshakeReply, error) {
+	req, err := stream.Recv()
+	if err != nil {
+		return errors.Errorf("failed to receieve handshake request: %w", err)
+	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
-	task := service.NewTask(ctx)
 	if err := task.Handshake(ctx, req.IsPrimary); err != nil {
-		return nil, err
+		return err
 	}
 
 	resp := &pb.HandshakeReply{
 		SessID: task.ID,
 	}
+	if err := stream.Send(resp); err != nil {
+		return errors.Errorf("failed to send handshake response: %w", err)
+	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
-	return resp, nil
+
+	for {
+		if _, err := stream.Recv(); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			switch status.Code(err) {
+			case codes.Canceled, codes.Unavailable:
+				return nil
+			}
+			return errors.Errorf("handshake stream closed: %w", err)
+		}
+	}
 }
 
-// AcceptedNodes implements supernode.RegisterArtowrkServer.AcceptedNodes()
+// AcceptedNodes implements walletnode.RegisterArtowrkServer.AcceptedNodes()
 func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
 	task, err := service.TaskFromMD(ctx)
@@ -97,7 +110,7 @@ func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.Accep
 	return resp, nil
 }
 
-// ConnectTo implements supernode.RegisterArtowrkServer.ConnectTo()
+// ConnectTo implements walletnode.RegisterArtowrkServer.ConnectTo()
 func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 	task, err := service.TaskFromMD(ctx)
@@ -114,8 +127,8 @@ func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
-// SendImage implements supernode.RegisterArtowrkServer.SendImage()
-func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageServer) error {
+// UploadImage implements walletnode.RegisterArtowrkServer.UploadImage()
+func (service *RegisterArtowrk) UploadImage(stream pb.RegisterArtowrk_UploadImageServer) error {
 	ctx := stream.Context()
 
 	task, err := service.TaskFromMD(ctx)
@@ -131,12 +144,6 @@ func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 		return errors.Errorf("failed to open file %q: %w", filename, err)
 	}
 
-	// TODO: remove file at the end of work
-	// defer func() {
-	// 	os.Remove(filename)
-	// 	log.WithContext(ctx).Debugf("Removed temp file %a", filename)
-	// }()
-
 	defer file.Close()
 	log.WithContext(ctx).Debugf("Created temp file %q for uploading image", filename)
 
@@ -151,7 +158,7 @@ func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 			if status.Code(err) == codes.Canceled {
 				return errors.New("connection closed")
 			}
-			return errors.Errorf("failed to receive SendImage: %w", err)
+			return errors.Errorf("failed to receive UploadImage: %w", err)
 		}
 
 		if _, err := wr.Write(req.Payload); err != nil {
@@ -159,14 +166,15 @@ func (service *RegisterArtowrk) SendImage(stream pb.RegisterArtowrk_SendImageSer
 		}
 	}
 
-	// TODO: pass filename to the task
-	_ = task
-
-	resp := &pb.SendImageReply{}
-	if err := stream.SendAndClose(resp); err != nil {
-		return errors.Errorf("failed to send SendImage response: %w", err)
+	if err := task.UploadImage(ctx, filename); err != nil {
+		return err
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("SendImage response")
+
+	resp := &pb.UploadImageReply{}
+	if err := stream.SendAndClose(resp); err != nil {
+		return errors.Errorf("failed to send UploadImage response: %w", err)
+	}
+	log.WithContext(ctx).WithField("resp", resp).Debugf("UploadImage response")
 	return nil
 }
 

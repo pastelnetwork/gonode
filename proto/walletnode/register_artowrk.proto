@@ -7,10 +7,8 @@ package walletnode;
 service RegisterArtowrk {
     // Handshake informs the supernode its position (primary/secondary).
     // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
-    rpc Handshake(HandshakeRequest) returns (HandshakeReply);
-    
-    // Health stream is used by the server to detect client disconnection.
-    rpc Health(stream Empty) returns (stream Empty);
+    // The stream is used by the parties to inform each other about the cancellation of the task.
+    rpc Handshake(stream HandshakeRequest) returns (stream HandshakeReply);
 
     // AcceptedNodes returns peers of the secondary supernodes connected to it.
     rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
@@ -18,14 +16,12 @@ service RegisterArtowrk {
     // ConnectTo is a request to connect to the primary supernode.
     rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
 
-    // SendImage uploads an image to the supernode.
-    rpc SendImage(stream SendImageRequest) returns (SendImageReply);
+    // UploadImage uploads an image to the supernode.
+    rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
 
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
 }
-
-message Empty {}
 
 message HandshakeRequest {
     bool is_primary = 1;
@@ -50,10 +46,10 @@ message ConnectToRequest {
 message ConnectToReply {
 }
 
-message SendImageRequest {
+message UploadImageRequest {
     bytes payload = 1;
 }
-message SendImageReply {
+message UploadImageReply {
     string fgpt = 1;
 }
 

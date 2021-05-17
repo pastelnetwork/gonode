@@ -18,8 +18,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RegisterArtowrkClient interface {
-	Health(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_HealthClient, error)
-	Handshake(ctx context.Context, in *HandshakeRequest, opts ...grpc.CallOption) (*HandshakeReply, error)
+	// Handshake informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
+	// The stream is used by the parties to inform each other about the cancellation of the task.
+	Handshake(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_HandshakeClient, error)
 }
 
 type registerArtowrkClient struct {
@@ -30,52 +31,44 @@ func NewRegisterArtowrkClient(cc grpc.ClientConnInterface) RegisterArtowrkClient
 	return &registerArtowrkClient{cc}
 }
 
-func (c *registerArtowrkClient) Health(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_HealthClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RegisterArtowrk_ServiceDesc.Streams[0], "/supernode.RegisterArtowrk/Health", opts...)
+func (c *registerArtowrkClient) Handshake(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_HandshakeClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterArtowrk_ServiceDesc.Streams[0], "/supernode.RegisterArtowrk/Handshake", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &registerArtowrkHealthClient{stream}
+	x := &registerArtowrkHandshakeClient{stream}
 	return x, nil
 }
 
-type RegisterArtowrk_HealthClient interface {
-	Send(*Empty) error
-	Recv() (*Empty, error)
+type RegisterArtowrk_HandshakeClient interface {
+	Send(*HandshakeRequest) error
+	Recv() (*HandshakeReply, error)
 	grpc.ClientStream
 }
 
-type registerArtowrkHealthClient struct {
+type registerArtowrkHandshakeClient struct {
 	grpc.ClientStream
 }
 
-func (x *registerArtowrkHealthClient) Send(m *Empty) error {
+func (x *registerArtowrkHandshakeClient) Send(m *HandshakeRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *registerArtowrkHealthClient) Recv() (*Empty, error) {
-	m := new(Empty)
+func (x *registerArtowrkHandshakeClient) Recv() (*HandshakeReply, error) {
+	m := new(HandshakeReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *registerArtowrkClient) Handshake(ctx context.Context, in *HandshakeRequest, opts ...grpc.CallOption) (*HandshakeReply, error) {
-	out := new(HandshakeReply)
-	err := c.cc.Invoke(ctx, "/supernode.RegisterArtowrk/Handshake", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // RegisterArtowrkServer is the server API for RegisterArtowrk service.
 // All implementations must embed UnimplementedRegisterArtowrkServer
 // for forward compatibility
 type RegisterArtowrkServer interface {
-	Health(RegisterArtowrk_HealthServer) error
-	Handshake(context.Context, *HandshakeRequest) (*HandshakeReply, error)
+	// Handshake informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
+	// The stream is used by the parties to inform each other about the cancellation of the task.
+	Handshake(RegisterArtowrk_HandshakeServer) error
 	mustEmbedUnimplementedRegisterArtowrkServer()
 }
 
@@ -83,11 +76,8 @@ type RegisterArtowrkServer interface {
 type UnimplementedRegisterArtowrkServer struct {
 }
 
-func (UnimplementedRegisterArtowrkServer) Health(RegisterArtowrk_HealthServer) error {
-	return status.Errorf(codes.Unimplemented, "method Health not implemented")
-}
-func (UnimplementedRegisterArtowrkServer) Handshake(context.Context, *HandshakeRequest) (*HandshakeReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Handshake not implemented")
+func (UnimplementedRegisterArtowrkServer) Handshake(RegisterArtowrk_HandshakeServer) error {
+	return status.Errorf(codes.Unimplemented, "method Handshake not implemented")
 }
 func (UnimplementedRegisterArtowrkServer) mustEmbedUnimplementedRegisterArtowrkServer() {}
 
@@ -102,48 +92,30 @@ func RegisterRegisterArtowrkServer(s grpc.ServiceRegistrar, srv RegisterArtowrkS
 	s.RegisterService(&RegisterArtowrk_ServiceDesc, srv)
 }
 
-func _RegisterArtowrk_Health_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RegisterArtowrkServer).Health(&registerArtowrkHealthServer{stream})
+func _RegisterArtowrk_Handshake_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterArtowrkServer).Handshake(&registerArtowrkHandshakeServer{stream})
 }
 
-type RegisterArtowrk_HealthServer interface {
-	Send(*Empty) error
-	Recv() (*Empty, error)
+type RegisterArtowrk_HandshakeServer interface {
+	Send(*HandshakeReply) error
+	Recv() (*HandshakeRequest, error)
 	grpc.ServerStream
 }
 
-type registerArtowrkHealthServer struct {
+type registerArtowrkHandshakeServer struct {
 	grpc.ServerStream
 }
 
-func (x *registerArtowrkHealthServer) Send(m *Empty) error {
+func (x *registerArtowrkHandshakeServer) Send(m *HandshakeReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *registerArtowrkHealthServer) Recv() (*Empty, error) {
-	m := new(Empty)
+func (x *registerArtowrkHandshakeServer) Recv() (*HandshakeRequest, error) {
+	m := new(HandshakeRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
-}
-
-func _RegisterArtowrk_Handshake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HandshakeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegisterArtowrkServer).Handshake(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/supernode.RegisterArtowrk/Handshake",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtowrkServer).Handshake(ctx, req.(*HandshakeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 // RegisterArtowrk_ServiceDesc is the grpc.ServiceDesc for RegisterArtowrk service.
@@ -152,16 +124,11 @@ func _RegisterArtowrk_Handshake_Handler(srv interface{}, ctx context.Context, de
 var RegisterArtowrk_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "supernode.RegisterArtowrk",
 	HandlerType: (*RegisterArtowrkServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Handshake",
-			Handler:    _RegisterArtowrk_Handshake_Handler,
-		},
-	},
+	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Health",
-			Handler:       _RegisterArtowrk_Health_Handler,
+			StreamName:    "Handshake",
+			Handler:       _RegisterArtowrk_Handshake_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

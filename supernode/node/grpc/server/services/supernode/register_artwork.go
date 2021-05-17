@@ -2,6 +2,7 @@ package supernode
 
 import (
 	"context"
+	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -9,7 +10,9 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/status"
 )
 
 // RegisterArtowrk represents grpc service for registration artowrk.
@@ -19,49 +22,60 @@ type RegisterArtowrk struct {
 	*common.RegisterArtowrk
 }
 
-// Health implements supernode.RegisterArtowrkServer.Health()
-func (service *RegisterArtowrk) Health(stream pb.RegisterArtowrk_HealthServer) error {
-	ctx := stream.Context()
+// Handshake implements supernode.RegisterArtowrkServer.Handshake()
+func (service *RegisterArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeServer) error {
+	ctx, cancel := context.WithCancel(stream.Context())
+	defer cancel()
 
-	task, err := service.TaskFromMD(ctx)
-	if err != nil {
-		return err
+	var task *artworkregister.Task
+
+	if sessID, ok := service.SessID(ctx); ok {
+		if task = service.Task(sessID); task == nil {
+			return errors.Errorf("not found %q task", sessID)
+		}
+	} else {
+		task = service.NewTask(ctx)
 	}
+	go func() {
+		<-task.Done()
+		cancel()
+	}()
 	defer task.Cancel()
 
 	peer, _ := peer.FromContext(ctx)
-	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Helath stream")
-	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Helath stream closed")
+	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Handshake stream")
+	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Handshake stream closed")
 
-	go func() {
-		defer task.Cancel()
-		for {
-			if _, err := stream.Recv(); err != nil {
-				return
-			}
-		}
-	}()
-
-	<-task.Done()
-	return nil
-}
-
-// Handshake implements supernode.RegisterArtowrkServer.Handshake()
-func (service *RegisterArtowrk) Handshake(ctx context.Context, req *pb.HandshakeRequest) (*pb.HandshakeReply, error) {
+	req, err := stream.Recv()
+	if err != nil {
+		return errors.Errorf("failed to receieve handshake request: %w", err)
+	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
 
-	task := service.Task(req.SessID)
-	if task == nil {
-		return nil, errors.Errorf("not found %q task", req.SessID)
-	}
-
 	if err := task.HandshakeNode(ctx, req.NodeID); err != nil {
-		return nil, err
+		return err
 	}
 
-	resp := &pb.HandshakeReply{}
+	resp := &pb.HandshakeReply{
+		SessID: task.ID,
+	}
+	if err := stream.Send(resp); err != nil {
+		return errors.Errorf("failed to send handshake response: %w", err)
+	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
-	return resp, nil
+
+	for {
+		if _, err := stream.Recv(); err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			switch status.Code(err) {
+			case codes.Canceled, codes.Unavailable:
+				return nil
+			}
+			return errors.Errorf("handshake stream closed: %w", err)
+		}
+	}
 }
 
 // Desc returns a description of the service.

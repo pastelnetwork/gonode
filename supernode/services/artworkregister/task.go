@@ -3,27 +3,30 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister/state"
+	"golang.org/x/sync/errgroup"
 )
 
 // Task is the task of registering new artwork.
 type Task struct {
 	*Service
 
-	ID    string
-	State *state.State
+	ID        string
+	State     *state.State
+	ImagePath string
 
 	acceptMu    sync.Mutex
 	accpetNodes Nodes
 
 	connectNode *Node
 
-	actionCh chan func(ctx context.Context) error
+	actCh chan func(ctx context.Context) error
 
 	doneMu sync.Mutex
 	doneCh chan struct{}
@@ -31,18 +34,27 @@ type Task struct {
 
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	defer task.Cancel()
 
+	group, ctx := errgroup.WithContext(ctx)
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
-		case action := <-task.actionCh:
-			if err := action(ctx); err != nil {
-				return err
-			}
+		case <-task.Done():
+
+		case action := <-task.actCh:
+			group.Go(func() (err error) {
+				defer errors.Recover(func(recErr error) { err = recErr })
+				return action(ctx)
+			})
+			continue
 		}
+		break
 	}
+	cancel()
+	return group.Wait()
 }
 
 // Cancel stops the task, which causes all connections associated with that task to be closed.
@@ -72,7 +84,7 @@ func (task *Task) context(ctx context.Context) context.Context {
 func (task *Task) Handshake(ctx context.Context, isPrimary bool) error {
 	ctx = task.context(ctx)
 
-	if err := task.requiredStatus(state.StatusTaskStarted); err != nil {
+	if err := task.requiredLatestStatus(state.StatusTaskStarted); err != nil {
 		return err
 	}
 
@@ -91,7 +103,7 @@ func (task *Task) Handshake(ctx context.Context, isPrimary bool) error {
 func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 	ctx = task.context(ctx)
 
-	if err := task.requiredStatus(state.StatusHandshakePrimaryNode); err != nil {
+	if err := task.requiredLatestStatus(state.StatusHandshakePrimaryNode); err != nil {
 		return nil, err
 	}
 	log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
@@ -100,7 +112,7 @@ func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-task.State.Updated():
-		if err := task.requiredStatus(state.StatusAcceptedNodes); err != nil {
+		if err := task.requiredLatestStatus(state.StatusAcceptedNodes); err != nil {
 			return nil, err
 		}
 		return task.accpetNodes, nil
@@ -114,7 +126,7 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeID string) error {
 	task.acceptMu.Lock()
 	defer task.acceptMu.Unlock()
 
-	if err := task.requiredStatus(state.StatusHandshakePrimaryNode); err != nil {
+	if err := task.requiredLatestStatus(state.StatusHandshakePrimaryNode); err != nil {
 		return err
 	}
 
@@ -136,15 +148,42 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeID string) error {
 	return nil
 }
 
-// ConnectTo connects to primary node
-func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
-	if err := task.requiredStatus(state.StatusHandshakeSecondaryNode); err != nil {
+// UploadImage uploads an image
+func (task *Task) UploadImage(_ context.Context, filename string) error {
+	if err := task.requiredLatestStatus(state.StatusAcceptedNodes, state.StatusConnectedToNode); err != nil {
 		return err
 	}
 
-	task.actionCh <- func(ctx context.Context) error {
+	task.actCh <- func(ctx context.Context) error {
+		return task.uploadImage(ctx, filename)
+	}
+	return nil
+}
+
+// ConnectTo connects to primary node
+func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
+	if err := task.requiredLatestStatus(state.StatusHandshakeSecondaryNode); err != nil {
+		return err
+	}
+
+	task.actCh <- func(ctx context.Context) error {
 		return task.connectTo(ctx, nodeID, sessID)
 	}
+	return nil
+}
+
+func (task *Task) uploadImage(ctx context.Context, filename string) error {
+	ctx = task.context(ctx)
+
+	task.ImagePath = filename
+	task.State.Update(ctx, state.NewStatus(state.StatusImageUploaded))
+
+	<-ctx.Done()
+
+	if err := os.Remove(filename); err != nil {
+		return errors.Errorf("failed to remove temp file %q: %w", filename, err)
+	}
+	log.WithContext(ctx).Debugf("Removed temp file %q", filename)
 	return nil
 }
 
@@ -159,15 +198,6 @@ func (task *Task) connectTo(ctx context.Context, nodeID, sessID string) error {
 	if err := node.connect(ctx); err != nil {
 		return err
 	}
-
-	go func() {
-		select {
-		case <-task.Done():
-			node.conn.Close()
-		case <-node.conn.Done():
-			task.Cancel()
-		}
-	}()
 
 	if err := node.Handshake(ctx, task.config.PastelID, sessID); err != nil {
 		return err
@@ -199,16 +229,18 @@ func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node,
 	return nil, errors.Errorf("node %q not found", nodeID)
 }
 
-func (task *Task) requiredStatus(statusType state.StatusType) error {
+func (task *Task) requiredLatestStatus(statusTypes ...state.StatusType) error {
 	latest := task.State.Latest()
 	if latest == nil {
 		return errors.New("not found latest status")
 	}
 
-	if latest.Type != statusType {
-		return errors.Errorf("wrong order, current task status %q, ", latest.Type)
+	for _, statusType := range statusTypes {
+		if latest.Type == statusType {
+			return nil
+		}
 	}
-	return nil
+	return errors.Errorf("wrong order, current task status %q, ", latest.Type)
 }
 
 // NewTask returns a new Task instance.
@@ -216,10 +248,10 @@ func NewTask(service *Service) *Task {
 	taskID, _ := random.String(8, random.Base62Chars)
 
 	return &Task{
-		Service:  service,
-		ID:       taskID,
-		State:    state.New(state.NewStatus(state.StatusTaskStarted)),
-		doneCh:   make(chan struct{}),
-		actionCh: make(chan func(ctx context.Context) error),
+		Service: service,
+		ID:      taskID,
+		State:   state.New(state.NewStatus(state.StatusTaskStarted)),
+		doneCh:  make(chan struct{}),
+		actCh:   make(chan func(ctx context.Context) error),
 	}
 }

@@ -66,7 +66,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 	select {
 	case <-ctx.Done():
 		log.WithContext(ctx).Infof("Shutting down server at %q", address)
-		grpcServer.Stop()
+		grpcServer.GracefulStop()
 	case err := <-errCh:
 		return err
 	}

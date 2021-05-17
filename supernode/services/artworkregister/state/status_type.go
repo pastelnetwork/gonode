@@ -12,6 +12,8 @@ const (
 	StatusHandshakeSecondaryNode
 	StatusConnectedToNode
 
+	StatusImageUploaded
+
 	// Final
 	StatusTaskCanceled
 	StatusTaskCompleted
@@ -23,6 +25,7 @@ var statusNames = map[StatusType]string{
 	StatusHandshakeSecondaryNode: "Handshake Secondary Node",
 	StatusAcceptedNodes:          "Accepted Secondary Nodes",
 	StatusConnectedToNode:        "Connected to Primary Node",
+	StatusImageUploaded:          "Image Uploaded",
 	StatusTaskCanceled:           "Task Canceled",
 	StatusTaskCompleted:          "Task Completed",
 }

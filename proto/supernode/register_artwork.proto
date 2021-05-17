@@ -6,19 +6,15 @@ package supernode;
 
 service RegisterArtowrk {
     // Handshake informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
-    rpc Handshake(HandshakeRequest) returns (HandshakeReply);
-
-    // Health stream is used by the server to detect client disconnection.
-    rpc Health(stream Empty) returns (stream Empty);
+    // The stream is used by the parties to inform each other about the cancellation of the task.
+    rpc Handshake(stream HandshakeRequest) returns (stream HandshakeReply);
 }
-
-message Empty {}
 
 message HandshakeRequest {
     string nodeID = 1;
-    string sessID = 2;
 }
 message HandshakeReply {
+    string sessID = 1;
 }
 
 
