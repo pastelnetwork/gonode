@@ -20,19 +20,19 @@ const (
 	uploadImageBufferSize = 32 * 1024
 )
 
-type registerArtowrk struct {
+type registerArtwork struct {
 	conn   *clientConn
-	client pb.RegisterArtowrkClient
+	client pb.RegisterArtworkClient
 
 	sessID string
 }
 
-func (service *registerArtowrk) SessID() string {
+func (service *registerArtwork) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterArtowrk.Session()
-func (service *registerArtowrk) Session(ctx context.Context, isPrimary bool) error {
+// Session implements node.RegisterArtwork.Session()
+func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) error {
 	ctx = service.contextWithLogPrefix(ctx)
 
 	stream, err := service.client.Session(ctx)
@@ -75,8 +75,8 @@ func (service *registerArtowrk) Session(ctx context.Context, isPrimary bool) err
 	return nil
 }
 
-// AcceptedNodes implements node.RegisterArtowrk.AcceptedNodes()
-func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
+// AcceptedNodes implements node.RegisterArtwork.AcceptedNodes()
+func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []string, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -96,8 +96,8 @@ func (service *registerArtowrk) AcceptedNodes(ctx context.Context) (pastelIDs []
 	return ids, nil
 }
 
-// ConnectTo implements node.RegisterArtowrk.ConnectTo()
-func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeID, sessID string) error {
+// ConnectTo implements node.RegisterArtwork.ConnectTo()
+func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID string) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -116,8 +116,8 @@ func (service *registerArtowrk) ConnectTo(ctx context.Context, nodeID, sessID st
 	return nil
 }
 
-// UploadImage implements node.RegisterArtowrk.UploadImage()
-func (service *registerArtowrk) UploadImage(ctx context.Context, filename string) error {
+// UploadImage implements node.RegisterArtwork.UploadImage()
+func (service *registerArtwork) UploadImage(ctx context.Context, filename string) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -159,18 +159,18 @@ func (service *registerArtowrk) UploadImage(ctx context.Context, filename string
 	return nil
 }
 
-func (service *registerArtowrk) contextWithMDSessID(ctx context.Context) context.Context {
+func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {
 	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
-func (service *registerArtowrk) contextWithLogPrefix(ctx context.Context) context.Context {
+func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newRegisterArtowrk(conn *clientConn) node.RegisterArtowrk {
-	return &registerArtowrk{
+func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {
+	return &registerArtwork{
 		conn:   conn,
-		client: pb.NewRegisterArtowrkClient(conn),
+		client: pb.NewRegisterArtworkClient(conn),
 	}
 }

@@ -104,8 +104,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// server
 	grpc := server.New(config.Node.Server,
-		walletnode.NewRegisterArtowrk(artworkRegister, config.WorkDir),
-		supernode.NewRegisterArtowrk(artworkRegister),
+		walletnode.NewRegisterArtwork(artworkRegister, config.WorkDir),
+		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
 	return runServices(ctx, artworkRegister, grpc)

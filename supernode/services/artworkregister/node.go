@@ -41,7 +41,7 @@ func (nodes *Nodes) Remove(id string) {
 
 // Node represents a single supernode
 type Node struct {
-	node.RegisterArtowrk
+	node.RegisterArtwork
 	client node.Client
 	conn   node.Connection
 
@@ -59,6 +59,6 @@ func (node *Node) connect(ctx context.Context) error {
 	}
 
 	node.conn = conn
-	node.RegisterArtowrk = conn.RegisterArtowrk()
+	node.RegisterArtwork = conn.RegisterArtwork()
 	return nil
 }

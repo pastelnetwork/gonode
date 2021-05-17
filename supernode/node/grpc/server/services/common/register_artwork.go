@@ -9,13 +9,13 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// RegisterArtowrk represents common grpc service for registration artowrk.
-type RegisterArtowrk struct {
+// RegisterArtwork represents common grpc service for registration artwork.
+type RegisterArtwork struct {
 	*artworkregister.Service
 }
 
 // SessID retrieves SessID from the metadata.
-func (service *RegisterArtowrk) SessID(ctx context.Context) (string, bool) {
+func (service *RegisterArtwork) SessID(ctx context.Context) (string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return "", false
@@ -29,7 +29,7 @@ func (service *RegisterArtowrk) SessID(ctx context.Context) (string, bool) {
 }
 
 // TaskFromMD returns task by SessID from the metadata.
-func (service *RegisterArtowrk) TaskFromMD(ctx context.Context) (*artworkregister.Task, error) {
+func (service *RegisterArtwork) TaskFromMD(ctx context.Context) (*artworkregister.Task, error) {
 	sessID, ok := service.SessID(ctx)
 	if !ok {
 		return nil, errors.New("not found sessID in metadata")
@@ -42,9 +42,9 @@ func (service *RegisterArtowrk) TaskFromMD(ctx context.Context) (*artworkregiste
 	return task, nil
 }
 
-// NewRegisterArtowrk returns a new RegisterArtowrk instance.
-func NewRegisterArtowrk(service *artworkregister.Service) *RegisterArtowrk {
-	return &RegisterArtowrk{
+// NewRegisterArtwork returns a new RegisterArtwork instance.
+func NewRegisterArtwork(service *artworkregister.Service) *RegisterArtwork {
+	return &RegisterArtwork{
 		Service: service,
 	}
 }

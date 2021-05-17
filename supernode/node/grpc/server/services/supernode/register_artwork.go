@@ -15,15 +15,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RegisterArtowrk represents grpc service for registration artowrk.
-type RegisterArtowrk struct {
-	pb.UnimplementedRegisterArtowrkServer
+// RegisterArtwork represents grpc service for registration artwork.
+type RegisterArtwork struct {
+	pb.UnimplementedRegisterArtworkServer
 
-	*common.RegisterArtowrk
+	*common.RegisterArtwork
 }
 
-// Session implements supernode.RegisterArtowrkServer.Session()
-func (service *RegisterArtowrk) Session(stream pb.RegisterArtowrk_SessionServer) error {
+// Session implements supernode.RegisterArtworkServer.Session()
+func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
@@ -79,13 +79,13 @@ func (service *RegisterArtowrk) Session(stream pb.RegisterArtowrk_SessionServer)
 }
 
 // Desc returns a description of the service.
-func (service *RegisterArtowrk) Desc() *grpc.ServiceDesc {
-	return &pb.RegisterArtowrk_ServiceDesc
+func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
+	return &pb.RegisterArtwork_ServiceDesc
 }
 
-// NewRegisterArtowrk returns a new RegisterArtowrk instance.
-func NewRegisterArtowrk(service *artworkregister.Service) *RegisterArtowrk {
-	return &RegisterArtowrk{
-		RegisterArtowrk: common.NewRegisterArtowrk(service),
+// NewRegisterArtwork returns a new RegisterArtwork instance.
+func NewRegisterArtwork(service *artworkregister.Service) *RegisterArtwork {
+	return &RegisterArtwork{
+		RegisterArtwork: common.NewRegisterArtwork(service),
 	}
 }

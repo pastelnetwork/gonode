@@ -15,18 +15,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type registerArtowrk struct {
+type registerArtwork struct {
 	conn   *clientConn
-	client pb.RegisterArtowrkClient
+	client pb.RegisterArtworkClient
 	sessID string
 }
 
-func (service *registerArtowrk) SessID() string {
+func (service *registerArtwork) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterArtowrk.Session()
-func (service *registerArtowrk) Session(ctx context.Context, nodeID, sessID string) error {
+// Session implements node.RegisterArtwork.Session()
+func (service *registerArtwork) Session(ctx context.Context, nodeID, sessID string) error {
 	service.sessID = sessID
 
 	ctx = service.contextWithLogPrefix(ctx)
@@ -71,18 +71,18 @@ func (service *registerArtowrk) Session(ctx context.Context, nodeID, sessID stri
 	return nil
 }
 
-func (service *registerArtowrk) contextWithMDSessID(ctx context.Context) context.Context {
+func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {
 	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
-func (service *registerArtowrk) contextWithLogPrefix(ctx context.Context) context.Context {
+func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newRegisterArtowrk(conn *clientConn) node.RegisterArtowrk {
-	return &registerArtowrk{
+func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {
+	return &registerArtwork{
 		conn:   conn,
-		client: pb.NewRegisterArtowrkClient(conn),
+		client: pb.NewRegisterArtworkClient(conn),
 	}
 }

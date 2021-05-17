@@ -14,47 +14,47 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// RegisterArtowrkClient is the client API for RegisterArtowrk service.
+// RegisterArtworkClient is the client API for RegisterArtwork service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RegisterArtowrkClient interface {
+type RegisterArtworkClient interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
-	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_SessionClient, error)
+	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_SessionClient, error)
 }
 
-type registerArtowrkClient struct {
+type registerArtworkClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRegisterArtowrkClient(cc grpc.ClientConnInterface) RegisterArtowrkClient {
-	return &registerArtowrkClient{cc}
+func NewRegisterArtworkClient(cc grpc.ClientConnInterface) RegisterArtworkClient {
+	return &registerArtworkClient{cc}
 }
 
-func (c *registerArtowrkClient) Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_SessionClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RegisterArtowrk_ServiceDesc.Streams[0], "/supernode.RegisterArtowrk/Session", opts...)
+func (c *registerArtworkClient) Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_SessionClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterArtwork_ServiceDesc.Streams[0], "/supernode.RegisterArtwork/Session", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &registerArtowrkSessionClient{stream}
+	x := &registerArtworkSessionClient{stream}
 	return x, nil
 }
 
-type RegisterArtowrk_SessionClient interface {
+type RegisterArtwork_SessionClient interface {
 	Send(*SessionRequest) error
 	Recv() (*SessionReply, error)
 	grpc.ClientStream
 }
 
-type registerArtowrkSessionClient struct {
+type registerArtworkSessionClient struct {
 	grpc.ClientStream
 }
 
-func (x *registerArtowrkSessionClient) Send(m *SessionRequest) error {
+func (x *registerArtworkSessionClient) Send(m *SessionRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *registerArtowrkSessionClient) Recv() (*SessionReply, error) {
+func (x *registerArtworkSessionClient) Recv() (*SessionReply, error) {
 	m := new(SessionReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -62,55 +62,55 @@ func (x *registerArtowrkSessionClient) Recv() (*SessionReply, error) {
 	return m, nil
 }
 
-// RegisterArtowrkServer is the server API for RegisterArtowrk service.
-// All implementations must embed UnimplementedRegisterArtowrkServer
+// RegisterArtworkServer is the server API for RegisterArtwork service.
+// All implementations must embed UnimplementedRegisterArtworkServer
 // for forward compatibility
-type RegisterArtowrkServer interface {
+type RegisterArtworkServer interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
-	Session(RegisterArtowrk_SessionServer) error
-	mustEmbedUnimplementedRegisterArtowrkServer()
+	Session(RegisterArtwork_SessionServer) error
+	mustEmbedUnimplementedRegisterArtworkServer()
 }
 
-// UnimplementedRegisterArtowrkServer must be embedded to have forward compatible implementations.
-type UnimplementedRegisterArtowrkServer struct {
+// UnimplementedRegisterArtworkServer must be embedded to have forward compatible implementations.
+type UnimplementedRegisterArtworkServer struct {
 }
 
-func (UnimplementedRegisterArtowrkServer) Session(RegisterArtowrk_SessionServer) error {
+func (UnimplementedRegisterArtworkServer) Session(RegisterArtwork_SessionServer) error {
 	return status.Errorf(codes.Unimplemented, "method Session not implemented")
 }
-func (UnimplementedRegisterArtowrkServer) mustEmbedUnimplementedRegisterArtowrkServer() {}
+func (UnimplementedRegisterArtworkServer) mustEmbedUnimplementedRegisterArtworkServer() {}
 
-// UnsafeRegisterArtowrkServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RegisterArtowrkServer will
+// UnsafeRegisterArtworkServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RegisterArtworkServer will
 // result in compilation errors.
-type UnsafeRegisterArtowrkServer interface {
-	mustEmbedUnimplementedRegisterArtowrkServer()
+type UnsafeRegisterArtworkServer interface {
+	mustEmbedUnimplementedRegisterArtworkServer()
 }
 
-func RegisterRegisterArtowrkServer(s grpc.ServiceRegistrar, srv RegisterArtowrkServer) {
-	s.RegisterService(&RegisterArtowrk_ServiceDesc, srv)
+func RegisterRegisterArtworkServer(s grpc.ServiceRegistrar, srv RegisterArtworkServer) {
+	s.RegisterService(&RegisterArtwork_ServiceDesc, srv)
 }
 
-func _RegisterArtowrk_Session_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RegisterArtowrkServer).Session(&registerArtowrkSessionServer{stream})
+func _RegisterArtwork_Session_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterArtworkServer).Session(&registerArtworkSessionServer{stream})
 }
 
-type RegisterArtowrk_SessionServer interface {
+type RegisterArtwork_SessionServer interface {
 	Send(*SessionReply) error
 	Recv() (*SessionRequest, error)
 	grpc.ServerStream
 }
 
-type registerArtowrkSessionServer struct {
+type registerArtworkSessionServer struct {
 	grpc.ServerStream
 }
 
-func (x *registerArtowrkSessionServer) Send(m *SessionReply) error {
+func (x *registerArtworkSessionServer) Send(m *SessionReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *registerArtowrkSessionServer) Recv() (*SessionRequest, error) {
+func (x *registerArtworkSessionServer) Recv() (*SessionRequest, error) {
 	m := new(SessionRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -118,17 +118,17 @@ func (x *registerArtowrkSessionServer) Recv() (*SessionRequest, error) {
 	return m, nil
 }
 
-// RegisterArtowrk_ServiceDesc is the grpc.ServiceDesc for RegisterArtowrk service.
+// RegisterArtwork_ServiceDesc is the grpc.ServiceDesc for RegisterArtwork service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RegisterArtowrk_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "supernode.RegisterArtowrk",
-	HandlerType: (*RegisterArtowrkServer)(nil),
+var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "supernode.RegisterArtwork",
+	HandlerType: (*RegisterArtworkServer)(nil),
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Session",
-			Handler:       _RegisterArtowrk_Session_Handler,
+			Handler:       _RegisterArtwork_Session_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

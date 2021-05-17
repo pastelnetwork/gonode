@@ -19,16 +19,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// RegisterArtowrk represents grpc service for registration artowrk.
-type RegisterArtowrk struct {
-	pb.UnimplementedRegisterArtowrkServer
+// RegisterArtwork represents grpc service for registration artwork.
+type RegisterArtwork struct {
+	pb.UnimplementedRegisterArtworkServer
 
-	*common.RegisterArtowrk
+	*common.RegisterArtwork
 	workDir string
 }
 
-// Session implements walletnode.RegisterArtowrkServer.Session()
-func (service *RegisterArtowrk) Session(stream pb.RegisterArtowrk_SessionServer) error {
+// Session implements walletnode.RegisterArtworkServer.Session()
+func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
@@ -83,8 +83,8 @@ func (service *RegisterArtowrk) Session(stream pb.RegisterArtowrk_SessionServer)
 	}
 }
 
-// AcceptedNodes implements walletnode.RegisterArtowrkServer.AcceptedNodes()
-func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
+// AcceptedNodes implements walletnode.RegisterArtworkServer.AcceptedNodes()
+func (service *RegisterArtwork) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -110,8 +110,8 @@ func (service *RegisterArtowrk) AcceptedNodes(ctx context.Context, req *pb.Accep
 	return resp, nil
 }
 
-// ConnectTo implements walletnode.RegisterArtowrkServer.ConnectTo()
-func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
+// ConnectTo implements walletnode.RegisterArtworkServer.ConnectTo()
+func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -127,8 +127,8 @@ func (service *RegisterArtowrk) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
-// UploadImage implements walletnode.RegisterArtowrkServer.UploadImage()
-func (service *RegisterArtowrk) UploadImage(stream pb.RegisterArtowrk_UploadImageServer) error {
+// UploadImage implements walletnode.RegisterArtworkServer.UploadImage()
+func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
 	ctx := stream.Context()
 
 	task, err := service.TaskFromMD(ctx)
@@ -179,14 +179,14 @@ func (service *RegisterArtowrk) UploadImage(stream pb.RegisterArtowrk_UploadImag
 }
 
 // Desc returns a description of the service.
-func (service *RegisterArtowrk) Desc() *grpc.ServiceDesc {
-	return &pb.RegisterArtowrk_ServiceDesc
+func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
+	return &pb.RegisterArtwork_ServiceDesc
 }
 
-// NewRegisterArtowrk returns a new RegisterArtowrk instance.
-func NewRegisterArtowrk(service *artworkregister.Service, workDir string) *RegisterArtowrk {
-	return &RegisterArtowrk{
-		RegisterArtowrk: common.NewRegisterArtowrk(service),
+// NewRegisterArtwork returns a new RegisterArtwork instance.
+func NewRegisterArtwork(service *artworkregister.Service, workDir string) *RegisterArtwork {
+	return &RegisterArtwork{
+		RegisterArtwork: common.NewRegisterArtwork(service),
 		workDir:         workDir,
 	}
 }

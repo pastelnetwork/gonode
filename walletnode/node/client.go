@@ -16,12 +16,12 @@ type Connection interface {
 	Close() error
 	// Done returns a channel that's closed when connection is shutdown.
 	Done() <-chan struct{}
-	// RegisterArtowrk returns a new RegisterArtowrk stream.
-	RegisterArtowrk() RegisterArtowrk
+	// RegisterArtwork returns a new RegisterArtwork stream.
+	RegisterArtwork() RegisterArtwork
 }
 
-// RegisterArtowrk contains methods for registering artwork.
-type RegisterArtowrk interface {
+// RegisterArtwork contains methods for registering artwork.
+type RegisterArtwork interface {
 	// SessID returns the sessID received from the server during the handshake.
 	SessID() (sessID string)
 	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.

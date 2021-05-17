@@ -4,7 +4,7 @@ option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
 
 package walletnode;
 
-service RegisterArtowrk {
+service RegisterArtwork {
     // Session informs the supernode its position (primary/secondary).
     // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
     // The stream is used by the parties to inform each other about the cancellation of the task.
