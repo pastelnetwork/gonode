@@ -2,6 +2,10 @@ package log
 
 import (
 	"context"
+	"fmt"
+	"os"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 // WithError adds an error to log entry.
@@ -59,25 +63,6 @@ func Error(args ...interface{}) {
 	NewDefaultEntry().Error(args...)
 }
 
-// Recover logs a message at level Panic with error stack.
-func Recover(err error) {
-	entry := NewDefaultEntry()
-	if debugMode {
-		entry.WithErrorStack(err)
-	}
-	entry.Panic(err)
-}
-
-// Panic logs a message at level Panic.
-func Panic(args ...interface{}) {
-	NewDefaultEntry().Panic(args...)
-}
-
-// Fatal logs a message at level Fatal.
-func Fatal(args ...interface{}) {
-	NewDefaultEntry().Fatal(args...)
-}
-
 // Debugln logs a message at level Debug.
 func Debugln(args ...interface{}) {
 	NewDefaultEntry().Debugln(args...)
@@ -101,16 +86,6 @@ func Warnln(args ...interface{}) {
 // Errorln logs a message at level Error.
 func Errorln(args ...interface{}) {
 	NewDefaultEntry().Errorln(args...)
-}
-
-// Panicln logs a message at level Panic.
-func Panicln(args ...interface{}) {
-	NewDefaultEntry().Panicln(args...)
-}
-
-// Fatalln logs a message at level Fatal then the process will exit with status set to 1.
-func Fatalln(args ...interface{}) {
-	NewDefaultEntry().Fatalln(args...)
 }
 
 // Debugf logs a message at level Debug.
@@ -143,12 +118,24 @@ func Tracef(format string, args ...interface{}) {
 	NewDefaultEntry().Tracef(format, args...)
 }
 
-// Panicf logs a message at level Panic.
-func Panicf(format string, args ...interface{}) {
-	NewDefaultEntry().Panicf(format, args...)
+// Fatal logs an error at level Fatal with error stack.
+func Fatal(err error) {
+	entry := NewDefaultEntry()
+	if debugMode {
+		entry = entry.WithErrorStack(err)
+	}
+	entry.Fatal(err)
 }
 
-// Fatalf logs a message at level Fatal then the process will exit with status set to 1.
-func Fatalf(format string, args ...interface{}) {
-	NewDefaultEntry().Fatalf(format, args...)
+// FatalAndExit checks if there is an error, display it in the console and exit with a non-zero exit code. Otherwise, exit 0.
+// Note that if the debugMode is true, this will print out the stack trace.
+func FatalAndExit(err error) {
+	if err == nil || errors.IsContextCanceled(err) {
+		return
+	}
+	defer os.Exit(errors.ExitCode(err))
+
+	Fatal(err)
+
+	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 }

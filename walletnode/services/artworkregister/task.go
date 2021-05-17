@@ -131,7 +131,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 				return
 			case <-time.After(connectToNextNodeDelay):
 				go func() {
-					defer errors.Recover(log.Recover)
+					defer errors.Recover(log.Fatal)
 
 					if err := node.connect(ctx); err != nil {
 						return

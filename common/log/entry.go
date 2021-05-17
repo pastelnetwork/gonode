@@ -85,11 +85,6 @@ func (entry *Entry) Fatal(args ...interface{}) {
 	entry.Entry.Log(logrus.FatalLevel, args...)
 }
 
-// Panic logs a message at level Panic.
-func (entry *Entry) Panic(args ...interface{}) {
-	entry.Entry.Panic(args...)
-}
-
 // Entry Printf family functions
 
 // Tracef logs a message at level Trace.
@@ -127,11 +122,6 @@ func (entry *Entry) Fatalf(format string, args ...interface{}) {
 	entry.Entry.Fatalf(format, args...)
 }
 
-// Panicf logs a message at level Panic.
-func (entry *Entry) Panicf(format string, args ...interface{}) {
-	entry.Entry.Panicf(format, args...)
-}
-
 // Entry Println family functions
 
 // Traceln logs a message at level Trace.
@@ -167,11 +157,6 @@ func (entry *Entry) Errorln(args ...interface{}) {
 // Fatalln logs a message at level Fatal.
 func (entry *Entry) Fatalln(args ...interface{}) {
 	entry.Entry.Fatalln(args...)
-}
-
-// Panicln logs a message at level Panic.
-func (entry *Entry) Panicln(args ...interface{}) {
-	entry.Entry.Panicln(args...)
 }
 
 // WithCaller adds caller field to the Entry.

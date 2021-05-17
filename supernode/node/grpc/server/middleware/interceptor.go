@@ -14,7 +14,7 @@ import (
 func UnaryInterceptor() grpc.ServerOption {
 	return grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 		defer errors.Recover(func(recErr error) {
-			log.Recover(recErr)
+			log.Fatal(recErr)
 			err = status.Error(codes.Internal, "internal server error")
 		})
 
@@ -29,7 +29,7 @@ func UnaryInterceptor() grpc.ServerOption {
 func StreamInterceptor() grpc.ServerOption {
 	return grpc.StreamInterceptor(func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) (err error) {
 		defer errors.Recover(func(recErr error) {
-			log.Recover(recErr)
+			log.Fatal(recErr)
 			err = status.Error(codes.Internal, "internal server error")
 		})
 

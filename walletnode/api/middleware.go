@@ -20,7 +20,7 @@ import (
 func Recovery() func(h http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			defer errors.Recover(log.Recover)
+			defer errors.Recover(log.Fatal)
 			h.ServeHTTP(w, r)
 		})
 	}
