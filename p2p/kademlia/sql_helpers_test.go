@@ -1,42 +1,29 @@
 package kademlia
 
 import (
-	"context"
 	"database/sql"
 	"testing"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_migrate(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
 	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if err := migrate(ctx, db); err != nil {
-		t.Fatal(err)
-	}
+	err = migrate(db)
+	assert.NoError(t, err)
 }
 
 func Test_store(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
 	db, err := sql.Open("sqlite3", ":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 
-	if err := migrate(ctx, db); err != nil {
-		t.Fatal(err)
-	}
+	err = migrate(db)
+	assert.NoError(t, err)
 
-	if err := store(db, []byte("sample key"), []byte("data"), time.Now(), time.Now()); err != nil {
-		t.Fatal(err)
-	}
+	err = store(db, []byte("sample key"), []byte("data"), time.Now(), time.Now())
+	assert.NoError(t, err)
 }

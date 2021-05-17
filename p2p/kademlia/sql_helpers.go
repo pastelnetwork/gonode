@@ -9,7 +9,10 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func migrate(ctx context.Context, db *sql.DB) error {
+func migrate(db *sql.DB) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
 	_, err := db.ExecContext(ctx,
 		"CREATE TABLE IF NOT EXISTS `keys` (`uid` INTEGER PRIMARY KEY AUTOINCREMENT, `key` VARCHAR(64) NULL, `data` BLOB NULL, `replication` DATE NULL, `expiration` DATE NULL)")
 	if err != nil {

@@ -1,7 +1,6 @@
 package kademlia
 
 import (
-	"context"
 	"database/sql"
 	"time"
 
@@ -34,10 +33,7 @@ func (ss *SQLiteStore) Init() error {
 	}
 	defer db.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := migrate(ctx, ss.db); err != nil {
+	if err := migrate(ss.db); err != nil {
 		return err
 	}
 
