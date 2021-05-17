@@ -1,36 +1,29 @@
 package kademlia
 
 import (
-	"crypto/sha1"
-	"sync"
+	"context"
+	"database/sql"
 	"time"
-	        _ "github.com/mattn/go-sqlite3"
 
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // SQLiteStore is a simple in-memory key/value store used for unit testing, and
 // the CLI example
 type SQLiteStore struct {
-	db			 *sql.DB
+	db *sql.DB
 }
 
 // GetAllKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
 func (ss *SQLiteStore) GetAllKeysForReplication() [][]byte {
-	ms.mutex.Lock()
-	defer ms.mutex.Unlock()
-	var keys [][]byte
-	for k := range ms.data {
-		if time.Now().After(ms.replicateMap[k]) {
-			keys = append(keys, []byte(k))
-		}
-	}
-	return keys
+	return getAllKeysForReplication(ss.db)
 }
 
 // ExpireKeys should expire all key/values due for expiration.
-func (ss *SQLiteStore) ExpireKeys() {
+func (ss *SQLiteStore) ExpireKeys() error {
+	return expireKeys(ss.db)
 }
 
 // Init initializes the Store
@@ -41,9 +34,9 @@ func (ss *SQLiteStore) Init() error {
 	}
 	defer db.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)  
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	if err := migrate(ctx, ss.db); err != nil {
 		return err
 	}
@@ -57,7 +50,6 @@ func (ss *SQLiteStore) Init() error {
 func (ss *SQLiteStore) Store(key []byte, data []byte, replication time.Time, expiration time.Time, publisher bool) error {
 	return store(ss.db, key, replication, expiration)
 }
-
 
 // Retrieve will return the local key/value if it exists
 func (ss *SQLiteStore) Retrieve(key []byte) (data []byte, found bool) {

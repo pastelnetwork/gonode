@@ -11,6 +11,7 @@ require (
 	github.com/chzyer/logex v1.1.10 // indirect
 	github.com/chzyer/test v0.0.0-20180213035817-a1ea475d72b1 // indirect
 	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6
+	github.com/mattn/go-sqlite3 v2.0.3+incompatible
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	gopkg.in/readline.v1 v1.0.0-20160726135117-62c6fe619375
