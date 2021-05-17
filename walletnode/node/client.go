@@ -24,8 +24,8 @@ type Connection interface {
 type RegisterArtowrk interface {
 	// SessID returns the sessID received from the server during the handshake.
 	SessID() (sessID string)
-	// Handshake sets up an initial connection with supernode, by telling supernode mode (primary or secondary).
-	Handshake(ctx context.Context, IsPrimary bool) (err error)
+	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.
+	Session(ctx context.Context, IsPrimary bool) (err error)
 	// AcceptedNodes requests information about connected secondary nodes.
 	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.

@@ -31,22 +31,22 @@ func (service *registerArtowrk) SessID() string {
 	return service.sessID
 }
 
-// Handshake implements node.RegisterArtowrk.Handshake()
-func (service *registerArtowrk) Handshake(ctx context.Context, isPrimary bool) error {
+// Session implements node.RegisterArtowrk.Session()
+func (service *registerArtowrk) Session(ctx context.Context, isPrimary bool) error {
 	ctx = service.contextWithLogPrefix(ctx)
 
-	stream, err := service.client.Handshake(ctx)
+	stream, err := service.client.Session(ctx)
 	if err != nil {
 		return errors.Errorf("failed to open Health stream: %w", err)
 	}
 
-	req := &pb.HandshakeRequest{
+	req := &pb.SessionRequest{
 		IsPrimary: isPrimary,
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
+	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
 	if err := stream.Send(req); err != nil {
-		return errors.Errorf("failed to send Handshake request: %w", err)
+		return errors.Errorf("failed to send Session request: %w", err)
 	}
 
 	resp, err := stream.Recv()
@@ -58,9 +58,9 @@ func (service *registerArtowrk) Handshake(ctx context.Context, isPrimary bool) e
 		case codes.Canceled, codes.Unavailable:
 			return nil
 		}
-		return errors.Errorf("failed to receive Handshake response: %w", err)
+		return errors.Errorf("failed to receive Session response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
+	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 	service.sessID = resp.SessID
 
 	go func() {

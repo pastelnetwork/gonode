@@ -5,15 +5,15 @@ option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
 package supernode;
 
 service RegisterArtowrk {
-    // Handshake informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
+    // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
     // The stream is used by the parties to inform each other about the cancellation of the task.
-    rpc Handshake(stream HandshakeRequest) returns (stream HandshakeReply);
+    rpc Session(stream SessionRequest) returns (stream SessionReply);
 }
 
-message HandshakeRequest {
+message SessionRequest {
     string nodeID = 1;
 }
-message HandshakeReply {
+message SessionReply {
     string sessID = 1;
 }
 

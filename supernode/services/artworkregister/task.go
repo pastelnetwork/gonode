@@ -76,8 +76,8 @@ func (task *Task) Done() <-chan struct{} {
 	return task.doneCh
 }
 
-// Handshake is handshake wallet to supernode
-func (task *Task) Handshake(ctx context.Context, isPrimary bool) error {
+// Session is handshake wallet to supernode
+func (task *Task) Session(ctx context.Context, isPrimary bool) error {
 	ctx = task.context(ctx)
 
 	if err := task.requiredLatestStatus(state.StatusTaskStarted); err != nil {
@@ -86,12 +86,12 @@ func (task *Task) Handshake(ctx context.Context, isPrimary bool) error {
 
 	if isPrimary {
 		log.WithContext(ctx).Debugf("Acts as primary node")
-		task.State.Update(ctx, state.NewStatus(state.StatusHandshakePrimaryNode))
+		task.State.Update(ctx, state.NewStatus(state.StatusSessionPrimaryNode))
 		return nil
 	}
 
 	log.WithContext(ctx).Debugf("Acts as secondary node")
-	task.State.Update(ctx, state.NewStatus(state.StatusHandshakeSecondaryNode))
+	task.State.Update(ctx, state.NewStatus(state.StatusSessionSecondaryNode))
 	return nil
 }
 
@@ -99,7 +99,7 @@ func (task *Task) Handshake(ctx context.Context, isPrimary bool) error {
 func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 	ctx = task.context(ctx)
 
-	if err := task.requiredLatestStatus(state.StatusHandshakePrimaryNode); err != nil {
+	if err := task.requiredLatestStatus(state.StatusSessionPrimaryNode); err != nil {
 		return nil, err
 	}
 	log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
@@ -115,14 +115,14 @@ func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 	}
 }
 
-// HandshakeNode accepts secondary node
-func (task *Task) HandshakeNode(ctx context.Context, nodeID string) error {
+// SessionNode accepts secondary node
+func (task *Task) SessionNode(ctx context.Context, nodeID string) error {
 	ctx = task.context(ctx)
 
 	task.acceptMu.Lock()
 	defer task.acceptMu.Unlock()
 
-	if err := task.requiredLatestStatus(state.StatusHandshakePrimaryNode); err != nil {
+	if err := task.requiredLatestStatus(state.StatusSessionPrimaryNode); err != nil {
 		return err
 	}
 
@@ -146,7 +146,7 @@ func (task *Task) HandshakeNode(ctx context.Context, nodeID string) error {
 
 // ConnectTo connects to primary node
 func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
-	if err := task.requiredLatestStatus(state.StatusHandshakeSecondaryNode); err != nil {
+	if err := task.requiredLatestStatus(state.StatusSessionSecondaryNode); err != nil {
 		return err
 	}
 
@@ -162,7 +162,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 			return err
 		}
 
-		if err := node.Handshake(ctx, task.config.PastelID, sessID); err != nil {
+		if err := node.Session(ctx, task.config.PastelID, sessID); err != nil {
 			return err
 		}
 

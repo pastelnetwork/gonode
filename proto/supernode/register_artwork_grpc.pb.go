@@ -18,9 +18,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type RegisterArtowrkClient interface {
-	// Handshake informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
+	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
-	Handshake(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_HandshakeClient, error)
+	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_SessionClient, error)
 }
 
 type registerArtowrkClient struct {
@@ -31,31 +31,31 @@ func NewRegisterArtowrkClient(cc grpc.ClientConnInterface) RegisterArtowrkClient
 	return &registerArtowrkClient{cc}
 }
 
-func (c *registerArtowrkClient) Handshake(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_HandshakeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RegisterArtowrk_ServiceDesc.Streams[0], "/supernode.RegisterArtowrk/Handshake", opts...)
+func (c *registerArtowrkClient) Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtowrk_SessionClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterArtowrk_ServiceDesc.Streams[0], "/supernode.RegisterArtowrk/Session", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &registerArtowrkHandshakeClient{stream}
+	x := &registerArtowrkSessionClient{stream}
 	return x, nil
 }
 
-type RegisterArtowrk_HandshakeClient interface {
-	Send(*HandshakeRequest) error
-	Recv() (*HandshakeReply, error)
+type RegisterArtowrk_SessionClient interface {
+	Send(*SessionRequest) error
+	Recv() (*SessionReply, error)
 	grpc.ClientStream
 }
 
-type registerArtowrkHandshakeClient struct {
+type registerArtowrkSessionClient struct {
 	grpc.ClientStream
 }
 
-func (x *registerArtowrkHandshakeClient) Send(m *HandshakeRequest) error {
+func (x *registerArtowrkSessionClient) Send(m *SessionRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *registerArtowrkHandshakeClient) Recv() (*HandshakeReply, error) {
-	m := new(HandshakeReply)
+func (x *registerArtowrkSessionClient) Recv() (*SessionReply, error) {
+	m := new(SessionReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -66,9 +66,9 @@ func (x *registerArtowrkHandshakeClient) Recv() (*HandshakeReply, error) {
 // All implementations must embed UnimplementedRegisterArtowrkServer
 // for forward compatibility
 type RegisterArtowrkServer interface {
-	// Handshake informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
+	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
-	Handshake(RegisterArtowrk_HandshakeServer) error
+	Session(RegisterArtowrk_SessionServer) error
 	mustEmbedUnimplementedRegisterArtowrkServer()
 }
 
@@ -76,8 +76,8 @@ type RegisterArtowrkServer interface {
 type UnimplementedRegisterArtowrkServer struct {
 }
 
-func (UnimplementedRegisterArtowrkServer) Handshake(RegisterArtowrk_HandshakeServer) error {
-	return status.Errorf(codes.Unimplemented, "method Handshake not implemented")
+func (UnimplementedRegisterArtowrkServer) Session(RegisterArtowrk_SessionServer) error {
+	return status.Errorf(codes.Unimplemented, "method Session not implemented")
 }
 func (UnimplementedRegisterArtowrkServer) mustEmbedUnimplementedRegisterArtowrkServer() {}
 
@@ -92,26 +92,26 @@ func RegisterRegisterArtowrkServer(s grpc.ServiceRegistrar, srv RegisterArtowrkS
 	s.RegisterService(&RegisterArtowrk_ServiceDesc, srv)
 }
 
-func _RegisterArtowrk_Handshake_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RegisterArtowrkServer).Handshake(&registerArtowrkHandshakeServer{stream})
+func _RegisterArtowrk_Session_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterArtowrkServer).Session(&registerArtowrkSessionServer{stream})
 }
 
-type RegisterArtowrk_HandshakeServer interface {
-	Send(*HandshakeReply) error
-	Recv() (*HandshakeRequest, error)
+type RegisterArtowrk_SessionServer interface {
+	Send(*SessionReply) error
+	Recv() (*SessionRequest, error)
 	grpc.ServerStream
 }
 
-type registerArtowrkHandshakeServer struct {
+type registerArtowrkSessionServer struct {
 	grpc.ServerStream
 }
 
-func (x *registerArtowrkHandshakeServer) Send(m *HandshakeReply) error {
+func (x *registerArtowrkSessionServer) Send(m *SessionReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *registerArtowrkHandshakeServer) Recv() (*HandshakeRequest, error) {
-	m := new(HandshakeRequest)
+func (x *registerArtowrkSessionServer) Recv() (*SessionRequest, error) {
+	m := new(SessionRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -127,8 +127,8 @@ var RegisterArtowrk_ServiceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "Handshake",
-			Handler:       _RegisterArtowrk_Handshake_Handler,
+			StreamName:    "Session",
+			Handler:       _RegisterArtowrk_Session_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

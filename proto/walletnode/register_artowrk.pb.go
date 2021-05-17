@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HandshakeRequest struct {
+type SessionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type HandshakeRequest struct {
 	IsPrimary bool `protobuf:"varint,1,opt,name=is_primary,json=isPrimary,proto3" json:"is_primary,omitempty"`
 }
 
-func (x *HandshakeRequest) Reset() {
-	*x = HandshakeRequest{}
+func (x *SessionRequest) Reset() {
+	*x = SessionRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_walletnode_register_artowrk_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *HandshakeRequest) Reset() {
 	}
 }
 
-func (x *HandshakeRequest) String() string {
+func (x *SessionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HandshakeRequest) ProtoMessage() {}
+func (*SessionRequest) ProtoMessage() {}
 
-func (x *HandshakeRequest) ProtoReflect() protoreflect.Message {
+func (x *SessionRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_walletnode_register_artowrk_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,19 +55,19 @@ func (x *HandshakeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HandshakeRequest.ProtoReflect.Descriptor instead.
-func (*HandshakeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SessionRequest.ProtoReflect.Descriptor instead.
+func (*SessionRequest) Descriptor() ([]byte, []int) {
 	return file_walletnode_register_artowrk_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *HandshakeRequest) GetIsPrimary() bool {
+func (x *SessionRequest) GetIsPrimary() bool {
 	if x != nil {
 		return x.IsPrimary
 	}
 	return false
 }
 
-type HandshakeReply struct {
+type SessionReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -75,8 +75,8 @@ type HandshakeReply struct {
 	SessID string `protobuf:"bytes,1,opt,name=sessID,proto3" json:"sessID,omitempty"`
 }
 
-func (x *HandshakeReply) Reset() {
-	*x = HandshakeReply{}
+func (x *SessionReply) Reset() {
+	*x = SessionReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_walletnode_register_artowrk_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -84,13 +84,13 @@ func (x *HandshakeReply) Reset() {
 	}
 }
 
-func (x *HandshakeReply) String() string {
+func (x *SessionReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HandshakeReply) ProtoMessage() {}
+func (*SessionReply) ProtoMessage() {}
 
-func (x *HandshakeReply) ProtoReflect() protoreflect.Message {
+func (x *SessionReply) ProtoReflect() protoreflect.Message {
 	mi := &file_walletnode_register_artowrk_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,12 +102,12 @@ func (x *HandshakeReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HandshakeReply.ProtoReflect.Descriptor instead.
-func (*HandshakeReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use SessionReply.ProtoReflect.Descriptor instead.
+func (*SessionReply) Descriptor() ([]byte, []int) {
 	return file_walletnode_register_artowrk_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HandshakeReply) GetSessID() string {
+func (x *SessionReply) GetSessID() string {
 	if x != nil {
 		return x.SessID
 	}
@@ -660,8 +660,8 @@ func file_walletnode_register_artowrk_proto_rawDescGZIP() []byte {
 
 var file_walletnode_register_artowrk_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_walletnode_register_artowrk_proto_goTypes = []interface{}{
-	(*HandshakeRequest)(nil),        // 0: walletnode.HandshakeRequest
-	(*HandshakeReply)(nil),          // 1: walletnode.HandshakeReply
+	(*SessionRequest)(nil),        // 0: walletnode.SessionRequest
+	(*SessionReply)(nil),          // 1: walletnode.SessionReply
 	(*AcceptedNodesRequest)(nil),    // 2: walletnode.AcceptedNodesRequest
 	(*AcceptedNodesReply)(nil),      // 3: walletnode.AcceptedNodesReply
 	(*ConnectToRequest)(nil),        // 4: walletnode.ConnectToRequest
@@ -674,12 +674,12 @@ var file_walletnode_register_artowrk_proto_goTypes = []interface{}{
 }
 var file_walletnode_register_artowrk_proto_depIdxs = []int32{
 	10, // 0: walletnode.AcceptedNodesReply.peers:type_name -> walletnode.AcceptedNodesReply.Peer
-	0,  // 1: walletnode.RegisterArtowrk.Handshake:input_type -> walletnode.HandshakeRequest
+	0,  // 1: walletnode.RegisterArtowrk.Session:input_type -> walletnode.SessionRequest
 	2,  // 2: walletnode.RegisterArtowrk.AcceptedNodes:input_type -> walletnode.AcceptedNodesRequest
 	4,  // 3: walletnode.RegisterArtowrk.ConnectTo:input_type -> walletnode.ConnectToRequest
 	6,  // 4: walletnode.RegisterArtowrk.UploadImage:input_type -> walletnode.UploadImageRequest
 	8,  // 5: walletnode.RegisterArtowrk.SendTicket:input_type -> walletnode.SendTicketRequest
-	1,  // 6: walletnode.RegisterArtowrk.Handshake:output_type -> walletnode.HandshakeReply
+	1,  // 6: walletnode.RegisterArtowrk.Session:output_type -> walletnode.SessionReply
 	3,  // 7: walletnode.RegisterArtowrk.AcceptedNodes:output_type -> walletnode.AcceptedNodesReply
 	5,  // 8: walletnode.RegisterArtowrk.ConnectTo:output_type -> walletnode.ConnectToReply
 	7,  // 9: walletnode.RegisterArtowrk.UploadImage:output_type -> walletnode.UploadImageReply
@@ -698,7 +698,7 @@ func file_walletnode_register_artowrk_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_walletnode_register_artowrk_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HandshakeRequest); i {
+			switch v := v.(*SessionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -710,7 +710,7 @@ func file_walletnode_register_artowrk_proto_init() {
 			}
 		}
 		file_walletnode_register_artowrk_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HandshakeReply); i {
+			switch v := v.(*SessionReply); i {
 			case 0:
 				return &v.state
 			case 1:

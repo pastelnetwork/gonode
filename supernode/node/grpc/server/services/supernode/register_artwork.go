@@ -22,8 +22,8 @@ type RegisterArtowrk struct {
 	*common.RegisterArtowrk
 }
 
-// Handshake implements supernode.RegisterArtowrkServer.Handshake()
-func (service *RegisterArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeServer) error {
+// Session implements supernode.RegisterArtowrkServer.Session()
+func (service *RegisterArtowrk) Session(stream pb.RegisterArtowrk_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
@@ -43,26 +43,26 @@ func (service *RegisterArtowrk) Handshake(stream pb.RegisterArtowrk_HandshakeSer
 	defer task.Cancel()
 
 	peer, _ := peer.FromContext(ctx)
-	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Handshake stream")
-	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Handshake stream closed")
+	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Session stream")
+	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Session stream closed")
 
 	req, err := stream.Recv()
 	if err != nil {
 		return errors.Errorf("failed to receieve handshake request: %w", err)
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Handshake request")
+	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
-	if err := task.HandshakeNode(ctx, req.NodeID); err != nil {
+	if err := task.SessionNode(ctx, req.NodeID); err != nil {
 		return err
 	}
 
-	resp := &pb.HandshakeReply{
+	resp := &pb.SessionReply{
 		SessID: task.ID,
 	}
 	if err := stream.Send(resp); err != nil {
 		return errors.Errorf("failed to send handshake response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Handshake response")
+	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 
 	for {
 		if _, err := stream.Recv(); err != nil {

@@ -20,7 +20,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type HandshakeRequest struct {
+type SessionRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -28,8 +28,8 @@ type HandshakeRequest struct {
 	NodeID string `protobuf:"bytes,1,opt,name=nodeID,proto3" json:"nodeID,omitempty"`
 }
 
-func (x *HandshakeRequest) Reset() {
-	*x = HandshakeRequest{}
+func (x *SessionRequest) Reset() {
+	*x = SessionRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_supernode_register_artwork_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +37,13 @@ func (x *HandshakeRequest) Reset() {
 	}
 }
 
-func (x *HandshakeRequest) String() string {
+func (x *SessionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HandshakeRequest) ProtoMessage() {}
+func (*SessionRequest) ProtoMessage() {}
 
-func (x *HandshakeRequest) ProtoReflect() protoreflect.Message {
+func (x *SessionRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_supernode_register_artwork_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,19 +55,19 @@ func (x *HandshakeRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HandshakeRequest.ProtoReflect.Descriptor instead.
-func (*HandshakeRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SessionRequest.ProtoReflect.Descriptor instead.
+func (*SessionRequest) Descriptor() ([]byte, []int) {
 	return file_supernode_register_artwork_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *HandshakeRequest) GetNodeID() string {
+func (x *SessionRequest) GetNodeID() string {
 	if x != nil {
 		return x.NodeID
 	}
 	return ""
 }
 
-type HandshakeReply struct {
+type SessionReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -75,8 +75,8 @@ type HandshakeReply struct {
 	SessID string `protobuf:"bytes,1,opt,name=sessID,proto3" json:"sessID,omitempty"`
 }
 
-func (x *HandshakeReply) Reset() {
-	*x = HandshakeReply{}
+func (x *SessionReply) Reset() {
+	*x = SessionReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_supernode_register_artwork_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -84,13 +84,13 @@ func (x *HandshakeReply) Reset() {
 	}
 }
 
-func (x *HandshakeReply) String() string {
+func (x *SessionReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HandshakeReply) ProtoMessage() {}
+func (*SessionReply) ProtoMessage() {}
 
-func (x *HandshakeReply) ProtoReflect() protoreflect.Message {
+func (x *SessionReply) ProtoReflect() protoreflect.Message {
 	mi := &file_supernode_register_artwork_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,12 +102,12 @@ func (x *HandshakeReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HandshakeReply.ProtoReflect.Descriptor instead.
-func (*HandshakeReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use SessionReply.ProtoReflect.Descriptor instead.
+func (*SessionReply) Descriptor() ([]byte, []int) {
 	return file_supernode_register_artwork_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *HandshakeReply) GetSessID() string {
+func (x *SessionReply) GetSessID() string {
 	if x != nil {
 		return x.SessID
 	}
@@ -151,12 +151,12 @@ func file_supernode_register_artwork_proto_rawDescGZIP() []byte {
 
 var file_supernode_register_artwork_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_supernode_register_artwork_proto_goTypes = []interface{}{
-	(*HandshakeRequest)(nil), // 0: supernode.HandshakeRequest
-	(*HandshakeReply)(nil),   // 1: supernode.HandshakeReply
+	(*SessionRequest)(nil), // 0: supernode.SessionRequest
+	(*SessionReply)(nil),   // 1: supernode.SessionReply
 }
 var file_supernode_register_artwork_proto_depIdxs = []int32{
-	0, // 0: supernode.RegisterArtowrk.Handshake:input_type -> supernode.HandshakeRequest
-	1, // 1: supernode.RegisterArtowrk.Handshake:output_type -> supernode.HandshakeReply
+	0, // 0: supernode.RegisterArtowrk.Session:input_type -> supernode.SessionRequest
+	1, // 1: supernode.RegisterArtowrk.Session:output_type -> supernode.SessionReply
 	1, // [1:2] is the sub-list for method output_type
 	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -171,7 +171,7 @@ func file_supernode_register_artwork_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_supernode_register_artwork_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HandshakeRequest); i {
+			switch v := v.(*SessionRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -183,7 +183,7 @@ func file_supernode_register_artwork_proto_init() {
 			}
 		}
 		file_supernode_register_artwork_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*HandshakeReply); i {
+			switch v := v.(*SessionReply); i {
 			case 0:
 				return &v.state
 			case 1:

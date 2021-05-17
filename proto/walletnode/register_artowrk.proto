@@ -5,10 +5,10 @@ option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
 package walletnode;
 
 service RegisterArtowrk {
-    // Handshake informs the supernode its position (primary/secondary).
+    // Session informs the supernode its position (primary/secondary).
     // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
     // The stream is used by the parties to inform each other about the cancellation of the task.
-    rpc Handshake(stream HandshakeRequest) returns (stream HandshakeReply);
+    rpc Session(stream SessionRequest) returns (stream SessionReply);
 
     // AcceptedNodes returns peers of the secondary supernodes connected to it.
     rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
@@ -23,10 +23,10 @@ service RegisterArtowrk {
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
 }
 
-message HandshakeRequest {
+message SessionRequest {
     bool is_primary = 1;
 }
-message HandshakeReply {
+message SessionReply {
     string sessID = 1;
 }
 

@@ -110,7 +110,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 	if err := primary.connect(ctx); err != nil {
 		return nil, err
 	}
-	if err := primary.Handshake(ctx, true); err != nil {
+	if err := primary.Session(ctx, true); err != nil {
 		return nil, err
 	}
 
@@ -136,7 +136,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 					if err := node.connect(ctx); err != nil {
 						return
 					}
-					if err := node.Handshake(ctx, false); err != nil {
+					if err := node.Session(ctx, false); err != nil {
 						return
 					}
 					secondaries.add(node)

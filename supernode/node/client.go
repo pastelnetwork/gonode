@@ -24,6 +24,6 @@ type Connection interface {
 type RegisterArtowrk interface {
 	// SessID returns the taskID received from the server during the handshake.
 	SessID() (taskID string)
-	// Handshake secondary sets up an initial connection with primary supernode, by telling session id and its own node key.
-	Handshake(ctx context.Context, nodeID, sessID string) (err error)
+	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
+	Session(ctx context.Context, nodeID, sessID string) (err error)
 }
