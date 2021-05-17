@@ -30,7 +30,7 @@ USE_CMD_ARGS = 0
 # Input - output folders
 ORIGINAL_FILE_PATH = ''
 TRANSFORMED_FILE_PATH = ''
-
+BASE_FILEPATH = ''
 # Crop size ratio used by random_crop function
 CROP_RATIO = random.uniform(0.5, 0.75)
 # Stretch width ratio used by random_stretch function
@@ -60,6 +60,8 @@ LOGGER = None
 MAXIMUM_NR_OF_TRANSFORMATIONS = 5
 MIN_NR_OF_TRANFORMATIONS = 2
 
+#Web scraped categories
+CATEGORIES = ['manga', 'contemporary', 'sports'] # art already OK
 
 class JsonLogger:
     """Logger class for JSON export"""
@@ -185,7 +187,7 @@ def get_hash(filename) -> object:
 
 
 def parse_folders():
-    global ORIGINAL_FILE_PATH
+    global BASE_FILEPATH
     global TRANSFORMED_FILE_PATH
 
     if USE_CMD_ARGS:
@@ -197,11 +199,11 @@ def parse_folders():
                         help="path to optional output folder")
         args = vars(ap.parse_args())
 
-        ORIGINAL_FILE_PATH = args["inputFolder"]
-        TRANSFORMED_FILE_PATH = args["outputFolder"]
+        BASE_FILEPATH = args["inputFolder"]
+        #TRANSFORMED_FILE_PATH = args["outputFolder"]
     else:
-        ORIGINAL_FILE_PATH = "dir_1/"
-        TRANSFORMED_FILE_PATH = "dir_2/"
+        BASE_FILEPATH = "scraper_categories/"
+        #TRANSFORMED_FILE_PATH = "scraper_categories_trials/"
 
 
 # Function which shall be used to save images
@@ -758,18 +760,21 @@ def transform_images(base_path, img_name):
     original_hash = get_hash(base_path + img_name)
 
     # Opens a image in RGB mode
-    with Image.open(base_path + img_name) as image:
-        # Get a random number, how many transformations shall be performed per asset
+    try:
+        with Image.open(base_path + img_name) as image:
+            # Get a random number, how many transformations shall be performed per asset
 
 
-        # Perform transformation
-        transform_each_image_multiple_times(img_transformation_dict_list,
-                                            image, base_path, img_name, original_hash)
-        # transform_each_image(transformation_nr, img_transformation_dict,
-        #                     image, base_path, img_name)
+            # Perform transformation
+            transform_each_image_multiple_times(img_transformation_dict_list,
+                                                image, base_path, img_name, original_hash)
+            # transform_each_image(transformation_nr, img_transformation_dict,
+            #                     image, base_path, img_name)
 
-        # Add each image to the 'asset' level of the LOGGER dictionary
-        LOGGER.add_element(img_name, img_transformation_dict_list)
+            # Add each image to the 'asset' level of the LOGGER dictionary
+            LOGGER.add_element(img_name, img_transformation_dict_list)
+    except Exception as bs:
+        print("Probelm with transformation is: {}".format(bs))
 
 
 def transform_files():
@@ -796,11 +801,17 @@ if __name__ == "__main__":
     # option to have command line arguments or constants
     parse_folders()
     # Create JsonLogger instance to story every transformation
-    LOGGER = JsonLogger()
+
     # It does the main work :)
-    transform_files()
-    # Add 'asset' child to the root
-    LOGGER.add_top_lvl()
-    # Save it to file
-    with open("transformation.json", "w") as outfile:
-        json.dump(LOGGER.root_info, outfile, indent=4)
+    for category in CATEGORIES:
+        LOGGER = JsonLogger()
+        TRANSFORMED_FILE_PATH = BASE_FILEPATH + category + "_dir2/"
+        ORIGINAL_FILE_PATH = BASE_FILEPATH + category + '/'
+        transform_files()
+        # Add 'asset' child to the root
+        LOGGER.add_top_lvl()
+        # Save it to file
+        json_file = TRANSFORMED_FILE_PATH + "transformation.json"
+        with open(json_file, "w") as outfile:
+            json.dump(LOGGER.root_info, outfile, indent=4)
+

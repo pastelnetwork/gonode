@@ -19,7 +19,9 @@ colors_per_class = {
     #'spider' : [0, 0, 0],
     #'squirrel' : [100, 100, 255],
     'openseaio_images' : [100, 100, 255],
-    'opensea_reduced' : [100, 100, 255]
+    'opensea_reduced' : [100, 100, 255],
+    'art_origi' : [52, 31, 151],
+    'art_transformed' : [128, 80, 128],
 }
 
 
@@ -94,7 +96,9 @@ class OriginalImagesDataset(torch.utils.data.Dataset):
     def __init__(self, data_path, num_images=0):
         # Key is the folder name and
         translation = {'openseaio' : 'openseaio_images',
-                       'reduced' : 'opensea_reduced'}
+                       'reduced' : 'opensea_reduced',
+                       'art' : 'art_origi',
+                       'art_dir2': 'art_transformed'}
 
         self.classes = translation.values()
 

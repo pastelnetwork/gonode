@@ -1,5 +1,6 @@
 import argparse
 import math
+import shutil
 
 from tqdm import tqdm
 import cv2
@@ -15,6 +16,8 @@ from resnet import ResNet101
 
 #GLobal varaibles / switches
 euclidean_distance_map = None
+
+TO_BE_DELETED_PATH= 'dataset/to_be_deleted/'
 
 # To get the same results for every run on the same images
 def fix_random_seeds():
@@ -123,6 +126,14 @@ def compute_plot_coordinates(image, x, y, image_centers_area_size, offset):
 # Keep in mind that we do not have such feature in 'live'.
 # So we won't know the image's parent (the original) because
 # this is what we are trying to reach
+def move_to_delete_folder(image_path):
+    filename = image_path.rsplit('/',1)
+    #for splitings in filename:
+        #print (splitings)
+    shutil.copyfile(image_path, TO_BE_DELETED_PATH+filename[-1])
+    pass
+
+
 def is_parents_euclidean_distance_big(child_img, images, tx, ty):
     # now we'll put a small copy of every image to its corresponding T-SNE coordinate
 
@@ -135,6 +146,11 @@ def is_parents_euclidean_distance_big(child_img, images, tx, ty):
         if image_path == child_img.parentName:
             distance = math.sqrt((x - child_img.x)**2+(y-child_img.y)**2)
             print('Euclidean distance between parent{} and child{}: {}'.format(child_img.parentName, child_img.imageName, distance))
+
+            # Not reliable :'(
+            if(distance > 0.5):
+                print ("Shall be deleted")
+                #move_to_delete_folder(child_img.imageName)
             return
 
 
@@ -243,7 +259,7 @@ def visualize_tsne_images(tx, ty, images, labels, plot_size=1000, max_image_size
 
     build_up_euclidean_distance_matrix(list_of_image_coordinates)
     # Example
-    retrieve_closest_N_images_per_image('dataset/opensea_dataset/openseaio_reduced/reduced/https___opensea.io_assets_0x7c40c393dc0f283f318791d746d894ddd3693572_8246.png', 15)
+    # retrieve_closest_N_images_per_image('dataset/opensea_dataset/openseaio_reduced/reduced/https___opensea.io_assets_0x7c40c393dc0f283f318791d746d894ddd3693572_8246.png', 15)
 
     # Keep in mind that we do not have such information 'live' as original vs. fake
     # For creating dataset, sure !
@@ -300,7 +316,7 @@ def visualize_tsne(tsne, images, labels, plot_size=1000, max_image_size=100):
 def do_tsne_calc():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--path', type=str, default='dataset/opensea_dataset/openseaio_reduced')
+    parser.add_argument('--path', type=str, default='dataset/trash_automation')
     parser.add_argument('--batch', type=int, default=64)
     parser.add_argument('--num_images', type=int, default=500)
     args = parser.parse_args()
