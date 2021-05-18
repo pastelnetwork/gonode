@@ -23,7 +23,7 @@ func migrate(db *sql.DB) error {
 	return nil
 }
 
-func store(db *sql.DB, key []byte, data []byte, replication, expiration time.Time) error {
+func store(db *sql.DB, key []byte, data []byte, replication, expiration time.Time) (int64, error) {
 	query := "INSERT INTO keys(key, data, replication, expiration) VALUES (?, ?, ?, ?)"
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -31,23 +31,23 @@ func store(db *sql.DB, key []byte, data []byte, replication, expiration time.Tim
 	stmt, err := db.PrepareContext(ctx, query)
 	if err != nil {
 		log.Printf("Error %s when preparing SQL statement", err)
-		return err
+		return 0, err
 	}
 	defer stmt.Close()
 
 	res, err := stmt.ExecContext(ctx, string(key), data, replication, expiration)
 	if err != nil {
 		log.Printf("Error %s when inserting row into keys table", err)
-		return err
+		return 0, err
 	}
 
-	_, err = res.RowsAffected()
+	rows, err := res.RowsAffected()
 	if err != nil {
 		log.Printf("Error %s when finding rows affected", err)
-		return err
+		return 0, err
 	}
 
-	return nil
+	return rows, nil
 }
 
 func retrieve(db *sql.DB, key []byte) ([]byte, error) {
@@ -62,9 +62,11 @@ func retrieve(db *sql.DB, key []byte) ([]byte, error) {
 	}
 	defer rows.Close()
 
-	if err := rows.Scan(&data); err != nil {
-		log.Printf("Error %s when scanning rows", err)
-		return []byte{}, err
+	for rows.Next() {
+		if err := rows.Scan(&data); err != nil {
+			log.Printf("Error %s when scanning rows", err)
+			return []byte{}, err
+		}
 	}
 
 	// If the database is being written to ensure to check for Close
@@ -88,7 +90,7 @@ func expireKeys(db *sql.DB) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := db.ExecContext(ctx, "UPDATE FROM keys where expiration > ?")
+	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE expiration > TIME('now')")
 	if err != nil {
 		log.Printf("Error %s while keys with due expiration", err)
 		return err
@@ -102,7 +104,7 @@ func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, "SELECT key FROM keys WHERE replication > ?", time.Now())
+	rows, err := db.QueryContext(ctx, "SELECT key FROM keys WHERE replication > TIME('now')")
 	if err != nil {
 		log.Printf("Error %s while selecting keys for replication", err)
 		return [][]byte{}, err
@@ -114,7 +116,8 @@ func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 		if err := rows.Scan(&key); err != nil {
 			// Check for a scan error.
 			// Query rows will be closed with defer.
-			log.Fatal(err)
+			log.Printf("Error %s while scanning rows", err)
+			return [][]byte{}, err
 		}
 		keys = append(keys, []byte(key))
 	}
@@ -134,4 +137,17 @@ func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 	}
 
 	return keys, nil
+}
+
+func remove(db *sql.DB, key []byte) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE key=?", string(key))
+	if err != nil {
+		log.Printf("Error %s while deleting key=%s", err, string(key))
+		return err
+	}
+
+	return nil
 }

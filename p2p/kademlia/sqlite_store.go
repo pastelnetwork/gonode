@@ -44,7 +44,8 @@ func (ss *SQLiteStore) Init() error {
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
 func (ss *SQLiteStore) Store(key []byte, data []byte, replication time.Time, expiration time.Time, publisher bool) error {
-	return store(ss.db, key, data, replication, expiration)
+	_, err := store(ss.db, key, data, replication, expiration)
+	return err
 }
 
 // Retrieve will return the local key/value if it exists
@@ -59,5 +60,5 @@ func (ss *SQLiteStore) Retrieve(key []byte) (data []byte, found bool) {
 
 // Delete deletes a key/value pair from the MemoryStore
 func (ss *SQLiteStore) Delete(key []byte) error {
-	return nil
+	return remove(ss.db, key)
 }
