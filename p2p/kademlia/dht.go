@@ -157,9 +157,9 @@ func (dht *DHT) Get(key string) (data []byte, found bool, err error) {
 	keyBytes := b58.Decode(key)
 	value, exists := dht.store.Retrieve(keyBytes)
 
-	if len(keyBytes) != k {
-		return nil, false, errors.New("Invalid key")
-	}
+	// if len(keyBytes) != k {
+	// 	return nil, false, errors.New("Invalid key")
+	// }
 
 	if !exists {
 		var err error
@@ -623,7 +623,7 @@ func (dht *DHT) listen() {
 				data := msg.Data.(*queryDataStore)
 				dht.addNode(newNode(msg.Sender))
 				//TODO: Get pastel generated key
-				key := []byte("sample key")
+				key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
 				expiration := dht.getExpirationTime(key)
 				replication := time.Now().Add(dht.options.TReplicate)
 				dht.store.Store(key, data.Data, replication, expiration, false)
