@@ -3,7 +3,7 @@ package services
 import (
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/node/state"
+	"github.com/pastelnetwork/gonode/common/service/state"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 )
@@ -42,13 +42,13 @@ func toArtworkTicket(ticket *artworkregister.Ticket) *artworks.ArtworkTicket {
 	}
 }
 
-func toArtworkStates(history []*state.Event) []*artworks.TaskState {
+func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 	var states []*artworks.TaskState
 
-	for _, state := range history {
+	for _, status := range statuses {
 		states = append(states, &artworks.TaskState{
-			Date:   state.CreatedAt.Format(time.RFC3339),
-			Status: state.Status.String(),
+			Date:   status.CreatedAt.Format(time.RFC3339),
+			Status: status.String(),
 		})
 	}
 	return states

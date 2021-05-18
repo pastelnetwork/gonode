@@ -50,13 +50,13 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 		select {
 		case <-ctx.Done():
 			return nil
-		case state := <-sub():
-			if state.IsFinal() {
+		case status := <-sub():
+			if status.IsFinal() {
 				return nil
 			}
 			res := &artworks.TaskState{
-				Date:   state.CreatedAt.Format(time.RFC3339),
-				Status: state.Status.String(),
+				Date:   status.CreatedAt.Format(time.RFC3339),
+				Status: status.String(),
 			}
 			if err := stream.Send(res); err != nil {
 				return artworks.MakeInternalServerError(err)

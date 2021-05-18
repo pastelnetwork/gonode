@@ -7,8 +7,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/node/state"
 	"github.com/pastelnetwork/gonode/common/random"
+	"github.com/pastelnetwork/gonode/common/service/state"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -30,8 +30,8 @@ type Task struct {
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
-	task.State.SetActionFunc(func(event *state.Event) {
-		log.WithContext(ctx).WithField("status", event.Status.String()).Debugf("States updated")
+	task.State.SetActionFunc(func(status *state.Status) {
+		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
 	})
 
 	log.WithContext(ctx).Debugf("Start task")

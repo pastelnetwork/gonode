@@ -4,14 +4,12 @@ package artworkregister
 const (
 	StatusTaskStarted Status = iota
 
-	// Primary node statuses
+	// Mode
 	StatusPrimaryMode
-	StatusAcceptedNodes
-
-	// Secondary node statuses
 	StatusSecondaryMode
-	StatusConnectedToNode
 
+	// Process
+	StatusConnected
 	StatusImageUploaded
 
 	// Final
@@ -20,14 +18,13 @@ const (
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted:     "Task started",
-	StatusPrimaryMode:     "Primary Mode",
-	StatusSecondaryMode:   "Secondary Mode",
-	StatusAcceptedNodes:   "Accepted Secondary Nodes",
-	StatusConnectedToNode: "Connected to Primary Node",
-	StatusImageUploaded:   "Image Uploaded",
-	StatusTaskCanceled:    "Task Canceled",
-	StatusTaskCompleted:   "Task Completed",
+	StatusTaskStarted:   "Task started",
+	StatusPrimaryMode:   "Primary Mode",
+	StatusSecondaryMode: "Secondary Mode",
+	StatusConnected:     "Connected",
+	StatusImageUploaded: "Image Uploaded",
+	StatusTaskCanceled:  "Task Canceled",
+	StatusTaskCompleted: "Task Completed",
 }
 
 // Status represents status of the task

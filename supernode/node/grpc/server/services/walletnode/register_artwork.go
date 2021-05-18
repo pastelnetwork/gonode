@@ -144,7 +144,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		return errors.Errorf("failed to open file %q: %w", filename, err)
 	}
 	defer file.Close()
-	log.WithContext(ctx).Debugf("Created temp file %q for uploading image", filename)
+	log.WithContext(ctx).WithField("filename", filename).Debugf("UploadImage request")
 
 	wr := bufio.NewWriter(file)
 	for {

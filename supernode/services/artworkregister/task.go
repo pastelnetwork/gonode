@@ -8,8 +8,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/node/state"
 	"github.com/pastelnetwork/gonode/common/random"
+	"github.com/pastelnetwork/gonode/common/service/state"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -36,8 +36,8 @@ type Task struct {
 func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
 
-	task.State.SetActionFunc(func(event *state.Event) {
-		log.WithContext(ctx).WithField("status", event.Status.String()).Debugf("States updated")
+	task.State.SetActionFunc(func(status *state.Status) {
+		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
 	})
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -116,7 +116,7 @@ func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case state := <-event():
-			if state.Is(StatusAcceptedNodes) {
+			if state.Is(StatusConnected) {
 				return task.accpetNodes, nil
 			}
 		}
@@ -147,7 +147,7 @@ func (task *Task) SessionNode(ctx context.Context, nodeID string) error {
 	log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
 
 	if len(task.accpetNodes) >= task.config.NumberConnectedNodes {
-		task.State.Update(StatusAcceptedNodes)
+		task.State.Update(StatusConnected)
 	}
 	return nil
 }
@@ -175,7 +175,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 		}
 
 		task.connectNode = node
-		task.State.Update(StatusConnectedToNode)
+		task.State.Update(StatusConnected)
 		return nil
 	}
 	return nil
@@ -183,7 +183,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 
 // UploadImage uploads an image
 func (task *Task) UploadImage(_ context.Context, filename string) error {
-	if err := task.requiredStatus(StatusAcceptedNodes, StatusConnectedToNode); err != nil {
+	if err := task.requiredStatus(StatusConnected); err != nil {
 		return err
 	}
 
@@ -225,11 +225,11 @@ func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node,
 	return nil, errors.Errorf("node %q not found", nodeID)
 }
 
-func (task *Task) requiredStatus(statusTypes ...state.Status) error {
-	if task.State.Is(statusTypes...) {
+func (task *Task) requiredStatus(status Status) error {
+	if task.State.Is(status) {
 		return nil
 	}
-	return errors.Errorf("required status %q, current %q", statusTypes, task.State.Status)
+	return errors.Errorf("required status %q, current %q", status, task.State.Status)
 }
 
 func (task *Task) context(ctx context.Context) context.Context {
