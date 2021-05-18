@@ -44,22 +44,19 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
-	sub, err := task.State.Subscribe()
-	if err != nil {
-		return artworks.MakeInternalServerError(err)
-	}
-	defer sub.Close()
+	sub := task.State.Subscribe()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-sub.Done():
-			return nil
-		case status := <-sub.Status():
+		case state := <-sub():
+			if state.IsFinal() {
+				return nil
+			}
 			res := &artworks.TaskState{
-				Date:   status.CreatedAt.Format(time.RFC3339),
-				Status: status.Type.String(),
+				Date:   state.CreatedAt.Format(time.RFC3339),
+				Status: state.Status.String(),
 			}
 			if err := stream.Send(res); err != nil {
 				return artworks.MakeInternalServerError(err)
@@ -78,9 +75,9 @@ func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTask
 
 	res = &artworks.Task{
 		ID:     p.TaskID,
-		Status: task.State.Latest().Type.String(),
+		Status: task.State.Status.String(),
 		Ticket: toArtworkTicket(task.Ticket),
-		States: toArtworkStates(task.State.All()),
+		States: toArtworkStates(task.State.Events()),
 	}
 	return res, nil
 }
@@ -91,7 +88,7 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
 			ID:     task.ID,
-			Status: task.State.Latest().Type.String(),
+			Status: task.State.Status.String(),
 			Ticket: toArtworkTicket(task.Ticket),
 		})
 	}

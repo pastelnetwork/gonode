@@ -3,9 +3,9 @@ package services
 import (
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/node/state"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 )
 
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Ticket {
@@ -42,13 +42,13 @@ func toArtworkTicket(ticket *artworkregister.Ticket) *artworks.ArtworkTicket {
 	}
 }
 
-func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
+func toArtworkStates(history []*state.Event) []*artworks.TaskState {
 	var states []*artworks.TaskState
 
-	for _, status := range statuses {
+	for _, state := range history {
 		states = append(states, &artworks.TaskState{
-			Date:   status.CreatedAt.Format(time.RFC3339),
-			Status: status.Type.String(),
+			Date:   state.CreatedAt.Format(time.RFC3339),
+			Status: state.Status.String(),
 		})
 	}
 	return states

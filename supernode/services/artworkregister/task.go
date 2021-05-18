@@ -8,8 +8,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/node/state"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkregister/state"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -34,6 +34,12 @@ type Task struct {
 
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
+
+	task.State.SetActionFunc(func(event *state.Event) {
+		log.WithContext(ctx).WithField("status", event.Status.String()).Debugf("States updated")
+	})
+
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	defer task.Cancel()
@@ -80,18 +86,18 @@ func (task *Task) Done() <-chan struct{} {
 func (task *Task) Session(ctx context.Context, isPrimary bool) error {
 	ctx = task.context(ctx)
 
-	if err := task.requiredLatestStatus(state.StatusTaskStarted); err != nil {
+	if err := task.requiredStatus(StatusTaskStarted); err != nil {
 		return err
 	}
 
 	if isPrimary {
 		log.WithContext(ctx).Debugf("Acts as primary node")
-		task.State.Update(ctx, state.NewStatus(state.StatusPrimaryMode))
+		task.State.Update(StatusPrimaryMode)
 		return nil
 	}
 
 	log.WithContext(ctx).Debugf("Acts as secondary node")
-	task.State.Update(ctx, state.NewStatus(state.StatusSecondaryMode))
+	task.State.Update(StatusSecondaryMode)
 	return nil
 }
 
@@ -99,19 +105,21 @@ func (task *Task) Session(ctx context.Context, isPrimary bool) error {
 func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 	ctx = task.context(ctx)
 
-	if err := task.requiredLatestStatus(state.StatusPrimaryMode); err != nil {
+	if err := task.requiredStatus(StatusPrimaryMode); err != nil {
 		return nil, err
 	}
 	log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
 
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-task.State.Updated():
-		if err := task.requiredLatestStatus(state.StatusAcceptedNodes); err != nil {
-			return nil, err
+	event := task.State.Subscribe()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case state := <-event():
+			if state.Is(StatusAcceptedNodes) {
+				return task.accpetNodes, nil
+			}
 		}
-		return task.accpetNodes, nil
 	}
 }
 
@@ -122,7 +130,7 @@ func (task *Task) SessionNode(ctx context.Context, nodeID string) error {
 	task.acceptMu.Lock()
 	defer task.acceptMu.Unlock()
 
-	if err := task.requiredLatestStatus(state.StatusPrimaryMode); err != nil {
+	if err := task.requiredStatus(StatusPrimaryMode); err != nil {
 		return err
 	}
 
@@ -139,14 +147,14 @@ func (task *Task) SessionNode(ctx context.Context, nodeID string) error {
 	log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
 
 	if len(task.accpetNodes) >= task.config.NumberConnectedNodes {
-		task.State.Update(ctx, state.NewStatus(state.StatusAcceptedNodes))
+		task.State.Update(StatusAcceptedNodes)
 	}
 	return nil
 }
 
 // ConnectTo connects to primary node
 func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
-	if err := task.requiredLatestStatus(state.StatusSecondaryMode); err != nil {
+	if err := task.requiredStatus(StatusSecondaryMode); err != nil {
 		return err
 	}
 
@@ -167,7 +175,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 		}
 
 		task.connectNode = node
-		task.State.Update(ctx, state.NewStatus(state.StatusConnectedToNode))
+		task.State.Update(StatusConnectedToNode)
 		return nil
 	}
 	return nil
@@ -175,7 +183,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 
 // UploadImage uploads an image
 func (task *Task) UploadImage(_ context.Context, filename string) error {
-	if err := task.requiredLatestStatus(state.StatusAcceptedNodes, state.StatusConnectedToNode); err != nil {
+	if err := task.requiredStatus(StatusAcceptedNodes, StatusConnectedToNode); err != nil {
 		return err
 	}
 
@@ -183,7 +191,7 @@ func (task *Task) UploadImage(_ context.Context, filename string) error {
 		ctx = task.context(ctx)
 
 		task.ImagePath = filename
-		task.State.Update(ctx, state.NewStatus(state.StatusImageUploaded))
+		task.State.Update(StatusImageUploaded)
 
 		<-ctx.Done()
 
@@ -217,18 +225,11 @@ func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node,
 	return nil, errors.Errorf("node %q not found", nodeID)
 }
 
-func (task *Task) requiredLatestStatus(statusTypes ...state.StatusType) error {
-	latest := task.State.Latest()
-	if latest == nil {
-		return errors.New("not found latest status")
+func (task *Task) requiredStatus(statusTypes ...state.Status) error {
+	if task.State.Is(statusTypes...) {
+		return nil
 	}
-
-	for _, statusType := range statusTypes {
-		if latest.Type == statusType {
-			return nil
-		}
-	}
-	return errors.Errorf("wrong order, current task status %q, ", latest.Type)
+	return errors.Errorf("required status %q, current %q", statusTypes, task.State.Status)
 }
 
 func (task *Task) context(ctx context.Context) context.Context {
@@ -242,7 +243,7 @@ func NewTask(service *Service) *Task {
 	return &Task{
 		Service: service,
 		ID:      taskID,
-		State:   state.New(state.NewStatus(state.StatusTaskStarted)),
+		State:   state.New(StatusTaskStarted),
 		doneCh:  make(chan struct{}),
 		actCh:   make(chan func(ctx context.Context) error),
 	}

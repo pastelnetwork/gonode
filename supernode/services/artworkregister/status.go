@@ -1,8 +1,8 @@
-package state
+package artworkregister
 
 // List of task statuses.
 const (
-	StatusTaskStarted StatusType = iota
+	StatusTaskStarted Status = iota
 
 	// Primary node statuses
 	StatusPrimaryMode
@@ -19,7 +19,7 @@ const (
 	StatusTaskCompleted
 )
 
-var statusNames = map[StatusType]string{
+var statusNames = map[Status]string{
 	StatusTaskStarted:     "Task started",
 	StatusPrimaryMode:     "Primary Mode",
 	StatusSecondaryMode:   "Secondary Mode",
@@ -30,12 +30,26 @@ var statusNames = map[StatusType]string{
 	StatusTaskCompleted:   "Task Completed",
 }
 
-// StatusType represents statusType type of the state.
-type StatusType byte
+// Status represents status of the task
+type Status byte
 
-func (statusType StatusType) String() string {
-	if name, ok := statusNames[statusType]; ok {
+func (status Status) String() string {
+	if name, ok := statusNames[status]; ok {
 		return name
 	}
 	return ""
+}
+
+// IsFinal returns true if the status is the final.
+func (status Status) IsFinal() bool {
+	return status == StatusTaskCanceled || status == StatusTaskCompleted
+}
+
+// StatusNames returns a sorted list of status names.
+func StatusNames() []string {
+	list := make([]string, len(statusNames))
+	for i, name := range statusNames {
+		list[i] = name
+	}
+	return list
 }

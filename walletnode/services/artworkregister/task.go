@@ -7,8 +7,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/node/state"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -30,17 +30,20 @@ type Task struct {
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
+	task.State.SetActionFunc(func(event *state.Event) {
+		log.WithContext(ctx).WithField("status", event.Status.String()).Debugf("States updated")
+	})
 
 	log.WithContext(ctx).Debugf("Start task")
 	defer log.WithContext(ctx).Debugf("End task")
 
 	if err := task.run(ctx); err != nil {
-		task.State.Update(ctx, state.NewStatus(state.StatusTaskRejected))
+		task.State.Update(StatusTaskRejected)
 		log.WithContext(ctx).WithError(err).Warnf("Task is rejected")
 		return nil
 	}
 
-	task.State.Update(ctx, state.NewStatus(state.StatusTaskCompleted))
+	task.State.Update(StatusTaskCompleted)
 	log.WithContext(ctx).Debugf("Task is completed")
 	return nil
 }
@@ -52,7 +55,7 @@ func (task *Task) run(ctx context.Context) error {
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
 		return err
 	} else if !ok {
-		task.State.Update(ctx, state.NewStatus(state.StatusErrorTooLowFee))
+		task.State.Update(StatusErrorTooLowFee)
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
@@ -61,7 +64,7 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 	if len(topNodes) < task.config.NumberSuperNodes {
-		task.State.Update(ctx, state.NewStatus(state.StatusErrorTooLowFee))
+		task.State.Update(StatusErrorTooLowFee)
 		return errors.New("not found enough available SuperNodes with acceptable storage fee: %f")
 	}
 
@@ -71,6 +74,7 @@ func (task *Task) run(ctx context.Context) error {
 		if err == nil {
 			break
 		}
+		log.WithContext(ctx).WithError(err).Warnf("Could not get mesh of nodes")
 	}
 	nodes.activate()
 	topNodes.disconnectInactive()
@@ -90,12 +94,14 @@ func (task *Task) run(ctx context.Context) error {
 			}
 		})
 	}
-	task.State.Update(ctx, state.NewStatus(state.StatusConnected))
+	task.State.Update(StatusConnected)
 
+	log.WithContext(ctx).WithField("filename", task.Ticket.ImagePath).Debugf("Uploading image")
 	if err := nodes.sendImage(ctx, task.Ticket.ImagePath); err != nil {
 		return err
 	}
-	task.State.Update(ctx, state.NewStatus(state.StatusUploadedImage))
+
+	task.State.Update(StatusUploadedImage)
 
 	<-ctx.Done()
 
@@ -208,6 +214,6 @@ func NewTask(service *Service, Ticket *Ticket) *Task {
 		Service: service,
 		ID:      taskID,
 		Ticket:  Ticket,
-		State:   state.New(state.NewStatus(state.StatusTaskStarted)),
+		State:   state.New(StatusTaskStarted),
 	}
 }
