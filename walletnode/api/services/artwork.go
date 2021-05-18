@@ -87,7 +87,7 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 	tasks := service.register.Tasks()
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
-			ID:     task.ID,
+			ID:     task.ID(),
 			Status: task.State.Status.String(),
 			Ticket: toArtworkTicket(task.Ticket),
 		})

@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-type subStatus interface {
+type SubStatus interface {
 	String() string
 	IsFinal() bool
 }
@@ -12,18 +12,18 @@ type subStatus interface {
 // Status represents a state of the task.
 type Status struct {
 	CreatedAt time.Time
-	subStatus
+	SubStatus
 }
 
 // Is returns true if the current `Status` matches to the given `statuses`.
-func (status *Status) Is(subStatus subStatus) bool {
-	return subStatus == status.subStatus
+func (status *Status) Is(subStatus SubStatus) bool {
+	return status.SubStatus == subStatus
 }
 
 // NewStatus returns a new Status instance.
-func NewStatus(subStatus subStatus) *Status {
+func NewStatus(subStatus SubStatus) *Status {
 	return &Status{
 		CreatedAt: time.Now(),
-		subStatus: subStatus,
+		SubStatus: subStatus,
 	}
 }

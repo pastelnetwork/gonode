@@ -7,8 +7,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/service/state"
+	"github.com/pastelnetwork/gonode/common/service/worker/task"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -20,16 +20,15 @@ const (
 
 // Task is the task of registering new artwork.
 type Task struct {
+	*task.Task
 	*Service
 
-	ID     string
-	State  *state.State
 	Ticket *Ticket
 }
 
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
 	task.State.SetActionFunc(func(status *state.Status) {
 		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
 	})
@@ -101,7 +100,7 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
-	task.State.Update(StatusUploadedImage)
+	task.State.Update(StatusImageUploaded)
 
 	<-ctx.Done()
 
@@ -208,12 +207,9 @@ func (task *Task) pastelTopNodes(ctx context.Context) (Nodes, error) {
 
 // NewTask returns a new Task instance.
 func NewTask(service *Service, Ticket *Ticket) *Task {
-	taskID, _ := random.String(8, random.Base62Chars)
-
 	return &Task{
+		Task:    task.New(StatusTaskStarted),
 		Service: service,
-		ID:      taskID,
 		Ticket:  Ticket,
-		State:   state.New(StatusTaskStarted),
 	}
 }

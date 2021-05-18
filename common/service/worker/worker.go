@@ -1,4 +1,4 @@
-package artworkregister
+package worker
 
 import (
 	"context"
@@ -8,26 +8,32 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// Worker represents a task handler of registering artworks.
+// Task represent a worker task.
+type Task interface {
+	ID() string
+	Run(ctx context.Context) error
+}
+
+// Worker represents a task handler.
 type Worker struct {
 	sync.Mutex
 
-	tasks  []*Task
-	taskCh chan *Task
+	tasks  []Task
+	taskCh chan Task
 }
 
 // Tasks returns all tasks.
-func (worker *Worker) Tasks() []*Task {
+func (worker *Worker) Tasks() []Task {
 	return worker.tasks
 }
 
-// Task returns the task of the registration artwork.
-func (worker *Worker) Task(taskID string) *Task {
+// Task returns the task  by the given id.
+func (worker *Worker) Task(taskID string) Task {
 	worker.Lock()
 	defer worker.Unlock()
 
 	for _, task := range worker.tasks {
-		if task.ID == taskID {
+		if task.ID() == taskID {
 			return task
 		}
 	}
@@ -35,19 +41,16 @@ func (worker *Worker) Task(taskID string) *Task {
 }
 
 // AddTask adds the new task.
-func (worker *Worker) AddTask(ctx context.Context, task *Task) {
+func (worker *Worker) AddTask(task Task) {
 	worker.Lock()
 	defer worker.Unlock()
 
 	worker.tasks = append(worker.tasks, task)
-	select {
-	case <-ctx.Done():
-	case worker.taskCh <- task:
-	}
+	worker.taskCh <- task
 }
 
 // RemoveTask removes the task.
-func (worker *Worker) RemoveTask(subTask *Task) {
+func (worker *Worker) RemoveTask(subTask Task) {
 	worker.Lock()
 	defer worker.Unlock()
 
@@ -62,12 +65,10 @@ func (worker *Worker) RemoveTask(subTask *Task) {
 // Run waits for new tasks, starts handling eche of them in a new goroutine.
 func (worker *Worker) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
-
 	for {
 		select {
 		case <-ctx.Done():
 			return group.Wait()
-
 		case task := <-worker.taskCh:
 			group.Go(func() (err error) {
 				defer errors.Recover(func(recErr error) { err = recErr })
@@ -79,9 +80,9 @@ func (worker *Worker) Run(ctx context.Context) error {
 	}
 }
 
-// NewWorker returns a new Worker instance.
-func NewWorker() *Worker {
+// New returns a new Worker instance.
+func New() *Worker {
 	return &Worker{
-		taskCh: make(chan *Task),
+		taskCh: make(chan Task),
 	}
 }

@@ -4,7 +4,7 @@ package artworkregister
 const (
 	StatusTaskStarted Status = iota
 	StatusConnected
-	StatusUploadedImage
+	StatusImageUploaded
 	// Ticket
 	StatusTicketAccepted
 	StatusTicketRegistered
@@ -20,7 +20,7 @@ const (
 var statusNames = map[Status]string{
 	StatusTaskStarted:       "Task Started",
 	StatusConnected:         "Connected",
-	StatusUploadedImage:     "Uploaded Image",
+	StatusImageUploaded:     "Image Uploaded",
 	StatusTicketAccepted:    "Ticket Accepted",
 	StatusTicketRegistered:  "Ticket Registered",
 	StatusTicketActivated:   "Ticket Activated",

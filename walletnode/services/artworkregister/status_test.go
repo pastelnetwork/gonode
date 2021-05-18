@@ -17,7 +17,7 @@ func TestStatusNames(t *testing.T) {
 			expectedStatues: []Status{
 				StatusTaskStarted,
 				StatusConnected,
-				StatusUploadedImage,
+				StatusImageUploaded,
 				StatusTicketAccepted,
 				StatusTicketRegistered,
 				StatusTicketActivated,
@@ -59,6 +59,9 @@ func TestStatusString(t *testing.T) {
 		}, {
 			status:        StatusConnected,
 			expectedValue: statusNames[StatusConnected],
+		}, {
+			status:        StatusImageUploaded,
+			expectedValue: statusNames[StatusImageUploaded],
 		}, {
 			status:        StatusTicketAccepted,
 			expectedValue: statusNames[StatusTicketAccepted],

@@ -28,7 +28,7 @@ func (state *State) Events() []*Status {
 }
 
 // Update updates the status of the state by creating a new status with the given `status`.
-func (state *State) Update(subStatus subStatus) {
+func (state *State) Update(subStatus SubStatus) {
 	state.Lock()
 	defer state.Unlock()
 
@@ -69,7 +69,7 @@ func (state *State) Subscribe() func() <-chan *Status {
 }
 
 // New returns a new State instance.
-func New(subStatus subStatus) *State {
+func New(subStatus SubStatus) *State {
 	return &State{
 		Status: NewStatus(subStatus),
 	}

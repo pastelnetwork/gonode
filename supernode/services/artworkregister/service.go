@@ -5,6 +5,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/worker"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node"
@@ -16,7 +17,7 @@ const (
 
 // Service represent artwork service.
 type Service struct {
-	*Worker
+	*worker.Worker
 
 	config       *Config
 	db           storage.KeyValue
@@ -35,10 +36,15 @@ func (service *Service) Run(ctx context.Context) error {
 	return service.Worker.Run(ctx)
 }
 
+// Task returns the task of the registration artwork by the given id.
+func (service *Service) Task(id string) *Task {
+	return service.Worker.Task(id).(*Task)
+}
+
 // NewTask runs a new task of the registration artwork and returns its taskID.
-func (service *Service) NewTask(ctx context.Context) *Task {
+func (service *Service) NewTask() *Task {
 	task := NewTask(service)
-	service.Worker.AddTask(ctx, task)
+	service.Worker.AddTask(task)
 
 	return task
 }
@@ -50,6 +56,6 @@ func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
-		Worker:       NewWorker(),
+		Worker:       worker.New(),
 	}
 }
