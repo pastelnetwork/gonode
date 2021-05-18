@@ -109,7 +109,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// NOTE: to bypass REST API (for testing)
 	go func() {
-		artworkRegisterService.AddTask(ctx, &artworkregister.Ticket{
+		artworkRegisterService.AddTask(&artworkregister.Ticket{
 			ImagePath:  "/Users/levko/Downloads/my.jpeg",
 			MaximumFee: 100,
 		})

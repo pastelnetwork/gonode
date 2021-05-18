@@ -50,7 +50,7 @@ func (service *Service) Task(id string) *Task {
 }
 
 // AddTask runs a new task of the registration artwork and returns its taskID.
-func (service *Service) AddTask(ctx context.Context, ticket *Ticket) (string, error) {
+func (service *Service) AddTask(ticket *Ticket) (string, error) {
 	task := NewTask(service, ticket)
 	service.Worker.AddTask(task)
 

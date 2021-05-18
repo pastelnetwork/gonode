@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// SubStatus represents a sub-status that contains a description of the status.
 type SubStatus interface {
 	String() string
 	IsFinal() bool

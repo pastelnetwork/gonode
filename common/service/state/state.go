@@ -41,6 +41,7 @@ func (state *State) Update(subStatus SubStatus) {
 	}
 
 	for _, subCh := range state.subsCh {
+		subCh := subCh
 		go func() {
 			subCh <- status
 		}()

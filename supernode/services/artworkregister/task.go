@@ -39,7 +39,7 @@ func (task *Task) Run(ctx context.Context) error {
 }
 
 // Session is handshake wallet to supernode
-func (task *Task) Session(ctx context.Context, isPrimary bool) error {
+func (task *Task) Session(_ context.Context, isPrimary bool) error {
 	if err := task.RequiredStatus(StatusTaskStarted); err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (task *Task) Session(ctx context.Context, isPrimary bool) error {
 }
 
 // AcceptedNodes waits for connection supernodes, as soon as there is the required amount returns them.
-func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
+func (task *Task) AcceptedNodes(_ context.Context) (Nodes, error) {
 	if err := task.RequiredStatus(StatusPrimaryMode); err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (task *Task) AcceptedNodes(ctx context.Context) (Nodes, error) {
 }
 
 // SessionNode accepts secondary node
-func (task *Task) SessionNode(ctx context.Context, nodeID string) error {
+func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 	task.acceptedMu.Lock()
 	defer task.acceptedMu.Unlock()
 

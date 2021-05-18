@@ -678,6 +678,7 @@ definitions:
         enum:
         - Task Started
         - Connected
+        - Image Uploaded
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -832,6 +833,7 @@ definitions:
         enum:
         - Task Started
         - Connected
+        - Image Uploaded
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -1189,6 +1191,7 @@ definitions:
         enum:
         - Task Started
         - Connected
+        - Image Uploaded
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -1243,6 +1246,7 @@ definitions:
         enum:
         - Task Started
         - Connected
+        - Image Uploaded
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated

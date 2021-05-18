@@ -2,6 +2,7 @@ package task
 
 import "context"
 
+// ActionFn represents a function that is run inside a goroutine.
 type ActionFn func(ctx context.Context) error
 
 // Action represents the action of the task.

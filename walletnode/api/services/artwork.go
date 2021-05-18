@@ -96,7 +96,7 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 }
 
 // Register runs registers process for the new artwork.
-func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
+func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	ticket := fromRegisterPayload(p)
 
 	imagePath, err := service.storage.Get(p.ImageID)
@@ -108,7 +108,7 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 	}
 	ticket.ImagePath = string(imagePath)
 
-	taskID, err := service.register.AddTask(ctx, ticket)
+	taskID, err := service.register.AddTask(ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
