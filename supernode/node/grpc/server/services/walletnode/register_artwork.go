@@ -39,7 +39,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask(ctx)
+		task = service.NewTask()
 	}
 	go func() {
 		<-task.Done()
@@ -62,7 +62,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 
 	resp := &pb.SessionReply{
-		SessID: task.ID,
+		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
 		return errors.Errorf("failed to send handshake response: %w", err)
@@ -143,12 +143,10 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	if err != nil {
 		return errors.Errorf("failed to open file %q: %w", filename, err)
 	}
-
 	defer file.Close()
-	log.WithContext(ctx).Debugf("Created temp file %q for uploading image", filename)
+	log.WithContext(ctx).WithField("filename", filename).Debugf("UploadImage request")
 
 	wr := bufio.NewWriter(file)
-
 	for {
 		req, err := stream.Recv()
 		if err != nil {

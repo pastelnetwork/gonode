@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/service/worker"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -16,7 +17,7 @@ const (
 
 // Service represents a service for the registration artwork.
 type Service struct {
-	*Worker
+	*worker.Worker
 
 	config       *Config
 	db           storage.KeyValue
@@ -34,12 +35,26 @@ func (service *Service) Run(ctx context.Context) error {
 	return group.Wait()
 }
 
-// AddTask runs a new task of the registration artwork and returns its taskID.
-func (service *Service) AddTask(ctx context.Context, ticket *Ticket) (string, error) {
-	task := NewTask(service, ticket)
-	service.Worker.AddTask(ctx, task)
+// Tasks returns all tasks.
+func (service *Service) Tasks() []*Task {
+	var tasks []*Task
+	for _, task := range service.Worker.Tasks() {
+		tasks = append(tasks, task.(*Task))
+	}
+	return tasks
+}
 
-	return task.ID, nil
+// Task returns the task of the registration artwork by the given id.
+func (service *Service) Task(id string) *Task {
+	return service.Worker.Task(id).(*Task)
+}
+
+// AddTask runs a new task of the registration artwork and returns its taskID.
+func (service *Service) AddTask(ticket *Ticket) (string, error) {
+	task := NewTask(service, ticket)
+	service.Worker.AddTask(task)
+
+	return task.ID(), nil
 }
 
 // NewService returns a new Service instance.
@@ -49,6 +64,6 @@ func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
-		Worker:       NewWorker(),
+		Worker:       worker.New(),
 	}
 }

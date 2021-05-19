@@ -44,22 +44,19 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
 	}
 
-	sub, err := task.State.Subscribe()
-	if err != nil {
-		return artworks.MakeInternalServerError(err)
-	}
-	defer sub.Close()
+	sub := task.State.Subscribe()
 
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-sub.Done():
-			return nil
-		case status := <-sub.Status():
+		case status := <-sub():
+			if status.IsFinal() {
+				return nil
+			}
 			res := &artworks.TaskState{
 				Date:   status.CreatedAt.Format(time.RFC3339),
-				Status: status.Type.String(),
+				Status: status.String(),
 			}
 			if err := stream.Send(res); err != nil {
 				return artworks.MakeInternalServerError(err)
@@ -78,9 +75,9 @@ func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTask
 
 	res = &artworks.Task{
 		ID:     p.TaskID,
-		Status: task.State.Latest().Type.String(),
+		Status: task.State.Status.String(),
 		Ticket: toArtworkTicket(task.Ticket),
-		States: toArtworkStates(task.State.All()),
+		States: toArtworkStates(task.State.Events()),
 	}
 	return res, nil
 }
@@ -90,8 +87,8 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 	tasks := service.register.Tasks()
 	for _, task := range tasks {
 		res = append(res, &artworks.Task{
-			ID:     task.ID,
-			Status: task.State.Latest().Type.String(),
+			ID:     task.ID(),
+			Status: task.State.Status.String(),
 			Ticket: toArtworkTicket(task.Ticket),
 		})
 	}
@@ -99,7 +96,7 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 }
 
 // Register runs registers process for the new artwork.
-func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
+func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload) (res *artworks.RegisterResult, err error) {
 	ticket := fromRegisterPayload(p)
 
 	imagePath, err := service.storage.Get(p.ImageID)
@@ -111,7 +108,7 @@ func (service *Artwork) Register(ctx context.Context, p *artworks.RegisterPayloa
 	}
 	ticket.ImagePath = string(imagePath)
 
-	taskID, err := service.register.AddTask(ctx, ticket)
+	taskID, err := service.register.AddTask(ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}

@@ -34,7 +34,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
-		task = service.NewTask(ctx)
+		task = service.NewTask()
 	}
 	go func() {
 		<-task.Done()
@@ -57,7 +57,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 
 	resp := &pb.SessionReply{
-		SessID: task.ID,
+		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
 		return errors.Errorf("failed to send handshake response: %w", err)

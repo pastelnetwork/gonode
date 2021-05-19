@@ -133,7 +133,6 @@ func (service *registerArtwork) UploadImage(ctx context.Context, filename string
 	}
 	defer file.Close()
 
-	log.WithContext(ctx).WithField("filename", filename).Debugf("UploadImage uploading")
 	buffer := make([]byte, uploadImageBufferSize)
 	for {
 		n, err := file.Read(buffer)
@@ -148,7 +147,6 @@ func (service *registerArtwork) UploadImage(ctx context.Context, filename string
 			return errors.Errorf("failed to send image data: %w", err).WithField("reqID", service.conn.id)
 		}
 	}
-	log.WithContext(ctx).Debugf("UploadImage uploaded")
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {

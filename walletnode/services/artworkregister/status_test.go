@@ -1,4 +1,4 @@
-package state
+package artworkregister
 
 import (
 	"fmt"
@@ -7,17 +7,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStatusTypeNames(t *testing.T) {
+func TestStatusNames(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		expectedStatues []StatusType
+		expectedStatues []Status
 	}{
 		{
-			expectedStatues: []StatusType{
+			expectedStatues: []Status{
 				StatusTaskStarted,
 				StatusConnected,
-				StatusUploadedImage,
+				StatusImageUploaded,
 				StatusTicketAccepted,
 				StatusTicketRegistered,
 				StatusTicketActivated,
@@ -40,17 +40,17 @@ func TestStatusTypeNames(t *testing.T) {
 				expectedNames = append(expectedNames, statusNames[status])
 			}
 
-			assert.Equal(t, expectedNames, StatusTypeNames())
+			assert.Equal(t, expectedNames, StatusNames())
 		})
 
 	}
 }
 
-func TestStatusTypeString(t *testing.T) {
+func TestStatusString(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		status        StatusType
+		status        Status
 		expectedValue string
 	}{
 		{
@@ -59,6 +59,9 @@ func TestStatusTypeString(t *testing.T) {
 		}, {
 			status:        StatusConnected,
 			expectedValue: statusNames[StatusConnected],
+		}, {
+			status:        StatusImageUploaded,
+			expectedValue: statusNames[StatusImageUploaded],
 		}, {
 			status:        StatusTicketAccepted,
 			expectedValue: statusNames[StatusTicketAccepted],

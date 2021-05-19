@@ -625,6 +625,7 @@ components:
           enum:
           - Task Started
           - Connected
+          - Image Uploaded
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
@@ -687,6 +688,7 @@ components:
           enum:
           - Task Started
           - Connected
+          - Image Uploaded
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
@@ -783,6 +785,7 @@ components:
           enum:
           - Task Started
           - Connected
+          - Image Uploaded
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
