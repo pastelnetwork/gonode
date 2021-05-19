@@ -3,7 +3,7 @@ package services
 import (
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/service/state"
+	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 )

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/service/worker"
+	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -17,7 +17,7 @@ const (
 
 // Service represents a service for the registration artwork.
 type Service struct {
-	*worker.Worker
+	*task.Worker
 
 	config       *Config
 	db           storage.KeyValue
@@ -64,6 +64,6 @@ func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
-		Worker:       worker.New(),
+		Worker:       task.NewWorker(),
 	}
 }
