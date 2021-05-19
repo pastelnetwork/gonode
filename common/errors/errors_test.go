@@ -8,6 +8,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNew(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		err      *errors.Error
+		expected string
+	}{
+		{
+			err:      errors.New("direct string"),
+			expected: "direct string",
+		}, {
+			err:      errors.New(fmt.Errorf("wrap native error")),
+			expected: "wrap native error",
+		},
+	}
+
+	for i, testCase := range testCases {
+		testCase := testCase
+
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+			assert.Equal(t, testCase.expected, testCase.err.Error())
+		})
+	}
+}
+
 func TestError(t *testing.T) {
 	t.Parallel()
 
