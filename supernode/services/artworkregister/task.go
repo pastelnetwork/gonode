@@ -8,13 +8,13 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/state"
-	"github.com/pastelnetwork/gonode/common/service/worker/task"
+	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/service/task/state"
 )
 
 // Task is the task of registering new artwork.
 type Task struct {
-	*task.Task
+	task.Task
 	*Service
 
 	ImagePath string
@@ -31,7 +31,7 @@ func (task *Task) Run(ctx context.Context) error {
 	defer log.WithContext(ctx).Debug("Task canceled")
 	defer task.Cancel()
 
-	task.State.SetActionFunc(func(status *state.Status) {
+	task.SetStatusNotifyFunc(func(status *state.Status) {
 		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
 	})
 
@@ -47,12 +47,12 @@ func (task *Task) Session(_ context.Context, isPrimary bool) error {
 	<-task.NewAction(func(ctx context.Context) error {
 		if isPrimary {
 			log.WithContext(ctx).Debugf("Acts as primary node")
-			task.State.Update(StatusPrimaryMode)
+			task.UpdateStatus(StatusPrimaryMode)
 			return nil
 		}
 
 		log.WithContext(ctx).Debugf("Acts as secondary node")
-		task.State.Update(StatusSecondaryMode)
+		task.UpdateStatus(StatusSecondaryMode)
 
 		return nil
 	})
@@ -60,7 +60,7 @@ func (task *Task) Session(_ context.Context, isPrimary bool) error {
 }
 
 // AcceptedNodes waits for connection supernodes, as soon as there is the required amount returns them.
-func (task *Task) AcceptedNodes(_ context.Context) (Nodes, error) {
+func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
 	if err := task.RequiredStatus(StatusPrimaryMode); err != nil {
 		return nil, err
 	}
@@ -68,13 +68,15 @@ func (task *Task) AcceptedNodes(_ context.Context) (Nodes, error) {
 	<-task.NewAction(func(ctx context.Context) error {
 		log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
 
-		event := task.State.Subscribe()
+		sub := task.SubscribeStatus()
 		for {
 			select {
+			case <-serverCtx.Done():
+				return nil
 			case <-ctx.Done():
-				return ctx.Err()
-			case state := <-event():
-				if state.Is(StatusConnected) {
+				return nil
+			case status := <-sub():
+				if status.Is(StatusConnected) {
 					return nil
 				}
 			}
@@ -106,7 +108,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
 
 		if len(task.accpeted) >= task.config.NumberConnectedNodes {
-			task.State.Update(StatusConnected)
+			task.UpdateStatus(StatusConnected)
 		}
 		return nil
 	})
@@ -134,7 +136,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 		}
 
 		task.connectedTo = node
-		task.State.Update(StatusConnected)
+		task.UpdateStatus(StatusConnected)
 		return nil
 	})
 	return nil
@@ -148,7 +150,7 @@ func (task *Task) UploadImage(_ context.Context, filename string) error {
 
 	task.NewAction(func(ctx context.Context) error {
 		task.ImagePath = filename
-		task.State.Update(StatusImageUploaded)
+		task.UpdateStatus(StatusImageUploaded)
 
 		<-ctx.Done()
 
