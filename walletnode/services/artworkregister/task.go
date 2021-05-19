@@ -7,8 +7,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/state"
-	"github.com/pastelnetwork/gonode/common/service/worker/task"
+	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -20,7 +20,7 @@ const (
 
 // Task is the task of registering new artwork.
 type Task struct {
-	*task.Task
+	task.Task
 	*Service
 
 	Ticket *Ticket
@@ -29,7 +29,8 @@ type Task struct {
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
-	task.State.SetActionFunc(func(status *state.Status) {
+
+	task.SetStatusNotifyFunc(func(status *state.Status) {
 		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
 	})
 
@@ -37,12 +38,12 @@ func (task *Task) Run(ctx context.Context) error {
 	defer log.WithContext(ctx).Debugf("End task")
 
 	if err := task.run(ctx); err != nil {
-		task.State.Update(StatusTaskRejected)
+		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithError(err).Warnf("Task is rejected")
 		return nil
 	}
 
-	task.State.Update(StatusTaskCompleted)
+	task.UpdateStatus(StatusTaskCompleted)
 	log.WithContext(ctx).Debugf("Task is completed")
 	return nil
 }
@@ -54,7 +55,7 @@ func (task *Task) run(ctx context.Context) error {
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
 		return err
 	} else if !ok {
-		task.State.Update(StatusErrorTooLowFee)
+		task.UpdateStatus(StatusErrorTooLowFee)
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
@@ -63,7 +64,7 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 	if len(topNodes) < task.config.NumberSuperNodes {
-		task.State.Update(StatusErrorTooLowFee)
+		task.UpdateStatus(StatusErrorTooLowFee)
 		return errors.New("not found enough available SuperNodes with acceptable storage fee: %f")
 	}
 
@@ -93,14 +94,14 @@ func (task *Task) run(ctx context.Context) error {
 			}
 		})
 	}
-	task.State.Update(StatusConnected)
+	task.UpdateStatus(StatusConnected)
 
 	log.WithContext(ctx).WithField("filename", task.Ticket.ImagePath).Debugf("Uploading image")
 	if err := nodes.sendImage(ctx, task.Ticket.ImagePath); err != nil {
 		return err
 	}
 
-	task.State.Update(StatusImageUploaded)
+	task.UpdateStatus(StatusImageUploaded)
 
 	<-ctx.Done()
 

@@ -1,4 +1,4 @@
-package worker
+package task
 
 import (
 	"context"
@@ -8,13 +8,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// Task represent a worker task.
-type Task interface {
-	ID() string
-	Run(ctx context.Context) error
-}
-
-// Worker represents a task handler.
+// Worker represents a pool of the task.
 type Worker struct {
 	sync.Mutex
 
@@ -80,8 +74,8 @@ func (worker *Worker) Run(ctx context.Context) error {
 	}
 }
 
-// New returns a new Worker instance.
-func New() *Worker {
+// NewWorker returns a new Worker instance.
+func NewWorker() *Worker {
 	return &Worker{
 		taskCh: make(chan Task),
 	}
