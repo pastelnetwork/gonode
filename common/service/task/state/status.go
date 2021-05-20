@@ -1,12 +1,13 @@
 package state
 
 import (
+	"fmt"
 	"time"
 )
 
 // SubStatus represents a sub-status that contains a description of the status.
 type SubStatus interface {
-	String() string
+	fmt.Stringer
 	IsFinal() bool
 }
 

@@ -3,8 +3,6 @@ package pastel
 import "encoding/json"
 
 const (
-	defaultConfigFile = "pastel.conf"
-
 	defaultHostname = "localhost"
 	defaultPort     = 9932
 )
@@ -20,8 +18,6 @@ type ExternalConfig struct {
 // Config contains settings of the Pastel client.
 type Config struct {
 	*ExternalConfig
-
-	ConfigFile string `mapstructure:"config-file"`
 
 	Hostname *string `mapstructure:"hostname"`
 	Port     *int    `mapstructure:"port"`
@@ -79,7 +75,6 @@ func (config *Config) password() string {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		ConfigFile: defaultConfigFile,
 		ExternalConfig: &ExternalConfig{
 			Hostname: defaultHostname,
 			Port:     defaultPort,
