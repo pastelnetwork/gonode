@@ -254,8 +254,8 @@ func ValidateTaskViewTiny(result *TaskView) (err error) {
 		}
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	if result.Txid != nil {
@@ -299,8 +299,8 @@ func ValidateTaskView(result *TaskView) (err error) {
 		}
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range result.States {
@@ -337,8 +337,8 @@ func ValidateTaskStateView(result *TaskStateView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Too Low Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Too Low Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return

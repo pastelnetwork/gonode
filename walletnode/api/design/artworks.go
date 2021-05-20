@@ -3,7 +3,7 @@ package design
 import (
 	"time"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
@@ -225,8 +225,8 @@ var ArtworkRegisterTaskResult = ResultType("application/vnd.artwork.register.tas
 		})
 		Attribute("status", String, func() {
 			Description("Status of the registration process")
-			Example(state.StatusTypeNames()[0])
-			Enum(InterfaceSlice(state.StatusTypeNames())...)
+			Example(artworkregister.StatusNames()[0])
+			Enum(InterfaceSlice(artworkregister.StatusNames())...)
 		})
 		Attribute("states", ArrayOf(ArtworkRegisterTaskState), func() {
 			Description("List of states from the very beginning of the process")
@@ -258,8 +258,8 @@ var ArtworkRegisterTaskState = Type("TaskState", func() {
 	})
 	Attribute("status", String, func() {
 		Description("Status of the registration process")
-		Example(state.StatusTypeNames()[0])
-		Enum(InterfaceSlice(state.StatusTypeNames())...)
+		Example(artworkregister.StatusNames()[0])
+		Enum(InterfaceSlice(artworkregister.StatusNames())...)
 	})
 	Required("date", "status")
 })
@@ -271,7 +271,11 @@ var ImageUploadPayload = Type("ImageUploadPayload", func() {
 		Meta("struct:field:name", "Bytes")
 		Description("File to upload")
 	})
-	Required("file")
+	Attribute("filepath", String, func() {
+		Meta("swagger:example", "false")
+		Description("Path to file")
+	})
+	// Required("file")
 })
 
 // ImageUploadResult is image upload result.

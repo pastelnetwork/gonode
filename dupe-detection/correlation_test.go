@@ -11,6 +11,7 @@ import (
 
 	"github.com/montanaflynn/stats"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
 )
 
@@ -101,7 +102,7 @@ func TestCorrelations(t *testing.T) {
 	fmt.Printf("\nNumber of inputs loaded: %v", len(inputs1))
 	differentsCount := 0
 	for i := range inputs1 {
-		result, err := Spearman2(inputs1[i], inputs2[i])
+		result, err := dupedetection.Spearman(inputs1[i], inputs2[i])
 		if err != nil {
 			t.Error(err)
 		}
@@ -147,7 +148,7 @@ func TestCorrelations(t *testing.T) {
 	fmt.Printf("\nNumber of inputs loaded: %v", len(inputs1))
 	differentsCount = 0
 	for i := range inputs1 {
-		result := wdm.Wdm(inputs1[i], inputs2[i], "kendall", []float64{})
+		result := wdm.Wdm(inputs1[i], inputs2[i], "kendall")
 		if result != outputs[i] && kendallFloatingPointAccuracy < math.Abs(result-outputs[i]) {
 			differentsCount++
 			t.Errorf("Kendall Calculated correlation doesn't match the expected result (diff is %v):\n%v\n%v", math.Abs(result-outputs[i]), result, outputs[i])
@@ -155,7 +156,7 @@ func TestCorrelations(t *testing.T) {
 	}
 	fmt.Printf("\nKendall - Found calculation differences: %v from total number of %v with floating point accuracy %v", differentsCount, len(inputs1), kendallFloatingPointAccuracy)
 
-	inputs1, inputs2, outputs, err = readInputFileIntoArrays("rdc_data.txt")
+	/*inputs1, inputs2, outputs, err = readInputFileIntoArrays("rdc_data.txt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -168,7 +169,7 @@ func TestCorrelations(t *testing.T) {
 	differentsCount = 0
 	for i := range inputs1 {
 		for repeat := 0; repeat < 10; repeat++ {
-			result := computeRandomizedDependence(inputs1[i], inputs2[i])
+			result := dupedetection.ComputeRandomizedDependence(inputs1[i], inputs2[i])
 			if result != outputs[i] {
 				differentsCount++
 				//t.Errorf("RDC Calculated correlation doesn't match the expected result (diff is %v):\n%v\n%v", math.Abs(result-outputs[i]), result, outputs[i])
@@ -177,6 +178,6 @@ func TestCorrelations(t *testing.T) {
 		}
 		fmt.Printf("\n--------------------------------")
 	}
-	fmt.Printf("\nRDC - Found calculation differences: %v from total number of %v with floating point accuracy %v", differentsCount, len(inputs1), kendallFloatingPointAccuracy)
+	fmt.Printf("\nRDC - Found calculation differences: %v from total number of %v with floating point accuracy %v", differentsCount, len(inputs1), kendallFloatingPointAccuracy)*/
 
 }

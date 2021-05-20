@@ -4,10 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
-
-	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // ErrorStack converts the given error to a string, including the stack trace if available
@@ -44,37 +41,5 @@ func Recover(onPanic func(cause error)) {
 			err = fmt.Errorf("%v", rec)
 		}
 		onPanic(newWithSkip(err, 3))
-	}
-}
-
-// CheckErrorAndExit checks if there is an error, display it in the console and exit with a non-zero exit code. Otherwise, exit 0.
-// Note that if the debugMode is true, this will print out the stack trace.
-func CheckErrorAndExit(err error) {
-	if err == nil || IsContextCanceled(err) {
-		return
-	}
-	defer os.Exit(ExitCode(err))
-
-	errorFields := ExtractFields(err)
-
-	if log.DebugMode() {
-		log.WithError(err).WithFields(map[string]interface{}(errorFields)).Error(ErrorStack(err))
-	} else {
-		if fields := errorFields.String(); fields != "" {
-			fmt.Fprintf(os.Stderr, "ERROR: %s %s\n", err, fields)
-			return
-		}
-		fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
-	}
-}
-
-// Log logs a statement of the given error. If log.DebugMode is true, the log record contains a stack of errors.
-func Log(err error) {
-	errorFields := ExtractFields(err)
-
-	if log.DebugMode() {
-		log.WithError(err).WithFields(map[string]interface{}(errorFields)).Error(ErrorStack(err))
-	} else {
-		log.WithFields(map[string]interface{}(errorFields)).Error(err)
 	}
 }

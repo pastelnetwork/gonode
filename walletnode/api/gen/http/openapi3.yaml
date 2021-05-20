@@ -624,6 +624,8 @@ components:
           example: Task Started
           enum:
           - Task Started
+          - Connected
+          - Image Uploaded
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
@@ -685,6 +687,8 @@ components:
           example: Task Started
           enum:
           - Task Started
+          - Connected
+          - Image Uploaded
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
@@ -780,6 +784,8 @@ components:
           example: Task Started
           enum:
           - Task Started
+          - Connected
+          - Image Uploaded
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
@@ -839,6 +845,9 @@ components:
           - 101
           - 46
           format: binary
+        filepath:
+          type: string
+          description: Path to file
       example:
         file:
         - 69
@@ -875,5 +884,3 @@ components:
         - 97
         - 109
         - 46
-      required:
-      - file

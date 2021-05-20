@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
+// SecretBoxKeyWrongSize describes errors message if secret key from nacl secret box doesn't match its expected size
 var SecretBoxKeyWrongSize = errors.Errorf("nacl secret box key doesn't match its expected size")
 
 // SetupNaclKey setups nacl secret box with generated key store as keyFilePath.

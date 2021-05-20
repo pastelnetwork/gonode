@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"golang.org/x/sync/errgroup"
 )
 
 // Nodes represents multiple Node.
@@ -29,49 +30,49 @@ func (nodes *Nodes) disconnectInactive() {
 
 func (nodes Nodes) findByPastelID(id string) *Node {
 	for _, node := range nodes {
-		if node.pastelID == id {
+		if node.PastelID == id {
 			return node
 		}
 	}
 	return nil
 }
 
+func (nodes *Nodes) sendImage(ctx context.Context, filename string) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() (err error) {
+			return node.UploadImage(ctx, filename)
+		})
+	}
+	return group.Wait()
+}
+
 // Node represent supernode connection.
 type Node struct {
-	node.RegisterArtowrk
-
+	node.RegisterArtwork
 	client node.Client
 	conn   node.Connection
 
 	activated bool
 
-	address  string
-	pastelID string
+	Address  string
+	PastelID string
 }
 
-func (node *Node) connect(ctx context.Context, connID string, isPrimary bool) error {
+func (node *Node) connect(ctx context.Context) error {
+	if node.conn != nil {
+		return nil
+	}
+
 	connCtx, connCancel := context.WithTimeout(ctx, connectToNodeTimeout)
 	defer connCancel()
 
-	if node.conn == nil {
-		conn, err := node.client.Connect(connCtx, node.address)
-		if err != nil {
-			return err
-		}
-		node.conn = conn
-
-		go func() {
-			<-ctx.Done()
-			conn.Close()
-			node.conn = nil
-		}()
-	}
-
-	stream, err := node.conn.RegisterArtowrk(ctx)
+	conn, err := node.client.Connect(connCtx, node.Address)
 	if err != nil {
 		return err
 	}
-	node.RegisterArtowrk = stream
-
-	return stream.Handshake(ctx, connID, isPrimary)
+	node.conn = conn
+	node.RegisterArtwork = conn.RegisterArtwork()
+	return nil
 }

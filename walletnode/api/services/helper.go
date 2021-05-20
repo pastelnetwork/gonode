@@ -3,9 +3,9 @@ package services
 import (
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
 )
 
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Ticket {
@@ -48,7 +48,7 @@ func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 	for _, status := range statuses {
 		states = append(states, &artworks.TaskState{
 			Date:   status.CreatedAt.Format(time.RFC3339),
-			Status: status.Type.String(),
+			Status: status.String(),
 		})
 	}
 	return states

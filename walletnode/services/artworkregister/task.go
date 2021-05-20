@@ -7,8 +7,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/state"
+	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -20,27 +20,30 @@ const (
 
 // Task is the task of registering new artwork.
 type Task struct {
+	task.Task
 	*Service
 
-	ID     string
-	State  *state.State
 	Ticket *Ticket
 }
 
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID))
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
+
+	task.SetStatusNotifyFunc(func(status *state.Status) {
+		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
+	})
 
 	log.WithContext(ctx).Debugf("Start task")
 	defer log.WithContext(ctx).Debugf("End task")
 
 	if err := task.run(ctx); err != nil {
-		task.State.Update(ctx, state.NewMessage(state.StatusTaskRejected))
+		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithError(err).Warnf("Task is rejected")
 		return nil
 	}
 
-	task.State.Update(ctx, state.NewMessage(state.StatusTaskCompleted))
+	task.UpdateStatus(StatusTaskCompleted)
 	log.WithContext(ctx).Debugf("Task is completed")
 	return nil
 }
@@ -52,16 +55,16 @@ func (task *Task) run(ctx context.Context) error {
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
 		return err
 	} else if !ok {
-		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
+		task.UpdateStatus(StatusErrorTooLowFee)
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
-	topNodes, err := task.findTopNodes(ctx)
+	topNodes, err := task.pastelTopNodes(ctx)
 	if err != nil {
 		return err
 	}
 	if len(topNodes) < task.config.NumberSuperNodes {
-		task.State.Update(ctx, state.NewMessage(state.StatusErrorTooLowFee))
+		task.UpdateStatus(StatusErrorTooLowFee)
 		return errors.New("not found enough available SuperNodes with acceptable storage fee: %f")
 	}
 
@@ -71,25 +74,34 @@ func (task *Task) run(ctx context.Context) error {
 		if err == nil {
 			break
 		}
+		log.WithContext(ctx).WithError(err).Warnf("Could not get mesh of nodes")
 	}
 	nodes.activate()
 	topNodes.disconnectInactive()
 
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range nodes {
+		node := node
 		group.Go(func() (err error) {
+			defer errors.Recover(func(recErr error) { err = recErr })
 			defer cancel()
 
 			select {
 			case <-ctx.Done():
 				return errors.Errorf("task was canceled")
 			case <-node.conn.Done():
-				return errors.Errorf("%q unexpectedly closed the connection", node.address)
+				return errors.Errorf("%q unexpectedly closed the connection", node.Address)
 			}
 		})
 	}
+	task.UpdateStatus(StatusConnected)
 
-	task.State.Update(ctx, state.NewMessage(state.StatusConnected))
+	log.WithContext(ctx).WithField("filename", task.Ticket.ImagePath).Debugf("Uploading image")
+	if err := nodes.sendImage(ctx, task.Ticket.ImagePath); err != nil {
+		return err
+	}
+
+	task.UpdateStatus(StatusImageUploaded)
 
 	<-ctx.Done()
 
@@ -100,10 +112,11 @@ func (task *Task) run(ctx context.Context) error {
 func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) (Nodes, error) {
 	var meshNodes Nodes
 
-	connID, _ := random.String(8, random.Base62Chars)
-
 	primary := nodes[primaryIndex]
-	if err := primary.connect(ctx, connID, true); err != nil {
+	if err := primary.connect(ctx); err != nil {
+		return nil, err
+	}
+	if err := primary.Session(ctx, true); err != nil {
 		return nil, err
 	}
 
@@ -124,17 +137,20 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 				return
 			case <-time.After(connectToNextNodeDelay):
 				go func() {
-					defer errors.Recover(errors.CheckErrorAndExit)
+					defer errors.Recover(log.Fatal)
 
-					if err := node.connect(ctx, connID, false); err != nil {
+					if err := node.connect(ctx); err != nil {
+						return
+					}
+					if err := node.Session(ctx, false); err != nil {
 						return
 					}
 					secondaries.add(node)
 
-					if err := node.ConnectTo(ctx, primary.pastelID); err != nil {
+					if err := node.ConnectTo(ctx, primary.PastelID, primary.SessID()); err != nil {
 						return
 					}
-					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.address)
+					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
 				}()
 			}
 		}
@@ -169,7 +185,7 @@ func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
 	return fee.NetworkFee <= task.Ticket.MaximumFee, nil
 }
 
-func (task *Task) findTopNodes(ctx context.Context) (Nodes, error) {
+func (task *Task) pastelTopNodes(ctx context.Context) (Nodes, error) {
 	var nodes Nodes
 
 	mns, err := task.pastelClient.MasterNodesTop(ctx)
@@ -182,8 +198,8 @@ func (task *Task) findTopNodes(ctx context.Context) (Nodes, error) {
 		}
 		nodes = append(nodes, &Node{
 			client:   task.Service.nodeClient,
-			address:  mn.ExtAddress,
-			pastelID: mn.ExtKey,
+			Address:  mn.ExtAddress,
+			PastelID: mn.ExtKey,
 		})
 	}
 
@@ -192,12 +208,9 @@ func (task *Task) findTopNodes(ctx context.Context) (Nodes, error) {
 
 // NewTask returns a new Task instance.
 func NewTask(service *Service, Ticket *Ticket) *Task {
-	taskID, _ := random.String(8, random.Base62Chars)
-
 	return &Task{
+		Task:    task.New(StatusTaskStarted),
 		Service: service,
-		ID:      taskID,
 		Ticket:  Ticket,
-		State:   state.New(state.NewMessage(state.StatusTaskStarted)),
 	}
 }

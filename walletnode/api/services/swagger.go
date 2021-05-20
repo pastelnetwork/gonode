@@ -14,7 +14,9 @@ import (
 )
 
 // Swagger represents services for swagger endpoints.
-type Swagger struct{}
+type Swagger struct {
+	*Common
+}
 
 // Mount configures the mux to serve the swagger endpoints.
 func (service *Swagger) Mount(_ context.Context, mux goahttp.Muxer) goahttp.Server {
@@ -35,5 +37,7 @@ func (service *Swagger) Mount(_ context.Context, mux goahttp.Muxer) goahttp.Serv
 
 // NewSwagger returns the swagger Swagger implementation.
 func NewSwagger() *Swagger {
-	return &Swagger{}
+	return &Swagger{
+		Common: NewCommon(),
+	}
 }

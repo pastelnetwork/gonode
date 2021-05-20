@@ -18,9 +18,10 @@ import (
 )
 
 const (
+	// OTPSecretLength hints the length of the OTP secret
 	OTPSecretLength       = 16
 	otpSecretCharacterSet = "ABCDEF1234567890"
-	otpUriQRCodeSize      = 256
+	otpURIQRCodeSize      = 256
 )
 
 // SetupOTPAuthenticator configures a one-time password authentication.
@@ -33,10 +34,10 @@ func SetupOTPAuthenticator(userEmail, otpSecretFilePath, qrCodeFilePath string) 
 		return errors.New(err)
 	}
 
-	googleAuthUri := gotp.NewDefaultTOTP(secret).ProvisioningUri(userEmail, "pastel")
+	googleAuthURI := gotp.NewDefaultTOTP(secret).ProvisioningUri(userEmail, "pastel")
 
 	enc := qrcode.NewQRCodeWriter()
-	im, err := enc.Encode(googleAuthUri, gozxing.BarcodeFormat_QR_CODE, otpUriQRCodeSize, otpUriQRCodeSize, nil)
+	im, err := enc.Encode(googleAuthURI, gozxing.BarcodeFormat_QR_CODE, otpURIQRCodeSize, otpURIQRCodeSize, nil)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -62,7 +63,7 @@ func SetupOTPAuthenticator(userEmail, otpSecretFilePath, qrCodeFilePath string) 
 
 	dc.SetFontFace(inconsolata.Bold8x16)
 
-	dc.DrawStringWrapped(googleAuthUri, x, y+90, 0, 0, maxWidth, 1.5, gg.AlignLeft)
+	dc.DrawStringWrapped(googleAuthURI, x, y+90, 0, 0, maxWidth, 1.5, gg.AlignLeft)
 
 	dc.DrawImageAnchored(im, W/2, H/2, 0.5, 0.5)
 
@@ -73,7 +74,7 @@ func SetupOTPAuthenticator(userEmail, otpSecretFilePath, qrCodeFilePath string) 
 }
 
 func conformsCharacterSet(value string, characterSet string) bool {
-	for _, rune := range characterSet {
+	for _, rune := range value {
 		if !strings.ContainsRune(characterSet, rune) {
 			return false
 		}
