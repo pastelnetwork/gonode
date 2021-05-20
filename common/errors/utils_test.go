@@ -42,7 +42,7 @@ func TestIsContextCanceled(t *testing.T) {
 		isCanceled bool
 	}{
 		{
-			err:        context.Canceled,
+			err:        New(context.Canceled),
 			isCanceled: true,
 		},
 		{
