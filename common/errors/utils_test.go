@@ -75,10 +75,10 @@ func TestRecover(t *testing.T) {
 		}, {
 			f: func() {
 				panic(struct {
-					Id      int
+					ID      int
 					Message string
 				}{
-					Id:      1,
+					ID:      1,
 					Message: "baz",
 				})
 			},
