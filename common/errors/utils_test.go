@@ -59,3 +59,48 @@ func TestIsContextCanceled(t *testing.T) {
 		})
 	}
 }
+
+func TestRecover(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		f        func()
+		expected interface{}
+	}{
+		{
+			f: func() {
+				panic(New("foo"))
+			},
+			expected: "foo",
+		}, {
+			f: func() {
+				panic(struct {
+					Id      int
+					Message string
+				}{
+					Id:      1,
+					Message: "baz",
+				})
+			},
+			expected: "{1 baz}",
+		}, {
+			f: func() {
+				fmt.Println("should not trigger Recover func")
+			},
+			expected: nil,
+		},
+	}
+
+	for i, testCase := range testCases {
+		testCase := testCase
+
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+			defer Recover(func(c error) {
+				assert.Equal(t, testCase.expected, c.Error())
+			})
+
+			testCase.f()
+		})
+	}
+
+}
