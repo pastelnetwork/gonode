@@ -24,13 +24,18 @@ import (
 const (
 	appName  = "walletnode"
 	appUsage = "WalletNode" // TODO: Write a clear description.
+)
 
-	defaultConfigFile = ""
+var (
+	defaultConfigFile       = configurer.DefaultConfigPath("walletnode.yml")
+	defaultPastelConfigFile = configurer.DefaultConfigPath("pastel.conf")
 )
 
 // NewApp inits a new command line interface.
 func NewApp() *cli.App {
-	configFile := defaultConfigFile
+	var configFile string
+	var pastelConfigFile string
+
 	config := configs.New()
 
 	app := cli.NewApp(appName)
@@ -39,14 +44,14 @@ func NewApp() *cli.App {
 
 	app.AddFlags(
 		// Main
-		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(configFile).SetAliases("c"),
-		cli.NewFlag("pastel-config-file", &config.Pastel.ConfigFile).SetUsage("Set `path` to the pastel config file.").SetValue(config.Pastel.ConfigFile),
+		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
+		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
+		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(config.TempDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
-		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Directory for storing working data.").SetValue(config.WorkDir),
 		// API
-		cli.NewFlag("swagger", &config.Node.API.Swagger).SetUsage("Enable Swagger UI."),
+		cli.NewFlag("swagger", &config.API.Swagger).SetUsage("Enable Swagger UI."),
 	)
 
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
@@ -55,6 +60,11 @@ func NewApp() *cli.App {
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
 				return err
+			}
+		}
+		if pastelConfigFile != "" {
+			if err := configurer.ParseFile(pastelConfigFile, config.Pastel.ExternalConfig); err != nil {
+				log.WithContext(ctx).Debug(err)
 			}
 		}
 
@@ -73,8 +83,8 @@ func NewApp() *cli.App {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
 		}
 
-		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
-			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
+		if err := os.MkdirAll(config.TempDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create temp-dir %q, %w", config.TempDir, err)
 		}
 
 		return runApp(ctx, config)
@@ -87,9 +97,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
 
-	if err := configurer.ParseFile(config.Pastel.ConfigFile, config.Pastel.ExternalConfig); err != nil {
-		log.WithContext(ctx).Debug(err)
-	}
 	log.WithContext(ctx).Infof("Config: %s", config)
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -100,24 +107,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(config.Pastel)
+	pastelClient := pastel.NewClient(&config.Pastel)
 	nodeClient := grpc.NewClient()
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegisterService := artworkregister.NewService(config.Node.ArtworkRegister, db, pastelClient, nodeClient)
-
-	// NOTE: to bypass REST API (for testing)
-	go func() {
-		artworkRegisterService.AddTask(&artworkregister.Ticket{
-			ImagePath:  "/Users/levko/Downloads/my.jpeg",
-			MaximumFee: 100,
-		})
-	}()
+	artworkRegisterService := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// api service
-	server := api.NewServer(config.Node.API,
-		services.NewArtwork(artworkRegisterService, config.WorkDir),
+	server := api.NewServer(&config.API,
+		services.NewArtwork(artworkRegisterService, config.TempDir),
 		services.NewSwagger(),
 	)
 

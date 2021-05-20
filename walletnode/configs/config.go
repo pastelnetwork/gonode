@@ -2,16 +2,25 @@ package configs
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
+const (
+	defaultLogLevel = "info"
+)
+
 // Config contains configuration of all components of the WalletNode.
 type Config struct {
-	Main `mapstructure:",squash"`
+	LogLevel string `mapstructure:"log-level" json:"log-level,omitempty"`
+	LogFile  string `mapstructure:"log-file" json:"log-file,omitempty"`
+	Quiet    bool   `mapstructure:"quiet" json:"quiet"`
+	TempDir  string `mapstructure:"temp-dir" json:"temp-dir"`
 
-	Node   *Node          `mapstructure:"node" json:"node,omitempty"`
-	Pastel *pastel.Config `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
+	Node   `mapstructure:"node" json:"node,omitempty"`
+	Pastel pastel.Config `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -24,8 +33,10 @@ func (config *Config) String() string {
 // New returns a new Config instance
 func New() *Config {
 	return &Config{
-		Main:   *NewMain(),
-		Node:   NewNode(),
-		Pastel: pastel.NewConfig(),
+		LogLevel: defaultLogLevel,
+		TempDir:  filepath.Join(os.TempDir(), "walletnode"),
+
+		Node:   *NewNode(),
+		Pastel: *pastel.NewConfig(),
 	}
 }
