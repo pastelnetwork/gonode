@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/node"
+	"github.com/pastelnetwork/gonode/supernode/p2p"
 )
 
 const (
@@ -23,6 +24,7 @@ type Service struct {
 	db           storage.KeyValue
 	pastelClient pastel.Client
 	nodeClient   node.Client
+	p2pSrv       *p2p.Service
 }
 
 // Run starts task
@@ -50,12 +52,13 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client, p2pSrv *p2p.Service) *Service {
 	return &Service{
 		config:       config,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
+		p2pSrv:       p2pSrv,
 		Worker:       task.NewWorker(),
 	}
 }

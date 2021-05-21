@@ -387,7 +387,7 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 
 	payload := [1000000]byte{}
 
-	key := []byte("sample key")
+	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
 	id, err := dht1.Store(payload[:], key)
 	assert.NoError(t, err)
 
@@ -617,7 +617,7 @@ func TestStoreReplication(t *testing.T) {
 
 	dht.Bootstrap()
 
-	key := []byte("sample key")
+	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
 	dht.Store([]byte("foo"), key)
 
 	<-replicate
@@ -646,7 +646,7 @@ func TestStoreExpiration(t *testing.T) {
 		dht.Listen()
 	}()
 
-	key := []byte("sample key")
+	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
 	k, _ := dht.Store([]byte("foo"), key)
 
 	v, exists, _ := dht.Get(k)
