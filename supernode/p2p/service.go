@@ -2,7 +2,14 @@ package p2p
 
 import (
 	"context"
-	"log"
+	"os"
+	"os/signal"
+
+	"github.com/pastelnetwork/gonode/common/log"
+)
+
+const (
+	logPrefix = "p2p"
 )
 
 // Service represents the p2p service.
@@ -18,23 +25,41 @@ type DHT interface {
 	Listen() error
 	GetNetworkAddr() string
 	Bootstrap() error
+	UseStun() bool
+	Disconnect() error
 }
-
 
 // Run starts the DHT service
 func (service *Service) Run(ctx context.Context) error {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
 	err := service.dht.CreateSocket()
 	if err != nil {
 		panic(err)
 	}
 
 	go func() {
-		log.Println("Now listening on " + service.dht.GetNetworkAddr())
+		log.WithContext(ctx).Infof("Server listening on %q", service.dht.GetNetworkAddr())
 		err := service.dht.Listen()
 		panic(err)
 	}()
 
-	return service.dht.Bootstrap()
+	if err := service.dht.Bootstrap(); err != nil {
+		return err
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			err := service.dht.Disconnect()
+			if err != nil {
+				panic(err)
+			}
+		}
+	}()
+
+	return nil
 }
 
 // NewService returns a new Service instance.

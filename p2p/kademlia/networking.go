@@ -105,7 +105,7 @@ func (rn *realNetworking) createSocket(host string, port string, useStun bool, s
 		return "", "", errors.New("already connected")
 	}
 
-	remoteAddress := fmt.Sprintf("[%s]:%d", host, port)
+	remoteAddress := fmt.Sprintf("[%s]:%s", host, port)
 
 	socket, err := utp.NewSocket("udp", remoteAddress)
 	if err != nil {
@@ -131,7 +131,7 @@ func (rn *realNetworking) createSocket(host string, port string, useStun bool, s
 
 		host = h.IP()
 		port = strconv.Itoa(int(h.Port()))
-		remoteAddress = fmt.Sprintf("[%s]:%d", host, port)
+		remoteAddress = fmt.Sprintf("[%s]:%s", host, port)
 	}
 
 	rn.remoteAddress = remoteAddress
@@ -157,7 +157,7 @@ func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int6
 
 	port :=  strconv.Itoa(msg.Receiver.Port)
 	host := msg.Receiver.IP.String()
-	conn, err := rn.socket.DialContext(ctx, "", fmt.Sprintf("[%s]:%d", host, port))
+	conn, err := rn.socket.DialContext(ctx, "", fmt.Sprintf("[%s]:%s", host, port))
 	if err != nil {
 		return nil, err
 	}

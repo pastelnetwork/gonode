@@ -192,6 +192,12 @@ func (dht *DHT) GetNetworkAddr() string {
 	return dht.networking.getNetworkAddr()
 }
 
+
+// UseStun checks if DHT is using STUN.
+func (dht *DHT) UseStun() bool {
+	return dht.options.UseStun
+}
+
 // CreateSocket attempts to open a UDP socket on the port provided to options
 func (dht *DHT) CreateSocket() error {
 	ip := dht.options.IP
