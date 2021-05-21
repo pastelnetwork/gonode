@@ -134,6 +134,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		return err
 	}
 
+	// p2p service (currently using kademlia)
 	p2pSrv := p2p.NewService(dht)
 
 	// business logic services
