@@ -25,13 +25,18 @@ import (
 const (
 	appName  = "supernode"
 	appUsage = "SuperNode" // TODO: Write a clear description.
+)
 
-	defaultConfigFile = ""
+var (
+	defaultConfigFile       = configurer.DefaultConfigPath("supernode.yml")
+	defaultPastelConfigFile = configurer.DefaultConfigPath("pastel.conf")
 )
 
 // NewApp inits a new command line interface.
 func NewApp() *cli.App {
-	configFile := defaultConfigFile
+	var configFile string
+	var pastelConfigFile string
+
 	config := configs.New()
 
 	app := cli.NewApp(appName)
@@ -40,17 +45,25 @@ func NewApp() *cli.App {
 
 	app.AddFlags(
 		// Main
-		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(configFile).SetAliases("c"),
+		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
+		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
+		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(config.TempDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
-		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Directory for storing working data.").SetValue(config.WorkDir),
 	)
 
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
+		ctx = log.ContextWithPrefix(ctx, "app")
+
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
 				return err
+			}
+		}
+		if pastelConfigFile != "" {
+			if err := configurer.ParseFile(pastelConfigFile, config.Pastel.ExternalConfig); err != nil {
+				log.WithContext(ctx).Debug(err)
 			}
 		}
 
@@ -69,8 +82,8 @@ func NewApp() *cli.App {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
 		}
 
-		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
-			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
+		if err := os.MkdirAll(config.TempDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create work-dir %q, %w", config.TempDir, err)
 		}
 
 		return runApp(ctx, config)
@@ -80,8 +93,6 @@ func NewApp() *cli.App {
 }
 
 func runApp(ctx context.Context, config *configs.Config) error {
-	ctx = log.ContextWithPrefix(ctx, "app")
-
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
 
@@ -95,16 +106,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(config.Pastel)
+	pastelClient := pastel.NewClient(&config.Pastel)
 	nodeClient := client.New()
 	db := memory.NewKeyValue()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(config.Node.ArtworkRegister, db, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// server
-	grpc := server.New(config.Node.Server,
-		walletnode.NewRegisterArtwork(artworkRegister, config.WorkDir),
+	grpc := server.New(&config.Server,
+		walletnode.NewRegisterArtwork(artworkRegister, config.TempDir),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
