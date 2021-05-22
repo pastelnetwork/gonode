@@ -10,46 +10,51 @@ import (
 // Flag is a wrapper of cli.Flag
 type Flag struct {
 	cli.Flag
-
-	destination interface{}
 }
 
-// SetUsage sets 'Usage' field for the cli.Flag
+// SetUsage assigns 'Usage' field for the cli.Flag
 func (s *Flag) SetUsage(val string) {
 	s.setField("Usage", func(v reflect.Value) {
 		v.SetString(val)
 	})
 }
 
-// SetAliases sets 'Aliases' field for the cli.Flag
+// SetAliases assigns 'Aliases' field for the cli.Flag
 func (s *Flag) SetAliases(val ...string) {
 	s.setField("Aliases", func(v reflect.Value) {
 		v.Set(reflect.ValueOf(val))
 	})
 }
 
-// SetEnvVars sets 'EnvVars' field for the cli.Flag
+// SetEnvVars assigns 'EnvVars' field for the cli.Flag
 func (s *Flag) SetEnvVars(val ...string) {
 	s.setField("EnvVars", func(v reflect.Value) {
 		v.Set(reflect.ValueOf(val))
 	})
 }
 
-// SetRequired sets 'Required' field for the cli.Flag
+// SetRequired assigns 'Required' field for the cli.Flag
 func (s *Flag) SetRequired() {
 	s.setField("Required", func(v reflect.Value) {
 		v.SetBool(true)
 	})
 }
 
-// SetValue sets 'Value' field for the cli.Flag
+// SetValue assigns 'Value' field for the cli.Flag
 func (s *Flag) SetValue(val interface{}) {
 	s.setField("Value", func(v reflect.Value) {
 		v.Set(reflect.ValueOf(val))
 	})
 }
 
-// SetHidden sets 'Hidden' field for the cli.Flag
+// SetDefaultText assigns 'DefaultText' field for the cli.Flag
+func (s *Flag) SetDefaultText(val interface{}) {
+	s.setField("DefaultText", func(v reflect.Value) {
+		v.Set(reflect.ValueOf(val))
+	})
+}
+
+// SetHidden assigns 'Hidden' field for the cli.Flag
 func (s *Flag) SetHidden() {
 	s.setField("Hidden", func(v reflect.Value) {
 		v.SetBool(true)
@@ -111,7 +116,6 @@ func NewFlag(name string, destination interface{}) *Flag {
 	}
 
 	return &Flag{
-		Flag:        flag,
-		destination: destination,
+		Flag: flag,
 	}
 }
