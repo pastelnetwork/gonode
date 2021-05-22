@@ -38,9 +38,16 @@ func (cmd *Command) SetActionFunc(actionFn ActionFn) {
 	}
 }
 
+// SetUsage sets the a usage description for the cli.Command
+func (cmd *Command) SetUsage(usage string) {
+	cmd.Usage = usage
+}
+
 // NewCommand create a new instance of the Command struct
-func NewCommand() *Command {
+func NewCommand(name string) *Command {
 	return &Command{
-		Command: cli.Command{},
+		Command: cli.Command{
+			Name: name,
+		},
 	}
 }
