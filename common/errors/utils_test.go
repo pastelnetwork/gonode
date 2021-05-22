@@ -2,6 +2,7 @@ package errors
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 
@@ -21,6 +22,9 @@ func TestErrorStack(t *testing.T) {
 		}, {
 			err:     fmt.Errorf("bar"),
 			contain: "bar",
+		}, {
+			err:     fmt.Errorf("wrap error: %w", errors.New("inner error")),
+			contain: "wrap error: inner error\ninner error",
 		},
 	}
 
