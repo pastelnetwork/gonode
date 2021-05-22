@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"bytes"
+	"context"
 	"net"
 	"strconv"
 	"testing"
@@ -35,12 +36,12 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 	for _, dht := range dhts {
 		assert.Equal(t, 0, dht.NumNodes())
 		go func(dht *DHT) {
-			err := dht.Listen()
+			err := dht.Listen(context.Background())
 			assert.Equal(t, "closed", err.Error())
 			done <- true
 		}(dht)
 		go func(dht *DHT) {
-			err := dht.Bootstrap()
+			err := dht.Bootstrap(context.Background())
 			assert.NoError(t, err)
 		}(dht)
 		time.Sleep(time.Millisecond * 200)
@@ -91,7 +92,7 @@ func TestBootstrapTwoNodes(t *testing.T) {
 
 	go func() {
 		go func() {
-			err := dht2.Bootstrap()
+			err := dht2.Bootstrap(context.Background())
 			assert.NoError(t, err)
 
 			time.Sleep(50 * time.Millisecond)
@@ -103,12 +104,12 @@ func TestBootstrapTwoNodes(t *testing.T) {
 			assert.NoError(t, err)
 			done <- true
 		}()
-		err := dht2.Listen()
+		err := dht2.Listen(context.Background())
 		assert.Equal(t, "closed", err.Error())
 		done <- true
 	}()
 
-	err = dht1.Listen()
+	err = dht1.Listen(context.Background())
 	assert.Equal(t, "closed", err.Error())
 
 	assert.Equal(t, 1, dht1.NumNodes())
@@ -170,11 +171,11 @@ func TestBootstrapThreeNodes(t *testing.T) {
 
 	go func(dht1 *DHT, dht2 *DHT, dht3 *DHT) {
 		go func(dht1 *DHT, dht2 *DHT, dht3 *DHT) {
-			err := dht2.Bootstrap()
+			err := dht2.Bootstrap(context.Background())
 			assert.NoError(t, err)
 
 			go func(dht1 *DHT, dht2 *DHT, dht3 *DHT) {
-				err := dht3.Bootstrap()
+				err := dht3.Bootstrap(context.Background())
 				assert.NoError(t, err)
 
 				time.Sleep(500 * time.Millisecond)
@@ -192,16 +193,16 @@ func TestBootstrapThreeNodes(t *testing.T) {
 				done <- true
 			}(dht1, dht2, dht3)
 
-			err = dht3.Listen()
+			err = dht3.Listen(context.Background())
 			assert.Equal(t, "closed", err.Error())
 			done <- true
 		}(dht1, dht2, dht3)
-		err := dht2.Listen()
+		err := dht2.Listen(context.Background())
 		assert.Equal(t, "closed", err.Error())
 		done <- true
 	}(dht1, dht2, dht3)
 
-	err = dht1.Listen()
+	err = dht1.Listen(context.Background())
 	assert.Equal(t, "closed", err.Error())
 
 	assert.Equal(t, 2, dht1.NumNodes())
@@ -247,7 +248,7 @@ func TestBootstrapNoID(t *testing.T) {
 
 	go func() {
 		go func() {
-			err := dht2.Bootstrap()
+			err := dht2.Bootstrap(context.Background())
 			assert.NoError(t, err)
 
 			time.Sleep(50 * time.Millisecond)
@@ -259,12 +260,12 @@ func TestBootstrapNoID(t *testing.T) {
 			assert.NoError(t, err)
 			done <- true
 		}()
-		err := dht2.Listen()
+		err := dht2.Listen(context.Background())
 		assert.Equal(t, "closed", err.Error())
 		done <- true
 	}()
 
-	err = dht1.Listen()
+	err = dht1.Listen(context.Background())
 	assert.Equal(t, "closed", err.Error())
 
 	assert.Equal(t, 1, dht1.NumNodes())
@@ -310,7 +311,7 @@ func TestReconnect(t *testing.T) {
 
 		go func() {
 			go func() {
-				err := dht2.Bootstrap()
+				err := dht2.Bootstrap(context.Background())
 				assert.NoError(t, err)
 
 				err = dht2.Disconnect()
@@ -321,13 +322,13 @@ func TestReconnect(t *testing.T) {
 
 				done <- true
 			}()
-			err := dht2.Listen()
+			err := dht2.Listen(context.Background())
 			assert.Equal(t, "closed", err.Error())
 			done <- true
 
 		}()
 
-		err = dht1.Listen()
+		err = dht1.Listen(context.Background())
 		assert.Equal(t, "closed", err.Error())
 
 		assert.Equal(t, 1, dht1.NumNodes())
@@ -370,30 +371,30 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 	assert.NoError(t, err)
 
 	go func() {
-		err := dht1.Listen()
+		err := dht1.Listen(context.Background())
 		assert.Equal(t, "closed", err.Error())
 		done <- true
 	}()
 
 	go func() {
-		err := dht2.Listen()
+		err := dht2.Listen(context.Background())
 		assert.Equal(t, "closed", err.Error())
 		done <- true
 	}()
 
 	time.Sleep(1 * time.Second)
 
-	dht2.Bootstrap()
+	dht2.Bootstrap(context.Background())
 
 	payload := [1000000]byte{}
 
 	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
-	id, err := dht1.Store(payload[:], key)
+	id, err := dht1.Store(context.Background(), payload[:], key)
 	assert.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
 
-	value, exists, err := dht2.Get(id)
+	value, exists, err := dht2.Get(context.Background(), id)
 	assert.NoError(t, err)
 	assert.Equal(t, true, exists)
 	assert.Equal(t, 0, bytes.Compare(payload[:], value))
@@ -431,7 +432,7 @@ func TestNetworkingSendError(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(context.Background())
 	}()
 
 	go func() {
@@ -442,7 +443,7 @@ func TestNetworkingSendError(t *testing.T) {
 
 	networking.failNextSendMessage()
 
-	dht.Bootstrap()
+	dht.Bootstrap(context.Background())
 
 	dht.Disconnect()
 
@@ -474,7 +475,7 @@ func TestNodeResponseSendError(t *testing.T) {
 	queries := 0
 
 	go func() {
-		dht.Listen()
+		dht.Listen(context.Background())
 	}()
 
 	go func() {
@@ -494,7 +495,7 @@ func TestNodeResponseSendError(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap()
+	dht.Bootstrap(context.Background())
 
 	assert.Equal(t, 1, dht.ht.totalNodes())
 
@@ -530,7 +531,7 @@ func TestBucketRefresh(t *testing.T) {
 	queries := 0
 
 	go func() {
-		dht.Listen()
+		dht.Listen(context.Background())
 	}()
 
 	go func() {
@@ -551,7 +552,7 @@ func TestBucketRefresh(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap()
+	dht.Bootstrap(context.Background())
 
 	assert.Equal(t, 1, dht.ht.totalNodes())
 
@@ -587,7 +588,7 @@ func TestStoreReplication(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(context.Background())
 	}()
 
 	stores := 0
@@ -615,10 +616,10 @@ func TestStoreReplication(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap()
+	dht.Bootstrap(context.Background())
 
 	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
-	dht.Store([]byte("foo"), key)
+	dht.Store(context.Background(), []byte("foo"), key)
 
 	<-replicate
 
@@ -643,20 +644,20 @@ func TestStoreExpiration(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(context.Background())
 	}()
 
 	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
-	k, _ := dht.Store([]byte("foo"), key)
+	k, _ := dht.Store(context.Background(), []byte("foo"), key)
 
-	v, exists, _ := dht.Get(k)
+	v, exists, _ := dht.Get(context.Background(), k)
 	assert.Equal(t, true, exists)
 
 	assert.Equal(t, []byte("foo"), v)
 
 	<-time.After(time.Second * 3)
 
-	_, exists, _ = dht.Get(k)
+	_, exists, _ = dht.Get(context.Background(), k)
 
 	assert.Equal(t, false, exists)
 

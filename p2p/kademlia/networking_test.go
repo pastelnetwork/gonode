@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"context"
 	"errors"
 	"net"
 )
@@ -79,7 +80,7 @@ func (net *mockNetworking) failNextSendMessage() {
 	net.failNext = true
 }
 
-func (net *mockNetworking) sendMessage(q *message, expectResponse bool, id int64) (*expectedResponse, error) {
+func (net *mockNetworking) sendMessage(ctx context.Context, q *message, expectResponse bool, id int64) (*expectedResponse, error) {
 	if id == 0 {
 		id = net.msgCounter
 		net.msgCounter++

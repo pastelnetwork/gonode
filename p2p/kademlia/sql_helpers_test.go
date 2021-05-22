@@ -8,6 +8,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
+
 func setupDB(t *testing.T) *sql.DB {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
@@ -19,7 +20,7 @@ func setupDB(t *testing.T) *sql.DB {
 }
 
 func TestMigrate(t *testing.T) {
-	db,err  := sql.Open("sqlite3", ":memory:")
+	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
 
 	err = migrate(db)
@@ -33,7 +34,6 @@ func TestStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, int64(1), rows)
 }
-
 
 func TestRetrieve(t *testing.T) {
 	db := setupDB(t)

@@ -7,7 +7,6 @@ import (
 	"net"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/anacrolix/utp"
 	"github.com/ccding/go-stun/stun"
@@ -18,7 +17,7 @@ var (
 )
 
 type networking interface {
-	sendMessage(*message, bool, int64) (*expectedResponse, error)
+	sendMessage(context.Context, *message, bool, int64) (*expectedResponse, error)
 	getMessage() chan (*message)
 	messagesFin()
 	timersFin()
@@ -143,7 +142,7 @@ func (rn *realNetworking) createSocket(host string, port string, useStun bool, s
 	return host, port, nil
 }
 
-func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int64) (*expectedResponse, error) {
+func (rn *realNetworking) sendMessage(ctx context.Context, msg *message, expectResponse bool, id int64) (*expectedResponse, error) {
 	rn.mutex.Lock()
 	if id == -1 {
 		id = rn.msgCounter
@@ -152,10 +151,7 @@ func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int6
 	msg.ID = id
 	rn.mutex.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-
-	port :=  strconv.Itoa(msg.Receiver.Port)
+	port := strconv.Itoa(msg.Receiver.Port)
 	host := msg.Receiver.IP.String()
 	conn, err := rn.socket.DialContext(ctx, "", fmt.Sprintf("[%s]:%s", host, port))
 	if err != nil {

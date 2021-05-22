@@ -2,8 +2,6 @@ package p2p
 
 import (
 	"context"
-	"os"
-	"os/signal"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
@@ -20,12 +18,12 @@ type Service struct {
 
 // DHT represents the methods by which a library consumer interacts with a DHT.
 type DHT interface {
-	Store(data []byte, key []byte) (id string, err error)
-	Get(key string) (data []byte, found bool, err error)
+	Store(ctx context.Context, data []byte, key []byte) (id string, err error)
+	Get(ctx context.Context, key string) (data []byte, found bool, err error)
 	CreateSocket() error
-	Listen() error
+	Listen(ctx context.Context) error
 	GetNetworkAddr() string
-	Bootstrap() error
+	Bootstrap(ctx context.Context) error
 	UseStun() bool
 	Disconnect() error
 }
@@ -41,24 +39,13 @@ func (service *Service) Run(ctx context.Context) error {
 
 	go func() {
 		log.WithContext(ctx).Infof("Server listening on %q", service.dht.GetNetworkAddr())
-		err := service.dht.Listen()
+		err := service.dht.Listen(ctx)
 		panic(err)
 	}()
 
-	if err := service.dht.Bootstrap(); err != nil {
+	if err := service.dht.Bootstrap(ctx); err != nil {
 		return err
 	}
-
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			err := service.dht.Disconnect()
-			if err != nil {
-				panic(err)
-			}
-		}
-	}()
 
 	return nil
 }
@@ -75,7 +62,7 @@ func NewService(config *Config) (*Service, error) {
 		BootstrapNodes: bootstrapNodes,
 		IP:             config.IP,
 		Port:           config.Port,
-		UseStun:    config.UseStun,
+		UseStun:        config.UseStun,
 	})
 	if err != nil {
 		return nil, err

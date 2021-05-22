@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"bytes"
+	"context"
 	"math"
 	"net"
 	"testing"
@@ -32,7 +33,7 @@ func TestFindNodeAllBuckets(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(context.Background())
 	}()
 
 	var k = 0
@@ -60,7 +61,7 @@ func TestFindNodeAllBuckets(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap()
+	dht.Bootstrap(context.Background())
 
 	for _, v := range dht.ht.RoutingTable {
 		assert.Equal(t, 1, len(v))
@@ -95,7 +96,7 @@ func TestAddNodeTimeout(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(context.Background())
 	}()
 
 	var nodesAdded = 1
@@ -137,7 +138,7 @@ func TestAddNodeTimeout(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap()
+	dht.Bootstrap(context.Background())
 
 	// ensure the first node in the table is the second node contacted, and the
 	// last is the last node contacted
@@ -161,7 +162,7 @@ func TestGetRandomIDFromBucket(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(context.Background())
 	}()
 
 	// Bytes should be equal up to the bucket index that the random ID was
