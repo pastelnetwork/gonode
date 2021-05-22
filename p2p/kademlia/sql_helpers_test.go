@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func Test_migrate(t *testing.T) {
+func TestMigrate(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
 
@@ -17,7 +17,7 @@ func Test_migrate(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_store(t *testing.T) {
+func TestStore(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
 
@@ -30,7 +30,7 @@ func Test_store(t *testing.T) {
 }
 
 
-func Test_retrieve(t *testing.T) {
+func TestRetrieve(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
 
@@ -46,7 +46,7 @@ func Test_retrieve(t *testing.T) {
 	assert.Equal(t, "data", string(data))
 }
 
-func Test_getAllKeysForReplication(t *testing.T) {
+func TestGetAllKeysForReplication(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
 
@@ -62,7 +62,7 @@ func Test_getAllKeysForReplication(t *testing.T) {
 	assert.Len(t, keys, 2)
 }
 
-func Test_expireKeys(t *testing.T) {
+func TestExpireKeys(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
 
@@ -77,7 +77,7 @@ func Test_expireKeys(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func Test_remove(t *testing.T) {
+func TestRemove(t *testing.T) {
 	db, err := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
 
