@@ -66,6 +66,11 @@ func (app *App) SetError(write io.Writer) {
 	app.ErrWriter = write
 }
 
+// SetAppHelpTemplate sets a custom help template
+func SetAppHelpTemplate(appHelperTemplate string) {
+	cli.AppHelpTemplate = appHelperTemplate
+}
+
 // NewApp create a new instance of the App struct
 func NewApp(name string) *App {
 	app := cli.NewApp()
