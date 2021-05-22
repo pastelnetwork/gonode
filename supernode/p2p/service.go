@@ -6,6 +6,7 @@ import (
 	"os/signal"
 
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/p2p/kademlia"
 )
 
 const (
@@ -63,8 +64,24 @@ func (service *Service) Run(ctx context.Context) error {
 }
 
 // NewService returns a new Service instance.
-func NewService(dht DHT) *Service {
+func NewService(config *Config) (*Service, error) {
+	var bootstrapNodes []*kademlia.NetworkNode
+	if config.BootstrapIP != "" || config.BootstrapPort != "" {
+		bootstrapNode := kademlia.NewNetworkNode(config.BootstrapIP, config.BootstrapPort)
+		bootstrapNodes = append(bootstrapNodes, bootstrapNode)
+	}
+
+	dht, err := kademlia.NewDHT(&kademlia.MemoryStore{}, &kademlia.Options{
+		BootstrapNodes: bootstrapNodes,
+		IP:             config.IP,
+		Port:           config.Port,
+		UseStun:    config.UseStun,
+	})
+	if err != nil {
+		return nil, err
+	}
+
 	return &Service{
 		dht: dht,
-	}
+	}, nil
 }

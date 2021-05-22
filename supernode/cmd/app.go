@@ -13,7 +13,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
@@ -112,30 +111,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nodeClient := client.New()
 	db := memory.NewKeyValue()
 
-	var ip = "0.0.0.0"
-	var port = "0"
-	var bIP = ""
-	var bPort = ""
-	var stun = true
-
-	var bootstrapNodes []*kademlia.NetworkNode
-	if bIP != "" || bPort != "" {
-		bootstrapNode := kademlia.NewNetworkNode(bIP, bPort)
-		bootstrapNodes = append(bootstrapNodes, bootstrapNode)
-	}
-
-	dht, err := kademlia.NewDHT(&kademlia.MemoryStore{}, &kademlia.Options{
-		BootstrapNodes: bootstrapNodes,
-		IP:             ip,
-		Port:           port,
-		UseStun:        stun,
-	})
+	// p2p service (currently using kademlia)
+	p2pSrv, err := p2p.NewService(p2p.NewConfig())
 	if err != nil {
 		return err
 	}
-
-	// p2p service (currently using kademlia)
-	p2pSrv := p2p.NewService(dht)
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient, p2pSrv)
