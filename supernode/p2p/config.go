@@ -1,11 +1,11 @@
 package p2p
 
 var (
-	ip    = "0.0.0.0"
-	port  = "0"
-	bIP   = ""
-	bPort = ""
-	useStun  = true
+	ip      = "0.0.0.0"
+	port    = "0"
+	bIP     = ""
+	bPort   = ""
+	useStun = true
 )
 
 // Config contains settings of the supernode server.
