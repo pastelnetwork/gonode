@@ -8,9 +8,18 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 )
+func setupDB(t *testing.T) *sql.DB {
+	db, err := sql.Open("sqlite3", ":memory:")
+	assert.NoError(t, err)
+
+	err = migrate(db)
+	assert.NoError(t, err)
+
+	return db
+}
 
 func TestMigrate(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
+	db,err  := sql.Open("sqlite3", ":memory:")
 	assert.NoError(t, err)
 
 	err = migrate(db)
@@ -18,11 +27,7 @@ func TestMigrate(t *testing.T) {
 }
 
 func TestStore(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
-	assert.NoError(t, err)
-
-	err = migrate(db)
-	assert.NoError(t, err)
+	db := setupDB(t)
 
 	rows, err := store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
 	assert.NoError(t, err)
@@ -31,11 +36,7 @@ func TestStore(t *testing.T) {
 
 
 func TestRetrieve(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
-	assert.NoError(t, err)
-
-	err = migrate(db)
-	assert.NoError(t, err)
+	db := setupDB(t)
 
 	rows, err := store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
 	assert.NoError(t, err)
@@ -47,13 +48,9 @@ func TestRetrieve(t *testing.T) {
 }
 
 func TestGetAllKeysForReplication(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
-	assert.NoError(t, err)
+	db := setupDB(t)
 
-	err = migrate(db)
-	assert.NoError(t, err)
-
-	_, err = store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
+	_, err := store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
 	_, err = store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
@@ -63,13 +60,9 @@ func TestGetAllKeysForReplication(t *testing.T) {
 }
 
 func TestExpireKeys(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
-	assert.NoError(t, err)
+	db := setupDB(t)
 
-	err = migrate(db)
-	assert.NoError(t, err)
-
-	_, err = store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
+	_, err := store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
 	_, err = store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
@@ -78,13 +71,9 @@ func TestExpireKeys(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	db, err := sql.Open("sqlite3", ":memory:")
-	assert.NoError(t, err)
+	db := setupDB(t)
 
-	err = migrate(db)
-	assert.NoError(t, err)
-
-	_, err = store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
+	_, err := store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
 	_, err = store(db, []byte("cf23df2207d99a74fbe169e3eba035e633b65d94"), []byte("data"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
