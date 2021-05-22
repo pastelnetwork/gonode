@@ -43,11 +43,7 @@ func (service *Service) Run(ctx context.Context) error {
 		panic(err)
 	}()
 
-	if err := service.dht.Bootstrap(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return service.dht.Bootstrap(ctx)
 }
 
 // NewService returns a new Service instance.
