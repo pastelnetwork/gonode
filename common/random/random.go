@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"crypto/rand"
 	"math/big"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 // Character sets that you can use when passing into String
@@ -40,7 +42,7 @@ func String(strLength int, allowedChars string) (string, error) {
 	for i := 0; i < strLength; i++ {
 		id, err := rand.Int(rand.Reader, big.NewInt(int64(len(allowedChars))))
 		if err != nil {
-			return out.String(), err
+			return out.String(), errors.New(err)
 		}
 		out.WriteByte(allowedChars[id.Int64()])
 	}

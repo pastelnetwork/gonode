@@ -2,6 +2,8 @@ package node
 
 import (
 	"context"
+
+	"github.com/pastelnetwork/gonode/common/service/image"
 )
 
 // Client represents a base connection interface.
@@ -31,5 +33,5 @@ type RegisterArtwork interface {
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
 	ConnectTo(ctx context.Context, nodeKey, sessID string) error
 	// UploadImage uploads image to supernode.
-	UploadImage(ctx context.Context, filename string) error
+	UploadImage(ctx context.Context, file *image.File) error
 }

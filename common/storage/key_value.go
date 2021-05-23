@@ -3,17 +3,14 @@ package storage
 import "github.com/pastelnetwork/gonode/common/errors"
 
 var (
-	// ErrKeyNotFound is returned when key isn't found.
-	ErrKeyNotFound = errors.New("key not found")
+	// ErrKeyValueNotFound is returned when key isn't found.
+	ErrKeyValueNotFound = errors.New("key not found")
 )
 
 // KeyValue represents database that uses a simple key-value method to store data.
 type KeyValue interface {
-	// Init initializes the database.
-	Init() error
-
 	// Get looks for key and returns corresponding Item.
-	// If key is not found, ErrKeyNotFound is returned.
+	// If key is not found, ErrKeyValueNotFound is returned.
 	Get(key string) (value []byte, err error)
 
 	// Set adds a key-value pair to the database.

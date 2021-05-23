@@ -55,7 +55,7 @@ func (task *Task) run(ctx context.Context) error {
 	if ok, err := task.isSuitableStorageFee(ctx); err != nil {
 		return err
 	} else if !ok {
-		task.UpdateStatus(StatusErrorTooLowFee)
+		task.UpdateStatus(ErrorInsufficientFee)
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
@@ -64,8 +64,8 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 	if len(topNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(StatusErrorTooLowFee)
-		return errors.New("not found enough available SuperNodes with acceptable storage fee: %f")
+		task.UpdateStatus(ErrorInsufficientFee)
+		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
 
 	var nodes Nodes
@@ -96,8 +96,8 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusConnected)
 
-	log.WithContext(ctx).WithField("filename", task.Ticket.ImagePath).Debugf("Uploading image")
-	if err := nodes.sendImage(ctx, task.Ticket.ImagePath); err != nil {
+	log.WithContext(ctx).WithField("filename", task.Ticket.Image.Name()).Debugf("Uploading image")
+	if err := nodes.sendImage(ctx, task.Ticket.Image); err != nil {
 		return err
 	}
 

@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/image"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -117,7 +117,7 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 }
 
 // UploadImage implements node.RegisterArtwork.UploadImage()
-func (service *registerArtwork) UploadImage(ctx context.Context, filename string) error {
+func (service *registerArtwork) UploadImage(ctx context.Context, image *image.File) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -127,9 +127,9 @@ func (service *registerArtwork) UploadImage(ctx context.Context, filename string
 	}
 	defer stream.CloseSend()
 
-	file, err := os.Open(filename)
+	file, err := image.Open()
 	if err != nil {
-		return errors.Errorf("failed to open file %q: %w", filename, err)
+		return errors.Errorf("failed to open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
