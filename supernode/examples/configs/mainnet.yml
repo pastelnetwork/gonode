@@ -1,9 +1,3 @@
-pastel-api:
-  hostname: "127.0.0.1"
-  port: 9932
-  username: "rt"
-  password: "rt"
-
 node:
   # `pastel_id` must match to active `PastelID` from masternode.
   # To check it out first get the active outpoint from `masteronde status`, then filter the result of `tickets list id mine` by this outpoint.

@@ -4,18 +4,19 @@ package configurer
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 	"syscall"
 )
 
 const (
 	beforeVistaAppDir = "Application Data"
-	fromVistaAppDir   = "AppData/Roaming"
+	sinceVistaAppDir  = "AppData/Roaming"
 )
 
 var defaultConfigPaths = []string{
-	file.Path("$HOME", beforeVistaAppDir, "Pastel"),
-	file.Path("$HOME", fromVistaAppDir, "Pastel"),
+	path.Join("$HOME", beforeVistaAppDir, "Pastel"),
+	path.Join("$HOME", sinceVistaAppDir, "Pastel"),
 	".",
 }
 
@@ -26,7 +27,7 @@ func DefaultConfigPath(filename string) string {
 
 	v, _ := syscall.GetVersion()
 	if v&0xff > 5 {
-		appDir = fromVistaAppDir
+		appDir = sinceVistaAppDir
 	}
 	return filepath.Join(homeDir, filepath.FromSlash(appDir), "Pastel", filename)
 }

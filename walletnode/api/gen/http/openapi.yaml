@@ -144,6 +144,8 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/ArtworksUploadImageRequestBody'
+          required:
+          - file
       responses:
         "201":
           description: Created response.
@@ -682,7 +684,7 @@ definitions:
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
-        - Error Too Low Fee
+        - Error Insufficient Fee
         - Error FGPT Not Match
         - Task Rejected
         - Task Completed
@@ -837,7 +839,7 @@ definitions:
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
-        - Error Too Low Fee
+        - Error Insufficient Fee
         - Error FGPT Not Match
         - Task Rejected
         - Task Completed
@@ -1117,9 +1119,9 @@ definitions:
         - 115
         - 46
         format: byte
-      filepath:
+      filename:
         type: string
-        description: Path to file
+        description: For internal use
     example:
       file:
       - 77
@@ -1152,6 +1154,8 @@ definitions:
       - 117
       - 115
       - 46
+    required:
+    - file
   ArtworksUploadImageResponseBody:
     title: 'Mediatype identifier: application/vnd.artwork.upload-image; view=default'
     type: object
@@ -1195,7 +1199,7 @@ definitions:
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
-        - Error Too Low Fee
+        - Error Insufficient Fee
         - Error FGPT Not Match
         - Task Rejected
         - Task Completed
@@ -1250,7 +1254,7 @@ definitions:
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
-        - Error Too Low Fee
+        - Error Insufficient Fee
         - Error FGPT Not Match
         - Task Rejected
         - Task Completed

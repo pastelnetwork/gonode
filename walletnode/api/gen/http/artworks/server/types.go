@@ -51,8 +51,8 @@ type RegisterRequestBody struct {
 type UploadImageRequestBody struct {
 	// File to upload
 	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
-	// Path to file
-	Filepath *string `form:"filepath,omitempty" json:"filepath,omitempty" xml:"filepath,omitempty"`
+	// For internal use
+	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
 // RegisterResponseBody is the type of the "artworks" service "register"
@@ -570,7 +570,7 @@ func NewRegisterTaskPayload(taskID string) *artworks.RegisterTaskPayload {
 func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePayload {
 	v := &artworks.UploadImagePayload{
 		Bytes:    body.Bytes,
-		Filepath: body.Filepath,
+		Filename: body.Filename,
 	}
 
 	return v
@@ -688,6 +688,15 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 		if *body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
 		}
+	}
+	return
+}
+
+// ValidateUploadImageRequestBody runs the validations defined on
+// UploadImageRequestBody
+func ValidateUploadImageRequestBody(body *UploadImageRequestBody) (err error) {
+	if body.Bytes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
 	}
 	return
 }

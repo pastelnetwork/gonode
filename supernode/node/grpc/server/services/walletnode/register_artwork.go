@@ -4,12 +4,10 @@ import (
 	"bufio"
 	"context"
 	"io"
-	"os"
-	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/random"
+	"github.com/pastelnetwork/gonode/common/service/image"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
@@ -24,7 +22,7 @@ type RegisterArtwork struct {
 	pb.UnimplementedRegisterArtworkServer
 
 	*common.RegisterArtwork
-	workDir string
+	imageStorage *image.Storage
 }
 
 // Session implements walletnode.RegisterArtworkServer.Session()
@@ -136,17 +134,17 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		return err
 	}
 
-	fileID, _ := random.String(16, random.Base62Chars)
-	filename := filepath.Join(service.workDir, fileID)
-
-	file, err := os.Create(filename)
+	image := service.imageStorage.NewFile()
+	file, err := image.Create()
 	if err != nil {
-		return errors.Errorf("failed to open file %q: %w", filename, err)
+		return errors.Errorf("failed to open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
-	log.WithContext(ctx).WithField("filename", filename).Debugf("UploadImage request")
+	log.WithContext(ctx).WithField("filename", file.Name()).Debugf("UploadImage request")
 
 	wr := bufio.NewWriter(file)
+	defer wr.Flush()
+
 	for {
 		req, err := stream.Recv()
 		if err != nil {
@@ -160,11 +158,11 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		}
 
 		if _, err := wr.Write(req.Payload); err != nil {
-			return errors.Errorf("failed to write to file %q: %w", filename, err)
+			return errors.Errorf("failed to write to file %q: %w", file.Name(), err)
 		}
 	}
 
-	if err := task.UploadImage(ctx, filename); err != nil {
+	if err := task.UploadImage(ctx, image); err != nil {
 		return err
 	}
 
@@ -182,9 +180,9 @@ func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
 }
 
 // NewRegisterArtwork returns a new RegisterArtwork instance.
-func NewRegisterArtwork(service *artworkregister.Service, workDir string) *RegisterArtwork {
+func NewRegisterArtwork(service *artworkregister.Service, imageStorage *image.Storage) *RegisterArtwork {
 	return &RegisterArtwork{
 		RegisterArtwork: common.NewRegisterArtwork(service),
-		workDir:         workDir,
+		imageStorage:    imageStorage,
 	}
 }
