@@ -629,7 +629,7 @@ components:
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
-          - Error Too Low Fee
+          - Error Insufficient Fee
           - Error FGPT Not Match
           - Task Rejected
           - Task Completed
@@ -692,7 +692,7 @@ components:
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
-          - Error Too Low Fee
+          - Error Insufficient Fee
           - Error FGPT Not Match
           - Task Rejected
           - Task Completed
@@ -789,7 +789,7 @@ components:
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
-          - Error Too Low Fee
+          - Error Insufficient Fee
           - Error FGPT Not Match
           - Task Rejected
           - Task Completed
@@ -845,9 +845,9 @@ components:
           - 101
           - 46
           format: binary
-        filepath:
+        filename:
           type: string
-          description: Path to file
+          description: For internal use
       example:
         file:
         - 69
@@ -884,3 +884,5 @@ components:
         - 97
         - 109
         - 46
+      required:
+      - file

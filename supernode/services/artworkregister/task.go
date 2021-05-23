@@ -3,11 +3,11 @@ package artworkregister
 import (
 	"context"
 	"fmt"
-	"os"
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/image"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 )
@@ -17,7 +17,7 @@ type Task struct {
 	task.Task
 	*Service
 
-	ImagePath string
+	Image *image.File
 
 	acceptedMu sync.Mutex
 	accpeted   Nodes
@@ -143,22 +143,18 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 }
 
 // UploadImage uploads an image
-func (task *Task) UploadImage(_ context.Context, filename string) error {
+func (task *Task) UploadImage(_ context.Context, image *image.File) error {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return err
 	}
 
 	task.NewAction(func(ctx context.Context) error {
-		task.ImagePath = filename
+		task.Image = image
 		task.UpdateStatus(StatusImageUploaded)
 
 		<-ctx.Done()
 
-		if err := os.Remove(filename); err != nil {
-			return errors.Errorf("failed to remove temp file %q: %w", filename, err)
-		}
-		log.WithContext(ctx).Debugf("Removed temp file %q", filename)
-		return nil
+		return task.Image.Remove()
 	})
 	return nil
 }

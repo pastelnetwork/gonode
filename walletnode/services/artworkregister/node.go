@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/service/image"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"golang.org/x/sync/errgroup"
 )
@@ -37,12 +38,12 @@ func (nodes Nodes) findByPastelID(id string) *Node {
 	return nil
 }
 
-func (nodes *Nodes) sendImage(ctx context.Context, filename string) error {
+func (nodes *Nodes) sendImage(ctx context.Context, file *image.File) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			return node.UploadImage(ctx, filename)
+			return node.UploadImage(ctx, file)
 		})
 	}
 	return group.Wait()

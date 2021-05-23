@@ -271,11 +271,11 @@ var ImageUploadPayload = Type("ImageUploadPayload", func() {
 		Meta("struct:field:name", "Bytes")
 		Description("File to upload")
 	})
-	Attribute("filepath", String, func() {
+	Attribute("filename", String, func() {
 		Meta("swagger:example", "false")
-		Description("Path to file")
+		Description("For internal use")
 	})
-	// Required("file")
+	Required("file")
 })
 
 // ImageUploadResult is image upload result.

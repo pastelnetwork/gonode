@@ -21,7 +21,7 @@ func TestStatusNames(t *testing.T) {
 				StatusTicketAccepted,
 				StatusTicketRegistered,
 				StatusTicketActivated,
-				StatusErrorTooLowFee,
+				ErrorInsufficientFee,
 				StatusErrorFGPTNotMatch,
 				StatusTaskRejected,
 				StatusTaskCompleted,
@@ -72,8 +72,8 @@ func TestStatusString(t *testing.T) {
 			status:        StatusTicketActivated,
 			expectedValue: statusNames[StatusTicketActivated],
 		}, {
-			status:        StatusErrorTooLowFee,
-			expectedValue: statusNames[StatusErrorTooLowFee],
+			status:        ErrorInsufficientFee,
+			expectedValue: statusNames[ErrorInsufficientFee],
 		}, {
 			status:        StatusErrorFGPTNotMatch,
 			expectedValue: statusNames[StatusErrorFGPTNotMatch],

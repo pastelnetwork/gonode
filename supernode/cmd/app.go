@@ -10,6 +10,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
+	"github.com/pastelnetwork/gonode/common/service/image"
+	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
@@ -109,15 +111,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	pastelClient := pastel.NewClient(&config.Pastel)
 	nodeClient := client.New()
 	db := memory.NewKeyValue()
+	imageStorage := image.NewStorage(fs.NewFileStorage(config.TempDir))
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// server
 	grpc := server.New(&config.Server,
-		walletnode.NewRegisterArtwork(artworkRegister, config.TempDir),
+		walletnode.NewRegisterArtwork(artworkRegister, imageStorage),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, artworkRegister, grpc)
+	return runServices(ctx, imageStorage, artworkRegister, grpc)
 }

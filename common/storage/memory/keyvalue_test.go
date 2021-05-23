@@ -32,7 +32,7 @@ func TestGet(t *testing.T) {
 			expectedValue: []byte("bar"),
 		}, {
 			key:           "not-exist",
-			expectedError: storage.ErrKeyNotFound,
+			expectedError: storage.ErrKeyValueNotFound,
 			expectedValue: nil,
 		},
 	}

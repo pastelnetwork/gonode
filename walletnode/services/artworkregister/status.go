@@ -10,7 +10,7 @@ const (
 	StatusTicketRegistered
 	StatusTicketActivated
 	// Error
-	StatusErrorTooLowFee
+	ErrorInsufficientFee
 	StatusErrorFGPTNotMatch
 	// Final
 	StatusTaskRejected
@@ -24,7 +24,7 @@ var statusNames = map[Status]string{
 	StatusTicketAccepted:    "Ticket Accepted",
 	StatusTicketRegistered:  "Ticket Registered",
 	StatusTicketActivated:   "Ticket Activated",
-	StatusErrorTooLowFee:    "Error Too Low Fee",
+	ErrorInsufficientFee:    "Error Insufficient Fee",
 	StatusErrorFGPTNotMatch: "Error FGPT Not Match",
 	StatusTaskRejected:      "Task Rejected",
 	StatusTaskCompleted:     "Task Completed",
