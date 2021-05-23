@@ -21,7 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
-	"github.com/pastelnetwork/gonode/supernode/p2p"
+	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 

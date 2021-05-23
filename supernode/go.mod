@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/pastelnetwork/gonode/common v0.0.0
-	github.com/pastelnetwork/gonode/p2p/kademlia v0.0.0-00010101000000-000000000000
+	github.com/pastelnetwork/gonode/p2p v0.0.0-00010101000000-000000000000
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/stretchr/testify v1.7.0
@@ -18,6 +18,6 @@ replace github.com/pastelnetwork/gonode/proto => ../proto
 
 replace github.com/pastelnetwork/gonode/pastel => ../pastel
 
-replace github.com/pastelnetwork/gonode/supernode/p2p => ./p2p
+replace github.com/pastelnetwork/gonode/p2p => ../p2p
 
 replace github.com/pastelnetwork/gonode/p2p/kademlia => ../p2p/kademlia
