@@ -1,8 +1,5 @@
 pastel-api:
-  hostname: "127.0.0.1"
   port: 19932
-  username: "rt"
-  password: "rt"
 
 node:
   # `pastel_id` must match to active `PastelID` from masternode.

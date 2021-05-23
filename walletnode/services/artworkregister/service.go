@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/service/image"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -32,12 +34,21 @@ func (service *Service) Run(ctx context.Context) error {
 
 	// NOTE: Before releasing, should be reomved (for testing). Used to bypass REST API.
 	if test := sys.GetStringEnv("TICKET", ""); test != "" {
-		var ticket Ticket
+		ticket := struct {
+			Ticket
+			ImagePath *string `json:"image_path"`
+		}{}
 		if err := json.Unmarshal([]byte(test), &ticket); err != nil {
 			return errors.Errorf("failed to marshal ticket %q : %w", test, err)
 		}
+
+		if imagePath := ticket.ImagePath; imagePath != nil {
+			imageStorage := image.NewStorage(fs.NewFileStorage("/"))
+			ticket.Image = image.NewFile(imageStorage, *imagePath)
+		}
+
 		go func() {
-			service.AddTask(&ticket)
+			service.AddTask(&ticket.Ticket)
 		}()
 	}
 
