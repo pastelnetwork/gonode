@@ -71,6 +71,11 @@ func (app *App) SetCustomAppHelpTemplate(appHelperTemplate string) {
 	app.CustomAppHelpTemplate = appHelperTemplate
 }
 
+// SetSubcommandHelpTemplate sets custom SubcommandHelpTemplate to cli
+func SetSubcommandHelpTemplate(subcommandHelpTemplate string) {
+	cli.SubcommandHelpTemplate = subcommandHelpTemplate
+}
+
 // NewApp create a new instance of the App struct
 func NewApp(name string) *App {
 	app := cli.NewApp()
