@@ -49,7 +49,7 @@ func (service *Service) Run(ctx context.Context) error {
 			imageStorage := artwork.NewStorage(fs.NewFileStorage(baseDir))
 			ticket.Image = artwork.NewFile(imageStorage, filename)
 			if err := ticket.Image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
-				return nil
+				return err
 			}
 			group.Go(func() (err error) {
 				return imageStorage.Run(ctx)
