@@ -394,6 +394,7 @@ func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, finalComb
 	return dupedetection.MeasureImageSimilarity(candidateImageFingerprint, finalCombinedImageFingerprintArray, config)
 }
 
+// MeasureResult contains AUPRC measure results
 type MeasureResult struct {
 	AUPRC            float64
 	DupeAccuracy     float64

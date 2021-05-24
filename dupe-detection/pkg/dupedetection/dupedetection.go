@@ -140,7 +140,7 @@ func ComputeImageDeepLearningFeatures(imagePath string) ([][]float64, error) {
 	return fingerprints, nil
 }
 
-func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, config ComputeConfig) ([]float64, error) {
+func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorMI := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -165,7 +165,7 @@ func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalC
 	return similarityScoreVectorMI, nil
 }
 
-func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, config ComputeConfig) ([]float64, error) {
+func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorPearsonAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -189,7 +189,7 @@ func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, 
 	return similarityScoreVectorPearsonAll, nil
 }
 
-func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, config ComputeConfig) ([]float64, error) {
+func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorSpearmanAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -213,7 +213,7 @@ func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, 
 	return similarityScoreVectorSpearmanAll, nil
 }
 
-func computeKendallForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, config ComputeConfig) ([]float64, error) {
+func computeKendallForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorKendallAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -236,7 +236,7 @@ func computeKendallForAllFingerprintPairs(candidateImageFingerprint []float64, f
 	return similarityScoreVectorKendallAll, nil
 }
 
-func computeHoeffdingDForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, config ComputeConfig) ([]float64, error) {
+func computeHoeffdingDForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorHoeffdingBetaAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -259,7 +259,7 @@ func computeHoeffdingDForAllFingerprintPairs(candidateImageFingerprint []float64
 	return similarityScoreVectorHoeffdingBetaAll, nil
 }
 
-func computeBlomqvistBetaForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, config ComputeConfig) ([]float64, error) {
+func computeBlomqvistBetaForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorBlomqvistBetaAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
