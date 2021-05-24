@@ -5,9 +5,9 @@ import (
 	"math/rand"
 )
 
-var WrongFormatErr = errors.New("Unknown message format")
-var WrongSignatureErr = errors.New("Wrong signature")
-var IncorrectPastelIdErr = errors.New("Incorrect Pastel Id")
+var ErrWrongFormat = errors.New("Unknown message format")
+var ErrWrongSignature = errors.New("Wrong signature")
+var ErrIncorrectPastelID = errors.New("Incorrect Pastel Id")
 
 // Handshake message types.
 const (
@@ -17,16 +17,20 @@ const (
 	typeServerHandshakeMsg byte = 4
 )
 
+// EncryptionScheme type defines all supported encryption
 type EncryptionScheme byte
 
+// EncryptionScheme types
 const (
 	AES128 EncryptionScheme = iota
 	AES192
 	AES256
 )
 
+// SignScheme type defines all supported signature methods
 type SignScheme byte
 
+// SignScheme methods
 const (
 	ED448 SignScheme = iota
 )

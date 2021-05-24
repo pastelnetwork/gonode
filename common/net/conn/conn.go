@@ -5,8 +5,11 @@ import (
 	"net"
 )
 
-const MaxBufferSize = 32768    // size which can store about 1024 frames of AES256
-const MinBufferFrameSet = 1024 // can contains 32 frames of AES256
+// MaxBufferSize - size which can store about 1024 frames of AES256
+const MaxBufferSize = 32768
+
+// MinBufferFrameSet - can contains 32 frames of AES256
+const MinBufferFrameSet = 1024
 
 // Conn represents a secured connection.
 // which implements the net.Conn interface.
@@ -16,6 +19,7 @@ type Conn struct {
 	buffer []byte
 }
 
+// NewClientConn - Creates Client that should use to connect to a server
 func NewClientConn(conn net.Conn) *Conn {
 	var clientConn = Conn{
 		conn:   conn,
@@ -60,10 +64,11 @@ func (c *Conn) readRecord() (interface{}, error) {
 	case typeServerHandshakeMsg:
 		return DecodeServerHandshakeMsg(buf)
 	default:
-		return nil, WrongFormatErr
+		return nil, ErrWrongFormat
 	}
 }
 
+// Write - writes data to connection
 func (c *Conn) Write(data []byte) (int, error) {
 	if err := c.crypto.Handshake(); err != nil {
 		return 0, err
@@ -77,6 +82,7 @@ func (c *Conn) Write(data []byte) (int, error) {
 	return c.conn.Write(encryptedData)
 }
 
+// Read - reads data to connection
 func (c *Conn) Read(b []byte) (int, error) {
 	if err := c.crypto.Handshake(); err != nil {
 		return 0, err

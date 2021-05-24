@@ -8,8 +8,9 @@ import (
 	"github.com/cloudflare/circl/sign/ed448"
 )
 
-var ServerContextDoesNotMatchErr = errors.New("Server context does not match")
+var ErrServerContextDoesNotMatch = errors.New("Server context does not match")
 
+// Client struct that implements handshake process
 type Client struct {
 	conn                   Conn
 	secret                 ed448.PrivateKey
@@ -20,6 +21,7 @@ type Client struct {
 	isHandshakeEstablished bool
 }
 
+// NewClient creates a new Client
 func NewClient(conn Conn) *Client {
 	return &Client{
 		conn: conn,
@@ -52,7 +54,7 @@ func (c *Client) readServerHandshake() (*ServerHandshakeMessage, error) {
 }
 
 // ToDo: update with appropriate implementation
-func (c *Client) retrievePastelId() uint32 {
+func (c *Client) retrievePastelID() uint32 {
 	return 100
 }
 
@@ -66,24 +68,25 @@ func (c *Client) prepareClientHandshake() (*ClientHandshakeMessage, error) {
 	c.public = public
 	c.ctx = randomString(512)
 
-	pastelId := c.retrievePastelId()
+	pastelID := c.retrievePastelID()
 	msg := make([]byte, 4)
-	binary.LittleEndian.PutUint32(msg, pastelId)
+	binary.LittleEndian.PutUint32(msg, pastelID)
 
-	signedPastelId := ed448.Sign(c.secret, msg, c.ctx)
+	signedPastelID := ed448.Sign(c.secret, msg, c.ctx)
 
 	return &ClientHandshakeMessage{
-		signedPastelId: signedPastelId,
+		signedPastelID: signedPastelID,
 		pubKey:         c.public,
 		ctx:            []byte(c.ctx),
 	}, nil
 }
 
 // ToDo: update with appropriate implementation
-func (c *Client) verifyPastelId(pastelId []byte) bool {
+func (c *Client) verifyPastelID(_ []byte) bool {
 	return true
 }
 
+// Handshake - does handshake process with a server
 func (c *Client) Handshake() error {
 	clientHello := c.prepareHelloMessage()
 	if _, err := c.conn.write(clientHello.marshall()); err != nil {
@@ -112,28 +115,30 @@ func (c *Client) Handshake() error {
 	}
 
 	if bytes.Compare([]byte(c.ctx), serverHandshakeMessage.ctx) != 0 {
-		return ServerContextDoesNotMatchErr
+		return ErrServerContextDoesNotMatch
 	}
 
-	if ed448.Verify(serverHandshakeMessage.pubKey, serverHandshakeMessage.pastelId, serverHandshakeMessage.signedPastelId, c.ctx) {
-		return WrongSignatureErr
+	if ed448.Verify(serverHandshakeMessage.pubKey, serverHandshakeMessage.pastelID, serverHandshakeMessage.signedPastelID, c.ctx) {
+		return ErrWrongSignature
 	}
 
 	// save public key from server
 	c.serverPublicKey = serverHandshakeMessage.pubKey
 
-	if !c.verifyPastelId(serverHandshakeMessage.pastelId) {
-		return IncorrectPastelIdErr
+	if !c.verifyPastelID(serverHandshakeMessage.pastelID) {
+		return ErrIncorrectPastelID
 	}
 
 	c.isHandshakeEstablished = true
 	return nil
 }
 
+// IsHandshakeEstablished - returns flag that says is handshake process finished
 func (c *Client) IsHandshakeEstablished() bool {
 	return c.isHandshakeEstablished
 }
 
+// GetCryptoProtocol - returns current encryption scheme that supports by server
 func (c *Client) GetCryptoProtocol() EncryptionScheme {
 	return c.encryptionScheme
 }

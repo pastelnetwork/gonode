@@ -1,5 +1,6 @@
 package conn
 
+// ServerHelloMessage - first server message during handshake
 type ServerHelloMessage struct {
 	chosenEncryption EncryptionScheme
 	chosenSignature  SignScheme
@@ -19,9 +20,10 @@ func (msg *ServerHelloMessage) marshall() []byte {
 	return encodedMsg
 }
 
+// DecodeServerMsg - unmarshall []byte to ServerHelloMessage
 func DecodeServerMsg(msg []byte) (*ServerHelloMessage, error) {
 	if msg[0] != typeServerHello {
-		return nil, WrongFormatErr
+		return nil, ErrWrongFormat
 	}
 
 	publicKey := make([]byte, msg[3])
@@ -33,32 +35,33 @@ func DecodeServerMsg(msg []byte) (*ServerHelloMessage, error) {
 	}, nil
 }
 
+// ServerHandshakeMessage - second server message during handshake process
 type ServerHandshakeMessage struct {
-	pastelId       []byte
-	signedPastelId []byte
+	pastelID       []byte
+	signedPastelID []byte
 	pubKey         []byte
 	ctx            []byte
 	aes256key      []byte
 }
 
 func (msg *ServerHandshakeMessage) marshall() []byte {
-	var pastelIdLen = len(msg.pastelId)
-	var signedPastelIdLen = len(msg.signedPastelId)
+	var pastelIDLen = len(msg.pastelID)
+	var signedPastelIDLen = len(msg.signedPastelID)
 	var pubKeyLen = len(msg.pubKey)
 	var ctxLen = len(msg.pubKey)
 	var aes265keyLen = len(msg.aes256key) // should be 32 byte
 
-	encodedMsg := make([]byte, 4+pastelIdLen+signedPastelIdLen+pubKeyLen)
+	encodedMsg := make([]byte, 4+pastelIDLen+signedPastelIDLen+pubKeyLen)
 
 	encodedMsg[0] = typeClientHandshakeMsg
-	encodedMsg[1] = byte(pastelIdLen)
-	copy(encodedMsg[2:], msg.pastelId)
+	encodedMsg[1] = byte(pastelIDLen)
+	copy(encodedMsg[2:], msg.pastelID)
 
-	shift := 2 + pastelIdLen // msg type + len and array itself
-	encodedMsg[shift] = byte(signedPastelIdLen)
-	copy(encodedMsg[2:], msg.signedPastelId)
+	shift := 2 + pastelIDLen // msg type + len and array itself
+	encodedMsg[shift] = byte(signedPastelIDLen)
+	copy(encodedMsg[2:], msg.signedPastelID)
 
-	shift += 1 + signedPastelIdLen // msg type + len and array itself
+	shift += 1 + signedPastelIDLen // msg type + len and array itself
 	encodedMsg[shift] = byte(pubKeyLen)
 	copy(encodedMsg[shift+1:], msg.pubKey)
 
@@ -73,17 +76,18 @@ func (msg *ServerHandshakeMessage) marshall() []byte {
 	return encodedMsg
 }
 
+// DecodeServerHandshakeMsg - unmarshall []byte to ServerHandshakeMessage
 func DecodeServerHandshakeMsg(msg []byte) (*ServerHandshakeMessage, error) {
 	if msg[0] != typeClientHandshakeMsg {
-		return nil, WrongFormatErr
+		return nil, ErrWrongFormat
 	}
 
-	pastelId := make([]byte, msg[1])
-	copy(pastelId, msg[2:])
+	pastelID := make([]byte, msg[1])
+	copy(pastelID, msg[2:])
 
 	shift := 2 + msg[1] // msg type + len and array itself
-	signedPastelId := make([]byte, msg[shift])
-	copy(signedPastelId, msg[shift+1:])
+	signedPastelID := make([]byte, msg[shift])
+	copy(signedPastelID, msg[shift+1:])
 
 	shift += 1 + msg[1] // len and array itself
 	pubKey := make([]byte, msg[shift])
@@ -98,8 +102,8 @@ func DecodeServerHandshakeMsg(msg []byte) (*ServerHandshakeMessage, error) {
 	copy(aes256key, msg[shift+1:])
 
 	return &ServerHandshakeMessage{
-		pastelId:       pastelId,
-		signedPastelId: signedPastelId,
+		pastelID:       pastelID,
+		signedPastelID: signedPastelID,
 		pubKey:         pubKey,
 		ctx:            ctx,
 		aes256key:      aes256key,
