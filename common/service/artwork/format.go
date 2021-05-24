@@ -12,8 +12,6 @@ const (
 	JPEG Format = iota
 	PNG
 	GIF
-	TIFF
-	BMP
 )
 
 var formatExts = map[string]Format{
@@ -21,17 +19,12 @@ var formatExts = map[string]Format{
 	"jpeg": JPEG,
 	"png":  PNG,
 	"gif":  GIF,
-	"tif":  TIFF,
-	"tiff": TIFF,
-	"bmp":  BMP,
 }
 
 var formatNames = map[Format]string{
 	JPEG: "JPEG",
 	PNG:  "PNG",
 	GIF:  "GIF",
-	TIFF: "TIFF",
-	BMP:  "BMP",
 }
 
 // Format is an image file format.
