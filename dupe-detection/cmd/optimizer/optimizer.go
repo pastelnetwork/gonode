@@ -42,10 +42,10 @@ func objective(trial goptuna.Trial) (float64, error) {
 		return 0, errors.New(err)
 	}
 
-	config.MIThreshold, err = trial.SuggestFloat("MIThreshold", 5.2, 5.4)
+	/*config.MIThreshold, err = trial.SuggestFloat("MIThreshold", 5.2, 5.4)
 	if err != nil {
 		return 0, errors.New(err)
-	}
+	}*/
 
 	config.PearsonDupeThreshold, err = trial.SuggestFloat("Pearson", 0.99, 0.99999)
 	if err != nil {
@@ -101,7 +101,7 @@ func objective(trial goptuna.Trial) (float64, error) {
 	}*/
 
 	//config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho BootstrappedKendallTau BootstrappedBlomqvistBeta HoeffdingDRound1 HoeffdingDRound2"
-	config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
+	config.CorrelationMethodsOrder = "PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
 
 	err = trial.SetUserAttr("CorrelationMethodsOrder", config.CorrelationMethodsOrder)
 	if err != nil {
