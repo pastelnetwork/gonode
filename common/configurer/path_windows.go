@@ -22,7 +22,7 @@ var defaultConfigPaths = []string{
 
 // DefaultConfigPath returns the default config path for Windows OS.
 func DefaultConfigPath(filename string) string {
-	homeDir := os.UserHomeDir()
+	homeDir, _ := os.UserHomeDir()
 	appDir := beforeVistaAppDir
 
 	v, _ := syscall.GetVersion()
