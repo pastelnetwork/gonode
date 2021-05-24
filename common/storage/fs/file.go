@@ -37,7 +37,11 @@ func (fs *FS) Open(filename string) (storage.File, error) {
 func (fs *FS) Create(filename string) (storage.File, error) {
 	filename = filepath.Join(fs.dir, filename)
 
-	log.WithPrefix(logPrefix).Debugf("Create file %q", filename)
+	if _, err := os.Stat(filename); !os.IsNotExist(err) {
+		log.WithPrefix(logPrefix).Debugf("Rewrite file %q", filename)
+	} else {
+		log.WithPrefix(logPrefix).Debugf("Create file %q", filename)
+	}
 
 	file, err := os.Create(filename)
 	if err != nil {
