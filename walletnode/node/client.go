@@ -1,3 +1,7 @@
+//go:generate mockery --name=Client
+//go:generate mockery --name=Connection
+//go:generate mockery --name=RegisterArtwork
+
 package node
 
 import (
