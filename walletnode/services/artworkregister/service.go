@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/service/image"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
@@ -43,8 +43,8 @@ func (service *Service) Run(ctx context.Context) error {
 		}
 
 		if imagePath := ticket.ImagePath; imagePath != nil {
-			imageStorage := image.NewStorage(fs.NewFileStorage("/"))
-			ticket.Image = image.NewFile(imageStorage, *imagePath)
+			imageStorage := artwork.NewStorage(fs.NewFileStorage("/"))
+			ticket.Image = artwork.NewFile(imageStorage, *imagePath)
 		}
 
 		go func() {

@@ -1,10 +1,10 @@
 package artworkregister
 
-import "github.com/pastelnetwork/gonode/common/service/image"
+import "github.com/pastelnetwork/gonode/common/service/artwork"
 
 // Ticket represents artwork registration ticket.
 type Ticket struct {
-	Image                    *image.File `json:"image"`
+	Image                    *artwork.File `json:"image"`
 	Name                     string      `json:"name"`
 	Description              *string     `json:"description"`
 	Keywords                 *string     `json:"keywords"`

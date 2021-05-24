@@ -8,7 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/common/service/image"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
@@ -29,7 +29,7 @@ type Artwork struct {
 	*Common
 	register     *artworkregister.Service
 	db           storage.KeyValue
-	imageStorage *image.Storage
+	imageStorage *artwork.Storage
 	imageTTL     time.Duration
 }
 
@@ -155,7 +155,7 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 }
 
 // NewArtwork returns the artworks Artwork implementation.
-func NewArtwork(register *artworkregister.Service, imageStorage *image.Storage) *Artwork {
+func NewArtwork(register *artworkregister.Service, imageStorage *artwork.Storage) *Artwork {
 	return &Artwork{
 		Common:       NewCommon(),
 		register:     register,

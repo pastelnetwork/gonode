@@ -7,7 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/image"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 )
@@ -17,7 +17,7 @@ type Task struct {
 	task.Task
 	*Service
 
-	Image *image.File
+	Image *artwork.File
 
 	acceptedMu sync.Mutex
 	accpeted   Nodes
@@ -143,7 +143,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 }
 
 // UploadImage uploads an image
-func (task *Task) UploadImage(_ context.Context, image *image.File) error {
+func (task *Task) UploadImage(_ context.Context, image *artwork.File) error {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return err
 	}
