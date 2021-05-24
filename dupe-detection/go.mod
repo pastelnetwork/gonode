@@ -11,6 +11,7 @@ require (
 	github.com/galeone/tensorflow v2.4.0-rc0.0.20210202175351-640a390c2283+incompatible
 	github.com/galeone/tfgo v0.0.0-20210204182614-84b9a5e77f79
 	github.com/gitchander/permutation v0.0.0-20210302120832-6ab79d7de174
+	github.com/kofalt/go-memoize v0.0.0-20200917044458-9b55a8d73e1c // indirect
 	github.com/kzahedi/goent v0.0.0-20190403094137-49773660fa36
 	github.com/kzahedi/gomi v0.0.0-20190403094142-0fd11bdc052f
 	github.com/mattn/go-sqlite3 v1.14.6
@@ -18,6 +19,7 @@ require (
 	github.com/mxschmitt/golang-combinations v1.1.0
 	github.com/pa-m/sklearn v0.0.0-20200711083454-beb861ee48b1
 	github.com/pastelnetwork/gonode/common v0.0.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/profile v1.5.0
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c

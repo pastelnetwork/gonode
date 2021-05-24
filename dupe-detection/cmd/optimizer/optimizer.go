@@ -20,6 +20,8 @@ import (
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 )
 
+const cacheFileName = "cached"
+
 var evaluateNumberOfTimes = 500
 var rootDir = ""
 var numberOfImagesToValidate = 0
@@ -198,8 +200,13 @@ func main() {
 	numberOfImagesToValidate = *numberOfImagesToValidatePtr
 	evaluateNumberOfTimes = *evaluateNumberOfTimesPtr
 
+	memoizer := dupedetection.GetMemoizer()
+	memoizer.Storage.LoadFile(cacheFileName)
+
 	if err := runStudy(*goptunaStudyNamePtr); err != nil {
 		log.Print(errors.ErrorStack(err))
 		panic(err)
 	}
+
+	memoizer.Storage.SaveFile(cacheFileName)
 }
