@@ -3,9 +3,10 @@ package artworkregister
 import (
 	"context"
 	"encoding/json"
+	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/service/image"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
@@ -31,6 +32,7 @@ type Service struct {
 
 // Run starts worker.
 func (service *Service) Run(ctx context.Context) error {
+	group, ctx := errgroup.WithContext(ctx)
 
 	// NOTE: Before releasing, should be reomved (for testing). Used to bypass REST API.
 	if test := sys.GetStringEnv("TICKET", ""); test != "" {
@@ -43,16 +45,23 @@ func (service *Service) Run(ctx context.Context) error {
 		}
 
 		if imagePath := ticket.ImagePath; imagePath != nil {
-			imageStorage := image.NewStorage(fs.NewFileStorage("/"))
-			ticket.Image = image.NewFile(imageStorage, *imagePath)
+			baseDir, filename := filepath.Split(*imagePath)
+			imageStorage := artwork.NewStorage(fs.NewFileStorage(baseDir))
+			ticket.Image = artwork.NewFile(imageStorage, filename)
+			if err := ticket.Image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
+				return err
+			}
+			group.Go(func() (err error) {
+				return imageStorage.Run(ctx)
+			})
 		}
 
-		go func() {
+		group.Go(func() (err error) {
 			service.AddTask(&ticket.Ticket)
-		}()
+			return nil
+		})
 	}
 
-	group, ctx := errgroup.WithContext(ctx)
 	group.Go(func() (err error) {
 		defer errors.Recover(func(recErr error) { err = recErr })
 		return service.Worker.Run(ctx)
@@ -75,11 +84,11 @@ func (service *Service) Task(id string) *Task {
 }
 
 // AddTask runs a new task of the registration artwork and returns its taskID.
-func (service *Service) AddTask(ticket *Ticket) (string, error) {
+func (service *Service) AddTask(ticket *Ticket) string {
 	task := NewTask(service, ticket)
 	service.Worker.AddTask(task)
 
-	return task.ID(), nil
+	return task.ID()
 }
 
 // NewService returns a new Service instance.

@@ -38,10 +38,10 @@ func (fs *FS) Create(filename string) (storage.File, error) {
 	filename = filepath.Join(fs.dir, filename)
 
 	if _, err := os.Stat(filename); !os.IsNotExist(err) {
-		return nil, storage.ErrFileExists
+		log.WithPrefix(logPrefix).Debugf("Rewrite file %q", filename)
+	} else {
+		log.WithPrefix(logPrefix).Debugf("Create file %q", filename)
 	}
-
-	log.WithPrefix(logPrefix).Debugf("Create file %q", filename)
 
 	file, err := os.Create(filename)
 	if err != nil {

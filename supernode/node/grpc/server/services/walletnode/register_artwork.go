@@ -7,7 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/image"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
@@ -22,7 +22,7 @@ type RegisterArtwork struct {
 	pb.UnimplementedRegisterArtworkServer
 
 	*common.RegisterArtwork
-	imageStorage *image.Storage
+	imageStorage *artwork.Storage
 }
 
 // Session implements walletnode.RegisterArtworkServer.Session()
@@ -180,7 +180,7 @@ func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
 }
 
 // NewRegisterArtwork returns a new RegisterArtwork instance.
-func NewRegisterArtwork(service *artworkregister.Service, imageStorage *image.Storage) *RegisterArtwork {
+func NewRegisterArtwork(service *artworkregister.Service, imageStorage *artwork.Storage) *RegisterArtwork {
 	return &RegisterArtwork{
 		RegisterArtwork: common.NewRegisterArtwork(service),
 		imageStorage:    imageStorage,
