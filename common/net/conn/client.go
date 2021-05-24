@@ -8,6 +8,7 @@ import (
 	"github.com/cloudflare/circl/sign/ed448"
 )
 
+// ErrServerContextDoesNotMatch - error in case of wrong context
 var ErrServerContextDoesNotMatch = errors.New("Server context does not match")
 
 // Client struct that implements handshake process

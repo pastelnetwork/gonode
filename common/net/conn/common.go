@@ -5,8 +5,13 @@ import (
 	"math/rand"
 )
 
+// ErrWrongFormat - error when structure can't be parsed
 var ErrWrongFormat = errors.New("Unknown message format")
+
+// ErrWrongSignature - error when signature is incorrect
 var ErrWrongSignature = errors.New("Wrong signature")
+
+// ErrIncorrectPastelID - error when pastel ID is wrong
 var ErrIncorrectPastelID = errors.New("Incorrect Pastel Id")
 
 // Handshake message types.
