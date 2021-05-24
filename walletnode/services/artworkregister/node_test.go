@@ -196,7 +196,7 @@ func TestNodesFindByPastelID(t *testing.T) {
 
 	testCases := []struct {
 		nodes        Nodes
-		pastelId     string
+		pastelID     string
 		expectedNode *Node
 	}{
 		{
@@ -204,14 +204,14 @@ func TestNodesFindByPastelID(t *testing.T) {
 				&Node{PastelID: "1"},
 				&Node{PastelID: "2"},
 			},
-			pastelId:     "2",
+			pastelID:     "2",
 			expectedNode: &Node{PastelID: "2"},
 		}, {
 			nodes: Nodes{
 				&Node{PastelID: "1"},
 				&Node{PastelID: "2"},
 			},
-			pastelId:     "3",
+			pastelID:     "3",
 			expectedNode: nil,
 		},
 	}
@@ -222,7 +222,7 @@ func TestNodesFindByPastelID(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			node := testCase.nodes.findByPastelID(testCase.pastelId)
+			node := testCase.nodes.findByPastelID(testCase.pastelID)
 			assert.Equal(t, testCase.expectedNode, node)
 		})
 	}
