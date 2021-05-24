@@ -47,8 +47,8 @@ func (service *Service) Run(ctx context.Context) error {
 	return service.dht.Bootstrap(ctx)
 }
 
-// NewService returns a new Service instance.
-func NewService(config *Config) (*Service, error) {
+// New returns a new Service instance.
+func New(config Config) (*Service, error) {
 	var bootstrapNodes []*kademlia.NetworkNode
 	if config.BootstrapIP != "" || config.BootstrapPort != "" {
 		bootstrapNode := kademlia.NewNetworkNode(config.BootstrapIP, config.BootstrapPort)
@@ -57,7 +57,7 @@ func NewService(config *Config) (*Service, error) {
 
 	dht, err := kademlia.NewDHT(&mem.Key{}, &kademlia.Options{
 		BootstrapNodes: bootstrapNodes,
-		IP:             config.IP,
+		IP:             config.ListenAddress,
 		Port:           config.Port,
 		UseStun:        config.UseStun,
 	})

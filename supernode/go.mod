@@ -21,3 +21,7 @@ replace github.com/pastelnetwork/gonode/pastel => ../pastel
 replace github.com/pastelnetwork/gonode/p2p => ../p2p
 
 replace github.com/pastelnetwork/gonode/p2p/kademlia => ../p2p/kademlia
+
+replace github.com/pastelnetwork/gonode/p2p/kademlia/dao => ../p2p/kademlia/dao
+
+replace github.com/pastelnetwork/gonode/p2p/kademlia/crypto => ../p2p/kademlia/crypto
