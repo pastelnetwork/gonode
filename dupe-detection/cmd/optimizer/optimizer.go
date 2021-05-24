@@ -36,6 +36,11 @@ func objective(trial goptuna.Trial) (float64, error) {
 		return 0, errors.New(err)
 	}
 
+	err = trial.SetUserAttr("TrimByPercentile", fmt.Sprintf("%v", config.TrimByPercentile))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+
 	config.NumberOfImagesToValidate = numberOfImagesToValidate
 	err = trial.SetUserAttr("MaxImageCountToEvaluate", fmt.Sprintf("%v", config.NumberOfImagesToValidate*2))
 	if err != nil {
