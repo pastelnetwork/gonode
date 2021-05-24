@@ -111,16 +111,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	pastelClient := pastel.NewClient(&config.Pastel)
 	nodeClient := client.New()
 	db := memory.NewKeyValue()
-	imageStorage := artwork.NewStorage(fs.NewFileStorage(config.TempDir))
+	artworkStorage := artwork.NewStorage(fs.NewFileStorage(config.TempDir))
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient)
 
 	// server
 	grpc := server.New(&config.Server,
-		walletnode.NewRegisterArtwork(artworkRegister, imageStorage),
+		walletnode.NewRegisterArtwork(artworkRegister, artworkStorage),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, imageStorage, artworkRegister, grpc)
+	return runServices(ctx, artworkStorage, artworkRegister, grpc)
 }

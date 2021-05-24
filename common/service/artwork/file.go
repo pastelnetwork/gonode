@@ -74,11 +74,23 @@ func (file *File) Create() (storage.File, error) {
 	return fl, nil
 }
 
-// Copy creates a copy of the current file.
-func (file *File) Copy() (*File, error) {
+// Remove removes the file.
+func (file *File) Remove() error {
 	file.Lock()
 	defer file.Unlock()
 
+	delete(file.storage.files, file.name)
+
+	if !file.isCreated {
+		return nil
+	}
+	file.isCreated = false
+
+	return file.storage.Remove(file.name)
+}
+
+// Copy creates a copy of the current file.
+func (file *File) Copy() (*File, error) {
 	src, err := file.Open()
 	if err != nil {
 		return nil, err
@@ -100,9 +112,6 @@ func (file *File) Copy() (*File, error) {
 
 // ResizeImage resizes image.
 func (file *File) ResizeImage(width, height int) error {
-	file.Lock()
-	defer file.Unlock()
-
 	src, err := file.openImage()
 	if err != nil {
 		return err
@@ -114,21 +123,6 @@ func (file *File) ResizeImage(width, height int) error {
 	}
 
 	return file.saveImage(dst)
-}
-
-// Remove removes the file.
-func (file *File) Remove() error {
-	file.Lock()
-	defer file.Unlock()
-
-	delete(file.storage.files, file.name)
-
-	if !file.isCreated {
-		return nil
-	}
-	file.isCreated = false
-
-	return file.storage.Remove(file.name)
 }
 
 // RemoveAfter removes the file after the specified duration.

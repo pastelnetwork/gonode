@@ -108,10 +108,7 @@ func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload)
 	}
 	ticket.Image = file
 
-	taskID, err := service.register.AddTask(ticket)
-	if err != nil {
-		return nil, artworks.MakeInternalServerError(err)
-	}
+	taskID := service.register.AddTask(ticket)
 	res = &artworks.RegisterResult{
 		TaskID: taskID,
 	}

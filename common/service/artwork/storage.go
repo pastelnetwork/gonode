@@ -21,11 +21,11 @@ type Storage struct {
 }
 
 // Run removes all files when the context is canceled.
-func (manager *Storage) Run(ctx context.Context) error {
+func (storage *Storage) Run(ctx context.Context) error {
 	<-ctx.Done()
 
 	var errs error
-	for _, file := range manager.files {
+	for _, file := range storage.files {
 		if err := file.Remove(); err != nil {
 			errs = multierror.Append(errs, err)
 		}
@@ -35,19 +35,19 @@ func (manager *Storage) Run(ctx context.Context) error {
 }
 
 // NewFile returns a new File instance with a unique name.
-func (manager *Storage) NewFile() *File {
-	id := atomic.AddInt64(&manager.idCounter, 1)
-	name := fmt.Sprintf("%s-%d", manager.prefix, id)
+func (storage *Storage) NewFile() *File {
+	id := atomic.AddInt64(&storage.idCounter, 1)
+	name := fmt.Sprintf("%s-%d", storage.prefix, id)
 
-	file := NewFile(manager, name)
-	manager.files[name] = file
+	file := NewFile(storage, name)
+	storage.files[name] = file
 
 	return file
 }
 
 // File returns File by the given name.
-func (manager *Storage) File(name string) (*File, error) {
-	file, ok := manager.files[name]
+func (storage *Storage) File(name string) (*File, error) {
+	file, ok := storage.files[name]
 	if !ok {
 		return nil, errors.New("image not found")
 	}
