@@ -1,4 +1,4 @@
-package kademlia
+package sqlite
 
 import (
 	"context"
@@ -7,13 +7,14 @@ import (
 
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
 )
 
 var (
 	logPrefix = "p2p"
 )
 
-func migrate(db *sql.DB) error {
+func Migrate(db *sql.DB) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
@@ -29,7 +30,8 @@ func migrate(db *sql.DB) error {
 	return nil
 }
 
-func store(db *sql.DB, key []byte, data []byte, replication, expiration time.Time) (int64, error) {
+func Store(db *sql.DB, data []byte, replication, expiration time.Time) (int64, error) {
+	key := crypto.GetKey(data)
 	query := "INSERT INTO keys(key, data, replication, expiration) VALUES (?, ?, ?, ?)"
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -58,7 +60,7 @@ func store(db *sql.DB, key []byte, data []byte, replication, expiration time.Tim
 	return rows, nil
 }
 
-func retrieve(db *sql.DB, key []byte) ([]byte, error) {
+func Retrieve(db *sql.DB, key []byte) ([]byte, error) {
 	var data []byte
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -68,14 +70,14 @@ func retrieve(db *sql.DB, key []byte) ([]byte, error) {
 	rows, err := db.QueryContext(ctx, "SELECT data FROM keys WHERE key=? LIMIT 1", string(key))
 	if err != nil {
 		log.WithContext(ctx).Infof("Error %s while selecting key=%s", err, string(key))
-		return []byte{}, err
+		return []byte(""), err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&data); err != nil {
 			log.WithContext(ctx).Infof("Error %s when scanning rows", err)
-			return []byte{}, err
+			return []byte(""), err
 		}
 	}
 
@@ -84,19 +86,19 @@ func retrieve(db *sql.DB, key []byte) ([]byte, error) {
 	// encounter an auto-commit error and be forced to rollback changes.
 	if err := rows.Close(); err != nil {
 		log.WithContext(ctx).Infof("Error %s while closing rows", err)
-		return []byte{}, err
+		return []byte(""), err
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
 		log.WithContext(ctx).Infof("Error %s after scanning rows", err)
-		return []byte{}, err
+		return []byte(""), err
 	}
 
 	return data, nil
 }
 
-func expireKeys(db *sql.DB) error {
+func ExpireKeys(db *sql.DB) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -111,7 +113,7 @@ func expireKeys(db *sql.DB) error {
 	return nil
 }
 
-func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
+func GetAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 	var keys [][]byte
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -153,7 +155,7 @@ func getAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 	return keys, nil
 }
 
-func remove(db *sql.DB, key []byte) error {
+func Remove(db *sql.DB, key []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

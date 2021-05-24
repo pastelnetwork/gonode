@@ -5,6 +5,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/dao/mem"
 )
 
 const (
@@ -18,7 +19,7 @@ type Service struct {
 
 // DHT represents the methods by which a library consumer interacts with a DHT.
 type DHT interface {
-	Store(ctx context.Context, data []byte, key []byte) (id string, err error)
+	Store(ctx context.Context, data []byte) (id string, err error)
 	Get(ctx context.Context, key string) (data []byte, found bool, err error)
 	CreateSocket() error
 	Listen(ctx context.Context) error
@@ -54,7 +55,7 @@ func NewService(config *Config) (*Service, error) {
 		bootstrapNodes = append(bootstrapNodes, bootstrapNode)
 	}
 
-	dht, err := kademlia.NewDHT(&kademlia.MemoryStore{}, &kademlia.Options{
+	dht, err := kademlia.NewDHT(&mem.Key{}, &kademlia.Options{
 		BootstrapNodes: bootstrapNodes,
 		IP:             config.IP,
 		Port:           config.Port,

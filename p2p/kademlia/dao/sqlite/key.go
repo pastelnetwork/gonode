@@ -1,4 +1,4 @@
-package kademlia
+package sqlite
 
 import (
 	"database/sql"
@@ -9,48 +9,48 @@ import (
 
 // SQLiteStore is a simple in-memory key/value store used for unit testing, and
 // the CLI example
-type SQLiteStore struct {
+type Key struct {
 	db *sql.DB
 }
 
 // GetAllKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (ss *SQLiteStore) GetAllKeysForReplication() ([][]byte, error) {
-	return getAllKeysForReplication(ss.db)
+func (k *Key) GetAllKeysForReplication() ([][]byte, error) {
+	return GetAllKeysForReplication(k.db)
 }
 
 // ExpireKeys should expire all key/values due for expiration.
-func (ss *SQLiteStore) ExpireKeys() error {
-	return expireKeys(ss.db)
+func (k *Key) ExpireKeys() error {
+	return ExpireKeys(k.db)
 }
 
 // Init initializes the Store
-func (ss *SQLiteStore) Init() error {
+func (k *Key) Init() error {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	if err := migrate(ss.db); err != nil {
+	if err := Migrate(k.db); err != nil {
 		return err
 	}
 
-	ss.db = db
+	k.db = db
 	return nil
 }
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (ss *SQLiteStore) Store(key []byte, data []byte, replication time.Time, expiration time.Time, publisher bool) error {
-	_, err := store(ss.db, key, data, replication, expiration)
+func (k *Key) Store(data []byte, replication time.Time, expiration time.Time, publisher bool) error {
+	_, err := Store(k.db, data, replication, expiration)
 	return err
 }
 
 // Retrieve will return the local key/value if it exists
-func (ss *SQLiteStore) Retrieve(key []byte) (data []byte, found bool) {
-	data, err := retrieve(ss.db, key)
+func (k *Key) Retrieve(key []byte) (data []byte, found bool) {
+	data, err := Retrieve(k.db, key)
 	if err != nil {
 		return data, false
 	}
@@ -59,6 +59,6 @@ func (ss *SQLiteStore) Retrieve(key []byte) (data []byte, found bool) {
 }
 
 // Delete deletes a key/value pair from the MemoryStore
-func (ss *SQLiteStore) Delete(key []byte) error {
-	return remove(ss.db, key)
+func (k *Key) Delete(key []byte) error {
+	return Remove(k.db, key)
 }

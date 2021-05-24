@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/p2p/kademlia/dao/mem"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -388,8 +389,7 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 
 	payload := [1000000]byte{}
 
-	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
-	id, err := dht1.Store(context.Background(), payload[:], key)
+	id, err := dht1.Store(context.Background(), payload[:])
 	assert.NoError(t, err)
 
 	time.Sleep(1 * time.Second)
@@ -618,8 +618,7 @@ func TestStoreReplication(t *testing.T) {
 
 	dht.Bootstrap(context.Background())
 
-	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
-	dht.Store(context.Background(), []byte("foo"), key)
+	dht.Store(context.Background(), []byte("foo"))
 
 	<-replicate
 
@@ -647,8 +646,7 @@ func TestStoreExpiration(t *testing.T) {
 		dht.Listen(context.Background())
 	}()
 
-	key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
-	k, _ := dht.Store(context.Background(), []byte("foo"), key)
+	k, _ := dht.Store(context.Background(), []byte("foo"))
 
 	v, exists, _ := dht.Get(context.Background(), k)
 	assert.Equal(t, true, exists)
@@ -664,7 +662,7 @@ func TestStoreExpiration(t *testing.T) {
 	dht.Disconnect()
 }
 
-func getInMemoryStore() *MemoryStore {
-	memStore := &MemoryStore{}
+func getInMemoryStore() *mem.Key {
+	memStore := &mem.Key{}
 	return memStore
 }

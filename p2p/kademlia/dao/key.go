@@ -1,15 +1,15 @@
-package kademlia
+package dao
 
 import (
 	"time"
 )
 
-// Store is the interface for implementing the storage mechanism for the
+// Key is the interface for implementing the storage mechanism for the
 // DHT.
-type Store interface {
+type Key interface {
 	// Store should store a key/value pair for the local node with the
 	// given replication and expiration times.
-	Store(key []byte, data []byte, replication time.Time, expiration time.Time, publisher bool) error
+	Store(data []byte, replication time.Time, expiration time.Time, publisher bool) error
 
 	// Retrieve should return the local key/value if it exists.
 	Retrieve(key []byte) (data []byte, found bool)
@@ -27,7 +27,4 @@ type Store interface {
 
 	// ExpireKeys should expire all key/values due for expiration.
 	ExpireKeys() error
-
-	// GetKey returns the key for data
-	GetKey(data []byte) ([]byte, error)
 }

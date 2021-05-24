@@ -11,6 +11,8 @@ import (
 	"time"
 
 	b58 "github.com/jbenet/go-base58"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/dao"
 )
 
 // DHT represents the state of the local node in the distributed hash table
@@ -18,7 +20,7 @@ type DHT struct {
 	ht         *hashTable
 	options    *Options
 	networking networking
-	store      Store
+	store      dao.Key
 }
 
 // Options contains configuration options for the local node
@@ -72,7 +74,7 @@ type Options struct {
 
 // NewDHT initializes a new DHT node. A store and options struct must be
 // provided.
-func NewDHT(store Store, options *Options) (*DHT, error) {
+func NewDHT(store dao.Key, options *Options) (*DHT, error) {
 	dht := &DHT{}
 
 	dht.options = options
@@ -140,10 +142,11 @@ func (dht *DHT) getExpirationTime(key []byte) time.Time {
 
 // Store stores data on the network. This will trigger an iterateStore message.
 // The base58 encoded identifier will be returned if the store is successful.
-func (dht *DHT) Store(ctx context.Context, data []byte, key []byte) (id string, err error) {
+func (dht *DHT) Store(ctx context.Context, data []byte) (id string, err error) {
+	key := crypto.GetKey(data)
 	expiration := dht.getExpirationTime(key)
 	replication := time.Now().Add(dht.options.TReplicate)
-	dht.store.Store(key, data, replication, expiration, true)
+	dht.store.Store(data, replication, expiration, true)
 	_, _, err = dht.iterate(ctx, iterateStore, key[:], data)
 	if err != nil {
 		return "", err
@@ -628,11 +631,10 @@ func (dht *DHT) listen(ctx context.Context) {
 			case messageTypeStore:
 				data := msg.Data.(*queryDataStore)
 				dht.addNode(ctx, newNode(msg.Sender))
-				//TODO: Get pastel generated key
-				key := []byte("cf23df2207d99a74fbe169e3eba035e633b65d94")
+				key := crypto.GetKey(data.Data)
 				expiration := dht.getExpirationTime(key)
 				replication := time.Now().Add(dht.options.TReplicate)
-				dht.store.Store(key, data.Data, replication, expiration, false)
+				dht.store.Store(data.Data, replication, expiration, false)
 			case messageTypePing:
 				response := &message{IsResponse: true}
 				response.Sender = dht.ht.Self
