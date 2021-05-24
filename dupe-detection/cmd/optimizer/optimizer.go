@@ -108,11 +108,27 @@ func objective(trial goptuna.Trial) (float64, error) {
 		return 0, errors.New(err)
 	}
 
-	aurpc, err := auprc.MeasureAUPRC(config)
+	aurpcResult, err := auprc.MeasureAUPRC(config)
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	return aurpc, nil
+	err = trial.SetUserAttr("DupeAccuracy", fmt.Sprintf("%v", aurpcResult.DupeAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("DupeCount", fmt.Sprintf("%v", aurpcResult.DupeCount))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("OriginalAccuracy", fmt.Sprintf("%v", aurpcResult.OriginalAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("OriginalCount", fmt.Sprintf("%v", aurpcResult.OriginalCount))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	return aurpcResult.AUPRC, nil
 }
 
 func runStudy(studyName string) error {

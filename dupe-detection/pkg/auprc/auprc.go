@@ -12,6 +12,7 @@ import (
 
 	"database/sql"
 
+	"github.com/aclements/go-moremath/stats"
 	"github.com/corona10/goimghdr"
 	_ "github.com/mattn/go-sqlite3" // Imports sqlite db drivers
 	"github.com/pa-m/sklearn/metrics"
@@ -393,8 +394,17 @@ func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, finalComb
 	return dupedetection.MeasureImageSimilarity(candidateImageFingerprint, finalCombinedImageFingerprintArray, config)
 }
 
+type MeasureResult struct {
+	AUPRC            float64
+	DupeAccuracy     float64
+	DupeCount        float64
+	OriginalAccuracy float64
+	OriginalCount    float64
+	AverageAccuracy  float64
+}
+
 // MeasureAUPRC calculates AUPRC for a test corpus of the images
-func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
+func MeasureAUPRC(config dupedetection.ComputeConfig) (MeasureResult, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
 	miscMasternodeFilesFolderPath := filepath.Join(config.RootDir, "misc_masternode_files")
@@ -405,7 +415,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 
 	if _, err := os.Stat(miscMasternodeFilesFolderPath); os.IsNotExist(err) {
 		if err := os.MkdirAll(miscMasternodeFilesFolderPath, 0770); err != nil {
-			return 0, errors.New(err)
+			return MeasureResult{}, errors.New(err)
 		}
 	}
 
@@ -415,7 +425,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 		regenerateEmptyDupeDetectionImageFingerprintDatabase()
 		err := addAllImagesInFolderToImageFingerprintDatabase(pathToAllRegisteredWorksForDupeDetection)
 		if err != nil {
-			return 0, errors.New(err)
+			return MeasureResult{}, errors.New(err)
 		}
 	} else {
 		fmt.Printf("\nFound existing image fingerprint database.")
@@ -425,14 +435,14 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 
 	finalCombinedImageFingerprintArray, err := getAllImageFingerprintsFromDupeDetectionDatabaseAsArray()
 	if err != nil {
-		return 0, errors.New(err)
+		return MeasureResult{}, errors.New(err)
 	}
 
 	fmt.Printf("\n\nNow testing duplicate-detection scheme on known near-duplicate images:")
 	nearDuplicates, err := getAllValidImageFilePathsInFolder(dupeDetectionTestImagesBaseFolderPath, config.NumberOfImagesToValidate)
 	if err != nil {
 		if err != nil {
-			return 0, errors.New(err)
+			return MeasureResult{}, errors.New(err)
 		}
 	}
 	dupeCounter := 0
@@ -442,20 +452,22 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 		fmt.Printf("\nCurrent Near Duplicate Image: %v", nearDupeFilePath)
 		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nearDupeFilePath, finalCombinedImageFingerprintArray, config)
 		if err != nil {
-			return 0, errors.New(err)
+			return MeasureResult{}, errors.New(err)
 		}
 		dupeCounter += isLikelyDupe
 		predictedY = append(predictedY, float64(isLikelyDupe))
 	}
 	fmt.Printf("\n\n________________________________________________________________________________________________________________")
 	fmt.Printf("\n________________________________________________________________________________________________________________")
-	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", float32(dupeCounter)/float32(len(nearDuplicates))*100.0, len(nearDuplicates))
+	dupeAccuracy := float32(dupeCounter) / float32(len(nearDuplicates)) * 100.0
+	dupeCount := len(nearDuplicates)
+	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", dupeAccuracy, dupeCount)
 
 	fmt.Printf("\n\nNow testing duplicate-detection scheme on known non-duplicate images:")
 	nonDuplicates, err := getAllValidImageFilePathsInFolder(nonDupeTestImagesBaseFolderPath, config.NumberOfImagesToValidate)
 	if err != nil {
 		if err != nil {
-			return 0, errors.New(err)
+			return MeasureResult{}, errors.New(err)
 		}
 	}
 	nondupeCounter := 0
@@ -464,7 +476,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 		fmt.Printf("\nCurrent Non-Duplicate Test Image: %v", nonDupeFilePath)
 		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nonDupeFilePath, finalCombinedImageFingerprintArray, config)
 		if err != nil {
-			return 0, errors.New(err)
+			return MeasureResult{}, errors.New(err)
 		}
 
 		if isLikelyDupe == 0 {
@@ -476,14 +488,16 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	}
 	fmt.Printf("\n\n________________________________________________________________________________________________________________")
 	fmt.Printf("\n________________________________________________________________________________________________________________")
-	fmt.Printf("\nAccuracy Percentage in Detecting Non-Duplicate Images: %.2f %% from totally %v images", float32(nondupeCounter)/float32(len(nonDuplicates))*100.0, len(nonDuplicates))
+	nondupeAccuracy := float32(nondupeCounter) / float32(len(nonDuplicates)) * 100.0
+	nondupeCount := len(nonDuplicates)
+	fmt.Printf("\nAccuracy Percentage in Detecting Non-Duplicate Images: %.2f %% from totally %v images", nondupeAccuracy, nondupeCount)
 
 	fmt.Printf("\n\n\n_______________________________Summary:_______________________________\n\n")
-	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", float32(dupeCounter)/float32(len(nearDuplicates))*100.0, len(nearDuplicates))
-	fmt.Printf("\nAccuracy Percentage in Detecting Non-Duplicate Images: %.2f %% from totally %v images\n", float32(nondupeCounter)/float32(len(nonDuplicates))*100.0, len(nonDuplicates))
+	fmt.Printf("\nAccuracy Percentage in Detecting Near-Duplicate Images: %.2f %% from totally %v images", dupeAccuracy, dupeCount)
+	fmt.Printf("\nAccuracy Percentage in Detecting Non-Duplicate Images: %.2f %% from totally %v images\n", nondupeAccuracy, nondupeCount)
 
 	if len(predictedY) == 0 {
-		return 0, nil
+		return MeasureResult{}, nil
 	}
 
 	actualY := make([]float64, len(predictedY))
@@ -497,5 +511,12 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (float64, error) {
 	sort.Float64s(recall)
 	auprcMetric := metrics.AUC(recall, precision)
 	fmt.Printf("\nAcross all near-duplicate and non-duplicate test images, precision is %v and the Area Under the Precision-Recall Curve (AUPRC) is %.3f\n", precision, auprcMetric)
-	return auprcMetric, nil
+	return MeasureResult{
+		AUPRC:            auprcMetric,
+		DupeAccuracy:     float64(dupeAccuracy),
+		DupeCount:        float64(dupeCount),
+		OriginalAccuracy: float64(nondupeAccuracy),
+		OriginalCount:    float64(nondupeCount),
+		AverageAccuracy:  stats.Mean([]float64{float64(dupeAccuracy), float64(nondupeAccuracy)}),
+	}, nil
 }
