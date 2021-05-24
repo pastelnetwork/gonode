@@ -133,6 +133,10 @@ func objective(trial goptuna.Trial) (float64, error) {
 	if err != nil {
 		return 0, errors.New(err)
 	}
+	err = trial.SetUserAttr("AverageAccuracy", fmt.Sprintf("%v", aurpcResult.AverageAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
 	return aurpcResult.AUPRC, nil
 }
 
