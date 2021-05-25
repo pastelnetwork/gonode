@@ -325,7 +325,7 @@ workflows:
             - prepare_workspace
       - release:
           requires:
-            - test
+            - test_common
           filters:
             branches:
               ignore: /.*/
