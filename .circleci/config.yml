@@ -9,7 +9,7 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-    GOPATH: "/home/circleci/go"
+    GOPATH: "/home/circleci/project/go"
 
 commands:
   test:
@@ -18,7 +18,7 @@ commands:
         type: string
     steps:
       - run:
-          name: "<< parameters.package >>: Fetch prepare_workspace"
+          name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
           command: |
             go get -v ./...
