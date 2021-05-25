@@ -9,6 +9,7 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
+  parallelism: 80
 
 commands:
   test:
@@ -238,22 +239,6 @@ jobs:
           binaryName: "walletnode"
       - test:
           package: "common"
-      - test:
-          package: "pastel"
-      - test:
-          package: "tools/pastel-api"
-      - test:
-          package: "proto"
-      - test:
-          package: "legroast"
-      - test:
-          package: "dupe-detection"
-      - test:
-          package: "pqsignatures"
-      - test:
-          package: "walletnode"
-      - test:
-          package: "supernode"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:

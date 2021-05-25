@@ -99,6 +99,7 @@ func loadImage(imagePath string, width int, height int) (image.Image, error) {
 	}
 
 	img = imaging.Resize(img, width, height, imaging.Linear)
+
 	return img, nil
 }
 

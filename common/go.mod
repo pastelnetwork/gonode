@@ -3,6 +3,7 @@ module github.com/pastelnetwork/gonode/common
 go 1.16
 
 require (
+	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/go-errors/errors v1.1.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mattn/go-colorable v0.1.8 // indirect
