@@ -193,7 +193,7 @@ jobs:
     steps:
       - restore_cache:
           keys:
-            - tools-{{ checksum "$CIRCLE_SHA1" }}
+            - tools-{{ checksum CIRCLE_SHA1 }}
             - tools-
       - run:
           name: Print the go version
