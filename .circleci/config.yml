@@ -119,10 +119,6 @@ jobs:
           name: Install mockery
           command: |
             go get -u github.com/vektra/mockery/cmd/mockery
-      - run:
-          name: Install goa
-          command: |
-            go get -u goa.design/goa/v3/...@v3
       - test:
           package: "common"
       - test:
