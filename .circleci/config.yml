@@ -30,6 +30,7 @@ commands:
           name: "<< parameters.package >>: Run go vet"
           working_directory: ~/project/<< parameters.package >>
           command: |
+            go generate ./...
             go vet -v ./...
       - run:
           name: "<< parameters.package >>: Run revive"
