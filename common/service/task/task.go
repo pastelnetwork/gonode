@@ -1,3 +1,5 @@
+//go:generate mockery --name=Task
+
 package task
 
 import (
