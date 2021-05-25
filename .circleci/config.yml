@@ -239,7 +239,7 @@ jobs:
   #         binaryName: "walletnode"
 
   # Run automated tests
-  test:
+  tests:
     steps:
       - test:
           package: "common"
@@ -301,7 +301,7 @@ workflows:
   build-and-test:
     jobs:
       - dependencies
-      - test:
+      - tests:
           requires:
             - dependencies
           filters:
