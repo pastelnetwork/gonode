@@ -47,6 +47,7 @@ commands:
           name: "<< parameters.package >>: Run go test (+ race detector)"
           working_directory: ~/project/<< parameters.package >>
           command: |
+            go generate ./...
             go test -v -race ./...
   build:
     parameters:
@@ -218,9 +219,9 @@ jobs:
           command: |
             GO111MODULE=off go get -u honnef.co/go/tools/cmd/staticcheck
       - run:
-          name: Install xgo
+          name: Install mockery
           command: |
-            go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
+            go get -u github.com/vektra/mockery/cmd/mockery
       - persist_to_workspace:
           root: .
           paths:
@@ -234,20 +235,6 @@ jobs:
           at: .
       - test:
           package: "common"
-      # - test:
-      #     package: "tools/pastel-api"
-      # - test:
-      #     package: "proto"
-      # - test:
-      #     package: "legroast"
-      # - test:
-      #     package: "dupe-detection"
-      # - test:
-      #     package: "pqsignatures"
-      # - test:
-      #     package: "walletnode"
-      # - test:
-      #     package: "supernode"
 
   test_pastel:
     <<: *defaults
@@ -257,26 +244,88 @@ jobs:
       - test:
           package: "pastel"
 
-  # build:
-  #   <<: *defaults
-  #   steps:
-  #     - setup_remote_docker:
-  #         version: 20.10.2
-  #         docker_layer_caching: true
-  #     - create-sources-container:
-  #         containerName: "sourcesContainer"
-  #     - build:
-  #         buildContainerName: "pqsignatures"
-  #         moduleSubDir: "pqsignatures"
-  #         package: "cmd/pqsignatures"
-  #         targets: "darwin-10.14/amd64,windows/amd64,"
-  #         binaryName: "pqsignatures"
-  #     - build:
-  #         buildContainerName: "walletnode"
-  #         moduleSubDir: "walletnode"
-  #         package: ""
-  #         targets: "darwin-10.14/amd64,windows/amd64,"
-  #         binaryName: "walletnode"
+  test_pastel-api:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "tools/pastel-api"
+
+  test_proto:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "proto"
+
+  test_legroast:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "legroast"
+
+  test_dupe-detection:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "dupe-detection"
+
+  test_pqsignatures:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "pqsignatures"
+
+  test_walletnode:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "walletnode"
+
+  test_supernode:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "supernode"
+
+  build:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - setup_remote_docker:
+          version: 20.10.2
+          docker_layer_caching: true
+      - run:
+          name: Install xgo
+          command: |
+            go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
+      - create-sources-container:
+          containerName: "sourcesContainer"
+      - build:
+          buildContainerName: "pqsignatures"
+          moduleSubDir: "pqsignatures"
+          package: "cmd/pqsignatures"
+          targets: "darwin-10.14/amd64,windows/amd64,"
+          binaryName: "pqsignatures"
+      - build:
+          buildContainerName: "walletnode"
+          moduleSubDir: "walletnode"
+          package: ""
+          targets: "darwin-10.14/amd64,windows/amd64,"
+          binaryName: "walletnode"
 
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
@@ -326,9 +375,35 @@ workflows:
       - test_pastel:
           requires:
             - prepare_workspace
+      - test_pastel-api:
+          requires:
+            - prepare_workspace
+      - test_proto:
+          requires:
+            - prepare_workspace
+      - test_legroast:
+          requires:
+            - prepare_workspace
+      - test_dupe-detection:
+          requires:
+            - prepare_workspace
+      - test_pqsignatures:
+          requires:
+            - prepare_workspace
+      - test_walletnode:
+          requires:
+            - prepare_workspace
+      - test_supernode:
+          requires:
+            - prepare_workspace
+      - build:
+          requires:
+            - test_walletnode
+            - test_pqsignatures
       - release:
           requires:
-            - test_common
+            - test_walletnode
+            - test_supernode
           filters:
             branches:
               ignore: /.*/
