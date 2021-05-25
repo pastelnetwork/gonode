@@ -9,7 +9,7 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-  parallelism: 80
+  parallelism: 8
 
 commands:
   test:
@@ -189,11 +189,9 @@ commands:
           repo: << parameters.repo >>
 
 jobs:
-  # Run automated tests
-  test:
+  install_dependencies:
     <<: *defaults
     steps:
-      - checkout
       - run:
           name: Print the go version
           command: |
@@ -223,6 +221,8 @@ jobs:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
+  build:
+    steps:
       - create-sources-container:
           containerName: "sourcesContainer"
       - build:
@@ -237,8 +237,28 @@ jobs:
           package: ""
           targets: "darwin-10.14/amd64,windows/amd64,"
           binaryName: "walletnode"
+
+  # Run automated tests
+  test:
+    steps:
       - test:
           package: "common"
+      - test:
+          package: "pastel"
+      - test:
+          package: "tools/pastel-api"
+      - test:
+          package: "proto"
+      - test:
+          package: "legroast"
+      - test:
+          package: "dupe-detection"
+      - test:
+          package: "pqsignatures"
+      - test:
+          package: "walletnode"
+      - test:
+          package: "supernode"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
@@ -280,7 +300,10 @@ jobs:
 workflows:
   build-and-test:
     jobs:
+      - install_dependencies
       - test:
+          requires:
+            - install_dependencies
           filters:
             tags:
               only: /^v.*/
