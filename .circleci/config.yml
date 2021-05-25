@@ -9,8 +9,8 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-    GOPATH: "${HOME}/.go_project"
-    PATH: "${GOPATH}/bin:${PATH}"
+    GOPATH: "$HOME/go"
+    PATH: "$GOPATH/bin:$PATH"
 
 commands:
   test:
