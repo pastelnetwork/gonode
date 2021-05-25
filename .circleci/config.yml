@@ -209,11 +209,11 @@ jobs:
       - run:
           name: Install revive
           command: |
-            go get -u github.com/mgechev/revive
+            go install -v github.com/mgechev/revive@v1.0.6
       - run:
           name: Install staticcheck
           command: |
-            go get -u honnef.co/go/tools/cmd/staticcheck
+            GO111MODULE=off go get -u honnef.co/go/tools/cmd/staticcheck
       - run:
           name: Install xgo
           command: |
