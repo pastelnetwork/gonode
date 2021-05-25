@@ -193,7 +193,7 @@ jobs:
     steps:
       - restore_cache:
           keys:
-            - tools-{{ checksum CIRCLE_SHA1 }}
+            - tools-$CIRCLE_SHA1
             - tools-
       - run:
           name: Print the go version
@@ -222,7 +222,7 @@ jobs:
           command: |
             go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
       - save_cache:
-          key: tools-{{ checksum "$CIRCLE_SHA1" }}
+          key: tools-$CIRCLE_SHA1
           paths:
             - ~/.cache
 
