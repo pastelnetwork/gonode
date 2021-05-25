@@ -16,6 +16,8 @@ const (
 	connectToNextNodeDelay = time.Millisecond * 200
 	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
 	connectToNodeTimeout   = time.Second * 1
+
+	thumbnailWidth, thumbnailHeight = 224, 224
 )
 
 // Task is the task of registering new artwork.
@@ -96,8 +98,18 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusConnected)
 
-	log.WithContext(ctx).WithField("filename", task.Ticket.Image.Name()).Debugf("Uploading image")
-	if err := nodes.sendImage(ctx, task.Ticket.Image); err != nil {
+	log.WithContext(ctx).WithField("filename", task.Ticket.Image.Name()).Debugf("Copy image")
+	thumbnail, err := task.Ticket.Image.Copy()
+	if err != nil {
+		return err
+	}
+
+	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to thumbnail %dx%d", thumbnailWidth, thumbnailHeight)
+	if err := thumbnail.ResizeImage(thumbnailWidth, thumbnailHeight); err != nil {
+		return err
+	}
+
+	if err := nodes.sendImage(ctx, thumbnail); err != nil {
 		return err
 	}
 
