@@ -175,27 +175,115 @@ func TestNodesFindByPastelID(t *testing.T) {
 	}
 }
 
-//TODO: Implement sendImage test with mock
 func TestNodesSendImage(t *testing.T) {
 	t.Parallel()
+
+	type fields struct {
+		pastelID        string
+		registerArtwork *mocks.RegisterArtwork
+	}
 
 	type args struct {
 		ctx  context.Context
 		file *artwork.File
 	}
-	tests := []struct {
-		nodes     *Nodes
-		args      args
-		assertion assert.ErrorAssertionFunc
-	}{
-		// TODO: Add test cases.
+
+	type methods struct {
+		uploadImage string
 	}
 
-	for i, tt := range tests {
+	type mockArgs struct {
+		ctx  interface{}
+		file interface{}
+	}
+
+	type methodsCall struct {
+		uploadImage int
+	}
+
+	type node struct {
+		fields      fields
+		methodsCall methodsCall
+		returnErr   error
+	}
+
+	testCases := []struct {
+		args           args
+		mockArgs       mockArgs
+		methods        methods
+		nodes          Nodes
+		nodeAttributes []*node
+		assertion      assert.ErrorAssertionFunc
+	}{
+		{
+			args:     args{context.Background(), &artwork.File{}},
+			mockArgs: mockArgs{mock.Anything, mock.AnythingOfType("*artwork.File")},
+			methods:  methods{"UploadImage"},
+			nodes:    Nodes{},
+			nodeAttributes: []*node{
+				{
+					fields:      fields{"1", &mocks.RegisterArtwork{}},
+					methodsCall: methodsCall{1},
+					returnErr:   nil,
+				}, {
+					fields:      fields{"2", &mocks.RegisterArtwork{}},
+					methodsCall: methodsCall{1},
+					returnErr:   nil,
+				},
+			},
+			assertion: assert.NoError,
+		},
+		{
+			args:     args{context.Background(), &artwork.File{}},
+			mockArgs: mockArgs{mock.Anything, mock.AnythingOfType("*artwork.File")},
+			methods:  methods{"UploadImage"},
+			nodes:    Nodes{},
+			nodeAttributes: []*node{
+				{
+					fields:      fields{"3", &mocks.RegisterArtwork{}},
+					methodsCall: methodsCall{1},
+					returnErr:   nil,
+				}, {
+					fields:      fields{"4", &mocks.RegisterArtwork{}},
+					methodsCall: methodsCall{1},
+					returnErr:   fmt.Errorf("failed to open stream"),
+				},
+			},
+			assertion: func(t assert.TestingT, err error, a ...interface{}) bool {
+				//should return first non nil error
+				return assert.Equal(t, "failed to open stream", err.Error())
+			},
+		},
+	}
+
+	for i, testCase := range testCases {
+		testCase := testCase
+
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			tt.assertion(t, tt.nodes.sendImage(tt.args.ctx, tt.args.file))
+			for _, a := range testCase.nodeAttributes {
+				//mock
+				a.fields.registerArtwork.On(testCase.methods.uploadImage,
+					testCase.mockArgs.ctx,
+					testCase.mockArgs.file,
+				).Return(a.returnErr)
+
+				n := &Node{
+					PastelID:        a.fields.pastelID,
+					RegisterArtwork: a.fields.registerArtwork,
+				}
+				testCase.nodes.add(n)
+			}
+
+			testCase.assertion(t, testCase.nodes.sendImage(testCase.args.ctx, testCase.args.file))
+
+			//mock assertion each node
+			for _, a := range testCase.nodeAttributes {
+				a.fields.registerArtwork.AssertExpectations(t)
+				a.fields.registerArtwork.AssertCalled(t, testCase.methods.uploadImage, testCase.args.ctx, testCase.args.file)
+				a.fields.registerArtwork.AssertNumberOfCalls(t, testCase.methods.uploadImage, a.methodsCall.uploadImage)
+			}
 		})
 	}
 }
