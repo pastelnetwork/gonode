@@ -17,7 +17,7 @@ commands:
         type: string
     steps:
       - run:
-          name: "<< parameters.package >>: Fetch install_tools"
+          name: "<< parameters.package >>: Fetch tools"
           working_directory: ~/project/<< parameters.package >>
           command: |
             go get -v ./...
@@ -188,9 +188,13 @@ commands:
           repo: << parameters.repo >>
 
 jobs:
-  install_tools:
+  tools:
     <<: *defaults
     steps:
+      - restore_cache:
+          keys:
+            - tools-{{ checksum $CIRCLE_SHA1 }}
+            - tools-
       - run:
           name: Print the go version
           command: |
@@ -213,15 +217,19 @@ jobs:
           name: Install staticcheck
           command: |
             GO111MODULE=off go get -u honnef.co/go/tools/cmd/staticcheck
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
       - run:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
+      - save_cache:
+          keys: tools-{{ checksum $CIRCLE_SHA1 }}
+
   # build:
+  #   <<: *defaults
   #   steps:
+  #     - setup_remote_docker:
+  #         version: 20.10.2
+  #         docker_layer_caching: true
   #     - create-sources-container:
   #         containerName: "sourcesContainer"
   #     - build:
@@ -301,16 +309,16 @@ jobs:
 workflows:
   build-and-test:
     jobs:
-      - install_tools
+      - tools
       - test:
           requires:
-            - install_tools
+            - tools
           filters:
             tags:
               only: /^v.*/
       - release:
           requires:
-            - install_tools
+            - tools
             - test
           filters:
             branches:
