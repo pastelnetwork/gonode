@@ -17,7 +17,7 @@ commands:
         type: string
     steps:
       - run:
-          name: "<< parameters.package >>: Fetch tools"
+          name: "<< parameters.package >>: Fetch prepare_workspace"
           working_directory: ~/project/<< parameters.package >>
           command: |
             go get -v ./...
@@ -188,13 +188,9 @@ commands:
           repo: << parameters.repo >>
 
 jobs:
-  tools:
+  prepare_workspace:
     <<: *defaults
     steps:
-      - restore_cache:
-          keys:
-            - tools-{{ .Environment.CIRCLE_SHA1 }}
-            - tools-
       - checkout
       - run:
           name: Print the go version
@@ -222,14 +218,41 @@ jobs:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
-      - save_cache:
-          key: tools-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - /
       - persist_to_workspace:
           root: .
           paths:
             - .
+
+  # Run automated tests
+  test_common:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "common"
+      # - test:
+      #     package: "tools/pastel-api"
+      # - test:
+      #     package: "proto"
+      # - test:
+      #     package: "legroast"
+      # - test:
+      #     package: "dupe-detection"
+      # - test:
+      #     package: "pqsignatures"
+      # - test:
+      #     package: "walletnode"
+      # - test:
+      #     package: "supernode"
+
+  test_pastel:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "pastel"
 
   # build:
   #   <<: *defaults
@@ -252,38 +275,6 @@ jobs:
   #         targets: "darwin-10.14/amd64,windows/amd64,"
   #         binaryName: "walletnode"
 
-  # Run automated tests
-  test:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - test:
-          package: "common"
-      - test:
-          package: "pastel"
-      - test:
-          package: "tools/pastel-api"
-      - test:
-          package: "proto"
-      - test:
-          package: "legroast"
-      - test:
-          package: "dupe-detection"
-      - test:
-          package: "pqsignatures"
-      - test:
-          package: "walletnode"
-      - test:
-          package: "supernode"
-
-  test_pastel:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - test:
-          package: "pastel"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
@@ -325,22 +316,15 @@ jobs:
 workflows:
   build-and-test:
     jobs:
-      - tools
-      - test:
+      - prepare_workspace
+      - test_common:
           requires:
-            - tools
-          filters:
-            tags:
-              only: /^v.*/
+            - prepare_workspace
       - test_pastel:
           requires:
-            - tools
-          filters:
-            tags:
-              only: /^v.*/
+            - prepare_workspace
       - release:
           requires:
-            - tools
             - test
           filters:
             branches:
