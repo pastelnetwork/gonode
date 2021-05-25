@@ -252,6 +252,7 @@ jobs:
     <<: *defaults
     parallelism: 8
     steps:
+      - checkout
       - test:
           package: "common"
       - test:
