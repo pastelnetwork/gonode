@@ -9,7 +9,6 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-  parallelism: 8
 
 commands:
   test:
@@ -240,6 +239,8 @@ jobs:
 
   # Run automated tests
   test:
+    <<: *defaults
+    parallelism: 8
     steps:
       - test:
           package: "common"
