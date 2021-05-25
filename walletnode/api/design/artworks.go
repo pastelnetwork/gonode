@@ -119,6 +119,20 @@ var _ = Service("artworks", func() {
 			Response(StatusCreated)
 		})
 	})
+
+	// search request artworks handler
+	//
+	Method("search", func() {
+		Description("Search artwork request")
+		Meta("swagger:summary", "search artworks")
+		Payload(ArtworkSearchRequestPayload)
+		StreamingResult(ArtworkTicket)
+		HTTP(func() {
+			GET("/search/{term}")
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+		})
+	})
 })
 
 // ArtworkTicket is artwork register payload.
@@ -307,3 +321,77 @@ var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
 	})
 	Required("taskId")
 })
+
+// ArtworkSearchRequestPayload - payload data for search tikets
+//
+var ArtworkSearchRequestPayload = Type("ArtworkSearchRequestPayload", func() {
+	Attribute("filter", ArtworkSearchFilter, func() {
+		Description("Filter for finding tikets")
+	})
+	Attribute("limit", UInt, func() {
+		Description("a number of tickets to return")
+		Minimum(1)
+		Maximum(1000)
+	})
+	Attribute("search", ArtworkSearchTerms, func() {
+		Description("SearchTerm and fields for search")
+	})
+	Required("search")
+
+})
+
+// ArtworkSearchFilter - filter for extracting the desired from the results
+//  tickets
+//
+var ArtworkSearchFilter = Type("ArtworkSearchFilter", func() {
+
+	Attribute("blocknum", ArtworkFilterCondition, func() {
+		Description("before or after or in range")
+	})
+
+	Attribute("copies", ArtworkFilterCondition, func() {
+		Description("exact number; less or more")
+	})
+	Attribute("rareness_core", ArtworkFilterCondition, func() {
+		Description("less or more of some value")
+	})
+
+	Attribute("nsfw_score", ArtworkFilterCondition, func() {
+		Description("less or more of some value")
+	})
+	Attribute("author", String, func() {
+		Description("author name")
+		MinLength(2)
+	})
+})
+
+// ArtworkSearchTerms - search term
+//
+var ArtworkSearchTerms = Type("ArtworkSearchTerms", func() {
+	Attribute("term", String, func() {
+		Description("Term for search in tikets")
+		MinLength(2)
+		MaxLength(256)
+	})
+	Attribute("fields", ArrayOf(String), func() {
+		Description("list of properties to search for")
+		Enum("artlist_name", "artwork_title", "artwork_series_name", "artwork_keyword_set",
+			"artist_website", "artist_written_statement", "artwork_creation_video_youtube_url")
+	})
+})
+
+// ArtworkFilterCondition - An object containing criteria for selecting a ticket from those found
+//
+var ArtworkFilterCondition = Type("ArtworkFilterOCondition", func() {
+	Description("Condition for value")
+	Attribute("value", UInt, func() {
+		Description("Value for condition (integer)")
+	})
+	Attribute("condition", String, func() {
+		Description("Condition: less, more, less_eq, more_eq")
+		Enum("less", "less_eq", "great", "great_eq")
+	})
+})
+
+// ArtworkSearchResultStream
+//
