@@ -225,7 +225,7 @@ jobs:
       - save_cache:
           key: tools-{{ .Environment.CIRCLE_SHA1 }}
           paths:
-            - ~/.cache
+            - /
       - persist_to_workspace:
           root: .
           paths:
