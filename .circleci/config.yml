@@ -222,7 +222,9 @@ jobs:
           command: |
             go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
       - save_cache:
-          keys: tools-{{ checksum $CIRCLE_SHA1 }}
+          key: tools-{{ checksum $CIRCLE_SHA1 }}
+          paths:
+            - ~/.cache
 
   # build:
   #   <<: *defaults
