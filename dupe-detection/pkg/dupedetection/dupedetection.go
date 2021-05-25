@@ -899,13 +899,13 @@ func NewComputeConfig() ComputeConfig {
 	config.StableOrderOfCorrelationMethods = []string{
 		"PearsonR",
 		"SpearmanRho",
-		"BootstrappedKendallTau",
 	}
 
 	config.UnstableOrderOfCorrelationMethods = []string{
-		"BootstrappedBlomqvistBeta",
-		"HoeffdingDRound1",
-		"HoeffdingDRound2",
+		"MI",
+		"KendallTau",
+		"HoeffdingD",
+		"BlomqvistBeta",
 	}
 
 	return config

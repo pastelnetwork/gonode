@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/c-bata/goptuna"
+	"github.com/gitchander/permutation"
+	combinations "github.com/mxschmitt/golang-combinations"
 	"gorm.io/driver/mysql"
 
 	"github.com/c-bata/goptuna/cmaes"
@@ -85,19 +88,18 @@ func objective(trial goptuna.Trial) (float64, error) {
 	config.HoeffdingRound2DupeThreshold, _ = trial.SuggestFloat("HoeffdingD2", 0.1, 0.99999)
 	if err != nil {
 		return 0, errors.New(err)
-	}
+	}*/
 
 	allCombinationsOfUnstableMethods := combinations.All(config.UnstableOrderOfCorrelationMethods)
 	var allOrderedCombinationsOfUnstableMethodsAsStrings []string
 	for _, combination := range allCombinationsOfUnstableMethods {
 		permutator := permutation.New(permutation.StringSlice(combination))
 		for permutator.Next() {
-			fmt.Println(combination)
 			allOrderedCombinationsOfUnstableMethodsAsStrings = append(allOrderedCombinationsOfUnstableMethodsAsStrings, strings.Join(combination, " "))
 		}
-	}*/
+	}
 
-	/*correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allOrderedCombinationsOfUnstableMethodsAsStrings)-1, 1)
+	correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allOrderedCombinationsOfUnstableMethodsAsStrings)-1, 1)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -105,10 +107,10 @@ func objective(trial goptuna.Trial) (float64, error) {
 	config.CorrelationMethodsOrder = strings.Join(correlationMethodsOrder, " ")
 	if err != nil {
 		return 0, errors.New(err)
-	}*/
+	}
 
 	//config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho BootstrappedKendallTau BootstrappedBlomqvistBeta HoeffdingDRound1 HoeffdingDRound2"
-	config.CorrelationMethodsOrder = "PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
+	//config.CorrelationMethodsOrder = "PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
 
 	err = trial.SetUserAttr("CorrelationMethodsOrder", config.CorrelationMethodsOrder)
 	if err != nil {
@@ -139,7 +141,7 @@ func objective(trial goptuna.Trial) (float64, error) {
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	return aurpcResult.AUPRC, nil
+	return 1.0 - aurpcResult.AUPRC, nil
 }
 
 func runStudy(studyName string) error {
@@ -157,8 +159,6 @@ func runStudy(studyName string) error {
 		studyName,
 		goptuna.StudyOptionStorage(storage),
 		goptuna.StudyOptionRelativeSampler(cmaes.NewSampler()),
-		//goptuna.StudyOptionSampler(tpe.NewSampler()),
-		goptuna.StudyOptionDirection(goptuna.StudyDirectionMaximize),
 		goptuna.StudyOptionLoadIfExists(true),
 	)
 	if err != nil {
