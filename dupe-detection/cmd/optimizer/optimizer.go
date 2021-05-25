@@ -20,6 +20,8 @@ import (
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 )
 
+const cacheFileName = "cached"
+
 var evaluateNumberOfTimes = 500
 var rootDir = ""
 var numberOfImagesToValidate = 0
@@ -36,16 +38,21 @@ func objective(trial goptuna.Trial) (float64, error) {
 		return 0, errors.New(err)
 	}
 
+	err = trial.SetUserAttr("TrimByPercentile", fmt.Sprintf("%v", config.TrimByPercentile))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+
 	config.NumberOfImagesToValidate = numberOfImagesToValidate
 	err = trial.SetUserAttr("MaxImageCountToEvaluate", fmt.Sprintf("%v", config.NumberOfImagesToValidate*2))
 	if err != nil {
 		return 0, errors.New(err)
 	}
 
-	config.MIThreshold, err = trial.SuggestFloat("MIThreshold", 5.2, 5.4)
+	/*config.MIThreshold, err = trial.SuggestFloat("MIThreshold", 5.2, 5.4)
 	if err != nil {
 		return 0, errors.New(err)
-	}
+	}*/
 
 	config.PearsonDupeThreshold, err = trial.SuggestFloat("Pearson", 0.99, 0.99999)
 	if err != nil {
@@ -101,18 +108,38 @@ func objective(trial goptuna.Trial) (float64, error) {
 	}*/
 
 	//config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho BootstrappedKendallTau BootstrappedBlomqvistBeta HoeffdingDRound1 HoeffdingDRound2"
-	config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
+	config.CorrelationMethodsOrder = "PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
 
 	err = trial.SetUserAttr("CorrelationMethodsOrder", config.CorrelationMethodsOrder)
 	if err != nil {
 		return 0, errors.New(err)
 	}
 
-	aurpc, err := auprc.MeasureAUPRC(config)
+	aurpcResult, err := auprc.MeasureAUPRC(config)
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	return aurpc, nil
+	err = trial.SetUserAttr("DupeAccuracy", fmt.Sprintf("%v", aurpcResult.DupeAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("DupeCount", fmt.Sprintf("%v", aurpcResult.DupeCount))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("OriginalAccuracy", fmt.Sprintf("%v", aurpcResult.OriginalAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("OriginalCount", fmt.Sprintf("%v", aurpcResult.OriginalCount))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("AverageAccuracy", fmt.Sprintf("%v", aurpcResult.AverageAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	return aurpcResult.AUPRC, nil
 }
 
 func runStudy(studyName string) error {
@@ -173,8 +200,13 @@ func main() {
 	numberOfImagesToValidate = *numberOfImagesToValidatePtr
 	evaluateNumberOfTimes = *evaluateNumberOfTimesPtr
 
+	memoizer := dupedetection.GetMemoizer()
+	memoizer.Storage.LoadFile(cacheFileName)
+
 	if err := runStudy(*goptunaStudyNamePtr); err != nil {
 		log.Print(errors.ErrorStack(err))
 		panic(err)
 	}
+
+	memoizer.Storage.SaveFile(cacheFileName)
 }

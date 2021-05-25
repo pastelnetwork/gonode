@@ -11,11 +11,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kzahedi/goent/discrete"
+	"github.com/kofalt/go-memoize"
 	"github.com/montanaflynn/stats"
 	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
 	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
+	"github.com/patrickmn/go-cache"
 	"golang.org/x/sync/errgroup"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
@@ -26,6 +27,9 @@ import (
 )
 
 const strictnessFactor = 0.985
+
+// InterfaceTypeError indicates unexpected variable type is returned by invoked correlation calculation func
+var InterfaceTypeError = errors.Errorf("Calculation function returned value of unexpected type.")
 
 var models = make(map[string]*tg.Model)
 
@@ -140,7 +144,7 @@ func ComputeImageDeepLearningFeatures(imagePath string) ([][]float64, error) {
 	return fingerprints, nil
 }
 
-func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, memoizationData MemoizationImageData, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorMI := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -149,12 +153,19 @@ func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalC
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-
-			miInputPair := make([][]float64, 2)
-			miInputPair[0] = candidateImageFingerprint
-			miInputPair[1] = currentFingerprint
-
-			similarityScoreVectorMI[currentIndex] = math.Pow(math.Abs(discrete.MutualInformationBase2(miInputPair)), 1.0/10.0)
+			if memoizer != nil {
+				//currentImageSHA256 := memoizationData.SHA256HashOfFetchedImages[currentIndex]
+				memoKey := fmt.Sprintf("%v:%v:%v", "MI", currentIndex, memoizationData.SHA256HashOfCurrentImage)
+				similarityScoreVectorMI[currentIndex], err = memoizeCorrelationFuncCall(MI, candidateImageFingerprint, currentFingerprint, memoKey)
+				if err != nil {
+					return err
+				}
+			} else {
+				similarityScoreVectorMI[currentIndex], err = MI(candidateImageFingerprint, currentFingerprint)
+				if err != nil {
+					return err
+				}
+			}
 			return nil
 		})
 	}
@@ -165,7 +176,36 @@ func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalC
 	return similarityScoreVectorMI, nil
 }
 
-func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+var memoizer *memoize.Memoizer
+
+// GetMemoizer returns memoizer used to cache correlations calculations results
+func GetMemoizer() *memoize.Memoizer {
+	if memoizer == nil {
+		memoizer = memoize.NewMemoizer(cache.NoExpiration, cache.NoExpiration)
+	}
+	return memoizer
+}
+
+type funcCallToMemoize func([]float64, []float64) (float64, error)
+
+func memoizeCorrelationFuncCall(f funcCallToMemoize, data1, data2 []float64, memoKey string) (float64, error) {
+	pearsonCall := func() (interface{}, error) {
+		return f(data1, data2)
+	}
+
+	result, err, _ := memoizer.Memoize(memoKey, pearsonCall)
+	if err != nil {
+		return 0, err
+	}
+
+	value, ok := result.(float64)
+	if !ok {
+		return 0, errors.New(InterfaceTypeError)
+	}
+	return value, nil
+}
+
+func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, memoizationData MemoizationImageData, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorPearsonAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -174,10 +214,18 @@ func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, 
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			//similarityScoreVectorPearsonAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "pearson")
-			similarityScoreVectorPearsonAll[currentIndex], err = stats.Pearson(candidateImageFingerprint, currentFingerprint)
-			if err != nil {
-				return err
+			if memoizer != nil {
+				//currentImageSHA256 := memoizationData.SHA256HashOfFetchedImages[currentIndex]
+				memoKey := fmt.Sprintf("%v:%v:%v", "PearsonR", currentIndex, memoizationData.SHA256HashOfCurrentImage)
+				similarityScoreVectorPearsonAll[currentIndex], err = memoizeCorrelationFuncCall(Pearson, candidateImageFingerprint, currentFingerprint, memoKey)
+				if err != nil {
+					return err
+				}
+			} else {
+				similarityScoreVectorPearsonAll[currentIndex], err = Pearson(candidateImageFingerprint, currentFingerprint)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
@@ -189,7 +237,7 @@ func computePearsonRForAllFingerprintPairs(candidateImageFingerprint []float64, 
 	return similarityScoreVectorPearsonAll, nil
 }
 
-func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, memoizationData MemoizationImageData, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorSpearmanAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -198,10 +246,18 @@ func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, 
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			//similarityScoreVectorSpearmanAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "spearman")
-			similarityScoreVectorSpearmanAll[currentIndex], err = Spearman(candidateImageFingerprint, currentFingerprint)
-			if err != nil {
-				return err
+			if memoizer != nil {
+				//currentImageSHA256 := memoizationData.SHA256HashOfFetchedImages[currentIndex]
+				memoKey := fmt.Sprintf("%v:%v:%v", "Spearman", currentIndex, memoizationData.SHA256HashOfCurrentImage)
+				similarityScoreVectorSpearmanAll[currentIndex], err = memoizeCorrelationFuncCall(Spearman, candidateImageFingerprint, currentFingerprint, memoKey)
+				if err != nil {
+					return err
+				}
+			} else {
+				similarityScoreVectorSpearmanAll[currentIndex], err = Spearman(candidateImageFingerprint, currentFingerprint)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
@@ -213,7 +269,7 @@ func computeSpearmanForAllFingerprintPairs(candidateImageFingerprint []float64, 
 	return similarityScoreVectorSpearmanAll, nil
 }
 
-func computeKendallForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+func computeKendallForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, memoizationData MemoizationImageData, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorKendallAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -222,9 +278,18 @@ func computeKendallForAllFingerprintPairs(candidateImageFingerprint []float64, f
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			similarityScoreVectorKendallAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "kendall")
-			if err != nil {
-				return err
+			if memoizer != nil {
+				//currentImageSHA256 := memoizationData.SHA256HashOfFetchedImages[currentIndex]
+				memoKey := fmt.Sprintf("%v:%v:%v", "Kendall", currentIndex, memoizationData.SHA256HashOfCurrentImage)
+				similarityScoreVectorKendallAll[currentIndex], err = memoizeCorrelationFuncCall(Kendall, candidateImageFingerprint, currentFingerprint, memoKey)
+				if err != nil {
+					return err
+				}
+			} else {
+				similarityScoreVectorKendallAll[currentIndex], err = Kendall(candidateImageFingerprint, currentFingerprint)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
@@ -236,7 +301,7 @@ func computeKendallForAllFingerprintPairs(candidateImageFingerprint []float64, f
 	return similarityScoreVectorKendallAll, nil
 }
 
-func computeHoeffdingDForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+func computeHoeffdingDForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, memoizationData MemoizationImageData, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorHoeffdingBetaAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -245,9 +310,18 @@ func computeHoeffdingDForAllFingerprintPairs(candidateImageFingerprint []float64
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			similarityScoreVectorHoeffdingBetaAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "hoeffding")
-			if err != nil {
-				return err
+			if memoizer != nil {
+				//currentImageSHA256 := memoizationData.SHA256HashOfFetchedImages[currentIndex]
+				memoKey := fmt.Sprintf("%v:%v:%v", "Hoeffding", currentIndex, memoizationData.SHA256HashOfCurrentImage)
+				similarityScoreVectorHoeffdingBetaAll[currentIndex], err = memoizeCorrelationFuncCall(HoeffdingD, candidateImageFingerprint, currentFingerprint, memoKey)
+				if err != nil {
+					return err
+				}
+			} else {
+				similarityScoreVectorHoeffdingBetaAll[currentIndex], err = HoeffdingD(candidateImageFingerprint, currentFingerprint)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
@@ -259,7 +333,7 @@ func computeHoeffdingDForAllFingerprintPairs(candidateImageFingerprint []float64
 	return similarityScoreVectorHoeffdingBetaAll, nil
 }
 
-func computeBlomqvistBetaForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64) ([]float64, error) {
+func computeBlomqvistBetaForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, memoizationData MemoizationImageData, _ ComputeConfig) ([]float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	similarityScoreVectorBlomqvistBetaAll := make([]float64, len(finalCombinedImageFingerprintArray))
 	var err error
@@ -268,9 +342,18 @@ func computeBlomqvistBetaForAllFingerprintPairs(candidateImageFingerprint []floa
 		currentIndex := i
 		currentFingerprint := fingerprint
 		g.Go(func() error {
-			similarityScoreVectorBlomqvistBetaAll[currentIndex] = wdm.Wdm(candidateImageFingerprint, currentFingerprint, "blomqvist")
-			if err != nil {
-				return err
+			if memoizer != nil {
+				//currentImageSHA256 := memoizationData.SHA256HashOfFetchedImages[currentIndex]
+				memoKey := fmt.Sprintf("%v:%v:%v", "Blomqvist", currentIndex, memoizationData.SHA256HashOfCurrentImage)
+				similarityScoreVectorBlomqvistBetaAll[currentIndex], err = memoizeCorrelationFuncCall(Blomqvist, candidateImageFingerprint, currentFingerprint, memoKey)
+				if err != nil {
+					return err
+				}
+			} else {
+				similarityScoreVectorBlomqvistBetaAll[currentIndex], err = Blomqvist(candidateImageFingerprint, currentFingerprint)
+				if err != nil {
+					return err
+				}
 			}
 			return nil
 		})
@@ -319,29 +402,37 @@ func filterOutArrayValuesByRange(input []float64, min, max float64) []float64 {
 	return output
 }
 
-func computeAverageAndStdevOf25thTo75thPercentile(inputVector []float64) (float64, float64) {
-	percentile25, _ := stats.Percentile(inputVector, 25)
-	percentile75, _ := stats.Percentile(inputVector, 75)
+func computeAverageAndStdevOf25thTo75thPercentile(inputVector []float64, filterByPercentile bool) (float64, float64) {
+	trimmedVector := inputVector
+	if filterByPercentile {
+		percentile25, _ := stats.Percentile(inputVector, 25)
+		percentile75, _ := stats.Percentile(inputVector, 75)
 
-	trimmedVector := filterOutArrayValuesByRange(inputVector, percentile25, percentile75)
+		trimmedVector = filterOutArrayValuesByRange(inputVector, percentile25, percentile75)
+	}
+
 	trimmedVectorAvg, _ := stats.Mean(trimmedVector)
 	trimmedVectorStdev, _ := stats.StdDevS(trimmedVector)
 
 	return trimmedVectorAvg, trimmedVectorStdev
 }
 
-func computeAverageAndStdevOf50thTo90thPercentile(inputVector []float64) (float64, float64) {
-	percentile50, _ := stats.Percentile(inputVector, 50)
-	percentile90, _ := stats.Percentile(inputVector, 90)
+func computeAverageAndStdevOf50thTo90thPercentile(inputVector []float64, filterByPercentile bool) (float64, float64) {
+	trimmedVector := inputVector
+	if filterByPercentile {
+		percentile50, _ := stats.Percentile(inputVector, 50)
+		percentile90, _ := stats.Percentile(inputVector, 90)
 
-	trimmedVector := filterOutArrayValuesByRange(inputVector, percentile50, percentile90)
+		trimmedVector = filterOutArrayValuesByRange(inputVector, percentile50, percentile90)
+	}
+
 	trimmedVectorAvg, _ := stats.Mean(trimmedVector)
 	trimmedVectorStdev, _ := stats.StdDevS(trimmedVector)
 
 	return trimmedVectorAvg, trimmedVectorStdev
 }
 
-func computeParallelBootstrappedKendallsTau(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+func computeParallelBootstrappedKendallsTau(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int, config ComputeConfig) ([]float64, []float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	originalLengthOfInput := len(x)
 	robustAverageTau := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
@@ -365,7 +456,7 @@ func computeParallelBootstrappedKendallsTau(x []float64, arrayOfFingerprintsRequ
 
 				bootstrappedKendallTauResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "kendall")
 			}
-			robustAverageTau[fingerprintIdx], robustStdevTau[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedKendallTauResults)
+			robustAverageTau[fingerprintIdx], robustStdevTau[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedKendallTauResults, config.TrimByPercentile)
 			return nil
 		})
 	}
@@ -511,7 +602,7 @@ func ComputeRandomizedDependence(x, y []float64) float64 {
 	return result
 }
 
-func computeParallelBootstrappedRandomizedDependence(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+func computeParallelBootstrappedRandomizedDependence(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int, config ComputeConfig) ([]float64, []float64, error) {
 	originalLengthOfInput := len(x)
 	robustAverageRandomizedDependence := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
 	robustStdevRandomizedDependence := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
@@ -549,7 +640,7 @@ func computeParallelBootstrappedRandomizedDependence(x []float64, arrayOfFingerp
 
 			}
 
-			robustAverageRandomizedDependence[fingerprintIdx], robustStdevRandomizedDependence[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedRandomizedDependenceResults)
+			robustAverageRandomizedDependence[fingerprintIdx], robustStdevRandomizedDependence[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedRandomizedDependenceResults, config.TrimByPercentile)
 			return nil
 		})
 	}
@@ -560,7 +651,7 @@ func computeParallelBootstrappedRandomizedDependence(x []float64, arrayOfFingerp
 	return robustAverageRandomizedDependence, robustStdevRandomizedDependence, nil
 }
 
-func computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+func computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int, config ComputeConfig) ([]float64, []float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	originalLengthOfInput := len(x)
 	robustAverageD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
@@ -585,7 +676,7 @@ func computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize(x []float64, 
 
 				bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding")
 			}
-			robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf25thTo75thPercentile(bootstrappedHoeffdingsDResults)
+			robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf25thTo75thPercentile(bootstrappedHoeffdingsDResults, config.TrimByPercentile)
 			return nil
 		})
 	}
@@ -596,7 +687,7 @@ func computeParallelBootstrappedBaggedHoeffdingsDSmallerSampleSize(x []float64, 
 	return robustAverageD, robustStdevD, nil
 }
 
-func computeParallelBootstrappedBaggedHoeffdingsD(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+func computeParallelBootstrappedBaggedHoeffdingsD(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int, config ComputeConfig) ([]float64, []float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	originalLengthOfInput := len(x)
 	robustAverageD := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
@@ -621,7 +712,7 @@ func computeParallelBootstrappedBaggedHoeffdingsD(x []float64, arrayOfFingerprin
 
 				bootstrappedHoeffdingsDResults[i] = wdm.Wdm(xBootstraps[i], yBootstraps[i], "hoeffding")
 			}
-			robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedHoeffdingsDResults)
+			robustAverageD[fingerprintIdx], robustStdevD[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedHoeffdingsDResults, config.TrimByPercentile)
 			return nil
 		})
 	}
@@ -632,7 +723,7 @@ func computeParallelBootstrappedBaggedHoeffdingsD(x []float64, arrayOfFingerprin
 	return robustAverageD, robustStdevD, nil
 }
 
-func computeParallelBootstrappedBlomqvistBeta(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int) ([]float64, []float64, error) {
+func computeParallelBootstrappedBlomqvistBeta(x []float64, arrayOfFingerprintsRequiringFurtherTesting [][]float64, sampleSize int, numberOfBootstraps int, config ComputeConfig) ([]float64, []float64, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	originalLengthOfInput := len(x)
 	robustAverageBlomqvist := make([]float64, len(arrayOfFingerprintsRequiringFurtherTesting))
@@ -659,7 +750,7 @@ func computeParallelBootstrappedBlomqvistBeta(x []float64, arrayOfFingerprintsRe
 					bootstrappedBlomqvistResults = append(bootstrappedBlomqvistResults, blomqvistValue)
 				}
 			}
-			robustAverageBlomqvist[fingerprintIdx], robustStdevBlomqvist[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedBlomqvistResults)
+			robustAverageBlomqvist[fingerprintIdx], robustStdevBlomqvist[fingerprintIdx] = computeAverageAndStdevOf50thTo90thPercentile(bootstrappedBlomqvistResults, config.TrimByPercentile)
 			return nil
 		})
 	}
@@ -671,8 +762,8 @@ func computeParallelBootstrappedBlomqvistBeta(x []float64, arrayOfFingerprintsRe
 
 type printInfo func([]float64)
 type bootstrappedPrintInfo func([]float64, []float64)
-type correlation func([]float64, [][]float64) ([]float64, error)
-type bootstrappedCorrelation func([]float64, [][]float64, int, int) ([]float64, []float64, error)
+type correlation func([]float64, [][]float64, MemoizationImageData, ComputeConfig) ([]float64, error)
+type bootstrappedCorrelation func([]float64, [][]float64, int, int, ComputeConfig) ([]float64, []float64, error)
 
 type computeData struct {
 	name                        string
@@ -685,9 +776,10 @@ type computeData struct {
 	threshold                   float64
 	cutAboveThreshold           bool
 	totalFingerprintsCount      int
+	config                      ComputeConfig
 }
 
-func computeSimilarity(candidateImageFingerprint []float64, fingerprints [][]float64, data computeData) ([][]float64, error) {
+func computeSimilarity(candidateImageFingerprint []float64, fingerprints [][]float64, memoizationData MemoizationImageData, data computeData) ([][]float64, error) {
 	if len(fingerprints) == 0 {
 		return [][]float64{}, nil
 	}
@@ -698,7 +790,7 @@ func computeSimilarity(candidateImageFingerprint []float64, fingerprints [][]flo
 	var err error
 
 	if data.computeFunc != nil {
-		similarityScore, err = data.computeFunc(candidateImageFingerprint, fingerprints)
+		similarityScore, err = data.computeFunc(candidateImageFingerprint, fingerprints, memoizationData, data.config)
 		if err != nil {
 			return nil, errors.New(err)
 		}
@@ -708,7 +800,7 @@ func computeSimilarity(candidateImageFingerprint []float64, fingerprints [][]flo
 	}
 
 	if data.bootstrappedComputeFunc != nil {
-		similarityScore, similarityScoreStdev, err = data.bootstrappedComputeFunc(candidateImageFingerprint, fingerprints, data.sampleSize, data.bootstrapsCount)
+		similarityScore, similarityScoreStdev, err = data.bootstrappedComputeFunc(candidateImageFingerprint, fingerprints, data.sampleSize, data.bootstrapsCount, data.config)
 		if err != nil {
 			return nil, errors.New(err)
 		}
@@ -745,6 +837,12 @@ func printBlomqvistBetaCalculationResults(similarityScore, similarityScoreStdev 
 	fmt.Printf("\n Average for Blomqvist's beta: %.4f", strictnessFactor*similarityScoreVectorBlomqvistAverage)
 }
 
+// MemoizationImageData provides images data for memoization of correlation calculation methods results
+type MemoizationImageData struct {
+	SHA256HashOfFetchedImages []string
+	SHA256HashOfCurrentImage  string
+}
+
 // ComputeConfig contains configurable parameters to calculate AUPRC of image similariy measurement
 type ComputeConfig struct {
 	CorrelationMethodNameArray        []string
@@ -763,11 +861,15 @@ type ComputeConfig struct {
 
 	RootDir                  string
 	NumberOfImagesToValidate int
+	TrimByPercentile         bool
 }
 
 // NewComputeConfig retirieves new ComputeConfig with default values
 func NewComputeConfig() ComputeConfig {
 	config := ComputeConfig{}
+
+	config.TrimByPercentile = false
+
 	config.PearsonDupeThreshold = 0.995
 	config.SpearmanDupeThreshold = 0.79
 	config.KendallDupeThreshold = 0.70
@@ -779,7 +881,7 @@ func NewComputeConfig() ComputeConfig {
 	config.MIThreshold = 5.28
 
 	config.CorrelationMethodNameArray = []string{
-		"MI",
+		//"MI",
 		"PearsonR",
 		"SpearmanRho",
 		"KendallTau",
@@ -810,7 +912,7 @@ func NewComputeConfig() ComputeConfig {
 }
 
 // MeasureImageSimilarity calculates similarity between candidateImageFingerprint and each value in fingerprintsArrayToCompareWith
-func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArrayToCompareWith [][]float64, config ComputeConfig) (int, error) {
+func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArrayToCompareWith [][]float64, memoizationData MemoizationImageData, config ComputeConfig) (int, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
 	var err error
@@ -832,6 +934,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:              strictnessFactor * config.PearsonDupeThreshold,
 				cutAboveThreshold:      true,
 				totalFingerprintsCount: totalFingerprintsCount,
+				config:                 config,
 			}
 		case computeBlockName == "SpearmanRho":
 			nextComputeBlock = computeData{
@@ -842,6 +945,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:              strictnessFactor * config.SpearmanDupeThreshold,
 				cutAboveThreshold:      true,
 				totalFingerprintsCount: totalFingerprintsCount,
+				config:                 config,
 			}
 		case computeBlockName == "KendallTau":
 			nextComputeBlock = computeData{
@@ -852,6 +956,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:              strictnessFactor * config.KendallDupeThreshold,
 				cutAboveThreshold:      true,
 				totalFingerprintsCount: totalFingerprintsCount,
+				config:                 config,
 			}
 		case computeBlockName == "BootstrappedKendallTau":
 			nextComputeBlock = computeData{
@@ -866,6 +971,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.KendallDupeThreshold,
 				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
+				config:                  config,
 			}
 		case computeBlockName == "BootstrappedRDC":
 			nextComputeBlock = computeData{
@@ -880,6 +986,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.RandomizedDependenceDupeThreshold,
 				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
+				config:                  config,
 			}
 		case computeBlockName == "BlomqvistBeta":
 			nextComputeBlock = computeData{
@@ -890,6 +997,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:              strictnessFactor * config.BlomqvistDupeThreshold,
 				cutAboveThreshold:      true,
 				totalFingerprintsCount: totalFingerprintsCount,
+				config:                 config,
 			}
 		case computeBlockName == "BootstrappedBlomqvistBeta":
 			nextComputeBlock = computeData{
@@ -904,6 +1012,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.BlomqvistDupeThreshold,
 				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
+				config:                  config,
 			}
 		case computeBlockName == "HoeffdingD":
 			nextComputeBlock = computeData{
@@ -914,6 +1023,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:              strictnessFactor * config.HoeffdingDupeThreshold,
 				cutAboveThreshold:      true,
 				totalFingerprintsCount: totalFingerprintsCount,
+				config:                 config,
 			}
 		case computeBlockName == "HoeffdingDRound1":
 			nextComputeBlock = computeData{
@@ -928,6 +1038,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.HoeffdingRound1DupeThreshold,
 				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
+				config:                  config,
 			}
 		case computeBlockName == "HoeffdingDRound2":
 			nextComputeBlock = computeData{
@@ -942,6 +1053,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:               strictnessFactor * config.HoeffdingRound2DupeThreshold,
 				cutAboveThreshold:       true,
 				totalFingerprintsCount:  totalFingerprintsCount,
+				config:                  config,
 			}
 		case computeBlockName == "MI":
 			nextComputeBlock = computeData{
@@ -952,6 +1064,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 				threshold:              strictnessFactor * config.MIThreshold,
 				cutAboveThreshold:      false,
 				totalFingerprintsCount: totalFingerprintsCount,
+				config:                 config,
 			}
 		default:
 			return 0, errors.New(errors.Errorf("Unrecognized similarity computation block name \"%v\"", computeBlockName))
@@ -962,7 +1075,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 	fingerprintsForFurtherTesting := fingerprintsArrayToCompareWith
 	for _, computeBlock := range orderedComputeBlocks {
 
-		fingerprintsForFurtherTesting, err = computeSimilarity(candidateImageFingerprint, fingerprintsForFurtherTesting, computeBlock)
+		fingerprintsForFurtherTesting, err = computeSimilarity(candidateImageFingerprint, fingerprintsForFurtherTesting, memoizationData, computeBlock)
 		if err != nil {
 			return 0, errors.New(err)
 		}
