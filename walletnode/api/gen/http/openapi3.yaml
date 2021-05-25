@@ -20,7 +20,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/TaskResponseTinyCollection'
               example:
-              - id: n6Qn6TFM
+                - id: n6Qn6TFM
                 status: Task Started
                 ticket:
                   artist_name: Leonardo da Vinci
@@ -58,6 +58,25 @@ paths:
                   spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+                - id: n6Qn6TFM
+                  status: Task Started
+                  ticket:
+                    artist_name: Leonardo da Vinci
+                    artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                    artist_pastelid_passphrase: qwerasdf1234
+                    artist_website_url: https://www.leonardodavinci.net
+                    description: The Mona Lisa is an oil painting by Italian artist,
+                      inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                      the piece features a portrait of a seated woman set against an
+                      imaginary landscape.
+                    issued_copies: 1
+                    keywords: Renaissance, sfumato, portrait
+                    maximum_fee: 100
+                    name: Mona Lisa
+                    series_name: Famous artist
+                    spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                    youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                  txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         "500":
           description: Internal Server Error response.
           content:
@@ -262,41 +281,62 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 86
-              - 101
-              - 108
-              - 32
-              - 118
-              - 111
-              - 108
-              - 117
-              - 112
-              - 116
-              - 97
-              - 116
-              - 101
-              - 109
-              - 32
-              - 112
-              - 114
-              - 111
-              - 118
-              - 105
-              - 100
-              - 101
-              - 110
-              - 116
-              - 32
-              - 100
-              - 111
-              - 108
-              - 111
-              - 114
-              - 105
-              - 98
-              - 117
-              - 115
-              - 46
+                - 68
+                - 111
+                - 108
+                - 111
+                - 114
+                - 101
+                - 115
+                - 32
+                - 117
+                - 116
+                - 32
+                - 102
+                - 117
+                - 103
+                - 105
+                - 116
+                - 32
+                - 116
+                - 101
+                - 109
+                - 112
+                - 111
+                - 114
+                - 97
+                - 32
+                - 112
+                - 101
+                - 114
+                - 102
+                - 101
+                - 114
+                - 101
+                - 110
+                - 100
+                - 105
+                - 115
+                - 32
+                - 100
+                - 111
+                - 108
+                - 111
+                - 114
+                - 105
+                - 98
+                - 117
+                - 115
+                - 32
+                - 113
+                - 117
+                - 105
+                - 115
+                - 113
+                - 117
+                - 97
+                - 109
+                - 46
       responses:
         "201":
           description: Created response.
@@ -307,6 +347,65 @@ paths:
               example:
                 expires_in: 2006-01-02T15:04:05Z07:00
                 image_id: VK7mpAqZ
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /artworks/search/{term}:
+    get:
+      tags:
+        - artworks
+      summary: search artworks
+      description: Search artwork request
+      operationId: artworks#search
+      parameters:
+        - name: term
+          in: path
+          description: artwork search request
+          required: true
+          schema:
+            type: string
+            description: artwork search request
+            example: Reprehenderit explicabo quo temporibus harum voluptates.
+          example: Harum quas sapiente et unde voluptates.
+      responses:
+        "101":
+          description: Switching Protocols response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArtworkTicket'
+              example:
+                artist_name: Leonardo da Vinci
+                artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                artist_pastelid_passphrase: qwerasdf1234
+                artist_website_url: https://www.leonardodavinci.net
+                description: The Mona Lisa is an oil painting by Italian artist, inventor,
+                  and writer Leonardo da Vinci. Likely completed in 1506, the piece
+                  features a portrait of a seated woman set against an imaginary landscape.
+                issued_copies: 1
+                keywords: Renaissance, sfumato, portrait
+                maximum_fee: 100
+                name: Mona Lisa
+                series_name: Famous artist
+                spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         "400":
           description: Bad Request response.
           content:
@@ -614,10 +713,14 @@ components:
             $ref: '#/components/schemas/TaskState'
           description: List of states from the very beginning of the process
           example:
-          - date: 2006-01-02T15:04:05Z07:00
-            status: Task Started
-          - date: 2006-01-02T15:04:05Z07:00
-            status: Task Started
+            - date: 2006-01-02T15:04:05Z07:00
+              status: Task Started
+            - date: 2006-01-02T15:04:05Z07:00
+              status: Task Started
+            - date: 2006-01-02T15:04:05Z07:00
+              status: Task Started
+            - date: 2006-01-02T15:04:05Z07:00
+              status: Task Started
         status:
           type: string
           description: Status of the registration process
@@ -645,12 +748,14 @@ components:
       example:
         id: n6Qn6TFM
         states:
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
         status: Task Started
         ticket:
           artist_name: Leonardo da Vinci
@@ -806,83 +911,74 @@ components:
           type: string
           description: File to upload
           example:
-          - 83
-          - 117
-          - 110
-          - 116
-          - 32
-          - 97
-          - 99
-          - 99
-          - 117
-          - 115
-          - 97
-          - 110
-          - 116
-          - 105
-          - 117
-          - 109
-          - 32
-          - 105
-          - 112
-          - 115
-          - 117
-          - 109
-          - 32
-          - 116
-          - 111
-          - 116
-          - 97
-          - 109
-          - 32
-          - 101
-          - 115
-          - 116
-          - 32
-          - 117
-          - 110
-          - 100
-          - 101
-          - 46
+            - 78
+            - 111
+            - 115
+            - 116
+            - 114
+            - 117
+            - 109
+            - 32
+            - 101
+            - 120
+            - 112
+            - 101
+            - 100
+            - 105
+            - 116
+            - 97
+            - 32
+            - 100
+            - 117
+            - 99
+            - 105
+            - 109
+            - 117
+            - 115
+            - 32
+            - 118
+            - 111
+            - 108
+            - 117
+            - 112
+            - 116
+            - 97
+            - 116
+            - 101
+            - 109
+            - 32
+            - 114
+            - 101
+            - 112
+            - 117
+            - 100
+            - 105
+            - 97
+            - 110
+            - 100
+            - 97
+            - 101
+            - 46
           format: binary
         filename:
           type: string
           description: For internal use
       example:
         file:
-        - 69
-        - 105
-        - 117
-        - 115
-        - 32
-        - 99
-        - 117
-        - 109
-        - 32
-        - 104
-        - 97
-        - 114
-        - 117
-        - 109
-        - 32
-        - 105
-        - 108
-        - 108
-        - 117
-        - 109
-        - 32
-        - 118
-        - 101
-        - 108
-        - 105
-        - 116
-        - 32
-        - 118
-        - 101
-        - 110
-        - 105
-        - 97
-        - 109
-        - 46
+          - 65
+          - 117
+          - 116
+          - 101
+          - 109
+          - 32
+          - 101
+          - 97
+          - 113
+          - 117
+          - 101
+          - 46
       required:
       - file
+tags:
+  - name: artworks
+    description: Pastel Artwork

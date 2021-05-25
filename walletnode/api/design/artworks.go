@@ -123,9 +123,17 @@ var _ = Service("artworks", func() {
 	// search request artworks handler
 	//
 	Method("search", func() {
+
 		Description("Search artwork request")
+
 		Meta("swagger:summary", "search artworks")
-		Payload(ArtworkSearchRequestPayload)
+
+		//	Payload("term", ArtworkSearchRequestPayload)
+
+		Payload(func() {
+			Attribute("term", String, "artwork search request")
+		})
+
 		StreamingResult(ArtworkTicket)
 		HTTP(func() {
 			GET("/search/{term}")
@@ -375,8 +383,11 @@ var ArtworkSearchTerms = Type("ArtworkSearchTerms", func() {
 	})
 	Attribute("fields", ArrayOf(String), func() {
 		Description("list of properties to search for")
-		Enum("artlist_name", "artwork_title", "artwork_series_name", "artwork_keyword_set",
-			"artist_website", "artist_written_statement", "artwork_creation_video_youtube_url")
+		Elem(func() {
+			Enum("artlist_name", "artwork_title", "artwork_series_name", "artwork_keyword_set",
+				"artist_website", "artist_written_statement", "artwork_creation_video_youtube_url")
+		})
+
 	})
 })
 
