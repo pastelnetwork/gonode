@@ -195,6 +195,7 @@ jobs:
           keys:
             - tools-{{ .Environment.CIRCLE_SHA1 }}
             - tools-
+      - checkout
       - run:
           name: Print the go version
           command: |
@@ -225,6 +226,10 @@ jobs:
           key: tools-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/.cache
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
 
   # build:
   #   <<: *defaults
@@ -252,7 +257,8 @@ jobs:
     <<: *defaults
     parallelism: 8
     steps:
-      - checkout
+      - attach_workspace:
+          at: .
       - test:
           package: "common"
       - test:
