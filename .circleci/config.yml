@@ -10,7 +10,6 @@ defaults: &defaults
   environment:
     GO111MODULE: "on"
     GOPATH: "/home/circleci/go"
-    PATH: "/home/circleci/go/bin:$PATH"
 
 commands:
   test:
