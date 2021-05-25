@@ -18,7 +18,7 @@ commands:
         type: string
     steps:
       - run:
-          name: "<< parameters.package >>: Fetch dependencies"
+          name: "<< parameters.package >>: Fetch install_tools"
           working_directory: ~/project/<< parameters.package >>
           command: |
             go get -v ./...
@@ -189,7 +189,7 @@ commands:
           repo: << parameters.repo >>
 
 jobs:
-  dependencies:
+  install_tools:
     <<: *defaults
     steps:
       - run:
@@ -239,7 +239,7 @@ jobs:
   #         binaryName: "walletnode"
 
   # Run automated tests
-  tests:
+  test:
     steps:
       - test:
           package: "common"
@@ -300,15 +300,16 @@ jobs:
 workflows:
   build-and-test:
     jobs:
-      - dependencies
-      - tests:
+      - install_tools
+      - test:
           requires:
-            - dependencies
+            - install_tools
           filters:
             tags:
               only: /^v.*/
       - release:
           requires:
+            - install_tools
             - test
           filters:
             branches:
