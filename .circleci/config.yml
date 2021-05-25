@@ -255,7 +255,6 @@ jobs:
   # Run automated tests
   test:
     <<: *defaults
-    parallelism: 8
     steps:
       - attach_workspace:
           at: .
@@ -277,6 +276,14 @@ jobs:
           package: "walletnode"
       - test:
           package: "supernode"
+
+  test_pastel:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "pastel"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
@@ -320,6 +327,12 @@ workflows:
     jobs:
       - tools
       - test:
+          requires:
+            - tools
+          filters:
+            tags:
+              only: /^v.*/
+      - test_pastel:
           requires:
             - tools
           filters:
