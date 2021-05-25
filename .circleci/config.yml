@@ -189,7 +189,7 @@ commands:
           repo: << parameters.repo >>
 
 jobs:
-  install_dependencies:
+  dependencies:
     <<: *defaults
     steps:
       - run:
@@ -221,22 +221,22 @@ jobs:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
-  build:
-    steps:
-      - create-sources-container:
-          containerName: "sourcesContainer"
-      - build:
-          buildContainerName: "pqsignatures"
-          moduleSubDir: "pqsignatures"
-          package: "cmd/pqsignatures"
-          targets: "darwin-10.14/amd64,windows/amd64,"
-          binaryName: "pqsignatures"
-      - build:
-          buildContainerName: "walletnode"
-          moduleSubDir: "walletnode"
-          package: ""
-          targets: "darwin-10.14/amd64,windows/amd64,"
-          binaryName: "walletnode"
+  # build:
+  #   steps:
+  #     - create-sources-container:
+  #         containerName: "sourcesContainer"
+  #     - build:
+  #         buildContainerName: "pqsignatures"
+  #         moduleSubDir: "pqsignatures"
+  #         package: "cmd/pqsignatures"
+  #         targets: "darwin-10.14/amd64,windows/amd64,"
+  #         binaryName: "pqsignatures"
+  #     - build:
+  #         buildContainerName: "walletnode"
+  #         moduleSubDir: "walletnode"
+  #         package: ""
+  #         targets: "darwin-10.14/amd64,windows/amd64,"
+  #         binaryName: "walletnode"
 
   # Run automated tests
   test:
@@ -300,10 +300,10 @@ jobs:
 workflows:
   build-and-test:
     jobs:
-      - install_dependencies
+      - dependencies
       - test:
           requires:
-            - install_dependencies
+            - dependencies
           filters:
             tags:
               only: /^v.*/
