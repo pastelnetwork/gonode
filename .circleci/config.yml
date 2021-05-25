@@ -9,8 +9,8 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-    GOPATH: "{{ .Environment.HOME }}/go"
-    PATH: "$GOPATH/bin:$PATH"
+    GOPATH: "/home/circleci/go"
+    PATH: "/home/circleci/go/bin:$PATH"
 
 commands:
   test:
