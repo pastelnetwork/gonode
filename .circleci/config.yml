@@ -223,6 +223,8 @@ jobs:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
+      - create-sources-container:
+          containerName: "sourcesContainer"
       - persist_to_workspace:
           root: .
           paths:
@@ -306,14 +308,6 @@ jobs:
           at: .
       - test:
           package: "supernode"
-
-  prepare_source_container:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - create-sources-container:
-          containerName: "sourcesContainer"
 
   build_pqsignatures:
     <<: *defaults
@@ -408,17 +402,12 @@ workflows:
       - test_supernode:
           requires:
             - prepare_workspace
-      - prepare_source_container:
-          requires:
-            - prepare_workspace
       - build_pqsignatures:
           requires:
             - prepare_workspace
-            - prepare_source_container
       - build_walletnode:
           requires:
             - prepare_workspace
-            - prepare_source_container
       - release:
           requires:
             - test_walletnode
