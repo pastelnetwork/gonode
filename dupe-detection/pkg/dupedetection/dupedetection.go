@@ -99,6 +99,7 @@ func loadImage(imagePath string, width int, height int) (image.Image, error) {
 	}
 
 	img = imaging.Resize(img, width, height, imaging.Linear)
+
 	return img, nil
 }
 
@@ -899,13 +900,13 @@ func NewComputeConfig() ComputeConfig {
 	config.StableOrderOfCorrelationMethods = []string{
 		"PearsonR",
 		"SpearmanRho",
-		"BootstrappedKendallTau",
 	}
 
 	config.UnstableOrderOfCorrelationMethods = []string{
-		"BootstrappedBlomqvistBeta",
-		"HoeffdingDRound1",
-		"HoeffdingDRound2",
+		"MI",
+		"KendallTau",
+		"HoeffdingD",
+		"BlomqvistBeta",
 	}
 
 	return config

@@ -1,8 +1,4 @@
-// #go:generate goa gen github.com/pastelnetwork/gonode/walletnode/api/design --disable now
-// TODO: Ashadi: that command above will raise error when ran go vet ./...
-// # github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/client
-// api/gen/http/artworks/client/client.go:130:3: the cancel function is not used on all paths (possible context leak)
-// api/gen/http/artworks/client/client.go:134:5: this return statement may be reached without using the cancel var defined on line 130
+// //go:generate goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package api
 
