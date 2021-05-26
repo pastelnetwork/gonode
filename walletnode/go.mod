@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
-	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/pastel v0.0.0
