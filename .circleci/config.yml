@@ -195,6 +195,9 @@ jobs:
     <<: *defaults
     steps:
       - checkout
+      - setup_remote_docker:
+          version: 20.10.2
+          docker_layer_caching: true
       - run:
           name: Print the go version
           command: |
@@ -307,9 +310,8 @@ jobs:
   prepare_source_container:
     <<: *defaults
     steps:
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
+      - attach_workspace:
+          at: .
       - create-sources-container:
           containerName: "sourcesContainer"
 
@@ -379,7 +381,6 @@ workflows:
   build-and-test:
     jobs:
       - prepare_workspace
-      - prepare_source_container
       - test_common:
           requires:
             - prepare_workspace
@@ -405,6 +406,9 @@ workflows:
           requires:
             - prepare_workspace
       - test_supernode:
+          requires:
+            - prepare_workspace
+      - prepare_source_container:
           requires:
             - prepare_workspace
       - build_pqsignatures:
