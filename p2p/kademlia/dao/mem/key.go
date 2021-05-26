@@ -20,7 +20,7 @@ type Key struct {
 // GetAllKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (k *Key) GetAllKeysForReplication(ctx context.Context) ([][]byte, error) {
+func (k *Key) GetAllKeysForReplication(_ context.Context) ([][]byte, error) {
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
 	var keys [][]byte
@@ -33,7 +33,7 @@ func (k *Key) GetAllKeysForReplication(ctx context.Context) ([][]byte, error) {
 }
 
 // ExpireKeys should expire all key/values due for expiration.
-func (k *Key) ExpireKeys(ctx context.Context) error {
+func (k *Key) ExpireKeys(_ context.Context) error {
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
 	for kk, v := range k.expireMap {
@@ -47,7 +47,7 @@ func (k *Key) ExpireKeys(ctx context.Context) error {
 }
 
 // Init initializes the Store
-func (k *Key) Init(ctx context.Context) error {
+func (k *Key) Init(_ context.Context) error {
 	k.data = make(map[string][]byte)
 	k.mutex = &sync.Mutex{}
 	k.replicateMap = make(map[string]time.Time)
@@ -57,7 +57,7 @@ func (k *Key) Init(ctx context.Context) error {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (k *Key) Store(ctx context.Context, data []byte, replication time.Time, expiration time.Time, publisher bool) error {
+func (k *Key) Store(_ context.Context, data []byte, replication time.Time, expiration time.Time, _ bool) error {
 	key := crypto.GetKey(data)
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
@@ -68,7 +68,7 @@ func (k *Key) Store(ctx context.Context, data []byte, replication time.Time, exp
 }
 
 // Retrieve will return the local key/value if it exists
-func (k *Key) Retrieve(ctx context.Context, key []byte) (data []byte, found bool) {
+func (k *Key) Retrieve(_ context.Context, key []byte) (data []byte, found bool) {
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
 	data, found = k.data[string(key)]
@@ -76,7 +76,7 @@ func (k *Key) Retrieve(ctx context.Context, key []byte) (data []byte, found bool
 }
 
 // Delete deletes a key/value pair from the MemoryStore
-func (k *Key) Delete(ctx context.Context, key []byte) error {
+func (k *Key) Delete(_ context.Context, key []byte) error {
 	k.mutex.Lock()
 	defer k.mutex.Unlock()
 	delete(k.replicateMap, string(key))

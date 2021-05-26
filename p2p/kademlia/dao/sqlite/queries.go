@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"time"
 
+
+	// add sqlite driver
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
@@ -14,6 +16,7 @@ var (
 	logPrefix = "p2p"
 )
 
+// Migrate runs migrations such as creating `keys` table.
 func Migrate(ctx context.Context, db *sql.DB) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
@@ -29,6 +32,8 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
+// Store will store a key/value pair for the local node with the given
+// replication and expiration times.
 func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration time.Time) (int64, error) {
 	key := crypto.GetKey(data)
 	query := "INSERT INTO keys(key, data, replication, expiration) VALUES (?, ?, ?, ?)"
@@ -58,6 +63,7 @@ func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration
 	return rows, nil
 }
 
+// Retrieve will return the local key/value if it exists
 func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	var data []byte
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
@@ -95,6 +101,7 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	return data, nil
 }
 
+// ExpireKeys should expire all key/values due for expiration.
 func ExpireKeys(ctx context.Context, db *sql.DB) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
@@ -107,6 +114,9 @@ func ExpireKeys(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
+// GetAllKeysForReplication should return the keys of all data to be
+// replicated across the network. Typically all data should be
+// replicated every tReplicate seconds.
 func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error) {
 	var keys [][]byte
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
@@ -148,6 +158,7 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 	return keys, nil
 }
 
+// Remove deletes a key/value pair from the Key
 func Remove(ctx context.Context, db *sql.DB, key []byte) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))

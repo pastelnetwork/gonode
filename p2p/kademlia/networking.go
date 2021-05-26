@@ -193,7 +193,7 @@ func (rn *realNetworking) cancelResponse(res *expectedResponse) {
 	delete(rn.responseMap, res.query.ID)
 }
 
-func (rn *realNetworking) disconnect(ctx context.Context) error {
+func (rn *realNetworking) disconnect(_ context.Context) error {
 	rn.mutex.Lock()
 	defer rn.mutex.Unlock()
 	if !rn.connected {
@@ -229,9 +229,9 @@ func (rn *realNetworking) listen(ctx context.Context) error {
 				// Wait for messages
 				msg, err := deserializeMessage(conn)
 				if err != nil {
-					if err.Error() == "EOF" {
-						// Node went bye bye
-					}
+					// if err.Error() == "EOF" {
+					// 	// Node went bye bye
+					// }
 					// TODO should we penalize this node somehow ? Ban it ?
 					return
 				}

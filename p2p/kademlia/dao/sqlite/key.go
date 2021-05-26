@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"time"
 
+	// add sqlite driver
 	_ "github.com/mattn/go-sqlite3"
 )
 
-// SQLiteStore is a simple in-memory key/value store used for unit testing, and
+// Key is a simple in-memory key/value store used for unit testing, and
 // the CLI example
 type Key struct {
 	db *sql.DB
@@ -44,7 +45,7 @@ func (k *Key) Init(ctx context.Context) error {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (k *Key) Store(ctx context.Context, data []byte, replication time.Time, expiration time.Time, publisher bool) error {
+func (k *Key) Store(ctx context.Context, data []byte, replication time.Time, expiration time.Time, _ bool) error {
 	_, err := Store(ctx, k.db, data, replication, expiration)
 	return err
 }
@@ -59,7 +60,7 @@ func (k *Key) Retrieve(ctx context.Context, key []byte) (data []byte, found bool
 	return data, true
 }
 
-// Delete deletes a key/value pair from the MemoryStore
+// Delete deletes a key/value pair from the Key
 func (k *Key) Delete(ctx context.Context, key []byte) error {
 	return Remove(ctx, k.db, key)
 }
