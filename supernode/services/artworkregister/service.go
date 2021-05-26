@@ -24,7 +24,7 @@ type Service struct {
 	db           storage.KeyValue
 	pastelClient pastel.Client
 	nodeClient   node.Client
-	p2pSrv       *p2p.Service
+	p2pClient    p2p.Client
 }
 
 // Run starts task
@@ -52,13 +52,13 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client, p2pSrv *p2p.Service) *Service {
+func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
-		p2pSrv:       p2pSrv,
+		p2pClient:    p2pClient,
 		Worker:       task.NewWorker(),
 	}
 }

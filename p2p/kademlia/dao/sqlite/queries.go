@@ -9,15 +9,12 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
-)
 
-var (
-	logPrefix = "p2p"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 // Migrate runs migrations such as creating `keys` table.
 func Migrate(ctx context.Context, db *sql.DB) error {
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
 
@@ -36,14 +33,12 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration time.Time) (int64, error) {
 	key := crypto.GetKey(data)
 	query := "INSERT INTO keys(key, data, replication, expiration) VALUES (?, ?, ?, ?)"
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
 
 	stmt, err := db.PrepareContext(ctx, query)
 	if err != nil {
-		log.WithContext(ctx).Infof("Error %s when preparing SQL statement", err)
-		return 0, err
+		return 0, errors.Errorf("failed to preparing SQL statement: %w", err)
 	}
 	defer stmt.Close()
 
@@ -65,7 +60,6 @@ func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration
 // Retrieve will return the local key/value if it exists
 func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	var data []byte
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
 
@@ -102,8 +96,6 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 
 // ExpireKeys should expire all key/values due for expiration.
 func ExpireKeys(ctx context.Context, db *sql.DB) error {
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
-
 	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE expiration > TIME('now')")
 	if err != nil {
 		log.WithContext(ctx).Infof("Error %s while keys with due expiration", err)
@@ -118,7 +110,7 @@ func ExpireKeys(ctx context.Context, db *sql.DB) error {
 // replicated every tReplicate seconds.
 func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error) {
 	var keys [][]byte
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
 
@@ -159,7 +151,6 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 
 // Remove deletes a key/value pair from the Key
 func Remove(ctx context.Context, db *sql.DB, key []byte) error {
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
 	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE key=?", string(key))

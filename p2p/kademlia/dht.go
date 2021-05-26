@@ -3,11 +3,12 @@ package kademlia
 import (
 	"bytes"
 	"context"
-	"errors"
 	"math"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 
 	b58 "github.com/jbenet/go-base58"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -303,10 +304,10 @@ func (dht *DHT) Bootstrap(ctx context.Context) error {
 
 // Disconnect will trigger a disconnect from the network. All underlying sockets
 // will be closed.
-func (dht *DHT) Disconnect(ctx context.Context) error {
+func (dht *DHT) Disconnect() error {
 	// TODO if .CreateSocket() is called, but .Listen() is never called, we
 	// don't provide a way to close the socket
-	return dht.networking.disconnect(ctx)
+	return dht.networking.disconnect()
 }
 
 // Iterate does an iterative search through the network. This can be done
@@ -382,7 +383,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 				queryData.Target = target
 				query.Data = queryData
 			default:
-				log.WithContext(ctx).Fatal(errors.New("unknown iterate type"))
+				log.WithContext(ctx).Fatal("unknown iterate type")
 			}
 
 			// Send the async queries and wait for a response

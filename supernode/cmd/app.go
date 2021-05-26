@@ -115,10 +115,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	artworkStorage := artwork.NewStorage(fs.NewFileStorage(config.TempDir))
 
 	// p2p service (currently using kademlia)
-	p2pSrv := p2p.New()
-	if err := p2pSrv.Configure(ctx, config.P2P); err != nil {
-		return err
-	}
+	p2pSrv := p2p.New(config.P2P)
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient, p2pSrv)

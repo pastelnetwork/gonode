@@ -3,7 +3,6 @@ package kademlia
 import (
 	"bytes"
 	"context"
-	"errors"
 	"math"
 	"math/big"
 	"math/rand"
@@ -12,6 +11,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 
 	"github.com/pastelnetwork/gonode/common/log"
 )

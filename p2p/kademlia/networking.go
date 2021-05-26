@@ -2,11 +2,12 @@ package kademlia
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"strconv"
 	"sync"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 
 	"github.com/anacrolix/utp"
 	"github.com/ccding/go-stun/stun"
@@ -21,7 +22,7 @@ type networking interface {
 	init(self *NetworkNode)
 	createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error)
 	listen(ctx context.Context) error
-	disconnect(ctx context.Context) error
+	disconnect() error
 	cancelResponse(*expectedResponse)
 	isInitialized() bool
 	getNetworkAddr() string
@@ -187,7 +188,7 @@ func (rn *realNetworking) cancelResponse(res *expectedResponse) {
 	delete(rn.responseMap, res.query.ID)
 }
 
-func (rn *realNetworking) disconnect(_ context.Context) error {
+func (rn *realNetworking) disconnect() error {
 	rn.mutex.Lock()
 	defer rn.mutex.Unlock()
 	if !rn.connected {
@@ -205,17 +206,16 @@ func (rn *realNetworking) disconnect(_ context.Context) error {
 	rn.connected = false
 	rn.initialized = false
 	close(rn.dcEndChan)
-	return err
+	return errors.Errorf("failed to close socket: %w", err)
 }
 
 func (rn *realNetworking) listen(ctx context.Context) error {
 	for {
 		conn, err := rn.socket.Accept()
-
 		if err != nil {
-			rn.disconnect(ctx)
+			rn.disconnect()
 			<-rn.dcEndChan
-			return err
+			return errors.Errorf("failed to accept socket: %s", err)
 		}
 
 		go func(conn net.Conn) {
