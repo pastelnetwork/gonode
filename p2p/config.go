@@ -11,7 +11,7 @@ var (
 // Config contains settings of the supernode server.
 type Config struct {
 	// The local IPv4 or IPv6 address
-	ListenAddress string `mapstructure:"listen_address" json:"listen_address,omitempty"`
+	ListenAddresses string `mapstructure:"listen_addresses" json:"listen_address,omitempty"`
 	// The local port to listen for connections on
 	Port string `mapstructure:"port" json:"port,omitempty"`
 	// IP Address to bootstrap against
@@ -25,10 +25,10 @@ type Config struct {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		ListenAddress: defaultListenAddress,
-		Port:          defaultPort,
-		BootstrapIP:   defaultBootstrapIP,
-		BootstrapPort: defaultBootstrapPort,
-		UseStun:       defualtUseStun,
+		ListenAddresses: defaultListenAddress,
+		Port:            defaultPort,
+		BootstrapIP:     defaultBootstrapIP,
+		BootstrapPort:   defaultBootstrapPort,
+		UseStun:         defualtUseStun,
 	}
 }

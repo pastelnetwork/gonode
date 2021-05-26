@@ -64,7 +64,7 @@ func (service *Service) Setup(ctx context.Context, config Config) error {
 
 	dht, err := kademlia.NewDHT(ctx, &mem.Key{}, &kademlia.Options{
 		BootstrapNodes: bootstrapNodes,
-		IP:             config.ListenAddress,
+		IP:             config.ListenAddresses,
 		Port:           config.Port,
 		UseStun:        config.UseStun,
 	})
