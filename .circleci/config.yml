@@ -397,6 +397,8 @@ workflows:
           requires:
             - prepare_workspace
       - build:
+          requires:
+            - prepare_workspace
       - release:
           requires:
             - test_walletnode
