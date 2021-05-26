@@ -413,6 +413,9 @@ type MeasureResult struct {
 	AverageAccuracy  float64
 }
 
+var finalCombinedImageFingerprintArray [][]float64
+var memoizationData *dupedetection.MemoizationImageData
+
 // MeasureAUPRC calculates AUPRC for a test corpus of the images
 func MeasureAUPRC(config dupedetection.ComputeConfig) (MeasureResult, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
@@ -443,9 +446,12 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (MeasureResult, error) {
 
 	fmt.Printf("\nRetrieving image fingerprints of previously registered images from local database...")
 
-	finalCombinedImageFingerprintArray, memoizationData, err := getAllImageFingerprintsFromDupeDetectionDatabaseAsArray()
-	if err != nil {
-		return MeasureResult{}, errors.New(err)
+	var err error
+	if len(finalCombinedImageFingerprintArray) == 0 || memoizationData == nil {
+		finalCombinedImageFingerprintArray, memoizationData, err = getAllImageFingerprintsFromDupeDetectionDatabaseAsArray()
+		if err != nil {
+			return MeasureResult{}, errors.New(err)
+		}
 	}
 
 	fmt.Printf("\n\nNow testing duplicate-detection scheme on known near-duplicate images:")
