@@ -59,7 +59,7 @@ func areNodesEqual(n1 *NetworkNode, n2 *NetworkNode, allowNilID bool) bool {
 		if n1.ID == nil || n2.ID == nil {
 			return false
 		}
-		if bytes.Equal(n1.ID, n2.ID) {
+		if !bytes.Equal(n1.ID, n2.ID) {
 			return false
 		}
 	}
