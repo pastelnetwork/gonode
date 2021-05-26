@@ -14,19 +14,7 @@ const (
 
 // Service represents the p2p service.
 type Service struct {
-	dht DHT
-}
-
-// DHT represents the methods by which a library consumer interacts with a DHT.
-type DHT interface {
-	Store(ctx context.Context, data []byte) (id string, err error)
-	Get(ctx context.Context, key string) (data []byte, found bool, err error)
-	CreateSocket() error
-	Listen(ctx context.Context) error
-	GetNetworkAddr() string
-	Bootstrap(ctx context.Context) error
-	UseStun() bool
-	Disconnect() error
+	dht *kademlia.DHT
 }
 
 // Run starts the DHT service
@@ -40,8 +28,10 @@ func (service *Service) Run(ctx context.Context) error {
 
 	go func() {
 		log.WithContext(ctx).Infof("Server listening on %q", service.dht.GetNetworkAddr())
-		err := service.dht.Listen(ctx)
-		panic(err)
+		if err := service.dht.Listen(ctx); err != nil {
+			log.WithContext(ctx).Error(err)
+			<-ctx.Done()
+		}
 	}()
 
 	return service.dht.Bootstrap(ctx)
