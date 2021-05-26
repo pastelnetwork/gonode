@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-
 	// add sqlite driver
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/pastelnetwork/gonode/common/log"
