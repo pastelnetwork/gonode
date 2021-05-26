@@ -15,7 +15,7 @@ import (
 // Creates twenty DHTs and bootstraps each with the previous
 // at the end all should know about each other
 func TestBootstrapTwentyNodes(t *testing.T) {
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	done := make(chan bool)
@@ -41,7 +41,7 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 		assert.Equal(t, 0, dht.NumNodes())
 		go func(dht *DHT) {
 			err := dht.Listen(ctx)
-			assert.Equal(t, "closed", err.Error())
+			assert.EqualError(t, errClosed, err.Error())
 			done <- true
 		}(dht)
 		go func(dht *DHT) {
@@ -64,6 +64,9 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 // Creates two DHTs, bootstrap one using the other, ensure that they both know
 // about each other afterwards.
 func TestBootstrapTwoNodes(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	done := make(chan bool)
 
 	id1, _ := newID()
@@ -109,12 +112,12 @@ func TestBootstrapTwoNodes(t *testing.T) {
 			done <- true
 		}()
 		err := dht2.Listen(ctx)
-		assert.Equal(t, "closed", err.Error())
+		assert.EqualError(t, errClosed, err.Error())
 		done <- true
 	}()
 
 	err = dht1.Listen(ctx)
-	assert.Equal(t, "closed", err.Error())
+	assert.EqualError(t, errClosed, err.Error())
 
 	assert.Equal(t, 1, dht1.NumNodes())
 	assert.Equal(t, 1, dht2.NumNodes())
@@ -125,6 +128,9 @@ func TestBootstrapTwoNodes(t *testing.T) {
 // Creates three DHTs, bootstrap B using A, bootstrap C using B. A should know
 // about both B and C
 func TestBootstrapThreeNodes(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	done := make(chan bool)
 
 	id1, _ := newID()
@@ -198,16 +204,16 @@ func TestBootstrapThreeNodes(t *testing.T) {
 			}(dht1, dht2, dht3)
 
 			err = dht3.Listen(ctx)
-			assert.Equal(t, "closed", err.Error())
+			assert.EqualError(t, errClosed, err.Error())
 			done <- true
 		}(dht1, dht2, dht3)
 		err := dht2.Listen(ctx)
-		assert.Equal(t, "closed", err.Error())
+		assert.EqualError(t, errClosed, err.Error())
 		done <- true
 	}(dht1, dht2, dht3)
 
 	err = dht1.Listen(ctx)
-	assert.Equal(t, "closed", err.Error())
+	assert.EqualError(t, errClosed, err.Error())
 
 	assert.Equal(t, 2, dht1.NumNodes())
 	assert.Equal(t, 2, dht2.NumNodes())
@@ -221,6 +227,9 @@ func TestBootstrapThreeNodes(t *testing.T) {
 // Creates two DHTs and bootstraps using only IP:Port. Connecting node should
 // ping the first node to find its ID
 func TestBootstrapNoID(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	done := make(chan bool)
 
 	id1, _ := newID()
@@ -265,12 +274,12 @@ func TestBootstrapNoID(t *testing.T) {
 			done <- true
 		}()
 		err := dht2.Listen(ctx)
-		assert.Equal(t, "closed", err.Error())
+		assert.EqualError(t, errClosed, err.Error())
 		done <- true
 	}()
 
 	err = dht1.Listen(ctx)
-	assert.Equal(t, "closed", err.Error())
+	assert.EqualError(t, errClosed, err.Error())
 
 	assert.Equal(t, 1, dht1.NumNodes())
 	assert.Equal(t, 1, dht2.NumNodes())
@@ -283,6 +292,9 @@ func TestBootstrapNoID(t *testing.T) {
 // 100 times to ensure that we can use the same IP and port without EADDRINUSE
 // errors.
 func TestReconnect(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	for i := 0; i < 100; i++ {
 		done := make(chan bool)
 
@@ -327,13 +339,13 @@ func TestReconnect(t *testing.T) {
 				done <- true
 			}()
 			err := dht2.Listen(ctx)
-			assert.Equal(t, "closed", err.Error())
+			assert.EqualError(t, errClosed, err.Error())
 			done <- true
 
 		}()
 
 		err = dht1.Listen(ctx)
-		assert.Equal(t, "closed", err.Error())
+		assert.EqualError(t, errClosed, err.Error())
 
 		assert.Equal(t, 1, dht1.NumNodes())
 		assert.Equal(t, 1, dht2.NumNodes())
@@ -347,6 +359,9 @@ func TestReconnect(t *testing.T) {
 // payload from one node to another. Ensure that the other node now has
 // this data in its store.
 func TestStoreAndFindLargeValue(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	done := make(chan bool)
 
 	id1, _ := newID()
@@ -376,13 +391,13 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 
 	go func() {
 		err := dht1.Listen(ctx)
-		assert.Equal(t, "closed", err.Error())
+		assert.EqualError(t, errClosed, err.Error())
 		done <- true
 	}()
 
 	go func() {
 		err := dht2.Listen(ctx)
-		assert.Equal(t, "closed", err.Error())
+		assert.EqualError(t, errClosed, err.Error())
 		done <- true
 	}()
 
@@ -415,6 +430,9 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 // Tests sending a message which results in an error when attempting to
 // send over uTP
 func TestNetworkingSendError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 	done := make(chan (int))
@@ -456,6 +474,9 @@ func TestNetworkingSendError(t *testing.T) {
 // Tests sending a message which results in a successful send, but the node
 // never responds
 func TestNodeResponseSendError(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 	done := make(chan (int))
@@ -510,6 +531,9 @@ func TestNodeResponseSendError(t *testing.T) {
 // Tests a bucket refresh by setting a very low TRefresh value, adding a single
 // node to a bucket, and waiting for the refresh message for the bucket
 func TestBucketRefresh(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 	done := make(chan (int))
@@ -569,6 +593,9 @@ func TestBucketRefresh(t *testing.T) {
 // Tets store replication by setting the TReplicate time to a very small value.
 // Stores some data, and then expects another store message in TReplicate time
 func TestStoreReplication(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 	done := make(chan (int))
@@ -634,6 +661,9 @@ func TestStoreReplication(t *testing.T) {
 // and then wait longer than TExpire. The value should no longer exist in
 // the store.
 func TestStoreExpiration(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	id := getIDWithValues(0)
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{

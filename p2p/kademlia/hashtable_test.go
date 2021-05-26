@@ -10,12 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var ctx = context.Background()
-
 // Create a new node and bootstrap it. All nodes in the network know of a
 // single node closer to the original node. This continues until every k bucket
 // is occupied.
 func TestFindNodeAllBuckets(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 
@@ -77,6 +78,9 @@ func TestFindNodeAllBuckets(t *testing.T) {
 // node to the now full bucket, we should receive a ping to the very first node
 // added in order to determine if it is still alive.
 func TestAddNodeTimeout(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 	done := make(chan (int))
@@ -154,6 +158,9 @@ func TestAddNodeTimeout(t *testing.T) {
 }
 
 func TestGetRandomIDFromBucket(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	id := getIDWithValues(0)
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,

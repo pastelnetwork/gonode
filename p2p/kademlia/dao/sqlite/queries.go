@@ -38,7 +38,7 @@ func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration
 
 	stmt, err := db.PrepareContext(ctx, query)
 	if err != nil {
-		return 0, errors.Errorf("failed to preparing SQL statement: %w", err)
+		return 0, errors.Errorf("failed to prepare SQL statement: %w", err)
 	}
 	defer stmt.Close()
 

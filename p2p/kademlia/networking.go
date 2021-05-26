@@ -13,6 +13,10 @@ import (
 	"github.com/ccding/go-stun/stun"
 )
 
+var (
+	errClosed = errors.Errorf("failed to accept new connection: closed")
+)
+
 type networking interface {
 	sendMessage(context.Context, *message, bool, int64) (*expectedResponse, error)
 	getMessage() chan (*message)
@@ -206,7 +210,10 @@ func (rn *realNetworking) disconnect() error {
 	rn.connected = false
 	rn.initialized = false
 	close(rn.dcEndChan)
-	return errors.Errorf("failed to close socket: %w", err)
+	if err != nil {
+		return errors.Errorf("failed to close socket: %w", err)
+	}
+	return nil
 }
 
 func (rn *realNetworking) listen(ctx context.Context) error {
@@ -215,7 +222,13 @@ func (rn *realNetworking) listen(ctx context.Context) error {
 		if err != nil {
 			rn.disconnect()
 			<-rn.dcEndChan
-			return errors.Errorf("failed to accept new connection: %s", err)
+
+			switch err.Error() {
+			case "closed":
+				return errClosed
+			default:
+				return errors.Errorf("failed to accept new connection: %s", err)
+			}
 		}
 
 		go func(conn net.Conn) {
