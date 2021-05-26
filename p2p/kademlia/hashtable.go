@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"math"
 	"math/big"
@@ -11,6 +12,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 const (
@@ -108,7 +111,7 @@ func (ht *hashTable) getRefreshTimeForBucket(bucket int) time.Time {
 	return ht.refreshMap[bucket]
 }
 
-func (ht *hashTable) markNodeAsSeen(node []byte) {
+func (ht *hashTable) markNodeAsSeen(ctx context.Context, node []byte) {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 	index := getBucketIndexFromDifferingBit(ht.Self.ID, node)
@@ -121,7 +124,7 @@ func (ht *hashTable) markNodeAsSeen(node []byte) {
 		}
 	}
 	if nodeIndex == -1 {
-		panic(errors.New("Tried to mark nonexistent node as seen"))
+		log.WithContext(ctx).Fatal(errors.New("Tried to mark nonexistent node as seen"))
 	}
 
 	n := bucket[nodeIndex]

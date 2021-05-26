@@ -26,16 +26,11 @@ func TestSerializeNetMsg(t *testing.T) {
 	}
 
 	serialized, err := serializeMessage(msg)
-	if err != nil {
-		panic(err)
-	}
+	assert.NoError(t, err)
 
 	conn.Write(serialized)
 
 	deserialized, err := deserializeMessage(&conn)
-	if err != nil {
-		panic(err)
-	}
-
+	assert.NoError(t, err)
 	assert.Equal(t, msg, deserialized)
 }

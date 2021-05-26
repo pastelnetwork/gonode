@@ -22,7 +22,7 @@ func newMockNetworking() *mockNetworking {
 	return net
 }
 
-func (net *mockNetworking) listen() error {
+func (net *mockNetworking) listen(ctx context.Context) error {
 	return nil
 }
 
@@ -30,7 +30,7 @@ func (net *mockNetworking) getNetworkAddr() string {
 	return ""
 }
 
-func (net *mockNetworking) disconnect() error {
+func (net *mockNetworking) disconnect(ctx context.Context) error {
 	close(net.dc)
 	<-net.dcTimersChan
 	close(net.recv)

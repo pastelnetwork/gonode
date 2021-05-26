@@ -115,8 +115,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	imageStorage := image.NewStorage(fs.NewFileStorage(config.TempDir))
 
 	// p2p service (currently using kademlia)
-	p2pSrv, err := p2p.New(config.P2P)
-	if err != nil {
+	p2pSrv := p2p.New()
+	if err := p2pSrv.Setup(config.P2P); err != nil {
 		return err
 	}
 

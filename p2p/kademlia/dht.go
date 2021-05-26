@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"log"
 	"math"
 	"sort"
 	"sync"
 	"time"
 
 	b58 "github.com/jbenet/go-base58"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/dao"
 )
@@ -74,7 +74,7 @@ type Options struct {
 
 // NewDHT initializes a new DHT node. A store and options struct must be
 // provided.
-func NewDHT(store dao.Key, options *Options) (*DHT, error) {
+func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) {
 	dht := &DHT{}
 
 	dht.options = options
@@ -88,7 +88,10 @@ func NewDHT(store dao.Key, options *Options) (*DHT, error) {
 	dht.ht = ht
 	dht.networking = &realNetworking{}
 
-	store.Init()
+	err = store.Init(ctx)
+	if err != nil {
+		return nil, err
+	}
 
 	if options.TExpire == 0 {
 		options.TExpire = time.Second * 86410
@@ -146,7 +149,7 @@ func (dht *DHT) Store(ctx context.Context, data []byte) (id string, err error) {
 	key := crypto.GetKey(data)
 	expiration := dht.getExpirationTime(key)
 	replication := time.Now().Add(dht.options.TReplicate)
-	dht.store.Store(data, replication, expiration, true)
+	dht.store.Store(ctx, data, replication, expiration, true)
 	_, _, err = dht.iterate(ctx, iterateStore, key[:], data)
 	if err != nil {
 		return "", err
@@ -159,7 +162,7 @@ func (dht *DHT) Store(ctx context.Context, data []byte) (id string, err error) {
 // identifier of the data.
 func (dht *DHT) Get(ctx context.Context, key string) (data []byte, found bool, err error) {
 	keyBytes := b58.Decode(key)
-	value, exists := dht.store.Retrieve(keyBytes)
+	value, exists := dht.store.Retrieve(ctx, keyBytes)
 
 	// if len(keyBytes) != k {
 	// 	return nil, false, errors.New("Invalid key")
@@ -235,7 +238,7 @@ func (dht *DHT) Listen(ctx context.Context) error {
 	}
 	go dht.listen(ctx)
 	go dht.timers(ctx)
-	return dht.networking.listen()
+	return dht.networking.listen(ctx)
 }
 
 // Bootstrap attempts to bootstrap the network using the BootstrapNodes provided
@@ -300,10 +303,10 @@ func (dht *DHT) Bootstrap(ctx context.Context) error {
 
 // Disconnect will trigger a disconnect from the network. All underlying sockets
 // will be closed.
-func (dht *DHT) Disconnect() error {
+func (dht *DHT) Disconnect(ctx context.Context) error {
 	// TODO if .CreateSocket() is called, but .Listen() is never called, we
 	// don't provide a way to close the socket
-	return dht.networking.disconnect()
+	return dht.networking.disconnect(ctx)
 }
 
 // Iterate does an iterative search through the network. This can be done
@@ -379,7 +382,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 				queryData.Target = target
 				query.Data = queryData
 			default:
-				panic("Unknown iterate type")
+				log.WithContext(ctx).Fatal(errors.New("Unknown iterate type"))
 			}
 
 			// Send the async queries and wait for a response
@@ -516,7 +519,7 @@ func (dht *DHT) addNode(ctx context.Context, node *node) {
 	// Make sure node doesn't already exist
 	// If it does, mark it as seen
 	if dht.ht.doesNodeExistInBucket(index, node.ID) {
-		dht.ht.markNodeAsSeen(node.ID)
+		dht.ht.markNodeAsSeen(ctx, node.ID)
 		return
 	}
 
@@ -568,18 +571,18 @@ func (dht *DHT) timers(ctx context.Context) {
 			}
 
 			// Replication
-			keys, err := dht.store.GetAllKeysForReplication()
+			keys, err := dht.store.GetAllKeysForReplication(ctx)
 			if err != nil {
-				log.Fatal(err)
+				log.WithContext(ctx).Fatal(err)
 			}
 
 			for _, key := range keys {
-				value, _ := dht.store.Retrieve(key)
+				value, _ := dht.store.Retrieve(ctx, key)
 				dht.iterate(ctx, iterateStore, key, value)
 			}
 
 			// Expiration
-			dht.store.ExpireKeys()
+			dht.store.ExpireKeys(ctx)
 		case <-dht.networking.getDisconnect():
 			t.Stop()
 			dht.networking.timersFin()
@@ -613,7 +616,7 @@ func (dht *DHT) listen(ctx context.Context) {
 			case messageTypeFindValue:
 				data := msg.Data.(*queryDataFindValue)
 				dht.addNode(ctx, newNode(msg.Sender))
-				value, exists := dht.store.Retrieve(data.Target)
+				value, exists := dht.store.Retrieve(ctx, data.Target)
 				response := &message{IsResponse: true}
 				response.ID = msg.ID
 				response.Receiver = msg.Sender
@@ -634,7 +637,7 @@ func (dht *DHT) listen(ctx context.Context) {
 				key := crypto.GetKey(data.Data)
 				expiration := dht.getExpirationTime(key)
 				replication := time.Now().Add(dht.options.TReplicate)
-				dht.store.Store(data.Data, replication, expiration, false)
+				dht.store.Store(ctx, data.Data, replication, expiration, false)
 			case messageTypePing:
 				response := &message{IsResponse: true}
 				response.Sender = dht.ht.Self

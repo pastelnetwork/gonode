@@ -24,8 +24,8 @@ type networking interface {
 	getDisconnect() chan (int)
 	init(self *NetworkNode)
 	createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error)
-	listen() error
-	disconnect() error
+	listen(ctx context.Context) error
+	disconnect(ctx context.Context) error
 	cancelResponse(*expectedResponse)
 	isInitialized() bool
 	getNetworkAddr() string
@@ -193,7 +193,7 @@ func (rn *realNetworking) cancelResponse(res *expectedResponse) {
 	delete(rn.responseMap, res.query.ID)
 }
 
-func (rn *realNetworking) disconnect() error {
+func (rn *realNetworking) disconnect(ctx context.Context) error {
 	rn.mutex.Lock()
 	defer rn.mutex.Unlock()
 	if !rn.connected {
@@ -214,12 +214,12 @@ func (rn *realNetworking) disconnect() error {
 	return err
 }
 
-func (rn *realNetworking) listen() error {
+func (rn *realNetworking) listen(ctx context.Context) error {
 	for {
 		conn, err := rn.socket.Accept()
 
 		if err != nil {
-			rn.disconnect()
+			rn.disconnect(ctx)
 			<-rn.dcEndChan
 			return err
 		}

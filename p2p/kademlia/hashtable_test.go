@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var ctx = context.Background()
+
 // Create a new node and bootstrap it. All nodes in the network know of a
 // single node closer to the original node. This continues until every k bucket
 // is occupied.
@@ -17,7 +19,7 @@ func TestFindNodeAllBuckets(t *testing.T) {
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 
-	dht, _ := NewDHT(getInMemoryStore(), &Options{
+	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
 		Port: "3000",
 		IP:   "0.0.0.0",
@@ -33,7 +35,7 @@ func TestFindNodeAllBuckets(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen(context.Background())
+		dht.Listen(ctx)
 	}()
 
 	var k = 0
@@ -61,13 +63,13 @@ func TestFindNodeAllBuckets(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap(context.Background())
+	dht.Bootstrap(ctx)
 
 	for _, v := range dht.ht.RoutingTable {
 		assert.Equal(t, 1, len(v))
 	}
 
-	dht.Disconnect()
+	dht.Disconnect(ctx)
 }
 
 // Tests timing out of nodes in a bucket. DHT bootstraps networks and learns
@@ -80,7 +82,7 @@ func TestAddNodeTimeout(t *testing.T) {
 	done := make(chan (int))
 	pinged := make(chan (int))
 
-	dht, _ := NewDHT(getInMemoryStore(), &Options{
+	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
 		Port: "3000",
 		IP:   "0.0.0.0",
@@ -96,7 +98,7 @@ func TestAddNodeTimeout(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen(context.Background())
+		dht.Listen(ctx)
 	}()
 
 	var nodesAdded = 1
@@ -138,7 +140,7 @@ func TestAddNodeTimeout(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap(context.Background())
+	dht.Bootstrap(ctx)
 
 	// ensure the first node in the table is the second node contacted, and the
 	// last is the last node contacted
@@ -148,12 +150,12 @@ func TestAddNodeTimeout(t *testing.T) {
 	<-done
 	<-pinged
 
-	dht.Disconnect()
+	dht.Disconnect(ctx)
 }
 
 func TestGetRandomIDFromBucket(t *testing.T) {
 	id := getIDWithValues(0)
-	dht, _ := NewDHT(getInMemoryStore(), &Options{
+	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
 		Port: "3000",
 		IP:   "0.0.0.0",
@@ -162,7 +164,7 @@ func TestGetRandomIDFromBucket(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen(context.Background())
+		dht.Listen(ctx)
 	}()
 
 	// Bytes should be equal up to the bucket index that the random ID was
@@ -174,5 +176,5 @@ func TestGetRandomIDFromBucket(t *testing.T) {
 		}
 	}
 
-	dht.Disconnect()
+	dht.Disconnect(ctx)
 }

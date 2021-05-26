@@ -14,10 +14,7 @@ var (
 	logPrefix = "p2p"
 )
 
-func Migrate(db *sql.DB) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-
+func Migrate(ctx context.Context, db *sql.DB) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	_, err := db.ExecContext(ctx,
@@ -30,11 +27,9 @@ func Migrate(db *sql.DB) error {
 	return nil
 }
 
-func Store(db *sql.DB, data []byte, replication, expiration time.Time) (int64, error) {
+func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration time.Time) (int64, error) {
 	key := crypto.GetKey(data)
 	query := "INSERT INTO keys(key, data, replication, expiration) VALUES (?, ?, ?, ?)"
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
@@ -60,10 +55,8 @@ func Store(db *sql.DB, data []byte, replication, expiration time.Time) (int64, e
 	return rows, nil
 }
 
-func Retrieve(db *sql.DB, key []byte) ([]byte, error) {
+func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	var data []byte
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
@@ -98,10 +91,7 @@ func Retrieve(db *sql.DB, key []byte) ([]byte, error) {
 	return data, nil
 }
 
-func ExpireKeys(db *sql.DB) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func ExpireKeys(ctx context.Context, db *sql.DB) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE expiration > TIME('now')")
@@ -113,11 +103,8 @@ func ExpireKeys(db *sql.DB) error {
 	return nil
 }
 
-func GetAllKeysForReplication(db *sql.DB) ([][]byte, error) {
+func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error) {
 	var keys [][]byte
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	rows, err := db.QueryContext(ctx, "SELECT key FROM keys WHERE replication > TIME('now')")
@@ -155,10 +142,7 @@ func GetAllKeysForReplication(db *sql.DB) ([][]byte, error) {
 	return keys, nil
 }
 
-func Remove(db *sql.DB, key []byte) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
+func Remove(ctx context.Context, db *sql.DB, key []byte) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE key=?", string(key))

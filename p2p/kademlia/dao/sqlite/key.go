@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -16,24 +17,24 @@ type Key struct {
 // GetAllKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (k *Key) GetAllKeysForReplication() ([][]byte, error) {
-	return GetAllKeysForReplication(k.db)
+func (k *Key) GetAllKeysForReplication(ctx context.Context) ([][]byte, error) {
+	return GetAllKeysForReplication(ctx, k.db)
 }
 
 // ExpireKeys should expire all key/values due for expiration.
-func (k *Key) ExpireKeys() error {
-	return ExpireKeys(k.db)
+func (k *Key) ExpireKeys(ctx context.Context) error {
+	return ExpireKeys(ctx, k.db)
 }
 
 // Init initializes the Store
-func (k *Key) Init() error {
+func (k *Key) Init(ctx context.Context) error {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		return err
 	}
 	defer db.Close()
 
-	if err := Migrate(k.db); err != nil {
+	if err := Migrate(ctx, k.db); err != nil {
 		return err
 	}
 
@@ -43,14 +44,14 @@ func (k *Key) Init() error {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (k *Key) Store(data []byte, replication time.Time, expiration time.Time, publisher bool) error {
-	_, err := Store(k.db, data, replication, expiration)
+func (k *Key) Store(ctx context.Context, data []byte, replication time.Time, expiration time.Time, publisher bool) error {
+	_, err := Store(ctx, k.db, data, replication, expiration)
 	return err
 }
 
 // Retrieve will return the local key/value if it exists
-func (k *Key) Retrieve(key []byte) (data []byte, found bool) {
-	data, err := Retrieve(k.db, key)
+func (k *Key) Retrieve(ctx context.Context, key []byte) (data []byte, found bool) {
+	data, err := Retrieve(ctx, k.db, key)
 	if err != nil {
 		return data, false
 	}
@@ -59,6 +60,6 @@ func (k *Key) Retrieve(key []byte) (data []byte, found bool) {
 }
 
 // Delete deletes a key/value pair from the MemoryStore
-func (k *Key) Delete(key []byte) error {
-	return Remove(k.db, key)
+func (k *Key) Delete(ctx context.Context, key []byte) error {
+	return Remove(ctx, k.db, key)
 }
