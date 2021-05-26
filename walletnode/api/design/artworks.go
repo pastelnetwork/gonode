@@ -122,7 +122,7 @@ var _ = Service("artworks", func() {
 
 	// search request artworks handler
 	//
-	Method("search", func() {
+	Method("searchRequest", func() {
 
 		Description("Search artwork request")
 
@@ -135,6 +135,7 @@ var _ = Service("artworks", func() {
 		})
 
 		StreamingResult(ArtworkTicket)
+
 		HTTP(func() {
 			GET("/search/{term}")
 			Response("BadRequest", StatusBadRequest)
