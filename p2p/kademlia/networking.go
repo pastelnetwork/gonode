@@ -12,10 +12,6 @@ import (
 	"github.com/ccding/go-stun/stun"
 )
 
-var (
-	errorValueNotFound = errors.New("Value not found")
-)
-
 type networking interface {
 	sendMessage(context.Context, *message, bool, int64) (*expectedResponse, error)
 	getMessage() chan (*message)
@@ -39,8 +35,6 @@ type realNetworking struct {
 	dcEndChan     chan (int)
 	dcTimersChan  chan (int)
 	dcMessageChan chan (int)
-	address       *net.UDPAddr
-	connection    *net.UDPConn
 	mutex         *sync.Mutex
 	connected     bool
 	initialized   bool

@@ -21,6 +21,7 @@ require (
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
 	golang.org/x/tools v0.1.2 // indirect
+	honnef.co/go/tools v0.2.0 // indirect
 
 )
 

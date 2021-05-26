@@ -70,7 +70,7 @@ func newHashTable(options *Options) (*hashTable, error) {
 	}
 
 	if options.IP == "" || options.Port == "" {
-		return nil, errors.New("Port and IP required")
+		return nil, errors.New("port and ip required")
 	}
 
 	err := ht.setSelfAddr(options.IP, options.Port)
@@ -118,13 +118,13 @@ func (ht *hashTable) markNodeAsSeen(ctx context.Context, node []byte) {
 	bucket := ht.RoutingTable[index]
 	nodeIndex := -1
 	for i, v := range bucket {
-		if bytes.Compare(v.ID, node) == 0 {
+		if bytes.Equal(v.ID, node) {
 			nodeIndex = i
 			break
 		}
 	}
 	if nodeIndex == -1 {
-		log.WithContext(ctx).Fatal(errors.New("Tried to mark nonexistent node as seen"))
+		log.WithContext(ctx).Fatal(errors.New("tried to mark nonexistent node as seen"))
 	}
 
 	n := bucket[nodeIndex]
@@ -137,7 +137,7 @@ func (ht *hashTable) doesNodeExistInBucket(bucket int, node []byte) bool {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 	for _, v := range ht.RoutingTable[bucket] {
-		if bytes.Compare(v.ID, node) == 0 {
+		if bytes.Equal(v.ID, node) {
 			return true
 		}
 	}
@@ -175,7 +175,7 @@ func (ht *hashTable) getClosestContacts(num int, target []byte, ignoredNodes []*
 		for i := 0; i < bucketContacts; i++ {
 			ignored := false
 			for j := 0; j < len(ignoredNodes); j++ {
-				if bytes.Compare(ht.RoutingTable[index][i].ID, ignoredNodes[j].ID) == 0 {
+				if bytes.Equal(ht.RoutingTable[index][i].ID, ignoredNodes[j].ID) {
 					ignored = true
 				}
 			}
@@ -194,21 +194,21 @@ func (ht *hashTable) getClosestContacts(num int, target []byte, ignoredNodes []*
 	return sl
 }
 
-func (ht *hashTable) removeNode(ID []byte) {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+// func (ht *hashTable) removeNode(ID []byte) {
+// 	ht.mutex.Lock()
+// 	defer ht.mutex.Unlock()
 
-	index := getBucketIndexFromDifferingBit(ht.Self.ID, ID)
-	bucket := ht.RoutingTable[index]
+// 	index := getBucketIndexFromDifferingBit(ht.Self.ID, ID)
+// 	bucket := ht.RoutingTable[index]
 
-	for i, v := range bucket {
-		if bytes.Compare(v.ID, ID) == 0 {
-			bucket = append(bucket[:i], bucket[i+1:]...)
-		}
-	}
+// 	for i, v := range bucket {
+// 		if bytes.Equal(v.ID, ID) {
+// 			bucket = append(bucket[:i], bucket[i+1:]...)
+// 		}
+// 	}
 
-	ht.RoutingTable[index] = bucket
-}
+// 	ht.RoutingTable[index] = bucket
+// }
 
 func (ht *hashTable) getAllNodesInBucketCloserThan(bucket int, id []byte) [][]byte {
 	b := ht.RoutingTable[bucket]

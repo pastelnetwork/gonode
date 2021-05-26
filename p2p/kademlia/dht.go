@@ -356,7 +356,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 			}
 
 			// Don't contact nodes already contacted
-			if contacted[string(node.ID)] == true {
+			if contacted[string(node.ID)] {
 				continue
 			}
 
@@ -382,7 +382,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 				queryData.Target = target
 				query.Data = queryData
 			default:
-				log.WithContext(ctx).Fatal(errors.New("Unknown iterate type"))
+				log.WithContext(ctx).Fatal(errors.New("unknown iterate type"))
 			}
 
 			// Send the async queries and wait for a response
@@ -476,7 +476,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 		sort.Sort(sl)
 
 		// If closestNode is unchanged then we are done
-		if bytes.Compare(sl.Nodes[0].ID, closestNode.ID) == 0 || queryRest {
+		if bytes.Equal(sl.Nodes[0].ID, closestNode.ID) || queryRest {
 			// We are done
 			switch t {
 			case iterateFindNode:

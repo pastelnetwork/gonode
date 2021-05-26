@@ -119,6 +119,8 @@ func TestRetrieve(t *testing.T) {
 func TestExpireKeys(t *testing.T) {
 	db := setupDB()
 	_, err := Store(ctx, db, []byte("test data 1"), time.Now(), time.Now())
+	assert.NoError(t, err)
+
 	_, err = Store(ctx, db, []byte("test data 2"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
@@ -146,6 +148,7 @@ func TestExpireKeys(t *testing.T) {
 func TestGetAllKeysForReplication(t *testing.T) {
 	db := setupDB()
 	_, err := Store(ctx, db, []byte("test data 1"), time.Now(), time.Now())
+	assert.NoError(t, err)
 	_, err = Store(ctx, db, []byte("test data 2"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
