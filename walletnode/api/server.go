@@ -1,4 +1,4 @@
-//go:generate goa gen github.com/pastelnetwork/gonode/walletnode/api/design
+// //go:generate goa gen github.com/pastelnetwork/gonode/walletnode/api/design
 
 package api
 
