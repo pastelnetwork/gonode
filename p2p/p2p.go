@@ -41,14 +41,12 @@ func (service *p2p) Run(ctx context.Context) error {
 	}
 
 	group, ctx := errgroup.WithContext(ctx)
-
 	group.Go(func() (err error) {
 		defer errors.Recover(func(rec error) { err = rec })
 
 		log.WithContext(ctx).Infof("Server listening on %q", service.dht.GetNetworkAddr())
 		return service.dht.Listen(ctx)
 	})
-
 	group.Go(func() (err error) {
 		defer errors.Recover(func(rec error) { err = rec })
 
