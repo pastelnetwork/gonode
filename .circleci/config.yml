@@ -205,12 +205,6 @@ jobs:
           command: |
             sudo apt-get install -y swig
       - run:
-          name: Install libtensorflow
-          command: |
-            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
-            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
-            sudo /sbin/ldconfig -v
-      - run:
           name: Install revive
           command: |
             GO111MODULE=off go get -u github.com/mgechev/revive
@@ -222,6 +216,10 @@ jobs:
           name: Install mockery
           command: |
             go get -u github.com/vektra/mockery/cmd/mockery
+      - run:
+          name: Install xgo
+          command: |
+            go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
       - persist_to_workspace:
           root: .
           paths:
@@ -273,6 +271,12 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - run:
+          name: Install libtensorflow
+          command: |
+            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo /sbin/ldconfig -v
       - test:
           package: "dupe-detection"
 
@@ -300,26 +304,32 @@ jobs:
       - test:
           package: "supernode"
 
-  build:
+  prepare_source_container:
+    <<: *defaults
+    steps:
+      - setup_remote_docker:
+          version: 20.10.2
+          docker_layer_caching: true
+      - create-sources-container:
+          containerName: "sourcesContainer"
+
+  build_pqsignatures:
     <<: *defaults
     steps:
       - attach_workspace:
           at: .
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
-      - run:
-          name: Install xgo
-          command: |
-            go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
-      - create-sources-container:
-          containerName: "sourcesContainer"
       - build:
           buildContainerName: "pqsignatures"
           moduleSubDir: "pqsignatures"
           package: "cmd/pqsignatures"
           targets: "darwin-10.14/amd64,windows/amd64,"
           binaryName: "pqsignatures"
+
+  build_walletnode:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
       - build:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
@@ -369,6 +379,7 @@ workflows:
   build-and-test:
     jobs:
       - prepare_workspace
+      - prepare_source_container
       - test_common:
           requires:
             - prepare_workspace
@@ -396,9 +407,14 @@ workflows:
       - test_supernode:
           requires:
             - prepare_workspace
-      - build:
+      - build_pqsignatures:
           requires:
             - prepare_workspace
+            - prepare_source_container
+      - build_walletnode:
+          requires:
+            - prepare_workspace
+            - prepare_source_container
       - release:
           requires:
             - test_walletnode
