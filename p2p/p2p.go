@@ -51,8 +51,8 @@ func (service *p2p) Run(ctx context.Context) error {
 		defer errors.Recover(func(rec error) { err = rec })
 
 		<-ctx.Done()
-		log.WithContext(ctx).Infof("Server is shutting down...")
 
+		log.WithContext(ctx).Infof("Server is shutting down...")
 		return service.dht.Disconnect()
 	})
 
