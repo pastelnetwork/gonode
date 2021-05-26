@@ -275,17 +275,19 @@ func (dht *DHT) Bootstrap(ctx context.Context) error {
 	if numExpectedResponses > 0 {
 		for _, r := range expectedResponses {
 			go func(r *expectedResponse) {
+				defer wg.Done()
+
 				select {
 				case result := <-r.ch:
 					// If result is nil, channel was closed
 					if result != nil {
 						dht.addNode(ctx, newNode(result.Sender))
 					}
-					wg.Done()
 					return
 				case <-time.After(dht.options.TMsgTimeout):
 					dht.networking.cancelResponse(r)
-					wg.Done()
+					return
+				case <-ctx.Done():
 					return
 				}
 			}(r)

@@ -215,95 +215,100 @@ func (rn *realNetworking) listen(ctx context.Context) error {
 		if err != nil {
 			rn.disconnect()
 			<-rn.dcEndChan
-			return errors.Errorf("failed to accept socket: %s", err)
+			return errors.Errorf("failed to accept new connection: %s", err)
 		}
 
 		go func(conn net.Conn) {
 			for {
-				// Wait for messages
-				msg, err := deserializeMessage(conn)
-				if err != nil {
-					// if err.Error() == "EOF" {
-					// 	// Node went bye bye
-					// }
-					// TODO should we penalize this node somehow ? Ban it ?
+				select {
+				case <-ctx.Done():
 					return
-				}
+				default:
+					// Wait for messages
+					msg, err := deserializeMessage(conn)
+					if err != nil {
+						// if err.Error() == "EOF" {
+						// 	// Node went bye bye
+						// }
+						// TODO should we penalize this node somehow ? Ban it ?
+						return
+					}
 
-				isPing := msg.Type == messageTypePing
+					isPing := msg.Type == messageTypePing
 
-				if !areNodesEqual(msg.Receiver, rn.self, isPing) {
-					// TODO should we penalize this node somehow ? Ban it ?
-					continue
-				}
+					if !areNodesEqual(msg.Receiver, rn.self, isPing) {
+						// TODO should we penalize this node somehow ? Ban it ?
+						continue
+					}
 
-				if msg.ID < 0 {
-					// TODO should we penalize this node somehow ? Ban it ?
-					continue
-				}
+					if msg.ID < 0 {
+						// TODO should we penalize this node somehow ? Ban it ?
+						continue
+					}
 
-				rn.mutex.Lock()
-				if rn.connected {
-					if msg.IsResponse {
-						if rn.responseMap[msg.ID] == nil {
-							// We were not expecting this response
+					rn.mutex.Lock()
+					if rn.connected {
+						if msg.IsResponse {
+							if rn.responseMap[msg.ID] == nil {
+								// We were not expecting this response
+								rn.mutex.Unlock()
+								continue
+							}
+
+							if !areNodesEqual(rn.responseMap[msg.ID].node, msg.Sender, isPing) {
+								// TODO should we penalize this node somehow ? Ban it ?
+								rn.mutex.Unlock()
+								continue
+							}
+
+							if msg.Type != rn.responseMap[msg.ID].query.Type {
+								close(rn.responseMap[msg.ID].ch)
+								delete(rn.responseMap, msg.ID)
+								rn.mutex.Unlock()
+								continue
+							}
+
+							if !msg.IsResponse {
+								close(rn.responseMap[msg.ID].ch)
+								delete(rn.responseMap, msg.ID)
+								rn.mutex.Unlock()
+								continue
+							}
+
+							resChan := rn.responseMap[msg.ID].ch
 							rn.mutex.Unlock()
-							continue
-						}
-
-						if !areNodesEqual(rn.responseMap[msg.ID].node, msg.Sender, isPing) {
-							// TODO should we penalize this node somehow ? Ban it ?
-							rn.mutex.Unlock()
-							continue
-						}
-
-						if msg.Type != rn.responseMap[msg.ID].query.Type {
+							resChan <- msg
+							rn.mutex.Lock()
 							close(rn.responseMap[msg.ID].ch)
 							delete(rn.responseMap, msg.ID)
 							rn.mutex.Unlock()
-							continue
-						}
+						} else {
+							assertion := false
+							switch msg.Type {
+							case messageTypeFindNode:
+								_, assertion = msg.Data.(*queryDataFindNode)
+							case messageTypeFindValue:
+								_, assertion = msg.Data.(*queryDataFindValue)
+							case messageTypeStore:
+								_, assertion = msg.Data.(*queryDataStore)
+							default:
+								assertion = true
+							}
 
-						if !msg.IsResponse {
-							close(rn.responseMap[msg.ID].ch)
-							delete(rn.responseMap, msg.ID)
+							if !assertion {
+								fmt.Printf("Received bad message %v from %+v", msg.Type, msg.Sender)
+								close(rn.responseMap[msg.ID].ch)
+								delete(rn.responseMap, msg.ID)
+								rn.mutex.Unlock()
+								continue
+							}
+
+							rn.recvChan <- msg
 							rn.mutex.Unlock()
-							continue
 						}
-
-						resChan := rn.responseMap[msg.ID].ch
-						rn.mutex.Unlock()
-						resChan <- msg
-						rn.mutex.Lock()
-						close(rn.responseMap[msg.ID].ch)
-						delete(rn.responseMap, msg.ID)
-						rn.mutex.Unlock()
 					} else {
-						assertion := false
-						switch msg.Type {
-						case messageTypeFindNode:
-							_, assertion = msg.Data.(*queryDataFindNode)
-						case messageTypeFindValue:
-							_, assertion = msg.Data.(*queryDataFindValue)
-						case messageTypeStore:
-							_, assertion = msg.Data.(*queryDataStore)
-						default:
-							assertion = true
-						}
-
-						if !assertion {
-							fmt.Printf("Received bad message %v from %+v", msg.Type, msg.Sender)
-							close(rn.responseMap[msg.ID].ch)
-							delete(rn.responseMap, msg.ID)
-							rn.mutex.Unlock()
-							continue
-						}
-
-						rn.recvChan <- msg
 						rn.mutex.Unlock()
 					}
-				} else {
-					rn.mutex.Unlock()
 				}
 			}
 		}(conn)
