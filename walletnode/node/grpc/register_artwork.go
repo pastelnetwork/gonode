@@ -7,7 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/image"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -117,7 +117,7 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 }
 
 // UploadImage implements node.RegisterArtwork.UploadImage()
-func (service *registerArtwork) UploadImage(ctx context.Context, image *image.File) error {
+func (service *registerArtwork) UploadImage(ctx context.Context, image *artwork.File) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 

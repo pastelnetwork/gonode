@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
-	"github.com/pastelnetwork/gonode/common/service/image"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
@@ -112,7 +112,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	pastelClient := pastel.NewClient(&config.Pastel)
 	nodeClient := client.New()
 	db := memory.NewKeyValue()
-	imageStorage := image.NewStorage(fs.NewFileStorage(config.TempDir))
+	artworkStorage := artwork.NewStorage(fs.NewFileStorage(config.TempDir))
 
 	// p2p service (currently using kademlia)
 	p2pSrv := p2p.New()
@@ -125,9 +125,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// server
 	grpc := server.New(&config.Server,
-		walletnode.NewRegisterArtwork(artworkRegister, imageStorage),
+		walletnode.NewRegisterArtwork(artworkRegister, artworkStorage),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, imageStorage, artworkRegister, grpc, p2pSrv)
+	return runServices(ctx, artworkStorage, artworkRegister, grpc, p2pSrv)
 }

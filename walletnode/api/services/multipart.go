@@ -50,7 +50,9 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 			filename := part.FileName()
 
 			image := service.imageStorage.NewFile()
-			image.SetExt(filepath.Ext(filename))
+			if err := image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
+				return artworks.MakeBadRequest(err)
+			}
 			filename = image.Name()
 
 			fl, err := image.Create()

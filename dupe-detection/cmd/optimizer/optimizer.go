@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/c-bata/goptuna"
+	"github.com/gitchander/permutation"
+	combinations "github.com/mxschmitt/golang-combinations"
 	"gorm.io/driver/mysql"
 
 	"github.com/c-bata/goptuna/cmaes"
@@ -19,6 +22,8 @@ import (
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/auprc"
 	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 )
+
+const cacheFileName = "cached"
 
 var evaluateNumberOfTimes = 500
 var rootDir = ""
@@ -32,6 +37,11 @@ func objective(trial goptuna.Trial) (float64, error) {
 
 	config.RootDir = rootDir
 	err = trial.SetUserAttr("RootDir", config.RootDir)
+	if err != nil {
+		return 0, errors.New(err)
+	}
+
+	err = trial.SetUserAttr("TrimByPercentile", fmt.Sprintf("%v", config.TrimByPercentile))
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -78,19 +88,18 @@ func objective(trial goptuna.Trial) (float64, error) {
 	config.HoeffdingRound2DupeThreshold, _ = trial.SuggestFloat("HoeffdingD2", 0.1, 0.99999)
 	if err != nil {
 		return 0, errors.New(err)
-	}
+	}*/
 
 	allCombinationsOfUnstableMethods := combinations.All(config.UnstableOrderOfCorrelationMethods)
 	var allOrderedCombinationsOfUnstableMethodsAsStrings []string
 	for _, combination := range allCombinationsOfUnstableMethods {
 		permutator := permutation.New(permutation.StringSlice(combination))
 		for permutator.Next() {
-			fmt.Println(combination)
 			allOrderedCombinationsOfUnstableMethodsAsStrings = append(allOrderedCombinationsOfUnstableMethodsAsStrings, strings.Join(combination, " "))
 		}
-	}*/
+	}
 
-	/*correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allOrderedCombinationsOfUnstableMethodsAsStrings)-1, 1)
+	correlationMethodIndex, err := trial.SuggestStepInt("CorrelationMethodsOrderIndex", 0, len(allOrderedCombinationsOfUnstableMethodsAsStrings)-1, 1)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -98,21 +107,41 @@ func objective(trial goptuna.Trial) (float64, error) {
 	config.CorrelationMethodsOrder = strings.Join(correlationMethodsOrder, " ")
 	if err != nil {
 		return 0, errors.New(err)
-	}*/
+	}
 
 	//config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho BootstrappedKendallTau BootstrappedBlomqvistBeta HoeffdingDRound1 HoeffdingDRound2"
-	config.CorrelationMethodsOrder = "MI PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
+	//config.CorrelationMethodsOrder = "PearsonR SpearmanRho KendallTau HoeffdingD BlomqvistBeta"
 
 	err = trial.SetUserAttr("CorrelationMethodsOrder", config.CorrelationMethodsOrder)
 	if err != nil {
 		return 0, errors.New(err)
 	}
 
-	aurpc, err := auprc.MeasureAUPRC(config)
+	aurpcResult, err := auprc.MeasureAUPRC(config)
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	return aurpc, nil
+	err = trial.SetUserAttr("DupeAccuracy", fmt.Sprintf("%v", aurpcResult.DupeAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("DupeCount", fmt.Sprintf("%v", aurpcResult.DupeCount))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("OriginalAccuracy", fmt.Sprintf("%v", aurpcResult.OriginalAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("OriginalCount", fmt.Sprintf("%v", aurpcResult.OriginalCount))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	err = trial.SetUserAttr("AverageAccuracy", fmt.Sprintf("%v", aurpcResult.AverageAccuracy))
+	if err != nil {
+		return 0, errors.New(err)
+	}
+	return 1.0 - aurpcResult.AUPRC, nil
 }
 
 func runStudy(studyName string) error {
@@ -130,8 +159,6 @@ func runStudy(studyName string) error {
 		studyName,
 		goptuna.StudyOptionStorage(storage),
 		goptuna.StudyOptionRelativeSampler(cmaes.NewSampler()),
-		//goptuna.StudyOptionSampler(tpe.NewSampler()),
-		goptuna.StudyOptionDirection(goptuna.StudyDirectionMaximize),
 		goptuna.StudyOptionLoadIfExists(true),
 	)
 	if err != nil {
@@ -173,8 +200,13 @@ func main() {
 	numberOfImagesToValidate = *numberOfImagesToValidatePtr
 	evaluateNumberOfTimes = *evaluateNumberOfTimesPtr
 
+	memoizer := dupedetection.GetMemoizer()
+	memoizer.Storage.LoadFile(cacheFileName)
+
 	if err := runStudy(*goptunaStudyNamePtr); err != nil {
 		log.Print(errors.ErrorStack(err))
 		panic(err)
 	}
+
+	memoizer.Storage.SaveFile(cacheFileName)
 }

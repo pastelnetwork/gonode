@@ -13,6 +13,8 @@ import (
 	"github.com/pkg/profile"
 )
 
+const cacheFileName = "cached"
+
 func main() {
 	rootDirPtr := flag.String("rootDir", "", "a path to the directory with the test corpus of images.")
 	numberOfImagesToValidate := flag.Int("imageCount", 0, "limits the number of dupes and original images to validate.")
@@ -24,6 +26,9 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
+	memoizer := dupedetection.GetMemoizer()
+	memoizer.Storage.LoadFile(cacheFileName)
+
 	config := dupedetection.NewComputeConfig()
 	config.RootDir = *rootDirPtr
 	config.NumberOfImagesToValidate = *numberOfImagesToValidate
@@ -32,4 +37,6 @@ func main() {
 		log.Print(errors.ErrorStack(err))
 		panic(err)
 	}
+
+	memoizer.Storage.SaveFile(cacheFileName)
 }
