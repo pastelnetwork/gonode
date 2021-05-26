@@ -1,23 +1,25 @@
 package conn
 
+import (
+	"bytes"
+	"encoding/binary"
+)
+
 // ServerHelloMessage - first server message during handshake
 type ServerHelloMessage struct {
-	chosenEncryption EncryptionScheme
+	chosenEncryption string
 	chosenSignature  SignScheme
-	publicKey        []byte
 }
 
-func (msg *ServerHelloMessage) marshall() []byte {
-	// prepare structure to send a message, it should keep supportedEncryptions and supportedSignatureAlgorithms within theirs length
-	encodedMsg := make([]byte, 4+len(msg.publicKey))
-
-	encodedMsg[0] = typeServerHello
-	encodedMsg[1] = byte(msg.chosenEncryption) // store len of supportedEncryptions
-	encodedMsg[2] = byte(msg.chosenSignature)
-	encodedMsg[3] = byte(len(msg.publicKey))
-
-	copy(encodedMsg[4:], msg.publicKey)
-	return encodedMsg
+func (msg *ServerHelloMessage) marshall() ([]byte, error) {
+	encodedMsg := bytes.Buffer{}
+	encodedMsg.WriteByte(typeServerHello)
+	if err := binary.Write(&encodedMsg, binary.LittleEndian, len(msg.chosenEncryption)); err != nil {
+		return nil, err
+	}
+	encodedMsg.WriteString(msg.chosenEncryption)
+	encodedMsg.WriteByte(byte(msg.chosenSignature))
+	return encodedMsg.Bytes(), nil
 }
 
 // DecodeServerMsg - unmarshall []byte to ServerHelloMessage
@@ -26,54 +28,75 @@ func DecodeServerMsg(msg []byte) (*ServerHelloMessage, error) {
 		return nil, ErrWrongFormat
 	}
 
-	publicKey := make([]byte, msg[3])
+	reader := bytes.NewReader(msg[1:])
+	var chosenEncryptionLen int
+	if err := binary.Read(reader, binary.LittleEndian, &chosenEncryptionLen); err != nil {
+		return nil, err
+	}
 
-	copy(publicKey, msg[4:])
+	byteString := make([]byte, chosenEncryptionLen)
+	if _, err := reader.Read(byteString); err != nil {
+		return nil, err
+	}
+
+	binarySignature, err := reader.ReadByte()
+	if err != nil {
+		return nil, err
+	}
+
 	return &ServerHelloMessage{
-		chosenEncryption: EncryptionScheme(msg[1]),
-		chosenSignature:  SignScheme(msg[2]),
+		chosenEncryption: string(byteString),
+		chosenSignature:  SignScheme(binarySignature),
 	}, nil
 }
 
 // ServerHandshakeMessage - second server message during handshake process
 type ServerHandshakeMessage struct {
-	pastelID       []byte
-	signedPastelID []byte
-	pubKey         []byte
-	ctx            []byte
-	aes256key      []byte
+	pastelID         []byte
+	signedPastelID   []byte
+	pubKey           []byte
+	ctx              []byte
+	encryptionParams [][]byte
 }
 
-func (msg *ServerHandshakeMessage) marshall() []byte {
+func (msg *ServerHandshakeMessage) marshall() ([]byte, error) {
 	var pastelIDLen = len(msg.pastelID)
 	var signedPastelIDLen = len(msg.signedPastelID)
 	var pubKeyLen = len(msg.pubKey)
 	var ctxLen = len(msg.pubKey)
-	var aes265keyLen = len(msg.aes256key) // should be 32 byte
+	var encryptionParamsLen = len(msg.encryptionParams)
 
-	encodedMsg := make([]byte, 4+pastelIDLen+signedPastelIDLen+pubKeyLen)
+	encodedMsg := bytes.Buffer{}
+	encodedMsg.WriteByte(typeClientHandshakeMsg)
+	if err := binary.Write(&encodedMsg, binary.LittleEndian, pastelIDLen); err != nil {
+		return nil, err
+	}
+	encodedMsg.Write(msg.pastelID)
+	if err := binary.Write(&encodedMsg, binary.LittleEndian, signedPastelIDLen); err != nil {
+		return nil, err
+	}
+	encodedMsg.Write(msg.signedPastelID)
+	if err := binary.Write(&encodedMsg, binary.LittleEndian, pubKeyLen); err != nil {
+		return nil, err
+	}
+	encodedMsg.Write(msg.pubKey)
+	if err := binary.Write(&encodedMsg, binary.LittleEndian, ctxLen); err != nil {
+		return nil, err
+	}
+	encodedMsg.Write(msg.ctx)
+	if err := binary.Write(&encodedMsg, binary.LittleEndian, encryptionParamsLen); err != nil {
+		return nil, err
+	}
+	// write encryption data
+	for _, paramData := range msg.encryptionParams {
+		paramDataLen := len(paramData)
+		if err := binary.Write(&encodedMsg, binary.LittleEndian, paramDataLen); err != nil {
+			return nil, err
+		}
+		encodedMsg.Write(paramData)
+	}
 
-	encodedMsg[0] = typeClientHandshakeMsg
-	encodedMsg[1] = byte(pastelIDLen)
-	copy(encodedMsg[2:], msg.pastelID)
-
-	shift := 2 + pastelIDLen // msg type + len and array itself
-	encodedMsg[shift] = byte(signedPastelIDLen)
-	copy(encodedMsg[2:], msg.signedPastelID)
-
-	shift += 1 + signedPastelIDLen // msg type + len and array itself
-	encodedMsg[shift] = byte(pubKeyLen)
-	copy(encodedMsg[shift+1:], msg.pubKey)
-
-	shift += 1 + pubKeyLen // len and array itself
-	encodedMsg[shift] = byte(ctxLen)
-	copy(encodedMsg[shift+1:], msg.ctx)
-
-	shift += 1 + ctxLen // len and array itself
-	encodedMsg[shift] = byte(aes265keyLen)
-	copy(encodedMsg[shift+1:], msg.aes256key)
-
-	return encodedMsg
+	return encodedMsg.Bytes(), nil
 }
 
 // DecodeServerHandshakeMsg - unmarshall []byte to ServerHandshakeMessage

@@ -2,24 +2,26 @@ package conn
 
 import (
 	"errors"
-	"math/rand"
 )
 
 // ErrWrongFormat - error when structure can't be parsed
-var ErrWrongFormat = errors.New("Unknown message format")
+var ErrWrongFormat = errors.New("unknown message format")
 
 // ErrWrongSignature - error when signature is incorrect
-var ErrWrongSignature = errors.New("Wrong signature")
+var ErrWrongSignature = errors.New("wrong signature")
 
 // ErrIncorrectPastelID - error when pastel ID is wrong
-var ErrIncorrectPastelID = errors.New("Incorrect Pastel Id")
+var ErrIncorrectPastelID = errors.New("incorrect Pastel Id")
+
+var ErrUnsupportedEncryption = errors.New("unsupported encryption")
 
 // Handshake message types.
 const (
-	typeClientHello        byte = 1
-	typeServerHello        byte = 2
-	typeClientHandshakeMsg byte = 3
-	typeServerHandshakeMsg byte = 4
+	typeClientHello = iota + 1
+	typeServerHello
+	typeClientHandshakeMsg
+	typeServerHandshakeMsg
+	typeEncryptedMsg
 )
 
 // EncryptionScheme type defines all supported encryption
@@ -40,12 +42,13 @@ const (
 	ED448 SignScheme = iota
 )
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+type message interface {
+	marshall() ([]byte, error)
+}
 
-func randomString(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
+type signedPastelID struct {
+	pastelID       []byte
+	signedPastelID []byte
+	pubKey         []byte
+	ctx            []byte
 }

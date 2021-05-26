@@ -1,28 +1,38 @@
 package conn
 
+import (
+	"bytes"
+	"encoding/binary"
+)
+
 // ClientHelloMessage - first Client message during handshake
 type ClientHelloMessage struct {
-	supportedEncryptions         []EncryptionScheme
+	supportedEncryptions         []string
 	supportedSignatureAlgorithms []SignScheme
 }
 
-func (msg *ClientHelloMessage) marshall() []byte {
+func (msg *ClientHelloMessage) marshall() ([]byte, error) {
+	var encodedMsg = bytes.Buffer{}
 	var supportedEncryptionsCount = len(msg.supportedEncryptions)
 	var supportedSignatureAlgorithmsCount = len(msg.supportedSignatureAlgorithms)
 
-	// prepare structure to send a message, it should keep supportedEncryptions and supportedSignatureAlgorithms within theirs length and type of msg
-	encodedMsg := make([]byte, supportedEncryptionsCount+supportedSignatureAlgorithmsCount+3)
+	encodedMsg.WriteByte(typeClientHello)
+	if err := binary.Write(&encodedMsg, binary.LittleEndian, supportedEncryptionsCount); err != nil {
+		return nil, err
+	}
 
-	encodedMsg[0] = typeClientHello
-	encodedMsg[1] = byte(supportedEncryptionsCount) // store len of supportedEncryptions
-	shift := 2
-	copy(encodedMsg[shift:], string(msg.supportedEncryptions))
+	for _, encryption := range msg.supportedEncryptions {
+		encodedMsg.WriteString(encryption)
+	}
 
-	shift += supportedSignatureAlgorithmsCount
-	encodedMsg[shift] = byte(supportedSignatureAlgorithmsCount)
-	copy(encodedMsg[shift:], string(msg.supportedSignatureAlgorithms))
+	if err := binary.Write(&encodedMsg, binary.LittleEndian, supportedSignatureAlgorithmsCount); err != nil {
+		return nil, err
+	}
 
-	return encodedMsg
+	for _, signature := range msg.supportedSignatureAlgorithms {
+		encodedMsg.WriteByte(byte(signature))
+	}
+	return encodedMsg.Bytes(), nil
 }
 
 // DecodeClientMsg - unmarshall []byte to ClientHelloMessage
