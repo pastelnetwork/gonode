@@ -55,7 +55,7 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 
 	for _, dht := range dhts {
 		assert.Equal(t, 19, dht.NumNodes())
-		err := dht.Disconnect(ctx)
+		err := dht.Disconnect()
 		assert.NoError(t, err)
 		<-done
 	}
@@ -101,10 +101,10 @@ func TestBootstrapTwoNodes(t *testing.T) {
 
 			time.Sleep(50 * time.Millisecond)
 
-			err = dht2.Disconnect(ctx)
+			err = dht2.Disconnect()
 			assert.NoError(t, err)
 
-			err = dht1.Disconnect(ctx)
+			err = dht1.Disconnect()
 			assert.NoError(t, err)
 			done <- true
 		}()
@@ -184,15 +184,15 @@ func TestBootstrapThreeNodes(t *testing.T) {
 
 				time.Sleep(500 * time.Millisecond)
 
-				err = dht1.Disconnect(ctx)
+				err = dht1.Disconnect()
 				assert.NoError(t, err)
 
 				time.Sleep(100 * time.Millisecond)
 
-				err = dht2.Disconnect(ctx)
+				err = dht2.Disconnect()
 				assert.NoError(t, err)
 
-				err = dht3.Disconnect(ctx)
+				err = dht3.Disconnect()
 				assert.NoError(t, err)
 				done <- true
 			}(dht1, dht2, dht3)
@@ -257,10 +257,10 @@ func TestBootstrapNoID(t *testing.T) {
 
 			time.Sleep(50 * time.Millisecond)
 
-			err = dht2.Disconnect(ctx)
+			err = dht2.Disconnect()
 			assert.NoError(t, err)
 
-			err = dht1.Disconnect(ctx)
+			err = dht1.Disconnect()
 			assert.NoError(t, err)
 			done <- true
 		}()
@@ -318,10 +318,10 @@ func TestReconnect(t *testing.T) {
 				err := dht2.Bootstrap(ctx)
 				assert.NoError(t, err)
 
-				err = dht2.Disconnect(ctx)
+				err = dht2.Disconnect()
 				assert.NoError(t, err)
 
-				err = dht1.Disconnect(ctx)
+				err = dht1.Disconnect()
 				assert.NoError(t, err)
 
 				done <- true
@@ -402,10 +402,10 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 	assert.Equal(t, true, exists)
 	assert.Equal(t, 0, bytes.Compare(payload[:], value))
 
-	err = dht1.Disconnect(ctx)
+	err = dht1.Disconnect()
 	assert.NoError(t, err)
 
-	err = dht2.Disconnect(ctx)
+	err = dht2.Disconnect()
 	assert.NoError(t, err)
 
 	<-done
@@ -448,7 +448,7 @@ func TestNetworkingSendError(t *testing.T) {
 
 	dht.Bootstrap(ctx)
 
-	dht.Disconnect(ctx)
+	dht.Disconnect()
 
 	<-done
 }
@@ -502,7 +502,7 @@ func TestNodeResponseSendError(t *testing.T) {
 
 	assert.Equal(t, 1, dht.ht.totalNodes())
 
-	dht.Disconnect(ctx)
+	dht.Disconnect()
 
 	<-done
 }
@@ -561,7 +561,7 @@ func TestBucketRefresh(t *testing.T) {
 
 	<-refresh
 
-	dht.Disconnect(ctx)
+	dht.Disconnect()
 
 	<-done
 }
@@ -625,7 +625,7 @@ func TestStoreReplication(t *testing.T) {
 
 	<-replicate
 
-	dht.Disconnect(ctx)
+	dht.Disconnect()
 
 	<-done
 }
@@ -662,7 +662,7 @@ func TestStoreExpiration(t *testing.T) {
 
 	assert.Equal(t, false, exists)
 
-	dht.Disconnect(ctx)
+	dht.Disconnect()
 }
 
 func getInMemoryStore() *mem.Key {

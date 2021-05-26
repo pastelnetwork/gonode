@@ -30,7 +30,7 @@ func (net *mockNetworking) getNetworkAddr() string {
 	return ""
 }
 
-func (net *mockNetworking) disconnect(_ context.Context) error {
+func (net *mockNetworking) disconnect() error {
 	close(net.dc)
 	<-net.dcTimersChan
 	close(net.recv)

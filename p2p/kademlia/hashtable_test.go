@@ -69,7 +69,7 @@ func TestFindNodeAllBuckets(t *testing.T) {
 		assert.Equal(t, 1, len(v))
 	}
 
-	dht.Disconnect(ctx)
+	dht.Disconnect()
 }
 
 // Tests timing out of nodes in a bucket. DHT bootstraps networks and learns
@@ -150,7 +150,7 @@ func TestAddNodeTimeout(t *testing.T) {
 	<-done
 	<-pinged
 
-	dht.Disconnect(ctx)
+	dht.Disconnect()
 }
 
 func TestGetRandomIDFromBucket(t *testing.T) {
@@ -176,5 +176,5 @@ func TestGetRandomIDFromBucket(t *testing.T) {
 		}
 	}
 
-	dht.Disconnect(ctx)
+	dht.Disconnect()
 }
