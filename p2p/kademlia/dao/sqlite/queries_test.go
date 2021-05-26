@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"context"
 	"database/sql"
 	"testing"
 	"time"
@@ -10,9 +11,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var ctx = context.Background()
+
 func setupDB() *sql.DB {
 	db, _ := sql.Open("sqlite3", ":memory:")
-	Migrate(db)
+	Migrate(ctx, db)
 	return db
 }
 
@@ -39,7 +42,7 @@ func TestMigrate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.assertion(t, Migrate(tt.args.db))
+			tt.assertion(t, Migrate(ctx, tt.args.db))
 		})
 	}
 }
@@ -68,7 +71,7 @@ func TestStore(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Store(tt.args.db, tt.args.data, tt.args.replication, tt.args.expiration)
+			got, err := Store(ctx, tt.args.db, tt.args.data, tt.args.replication, tt.args.expiration)
 			tt.assertion(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -77,7 +80,7 @@ func TestStore(t *testing.T) {
 
 func TestRetrieve(t *testing.T) {
 	db := setupDB()
-	_, err := Store(db, []byte("test data"), time.Now(), time.Now())
+	_, err := Store(ctx, db, []byte("test data"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
 	type args struct {
@@ -106,7 +109,7 @@ func TestRetrieve(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Retrieve(tt.args.db, tt.args.key)
+			got, err := Retrieve(ctx, tt.args.db, tt.args.key)
 			tt.assertion(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -115,8 +118,8 @@ func TestRetrieve(t *testing.T) {
 
 func TestExpireKeys(t *testing.T) {
 	db := setupDB()
-	_, err := Store(db, []byte("test data 1"), time.Now(), time.Now())
-	_, err = Store(db, []byte("test data 2"), time.Now(), time.Now())
+	_, err := Store(ctx, db, []byte("test data 1"), time.Now(), time.Now())
+	_, err = Store(ctx, db, []byte("test data 2"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
 	type args struct {
@@ -135,15 +138,15 @@ func TestExpireKeys(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.assertion(t, ExpireKeys(tt.args.db))
+			tt.assertion(t, ExpireKeys(ctx, tt.args.db))
 		})
 	}
 }
 
 func TestGetAllKeysForReplication(t *testing.T) {
 	db := setupDB()
-	_, err := Store(db, []byte("test data 1"), time.Now(), time.Now())
-	_, err = Store(db, []byte("test data 2"), time.Now(), time.Now())
+	_, err := Store(ctx, db, []byte("test data 1"), time.Now(), time.Now())
+	_, err = Store(ctx, db, []byte("test data 2"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
 	var want [][]byte
@@ -168,7 +171,7 @@ func TestGetAllKeysForReplication(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetAllKeysForReplication(tt.args.db)
+			got, err := GetAllKeysForReplication(ctx, tt.args.db)
 			tt.assertion(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -177,7 +180,7 @@ func TestGetAllKeysForReplication(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	db := setupDB()
-	_, err := Store(db, []byte("test data 1"), time.Now(), time.Now())
+	_, err := Store(ctx, db, []byte("test data 1"), time.Now(), time.Now())
 	assert.NoError(t, err)
 
 	type args struct {
@@ -197,7 +200,7 @@ func TestRemove(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.assertion(t, Remove(tt.args.db, tt.args.key))
+			tt.assertion(t, Remove(ctx, tt.args.db, tt.args.key))
 		})
 	}
 }

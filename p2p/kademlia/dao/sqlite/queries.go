@@ -16,6 +16,8 @@ var (
 
 func Migrate(ctx context.Context, db *sql.DB) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
+	defer cancel()
 
 	_, err := db.ExecContext(ctx,
 		"CREATE TABLE IF NOT EXISTS `keys` (`uid` INTEGER PRIMARY KEY AUTOINCREMENT, `key` VARCHAR(64) NULL, `data` BLOB NULL, `replication` DATE NULL, `expiration` DATE NULL)")
@@ -30,8 +32,9 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration time.Time) (int64, error) {
 	key := crypto.GetKey(data)
 	query := "INSERT INTO keys(key, data, replication, expiration) VALUES (?, ?, ?, ?)"
-
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
+	defer cancel()
 
 	stmt, err := db.PrepareContext(ctx, query)
 	if err != nil {
@@ -57,8 +60,9 @@ func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration
 
 func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	var data []byte
-
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
+	defer cancel()
 
 	rows, err := db.QueryContext(ctx, "SELECT data FROM keys WHERE key=? LIMIT 1", string(key))
 	if err != nil {
@@ -106,6 +110,8 @@ func ExpireKeys(ctx context.Context, db *sql.DB) error {
 func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error) {
 	var keys [][]byte
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
+	defer cancel()
 
 	rows, err := db.QueryContext(ctx, "SELECT key FROM keys WHERE replication > TIME('now')")
 	if err != nil {
@@ -144,7 +150,8 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 
 func Remove(ctx context.Context, db *sql.DB, key []byte) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
-
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
+	defer cancel()
 	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE key=?", string(key))
 	if err != nil {
 		log.WithContext(ctx).Infof("Error %s while deleting key=%s", err, string(key))
