@@ -9,6 +9,8 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
+    GOPATH: "/home/circleci/project/go"
+    PATH: "/home/circleci/.local/bin:/home/circleci/bin:/home/circleci/project/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 commands:
   test:
@@ -45,6 +47,7 @@ commands:
           name: "<< parameters.package >>: Run go test (+ race detector)"
           working_directory: ~/project/<< parameters.package >>
           command: |
+            go generate ./...
             go test -v -race ./...
   build:
     parameters:
@@ -188,8 +191,7 @@ commands:
           repo: << parameters.repo >>
 
 jobs:
-  # Run automated tests
-  test:
+  prepare_workspace:
     <<: *defaults
     steps:
       - checkout
@@ -197,16 +199,11 @@ jobs:
           name: Print the go version
           command: |
             go version
+            printenv PATH
       - run:
           name: Install swig
           command: |
             sudo apt-get install -y swig
-      - run:
-          name: Install libtensorflow
-          command: |
-            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
-            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
-            sudo /sbin/ldconfig -v
       - run:
           name: Install revive
           command: |
@@ -215,13 +212,106 @@ jobs:
           name: Install staticcheck
           command: |
             GO111MODULE=off go get -u honnef.co/go/tools/cmd/staticcheck
-      - setup_remote_docker:
-          version: 20.10.2
-          docker_layer_caching: true
+      - run:
+          name: Install mockery
+          command: |
+            go get -u github.com/vektra/mockery/cmd/mockery
       - run:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
+  # Run automated tests
+  test_common:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "common"
+
+  test_pastel:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "pastel"
+
+  test_pastel-api:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "tools/pastel-api"
+
+  test_proto:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "proto"
+
+  test_legroast:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "legroast"
+
+  test_dupe-detection:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Install libtensorflow
+          command: |
+            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo /sbin/ldconfig -v
+      - test:
+          package: "dupe-detection"
+
+  test_pqsignatures:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "pqsignatures"
+
+  test_walletnode:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "walletnode"
+
+  test_supernode:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "supernode"
+
+  build:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - setup_remote_docker:
+          version: 20.10.2
+          docker_layer_caching: true
       - create-sources-container:
           containerName: "sourcesContainer"
       - build:
@@ -236,24 +326,6 @@ jobs:
           package: ""
           targets: "darwin-10.14/amd64,windows/amd64,"
           binaryName: "walletnode"
-      - test:
-          package: "common"
-      - test:
-          package: "pastel"
-      - test:
-          package: "tools/pastel-api"
-      - test:
-          package: "proto"
-      - test:
-          package: "legroast"
-      - test:
-          package: "dupe-detection"
-      - test:
-          package: "pqsignatures"
-      - test:
-          package: "walletnode"
-      - test:
-          package: "supernode"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
@@ -295,13 +367,41 @@ jobs:
 workflows:
   build-and-test:
     jobs:
-      - test:
-          filters:
-            tags:
-              only: /^v.*/
+      - prepare_workspace
+      - test_common:
+          requires:
+            - prepare_workspace
+      - test_pastel:
+          requires:
+            - prepare_workspace
+      - test_pastel-api:
+          requires:
+            - prepare_workspace
+      - test_proto:
+          requires:
+            - prepare_workspace
+      - test_legroast:
+          requires:
+            - prepare_workspace
+      - test_dupe-detection:
+          requires:
+            - prepare_workspace
+      - test_pqsignatures:
+          requires:
+            - prepare_workspace
+      - test_walletnode:
+          requires:
+            - prepare_workspace
+      - test_supernode:
+          requires:
+            - prepare_workspace
+      - build:
+          requires:
+            - prepare_workspace
       - release:
           requires:
-            - test
+            - test_walletnode
+            - test_supernode
           filters:
             branches:
               ignore: /.*/

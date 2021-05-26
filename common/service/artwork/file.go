@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/storage"
 )
@@ -117,10 +118,7 @@ func (file *File) ResizeImage(width, height int) error {
 		return err
 	}
 
-	dst := ResizeImage(src, width, height)
-	if dst == nil {
-		return nil
-	}
+	dst := imaging.Resize(src, width, height, imaging.Lanczos)
 
 	return file.saveImage(dst)
 }
