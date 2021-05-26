@@ -139,7 +139,9 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 	return res, nil
 }
 
-func (service *Artwork) Search(_ context.Context, p *artworks.SearchPayload, strean artworks.SearchServerStream) (err error) {
+// Search  search artworks ticket
+func (service *Artwork) Search(_ context.Context, _ *artworks.SearchPayload, _ artworks.SearchServerStream) (err error) {
+	// TODO: implement search service
 	return
 }
 
