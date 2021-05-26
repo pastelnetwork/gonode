@@ -116,7 +116,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// p2p service (currently using kademlia)
 	p2pSrv := p2p.New()
-	if err := p2pSrv.Setup(config.P2P); err != nil {
+	if err := p2pSrv.Configure(ctx, config.P2P); err != nil {
 		return err
 	}
 

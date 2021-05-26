@@ -54,8 +54,8 @@ func (service *Service) Run(ctx context.Context) error {
 	return service.dht.Bootstrap(ctx)
 }
 
-// Setup configures service DHT
-func (service *Service) Setup(ctx context.Context, config Config) error {
+// Configure configures service DHT
+func (service *Service) Configure(ctx context.Context, config Config) error {
 	var bootstrapNodes []*kademlia.NetworkNode
 	if config.BootstrapIP != "" || config.BootstrapPort != "" {
 		bootstrapNode := kademlia.NewNetworkNode(config.BootstrapIP, config.BootstrapPort)
