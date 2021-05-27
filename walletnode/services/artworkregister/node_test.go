@@ -7,6 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
+	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -178,81 +179,33 @@ func TestNodesFindByPastelID(t *testing.T) {
 func TestNodesSendImage(t *testing.T) {
 	t.Parallel()
 
-	type fields struct {
-		pastelID        string
-		registerArtwork *mocks.RegisterArtwork
-	}
-
 	type args struct {
 		ctx  context.Context
 		file *artwork.File
 	}
 
-	type methods struct {
-		uploadImage string
-	}
-
-	type mockArgs struct {
-		ctx  interface{}
-		file interface{}
-	}
-
-	type methodsCall struct {
-		uploadImage int
-	}
-
-	type node struct {
-		fields      fields
-		methodsCall methodsCall
-		returnErr   error
+	type nodeAttribute struct {
+		address   string
+		returnErr error
 	}
 
 	testCases := []struct {
-		args           args
-		mockArgs       mockArgs
-		methods        methods
-		nodes          Nodes
-		nodeAttributes []*node
-		assertion      assert.ErrorAssertionFunc
+		nodes                 []nodeAttribute
+		args                  args
+		err                   error
+		numberUploadImageCall int
 	}{
 		{
-			args:     args{context.Background(), &artwork.File{}},
-			mockArgs: mockArgs{mock.Anything, mock.AnythingOfType("*artwork.File")},
-			methods:  methods{"UploadImage"},
-			nodes:    Nodes{},
-			nodeAttributes: []*node{
-				{
-					fields:      fields{"1", &mocks.RegisterArtwork{}},
-					methodsCall: methodsCall{1},
-					returnErr:   nil,
-				}, {
-					fields:      fields{"2", &mocks.RegisterArtwork{}},
-					methodsCall: methodsCall{1},
-					returnErr:   nil,
-				},
-			},
-			assertion: assert.NoError,
+			nodes:                 []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
+			args:                  args{context.Background(), &artwork.File{}},
+			err:                   nil,
+			numberUploadImageCall: 1,
 		},
 		{
-			args:     args{context.Background(), &artwork.File{}},
-			mockArgs: mockArgs{mock.Anything, mock.AnythingOfType("*artwork.File")},
-			methods:  methods{"UploadImage"},
-			nodes:    Nodes{},
-			nodeAttributes: []*node{
-				{
-					fields:      fields{"3", &mocks.RegisterArtwork{}},
-					methodsCall: methodsCall{1},
-					returnErr:   nil,
-				}, {
-					fields:      fields{"4", &mocks.RegisterArtwork{}},
-					methodsCall: methodsCall{1},
-					returnErr:   fmt.Errorf("failed to open stream"),
-				},
-			},
-			assertion: func(t assert.TestingT, err error, a ...interface{}) bool {
-				//should return first non nil error
-				return assert.Equal(t, "failed to open stream", err.Error())
-			},
+			nodes:                 []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
+			args:                  args{context.Background(), &artwork.File{}},
+			err:                   fmt.Errorf("failed to open stream"),
+			numberUploadImageCall: 1,
 		},
 	}
 
@@ -262,27 +215,30 @@ func TestNodesSendImage(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			for _, a := range testCase.nodeAttributes {
-				//mock
-				a.fields.registerArtwork.On(testCase.methods.uploadImage,
-					testCase.mockArgs.ctx,
-					testCase.mockArgs.file,
-				).Return(a.returnErr)
+			nodes := Nodes{}
+			clients := []*test.Client{}
 
-				n := &Node{
-					PastelID:        a.fields.pastelID,
-					RegisterArtwork: a.fields.registerArtwork,
-				}
-				testCase.nodes.add(n)
+			for _, a := range testCase.nodes {
+				//client mock
+				client := test.NewMockClient()
+				//listen on uploadImage call
+				client.ListenOnUploadImage(testCase.err)
+				clients = append(clients, client)
+
+				nodes.add(&Node{
+					Address:         a.address,
+					RegisterArtwork: client.RegArtWorkMock,
+				})
 			}
 
-			testCase.assertion(t, testCase.nodes.sendImage(testCase.args.ctx, testCase.args.file))
+			err := nodes.sendImage(testCase.args.ctx, testCase.args.file)
+			assert.Equal(t, testCase.err, err)
 
-			//mock assertion each node
-			for _, a := range testCase.nodeAttributes {
-				a.fields.registerArtwork.AssertExpectations(t)
-				a.fields.registerArtwork.AssertCalled(t, testCase.methods.uploadImage, testCase.args.ctx, testCase.args.file)
-				a.fields.registerArtwork.AssertNumberOfCalls(t, testCase.methods.uploadImage, a.methodsCall.uploadImage)
+			//mock assertion each client
+			for _, client := range clients {
+				client.RegArtWorkMock.AssertExpectations(t)
+				client.RegArtWorkMock.AssertCalled(t, "UploadImage", testCase.args.ctx, testCase.args.file)
+				client.RegArtWorkMock.AssertNumberOfCalls(t, "UploadImage", testCase.numberUploadImageCall)
 			}
 		})
 	}
@@ -291,87 +247,35 @@ func TestNodesSendImage(t *testing.T) {
 func TestNodeConnect(t *testing.T) {
 	t.Parallel()
 
-	type fields struct {
-		client          *mocks.Client
-		conn            *mocks.Connection
-		registerArtwork *mocks.RegisterArtwork
-		Address         string
-		PastelID        string
-	}
-
 	type args struct {
 		ctx context.Context
-		err error
-	}
-
-	type methods struct {
-		registerArtwork string
-		connect         string
-	}
-
-	type methodCall struct {
-		connect         int
-		registerArtWork int
-	}
-
-	type mockArgs struct {
-		ctx     interface{}
-		address interface{}
 	}
 
 	testCases := []struct {
-		fields     fields
-		args       args
-		methods    methods
-		methodCall methodCall
-		mockArgs   mockArgs
-		assertion  assert.ErrorAssertionFunc
+		node                      *Node
+		address                   string
+		args                      args
+		err                       error
+		numberConnectCall         int
+		numberRegisterArtWorkCall int
+		assertion                 assert.ErrorAssertionFunc
 	}{
 		{
-			fields: fields{
-				conn:            &mocks.Connection{},
-				client:          &mocks.Client{},
-				registerArtwork: &mocks.RegisterArtwork{},
-				Address:         "127.0.0.1:4444",
-				PastelID:        "1",
-			},
-			methods: methods{
-				registerArtwork: "RegisterArtwork",
-				connect:         "Connect",
-			},
-			methodCall: methodCall{
-				connect:         1,
-				registerArtWork: 1,
-			},
-			mockArgs: mockArgs{mock.Anything, mock.AnythingOfType("string")},
-			args: args{
-				ctx: context.Background(),
-				err: nil,
-			},
-			assertion: assert.NoError,
-		},
-		{
-			fields: fields{
-				conn:            &mocks.Connection{},
-				client:          &mocks.Client{},
-				registerArtwork: &mocks.RegisterArtwork{},
-				Address:         "127.0.0.1:4445",
-				PastelID:        "2",
-			},
-			methods: methods{
-				registerArtwork: "RegisterArtwork",
-				connect:         "Connect",
-			},
-			methodCall: methodCall{
-				connect:         1,
-				registerArtWork: 0,
-			},
-			mockArgs: mockArgs{mock.Anything, mock.AnythingOfType("string")},
-			args: args{
-				ctx: context.Background(),
-				err: fmt.Errorf("connection timeout"),
-			},
-			assertion: assert.Error,
+			node:                      &Node{Address: "127.0.0.1:4444"},
+			address:                   "127.0.0.1:4444",
+			args:                      args{context.Background()},
+			err:                       nil,
+			numberConnectCall:         1,
+			numberRegisterArtWorkCall: 1,
+			assertion:                 assert.NoError,
+		}, {
+			node:                      &Node{Address: "127.0.0.1:4445"},
+			address:                   "127.0.0.1:4445",
+			args:                      args{context.Background()},
+			err:                       fmt.Errorf("connection timeout"),
+			numberConnectCall:         1,
+			numberRegisterArtWorkCall: 0,
+			assertion:                 assert.Error,
 		},
 	}
 
@@ -381,20 +285,23 @@ func TestNodeConnect(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			testCase.fields.conn.On(testCase.methods.registerArtwork).Return(testCase.fields.registerArtwork)
-			testCase.fields.client.On(testCase.methods.connect, testCase.mockArgs.ctx, testCase.mockArgs.address).Return(testCase.fields.conn, testCase.args.err)
+			//create client mocks
+			client := test.NewMockClient()
 
-			node := &Node{
-				client:   testCase.fields.client,
-				Address:  testCase.fields.Address,
-				PastelID: testCase.fields.PastelID,
-			}
+			//listen needed method
+			client.ListenOnConnect(testCase.err).ListenOnRegisterArtwork()
 
-			testCase.assertion(t, node.connect(testCase.args.ctx))
-			testCase.fields.client.AssertExpectations(t)
-			testCase.fields.client.AssertCalled(t, testCase.methods.connect, testCase.mockArgs.ctx, testCase.fields.Address)
-			testCase.fields.client.AssertNumberOfCalls(t, testCase.methods.connect, testCase.methodCall.connect)
-			testCase.fields.conn.AssertNumberOfCalls(t, testCase.methods.registerArtwork, testCase.methodCall.registerArtWork)
+			//set up node client only
+			testCase.node.client = client.ClientMock
+
+			//assertion error
+			testCase.assertion(t, testCase.node.connect(testCase.args.ctx))
+			//mock assertion
+			client.ClientMock.AssertExpectations(t)
+			client.ClientMock.AssertCalled(t, "Connect", mock.Anything, testCase.address)
+			client.ClientMock.AssertNumberOfCalls(t, "Connect", testCase.numberConnectCall)
+			client.ConnectionMock.AssertNumberOfCalls(t, "RegisterArtwork", testCase.numberRegisterArtWorkCall)
+
 		})
 	}
 }
