@@ -317,8 +317,11 @@ func (ht *hashTable) totalNodes() int {
 // newID generates a new random ID
 func newID() ([]byte, error) {
 	result := make([]byte, 20)
-	_, err := rand.Read(result)
-	return result, errors.New(err)
+	if _, err := rand.Read(result); err != nil {
+		return nil, errors.New(err)
+	}
+
+	return result, nil
 }
 
 // Simple helper function to determine the value of a particular

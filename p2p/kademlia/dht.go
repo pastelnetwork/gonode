@@ -226,7 +226,7 @@ func (dht *DHT) CreateSocket() error {
 
 	publicHost, publicPort, err := dht.networking.createSocket(ip, port, dht.options.UseStun, dht.options.StunAddr)
 	if err != nil {
-		return errors.New(err)
+		return errors.Errorf("failed creating socket: %w", err)
 	}
 
 	if dht.options.UseStun {
@@ -302,7 +302,7 @@ func (dht *DHT) Bootstrap(ctx context.Context) error {
 
 	if dht.NumNodes() > 0 {
 		_, _, err := dht.iterate(ctx, iterateFindNode, dht.ht.Self.ID, nil)
-		return errors.New(err)
+		return err
 	}
 
 	return nil
