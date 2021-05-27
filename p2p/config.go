@@ -3,8 +3,6 @@ package p2p
 var (
 	defaultListenAddress = "0.0.0.0"
 	defaultPort          = "0"
-	defaultBootstrapIP   = ""
-	defaultBootstrapPort = ""
 	defualtUseStun       = true
 )
 
@@ -27,8 +25,6 @@ func NewConfig() *Config {
 	return &Config{
 		ListenAddresses: defaultListenAddress,
 		Port:            defaultPort,
-		BootstrapIP:     defaultBootstrapIP,
-		BootstrapPort:   defaultBootstrapPort,
 		UseStun:         defualtUseStun,
 	}
 }

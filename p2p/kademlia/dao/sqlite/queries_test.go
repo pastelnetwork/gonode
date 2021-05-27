@@ -151,6 +151,8 @@ func TestGetAllKeysForReplication(t *testing.T) {
 	assert.NoError(t, err)
 	_, err = Store(ctx, db, []byte("test data 2"), time.Now(), time.Now())
 	assert.NoError(t, err)
+	_, err = Store(ctx, db, []byte("test data 2"), time.Now().Add(1*time.Hour), time.Now().Add(1*time.Hour))
+	// should not return ^
 
 	var want [][]byte
 	want = append(want, crypto.GetKey([]byte("test data 1")))
