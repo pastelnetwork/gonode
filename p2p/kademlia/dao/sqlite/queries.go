@@ -7,7 +7,6 @@ import (
 
 	// add sqlite driver
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -21,7 +20,7 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	_, err := db.ExecContext(ctx,
 		"CREATE TABLE IF NOT EXISTS `keys` (`uid` INTEGER PRIMARY KEY AUTOINCREMENT, `key` VARCHAR(64) NULL, `data` BLOB NULL, `replication` DATE NULL, `expiration` DATE NULL)")
 	if err != nil {
-		return errors.Errorf("Error %s when creating keys table", err)
+		return errors.Errorf("Error %w when creating keys table", err)
 	}
 
 	return nil
@@ -43,12 +42,12 @@ func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration
 
 	res, err := stmt.ExecContext(ctx, string(key), data, replication, expiration)
 	if err != nil {
-		return 0, errors.Errorf("Error %s when inserting row into keys table", err)
+		return 0, errors.Errorf("Error %w when inserting row into keys table", err)
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return 0, errors.Errorf("Error %s when finding rows affected", err)
+		return 0, errors.Errorf("Error %w when finding rows affected", err)
 	}
 
 	return rows, nil
@@ -62,14 +61,12 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 
 	rows, err := db.QueryContext(ctx, "SELECT data FROM keys WHERE key=? LIMIT 1", string(key))
 	if err != nil {
-		log.WithContext(ctx).Fatalf("Error %s while selecting key=%s", err, string(key))
 		return []byte(""), errors.New(err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&data); err != nil {
-			log.WithContext(ctx).Fatalf("Error %s when scanning rows", err)
 			return []byte(""), errors.New(err)
 		}
 	}
@@ -78,13 +75,11 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	// errors that may be returned from the driver. The query may
 	// encounter an auto-commit error and be forced to rollback changes.
 	if err := rows.Close(); err != nil {
-		log.WithContext(ctx).Fatalf("Error %s while closing rows", err)
 		return []byte(""), errors.New(err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		log.WithContext(ctx).Fatalf("Error %s after scanning rows", err)
 		return []byte(""), errors.New(err)
 	}
 
@@ -95,7 +90,7 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 func ExpireKeys(ctx context.Context, db *sql.DB) error {
 	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE expiration <= ?", time.Now())
 	if err != nil {
-		return errors.Errorf("Error %s while keys with due expiration", err)
+		return errors.Errorf("Error %w while keys with due expiration", err)
 	}
 
 	return nil
@@ -112,7 +107,6 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 
 	rows, err := db.QueryContext(ctx, "SELECT key FROM keys WHERE replication <= ?", time.Now())
 	if err != nil {
-		log.WithContext(ctx).Fatalf("Error %s while selecting keys for replication", err)
 		return [][]byte{}, errors.New(err)
 	}
 	defer rows.Close()
@@ -122,7 +116,7 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 		if err := rows.Scan(&key); err != nil {
 			// Check for a scan error.
 			// Query rows will be closed with defer.
-			return [][]byte{}, errors.Errorf("Error %s while scanning rows", err)
+			return [][]byte{}, errors.Errorf("Error %w while scanning rows", err)
 		}
 		keys = append(keys, []byte(key))
 	}
@@ -131,12 +125,12 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 	// errors that may be returned from the driver. The query may
 	// encounter an auto-commit error and be forced to rollback changes.
 	if err := rows.Close(); err != nil {
-		return [][]byte{}, errors.Errorf("Error %s while closing rows", err)
+		return [][]byte{}, errors.Errorf("Error %w while closing rows", err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return [][]byte{}, errors.Errorf("Error %s after scanning rows", err)
+		return [][]byte{}, errors.Errorf("Error %w after scanning rows", err)
 	}
 
 	return keys, nil
@@ -148,7 +142,7 @@ func Remove(ctx context.Context, db *sql.DB, key []byte) error {
 	defer cancel()
 	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE key=?", string(key))
 	if err != nil {
-		return errors.Errorf("Error %s while deleting key=%s", err, string(key))
+		return errors.Errorf("Error %w while deleting key=%s", err, string(key))
 	}
 
 	return nil
