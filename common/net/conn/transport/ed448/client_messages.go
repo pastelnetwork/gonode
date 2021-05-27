@@ -1,4 +1,4 @@
-package conn
+package ed448
 
 import (
 	"bytes"
@@ -20,9 +20,10 @@ func (msg *ClientHelloMessage) marshall() ([]byte, error) {
 	if err := binary.Write(&encodedMsg, binary.LittleEndian, supportedEncryptionsCount); err != nil {
 		return nil, err
 	}
-
 	for _, encryption := range msg.supportedEncryptions {
-		encodedMsg.WriteString(encryption)
+		if err := writeString(&encodedMsg, &encryption); err != nil {
+			return nil, err
+		}
 	}
 
 	if err := binary.Write(&encodedMsg, binary.LittleEndian, supportedSignatureAlgorithmsCount); err != nil {
@@ -40,19 +41,33 @@ func DecodeClientMsg(msg []byte) (*ClientHelloMessage, error) {
 	if msg[0] != typeClientHello {
 		return nil, ErrWrongFormat
 	}
-	var supportedEncryptionsCount = msg[1]
-	supportedEncryptions := make([]EncryptionScheme, supportedEncryptionsCount)
+	reader := bytes.NewReader(msg[1:])
 
-	shift := 2
-	for i := 0; i < int(supportedEncryptionsCount); i++ {
-		supportedEncryptions[i] = EncryptionScheme(msg[shift+i])
+	var supportedEncryptionsCount int
+	if err := binary.Read(reader, binary.LittleEndian, &supportedEncryptionsCount); err != nil {
+		return nil, err
 	}
 
-	shift += int(supportedEncryptionsCount)
-	var supportedSignatureAlgorithmsCount = msg[shift]
+	supportedEncryptions := make([]string, supportedEncryptionsCount)
+	for i := 0; i < supportedEncryptionsCount; i++ {
+		encryption, err := readString(reader)
+		if err != nil {
+			return nil, err
+		}
+		supportedEncryptions[i] = *encryption
+	}
+
+	var supportedSignatureAlgorithmsCount int
+	if err := binary.Read(reader, binary.LittleEndian, &supportedSignatureAlgorithmsCount); err != nil {
+		return nil, err
+	}
 	supportedSignatureAlgorithms := make([]SignScheme, supportedEncryptionsCount)
 	for i := 0; i < int(supportedSignatureAlgorithmsCount); i++ {
-		supportedSignatureAlgorithms[i] = SignScheme(msg[shift+i])
+		signScheme, err := reader.ReadByte()
+		if err != nil {
+			return nil, err
+		}
+		supportedSignatureAlgorithms[i] = SignScheme(signScheme)
 	}
 
 	return &ClientHelloMessage{
@@ -69,31 +84,23 @@ type ClientHandshakeMessage struct {
 	ctx            []byte
 }
 
-func (msg *ClientHandshakeMessage) marshall() []byte {
-	var pastelIDLen = len(msg.signedPastelID)
-	var signedPastelIDLen = len(msg.signedPastelID)
-	var clientPubKeyLen = len(msg.pubKey)
-	var ctxLen = len(msg.pubKey)
+func (msg *ClientHandshakeMessage) marshall() ([]byte, error) {
+	var encodedMsg = bytes.Buffer{}
+	encodedMsg.WriteByte(typeClientHandshakeMsg)
+	if err := writeByteArray(&encodedMsg, &msg.pastelID); err != nil {
+		return nil, err
+	}
+	if err := writeByteArray(&encodedMsg, &msg.signedPastelID); err != nil {
+		return nil, err
+	}
+	if err := writeByteArray(&encodedMsg, &msg.pubKey); err != nil {
+		return nil, err
+	}
+	if err := writeByteArray(&encodedMsg, &msg.ctx); err != nil {
+		return nil, err
+	}
 
-	encodedMsg := make([]byte, 4+pastelIDLen+signedPastelIDLen+clientPubKeyLen)
-
-	encodedMsg[0] = typeClientHandshakeMsg
-	encodedMsg[1] = byte(pastelIDLen)
-	copy(encodedMsg[2:], msg.pastelID)
-
-	shift := 2 + pastelIDLen // msg type + len and array itself
-	encodedMsg[shift] = byte(signedPastelIDLen)
-	copy(encodedMsg[shift+1:], msg.signedPastelID)
-
-	shift += 1 + signedPastelIDLen // len and array itself
-	encodedMsg[shift] = byte(clientPubKeyLen)
-	copy(encodedMsg[shift+1:], msg.pubKey)
-
-	shift += 1 + clientPubKeyLen // len and array itself
-	encodedMsg[shift] = byte(ctxLen)
-	copy(encodedMsg[shift+1:], msg.ctx)
-
-	return encodedMsg
+	return encodedMsg.Bytes(), nil
 }
 
 // DecodeClientHandshakeMessage - unmarshall []byte to ClientHandshakeMessage
@@ -102,25 +109,31 @@ func DecodeClientHandshakeMessage(msg []byte) (*ClientHandshakeMessage, error) {
 		return nil, ErrWrongFormat
 	}
 
-	pastelID := make([]byte, msg[1])
-	copy(pastelID, msg[2:])
+	reader := bytes.NewReader(msg[1:])
+	pastelID, err := readByteArray(reader)
+	if err != nil {
+		return nil, err
+	}
 
-	shift := 2 + msg[1] // msg type + len and array itself
-	signedPastelID := make([]byte, msg[shift])
-	copy(signedPastelID, msg[shift+1:])
+	signedPastelID, err := readByteArray(reader)
+	if err != nil {
+		return nil, err
+	}
 
-	shift += 1 + msg[1] // len and array itself
-	pubKey := make([]byte, msg[shift])
-	copy(pubKey, msg[shift+1:])
+	pubKey, err := readByteArray(reader)
+	if err != nil {
+		return nil, err
+	}
 
-	shift += 1 + msg[shift] // len and array itself
-	ctx := make([]byte, msg[shift])
-	copy(ctx, msg[shift+1:])
+	ctx, err := readByteArray(reader)
+	if err != nil {
+		return nil, err
+	}
 
 	return &ClientHandshakeMessage{
-		pastelID:       pastelID,
-		signedPastelID: signedPastelID,
-		pubKey:         pubKey,
-		ctx:            ctx,
+		pastelID:       *pastelID,
+		signedPastelID: *signedPastelID,
+		pubKey:         *pubKey,
+		ctx:            *ctx,
 	}, nil
 }

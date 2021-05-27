@@ -1,33 +1,34 @@
-package conn
+package ed448
 
 import (
+	"github.com/gonode/common/net/conn/transport"
 	"io"
 	"math/rand"
 	"net"
 )
 
-type Ed448Transport struct {
-	cryptos                map[string]Crypto
+type Ed448 struct {
+	cryptos                map[string]transport.Crypto
 	isHandshakeEstablished bool
 	chosenEncryptionScheme string
 }
 
-func NewEd448Transport(cryptos ...Crypto) *Ed448Transport {
-	cryptosMap := make(map[string]Crypto)
+func New(cryptos ...transport.Crypto) *Ed448 {
+	cryptosMap := make(map[string]transport.Crypto)
 	for _, crypto := range cryptos {
 		cryptosMap[crypto.About()] = crypto
 	}
-	return &Ed448Transport{
+	return &Ed448{
 		cryptos: cryptosMap,
 	}
 }
 
 // IsHandshakeEstablished - returns flag that says is handshake process finished
-func (t *Ed448Transport) IsHandshakeEstablished() bool {
-	return t.isHandshakeEstablished
+func (transport *Ed448) IsHandshakeEstablished() bool {
+	return transport.isHandshakeEstablished
 }
 
-func (t *Ed448Transport) readRecord(conn net.Conn) (interface{}, error) {
+func (transport *Ed448) readRecord(conn net.Conn) (interface{}, error) {
 	buf := make([]byte, 0, 4096) // big buffer
 	tmp := make([]byte, 256)     // using small buffer
 
@@ -61,7 +62,7 @@ func (t *Ed448Transport) readRecord(conn net.Conn) (interface{}, error) {
 	}
 }
 
-func (t *Ed448Transport) writeRecord(msg message, conn net.Conn) error {
+func (transport *Ed448) writeRecord(msg message, conn net.Conn) error {
 	data, err := msg.marshall()
 	if err != nil {
 		return err
@@ -74,20 +75,29 @@ func (t *Ed448Transport) writeRecord(msg message, conn net.Conn) error {
 	return nil
 }
 
-func (t *Ed448Transport) initEncryptedConnection(conn net.Conn) {
+func (transport *Ed448) initEncryptedConnection(conn net.Conn, cryptoAlias string, params string) (net.Conn, error) {
+	crypto := transport.cryptos[cryptoAlias]
+	if crypto == nil {
+		return nil, ErrUnsupportedEncryption
+	}
 
+	if err := crypto.Configure(params); err != nil {
+		return nil, err
+	}
+
+	return NewConn(conn, crypto), nil
 }
 
 // ToDo: update with appropriate implementation
-func (t *Ed448Transport) getPastelID() []byte {
+func (transport *Ed448) getPastelID() []byte {
 	pastelID := make([]byte, 4)
 	rand.Read(pastelID)
 	return pastelID
 }
 
 // ToDo: update with appropriate implementation
-func (t *Ed448Transport) getSignedPastelId() *signedPastelID {
-	var pastelID = t.getPastelID()
+func (transport *Ed448) getSignedPastelId() *signedPastelID {
+	var pastelID = transport.getPastelID()
 
 	signPastelID := make([]byte, 4)
 	rand.Read(pastelID)
@@ -107,11 +117,11 @@ func (t *Ed448Transport) getSignedPastelId() *signedPastelID {
 }
 
 // ToDo: update with appropriate implementation
-func (t *Ed448Transport) verifyPastelID(_ []byte) bool {
+func (transport *Ed448) verifyPastelID(_ []byte) bool {
 	return true
 }
 
 // ToDo: update with external check through cNode
-func (t *Ed448Transport) verifySignature(_, _, _, _ []byte) bool {
+func (transport *Ed448) verifySignature(_, _, _, _ []byte) bool {
 	return true
 }

@@ -1,4 +1,4 @@
-package conn
+package transport
 
 import (
 	"context"
@@ -12,10 +12,10 @@ type Transport interface {
 }
 
 type Crypto interface {
-	Init(...[]byte) error
+	Configure(string) error
 	Decrypt([]byte) ([]byte, error)
 	Encrypt([]byte) ([]byte, error)
-	GenerateEncryptionParams() [][]byte
+	GetConfiguration() string
 	FrameSize() int
 	About() string
 }

@@ -1,18 +1,19 @@
-package conn
+package ed448
 
 import (
 	"encoding/binary"
+	"github.com/gonode/common/net/conn/transport"
 	"net"
 )
 
 // conn represents a secured connection. It implements the net.Conn interface.
 type conn struct {
 	net.Conn
-	crypto Crypto
+	crypto transport.Crypto
 }
 
 // NewConn creates a new secure channel instance
-func NewConn(c net.Conn, crypto Crypto) net.Conn {
+func NewConn(c net.Conn, crypto transport.Crypto) net.Conn {
 	return &conn{
 		Conn:   c,
 		crypto: crypto,
