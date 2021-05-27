@@ -22,6 +22,7 @@ commands:
           name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
           command: |
+            go generate ./...
             go get -v ./...
       - run:
           name: "<< parameters.package >>: Run gofmt"
