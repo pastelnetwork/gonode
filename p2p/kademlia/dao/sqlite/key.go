@@ -7,6 +7,7 @@ import (
 
 	// add sqlite driver
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 // Key is a simple in-memory key/value store used for unit testing, and
@@ -31,12 +32,12 @@ func (k *Key) ExpireKeys(ctx context.Context) error {
 func (k *Key) Init(ctx context.Context) error {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 	defer db.Close()
 
 	if err := Migrate(ctx, k.db); err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	k.db = db
@@ -47,7 +48,7 @@ func (k *Key) Init(ctx context.Context) error {
 // replication and expiration times.
 func (k *Key) Store(ctx context.Context, data []byte, replication time.Time, expiration time.Time, _ bool) error {
 	_, err := Store(ctx, k.db, data, replication, expiration)
-	return err
+	return errors.New(err)
 }
 
 // Retrieve will return the local key/value if it exists

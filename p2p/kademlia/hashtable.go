@@ -65,7 +65,7 @@ func newHashTable(options *Options) (*hashTable, error) {
 	} else {
 		id, err := newID()
 		if err != nil {
-			return nil, err
+			return nil, errors.New(err)
 		}
 		ht.Self.ID = id
 	}
@@ -76,7 +76,7 @@ func newHashTable(options *Options) (*hashTable, error) {
 
 	err := ht.setSelfAddr(options.IP, options.Port)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	for i := 0; i < b; i++ {
@@ -94,7 +94,7 @@ func (ht *hashTable) setSelfAddr(ip string, port string) error {
 	ht.Self.IP = net.ParseIP(ip)
 	p, err := strconv.Atoi(port)
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 	ht.Self.Port = p
 	return nil
@@ -318,7 +318,7 @@ func (ht *hashTable) totalNodes() int {
 func newID() ([]byte, error) {
 	result := make([]byte, 20)
 	_, err := rand.Read(result)
-	return result, err
+	return result, errors.New(err)
 }
 
 // Simple helper function to determine the value of a particular

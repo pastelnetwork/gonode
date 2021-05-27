@@ -82,7 +82,7 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 
 	ht, err := newHashTable(options)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	dht.store = store
@@ -91,7 +91,7 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 
 	err = store.Init(ctx)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(err)
 	}
 
 	if options.TExpire == 0 {
@@ -150,10 +150,14 @@ func (dht *DHT) Store(ctx context.Context, data []byte) (id string, err error) {
 	key := crypto.GetKey(data)
 	expiration := dht.getExpirationTime(key)
 	replication := time.Now().Add(dht.options.TReplicate)
-	dht.store.Store(ctx, data, replication, expiration, true)
+	err = dht.store.Store(ctx, data, replication, expiration, true)
+	if err != nil {
+		return "", errors.Errorf("failed to store key %w", err)
+	}
+
 	_, _, err = dht.iterate(ctx, iterateStore, key[:], data)
 	if err != nil {
-		return "", err
+		return "", errors.New(err)
 	}
 	str := b58.Encode(key)
 	return str, nil
@@ -173,7 +177,7 @@ func (dht *DHT) Get(ctx context.Context, key string) (data []byte, found bool, e
 		var err error
 		value, _, err = dht.iterate(ctx, iterateFindValue, keyBytes, nil)
 		if err != nil {
-			return nil, false, err
+			return nil, false, errors.New(err)
 		}
 		if value != nil {
 			exists = true
@@ -222,7 +226,7 @@ func (dht *DHT) CreateSocket() error {
 
 	publicHost, publicPort, err := dht.networking.createSocket(ip, port, dht.options.UseStun, dht.options.StunAddr)
 	if err != nil {
-		return err
+		return errors.New(err)
 	}
 
 	if dht.options.UseStun {
@@ -298,7 +302,7 @@ func (dht *DHT) Bootstrap(ctx context.Context) error {
 
 	if dht.NumNodes() > 0 {
 		_, _, err := dht.iterate(ctx, iterateFindNode, dht.ht.Self.ID, nil)
-		return err
+		return errors.New(err)
 	}
 
 	return nil
