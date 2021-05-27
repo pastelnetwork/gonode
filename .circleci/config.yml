@@ -78,15 +78,15 @@ commands:
             export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.binaryName >>-linux-amd64
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Check existence of linux/amd64 build"
-              test -f $LINUX_ARTIFACT
+              test -f $LINUX_ARTIFACT || (echo "$LINUX_ARTIFACT is not found" && exit 1)
             fi
             if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
               echo "Check existence of darwin-10.14/amd64 build"
-              test -f $MACOS_ARTIFACT
+              test -f $MACOS_ARTIFACT || (echo "$MACOS_ARTIFACT is not found" && exit 1)
             fi
             if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
               echo "Check existence of windows/amd64 build"
-              test -f $WINDOWS_ARTIFACT
+              test -f $WINDOWS_ARTIFACT || (echo "$WINDOWS_ARTIFACT is not found" && exit 1)
             fi
   release:
     parameters:
@@ -112,6 +112,7 @@ commands:
           working_directory: "~/project/build/github.com/pastelnetwork/gonode"
           binaryName: << parameters.binaryName >>
           repo: "gonode"
+          targets: << parameters.targets >>
 
   create-sources-container:
     parameters:
@@ -148,23 +149,6 @@ commands:
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
             ls -R ./<< parameters.outputDirectory >>
 
-  github-release:
-    parameters:
-      working_directory:
-        type: string
-      uploadFilePath:
-        type: string
-      publishFileName:
-        type: string
-      repo:
-        type: string
-    steps:
-      - run:
-          name: Upload << parameters.uploadFilePath >> to GitHub
-          working_directory: << parameters.working_directory >>
-          command: |
-            github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.publishFileName >> --file << parameters.uploadFilePath >>
-
   github-upload-all-os:
     parameters:
       working_directory:
@@ -173,22 +157,31 @@ commands:
         type: string
       repo:
         type: string
+      targets:
+        type: string
     steps:
-      - github-release:
+      - run:
+          name: Upload << parameters.targets >> to << parameters.repo >> GitHub repo
           working_directory: << parameters.working_directory >>
-          uploadFilePath: << parameters.binaryName >>-darwin-10.14-amd64
-          publishFileName: << parameters.binaryName >>-darwin-amd64
-          repo: << parameters.repo >>
-      - github-release:
-          working_directory: << parameters.working_directory >>
-          uploadFilePath: << parameters.binaryName >>-windows-4.0-amd64.exe
-          publishFileName: << parameters.binaryName >>-windows-amd64.exe
-          repo: << parameters.repo >>
-      - github-release:
-          working_directory: << parameters.working_directory >>
-          uploadFilePath: << parameters.binaryName >>-linux-amd64
-          publishFileName: << parameters.binaryName >>-linux-amd64
-          repo: << parameters.repo >>
+          command: |
+            export MACOS_ARTIFACT=<< parameters.binaryName >>-darwin-10.14-amd64
+            export WINDOWS_ARTIFACT=<< parameters.binaryName >>-windows-4.0-amd64.exe
+            export LINUX_ARTIFACT=<< parameters.binaryName >>-linux-amd64
+            if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
+              echo "Check existence of linux/amd64 build and upload to GitHub"
+              test -f $LINUX_ARTIFACT
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-linux-amd64 --file << parameters.binaryName >>-linux-amd64
+            fi
+            if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
+              echo "Check existence of darwin-10.14/amd64 build and upload to GitHub"
+              test -f $MACOS_ARTIFACT
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64 --file << parameters.binaryName >>-darwin-10.14-amd64
+            fi
+            if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
+              echo "Check existence of windows/amd64 build and upload to GitHub"
+              test -f $WINDOWS_ARTIFACT
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-windows-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
+            fi
 
 jobs:
   prepare_workspace:
@@ -369,13 +362,16 @@ jobs:
           buildContainerName: "supernode"
           moduleSubDir: "supernode"
           package: ""
-          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
+          targets: "linux/amd64,"
           binaryName: "supernode"
 
 workflows:
   build-and-test:
     jobs:
-      - prepare_workspace
+      - prepare_workspace:
+          filters:
+            tags:
+              only: /^v.*/
       - test_common:
           requires:
             - prepare_workspace
@@ -403,13 +399,20 @@ workflows:
       - test_walletnode:
           requires:
             - prepare_workspace
+          filters:
+            tags:
+              only: /^v.*/
       - test_supernode:
           requires:
             - prepare_workspace
+          filters:
+            tags:
+              only: /^v.*/
       - build:
           requires:
             - prepare_workspace
       - release:
+          # Reminder: All jobs in "requires" section to run on git tags should have "filters: tags:" value explicitly set
           requires:
             - test_walletnode
             - test_supernode

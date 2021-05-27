@@ -92,7 +92,7 @@ func (service *p2p) configure(ctx context.Context) error {
 		UseStun:        service.config.UseStun,
 	})
 	if err != nil {
-		return errors.new(err)
+		return errors.New(err)
 	}
 
 	service.dht = dht
