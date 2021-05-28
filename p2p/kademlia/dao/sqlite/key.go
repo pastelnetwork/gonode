@@ -32,12 +32,12 @@ func (k *Key) ExpireKeys(ctx context.Context) error {
 func (k *Key) Init(ctx context.Context) error {
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
-		return errors.New(err)
+		return errors.Errorf("failed opening new sqlite connection: %w", err)
 	}
 	defer db.Close()
 
 	if err := Migrate(ctx, k.db); err != nil {
-		return errors.New(err)
+		return errors.Errorf("failed running migrations: %w", err)
 	}
 
 	k.db = db
@@ -48,7 +48,7 @@ func (k *Key) Init(ctx context.Context) error {
 // replication and expiration times.
 func (k *Key) Store(ctx context.Context, data []byte, replication time.Time, expiration time.Time, _ bool) error {
 	_, err := Store(ctx, k.db, data, replication, expiration)
-	return errors.New(err)
+	return errors.Errorf("failed storing key in database: %w", err)
 }
 
 // Retrieve will return the local key/value if it exists

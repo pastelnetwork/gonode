@@ -65,7 +65,7 @@ func newHashTable(options *Options) (*hashTable, error) {
 	} else {
 		id, err := newID()
 		if err != nil {
-			return nil, errors.New(err)
+			return nil, errors.Errorf("error generating hash table id: %w", err)
 		}
 		ht.Self.ID = id
 	}
@@ -76,7 +76,7 @@ func newHashTable(options *Options) (*hashTable, error) {
 
 	err := ht.setSelfAddr(options.IP, options.Port)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, errors.Errorf("failed setting hash table addr: %w", err)
 	}
 
 	for i := 0; i < b; i++ {

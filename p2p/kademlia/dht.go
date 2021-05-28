@@ -82,7 +82,7 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 
 	ht, err := newHashTable(options)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, errors.Errorf("failed creating new hash table: %w", err)
 	}
 
 	dht.store = store
@@ -91,7 +91,7 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 
 	err = store.Init(ctx)
 	if err != nil {
-		return nil, errors.New(err)
+		return nil, errors.Errorf("failed initiating dht store: %w", err)
 	}
 
 	if options.TExpire == 0 {
@@ -157,7 +157,7 @@ func (dht *DHT) Store(ctx context.Context, data []byte) (id string, err error) {
 
 	_, _, err = dht.iterate(ctx, iterateStore, key[:], data)
 	if err != nil {
-		return "", errors.New(err)
+		return "", errors.Errorf("failed iterative search through the network: %w", err)
 	}
 	str := b58.Encode(key)
 	return str, nil
@@ -177,7 +177,7 @@ func (dht *DHT) Get(ctx context.Context, key string) (data []byte, found bool, e
 		var err error
 		value, _, err = dht.iterate(ctx, iterateFindValue, keyBytes, nil)
 		if err != nil {
-			return nil, false, errors.New(err)
+			return nil, false, errors.Errorf("failed iterative search through the network: %w", err)
 		}
 		if value != nil {
 			exists = true
