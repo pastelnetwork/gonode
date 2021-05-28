@@ -2,7 +2,7 @@ package ed448
 
 import (
 	"encoding/binary"
-	"github.com/gonode/common/net/conn/transport"
+	"github.com/pastelnetwork/gonode/common/net/conn/transport"
 	"net"
 )
 

@@ -1,11 +1,10 @@
 package ed448
 
 import (
-	"context"
 	"net"
 )
 
-func (transport *Ed448) ClientHandshake(context context.Context, conn net.Conn) (net.Conn, error) {
+func (transport *Ed448) ClientHandshake(conn net.Conn) (net.Conn, error) {
 	clientHello := transport.prepareHelloMessage()
 	if err := transport.writeRecord(clientHello, conn); err != nil {
 		return nil, err

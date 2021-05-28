@@ -1,13 +1,12 @@
 package transport
 
 import (
-	"context"
 	"net"
 )
 
 type Transport interface {
-	ClientHandshake(context.Context, net.Conn) (net.Conn, error)
-	ServerHandshake(context.Context, net.Conn) (net.Conn, error)
+	ClientHandshake(net.Conn) (net.Conn, error)
+	ServerHandshake(net.Conn) (net.Conn, error)
 	IsHandshakeEstablished() bool
 }
 

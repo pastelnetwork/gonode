@@ -1,22 +1,19 @@
 package conn
 
 import (
-	"context"
-	"github.com/gonode/common/net/conn/transport"
+	"github.com/pastelnetwork/gonode/common/net/conn/transport"
 	"net"
 )
 
 type Server struct {
 	net.Listener
-	context   context.Context
 	transport transport.Transport
 }
 
-func NewServer(listener net.Listener, context context.Context, transport transport.Transport) *Server {
+func NewServer(listener net.Listener, transport transport.Transport) *Server {
 	return &Server{
 		Listener:  listener,
 		transport: transport,
-		context:   context,
 	}
 }
 
@@ -26,7 +23,7 @@ func (s *Server) Accept() (net.Conn, error) {
 		return nil, err
 	}
 	if s.transport != nil {
-		return s.transport.ServerHandshake(s.context, conn)
+		return s.transport.ServerHandshake(conn)
 	}
 
 	return conn, nil

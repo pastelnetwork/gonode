@@ -1,7 +1,7 @@
 package ed448
 
 import (
-	"github.com/gonode/common/net/conn/transport"
+	"github.com/pastelnetwork/gonode/common/net/conn/transport"
 	"io"
 	"math/rand"
 	"net"
@@ -13,7 +13,7 @@ type Ed448 struct {
 	chosenEncryptionScheme string
 }
 
-func New(cryptos ...transport.Crypto) *Ed448 {
+func New(cryptos ...transport.Crypto) transport.Transport {
 	cryptosMap := make(map[string]transport.Crypto)
 	for _, crypto := range cryptos {
 		cryptosMap[crypto.About()] = crypto
