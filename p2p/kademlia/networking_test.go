@@ -44,8 +44,8 @@ func (net *mockNetworking) isInitialized() bool {
 	return true
 }
 
-func (net *mockNetworking) createSocket(_ string, _ string, _ bool, _ string) (publicHost string, publicPort string, err error) {
-	return "", "", nil
+func (net *mockNetworking) createSocket(_ string, _ int, _ bool, _ string) (publicHost string, publicPort int, err error) {
+	return "", 0, nil
 }
 
 func (net *mockNetworking) cancelResponse(*expectedResponse) {

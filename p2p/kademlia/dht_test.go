@@ -26,7 +26,7 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 		dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 			ID:   id,
 			IP:   "127.0.0.1",
-			Port: strconv.Itoa(port),
+			Port: port,
 			BootstrapNodes: []*NetworkNode{
 				NewNetworkNode("127.0.0.1", strconv.Itoa(port-1)),
 			},
@@ -73,7 +73,7 @@ func TestBootstrapTwoNodes(t *testing.T) {
 	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id1,
 		IP:   "127.0.0.1",
-		Port: "3000",
+		Port: 3000,
 	})
 
 	dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
@@ -85,7 +85,7 @@ func TestBootstrapTwoNodes(t *testing.T) {
 			},
 		},
 		IP:   "127.0.0.1",
-		Port: "3001",
+		Port: 3001,
 	})
 
 	err := dht1.CreateSocket()
@@ -137,7 +137,7 @@ func TestBootstrapThreeNodes(t *testing.T) {
 	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id1,
 		IP:   "127.0.0.1",
-		Port: "3000",
+		Port: 3000,
 	})
 
 	id2, _ := newID()
@@ -150,7 +150,7 @@ func TestBootstrapThreeNodes(t *testing.T) {
 			},
 		},
 		IP:   "127.0.0.1",
-		Port: "3001",
+		Port: 3001,
 		ID:   id2,
 	})
 
@@ -163,7 +163,7 @@ func TestBootstrapThreeNodes(t *testing.T) {
 			},
 		},
 		IP:   "127.0.0.1",
-		Port: "3002",
+		Port: 3002,
 	})
 
 	err := dht1.CreateSocket()
@@ -236,7 +236,7 @@ func TestBootstrapNoID(t *testing.T) {
 	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id1,
 		IP:   "127.0.0.1",
-		Port: "3000",
+		Port: 3000,
 	})
 
 	dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
@@ -247,7 +247,7 @@ func TestBootstrapNoID(t *testing.T) {
 			},
 		},
 		IP:   "127.0.0.1",
-		Port: "3001",
+		Port: 3001,
 	})
 
 	err := dht1.CreateSocket()
@@ -302,7 +302,7 @@ func TestReconnect(t *testing.T) {
 		dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 			ID:   id1,
 			IP:   "127.0.0.1",
-			Port: "3000",
+			Port: 3000,
 		})
 
 		dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
@@ -314,7 +314,7 @@ func TestReconnect(t *testing.T) {
 				},
 			},
 			IP:   "127.0.0.1",
-			Port: "3001",
+			Port: 3001,
 		})
 
 		err := dht1.CreateSocket()
@@ -368,7 +368,7 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id1,
 		IP:   "127.0.0.1",
-		Port: "3000",
+		Port: 3000,
 	})
 
 	dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
@@ -380,7 +380,7 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 			},
 		},
 		IP:   "127.0.0.1",
-		Port: "3001",
+		Port: 3001,
 	})
 
 	err := dht1.CreateSocket()
@@ -439,7 +439,7 @@ func TestNetworkingSendError(t *testing.T) {
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
-		Port: "3000",
+		Port: 3000,
 		IP:   "0.0.0.0",
 		BootstrapNodes: []*NetworkNode{{
 			ID:   getZerodIDWithNthByte(1, byte(255)),
@@ -483,7 +483,7 @@ func TestNodeResponseSendError(t *testing.T) {
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
-		Port: "3000",
+		Port: 3000,
 		IP:   "0.0.0.0",
 		BootstrapNodes: []*NetworkNode{{
 			ID:   getZerodIDWithNthByte(1, byte(255)),
@@ -541,7 +541,7 @@ func TestBucketRefresh(t *testing.T) {
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:       id,
-		Port:     "3000",
+		Port:     3000,
 		IP:       "0.0.0.0",
 		TRefresh: time.Second * 2,
 		BootstrapNodes: []*NetworkNode{{
@@ -603,7 +603,7 @@ func TestStoreReplication(t *testing.T) {
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:         id,
-		Port:       "3000",
+		Port:       3000,
 		IP:         "0.0.0.0",
 		TReplicate: time.Second * 2,
 		BootstrapNodes: []*NetworkNode{{
@@ -668,7 +668,7 @@ func TestStoreExpiration(t *testing.T) {
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:      id,
-		Port:    "3000",
+		Port:    3000,
 		IP:      "0.0.0.0",
 		TExpire: time.Second,
 	})

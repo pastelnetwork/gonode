@@ -24,7 +24,7 @@ type networking interface {
 	timersFin()
 	getDisconnect() chan (int)
 	init(self *NetworkNode)
-	createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error)
+	createSocket(host string, port int, useStun bool, stunAddr string) (publicHost string, publicPort int, err error)
 	listen(ctx context.Context) error
 	disconnect() error
 	cancelResponse(*expectedResponse)
@@ -96,18 +96,18 @@ func (rn *realNetworking) timersFin() {
 	rn.dcTimersChan <- 1
 }
 
-func (rn *realNetworking) createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error) {
+func (rn *realNetworking) createSocket(host string, port int, useStun bool, stunAddr string) (publicHost string, publicPort int, err error) {
 	rn.mutex.Lock()
 	defer rn.mutex.Unlock()
 	if rn.connected {
-		return "", "", errors.New("already connected")
+		return "", 0, errors.New("already connected")
 	}
 
-	remoteAddress := fmt.Sprintf("[%s]:%s", host, port)
+	remoteAddress := fmt.Sprintf("[%s]:%d", host, port)
 
 	socket, err := utp.NewSocket("udp", remoteAddress)
 	if err != nil {
-		return "", "", err
+		return "", 0, err
 	}
 
 	if useStun {
@@ -119,17 +119,17 @@ func (rn *realNetworking) createSocket(host string, port string, useStun bool, s
 
 		_, h, err := c.Discover()
 		if err != nil {
-			return "", "", err
+			return "", 0, err
 		}
 
 		_, err = c.Keepalive()
 		if err != nil {
-			return "", "", err
+			return "", 0, err
 		}
 
 		host = h.IP()
-		port = strconv.Itoa(int(h.Port()))
-		remoteAddress = fmt.Sprintf("[%s]:%s", host, port)
+		port = int(h.Port())
+		remoteAddress = fmt.Sprintf("[%s]:%d", host, port)
 	}
 
 	rn.remoteAddress = remoteAddress

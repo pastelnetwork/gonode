@@ -22,7 +22,7 @@ func TestFindNodeAllBuckets(t *testing.T) {
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
-		Port: "3000",
+		Port: 3000,
 		IP:   "0.0.0.0",
 		BootstrapNodes: []*NetworkNode{{
 			ID:   getZerodIDWithNthByte(0, byte(math.Pow(2, 7))),
@@ -65,7 +65,6 @@ func TestFindNodeAllBuckets(t *testing.T) {
 	}()
 
 	dht.Bootstrap(ctx)
-
 	for _, v := range dht.ht.RoutingTable {
 		assert.Equal(t, 1, len(v))
 	}
@@ -88,7 +87,7 @@ func TestAddNodeTimeout(t *testing.T) {
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
-		Port: "3000",
+		Port: 3000,
 		IP:   "0.0.0.0",
 		BootstrapNodes: []*NetworkNode{{
 			ID:   getZerodIDWithNthByte(1, byte(255)),
@@ -164,7 +163,7 @@ func TestGetRandomIDFromBucket(t *testing.T) {
 	id := getIDWithValues(0)
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
-		Port: "3000",
+		Port: 3000,
 		IP:   "0.0.0.0",
 	})
 

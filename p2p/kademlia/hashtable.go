@@ -8,7 +8,6 @@ import (
 	"math/rand"
 	"net"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
 
@@ -70,7 +69,7 @@ func newHashTable(options *Options) (*hashTable, error) {
 		ht.Self.ID = id
 	}
 
-	if options.IP == "" || options.Port == "" {
+	if options.IP == "" || options.Port == 0 {
 		return nil, errors.New("port and ip required")
 	}
 
@@ -90,13 +89,9 @@ func newHashTable(options *Options) (*hashTable, error) {
 	return ht, nil
 }
 
-func (ht *hashTable) setSelfAddr(ip string, port string) error {
+func (ht *hashTable) setSelfAddr(ip string, port int) error {
 	ht.Self.IP = net.ParseIP(ip)
-	p, err := strconv.Atoi(port)
-	if err != nil {
-		return errors.New(err)
-	}
-	ht.Self.Port = p
+	ht.Self.Port = port
 	return nil
 }
 

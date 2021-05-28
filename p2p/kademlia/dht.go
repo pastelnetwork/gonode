@@ -32,7 +32,7 @@ type Options struct {
 	IP string
 
 	// The local port to listen for connections on
-	Port string
+	Port int
 
 	// Whether or not to use the STUN protocol to determine public IP and Port
 	// May be necessary if the node is behind a NAT

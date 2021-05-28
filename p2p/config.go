@@ -2,7 +2,7 @@ package p2p
 
 var (
 	defaultListenAddress = "0.0.0.0"
-	defaultPort          = "4445"
+	defaultPort          = 4445
 	defualtUseStun       = true
 )
 
@@ -11,7 +11,7 @@ type Config struct {
 	// The local IPv4 or IPv6 address
 	ListenAddresses string `mapstructure:"listen_addresses" json:"listen_address,omitempty"`
 	// The local port to listen for connections on
-	Port string `mapstructure:"port" json:"port,omitempty"`
+	Port int `mapstructure:"port" json:"port,omitempty"`
 	// IP Address to bootstrap against
 	BootstrapIP string `mapstructure:"bootstrap_ip" json:"bootstrap_ip,omitempty"`
 	// Port to bootstrap against
