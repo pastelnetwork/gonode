@@ -32,7 +32,7 @@ const (
 	cachedFingerprintsDB = "cachedFingerprints.sqlite"
 )
 
-func fingerprintFromCache(filePath string) ([]float64, error) {
+func fingerprintFromCache(filePath string) ([]float32, error) {
 	if _, err := os.Stat(cachedFingerprintsDB); os.IsNotExist(err) {
 		return nil, errors.New(errors.Errorf("Cache database is not found."))
 	}
@@ -70,7 +70,7 @@ func fingerprintFromCache(filePath string) ([]float64, error) {
 	return nil, errors.New(errors.Errorf("Fingerprint is not found"))
 }
 
-func cacheFingerprint(fingerprints [][]float64, filePath string) error {
+func cacheFingerprint(fingerprints [][]float32, filePath string) error {
 	if _, err := os.Stat(cachedFingerprintsDB); os.IsNotExist(err) {
 		db, err := sql.Open("sqlite3", cachedFingerprintsDB)
 		if err != nil {
@@ -221,17 +221,17 @@ func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
-func toBytes(data []float64) []byte {
+func toBytes(data []float32) []byte {
 	output := new(bytes.Buffer)
 	_ = binary.Write(output, binary.LittleEndian, data)
 	return output.Bytes()
 }
 
-func fromBytes(data []byte) []float64 {
-	output := make([]float64, len(data)/8)
+func fromBytes(data []byte) []float32 {
+	output := make([]float32, len(data)/4)
 	for i := range output {
-		bits := binary.LittleEndian.Uint64(data[i*8 : (i+1)*8])
-		output[i] = math.Float64frombits(bits)
+		bits := binary.LittleEndian.Uint32(data[i*4 : (i+1)*4])
+		output[i] = math.Float32frombits(bits)
 	}
 	return output
 }
@@ -317,7 +317,7 @@ func getListOfAllRegisteredImageFileHashes() ([]string, error) {
 	return hashes, nil
 }
 
-func getAllImageFingerprintsFromDupeDetectionDatabaseAsArray() ([][]float64, *dupedetection.MemoizationImageData, error) {
+func getAllImageFingerprintsFromDupeDetectionDatabaseAsArray() ([][]float32, *dupedetection.MemoizationImageData, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
 	hashes, err := getListOfAllRegisteredImageFileHashes()
@@ -331,7 +331,7 @@ func getAllImageFingerprintsFromDupeDetectionDatabaseAsArray() ([][]float64, *du
 	}
 	defer db.Close()
 
-	var arrayOfCombinedImageFingerprintRows [][]float64
+	var arrayOfCombinedImageFingerprintRows [][]float32
 	var memoizationImageData dupedetection.MemoizationImageData
 
 	for _, currentImageFileHash := range hashes {
@@ -362,13 +362,13 @@ func getAllImageFingerprintsFromDupeDetectionDatabaseAsArray() ([][]float64, *du
 	return arrayOfCombinedImageFingerprintRows, &memoizationImageData, nil
 }
 
-func getImageDeepLearningFeaturesCombinedVectorForSingleImage(artImageFilePath string) ([]float64, error) {
+func getImageDeepLearningFeaturesCombinedVectorForSingleImage(artImageFilePath string) ([]float32, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	fingerprints, err := dupedetection.ComputeImageDeepLearningFeatures(artImageFilePath)
 	if err != nil {
 		return nil, errors.New(err)
 	}
-	var combinedImageFingerprintVector []float64
+	var combinedImageFingerprintVector []float32
 	for _, fingerprint := range fingerprints {
 		combinedImageFingerprintVector = append(combinedImageFingerprintVector, fingerprint...)
 	}
@@ -448,9 +448,13 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (MeasureResult, error) {
 
 	var err error
 	if len(finalCombinedImageFingerprintArray) == 0 || memoizationData == nil {
-		finalCombinedImageFingerprintArray, memoizationData, err = getAllImageFingerprintsFromDupeDetectionDatabaseAsArray()
+		var finalCombinedImageFingerprintArrayFloat32 [][]float32
+		finalCombinedImageFingerprintArrayFloat32, memoizationData, err = getAllImageFingerprintsFromDupeDetectionDatabaseAsArray()
 		if err != nil {
 			return MeasureResult{}, errors.New(err)
+		}
+		for _, fingerprintFloat32 := range finalCombinedImageFingerprintArrayFloat32 {
+			finalCombinedImageFingerprintArray = append(finalCombinedImageFingerprintArray, dupedetection.FromFloat32To64(fingerprintFloat32))
 		}
 	}
 
