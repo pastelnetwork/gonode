@@ -214,13 +214,6 @@ func (dht *DHT) CreateSocket() error {
 	ip := dht.options.IP
 	port := dht.options.Port
 
-	if ip == "" {
-		ip = "0.0.0.0"
-	}
-	if port == "" {
-		port = "3000"
-	}
-
 	netMsgInit()
 	dht.networking.init(dht.ht.Self)
 

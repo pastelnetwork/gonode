@@ -2,7 +2,7 @@ package p2p
 
 var (
 	defaultListenAddress = "0.0.0.0"
-	defaultPort          = "0"
+	defaultPort          = "4445"
 	defualtUseStun       = true
 )
 

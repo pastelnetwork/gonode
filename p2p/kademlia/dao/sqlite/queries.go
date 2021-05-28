@@ -7,9 +7,8 @@ import (
 
 	// add sqlite driver
 	_ "github.com/mattn/go-sqlite3"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
-
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
 )
 
 // Migrate runs migrations such as creating `keys` table.
