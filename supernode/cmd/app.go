@@ -15,8 +15,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	"github.com/pastelnetwork/gonode/dupe-detection/pkg/fingerprint"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
@@ -122,10 +122,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nodeClient := client.New()
 	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
-	fingerprint := fingerprint.New(config.WorkDir)
+
+	dupeDetection := probe.New(config.WorkDir)
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, dupeDetection, pastelClient, nodeClient)
 
 	// server
 	grpc := server.New(&config.Server,
@@ -133,5 +134,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, grpc, fingerprint, artworkRegister)
+	return runServices(ctx, grpc, dupeDetection, artworkRegister)
 }

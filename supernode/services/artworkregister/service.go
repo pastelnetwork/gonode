@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"golang.org/x/sync/errgroup"
 )
@@ -62,7 +63,7 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorage, probe probe.Probe, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,

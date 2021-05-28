@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/pastelnetwork/gonode/common v0.0.0
-	github.com/pastelnetwork/gonode/dupe-detection v0.0.0
+	github.com/pastelnetwork/gonode/probe v0.0.0
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/stretchr/testify v1.7.0
@@ -14,7 +14,7 @@ require (
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
-	github.com/pastelnetwork/gonode/dupe-detection => ../dupe-detection
+	github.com/pastelnetwork/gonode/probe => ../probe
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto
 )
