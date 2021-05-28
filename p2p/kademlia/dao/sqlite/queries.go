@@ -37,11 +37,17 @@ func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration
 	if err != nil {
 		return 0, errors.Errorf("failed to prepare SQL statement: %w", err)
 	}
-	defer stmt.Close()
 
 	res, err := stmt.ExecContext(ctx, string(key), data, replication, expiration)
 	if err != nil {
 		return 0, errors.Errorf("Error %w when inserting row into keys table", err)
+	}
+
+	// If the database is being written to ensure to check for Close
+	// errors that may be returned from the driver. The query may
+	// encounter an auto-commit error and be forced to rollback changes.
+	if err := stmt.Close(); err != nil {
+		return 0, errors.New(err)
 	}
 
 	rows, err := res.RowsAffected()
@@ -62,7 +68,6 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	if err != nil {
 		return []byte(""), errors.New(err)
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		if err := rows.Scan(&data); err != nil {
@@ -99,6 +104,7 @@ func ExpireKeys(ctx context.Context, db *sql.DB) error {
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
 func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error) {
+	var closerr error
 	var keys [][]byte
 
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
@@ -108,7 +114,6 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 	if err != nil {
 		return [][]byte{}, errors.New(err)
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		var key string
@@ -132,7 +137,7 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 		return [][]byte{}, errors.Errorf("Error %w after scanning rows", err)
 	}
 
-	return keys, nil
+	return keys, closerr
 }
 
 // Remove deletes a key/value pair from the Key

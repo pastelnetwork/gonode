@@ -30,18 +30,24 @@ func (k *Key) ExpireKeys(ctx context.Context) error {
 
 // Init initializes the Store
 func (k *Key) Init(ctx context.Context) error {
+	var closerr error
+
 	db, err := sql.Open("sqlite3", ":memory:")
 	if err != nil {
 		return errors.Errorf("failed opening new sqlite connection: %w", err)
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			closerr = errors.Errorf("failed closing db connection: %w", err)
+		}
+	}()
 
 	if err := Migrate(ctx, k.db); err != nil {
 		return errors.Errorf("failed running migrations: %w", err)
 	}
 
 	k.db = db
-	return nil
+	return closerr
 }
 
 // Store will store a key/value pair for the local node with the given

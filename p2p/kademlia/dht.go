@@ -223,7 +223,10 @@ func (dht *DHT) CreateSocket() error {
 	}
 
 	if dht.options.UseStun {
-		dht.ht.setSelfAddr(publicHost, publicPort)
+		err := dht.ht.setSelfAddr(publicHost, publicPort)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -500,7 +503,10 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 					queryData := &queryDataStore{}
 					queryData.Data = data
 					query.Data = queryData
-					dht.networking.sendMessage(ctx, query, false, -1)
+					_, err := dht.networking.sendMessage(ctx, query, false, -1)
+					if err != nil {
+						return nil, nil, errors.Errorf("failed sending message: %w", err)
+					}
 				}
 				return nil, nil, nil
 			}
