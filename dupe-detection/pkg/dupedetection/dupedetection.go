@@ -78,7 +78,8 @@ func tgModel(path string) *tg.Model {
 	return m
 }
 
-func fromFloat32To64(input []float32) []float64 {
+// FromFloat32To64 accepts input array of float32 values and returns float64 array of the input values
+func FromFloat32To64(input []float32) []float64 {
 	output := make([]float64, len(input))
 	for i, value := range input {
 		output[i] = float64(value)
@@ -104,7 +105,7 @@ func loadImage(imagePath string, width int, height int) (image.Image, error) {
 }
 
 // ComputeImageDeepLearningFeatures computes dupe detection fingerprints for image with imagePath
-func ComputeImageDeepLearningFeatures(imagePath string) ([][]float64, error) {
+func ComputeImageDeepLearningFeatures(imagePath string) ([][]float32, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 
 	m, err := loadImage(imagePath, 224, 224)
@@ -127,7 +128,7 @@ func ComputeImageDeepLearningFeatures(imagePath string) ([][]float64, error) {
 		}
 	}
 
-	fingerprints := make([][]float64, len(fingerprintSources))
+	fingerprints := make([][]float32, len(fingerprintSources))
 	for i, source := range fingerprintSources {
 		model := tgModel(source.model)
 
@@ -139,7 +140,7 @@ func ComputeImageDeepLearningFeatures(imagePath string) ([][]float64, error) {
 		})
 
 		predictions := results[0].Value().([][]float32)[0]
-		fingerprints[i] = fromFloat32To64(predictions)
+		fingerprints[i] = predictions
 	}
 
 	return fingerprints, nil
@@ -913,8 +914,10 @@ func NewComputeConfig() ComputeConfig {
 }
 
 // MeasureImageSimilarity calculates similarity between candidateImageFingerprint and each value in fingerprintsArrayToCompareWith
-func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArrayToCompareWith [][]float64, memoizationData MemoizationImageData, config ComputeConfig) (int, error) {
+func MeasureImageSimilarity(candidateImageFingerprint []float32, fingerprintsArrayToCompareWith [][]float64, memoizationData MemoizationImageData, config ComputeConfig) (int, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
+
+	candidateImageFingerprintFloat64 := FromFloat32To64(candidateImageFingerprint)
 
 	var err error
 	totalFingerprintsCount := len(fingerprintsArrayToCompareWith)
@@ -1076,7 +1079,7 @@ func MeasureImageSimilarity(candidateImageFingerprint []float64, fingerprintsArr
 	fingerprintsForFurtherTesting := fingerprintsArrayToCompareWith
 	for _, computeBlock := range orderedComputeBlocks {
 
-		fingerprintsForFurtherTesting, err = computeSimilarity(candidateImageFingerprint, fingerprintsForFurtherTesting, memoizationData, computeBlock)
+		fingerprintsForFurtherTesting, err = computeSimilarity(candidateImageFingerprintFloat64, fingerprintsForFurtherTesting, memoizationData, computeBlock)
 		if err != nil {
 			return 0, errors.New(err)
 		}
