@@ -23,6 +23,7 @@ const (
 // Service represents a service for the registration artwork.
 type Service struct {
 	*task.Worker
+	*artwork.Storage
 
 	config       *Config
 	db           storage.KeyValue
@@ -64,6 +65,10 @@ func (service *Service) Run(ctx context.Context) error {
 
 	group.Go(func() (err error) {
 		defer errors.Recover(func(recErr error) { err = recErr })
+		return service.Storage.Run(ctx)
+	})
+	group.Go(func() (err error) {
+		defer errors.Recover(func(recErr error) { err = recErr })
 		return service.Worker.Run(ctx)
 	})
 	return group.Wait()
@@ -92,12 +97,13 @@ func (service *Service) AddTask(ticket *Ticket) string {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
 		Worker:       task.NewWorker(),
+		Storage:      artwork.NewStorage(fileStorage),
 	}
 }

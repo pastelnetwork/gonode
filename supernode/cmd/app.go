@@ -4,17 +4,18 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	"github.com/pastelnetwork/gonode/dupe-detection/pkg/fingerprint"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
@@ -30,8 +31,12 @@ const (
 )
 
 var (
-	defaultConfigFile       = configurer.DefaultConfigPath("supernode.yml")
-	defaultPastelConfigFile = configurer.DefaultConfigPath("pastel.conf")
+	defaultPath = configurer.DefaultPath()
+
+	defaultTempDir          = filepath.Join(os.TempDir(), appName)
+	defaultWorkDir          = filepath.Join(defaultPath, appName)
+	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
+	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 )
 
 // NewApp inits a new command line interface.
@@ -49,7 +54,8 @@ func NewApp() *cli.App {
 		// Main
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
-		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(config.TempDir),
+		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` to directory for storing work data.").SetValue(defaultWorkDir),
+		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -85,7 +91,11 @@ func NewApp() *cli.App {
 		}
 
 		if err := os.MkdirAll(config.TempDir, os.ModePerm); err != nil {
-			return errors.Errorf("could not create work-dir %q, %w", config.TempDir, err)
+			return errors.Errorf("could not create temp-dir %q, %w", config.TempDir, err)
+		}
+
+		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
 		}
 
 		return runApp(ctx, config)
@@ -111,16 +121,17 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	pastelClient := pastel.NewClient(&config.Pastel)
 	nodeClient := client.New()
 	db := memory.NewKeyValue()
-	artworkStorage := artwork.NewStorage(fs.NewFileStorage(config.TempDir))
+	fileStorage := fs.NewFileStorage(config.TempDir)
+	fingerprint := fingerprint.New(config.WorkDir)
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
 
 	// server
 	grpc := server.New(&config.Server,
-		walletnode.NewRegisterArtwork(artworkRegister, artworkStorage),
+		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, artworkStorage, artworkRegister, grpc)
+	return runServices(ctx, grpc, fingerprint, artworkRegister)
 }

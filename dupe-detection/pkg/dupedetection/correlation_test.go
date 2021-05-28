@@ -1,4 +1,4 @@
-package main
+package dupedetection
 
 import (
 	"bufio"
@@ -11,7 +11,6 @@ import (
 
 	"github.com/montanaflynn/stats"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
 	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
 )
 
@@ -90,7 +89,7 @@ func TestCorrelations(t *testing.T) {
 	pearsonFloatingPointAccuracy := 0.000000000001
 	kendallFloatingPointAccuracy := 0.000000000000001
 
-	inputs1, inputs2, outputs, err := readInputFileIntoArrays("spearmanrho_data.txt")
+	inputs1, inputs2, outputs, err := readInputFileIntoArrays("data/spearmanrho_data.txt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -102,7 +101,7 @@ func TestCorrelations(t *testing.T) {
 	fmt.Printf("\nNumber of inputs loaded: %v", len(inputs1))
 	differentsCount := 0
 	for i := range inputs1 {
-		result, err := dupedetection.Spearman(inputs1[i], inputs2[i])
+		result, err := Spearman(inputs1[i], inputs2[i])
 		if err != nil {
 			t.Error(err)
 		}
@@ -113,7 +112,7 @@ func TestCorrelations(t *testing.T) {
 	}
 	fmt.Printf("\nSpearman Rho - Found calculation differences: %v from total number of %v with floating point accuracy %v", differentsCount, len(inputs1), spearmanFloatingPointAccuracy)
 
-	inputs1, inputs2, outputs, err = readInputFileIntoArrays("pearsonr_data.txt")
+	inputs1, inputs2, outputs, err = readInputFileIntoArrays("data/pearsonr_data.txt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -136,7 +135,7 @@ func TestCorrelations(t *testing.T) {
 	}
 	fmt.Printf("\nPearson R - Found calculation differences: %v from total number of %v with floating point accuracy %v", differentsCount, len(inputs1), pearsonFloatingPointAccuracy)
 
-	inputs1, inputs2, outputs, err = readInputFileIntoArrays("kendall_data.txt")
+	inputs1, inputs2, outputs, err = readInputFileIntoArrays("data/kendall_data.txt")
 	if err != nil {
 		t.Error(err)
 	}
@@ -169,7 +168,7 @@ func TestCorrelations(t *testing.T) {
 	differentsCount = 0
 	for i := range inputs1 {
 		for repeat := 0; repeat < 10; repeat++ {
-			result := dupedetection.ComputeRandomizedDependence(inputs1[i], inputs2[i])
+			result := ComputeRandomizedDependence(inputs1[i], inputs2[i])
 			if result != outputs[i] {
 				differentsCount++
 				//t.Errorf("RDC Calculated correlation doesn't match the expected result (diff is %v):\n%v\n%v", math.Abs(result-outputs[i]), result, outputs[i])
