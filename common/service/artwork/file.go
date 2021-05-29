@@ -1,6 +1,7 @@
 package artwork
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/gif"
@@ -109,6 +110,35 @@ func (file *File) Copy() (*File, error) {
 		return nil, errors.Errorf("failed to copy file: %w", err)
 	}
 	return newFile, nil
+}
+
+// Bytes returns the contents of the file by bytes.
+func (file *File) Bytes() ([]byte, error) {
+	f, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(f); err != nil {
+		return nil, errors.Errorf("failed to read from file: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// Write writes data to the file.
+func (file *File) Write(data []byte) error {
+	f, err := file.Create()
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err := f.Write(data); err != nil {
+		return errors.Errorf("failed to write to file: %w", err)
+	}
+	return nil
 }
 
 // ResizeImage resizes image.

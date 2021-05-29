@@ -5,6 +5,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/dao/mem"
 )
@@ -60,16 +61,30 @@ func (service *p2p) Run(ctx context.Context) error {
 
 // Store stores data on the network. This will trigger an iterateStore message.
 // The base58 encoded identifier will be returned if the store is successful.
-func (service *p2p) Store(ctx context.Context, data []byte) (id string, err error) {
+func (service *p2p) Store(ctx context.Context, file *artwork.File) (id string, err error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	data, err := file.Bytes()
+	if err != nil {
+		return "", err
+	}
 	return service.dht.Store(ctx, data)
 }
 
 // Get retrieves data from the networking using key. Key is the base58 encoded
 // identifier of the data.
-func (service *p2p) Get(ctx context.Context, key string) (data []byte, found bool, err error) {
+func (service *p2p) Get(ctx context.Context, key string, file *artwork.File) (found bool, err error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
-	return service.dht.Get(ctx, key)
+
+	data, found, err := service.dht.Get(ctx, key)
+	if err != nil || !found {
+		return false, err
+	}
+
+	if err := file.Write(data); err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 // configure configures service DHT
