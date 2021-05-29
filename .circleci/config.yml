@@ -243,6 +243,14 @@ jobs:
       - test:
           package: "pastel"
 
+  test_p2p:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "p2p"
+
   test_pastel-api:
     <<: *defaults
     steps:
@@ -372,6 +380,9 @@ workflows:
           requires:
             - prepare_workspace
       - test_pastel:
+          requires:
+            - prepare_workspace
+      - test_p2p:
           requires:
             - prepare_workspace
       - test_pastel-api:

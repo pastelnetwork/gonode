@@ -7,14 +7,15 @@ import (
 
 // Node contains the SuperNode configuration itself.
 type Node struct {
+	// `squash` field cannot be pointer
 	ArtworkRegister artworkregister.Config `mapstructure:",squash" json:"artwork_register,omitempty"`
-	Server          server.Config          `mapstructure:"server" json:"server,omitempty"`
+	Server          *server.Config         `mapstructure:"server" json:"server,omitempty"`
 }
 
 // NewNode returns a new Node instance
-func NewNode() *Node {
-	return &Node{
+func NewNode() Node {
+	return Node{
 		ArtworkRegister: *artworkregister.NewConfig(),
-		Server:          *server.NewConfig(),
+		Server:          server.NewConfig(),
 	}
 }

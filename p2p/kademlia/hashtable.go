@@ -2,15 +2,16 @@ package kademlia
 
 import (
 	"bytes"
-	"errors"
+	"context"
 	"math"
 	"math/big"
 	"math/rand"
 	"net"
 	"sort"
-	"strconv"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 const (
@@ -66,14 +67,15 @@ func newHashTable(options *Options) (*hashTable, error) {
 		ht.Self.ID = id
 	}
 
-	if options.IP == "" || options.Port == "" {
-		return nil, errors.New("Port and IP required")
+	if options.IP == "" {
+		return nil, errors.New("not specified IP")
 	}
 
-	err := ht.setSelfAddr(options.IP, options.Port)
-	if err != nil {
-		return nil, err
+	if options.Port == 0 {
+		return nil, errors.New("not specified port")
 	}
+
+	ht.setSelfAddr(options.IP, options.Port)
 
 	for i := 0; i < b; i++ {
 		ht.resetRefreshTimeForBucket(i)
@@ -86,14 +88,9 @@ func newHashTable(options *Options) (*hashTable, error) {
 	return ht, nil
 }
 
-func (ht *hashTable) setSelfAddr(ip string, port string) error {
+func (ht *hashTable) setSelfAddr(ip string, port int) {
 	ht.Self.IP = net.ParseIP(ip)
-	p, err := strconv.Atoi(port)
-	if err != nil {
-		return err
-	}
-	ht.Self.Port = p
-	return nil
+	ht.Self.Port = port
 }
 
 func (ht *hashTable) resetRefreshTimeForBucket(bucket int) {
@@ -108,33 +105,35 @@ func (ht *hashTable) getRefreshTimeForBucket(bucket int) time.Time {
 	return ht.refreshMap[bucket]
 }
 
-func (ht *hashTable) markNodeAsSeen(node []byte) {
+func (ht *hashTable) markNodeAsSeen(_ context.Context, node []byte) error {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 	index := getBucketIndexFromDifferingBit(ht.Self.ID, node)
 	bucket := ht.RoutingTable[index]
 	nodeIndex := -1
 	for i, v := range bucket {
-		if bytes.Compare(v.ID, node) == 0 {
+		if bytes.Equal(v.ID, node) {
 			nodeIndex = i
 			break
 		}
 	}
 	if nodeIndex == -1 {
-		panic(errors.New("Tried to mark nonexistent node as seen"))
+		return errors.New("tried to mark nonexistent node as seen")
 	}
 
 	n := bucket[nodeIndex]
 	bucket = append(bucket[:nodeIndex], bucket[nodeIndex+1:]...)
 	bucket = append(bucket, n)
 	ht.RoutingTable[index] = bucket
+
+	return nil
 }
 
 func (ht *hashTable) doesNodeExistInBucket(bucket int, node []byte) bool {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 	for _, v := range ht.RoutingTable[bucket] {
-		if bytes.Compare(v.ID, node) == 0 {
+		if bytes.Equal(v.ID, node) {
 			return true
 		}
 	}
@@ -172,7 +171,7 @@ func (ht *hashTable) getClosestContacts(num int, target []byte, ignoredNodes []*
 		for i := 0; i < bucketContacts; i++ {
 			ignored := false
 			for j := 0; j < len(ignoredNodes); j++ {
-				if bytes.Compare(ht.RoutingTable[index][i].ID, ignoredNodes[j].ID) == 0 {
+				if bytes.Equal(ht.RoutingTable[index][i].ID, ignoredNodes[j].ID) {
 					ignored = true
 				}
 			}
@@ -191,21 +190,21 @@ func (ht *hashTable) getClosestContacts(num int, target []byte, ignoredNodes []*
 	return sl
 }
 
-func (ht *hashTable) removeNode(ID []byte) {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+// func (ht *hashTable) removeNode(ID []byte) {
+// 	ht.mutex.Lock()
+// 	defer ht.mutex.Unlock()
 
-	index := getBucketIndexFromDifferingBit(ht.Self.ID, ID)
-	bucket := ht.RoutingTable[index]
+// 	index := getBucketIndexFromDifferingBit(ht.Self.ID, ID)
+// 	bucket := ht.RoutingTable[index]
 
-	for i, v := range bucket {
-		if bytes.Compare(v.ID, ID) == 0 {
-			bucket = append(bucket[:i], bucket[i+1:]...)
-		}
-	}
+// 	for i, v := range bucket {
+// 		if bytes.Equal(v.ID, ID) {
+// 			bucket = append(bucket[:i], bucket[i+1:]...)
+// 		}
+// 	}
 
-	ht.RoutingTable[index] = bucket
-}
+// 	ht.RoutingTable[index] = bucket
+// }
 
 func (ht *hashTable) getAllNodesInBucketCloserThan(bucket int, id []byte) [][]byte {
 	b := ht.RoutingTable[bucket]
@@ -313,8 +312,11 @@ func (ht *hashTable) totalNodes() int {
 // newID generates a new random ID
 func newID() ([]byte, error) {
 	result := make([]byte, 20)
-	_, err := rand.Read(result)
-	return result, err
+	if _, err := rand.Read(result); err != nil {
+		return nil, errors.Errorf("failed to generate random bytes: %w", err)
+	}
+
+	return result, nil
 }
 
 // Simple helper function to determine the value of a particular

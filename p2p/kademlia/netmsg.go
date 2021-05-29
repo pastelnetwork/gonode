@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"encoding/gob"
 	"io"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 const (
@@ -64,7 +66,7 @@ func serializeMessage(q *message) ([]byte, error) {
 	enc := gob.NewEncoder(&msgBuffer)
 	err := enc.Encode(q)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to encode transmits: %w", err)
 	}
 
 	length := msgBuffer.Len()
@@ -81,31 +83,27 @@ func serializeMessage(q *message) ([]byte, error) {
 
 func deserializeMessage(conn io.Reader) (*message, error) {
 	lengthBytes := make([]byte, 8)
-	_, err := conn.Read(lengthBytes)
-	if err != nil {
-		return nil, err
+	if _, err := conn.Read(lengthBytes); err != nil {
+		return nil, errors.Errorf("failed to read bytes: %w", err)
 	}
 
 	lengthReader := bytes.NewBuffer(lengthBytes)
 	length, err := binary.ReadUvarint(lengthReader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to read an encoded buffer: %w", err)
 	}
 
 	msgBytes := make([]byte, length)
-	_, err = conn.Read(msgBytes)
-	if err != nil {
-		return nil, err
+	if _, err := conn.Read(msgBytes); err != nil {
+		return nil, errors.Errorf("failed to read bytes: %w", err)
 	}
 
 	reader := bytes.NewBuffer(msgBytes)
 	msg := &message{}
 	dec := gob.NewDecoder(reader)
 
-	err = dec.Decode(msg)
-	if err != nil {
-		return nil, err
+	if err := dec.Decode(msg); err != nil {
+		return nil, errors.Errorf("failed to decode message: %w", err)
 	}
-
 	return msg, nil
 }

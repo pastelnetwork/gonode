@@ -1,6 +1,7 @@
 package kademlia
 
 import (
+	"context"
 	"errors"
 	"net"
 )
@@ -21,7 +22,7 @@ func newMockNetworking() *mockNetworking {
 	return net
 }
 
-func (net *mockNetworking) listen() error {
+func (net *mockNetworking) listen(_ context.Context) error {
 	return nil
 }
 
@@ -43,14 +44,14 @@ func (net *mockNetworking) isInitialized() bool {
 	return true
 }
 
-func (net *mockNetworking) createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error) {
-	return "", "", nil
+func (net *mockNetworking) createSocket(_ string, _ int, _ bool, _ string) (publicHost string, publicPort int, err error) {
+	return "", 0, nil
 }
 
 func (net *mockNetworking) cancelResponse(*expectedResponse) {
 }
 
-func (net *mockNetworking) init(self *NetworkNode) {
+func (net *mockNetworking) init(_ *NetworkNode) {
 	net.recv = make(chan (*message))
 	net.send = make(chan (*message))
 	net.msgChan = make(chan (*message))
@@ -79,7 +80,7 @@ func (net *mockNetworking) failNextSendMessage() {
 	net.failNext = true
 }
 
-func (net *mockNetworking) sendMessage(q *message, expectResponse bool, id int64) (*expectedResponse, error) {
+func (net *mockNetworking) sendMessage(_ context.Context, q *message, expectResponse bool, id int64) (*expectedResponse, error) {
 	if id == 0 {
 		id = net.msgCounter
 		net.msgCounter++

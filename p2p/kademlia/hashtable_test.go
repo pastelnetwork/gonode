@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"bytes"
+	"context"
 	"math"
 	"net"
 	"testing"
@@ -13,12 +14,15 @@ import (
 // single node closer to the original node. This continues until every k bucket
 // is occupied.
 func TestFindNodeAllBuckets(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 
-	dht, _ := NewDHT(getInMemoryStore(), &Options{
+	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
-		Port: "3000",
+		Port: 3000,
 		IP:   "0.0.0.0",
 		BootstrapNodes: []*NetworkNode{{
 			ID:   getZerodIDWithNthByte(0, byte(math.Pow(2, 7))),
@@ -32,7 +36,7 @@ func TestFindNodeAllBuckets(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(ctx)
 	}()
 
 	var k = 0
@@ -60,8 +64,7 @@ func TestFindNodeAllBuckets(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap()
-
+	dht.Bootstrap(ctx)
 	for _, v := range dht.ht.RoutingTable {
 		assert.Equal(t, 1, len(v))
 	}
@@ -74,14 +77,17 @@ func TestFindNodeAllBuckets(t *testing.T) {
 // node to the now full bucket, we should receive a ping to the very first node
 // added in order to determine if it is still alive.
 func TestAddNodeTimeout(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	networking := newMockNetworking()
 	id := getIDWithValues(0)
 	done := make(chan (int))
 	pinged := make(chan (int))
 
-	dht, _ := NewDHT(getInMemoryStore(), &Options{
+	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
-		Port: "3000",
+		Port: 3000,
 		IP:   "0.0.0.0",
 		BootstrapNodes: []*NetworkNode{{
 			ID:   getZerodIDWithNthByte(1, byte(255)),
@@ -95,7 +101,7 @@ func TestAddNodeTimeout(t *testing.T) {
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(ctx)
 	}()
 
 	var nodesAdded = 1
@@ -137,7 +143,7 @@ func TestAddNodeTimeout(t *testing.T) {
 		}
 	}()
 
-	dht.Bootstrap()
+	dht.Bootstrap(ctx)
 
 	// ensure the first node in the table is the second node contacted, and the
 	// last is the last node contacted
@@ -151,17 +157,20 @@ func TestAddNodeTimeout(t *testing.T) {
 }
 
 func TestGetRandomIDFromBucket(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	id := getIDWithValues(0)
-	dht, _ := NewDHT(getInMemoryStore(), &Options{
+	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
 		ID:   id,
-		Port: "3000",
+		Port: 3000,
 		IP:   "0.0.0.0",
 	})
 
 	dht.CreateSocket()
 
 	go func() {
-		dht.Listen()
+		dht.Listen(ctx)
 	}()
 
 	// Bytes should be equal up to the bucket index that the random ID was

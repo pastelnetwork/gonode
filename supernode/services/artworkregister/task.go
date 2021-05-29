@@ -152,6 +152,12 @@ func (task *Task) UploadImage(_ context.Context, image *artwork.File) error {
 		task.Image = image
 		task.UpdateStatus(StatusImageUploaded)
 
+		id, err := task.p2pClient.Store(ctx, image)
+		if err != nil {
+			return err
+		}
+		log.WithContext(ctx).WithField("id", id).Debugf("Image stored into Kademlia")
+
 		<-ctx.Done()
 
 		return task.Image.Remove()

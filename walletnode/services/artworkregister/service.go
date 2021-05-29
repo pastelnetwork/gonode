@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -13,7 +14,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -52,23 +52,21 @@ func (service *Service) Run(ctx context.Context) error {
 			if err := ticket.Image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
 				return err
 			}
-			group.Go(func() (err error) {
+			group.Go(func() error {
 				return imageStorage.Run(ctx)
 			})
 		}
 
-		group.Go(func() (err error) {
+		group.Go(func() error {
 			service.AddTask(&ticket.Ticket)
 			return nil
 		})
 	}
 
-	group.Go(func() (err error) {
-		defer errors.Recover(func(recErr error) { err = recErr })
+	group.Go(func() error {
 		return service.Storage.Run(ctx)
 	})
-	group.Go(func() (err error) {
-		defer errors.Recover(func(recErr error) { err = recErr })
+	group.Go(func() error {
 		return service.Worker.Run(ctx)
 	})
 	return group.Wait()

@@ -51,7 +51,7 @@ func NewApp() *cli.App {
 		// Main
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
-		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(defaultTempDir),
+		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -112,7 +112,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(&config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel)
 	nodeClient := grpc.NewClient()
 	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
@@ -121,7 +121,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
 
 	// api service
-	server := api.NewServer(&config.API,
+	server := api.NewServer(config.API,
 		services.NewArtwork(artworkRegister),
 		services.NewSwagger(),
 	)

@@ -12,9 +12,9 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
-	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/probe/tfmodel"
@@ -57,8 +57,8 @@ func NewApp() *cli.App {
 		// Main
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
-		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` to directory for storing work data.").SetValue(defaultWorkDir),
-		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(defaultTempDir),
+		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
+		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -121,22 +121,24 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(&config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel)
 	nodeClient := client.New()
-	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// analysis tools
-	tensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
+	probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
+
+	// p2p service (currently using kademlia)
+	p2p := p2p.New(config.P2P)
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, tensor, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
 
 	// server
-	grpc := server.New(&config.Server,
+	grpc := server.New(config.Server,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, grpc, artworkRegister)
+	return runServices(ctx, grpc, p2p, artworkRegister)
 }

@@ -2,30 +2,26 @@ package kademlia
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net"
 	"strconv"
 	"sync"
-	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 
 	"github.com/anacrolix/utp"
 	"github.com/ccding/go-stun/stun"
 )
 
-var (
-	errorValueNotFound = errors.New("Value not found")
-)
-
 type networking interface {
-	sendMessage(*message, bool, int64) (*expectedResponse, error)
+	sendMessage(context.Context, *message, bool, int64) (*expectedResponse, error)
 	getMessage() chan (*message)
 	messagesFin()
 	timersFin()
 	getDisconnect() chan (int)
 	init(self *NetworkNode)
-	createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error)
-	listen() error
+	createSocket(host string, port int, useStun bool, stunAddr string) (publicHost string, publicPort int, err error)
+	listen(ctx context.Context) error
 	disconnect() error
 	cancelResponse(*expectedResponse)
 	isInitialized() bool
@@ -40,8 +36,6 @@ type realNetworking struct {
 	dcEndChan     chan (int)
 	dcTimersChan  chan (int)
 	dcMessageChan chan (int)
-	address       *net.UDPAddr
-	connection    *net.UDPConn
 	mutex         *sync.Mutex
 	connected     bool
 	initialized   bool
@@ -98,18 +92,17 @@ func (rn *realNetworking) timersFin() {
 	rn.dcTimersChan <- 1
 }
 
-func (rn *realNetworking) createSocket(host string, port string, useStun bool, stunAddr string) (publicHost string, publicPort string, err error) {
+func (rn *realNetworking) createSocket(host string, port int, useStun bool, stunAddr string) (publicHost string, publicPort int, err error) {
 	rn.mutex.Lock()
 	defer rn.mutex.Unlock()
 	if rn.connected {
-		return "", "", errors.New("already connected")
+		return "", 0, errors.New("already connected")
 	}
 
-	remoteAddress := "[" + host + "]" + ":" + port
-
+	remoteAddress := net.JoinHostPort(host, strconv.Itoa(port))
 	socket, err := utp.NewSocket("udp", remoteAddress)
 	if err != nil {
-		return "", "", err
+		return "", 0, errors.Errorf("failed to create a new socket %q: %w", remoteAddress, err)
 	}
 
 	if useStun {
@@ -121,29 +114,27 @@ func (rn *realNetworking) createSocket(host string, port string, useStun bool, s
 
 		_, h, err := c.Discover()
 		if err != nil {
-			return "", "", err
+			return "", 0, errors.Errorf("failed to contact the STUN server: %w", err)
 		}
 
 		_, err = c.Keepalive()
 		if err != nil {
-			return "", "", err
+			return "", 0, errors.Errorf("failed to enable keepalive: %w", err)
 		}
 
-		host = h.IP()
-		port = strconv.Itoa(int(h.Port()))
-		remoteAddress = "[" + host + "]" + ":" + port
+		host := h.IP()
+		port := int(h.Port())
+		remoteAddress = net.JoinHostPort(host, strconv.Itoa(port))
 	}
 
 	rn.remoteAddress = remoteAddress
-
 	rn.connected = true
-
 	rn.socket = socket
 
 	return host, port, nil
 }
 
-func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int64) (*expectedResponse, error) {
+func (rn *realNetworking) sendMessage(ctx context.Context, msg *message, expectResponse bool, id int64) (*expectedResponse, error) {
 	rn.mutex.Lock()
 	if id == -1 {
 		id = rn.msgCounter
@@ -152,12 +143,13 @@ func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int6
 	msg.ID = id
 	rn.mutex.Unlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
+	host := msg.Receiver.IP.String()
+	port := strconv.Itoa(msg.Receiver.Port)
+	remoteAddress := net.JoinHostPort(host, port)
 
-	conn, err := rn.socket.DialContext(ctx, "", "["+msg.Receiver.IP.String()+"]:"+strconv.Itoa(msg.Receiver.Port))
+	conn, err := rn.socket.DialContext(ctx, "", remoteAddress)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to dial %q: %w", remoteAddress, err)
 	}
 
 	data, err := serializeMessage(msg)
@@ -167,7 +159,7 @@ func (rn *realNetworking) sendMessage(msg *message, expectResponse bool, id int6
 
 	_, err = conn.Write(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to write: %w", err)
 	}
 
 	if expectResponse {
@@ -213,105 +205,116 @@ func (rn *realNetworking) disconnect() error {
 	rn.connected = false
 	rn.initialized = false
 	close(rn.dcEndChan)
-	return err
+	if err != nil {
+		return errors.Errorf("failed to close socket: %w", err)
+	}
+	return nil
 }
 
-func (rn *realNetworking) listen() error {
+func (rn *realNetworking) listen(ctx context.Context) error {
 	for {
 		conn, err := rn.socket.Accept()
-
 		if err != nil {
 			rn.disconnect()
 			<-rn.dcEndChan
-			return err
+
+			if err.Error() == "closed" {
+				return nil
+			}
+			return errors.Errorf("failed to accept new connection: %s", err)
 		}
 
 		go func(conn net.Conn) {
 			for {
-				// Wait for messages
-				msg, err := deserializeMessage(conn)
-				if err != nil {
-					if err.Error() == "EOF" {
-						// Node went bye bye
-					}
-					// TODO should we penalize this node somehow ? Ban it ?
+				select {
+				case <-ctx.Done():
 					return
-				}
+				default:
+					// Wait for messages
+					msg, err := deserializeMessage(conn)
+					if err != nil {
+						// if err.Error() == "EOF" {
+						// 	// Node went bye bye
+						// }
+						// TODO should we penalize this node somehow ? Ban it ?
+						return
+					}
 
-				isPing := msg.Type == messageTypePing
+					isPing := msg.Type == messageTypePing
 
-				if !areNodesEqual(msg.Receiver, rn.self, isPing) {
-					// TODO should we penalize this node somehow ? Ban it ?
-					continue
-				}
+					if !areNodesEqual(msg.Receiver, rn.self, isPing) {
+						// TODO should we penalize this node somehow ? Ban it ?
+						continue
+					}
 
-				if msg.ID < 0 {
-					// TODO should we penalize this node somehow ? Ban it ?
-					continue
-				}
+					if msg.ID < 0 {
+						// TODO should we penalize this node somehow ? Ban it ?
+						continue
+					}
 
-				rn.mutex.Lock()
-				if rn.connected {
-					if msg.IsResponse {
-						if rn.responseMap[msg.ID] == nil {
-							// We were not expecting this response
+					rn.mutex.Lock()
+					if rn.connected {
+						if msg.IsResponse {
+							if rn.responseMap[msg.ID] == nil {
+								// We were not expecting this response
+								rn.mutex.Unlock()
+								continue
+							}
+
+							if !areNodesEqual(rn.responseMap[msg.ID].node, msg.Sender, isPing) {
+								// TODO should we penalize this node somehow ? Ban it ?
+								rn.mutex.Unlock()
+								continue
+							}
+
+							if msg.Type != rn.responseMap[msg.ID].query.Type {
+								close(rn.responseMap[msg.ID].ch)
+								delete(rn.responseMap, msg.ID)
+								rn.mutex.Unlock()
+								continue
+							}
+
+							if !msg.IsResponse {
+								close(rn.responseMap[msg.ID].ch)
+								delete(rn.responseMap, msg.ID)
+								rn.mutex.Unlock()
+								continue
+							}
+
+							resChan := rn.responseMap[msg.ID].ch
 							rn.mutex.Unlock()
-							continue
-						}
-
-						if !areNodesEqual(rn.responseMap[msg.ID].node, msg.Sender, isPing) {
-							// TODO should we penalize this node somehow ? Ban it ?
-							rn.mutex.Unlock()
-							continue
-						}
-
-						if msg.Type != rn.responseMap[msg.ID].query.Type {
+							resChan <- msg
+							rn.mutex.Lock()
 							close(rn.responseMap[msg.ID].ch)
 							delete(rn.responseMap, msg.ID)
 							rn.mutex.Unlock()
-							continue
-						}
+						} else {
+							assertion := false
+							switch msg.Type {
+							case messageTypeFindNode:
+								_, assertion = msg.Data.(*queryDataFindNode)
+							case messageTypeFindValue:
+								_, assertion = msg.Data.(*queryDataFindValue)
+							case messageTypeStore:
+								_, assertion = msg.Data.(*queryDataStore)
+							default:
+								assertion = true
+							}
 
-						if !msg.IsResponse {
-							close(rn.responseMap[msg.ID].ch)
-							delete(rn.responseMap, msg.ID)
+							if !assertion {
+								fmt.Printf("Received bad message %v from %+v", msg.Type, msg.Sender)
+								close(rn.responseMap[msg.ID].ch)
+								delete(rn.responseMap, msg.ID)
+								rn.mutex.Unlock()
+								continue
+							}
+
+							rn.recvChan <- msg
 							rn.mutex.Unlock()
-							continue
 						}
-
-						resChan := rn.responseMap[msg.ID].ch
-						rn.mutex.Unlock()
-						resChan <- msg
-						rn.mutex.Lock()
-						close(rn.responseMap[msg.ID].ch)
-						delete(rn.responseMap, msg.ID)
-						rn.mutex.Unlock()
 					} else {
-						assertion := false
-						switch msg.Type {
-						case messageTypeFindNode:
-							_, assertion = msg.Data.(*queryDataFindNode)
-						case messageTypeFindValue:
-							_, assertion = msg.Data.(*queryDataFindValue)
-						case messageTypeStore:
-							_, assertion = msg.Data.(*queryDataStore)
-						default:
-							assertion = true
-						}
-
-						if !assertion {
-							fmt.Printf("Received bad message %v from %+v", msg.Type, msg.Sender)
-							close(rn.responseMap[msg.ID].ch)
-							delete(rn.responseMap, msg.ID)
-							rn.mutex.Unlock()
-							continue
-						}
-
-						rn.recvChan <- msg
 						rn.mutex.Unlock()
 					}
-				} else {
-					rn.mutex.Unlock()
 				}
 			}
 		}(conn)
