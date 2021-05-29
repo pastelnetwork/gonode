@@ -121,7 +121,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(&config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel)
 	nodeClient := client.New()
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
@@ -129,13 +129,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
 
 	// p2p service (currently using kademlia)
-	p2p := p2p.New(&config.P2P)
+	p2p := p2p.New(config.P2P)
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
+	artworkRegister := artworkregister.NewService(config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
 
 	// server
-	grpc := server.New(&config.Server,
+	grpc := server.New(config.Server,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)

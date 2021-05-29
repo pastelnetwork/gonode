@@ -22,8 +22,8 @@ type Config struct {
 	WorkDir  string `mapstructure:"work-dir" json:"work-dir"`
 
 	Node   `mapstructure:"node" json:"node,omitempty"`
-	Pastel pastel.Config `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
-	P2P    p2p.Config    `mapstructure:"p2p" json:"p2p,omitempty"`
+	Pastel *pastel.Config `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
+	P2P    *p2p.Config    `mapstructure:"p2p" json:"p2p,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -38,8 +38,8 @@ func New() *Config {
 	return &Config{
 		LogLevel: defaultLogLevel,
 
-		Node:   *NewNode(),
-		Pastel: *pastel.NewConfig(),
-		P2P:    *p2p.NewConfig(),
+		Node:   NewNode(),
+		Pastel: pastel.NewConfig(),
+		P2P:    p2p.NewConfig(),
 	}
 }

@@ -112,16 +112,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(&config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel)
 	nodeClient := grpc.NewClient()
 	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
 
 	// api service
-	server := api.NewServer(&config.API,
+	server := api.NewServer(config.API,
 		services.NewArtwork(artworkRegister),
 		services.NewSwagger(),
 	)
