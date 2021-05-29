@@ -154,7 +154,7 @@ func TestTaskMeshNodes(t *testing.T) {
 			}
 
 			task := &Task{}
-			got, err := task.meshNodes(tt.args.ctx, tt.args.nodes, tt.args.primaryIndex)
+			got, err := task.meshNodes(tt.args.ctx, nodes, tt.args.primaryIndex)
 
 			tt.assertion(t, err)
 			assert.Equal(t, tt.want, pullPastelIDNodes(got))
