@@ -105,7 +105,7 @@ func (ht *hashTable) getRefreshTimeForBucket(bucket int) time.Time {
 	return ht.refreshMap[bucket]
 }
 
-func (ht *hashTable) markNodeAsSeen(ctx context.Context, node []byte) error {
+func (ht *hashTable) markNodeAsSeen(_ context.Context, node []byte) error {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 	index := getBucketIndexFromDifferingBit(ht.Self.ID, node)
