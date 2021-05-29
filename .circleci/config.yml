@@ -183,9 +183,6 @@ commands:
               github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-windows-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
             fi
   install-tensorflow:
-    parameters:
-      package:
-        type: string
     steps:
       - run:
           name: Install libtensorflow
@@ -275,7 +272,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - install-tensorflow
+      - install-tensorflow:
       - test:
           package: "probe"
 
@@ -300,7 +297,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      - install-tensorflow
+      - install-tensorflow:
       - test:
           package: "supernode"
 
