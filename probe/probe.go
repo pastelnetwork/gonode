@@ -9,11 +9,15 @@ import (
 )
 
 const (
-	tensorDir = "tensor"
+	tensorDir = "tensormodels"
 )
 
+// Probe represents image analysis techniques.
 type Probe interface {
-	Fingerpints(ctx context.Context, img image.Image) ([][]float32, error)
+	// Fingerpint computes fingerprints for the given image.
+	Fingerpint(ctx context.Context, img image.Image) ([][]float32, error)
+
+	// Run bootstraps all services.
 	Run(ctx context.Context) error
 }
 
@@ -22,12 +26,14 @@ type probe struct {
 	workDir string
 }
 
+// Run implements probe.Probe.Run
 func (service *probe) Run(ctx context.Context) error {
 	tensorDir := filepath.Join(service.workDir, tensorDir)
 
-	return service.Tensor.Models.Load(ctx, tensorDir)
+	return service.Tensor.LoadModels(ctx, tensorDir)
 }
 
+// New returns a implemented Probe interface.
 func New(workDir string) Probe {
 	return &probe{
 		workDir: workDir,

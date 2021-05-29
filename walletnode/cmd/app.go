@@ -80,9 +80,9 @@ func NewApp() *cli.App {
 		}
 
 		if config.LogFile != "" {
-			fileHook := hooks.NewFileHook(config.LogFile)
-			log.AddHook(fileHook)
+			log.AddHook(hooks.NewFileHook(config.LogFile))
 		}
+		log.AddHook(hooks.NewDurationHook())
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)

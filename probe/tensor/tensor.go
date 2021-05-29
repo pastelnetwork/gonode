@@ -3,14 +3,22 @@ package tensor
 import (
 	"context"
 	"image"
+	"os"
+
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
+const logPrefix = "tensor"
+
+// Tensor represents tensorflow models.
 type Tensor struct {
-	Models
+	models Models
 }
 
-// Fingerpints computes fingerprints for the given image.
-func (tensor *Tensor) Fingerpints(ctx context.Context, img image.Image) ([][]float32, error) {
+// Fingerpint implements probe.Probe.Fingerpint
+func (tensor *Tensor) Fingerpint(ctx context.Context, img image.Image) ([][]float32, error) {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
 	bounds := img.Bounds()
 
 	var inputTensor [1][224][224][3]float32
@@ -26,19 +34,32 @@ func (tensor *Tensor) Fingerpints(ctx context.Context, img image.Image) ([][]flo
 		}
 	}
 
-	return tensor.Models.Exec(ctx, inputTensor)
+	return tensor.models.Exec(ctx, inputTensor)
 }
 
+// LoadModels loads models.
+func (tensor *Tensor) LoadModels(ctx context.Context, baseDir string) error {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	return tensor.models.Load(ctx, baseDir)
+}
+
+// New returns a new Tensor instance.
 func New() *Tensor {
 	return &Tensor{
-		Models: NewModels(
+		models: NewModels(
 			EfficientNetB7,
 			EfficientNetB6,
-			InceptionResNetV2,
-			DenseNet201,
-			InceptionV3,
-			NASNetLarge,
-			ResNet152V2,
+			// InceptionResNetV2,
+			// DenseNet201,
+			// InceptionV3,
+			// NASNetLarge,
+			// ResNet152V2,
 		),
 	}
+}
+
+func init() {
+	// disable tensorflow logger
+	os.Setenv("TF_CPP_MIN_LOG_LEVEL", "3")
 }

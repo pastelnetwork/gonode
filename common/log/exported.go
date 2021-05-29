@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log/hooks"
 )
 
 // WithError adds an error to log entry.
@@ -26,6 +28,11 @@ func WithPrefix(value string) *Entry {
 // WithContext adds an context to log entry, using the value defined inside of context.
 func WithContext(ctx context.Context) *Entry {
 	return NewDefaultEntry().WithContext(ctx)
+}
+
+// WithDuration adds an field `duration` with value of the time elapsed since t.
+func WithDuration(t time.Time) *Entry {
+	return NewDefaultEntry().WithField(hooks.DurationFieldName, t)
 }
 
 // WithField adds a field to entry.
