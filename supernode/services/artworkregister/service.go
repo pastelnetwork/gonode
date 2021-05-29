@@ -2,14 +2,12 @@ package artworkregister
 
 import (
 	"context"
-	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/supernode/node"
@@ -41,27 +39,6 @@ func (service *Service) Run(ctx context.Context) error {
 	}
 
 	if err := service.probeTensor.LoadModels(ctx); err != nil {
-		return err
-	}
-
-	baseDir, filename := filepath.Split("/Users/levko/Downloads/my.jpeg")
-	imageStorage := artwork.NewStorage(fs.NewFileStorage(baseDir))
-	file := artwork.NewFile(imageStorage, filename)
-	if err := file.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
-		return err
-	}
-
-	if err := file.ResizeImage(224, 224); err != nil {
-		return err
-	}
-
-	img, err := file.OpenImage()
-	if err != nil {
-		return err
-	}
-
-	_, err = service.probeTensor.Fingerpint(ctx, img)
-	if err != nil {
 		return err
 	}
 

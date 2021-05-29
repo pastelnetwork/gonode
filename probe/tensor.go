@@ -2,7 +2,6 @@ package probe
 
 import (
 	"context"
-	"errors"
 	"image"
 	"os"
 	"time"
@@ -13,7 +12,7 @@ import (
 
 const logTensorPrefix = "tensor"
 
-// Tensor represents analysis methods based on machine learning methods.
+// Tensor represents image analysis based on machine learning methods.
 type Tensor interface {
 	// Fingerpint computes fingerprints for the given image.
 	Fingerpint(ctx context.Context, img image.Image) ([][]float32, error)
@@ -24,21 +23,17 @@ type Tensor interface {
 
 // tensor represents tensorflow models.
 type tensor struct {
-	models  tfmodel.List
-	baseDir string
+	tfModels tfmodel.List
+	baseDir  string
 }
 
 // Fingerpint implements tensor.Tensor.Fingerpint
 func (tensor *tensor) Fingerpint(ctx context.Context, img image.Image) ([][]float32, error) {
 	ctx = log.ContextWithPrefix(ctx, logTensorPrefix)
 
-	if len(tensor.models) == 0 {
-		return nil, errors.New("no models")
-	}
+	var inputTensor [1][224][224][3]float32
 
 	bounds := img.Bounds()
-
-	var inputTensor [1][224][224][3]float32
 
 	for x := bounds.Min.X; x < bounds.Max.X; x++ {
 		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
@@ -51,7 +46,7 @@ func (tensor *tensor) Fingerpint(ctx context.Context, img image.Image) ([][]floa
 		}
 	}
 
-	return tensor.models.Exec(ctx, inputTensor)
+	return tensor.tfModels.Exec(ctx, inputTensor)
 }
 
 // LoadModels implements tensor.Tensor.LoadModels
@@ -60,22 +55,14 @@ func (tensor *tensor) LoadModels(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("Loading models...")
 	defer log.WithContext(ctx).WithDuration(time.Now()).Debugf("All models loaded")
 
-	return tensor.models.Load(ctx, tensor.baseDir)
+	return tensor.tfModels.Load(ctx, tensor.baseDir)
 }
 
 // NewTensor returns a new Tensor interface implementation.
-func NewTensor(baseDir string) Tensor {
+func NewTensor(baseDir string, tfModelConfigs []tfmodel.Config) Tensor {
 	return &tensor{
-		baseDir: baseDir,
-		models: tfmodel.NewList(
-			tfmodel.EfficientNetB7,
-			tfmodel.EfficientNetB6,
-			// tfmodel.InceptionResNetV2,
-			// tfmodel.DenseNet201,
-			// tfmodel.InceptionV3,
-			// tfmodel.NASNetLarge,
-			// tfmodel.ResNet152V2,
-		),
+		baseDir:  baseDir,
+		tfModels: tfmodel.NewList(tfModelConfigs),
 	}
 }
 

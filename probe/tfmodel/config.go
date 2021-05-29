@@ -3,9 +3,22 @@ package tfmodel
 import (
 	"path/filepath"
 	"strings"
+
+	"github.com/pastelnetwork/gonode/common/sys"
 )
 
-// List of the available models.
+// AllConfigs contains configs of all models.
+var AllConfigs = []Config{
+	EfficientNetB7,
+	EfficientNetB6,
+	InceptionResNetV2,
+	DenseNet201,
+	InceptionV3,
+	NASNetLarge,
+	ResNet152V2,
+}
+
+// Configs of the available models.
 var (
 	EfficientNetB7    = NewConfig("EfficientNetB7.tf", "serving_default_input_1")
 	EfficientNetB6    = NewConfig("EfficientNetB6.tf", "serving_default_input_2")
@@ -29,5 +42,12 @@ func NewConfig(path, input string) Config {
 		name:  strings.TrimSuffix(path, filepath.Ext(path)),
 		path:  path,
 		input: input,
+	}
+}
+
+func init() {
+	// NOTE: Before releasing, should be reomved (for testing). Used to reduce loaded models.
+	if number := sys.GetIntEnv("NUMBER_TFMODELS", 0); number != 0 {
+		AllConfigs = AllConfigs[:number]
 	}
 }

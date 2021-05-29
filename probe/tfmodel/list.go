@@ -2,6 +2,8 @@ package tfmodel
 
 import (
 	"context"
+
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // List represents multiple TFModel.
@@ -26,6 +28,11 @@ func (models *List) Load(ctx context.Context, baseDir string) error {
 func (models *List) Exec(ctx context.Context, value interface{}) ([][]float32, error) {
 	fingerprints := make([][]float32, len(*models))
 
+	if len(*models) == 0 {
+		log.WithContext(ctx).Warn("Models list is empty")
+		return fingerprints, nil
+	}
+
 	for i, model := range *models {
 		select {
 		case <-ctx.Done():
@@ -42,7 +49,7 @@ func (models *List) Exec(ctx context.Context, value interface{}) ([][]float32, e
 }
 
 // NewList returns a new List instance.
-func NewList(configs ...Config) List {
+func NewList(configs []Config) List {
 	var models List
 	for _, config := range configs {
 		models = append(models, NewModel(config))

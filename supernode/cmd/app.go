@@ -17,6 +17,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
+	"github.com/pastelnetwork/gonode/probe/tfmodel"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
@@ -126,7 +127,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// analysis tools
-	tensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir))
+	tensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, tensor, pastelClient, nodeClient)
