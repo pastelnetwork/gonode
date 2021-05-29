@@ -16,12 +16,11 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
 
-	_, err := db.ExecContext(ctx,
-		"CREATE TABLE IF NOT EXISTS `keys` (`uid` INTEGER PRIMARY KEY AUTOINCREMENT, `key` VARCHAR(64) NULL, `data` BLOB NULL, `replication` DATE NULL, `expiration` DATE NULL)")
-	if err != nil {
-		return errors.Errorf("Error %w when creating keys table", err)
-	}
+	query := "CREATE TABLE IF NOT EXISTS `keys` (`uid` INTEGER PRIMARY KEY AUTOINCREMENT, `key` VARCHAR(64) NULL, `data` BLOB NULL, `replication` DATE NULL, `expiration` DATE NULL)"
 
+	if _, err := db.ExecContext(ctx, query); err != nil {
+		return errors.Errorf("could not create \"keys\" table: %w", err).WithField("query", query)
+	}
 	return nil
 }
 
@@ -35,24 +34,24 @@ func Store(ctx context.Context, db *sql.DB, data []byte, replication, expiration
 
 	stmt, err := db.PrepareContext(ctx, query)
 	if err != nil {
-		return 0, errors.Errorf("failed to prepare SQL statement: %w", err)
+		return 0, errors.Errorf("could not prepare statement: %w", err).WithField("query", query)
 	}
 
 	res, err := stmt.ExecContext(ctx, string(key), data, replication, expiration)
 	if err != nil {
-		return 0, errors.Errorf("Error %w when inserting row into keys table", err)
+		return 0, errors.Errorf("could not insert keys: %w", err)
 	}
 
 	// If the database is being written to ensure to check for Close
 	// errors that may be returned from the driver. The query may
 	// encounter an auto-commit error and be forced to rollback changes.
 	if err := stmt.Close(); err != nil {
-		return 0, errors.New(err)
+		return 0, errors.Errorf("could not close statement: %w", err)
 	}
 
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return 0, errors.Errorf("Error %w when finding rows affected", err)
+		return 0, errors.Errorf("could not get the number of affected rows: %w", err)
 	}
 
 	return rows, nil
@@ -64,14 +63,15 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, "SELECT data FROM keys WHERE key=? LIMIT 1", string(key))
+	query := "SELECT data FROM keys WHERE key=? LIMIT 1"
+	rows, err := db.QueryContext(ctx, query, string(key))
 	if err != nil {
-		return []byte(""), errors.New(err)
+		return []byte(""), errors.Errorf("could not retrieve data for key=%q: %w", string(key), err).WithField("query", query)
 	}
 
 	for rows.Next() {
 		if err := rows.Scan(&data); err != nil {
-			return []byte(""), errors.New(err)
+			return []byte(""), errors.Errorf("could not scan columns: %w", err)
 		}
 	}
 
@@ -79,12 +79,12 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 	// errors that may be returned from the driver. The query may
 	// encounter an auto-commit error and be forced to rollback changes.
 	if err := rows.Close(); err != nil {
-		return []byte(""), errors.New(err)
+		return []byte(""), errors.Errorf("could not close the Rows: %w", err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return []byte(""), errors.New(err)
+		return []byte(""), errors.Errorf("could not scann rows: %w", err)
 	}
 
 	return data, nil
@@ -92,9 +92,10 @@ func Retrieve(ctx context.Context, db *sql.DB, key []byte) ([]byte, error) {
 
 // ExpireKeys should expire all key/values due for expiration.
 func ExpireKeys(ctx context.Context, db *sql.DB) error {
-	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE expiration <= ?", time.Now())
+	query := "DELETE FROM keys WHERE expiration <= ?"
+	_, err := db.ExecContext(ctx, query, time.Now())
 	if err != nil {
-		return errors.Errorf("Error %w while keys with due expiration", err)
+		return errors.Errorf("could not delete expired keys: %w", err).WithField("query", query)
 	}
 
 	return nil
@@ -110,9 +111,10 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
 
-	rows, err := db.QueryContext(ctx, "SELECT key FROM keys WHERE replication <= ?", time.Now())
+	query := "SELECT key FROM keys WHERE replication <= ?"
+	rows, err := db.QueryContext(ctx, query, time.Now())
 	if err != nil {
-		return [][]byte{}, errors.New(err)
+		return [][]byte{}, errors.Errorf("could not retrieve keys: %w", err).WithField("query", query)
 	}
 
 	for rows.Next() {
@@ -120,7 +122,7 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 		if err := rows.Scan(&key); err != nil {
 			// Check for a scan error.
 			// Query rows will be closed with defer.
-			return [][]byte{}, errors.Errorf("Error %w while scanning rows", err)
+			return [][]byte{}, errors.Errorf("could not scan columns: %w", err)
 		}
 		keys = append(keys, []byte(key))
 	}
@@ -129,12 +131,12 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 	// errors that may be returned from the driver. The query may
 	// encounter an auto-commit error and be forced to rollback changes.
 	if err := rows.Close(); err != nil {
-		return [][]byte{}, errors.Errorf("Error %w while closing rows", err)
+		return [][]byte{}, errors.Errorf("could not close the Rows: %w", err)
 	}
 
 	// Rows.Err will report the last error encountered by Rows.Scan.
 	if err := rows.Err(); err != nil {
-		return [][]byte{}, errors.Errorf("Error %w after scanning rows", err)
+		return [][]byte{}, errors.Errorf("could not scann rows: %w", err)
 	}
 
 	return keys, closerr
@@ -144,9 +146,10 @@ func GetAllKeysForReplication(ctx context.Context, db *sql.DB) ([][]byte, error)
 func Remove(ctx context.Context, db *sql.DB, key []byte) error {
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(3*time.Second))
 	defer cancel()
-	_, err := db.ExecContext(ctx, "DELETE FROM keys WHERE key=?", string(key))
+	query := "DELETE FROM keys WHERE key=?"
+	_, err := db.ExecContext(ctx, query, string(key))
 	if err != nil {
-		return errors.Errorf("Error %w while deleting key=%s", err, string(key))
+		return errors.Errorf("could not delete key=%q: %w", string(key), err).WithField("query", query)
 	}
 
 	return nil

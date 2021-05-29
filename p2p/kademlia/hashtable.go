@@ -64,19 +64,20 @@ func newHashTable(options *Options) (*hashTable, error) {
 	} else {
 		id, err := newID()
 		if err != nil {
-			return nil, errors.Errorf("error generating hash table id: %w", err)
+			return nil, err
 		}
 		ht.Self.ID = id
 	}
 
-	if options.IP == "" || options.Port == 0 {
-		return nil, errors.New("port and ip required")
+	if options.IP == "" {
+		return nil, errors.New("not specified IP")
 	}
 
-	err := ht.setSelfAddr(options.IP, options.Port)
-	if err != nil {
-		return nil, errors.Errorf("failed setting hash table addr: %w", err)
+	if options.Port == 0 {
+		return nil, errors.New("not specified port")
 	}
+
+	ht.setSelfAddr(options.IP, options.Port)
 
 	for i := 0; i < b; i++ {
 		ht.resetRefreshTimeForBucket(i)
@@ -89,10 +90,9 @@ func newHashTable(options *Options) (*hashTable, error) {
 	return ht, nil
 }
 
-func (ht *hashTable) setSelfAddr(ip string, port int) error {
+func (ht *hashTable) setSelfAddr(ip string, port int) {
 	ht.Self.IP = net.ParseIP(ip)
 	ht.Self.Port = port
-	return nil
 }
 
 func (ht *hashTable) resetRefreshTimeForBucket(bucket int) {
@@ -120,7 +120,7 @@ func (ht *hashTable) markNodeAsSeen(ctx context.Context, node []byte) {
 		}
 	}
 	if nodeIndex == -1 {
-		log.WithContext(ctx).Fatal(errors.New("tried to mark nonexistent node as seen"))
+		log.WithContext(ctx).Warn("tried to mark nonexistent node as seen")
 	}
 
 	n := bucket[nodeIndex]
@@ -313,7 +313,7 @@ func (ht *hashTable) totalNodes() int {
 func newID() ([]byte, error) {
 	result := make([]byte, 20)
 	if _, err := rand.Read(result); err != nil {
-		return nil, errors.New(err)
+		return nil, errors.Errorf("failed to generate random bytes: %w", err)
 	}
 
 	return result, nil

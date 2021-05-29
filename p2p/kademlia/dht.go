@@ -82,16 +82,15 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 
 	ht, err := newHashTable(options)
 	if err != nil {
-		return nil, errors.Errorf("failed creating new hash table: %w", err)
+		return nil, err
 	}
 
 	dht.store = store
 	dht.ht = ht
 	dht.networking = &realNetworking{}
 
-	err = store.Init(ctx)
-	if err != nil {
-		return nil, errors.Errorf("failed initiating dht store: %w", err)
+	if err = store.Init(ctx); err != nil {
+		return nil, err
 	}
 
 	if options.TExpire == 0 {
@@ -150,14 +149,12 @@ func (dht *DHT) Store(ctx context.Context, data []byte) (id string, err error) {
 	key := crypto.GetKey(data)
 	expiration := dht.getExpirationTime(key)
 	replication := time.Now().Add(dht.options.TReplicate)
-	err = dht.store.Store(ctx, data, replication, expiration, true)
-	if err != nil {
-		return "", errors.Errorf("failed to store key %w", err)
+	if err = dht.store.Store(ctx, data, replication, expiration, true); err != nil {
+		return "", err
 	}
 
-	_, _, err = dht.iterate(ctx, iterateStore, key[:], data)
-	if err != nil {
-		return "", errors.Errorf("failed iterative search through the network: %w", err)
+	if _, _, err = dht.iterate(ctx, iterateStore, key[:], data); err != nil {
+		return "", err
 	}
 	str := b58.Encode(key)
 	return str, nil
@@ -177,7 +174,7 @@ func (dht *DHT) Get(ctx context.Context, key string) (data []byte, found bool, e
 		var err error
 		value, _, err = dht.iterate(ctx, iterateFindValue, keyBytes, nil)
 		if err != nil {
-			return nil, false, errors.Errorf("failed iterative search through the network: %w", err)
+			return nil, false, err
 		}
 		if value != nil {
 			exists = true
@@ -219,14 +216,11 @@ func (dht *DHT) CreateSocket() error {
 
 	publicHost, publicPort, err := dht.networking.createSocket(ip, port, dht.options.UseStun, dht.options.StunAddr)
 	if err != nil {
-		return errors.Errorf("failed creating socket: %w", err)
+		return err
 	}
 
 	if dht.options.UseStun {
-		err := dht.ht.setSelfAddr(publicHost, publicPort)
-		if err != nil {
-			return err
-		}
+		dht.ht.setSelfAddr(publicHost, publicPort)
 	}
 
 	return nil
@@ -505,7 +499,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 					query.Data = queryData
 					_, err := dht.networking.sendMessage(ctx, query, false, -1)
 					if err != nil {
-						return nil, nil, errors.Errorf("failed sending message: %w", err)
+						return nil, nil, err
 					}
 				}
 				return nil, nil, nil

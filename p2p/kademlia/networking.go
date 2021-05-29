@@ -103,11 +103,10 @@ func (rn *realNetworking) createSocket(host string, port int, useStun bool, stun
 		return "", 0, errors.New("already connected")
 	}
 
-	remoteAddress := fmt.Sprintf("[%s]:%d", host, port)
-
+	remoteAddress := net.JoinHostPort(host, strconv.Itoa(port))
 	socket, err := utp.NewSocket("udp", remoteAddress)
 	if err != nil {
-		return "", 0, err
+		return "", 0, errors.Errorf("failed to create a new socket %q: %w", remoteAddress, err)
 	}
 
 	if useStun {
@@ -119,12 +118,12 @@ func (rn *realNetworking) createSocket(host string, port int, useStun bool, stun
 
 		_, h, err := c.Discover()
 		if err != nil {
-			return "", 0, err
+			return "", 0, errors.Errorf("failed to contact the STUN server: %w", err)
 		}
 
 		_, err = c.Keepalive()
 		if err != nil {
-			return "", 0, err
+			return "", 0, errors.Errorf("failed to enable keepalive: %w", err)
 		}
 
 		host = h.IP()
@@ -150,11 +149,10 @@ func (rn *realNetworking) sendMessage(ctx context.Context, msg *message, expectR
 	msg.ID = id
 	rn.mutex.Unlock()
 
-	port := strconv.Itoa(msg.Receiver.Port)
-	host := msg.Receiver.IP.String()
-	conn, err := rn.socket.DialContext(ctx, "", fmt.Sprintf("[%s]:%s", host, port))
+	remoteAddress := net.JoinHostPort(msg.Receiver.IP.String(), strconv.Itoa(msg.Receiver.Port))
+	conn, err := rn.socket.DialContext(ctx, "", remoteAddress)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to dial %q: %w", remoteAddress, err)
 	}
 
 	data, err := serializeMessage(msg)
@@ -164,7 +162,7 @@ func (rn *realNetworking) sendMessage(ctx context.Context, msg *message, expectR
 
 	_, err = conn.Write(data)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("failed to write: %w", err)
 	}
 
 	if expectResponse {

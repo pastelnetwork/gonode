@@ -33,11 +33,11 @@ func (service *p2p) Run(ctx context.Context) error {
 	defer cancel()
 
 	if err := service.configure(ctx); err != nil {
-		return errors.Errorf("failed configuring p2p service: %w", err)
+		return err
 	}
 
 	if err := service.dht.CreateSocket(); err != nil {
-		return errors.Errorf("failed creating new socket: %w", err)
+		return err
 	}
 
 	group, ctx := errgroup.WithContext(ctx)
@@ -57,7 +57,7 @@ func (service *p2p) Run(ctx context.Context) error {
 	})
 
 	if err := service.dht.Bootstrap(ctx); err != nil {
-		return errors.Errorf("failed bootstraping dht: %w", err)
+		return err
 	}
 
 	return group.Wait()
@@ -92,7 +92,7 @@ func (service *p2p) configure(ctx context.Context) error {
 		UseStun:        service.config.UseStun,
 	})
 	if err != nil {
-		return errors.Errorf("failed initializing dht: %w", err)
+		return err
 	}
 
 	service.dht = dht
