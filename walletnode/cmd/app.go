@@ -4,13 +4,13 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
@@ -29,8 +29,11 @@ const (
 )
 
 var (
-	defaultConfigFile       = configurer.DefaultConfigPath("walletnode.yml")
-	defaultPastelConfigFile = configurer.DefaultConfigPath("pastel.conf")
+	defaultPath = configurer.DefaultPath()
+
+	defaultTempDir          = filepath.Join(os.TempDir(), appName)
+	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
+	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 )
 
 // NewApp inits a new command line interface.
@@ -48,7 +51,7 @@ func NewApp() *cli.App {
 		// Main
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
-		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(config.TempDir),
+		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -77,9 +80,9 @@ func NewApp() *cli.App {
 		}
 
 		if config.LogFile != "" {
-			fileHook := hooks.NewFileHook(config.LogFile)
-			log.AddHook(fileHook)
+			log.AddHook(hooks.NewFileHook(config.LogFile))
 		}
+		log.AddHook(hooks.NewDurationHook())
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
@@ -112,16 +115,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	pastelClient := pastel.NewClient(&config.Pastel)
 	nodeClient := grpc.NewClient()
 	db := memory.NewKeyValue()
-	artworkStorage := artwork.NewStorage(fs.NewFileStorage(config.TempDir))
+	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// business logic services
-	artworkRegisterService := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
 
 	// api service
 	server := api.NewServer(&config.API,
-		services.NewArtwork(artworkRegisterService, artworkStorage),
+		services.NewArtwork(artworkRegister),
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, artworkStorage, artworkRegisterService, server)
+	return runServices(ctx, server, artworkRegister)
 }

@@ -2,8 +2,10 @@ package log
 
 import (
 	"context"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log/hooks"
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,6 +45,11 @@ func (entry *Entry) WithError(err error) *Entry {
 // WithContext adds a context to the Entry.
 func (entry *Entry) WithContext(ctx context.Context) *Entry {
 	return &Entry{Entry: entry.Entry.WithContext(ctx)}
+}
+
+// WithDuration adds an field `duration` with value of the time elapsed since t.
+func (entry *Entry) WithDuration(t time.Time) *Entry {
+	return &Entry{Entry: entry.Entry.WithField(hooks.DurationFieldName, t)}
 }
 
 // WithPrefix adds a prefix as single field (using the key `prefix`) to the Entry.
