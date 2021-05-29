@@ -128,6 +128,7 @@ func (rn *realNetworking) createSocket(host string, port int, useStun bool, stun
 	}
 
 	rn.remoteAddress = remoteAddress
+	rn.connected = true
 	rn.socket = socket
 
 	return host, port, nil
@@ -211,7 +212,6 @@ func (rn *realNetworking) disconnect() error {
 }
 
 func (rn *realNetworking) listen(ctx context.Context) error {
-	rn.connected = true
 	for {
 		conn, err := rn.socket.Accept()
 		if err != nil {
