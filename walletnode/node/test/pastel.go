@@ -8,9 +8,8 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// TODO: Ashadi
 // PastelClient mock pastel.Client. redefine pastel.Client interface
-// go:generate does not work with accros module on current CircleCI build
+// TODO : go:generate does not work with accros module on current CircleCI build
 // not sure how to fix it
 type PastelClient interface {
 	// MasterNodesTop returns a result of the `masternode top`.
