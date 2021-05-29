@@ -259,7 +259,7 @@ jobs:
       - test:
           package: "legroast"
 
-  test_dupe-detection:
+  test_probe:
     <<: *defaults
     steps:
       - attach_workspace:
@@ -271,7 +271,7 @@ jobs:
             sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
             sudo /sbin/ldconfig -v
       - test:
-          package: "dupe-detection"
+          package: "probe"
 
   test_pqsignatures:
     <<: *defaults
@@ -379,7 +379,7 @@ workflows:
       - test_legroast:
           requires:
             - prepare_workspace
-      - test_dupe-detection:
+      - test_probe:
           requires:
             - prepare_workspace
       - test_pqsignatures:

@@ -130,6 +130,7 @@ func (file *File) RemoveAfter(d time.Duration) {
 	}()
 }
 
+// OpenImage opens images from the file.
 func (file *File) OpenImage() (image.Image, error) {
 	f, err := file.Open()
 	if err != nil {
@@ -144,6 +145,7 @@ func (file *File) OpenImage() (image.Image, error) {
 	return img, nil
 }
 
+// SaveImage saves image to the file.
 func (file *File) SaveImage(img image.Image) error {
 	f, err := file.Create()
 	if err != nil {
