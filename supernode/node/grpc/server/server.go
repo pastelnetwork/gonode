@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/middleware"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
@@ -39,8 +39,7 @@ func (server *Server) Run(ctx context.Context) error {
 	for _, address := range addresses {
 		addr := net.JoinHostPort(strings.TrimSpace(address), strconv.Itoa(server.config.Port))
 
-		group.Go(func() (err error) {
-			defer errors.Recover(func(recErr error) { err = recErr })
+		group.Go(func() error {
 			return server.listen(ctx, addr, grpcServer)
 		})
 	}

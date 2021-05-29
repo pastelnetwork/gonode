@@ -40,11 +40,11 @@ func (service *p2p) Run(ctx context.Context) error {
 	}
 
 	group, ctx := errgroup.WithContext(ctx)
-	group.Go(func() (err error) {
+	group.Go(func() error {
 		log.WithContext(ctx).Infof("Kademlia server listening on %q", service.dht.GetNetworkAddr())
 		return service.dht.Listen(ctx)
 	})
-	group.Go(func() (err error) {
+	group.Go(func() error {
 		<-ctx.Done()
 
 		log.WithContext(ctx).Infof("Shutting down Kademlia server at %q", service.dht.GetNetworkAddr())

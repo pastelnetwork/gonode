@@ -13,9 +13,9 @@ type Group struct {
 }
 
 // Go calls the given function in a new goroutine and tries to recover from panics.
-func (g *Group) Go(fn func() error) {
-	g.Group.Go(func() (err error) {
-		defer errors.Recover(func(rec error) { err = rec })
+func (group *Group) Go(fn func() error) {
+	group.Group.Go(func() (err error) {
+		defer errors.Recover(func(recErr error) { err = recErr })
 		return fn()
 	})
 }

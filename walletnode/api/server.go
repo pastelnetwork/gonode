@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/walletnode/api/docs"
-	"golang.org/x/sync/errgroup"
 
 	goahttp "goa.design/goa/v3/http"
 	goahttpmiddleware "goa.design/goa/v3/http/middleware"
@@ -45,8 +45,7 @@ func (server *Server) Run(ctx context.Context) error {
 	groupServices, ctx := errgroup.WithContext(ctx)
 	var servers goahttp.Servers
 	for _, service := range server.services {
-		groupServices.Go(func() (err error) {
-			defer errors.Recover(func(recErr error) { err = recErr })
+		groupServices.Go(func() error {
 			return service.Run(ctx)
 		})
 		servers = append(servers, service.Mount(ctx, goamux))

@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -12,7 +13,6 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/supernode/node"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -44,12 +44,10 @@ func (service *Service) Run(ctx context.Context) error {
 	}
 
 	group, ctx := errgroup.WithContext(ctx)
-	group.Go(func() (err error) {
-		defer errors.Recover(func(recErr error) { err = recErr })
+	group.Go(func() error {
 		return service.Storage.Run(ctx)
 	})
-	group.Go(func() (err error) {
-		defer errors.Recover(func(recErr error) { err = recErr })
+	group.Go(func() error {
 		return service.Worker.Run(ctx)
 	})
 	return group.Wait()
