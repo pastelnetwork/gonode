@@ -75,7 +75,7 @@ func (model *TFModel) Exec(ctx context.Context, value interface{}) ([]float32, e
 
 	results, err := model.data.Session.Run(feeds, fetches, nil)
 	if err != nil {
-		return nil, errors.Errorf("failed to run model graph %q: %w", model.path, err)
+		return nil, errors.Errorf("failed to run model graph %q: %w", model, err)
 	}
 	return results[0].Value().([][]float32)[0], nil
 }

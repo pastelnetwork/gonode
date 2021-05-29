@@ -52,6 +52,7 @@ func (tensor *tensor) Fingerpint(ctx context.Context, img image.Image) ([][]floa
 // LoadModels implements tensor.Tensor.LoadModels
 func (tensor *tensor) LoadModels(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logTensorPrefix)
+
 	log.WithContext(ctx).Debugf("Loading models...")
 	defer log.WithContext(ctx).WithDuration(time.Now()).Debugf("All models loaded")
 
