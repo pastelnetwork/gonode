@@ -166,24 +166,19 @@ func TestTaskMeshNodes(t *testing.T) {
 			primaryNodeMock.RegArtWorkMock.AssertCalled(t, "SessID")
 			primaryNodeMock.RegArtWorkMock.AssertNumberOfCalls(t, "SessID", tt.numSessIDCall)
 
-			t.Run("group", func(t *testing.T) {
-				for i, n := range nodesClientMock {
-					i, n := i, n
+			for i, n := range nodesClientMock {
+				n.ClientMock.AssertExpectations(t)
+				n.ConnectionMock.AssertExpectations(t)
 
-					t.Run(fmt.Sprintf("testCall-%d", i), func(t *testing.T) {
-						n.ClientMock.AssertExpectations(t)
-						n.ConnectionMock.AssertExpectations(t)
-
-						//if node not primary should call these method
-						if i != tt.args.primaryIndex {
-							n.RegArtWorkMock.AssertCalled(t, "Session", mock.Anything, false)
-							n.RegArtWorkMock.AssertCalled(t, "ConnectTo", mock.Anything, tt.args.primaryPastelID, tt.args.primarySessID)
-						}
-					})
+				//if node not primary should call these method
+				if i != tt.args.primaryIndex {
+					n.RegArtWorkMock.AssertCalled(t, "Session", mock.Anything, false)
+					n.RegArtWorkMock.AssertCalled(t, "ConnectTo", mock.Anything, tt.args.primaryPastelID, tt.args.primarySessID)
 				}
-			})
 
+			}
 		})
+
 	}
 
 }
@@ -250,7 +245,7 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockPastelClient()
 			pastelClientMock.ListenOnStorageFee(tt.args.pastelFee, tt.args.returnErr)
 			service := &Service{
-				pastelClient: pastelClientMock.ClientMock,
+				pastelClient: pastelClientMock.PastelMock,
 			}
 
 			task := &Task{
@@ -263,9 +258,9 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 
 			//pastelClient mock assertion
-			pastelClientMock.ClientMock.AssertExpectations(t)
-			pastelClientMock.ClientMock.AssertCalled(t, "StorageFee", tt.args.ctx)
-			pastelClientMock.ClientMock.AssertNumberOfCalls(t, "StorageFee", 1)
+			pastelClientMock.PastelMock.AssertExpectations(t)
+			pastelClientMock.PastelMock.AssertCalled(t, "StorageFee", tt.args.ctx)
+			pastelClientMock.PastelMock.AssertNumberOfCalls(t, "StorageFee", 1)
 		})
 	}
 }
@@ -352,7 +347,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockPastelClient()
 			pastelClientMock.ListenOnMasterNodesTop(tt.args.returnMn, tt.args.returnErr)
 			service := &Service{
-				pastelClient: pastelClientMock.ClientMock,
+				pastelClient: pastelClientMock.PastelMock,
 			}
 
 			task := &Task{
@@ -365,9 +360,9 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 
 			//mock assertion
-			pastelClientMock.ClientMock.AssertExpectations(t)
-			pastelClientMock.ClientMock.AssertCalled(t, "MasterNodesTop", mock.Anything)
-			pastelClientMock.ClientMock.AssertNumberOfCalls(t, "MasterNodesTop", 1)
+			pastelClientMock.PastelMock.AssertExpectations(t)
+			pastelClientMock.PastelMock.AssertCalled(t, "MasterNodesTop", mock.Anything)
+			pastelClientMock.PastelMock.AssertNumberOfCalls(t, "MasterNodesTop", 1)
 		})
 	}
 
