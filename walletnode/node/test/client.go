@@ -1,6 +1,9 @@
 package test
 
 import (
+	"context"
+	"time"
+
 	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
 	"github.com/stretchr/testify/mock"
 )
@@ -42,5 +45,38 @@ func (c *Client) ListenOnClose(returnErr error) *Client {
 // ListenOnUploadImage listening UploadImage call and returning error from args
 func (c *Client) ListenOnUploadImage(returnErr error) *Client {
 	c.RegArtWorkMock.On("UploadImage", mock.Anything, mock.AnythingOfType("*artwork.File")).Return(returnErr)
+	return c
+}
+
+// ListenOnSession listening Session call and returning error from args
+func (c *Client) ListenOnSession(returnErr error) *Client {
+	c.RegArtWorkMock.On("Session", mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+	return c
+}
+
+// ListenOnAcceptedNodes listening AcceptedNodes call and returning pastelIDs and error from args. Support delay for blocking process to simulate waiting request grpc request
+func (c *Client) ListenOnAcceptedNodes(delay int, pastelIDs []string, returnErr error) *Client {
+	if delay > 0 {
+		delayFunc := func(ctx context.Context) []string {
+			time.Sleep(time.Second * time.Duration(delay))
+			return pastelIDs
+		}
+		c.RegArtWorkMock.On("AcceptedNodes", mock.Anything).Return(delayFunc, returnErr)
+	} else {
+		c.RegArtWorkMock.On("AcceptedNodes", mock.Anything).Return(pastelIDs, returnErr)
+	}
+
+	return c
+}
+
+// ListenOnConnectTo listening ConnectTo call and returning error from args
+func (c *Client) ListenOnConnectTo(returnErr error) *Client {
+	c.RegArtWorkMock.On("ConnectTo", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(returnErr)
+	return c
+}
+
+// ListenOnSessID listening SessID call and returning sessID from args
+func (c *Client) ListenOnSessID(sessID string) *Client {
+	c.RegArtWorkMock.On("SessID").Return(sessID)
 	return c
 }
