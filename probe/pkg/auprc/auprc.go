@@ -20,7 +20,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
-	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
+	"github.com/pastelnetwork/gonode/probe/pkg/dupedetection"
 
 	"encoding/binary"
 	"encoding/hex"

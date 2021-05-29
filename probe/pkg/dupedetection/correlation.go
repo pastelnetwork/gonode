@@ -6,7 +6,7 @@ import (
 	onlinestats "github.com/dgryski/go-onlinestats"
 	"github.com/kzahedi/goent/discrete"
 	"github.com/montanaflynn/stats"
-	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
+	"github.com/pastelnetwork/gonode/probe/wdm"
 )
 
 // Spearman calculates Spearman Rho correlation between arrays of input data

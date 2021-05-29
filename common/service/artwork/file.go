@@ -113,14 +113,14 @@ func (file *File) Copy() (*File, error) {
 
 // ResizeImage resizes image.
 func (file *File) ResizeImage(width, height int) error {
-	src, err := file.openImage()
+	src, err := file.OpenImage()
 	if err != nil {
 		return err
 	}
 
 	dst := imaging.Resize(src, width, height, imaging.Lanczos)
 
-	return file.saveImage(dst)
+	return file.SaveImage(dst)
 }
 
 // RemoveAfter removes the file after the specified duration.
@@ -130,7 +130,7 @@ func (file *File) RemoveAfter(d time.Duration) {
 	}()
 }
 
-func (file *File) openImage() (image.Image, error) {
+func (file *File) OpenImage() (image.Image, error) {
 	f, err := file.Open()
 	if err != nil {
 		return nil, err
@@ -144,7 +144,7 @@ func (file *File) openImage() (image.Image, error) {
 	return img, nil
 }
 
-func (file *File) saveImage(img image.Image) error {
+func (file *File) SaveImage(img image.Image) error {
 	f, err := file.Create()
 	if err != nil {
 		return err

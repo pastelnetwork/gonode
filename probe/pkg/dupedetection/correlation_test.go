@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/montanaflynn/stats"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
+	"github.com/pastelnetwork/gonode/probe/wdm"
 )
 
 func readInputFileIntoArrays(inputFile string) ([][]float64, [][]float64, []float64, error) {
@@ -89,7 +90,7 @@ func TestCorrelations(t *testing.T) {
 	pearsonFloatingPointAccuracy := 0.000000000001
 	kendallFloatingPointAccuracy := 0.000000000000001
 
-	inputs1, inputs2, outputs, err := readInputFileIntoArrays("data/spearmanrho_data.txt")
+	inputs1, inputs2, outputs, err := readInputFileIntoArrays(filepath.Join("testdata", "spearmanrho_data.txt"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -112,7 +113,7 @@ func TestCorrelations(t *testing.T) {
 	}
 	fmt.Printf("\nSpearman Rho - Found calculation differences: %v from total number of %v with floating point accuracy %v", differentsCount, len(inputs1), spearmanFloatingPointAccuracy)
 
-	inputs1, inputs2, outputs, err = readInputFileIntoArrays("data/pearsonr_data.txt")
+	inputs1, inputs2, outputs, err = readInputFileIntoArrays(filepath.Join("testdata", "pearsonr_data.txt"))
 	if err != nil {
 		t.Error(err)
 	}
@@ -135,7 +136,7 @@ func TestCorrelations(t *testing.T) {
 	}
 	fmt.Printf("\nPearson R - Found calculation differences: %v from total number of %v with floating point accuracy %v", differentsCount, len(inputs1), pearsonFloatingPointAccuracy)
 
-	inputs1, inputs2, outputs, err = readInputFileIntoArrays("data/kendall_data.txt")
+	inputs1, inputs2, outputs, err = readInputFileIntoArrays(filepath.Join("testdata", "kendall_data.txt"))
 	if err != nil {
 		t.Error(err)
 	}

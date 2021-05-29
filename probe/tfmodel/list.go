@@ -1,14 +1,14 @@
-package tensor
+package tfmodel
 
 import (
 	"context"
 )
 
-// Models represents multiple Model.
-type Models []*Model
+// List represents multiple TFModel.
+type List []*TFModel
 
 // Load loads models data from the baseDir.
-func (models *Models) Load(ctx context.Context, baseDir string) error {
+func (models *List) Load(ctx context.Context, baseDir string) error {
 	for _, model := range *models {
 		select {
 		case <-ctx.Done():
@@ -23,8 +23,8 @@ func (models *Models) Load(ctx context.Context, baseDir string) error {
 }
 
 // Exec executes the nodes/tensors that must be present in the loaded models.
-func (models *Models) Exec(ctx context.Context, value interface{}) ([][]float32, error) {
-	var fingerprints [][]float32
+func (models *List) Exec(ctx context.Context, value interface{}) ([][]float32, error) {
+	fingerprints := make([][]float32, len(*models))
 
 	for i, model := range *models {
 		select {
@@ -41,11 +41,11 @@ func (models *Models) Exec(ctx context.Context, value interface{}) ([][]float32,
 	return fingerprints, nil
 }
 
-// NewModels returns a new Models instance.
-func NewModels(infos ...ModelInfo) Models {
-	var models Models
-	for _, info := range infos {
-		models = append(models, NewModel(info))
+// NewList returns a new List instance.
+func NewList(configs ...Config) List {
+	var models List
+	for _, config := range configs {
+		models = append(models, NewModel(config))
 	}
 	return models
 }

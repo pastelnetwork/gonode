@@ -28,6 +28,8 @@ import (
 const (
 	appName  = "supernode"
 	appUsage = "SuperNode" // TODO: Write a clear description.
+
+	tfmodelDir = "./tfmodels" // relatively from work-dir
 )
 
 var (
@@ -123,10 +125,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
-	dupeDetection := probe.New(config.WorkDir)
+	// analysis tools
+	tensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir))
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, dupeDetection, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, tensor, pastelClient, nodeClient)
 
 	// server
 	grpc := server.New(&config.Server,
@@ -134,5 +137,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, grpc, dupeDetection, artworkRegister)
+	return runServices(ctx, grpc, artworkRegister)
 }

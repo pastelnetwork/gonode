@@ -1,8 +1,9 @@
-package tensor
+package tfmodel
 
 import (
 	"context"
 	"path/filepath"
+	"sync"
 	"time"
 
 	tf "github.com/galeone/tensorflow/tensorflow/go"
@@ -10,22 +11,27 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
-// Model represents tensorflow exported model.
-type Model struct {
-	ModelInfo
+// TFModel represents tensorflow exported model.
+type TFModel struct {
+	sync.Mutex
+
+	Config
 	data *tf.SavedModel
 }
 
 // String implements fmt.Stringer.String
-func (model *Model) String() string {
+func (model *TFModel) String() string {
 	return model.name
 }
 
-// Load loads model data from the baseDir.
-// The graph loaded is identified by the set of tags specified when exporting it.
-// This operation creates a session with specified `options`.
-func (model *Model) Load(ctx context.Context, baseDir string) error {
-	log.WithContext(ctx).Debugf("Loading model %q", model)
+// Load loads model data from the baseDir. The graph loaded is identified by the set of tags specified when exporting it.
+func (model *TFModel) Load(ctx context.Context, baseDir string) error {
+	model.Lock()
+	defer model.Unlock()
+
+	if model.data != nil {
+		return nil
+	}
 	defer log.WithContext(ctx).WithDuration(time.Now()).Debugf("Loaded model %q", model)
 
 	modelPath := filepath.Join(baseDir, model.path)
@@ -40,8 +46,14 @@ func (model *Model) Load(ctx context.Context, baseDir string) error {
 }
 
 // Exec executes the nodes/tensors that must be present in the loaded model.
-func (model *Model) Exec(ctx context.Context, value interface{}) ([]float32, error) {
-	defer log.WithContext(ctx).WithDuration(time.Now()).Debugf("Execute model %q", model)
+func (model *TFModel) Exec(ctx context.Context, value interface{}) ([]float32, error) {
+	model.Lock()
+	defer model.Unlock()
+
+	if model.data == nil {
+		return nil, errors.Errorf("model not loaded %q", model)
+	}
+	defer log.WithContext(ctx).WithDuration(time.Now()).Debugf("Executed model %q", model)
 
 	fetcheOutput, err := model.operation("StatefulPartitionedCall", 0)
 	if err != nil {
@@ -69,7 +81,7 @@ func (model *Model) Exec(ctx context.Context, value interface{}) ([]float32, err
 }
 
 // Operation extracts the output in position idx of the tensor with the specified name from the model graph
-func (model *Model) operation(name string, idx int) (tf.Output, error) {
+func (model *TFModel) operation(name string, idx int) (tf.Output, error) {
 	op := model.data.Graph.Operation(name)
 	if op == nil {
 		return tf.Output{}, errors.Errorf("op %q not found", name)
@@ -81,9 +93,9 @@ func (model *Model) operation(name string, idx int) (tf.Output, error) {
 	return op.Output(idx), nil
 }
 
-// NewModel returns a new Model instance.
-func NewModel(info ModelInfo) *Model {
-	return &Model{
-		ModelInfo: info,
+// NewModel returns a new TFModel instance.
+func NewModel(info Config) *TFModel {
+	return &TFModel{
+		Config: info,
 	}
 }

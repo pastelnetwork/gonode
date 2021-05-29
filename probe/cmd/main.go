@@ -8,8 +8,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
-	"github.com/pastelnetwork/gonode/dupe-detection/pkg/auprc"
-	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
+	"github.com/pastelnetwork/gonode/probe/pkg/auprc"
+	"github.com/pastelnetwork/gonode/probe/pkg/dupedetection"
 	"github.com/pkg/profile"
 )
 
