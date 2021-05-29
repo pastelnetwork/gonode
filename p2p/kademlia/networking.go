@@ -13,10 +13,6 @@ import (
 	"github.com/ccding/go-stun/stun"
 )
 
-var (
-	errClosed = errors.Errorf("failed to accept new connection: closed")
-)
-
 type networking interface {
 	sendMessage(context.Context, *message, bool, int64) (*expectedResponse, error)
 	getMessage() chan (*message)
@@ -126,15 +122,13 @@ func (rn *realNetworking) createSocket(host string, port int, useStun bool, stun
 			return "", 0, errors.Errorf("failed to enable keepalive: %w", err)
 		}
 
-		host = h.IP()
-		port = int(h.Port())
-		remoteAddress = fmt.Sprintf("[%s]:%d", host, port)
+		host := h.IP()
+		port := int(h.Port())
+		remoteAddress = net.JoinHostPort(host, strconv.Itoa(port))
 	}
 
 	rn.remoteAddress = remoteAddress
-
 	rn.connected = true
-
 	rn.socket = socket
 
 	return host, port, nil
@@ -149,7 +143,10 @@ func (rn *realNetworking) sendMessage(ctx context.Context, msg *message, expectR
 	msg.ID = id
 	rn.mutex.Unlock()
 
-	remoteAddress := net.JoinHostPort(msg.Receiver.IP.String(), strconv.Itoa(msg.Receiver.Port))
+	host := msg.Receiver.IP.String()
+	port := strconv.Itoa(msg.Receiver.Port)
+	remoteAddress := net.JoinHostPort(host, port)
+
 	conn, err := rn.socket.DialContext(ctx, "", remoteAddress)
 	if err != nil {
 		return nil, errors.Errorf("failed to dial %q: %w", remoteAddress, err)
@@ -221,12 +218,10 @@ func (rn *realNetworking) listen(ctx context.Context) error {
 			rn.disconnect()
 			<-rn.dcEndChan
 
-			switch err.Error() {
-			case "closed":
-				return errClosed
-			default:
-				return errors.Errorf("failed to accept new connection: %s", err)
+			if err.Error() == "closed" {
+				return nil
 			}
+			return errors.Errorf("failed to accept new connection: %s", err)
 		}
 
 		go func(conn net.Conn) {

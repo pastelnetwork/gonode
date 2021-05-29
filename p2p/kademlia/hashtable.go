@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-
-	"github.com/pastelnetwork/gonode/common/log"
 )
 
 const (
@@ -107,7 +105,7 @@ func (ht *hashTable) getRefreshTimeForBucket(bucket int) time.Time {
 	return ht.refreshMap[bucket]
 }
 
-func (ht *hashTable) markNodeAsSeen(ctx context.Context, node []byte) {
+func (ht *hashTable) markNodeAsSeen(ctx context.Context, node []byte) error {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 	index := getBucketIndexFromDifferingBit(ht.Self.ID, node)
@@ -120,13 +118,15 @@ func (ht *hashTable) markNodeAsSeen(ctx context.Context, node []byte) {
 		}
 	}
 	if nodeIndex == -1 {
-		log.WithContext(ctx).Warn("tried to mark nonexistent node as seen")
+		return errors.New("tried to mark nonexistent node as seen")
 	}
 
 	n := bucket[nodeIndex]
 	bucket = append(bucket[:nodeIndex], bucket[nodeIndex+1:]...)
 	bucket = append(bucket, n)
 	ht.RoutingTable[index] = bucket
+
+	return nil
 }
 
 func (ht *hashTable) doesNodeExistInBucket(bucket int, node []byte) bool {

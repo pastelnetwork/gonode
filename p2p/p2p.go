@@ -3,11 +3,10 @@ package p2p
 import (
 	"context"
 
-	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/dao/mem"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -42,17 +41,13 @@ func (service *p2p) Run(ctx context.Context) error {
 
 	group, ctx := errgroup.WithContext(ctx)
 	group.Go(func() (err error) {
-		defer errors.Recover(func(rec error) { err = rec })
-
-		log.WithContext(ctx).Infof("Server listening on %q", service.dht.GetNetworkAddr())
+		log.WithContext(ctx).Infof("Kademlia server listening on %q", service.dht.GetNetworkAddr())
 		return service.dht.Listen(ctx)
 	})
 	group.Go(func() (err error) {
-		defer errors.Recover(func(rec error) { err = rec })
-
 		<-ctx.Done()
 
-		log.WithContext(ctx).Infof("Server is shutting down...")
+		log.WithContext(ctx).Infof("Shutting down Kademlia server at %q", service.dht.GetNetworkAddr())
 		return service.dht.Disconnect()
 	})
 
@@ -94,8 +89,8 @@ func (service *p2p) configure(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
 	service.dht = dht
+
 	return nil
 }
 

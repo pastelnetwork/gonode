@@ -3,7 +3,6 @@ package p2p
 var (
 	defaultListenAddress = "0.0.0.0"
 	defaultPort          = 4445
-	defualtUseStun       = true
 )
 
 // Config contains settings of the supernode server.
@@ -25,6 +24,5 @@ func NewConfig() *Config {
 	return &Config{
 		ListenAddresses: defaultListenAddress,
 		Port:            defaultPort,
-		UseStun:         defualtUseStun,
 	}
 }

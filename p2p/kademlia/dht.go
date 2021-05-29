@@ -5,9 +5,9 @@ import (
 	"context"
 	"math"
 	"sort"
-	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 
 	b58 "github.com/jbenet/go-base58"
@@ -231,9 +231,18 @@ func (dht *DHT) Listen(ctx context.Context) error {
 	if !dht.networking.isInitialized() {
 		return errors.New("socket not created")
 	}
-	go dht.listen(ctx)
-	go dht.timers(ctx)
-	return dht.networking.listen(ctx)
+
+	group, _ := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		return dht.listen(ctx)
+	})
+	group.Go(func() error {
+		return dht.timers(ctx)
+	})
+	group.Go(func() error {
+		return dht.networking.listen(ctx)
+	})
+	return group.Wait()
 }
 
 // Bootstrap attempts to bootstrap the network using the BootstrapNodes provided
@@ -244,7 +253,6 @@ func (dht *DHT) Bootstrap(ctx context.Context) error {
 		return nil
 	}
 	expectedResponses := []*expectedResponse{}
-	wg := &sync.WaitGroup{}
 
 	for _, bn := range dht.options.BootstrapNodes {
 		query := &message{}
@@ -256,39 +264,45 @@ func (dht *DHT) Bootstrap(ctx context.Context) error {
 			if err != nil {
 				continue
 			}
-			wg.Add(1)
 			expectedResponses = append(expectedResponses, res)
 		} else {
 			node := newNode(bn)
-			dht.addNode(ctx, node)
+			if err := dht.addNode(ctx, node); err != nil {
+				return err
+			}
 		}
 	}
 
 	numExpectedResponses := len(expectedResponses)
 
 	if numExpectedResponses > 0 {
-		for _, r := range expectedResponses {
-			go func(r *expectedResponse) {
-				defer wg.Done()
+		group, _ := errgroup.WithContext(ctx)
 
+		for _, r := range expectedResponses {
+			r := r
+			group.Go(func() error {
 				select {
 				case result := <-r.ch:
 					// If result is nil, channel was closed
 					if result != nil {
-						dht.addNode(ctx, newNode(result.Sender))
+						if err := dht.addNode(ctx, newNode(result.Sender)); err != nil {
+							return err
+						}
 					}
-					return
+					return nil
 				case <-time.After(dht.options.TMsgTimeout):
 					dht.networking.cancelResponse(r)
-					return
+					return nil
 				case <-ctx.Done():
-					return
+					return nil
 				}
-			}(r)
+			})
+		}
+
+		if err := group.Wait(); err != nil {
+			return err
 		}
 	}
-
-	wg.Wait()
 
 	if dht.NumNodes() > 0 {
 		_, _, err := dht.iterate(ctx, iterateFindNode, dht.ht.Self.ID, nil)
@@ -379,7 +393,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 				queryData.Target = target
 				query.Data = queryData
 			default:
-				log.WithContext(ctx).Fatal("unknown iterate type")
+				return nil, nil, errors.New("unknown iterate type")
 			}
 
 			// Send the async queries and wait for a response
@@ -402,22 +416,26 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 		numExpectedResponses = len(expectedResponses)
 
 		resultChan := make(chan (*message))
+		group, _ := errgroup.WithContext(ctx)
 		for _, r := range expectedResponses {
-			go func(r *expectedResponse) {
+			r := r
+			group.Go(func() error {
 				select {
 				case result := <-r.ch:
 					if result == nil {
 						// Channel was closed
-						return
+						return nil
 					}
-					dht.addNode(ctx, newNode(result.Sender))
+					if err := dht.addNode(ctx, newNode(result.Sender)); err != nil {
+						return err
+					}
 					resultChan <- result
-					return
+					return nil
 				case <-time.After(dht.options.TMsgTimeout):
 					dht.networking.cancelResponse(r)
-					return
+					return nil
 				}
-			}(r)
+			})
 		}
 
 		var results []*message
@@ -467,7 +485,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 		}
 
 		if !queryRest && len(sl.Nodes) == 0 {
-			return nil, nil, nil
+			return nil, nil, group.Wait()
 		}
 
 		sort.Sort(sl)
@@ -487,7 +505,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 			case iterateStore:
 				for i, n := range sl.Nodes {
 					if i >= k {
-						return nil, nil, nil
+						return nil, nil, group.Wait()
 					}
 
 					query := &message{}
@@ -502,7 +520,7 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 						return nil, nil, err
 					}
 				}
-				return nil, nil, nil
+				return nil, nil, group.Wait()
 			}
 		} else {
 			closestNode = sl.Nodes[0]
@@ -513,14 +531,13 @@ func (dht *DHT) iterate(ctx context.Context, t int, target []byte, data []byte) 
 // addNode adds a node into the appropriate k bucket
 // we store these buckets in big-endian order so we look at the bits
 // from right to left in order to find the appropriate bucket
-func (dht *DHT) addNode(ctx context.Context, node *node) {
+func (dht *DHT) addNode(ctx context.Context, node *node) error {
 	index := getBucketIndexFromDifferingBit(dht.ht.Self.ID, node.ID)
 
 	// Make sure node doesn't already exist
 	// If it does, mark it as seen
 	if dht.ht.doesNodeExistInBucket(index, node.ID) {
-		dht.ht.markNodeAsSeen(ctx, node.ID)
-		return
+		return dht.ht.markNodeAsSeen(ctx, node.ID)
 	}
 
 	dht.ht.mutex.Lock()
@@ -544,7 +561,7 @@ func (dht *DHT) addNode(ctx context.Context, node *node) {
 		} else {
 			select {
 			case <-res.ch:
-				return
+				return nil
 			case <-time.After(dht.options.TPingMax):
 				bucket = bucket[1:]
 				bucket = append(bucket, node)
@@ -555,9 +572,11 @@ func (dht *DHT) addNode(ctx context.Context, node *node) {
 	}
 
 	dht.ht.RoutingTable[index] = bucket
+
+	return nil
 }
 
-func (dht *DHT) timers(ctx context.Context) {
+func (dht *DHT) timers(ctx context.Context) error {
 	t := time.NewTicker(time.Second)
 	for {
 		select {
@@ -573,7 +592,7 @@ func (dht *DHT) timers(ctx context.Context) {
 			// Replication
 			keys, err := dht.store.GetAllKeysForReplication(ctx)
 			if err != nil {
-				log.WithContext(ctx).Fatal(err)
+				return err
 			}
 
 			for _, key := range keys {
@@ -586,24 +605,26 @@ func (dht *DHT) timers(ctx context.Context) {
 		case <-dht.networking.getDisconnect():
 			t.Stop()
 			dht.networking.timersFin()
-			return
+			return nil
 		}
 	}
 }
 
-func (dht *DHT) listen(ctx context.Context) {
+func (dht *DHT) listen(ctx context.Context) error {
 	for {
 		select {
 		case msg := <-dht.networking.getMessage():
 			if msg == nil {
 				// Disconnected
 				dht.networking.messagesFin()
-				return
+				return nil
 			}
 			switch msg.Type {
 			case messageTypeFindNode:
 				data := msg.Data.(*queryDataFindNode)
-				dht.addNode(ctx, newNode(msg.Sender))
+				if err := dht.addNode(ctx, newNode(msg.Sender)); err != nil {
+					return err
+				}
 				closest := dht.ht.getClosestContacts(k, data.Target, []*NetworkNode{msg.Sender})
 				response := &message{IsResponse: true}
 				response.Sender = dht.ht.Self
@@ -615,7 +636,9 @@ func (dht *DHT) listen(ctx context.Context) {
 				dht.networking.sendMessage(ctx, response, false, msg.ID)
 			case messageTypeFindValue:
 				data := msg.Data.(*queryDataFindValue)
-				dht.addNode(ctx, newNode(msg.Sender))
+				if err := dht.addNode(ctx, newNode(msg.Sender)); err != nil {
+					return err
+				}
 				value, exists := dht.store.Retrieve(ctx, data.Target)
 				response := &message{IsResponse: true}
 				response.ID = msg.ID
@@ -633,7 +656,9 @@ func (dht *DHT) listen(ctx context.Context) {
 				dht.networking.sendMessage(ctx, response, false, msg.ID)
 			case messageTypeStore:
 				data := msg.Data.(*queryDataStore)
-				dht.addNode(ctx, newNode(msg.Sender))
+				if err := dht.addNode(ctx, newNode(msg.Sender)); err != nil {
+					return err
+				}
 				key := crypto.GetKey(data.Data)
 				expiration := dht.getExpirationTime(key)
 				replication := time.Now().Add(dht.options.TReplicate)
@@ -647,7 +672,7 @@ func (dht *DHT) listen(ctx context.Context) {
 			}
 		case <-dht.networking.getDisconnect():
 			dht.networking.messagesFin()
-			return
+			return nil
 		}
 	}
 }

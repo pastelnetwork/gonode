@@ -7,11 +7,12 @@ node:
   pastel_id: jXXk5k99wK1ca5ZqC6cXSwiiUv57NNiEAApUBtQCNYPbgXDTVwo1k4vVb8J9CAMtnUC4QrNED4DhUGqKyEZCQS
   server:
     # `listen_address` and `port` must match to `extAddress` from masternode.conf
-    listen_addresses: "127.0.0.1"
+    listen_addresses: "0.0.0.0"
     port: 4444
-# p2p:
-#   listen_addresses: "0.0.0.0"
-#   port: "0"
-#   bootstrap_ip: ""
-#   bootstrap_port: ""
-#   use_stun: true
+
+p2p:
+  listen_addresses: "0.0.0.0"
+  port: 4445
+  # bootstrap_ip: ""
+  # bootstrap_port: ""
+  # use_stun: true

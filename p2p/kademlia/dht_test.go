@@ -41,7 +41,7 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 		assert.Equal(t, 0, dht.NumNodes())
 		go func(dht *DHT) {
 			err := dht.Listen(ctx)
-			assert.EqualError(t, errClosed, err.Error())
+			assert.NoError(t, err)
 			done <- true
 		}(dht)
 		go func(dht *DHT) {
@@ -112,12 +112,12 @@ func TestBootstrapTwoNodes(t *testing.T) {
 			done <- true
 		}()
 		err := dht2.Listen(ctx)
-		assert.EqualError(t, errClosed, err.Error())
+		assert.NoError(t, err)
 		done <- true
 	}()
 
 	err = dht1.Listen(ctx)
-	assert.EqualError(t, errClosed, err.Error())
+	assert.NoError(t, err)
 
 	assert.Equal(t, 1, dht1.NumNodes())
 	assert.Equal(t, 1, dht2.NumNodes())
@@ -204,16 +204,16 @@ func TestBootstrapThreeNodes(t *testing.T) {
 			}(dht1, dht2, dht3)
 
 			err = dht3.Listen(ctx)
-			assert.EqualError(t, errClosed, err.Error())
+			assert.NoError(t, err)
 			done <- true
 		}(dht1, dht2, dht3)
 		err := dht2.Listen(ctx)
-		assert.EqualError(t, errClosed, err.Error())
+		assert.NoError(t, err)
 		done <- true
 	}(dht1, dht2, dht3)
 
 	err = dht1.Listen(ctx)
-	assert.EqualError(t, errClosed, err.Error())
+	assert.NoError(t, err)
 
 	assert.Equal(t, 2, dht1.NumNodes())
 	assert.Equal(t, 2, dht2.NumNodes())
@@ -274,12 +274,12 @@ func TestBootstrapNoID(t *testing.T) {
 			done <- true
 		}()
 		err := dht2.Listen(ctx)
-		assert.EqualError(t, errClosed, err.Error())
+		assert.NoError(t, err)
 		done <- true
 	}()
 
 	err = dht1.Listen(ctx)
-	assert.EqualError(t, errClosed, err.Error())
+	assert.NoError(t, err)
 
 	assert.Equal(t, 1, dht1.NumNodes())
 	assert.Equal(t, 1, dht2.NumNodes())
@@ -339,13 +339,13 @@ func TestReconnect(t *testing.T) {
 				done <- true
 			}()
 			err := dht2.Listen(ctx)
-			assert.EqualError(t, errClosed, err.Error())
+			assert.NoError(t, err)
 			done <- true
 
 		}()
 
 		err = dht1.Listen(ctx)
-		assert.EqualError(t, errClosed, err.Error())
+		assert.NoError(t, err)
 
 		assert.Equal(t, 1, dht1.NumNodes())
 		assert.Equal(t, 1, dht2.NumNodes())
@@ -391,13 +391,13 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 
 	go func() {
 		err := dht1.Listen(ctx)
-		assert.EqualError(t, errClosed, err.Error())
+		assert.NoError(t, err)
 		done <- true
 	}()
 
 	go func() {
 		err := dht2.Listen(ctx)
-		assert.EqualError(t, errClosed, err.Error())
+		assert.NoError(t, err)
 		done <- true
 	}()
 

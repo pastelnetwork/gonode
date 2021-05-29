@@ -7,11 +7,9 @@ pastel-api:
 node:
   pastel_id: jXa9V7SpRAvyJx53Jh3ffrEXxutuAeXUToePpzCsg8ucwB4rRf2zfuhQsdfKB8SEV4dTbE1HFGCdmWk4P9TENZ
   server:
-    listen_addresses: "127.0.0.1"
+    listen_addresses: "0.0.0.0"
     port: 4446
-# p2p:
-#   listen_addresses: "0.0.0.0"
-#   port: "0"
-#   bootstrap_ip: ""
-#   bootstrap_port: ""
-#   use_stun: true
+
+p2p:
+  listen_addresses: "0.0.0.0"
+  port: 4456

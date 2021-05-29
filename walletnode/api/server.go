@@ -75,7 +75,7 @@ func (server *Server) Run(ctx context.Context) error {
 		defer errors.Recover(log.Fatal)
 
 		<-ctx.Done()
-		log.WithContext(ctx).Infof("Server is shutting down...")
+		log.WithContext(ctx).Infof("Shutting down REST server on %q", addr)
 
 		ctx, cancel := context.WithTimeout(ctx, server.shutdownTimeout)
 		defer cancel()
@@ -87,7 +87,7 @@ func (server *Server) Run(ctx context.Context) error {
 		close(errCh)
 	}()
 
-	log.WithContext(ctx).Infof("Server is listening on %q", addr)
+	log.WithContext(ctx).Infof("REST server is listening on %q", addr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return errors.Errorf("error starting server: %w", err)
 	}
