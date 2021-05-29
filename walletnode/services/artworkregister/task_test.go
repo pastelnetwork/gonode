@@ -8,8 +8,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/pastel/test"
-	nodetest "github.com/pastelnetwork/gonode/walletnode/node/test"
+	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -135,11 +134,11 @@ func TestTaskMeshNodes(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			//setup mock service for each node
-			nodesClientMock := []*nodetest.Client{}
+			nodesClientMock := []*test.Client{}
 			nodes := tt.args.nodes
 
 			for _, node := range nodes {
-				nodeClient := nodetest.NewMockClient()
+				nodeClient := test.NewMockClient()
 				nodeClient.
 					ListenOnConnect(tt.args.returnErr).
 					ListenOnRegisterArtwork().
