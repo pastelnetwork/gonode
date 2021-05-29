@@ -29,7 +29,7 @@ func (models *List) Exec(ctx context.Context, value interface{}) ([][]float32, e
 	fingerprints := make([][]float32, len(*models))
 
 	if len(*models) == 0 {
-		log.WithContext(ctx).Warn("Models list is empty")
+		log.WithContext(ctx).Warn("Empty models list")
 		return fingerprints, nil
 	}
 
@@ -50,9 +50,10 @@ func (models *List) Exec(ctx context.Context, value interface{}) ([][]float32, e
 
 // NewList returns a new List instance.
 func NewList(configs []Config) List {
-	var models List
-	for _, config := range configs {
-		models = append(models, NewModel(config))
+	models := make(List, len(configs))
+
+	for i, config := range configs {
+		models[i] = NewModel(config)
 	}
 	return models
 }
