@@ -12,8 +12,8 @@ var defaultConfigPaths = []string{
 	".",
 }
 
-// DefaultConfigPath returns the default config path for darwin OS.
-func DefaultConfigPath(filename string) string {
+// DefaultPath returns the default config path for darwin OS.
+func DefaultPath() string {
 	homeDir, _ := os.UserConfigDir()
-	return filepath.Join(homeDir, "Pastel", filename)
+	return filepath.Join(homeDir, "Pastel")
 }

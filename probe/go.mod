@@ -1,4 +1,4 @@
-module github.com/pastelnetwork/gonode/dupe-detection
+module github.com/pastelnetwork/gonode/probe
 
 go 1.16
 

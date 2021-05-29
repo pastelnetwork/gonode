@@ -2,8 +2,6 @@ package configs
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -34,7 +32,6 @@ func (config *Config) String() string {
 func New() *Config {
 	return &Config{
 		LogLevel: defaultLogLevel,
-		TempDir:  filepath.Join(os.TempDir(), "walletnode"),
 
 		Node:   *NewNode(),
 		Pastel: *pastel.NewConfig(),

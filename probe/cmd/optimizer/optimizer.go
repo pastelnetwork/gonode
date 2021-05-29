@@ -19,8 +19,8 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/dupe-detection/pkg/auprc"
-	"github.com/pastelnetwork/gonode/dupe-detection/pkg/dupedetection"
+	"github.com/pastelnetwork/gonode/probe/pkg/auprc"
+	"github.com/pastelnetwork/gonode/probe/pkg/dupedetection"
 )
 
 const cacheFileName = "cached"
@@ -189,7 +189,7 @@ func runStudy(studyName string) error {
 
 func main() {
 	rootDirPtr := flag.String("rootDir", "", "a path to the directory with the test corpus of images.")
-	goptunaStudyNamePtr := flag.String("studyName", "dupe-detection-aurpc", "a name of the Goptuna study to create or continue available.")
+	goptunaStudyNamePtr := flag.String("studyName", "probe-aurpc", "a name of the Goptuna study to create or continue available.")
 	numberOfImagesToValidatePtr := flag.Int("imageCount", 0, "limits the number of dupes and original images to validate.")
 	evaluateNumberOfTimesPtr := flag.Int("runCount", 500, "defines the number of times goptuna will evaluate optimization objective.")
 	flag.Parse()

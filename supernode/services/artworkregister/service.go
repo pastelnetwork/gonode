@@ -5,10 +5,13 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/supernode/node"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -18,9 +21,11 @@ const (
 // Service represent artwork service.
 type Service struct {
 	*task.Worker
+	*artwork.Storage
 
 	config       *Config
 	db           storage.KeyValue
+	probeTensor  probe.Tensor
 	pastelClient pastel.Client
 	nodeClient   node.Client
 }
@@ -33,7 +38,20 @@ func (service *Service) Run(ctx context.Context) error {
 		return errors.New("PastelID is not specified in the config file")
 	}
 
-	return service.Worker.Run(ctx)
+	if err := service.probeTensor.LoadModels(ctx); err != nil {
+		return err
+	}
+
+	group, ctx := errgroup.WithContext(ctx)
+	group.Go(func() (err error) {
+		defer errors.Recover(func(recErr error) { err = recErr })
+		return service.Storage.Run(ctx)
+	})
+	group.Go(func() (err error) {
+		defer errors.Recover(func(recErr error) { err = recErr })
+		return service.Worker.Run(ctx)
+	})
+	return group.Wait()
 }
 
 // Task returns the task of the registration artwork by the given id.
@@ -50,12 +68,14 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorage, probeTensor probe.Tensor, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,
+		probeTensor:  probeTensor,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
 		Worker:       task.NewWorker(),
+		Storage:      artwork.NewStorage(fileStorage),
 	}
 }

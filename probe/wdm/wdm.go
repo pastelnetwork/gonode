@@ -1,7 +1,7 @@
 package wdm
 
 import (
-	"github.com/pastelnetwork/gonode/dupe-detection/wdm/wrapper"
+	"github.com/pastelnetwork/gonode/probe/wdm/wrapper"
 )
 
 // Wdm compute correlation for specified method. List of supported methods:

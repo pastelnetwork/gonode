@@ -182,6 +182,14 @@ commands:
               test -f $WINDOWS_ARTIFACT
               github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-windows-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
             fi
+  install_tensorflow:
+    steps:
+      - run:
+          name: Install libtensorflow
+          command: |
+            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo /sbin/ldconfig -v
 
 jobs:
   prepare_workspace:
@@ -259,19 +267,14 @@ jobs:
       - test:
           package: "legroast"
 
-  test_dupe-detection:
+  test_probe:
     <<: *defaults
     steps:
       - attach_workspace:
           at: .
-      - run:
-          name: Install libtensorflow
-          command: |
-            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
-            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
-            sudo /sbin/ldconfig -v
+      - install_tensorflow
       - test:
-          package: "dupe-detection"
+          package: "probe"
 
   test_pqsignatures:
     <<: *defaults
@@ -294,6 +297,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - install_tensorflow
       - test:
           package: "supernode"
 
@@ -379,7 +383,7 @@ workflows:
       - test_legroast:
           requires:
             - prepare_workspace
-      - test_dupe-detection:
+      - test_probe:
           requires:
             - prepare_workspace
       - test_pqsignatures:

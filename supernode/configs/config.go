@@ -2,8 +2,6 @@ package configs
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -14,10 +12,13 @@ const (
 
 // Config contains configuration of all components of the SuperNode.
 type Config struct {
+	DefaultDir string `json:"-"`
+
 	LogLevel string `mapstructure:"log-level" json:"log-level,omitempty"`
 	LogFile  string `mapstructure:"log-file" json:"log-file,omitempty"`
 	Quiet    bool   `mapstructure:"quiet" json:"quiet"`
 	TempDir  string `mapstructure:"temp-dir" json:"temp-dir"`
+	WorkDir  string `mapstructure:"work-dir" json:"work-dir"`
 
 	Node   `mapstructure:"node" json:"node,omitempty"`
 	Pastel pastel.Config `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
@@ -34,7 +35,6 @@ func (config *Config) String() string {
 func New() *Config {
 	return &Config{
 		LogLevel: defaultLogLevel,
-		TempDir:  filepath.Join(os.TempDir(), "supernode"),
 
 		Node:   *NewNode(),
 		Pastel: *pastel.NewConfig(),

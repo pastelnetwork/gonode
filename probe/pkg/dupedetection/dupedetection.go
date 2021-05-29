@@ -15,7 +15,7 @@ import (
 	"github.com/montanaflynn/stats"
 	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
-	"github.com/pastelnetwork/gonode/dupe-detection/wdm"
+	"github.com/pastelnetwork/gonode/probe/wdm"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/sync/errgroup"
 	"gonum.org/v1/gonum/mat"
