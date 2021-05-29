@@ -87,7 +87,8 @@ func TestTask_run(t *testing.T) {
 }
 
 func TestTaskMeshNodes(t *testing.T) {
-	t.Parallel()
+	//TODO: ashadi - this test can't run at parallel
+	//t.Parallel()
 
 	type args struct {
 		ctx             context.Context
