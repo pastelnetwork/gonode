@@ -22,8 +22,12 @@ commands:
           name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
           command: |
-            go generate ./...
             go get -v ./...
+      - run:
+          name: "<< parameters.package >>: Go generate"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            go generate ./...
       - run:
           name: "<< parameters.package >>: Run gofmt"
           working_directory: ~/project/<< parameters.package >>
@@ -33,7 +37,6 @@ commands:
           name: "<< parameters.package >>: Run go vet"
           working_directory: ~/project/<< parameters.package >>
           command: |
-            go generate ./...
             go vet -v ./...
       - run:
           name: "<< parameters.package >>: Run revive"
@@ -49,7 +52,6 @@ commands:
           name: "<< parameters.package >>: Run go test (+ race detector)"
           working_directory: ~/project/<< parameters.package >>
           command: |
-            go generate ./...
             go test -v -race ./...
   build:
     parameters:
