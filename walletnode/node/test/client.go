@@ -77,12 +77,15 @@ func (c *Client) ListenOnSessID(sessID string) *Client {
 	return c
 }
 
+// Clients collections
 type Clients []*Client
 
+// NewClients new client collections
 func NewClients() Clients {
 	return make(Clients, 0)
 }
 
+// Add client to clients
 func (c *Clients) Add(i *Client) {
 	*c = append(*c, i)
 }
