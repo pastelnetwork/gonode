@@ -160,6 +160,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 						return
 					}
 
+					//data race detection without lock
 					mtx.Lock()
 					secondaries.add(node)
 					mtx.Unlock()

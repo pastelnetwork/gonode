@@ -57,6 +57,7 @@ func (c *Client) ListenOnSession(returnErr error) *Client {
 // ListenOnAcceptedNodes listening AcceptedNodes call and returning pastelIDs and error from args.
 func (c *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error) *Client {
 	handleFunc := func(cxt context.Context) []string {
+		//need block operation for simulate go routine
 		time.Sleep(time.Second * 2)
 		return pastelIDs
 	}

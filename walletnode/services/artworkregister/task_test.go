@@ -87,8 +87,7 @@ func TestTask_run(t *testing.T) {
 }
 
 func TestTaskMeshNodes(t *testing.T) {
-	//TODO: ashadi - this test can't run at parallel
-	//t.Parallel()
+	t.Parallel()
 
 	type args struct {
 		ctx             context.Context
@@ -149,6 +148,7 @@ func TestTaskMeshNodes(t *testing.T) {
 					ListenOnConnectTo(testCase.args.returnErr).
 					ListenOnSessID(testCase.args.primarySessID)
 
+				//only listen AcceptedNodes when node is primary
 				if i == testCase.args.primaryIndex {
 					nodeClient.ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr)
 				}
