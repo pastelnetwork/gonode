@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -136,6 +137,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 	defer nextConnCancel()
 
 	var secondaries Nodes
+	var mtx sync.Mutex
 	go func() {
 		for i, node := range nodes {
 			node := node
@@ -148,7 +150,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 			case <-nextConnCtx.Done():
 				return
 			case <-time.After(connectToNextNodeDelay):
-				go func(node *Node) {
+				go func() {
 					defer errors.Recover(log.Fatal)
 
 					if err := node.connect(ctx); err != nil {
@@ -157,13 +159,16 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 					if err := node.Session(ctx, false); err != nil {
 						return
 					}
+
+					mtx.Lock()
 					secondaries.add(node)
+					mtx.Unlock()
 
 					if err := node.ConnectTo(ctx, primary.PastelID, primary.SessID()); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
-				}(node)
+				}()
 			}
 		}
 	}()
