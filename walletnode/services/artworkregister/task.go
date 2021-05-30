@@ -148,7 +148,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 			case <-nextConnCtx.Done():
 				return
 			case <-time.After(connectToNextNodeDelay):
-				go func() {
+				go func(node *Node) {
 					defer errors.Recover(log.Fatal)
 
 					if err := node.connect(ctx); err != nil {
@@ -163,7 +163,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
-				}()
+				}(node)
 			}
 		}
 	}()
