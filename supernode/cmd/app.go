@@ -21,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
+	"github.com/pastelnetwork/gonode/supernode/rqlite"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 
@@ -122,5 +123,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, artworkStorage, artworkRegister, grpc)
+	// <TODO> for testings
+	config.Node.ArtworkRegister.PastelID = "pastel id"
+	// new rqlite service
+	rqliteService := rqlite.NewService(&config.RQLite)
+
+	return runServices(ctx, rqliteService, artworkStorage, artworkRegister, grpc)
 }

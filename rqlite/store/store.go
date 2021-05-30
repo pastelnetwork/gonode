@@ -176,7 +176,7 @@ type StoreConfig struct {
 func New(ln Listener, c *StoreConfig) *Store {
 	logger := c.Logger
 	if logger == nil {
-		logger = log.New(os.Stderr, "[store] ", log.LstdFlags)
+		logger = log.New(os.Stderr, "[rqlite#store] ", log.LstdFlags)
 	}
 
 	return &Store{

@@ -189,7 +189,7 @@ func New(addr string, store Store, credentials CredentialStore) *Service {
 		start:           time.Now(),
 		statuses:        make(map[string]Statuser),
 		credentialStore: credentials,
-		logger:          log.New(os.Stderr, "[http] ", log.LstdFlags),
+		logger:          log.New(os.Stderr, "[rqlite#http] ", log.LstdFlags),
 	}
 }
 
