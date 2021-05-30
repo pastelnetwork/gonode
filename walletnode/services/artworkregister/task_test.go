@@ -99,7 +99,8 @@ func TestTaskMeshNodes(t *testing.T) {
 		pastelIDS       []string
 		returnErr       error
 	}
-	tests := []struct {
+
+	testCases := []struct {
 		name          string
 		args          args
 		want          []string
@@ -131,57 +132,58 @@ func TestTaskMeshNodes(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
+	for _, testCase := range testCases {
+		testCase := testCase
 
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			//setup mock service for each node
-			nodesClientMock := []*test.Client{}
-			nodes := tt.args.nodes
+			nodesClientMock := test.NewClients()
+			nodes := testCase.args.nodes
 
-			for _, node := range nodes {
+			for i, node := range nodes {
 				nodeClient := test.NewMockClient()
 				nodeClient.
-					ListenOnConnect(tt.args.returnErr).
+					ListenOnConnect(testCase.args.returnErr).
 					ListenOnRegisterArtwork().
-					ListenOnSession(tt.args.returnErr).
-					ListenOnConnectTo(tt.args.returnErr).
-					ListenOnSessID(tt.args.primarySessID).
-					//blocking primary acceptNode call with delay 2 second
-					ListenOnAcceptedNodes(2, tt.args.pastelIDS, tt.args.returnErr)
+					ListenOnSession(testCase.args.returnErr).
+					ListenOnConnectTo(testCase.args.returnErr).
+					ListenOnSessID(testCase.args.primarySessID)
+
+				if i == testCase.args.primaryIndex {
+					nodeClient.ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr)
+				}
 
 				node.client = nodeClient.ClientMock
-				nodesClientMock = append(nodesClientMock, nodeClient)
+				nodesClientMock.Add(nodeClient)
 			}
 
 			task := &Task{}
-			got, err := task.meshNodes(tt.args.ctx, nodes, tt.args.primaryIndex)
+			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 
-			tt.assertion(t, err)
-			assert.Equal(t, tt.want, pullPastelIDNodes(got))
+			testCase.assertion(t, err)
+			assert.Equal(t, testCase.want, pullPastelIDNodes(got))
 
 			//primary node mock should call these methods
-			primaryNodeMock := nodesClientMock[tt.args.primaryIndex]
+			primaryNodeMock := nodesClientMock[testCase.args.primaryIndex]
 			primaryNodeMock.RegArtWorkMock.AssertCalled(t, "AcceptedNodes", mock.Anything)
 			primaryNodeMock.RegArtWorkMock.AssertNumberOfCalls(t, "AcceptedNodes", 1)
 			primaryNodeMock.RegArtWorkMock.AssertCalled(t, "SessID")
-			primaryNodeMock.RegArtWorkMock.AssertNumberOfCalls(t, "SessID", tt.numSessIDCall)
+			primaryNodeMock.RegArtWorkMock.AssertNumberOfCalls(t, "SessID", testCase.numSessIDCall)
 
 			for i, n := range nodesClientMock {
 				n.ClientMock.AssertExpectations(t)
 				n.ConnectionMock.AssertExpectations(t)
 
 				//if node not primary should call these method
-				if i != tt.args.primaryIndex {
+				if i != testCase.args.primaryIndex {
 					n.RegArtWorkMock.AssertCalled(t, "Session", mock.Anything, false)
-					n.RegArtWorkMock.AssertCalled(t, "ConnectTo", mock.Anything, tt.args.primaryPastelID, tt.args.primarySessID)
+					n.RegArtWorkMock.AssertCalled(t, "ConnectTo", mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
 				}
 
 			}
 		})
 
 	}
-
 }
 
 func TestTaskIsSuitableStorageFee(t *testing.T) {

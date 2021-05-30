@@ -54,18 +54,14 @@ func (c *Client) ListenOnSession(returnErr error) *Client {
 	return c
 }
 
-// ListenOnAcceptedNodes listening AcceptedNodes call and returning pastelIDs and error from args. Support delay for blocking process to simulate waiting request grpc request
-func (c *Client) ListenOnAcceptedNodes(delay int, pastelIDs []string, returnErr error) *Client {
-	if delay > 0 {
-		delayFunc := func(ctx context.Context) []string {
-			time.Sleep(time.Second * time.Duration(delay))
-			return pastelIDs
-		}
-		c.RegArtWorkMock.On("AcceptedNodes", mock.Anything).Return(delayFunc, returnErr)
-	} else {
-		c.RegArtWorkMock.On("AcceptedNodes", mock.Anything).Return(pastelIDs, returnErr)
+// ListenOnAcceptedNodes listening AcceptedNodes call and returning pastelIDs and error from args.
+func (c *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error) *Client {
+	handleFunc := func(cxt context.Context) []string {
+		time.Sleep(time.Second * 2)
+		return pastelIDs
 	}
 
+	c.RegArtWorkMock.On("AcceptedNodes", mock.Anything).Return(handleFunc, returnErr)
 	return c
 }
 
@@ -79,4 +75,14 @@ func (c *Client) ListenOnConnectTo(returnErr error) *Client {
 func (c *Client) ListenOnSessID(sessID string) *Client {
 	c.RegArtWorkMock.On("SessID").Return(sessID)
 	return c
+}
+
+type Clients []*Client
+
+func NewClients() Clients {
+	return make(Clients, 0)
+}
+
+func (c *Clients) Add(i *Client) {
+	*c = append(*c, i)
 }
