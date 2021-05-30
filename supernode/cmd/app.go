@@ -54,6 +54,12 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
+
+		// for rqlite cluster
+		cli.NewFlag("rqlite-http-addr", &config.Node.RQLite.HTTPAddress).SetUsage("Set http server bind address").SetValue(config.Node.RQLite.HTTPAddress),
+		cli.NewFlag("rqlite-raft-addr", &config.Node.RQLite.RaftAddress).SetUsage("Set raft communication bind address").SetValue(config.Node.RQLite.RaftAddress),
+		cli.NewFlag("rqlite-join", &config.Node.RQLite.JoinAddress).SetUsage("Set a cluster can be joined (proto://host:port), comma-delimited list of nodes").SetValue(config.Node.RQLite.JoinAddress),
+		cli.NewFlag("rqlite-raft-log-level", &config.Node.RQLite.RaftLogLevel).SetUsage("Set log level for raft module").SetValue(config.Node.RQLite.RaftLogLevel),
 	)
 
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
