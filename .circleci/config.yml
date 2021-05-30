@@ -19,6 +19,11 @@ commands:
         type: string
     steps:
       - run:
+          name: "<< parameters.package >>: Go generate"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            go generate ./...
+      - run:
           name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
           command: |
@@ -47,7 +52,6 @@ commands:
           name: "<< parameters.package >>: Run go test (+ race detector)"
           working_directory: ~/project/<< parameters.package >>
           command: |
-            go generate ./...
             go test -v -race ./...
   build:
     parameters:

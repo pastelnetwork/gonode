@@ -1,4 +1,5 @@
 // Package jsonrpc provides a JSON-RPC 2.0 client that sends JSON-RPC requests and receives JSON-RPC responses using HTTP.
+//go:generate mockery --name=RPCClient
 package jsonrpc
 
 import (

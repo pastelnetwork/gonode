@@ -1,3 +1,5 @@
+//go:generate mockery --name=KeyValue
+
 package storage
 
 import "github.com/pastelnetwork/gonode/common/errors"

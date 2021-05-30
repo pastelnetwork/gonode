@@ -1,3 +1,5 @@
+//go:generate mockery --name=FileStorage
+
 package storage
 
 import (

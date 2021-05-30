@@ -13,7 +13,6 @@ require (
 	goa.design/goa/v3 v3.3.1
 	goa.design/plugins/v3 v3.3.1
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210511113859-b0526f3d8744 // indirect
 	golang.org/x/tools v0.1.1 // indirect
 	google.golang.org/genproto v0.0.0-20210510173355-fb37daa5cd7a // indirect
@@ -22,6 +21,6 @@ require (
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
-	github.com/pastelnetwork/gonode/proto => ../proto
 	github.com/pastelnetwork/gonode/pastel => ../pastel
+	github.com/pastelnetwork/gonode/proto => ../proto
 )
