@@ -135,6 +135,8 @@ func TestTaskMeshNodes(t *testing.T) {
 		testCase := testCase
 
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			//setup mock service for each node
 			nodesClientMock := test.NewClients()
 			nodes := testCase.args.nodes
