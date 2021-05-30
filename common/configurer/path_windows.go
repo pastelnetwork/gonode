@@ -20,8 +20,8 @@ var defaultConfigPaths = []string{
 	".",
 }
 
-// DefaultConfigPath returns the default config path for Windows OS.
-func DefaultConfigPath(filename string) string {
+// DefaultPath returns the default config path for Windows OS.
+func DefaultPath() string {
 	homeDir, _ := os.UserHomeDir()
 	appDir := beforeVistaAppDir
 
@@ -29,5 +29,5 @@ func DefaultConfigPath(filename string) string {
 	if v&0xff > 5 {
 		appDir = sinceVistaAppDir
 	}
-	return filepath.Join(homeDir, filepath.FromSlash(appDir), "Pastel", filename)
+	return filepath.Join(homeDir, filepath.FromSlash(appDir), "Pastel")
 }

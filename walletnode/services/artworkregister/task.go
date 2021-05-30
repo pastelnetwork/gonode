@@ -6,11 +6,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -85,8 +85,7 @@ func (task *Task) run(ctx context.Context) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range nodes {
 		node := node
-		group.Go(func() (err error) {
-			defer errors.Recover(func(recErr error) { err = recErr })
+		group.Go(func() error {
 			defer cancel()
 
 			select {

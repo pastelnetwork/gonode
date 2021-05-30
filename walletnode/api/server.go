@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/walletnode/api/docs"
-	"golang.org/x/sync/errgroup"
 
 	goahttp "goa.design/goa/v3/http"
 	goahttpmiddleware "goa.design/goa/v3/http/middleware"
@@ -45,8 +45,7 @@ func (server *Server) Run(ctx context.Context) error {
 	groupServices, ctx := errgroup.WithContext(ctx)
 	var servers goahttp.Servers
 	for _, service := range server.services {
-		groupServices.Go(func() (err error) {
-			defer errors.Recover(func(recErr error) { err = recErr })
+		groupServices.Go(func() error {
 			return service.Run(ctx)
 		})
 		servers = append(servers, service.Mount(ctx, goamux))
@@ -75,7 +74,7 @@ func (server *Server) Run(ctx context.Context) error {
 		defer errors.Recover(log.Fatal)
 
 		<-ctx.Done()
-		log.WithContext(ctx).Infof("Server is shutting down...")
+		log.WithContext(ctx).Infof("Shutting down REST server on %q", addr)
 
 		ctx, cancel := context.WithTimeout(ctx, server.shutdownTimeout)
 		defer cancel()
@@ -87,7 +86,7 @@ func (server *Server) Run(ctx context.Context) error {
 		close(errCh)
 	}()
 
-	log.WithContext(ctx).Infof("Server is listening on %q", addr)
+	log.WithContext(ctx).Infof("REST server is listening on %q", addr)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		return errors.Errorf("error starting server: %w", err)
 	}
