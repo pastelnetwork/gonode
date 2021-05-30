@@ -29,6 +29,8 @@ func pullPastelIDNodes(nodes Nodes) []string {
 }
 
 func TestTaskRun(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		Task    task.Task
 		Service *Service
@@ -37,7 +39,8 @@ func TestTaskRun(t *testing.T) {
 	type args struct {
 		ctx context.Context
 	}
-	tests := []struct {
+
+	testCases := []struct {
 		name      string
 		fields    fields
 		args      args
@@ -45,28 +48,37 @@ func TestTaskRun(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+
+	for _, testCase := range testCases {
+		testCase := testCase
+
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			task := &Task{
-				Task:    tt.fields.Task,
-				Service: tt.fields.Service,
-				Ticket:  tt.fields.Ticket,
+				Task:    testCase.fields.Task,
+				Service: testCase.fields.Service,
+				Ticket:  testCase.fields.Ticket,
 			}
-			tt.assertion(t, task.Run(tt.args.ctx))
+			testCase.assertion(t, task.Run(testCase.args.ctx))
 		})
 	}
 }
 
 func TestTask_run(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		Task    task.Task
 		Service *Service
 		Ticket  *Ticket
 	}
+
 	type args struct {
 		ctx context.Context
 	}
-	tests := []struct {
+
+	testCases := []struct {
 		name      string
 		fields    fields
 		args      args
@@ -74,14 +86,17 @@ func TestTask_run(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+
+	for _, testCase := range testCases {
+		testCase := testCase
+
+		t.Run(testCase.name, func(t *testing.T) {
 			task := &Task{
-				Task:    tt.fields.Task,
-				Service: tt.fields.Service,
-				Ticket:  tt.fields.Ticket,
+				Task:    testCase.fields.Task,
+				Service: testCase.fields.Service,
+				Ticket:  testCase.fields.Ticket,
 			}
-			tt.assertion(t, task.run(tt.args.ctx))
+			testCase.assertion(t, task.run(testCase.args.ctx))
 		})
 	}
 }
@@ -284,7 +299,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 		returnErr error
 	}
 
-	tests := []struct {
+	testCases := []struct {
 		name      string
 		fields    fields
 		args      args
@@ -342,27 +357,27 @@ func TestTaskPastelTopNodes(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
+	for _, testCase := range testCases {
+		testCase := testCase
 
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
 			//create new mock service
 			pastelClientMock := pastelMock.NewMockPastelClient()
-			pastelClientMock.ListenOnMasterNodesTop(tt.args.returnMn, tt.args.returnErr)
+			pastelClientMock.ListenOnMasterNodesTop(testCase.args.returnMn, testCase.args.returnErr)
 			service := &Service{
 				pastelClient: pastelClientMock.PastelMock,
 			}
 
 			task := &Task{
-				Task:    tt.fields.Task,
+				Task:    testCase.fields.Task,
 				Service: service,
-				Ticket:  tt.fields.Ticket,
+				Ticket:  testCase.fields.Ticket,
 			}
-			got, err := task.pastelTopNodes(tt.args.ctx)
-			tt.assertion(t, err)
-			assert.Equal(t, tt.want, got)
+			got, err := task.pastelTopNodes(testCase.args.ctx)
+			testCase.assertion(t, err)
+			assert.Equal(t, testCase.want, got)
 
 			//mock assertion
 			pastelClientMock.PastelMock.AssertExpectations(t)
@@ -384,7 +399,7 @@ func TestNewTask(t *testing.T) {
 	service := &Service{}
 	ticket := &Ticket{}
 
-	tests := []struct {
+	testCases := []struct {
 		name string
 		args args
 		want *Task
@@ -402,14 +417,14 @@ func TestNewTask(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		tt := tt
+	for _, testCase := range testCases {
+		testCase := testCase
 
-		t.Run(tt.name, func(t *testing.T) {
-			task := NewTask(tt.args.service, tt.args.Ticket)
-			assert.Equal(t, tt.want.Service, task.Service)
-			assert.Equal(t, tt.want.Ticket, task.Ticket)
-			assert.Equal(t, tt.want.Status().SubStatus, task.Status().SubStatus)
+		t.Run(testCase.name, func(t *testing.T) {
+			task := NewTask(testCase.args.service, testCase.args.Ticket)
+			assert.Equal(t, testCase.want.Service, task.Service)
+			assert.Equal(t, testCase.want.Ticket, task.Ticket)
+			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 		})
 	}
 }
