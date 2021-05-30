@@ -11,11 +11,9 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -24,6 +22,7 @@ import (
 	"github.com/pastelnetwork/gonode/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/rqlite/db"
 	"github.com/pastelnetwork/gonode/rqlite/store"
+	"github.com/sirupsen/logrus"
 )
 
 // Database is the interface any queryable system must implement
@@ -177,19 +176,22 @@ type Service struct {
 
 	BuildInfo map[string]interface{}
 
-	logger *log.Logger
+	logger *logrus.Entry
 }
 
 // New returns an uninitialized HTTP service. If credentials is nil, then
 // the service performs no authentication and authorization checks.
-func New(addr string, store Store, credentials CredentialStore) *Service {
+func New(addr string, store Store, credentials CredentialStore, logger *logrus.Entry) *Service {
+	if logger == nil {
+		logger = logrus.New().WithField("prefix", "http")
+	}
 	return &Service{
 		addr:            addr,
 		store:           store,
 		start:           time.Now(),
 		statuses:        make(map[string]Statuser),
 		credentialStore: credentials,
-		logger:          log.New(os.Stderr, "[rqlite#http] ", log.LstdFlags),
+		logger:          logger,
 	}
 }
 

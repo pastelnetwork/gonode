@@ -66,7 +66,7 @@ func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) 
 
 		for _, a := range r.Nodes {
 			if a != apiAdv {
-				// Only other nodes can be joined.
+				// only other nodes can be joined.
 				addrs = append(addrs, a)
 			}
 		}
@@ -97,8 +97,10 @@ func (s *Service) waitForConsensus(ctx context.Context, dbStore *store.Store) er
 }
 
 func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store) error {
+	logger := log.DefaultLogger.WithField("prefix", "http")
+
 	// new http server
-	server := httpd.New(s.config.HTTPAddress, dbStore, nil)
+	server := httpd.New(s.config.HTTPAddress, dbStore, nil, logger)
 
 	// start the http server
 	return server.Start()
@@ -121,6 +123,7 @@ func (s *Service) Run(ctx context.Context) error {
 		DBConf: dbConf,
 		Dir:    s.config.DataDir,
 		ID:     s.idOrRaftAddr(),
+		Logger: log.DefaultLogger.WithField("prefix", "store"),
 	})
 	s.db = db
 
@@ -251,9 +254,9 @@ func (s *Service) Run(ctx context.Context) error {
 		log.WithContext(ctx).Errorf("start http server: %v", err)
 		return err
 	}
-	log.WithContext(ctx).Info("node is ready")
+	log.WithContext(ctx).Info("node is ready, block until context is done")
 
-	// block until signalled
+	// block until context is done
 	<-ctx.Done()
 	if err := db.Close(true); err != nil {
 		log.WithContext(ctx).Errorf("close store: %v", err)

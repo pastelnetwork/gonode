@@ -10,6 +10,7 @@ require (
 	github.com/mkideal/cli v0.2.5
 	github.com/mkideal/pkg v0.1.2
 	github.com/rqlite/go-sqlite3 v1.20.2
+	github.com/sirupsen/logrus v1.2.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/net v0.0.0-20210525063256-abc453219eb5
 	google.golang.org/protobuf v1.26.0

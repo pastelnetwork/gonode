@@ -86,7 +86,7 @@ func Test_EnsureHTTPS(t *testing.T) {
 
 func Test_NewService(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if s == nil {
 		t.Fatalf("failed to create new service")
 	}
@@ -94,7 +94,7 @@ func Test_NewService(t *testing.T) {
 
 func Test_HasVersionHeader(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -117,7 +117,7 @@ func Test_HasVersionHeader(t *testing.T) {
 
 func Test_HasContentTypeJSON(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -137,7 +137,7 @@ func Test_HasContentTypeJSON(t *testing.T) {
 
 func Test_HasContentTypeOctetStream(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -157,7 +157,7 @@ func Test_HasContentTypeOctetStream(t *testing.T) {
 
 func Test_HasVersionHeaderUnknown(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -177,7 +177,7 @@ func Test_HasVersionHeaderUnknown(t *testing.T) {
 
 func Test_404Routes(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -205,7 +205,7 @@ func Test_404Routes(t *testing.T) {
 
 func Test_404Routes_ExpvarPprofDisabled(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -233,7 +233,7 @@ func Test_404Routes_ExpvarPprofDisabled(t *testing.T) {
 
 func Test_405Routes(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -293,7 +293,7 @@ func Test_405Routes(t *testing.T) {
 
 func Test_400Routes(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -315,7 +315,7 @@ func Test_401Routes_NoBasicAuth(t *testing.T) {
 	c := &mockCredentialStore{CheckOK: false, HasPermOK: false}
 
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, c)
+	s := New("127.0.0.1:0", m, c, nil)
 	s.Expvar = true
 	s.Pprof = true
 	if err := s.Start(); err != nil {
@@ -353,7 +353,7 @@ func Test_401Routes_BasicAuthBadPassword(t *testing.T) {
 	c := &mockCredentialStore{CheckOK: false, HasPermOK: false}
 
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, c)
+	s := New("127.0.0.1:0", m, c, nil)
 	s.Expvar = true
 	s.Pprof = true
 	if err := s.Start(); err != nil {
@@ -396,7 +396,7 @@ func Test_401Routes_BasicAuthBadPerm(t *testing.T) {
 	c := &mockCredentialStore{CheckOK: true, HasPermOK: false}
 
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, c)
+	s := New("127.0.0.1:0", m, c, nil)
 	s.Expvar = true
 	s.Pprof = true
 	if err := s.Start(); err != nil {
@@ -437,7 +437,7 @@ func Test_401Routes_BasicAuthBadPerm(t *testing.T) {
 
 func Test_BackupOK(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
 	}
@@ -465,7 +465,7 @@ func Test_BackupFlagsNoLeader(t *testing.T) {
 		"api_proto": "http",
 	}
 
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
@@ -494,7 +494,7 @@ func Test_BackupFlagsNoLeader(t *testing.T) {
 func Test_BackupFlagsNoLeaderOK(t *testing.T) {
 	m := &MockStore{}
 
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 
 	if err := s.Start(); err != nil {
 		t.Fatalf("failed to start service")
@@ -522,7 +522,7 @@ func Test_BackupFlagsNoLeaderOK(t *testing.T) {
 func Test_RegisterStatus(t *testing.T) {
 	var stats *mockStatuser
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 
 	if err := s.RegisterStatus("foo", stats); err != nil {
 		t.Fatalf("failed to register statuser: %s", err.Error())
@@ -535,7 +535,7 @@ func Test_RegisterStatus(t *testing.T) {
 
 func Test_LeaderAPIAddrProto(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 
 	m.metadata = map[string]string{
 		"api_addr":  "1.2.3.4:999",
@@ -572,7 +572,7 @@ func Test_LeaderAPIAddrProto(t *testing.T) {
 
 func Test_FormRedirect(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	req := mustNewHTTPRequest("http://qux:4001")
 
 	if rd := s.FormRedirect(req, "http", "foo:4001"); rd != "http://foo:4001" {
@@ -585,7 +585,7 @@ func Test_FormRedirect(t *testing.T) {
 
 func Test_FormRedirectParam(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	req := mustNewHTTPRequest("http://qux:4001/db/query?x=y")
 
 	if rd := s.FormRedirect(req, "http", "foo:4001"); rd != "http://foo:4001/db/query?x=y" {
@@ -598,7 +598,7 @@ func Test_FormRedirectParam(t *testing.T) {
 
 func Test_FormRedirectHTTPS(t *testing.T) {
 	m := &MockStore{}
-	s := New("127.0.0.1:0", m, nil)
+	s := New("127.0.0.1:0", m, nil, nil)
 	req := mustNewHTTPRequest("http://qux:4001")
 
 	if rd := s.FormRedirect(req, "https", "foo:4001"); rd != "https://foo:4001" {
@@ -614,7 +614,7 @@ func Test_TLSServce(t *testing.T) {
 	var s *Service
 	tempDir := mustTempDir()
 
-	s = New("127.0.0.1:0", m, nil)
+	s = New("127.0.0.1:0", m, nil, nil)
 	s.CertFile = x509.CertFile(tempDir)
 	s.KeyFile = x509.KeyFile(tempDir)
 	s.BuildInfo = map[string]interface{}{

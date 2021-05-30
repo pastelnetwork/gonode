@@ -83,11 +83,7 @@ func (t *Transport) Dial(addr string, timeout time.Duration) (net.Conn, error) {
 
 // Accept waits for the next connection.
 func (t *Transport) Accept() (net.Conn, error) {
-	c, err := t.ln.Accept()
-	if err != nil {
-		fmt.Println("error accepting: ", err.Error())
-	}
-	return c, err
+	return t.ln.Accept()
 }
 
 // Close closes the transport

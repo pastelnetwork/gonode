@@ -15,7 +15,7 @@ const (
 	defaultRaftSnapInterval       = "30s"
 	defaultRaftLeaderLeaseTimeout = "0s"
 	defaultRaftShutdownOnRemove   = false
-	defaultRaftLogLevel           = "info"
+	defaultRaftLogLevel           = "error"
 	defaultCompressionSize        = 150
 	defaultCompressionBatch       = 5
 	defaultOnDisk                 = false

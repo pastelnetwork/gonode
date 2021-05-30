@@ -406,9 +406,9 @@ func startHTTPService(str *store.Store) error {
 	// Create HTTP server and load authentication information if required.
 	var s *httpd.Service
 	if credStr != nil {
-		s = httpd.New(httpAddr, str, credStr)
+		s = httpd.New(httpAddr, str, credStr, nil)
 	} else {
-		s = httpd.New(httpAddr, str, nil)
+		s = httpd.New(httpAddr, str, nil, nil)
 	}
 
 	s.CertFile = x509Cert
