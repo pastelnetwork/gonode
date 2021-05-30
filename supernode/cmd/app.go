@@ -123,8 +123,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	// <TODO> for testings
-	config.Node.ArtworkRegister.PastelID = "pastel id"
 	// new rqlite service
 	rqliteService := rqlite.NewService(&config.RQLite)
 
