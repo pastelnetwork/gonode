@@ -19,15 +19,15 @@ commands:
         type: string
     steps:
       - run:
-          name: "<< parameters.package >>: Fetch dependencies"
-          working_directory: ~/project/<< parameters.package >>
-          command: |
-            go get -v ./...
-      - run:
           name: "<< parameters.package >>: Go generate"
           working_directory: ~/project/<< parameters.package >>
           command: |
             go generate ./...
+      - run:
+          name: "<< parameters.package >>: Fetch dependencies"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            go get -v ./...
       - run:
           name: "<< parameters.package >>: Run gofmt"
           working_directory: ~/project/<< parameters.package >>
