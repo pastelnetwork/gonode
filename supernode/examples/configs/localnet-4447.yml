@@ -7,5 +7,9 @@ pastel-api:
 node:
   pastel_id: jXZDyPoescC4pgWMeD2qMzyPi5gaxMkkggrwGFAK2izTQgEkrjKqHSbG1HCfCFY9n3pAQ9q4VFHLrakL89bvfR
   server:
-    listen_addresses: "127.0.0.1"
+    listen_addresses: "0.0.0.0"
     port: 4447
+
+p2p:
+  listen_addresses: "0.0.0.0"
+  port: 4457

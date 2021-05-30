@@ -6,10 +6,10 @@ import (
 	"context"
 	"sync"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
-	"golang.org/x/sync/errgroup"
 )
 
 // Task represent a worker task.
@@ -89,8 +89,7 @@ func (task *task) RunAction(ctx context.Context) error {
 		case <-task.Done():
 			cancel()
 		case action := <-task.actionCh:
-			group.Go(func() (err error) {
-				defer errors.Recover(func(recErr error) { err = recErr })
+			group.Go(func() error {
 				defer close(action.doneCh)
 
 				return action.fn(ctx)

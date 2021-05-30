@@ -3,8 +3,7 @@ package cmd
 import (
 	"context"
 
-	"github.com/pastelnetwork/gonode/common/errors"
-	"golang.org/x/sync/errgroup"
+	"github.com/pastelnetwork/gonode/common/errgroup"
 )
 
 type service interface {
@@ -17,8 +16,7 @@ func runServices(ctx context.Context, services ...service) error {
 	for _, service := range services {
 		service := service
 
-		group.Go(func() (err error) {
-			defer errors.Recover(func(recErr error) { err = recErr })
+		group.Go(func() error {
 			return service.Run(ctx)
 		})
 	}

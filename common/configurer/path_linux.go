@@ -12,8 +12,8 @@ var defaultConfigPaths = []string{
 	".",
 }
 
-// DefaultConfigPath returns the default config path for Linux OS.
-func DefaultConfigPath(filename string) string {
+// DefaultPath returns the default config path for Linux OS.
+func DefaultPath() string {
 	homeDir, _ := os.UserHomeDir()
-	return filepath.Join(homeDir, ".pastel", filename)
+	return filepath.Join(homeDir, ".pastel")
 }
