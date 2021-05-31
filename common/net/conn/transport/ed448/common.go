@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
 )
 
 // ErrWrongFormat - error when structure can't be parsed
@@ -24,6 +25,7 @@ const (
 	typeClientHandshakeMsg
 	typeServerHandshakeMsg
 	typeEncryptedMsg
+	typeED448Msg
 )
 
 // EncryptionScheme type defines all supported encryption
@@ -56,13 +58,13 @@ type signedPastelID struct {
 }
 
 func readByteArray(reader *bytes.Reader) (*[]byte, error) {
-	var arrayLen int
-	if err := binary.Read(reader, binary.LittleEndian, &arrayLen); err != nil {
+	arrayLen, err := readInt(reader)
+	if err != nil {
 		return nil, err
 	}
 
 	array := make([]byte, arrayLen)
-	if _, err := reader.Read(array); err != nil {
+	if _, err := reader.Read(array); err != nil && err != io.EOF {
 		return nil, err
 	}
 
@@ -70,13 +72,13 @@ func readByteArray(reader *bytes.Reader) (*[]byte, error) {
 }
 
 func readString(reader *bytes.Reader) (*string, error) {
-	var strLen int
-	if err := binary.Read(reader, binary.LittleEndian, &strLen); err != nil {
+	strLen, err := readInt(reader)
+	if err != nil {
 		return nil, err
 	}
 
 	byteString := make([]byte, strLen)
-	if _, err := reader.Read(byteString); err != nil {
+	if _, err := reader.Read(byteString); err != nil && err != io.EOF {
 		return nil, err
 	}
 
@@ -85,20 +87,30 @@ func readString(reader *bytes.Reader) (*string, error) {
 	return &str, nil
 }
 
-func writeByteArray(writer *bytes.Buffer, array *[]byte) error {
+func writeByteArray(writer *bytes.Buffer, array *[]byte) {
 	arrayLen := len(*array)
-	if err := binary.Write(writer, binary.LittleEndian, arrayLen); err != nil {
-		return err
-	}
+	writeInt(writer, arrayLen)
 	writer.Write(*array)
-	return nil
 }
 
-func writeString(writer *bytes.Buffer, str *string) error {
+func writeString(writer *bytes.Buffer, str *string) {
 	strLen := len(*str)
-	if err := binary.Write(writer, binary.LittleEndian, strLen); err != nil {
-		return err
-	}
+	writeInt(writer, strLen)
 	writer.WriteString(*str)
-	return nil
+}
+
+func writeInt(writer *bytes.Buffer, val int) {
+	var buff = make([]byte, 4)
+	binary.LittleEndian.PutUint32(buff, uint32(val))
+
+	writer.Write(buff)
+}
+
+func readInt(reader *bytes.Reader) (int, error) {
+	var buff = make([]byte, 4)
+	if _, err := reader.Read(buff); err != nil && err != io.EOF {
+		return 0, err
+	}
+
+	return int(binary.LittleEndian.Uint32(buff)), nil
 }

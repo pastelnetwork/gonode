@@ -11,10 +11,10 @@ type Transport interface {
 }
 
 type Crypto interface {
-	Configure(string) error
+	Configure(rawData []byte) error
 	Decrypt([]byte) ([]byte, error)
 	Encrypt([]byte) ([]byte, error)
-	GetConfiguration() string
+	GetConfiguration() []byte
 	FrameSize() int
 	About() string
 }

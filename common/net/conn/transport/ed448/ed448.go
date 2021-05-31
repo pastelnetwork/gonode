@@ -1,11 +1,17 @@
 package ed448
 
 import (
+	"encoding/binary"
 	"github.com/pastelnetwork/gonode/common/net/conn/transport"
 	"io"
 	"math/rand"
 	"net"
 )
+
+// it contains packet type 1 byte
+// 4 bytes - packet size
+// 12 bytes - additional data for the future extends
+const ed448PacketHeaderLen = 17
 
 type Ed448 struct {
 	cryptos                map[string]transport.Crypto
@@ -31,8 +37,20 @@ func (transport *Ed448) IsHandshakeEstablished() bool {
 func (transport *Ed448) readRecord(conn net.Conn) (interface{}, error) {
 	buf := make([]byte, 0, 4096) // big buffer
 	tmp := make([]byte, 256)     // using small buffer
+	packetHeader := make([]byte, ed448PacketHeaderLen)
 
-	for {
+	read, err := conn.Read(packetHeader)
+	if err != nil {
+		return nil, err
+	}
+
+	if read != ed448PacketHeaderLen {
+		return nil, ErrWrongFormat
+	}
+
+	expected := int(binary.LittleEndian.Uint32(packetHeader[1:5]))
+
+	for expected != 0 {
 		n, err := conn.Read(tmp)
 		if err != nil {
 			if err != io.EOF {
@@ -41,10 +59,7 @@ func (transport *Ed448) readRecord(conn net.Conn) (interface{}, error) {
 			break
 		}
 		buf = append(buf, tmp[:n]...)
-
-	}
-	if _, err := conn.Read(buf); err == nil {
-		return nil, err
+		expected -= n
 	}
 
 	// trying to decrypt message
@@ -68,6 +83,15 @@ func (transport *Ed448) writeRecord(msg message, conn net.Conn) error {
 		return err
 	}
 
+	size := len(data)
+	var packetHeader = make([]byte, ed448PacketHeaderLen) // header + packet size + 4 additional bytes for the future
+	packetHeader[0] = typeED448Msg
+	binary.LittleEndian.PutUint32(packetHeader[1:], uint32(size))
+
+	if _, err := conn.Write(packetHeader); err != nil {
+		return err
+	}
+
 	if _, err := conn.Write(data); err != nil {
 		return err
 	}
@@ -75,7 +99,7 @@ func (transport *Ed448) writeRecord(msg message, conn net.Conn) error {
 	return nil
 }
 
-func (transport *Ed448) initEncryptedConnection(conn net.Conn, cryptoAlias string, params string) (net.Conn, error) {
+func (transport *Ed448) initEncryptedConnection(conn net.Conn, cryptoAlias string, params []byte) (net.Conn, error) {
 	crypto := transport.cryptos[cryptoAlias]
 	if crypto == nil {
 		return nil, ErrUnsupportedEncryption

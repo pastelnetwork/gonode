@@ -13,9 +13,7 @@ type ServerHelloMessage struct {
 func (msg *ServerHelloMessage) marshall() ([]byte, error) {
 	encodedMsg := bytes.Buffer{}
 	encodedMsg.WriteByte(typeServerHello)
-	if err := writeString(&encodedMsg, &msg.chosenEncryption); err != nil {
-		return nil, err
-	}
+	writeString(&encodedMsg, &msg.chosenEncryption)
 	encodedMsg.WriteByte(byte(msg.chosenSignature))
 	return encodedMsg.Bytes(), nil
 }
@@ -49,30 +47,23 @@ type ServerHandshakeMessage struct {
 	signedPastelID   []byte
 	pubKey           []byte
 	ctx              []byte
-	encryptionParams string
+	encryptionParams []byte
 }
 
 func (msg *ServerHandshakeMessage) marshall() ([]byte, error) {
 	encodedMsg := bytes.Buffer{}
-	encodedMsg.WriteByte(typeClientHandshakeMsg)
-	if err := writeByteArray(&encodedMsg, &msg.pastelID); err != nil {
-		return nil, err
-	}
-	if err := writeByteArray(&encodedMsg, &msg.pubKey); err != nil {
-		return nil, err
-	}
-	if err := writeByteArray(&encodedMsg, &msg.ctx); err != nil {
-		return nil, err
-	}
-	if err := writeString(&encodedMsg, &msg.encryptionParams); err != nil {
-		return nil, err
-	}
+	encodedMsg.WriteByte(typeServerHandshakeMsg)
+	writeByteArray(&encodedMsg, &msg.pastelID)
+	writeByteArray(&encodedMsg, &msg.signedPastelID)
+	writeByteArray(&encodedMsg, &msg.pubKey)
+	writeByteArray(&encodedMsg, &msg.ctx)
+	writeByteArray(&encodedMsg, &msg.encryptionParams)
 	return encodedMsg.Bytes(), nil
 }
 
 // DecodeServerHandshakeMsg - unmarshall []byte to ServerHandshakeMessage
 func DecodeServerHandshakeMsg(msg []byte) (*ServerHandshakeMessage, error) {
-	if msg[0] != typeClientHandshakeMsg {
+	if msg[0] != typeServerHandshakeMsg {
 		return nil, ErrWrongFormat
 	}
 
@@ -107,6 +98,6 @@ func DecodeServerHandshakeMsg(msg []byte) (*ServerHandshakeMessage, error) {
 		signedPastelID:   *signedPastelID,
 		pubKey:           *pubKey,
 		ctx:              *ctx,
-		encryptionParams: string(*encryptionParams),
+		encryptionParams: *encryptionParams,
 	}, nil
 }

@@ -32,7 +32,7 @@ func (transport *Ed448) ClientHandshake(conn net.Conn) (net.Conn, error) {
 		return nil, err
 	}
 
-	if transport.verifySignature(serverHandshakeMessage.ctx, serverHandshakeMessage.signedPastelID, serverHandshakeMessage.pastelID, serverHandshakeMessage.pubKey) {
+	if !transport.verifySignature(serverHandshakeMessage.ctx, serverHandshakeMessage.signedPastelID, serverHandshakeMessage.pastelID, serverHandshakeMessage.pubKey) {
 		return nil, ErrWrongSignature
 	}
 

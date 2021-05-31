@@ -2,7 +2,6 @@ package ed448
 
 import (
 	"bytes"
-	"encoding/binary"
 )
 
 // ClientHelloMessage - first Client message during handshake
@@ -17,18 +16,12 @@ func (msg *ClientHelloMessage) marshall() ([]byte, error) {
 	var supportedSignatureAlgorithmsCount = len(msg.supportedSignatureAlgorithms)
 
 	encodedMsg.WriteByte(typeClientHello)
-	if err := binary.Write(&encodedMsg, binary.LittleEndian, supportedEncryptionsCount); err != nil {
-		return nil, err
-	}
+	writeInt(&encodedMsg, supportedEncryptionsCount)
 	for _, encryption := range msg.supportedEncryptions {
-		if err := writeString(&encodedMsg, &encryption); err != nil {
-			return nil, err
-		}
+		writeString(&encodedMsg, &encryption)
 	}
 
-	if err := binary.Write(&encodedMsg, binary.LittleEndian, supportedSignatureAlgorithmsCount); err != nil {
-		return nil, err
-	}
+	writeInt(&encodedMsg, supportedSignatureAlgorithmsCount)
 
 	for _, signature := range msg.supportedSignatureAlgorithms {
 		encodedMsg.WriteByte(byte(signature))
@@ -43,8 +36,8 @@ func DecodeClientMsg(msg []byte) (*ClientHelloMessage, error) {
 	}
 	reader := bytes.NewReader(msg[1:])
 
-	var supportedEncryptionsCount int
-	if err := binary.Read(reader, binary.LittleEndian, &supportedEncryptionsCount); err != nil {
+	supportedEncryptionsCount, err := readInt(reader)
+	if err != nil {
 		return nil, err
 	}
 
@@ -57,8 +50,8 @@ func DecodeClientMsg(msg []byte) (*ClientHelloMessage, error) {
 		supportedEncryptions[i] = *encryption
 	}
 
-	var supportedSignatureAlgorithmsCount int
-	if err := binary.Read(reader, binary.LittleEndian, &supportedSignatureAlgorithmsCount); err != nil {
+	supportedSignatureAlgorithmsCount, err := readInt(reader)
+	if err != nil {
 		return nil, err
 	}
 	supportedSignatureAlgorithms := make([]SignScheme, supportedEncryptionsCount)
@@ -87,18 +80,10 @@ type ClientHandshakeMessage struct {
 func (msg *ClientHandshakeMessage) marshall() ([]byte, error) {
 	var encodedMsg = bytes.Buffer{}
 	encodedMsg.WriteByte(typeClientHandshakeMsg)
-	if err := writeByteArray(&encodedMsg, &msg.pastelID); err != nil {
-		return nil, err
-	}
-	if err := writeByteArray(&encodedMsg, &msg.signedPastelID); err != nil {
-		return nil, err
-	}
-	if err := writeByteArray(&encodedMsg, &msg.pubKey); err != nil {
-		return nil, err
-	}
-	if err := writeByteArray(&encodedMsg, &msg.ctx); err != nil {
-		return nil, err
-	}
+	writeByteArray(&encodedMsg, &msg.pastelID)
+	writeByteArray(&encodedMsg, &msg.signedPastelID)
+	writeByteArray(&encodedMsg, &msg.pubKey)
+	writeByteArray(&encodedMsg, &msg.ctx)
 
 	return encodedMsg.Bytes(), nil
 }

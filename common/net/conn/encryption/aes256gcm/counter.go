@@ -1,4 +1,4 @@
-package aes265gcm
+package aes256gcm
 
 import "errors"
 
@@ -20,14 +20,6 @@ func NewCounter(overflowLen int) Counter {
 		overflowLen: overflowLen,
 	}
 	counter.value[counterLen-1] = 0x80
-	return counter
-}
-
-func CounterFromValue(value []byte, overflowLen int) Counter {
-	counter := Counter{
-		overflowLen: overflowLen,
-	}
-	copy(counter.value[:], value)
 	return counter
 }
 

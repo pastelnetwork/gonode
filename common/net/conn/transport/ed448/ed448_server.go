@@ -54,6 +54,7 @@ func (transport *Ed448) readClientHello(conn net.Conn) (*ClientHelloMessage, err
 func (transport *Ed448) chooseEncryption(clientEncryptions []string) (string, error) {
 	for _, encryption := range clientEncryptions {
 		if _, ok := transport.cryptos[encryption]; ok == true {
+			transport.chosenEncryptionScheme = encryption
 			return encryption, nil
 		}
 	}

@@ -1,4 +1,4 @@
-package aes265gcm
+package aes256gcm
 
 import (
 	"crypto/aes"
@@ -10,12 +10,12 @@ import (
 const (
 	// Overflow length n in bytes, never encrypt more than 2^(n*8) frames (in
 	// each direction).
-	overflowLenAES265GCMGCM = 10
-	AES265GCMGCMFrameSize   = 32
+	overflowLenAES256GCMGCM = 10
+	AES256GCMGCMFrameSize   = 32
 )
 
-// AES265GCM struct to work with encode and decode
-type AES265GCM struct {
+// AES256GCM struct to work with encode and decode
+type AES256GCM struct {
 	configuration []byte
 	block         cipher.Block
 	aead          cipher.AEAD
@@ -23,13 +23,13 @@ type AES265GCM struct {
 	outCounter    Counter
 }
 
-// KeySizeError - error when passed wrong size of AES265GCM key
+// KeySizeError - error when passed wrong size of AES256GCM key
 func KeySizeError(size int) error {
 	return errors.New("crypto/aes: invalid key size " + strconv.Itoa(size) + " expected 32 bytes.")
 }
 
-// New - Creates AES265GCMCrypto based on passed key that it's going to be used in ecryption process
-func New(key []byte) (*AES265GCM, error) {
+// New - Creates AES256GCMCrypto based on passed key that it's going to be used in ecryption process
+func New(key []byte) (*AES256GCM, error) {
 	if len(key) != 32 {
 		return nil, KeySizeError(len(key))
 	}
@@ -44,20 +44,20 @@ func New(key []byte) (*AES265GCM, error) {
 		return nil, err
 	}
 
-	return &AES265GCM{
+	return &AES256GCM{
 		configuration: key,
 		block:         block,
 		aead:          aead,
-		inCounter:     NewCounter(overflowLenAES265GCMGCM),
-		outCounter:    NewCounter(overflowLenAES265GCMGCM),
+		inCounter:     NewCounter(overflowLenAES256GCMGCM),
+		outCounter:    NewCounter(overflowLenAES256GCMGCM),
 	}, nil
 }
 
-func (crypto *AES265GCM) GetConfiguration() []byte {
+func (crypto *AES256GCM) GetConfiguration() []byte {
 	return crypto.configuration
 }
 
-func (crypto *AES265GCM) Configure(rawData []byte) error {
+func (crypto *AES256GCM) Configure(rawData []byte) error {
 	crypto.configuration = rawData
 	block, err := aes.NewCipher(rawData)
 	if err != nil {
@@ -72,20 +72,20 @@ func (crypto *AES265GCM) Configure(rawData []byte) error {
 	crypto.aead = aead
 
 	// reset counters
-	crypto.inCounter = NewCounter(overflowLenAES265GCMGCM)
-	crypto.outCounter = NewCounter(overflowLenAES265GCMGCM)
+	crypto.inCounter = NewCounter(overflowLenAES256GCMGCM)
+	crypto.outCounter = NewCounter(overflowLenAES256GCMGCM)
 	return nil
 }
 
-func (crypto *AES265GCM) FrameSize() int {
-	return AES265GCMGCMFrameSize
+func (crypto *AES256GCM) FrameSize() int {
+	return AES256GCMGCMFrameSize
 }
 
-func (crypto *AES265GCM) About() string {
-	return "AES265GCMGCM"
+func (crypto *AES256GCM) About() string {
+	return "AES256GMC"
 }
 
-func (crypto *AES265GCM) Encrypt(plainText []byte) ([]byte, error) {
+func (crypto *AES256GCM) Encrypt(plainText []byte) ([]byte, error) {
 	seq, err := crypto.outCounter.Value()
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (crypto *AES265GCM) Encrypt(plainText []byte) ([]byte, error) {
 	return cipherText, nil
 }
 
-func (crypto *AES265GCM) Decrypt(cipherText []byte) ([]byte, error) {
+func (crypto *AES256GCM) Decrypt(cipherText []byte) ([]byte, error) {
 	seq, err := crypto.inCounter.Value()
 	if err != nil {
 		return nil, err

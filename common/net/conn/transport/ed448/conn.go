@@ -68,11 +68,11 @@ func (c *conn) Write(b []byte) (int, error) {
 		frameCount += 1
 	}
 
-	header := make([]byte, 5+frameCount*c.crypto.FrameSize())
+	header := make([]byte, 5)
 	header[0] = typeEncryptedMsg
-	binary.LittleEndian.PutUint32(header[1:], uint32(frameCount*c.crypto.FrameSize()))
 	// encrypt data
 	encrypted, err := c.crypto.Encrypt(b)
+	binary.LittleEndian.PutUint32(header[1:], uint32(len(encrypted)))
 	if err != nil {
 		return 0, err
 	}
