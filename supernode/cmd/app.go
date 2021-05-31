@@ -54,12 +54,19 @@ func NewApp() *cli.App {
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
+		cli.NewFlag("listen-addr", &config.Node.Server.ListenAddresses).SetUsage("Set server bind address.").SetValue(config.Node.Server.ListenAddresses),
+		cli.NewFlag("listen-port", &config.Node.Server.Port).SetUsage("Set server bind port.").SetValue(config.Node.Server.Port),
 
 		// for rqlite cluster
-		cli.NewFlag("rqlite-http-addr", &config.Node.RQLite.HTTPAddress).SetUsage("Set http server bind address").SetValue(config.Node.RQLite.HTTPAddress),
-		cli.NewFlag("rqlite-raft-addr", &config.Node.RQLite.RaftAddress).SetUsage("Set raft communication bind address").SetValue(config.Node.RQLite.RaftAddress),
-		cli.NewFlag("rqlite-join", &config.Node.RQLite.JoinAddress).SetUsage("Set a cluster can be joined (proto://host:port), comma-delimited list of nodes").SetValue(config.Node.RQLite.JoinAddress),
-		cli.NewFlag("rqlite-raft-log-level", &config.Node.RQLite.RaftLogLevel).SetUsage("Set log level for raft module").SetValue(config.Node.RQLite.RaftLogLevel),
+		cli.NewFlag("rqlite-node-id", &config.Node.RQLite.NodeID).SetUsage("Set unique name for node.").SetValue(config.Node.RQLite.NodeID),
+		cli.NewFlag("rqlite-http-addr", &config.Node.RQLite.HTTPAddress).SetUsage("Set http server bind address.").SetValue(config.Node.RQLite.HTTPAddress),
+		cli.NewFlag("rqlite-raft-addr", &config.Node.RQLite.RaftAddress).SetUsage("Set raft communication bind address.").SetValue(config.Node.RQLite.RaftAddress),
+		cli.NewFlag("rqlite-join", &config.Node.RQLite.JoinAddress).SetUsage("Set a cluster can be joined (proto://host:port), comma-delimited list of nodes.").SetValue(config.Node.RQLite.JoinAddress),
+		cli.NewFlag("rqlite-raft-log-level", &config.Node.RQLite.RaftLogLevel).SetUsage("Set log level for raft module.").SetValue(config.Node.RQLite.RaftLogLevel),
+		cli.NewFlag("rqlite-on-disk", &config.Node.RQLite.OnDisk).SetUsage("Set an on-disk sqlite database.").SetValue(config.Node.RQLite.OnDisk),
+		cli.NewFlag("rqlite-data-dir", &config.Node.RQLite.DataDir).SetUsage("Set data directory for files.").SetValue(config.Node.RQLite.DataDir),
+		cli.NewFlag("rqlite-discovery-id", &config.Node.RQLite.DiscoveryID).SetUsage("Set discovery id, if not set, discovery service not used.").SetValue(config.Node.RQLite.DiscoveryID),
+		cli.NewFlag("rqlite-discovery-url", &config.Node.RQLite.DiscoveryURL).SetUsage("Set discovery service url.").SetValue(config.Node.RQLite.DiscoveryURL),
 	)
 
 	app.SetActionFunc(func(ctx context.Context, args []string) error {
