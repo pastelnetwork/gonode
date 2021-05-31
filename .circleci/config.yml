@@ -147,7 +147,7 @@ commands:
       - run:
           name: "<< parameters.moduleSubDir >> << parameters.package >>: xgo build for << parameters.targets >>"
           command: |
-            GOPATH= xgo -go go-1.16.x --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
+            GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
 
             mkdir -p << parameters.outputDirectory >>
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
@@ -333,8 +333,16 @@ jobs:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
           package: ""
-          targets: "darwin-10.14/amd64,windows/amd64,"
+          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
           binaryName: "walletnode"
+      - build:
+          buildContainerName: "supernode"
+          moduleSubDir: "supernode"
+          package: ""
+          targets: "linux/amd64,"
+          binaryName: "supernode"
+      - store_artifacts:
+          path: "build"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
