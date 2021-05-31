@@ -22,7 +22,6 @@ const (
 // Service represents the rqlite cluster
 type Service struct {
 	config *Config
-	db     *store.Store
 }
 
 // New returns a new service for rqlite cluster
@@ -125,7 +124,6 @@ func (s *Service) Run(ctx context.Context) error {
 		ID:     s.idOrRaftAddr(),
 		Logger: log.DefaultLogger.WithField("prefix", "store"),
 	})
-	s.db = db
 
 	var err error
 	// set optional parameters on store
