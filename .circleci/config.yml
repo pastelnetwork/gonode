@@ -147,7 +147,7 @@ commands:
       - run:
           name: "<< parameters.moduleSubDir >> << parameters.package >>: xgo build for << parameters.targets >>"
           command: |
-            GOPATH= xgo -go go-1.16.x --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
+            GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
 
             mkdir -p << parameters.outputDirectory >>
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
