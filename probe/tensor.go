@@ -14,8 +14,8 @@ const logTensorPrefix = "tensor"
 
 // Tensor represents image analysis based on machine learning methods.
 type Tensor interface {
-	// Fingerpint computes fingerprints for the given image.
-	Fingerpint(ctx context.Context, img image.Image) ([][]float32, error)
+	// Fingerprints computes and returns fingerprints for the given image by models.
+	Fingerprints(ctx context.Context, img image.Image) (Fingerprints, error)
 
 	// LoadModels loads all models.
 	LoadModels(ctx context.Context) error
@@ -27,8 +27,8 @@ type tensor struct {
 	baseDir  string
 }
 
-// Fingerpint implements tensor.Tensor.Fingerpint
-func (tensor *tensor) Fingerpint(ctx context.Context, img image.Image) ([][]float32, error) {
+// Fingerprints implements tensor.Tensor.Fingerprints
+func (tensor *tensor) Fingerprints(ctx context.Context, img image.Image) (Fingerprints, error) {
 	ctx = log.ContextWithPrefix(ctx, logTensorPrefix)
 
 	var inputTensor [1][224][224][3]float32
@@ -46,7 +46,17 @@ func (tensor *tensor) Fingerpint(ctx context.Context, img image.Image) ([][]floa
 		}
 	}
 
-	return tensor.tfModels.Exec(ctx, inputTensor)
+	fg, err := tensor.tfModels.Exec(ctx, inputTensor)
+	if err != nil {
+		return nil, err
+	}
+
+	fingerprints := make(Fingerprints, len(fg))
+	for i, f := range fg {
+		fingerprints[i] = f
+	}
+	return fingerprints, nil
+
 }
 
 // LoadModels implements tensor.Tensor.LoadModels
