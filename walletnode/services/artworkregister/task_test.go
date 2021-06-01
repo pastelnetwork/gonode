@@ -28,79 +28,6 @@ func pullPastelIDNodes(nodes Nodes) []string {
 	return v
 }
 
-func TestTaskRun(t *testing.T) {
-	t.Parallel()
-
-	type fields struct {
-		Task    task.Task
-		Service *Service
-		Ticket  *Ticket
-	}
-	type args struct {
-		ctx context.Context
-	}
-
-	testCases := []struct {
-		name      string
-		fields    fields
-		args      args
-		assertion assert.ErrorAssertionFunc
-	}{
-		// TODO: Add test cases.
-	}
-
-	for _, testCase := range testCases {
-		testCase := testCase
-
-		t.Run(testCase.name, func(t *testing.T) {
-			t.Parallel()
-
-			task := &Task{
-				Task:    testCase.fields.Task,
-				Service: testCase.fields.Service,
-				Ticket:  testCase.fields.Ticket,
-			}
-			testCase.assertion(t, task.Run(testCase.args.ctx))
-		})
-	}
-}
-
-func TestTask_run(t *testing.T) {
-	t.Parallel()
-
-	type fields struct {
-		Task    task.Task
-		Service *Service
-		Ticket  *Ticket
-	}
-
-	type args struct {
-		ctx context.Context
-	}
-
-	testCases := []struct {
-		name      string
-		fields    fields
-		args      args
-		assertion assert.ErrorAssertionFunc
-	}{
-		// TODO: Add test cases.
-	}
-
-	for _, testCase := range testCases {
-		testCase := testCase
-
-		t.Run(testCase.name, func(t *testing.T) {
-			task := &Task{
-				Task:    testCase.fields.Task,
-				Service: testCase.fields.Service,
-				Ticket:  testCase.fields.Ticket,
-			}
-			testCase.assertion(t, task.run(testCase.args.ctx))
-		})
-	}
-}
-
 func TestTaskMeshNodes(t *testing.T) {
 	t.Parallel()
 
@@ -156,19 +83,15 @@ func TestTaskMeshNodes(t *testing.T) {
 			nodesClientMock := test.NewClients()
 			nodes := testCase.args.nodes
 
-			for i, node := range nodes {
+			for _, node := range nodes {
 				nodeClient := test.NewMockClient()
 				nodeClient.
 					ListenOnConnect(testCase.args.returnErr).
 					ListenOnRegisterArtwork().
 					ListenOnSession(testCase.args.returnErr).
 					ListenOnConnectTo(testCase.args.returnErr).
-					ListenOnSessID(testCase.args.primarySessID)
-
-				//only listen AcceptedNodes when node is primary
-				if i == testCase.args.primaryIndex {
-					nodeClient.ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr)
-				}
+					ListenOnSessID(testCase.args.primarySessID).
+					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr)
 
 				node.client = nodeClient.ClientMock
 				nodesClientMock.Add(nodeClient)
@@ -211,12 +134,12 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 	}
 
 	type args struct {
-		ctx       context.Context
-		pastelFee *pastel.StorageFee
-		returnErr error
+		ctx        context.Context
+		networkFee *pastel.StorageFee
+		returnErr  error
 	}
 
-	tests := []struct {
+	testCases := []struct {
 		name      string
 		fields    fields
 		args      args
@@ -228,8 +151,8 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 				Ticket: &Ticket{MaximumFee: 0.5},
 			},
 			args: args{
-				ctx:       context.Background(),
-				pastelFee: &pastel.StorageFee{NetworkFee: 0.49},
+				ctx:        context.Background(),
+				networkFee: &pastel.StorageFee{NetworkFee: 0.49},
 			},
 			want:      true,
 			assertion: assert.NoError,
@@ -239,8 +162,8 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 				Ticket: &Ticket{MaximumFee: 0.5},
 			},
 			args: args{
-				ctx:       context.Background(),
-				pastelFee: &pastel.StorageFee{NetworkFee: 0.51},
+				ctx:        context.Background(),
+				networkFee: &pastel.StorageFee{NetworkFee: 0.51},
 			},
 			want:      false,
 			assertion: assert.NoError,
@@ -255,31 +178,31 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
+	for _, testCase := range testCases {
+		testCase := testCase
 
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
 			//create new mock service
 			pastelClientMock := pastelMock.NewMockPastelClient()
-			pastelClientMock.ListenOnStorageFee(tt.args.pastelFee, tt.args.returnErr)
+			pastelClientMock.ListenOnStorageFee(testCase.args.networkFee, testCase.args.returnErr)
 			service := &Service{
 				pastelClient: pastelClientMock.PastelMock,
 			}
 
 			task := &Task{
 				Service: service,
-				Ticket:  tt.fields.Ticket,
+				Ticket:  testCase.fields.Ticket,
 			}
 
-			got, err := task.isSuitableStorageFee(tt.args.ctx)
-			tt.assertion(t, err)
-			assert.Equal(t, tt.want, got)
+			got, err := task.isSuitableStorageFee(testCase.args.ctx)
+			testCase.assertion(t, err)
+			assert.Equal(t, testCase.want, got)
 
 			//pastelClient mock assertion
 			pastelClientMock.PastelMock.AssertExpectations(t)
-			pastelClientMock.PastelMock.AssertCalled(t, "StorageFee", tt.args.ctx)
+			pastelClientMock.PastelMock.AssertCalled(t, "StorageFee", testCase.args.ctx)
 			pastelClientMock.PastelMock.AssertNumberOfCalls(t, "StorageFee", 1)
 		})
 	}
