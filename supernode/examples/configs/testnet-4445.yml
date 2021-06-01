@@ -9,3 +9,10 @@ node:
     # `listen_address` and `port` must match to `extAddress` from masternode.conf
     listen_addresses: "127.0.0.1"
     port: 4445
+  rqlite:
+    http_address: "localhost:4003"
+    raft_address: "localhost:4004"
+    node_id: "2"
+    data_dir: "data/node2"
+    raft_open_timeout: "5s"
+    join_address: "http://localhost:4001"
