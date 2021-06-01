@@ -29,7 +29,7 @@ func (models *List) Exec(ctx context.Context, value interface{}) ([][]float32, e
 	fingerprints := make([][]float32, len(*models))
 
 	if len(*models) == 0 {
-		log.WithContext(ctx).Warn("Empty models list")
+		log.WithContext(ctx).Warn("Empty model list")
 		return fingerprints, nil
 	}
 
