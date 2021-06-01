@@ -101,7 +101,7 @@ type Config struct {
 	// Skip verification of a remote node cert
 	NodeNoVerify bool `mapstructure:"node_no_verify" json:"node_no_verify,omitempty"`
 	// Path to authentication and authorization file. If not set, not enabled
-	authFile string `mapstructure:"auth_file" json:"auth_file"`
+	AuthFile string `mapstructure:"auth_file" json:"auth_file,omitempty"`
 }
 
 // NewConfig returns a new Config instance.

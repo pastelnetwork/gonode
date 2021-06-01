@@ -87,11 +87,11 @@ func (s *Service) waitForConsensus(ctx context.Context, dbStore *store.Store) er
 
 // open the auth file, and returns a credential store instance
 func (s *Service) credentialStore() (*auth.CredentialsStore, error) {
-	if s.config.authFile == "" {
+	if s.config.AuthFile == "" {
 		return nil, nil
 	}
 
-	file, err := os.Open(s.config.authFile)
+	file, err := os.Open(s.config.AuthFile)
 	if err != nil {
 		return nil, fmt.Errorf("open authentication file: %v", err)
 	}
