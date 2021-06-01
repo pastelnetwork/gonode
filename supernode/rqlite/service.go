@@ -2,9 +2,8 @@ package rqlite
 
 import (
 	"context"
-	"errors"
 
-	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/rqlite/command"
 	"github.com/pastelnetwork/gonode/rqlite/db"
 	"github.com/pastelnetwork/gonode/rqlite/store"
@@ -57,8 +56,8 @@ func (s *Service) Execute(ctx context.Context, sqls []string) ([]*db.Result, err
 	// execute the command by store
 	results, err := s.db.Execute(er)
 	if err != nil {
-		log.WithContext(ctx).Errorf("store execute %s: %v", sqls, err)
-		return nil, err
+		return nil, errors.Errorf("store execute statements: %v", err)
 	}
-	return results, err
+
+	return results, nil
 }

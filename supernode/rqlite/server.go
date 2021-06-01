@@ -4,12 +4,12 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/rqlite/auth"
 	"github.com/pastelnetwork/gonode/rqlite/cluster"
@@ -49,7 +49,7 @@ func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) 
 		c := disco.New(s.config.DiscoveryURL)
 		r, err := c.Register(s.config.DiscoveryID, apiAdv)
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("discovery register: %v", err)
 		}
 		log.WithContext(ctx).Infof("discovery service responded with nodes:", r.Nodes)
 
@@ -67,21 +67,22 @@ func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) 
 func (s *Service) waitForConsensus(ctx context.Context, dbStore *store.Store) error {
 	openTimeout, err := time.ParseDuration(s.config.RaftOpenTimeout)
 	if err != nil {
-		return fmt.Errorf("parse RaftOpenTimeout: %v", err)
+		return errors.Errorf("parse RaftOpenTimeout: %v", err)
 	}
 	if _, err := dbStore.WaitForLeader(openTimeout); err != nil {
 		if s.config.RaftWaitForLeader {
-			return fmt.Errorf("leader did not appear within timeout: %v", err)
+			return errors.Errorf("leader did not appear within timeout: %v", err)
 		}
 		log.WithContext(ctx).Infof("ignoring error while waiting for leader")
 	}
 	if openTimeout != 0 {
 		if err := dbStore.WaitForApplied(openTimeout); err != nil {
-			return fmt.Errorf("log was not fully applied within timeout: %s", err.Error())
+			return errors.Errorf("store log not applied within timeout: %s", err.Error())
 		}
 	} else {
 		log.WithContext(ctx).Info("not waiting for logs to be applied")
 	}
+
 	return nil
 }
 
@@ -93,12 +94,12 @@ func (s *Service) credentialStore() (*auth.CredentialsStore, error) {
 
 	file, err := os.Open(s.config.AuthFile)
 	if err != nil {
-		return nil, fmt.Errorf("open authentication file: %v", err)
+		return nil, errors.Errorf("open authentication file: %v", err)
 	}
 
 	store := auth.NewCredentialsStore()
 	if store.Load(file); err != nil {
-		return nil, err
+		return nil, errors.Errorf("store load: %v", err)
 	}
 	return store, nil
 }
@@ -110,8 +111,7 @@ func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store) err
 	// load the credential store
 	cred, err := s.credentialStore()
 	if err != nil {
-		log.WithContext(ctx).Errorf("laod credentail store: %v", err)
-		return err
+		return errors.Errorf("load credentail store: %v", err)
 	}
 
 	var server *httpd.Service
@@ -149,8 +149,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	}
 	// open the tcp transport which bind the raft address
 	if err := transport.Open(s.config.RaftAddress); err != nil {
-		log.WithContext(ctx).Errorf("open internode network layer: %v", err)
-		return err
+		return errors.Errorf("open internode network layer: %v", err)
 	}
 
 	// create and open the store
@@ -170,28 +169,23 @@ func (s *Service) startServer(ctx context.Context) error {
 	db.SnapshotThreshold = s.config.RaftSnapThreshold
 	db.SnapshotInterval, err = time.ParseDuration(s.config.RaftSnapInterval)
 	if err != nil {
-		log.WithContext(ctx).Errorf("parse RaftSnapInterval: %v", err)
-		return err
+		return errors.Errorf("parse RaftSnapInterval: %v", err)
 	}
 	db.LeaderLeaseTimeout, err = time.ParseDuration(s.config.RaftLeaderLeaseTimeout)
 	if err != nil {
-		log.WithContext(ctx).Errorf("parse RaftLeaderLeaseTimeout: %v", err)
-		return err
+		return errors.Errorf("parse RaftLeaderLeaseTimeout: %v", err)
 	}
 	db.HeartbeatTimeout, err = time.ParseDuration(s.config.RaftHeartbeatTimeout)
 	if err != nil {
-		log.WithContext(ctx).Errorf("parse RaftHeartbeatTimeout: %v", err)
-		return err
+		return errors.Errorf("parse RaftHeartbeatTimeout: %v", err)
 	}
 	db.ElectionTimeout, err = time.ParseDuration(s.config.RaftElectionTimeout)
 	if err != nil {
-		log.WithContext(ctx).Errorf("parse RaftElectionTimeout: %v", err)
-		return err
+		return errors.Errorf("parse RaftElectionTimeout: %v", err)
 	}
 	db.ApplyTimeout, err = time.ParseDuration(s.config.RaftApplyTimeout)
 	if err != nil {
-		log.WithContext(ctx).Errorf("parse RaftApplyTimeout: %v", err)
-		return err
+		return errors.Errorf("parse RaftApplyTimeout: %v", err)
 	}
 
 	// a pre-existing node
@@ -206,8 +200,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	// determine the join addresses
 	joins, err := s.determineJoinAddresses(ctx)
 	if err != nil {
-		log.WithContext(ctx).Errorf("determine join addresses: %v", err)
-		return err
+		return errors.Errorf("determine join addresses: %v", err)
 	}
 	// supplying join addresses means bootstrapping a new cluster won't be required.
 	if len(joins) > 0 {
@@ -223,8 +216,7 @@ func (s *Service) startServer(ctx context.Context) error {
 
 	// open store
 	if err := db.Open(bootstrap); err != nil {
-		log.WithContext(ctx).Errorf("open store: %v", err)
-		return err
+		return errors.Errorf("open store: %v", err)
 	}
 	s.db = db
 
@@ -252,21 +244,18 @@ func (s *Service) startServer(ctx context.Context) error {
 		// try to parse the join duration
 		joinDuration, err := time.ParseDuration(s.config.JoinInterval)
 		if err != nil {
-			log.WithContext(ctx).Errorf("parse JoinInterval: %v", err)
-			return err
+			return errors.Errorf("parse JoinInterval: %v", err)
 		}
 
 		tlsConfig := tls.Config{InsecureSkipVerify: s.config.NoVerify}
 		if s.config.X509CACert != "" {
 			data, err := ioutil.ReadFile(s.config.X509CACert)
 			if err != nil {
-				log.WithContext(ctx).Errorf("ioutil read: %v", err)
-				return err
+				return errors.Errorf("ioutil read: %v", err)
 			}
 			tlsConfig.RootCAs = x509.NewCertPool()
 			if ok := tlsConfig.RootCAs.AppendCertsFromPEM(data); !ok {
-				log.WithContext(ctx).Errorf("parse root CA certificate in %v", s.config.X509CACert)
-				return err
+				return errors.Errorf("parse root CA certificate in %v", s.config.X509CACert)
 			}
 		}
 
@@ -283,8 +272,7 @@ func (s *Service) startServer(ctx context.Context) error {
 			&tlsConfig,
 			log.DefaultLogger.WithField("prefix", "join"),
 		); err != nil {
-			log.WithContext(ctx).Errorf("join cluster at %v: %v", joins, err)
-			return err
+			return errors.Errorf("join cluster at %v: %v", joins, err)
 		} else {
 			log.WithContext(ctx).Infof("successfully joined cluster at %v", j)
 		}
@@ -292,22 +280,19 @@ func (s *Service) startServer(ctx context.Context) error {
 
 	// wait until the store is in full consensus
 	if err := s.waitForConsensus(ctx, db); err != nil {
-		log.WithContext(ctx).Errorf("wait for consensus: %v", err)
-		return err
+		return errors.Errorf("wait for consensus: %v", err)
 	}
 
 	// this may be a standalone server. In that case set its own metadata.
 	if err := db.SetMetadata(meta); err != nil && err != store.ErrNotLeader {
 		// Non-leader errors are OK, since metadata will then be set through
 		// consensus as a result of a join. All other errors indicate a problem.
-		log.WithContext(ctx).Errorf("set store metadata: %v", err)
-		return err
+		return errors.Errorf("set store metadata: %v", err)
 	}
 
 	// start the HTTP API server
 	if err := s.startHTTPServer(ctx, db); err != nil {
-		log.WithContext(ctx).Errorf("start http server: %v", err)
-		return err
+		return errors.Errorf("start http server: %v", err)
 	}
 	log.WithContext(ctx).Info("node is ready, block until context is done")
 
