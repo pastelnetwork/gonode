@@ -41,7 +41,6 @@ var (
 	commit    = "unknown"
 	branch    = "unknown"
 	buildtime = "unknown"
-	features  = []string{}
 )
 
 var httpAddr string
@@ -307,7 +306,7 @@ func main() {
 		}
 
 		if j, err := cluster.Join(joinSrcIP, joins, str.ID(), advAddr, !raftNonVoter, meta,
-			joinAttempts, joinDur, &tlsConfig); err != nil {
+			joinAttempts, joinDur, &tlsConfig, nil); err != nil {
 			log.Fatalf("failed to join cluster at %s: %s", joins, err.Error())
 		} else {
 			log.Println("successfully joined cluster at", j)
