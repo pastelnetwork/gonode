@@ -51,7 +51,7 @@ func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) 
 		if err != nil {
 			return nil, errors.Errorf("discovery register: %v", err)
 		}
-		log.WithContext(ctx).Infof("discovery service responded with nodes:", r.Nodes)
+		log.WithContext(ctx).Infof("discovery service responded with nodes: %v", r.Nodes)
 
 		for _, a := range r.Nodes {
 			if a != apiAdv {
