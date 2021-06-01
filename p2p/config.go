@@ -17,6 +17,9 @@ type Config struct {
 	BootstrapPort string `mapstructure:"bootstrap_port" json:"bootstrap_port,omitempty"`
 	// Use STUN protocol for public addr discovery
 	UseStun bool `mapstructure:"use_stun" json:"use_stun,omitempty"`
+	// a driver-specific data source name, usually consisting of
+	// at least a database name and connection information.
+	DataSourceName string `mapstructure:"data_source_name" json:"data_source_name,omitempty"`
 }
 
 // NewConfig returns a new Config instance.

@@ -47,7 +47,7 @@ func (k *Key) ExpireKeys(_ context.Context) error {
 }
 
 // Init initializes the Store
-func (k *Key) Init(_ context.Context) error {
+func (k *Key) Init(_ context.Context, _ string) error {
 	k.data = make(map[string][]byte)
 	k.mutex = &sync.Mutex{}
 	k.replicateMap = make(map[string]time.Time)

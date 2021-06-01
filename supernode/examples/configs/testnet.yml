@@ -13,6 +13,7 @@ node:
 p2p:
   listen_addresses: "0.0.0.0"
   port: 4445
+  data_source_name: ":memory:"
   # bootstrap_ip: ""
   # bootstrap_port: ""
   # use_stun: true

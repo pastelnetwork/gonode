@@ -71,6 +71,10 @@ type Options struct {
 
 	// The maximum time to wait for a response to any message
 	TMsgTimeout time.Duration
+
+	// a driver-specific data source name, usually consisting of
+	// at least a database name and connection information.
+	DataSourceName string
 }
 
 // NewDHT initializes a new DHT node. A store and options struct must be
@@ -89,7 +93,7 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 	dht.ht = ht
 	dht.networking = &realNetworking{}
 
-	if err = store.Init(ctx); err != nil {
+	if err = store.Init(ctx, options.DataSourceName); err != nil {
 		return nil, err
 	}
 
