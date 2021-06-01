@@ -20,6 +20,8 @@ const (
 	defaultCompressionBatch       = 5
 	defaultOnDisk                 = false
 	defaultDataDir                = "data"
+	defaultNodeX509Cert           = "cert.pem"
+	defaultNodeX509Key            = "key.pem"
 )
 
 // Config contains settings of the rqlite server
@@ -78,6 +80,28 @@ type Config struct {
 	DNS string `mapstructure:"dns" json:"dns,omitempty"`
 	// data directory for rqlite
 	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
+	// Support deprecated TLS versions 1.0 and 1.1
+	TLS1011 bool `mapstructure:"tls1011" json:"tls1011,omitempty"`
+	// Path to root X.509 certificate for HTTP endpoint
+	X509CACert string `mapstructure:"http_ca_cert" json:"http_ca_cert,omitempty"`
+	// Path to X.509 certificate for HTTP endpoint
+	X509Cert string `mapstructure:"http_cert" json:"http_cert,omitempty"`
+	// Path to X.509 private key for HTTP endpoint
+	X509Key string `mapstructure:"http_key" json:"http_key,omitempty"`
+	// Skip verification of remote HTTPS cert when joining cluster
+	NoVerify bool `mapstructure:"http_no_verify" json:"http_no_verify,omitempty"`
+	// Enable node-to-node encryption
+	NodeEncrypt bool `mapstructure:"node_encrypt" json:"node_encrypt,omitempty"`
+	// Path to root X.509 certificate for node-to-node encryption
+	NodeX509CACert string `mapstructure:"node_ca_cert" json:"node_ca_cert,omitempty"`
+	// Path to X.509 certificate for node-to-node encryption
+	NodeX509Cert string `mapstructure:"node_cert" json:"node_cert,omitempty"`
+	// Path to X.509 private key for node-to-node encryption
+	NodeX509Key string `mapstructure:"node_key" json:"node_key,omitempty"`
+	// Skip verification of a remote node cert
+	NodeNoVerify bool `mapstructure:"node_no_verify" json:"node_no_verify,omitempty"`
+	// Path to authentication and authorization file. If not set, not enabled
+	authFile string `mapstructure:"auth_file" json:"auth_file"`
 }
 
 // NewConfig returns a new Config instance.
@@ -102,5 +126,7 @@ func NewConfig() *Config {
 		CompressionBatch:       defaultCompressionBatch,
 		OnDisk:                 defaultOnDisk,
 		DataDir:                defaultDataDir,
+		NodeX509Cert:           defaultNodeX509Cert,
+		NodeX509Key:            defaultNodeX509Key,
 	}
 }

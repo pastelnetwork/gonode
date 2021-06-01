@@ -7,14 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
 	httpd "github.com/pastelnetwork/gonode/rqlite/http"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -27,12 +26,14 @@ var (
 // the joining node as id addr respectively. It returns the endpoint successfully
 // used to join the cluster.
 func Join(srcIP string, joinAddr []string, id, addr string, voter bool, meta map[string]string, numAttempts int,
-	attemptInterval time.Duration, tlsConfig *tls.Config) (string, error) {
+	attemptInterval time.Duration, tlsConfig *tls.Config, logger *logrus.Entry) (string, error) {
 	var err error
 	var j string
-	logger := log.New(os.Stderr, "[cluster-join] ", log.LstdFlags)
 	if tlsConfig == nil {
 		tlsConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+	if logger == nil {
+		logger = logrus.New().WithField("prefix", "join")
 	}
 
 	for i := 0; i < numAttempts; i++ {
@@ -43,14 +44,14 @@ func Join(srcIP string, joinAddr []string, id, addr string, voter bool, meta map
 				return j, nil
 			}
 		}
-		logger.Printf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, err.Error(), attemptInterval)
+		logger.Infof("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, err.Error(), attemptInterval)
 		time.Sleep(attemptInterval)
 	}
-	logger.Printf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
+	logger.Infof("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
 	return "", ErrJoinFailed
 }
 
-func join(srcIP, joinAddr, id, addr string, voter bool, meta map[string]string, tlsConfig *tls.Config, logger *log.Logger) (string, error) {
+func join(srcIP, joinAddr, id, addr string, voter bool, meta map[string]string, tlsConfig *tls.Config, logger *logrus.Entry) (string, error) {
 	if id == "" {
 		return "", fmt.Errorf("node ID not set")
 	}
@@ -125,7 +126,7 @@ func join(srcIP, joinAddr, id, addr string, voter bool, meta map[string]string, 
 				return "", fmt.Errorf("failed to join, node returned: %s: (%s)", resp.Status, string(b))
 			}
 
-			logger.Print("join via HTTP failed, trying via HTTPS")
+			logger.Info("join via HTTP failed, trying via HTTPS")
 			fullAddr = httpd.EnsureHTTPS(fullAddr)
 			continue
 		default:

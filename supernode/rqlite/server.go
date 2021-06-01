@@ -2,11 +2,16 @@ package rqlite
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/rqlite/auth"
 	"github.com/pastelnetwork/gonode/rqlite/cluster"
 	"github.com/pastelnetwork/gonode/rqlite/disco"
 	httpd "github.com/pastelnetwork/gonode/rqlite/http"
@@ -80,12 +85,45 @@ func (s *Service) waitForConsensus(ctx context.Context, dbStore *store.Store) er
 	return nil
 }
 
+// open the auth file, and returns a credential store instance
+func (s *Service) credentialStore() (*auth.CredentialsStore, error) {
+	if s.config.authFile == "" {
+		return nil, nil
+	}
+
+	file, err := os.Open(s.config.authFile)
+	if err != nil {
+		return nil, fmt.Errorf("open authentication file: %v", err)
+	}
+
+	store := auth.NewCredentialsStore()
+	if store.Load(file); err != nil {
+		return nil, err
+	}
+	return store, nil
+}
+
 // start the http server
 func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store) error {
 	logger := log.DefaultLogger.WithField("prefix", "http")
 
-	// new http server
-	server := httpd.New(s.config.HTTPAddress, dbStore, nil, logger)
+	// load the credential store
+	cred, err := s.credentialStore()
+	if err != nil {
+		log.WithContext(ctx).Errorf("laod credentail store: %v", err)
+		return err
+	}
+
+	var server *httpd.Service
+	// create http server and load authentication information if required
+	if cred != nil {
+		server = httpd.New(s.config.HTTPAddress, dbStore, cred, logger)
+	} else {
+		server = httpd.New(s.config.HTTPAddress, dbStore, nil, logger)
+	}
+	server.CertFile = s.config.X509Cert
+	server.KeyFile = s.config.X509Key
+	server.TLS1011 = s.config.TLS1011
 
 	// start the http server
 	return server.Start()
@@ -95,8 +133,21 @@ func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store) err
 func (s *Service) startServer(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
+	var transport *tcp.Transport
 	// create internode network layer
-	transport := tcp.NewTransport()
+	if s.config.NodeEncrypt {
+		log.WithContext(ctx).Infof("enable node-to-node encryption with cert: %v, key: %v", s.config.NodeX509Cert, s.config.NodeX509Key)
+
+		transport = tcp.NewTLSTransport(
+			s.config.NodeX509Cert,
+			s.config.NodeX509Key,
+			s.config.NodeX509CACert,
+			s.config.NoVerify,
+		)
+	} else {
+		transport = tcp.NewTransport()
+	}
+	// open the tcp transport which bind the raft address
 	if err := transport.Open(s.config.RaftAddress); err != nil {
 		log.WithContext(ctx).Errorf("open internode network layer: %v", err)
 		return err
@@ -149,7 +200,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	if isNew {
 		bootstrap = true // new node, it needs to bootstrap
 	} else {
-		log.WithContext(ctx).Infof("preexisting node detected in: %v", s.config.DataDir)
+		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
 	// determine the join addresses
@@ -161,7 +212,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	// supplying join addresses means bootstrapping a new cluster won't be required.
 	if len(joins) > 0 {
 		bootstrap = false
-		log.WithContext(ctx).Info("join addresses specified, node is not bootstrapping")
+		log.WithContext(ctx).Info("join addresses specified, node is not bootstrap")
 	} else {
 		log.WithContext(ctx).Info("no join addresses")
 	}
@@ -183,6 +234,9 @@ func (s *Service) startServer(ctx context.Context) error {
 		apiAdv = s.config.HTTPAdvertiseAddress
 	}
 	apiProto := "http"
+	if s.config.X509Cert != "" {
+		apiProto = "https"
+	}
 	meta := map[string]string{
 		"api_addr":  apiAdv,
 		"api_proto": apiProto,
@@ -195,10 +249,25 @@ func (s *Service) startServer(ctx context.Context) error {
 			advAddr = s.config.RaftAdvertiseAddress
 		}
 
+		// try to parse the join duration
 		joinDuration, err := time.ParseDuration(s.config.JoinInterval)
 		if err != nil {
 			log.WithContext(ctx).Errorf("parse JoinInterval: %v", err)
 			return err
+		}
+
+		tlsConfig := tls.Config{InsecureSkipVerify: s.config.NoVerify}
+		if s.config.X509CACert != "" {
+			data, err := ioutil.ReadFile(s.config.X509CACert)
+			if err != nil {
+				log.WithContext(ctx).Errorf("ioutil read: %v", err)
+				return err
+			}
+			tlsConfig.RootCAs = x509.NewCertPool()
+			if ok := tlsConfig.RootCAs.AppendCertsFromPEM(data); !ok {
+				log.WithContext(ctx).Errorf("parse root CA certificate in %v", s.config.X509CACert)
+				return err
+			}
 		}
 
 		// join rqlite cluster
@@ -211,7 +280,8 @@ func (s *Service) startServer(ctx context.Context) error {
 			meta,
 			s.config.JoinAttempts,
 			joinDuration,
-			nil,
+			&tlsConfig,
+			log.DefaultLogger.WithField("prefix", "join"),
 		); err != nil {
 			log.WithContext(ctx).Errorf("join cluster at %v: %v", joins, err)
 			return err

@@ -36,7 +36,7 @@ func Test_SingleJoinOK(t *testing.T) {
 	defer ts.Close()
 
 	j, err := Join("127.0.0.1", []string{ts.URL}, "id0", "127.0.0.1:9090", false, nil,
-		numAttempts, attemptInterval, nil)
+		numAttempts, attemptInterval, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to join a single node: %s", err.Error())
 	}
@@ -60,7 +60,7 @@ func Test_SingleJoinZeroAttempts(t *testing.T) {
 		t.Fatalf("handler should not have been called")
 	}))
 
-	_, err := Join("127.0.0.1", []string{ts.URL}, "id0", "127.0.0.1:9090", false, nil, 0, attemptInterval, nil)
+	_, err := Join("127.0.0.1", []string{ts.URL}, "id0", "127.0.0.1:9090", false, nil, 0, attemptInterval, nil, nil)
 	if err != ErrJoinFailed {
 		t.Fatalf("Incorrect error returned when zero attempts specified")
 	}
@@ -91,7 +91,7 @@ func Test_SingleJoinMetaOK(t *testing.T) {
 	nodeAddr := "127.0.0.1:9090"
 	md := map[string]string{"foo": "bar"}
 	j, err := Join("", []string{ts.URL}, "id0", nodeAddr, true, md,
-		numAttempts, attemptInterval, nil)
+		numAttempts, attemptInterval, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to join a single node: %s", err.Error())
 	}
@@ -118,7 +118,7 @@ func Test_SingleJoinFail(t *testing.T) {
 	defer ts.Close()
 
 	_, err := Join("", []string{ts.URL}, "id0", "127.0.0.1:9090", true, nil,
-		numAttempts, attemptInterval, nil)
+		numAttempts, attemptInterval, nil, nil)
 	if err == nil {
 		t.Fatalf("expected error when joining bad node")
 	}
@@ -133,7 +133,7 @@ func Test_DoubleJoinOK(t *testing.T) {
 	defer ts2.Close()
 
 	j, err := Join("127.0.0.1", []string{ts1.URL, ts2.URL}, "id0", "127.0.0.1:9090", true, nil,
-		numAttempts, attemptInterval, nil)
+		numAttempts, attemptInterval, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to join a single node: %s", err.Error())
 	}
@@ -152,7 +152,7 @@ func Test_DoubleJoinOKSecondNode(t *testing.T) {
 	defer ts2.Close()
 
 	j, err := Join("", []string{ts1.URL, ts2.URL}, "id0", "127.0.0.1:9090", true, nil,
-		numAttempts, attemptInterval, nil)
+		numAttempts, attemptInterval, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to join a single node: %s", err.Error())
 	}
@@ -173,7 +173,7 @@ func Test_DoubleJoinOKSecondNodeRedirect(t *testing.T) {
 	defer ts2.Close()
 
 	j, err := Join("127.0.0.1", []string{ts2.URL}, "id0", "127.0.0.1:9090", true, nil,
-		numAttempts, attemptInterval, nil)
+		numAttempts, attemptInterval, nil, nil)
 	if err != nil {
 		t.Fatalf("failed to join a single node: %s", err.Error())
 	}
