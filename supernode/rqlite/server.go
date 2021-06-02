@@ -296,6 +296,8 @@ func (s *Service) startServer(ctx context.Context) error {
 	}
 	log.WithContext(ctx).Info("node is ready, block until context is done")
 
+	// mark the rqlite node is ready
+	s.ready <- struct{}{}
 	// block until context is done
 	<-ctx.Done()
 

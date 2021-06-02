@@ -9,6 +9,15 @@ import (
 	"github.com/pastelnetwork/gonode/rqlite/db"
 )
 
+const (
+	// ReadLevelNono - with none, the node simply queries its local SQLite database, and does not even check if it is the leader
+	ReadLevelNono = "nono"
+	// ReadLevelWeek - weak instructs the node to check that it is the leader, before querying the local SQLite file
+	ReadLevelWeek = "week"
+	// ReadLevelStrong - to avoid even the issues associated with weak consistency, rqlite also offers strong
+	ReadLevelStrong = "strong"
+)
+
 // Execute executes a slice of queries, each of which is not expected
 // to return rows. If timings is true, then timing information will
 // be return. If tx is true, then either all queries will be executed
@@ -43,7 +52,8 @@ func (s *Service) Execute(ctx context.Context, stmts []string, tx bool, timings 
 	return results, nil
 }
 
-func (s *Service) parseRequestLevel(level string) command.QueryRequest_Level {
+// for the read consistency level, Weak is probably sufficient for most applications, and is the default read consistency level
+func (s *Service) consistencyLevel(level string) command.QueryRequest_Level {
 	switch strings.ToLower(level) {
 	case "none":
 		return command.QueryRequest_QUERY_REQUEST_LEVEL_NONE
@@ -59,7 +69,7 @@ func (s *Service) parseRequestLevel(level string) command.QueryRequest_Level {
 // Query executes a slice of queries, each of which returns rows. If
 // timings is true, then timing information will be returned. If tx
 // is true, then all queries will take place while a read transaction
-// is held on the database.
+// is held on the database. The level can be 'none', 'weak', and 'strong'
 func (s *Service) Query(ctx context.Context, stmts []string, tx bool, timings bool, level string) ([]*db.Rows, error) {
 	if len(stmts) == 0 {
 		return nil, errors.New("query statements are empty")
@@ -80,7 +90,7 @@ func (s *Service) Query(ctx context.Context, stmts []string, tx bool, timings bo
 			Statements:  statements,
 		},
 		Timings: timings,
-		Level:   s.parseRequestLevel(level),
+		Level:   s.consistencyLevel(level),
 	}
 
 	// query the command by store
