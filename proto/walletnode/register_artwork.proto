@@ -13,11 +13,11 @@ service RegisterArtwork {
     // AcceptedNodes returns peers of the secondary supernodes connected to it.
     rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
 
-    // ConnectTo is a request to connect to the primary supernode.
+    // ConnectTo requests to connect to the primary supernode.
     rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
 
-    // UploadImage uploads an image to the supernode.
-    rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
+    // ProbeImage uploads the resampled image compute and return a fingerpirnt.
+    rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
@@ -46,11 +46,11 @@ message ConnectToRequest {
 message ConnectToReply {
 }
 
-message UploadImageRequest {
+message ProbeImageRequest {
     bytes payload = 1;
 }
-message UploadImageReply {
-    string fgpt = 1;
+message ProbeImageReply {
+    bytes fingerprint = 1;
 }
 
 message SendTicketRequest {
