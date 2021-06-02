@@ -1,3 +1,5 @@
+//go:generate mockery --name=SubStatus
+
 package state
 
 import (

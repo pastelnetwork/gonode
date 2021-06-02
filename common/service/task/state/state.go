@@ -1,3 +1,5 @@
+//go:generate mockery --name=State
+
 package state
 
 import (

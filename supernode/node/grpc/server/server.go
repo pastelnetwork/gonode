@@ -6,10 +6,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/middleware"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 )
 
@@ -37,11 +37,10 @@ func (server *Server) Run(ctx context.Context) error {
 	grpcServer := server.grpcServer(ctx)
 
 	for _, address := range addresses {
-		address = net.JoinHostPort(strings.TrimSpace(address), strconv.Itoa(server.config.Port))
+		addr := net.JoinHostPort(strings.TrimSpace(address), strconv.Itoa(server.config.Port))
 
-		group.Go(func() (err error) {
-			defer errors.Recover(func(recErr error) { err = recErr })
-			return server.listen(ctx, address, grpcServer)
+		group.Go(func() error {
+			return server.listen(ctx, addr, grpcServer)
 		})
 	}
 
@@ -57,7 +56,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 	errCh := make(chan error, 1)
 	go func() {
 		defer errors.Recover(func(recErr error) { err = recErr })
-		log.WithContext(ctx).Infof("Server listening on %q", address)
+		log.WithContext(ctx).Infof("gRPC server listening on %q", address)
 		if err := grpcServer.Serve(listen); err != nil {
 			errCh <- errors.Errorf("failed to serve: %w", err).WithField("address", address)
 		}
@@ -65,7 +64,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 
 	select {
 	case <-ctx.Done():
-		log.WithContext(ctx).Infof("Shutting down server at %q", address)
+		log.WithContext(ctx).Infof("Shutting down gRPC server at %q", address)
 		grpcServer.GracefulStop()
 	case err := <-errCh:
 		return err

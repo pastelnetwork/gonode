@@ -1,6 +1,7 @@
 package artwork
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/gif"
@@ -111,16 +112,45 @@ func (file *File) Copy() (*File, error) {
 	return newFile, nil
 }
 
+// Bytes returns the contents of the file by bytes.
+func (file *File) Bytes() ([]byte, error) {
+	f, err := file.Open()
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	buf := new(bytes.Buffer)
+	if _, err := buf.ReadFrom(f); err != nil {
+		return nil, errors.Errorf("failed to read from file: %w", err)
+	}
+	return buf.Bytes(), nil
+}
+
+// Write writes data to the file.
+func (file *File) Write(data []byte) error {
+	f, err := file.Create()
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	if _, err := f.Write(data); err != nil {
+		return errors.Errorf("failed to write to file: %w", err)
+	}
+	return nil
+}
+
 // ResizeImage resizes image.
 func (file *File) ResizeImage(width, height int) error {
-	src, err := file.openImage()
+	src, err := file.OpenImage()
 	if err != nil {
 		return err
 	}
 
 	dst := imaging.Resize(src, width, height, imaging.Lanczos)
 
-	return file.saveImage(dst)
+	return file.SaveImage(dst)
 }
 
 // RemoveAfter removes the file after the specified duration.
@@ -130,7 +160,8 @@ func (file *File) RemoveAfter(d time.Duration) {
 	}()
 }
 
-func (file *File) openImage() (image.Image, error) {
+// OpenImage opens images from the file.
+func (file *File) OpenImage() (image.Image, error) {
 	f, err := file.Open()
 	if err != nil {
 		return nil, err
@@ -144,7 +175,8 @@ func (file *File) openImage() (image.Image, error) {
 	return img, nil
 }
 
-func (file *File) saveImage(img image.Image) error {
+// SaveImage saves image to the file.
+func (file *File) SaveImage(img image.Image) error {
 	f, err := file.Create()
 	if err != nil {
 		return err

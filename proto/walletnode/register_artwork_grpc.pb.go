@@ -24,10 +24,10 @@ type RegisterArtworkClient interface {
 	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_SessionClient, error)
 	// AcceptedNodes returns peers of the secondary supernodes connected to it.
 	AcceptedNodes(ctx context.Context, in *AcceptedNodesRequest, opts ...grpc.CallOption) (*AcceptedNodesReply, error)
-	// ConnectTo is a request to connect to the primary supernode.
+	// ConnectTo requests to connect to the primary supernode.
 	ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error)
-	// UploadImage uploads an image to the supernode.
-	UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_UploadImageClient, error)
+	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
+	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
 }
@@ -89,34 +89,34 @@ func (c *registerArtworkClient) ConnectTo(ctx context.Context, in *ConnectToRequ
 	return out, nil
 }
 
-func (c *registerArtworkClient) UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_UploadImageClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RegisterArtwork_ServiceDesc.Streams[1], "/walletnode.RegisterArtwork/UploadImage", opts...)
+func (c *registerArtworkClient) ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterArtwork_ServiceDesc.Streams[1], "/walletnode.RegisterArtwork/ProbeImage", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &registerArtworkUploadImageClient{stream}
+	x := &registerArtworkProbeImageClient{stream}
 	return x, nil
 }
 
-type RegisterArtwork_UploadImageClient interface {
-	Send(*UploadImageRequest) error
-	CloseAndRecv() (*UploadImageReply, error)
+type RegisterArtwork_ProbeImageClient interface {
+	Send(*ProbeImageRequest) error
+	CloseAndRecv() (*ProbeImageReply, error)
 	grpc.ClientStream
 }
 
-type registerArtworkUploadImageClient struct {
+type registerArtworkProbeImageClient struct {
 	grpc.ClientStream
 }
 
-func (x *registerArtworkUploadImageClient) Send(m *UploadImageRequest) error {
+func (x *registerArtworkProbeImageClient) Send(m *ProbeImageRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *registerArtworkUploadImageClient) CloseAndRecv() (*UploadImageReply, error) {
+func (x *registerArtworkProbeImageClient) CloseAndRecv() (*ProbeImageReply, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
-	m := new(UploadImageReply)
+	m := new(ProbeImageReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -142,10 +142,10 @@ type RegisterArtworkServer interface {
 	Session(RegisterArtwork_SessionServer) error
 	// AcceptedNodes returns peers of the secondary supernodes connected to it.
 	AcceptedNodes(context.Context, *AcceptedNodesRequest) (*AcceptedNodesReply, error)
-	// ConnectTo is a request to connect to the primary supernode.
+	// ConnectTo requests to connect to the primary supernode.
 	ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error)
-	// UploadImage uploads an image to the supernode.
-	UploadImage(RegisterArtwork_UploadImageServer) error
+	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
+	ProbeImage(RegisterArtwork_ProbeImageServer) error
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
 	mustEmbedUnimplementedRegisterArtworkServer()
@@ -164,8 +164,8 @@ func (UnimplementedRegisterArtworkServer) AcceptedNodes(context.Context, *Accept
 func (UnimplementedRegisterArtworkServer) ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConnectTo not implemented")
 }
-func (UnimplementedRegisterArtworkServer) UploadImage(RegisterArtwork_UploadImageServer) error {
-	return status.Errorf(codes.Unimplemented, "method UploadImage not implemented")
+func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageServer) error {
+	return status.Errorf(codes.Unimplemented, "method ProbeImage not implemented")
 }
 func (UnimplementedRegisterArtworkServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
@@ -245,26 +245,26 @@ func _RegisterArtwork_ConnectTo_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterArtwork_UploadImage_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RegisterArtworkServer).UploadImage(&registerArtworkUploadImageServer{stream})
+func _RegisterArtwork_ProbeImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterArtworkServer).ProbeImage(&registerArtworkProbeImageServer{stream})
 }
 
-type RegisterArtwork_UploadImageServer interface {
-	SendAndClose(*UploadImageReply) error
-	Recv() (*UploadImageRequest, error)
+type RegisterArtwork_ProbeImageServer interface {
+	SendAndClose(*ProbeImageReply) error
+	Recv() (*ProbeImageRequest, error)
 	grpc.ServerStream
 }
 
-type registerArtworkUploadImageServer struct {
+type registerArtworkProbeImageServer struct {
 	grpc.ServerStream
 }
 
-func (x *registerArtworkUploadImageServer) SendAndClose(m *UploadImageReply) error {
+func (x *registerArtworkProbeImageServer) SendAndClose(m *ProbeImageReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *registerArtworkUploadImageServer) Recv() (*UploadImageRequest, error) {
-	m := new(UploadImageRequest)
+func (x *registerArtworkProbeImageServer) Recv() (*ProbeImageRequest, error) {
+	m := new(ProbeImageRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -317,8 +317,8 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "UploadImage",
-			Handler:       _RegisterArtwork_UploadImage_Handler,
+			StreamName:    "ProbeImage",
+			Handler:       _RegisterArtwork_ProbeImage_Handler,
 			ClientStreams: true,
 		},
 	},

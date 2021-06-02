@@ -4,18 +4,20 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
-	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/probe"
+	"github.com/pastelnetwork/gonode/probe/tfmodel"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
@@ -28,11 +30,17 @@ import (
 const (
 	appName  = "supernode"
 	appUsage = "SuperNode" // TODO: Write a clear description.
+
+	tfmodelDir = "./tfmodels" // relatively from work-dir
 )
 
 var (
-	defaultConfigFile       = configurer.DefaultConfigPath("supernode.yml")
-	defaultPastelConfigFile = configurer.DefaultConfigPath("pastel.conf")
+	defaultPath = configurer.DefaultPath()
+
+	defaultTempDir          = filepath.Join(os.TempDir(), appName)
+	defaultWorkDir          = filepath.Join(defaultPath, appName)
+	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
+	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 )
 
 // NewApp inits a new command line interface.
@@ -50,7 +58,8 @@ func NewApp() *cli.App {
 		// Main
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
-		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` to directory for storing temp data.").SetValue(config.TempDir),
+		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
+		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -77,16 +86,20 @@ func NewApp() *cli.App {
 		}
 
 		if config.LogFile != "" {
-			fileHook := hooks.NewFileHook(config.LogFile)
-			log.AddHook(fileHook)
+			log.AddHook(hooks.NewFileHook(config.LogFile))
 		}
+		log.AddHook(hooks.NewDurationHook())
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
 		}
 
 		if err := os.MkdirAll(config.TempDir, os.ModePerm); err != nil {
-			return errors.Errorf("could not create work-dir %q, %w", config.TempDir, err)
+			return errors.Errorf("could not create temp-dir %q, %w", config.TempDir, err)
+		}
+
+		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
 		}
 
 		return runApp(ctx, config)
@@ -109,22 +122,24 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// entities
-	pastelClient := pastel.NewClient(&config.Pastel)
+	pastelClient := pastel.NewClient(config.Pastel)
 	nodeClient := client.New()
-	db := memory.NewKeyValue()
-	artworkStorage := artwork.NewStorage(fs.NewFileStorage(config.TempDir))
+	fileStorage := fs.NewFileStorage(config.TempDir)
+
+	// analysis tools
+	probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
+
+	// p2p service (currently using kademlia)
+	p2p := p2p.New(config.P2P)
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, pastelClient, nodeClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
 
 	// server
-	grpc := server.New(&config.Server,
-		walletnode.NewRegisterArtwork(artworkRegister, artworkStorage),
+	grpc := server.New(config.Server,
+		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	// new rqlite service
-	rqliteService := rqlite.NewService(&config.RQLite)
-
-	return runServices(ctx, rqliteService, artworkStorage, artworkRegister, grpc)
+	return runServices(ctx, rqliteService, grpc, p2p, artworkRegister)
 }

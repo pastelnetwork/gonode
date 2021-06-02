@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -13,7 +14,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -23,6 +23,7 @@ const (
 // Service represents a service for the registration artwork.
 type Service struct {
 	*task.Worker
+	*artwork.Storage
 
 	config       *Config
 	db           storage.KeyValue
@@ -51,19 +52,21 @@ func (service *Service) Run(ctx context.Context) error {
 			if err := ticket.Image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
 				return err
 			}
-			group.Go(func() (err error) {
+			group.Go(func() error {
 				return imageStorage.Run(ctx)
 			})
 		}
 
-		group.Go(func() (err error) {
+		group.Go(func() error {
 			service.AddTask(&ticket.Ticket)
 			return nil
 		})
 	}
 
-	group.Go(func() (err error) {
-		defer errors.Recover(func(recErr error) { err = recErr })
+	group.Go(func() error {
+		return service.Storage.Run(ctx)
+	})
+	group.Go(func() error {
 		return service.Worker.Run(ctx)
 	})
 	return group.Wait()
@@ -92,12 +95,13 @@ func (service *Service) AddTask(ticket *Ticket) string {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
 		Worker:       task.NewWorker(),
+		Storage:      artwork.NewStorage(fileStorage),
 	}
 }

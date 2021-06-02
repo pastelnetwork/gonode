@@ -7,7 +7,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
@@ -22,7 +21,6 @@ type RegisterArtwork struct {
 	pb.UnimplementedRegisterArtworkServer
 
 	*common.RegisterArtwork
-	imageStorage *artwork.Storage
 }
 
 // Session implements walletnode.RegisterArtworkServer.Session()
@@ -125,8 +123,8 @@ func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
-// UploadImage implements walletnode.RegisterArtworkServer.UploadImage()
-func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
+// ProbeImage implements walletnode.RegisterArtworkServer.ProbeImage()
+func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageServer) error {
 	ctx := stream.Context()
 
 	task, err := service.TaskFromMD(ctx)
@@ -134,13 +132,13 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		return err
 	}
 
-	image := service.imageStorage.NewFile()
+	image := service.Storage.NewFile()
 	file, err := image.Create()
 	if err != nil {
 		return errors.Errorf("failed to open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
-	log.WithContext(ctx).WithField("filename", file.Name()).Debugf("UploadImage request")
+	log.WithContext(ctx).WithField("filename", file.Name()).Debugf("ProbeImage request")
 
 	wr := bufio.NewWriter(file)
 	defer wr.Flush()
@@ -154,7 +152,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 			if status.Code(err) == codes.Canceled {
 				return errors.New("connection closed")
 			}
-			return errors.Errorf("failed to receive UploadImage: %w", err)
+			return errors.Errorf("failed to receive ProbeImage: %w", err)
 		}
 
 		if _, err := wr.Write(req.Payload); err != nil {
@@ -162,15 +160,21 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		}
 	}
 
-	if err := task.UploadImage(ctx, image); err != nil {
+	fingerprint, err := task.ProbeImage(ctx, image)
+	if err != nil {
 		return err
 	}
-
-	resp := &pb.UploadImageReply{}
-	if err := stream.SendAndClose(resp); err != nil {
-		return errors.Errorf("failed to send UploadImage response: %w", err)
+	if fingerprint == nil {
+		return errors.New("could not compute fingerprint data")
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("UploadImage response")
+
+	resp := &pb.ProbeImageReply{
+		Fingerprint: fingerprint,
+	}
+	if err := stream.SendAndClose(resp); err != nil {
+		return errors.Errorf("failed to send ProbeImage response: %w", err)
+	}
+	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 	return nil
 }
 
@@ -180,9 +184,8 @@ func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
 }
 
 // NewRegisterArtwork returns a new RegisterArtwork instance.
-func NewRegisterArtwork(service *artworkregister.Service, imageStorage *artwork.Storage) *RegisterArtwork {
+func NewRegisterArtwork(service *artworkregister.Service) *RegisterArtwork {
 	return &RegisterArtwork{
 		RegisterArtwork: common.NewRegisterArtwork(service),
-		imageStorage:    imageStorage,
 	}
 }
