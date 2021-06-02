@@ -298,9 +298,9 @@ func (s *Service) startServer(ctx context.Context) error {
 
 	// mark the rqlite node is ready
 	s.ready <- struct{}{}
+
 	// block until context is done
 	<-ctx.Done()
-
 	// close the rqlite server
 	if err := db.Close(true); err != nil {
 		log.WithContext(ctx).Errorf("close store: %v", err)

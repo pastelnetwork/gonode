@@ -21,7 +21,7 @@ type Service struct {
 func NewService(config *Config) *Service {
 	return &Service{
 		config: config,
-		ready:  make(chan struct{}),
+		ready:  make(chan struct{}, 1),
 	}
 }
 
