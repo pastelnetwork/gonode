@@ -11,19 +11,19 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
+	"github.com/sirupsen/logrus"
 )
 
 // Database is the interface any queryable system must implement
@@ -188,7 +188,7 @@ type Service struct {
 
 	BuildInfo map[string]interface{}
 
-	logger *log.Logger
+	logger *logrus.Entry
 }
 
 // New returns an uninitialized HTTP service. If credentials is nil, then
@@ -201,7 +201,7 @@ func New(addr string, store Store, cluster Cluster, credentials CredentialStore)
 		start:           time.Now(),
 		statuses:        make(map[string]Statuser),
 		credentialStore: credentials,
-		logger:          log.New(os.Stderr, "[http] ", log.LstdFlags),
+		logger:          log.DefaultLogger.WithField("prefix", "http"),
 	}
 }
 
@@ -227,17 +227,17 @@ func (s *Service) Start() error {
 		if err != nil {
 			return err
 		}
-		s.logger.Printf("secure HTTPS server enabled with cert %s, key %s", s.CertFile, s.KeyFile)
+		s.logger.Infof("secure HTTPS server enabled with cert %s, key %s", s.CertFile, s.KeyFile)
 	}
 	s.ln = ln
 
 	go func() {
 		err := server.Serve(s.ln)
 		if err != nil {
-			s.logger.Println("HTTP service Serve() returned:", err.Error())
+			s.logger.Errorf("HTTP service Serve() returned: %v", err.Error())
 		}
 	}()
-	s.logger.Println("service listening on", s.Addr())
+	s.logger.Infof("service listening on: %v", s.Addr())
 
 	return nil
 }
@@ -998,7 +998,7 @@ func (s *Service) writeResponse(w http.ResponseWriter, r *http.Request, j *Respo
 	}
 	_, err = w.Write(b)
 	if err != nil {
-		s.logger.Println("writing response failed:", err.Error())
+		s.logger.Errorf("writing response failed: %v", err.Error())
 	}
 }
 

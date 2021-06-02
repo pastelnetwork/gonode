@@ -7,9 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
-	"os"
+
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/sirupsen/logrus"
 )
 
 // Response represents the response returned by a Discovery Service.
@@ -22,14 +23,14 @@ type Response struct {
 // Client provides a Discovery Service client.
 type Client struct {
 	url    string
-	logger *log.Logger
+	logger *logrus.Entry
 }
 
 // New returns an initialized Discovery Service client.
 func New(url string) *Client {
 	return &Client{
 		url:    url,
-		logger: log.New(os.Stderr, "[discovery] ", log.LstdFlags),
+		logger: log.DefaultLogger.WithField("prefix", "discovery"),
 	}
 }
 
@@ -57,7 +58,7 @@ func (c *Client) Register(id, addr string) (*Response, error) {
 			return nil, err
 		}
 
-		c.logger.Printf("discovery client attempting registration of %s at %s", addr, url)
+		c.logger.Infof("discovery client attempting registration of %s at %s", addr, url)
 		resp, err := client.Post(url, "application-type/json", bytes.NewReader(b))
 		if err != nil {
 			return nil, err
@@ -75,11 +76,11 @@ func (c *Client) Register(id, addr string) (*Response, error) {
 			if err := json.Unmarshal(b, r); err != nil {
 				return nil, err
 			}
-			c.logger.Printf("discovery client successfully registered %s at %s", addr, url)
+			c.logger.Infof("discovery client successfully registered %s at %s", addr, url)
 			return r, nil
 		case http.StatusMovedPermanently:
 			url = resp.Header.Get("location")
-			c.logger.Println("discovery client redirecting to", url)
+			c.logger.Infof("discovery client redirecting to: %s", url)
 			continue
 		default:
 			return nil, errors.New(resp.Status)

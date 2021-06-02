@@ -254,7 +254,7 @@ COMMIT;
 
 	f, _ := ioutil.TempFile("", "rqlite-baktest-")
 	defer os.Remove(f.Name())
-	s.logger.Printf("backup file is %s", f.Name())
+	s.logger.Infof("backup file is %s", f.Name())
 
 	if err := s.Backup(true, BackupBinary, f); err != nil {
 		t.Fatalf("Backup failed %s", err.Error())
@@ -302,7 +302,7 @@ COMMIT;
 
 	f, _ := ioutil.TempFile("", "rqlite-baktest-")
 	defer os.Remove(f.Name())
-	s.logger.Printf("backup file is %s", f.Name())
+	s.logger.Infof("backup file is %s", f.Name())
 
 	if err := s.Backup(true, BackupSQL, f); err != nil {
 		t.Fatalf("Backup failed %s", err.Error())

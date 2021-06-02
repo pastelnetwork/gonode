@@ -7,12 +7,13 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
-	"os"
 	"strings"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/sirupsen/logrus"
 
 	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
 )
@@ -30,7 +31,7 @@ func Join(srcIP string, joinAddr []string, id, addr string, voter bool, numAttem
 	attemptInterval time.Duration, tlsConfig *tls.Config) (string, error) {
 	var err error
 	var j string
-	logger := log.New(os.Stderr, "[cluster-join] ", log.LstdFlags)
+	logger := log.DefaultLogger.WithField("prefix", "join")
 	if tlsConfig == nil {
 		tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
@@ -43,14 +44,14 @@ func Join(srcIP string, joinAddr []string, id, addr string, voter bool, numAttem
 				return j, nil
 			}
 		}
-		logger.Printf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, err.Error(), attemptInterval)
+		logger.Errorf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, err.Error(), attemptInterval)
 		time.Sleep(attemptInterval)
 	}
-	logger.Printf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
+	logger.Errorf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
 	return "", ErrJoinFailed
 }
 
-func join(srcIP, joinAddr, id, addr string, voter bool, tlsConfig *tls.Config, logger *log.Logger) (string, error) {
+func join(srcIP, joinAddr, id, addr string, voter bool, tlsConfig *tls.Config, logger *logrus.Entry) (string, error) {
 	if id == "" {
 		return "", fmt.Errorf("node ID not set")
 	}
@@ -124,7 +125,7 @@ func join(srcIP, joinAddr, id, addr string, voter bool, tlsConfig *tls.Config, l
 				return "", fmt.Errorf("failed to join, node returned: %s: (%s)", resp.Status, string(b))
 			}
 
-			logger.Print("join via HTTP failed, trying via HTTPS")
+			logger.Error("join via HTTP failed, trying via HTTPS")
 			fullAddr = httpd.EnsureHTTPS(fullAddr)
 			continue
 		default:

@@ -6,12 +6,13 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
-	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/sirupsen/logrus"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -59,7 +60,7 @@ type Service struct {
 	https   bool   // Serving HTTPS?
 	apiAddr string // host:port this node serves the HTTP API.
 
-	logger *log.Logger
+	logger *logrus.Entry
 }
 
 // New returns a new instance of the cluster service
@@ -68,14 +69,14 @@ func New(tn Transport) *Service {
 		tn:      tn,
 		addr:    tn.Addr(),
 		timeout: 10 * time.Second,
-		logger:  log.New(os.Stderr, "[cluster] ", log.LstdFlags),
+		logger:  log.DefaultLogger.WithField("prefix", "cluster"),
 	}
 }
 
 // Open opens the Service.
 func (s *Service) Open() error {
 	go s.serve()
-	s.logger.Println("service listening on", s.tn.Addr())
+	s.logger.Infof("service listening on: %v", s.tn.Addr())
 	return nil
 }
 

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"testing/quick"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/x509"
 	"golang.org/x/sync/errgroup"
 )
@@ -24,9 +24,9 @@ func TestMux(t *testing.T) {
 	if err := quick.Check(func(n uint8, msg []byte) bool {
 		if testing.Verbose() {
 			if len(msg) == 0 {
-				log.Printf("n=%d, <no message>", n)
+				log.Infof("n=%d, <no message>", n)
 			} else {
-				log.Printf("n=%d, hdr=%d, len=%d", n, msg[0], len(msg))
+				log.Infof("n=%d, hdr=%d, len=%d", n, msg[0], len(msg))
 			}
 		}
 
@@ -41,7 +41,8 @@ func TestMux(t *testing.T) {
 		}
 		mux.Timeout = 200 * time.Millisecond
 		if !testing.Verbose() {
-			mux.Logger = log.New(ioutil.Discard, "", 0)
+			mux.Logger = log.DefaultLogger.WithField("prefix", "mux_test")
+			mux.Logger.Logger.SetOutput(ioutil.Discard)
 		}
 
 		group, _ := errgroup.WithContext(context.Background())
@@ -142,7 +143,8 @@ func TestMux_Advertise(t *testing.T) {
 	}
 	mux.Timeout = 200 * time.Millisecond
 	if !testing.Verbose() {
-		mux.Logger = log.New(ioutil.Discard, "", 0)
+		mux.Logger = log.DefaultLogger.WithField("prefix", "mux_test")
+		mux.Logger.Logger.SetOutput(ioutil.Discard)
 	}
 
 	layer := mux.Listen(1)
