@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/rqlite/rqlite/command"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 )
 
 var (

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/rqlite/go-sqlite3"
-	"github.com/rqlite/rqlite/command"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 )
 
 const bkDelay = 250

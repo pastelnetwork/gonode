@@ -23,9 +23,9 @@ import (
 	"unsafe"
 
 	"github.com/hashicorp/raft"
-	"github.com/rqlite/rqlite/command"
-	sql "github.com/rqlite/rqlite/db"
-	rlog "github.com/rqlite/rqlite/log"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
+	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
+	rlog "github.com/pastelnetwork/gonode/metadb/rqlite/log"
 )
 
 var (

@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rqlite/rqlite/cluster"
-	httpd "github.com/rqlite/rqlite/http"
-	"github.com/rqlite/rqlite/store"
-	"github.com/rqlite/rqlite/tcp"
-	"github.com/rqlite/rqlite/testdata/x509"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/cluster"
+	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/tcp"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/x509"
 )
 
 const (

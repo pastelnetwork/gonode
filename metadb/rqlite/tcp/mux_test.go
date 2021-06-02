@@ -14,7 +14,7 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/rqlite/rqlite/testdata/x509"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/x509"
 )
 
 // Ensure the muxer can split a listener's connections across multiple listeners.

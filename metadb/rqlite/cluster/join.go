@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	httpd "github.com/rqlite/rqlite/http"
+	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
 )
 
 var (

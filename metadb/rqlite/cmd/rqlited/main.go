@@ -17,13 +17,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rqlite/rqlite/auth"
-	"github.com/rqlite/rqlite/cluster"
-	"github.com/rqlite/rqlite/cmd"
-	"github.com/rqlite/rqlite/disco"
-	httpd "github.com/rqlite/rqlite/http"
-	"github.com/rqlite/rqlite/store"
-	"github.com/rqlite/rqlite/tcp"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/auth"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/cluster"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/cmd"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/disco"
+	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/tcp"
 )
 
 const logo = `

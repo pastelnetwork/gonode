@@ -17,7 +17,7 @@ import (
 
 	"github.com/Bowery/prompt"
 	"github.com/mkideal/cli"
-	"github.com/rqlite/rqlite/cmd"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/cmd"
 )
 
 const maxRedirect = 21

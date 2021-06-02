@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rqlite/rqlite/command"
-	sql "github.com/rqlite/rqlite/db"
-	"github.com/rqlite/rqlite/testdata/chinook"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
+	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/chinook"
 )
 
 func Test_OpenStoreSingleNode(t *testing.T) {

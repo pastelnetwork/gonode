@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/rqlite/rqlite/command"
-	sql "github.com/rqlite/rqlite/db"
-	"github.com/rqlite/rqlite/store"
-	"github.com/rqlite/rqlite/testdata/x509"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
+	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/x509"
 
 	"golang.org/x/net/http2"
 )
