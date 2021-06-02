@@ -229,7 +229,7 @@ func Test_404Routes_ExpvarPprofDisabled(t *testing.T) {
 		"/debug/pprof/profile",
 		"/debug/pprof/symbol",
 	} {
-		req, err := http.NewRequest("GET", host+path, nil)
+		req, _ := http.NewRequest("GET", host+path, nil)
 		resp, err := client.Do(req)
 		if err != nil {
 			t.Fatalf("failed to make request: %s", err.Error())
@@ -711,29 +711,29 @@ type MockStore struct {
 	leaderAddr string
 }
 
-func (m *MockStore) Execute(er *command.ExecuteRequest) ([]*sql.Result, error) {
+func (m *MockStore) Execute(_ *command.ExecuteRequest) ([]*sql.Result, error) {
 	if m.executeFn == nil {
 		return nil, nil
 	}
 	return nil, nil
 }
 
-func (m *MockStore) ExecuteOrAbort(er *command.ExecuteRequest) ([]*sql.Result, error) {
+func (m *MockStore) ExecuteOrAbort(_ *command.ExecuteRequest) ([]*sql.Result, error) {
 	return nil, nil
 }
 
-func (m *MockStore) Query(qr *command.QueryRequest) ([]*sql.Rows, error) {
+func (m *MockStore) Query(_ *command.QueryRequest) ([]*sql.Rows, error) {
 	if m.queryFn == nil {
 		return nil, nil
 	}
 	return nil, nil
 }
 
-func (m *MockStore) Join(id, addr string, voter bool) error {
+func (m *MockStore) Join(_, _ string, _ bool) error {
 	return nil
 }
 
-func (m *MockStore) Remove(id string) error {
+func (m *MockStore) Remove(_ string) error {
 	return nil
 }
 
@@ -760,7 +760,7 @@ type mockClusterService struct {
 	apiAddr string
 }
 
-func (m *mockClusterService) GetNodeAPIAddr(a string) (string, error) {
+func (m *mockClusterService) GetNodeAPIAddr(_ string) (string, error) {
 	return m.apiAddr, nil
 }
 
@@ -769,11 +769,11 @@ type mockCredentialStore struct {
 	HasPermOK bool
 }
 
-func (m *mockCredentialStore) Check(username, password string) bool {
+func (m *mockCredentialStore) Check(_, _ string) bool {
 	return m.CheckOK
 }
 
-func (m *mockCredentialStore) HasPerm(username, perm string) bool {
+func (m *mockCredentialStore) HasPerm(_, _ string) bool {
 	return m.HasPermOK
 }
 
@@ -781,7 +781,7 @@ func (m *mockClusterService) Stats() (map[string]interface{}, error) {
 	return nil, nil
 }
 
-func (m *mockCredentialStore) HasAnyPerm(username string, perm ...string) bool {
+func (m *mockCredentialStore) HasAnyPerm(_ string, _ ...string) bool {
 	return m.HasPermOK
 }
 
@@ -823,13 +823,4 @@ func mustParseDuration(d string) time.Duration {
 	} else {
 		return dur
 	}
-}
-
-func mustReadResponseBody(resp *http.Response) string {
-	response, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic("failed to ReadAll response body")
-	}
-	resp.Body.Close()
-	return string(response)
 }

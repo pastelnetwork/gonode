@@ -156,8 +156,8 @@ func IsNewNode(raftDir string) bool {
 	return !pathExists(filepath.Join(raftDir, raftDBPath))
 }
 
-// StoreConfig represents the configuration of the underlying Store.
-type StoreConfig struct {
+// Config represents the configuration of the underlying Store.
+type Config struct {
 	DBConf *DBConfig   // The DBConfig object for this Store.
 	Dir    string      // The working directory for raft.
 	Tn     Transport   // The underlying Transport for raft.
@@ -166,7 +166,7 @@ type StoreConfig struct {
 }
 
 // New returns a new Store.
-func New(ln Listener, c *StoreConfig) *Store {
+func New(ln Listener, c *Config) *Store {
 	logger := c.Logger
 	if logger == nil {
 		logger = log.New(os.Stderr, "[store] ", log.LstdFlags)
@@ -284,18 +284,15 @@ func (s *Store) Open(enableBootstrap bool) error {
 func (s *Store) Close(wait bool) error {
 	f := s.raft.Shutdown()
 	if wait {
-		if e := f.(raft.Future); e.Error() != nil {
-			return e.Error()
+		if f.Error() != nil {
+			return f.Error()
 		}
 	}
 	// Only shutdown Bolt and SQLite when Raft is done.
 	if err := s.db.Close(); err != nil {
 		return err
 	}
-	if err := s.boltStore.Close(); err != nil {
-		return err
-	}
-	return nil
+	return s.boltStore.Close()
 }
 
 // WaitForApplied waits for all Raft log entries to to be applied to the
@@ -543,12 +540,10 @@ func (s *Store) Execute(ex *command.ExecuteRequest) ([]*sql.Result, error) {
 func (s *Store) ExecuteOrAbort(ex *command.ExecuteRequest) (results []*sql.Result, retErr error) {
 	defer func() {
 		var errored bool
-		if results != nil {
-			for i := range results {
-				if results[i].Error != "" {
-					errored = true
-					break
-				}
+		for i := range results {
+			if results[i].Error != "" {
+				errored = true
+				break
 			}
 		}
 		if retErr != nil || errored {
@@ -1224,13 +1219,6 @@ func (s *Store) database(leader bool, dst io.Writer) error {
 
 	_, err = io.Copy(dst, of)
 	return err
-}
-
-func (s *Store) databaseTypePretty() string {
-	if s.dbConf.Memory {
-		return "in-memory"
-	}
-	return "on-disk"
 }
 
 // Release is a no-op.

@@ -2,19 +2,21 @@ package tcp
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"strings"
-	"sync"
 	"testing"
 	"testing/quick"
 	"time"
 
 	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/x509"
+	"golang.org/x/sync/errgroup"
 )
 
 // Ensure the muxer can split a listener's connections across multiple listeners.
@@ -27,8 +29,6 @@ func TestMux(t *testing.T) {
 				log.Printf("n=%d, hdr=%d, len=%d", n, msg[0], len(msg))
 			}
 		}
-
-		var wg sync.WaitGroup
 
 		// Open single listener on random port.
 		tcpListener := mustTCPListener("127.0.0.1:0")
@@ -43,13 +43,12 @@ func TestMux(t *testing.T) {
 		if !testing.Verbose() {
 			mux.Logger = log.New(ioutil.Discard, "", 0)
 		}
+
+		group, _ := errgroup.WithContext(context.Background())
 		for i := uint8(0); i < n; i++ {
+			i := i
 			ln := mux.Listen(byte(i))
-
-			wg.Add(1)
-			go func(i uint8, ln net.Listener) {
-				defer wg.Done()
-
+			group.Go(func() error {
 				// Wait for a connection for this listener.
 				conn, err := ln.Accept()
 				if conn != nil {
@@ -60,25 +59,26 @@ func TestMux(t *testing.T) {
 				// doesn't match then expect close.
 				if len(msg) == 0 || msg[0] != byte(i) {
 					if err == nil || err.Error() != "network connection closed" {
-						t.Fatalf("unexpected error: %s", err)
+						return fmt.Errorf("unexpected error: %s", err)
 					}
-					return
+					return nil
 				}
 
 				// If the header byte matches this listener
 				// then expect a connection and read the message.
 				var buf bytes.Buffer
 				if _, err := io.CopyN(&buf, conn, int64(len(msg)-1)); err != nil {
-					t.Fatal(err)
+					return err
 				} else if !bytes.Equal(msg[1:], buf.Bytes()) {
-					t.Fatalf("message mismatch:\n\nexp=%x\n\ngot=%x\n\n", msg[1:], buf.Bytes())
+					return fmt.Errorf("message mismatch:\n\nexp=%x\n\ngot=%x", msg[1:], buf.Bytes())
 				}
 
 				// Write response.
 				if _, err := conn.Write([]byte("OK")); err != nil {
-					t.Fatal(err)
+					return err
 				}
-			}(i, ln)
+				return nil
+			})
 		}
 
 		// Begin serving from the listener.
@@ -116,7 +116,9 @@ func TestMux(t *testing.T) {
 
 		// Close original TCP listener and wait for all goroutines to close.
 		tcpListener.Close()
-		wg.Wait()
+		if err := group.Wait(); err != nil {
+			t.Fatal(err)
+		}
 
 		return true
 	}, nil); err != nil {

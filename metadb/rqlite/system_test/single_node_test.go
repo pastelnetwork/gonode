@@ -4,12 +4,14 @@ Package system runs system-level testing of rqlite. This includes testing of sin
 package system
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func Test_SingleNode(t *testing.T) {
@@ -147,19 +149,20 @@ func Test_SingleNodeConcurrentRequests(t *testing.T) {
 		t.Fatalf("failed to create table: %s", err.Error())
 	}
 
-	var wg sync.WaitGroup
+	group, _ := errgroup.WithContext(context.Background())
 	for i := 0; i < 200; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		group.Go(func() error {
 			resp, err := PostExecuteStmt(node.APIAddr, `INSERT INTO foo(name) VALUES("fiona")`)
 			if err != nil {
-				t.Fatalf("failed to insert record: %s %s", err.Error(), resp)
+				return fmt.Errorf("failed to insert record: %s %s", err.Error(), resp)
 			}
-		}()
+			return nil
+		})
+	}
+	if err := group.Wait(); err != nil {
+		t.Fatal(err)
 	}
 
-	wg.Wait()
 	r, err := node.Query("SELECT COUNT(*) FROM foo")
 	if err != nil {
 		t.Fatalf("failed to count records: %s", err.Error())
@@ -180,19 +183,20 @@ func Test_SingleNodeConcurrentRequestsCompressed(t *testing.T) {
 		t.Fatalf("failed to create table: %s", err.Error())
 	}
 
-	var wg sync.WaitGroup
+	group, _ := errgroup.WithContext(context.Background())
 	for i := 0; i < 200; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		group.Go(func() error {
 			resp, err := PostExecuteStmt(node.APIAddr, `INSERT INTO foo(name) VALUES("fiona")`)
 			if err != nil {
 				t.Fatalf("failed to insert record: %s %s", err.Error(), resp)
 			}
-		}()
+			return nil
+		})
+	}
+	if err := group.Wait(); err != nil {
+		t.Fatal(err)
 	}
 
-	wg.Wait()
 	r, err := node.Query("SELECT COUNT(*) FROM foo")
 	if err != nil {
 		t.Fatalf("failed to count records: %s", err.Error())

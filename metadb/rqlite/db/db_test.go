@@ -2,7 +2,6 @@ package db
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path"
@@ -18,7 +17,7 @@ import (
  */
 
 func Test_DbFileCreation(t *testing.T) {
-	dir, err := ioutil.TempDir("", "rqlite-test-")
+	dir, _ := ioutil.TempDir("", "rqlite-test-")
 	defer os.RemoveAll(dir)
 
 	db, err := Open(path.Join(dir, "test_db"))
@@ -1209,39 +1208,6 @@ func mustCreateDatabase() (*DB, string) {
 	}
 
 	return db, f
-}
-
-func mustWriteAndOpenDatabase(b []byte) (*DB, string) {
-	var err error
-	f := mustTempFile()
-	err = ioutil.WriteFile(f, b, 0660)
-	if err != nil {
-		panic("failed to write file")
-	}
-
-	db, err := Open(f)
-	if err != nil {
-		panic("failed to open database")
-	}
-	return db, f
-}
-
-// mustExecute executes a statement, and panics on failure. Used for statements
-// that should never fail, even taking into account test setup.
-func mustExecute(db *DB, stmt string) {
-	_, err := db.ExecuteStringStmt(stmt)
-	if err != nil {
-		panic(fmt.Sprintf("failed to execute statement: %s", err.Error()))
-	}
-}
-
-// mustQuery executes a statement, and panics on failure. Used for statements
-// that should never fail, even taking into account test setup.
-func mustQuery(db *DB, stmt string) {
-	_, err := db.QueryStringStmt(stmt)
-	if err != nil {
-		panic(fmt.Sprintf("failed to query: %s", err.Error()))
-	}
 }
 
 func asJSON(v interface{}) string {

@@ -295,16 +295,6 @@ func (ln *listener) Close() error { return nil }
 // Addr always returns nil
 func (ln *listener) Addr() net.Addr { return nil }
 
-// newTLSListener returns a net listener which encrypts the traffic using TLS.
-func newTLSListener(ln net.Listener, certFile, keyFile, caCertFile string) (net.Listener, error) {
-	config, err := createTLSConfig(certFile, keyFile, caCertFile)
-	if err != nil {
-		return nil, err
-	}
-
-	return tls.NewListener(ln, config), nil
-}
-
 // createTLSConfig returns a TLS config from the given cert, key and optionally
 // Certificate Authority cert.
 func createTLSConfig(certFile, keyFile, caCertFile string) (*tls.Config, error) {

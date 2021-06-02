@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rqlite/go-sqlite3"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
+	"github.com/rqlite/go-sqlite3"
 )
 
 const bkDelay = 250
@@ -50,7 +50,6 @@ func init() {
 type DB struct {
 	sqlite3conn *sqlite3.SQLiteConn // Driver connection to database.
 	path        string              // Path to database file.
-	dsn         string              // DSN, if any.
 	memory      bool                // In-memory only.
 }
 
@@ -347,7 +346,7 @@ func (db *DB) Execute(req *command.Request, xTime bool) ([]*Result, error) {
 			}
 			result.RowsAffected = ra
 			if xTime {
-				result.Time = time.Now().Sub(start).Seconds()
+				result.Time = time.Since(start).Seconds()
 			}
 			allResults = append(allResults, result)
 		}
@@ -450,7 +449,7 @@ func (db *DB) Query(req *command.Request, xTime bool) ([]*Rows, error) {
 				rows.Values = append(rows.Values, values)
 			}
 			if xTime {
-				rows.Time = time.Now().Sub(start).Seconds()
+				rows.Time = time.Since(start).Seconds()
 			}
 			allRows = append(allRows, rows)
 		}
@@ -623,11 +622,7 @@ func copyDatabase(dst *sqlite3.SQLiteConn, src *sqlite3.SQLiteConn) error {
 		time.Sleep(bkDelay * time.Millisecond)
 	}
 
-	if err := bk.Finish(); err != nil {
-		return err
-	}
-
-	return nil
+	return bk.Finish()
 }
 
 // parametersToValues maps values in the proto params to SQL driver values.

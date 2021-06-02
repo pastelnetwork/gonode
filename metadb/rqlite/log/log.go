@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/raft"
-	"github.com/hashicorp/raft-boltdb"
+	raftboltdb "github.com/hashicorp/raft-boltdb/v2"
 )
 
 // Log is an object that can return information about the Raft log.

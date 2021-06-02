@@ -245,7 +245,6 @@ func (s *Service) Start() error {
 // Close closes the service.
 func (s *Service) Close() {
 	s.ln.Close()
-	return
 }
 
 // ServeHTTP allows Service to serve HTTP requests.
@@ -927,7 +926,7 @@ func (s *Service) LeaderAPIAddr() string {
 
 // checkNodesAPIAddr returns a map of node ID to API addresses, reachable
 // being defined as node responds to a simple request over the network.
-func (s *Service) checkNodesAPIAddr(nodes []*store.Server, timeout time.Duration) (map[string]string, error) {
+func (s *Service) checkNodesAPIAddr(nodes []*store.Server, _ time.Duration) (map[string]string, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	apiAddrs := make(map[string]string)
@@ -1029,14 +1028,14 @@ func requestQueries(r *http.Request) ([]*command.Statement, error) {
 func createTLSConfig(certFile, keyFile, caCertFile string, tls1011 bool) (*tls.Config, error) {
 	var err error
 
-	var minTls = uint16(tls.VersionTLS12)
+	var minTLS = uint16(tls.VersionTLS12)
 	if tls1011 {
-		minTls = tls.VersionTLS10
+		minTLS = tls.VersionTLS10
 	}
 
 	config := &tls.Config{
 		NextProtos: []string{"h2", "http/1.1"},
-		MinVersion: minTls,
+		MinVersion: minTLS,
 	}
 	config.Certificates = make([]tls.Certificate, 1)
 	config.Certificates[0], err = tls.LoadX509KeyPair(certFile, keyFile)
@@ -1208,24 +1207,6 @@ func executeRequestFromStrings(s []string, timings, tx bool) *command.ExecuteReq
 
 	}
 	return &command.ExecuteRequest{
-		Request: &command.Request{
-			Statements:  stmts,
-			Transaction: tx,
-		},
-		Timings: timings,
-	}
-}
-
-// queryRequestFromStrings converts a slice of strings into a command.QueryRequest
-func queryRequestFromStrings(s []string, timings, tx bool) *command.QueryRequest {
-	stmts := make([]*command.Statement, len(s))
-	for i := range s {
-		stmts[i] = &command.Statement{
-			Sql: s[i],
-		}
-
-	}
-	return &command.QueryRequest{
 		Request: &command.Request{
 			Statements:  stmts,
 			Transaction: tx,

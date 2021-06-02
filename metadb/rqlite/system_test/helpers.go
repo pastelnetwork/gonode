@@ -383,10 +383,10 @@ func (c Cluster) Followers() ([]*Node, error) {
 
 // RemoveNode removes the given node from the list of nodes representing
 // a cluster.
-func (c Cluster) RemoveNode(node *Node) {
-	for i, n := range c {
+func (c *Cluster) RemoveNode(node *Node) {
+	for i, n := range *c {
 		if n.RaftAddr == node.RaftAddr {
-			c = append(c[:i], c[i+1:]...)
+			*c = append((*c)[:i], (*c)[i+1:]...)
 			return
 		}
 	}
@@ -485,7 +485,7 @@ func mustNodeEncryptedOnDisk(dir string, enableSingle, httpEncrypt bool, mux *tc
 	if id == "" {
 		id = raftTn.Addr().String()
 	}
-	node.Store = store.New(raftTn, &store.StoreConfig{
+	node.Store = store.New(raftTn, &store.Config{
 		DBConf: dbConf,
 		Dir:    node.Dir,
 		ID:     id,

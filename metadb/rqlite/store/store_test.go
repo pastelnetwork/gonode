@@ -252,7 +252,7 @@ COMMIT;
 		t.Fatalf("failed to load simple dump: %s", err.Error())
 	}
 
-	f, err := ioutil.TempFile("", "rqlite-baktest-")
+	f, _ := ioutil.TempFile("", "rqlite-baktest-")
 	defer os.Remove(f.Name())
 	s.logger.Printf("backup file is %s", f.Name())
 
@@ -300,7 +300,7 @@ COMMIT;
 		t.Fatalf("failed to load simple dump: %s", err.Error())
 	}
 
-	f, err := ioutil.TempFile("", "rqlite-baktest-")
+	f, _ := ioutil.TempFile("", "rqlite-baktest-")
 	defer os.Remove(f.Name())
 	s.logger.Printf("backup file is %s", f.Name())
 
@@ -1216,7 +1216,7 @@ func Test_State(t *testing.T) {
 
 func mustNewStoreAtPath(path string, inmem bool) *Store {
 	cfg := NewDBConfig("", inmem)
-	s := New(mustMockLister("localhost:0"), &StoreConfig{
+	s := New(mustMockLister("localhost:0"), &Config{
 		DBConf: cfg,
 		Dir:    path,
 		ID:     path, // Could be any unique string.
@@ -1241,10 +1241,6 @@ func (m *mockSnapshotSink) ID() string {
 
 func (m *mockSnapshotSink) Cancel() error {
 	return nil
-}
-
-type mockTransport struct {
-	ln net.Listener
 }
 
 type mockListener struct {
