@@ -11,7 +11,7 @@ require (
 	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mattn/go-sqlite3 v1.14.7
-	github.com/pastelnetwork/gonode/common v0.0.0-20210523194944-207a3e9a74d9
+	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
@@ -19,4 +19,6 @@ require (
 
 )
 
-replace github.com/pastelnetwork/gonode/common => ../common
+replace (
+	github.com/pastelnetwork/gonode/common => ../common
+)
