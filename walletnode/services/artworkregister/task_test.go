@@ -10,18 +10,19 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	pastelMock "github.com/pastelnetwork/gonode/walletnode/node/test/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-func newTestNode(address, pastelID string) *Node {
-	return &Node{Address: address, PastelID: pastelID}
+func newTestNode(address, pastelID string) *node.Node {
+	return node.NewNode(nil, address, pastelID)
 }
 
-func pullPastelIDNodes(nodes Nodes) []string {
+func pullPastelAddressIDNodes(nodes node.List) []string {
 	var v []string
 	for _, n := range nodes {
-		v = append(v, n.PastelID)
+		v = append(v, fmt.Sprintf("%s:%s", n.PastelID(), n.String()))
 	}
 
 	sort.Strings(v)
@@ -31,9 +32,14 @@ func pullPastelIDNodes(nodes Nodes) []string {
 func TestTaskMeshNodes(t *testing.T) {
 	t.Parallel()
 
+	type nodeArg struct {
+		address  string
+		pastelID string
+	}
+
 	type args struct {
 		ctx             context.Context
-		nodes           Nodes
+		nodes           []nodeArg
 		primaryIndex    int
 		primaryPastelID string
 		primarySessID   string
@@ -53,14 +59,14 @@ func TestTaskMeshNodes(t *testing.T) {
 			args: args{
 				ctx:          context.Background(),
 				primaryIndex: 1,
-				nodes: Nodes{
-					newTestNode("127.0.0.1", "1"),
-					newTestNode("127.0.0.2", "2"),
-					newTestNode("127.0.0.3", "3"),
-					newTestNode("127.0.0.4", "4"),
-					newTestNode("127.0.0.5", "5"),
-					newTestNode("127.0.0.6", "6"),
-					newTestNode("127.0.0.7", "7"),
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+					{"127.0.0.3", "3"},
+					{"127.0.0.4", "4"},
+					{"127.0.0.5", "5"},
+					{"127.0.0.6", "6"},
+					{"127.0.0.7", "7"},
 				},
 				primaryPastelID: "2",
 				primarySessID:   "xdcfjc",
@@ -69,7 +75,7 @@ func TestTaskMeshNodes(t *testing.T) {
 			},
 			assertion:     assert.NoError,
 			numSessIDCall: 6,
-			want:          []string{"1", "2", "4", "7"},
+			want:          []string{"1:127.0.0.1", "2:127.0.0.2", "4:127.0.0.4", "7:127.0.0.7"},
 		},
 	}
 
@@ -79,48 +85,37 @@ func TestTaskMeshNodes(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
-			//setup mock service for each node
-			nodesClientMock := test.NewClients()
-			nodes := testCase.args.nodes
+			//create new client mock
+			nodeClient := test.NewMockClient()
+			nodeClient.
+				ListenOnConnect(testCase.args.returnErr).
+				ListenOnRegisterArtwork().
+				ListenOnSession(testCase.args.returnErr).
+				ListenOnConnectTo(testCase.args.returnErr).
+				ListenOnSessID(testCase.args.primarySessID).
+				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr)
 
-			for _, node := range nodes {
-				nodeClient := test.NewMockClient()
-				nodeClient.
-					ListenOnConnect(testCase.args.returnErr).
-					ListenOnRegisterArtwork().
-					ListenOnSession(testCase.args.returnErr).
-					ListenOnConnectTo(testCase.args.returnErr).
-					ListenOnSessID(testCase.args.primarySessID).
-					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr)
-
-				node.client = nodeClient.ClientMock
-				nodesClientMock.Add(nodeClient)
+			nodes := node.List{}
+			for _, n := range testCase.args.nodes {
+				nodes.Add(node.NewNode(nodeClient.ClientMock, n.address, n.pastelID))
 			}
 
 			task := &Task{}
 			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 
 			testCase.assertion(t, err)
-			assert.Equal(t, testCase.want, pullPastelIDNodes(got))
+			assert.Equal(t, testCase.want, pullPastelAddressIDNodes(got))
 
-			//primary node mock should call these methods
-			primaryNodeMock := nodesClientMock[testCase.args.primaryIndex]
-			primaryNodeMock.RegArtWorkMock.AssertCalled(t, "AcceptedNodes", mock.Anything)
-			primaryNodeMock.RegArtWorkMock.AssertNumberOfCalls(t, "AcceptedNodes", 1)
-			primaryNodeMock.RegArtWorkMock.AssertCalled(t, "SessID")
-			primaryNodeMock.RegArtWorkMock.AssertNumberOfCalls(t, "SessID", testCase.numSessIDCall)
+			nodeClient.RegArtWorkMock.AssertCalled(t, "AcceptedNodes", mock.Anything)
+			nodeClient.RegArtWorkMock.AssertNumberOfCalls(t, "AcceptedNodes", 1)
+			nodeClient.RegArtWorkMock.AssertCalled(t, "SessID")
+			nodeClient.RegArtWorkMock.AssertNumberOfCalls(t, "SessID", testCase.numSessIDCall)
+			nodeClient.RegArtWorkMock.AssertCalled(t, "Session", mock.Anything, false)
+			nodeClient.RegArtWorkMock.AssertCalled(t, "ConnectTo", mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
 
-			for i, n := range nodesClientMock {
-				n.ClientMock.AssertExpectations(t)
-				n.ConnectionMock.AssertExpectations(t)
+			nodeClient.ClientMock.AssertExpectations(t)
+			nodeClient.ConnectionMock.AssertExpectations(t)
 
-				//if node not primary should call these method
-				if i != testCase.args.primaryIndex {
-					n.RegArtWorkMock.AssertCalled(t, "Session", mock.Anything, false)
-					n.RegArtWorkMock.AssertCalled(t, "ConnectTo", mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
-				}
-
-			}
 		})
 
 	}
@@ -226,7 +221,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 		name      string
 		fields    fields
 		args      args
-		want      Nodes
+		want      node.List
 		assertion assert.ErrorAssertionFunc
 	}{
 		{
@@ -244,9 +239,9 @@ func TestTaskPastelTopNodes(t *testing.T) {
 				},
 				returnErr: nil,
 			},
-			want: Nodes{
-				&Node{Address: "127.0.0.1:4444", PastelID: "1"},
-				&Node{Address: "127.0.0.1:4445", PastelID: "2"},
+			want: node.List{
+				newTestNode("127.0.0.1:4444", "1"),
+				newTestNode("127.0.0.1:4445", "2"),
 			},
 			assertion: assert.NoError,
 		}, {
@@ -264,8 +259,8 @@ func TestTaskPastelTopNodes(t *testing.T) {
 				},
 				returnErr: nil,
 			},
-			want: Nodes{
-				&Node{Address: "127.0.0.1:4445", PastelID: "2"},
+			want: node.List{
+				newTestNode("127.0.0.1:4445", "2"),
 			},
 			assertion: assert.NoError,
 		}, {

@@ -18,13 +18,13 @@ func NewMockPastelClient() *Client {
 	}
 }
 
-// ListenOnMasterNodesTop listening MasterNodesTop and returning Mn's and error from args
+// ListenOnMasterNodesTop listening MasterNodesTop and returns Mn's and error from args
 func (p *Client) ListenOnMasterNodesTop(nodes pastel.MasterNodes, err error) *Client {
 	p.PastelMock.On("MasterNodesTop", mock.Anything).Return(nodes, err)
 	return p
 }
 
-// ListenOnStorageFee listening StorageFee call and returning pastel.StorageFee, error form args
+// ListenOnStorageFee listening StorageFee call and returns pastel.StorageFee, error form args
 func (p *Client) ListenOnStorageFee(fee *pastel.StorageFee, returnErr error) *Client {
 	p.PastelMock.On("StorageFee", mock.Anything).Return(fee, returnErr)
 	return p
