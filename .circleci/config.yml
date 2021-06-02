@@ -19,7 +19,7 @@ commands:
         type: string
     steps:
       - run:
-          name: "<< parameters.package >>: Go generate"
+          name: "Go generate"
           working_directory: ~/project
           command: |
             cd ~/project/common && go generate ./...
