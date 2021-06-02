@@ -18,11 +18,11 @@ const (
 	ReadLevelStrong = "strong"
 )
 
-// Execute executes a slice of queries, each of which is not expected
+// Write executes a slice of queries, each of which is not expected
 // to return rows. If timings is true, then timing information will
 // be return. If tx is true, then either all queries will be executed
 // successfully or it will as though none executed.
-func (s *Service) Execute(ctx context.Context, stmts []string, tx bool, timings bool) ([]*db.Result, error) {
+func (s *Service) Write(ctx context.Context, stmts []string, tx bool, timings bool) ([]*db.Result, error) {
 	if len(stmts) == 0 {
 		return nil, errors.New("execute statements are empty")
 	}

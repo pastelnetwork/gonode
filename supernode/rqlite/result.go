@@ -179,3 +179,11 @@ func (qr *QueryResult) Scan(dest ...interface{}) error {
 func (qr *QueryResult) Types() []string {
 	return qr.types
 }
+
+// WriteResult holds the result of a single statement sent to Write().
+type WriteResult struct {
+	Err          error
+	Timing       float64
+	RowsAffected int64 // affected by the change
+	LastInsertID int64 // if relevant, otherwise zero value
+}

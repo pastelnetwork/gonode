@@ -69,7 +69,7 @@ func (s *testSuite) TestExecute() {
 
 	stmts := []string{creation, insertion}
 	// create table and insert the values
-	results, err := s.service.Execute(s.ctx, stmts, true, true)
+	results, err := s.service.Write(s.ctx, stmts, true, true)
 	s.Nil(err, "execute statements")
 	for _, result := range results {
 		s.Empty(result.Error, "execute result")
