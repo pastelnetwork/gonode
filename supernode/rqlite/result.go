@@ -14,7 +14,7 @@ type QueryResult struct {
 	columns   []string
 	types     []string
 	Timing    float64
-	values    []interface{}
+	values    [][]interface{}
 	rowNumber int64
 }
 
@@ -30,10 +30,10 @@ func (qr *QueryResult) Map() (map[string]interface{}, error) {
 	ans := make(map[string]interface{})
 
 	if qr.rowNumber == -1 {
-		return ans, errors.New("need to Next() before you Map()")
+		return ans, errors.New("need to Next() before Map()")
 	}
 
-	thisRowValues := qr.values[qr.rowNumber].([]interface{})
+	thisRowValues := qr.values[qr.rowNumber]
 	for i := 0; i < len(qr.columns); i++ {
 		switch qr.types[i] {
 		case "date", "datetime":
@@ -92,15 +92,15 @@ func (qr *QueryResult) RowNumber() int64 {
 	return qr.rowNumber
 }
 
-// Scan() takes a list of pointers and then updates them to reflect he current row's data.
-
+// Scan() takes a list of pointers and then updates them to reflect the current row's data.
+//
 // Note that only the following data types are used, and they
 // are a subset of the types JSON uses:
 // 	string, for JSON strings
 // 	float64, for JSON numbers
 // 	int64, as a convenient extension
 // 	nil for JSON null
-
+//
 // booleans, JSON arrays, and JSON objects are not supported,
 // since sqlite does not support them.
 func (qr *QueryResult) Scan(dest ...interface{}) error {
@@ -112,7 +112,7 @@ func (qr *QueryResult) Scan(dest ...interface{}) error {
 		return errors.Errorf("expected %d columns but got %d vars", len(qr.columns), len(dest))
 	}
 
-	thisRowValues := qr.values[qr.rowNumber].([]interface{})
+	thisRowValues := qr.values[qr.rowNumber]
 	for n, d := range dest {
 		src := thisRowValues[n]
 		if src == nil {
@@ -182,7 +182,7 @@ func (qr *QueryResult) Types() []string {
 
 // WriteResult holds the result of a single statement sent to Write().
 type WriteResult struct {
-	Err          error
+	Error        string
 	Timing       float64
 	RowsAffected int64 // affected by the change
 	LastInsertID int64 // if relevant, otherwise zero value

@@ -56,31 +56,38 @@ func (s *testSuite) TearDownSuite() {
 	os.RemoveAll(s.config.DataDir)
 }
 
-func (s *testSuite) TestQuery() {
-}
-
-func (s *testSuite) TestExecute() {
+func (s *testSuite) TestWriteAndQuery() {
 	s.NotNil(s.service.db, "store is nil")
 
 	// create the table
 	creation := "CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)"
-	// insert the value to table
-	insertion := "insert into foo(id, name) values(1,'alon');insert into foo(id, name) values(2,'belayu')"
+	result, err := s.service.Write(s.ctx, creation)
+	s.Nil(err, "execute creation statement")
+	s.Empty(result.Error, "result after execution")
 
-	stmts := []string{creation, insertion}
-	// create table and insert the values
-	results, err := s.service.Write(s.ctx, stmts, true, true)
-	s.Nil(err, "execute statements")
-	for _, result := range results {
-		s.Empty(result.Error, "execute result")
-	}
+	// insert the value to table
+	insertion := "insert into foo(id, name) values(1,'alon')"
+	result, err = s.service.Write(s.ctx, insertion)
+	s.Nil(err, "execute insertion statement")
+	s.Empty(result.Error, "result after execution")
+
+	// insert the value to table
+	insertion = "insert into foo(id, name) values(2,'belayu')"
+	result, err = s.service.Write(s.ctx, insertion)
+	s.Nil(err, "execute insertion statement")
+	s.Empty(result.Error, "result after execution")
 
 	// select a row from table with week level
 	selection := "select * from foo where id = 1"
-	stmts = []string{selection}
-	rows, err := s.service.Query(s.ctx, stmts, true, true, "weak")
+	rows, err := s.service.Query(s.ctx, selection, "weak")
 	s.Nil(err, "query statements")
-	s.Equal(1, len(rows))
-	// for _, row := range rows {
-	// }
+
+	var id int64
+	var name string
+	for rows.Next() {
+		err := rows.Scan(&id, &name)
+		s.Nil(err, "rows scan")
+		s.Equal(int64(1), id)
+		s.Equal("alon", name)
+	}
 }

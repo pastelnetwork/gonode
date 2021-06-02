@@ -6,7 +6,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/rqlite/command"
-	"github.com/pastelnetwork/gonode/rqlite/db"
 )
 
 const (
@@ -16,40 +15,45 @@ const (
 	ReadLevelWeek = "week"
 	// ReadLevelStrong - to avoid even the issues associated with weak consistency, rqlite also offers strong
 	ReadLevelStrong = "strong"
+	// AllowedSubStatement - the supported count of sub statements
+	AllowedSubStatement = 1
 )
 
-// Write executes a slice of queries, each of which is not expected
-// to return rows. If timings is true, then timing information will
-// be return. If tx is true, then either all queries will be executed
-// successfully or it will as though none executed.
-func (s *Service) Write(ctx context.Context, stmts []string, tx bool, timings bool) ([]*db.Result, error) {
-	if len(stmts) == 0 {
-		return nil, errors.New("execute statements are empty")
+// Write execute a statement, not support multple statements
+func (s *Service) Write(ctx context.Context, statement string) (*WriteResult, error) {
+	if len(statement) == 0 {
+		return nil, errors.New("statement are empty")
+	}
+	if len(strings.Split(statement, ";")) > AllowedSubStatement {
+		return nil, errors.New("only support one sub statement")
 	}
 
-	// prepare the statements for command
-	statements := []*command.Statement{}
-	for _, stmt := range stmts {
-		statements = append(statements, &command.Statement{
-			Sql: stmt,
-		})
-	}
 	// prepare the execute command request
 	request := &command.ExecuteRequest{
 		Request: &command.Request{
-			Transaction: tx,
-			Statements:  statements,
+			Transaction: true,
+			Statements: []*command.Statement{
+				{
+					Sql: statement,
+				},
+			},
 		},
-		Timings: timings,
+		Timings: true,
 	}
 
 	// execute the command by store
 	results, err := s.db.Execute(request)
 	if err != nil {
-		return nil, errors.Errorf("store execute statements: %v", err)
+		return nil, errors.Errorf("execute statement: %v", err)
 	}
+	firsts := results[0]
 
-	return results, nil
+	return &WriteResult{
+		Error:        firsts.Error,
+		Timing:       firsts.Time,
+		RowsAffected: firsts.RowsAffected,
+		LastInsertID: firsts.LastInsertID,
+	}, nil
 }
 
 // for the read consistency level, Weak is probably sufficient for most applications, and is the default read consistency level
@@ -66,38 +70,42 @@ func (s *Service) consistencyLevel(level string) command.QueryRequest_Level {
 	}
 }
 
-// Query executes a slice of queries, each of which returns rows. If
-// timings is true, then timing information will be returned. If tx
-// is true, then all queries will take place while a read transaction
-// is held on the database. The level can be 'none', 'weak', and 'strong'
-func (s *Service) Query(ctx context.Context, stmts []string, tx bool, timings bool, level string) ([]*db.Rows, error) {
-	if len(stmts) == 0 {
-		return nil, errors.New("query statements are empty")
+// Query execute a query, not support multple statements
+// level can be 'none', 'weak', and 'strong'
+func (s *Service) Query(ctx context.Context, statement string, level string) (*QueryResult, error) {
+	if len(statement) == 0 {
+		return nil, errors.New("statement are empty")
 	}
-
-	// prepare the statements for command
-	statements := []*command.Statement{}
-	for _, stmt := range stmts {
-		statements = append(statements, &command.Statement{
-			Sql: stmt,
-		})
+	if len(strings.Split(statement, ";")) > AllowedSubStatement {
+		return nil, errors.New("only support one sub statement")
 	}
 
 	// prepare the query command request
 	request := &command.QueryRequest{
 		Request: &command.Request{
-			Transaction: tx,
-			Statements:  statements,
+			Transaction: true,
+			Statements: []*command.Statement{
+				{
+					Sql: statement,
+				},
+			},
 		},
-		Timings: timings,
+		Timings: true,
 		Level:   s.consistencyLevel(level),
 	}
 
 	// query the command by store
-	results, err := s.db.Query(request)
+	rows, err := s.db.Query(request)
 	if err != nil {
-		return nil, errors.Errorf("store query statements: %v", err)
+		return nil, errors.Errorf("query statement: %v", err)
 	}
+	first := rows[0]
 
-	return results, nil
+	return &QueryResult{
+		columns:   first.Columns,
+		types:     first.Types,
+		values:    first.Values,
+		rowNumber: -1,
+		Timing:    first.Time,
+	}, nil
 }
