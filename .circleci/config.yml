@@ -255,6 +255,14 @@ jobs:
       - test:
           package: "p2p"
 
+  test_metadb:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "metadb"
+
   test_pastel-api:
     <<: *defaults
     steps:
@@ -395,6 +403,9 @@ workflows:
           requires:
             - prepare_workspace
       - test_p2p:
+          requires:
+            - prepare_workspace
+      - test_metadb:
           requires:
             - prepare_workspace
       - test_pastel-api:
