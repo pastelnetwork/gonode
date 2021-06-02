@@ -1,4 +1,4 @@
-module github.com/rqlite/rqlite
+module github.com/pastelnetwork/gonode/metadb
 
 go 1.13
 
@@ -24,4 +24,9 @@ require (
 	golang.org/x/term v0.0.0-20210422114643-f5beecf764ed // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	google.golang.org/protobuf v1.26.0
+	github.com/pastelnetwork/gonode/common v0.0.0
+)
+
+replace (
+	github.com/pastelnetwork/gonode/common => ../common
 )
