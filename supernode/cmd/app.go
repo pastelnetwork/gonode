@@ -141,5 +141,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
+	// new rqlite service
+	rqliteService := rqlite.NewService(config.RQLite)
+
 	return runServices(ctx, rqliteService, grpc, p2p, artworkRegister)
 }
