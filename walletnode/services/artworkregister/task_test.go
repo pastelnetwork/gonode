@@ -8,8 +8,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
+	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
-	pastelMock "github.com/pastelnetwork/gonode/walletnode/node/test/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -180,10 +180,10 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 			t.Parallel()
 
 			//create new mock service
-			pastelClientMock := pastelMock.NewMockPastelClient()
-			pastelClientMock.ListenOnStorageFee(testCase.args.networkFee, testCase.args.returnErr)
+			pastelClient := pastelMock.NewMockClient()
+			pastelClient.ListenOnStorageFee(testCase.args.networkFee, testCase.args.returnErr)
 			service := &Service{
-				pastelClient: pastelClientMock.PastelMock,
+				pastelClient: pastelClient.ClientMock,
 			}
 
 			task := &Task{
@@ -196,9 +196,9 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 			assert.Equal(t, testCase.want, got)
 
 			//pastelClient mock assertion
-			pastelClientMock.PastelMock.AssertExpectations(t)
-			pastelClientMock.PastelMock.AssertCalled(t, "StorageFee", testCase.args.ctx)
-			pastelClientMock.PastelMock.AssertNumberOfCalls(t, "StorageFee", 1)
+			pastelClient.ClientMock.AssertExpectations(t)
+			pastelClient.ClientMock.AssertCalled(t, "StorageFee", testCase.args.ctx)
+			pastelClient.ClientMock.AssertNumberOfCalls(t, "StorageFee", 1)
 		})
 	}
 }
@@ -282,10 +282,10 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			t.Parallel()
 
 			//create new mock service
-			pastelClientMock := pastelMock.NewMockPastelClient()
-			pastelClientMock.ListenOnMasterNodesTop(testCase.args.returnMn, testCase.args.returnErr)
+			pastelClient := pastelMock.NewMockClient()
+			pastelClient.ListenOnMasterNodesTop(testCase.args.returnMn, testCase.args.returnErr)
 			service := &Service{
-				pastelClient: pastelClientMock.PastelMock,
+				pastelClient: pastelClient.ClientMock,
 			}
 
 			task := &Task{
@@ -298,9 +298,9 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			assert.Equal(t, testCase.want, got)
 
 			//mock assertion
-			pastelClientMock.PastelMock.AssertExpectations(t)
-			pastelClientMock.PastelMock.AssertCalled(t, "MasterNodesTop", mock.Anything)
-			pastelClientMock.PastelMock.AssertNumberOfCalls(t, "MasterNodesTop", 1)
+			pastelClient.ClientMock.AssertExpectations(t)
+			pastelClient.ClientMock.AssertCalled(t, "MasterNodesTop", mock.Anything)
+			pastelClient.ClientMock.AssertNumberOfCalls(t, "MasterNodesTop", 1)
 		})
 	}
 
