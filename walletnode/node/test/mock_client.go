@@ -69,7 +69,7 @@ func (c *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error) *Cli
 
 // ListenOnConnectTo listening ConnectTo call and returns error from args
 func (c *Client) ListenOnConnectTo(returnErr error) *Client {
-	c.RegArtWorkMock.On("ConnectTo", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(returnErr)
+	c.RegArtWorkMock.On("ConnectTo", mock.Anything, mock.IsType(string("")), mock.IsType(string(""))).Return(returnErr)
 	return c
 }
 
@@ -77,17 +77,4 @@ func (c *Client) ListenOnConnectTo(returnErr error) *Client {
 func (c *Client) ListenOnSessID(sessID string) *Client {
 	c.RegArtWorkMock.On("SessID").Return(sessID)
 	return c
-}
-
-// Clients collections
-type Clients []*Client
-
-// NewClients new client collections
-func NewClients() Clients {
-	return make(Clients, 0)
-}
-
-// Add client to clients
-func (c *Clients) Add(i *Client) {
-	*c = append(*c, i)
 }
