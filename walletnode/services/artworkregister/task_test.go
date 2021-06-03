@@ -58,6 +58,7 @@ func TestTaskRun(t *testing.T) {
 		masterNodes   pastel.MasterNodes
 		primarySessID string
 		pastelIDS     []string
+		fingerPrint   []byte
 		returnErr     error
 	}
 
@@ -83,6 +84,7 @@ func TestTaskRun(t *testing.T) {
 				},
 				primarySessID: "sesid1",
 				pastelIDS:     []string{"2", "3", "4"},
+				fingerPrint:   []byte("match"),
 				returnErr:     nil,
 			},
 			assertion:       assert.NoError,
@@ -115,19 +117,21 @@ func TestTaskRun(t *testing.T) {
 					ListenOnDone()
 
 				cancelCtx, cancel := context.WithCancel(testCase.args.ctx)
+
 				// custom probe image listening call to get thumbnail file.
 				// should remove the generated thumbnail file and close all go routine
+				customProbeImage := func(ctx context.Context, image *artwork.File) []byte {
+					defer cancel()
+					err := image.Remove()
+					assert.NoError(t, err)
+
+					return testCase.args.fingerPrint
+				}
+
 				nodeClient.RegArtWorkMock.On("ProbeImage",
 					mock.Anything,
 					mock.IsType(&artwork.File{})).
-					Return(func(ctx context.Context, image *artwork.File) (fingerprintData []byte) {
-						defer cancel()
-						err := image.Remove()
-						assert.NoError(t, err)
-
-						fingerprintData = []byte("fingerprint matches")
-						return fingerprintData
-					}, testCase.args.returnErr)
+					Return(customProbeImage, testCase.args.returnErr)
 
 				pastelClientMock := pastelMock.NewMockClient()
 				pastelClientMock.
