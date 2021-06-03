@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
@@ -10,6 +11,7 @@ type Node struct {
 	// `squash` field cannot be pointer
 	ArtworkRegister artworkregister.Config `mapstructure:",squash" json:"artwork_register,omitempty"`
 	Server          *server.Config         `mapstructure:"server" json:"server,omitempty"`
+	MetaDB          *metadb.Config         `mapstructure:"metadb" json:"metadb,omitempty"`
 }
 
 // NewNode returns a new Node instance
@@ -17,5 +19,6 @@ func NewNode() Node {
 	return Node{
 		ArtworkRegister: *artworkregister.NewConfig(),
 		Server:          server.NewConfig(),
+		MetaDB:          metadb.NewConfig(),
 	}
 }

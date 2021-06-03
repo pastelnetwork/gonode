@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
@@ -140,5 +141,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	return runServices(ctx, grpc, p2p, artworkRegister)
+	// new metadb service
+	metadb := metadb.NewService(config.MetaDB)
+
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
 }

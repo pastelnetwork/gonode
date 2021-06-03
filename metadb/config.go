@@ -19,7 +19,7 @@ const (
 	defaultCompressionSize        = 150
 	defaultCompressionBatch       = 5
 	defaultOnDisk                 = false
-	defaultDataDir                = "data"
+	defaultDataDir                = ".data"
 	defaultNodeX509Cert           = "cert.pem"
 	defaultNodeX509Key            = "key.pem"
 )
