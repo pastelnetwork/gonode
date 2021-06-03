@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	logPrefix = "rqlite"
+	logPrefix = "metadb"
 )
 
 // Service represents the rqlite cluster

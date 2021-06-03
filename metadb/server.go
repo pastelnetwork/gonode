@@ -47,7 +47,7 @@ func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) 
 	if s.config.DiscoveryID != "" {
 		log.WithContext(ctx).Infof("register with discovery service at %s with ID %s", s.config.DiscoveryURL, s.config.DiscoveryID)
 
-		c := disco.New(s.config.DiscoveryURL)
+		c := disco.New(ctx, s.config.DiscoveryURL)
 		r, err := c.Register(s.config.DiscoveryID, apiAdv)
 		if err != nil {
 			return nil, errors.Errorf("discovery register: %v", err)
@@ -106,7 +106,7 @@ func (s *Service) credentialStore() (*auth.CredentialsStore, error) {
 }
 
 // start the http server
-func (s *Service) startHTTPServer(dbStore *store.Store, cs *cluster.Service) error {
+func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs *cluster.Service) error {
 	// load the credential store
 	cred, err := s.credentialStore()
 	if err != nil {
@@ -116,9 +116,9 @@ func (s *Service) startHTTPServer(dbStore *store.Store, cs *cluster.Service) err
 	var server *httpd.Service
 	// create http server and load authentication information if required
 	if cred != nil {
-		server = httpd.New(s.config.HTTPAddress, dbStore, cs, cred)
+		server = httpd.New(ctx, s.config.HTTPAddress, dbStore, cs, cred)
 	} else {
-		server = httpd.New(s.config.HTTPAddress, dbStore, cs, nil)
+		server = httpd.New(ctx, s.config.HTTPAddress, dbStore, cs, nil)
 	}
 	server.CertFile = s.config.X509Cert
 	server.KeyFile = s.config.X509Key
@@ -142,9 +142,9 @@ func (s *Service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, 
 	var mux *tcp.Mux
 	if s.config.NodeEncrypt {
 		log.WithContext(ctx).Infof("enabling node-to-node encryption with cert: %s, key: %s", s.config.NodeX509Cert, s.config.NodeX509Key)
-		mux, err = tcp.NewTLSMux(ln, adv, s.config.NodeX509Cert, s.config.NodeX509Key, s.config.NodeX509CACert)
+		mux, err = tcp.NewTLSMux(ctx, ln, adv, s.config.NodeX509Cert, s.config.NodeX509Key, s.config.NodeX509CACert)
 	} else {
-		mux, err = tcp.NewMux(ln, adv)
+		mux, err = tcp.NewMux(ctx, ln, adv)
 	}
 	if err != nil {
 		return nil, errors.Errorf("create node-to-node mux: %s", err.Error())
@@ -157,8 +157,8 @@ func (s *Service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, 
 }
 
 // start the cluster server
-func (s *Service) startClusterService(tn cluster.Transport) (*cluster.Service, error) {
-	c := cluster.New(tn)
+func (s *Service) startClusterService(ctx context.Context, tn cluster.Transport) (*cluster.Service, error) {
+	c := cluster.New(ctx, tn)
 
 	apiAddr := s.config.HTTPAddress
 	if s.config.HTTPAdvertiseAddress != "" {
@@ -192,14 +192,14 @@ func (s *Service) startServer(ctx context.Context) error {
 
 	// create cluster service, so nodes can learn information about each other.
 	// This can be started now since it doesn't require a functioning Store yet.
-	cs, err := s.startClusterService(mux.Listen(cluster.MuxClusterHeader))
+	cs, err := s.startClusterService(ctx, mux.Listen(cluster.MuxClusterHeader))
 	if err != nil {
 		return errors.Errorf("start create cluster service: %v", err)
 	}
 
 	// create and open the store
 	dbConf := store.NewDBConfig(s.config.DNS, !s.config.OnDisk)
-	db := store.New(raftTn, &store.Config{
+	db := store.New(ctx, raftTn, &store.Config{
 		DBConf: dbConf,
 		Dir:    s.config.DataDir,
 		ID:     s.idOrRaftAddr(),
@@ -291,6 +291,7 @@ func (s *Service) startServer(ctx context.Context) error {
 
 		// join rqlite cluster
 		joinAddr, err := cluster.Join(
+			ctx,
 			s.config.JoinSourceIP,
 			joins,
 			db.ID(),
@@ -313,7 +314,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	log.WithContext(ctx).Info("store has reached consensus")
 
 	// start the HTTP API server
-	if err := s.startHTTPServer(db, cs); err != nil {
+	if err := s.startHTTPServer(ctx, db, cs); err != nil {
 		return errors.Errorf("start http server: %v", err)
 	}
 	log.WithContext(ctx).Info("node is ready, block until context is done")

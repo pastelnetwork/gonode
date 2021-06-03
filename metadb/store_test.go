@@ -2,12 +2,10 @@ package metadb
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"sync"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -31,8 +29,6 @@ func (s *testSuite) SetupSuite() {
 	// new the rqlite service
 	s.service = NewService(s.config)
 
-	// disable the logger
-	log.DefaultLogger.SetOutput(ioutil.Discard)
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 
 	s.wg.Add(1)
