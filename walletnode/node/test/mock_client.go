@@ -43,7 +43,7 @@ func (c *Client) ListenOnClose(returnErr error) *Client {
 	return c
 }
 
-// ListenOnClose listening Done call and returns channel from args
+// ListenOnDone listening Done call and returns channel from args
 func (c *Client) ListenOnDone() *Client {
 	c.ConnectionMock.On("Done").Return(nil)
 	return c
