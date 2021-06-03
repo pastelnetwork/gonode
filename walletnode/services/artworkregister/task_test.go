@@ -52,7 +52,7 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	type args struct {
-		taskId        string
+		taskID        string
 		ctx           context.Context
 		networkFee    *pastel.StorageFee
 		masterNodes   pastel.MasterNodes
@@ -71,7 +71,7 @@ func TestTaskRun(t *testing.T) {
 		{
 			fields: fields{&Ticket{MaximumFee: 0.5}},
 			args: args{
-				taskId:     "1",
+				taskID:     "1",
 				ctx:        context.Background(),
 				networkFee: &pastel.StorageFee{NetworkFee: 0.4},
 				masterNodes: pastel.MasterNodes{
@@ -140,7 +140,7 @@ func TestTaskRun(t *testing.T) {
 
 				taskClient := stateMock.NewMockTask()
 				taskClient.
-					ListenOnID(testCase.args.taskId).
+					ListenOnID(testCase.args.taskID).
 					ListenOnUpdateStatus().
 					ListenOnSetStatusNotifyFunc()
 
