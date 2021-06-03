@@ -1,58 +1,66 @@
 package ed448
 
 import (
+	"github.com/pastelnetwork/gonode/common/errors"
 	"net"
 )
 
-func (transport *Ed448) ClientHandshake(conn net.Conn) (net.Conn, error) {
-	clientHello := transport.prepareHelloMessage()
-	if err := transport.writeRecord(clientHello, conn); err != nil {
+// ClientHandshake does handshake on client side
+func (trans *Ed448) ClientHandshake(conn net.Conn) (net.Conn, error) {
+	if !acquire() {
+		return nil, errors.New(ErrMaxHandshakes)
+	}
+
+	defer release()
+
+	clientHello := trans.prepareHelloMessage()
+	if err := trans.writeRecord(clientHello, conn); err != nil {
 		return nil, err
 	}
 
-	serverHelloMessage, err := transport.readServerHello(conn)
+	serverHelloMessage, err := trans.readServerHello(conn)
 	if err != nil {
 		return nil, err
 	}
 
-	if !transport.isClientSupportServerEncryption(serverHelloMessage.chosenEncryption) {
+	if !trans.isClientSupportServerEncryption(serverHelloMessage.chosenEncryption) {
 		return nil, ErrUnsupportedEncryption
 	}
 
-	clientHandshake, err := transport.prepareClientHandshake()
+	clientHandshake, err := trans.prepareClientHandshake()
 	if err != nil {
 		return nil, err
 	}
-	if err := transport.writeRecord(clientHandshake, conn); err != nil {
+	if err := trans.writeRecord(clientHandshake, conn); err != nil {
 		return nil, err
 	}
 
-	serverHandshakeMessage, err := transport.readServerHandshake(conn)
+	serverHandshakeMessage, err := trans.readServerHandshake(conn)
 	if err != nil {
 		return nil, err
 	}
 
-	if !transport.verifySignature(serverHandshakeMessage.ctx, serverHandshakeMessage.signedPastelID, serverHandshakeMessage.pastelID, serverHandshakeMessage.pubKey) {
-		return nil, ErrWrongSignature
+	if !trans.verifySignature(serverHandshakeMessage.ctx, serverHandshakeMessage.signedPastelID, serverHandshakeMessage.pastelID, serverHandshakeMessage.pubKey) {
+		return nil, errors.New(ErrWrongSignature)
 	}
 
-	if !transport.verifyPastelID(serverHandshakeMessage.pastelID) {
-		return nil, ErrIncorrectPastelID
+	if !trans.verifyPastelID(serverHandshakeMessage.pastelID) {
+		return nil, errors.New(ErrIncorrectPastelID)
 	}
 
-	transport.isHandshakeEstablished = true
+	trans.isHandshakeEstablished = true
 
-	return transport.initEncryptedConnection(conn, serverHelloMessage.chosenEncryption, serverHandshakeMessage.encryptionParams)
+	return trans.initEncryptedConnection(conn, serverHelloMessage.chosenEncryption, serverHandshakeMessage.encryptionParams)
 }
 
-func (transport *Ed448) isClientSupportServerEncryption(serverEncryption string) bool {
-	_, ok := transport.cryptos[serverEncryption]
+func (trans *Ed448) isClientSupportServerEncryption(serverEncryption string) bool {
+	_, ok := trans.cryptos[serverEncryption]
 	return ok
 }
 
-func (transport *Ed448) prepareHelloMessage() *ClientHelloMessage {
-	var supportedEncryptions = make([]string, len(transport.cryptos))
-	for crypto := range transport.cryptos {
+func (trans *Ed448) prepareHelloMessage() *ClientHelloMessage {
+	var supportedEncryptions = make([]string, len(trans.cryptos))
+	for crypto := range trans.cryptos {
 		supportedEncryptions = append(supportedEncryptions, crypto)
 	}
 	return &ClientHelloMessage{
@@ -61,8 +69,8 @@ func (transport *Ed448) prepareHelloMessage() *ClientHelloMessage {
 	}
 }
 
-func (transport *Ed448) readServerHello(conn net.Conn) (*ServerHelloMessage, error) {
-	msg, err := transport.readRecord(conn)
+func (trans *Ed448) readServerHello(conn net.Conn) (*ServerHelloMessage, error) {
+	msg, err := trans.readRecord(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +78,8 @@ func (transport *Ed448) readServerHello(conn net.Conn) (*ServerHelloMessage, err
 	return msg.(*ServerHelloMessage), nil
 }
 
-func (transport *Ed448) readServerHandshake(conn net.Conn) (*ServerHandshakeMessage, error) {
-	msg, err := transport.readRecord(conn)
+func (trans *Ed448) readServerHandshake(conn net.Conn) (*ServerHandshakeMessage, error) {
+	msg, err := trans.readRecord(conn)
 	if err != nil {
 		return nil, err
 	}
@@ -79,18 +87,13 @@ func (transport *Ed448) readServerHandshake(conn net.Conn) (*ServerHandshakeMess
 	return msg.(*ServerHandshakeMessage), nil
 }
 
-// ToDo: update with appropriate implementation
-func (transport *Ed448) retrievePastelID() uint32 {
-	return 100
-}
-
-func (transport *Ed448) prepareClientHandshake() (*ClientHandshakeMessage, error) {
-	signedPastelId := transport.getSignedPastelId()
+func (trans *Ed448) prepareClientHandshake() (*ClientHandshakeMessage, error) {
+	signedPastelID := trans.getSignedPastelID()
 
 	return &ClientHandshakeMessage{
-		pastelID:       signedPastelId.pastelID,
-		signedPastelID: signedPastelId.signedPastelID,
-		pubKey:         signedPastelId.ctx,
-		ctx:            signedPastelId.ctx,
+		pastelID:       signedPastelID.pastelID,
+		signedPastelID: signedPastelID.signedPastelID,
+		pubKey:         signedPastelID.ctx,
+		ctx:            signedPastelID.ctx,
 	}, nil
 }

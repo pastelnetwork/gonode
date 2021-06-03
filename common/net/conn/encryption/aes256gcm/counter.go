@@ -15,6 +15,7 @@ type Counter struct {
 	overflowLen int
 }
 
+// NewCounter creates a counter.
 func NewCounter(overflowLen int) Counter {
 	counter := Counter{
 		overflowLen: overflowLen,

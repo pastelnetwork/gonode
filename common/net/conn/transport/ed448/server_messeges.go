@@ -2,6 +2,7 @@ package ed448
 
 import (
 	"bytes"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 // ServerHelloMessage - first server message during handshake
@@ -21,18 +22,18 @@ func (msg *ServerHelloMessage) marshall() ([]byte, error) {
 // DecodeServerMsg - unmarshall []byte to ServerHelloMessage
 func DecodeServerMsg(msg []byte) (*ServerHelloMessage, error) {
 	if msg[0] != typeServerHello {
-		return nil, ErrWrongFormat
+		return nil, errors.New(ErrWrongFormat)
 	}
 
 	reader := bytes.NewReader(msg[1:])
 	chosenEncryption, err := readString(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read chosen encryption information %s", err)
 	}
 
 	binarySignature, err := reader.ReadByte()
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read chosen signature information %s", err)
 	}
 
 	return &ServerHelloMessage{
@@ -64,33 +65,33 @@ func (msg *ServerHandshakeMessage) marshall() ([]byte, error) {
 // DecodeServerHandshakeMsg - unmarshall []byte to ServerHandshakeMessage
 func DecodeServerHandshakeMsg(msg []byte) (*ServerHandshakeMessage, error) {
 	if msg[0] != typeServerHandshakeMsg {
-		return nil, ErrWrongFormat
+		return nil, errors.New(ErrWrongFormat)
 	}
 
 	reader := bytes.NewReader(msg[1:])
 	pastelID, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read PastelID %s", err)
 	}
 
 	signedPastelID, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read signed PastelID %s", err)
 	}
 
 	pubKey, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read public key %s", err)
 	}
 
 	ctx, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read context data %s", err)
 	}
 
 	encryptionParams, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read encryption params %s", err)
 	}
 
 	return &ServerHandshakeMessage{

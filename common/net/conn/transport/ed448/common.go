@@ -3,20 +3,9 @@ package ed448
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
-	"io"
+	"fmt"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
-
-// ErrWrongFormat - error when structure can't be parsed
-var ErrWrongFormat = errors.New("unknown message format")
-
-// ErrWrongSignature - error when signature is incorrect
-var ErrWrongSignature = errors.New("wrong signature")
-
-// ErrIncorrectPastelID - error when pastel ID is wrong
-var ErrIncorrectPastelID = errors.New("incorrect Pastel Id")
-
-var ErrUnsupportedEncryption = errors.New("unsupported encryption")
 
 // Handshake message types.
 const (
@@ -46,6 +35,12 @@ const (
 	ED448 SignScheme = iota
 )
 
+const (
+	msgTypeLen    = 1
+	msgHeaderSize = 5
+	msgMaxSize    = 1024 * 1024 // 1 MiB
+)
+
 type message interface {
 	marshall() ([]byte, error)
 }
@@ -57,6 +52,30 @@ type signedPastelID struct {
 	ctx            []byte
 }
 
+func parseFramedMsg(buf []byte, maxLen uint32) ([]byte, []byte, error) {
+	// if header isn't complete we return same buffer
+	if len(buf) < msgHeaderSize {
+		return nil, buf, nil
+	}
+
+	if buf[0] != typeEncryptedMsg {
+		return nil, nil, errors.New(ErrWrongFormat)
+	}
+
+	msgLenField := buf[msgTypeLen:msgHeaderSize]
+	length := binary.LittleEndian.Uint32(msgLenField)
+	if length > maxLen {
+		return nil, nil, fmt.Errorf("received the frame length %d larger than the limit %d", length, maxLen)
+	}
+	// ensure that frame is complete, either return same buffer again
+	if len(buf) < int(length)+msgHeaderSize {
+		// Frame is not complete yet.
+		return nil, buf, nil
+	}
+	// split buf to frames
+	return buf[:msgHeaderSize+length], buf[msgHeaderSize+length:], nil
+}
+
 func readByteArray(reader *bytes.Reader) (*[]byte, error) {
 	arrayLen, err := readInt(reader)
 	if err != nil {
@@ -64,8 +83,8 @@ func readByteArray(reader *bytes.Reader) (*[]byte, error) {
 	}
 
 	array := make([]byte, arrayLen)
-	if _, err := reader.Read(array); err != nil && err != io.EOF {
-		return nil, err
+	if _, err := reader.Read(array); err != nil {
+		return nil, errors.Errorf("can not read array %w", err)
 	}
 
 	return &array, nil
@@ -78,8 +97,8 @@ func readString(reader *bytes.Reader) (*string, error) {
 	}
 
 	byteString := make([]byte, strLen)
-	if _, err := reader.Read(byteString); err != nil && err != io.EOF {
-		return nil, err
+	if _, err := reader.Read(byteString); err != nil {
+		return nil, errors.Errorf("can not read string %w", err)
 	}
 
 	str := string(byteString)
@@ -108,8 +127,8 @@ func writeInt(writer *bytes.Buffer, val int) {
 
 func readInt(reader *bytes.Reader) (int, error) {
 	var buff = make([]byte, 4)
-	if _, err := reader.Read(buff); err != nil && err != io.EOF {
-		return 0, err
+	if _, err := reader.Read(buff); err != nil {
+		return 0, errors.Errorf("can not read integer value %w", err)
 	}
 
 	return int(binary.LittleEndian.Uint32(buff)), nil

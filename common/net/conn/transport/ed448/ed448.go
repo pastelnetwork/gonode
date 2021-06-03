@@ -2,23 +2,56 @@ package ed448
 
 import (
 	"encoding/binary"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/net/conn/transport"
 	"io"
 	"math/rand"
 	"net"
+	"sync"
 )
 
 // it contains packet type 1 byte
 // 4 bytes - packet size
 // 12 bytes - additional data for the future extends
-const ed448PacketHeaderLen = 17
+const (
+	ed448PacketHeaderLen = 17
+	maxPendingHandshakes = 100
+)
 
+var (
+	mu                   sync.Mutex
+	concurrentHandshakes = int64(0)
+)
+
+// Ed448 is transport layer that implements ED448 handshake protocol
 type Ed448 struct {
 	cryptos                map[string]transport.Crypto
 	isHandshakeEstablished bool
 	chosenEncryptionScheme string
 }
 
+func acquire() bool {
+	mu.Lock()
+	n := int64(1)
+	success := maxPendingHandshakes-concurrentHandshakes >= n
+	if success {
+		concurrentHandshakes += n
+	}
+	mu.Unlock()
+	return success
+}
+
+func release() {
+	mu.Lock()
+	concurrentHandshakes -= int64(1)
+	if concurrentHandshakes < 0 {
+		mu.Unlock()
+		panic("bad release")
+	}
+	mu.Unlock()
+}
+
+// New creates Ed448 transport layer
 func New(cryptos ...transport.Crypto) transport.Transport {
 	cryptosMap := make(map[string]transport.Crypto)
 	for _, crypto := range cryptos {
@@ -29,34 +62,44 @@ func New(cryptos ...transport.Crypto) transport.Transport {
 	}
 }
 
-// IsHandshakeEstablished - returns flag that says is handshake process finished
-func (transport *Ed448) IsHandshakeEstablished() bool {
-	return transport.isHandshakeEstablished
+// GetEncryptionInfo returns chosen encryption scheme
+func (trans *Ed448) GetEncryptionInfo() string {
+	return trans.chosenEncryptionScheme
 }
 
-func (transport *Ed448) readRecord(conn net.Conn) (interface{}, error) {
+// Clone creates a clone of current instance
+func (trans *Ed448) Clone() transport.Transport {
+	cryptos := []transport.Crypto{}
+	for _, value := range trans.cryptos {
+		crypto, err := value.Clone()
+		if err != nil {
+			panic(err)
+		}
+		cryptos = append(cryptos, crypto)
+	}
+	return New(cryptos...)
+}
+
+func (trans *Ed448) readRecord(conn net.Conn) (interface{}, error) {
 	buf := make([]byte, 0, 4096) // big buffer
 	tmp := make([]byte, 256)     // using small buffer
 	packetHeader := make([]byte, ed448PacketHeaderLen)
 
 	read, err := conn.Read(packetHeader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("error during reading pkg header %w", err)
 	}
 
 	if read != ed448PacketHeaderLen {
-		return nil, ErrWrongFormat
+		return nil, errors.New(ErrWrongFormat)
 	}
 
 	expected := int(binary.LittleEndian.Uint32(packetHeader[1:5]))
 
 	for expected != 0 {
 		n, err := conn.Read(tmp)
-		if err != nil {
-			if err != io.EOF {
-				return nil, err
-			}
-			break
+		if err != nil && err != io.EOF {
+			return nil, errors.Errorf("error during reading pkg body %w", err)
 		}
 		buf = append(buf, tmp[:n]...)
 		expected -= n
@@ -77,7 +120,7 @@ func (transport *Ed448) readRecord(conn net.Conn) (interface{}, error) {
 	}
 }
 
-func (transport *Ed448) writeRecord(msg message, conn net.Conn) error {
+func (trans *Ed448) writeRecord(msg message, conn net.Conn) error {
 	data, err := msg.marshall()
 	if err != nil {
 		return err
@@ -89,39 +132,39 @@ func (transport *Ed448) writeRecord(msg message, conn net.Conn) error {
 	binary.LittleEndian.PutUint32(packetHeader[1:], uint32(size))
 
 	if _, err := conn.Write(packetHeader); err != nil {
-		return err
+		return errors.Errorf("errors during writing packet header %w", err)
 	}
 
 	if _, err := conn.Write(data); err != nil {
-		return err
+		return errors.Errorf("errors during writing data %w", err)
 	}
 
 	return nil
 }
 
-func (transport *Ed448) initEncryptedConnection(conn net.Conn, cryptoAlias string, params []byte) (net.Conn, error) {
-	crypto := transport.cryptos[cryptoAlias]
+func (trans *Ed448) initEncryptedConnection(conn net.Conn, cryptoAlias string, params []byte) (net.Conn, error) {
+	crypto := trans.cryptos[cryptoAlias]
 	if crypto == nil {
-		return nil, ErrUnsupportedEncryption
+		return nil, errors.New(ErrUnsupportedEncryption)
 	}
 
 	if err := crypto.Configure(params); err != nil {
-		return nil, err
+		return nil, errors.Errorf("error during configuration %w", err)
 	}
 
 	return NewConn(conn, crypto), nil
 }
 
 // ToDo: update with appropriate implementation
-func (transport *Ed448) getPastelID() []byte {
+func (trans *Ed448) getPastelID() []byte {
 	pastelID := make([]byte, 4)
 	rand.Read(pastelID)
 	return pastelID
 }
 
 // ToDo: update with appropriate implementation
-func (transport *Ed448) getSignedPastelId() *signedPastelID {
-	var pastelID = transport.getPastelID()
+func (trans *Ed448) getSignedPastelID() *signedPastelID {
+	var pastelID = trans.getPastelID()
 
 	signPastelID := make([]byte, 4)
 	rand.Read(pastelID)
@@ -141,11 +184,11 @@ func (transport *Ed448) getSignedPastelId() *signedPastelID {
 }
 
 // ToDo: update with appropriate implementation
-func (transport *Ed448) verifyPastelID(_ []byte) bool {
+func (trans *Ed448) verifyPastelID(_ []byte) bool {
 	return true
 }
 
 // ToDo: update with external check through cNode
-func (transport *Ed448) verifySignature(_, _, _, _ []byte) bool {
+func (trans *Ed448) verifySignature(_, _, _, _ []byte) bool {
 	return true
 }

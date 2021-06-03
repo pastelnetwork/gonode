@@ -2,6 +2,8 @@ package ed448
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 // ClientHelloMessage - first Client message during handshake
@@ -32,33 +34,34 @@ func (msg *ClientHelloMessage) marshall() ([]byte, error) {
 // DecodeClientMsg - unmarshall []byte to ClientHelloMessage
 func DecodeClientMsg(msg []byte) (*ClientHelloMessage, error) {
 	if msg[0] != typeClientHello {
-		return nil, ErrWrongFormat
+		fmt.Println("DecodeClientMsg")
+		return nil, errors.New(ErrWrongFormat)
 	}
 	reader := bytes.NewReader(msg[1:])
 
 	supportedEncryptionsCount, err := readInt(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read int value %w", err)
 	}
 
 	supportedEncryptions := make([]string, supportedEncryptionsCount)
 	for i := 0; i < supportedEncryptionsCount; i++ {
 		encryption, err := readString(reader)
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("can not read string value %w", err)
 		}
 		supportedEncryptions[i] = *encryption
 	}
 
 	supportedSignatureAlgorithmsCount, err := readInt(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read int value %w", err)
 	}
 	supportedSignatureAlgorithms := make([]SignScheme, supportedEncryptionsCount)
 	for i := 0; i < int(supportedSignatureAlgorithmsCount); i++ {
 		signScheme, err := reader.ReadByte()
 		if err != nil {
-			return nil, err
+			return nil, errors.Errorf("can not read SingScheme %w", err)
 		}
 		supportedSignatureAlgorithms[i] = SignScheme(signScheme)
 	}
@@ -91,28 +94,28 @@ func (msg *ClientHandshakeMessage) marshall() ([]byte, error) {
 // DecodeClientHandshakeMessage - unmarshall []byte to ClientHandshakeMessage
 func DecodeClientHandshakeMessage(msg []byte) (*ClientHandshakeMessage, error) {
 	if msg[0] != typeClientHandshakeMsg {
-		return nil, ErrWrongFormat
+		return nil, errors.New(ErrWrongFormat)
 	}
 
 	reader := bytes.NewReader(msg[1:])
 	pastelID, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read PastelID %w", err)
 	}
 
 	signedPastelID, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read signed PastelID %w", err)
 	}
 
 	pubKey, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read public key %w", err)
 	}
 
 	ctx, err := readByteArray(reader)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("can not read context data %w", err)
 	}
 
 	return &ClientHandshakeMessage{
