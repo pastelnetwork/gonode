@@ -62,11 +62,12 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name          string
-		fields        fields
-		args          args
-		assertion     assert.ErrorAssertionFunc
-		numSessIDCall int
+		name            string
+		fields          fields
+		args            args
+		assertion       assert.ErrorAssertionFunc
+		numSessIDCall   int
+		numUpdateStatus int
 	}{
 		{
 			fields: fields{&Ticket{MaximumFee: 0.5}},
@@ -84,8 +85,9 @@ func TestTaskRun(t *testing.T) {
 				pastelIDS:     []string{"2", "3", "4"},
 				returnErr:     nil,
 			},
-			assertion:     assert.NoError,
-			numSessIDCall: 3,
+			assertion:       assert.NoError,
+			numSessIDCall:   3,
+			numUpdateStatus: 3,
 		},
 	}
 
@@ -158,6 +160,7 @@ func TestTaskRun(t *testing.T) {
 				taskClient.TaskMock.AssertCalled(t, "ID")
 				taskClient.TaskMock.AssertCalled(t, "UpdateStatus", mock.Anything)
 				taskClient.TaskMock.AssertCalled(t, "SetStatusNotifyFunc", mock.Anything)
+				taskClient.TaskMock.AssertNumberOfCalls(t, "UpdateStatus", testCase.numUpdateStatus)
 
 				// //pastelClient mock assertion
 				pastelClientMock.ClientMock.AssertExpectations(t)
@@ -198,6 +201,7 @@ func TestTaskMeshNodes(t *testing.T) {
 		primarySessID   string
 		pastelIDS       []string
 		returnErr       error
+		acceptNodeErr   error
 	}
 
 	testCases := []struct {
@@ -225,10 +229,30 @@ func TestTaskMeshNodes(t *testing.T) {
 				primarySessID:   "xdcfjc",
 				pastelIDS:       []string{"1", "4", "7"},
 				returnErr:       nil,
+				acceptNodeErr:   nil,
 			},
 			assertion:     assert.NoError,
 			numSessIDCall: 6,
 			want:          []string{"1:127.0.0.1", "2:127.0.0.2", "4:127.0.0.4", "7:127.0.0.7"},
+		}, {
+			name: "primary node not accepted nodes",
+			args: args{
+				ctx:          context.Background(),
+				primaryIndex: 0,
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.1", "2"},
+					{"127.0.0.1", "3"},
+				},
+				primaryPastelID: "1",
+				primarySessID:   "xdxdf",
+				pastelIDS:       []string{"2", "3"},
+				returnErr:       nil,
+				acceptNodeErr:   fmt.Errorf("primary node not accepted"),
+			},
+			assertion:     assert.Error,
+			numSessIDCall: 2,
+			want:          nil,
 		},
 	}
 
@@ -236,8 +260,6 @@ func TestTaskMeshNodes(t *testing.T) {
 		testCase := testCase
 
 		t.Run(testCase.name, func(t *testing.T) {
-			//no need run in parallel. cost time
-			//t.Parallel()
 
 			//create new client mock
 			nodeClient := test.NewMockClient()
@@ -247,7 +269,7 @@ func TestTaskMeshNodes(t *testing.T) {
 				ListenOnSession(testCase.args.returnErr).
 				ListenOnConnectTo(testCase.args.returnErr).
 				ListenOnSessID(testCase.args.primarySessID).
-				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr)
+				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.acceptNodeErr)
 
 			nodes := node.List{}
 			for _, n := range testCase.args.nodes {
