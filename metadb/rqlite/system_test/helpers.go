@@ -2,6 +2,7 @@ package system
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -443,17 +444,17 @@ func DoJoinRequest(nodeAddr, raftID, raftAddr string, voter bool) (*http.Respons
 	return resp, nil
 }
 
-func mustNewNode(enableSingle bool) *Node {
-	return mustNewNodeEncrypted(enableSingle, false, false)
+func mustNewNode(ctx context.Context, enableSingle bool) *Node {
+	return mustNewNodeEncrypted(ctx, enableSingle, false, false)
 }
 
-func mustNewNodeEncrypted(enableSingle, httpEncrypt, nodeEncrypt bool) *Node {
+func mustNewNodeEncrypted(ctx context.Context, enableSingle, httpEncrypt, nodeEncrypt bool) *Node {
 	dir := mustTempDir()
 	var mux *tcp.Mux
 	if nodeEncrypt {
-		mux = mustNewOpenTLSMux(x509.CertFile(dir), x509.KeyFile(dir), "")
+		mux = mustNewOpenTLSMux(ctx, x509.CertFile(dir), x509.KeyFile(dir), "")
 	} else {
-		mux = mustNewOpenMux("")
+		mux = mustNewOpenMux(ctx, "")
 	}
 	go mux.Serve()
 
@@ -485,7 +486,7 @@ func mustNodeEncryptedOnDisk(dir string, enableSingle, httpEncrypt bool, mux *tc
 	if id == "" {
 		id = raftTn.Addr().String()
 	}
-	node.Store = store.New(raftTn, &store.Config{
+	node.Store = store.New(context.TODO(), raftTn, &store.Config{
 		DBConf: dbConf,
 		Dir:    node.Dir,
 		ID:     id,
@@ -500,12 +501,12 @@ func mustNodeEncryptedOnDisk(dir string, enableSingle, httpEncrypt bool, mux *tc
 	node.RaftAddr = node.Store.Addr()
 	node.ID = node.Store.ID()
 
-	cluster := cluster.New(mux.Listen(cluster.MuxClusterHeader))
+	cluster := cluster.New(context.TODO(), mux.Listen(cluster.MuxClusterHeader))
 	if err := cluster.Open(); err != nil {
 		panic("failed to open Cluster service)")
 	}
 
-	node.Service = httpd.New("localhost:0", node.Store, cluster, nil)
+	node.Service = httpd.New(context.TODO(), "localhost:0", node.Store, cluster, nil)
 	node.Service.Expvar = true
 	if httpEncrypt {
 		node.Service.CertFile = node.HTTPCertPath
@@ -524,8 +525,8 @@ func mustNodeEncryptedOnDisk(dir string, enableSingle, httpEncrypt bool, mux *tc
 	return node
 }
 
-func mustNewLeaderNode() *Node {
-	node := mustNewNode(true)
+func mustNewLeaderNode(ctx context.Context) *Node {
+	node := mustNewNode(ctx, true)
 	if _, err := node.WaitForLeader(); err != nil {
 		node.Deprovision()
 		panic("node never became leader")
@@ -542,7 +543,7 @@ func mustTempDir() string {
 	return path
 }
 
-func mustNewOpenMux(addr string) *tcp.Mux {
+func mustNewOpenMux(ctx context.Context, addr string) *tcp.Mux {
 	if addr == "" {
 		addr = "localhost:0"
 	}
@@ -553,7 +554,7 @@ func mustNewOpenMux(addr string) *tcp.Mux {
 	}
 
 	var mux *tcp.Mux
-	mux, err = tcp.NewMux(ln, nil)
+	mux, err = tcp.NewMux(ctx, ln, nil)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create node-to-node mux: %s", err.Error()))
 	}
@@ -562,7 +563,7 @@ func mustNewOpenMux(addr string) *tcp.Mux {
 	return mux
 }
 
-func mustNewOpenTLSMux(certFile, keyPath, addr string) *tcp.Mux {
+func mustNewOpenTLSMux(ctx context.Context, certFile, keyPath, addr string) *tcp.Mux {
 	if addr == "" {
 		addr = "localhost:0"
 	}
@@ -573,7 +574,7 @@ func mustNewOpenTLSMux(certFile, keyPath, addr string) *tcp.Mux {
 	}
 
 	var mux *tcp.Mux
-	mux, err = tcp.NewTLSMux(ln, nil, certFile, keyPath, "")
+	mux, err = tcp.NewTLSMux(ctx, ln, nil, certFile, keyPath, "")
 	if err != nil {
 		panic(fmt.Sprintf("failed to create node-to-node mux: %s", err.Error()))
 	}

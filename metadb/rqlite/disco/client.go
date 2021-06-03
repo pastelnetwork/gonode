@@ -3,6 +3,7 @@ package disco
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +11,6 @@ import (
 	"net/http"
 
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/sirupsen/logrus"
 )
 
 // Response represents the response returned by a Discovery Service.
@@ -22,15 +22,15 @@ type Response struct {
 
 // Client provides a Discovery Service client.
 type Client struct {
-	url    string
-	logger *logrus.Entry
+	url string
+	ctx context.Context
 }
 
 // New returns an initialized Discovery Service client.
-func New(url string) *Client {
+func New(ctx context.Context, url string) *Client {
 	return &Client{
-		url:    url,
-		logger: log.DefaultLogger.WithField("prefix", "discovery"),
+		ctx: ctx,
+		url: url,
 	}
 }
 
@@ -58,7 +58,7 @@ func (c *Client) Register(id, addr string) (*Response, error) {
 			return nil, err
 		}
 
-		c.logger.Infof("discovery client attempting registration of %s at %s", addr, url)
+		log.WithContext(c.ctx).Infof("discovery client attempting registration of %s at %s", addr, url)
 		resp, err := client.Post(url, "application-type/json", bytes.NewReader(b))
 		if err != nil {
 			return nil, err
@@ -76,11 +76,11 @@ func (c *Client) Register(id, addr string) (*Response, error) {
 			if err := json.Unmarshal(b, r); err != nil {
 				return nil, err
 			}
-			c.logger.Infof("discovery client successfully registered %s at %s", addr, url)
+			log.WithContext(c.ctx).Infof("discovery client successfully registered %s at %s", addr, url)
 			return r, nil
 		case http.StatusMovedPermanently:
 			url = resp.Header.Get("location")
-			c.logger.Infof("discovery client redirecting to: %s", url)
+			log.WithContext(c.ctx).Infof("discovery client redirecting to: %s", url)
 			continue
 		default:
 			return nil, errors.New(resp.Status)

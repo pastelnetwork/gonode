@@ -2,6 +2,7 @@ package store
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net"
@@ -254,7 +255,7 @@ COMMIT;
 
 	f, _ := ioutil.TempFile("", "rqlite-baktest-")
 	defer os.Remove(f.Name())
-	s.logger.Infof("backup file is %s", f.Name())
+	t.Logf("backup file is %s", f.Name())
 
 	if err := s.Backup(true, BackupBinary, f); err != nil {
 		t.Fatalf("Backup failed %s", err.Error())
@@ -302,7 +303,7 @@ COMMIT;
 
 	f, _ := ioutil.TempFile("", "rqlite-baktest-")
 	defer os.Remove(f.Name())
-	s.logger.Infof("backup file is %s", f.Name())
+	t.Logf("backup file is %s", f.Name())
 
 	if err := s.Backup(true, BackupSQL, f); err != nil {
 		t.Fatalf("Backup failed %s", err.Error())
@@ -1216,7 +1217,7 @@ func Test_State(t *testing.T) {
 
 func mustNewStoreAtPath(path string, inmem bool) *Store {
 	cfg := NewDBConfig("", inmem)
-	s := New(mustMockLister("localhost:0"), &Config{
+	s := New(context.TODO(), mustMockLister("localhost:0"), &Config{
 		DBConf: cfg,
 		Dir:    path,
 		ID:     path, // Could be any unique string.

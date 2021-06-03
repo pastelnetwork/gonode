@@ -3,6 +3,7 @@
 package http
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -23,7 +24,6 @@ import (
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
-	"github.com/sirupsen/logrus"
 )
 
 // Database is the interface any queryable system must implement
@@ -188,20 +188,20 @@ type Service struct {
 
 	BuildInfo map[string]interface{}
 
-	logger *logrus.Entry
+	ctx context.Context
 }
 
 // New returns an uninitialized HTTP service. If credentials is nil, then
 // the service performs no authentication and authorization checks.
-func New(addr string, store Store, cluster Cluster, credentials CredentialStore) *Service {
+func New(ctx context.Context, addr string, store Store, cluster Cluster, credentials CredentialStore) *Service {
 	return &Service{
+		ctx:             ctx,
 		addr:            addr,
 		store:           store,
 		cluster:         cluster,
 		start:           time.Now(),
 		statuses:        make(map[string]Statuser),
 		credentialStore: credentials,
-		logger:          log.DefaultLogger.WithField("prefix", "http"),
 	}
 }
 
@@ -227,17 +227,17 @@ func (s *Service) Start() error {
 		if err != nil {
 			return err
 		}
-		s.logger.Infof("secure HTTPS server enabled with cert %s, key %s", s.CertFile, s.KeyFile)
+		log.WithContext(s.ctx).Infof("secure HTTPS server enabled with cert %s, key %s", s.CertFile, s.KeyFile)
 	}
 	s.ln = ln
 
 	go func() {
 		err := server.Serve(s.ln)
 		if err != nil {
-			s.logger.Errorf("HTTP service Serve() returned: %v", err.Error())
+			log.WithContext(s.ctx).Errorf("HTTP service Serve() returned: %v", err.Error())
 		}
 	}()
-	s.logger.Infof("service listening on: %v", s.Addr())
+	log.WithContext(s.ctx).Infof("service listening on: %v", s.Addr())
 
 	return nil
 }
@@ -998,7 +998,7 @@ func (s *Service) writeResponse(w http.ResponseWriter, r *http.Request, j *Respo
 	}
 	_, err = w.Write(b)
 	if err != nil {
-		s.logger.Errorf("writing response failed: %v", err.Error())
+		log.WithContext(s.ctx).Errorf("writing response failed: %v", err.Error())
 	}
 }
 

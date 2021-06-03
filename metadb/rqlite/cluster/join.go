@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -13,8 +14,6 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/sirupsen/logrus"
-
 	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
 )
 
@@ -27,31 +26,30 @@ var (
 // It walks through joinAddr in order, and sets the node ID and Raft address of
 // the joining node as id addr respectively. It returns the endpoint successfully
 // used to join the cluster.
-func Join(srcIP string, joinAddr []string, id, addr string, voter bool, numAttempts int,
+func Join(ctx context.Context, srcIP string, joinAddr []string, id, addr string, voter bool, numAttempts int,
 	attemptInterval time.Duration, tlsConfig *tls.Config) (string, error) {
 	var err error
 	var j string
-	logger := log.DefaultLogger.WithField("prefix", "join")
 	if tlsConfig == nil {
 		tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
 	for i := 0; i < numAttempts; i++ {
 		for _, a := range joinAddr {
-			j, err = join(srcIP, a, id, addr, voter, tlsConfig, logger)
+			j, err = join(ctx, srcIP, a, id, addr, voter, tlsConfig)
 			if err == nil {
 				// Success!
 				return j, nil
 			}
 		}
-		logger.Errorf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, err.Error(), attemptInterval)
+		log.WithContext(ctx).Errorf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, err.Error(), attemptInterval)
 		time.Sleep(attemptInterval)
 	}
-	logger.Errorf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
+	log.WithContext(ctx).Errorf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
 	return "", ErrJoinFailed
 }
 
-func join(srcIP, joinAddr, id, addr string, voter bool, tlsConfig *tls.Config, logger *logrus.Entry) (string, error) {
+func join(ctx context.Context, srcIP, joinAddr, id, addr string, voter bool, tlsConfig *tls.Config) (string, error) {
 	if id == "" {
 		return "", fmt.Errorf("node ID not set")
 	}
@@ -125,7 +123,7 @@ func join(srcIP, joinAddr, id, addr string, voter bool, tlsConfig *tls.Config, l
 				return "", fmt.Errorf("failed to join, node returned: %s: (%s)", resp.Status, string(b))
 			}
 
-			logger.Error("join via HTTP failed, trying via HTTPS")
+			log.WithContext(ctx).Error("join via HTTP failed, trying via HTTPS")
 			fullAddr = httpd.EnsureHTTPS(fullAddr)
 			continue
 		default:
