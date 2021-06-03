@@ -26,6 +26,8 @@ type Service interface {
 	RegisterTasks(context.Context) (res TaskCollection, err error)
 	// Upload the image that is used when registering a new artwork.
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
+	// Streams the search result for artwork
+	ArtSearch(context.Context, *ArtSearchPayload, ArtSearchServerStream) (err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -36,7 +38,7 @@ const ServiceName = "artworks"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [5]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage"}
+var MethodNames = [6]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "artSearch"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -52,6 +54,22 @@ type RegisterTaskStateServerStream interface {
 type RegisterTaskStateClientStream interface {
 	// Recv reads instances of "TaskState" from the stream.
 	Recv() (*TaskState, error)
+}
+
+// ArtSearchServerStream is the interface a "artSearch" endpoint server stream
+// must satisfy.
+type ArtSearchServerStream interface {
+	// Send streams instances of "ArtSearchResult".
+	Send(*ArtSearchResult) error
+	// Close closes the stream.
+	Close() error
+}
+
+// ArtSearchClientStream is the interface a "artSearch" endpoint client stream
+// must satisfy.
+type ArtSearchClientStream interface {
+	// Recv reads instances of "ArtSearchResult" from the stream.
+	Recv() (*ArtSearchResult, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -145,6 +163,71 @@ type Image struct {
 	ImageID string
 	// Image expiration
 	ExpiresIn string
+}
+
+// ArtSearchPayload is the payload type of the artworks service artSearch
+// method.
+type ArtSearchPayload struct {
+	// Artist PastelID or special value; mine
+	Artist *string
+	// Number of results to be return
+	Limit int
+	// Name of the artist
+	ArtistName *string
+	// Art is artwork title
+	Art *string
+	// series refers to artwork series name
+	Series *string
+	// descr refers to artist written statement
+	Descr *string
+	// keyword is one of the values in artwork_keyword_set
+	Keyword *string
+	// Minimum blocknum
+	MinBlock int
+	// maximum blocknum
+	MaxBlock *int
+	// Minimum number of created copies
+	MinCopies *int
+	// Maximum number of crated copies
+	MaxCopies *int
+	// Minimum nsfw score
+	MinNsfwScore *int
+	// Maximum nsfw score
+	MaxNsfwScore *int
+	// Minimum rareness score
+	MinRarenessScore *int
+	// Maximum rareness score
+	MaxRarenessScore *int
+}
+
+// ArtSearchResult is the result type of the artworks service artSearch method.
+type ArtSearchResult struct {
+	// Thumbnail image
+	Image []byte
+	// Name of the artwork
+	Name string
+	// Description of the artwork
+	Description *string
+	// Keywords
+	Keywords *string
+	// Series name
+	SeriesName *string
+	// Number of copies issued
+	IssuedCopies int
+	// Artwork creation video youtube URL
+	YoutubeURL *string
+	// Artist's PastelID
+	ArtistPastelID string
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string
+	// Name of the artist
+	ArtistName string
+	// Artist website URL
+	ArtistWebsiteURL *string
+	// Spendable address
+	SpendableAddress string
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee float64
 }
 
 // Ticket of the registration artwork

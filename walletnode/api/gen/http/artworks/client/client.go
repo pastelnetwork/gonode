@@ -41,6 +41,10 @@ type Client struct {
 	// endpoint.
 	UploadImageDoer goahttp.Doer
 
+	// ArtSearch Doer is the HTTP client used to make requests to the artSearch
+	// endpoint.
+	ArtSearchDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -80,6 +84,7 @@ func NewClient(
 		RegisterTaskDoer:      doer,
 		RegisterTasksDoer:     doer,
 		UploadImageDoer:       doer,
+		ArtSearchDoer:         doer,
 		CORSDoer:              doer,
 		RestoreResponseBody:   restoreBody,
 		scheme:                scheme,
@@ -213,5 +218,49 @@ func (c *Client) UploadImage(artworksUploadImageEncoderFn ArtworksUploadImageEnc
 			return nil, goahttp.ErrRequestError("artworks", "uploadImage", err)
 		}
 		return decodeResponse(resp)
+	}
+}
+
+// ArtSearch returns an endpoint that makes HTTP requests to the artworks
+// service artSearch server.
+func (c *Client) ArtSearch() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeArtSearchRequest(c.encoder)
+		decodeResponse = DecodeArtSearchResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildArtSearchRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		defer cancel()
+
+		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
+		if err != nil {
+			if resp != nil {
+				return decodeResponse(resp)
+			}
+			return nil, goahttp.ErrRequestError("artworks", "artSearch", err)
+		}
+		if c.configurer.ArtSearchFn != nil {
+			conn = c.configurer.ArtSearchFn(conn, cancel)
+		}
+		go func() {
+			<-ctx.Done()
+			conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "client closing connection"),
+				time.Now().Add(time.Second),
+			)
+			conn.Close()
+		}()
+		stream := &ArtSearchClientStream{conn: conn}
+		return stream, nil
 	}
 }
