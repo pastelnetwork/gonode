@@ -106,7 +106,7 @@ func (s *Service) credentialStore() (*auth.CredentialsStore, error) {
 }
 
 // start the http server
-func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs *cluster.Service) error {
+func (s *Service) startHTTPServer(dbStore *store.Store, cs *cluster.Service) error {
 	// load the credential store
 	cred, err := s.credentialStore()
 	if err != nil {
@@ -290,7 +290,7 @@ func (s *Service) startServer(ctx context.Context) error {
 		}
 
 		// join rqlite cluster
-		if j, err := cluster.Join(
+		joinAddr, err := cluster.Join(
 			s.config.JoinSourceIP,
 			joins,
 			db.ID(),
@@ -299,11 +299,11 @@ func (s *Service) startServer(ctx context.Context) error {
 			s.config.JoinAttempts,
 			joinDuration,
 			&tlsConfig,
-		); err != nil {
+		)
+		if err != nil {
 			return errors.Errorf("join cluster at %v: %v", joins, err)
-		} else {
-			log.WithContext(ctx).Infof("successfully joined cluster at %v", j)
 		}
+		log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
 	}
 
 	// wait until the store is in full consensus
@@ -313,7 +313,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	log.WithContext(ctx).Info("store has reached consensus")
 
 	// start the HTTP API server
-	if err := s.startHTTPServer(ctx, db, cs); err != nil {
+	if err := s.startHTTPServer(db, cs); err != nil {
 		return errors.Errorf("start http server: %v", err)
 	}
 	log.WithContext(ctx).Info("node is ready, block until context is done")

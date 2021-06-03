@@ -17,7 +17,7 @@ type Service struct {
 	ready  chan struct{} // mark the rqlite node is started
 }
 
-// New returns a new service for rqlite cluster
+// NewService returns a new service for rqlite cluster
 func NewService(config *Config) *Service {
 	return &Service{
 		config: config,

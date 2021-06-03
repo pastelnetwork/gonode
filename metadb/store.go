@@ -20,7 +20,7 @@ const (
 )
 
 // Write execute a statement, not support multple statements
-func (s *Service) Write(ctx context.Context, statement string) (*WriteResult, error) {
+func (s *Service) Write(_ context.Context, statement string) (*WriteResult, error) {
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
 	}
@@ -72,7 +72,7 @@ func (s *Service) consistencyLevel(level string) command.QueryRequest_Level {
 
 // Query execute a query, not support multple statements
 // level can be 'none', 'weak', and 'strong'
-func (s *Service) Query(ctx context.Context, statement string, level string) (*QueryResult, error) {
+func (s *Service) Query(_ context.Context, statement string, level string) (*QueryResult, error) {
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
 	}

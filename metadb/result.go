@@ -23,7 +23,7 @@ func (qr *QueryResult) Columns() []string {
 	return qr.columns
 }
 
-// Map() returns the current row (as advanced by Next()) as a map[string]interface{}
+// Map returns the current row (as advanced by Next()) as a map[string]interface{}
 // The key is a string corresponding to a column name.
 // The value is the corresponding column.
 func (qr *QueryResult) Map() (map[string]interface{}, error) {
@@ -70,7 +70,7 @@ func toTime(src interface{}) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("invalid time type:%T val:%v", src, src)
 }
 
-// Next() positions the QueryResult result pointer so that Scan() or Map() is ready.
+// Next positions the QueryResult result pointer so that Scan() or Map() is ready.
 // You should call Next() first, but gorqlite will fix it if you call Map() or Scan() before
 // the initial Next().
 func (qr *QueryResult) Next() bool {
@@ -78,21 +78,21 @@ func (qr *QueryResult) Next() bool {
 		return false
 	}
 
-	qr.rowNumber += 1
+	qr.rowNumber++
 	return true
 }
 
-// NumRows() returns the number of rows returned by the query.
+// NumRows returns the number of rows returned by the query.
 func (qr *QueryResult) NumRows() int64 {
 	return int64(len(qr.values))
 }
 
-// RowNumber() returns the current row number as Next() iterates through the result's rows.
+// RowNumber returns the current row number as Next() iterates through the result's rows.
 func (qr *QueryResult) RowNumber() int64 {
 	return qr.rowNumber
 }
 
-// Scan() takes a list of pointers and then updates them to reflect the current row's data.
+// Scan takes a list of pointers and then updates them to reflect the current row's data.
 //
 // Note that only the following data types are used, and they
 // are a subset of the types JSON uses:
@@ -175,7 +175,7 @@ func (qr *QueryResult) Scan(dest ...interface{}) error {
 	return nil
 }
 
-// Types() returns an array of the column's types.
+// Types returns an array of the column's types.
 func (qr *QueryResult) Types() []string {
 	return qr.types
 }
