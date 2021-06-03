@@ -3,10 +3,14 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"os"
 	"sort"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
+	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
+	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -27,6 +31,155 @@ func pullPastelAddressIDNodes(nodes node.List) []string {
 
 	sort.Strings(v)
 	return v
+}
+
+func newTestImageFile(fileName string) (*artwork.File, error) {
+	err := test.CreateBlankImage("./"+fileName, 400, 400)
+	if err != nil {
+		return nil, err
+	}
+
+	imageStorage := artwork.NewStorage(fs.NewFileStorage("./"))
+	imageFile := artwork.NewFile(imageStorage, fileName)
+	return imageFile, nil
+}
+
+func TestTaskRun(t *testing.T) {
+	t.Parallel()
+
+	type fields struct {
+		Ticket *Ticket
+	}
+
+	type args struct {
+		taskId        string
+		ctx           context.Context
+		networkFee    *pastel.StorageFee
+		masterNodes   pastel.MasterNodes
+		primarySessID string
+		pastelIDS     []string
+		returnErr     error
+	}
+
+	testCases := []struct {
+		name          string
+		fields        fields
+		args          args
+		assertion     assert.ErrorAssertionFunc
+		numSessIDCall int
+	}{
+		{
+			fields: fields{&Ticket{MaximumFee: 0.5}},
+			args: args{
+				taskId:     "1",
+				ctx:        context.Background(),
+				networkFee: &pastel.StorageFee{NetworkFee: 0.4},
+				masterNodes: pastel.MasterNodes{
+					pastel.MasterNode{Fee: 0.1, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
+					pastel.MasterNode{Fee: 0.3, ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
+					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4448", ExtKey: "4"},
+				},
+				primarySessID: "sesid1",
+				pastelIDS:     []string{"2", "3", "4"},
+				returnErr:     nil,
+			},
+			assertion:     assert.NoError,
+			numSessIDCall: 3,
+		},
+	}
+
+	t.Run("group", func(t *testing.T) {
+		//create tmp image file
+		artworkFile, err := newTestImageFile("test.png")
+		assert.NoError(t, err)
+
+		defer func() {
+			os.Remove("./test.png")
+		}()
+
+		for _, testCase := range testCases {
+			testCase := testCase
+
+			t.Run(testCase.name, func(t *testing.T) {
+				nodeClient := test.NewMockClient()
+				nodeClient.
+					ListenOnConnect(testCase.args.returnErr).
+					ListenOnRegisterArtwork().
+					ListenOnSession(testCase.args.returnErr).
+					ListenOnConnectTo(testCase.args.returnErr).
+					ListenOnSessID(testCase.args.primarySessID).
+					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
+					ListenOnDone()
+
+				cancelCtx, cancel := context.WithCancel(testCase.args.ctx)
+				// custom probe image listening call to get thumbnail file.
+				// should remove the generated thumbnail file and close all go routine
+				nodeClient.RegArtWorkMock.On("ProbeImage",
+					mock.Anything,
+					mock.IsType(&artwork.File{})).
+					Return(func(ctx context.Context, image *artwork.File) (fingerprintData []byte) {
+						defer cancel()
+						err := image.Remove()
+						assert.NoError(t, err)
+
+						fingerprintData = []byte("fingerprint matches")
+						return fingerprintData
+					}, testCase.args.returnErr)
+
+				pastelClientMock := pastelMock.NewMockClient()
+				pastelClientMock.
+					ListenOnStorageFee(testCase.args.networkFee, testCase.args.returnErr).
+					ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr)
+
+				service := &Service{
+					pastelClient: pastelClientMock.ClientMock,
+					nodeClient:   nodeClient.ClientMock,
+					config:       NewConfig(),
+				}
+
+				taskClient := stateMock.NewMockTask()
+				taskClient.
+					ListenOnID(testCase.args.taskId).
+					ListenOnUpdateStatus().
+					ListenOnSetStatusNotifyFunc()
+
+				ticket := testCase.fields.Ticket
+				ticket.Image = artworkFile
+				task := &Task{
+					Task:    taskClient.TaskMock,
+					Service: service,
+					Ticket:  ticket,
+				}
+
+				testCase.assertion(t, task.Run(cancelCtx))
+
+				taskClient.TaskMock.AssertExpectations(t)
+				taskClient.TaskMock.AssertCalled(t, "ID")
+				taskClient.TaskMock.AssertCalled(t, "UpdateStatus", mock.Anything)
+				taskClient.TaskMock.AssertCalled(t, "SetStatusNotifyFunc", mock.Anything)
+
+				// //pastelClient mock assertion
+				pastelClientMock.ClientMock.AssertExpectations(t)
+				pastelClientMock.ClientMock.AssertCalled(t, "StorageFee", mock.Anything)
+				pastelClientMock.ClientMock.AssertNumberOfCalls(t, "StorageFee", 1)
+
+				// //nodeClient mock assertion
+				nodeClient.ClientMock.AssertExpectations(t)
+				nodeClient.ConnectionMock.AssertExpectations(t)
+				nodeClient.RegArtWorkMock.AssertExpectations(t)
+				nodeClient.RegArtWorkMock.AssertCalled(t, "AcceptedNodes", mock.Anything)
+				nodeClient.RegArtWorkMock.AssertNumberOfCalls(t, "AcceptedNodes", 1)
+				nodeClient.RegArtWorkMock.AssertCalled(t, "SessID")
+				nodeClient.RegArtWorkMock.AssertNumberOfCalls(t, "SessID", testCase.numSessIDCall)
+				nodeClient.RegArtWorkMock.AssertCalled(t, "Session", mock.Anything, false)
+				nodeClient.RegArtWorkMock.AssertCalled(t, "ConnectTo", mock.Anything, mock.Anything, testCase.args.primarySessID)
+				nodeClient.RegArtWorkMock.AssertCalled(t, "ProbeImage", mock.Anything, mock.IsType(&artwork.File{}))
+			})
+
+		}
+	})
+
 }
 
 func TestTaskMeshNodes(t *testing.T) {
@@ -83,7 +236,8 @@ func TestTaskMeshNodes(t *testing.T) {
 		testCase := testCase
 
 		t.Run(testCase.name, func(t *testing.T) {
-			t.Parallel()
+			//no need run in parallel. cost time
+			//t.Parallel()
 
 			//create new client mock
 			nodeClient := test.NewMockClient()
