@@ -149,6 +149,14 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 	return srv
 }
 
+// ArtSearch searches for artwork & streams the result based on filters
+func (service *Artwork) ArtSearch(_ context.Context, _ *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
+	defer stream.Close()
+	// TODO: Search Artwork & stream
+
+	return nil
+}
+
 // NewArtwork returns the artworks Artwork implementation.
 func NewArtwork(register *artworkregister.Service) *Artwork {
 	return &Artwork{

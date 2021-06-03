@@ -11,6 +11,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strconv"
 	"unicode/utf8"
 
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
@@ -353,6 +354,303 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 				body = formatter(res)
 			} else {
 				body = NewUploadImageInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// DecodeArtSearchRequest returns a decoder for requests sent to the artworks
+// artSearch endpoint.
+func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			artist           *string
+			limit            int
+			artistName       *string
+			art              *string
+			series           *string
+			descr            *string
+			keyword          *string
+			minCopies        *int
+			maxCopies        *int
+			minBlock         int
+			maxBlock         *int
+			minRarenessScore *int
+			maxRarenessScore *int
+			minNsfwScore     *int
+			maxNsfwScore     *int
+			err              error
+		)
+		artistRaw := r.URL.Query().Get("artist")
+		if artistRaw != "" {
+			artist = &artistRaw
+		}
+		if artist != nil {
+			if utf8.RuneCountInString(*artist) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("artist", *artist, utf8.RuneCountInString(*artist), 256, false))
+			}
+		}
+		{
+			limitRaw := r.URL.Query().Get("limit")
+			if limitRaw == "" {
+				limit = 10
+			} else {
+				v, err2 := strconv.ParseInt(limitRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("limit", limitRaw, "integer"))
+				}
+				limit = int(v)
+			}
+		}
+		if limit < 10 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 10, true))
+		}
+		artistNameRaw := r.URL.Query().Get("artist_name")
+		if artistNameRaw != "" {
+			artistName = &artistNameRaw
+		}
+		if artistName != nil {
+			if utf8.RuneCountInString(*artistName) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("artistName", *artistName, utf8.RuneCountInString(*artistName), 256, false))
+			}
+		}
+		artRaw := r.URL.Query().Get("art")
+		if artRaw != "" {
+			art = &artRaw
+		}
+		if art != nil {
+			if utf8.RuneCountInString(*art) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("art", *art, utf8.RuneCountInString(*art), 256, false))
+			}
+		}
+		seriesRaw := r.URL.Query().Get("series")
+		if seriesRaw != "" {
+			series = &seriesRaw
+		}
+		if series != nil {
+			if utf8.RuneCountInString(*series) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("series", *series, utf8.RuneCountInString(*series), 256, false))
+			}
+		}
+		descrRaw := r.URL.Query().Get("descr")
+		if descrRaw != "" {
+			descr = &descrRaw
+		}
+		if descr != nil {
+			if utf8.RuneCountInString(*descr) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("descr", *descr, utf8.RuneCountInString(*descr), 256, false))
+			}
+		}
+		keywordRaw := r.URL.Query().Get("keyword")
+		if keywordRaw != "" {
+			keyword = &keywordRaw
+		}
+		if keyword != nil {
+			if utf8.RuneCountInString(*keyword) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("keyword", *keyword, utf8.RuneCountInString(*keyword), 256, false))
+			}
+		}
+		{
+			minCopiesRaw := r.URL.Query().Get("min_copies")
+			if minCopiesRaw != "" {
+				v, err2 := strconv.ParseInt(minCopiesRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minCopies", minCopiesRaw, "integer"))
+				}
+				pv := int(v)
+				minCopies = &pv
+			}
+		}
+		if minCopies != nil {
+			if *minCopies < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minCopies", *minCopies, 1, true))
+			}
+		}
+		if minCopies != nil {
+			if *minCopies > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minCopies", *minCopies, 1000, false))
+			}
+		}
+		{
+			maxCopiesRaw := r.URL.Query().Get("max_copies")
+			if maxCopiesRaw != "" {
+				v, err2 := strconv.ParseInt(maxCopiesRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxCopies", maxCopiesRaw, "integer"))
+				}
+				pv := int(v)
+				maxCopies = &pv
+			}
+		}
+		if maxCopies != nil {
+			if *maxCopies < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxCopies", *maxCopies, 1, true))
+			}
+		}
+		if maxCopies != nil {
+			if *maxCopies > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxCopies", *maxCopies, 1000, false))
+			}
+		}
+		{
+			minBlockRaw := r.URL.Query().Get("min_block")
+			if minBlockRaw == "" {
+				minBlock = 1
+			} else {
+				v, err2 := strconv.ParseInt(minBlockRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minBlock", minBlockRaw, "integer"))
+				}
+				minBlock = int(v)
+			}
+		}
+		if minBlock < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("minBlock", minBlock, 1, true))
+		}
+		{
+			maxBlockRaw := r.URL.Query().Get("max_block")
+			if maxBlockRaw != "" {
+				v, err2 := strconv.ParseInt(maxBlockRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxBlock", maxBlockRaw, "integer"))
+				}
+				pv := int(v)
+				maxBlock = &pv
+			}
+		}
+		if maxBlock != nil {
+			if *maxBlock < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxBlock", *maxBlock, 1, true))
+			}
+		}
+		{
+			minRarenessScoreRaw := r.URL.Query().Get("min_rareness_score")
+			if minRarenessScoreRaw != "" {
+				v, err2 := strconv.ParseInt(minRarenessScoreRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minRarenessScore", minRarenessScoreRaw, "integer"))
+				}
+				pv := int(v)
+				minRarenessScore = &pv
+			}
+		}
+		if minRarenessScore != nil {
+			if *minRarenessScore < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1, true))
+			}
+		}
+		if minRarenessScore != nil {
+			if *minRarenessScore > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1000, false))
+			}
+		}
+		{
+			maxRarenessScoreRaw := r.URL.Query().Get("max_rareness_score")
+			if maxRarenessScoreRaw != "" {
+				v, err2 := strconv.ParseInt(maxRarenessScoreRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxRarenessScore", maxRarenessScoreRaw, "integer"))
+				}
+				pv := int(v)
+				maxRarenessScore = &pv
+			}
+		}
+		if maxRarenessScore != nil {
+			if *maxRarenessScore < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1, true))
+			}
+		}
+		if maxRarenessScore != nil {
+			if *maxRarenessScore > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1000, false))
+			}
+		}
+		{
+			minNsfwScoreRaw := r.URL.Query().Get("min_nsfw_score")
+			if minNsfwScoreRaw != "" {
+				v, err2 := strconv.ParseInt(minNsfwScoreRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minNsfwScore", minNsfwScoreRaw, "integer"))
+				}
+				pv := int(v)
+				minNsfwScore = &pv
+			}
+		}
+		if minNsfwScore != nil {
+			if *minNsfwScore < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1, true))
+			}
+		}
+		if minNsfwScore != nil {
+			if *minNsfwScore > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1000, false))
+			}
+		}
+		{
+			maxNsfwScoreRaw := r.URL.Query().Get("max_nsfw_score")
+			if maxNsfwScoreRaw != "" {
+				v, err2 := strconv.ParseInt(maxNsfwScoreRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxNsfwScore", maxNsfwScoreRaw, "integer"))
+				}
+				pv := int(v)
+				maxNsfwScore = &pv
+			}
+		}
+		if maxNsfwScore != nil {
+			if *maxNsfwScore < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1, true))
+			}
+		}
+		if maxNsfwScore != nil {
+			if *maxNsfwScore > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1000, false))
+			}
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewArtSearchPayload(artist, limit, artistName, art, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore)
+
+		return payload, nil
+	}
+}
+
+// EncodeArtSearchError returns an encoder for errors returned by the artSearch
+// artworks endpoint.
+func EncodeArtSearchError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewArtSearchBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", "BadRequest")
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewArtSearchInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", "InternalServerError")
 			w.WriteHeader(http.StatusInternalServerError)

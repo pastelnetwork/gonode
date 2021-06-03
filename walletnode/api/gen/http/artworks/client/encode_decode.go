@@ -10,6 +10,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
@@ -520,6 +521,155 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
 			return nil, goahttp.ErrInvalidResponse("artworks", "uploadImage", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildArtSearchRequest instantiates a HTTP request object with method and
+// path set to call the "artworks" service "artSearch" endpoint
+func (c *Client) BuildArtSearchRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	scheme := c.scheme
+	switch c.scheme {
+	case "http":
+		scheme = "ws"
+	case "https":
+		scheme = "wss"
+	}
+	u := &url.URL{Scheme: scheme, Host: c.host, Path: ArtSearchArtworksPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("artworks", "artSearch", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeArtSearchRequest returns an encoder for requests sent to the artworks
+// artSearch server.
+func EncodeArtSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*artworks.ArtSearchPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("artworks", "artSearch", "*artworks.ArtSearchPayload", v)
+		}
+		values := req.URL.Query()
+		if p.Artist != nil {
+			values.Add("artist", *p.Artist)
+		}
+		values.Add("limit", fmt.Sprintf("%v", p.Limit))
+		if p.ArtistName != nil {
+			values.Add("artist_name", *p.ArtistName)
+		}
+		if p.Art != nil {
+			values.Add("art", *p.Art)
+		}
+		if p.Series != nil {
+			values.Add("series", *p.Series)
+		}
+		if p.Descr != nil {
+			values.Add("descr", *p.Descr)
+		}
+		if p.Keyword != nil {
+			values.Add("keyword", *p.Keyword)
+		}
+		if p.MinCopies != nil {
+			values.Add("min_copies", fmt.Sprintf("%v", *p.MinCopies))
+		}
+		if p.MaxCopies != nil {
+			values.Add("max_copies", fmt.Sprintf("%v", *p.MaxCopies))
+		}
+		values.Add("min_block", fmt.Sprintf("%v", p.MinBlock))
+		if p.MaxBlock != nil {
+			values.Add("max_block", fmt.Sprintf("%v", *p.MaxBlock))
+		}
+		if p.MinRarenessScore != nil {
+			values.Add("min_rareness_score", fmt.Sprintf("%v", *p.MinRarenessScore))
+		}
+		if p.MaxRarenessScore != nil {
+			values.Add("max_rareness_score", fmt.Sprintf("%v", *p.MaxRarenessScore))
+		}
+		if p.MinNsfwScore != nil {
+			values.Add("min_nsfw_score", fmt.Sprintf("%v", *p.MinNsfwScore))
+		}
+		if p.MaxNsfwScore != nil {
+			values.Add("max_nsfw_score", fmt.Sprintf("%v", *p.MaxNsfwScore))
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeArtSearchResponse returns a decoder for responses returned by the
+// artworks artSearch endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeArtSearchResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeArtSearchResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body ArtSearchResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "artSearch", err)
+			}
+			err = ValidateArtSearchResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artSearch", err)
+			}
+			res := NewArtSearchResultOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body ArtSearchBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "artSearch", err)
+			}
+			err = ValidateArtSearchBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artSearch", err)
+			}
+			return nil, NewArtSearchBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body ArtSearchInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "artSearch", err)
+			}
+			err = ValidateArtSearchInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artSearch", err)
+			}
+			return nil, NewArtSearchInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("artworks", "artSearch", resp.StatusCode, string(body))
 		}
 	}
 }

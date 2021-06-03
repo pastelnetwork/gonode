@@ -98,6 +98,37 @@ type UploadImageResponseBody struct {
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 }
 
+// ArtSearchResponseBody is the type of the "artworks" service "artSearch"
+// endpoint HTTP response body.
+type ArtSearchResponseBody struct {
+	// Thumbnail image
+	Image []byte `form:"image" json:"image" xml:"image"`
+	// Name of the artwork
+	Name string `form:"name" json:"name" xml:"name"`
+	// Description of the artwork
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies issued
+	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
+	// Name of the artist
+	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
+	// Spendable address
+	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
+	// Used to find a suitable masternode with a fee equal or less
+	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
+}
+
 // RegisterBadRequestResponseBody is the type of the "artworks" service
 // "register" endpoint HTTP response body for the "BadRequest" error.
 type RegisterBadRequestResponseBody struct {
@@ -265,6 +296,43 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// ArtSearchBadRequestResponseBody is the type of the "artworks" service
+// "artSearch" endpoint HTTP response body for the "BadRequest" error.
+type ArtSearchBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// ArtSearchInternalServerErrorResponseBody is the type of the "artworks"
+// service "artSearch" endpoint HTTP response body for the
+// "InternalServerError" error.
+type ArtSearchInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -399,6 +467,27 @@ func NewUploadImageResponseBody(res *artworksviews.ImageView) *UploadImageRespon
 	return body
 }
 
+// NewArtSearchResponseBody builds the HTTP response body from the result of
+// the "artSearch" endpoint of the "artworks" service.
+func NewArtSearchResponseBody(res *artworks.ArtSearchResult) *ArtSearchResponseBody {
+	body := &ArtSearchResponseBody{
+		Image:                    res.Image,
+		Name:                     res.Name,
+		Description:              res.Description,
+		Keywords:                 res.Keywords,
+		SeriesName:               res.SeriesName,
+		IssuedCopies:             res.IssuedCopies,
+		YoutubeURL:               res.YoutubeURL,
+		ArtistPastelID:           res.ArtistPastelID,
+		ArtistPastelIDPassphrase: res.ArtistPastelIDPassphrase,
+		ArtistName:               res.ArtistName,
+		ArtistWebsiteURL:         res.ArtistWebsiteURL,
+		SpendableAddress:         res.SpendableAddress,
+		MaximumFee:               res.MaximumFee,
+	}
+	return body
+}
+
 // NewRegisterBadRequestResponseBody builds the HTTP response body from the
 // result of the "register" endpoint of the "artworks" service.
 func NewRegisterBadRequestResponseBody(res *goa.ServiceError) *RegisterBadRequestResponseBody {
@@ -527,6 +616,34 @@ func NewUploadImageInternalServerErrorResponseBody(res *goa.ServiceError) *Uploa
 	return body
 }
 
+// NewArtSearchBadRequestResponseBody builds the HTTP response body from the
+// result of the "artSearch" endpoint of the "artworks" service.
+func NewArtSearchBadRequestResponseBody(res *goa.ServiceError) *ArtSearchBadRequestResponseBody {
+	body := &ArtSearchBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewArtSearchInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "artSearch" endpoint of the "artworks" service.
+func NewArtSearchInternalServerErrorResponseBody(res *goa.ServiceError) *ArtSearchInternalServerErrorResponseBody {
+	body := &ArtSearchInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewRegisterPayload builds a artworks service register endpoint payload.
 func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	v := &artworks.RegisterPayload{
@@ -572,6 +689,28 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePa
 		Bytes:    body.Bytes,
 		Filename: body.Filename,
 	}
+
+	return v
+}
+
+// NewArtSearchPayload builds a artworks service artSearch endpoint payload.
+func NewArtSearchPayload(artist *string, limit int, artistName *string, art *string, series *string, descr *string, keyword *string, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *int, maxRarenessScore *int, minNsfwScore *int, maxNsfwScore *int) *artworks.ArtSearchPayload {
+	v := &artworks.ArtSearchPayload{}
+	v.Artist = artist
+	v.Limit = limit
+	v.ArtistName = artistName
+	v.Art = art
+	v.Series = series
+	v.Descr = descr
+	v.Keyword = keyword
+	v.MinCopies = minCopies
+	v.MaxCopies = maxCopies
+	v.MinBlock = minBlock
+	v.MaxBlock = maxBlock
+	v.MinRarenessScore = minRarenessScore
+	v.MaxRarenessScore = maxRarenessScore
+	v.MinNsfwScore = minNsfwScore
+	v.MaxNsfwScore = maxNsfwScore
 
 	return v
 }

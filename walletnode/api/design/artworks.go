@@ -119,6 +119,45 @@ var _ = Service("artworks", func() {
 			Response(StatusCreated)
 		})
 	})
+
+	Method("artSearch", func() {
+		Description("Streams the search result for artwork")
+		Meta("swagger:summary", "Streams the search result for Artwork")
+
+		Payload(SearchArtworkParams)
+		StreamingResult(func() {
+			Extend(ArtworkTicket)
+			Attribute("image", Bytes, func() {
+				Description("Thumbnail image")
+			})
+			Required("image")
+		})
+
+		HTTP(func() {
+			GET("/search")
+			Params(func() {
+				Param("artist")
+				Param("limit")
+				Param("artist_name")
+				Param("art")
+				Param("series")
+				Param("descr")
+				Param("keyword")
+				Param("min_copies")
+				Param("max_copies")
+				Param("min_block")
+				Param("max_block")
+				Param("min_rareness_score")
+				Param("max_rareness_score")
+				Param("min_nsfw_score")
+				Param("max_nsfw_score")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
 })
 
 // ArtworkTicket is artwork register payload.
@@ -307,3 +346,93 @@ var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
 	})
 	Required("taskId")
 })
+
+// SearchArtworkParams are query params to searchArtwork request
+var SearchArtworkParams = func() {
+	Attribute("artist", String, func() {
+		Description("Artist PastelID or special value; mine")
+		MaxLength(256)
+	})
+	Attribute("limit", Int, func() {
+		Description("Number of results to be return")
+		Minimum(10)
+		Default(10)
+		Example(10)
+	})
+
+	Attribute("artist_name", String, func() {
+		Description("Name of the artist")
+		MaxLength(256)
+		Example("Mona Lisa")
+	})
+	Attribute("art", String, func() {
+		Description("Art is artwork title")
+		MaxLength(256)
+	})
+	Attribute("series", String, func() {
+		Description("series refers to artwork series name")
+		MaxLength(256)
+	})
+	Attribute("descr", String, func() {
+		Description("descr refers to artist written statement")
+		MaxLength(256)
+	})
+
+	Attribute("keyword", String, func() {
+		Description("keyword is one of the values in artwork_keyword_set")
+		MaxLength(256)
+	})
+
+	Attribute("min_block", Int, func() {
+		Description("Minimum blocknum ")
+		Minimum(1)
+		Default(1)
+	})
+
+	Attribute("max_block", Int, func() {
+		Description("maximum blocknum")
+		Minimum(1)
+	})
+
+	Attribute("min_copies", Int, func() {
+		Description("Minimum number of created copies")
+		Minimum(1)
+		Maximum(1000)
+		Example(1)
+	})
+
+	Attribute("max_copies", Int, func() {
+		Description("Maximum number of crated copies")
+		Minimum(1)
+		Maximum(1000)
+		Example(1000)
+	})
+
+	Attribute("min_nsfw_score", Int, func() {
+		Description("Minimum nsfw score")
+		Minimum(1)
+		Maximum(1000)
+		Example(1)
+	})
+
+	Attribute("max_nsfw_score", Int, func() {
+		Description("Maximum nsfw score")
+		Minimum(1)
+		Maximum(1000)
+		Example(1000)
+	})
+
+	Attribute("min_rareness_score", Int, func() {
+		Description("Minimum rareness score ")
+		Minimum(1)
+		Maximum(1000)
+		Example(1)
+	})
+
+	Attribute("max_rareness_score", Int, func() {
+		Description("Maximum rareness score")
+		Minimum(1)
+		Maximum(1000)
+		Example(1000)
+	})
+}
