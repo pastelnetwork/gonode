@@ -91,11 +91,11 @@ This means that `supernode` did not find tensforflow models; the path where it t
 
 ##### `go: finding module for package .... mocks`
 
-We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](#Genreate mock files).
+We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](#Generate mock files).
 
 ### Running unit tests
 
-###### Genreate mock files
+##### Generate mock files
 
 if you run unit tests for the first time, you must generate the mock files:
 
@@ -111,7 +111,7 @@ go get github.com/vektra/mockery/v2/.../
 for d in ./*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
 ```
 
-###### Run tests
+##### Run tests
 
 To run unit tests:
 
