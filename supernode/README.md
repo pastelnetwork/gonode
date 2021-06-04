@@ -85,7 +85,12 @@ The path depends on the OS:
 ## Troubleshooting
 
 ##### `failed to load tensor model`
+
 This means that `supernode` did not find tensforflow models; the path where it tries to load them is [work-dir](# --work-dir)`/tfmodels`. By default [default_dir](# default_dir)`/supernode/tfmodels`
+
+##### `go: finding module for package .... mocks`
+
+We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](# Genreate mock files).
 
 ### Running unit tests
 

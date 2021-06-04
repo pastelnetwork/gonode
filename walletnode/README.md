@@ -83,6 +83,11 @@ The path depends on the OS:
 * Windows (>= Vista) `C:\Users\Username\AppData\Roaming\Pastel`
 * Windows (< Vista) `C:\Documents and Settings\Username\Application Data\Pastel`
 
+## Troubleshooting
+
+##### `go: finding module for package .... mocks`
+
+We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](# Genreate mock files).
 
 ### Running unit tests
 
@@ -101,7 +106,6 @@ go get github.com/vektra/mockery/v2/.../
 ``` shell
 for d in ./*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
 ```
-
 
 ###### Run tests
 
