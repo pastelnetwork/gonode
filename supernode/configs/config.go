@@ -3,6 +3,7 @@ package configs
 import (
 	"encoding/json"
 
+	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -24,6 +25,7 @@ type Config struct {
 	Node   `mapstructure:"node" json:"node,omitempty"`
 	Pastel *pastel.Config `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
 	P2P    *p2p.Config    `mapstructure:"p2p" json:"p2p,omitempty"`
+	MetaDB *metadb.Config `mapstructure:"metadb" json:"metadb,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -41,5 +43,6 @@ func New() *Config {
 		Node:   NewNode(),
 		Pastel: pastel.NewConfig(),
 		P2P:    p2p.NewConfig(),
+		MetaDB: metadb.NewConfig(),
 	}
 }

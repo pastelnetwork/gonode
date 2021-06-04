@@ -11,8 +11,8 @@ import (
 const (
 	// ReadLevelNono - with none, the node simply queries its local SQLite database, and does not even check if it is the leader
 	ReadLevelNono = "nono"
-	// ReadLevelWeek - weak instructs the node to check that it is the leader, before querying the local SQLite file
-	ReadLevelWeek = "week"
+	// ReadLevelWeak - weak instructs the node to check that it is the leader, before querying the local SQLite file
+	ReadLevelWeak = "weak"
 	// ReadLevelStrong - to avoid even the issues associated with weak consistency, rqlite also offers strong
 	ReadLevelStrong = "strong"
 	// AllowedSubStatement - the supported count of sub statements
@@ -20,7 +20,7 @@ const (
 )
 
 // Write execute a statement, not support multple statements
-func (s *Service) Write(_ context.Context, statement string) (*WriteResult, error) {
+func (s *service) Write(_ context.Context, statement string) (*WriteResult, error) {
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
 	}
@@ -57,13 +57,13 @@ func (s *Service) Write(_ context.Context, statement string) (*WriteResult, erro
 }
 
 // for the read consistency level, Weak is probably sufficient for most applications, and is the default read consistency level
-func (s *Service) consistencyLevel(level string) command.QueryRequest_Level {
+func (s *service) consistencyLevel(level string) command.QueryRequest_Level {
 	switch strings.ToLower(level) {
-	case "none":
+	case ReadLevelNono:
 		return command.QueryRequest_QUERY_REQUEST_LEVEL_NONE
-	case "weak":
+	case ReadLevelWeak:
 		return command.QueryRequest_QUERY_REQUEST_LEVEL_WEAK
-	case "strong":
+	case ReadLevelStrong:
 		return command.QueryRequest_QUERY_REQUEST_LEVEL_STRONG
 	default:
 		return command.QueryRequest_QUERY_REQUEST_LEVEL_WEAK
@@ -72,7 +72,7 @@ func (s *Service) consistencyLevel(level string) command.QueryRequest_Level {
 
 // Query execute a query, not support multple statements
 // level can be 'none', 'weak', and 'strong'
-func (s *Service) Query(_ context.Context, statement string, level string) (*QueryResult, error) {
+func (s *service) Query(_ context.Context, statement string, level string) (*QueryResult, error) {
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
 	}

@@ -16,18 +16,21 @@ func TestSuite(t *testing.T) {
 type testSuite struct {
 	suite.Suite
 
-	config  *Config
-	service *Service
-	ctx     context.Context
-	cancel  context.CancelFunc
-	wg      sync.WaitGroup
+	config     *Config
+	newService *service
+	ctx        context.Context
+	cancel     context.CancelFunc
+	wg         sync.WaitGroup
 }
 
 func (s *testSuite) SetupSuite() {
 	// new the rqlite config
 	s.config = NewConfig()
 	// new the rqlite service
-	s.service = NewService(s.config)
+	s.newService = &service{
+		config: s.config,
+		ready:  make(chan struct{}, 1),
+	}
 
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 
@@ -36,10 +39,10 @@ func (s *testSuite) SetupSuite() {
 		defer s.wg.Done()
 
 		// start the rqlite server
-		s.Nil(s.service.Run(s.ctx), "run service")
+		s.Nil(s.newService.Run(s.ctx), "run service")
 	}()
 	// wait until the rqlite node is ready
-	<-s.service.ready
+	<-s.newService.ready
 }
 
 func (s *testSuite) TearDownSuite() {
@@ -53,29 +56,29 @@ func (s *testSuite) TearDownSuite() {
 }
 
 func (s *testSuite) TestWriteAndQuery() {
-	s.NotNil(s.service.db, "store is nil")
+	s.NotNil(s.newService.db, "store is nil")
 
 	// create the table
 	creation := "CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)"
-	result, err := s.service.Write(s.ctx, creation)
+	result, err := s.newService.Write(s.ctx, creation)
 	s.Nil(err, "execute creation statement")
 	s.Empty(result.Error, "result after execution")
 
 	// insert the value to table
 	insertion := "insert into foo(id, name) values(1,'alon')"
-	result, err = s.service.Write(s.ctx, insertion)
+	result, err = s.newService.Write(s.ctx, insertion)
 	s.Nil(err, "execute insertion statement")
 	s.Empty(result.Error, "result after execution")
 
 	// insert the value to table
 	insertion = "insert into foo(id, name) values(2,'belayu')"
-	result, err = s.service.Write(s.ctx, insertion)
+	result, err = s.newService.Write(s.ctx, insertion)
 	s.Nil(err, "execute insertion statement")
 	s.Empty(result.Error, "result after execution")
 
 	// select a row from table with week level
 	selection := "select * from foo where id = 1"
-	rows, err := s.service.Query(s.ctx, selection, "weak")
+	rows, err := s.newService.Query(s.ctx, selection, "weak")
 	s.Nil(err, "query statements")
 
 	var id int64

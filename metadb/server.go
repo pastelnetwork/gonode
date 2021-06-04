@@ -21,7 +21,7 @@ import (
 )
 
 // the order is: node id, raft advertise address vs raft address
-func (s *Service) idOrRaftAddr() string {
+func (s *service) idOrRaftAddr() string {
 	if s.config.NodeID != "" {
 		return s.config.NodeID
 	}
@@ -32,7 +32,7 @@ func (s *Service) idOrRaftAddr() string {
 }
 
 // determine the join addresses
-func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) {
+func (s *service) determineJoinAddresses(ctx context.Context) ([]string, error) {
 	apiAdv := s.config.HTTPAddress
 	if s.config.HTTPAdvertiseAddress != "" {
 		apiAdv = s.config.HTTPAdvertiseAddress
@@ -65,7 +65,7 @@ func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) 
 }
 
 // wait until the store is in full consensus
-func (s *Service) waitForConsensus(ctx context.Context, dbStore *store.Store) error {
+func (s *service) waitForConsensus(ctx context.Context, dbStore *store.Store) error {
 	openTimeout, err := time.ParseDuration(s.config.RaftOpenTimeout)
 	if err != nil {
 		return errors.Errorf("parse RaftOpenTimeout: %w", err)
@@ -88,7 +88,7 @@ func (s *Service) waitForConsensus(ctx context.Context, dbStore *store.Store) er
 }
 
 // open the auth file, and returns a credential store instance
-func (s *Service) credentialStore() (*auth.CredentialsStore, error) {
+func (s *service) credentialStore() (*auth.CredentialsStore, error) {
 	if s.config.AuthFile == "" {
 		return nil, nil
 	}
@@ -106,7 +106,7 @@ func (s *Service) credentialStore() (*auth.CredentialsStore, error) {
 }
 
 // start the http server
-func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs *cluster.Service) error {
+func (s *service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs *cluster.Service) error {
 	// load the credential store
 	cred, err := s.credentialStore()
 	if err != nil {
@@ -129,7 +129,7 @@ func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs 
 }
 
 // start a mux for rqlite node
-func (s *Service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, error) {
+func (s *service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, error) {
 	var adv net.Addr
 	var err error
 	if s.config.RaftAdvertiseAddress != "" {
@@ -157,7 +157,7 @@ func (s *Service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, 
 }
 
 // start the cluster server
-func (s *Service) startClusterService(ctx context.Context, tn cluster.Transport) (*cluster.Service, error) {
+func (s *service) startClusterService(ctx context.Context, tn cluster.Transport) (*cluster.Service, error) {
 	c := cluster.New(ctx, tn)
 
 	apiAddr := s.config.HTTPAddress
@@ -175,35 +175,8 @@ func (s *Service) startClusterService(ctx context.Context, tn cluster.Transport)
 	return c, nil
 }
 
-// start the rqlite server, and try to join rqlite cluster if the join addresses is not empty
-func (s *Service) startServer(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, logPrefix)
-
-	// create internode network mux and configure.
-	muxListener, err := net.Listen("tcp", s.config.RaftAddress)
-	if err != nil {
-		return errors.Errorf("listen on %s: %w", s.config.RaftAddress, err)
-	}
-	// close the mux listener
-	defer func() {
-		if err := muxListener.Close(); err != nil {
-			log.WithContext(ctx).Errorf("close mux listener: %w", err)
-		}
-	}()
-
-	mux, err := s.startNodeMux(ctx, muxListener)
-	if err != nil {
-		return errors.Errorf("start node mux: %w", err)
-	}
-	raftTn := mux.Listen(cluster.MuxRaftHeader)
-
-	// create cluster service, so nodes can learn information about each other.
-	// This can be started now since it doesn't require a functioning Store yet.
-	cs, err := s.startClusterService(ctx, mux.Listen(cluster.MuxClusterHeader))
-	if err != nil {
-		return errors.Errorf("start create cluster service: %w", err)
-	}
-
+// create and open the store of rqlite cluster
+func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Store, error) {
 	// create and open the store
 	dbConf := store.NewDBConfig(s.config.DNS, !s.config.OnDisk)
 	db := store.New(ctx, raftTn, &store.Config{
@@ -212,6 +185,7 @@ func (s *Service) startServer(ctx context.Context) error {
 		ID:     s.idOrRaftAddr(),
 	})
 
+	var err error
 	// set optional parameters on store
 	db.SetRequestCompression(s.config.CompressionBatch, s.config.CompressionSize)
 	db.RaftLogLevel = s.config.RaftLogLevel
@@ -219,23 +193,23 @@ func (s *Service) startServer(ctx context.Context) error {
 	db.SnapshotThreshold = s.config.RaftSnapThreshold
 	db.SnapshotInterval, err = time.ParseDuration(s.config.RaftSnapInterval)
 	if err != nil {
-		return errors.Errorf("parse RaftSnapInterval: %w", err)
+		return nil, errors.Errorf("parse RaftSnapInterval: %w", err)
 	}
 	db.LeaderLeaseTimeout, err = time.ParseDuration(s.config.RaftLeaderLeaseTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftLeaderLeaseTimeout: %w", err)
+		return nil, errors.Errorf("parse RaftLeaderLeaseTimeout: %w", err)
 	}
 	db.HeartbeatTimeout, err = time.ParseDuration(s.config.RaftHeartbeatTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftHeartbeatTimeout: %w", err)
+		return nil, errors.Errorf("parse RaftHeartbeatTimeout: %w", err)
 	}
 	db.ElectionTimeout, err = time.ParseDuration(s.config.RaftElectionTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftElectionTimeout: %w", err)
+		return nil, errors.Errorf("parse RaftElectionTimeout: %w", err)
 	}
 	db.ApplyTimeout, err = time.ParseDuration(s.config.RaftApplyTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftApplyTimeout: %w", err)
+		return nil, errors.Errorf("parse RaftApplyTimeout: %w", err)
 	}
 
 	// a pre-existing node
@@ -250,7 +224,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	// determine the join addresses
 	joins, err := s.determineJoinAddresses(ctx)
 	if err != nil {
-		return errors.Errorf("determine join addresses: %w", err)
+		return nil, errors.Errorf("determine join addresses: %w", err)
 	}
 	// supplying join addresses means bootstrapping a new cluster won't be required.
 	if len(joins) > 0 {
@@ -266,16 +240,9 @@ func (s *Service) startServer(ctx context.Context) error {
 
 	// open store
 	if err := db.Open(bootstrap); err != nil {
-		return errors.Errorf("open store: %w", err)
+		return nil, errors.Errorf("open store: %w", err)
 	}
 	s.db = db
-
-	// close the rqlite store
-	defer func() {
-		if err := db.Close(true); err != nil {
-			log.WithContext(ctx).Errorf("close store: %w", err)
-		}
-	}()
 
 	// execute any requested join operation
 	if len(joins) > 0 && isNew {
@@ -288,18 +255,18 @@ func (s *Service) startServer(ctx context.Context) error {
 		// try to parse the join duration
 		joinDuration, err := time.ParseDuration(s.config.JoinInterval)
 		if err != nil {
-			return errors.Errorf("parse JoinInterval: %w", err)
+			return nil, errors.Errorf("parse JoinInterval: %w", err)
 		}
 
 		tlsConfig := tls.Config{InsecureSkipVerify: s.config.NoVerify}
 		if s.config.X509CACert != "" {
 			data, err := ioutil.ReadFile(s.config.X509CACert)
 			if err != nil {
-				return errors.Errorf("ioutil read: %w", err)
+				return nil, errors.Errorf("ioutil read: %w", err)
 			}
 			tlsConfig.RootCAs = x509.NewCertPool()
 			if ok := tlsConfig.RootCAs.AppendCertsFromPEM(data); !ok {
-				return errors.Errorf("parse root CA certificate in %v", s.config.X509CACert)
+				return nil, errors.Errorf("parse root CA certificate in %v", s.config.X509CACert)
 			}
 		}
 
@@ -316,10 +283,42 @@ func (s *Service) startServer(ctx context.Context) error {
 			&tlsConfig,
 		)
 		if err != nil {
-			return errors.Errorf("join cluster at %v: %w", joins, err)
+			return nil, errors.Errorf("join cluster at %v: %w", joins, err)
 		}
 		log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
 	}
+
+	return db, nil
+}
+
+// start the rqlite server, and try to join rqlite cluster if the join addresses is not empty
+func (s *service) startServer(ctx context.Context) error {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	// create internode network mux and configure.
+	muxListener, err := net.Listen("tcp", s.config.RaftAddress)
+	if err != nil {
+		return errors.Errorf("listen on %s: %w", s.config.RaftAddress, err)
+	}
+	mux, err := s.startNodeMux(ctx, muxListener)
+	if err != nil {
+		return errors.Errorf("start node mux: %w", err)
+	}
+	raftTn := mux.Listen(cluster.MuxRaftHeader)
+
+	// create cluster service, so nodes can learn information about each other.
+	// This can be started now since it doesn't require a functioning Store yet.
+	cs, err := s.startClusterService(ctx, mux.Listen(cluster.MuxClusterHeader))
+	if err != nil {
+		return errors.Errorf("start create cluster service: %w", err)
+	}
+
+	// create and open the store
+	db, err := s.initStore(ctx, raftTn)
+	if err != nil {
+		return errors.Errorf("create and open store: %w", err)
+	}
+	s.db = db
 
 	// wait until the store is in full consensus
 	if err := s.waitForConsensus(ctx, db); err != nil {
@@ -338,6 +337,16 @@ func (s *Service) startServer(ctx context.Context) error {
 
 	// block until context is done
 	<-ctx.Done()
+
+	// close the rqlite store
+	if err := db.Close(true); err != nil {
+		log.WithContext(ctx).Errorf("close store: %v", err)
+	}
+
+	// close the mux listener
+	if err := muxListener.Close(); err != nil {
+		log.WithContext(ctx).Errorf("close mux listener: %v", err)
+	}
 
 	log.WithContext(ctx).Info("rqlite server is stopped")
 	return nil
