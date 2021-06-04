@@ -88,7 +88,7 @@ The path depends on the OS:
 
 ##### `go: finding module for package .... mocks`
 
-We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](#generate mock files).
+We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](#generate-mock-files).
 
 ### Running unit tests
 
