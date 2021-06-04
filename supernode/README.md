@@ -4,13 +4,14 @@
 
 
 ## Quick Start
-1. Without any parameters, the application tries to read all settings from the config file placed in the [default dir](# default_dir):
+
+1. Without any parameters, `supernode` tries to find and read all settings from the config file `supernode.yml` in the [default dir](# default_dir):
 
 ``` shell
 ./supernode
 ```
 
-2. Specified config filesL:
+2. Specified config files:
 
 ``` shell
 ./supernode

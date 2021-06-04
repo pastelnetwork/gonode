@@ -5,11 +5,12 @@
 
 ## Quick Start
 
-1. Without any parameters, the application tries to read all settings from the config file placed in the [default dir](# default_dir).
+1. Without any parameters, `walletnode` tries to find and read all settings from the config file `walletnode.yml` in the [default dir](# default_dir):
 
 ``` shell
 ./walletnode
 ```
+
 2. Specified config files.
 
 ``` shell
