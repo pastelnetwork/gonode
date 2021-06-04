@@ -24,7 +24,7 @@ commands:
           command: |
             for d in ./*/ ; do (
                 cd "$d";
-                echo $PWD;
+                echo "dir: $PWD";
                 if [[ -f go.mod ]]; then 
                     go generate ./...
                 fi 
