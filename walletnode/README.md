@@ -5,11 +5,12 @@
 
 ## Quick Start
 
-1. Without any parameters, the application tries to read all settings from the config file placed in the [default dir](# default_dir).
+1. Without any parameters, `walletnode` tries to find and read all settings from the config file `walletnode.yml` in the [default dir](# default_dir):
 
 ``` shell
 ./walletnode
 ```
+
 2. Specified config files.
 
 ``` shell
@@ -83,6 +84,11 @@ The path depends on the OS:
 * Windows (>= Vista) `C:\Users\Username\AppData\Roaming\Pastel`
 * Windows (< Vista) `C:\Documents and Settings\Username\Application Data\Pastel`
 
+## Troubleshooting
+
+##### `go: finding module for package .... mocks`
+
+We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](# Genreate mock files).
 
 ### Running unit tests
 
@@ -90,7 +96,7 @@ The path depends on the OS:
 
 if you run unit tests first time, you need to generate mock files:
 
-* Install mockery
+* Install [mockery](https://github.com/vektra/mockery)
 
 ``` shell
 go get github.com/vektra/mockery/v2/.../
@@ -101,7 +107,6 @@ go get github.com/vektra/mockery/v2/.../
 ``` shell
 for d in ./*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
 ```
-
 
 ###### Run tests
 
