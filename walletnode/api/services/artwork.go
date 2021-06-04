@@ -8,7 +8,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
@@ -27,10 +26,9 @@ const (
 // Artwork represents services for artworks endpoints.
 type Artwork struct {
 	*Common
-	register     *artworkregister.Service
-	db           storage.KeyValue
-	imageStorage *artwork.Storage
-	imageTTL     time.Duration
+	register *artworkregister.Service
+	db       storage.KeyValue
+	imageTTL time.Duration
 }
 
 // RegisterTaskState streams the state of the registration process.
@@ -102,7 +100,7 @@ func (service *Artwork) Register(_ context.Context, p *artworks.RegisterPayload)
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	file, err := service.imageStorage.File(string(filename))
+	file, err := service.register.Storage.File(string(filename))
 	if err != nil {
 		return nil, artworks.MakeBadRequest(errors.Errorf("invalid image_id: %q", p.ImageID))
 	}
@@ -126,7 +124,7 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	file, err := service.imageStorage.File(*p.Filename)
+	file, err := service.register.Storage.File(*p.Filename)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
@@ -152,12 +150,11 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 }
 
 // NewArtwork returns the artworks Artwork implementation.
-func NewArtwork(register *artworkregister.Service, imageStorage *artwork.Storage) *Artwork {
+func NewArtwork(register *artworkregister.Service) *Artwork {
 	return &Artwork{
-		Common:       NewCommon(),
-		register:     register,
-		db:           memory.NewKeyValue(),
-		imageStorage: imageStorage,
-		imageTTL:     defaultImageTTL,
+		Common:   NewCommon(),
+		register: register,
+		db:       memory.NewKeyValue(),
+		imageTTL: defaultImageTTL,
 	}
 }

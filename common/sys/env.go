@@ -20,6 +20,20 @@ func GetBoolEnv(key string, fallback bool) bool {
 	return value
 }
 
+// GetIntEnv parses a int environment variable by the given key, if env is empty, returns the given fallback value
+func GetIntEnv(key string, fallback int) int {
+	strValue := os.Getenv(key)
+	if len(strValue) == 0 {
+		return fallback
+	}
+
+	value, err := strconv.Atoi(strValue)
+	if err != nil {
+		return fallback
+	}
+	return value
+}
+
 // GetDurationEnv parses a duration environment variable by the given key, if env is empty, returns the given fallback value
 func GetDurationEnv(key string, fallback time.Duration) time.Duration {
 	strValue := os.Getenv(key)

@@ -19,6 +19,11 @@ commands:
         type: string
     steps:
       - run:
+          name: "<< parameters.package >>: Go generate"
+          working_directory: ~/project/<< parameters.package >>
+          command: |
+            go generate ./...
+      - run:
           name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
           command: |
@@ -47,7 +52,6 @@ commands:
           name: "<< parameters.package >>: Run go test (+ race detector)"
           working_directory: ~/project/<< parameters.package >>
           command: |
-            go generate ./...
             go test -v -race ./...
   build:
     parameters:
@@ -143,7 +147,7 @@ commands:
       - run:
           name: "<< parameters.moduleSubDir >> << parameters.package >>: xgo build for << parameters.targets >>"
           command: |
-            GOPATH= xgo -go go-1.16.x --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
+            GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
 
             mkdir -p << parameters.outputDirectory >>
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
@@ -182,6 +186,14 @@ commands:
               test -f $WINDOWS_ARTIFACT
               github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-windows-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
             fi
+  install_tensorflow:
+    steps:
+      - run:
+          name: Install libtensorflow
+          command: |
+            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+            sudo /sbin/ldconfig -v
 
 jobs:
   prepare_workspace:
@@ -235,6 +247,22 @@ jobs:
       - test:
           package: "pastel"
 
+  test_p2p:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "p2p"
+
+  test_metadb:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "metadb"
+
   test_pastel-api:
     <<: *defaults
     steps:
@@ -259,19 +287,14 @@ jobs:
       - test:
           package: "legroast"
 
-  test_dupe-detection:
+  test_probe:
     <<: *defaults
     steps:
       - attach_workspace:
           at: .
-      - run:
-          name: Install libtensorflow
-          command: |
-            wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
-            sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
-            sudo /sbin/ldconfig -v
+      - install_tensorflow
       - test:
-          package: "dupe-detection"
+          package: "probe"
 
   test_pqsignatures:
     <<: *defaults
@@ -294,6 +317,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - install_tensorflow
       - test:
           package: "supernode"
 
@@ -317,8 +341,16 @@ jobs:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
           package: ""
-          targets: "darwin-10.14/amd64,windows/amd64,"
+          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
           binaryName: "walletnode"
+      - build:
+          buildContainerName: "supernode"
+          moduleSubDir: "supernode"
+          package: ""
+          targets: "linux/amd64,"
+          binaryName: "supernode"
+      - store_artifacts:
+          path: "build"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
@@ -370,6 +402,12 @@ workflows:
       - test_pastel:
           requires:
             - prepare_workspace
+      - test_p2p:
+          requires:
+            - prepare_workspace
+      - test_metadb:
+          requires:
+            - prepare_workspace
       - test_pastel-api:
           requires:
             - prepare_workspace
@@ -379,7 +417,7 @@ workflows:
       - test_legroast:
           requires:
             - prepare_workspace
-      - test_dupe-detection:
+      - test_probe:
           requires:
             - prepare_workspace
       - test_pqsignatures:

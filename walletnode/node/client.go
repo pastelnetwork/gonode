@@ -1,3 +1,7 @@
+//go:generate mockery --name=Client
+//go:generate mockery --name=Connection
+//go:generate mockery --name=RegisterArtwork
+
 package node
 
 import (
@@ -32,6 +36,6 @@ type RegisterArtwork interface {
 	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
 	ConnectTo(ctx context.Context, nodeKey, sessID string) error
-	// UploadImage uploads image to supernode.
-	UploadImage(ctx context.Context, file *artwork.File) error
+	// ProbeImage uploads image to supernode.
+	ProbeImage(ctx context.Context, image *artwork.File) (fingerprintData []byte, err error)
 }

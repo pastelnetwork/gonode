@@ -2,8 +2,6 @@ package configs
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -20,7 +18,7 @@ type Config struct {
 	TempDir  string `mapstructure:"temp-dir" json:"temp-dir"`
 
 	Node   `mapstructure:"node" json:"node,omitempty"`
-	Pastel pastel.Config `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
+	Pastel *pastel.Config `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -34,9 +32,8 @@ func (config *Config) String() string {
 func New() *Config {
 	return &Config{
 		LogLevel: defaultLogLevel,
-		TempDir:  filepath.Join(os.TempDir(), "walletnode"),
 
-		Node:   *NewNode(),
-		Pastel: *pastel.NewConfig(),
+		Node:   NewNode(),
+		Pastel: pastel.NewConfig(),
 	}
 }
