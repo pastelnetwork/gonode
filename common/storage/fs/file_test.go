@@ -21,7 +21,6 @@ func TestFSOpen(t *testing.T) {
 	type handleFunc func(t assert.TestingT)
 
 	testCases := []struct {
-		name        string
 		fields      fields
 		args        args
 		createfunc  handleFunc
@@ -30,7 +29,6 @@ func TestFSOpen(t *testing.T) {
 		valueAssert assert.ValueAssertionFunc
 	}{
 		{
-			name:        "valid open file",
 			fields:      fields{"./"},
 			args:        args{"test.txt"},
 			assertion:   assert.NoError,
@@ -51,7 +49,6 @@ func TestFSOpen(t *testing.T) {
 				assert.NoError(t, fs.Remove("test.txt"))
 			},
 		}, {
-			name:        "invalid open file",
 			fields:      fields{"./"},
 			args:        args{"non-exit.txt"},
 			assertion:   assert.Error,
@@ -61,7 +58,7 @@ func TestFSOpen(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
 		testCase := testCase
 
 		t.Run("group", func(t *testing.T) {
@@ -69,7 +66,7 @@ func TestFSOpen(t *testing.T) {
 
 			defer testCase.removeFunc(t)
 
-			t.Run(testCase.name, func(t *testing.T) {
+			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 				fs := &FS{dir: testCase.fields.dir}
 
 				got, err := fs.Open(testCase.args.filename)
@@ -92,23 +89,21 @@ func TestFSCreate(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name      string
 		fields    fields
 		args      args
 		assertion assert.ErrorAssertionFunc
 	}{
 		{
-			name:      "create test-1.txt file",
 			fields:    fields{"./"},
 			args:      args{"test-1.txt"},
 			assertion: assert.NoError,
 		},
 	}
 
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(testCase.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			fs := &FS{
 				dir: testCase.fields.dir,
 			}
@@ -130,21 +125,31 @@ func TestFSRemove(t *testing.T) {
 	type args struct {
 		filename string
 	}
-	tests := []struct {
-		name      string
+
+	testCases := []struct {
 		fields    fields
 		args      args
 		assertion assert.ErrorAssertionFunc
 	}{
-		// TODO: Add test cases.
+		{
+			fields:    fields{"./"},
+			args:      args{"test-2.txt"},
+			assertion: assert.NoError,
+		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for i, testCase := range testCases {
+		testCase := testCase
+
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			fs := &FS{
-				dir: tt.fields.dir,
+				dir: testCase.fields.dir,
 			}
-			tt.assertion(t, fs.Remove(tt.args.filename))
+
+			_, err := fs.Create(testCase.args.filename)
+			assert.NoError(t, err)
+
+			testCase.assertion(t, fs.Remove(testCase.args.filename))
 		})
 	}
 }
@@ -155,16 +160,22 @@ func TestNewFileStorage(t *testing.T) {
 	type args struct {
 		dir string
 	}
-	tests := []struct {
-		name string
+
+	testCases := []struct {
 		args args
 		want storage.FileStorage
 	}{
-		// TODO: Add test cases.
+		{
+			args: args{"./"},
+			want: &FS{dir: "./"},
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, NewFileStorage(tt.args.dir))
+
+	for i, testCase := range testCases {
+		testCase := testCase
+
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+			assert.Equal(t, testCase.want, NewFileStorage(testCase.args.dir))
 		})
 	}
 }
