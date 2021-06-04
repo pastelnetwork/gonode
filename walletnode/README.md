@@ -95,7 +95,7 @@ We do not commit mock files, this is only needed for development and their lack,
 
 if you run unit tests first time, you need to generate mock files:
 
-* Install mockery
+* Install [mockery](https://github.com/vektra/mockery)
 
 ``` shell
 go get github.com/vektra/mockery/v2/.../
