@@ -22,6 +22,7 @@ commands:
           name: "Go generate"
           working_directory: ~/project
           command: |
+            set -e
             for d in ~/project/*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
       - run:
           name: "<< parameters.package >>: Fetch dependencies"
