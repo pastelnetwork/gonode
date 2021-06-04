@@ -46,7 +46,7 @@ func NewConfig(path, input string) Config {
 }
 
 func init() {
-	// NOTE: Before releasing, should be reomved (for testing). Used to reduce loaded models.
+	// NOTE: Reduce loaded models, where `0` means not to load at all. Used for integration testing and testing at the developer stage.
 	if number := sys.GetIntEnv("LOAD_TFMODELS", -1); number >= 0 {
 		AllConfigs = AllConfigs[:number]
 	}
