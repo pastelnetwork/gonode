@@ -1,6 +1,6 @@
 # SuperNode
 
-`supernode` is a server application that handles `walletnode` requests. The app does all the work of registering and searching artworks.
+`supernode` is a server application that handles `walletnode` requests. The app does most of the work of registering and searching artworks.
 
 
 ## Quick Start
