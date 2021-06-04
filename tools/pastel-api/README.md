@@ -2,7 +2,8 @@
 
 # Pastel API
 
-This repo contains `pastel-api` server that simulates the real Pastel API. Used for integration testing and testing at the developer stage.
+This repo contains `pastel-api,` a server which simulates the real Pastel API. This is used for integration testing and testing at the development stage.
+
 
 ## Quick Start
 
@@ -17,7 +18,7 @@ PASTEL_API_DEBUG=1 ./pastel-api --log-level debug
 
 ##### Run `supernode`
 
-We have to run each supernode on a different port. The range of ports must be within the range of *extAddress* in the json response [`masternode top`](api/services/fake/data/masternode_top.json). To achieve we use different config files, with different port settings.
+We have to run each supernode on a different port. The range of ports must be within the range of *extAddress* in the json response [`masternode top`](api/services/fake/data/masternode_top.json). To achieve this, we use different config files, with different port settings.
 
 ``` shell
 SUPERNODE_DEBUG=1 LOAD_TFMODELS=0 ./supernode --log-level debug -c ./examples/configs/localnet-4444.yml
@@ -35,8 +36,9 @@ SUPERNODE_DEBUG=1 LOAD_TFMODELS=0 ./supernode --log-level debug -c ./examples/co
 WALLETNODE_DEBUG=1 ./walletnode --log-level debug -c ./examples/configs/localnet.yml --swagger
 ```
 
-* `WALLETNODE_DEBUG=1` displays advanced log messages and stack of the errors.
+* `WALLETNODE_DEBUG=1` displays advanced log messages and the stack of the errors.
 * `--swagger` enables REST API docs on the http://localhost:8080/swagger
+
 
 ## Supported API requests
 
