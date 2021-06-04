@@ -22,8 +22,14 @@ commands:
           name: "Go generate"
           working_directory: ~/project
           command: |
-            set -e
-            for d in ~/project/*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
+            for d in ./*/ ; do (
+                cd "$d";
+                echo $PWD;
+                if [[ -f go.mod ]]; then 
+                    go generate ./...
+                fi 
+            );
+            done
       - run:
           name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
