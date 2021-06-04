@@ -8,7 +8,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/binary"
-	"errors"
 	"expvar"
 	"fmt"
 	"io"
@@ -23,6 +22,7 @@ import (
 	"unsafe"
 
 	"github.com/hashicorp/raft"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"

@@ -13,7 +13,6 @@ import (
 	"testing/quick"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/x509"
 	"golang.org/x/sync/errgroup"
 )
@@ -23,9 +22,9 @@ func TestMux(t *testing.T) {
 	if err := quick.Check(func(n uint8, msg []byte) bool {
 		if testing.Verbose() {
 			if len(msg) == 0 {
-				log.Infof("n=%d, <no message>", n)
+				t.Logf("n=%d, <no message>", n)
 			} else {
-				log.Infof("n=%d, hdr=%d, len=%d", n, msg[0], len(msg))
+				t.Logf("n=%d, hdr=%d, len=%d", n, msg[0], len(msg))
 			}
 		}
 

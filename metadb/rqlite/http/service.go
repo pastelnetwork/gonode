@@ -7,7 +7,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"expvar"
 	"fmt"
 	"io"
@@ -20,6 +19,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"

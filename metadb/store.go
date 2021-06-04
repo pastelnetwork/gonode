@@ -44,7 +44,7 @@ func (s *Service) Write(_ context.Context, statement string) (*WriteResult, erro
 	// execute the command by store
 	results, err := s.db.Execute(request)
 	if err != nil {
-		return nil, errors.Errorf("execute statement: %v", err)
+		return nil, errors.Errorf("execute statement: %w", err)
 	}
 	firsts := results[0]
 
@@ -97,7 +97,7 @@ func (s *Service) Query(_ context.Context, statement string, level string) (*Que
 	// query the command by store
 	rows, err := s.db.Query(request)
 	if err != nil {
-		return nil, errors.Errorf("query statement: %v", err)
+		return nil, errors.Errorf("query statement: %w", err)
 	}
 	first := rows[0]
 

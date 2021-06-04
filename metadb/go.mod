@@ -15,7 +15,6 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/rqlite/go-sqlite3 v1.20.2
-	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110

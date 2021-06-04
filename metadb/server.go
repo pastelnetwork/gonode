@@ -50,7 +50,7 @@ func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) 
 		c := disco.New(ctx, s.config.DiscoveryURL)
 		r, err := c.Register(s.config.DiscoveryID, apiAdv)
 		if err != nil {
-			return nil, errors.Errorf("discovery register: %v", err)
+			return nil, errors.Errorf("discovery register: %w", err)
 		}
 		log.WithContext(ctx).Infof("discovery service responded with nodes: %v", r.Nodes)
 
@@ -68,17 +68,17 @@ func (s *Service) determineJoinAddresses(ctx context.Context) ([]string, error) 
 func (s *Service) waitForConsensus(ctx context.Context, dbStore *store.Store) error {
 	openTimeout, err := time.ParseDuration(s.config.RaftOpenTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftOpenTimeout: %v", err)
+		return errors.Errorf("parse RaftOpenTimeout: %w", err)
 	}
 	if _, err := dbStore.WaitForLeader(openTimeout); err != nil {
 		if s.config.RaftWaitForLeader {
-			return errors.Errorf("leader did not appear within timeout: %v", err)
+			return errors.Errorf("leader did not appear within timeout: %w", err)
 		}
 		log.WithContext(ctx).Infof("ignoring error while waiting for leader")
 	}
 	if openTimeout != 0 {
 		if err := dbStore.WaitForApplied(openTimeout); err != nil {
-			return errors.Errorf("store log not applied within timeout: %s", err.Error())
+			return errors.Errorf("store log not applied within timeout: %w", err)
 		}
 	} else {
 		log.WithContext(ctx).Info("not waiting for logs to be applied")
@@ -95,12 +95,12 @@ func (s *Service) credentialStore() (*auth.CredentialsStore, error) {
 
 	file, err := os.Open(s.config.AuthFile)
 	if err != nil {
-		return nil, errors.Errorf("open authentication file: %v", err)
+		return nil, errors.Errorf("open authentication file: %w", err)
 	}
 
 	store := auth.NewCredentialsStore()
 	if store.Load(file); err != nil {
-		return nil, errors.Errorf("store load: %v", err)
+		return nil, errors.Errorf("store load: %w", err)
 	}
 	return store, nil
 }
@@ -110,7 +110,7 @@ func (s *Service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs 
 	// load the credential store
 	cred, err := s.credentialStore()
 	if err != nil {
-		return errors.Errorf("load credentail store: %v", err)
+		return errors.Errorf("load credentail store: %w", err)
 	}
 
 	var server *httpd.Service
@@ -135,7 +135,7 @@ func (s *Service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, 
 	if s.config.RaftAdvertiseAddress != "" {
 		adv, err = net.ResolveTCPAddr("tcp", s.config.RaftAdvertiseAddress)
 		if err != nil {
-			return nil, errors.Errorf("resolve advertise address %s: %v", s.config.RaftAdvertiseAddress, err)
+			return nil, errors.Errorf("resolve advertise address %s: %w", s.config.RaftAdvertiseAddress, err)
 		}
 	}
 
@@ -147,7 +147,7 @@ func (s *Service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, 
 		mux, err = tcp.NewMux(ctx, ln, adv)
 	}
 	if err != nil {
-		return nil, errors.Errorf("create node-to-node mux: %s", err.Error())
+		return nil, errors.Errorf("create node-to-node mux: %w", err)
 	}
 	mux.InsecureSkipVerify = s.config.NodeNoVerify
 
@@ -182,11 +182,18 @@ func (s *Service) startServer(ctx context.Context) error {
 	// create internode network mux and configure.
 	muxListener, err := net.Listen("tcp", s.config.RaftAddress)
 	if err != nil {
-		return errors.Errorf("listen on %s: %v", s.config.RaftAddress, err)
+		return errors.Errorf("listen on %s: %w", s.config.RaftAddress, err)
 	}
+	// close the mux listener
+	defer func() {
+		if err := muxListener.Close(); err != nil {
+			log.WithContext(ctx).Errorf("close mux listener: %w", err)
+		}
+	}()
+
 	mux, err := s.startNodeMux(ctx, muxListener)
 	if err != nil {
-		return errors.Errorf("start node mux: %v", err)
+		return errors.Errorf("start node mux: %w", err)
 	}
 	raftTn := mux.Listen(cluster.MuxRaftHeader)
 
@@ -194,7 +201,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	// This can be started now since it doesn't require a functioning Store yet.
 	cs, err := s.startClusterService(ctx, mux.Listen(cluster.MuxClusterHeader))
 	if err != nil {
-		return errors.Errorf("start create cluster service: %v", err)
+		return errors.Errorf("start create cluster service: %w", err)
 	}
 
 	// create and open the store
@@ -212,23 +219,23 @@ func (s *Service) startServer(ctx context.Context) error {
 	db.SnapshotThreshold = s.config.RaftSnapThreshold
 	db.SnapshotInterval, err = time.ParseDuration(s.config.RaftSnapInterval)
 	if err != nil {
-		return errors.Errorf("parse RaftSnapInterval: %v", err)
+		return errors.Errorf("parse RaftSnapInterval: %w", err)
 	}
 	db.LeaderLeaseTimeout, err = time.ParseDuration(s.config.RaftLeaderLeaseTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftLeaderLeaseTimeout: %v", err)
+		return errors.Errorf("parse RaftLeaderLeaseTimeout: %w", err)
 	}
 	db.HeartbeatTimeout, err = time.ParseDuration(s.config.RaftHeartbeatTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftHeartbeatTimeout: %v", err)
+		return errors.Errorf("parse RaftHeartbeatTimeout: %w", err)
 	}
 	db.ElectionTimeout, err = time.ParseDuration(s.config.RaftElectionTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftElectionTimeout: %v", err)
+		return errors.Errorf("parse RaftElectionTimeout: %w", err)
 	}
 	db.ApplyTimeout, err = time.ParseDuration(s.config.RaftApplyTimeout)
 	if err != nil {
-		return errors.Errorf("parse RaftApplyTimeout: %v", err)
+		return errors.Errorf("parse RaftApplyTimeout: %w", err)
 	}
 
 	// a pre-existing node
@@ -243,7 +250,7 @@ func (s *Service) startServer(ctx context.Context) error {
 	// determine the join addresses
 	joins, err := s.determineJoinAddresses(ctx)
 	if err != nil {
-		return errors.Errorf("determine join addresses: %v", err)
+		return errors.Errorf("determine join addresses: %w", err)
 	}
 	// supplying join addresses means bootstrapping a new cluster won't be required.
 	if len(joins) > 0 {
@@ -259,9 +266,16 @@ func (s *Service) startServer(ctx context.Context) error {
 
 	// open store
 	if err := db.Open(bootstrap); err != nil {
-		return errors.Errorf("open store: %v", err)
+		return errors.Errorf("open store: %w", err)
 	}
 	s.db = db
+
+	// close the rqlite store
+	defer func() {
+		if err := db.Close(true); err != nil {
+			log.WithContext(ctx).Errorf("close store: %w", err)
+		}
+	}()
 
 	// execute any requested join operation
 	if len(joins) > 0 && isNew {
@@ -274,14 +288,14 @@ func (s *Service) startServer(ctx context.Context) error {
 		// try to parse the join duration
 		joinDuration, err := time.ParseDuration(s.config.JoinInterval)
 		if err != nil {
-			return errors.Errorf("parse JoinInterval: %v", err)
+			return errors.Errorf("parse JoinInterval: %w", err)
 		}
 
 		tlsConfig := tls.Config{InsecureSkipVerify: s.config.NoVerify}
 		if s.config.X509CACert != "" {
 			data, err := ioutil.ReadFile(s.config.X509CACert)
 			if err != nil {
-				return errors.Errorf("ioutil read: %v", err)
+				return errors.Errorf("ioutil read: %w", err)
 			}
 			tlsConfig.RootCAs = x509.NewCertPool()
 			if ok := tlsConfig.RootCAs.AppendCertsFromPEM(data); !ok {
@@ -302,20 +316,20 @@ func (s *Service) startServer(ctx context.Context) error {
 			&tlsConfig,
 		)
 		if err != nil {
-			return errors.Errorf("join cluster at %v: %v", joins, err)
+			return errors.Errorf("join cluster at %v: %w", joins, err)
 		}
 		log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
 	}
 
 	// wait until the store is in full consensus
 	if err := s.waitForConsensus(ctx, db); err != nil {
-		return errors.Errorf("wait for consensus: %v", err)
+		return errors.Errorf("wait for consensus: %w", err)
 	}
 	log.WithContext(ctx).Info("store has reached consensus")
 
 	// start the HTTP API server
 	if err := s.startHTTPServer(ctx, db, cs); err != nil {
-		return errors.Errorf("start http server: %v", err)
+		return errors.Errorf("start http server: %w", err)
 	}
 	log.WithContext(ctx).Info("node is ready, block until context is done")
 
@@ -324,14 +338,6 @@ func (s *Service) startServer(ctx context.Context) error {
 
 	// block until context is done
 	<-ctx.Done()
-	// close the rqlite store
-	if err := db.Close(true); err != nil {
-		log.WithContext(ctx).Errorf("close store: %v", err)
-	}
-	// close the mux listener
-	if err := muxListener.Close(); err != nil {
-		log.WithContext(ctx).Errorf("close mux listener: %v", err)
-	}
 
 	log.WithContext(ctx).Info("rqlite server is stopped")
 	return nil
