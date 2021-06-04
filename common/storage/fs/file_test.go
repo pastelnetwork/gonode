@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/common/storage"
@@ -19,7 +20,7 @@ func TestFSOpen(t *testing.T) {
 
 	type handleFunc func(t assert.TestingT)
 
-	tests := []struct {
+	testCases := []struct {
 		name        string
 		fields      fields
 		args        args
@@ -60,20 +61,20 @@ func TestFSOpen(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		tt := tt
+	for _, testCase := range testCases {
+		testCase := testCase
 
 		t.Run("group", func(t *testing.T) {
-			tt.createfunc(t)
+			testCase.createfunc(t)
 
-			defer tt.removeFunc(t)
+			defer testCase.removeFunc(t)
 
-			t.Run(tt.name, func(t *testing.T) {
-				fs := &FS{dir: tt.fields.dir}
+			t.Run(testCase.name, func(t *testing.T) {
+				fs := &FS{dir: testCase.fields.dir}
 
-				got, err := fs.Open(tt.args.filename)
-				tt.assertion(t, err)
-				tt.valueAssert(t, got)
+				got, err := fs.Open(testCase.args.filename)
+				testCase.assertion(t, err)
+				testCase.valueAssert(t, got)
 			})
 		})
 
@@ -89,23 +90,33 @@ func TestFSCreate(t *testing.T) {
 	type args struct {
 		filename string
 	}
-	tests := []struct {
+
+	testCases := []struct {
 		name      string
 		fields    fields
 		args      args
-		want      storage.File
 		assertion assert.ErrorAssertionFunc
 	}{
-		// TODO: Add test cases.
+		{
+			name:      "create test-1.txt file",
+			fields:    fields{"./"},
+			args:      args{"test-1.txt"},
+			assertion: assert.NoError,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+
+	for _, testCase := range testCases {
+		testCase := testCase
+
+		t.Run(testCase.name, func(t *testing.T) {
 			fs := &FS{
-				dir: tt.fields.dir,
+				dir: testCase.fields.dir,
 			}
-			got, err := fs.Create(tt.args.filename)
-			tt.assertion(t, err)
-			assert.Equal(t, tt.want, got)
+			got, err := fs.Create(testCase.args.filename)
+			testCase.assertion(t, err)
+			assert.NotNil(t, got)
+			assert.FileExists(t, fmt.Sprintf("%s/%s", testCase.fields.dir, testCase.args.filename))
+			assert.NoError(t, fs.Remove(fmt.Sprintf("%s/%s", testCase.fields.dir, testCase.args.filename)))
 		})
 	}
 }
