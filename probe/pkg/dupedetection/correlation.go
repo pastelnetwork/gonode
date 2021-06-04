@@ -163,16 +163,15 @@ func rbfDot(pattern1, pattern2 *mat.Dense, deg float64) (*mat.Dense, error) {
 func diag(i, j int, v float64) float64 {
 	if i == j {
 		return v
-	} else {
-		return 0
 	}
+	return 0
 }
 
-func addScalar1(i, j int, v float64) float64 {
+func addScalar1(_, _ int, v float64) float64 {
 	return v + 1.0
 }
 
-func elemPow2(i, j int, v float64) float64 {
+func elemPow2(_, _ int, v float64) float64 {
 	return math.Pow(v, 2.0)
 }
 
