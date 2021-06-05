@@ -71,13 +71,23 @@ func (task *Task) run(ctx context.Context) error {
 	}
 
 	var nodes node.List
+	var errs error
 	for primaryRank := range topNodes {
 		nodes, err = task.meshNodes(ctx, topNodes, primaryRank)
-		if err == nil {
-			break
+		if err != nil {
+			if errors.IsContextCanceled(err) {
+				return err
+			}
+			errs = errors.Append(errs, err)
+			log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
+			continue
 		}
-		log.WithContext(ctx).WithError(err).Warnf("Could not get mesh of nodes")
+		break
 	}
+	if len(nodes) < task.config.NumberSuperNodes {
+		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
+	}
+
 	nodes.Activate()
 	topNodes.DisconnectInactive()
 
@@ -108,6 +118,14 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 	task.UpdateStatus(StatusImageProbed)
+
+	fingerprint := nodes.Fingerprint()
+	signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(signature)
 
 	return groupConnClose.Wait()
 }
@@ -182,11 +200,11 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 }
 
 func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
-	fee, err := task.pastelClient.StorageFee(ctx)
+	fee, err := task.pastelClient.StorageNetworkFee(ctx)
 	if err != nil {
 		return false, err
 	}
-	return fee.NetworkFee <= task.Ticket.MaximumFee, nil
+	return fee <= task.Ticket.MaximumFee, nil
 }
 
 func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {

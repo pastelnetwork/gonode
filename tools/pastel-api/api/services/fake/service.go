@@ -4,6 +4,7 @@ import (
 	"context"
 	"embed"
 	"net/http"
+	"strings"
 
 	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services"
 	"github.com/pastelnetwork/gonode/tools/pastel-api/api/services/fake/models"
@@ -38,6 +39,13 @@ func (service *service) Handle(_ context.Context, r *http.Request, method string
 			return nil, services.ErrNotMasterNode
 		}
 		return newMasterNodeStatusByNode(node), nil
+	default:
+		switch {
+		case strings.HasPrefix(routePath, "pastelid_sign_") && len(params) == 4:
+			return newPastelID(params[2]).sign(params[1]), nil
+		case strings.HasPrefix(routePath, "pastelid_verify_") && len(params) == 4:
+			return newPastelID(params[3]).verify(params[1], params[2]), nil
+		}
 	}
 
 	return nil, services.ErrNotFoundMethod

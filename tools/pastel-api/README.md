@@ -52,7 +52,13 @@ Returns the result from the file `api/services/fake/data/storagefee_getnetworkfe
 Returns the result from the file `api/services/fake/data/tickets_list_id_mine.json`.
 
 * `masternode list-conf`
-Filter the result from the file `api/services/fake/data/tickets_list_id_mine.json` with `extPort` using the username from AuthBasic as the value.
+Filters the result from the file `api/services/fake/data/tickets_list_id_mine.json` with `extPort` using the username from AuthBasic as the value.
 
 * `masternode status`
-Filter the result from the file `api/services/fake/data/tickets_list_id_mine.json` with `extPort` using the username from AuthBasic as the value.
+Filters the result from the file `api/services/fake/data/tickets_list_id_mine.json` with `extPort` using the username from AuthBasic as the value.
+
+* `pastelid sign "text" "PastelID" "passphrase"`
+Returns a hash of `PastelID` and `text` as signature.
+
+* `pastelid verify "text" "signature" "PastelID"`
+Returns true if a hash of `PastelID` and `text` matches the `signature`.
