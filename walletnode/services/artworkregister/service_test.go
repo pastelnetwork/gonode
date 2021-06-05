@@ -19,7 +19,7 @@ func TestServiceRun(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Worker task.Worker
+		Worker *task.Worker
 	}
 
 	tests := []struct {
@@ -58,25 +58,29 @@ func TestServiceTasks(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Worker task.Worker
+		Worker       *task.Worker
+		Storage      *artwork.Storage
+		config       *Config
+		db           storage.KeyValue
+		pastelClient pastel.Client
+		nodeClient   node.Client
 	}
 	tests := []struct {
+		name   string
 		fields fields
 		want   []*Task
 	}{
-		// {
-		// 	fields: fields{},
-		// 	want:   nil,
-		// },
+		// TODO: Add test cases.
 	}
-	for i, tt := range tests {
-		tt := tt
-
-		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-
-			tt.fields.Worker.AddTask(&Task{})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
 			service := &Service{
-				Worker: tt.fields.Worker,
+				Worker:       tt.fields.Worker,
+				Storage:      tt.fields.Storage,
+				config:       tt.fields.config,
+				db:           tt.fields.db,
+				pastelClient: tt.fields.pastelClient,
+				nodeClient:   tt.fields.nodeClient,
 			}
 			assert.Equal(t, tt.want, service.Tasks())
 		})
@@ -87,7 +91,7 @@ func TestServiceTask(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Worker       task.Worker
+		Worker       *task.Worker
 		Storage      *artwork.Storage
 		config       *Config
 		db           storage.KeyValue
@@ -124,7 +128,7 @@ func TestServiceAddTask(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Worker       task.Worker
+		Worker       *task.Worker
 		Storage      *artwork.Storage
 		config       *Config
 		db           storage.KeyValue
@@ -158,8 +162,6 @@ func TestServiceAddTask(t *testing.T) {
 }
 
 func TestNewService(t *testing.T) {
-	t.Parallel()
-
 	type args struct {
 		config       *Config
 		db           storage.KeyValue

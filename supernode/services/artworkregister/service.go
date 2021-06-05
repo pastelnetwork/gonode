@@ -21,7 +21,7 @@ const (
 
 // Service represent artwork service.
 type Service struct {
-	task.Worker
+	*task.Worker
 	*artwork.Storage
 
 	config       *Config
