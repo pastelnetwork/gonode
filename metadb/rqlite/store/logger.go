@@ -95,7 +95,7 @@ func (logger *Logger) With(args ...interface{}) hclog.Logger {
 }
 
 // Named creates a new sub-Logger that a name decending from the current prefix.
-func (logger *Logger) Named(prefix string) hclog.Logger {
+func (logger *Logger) Named(_ string) hclog.Logger {
 	return logger
 }
 
@@ -105,7 +105,7 @@ func (logger *Logger) ResetNamed(name string) hclog.Logger {
 }
 
 // Accept implements the SinkAdapter interface
-func (logger *Logger) Accept(name string, level hclog.Level, msg string, args ...interface{}) {}
+func (logger *Logger) Accept(_ string, _ hclog.Level, _ string, _ ...interface{}) {}
 
 // ImpliedArgs returns the loggers implied args
 func (logger *Logger) ImpliedArgs() []interface{} {
@@ -118,15 +118,15 @@ func (logger *Logger) Name() string {
 }
 
 // SetLevel updates the logging level on-the-fly. This will affect all subloggers as well.
-func (logger *Logger) SetLevel(level hclog.Level) {}
+func (logger *Logger) SetLevel(_ hclog.Level) {}
 
 // StandardLogger creates a *log.Logger that will send it's data through this Logger.
-func (logger *Logger) StandardLogger(opts *hclog.StandardLoggerOptions) *golog.Logger {
+func (logger *Logger) StandardLogger(_ *hclog.StandardLoggerOptions) *golog.Logger {
 	return golog.New(logger.StandardWriter(nil), "", 0)
 }
 
 // StandardWriter returns a value that conforms to io.Writer, which can be passed into log.SetOutput()
-func (logger *Logger) StandardWriter(opts *hclog.StandardLoggerOptions) io.Writer {
+func (logger *Logger) StandardWriter(_ *hclog.StandardLoggerOptions) io.Writer {
 	return log.DefaultLogger.Out
 }
 
