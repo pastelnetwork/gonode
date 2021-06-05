@@ -223,13 +223,12 @@ jobs:
       - run:
           name: "Go generate"
           command: |
-            for d in ./*/ ; do (
+            for d in ./*/ ; do
                 cd "$d";
-                echo "dir: $PWD";
                 if [[ -f go.mod ]]; then
                     go generate ./...
                 fi
-            );
+            done
       - persist_to_workspace:
           root: .
           paths:
