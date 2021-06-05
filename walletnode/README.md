@@ -5,7 +5,7 @@
 
 ## Quick Start
 
-1. Without any parameters, `walletnode` tries to find and read all settings from the config file `walletnode.yml` in the [default dir](# default_dir):
+1. Without any parameters, `walletnode` tries to find and read all settings from the config file `walletnode.yml` in the [default dir](#default_dir):
 
 ``` shell
 ./walletnode
@@ -33,12 +33,12 @@ WALLETNODE_DEBUG=1 \
 
 ##### --config-file
 
-Specifies `walletnode` config file in yaml format. By default [default_dir](# default_dir)`/walletnode.yml`
+Specifies `walletnode` config file in yaml format. By default [default_dir](#default_dir)`/walletnode.yml`
 
 
 ##### --pastel-config-file
 
-Specifies `pastel.conf` config file in env format. By default [default_dir](# default_dir)`/pastel.conf`
+Specifies `pastel.conf` config file in env format. By default [default_dir](#default_dir)`/pastel.conf`
 
 
 ##### --temp-dir
@@ -88,11 +88,11 @@ The path depends on the OS:
 
 ##### `go: finding module for package .... mocks`
 
-We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](# Genreate mock files).
+We do not commit mock files, this is only needed for development and their lack, does not affect to build the package. But if you need to run unit tests or `go mod tidy`, you probably get an error. To fix this issue you need to [generate mock files](#generate-mock-files).
 
-### Running unit tests
+## Running unit tests
 
-###### Genreate mock files
+##### Generate mock files
 
 if you run unit tests first time, you need to generate mock files:
 
@@ -108,7 +108,7 @@ go get github.com/vektra/mockery/v2/.../
 for d in ./*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
 ```
 
-###### Run tests
+##### Run tests
 
 To run unit tests:
 
