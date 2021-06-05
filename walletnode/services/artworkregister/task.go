@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -145,6 +146,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
 
+	var mtx sync.Mutex
 	var secondaries node.List
 	go func() {
 		for i, node := range nodes {
@@ -167,7 +169,11 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 					if err := node.Session(ctx, false); err != nil {
 						return
 					}
+
+					//data race detection without lock
+					mtx.Lock()
 					secondaries.Add(node)
+					mtx.Unlock()
 
 					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
 						return
