@@ -2,7 +2,6 @@ package test
 
 import (
 	"context"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
@@ -63,9 +62,9 @@ func (c *Client) ListenOnSession(returnErr error) *Client {
 
 // ListenOnAcceptedNodes listening AcceptedNodes call and returns pastelIDs and error from args.
 func (c *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error) *Client {
-	handleFunc := func(cxt context.Context) []string {
-		//need block operation for simulate go routine
-		time.Sleep(time.Second * 2)
+	handleFunc := func(ctx context.Context) []string {
+		//need block operation until context is done
+		<-ctx.Done()
 		return pastelIDs
 	}
 

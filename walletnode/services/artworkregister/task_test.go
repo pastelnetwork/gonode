@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -63,7 +64,6 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name            string
 		fields          fields
 		args            args
 		assertion       assert.ErrorAssertionFunc
@@ -102,10 +102,10 @@ func TestTaskRun(t *testing.T) {
 			os.Remove("./test.png")
 		}()
 
-		for _, testCase := range testCases {
+		for i, testCase := range testCases {
 			testCase := testCase
 
-			t.Run(testCase.name, func(t *testing.T) {
+			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 				nodeClient := test.NewMockClient()
 				nodeClient.
 					ListenOnConnect(testCase.args.returnErr).
@@ -116,15 +116,11 @@ func TestTaskRun(t *testing.T) {
 					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 					ListenOnDone()
 
-				cancelCtx, cancel := context.WithCancel(testCase.args.ctx)
-
 				// custom probe image listening call to get thumbnail file.
-				// should remove the generated thumbnail file and close all go routine
+				// should remove the generated thumbnail file
 				customProbeImage := func(ctx context.Context, image *artwork.File) []byte {
-					defer cancel()
 					err := image.Remove()
 					assert.NoError(t, err)
-
 					return testCase.args.fingerPrint
 				}
 
@@ -158,7 +154,10 @@ func TestTaskRun(t *testing.T) {
 					Ticket:  ticket,
 				}
 
-				testCase.assertion(t, task.Run(cancelCtx))
+				//create context with timeout to automatically end process after 1 sec
+				ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+				defer cancel()
+				testCase.assertion(t, task.Run(ctx))
 
 				taskClient.TaskMock.AssertExpectations(t)
 				taskClient.TaskMock.AssertCalled(t, "ID")
@@ -209,14 +208,12 @@ func TestTaskMeshNodes(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name          string
 		args          args
 		want          []string
 		assertion     assert.ErrorAssertionFunc
 		numSessIDCall int
 	}{
 		{
-			name: "return 3 secondary nodes",
 			args: args{
 				ctx:          context.Background(),
 				primaryIndex: 1,
@@ -239,7 +236,6 @@ func TestTaskMeshNodes(t *testing.T) {
 			numSessIDCall: 6,
 			want:          []string{"1:127.0.0.1", "2:127.0.0.2", "4:127.0.0.4", "7:127.0.0.7"},
 		}, {
-			name: "primary node not accepted nodes",
 			args: args{
 				ctx:          context.Background(),
 				primaryIndex: 0,
@@ -260,10 +256,10 @@ func TestTaskMeshNodes(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(testCase.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 
 			//create new client mock
 			nodeClient := test.NewMockClient()
@@ -315,7 +311,6 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name      string
 		fields    fields
 		args      args
 		want      bool
@@ -353,10 +348,10 @@ func TestTaskIsSuitableStorageFee(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(testCase.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
 			//create new mock service
@@ -398,14 +393,12 @@ func TestTaskPastelTopNodes(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name      string
 		fields    fields
 		args      args
 		want      node.List
 		assertion assert.ErrorAssertionFunc
 	}{
 		{
-			name: "valid fee",
 			fields: fields{
 				Ticket: &Ticket{
 					MaximumFee: 0.30,
@@ -425,7 +418,6 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			},
 			assertion: assert.NoError,
 		}, {
-			name: "only one node valid fee",
 			fields: fields{
 				Ticket: &Ticket{
 					MaximumFee: 0.3,
@@ -444,7 +436,6 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			},
 			assertion: assert.NoError,
 		}, {
-			name: "failed retrieve top master node list",
 			args: args{
 				ctx:       context.Background(),
 				returnMn:  nil,
@@ -455,10 +446,10 @@ func TestTaskPastelTopNodes(t *testing.T) {
 		},
 	}
 
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(testCase.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
 			//create new mock service
@@ -498,12 +489,10 @@ func TestNewTask(t *testing.T) {
 	ticket := &Ticket{}
 
 	testCases := []struct {
-		name string
 		args args
 		want *Task
 	}{
 		{
-			name: "create new task",
 			args: args{
 				service: service,
 				Ticket:  ticket,
@@ -515,10 +504,12 @@ func TestNewTask(t *testing.T) {
 			},
 		},
 	}
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(testCase.name, func(t *testing.T) {
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+			t.Parallel()
+
 			task := NewTask(testCase.args.service, testCase.args.Ticket)
 			assert.Equal(t, testCase.want.Service, task.Service)
 			assert.Equal(t, testCase.want.Ticket, task.Ticket)
