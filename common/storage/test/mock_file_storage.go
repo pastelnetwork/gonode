@@ -30,6 +30,7 @@ func (f *FileStorage) ListenOnCreate(file storage.File, err error) *FileStorage 
 	return f
 }
 
+// ListenOnRemove listening Remove call and returns error from args
 func (f *FileStorage) ListenOnRemove(err error) *FileStorage {
 	f.FileStorageMock.On("Remove", mock.AnythingOfType("string")).Return(err)
 	return f
