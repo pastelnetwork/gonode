@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/chinook"
@@ -896,7 +897,7 @@ func Test_MultiNodeExecuteQueryFreshness(t *testing.T) {
 	if err == nil {
 		t.Fatalf("freshness violating query didn't return an error")
 	}
-	if err != ErrStaleRead {
+	if !errors.Is(err, ErrStaleRead) {
 		t.Fatalf("freshness violating query didn't returned wrong error: %s", err.Error())
 	}
 

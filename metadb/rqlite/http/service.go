@@ -340,7 +340,7 @@ func (s *Service) handleJoin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.store.Join(remoteID.(string), remoteAddr.(string), voter.(bool)); err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -392,7 +392,7 @@ func (s *Service) handleRemove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.store.Remove(remoteID); err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -435,7 +435,7 @@ func (s *Service) handleBackup(w http.ResponseWriter, r *http.Request) {
 
 	err = s.store.Backup(!noLeader, bf, w)
 	if err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -487,7 +487,7 @@ func (s *Service) handleLoad(w http.ResponseWriter, r *http.Request) {
 
 	results, err := s.store.ExecuteOrAbort(er)
 	if err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -738,7 +738,7 @@ func (s *Service) handleExecute(w http.ResponseWriter, r *http.Request) {
 
 	results, err := s.store.Execute(er)
 	if err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -816,7 +816,7 @@ func (s *Service) handleQuery(w http.ResponseWriter, r *http.Request) {
 
 	results, err := s.store.Query(qr)
 	if err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)

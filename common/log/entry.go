@@ -129,6 +129,15 @@ func (entry *Entry) Fatalf(format string, args ...interface{}) {
 	entry.Entry.Fatalf(format, args...)
 }
 
+// Logf logs a message at the provided level
+func (entry *Entry) Logf(levelName, format string, args ...interface{}) {
+	level, err := logrus.ParseLevel(levelName)
+	if err != nil {
+		level = logrus.DebugLevel
+	}
+	entry.Entry.Logf(level, format, args)
+}
+
 // Entry Println family functions
 
 // Traceln logs a message at level Trace.
