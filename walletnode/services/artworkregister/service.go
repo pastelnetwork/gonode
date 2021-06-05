@@ -22,7 +22,7 @@ const (
 
 // Service represents a service for the registration artwork.
 type Service struct {
-	*task.Worker
+	task.Worker
 	*artwork.Storage
 
 	config       *Config
