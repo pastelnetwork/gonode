@@ -135,7 +135,7 @@ func (entry *Entry) Logf(levelName, format string, args ...interface{}) {
 	if err != nil {
 		level = logrus.DebugLevel
 	}
-	entry.Entry.Logf(level, format, args)
+	entry.Entry.Logf(level, format, args...)
 }
 
 // Entry Println family functions
