@@ -9,7 +9,7 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-    GOPATH: "/home/circleci/project/go"
+    GOPATH: "/home/circleci/project/.go"
     PATH: "/home/circleci/.local/bin:/home/circleci/bin:/home/circleci/project/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 commands:
