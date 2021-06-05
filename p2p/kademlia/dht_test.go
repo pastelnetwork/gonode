@@ -38,6 +38,7 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 	}
 
 	for _, dht := range dhts {
+		dht := dht
 		assert.Equal(t, 0, dht.NumNodes())
 		go func(dht *DHT) {
 			err := dht.Listen(ctx)
