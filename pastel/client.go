@@ -16,11 +16,11 @@ type client struct {
 	jsonrpc.RPCClient
 }
 
-// MasterNodeConfig implements pastel.Client.MasterNodeConfig()
+// MasterNodeConfig implements pastel.Client.MasterNodeConfig
 func (client *client) MasterNodeConfig(ctx context.Context) (*MasterNodeConfig, error) {
 	listConf := make(map[string]MasterNodeConfig)
-	err := client.callFor(ctx, &listConf, "masternode", "list-conf")
-	if err != nil {
+
+	if err := client.callFor(ctx, &listConf, "masternode", "list-conf"); err != nil {
 		return nil, errors.Errorf("failed to get masternode configuration: %w", err)
 	}
 
@@ -30,47 +30,76 @@ func (client *client) MasterNodeConfig(ctx context.Context) (*MasterNodeConfig, 
 	return nil, errors.New("not found masternode configuration")
 }
 
-// MasterNodesTop implements pastel.Client.MasterNodesTop()
+// MasterNodesTop implements pastel.Client.MasterNodesTop
 func (client *client) MasterNodesTop(ctx context.Context) (MasterNodes, error) {
 	blocknumMNs := make(map[string]MasterNodes)
-	err := client.callFor(ctx, &blocknumMNs, "masternode", "top")
-	if err != nil {
+
+	if err := client.callFor(ctx, &blocknumMNs, "masternode", "top"); err != nil {
 		return nil, errors.Errorf("failed to get top masternodes: %w", err)
 	}
+
 	for _, masterNodes := range blocknumMNs {
 		return masterNodes, nil
 	}
 	return nil, nil
 }
 
-// MasterNodesTop implements pastel.Client.MasterNodeStatus()
+// MasterNodesTop implements pastel.Client.MasterNodeStatus
 func (client *client) MasterNodeStatus(ctx context.Context) (*MasterNodeStatus, error) {
 	var status MasterNodeStatus
-	err := client.callFor(ctx, &status, "masternode", "status")
-	if err != nil {
+
+	if err := client.callFor(ctx, &status, "masternode", "status"); err != nil {
 		return nil, errors.Errorf("failed to get masternode status: %w", err)
 	}
 	return &status, nil
 }
 
-// StorageFee implements pastel.Client.StorageFee()
-func (client *client) StorageFee(ctx context.Context) (*StorageFee, error) {
-	var storagefee StorageFee
-	err := client.callFor(ctx, &storagefee, "storagefee", "getnetworkfee")
-	if err != nil {
-		return nil, errors.Errorf("failed to get storage fee: %w", err)
+// StorageFee implements pastel.Client.StorageFee
+func (client *client) StorageNetworkFee(ctx context.Context) (networkfee float64, err error) {
+	var storagefee struct {
+		NetworkFee float64 `json:"networkfee"`
 	}
-	return &storagefee, nil
+
+	if err := client.callFor(ctx, &storagefee, "storagefee", "getnetworkfee"); err != nil {
+		return 0, errors.Errorf("failed to get storage fee: %w", err)
+	}
+	return storagefee.NetworkFee, nil
 }
 
-// IDTickets implements pastel.Client.IDTickets()
+// IDTickets implements pastel.Client.IDTickets
 func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTickets, error) {
 	tickets := IDTickets{}
-	err := client.callFor(ctx, &tickets, "tickets", "list", "id", string(idType))
-	if err != nil {
-		errors.Errorf("failed to get id tickets: %w", err)
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "id", string(idType)); err != nil {
+		return nil, errors.Errorf("failed to get id tickets: %w", err)
 	}
 	return tickets, nil
+}
+
+// Sign implements pastel.Client.Sign
+func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature string, err error) {
+	var sign struct {
+		Signature string `json:"signature"`
+	}
+	text := base64.StdEncoding.EncodeToString(data)
+
+	if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase); err != nil {
+		return "", errors.Errorf("failed to sign data: %w", err)
+	}
+	return sign.Signature, nil
+}
+
+// Verify implements pastel.Client.Verify
+func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+	var verify struct {
+		Verification bool `json:"verification"`
+	}
+	text := base64.StdEncoding.EncodeToString(data)
+
+	if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID); err != nil {
+		return false, errors.Errorf("failed to verify data: %w", err)
+	}
+	return verify.Verification, nil
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
@@ -86,23 +115,6 @@ func (client *client) callFor(ctx context.Context, object interface{}, method st
 	}
 	return nil
 }
-
-// func (client *client) call(ctx context.Context, method string, params ...interface{}) (*jsonrpc.RPCResponse, error) {
-// 	response, err := client.CallWithContext(ctx, method, params)
-// 	if err != nil {
-// 		return nil, errors.Errorf("could not call %q, %w", method, err)
-// 	}
-// 	if response == nil {
-// 		return nil, errors.Errorf("empty response on call %q", method)
-// 	}
-// 	if response.Error != nil {
-// 		return nil, errors.Errorf("call %q returns error: %s", method, response.Error.Message)
-// 	}
-// 	if response.Result == nil {
-// 		return nil, errors.Errorf("call %q returns empty result", method)
-// 	}
-// 	return response, nil
-// }
 
 // NewClient returns a new Client instance.
 func NewClient(config *Config) Client {

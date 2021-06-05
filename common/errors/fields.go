@@ -2,6 +2,7 @@ package errors
 
 import (
 	"fmt"
+	"strings"
 )
 
 // Fields contains key/value data
@@ -9,11 +10,11 @@ type Fields map[string]interface{}
 
 // Error returns the underlying error's message.
 func (fields Fields) String() string {
-	var str string
+	var strs []string
 	for name, value := range fields {
-		str += fmt.Sprintf("%s=%s ", name, value)
+		strs = append(strs, fmt.Sprintf("%s=%s", name, value))
 	}
-	return str
+	return strings.Join(strs, " ")
 }
 
 // ExtractFields extracts fields from err

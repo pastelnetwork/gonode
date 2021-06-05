@@ -7,6 +7,42 @@ import (
 	"strings"
 )
 
+// Append is a helper function that will append more errors
+// onto an Error in order to create a larger multi-error.
+func Append(err error, errs ...error) *Errors {
+	switch err := err.(type) {
+	case *Errors:
+		// Typed nils can reach here, so initialize if we are nil
+		if err == nil {
+			err = new(Errors)
+		}
+
+		// Go through each error and flatten
+		for _, e := range errs {
+			switch e := e.(type) {
+			case *Error:
+				if e != nil {
+					*err = append(*err, e)
+				}
+			default:
+				if e != nil {
+					*err = append(*err, New(e))
+				}
+			}
+		}
+		return err
+
+	default:
+		newErrs := make([]error, 0, len(errs)+1)
+		if err != nil {
+			newErrs = append(newErrs, err)
+		}
+		newErrs = append(newErrs, errs...)
+
+		return Append(&Errors{}, newErrs...)
+	}
+}
+
 // ErrorStack converts the given error to a string, including the stack trace if available
 func ErrorStack(err error) string {
 	var errStacks []string
