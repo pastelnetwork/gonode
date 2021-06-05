@@ -2,7 +2,7 @@
 
 # Pastel API
 
-This repo contains `pastel-api,` a server which simulates the real Pastel API. This is used for integration testing and testing at the development stage.
+This repo contains `pastel-api`, a server which simulates the real Pastel API. This is used for integration testing and testing at the development stage.
 
 
 ## Quick Start

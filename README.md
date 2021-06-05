@@ -4,8 +4,9 @@
 
 ### Main Apps
 
-[`walletnode`](supdernode/README.md) is a command line client application (i.e., there is no graphical interface); the main purpose of the app is to provide a REST API on the client side.
-[`supernode`](walletnode/README.md) is a server application for `walletnode` and actually does all the work of registering and searching for NFTs (artworks).
+[`walletnode`](walletnode/README.md) is a command line client application (i.e., there is no graphical interface); the main purpose of the app is to provide a REST API on the client side.
+
+[`supernode`](supernode/README.md) is a server application for `walletnode` and actually does all the work of registering and searching for NFTs (artworks).
 
 ### Tools
 
