@@ -19,18 +19,6 @@ commands:
         type: string
     steps:
       - run:
-          name: "Go generate"
-          working_directory: ~/project
-          command: |
-            for d in ./*/ ; do (
-                cd "$d";
-                echo "dir: $PWD";
-                if [[ -f go.mod ]]; then 
-                    go generate ./...
-                fi 
-            );
-            done
-      - run:
           name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
           command: |
@@ -232,6 +220,10 @@ jobs:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+      - run:
+          name: "Go generate"
+          command: |
+            for d in ./*/ ; do (cd "$d" && echo "dir: $PWD" && [[ -f go.mod ]] && go generate ./...); done
       - persist_to_workspace:
           root: .
           paths:
