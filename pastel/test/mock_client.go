@@ -24,8 +24,8 @@ func (c *Client) ListenOnMasterNodesTop(nodes pastel.MasterNodes, err error) *Cl
 	return c
 }
 
-// ListenOnStorageFee listening StorageFee call and returns pastel.StorageFee, error form args
-func (c *Client) ListenOnStorageFee(fee *pastel.StorageFee, returnErr error) *Client {
-	c.ClientMock.On("StorageFee", mock.Anything).Return(fee, returnErr)
+// ListenOnStorageNetworkFee listening StorageNetworkFee call and returns pastel.StorageNetworkFee, error form args
+func (c *Client) ListenOnStorageNetworkFee(fee float64, returnErr error) *Client {
+	c.ClientMock.On("StorageNetworkFee", mock.Anything).Return(fee, returnErr)
 	return c
 }
