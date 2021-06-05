@@ -1,3 +1,5 @@
+//go:generate mockery --name=Worker
+
 package task
 
 import (
@@ -8,20 +10,39 @@ import (
 )
 
 // Worker represents a pool of the task.
-type Worker struct {
+type Worker interface {
+
+	// Tasks returns all tasks.
+	Tasks() []Task
+
+	// Task returns the task  by the given id.
+	Task(taskID string) Task
+
+	// AddTask adds the new task.
+	AddTask(task Task)
+
+	// RemoveTask removes the task.
+	RemoveTask(subTask Task)
+
+	// Run waits for new tasks, starts handling eche of them in a new goroutine.
+	Run(ctx context.Context) error
+}
+
+// implement Worker interface
+type worker struct {
 	sync.Mutex
 
 	tasks  []Task
 	taskCh chan Task
 }
 
-// Tasks returns all tasks.
-func (worker *Worker) Tasks() []Task {
+// Tasks implements Worker.Tasks
+func (worker *worker) Tasks() []Task {
 	return worker.tasks
 }
 
-// Task returns the task  by the given id.
-func (worker *Worker) Task(taskID string) Task {
+// Task implements Worker.Task
+func (worker *worker) Task(taskID string) Task {
 	worker.Lock()
 	defer worker.Unlock()
 
@@ -33,8 +54,8 @@ func (worker *Worker) Task(taskID string) Task {
 	return nil
 }
 
-// AddTask adds the new task.
-func (worker *Worker) AddTask(task Task) {
+// AddTask implements Worker.AddTask
+func (worker *worker) AddTask(task Task) {
 	worker.Lock()
 	defer worker.Unlock()
 
@@ -42,8 +63,8 @@ func (worker *Worker) AddTask(task Task) {
 	worker.taskCh <- task
 }
 
-// RemoveTask removes the task.
-func (worker *Worker) RemoveTask(subTask Task) {
+// RemoveTask implements Worker.RemoveTask
+func (worker *worker) RemoveTask(subTask Task) {
 	worker.Lock()
 	defer worker.Unlock()
 
@@ -55,8 +76,8 @@ func (worker *Worker) RemoveTask(subTask Task) {
 	}
 }
 
-// Run waits for new tasks, starts handling eche of them in a new goroutine.
-func (worker *Worker) Run(ctx context.Context) error {
+// Run implements Worker.Run
+func (worker *worker) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 	for {
 		select {
@@ -73,8 +94,8 @@ func (worker *Worker) Run(ctx context.Context) error {
 }
 
 // NewWorker returns a new Worker instance.
-func NewWorker() *Worker {
-	return &Worker{
+func NewWorker() Worker {
+	return &worker{
 		taskCh: make(chan Task),
 	}
 }
