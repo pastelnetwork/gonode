@@ -225,10 +225,10 @@ jobs:
           working_directory: ~/project/
           command: |
             for d in ./*/ ; do
-                cd "$d";
+                (cd "$d";
                 if [[ -f go.mod ]]; then
                     go generate ./...
-                fi
+                fi)
             done
       - persist_to_workspace:
           root: .
