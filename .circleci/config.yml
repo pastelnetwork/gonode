@@ -222,6 +222,7 @@ jobs:
             go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
       - run:
           name: "Go generate"
+          working_directory: ~/project/
           command: |
             for d in ./*/ ; do
                 cd "$d";
