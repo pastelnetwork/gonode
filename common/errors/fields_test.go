@@ -16,7 +16,7 @@ func TestFieldsString(t *testing.T) {
 	}{
 		{
 			fields: Fields{"foo": "bar"},
-			value:  "foo=bar ",
+			value:  "foo=bar",
 		},
 	}
 
