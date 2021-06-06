@@ -4,10 +4,8 @@ package dupedetection
 import (
 	"context"
 	"fmt"
-	"image"
 	"math"
 	"math/rand"
-	"os"
 	"strings"
 	"time"
 
@@ -22,62 +20,12 @@ import (
 	"golang.org/x/sync/errgroup"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat"
-
-	"github.com/disintegration/imaging"
-	tg "github.com/galeone/tfgo"
 )
 
 const strictnessFactor = 0.985
 
 // InterfaceTypeError indicates unexpected variable type is returned by invoked correlation calculation func
 var InterfaceTypeError = errors.Errorf("Calculation function returned value of unexpected type.")
-
-var models = make(map[string]*tg.Model)
-
-type modelData struct {
-	model string
-	input string
-}
-
-var fingerprintSources = []modelData{
-	{
-		model: "EfficientNetB7.tf",
-		input: "serving_default_input_1",
-	},
-	{
-		model: "EfficientNetB6.tf",
-		input: "serving_default_input_2",
-	},
-	{
-		model: "InceptionResNetV2.tf",
-		input: "serving_default_input_3",
-	},
-	{
-		model: "DenseNet201.tf",
-		input: "serving_default_input_4",
-	},
-	{
-		model: "InceptionV3.tf",
-		input: "serving_default_input_5",
-	},
-	{
-		model: "NASNetLarge.tf",
-		input: "serving_default_input_6",
-	},
-	{
-		model: "ResNet152V2.tf",
-		input: "serving_default_input_7",
-	},
-}
-
-func tgModel(path string) *tg.Model {
-	m, ok := models[path]
-	if !ok {
-		m = tg.LoadModel(path, []string{"serve"}, nil)
-		models[path] = m
-	}
-	return m
-}
 
 // FromFloat32To64 accepts input array of float32 values and returns float64 array of the input values
 func FromFloat32To64(input []float32) []float64 {
@@ -86,23 +34,6 @@ func FromFloat32To64(input []float32) []float64 {
 		output[i] = float64(value)
 	}
 	return output
-}
-
-func loadImage(imagePath string, width int, height int) (image.Image, error) {
-	reader, err := os.Open(imagePath)
-	if err != nil {
-		return nil, errors.New(err)
-	}
-	defer reader.Close()
-
-	img, _, err := image.Decode(reader)
-	if err != nil {
-		return nil, errors.New(err)
-	}
-
-	img = imaging.Resize(img, width, height, imaging.Linear)
-
-	return img, nil
 }
 
 func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, memoizationData MemoizationImageData, _ ComputeConfig) ([]float64, error) {
