@@ -6,6 +6,8 @@ set -o nounset
 set -o errexit
 set -eu -o pipefail
 
+err=0
+
 (set -x && git pull --ff-only origin "refs/heads/master") || err=$?
 
 if [ "$err" -ne "0" ]; then
