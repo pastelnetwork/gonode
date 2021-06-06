@@ -194,7 +194,9 @@ jobs:
   prepare_workspace:
     <<: *defaults
     steps:
-      - checkout
+      - checkout:
+          post:
+            git pull --ff-only origin "refs/pull/${CI_PULL_REQUEST//*pull\//}/merge"
       - run:
           name: Print the go version
           command: |
@@ -224,12 +226,7 @@ jobs:
           name: "Go generate"
           working_directory: ~/project/
           command: |
-            for d in ./*/ ; do
-                (cd "$d";
-                if [[ -f go.mod ]]; then
-                    go generate ./...
-                fi)
-            done
+            for d in ./*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
       - persist_to_workspace:
           root: .
           paths:

@@ -3,7 +3,6 @@ package artworkregister
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -12,14 +11,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
-)
-
-const (
-	connectToNextNodeDelay = time.Millisecond * 200
-	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
-	connectToNodeTimeout   = time.Second * 2
-
-	thumbnailWidth, thumbnailHeight = 224, 224
 )
 
 // Task is the task of registering new artwork.
@@ -105,7 +96,7 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
-	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d", thumbnailWidth, thumbnailHeight)
+	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d", task.config.thumbnailWidth, task.config.thumbnailHeight)
 	if err := thumbnail.ResizeImage(thumbnailWidth, thumbnailHeight); err != nil {
 		return err
 	}
@@ -136,7 +127,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	var meshNodes node.List
 
 	primary := nodes[primaryIndex]
-	if err := primary.Connect(ctx, connectToNodeTimeout); err != nil {
+	if err := primary.Connect(ctx, task.config.connectTimeout); err != nil {
 		return nil, err
 	}
 	if err := primary.Session(ctx, true); err != nil {
@@ -146,7 +137,6 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
 
-	var mtx sync.Mutex
 	var secondaries node.List
 	go func() {
 		for i, node := range nodes {
@@ -159,21 +149,17 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 			select {
 			case <-nextConnCtx.Done():
 				return
-			case <-time.After(connectToNextNodeDelay):
+			case <-time.After(task.config.connectToNextNodeDelay):
 				go func() {
 					defer errors.Recover(log.Fatal)
 
-					if err := node.Connect(ctx, connectToNodeTimeout); err != nil {
+					if err := node.Connect(ctx, task.config.connectTimeout); err != nil {
 						return
 					}
 					if err := node.Session(ctx, false); err != nil {
 						return
 					}
-
-					//data race detection without lock
-					mtx.Lock()
 					secondaries.Add(node)
-					mtx.Unlock()
 
 					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
 						return
@@ -184,7 +170,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 		}
 	}()
 
-	acceptCtx, acceptCancel := context.WithTimeout(ctx, acceptNodesTimeout)
+	acceptCtx, acceptCancel := context.WithTimeout(ctx, task.config.acceptNodesTimeout)
 	defer acceptCancel()
 
 	accepted, err := primary.AcceptedNodes(acceptCtx)
