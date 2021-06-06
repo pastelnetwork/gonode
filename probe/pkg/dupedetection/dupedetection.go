@@ -15,6 +15,8 @@ import (
 	"github.com/montanaflynn/stats"
 	"github.com/pastelnetwork/gonode/common/errors"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
+	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/probe/wdm"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/sync/errgroup"
@@ -22,7 +24,6 @@ import (
 	"gonum.org/v1/gonum/stat"
 
 	"github.com/disintegration/imaging"
-	tf "github.com/galeone/tensorflow/tensorflow/go"
 	tg "github.com/galeone/tfgo"
 )
 
@@ -102,48 +103,6 @@ func loadImage(imagePath string, width int, height int) (image.Image, error) {
 	img = imaging.Resize(img, width, height, imaging.Linear)
 
 	return img, nil
-}
-
-// ComputeImageDeepLearningFeatures computes dupe detection fingerprints for image with imagePath
-func ComputeImageDeepLearningFeatures(imagePath string) ([][]float32, error) {
-	defer pruntime.PrintExecutionTime(time.Now())
-
-	m, err := loadImage(imagePath, 224, 224)
-	if err != nil {
-		return nil, errors.New(err)
-	}
-
-	bounds := m.Bounds()
-
-	var inputTensor [1][224][224][3]float32
-
-	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			r, g, b, _ := m.At(x, y).RGBA()
-
-			// height = y and width = x
-			inputTensor[0][y][x][0] = float32(r >> 8)
-			inputTensor[0][y][x][1] = float32(g >> 8)
-			inputTensor[0][y][x][2] = float32(b >> 8)
-		}
-	}
-
-	fingerprints := make([][]float32, len(fingerprintSources))
-	for i, source := range fingerprintSources {
-		model := tgModel(source.model)
-
-		fakeInput, _ := tf.NewTensor(inputTensor)
-		results := model.Exec([]tf.Output{
-			model.Op("StatefulPartitionedCall", 0),
-		}, map[tf.Output]*tf.Tensor{
-			model.Op(source.input, 0): fakeInput,
-		})
-
-		predictions := results[0].Value().([][]float32)[0]
-		fingerprints[i] = predictions
-	}
-
-	return fingerprints, nil
 }
 
 func computeMIForAllFingerprintPairs(candidateImageFingerprint []float64, finalCombinedImageFingerprintArray [][]float64, memoizationData MemoizationImageData, _ ComputeConfig) ([]float64, error) {
@@ -864,6 +823,8 @@ type ComputeConfig struct {
 	RootDir                  string
 	NumberOfImagesToValidate int
 	TrimByPercentile         bool
+
+	FileStorage storage.FileStorage
 }
 
 // NewComputeConfig retirieves new ComputeConfig with default values
@@ -909,6 +870,8 @@ func NewComputeConfig() ComputeConfig {
 		"HoeffdingD",
 		"BlomqvistBeta",
 	}
+
+	config.FileStorage = fs.NewFileStorage("")
 
 	return config
 }
