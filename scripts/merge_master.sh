@@ -4,9 +4,9 @@
 
 set -o nounset
 set -o errexit
-set -o pipefail
+set -eu -o pipefail
 
-PR_NUMBER=${CIRCLE_PULL_REQUEST}
+PR_NUMBER=${CIRCLE_PULL_REQUEST//*pull\//}
 err=0
 
 if [ -z "$PR_NUMBER" ]; then
