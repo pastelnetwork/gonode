@@ -194,8 +194,10 @@ jobs:
   prepare_workspace:
     <<: *defaults
     steps:
-      - checkout:
-          post:
+      - checkout
+      - run:
+          name: Merging branch
+          command: |
             git pull --ff-only origin "refs/pull/${CI_PULL_REQUEST//*pull\//}/merge"
       - run:
           name: Print the go version
