@@ -4,7 +4,7 @@
 
 set -eu -o pipefail
 
-PR_NUMBER=${CIRCLE_PULL_REQUEST//*pull\//}
+PR_NUMBER=${CIRCLE_PULL_REQUEST}
 err=0
 
 if [ -z "$PR_NUMBER" ]; then
