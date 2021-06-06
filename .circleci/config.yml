@@ -196,9 +196,9 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Merging branch
+          name: Detect not merged code
           command: |
-            git pull --ff-only origin "refs/pull/${CI_PULL_REQUEST//*pull\//}/merge"
+            ./scripts/merge_master.sh
       - run:
           name: Print the go version
           command: |
