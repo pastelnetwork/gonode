@@ -2,6 +2,7 @@ package auprc
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"math"
@@ -19,8 +20,13 @@ import (
 	"gonum.org/v1/gonum/mat"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	pruntime "github.com/pastelnetwork/gonode/common/runtime"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/probe/pkg/dupedetection"
+	"github.com/pastelnetwork/gonode/probe/tfmodel"
 
 	"encoding/binary"
 	"encoding/hex"
@@ -29,8 +35,13 @@ import (
 )
 
 const (
-	cachedFingerprintsDB = "cachedFingerprints.sqlite"
+	cachedFingerprintsDB            = "cachedFingerprints.sqlite"
+	thumbnailWidth, thumbnailHeight = 224, 224
 )
+
+var probeTensor probe.Tensor
+var fileStorage storage.FileStorage
+var artworkStorage *artwork.Storage
 
 func fingerprintFromCache(filePath string) ([]float32, error) {
 	if _, err := os.Stat(cachedFingerprintsDB); os.IsNotExist(err) {
@@ -236,8 +247,53 @@ func fromBytes(data []byte) []float32 {
 	return output
 }
 
-func addImageFingerprintsToDupeDetectionDatabase(imageFilePath string) error {
-	fingerprints, err := dupedetection.ComputeImageDeepLearningFeatures(imageFilePath)
+// FingerprintsToFloat32DoubleArray type casts Fingerprints to its base type
+func FingerprintsToFloat32DoubleArray(fingerprints probe.Fingerprints) [][]float32 {
+	var output [][]float32
+	for _, fingerprint := range fingerprints {
+		output = append(output, fingerprint)
+	}
+	return output
+}
+
+func computeImageDeepLearningFeatures(ctx context.Context, imageFilePath string) ([][]float32, error) {
+	if probeTensor == nil {
+		probeTensor = probe.NewTensor("models", tfmodel.AllConfigs)
+		if err := probeTensor.LoadModels(ctx); err != nil {
+			return nil, err
+		}
+		artworkStorage = artwork.NewStorage(fileStorage)
+	}
+
+	file := artwork.NewFile(artworkStorage, imageFilePath)
+
+	thumbnail, err := file.Copy()
+	if err != nil {
+		return nil, err
+	}
+
+	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d", thumbnailWidth, thumbnailHeight)
+	if err := thumbnail.ResizeImage(thumbnailWidth, thumbnailHeight); err != nil {
+		return nil, err
+	}
+
+	img, err := thumbnail.OpenImage()
+	if err != nil {
+		return nil, err
+	}
+
+	defer thumbnail.Remove()
+
+	fingerprints, err := probeTensor.Fingerprints(ctx, img)
+	if err != nil {
+		return nil, err
+	}
+
+	return FingerprintsToFloat32DoubleArray(fingerprints), nil
+}
+
+func addImageFingerprintsToDupeDetectionDatabase(ctx context.Context, imageFilePath string) error {
+	fingerprints, err := computeImageDeepLearningFeatures(ctx, imageFilePath)
 	if err != nil {
 		return errors.New(err)
 	}
@@ -276,14 +332,14 @@ func addImageFingerprintsToDupeDetectionDatabase(imageFilePath string) error {
 	return nil
 }
 
-func addAllImagesInFolderToImageFingerprintDatabase(artFolderPath string) error {
+func addAllImagesInFolderToImageFingerprintDatabase(ctx context.Context, artFolderPath string) error {
 	validImageFilePaths, err := getAllValidImageFilePathsInFolder(artFolderPath, 0)
 	if err != nil {
 		return errors.New(err)
 	}
 	for _, currentImageFilePath := range validImageFilePaths {
 		fmt.Printf("\nNow adding image file %v to image fingerprint database.", currentImageFilePath)
-		err = addImageFingerprintsToDupeDetectionDatabase(currentImageFilePath)
+		err = addImageFingerprintsToDupeDetectionDatabase(ctx, currentImageFilePath)
 		if err != nil {
 			return errors.New(err)
 		}
@@ -362,9 +418,9 @@ func getAllImageFingerprintsFromDupeDetectionDatabaseAsArray() ([][]float32, *du
 	return arrayOfCombinedImageFingerprintRows, &memoizationImageData, nil
 }
 
-func getImageDeepLearningFeaturesCombinedVectorForSingleImage(artImageFilePath string) ([]float32, error) {
+func getImageDeepLearningFeaturesCombinedVectorForSingleImage(ctx context.Context, artImageFilePath string) ([]float32, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
-	fingerprints, err := dupedetection.ComputeImageDeepLearningFeatures(artImageFilePath)
+	fingerprints, err := computeImageDeepLearningFeatures(ctx, artImageFilePath)
 	if err != nil {
 		return nil, errors.New(err)
 	}
@@ -376,7 +432,7 @@ func getImageDeepLearningFeaturesCombinedVectorForSingleImage(artImageFilePath s
 	return combinedImageFingerprintVector, err
 }
 
-func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, finalCombinedImageFingerprintArray [][]float64, memoizationData dupedetection.MemoizationImageData, config dupedetection.ComputeConfig) (int, error) {
+func measureSimilarityOfCandidateImageToDatabase(ctx context.Context, imageFilePath string, finalCombinedImageFingerprintArray [][]float64, memoizationData dupedetection.MemoizationImageData, config dupedetection.ComputeConfig) (int, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
 	fmt.Printf("\nChecking if candidate image is a likely duplicate of a previously registered artwork:")
 
@@ -387,7 +443,7 @@ func measureSimilarityOfCandidateImageToDatabase(imageFilePath string, finalComb
 
 	candidateImageFingerprint, err := fingerprintFromCache(imageFilePath)
 	if err != nil {
-		candidateImageFingerprint, err = getImageDeepLearningFeaturesCombinedVectorForSingleImage(imageFilePath)
+		candidateImageFingerprint, err = getImageDeepLearningFeaturesCombinedVectorForSingleImage(ctx, imageFilePath)
 	}
 	lengthOfCandidateImageFingerprint := len(candidateImageFingerprint)
 	fmt.Printf("\nCandidate image fingerpint consists from %v numbers", lengthOfCandidateImageFingerprint)
@@ -417,8 +473,10 @@ var finalCombinedImageFingerprintArray [][]float64
 var memoizationData *dupedetection.MemoizationImageData
 
 // MeasureAUPRC calculates AUPRC for a test corpus of the images
-func MeasureAUPRC(config dupedetection.ComputeConfig) (MeasureResult, error) {
+func MeasureAUPRC(ctx context.Context, config dupedetection.ComputeConfig) (MeasureResult, error) {
 	defer pruntime.PrintExecutionTime(time.Now())
+
+	fileStorage = config.FileStorage
 
 	miscMasternodeFilesFolderPath := filepath.Join(config.RootDir, "misc_masternode_files")
 	dupeDetectionImageFingerprintDatabaseFilePath = filepath.Join(config.RootDir, "dupe_detection_image_fingerprint_database.sqlite")
@@ -436,7 +494,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (MeasureResult, error) {
 	if !dbFound {
 		fmt.Printf("\nGenerating new image fingerprint database...")
 		regenerateEmptyDupeDetectionImageFingerprintDatabase()
-		err := addAllImagesInFolderToImageFingerprintDatabase(pathToAllRegisteredWorksForDupeDetection)
+		err := addAllImagesInFolderToImageFingerprintDatabase(ctx, pathToAllRegisteredWorksForDupeDetection)
 		if err != nil {
 			return MeasureResult{}, errors.New(err)
 		}
@@ -470,7 +528,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (MeasureResult, error) {
 	for _, nearDupeFilePath := range nearDuplicates {
 		fmt.Printf("\n\n________________________________________________________________________________________________________________\n\n")
 		fmt.Printf("\nCurrent Near Duplicate Image: %v", nearDupeFilePath)
-		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nearDupeFilePath, finalCombinedImageFingerprintArray, *memoizationData, config)
+		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(ctx, nearDupeFilePath, finalCombinedImageFingerprintArray, *memoizationData, config)
 		if err != nil {
 			return MeasureResult{}, errors.New(err)
 		}
@@ -494,7 +552,7 @@ func MeasureAUPRC(config dupedetection.ComputeConfig) (MeasureResult, error) {
 	for _, nonDupeFilePath := range nonDuplicates {
 		fmt.Printf("\n\n________________________________________________________________________________________________________________\n\n")
 		fmt.Printf("\nCurrent Non-Duplicate Test Image: %v", nonDupeFilePath)
-		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(nonDupeFilePath, finalCombinedImageFingerprintArray, *memoizationData, config)
+		isLikelyDupe, err := measureSimilarityOfCandidateImageToDatabase(ctx, nonDupeFilePath, finalCombinedImageFingerprintArray, *memoizationData, config)
 		if err != nil {
 			return MeasureResult{}, errors.New(err)
 		}
