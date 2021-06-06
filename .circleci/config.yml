@@ -226,7 +226,7 @@ jobs:
           name: "Go generate"
           working_directory: ~/project/
           command: |
-            for d in ./*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
+            for d in ./*/ ; do (cd "$d" && if [[ -f go.mod ]]; then go generate ./... ; fi); done
       - persist_to_workspace:
           root: .
           paths:
