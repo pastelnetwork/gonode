@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"math/rand"
@@ -26,6 +27,9 @@ func main() {
 
 	rand.Seed(time.Now().UnixNano())
 
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	memoizer := dupedetection.GetMemoizer()
 	memoizer.Storage.LoadFile(cacheFileName)
 
@@ -33,7 +37,7 @@ func main() {
 	config.RootDir = *rootDirPtr
 	config.NumberOfImagesToValidate = *numberOfImagesToValidate
 
-	if _, err := auprc.MeasureAUPRC(config); err != nil {
+	if _, err := auprc.MeasureAUPRC(ctx, config); err != nil {
 		log.Print(errors.ErrorStack(err))
 		panic(err)
 	}
