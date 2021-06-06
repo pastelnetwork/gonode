@@ -196,6 +196,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Detect not merged code
+          command: |
+            ./scripts/merge_master.sh
+      - run:
           name: Print the go version
           command: |
             go version
@@ -224,12 +228,7 @@ jobs:
           name: "Go generate"
           working_directory: ~/project/
           command: |
-            for d in ./*/ ; do
-                (cd "$d";
-                if [[ -f go.mod ]]; then
-                    go generate ./...
-                fi)
-            done
+            for d in ./*/ ; do (cd "$d" && if [[ -f go.mod ]]; then go generate ./... ; fi); done
       - persist_to_workspace:
           root: .
           paths:
