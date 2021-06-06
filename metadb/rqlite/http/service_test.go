@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
@@ -490,7 +491,7 @@ func Test_BackupFlagsNoLeader(t *testing.T) {
 	defer s.Close()
 
 	m.backupFn = func(leader bool, f store.BackupFormat, dst io.Writer) error {
-		return store.ErrNotLeader
+		return errors.New(store.ErrNotLeader)
 	}
 
 	client := &http.Client{}
@@ -525,7 +526,7 @@ func Test_BackupFlagsNoLeaderOK(t *testing.T) {
 		if !leader {
 			return nil
 		}
-		return store.ErrNotLeader
+		return errors.New(store.ErrNotLeader)
 	}
 
 	client := &http.Client{}

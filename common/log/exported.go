@@ -125,6 +125,11 @@ func Tracef(format string, args ...interface{}) {
 	NewDefaultEntry().Tracef(format, args...)
 }
 
+// Logf logs a message at the provided level
+func Logf(levelName, format string, args ...interface{}) {
+	NewDefaultEntry().Logf(levelName, format, args...)
+}
+
 // Fatal logs an error at level Fatal with error stack.
 func Fatal(err error) {
 	entry := NewDefaultEntry()

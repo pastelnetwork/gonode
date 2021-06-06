@@ -127,7 +127,6 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 
 	// set optional parameters on store
 	db.SetRequestCompression(defaultCompressionBatch, defaultCompressionSize)
-	db.RaftLogLevel = s.config.RaftLogLevel
 	db.ShutdownOnRemove = false
 	db.SnapshotThreshold = defaultRaftSnapThreshold
 	db.SnapshotInterval = defaultRaftSnapInterval

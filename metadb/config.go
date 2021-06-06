@@ -1,10 +1,9 @@
 package metadb
 
 const (
-	defaultHTTPAddress  = "0.0.0.0:4001"
-	defaultRaftAddress  = "0.0.0.0:4002"
-	defaultRaftLogLevel = "error"
-	defaultDataDir      = ".data"
+	defaultHTTPAddress = "0.0.0.0:4001"
+	defaultRaftAddress = "0.0.0.0:4002"
+	defaultDataDir     = ".data"
 )
 
 // Config contains settings of the rqlite server
@@ -21,8 +20,6 @@ type Config struct {
 	DiscoveryURL string `mapstructure:"discovery_url" json:"discovery_url,omitempty"`
 	// set Discovery ID. If not set, Discovery Service not used
 	DiscoveryID string `mapstructure:"discovery_id" json:"discovery_id,omitempty"`
-	// minimum log level for Raft module
-	RaftLogLevel string `mapstructure:"raft_log_level" json:"raft_log_level,omitempty"`
 	// data directory for rqlite
 	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
 }
@@ -30,9 +27,8 @@ type Config struct {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		HTTPAddress:  defaultHTTPAddress,
-		RaftAddress:  defaultRaftAddress,
-		RaftLogLevel: defaultRaftLogLevel,
-		DataDir:      defaultDataDir,
+		HTTPAddress: defaultHTTPAddress,
+		RaftAddress: defaultRaftAddress,
+		DataDir:     defaultDataDir,
 	}
 }
