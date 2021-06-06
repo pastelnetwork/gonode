@@ -9,8 +9,8 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-    GOPATH: "/home/circleci/project/go"
-    PATH: "/home/circleci/.local/bin:/home/circleci/bin:/home/circleci/project/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    GOPATH: "/home/circleci/project/.go"
+    PATH: "/home/circleci/.local/bin:/home/circleci/bin:/home/circleci/project/.go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 commands:
   test:
@@ -18,11 +18,6 @@ commands:
       package:
         type: string
     steps:
-      - run:
-          name: "<< parameters.package >>: Go generate"
-          working_directory: ~/project/<< parameters.package >>
-          command: |
-            go generate ./...
       - run:
           name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
@@ -201,6 +196,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Detect not merged code
+          command: |
+            ./scripts/merge_master.sh
+      - run:
           name: Print the go version
           command: |
             go version
@@ -225,6 +224,11 @@ jobs:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+      - run:
+          name: "Go generate"
+          working_directory: ~/project/
+          command: |
+            for d in ./*/ ; do (cd "$d" && if [[ -f go.mod ]]; then go generate ./... ; fi); done
       - persist_to_workspace:
           root: .
           paths:

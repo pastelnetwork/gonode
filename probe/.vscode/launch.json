@@ -13,7 +13,9 @@
             "program": "${fileDirname}",
             "env": {
                 "CGO_CXXFLAGS": "-std=gnu++11",
-            }
+            },
+            "args": ["-rootDir", "corpus-original+opensea"],
+            "cwd": "${workspaceFolder}"
         },
         {
             "name": "Launch Tests",
