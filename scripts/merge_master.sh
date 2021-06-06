@@ -6,14 +6,7 @@ set -o nounset
 set -o errexit
 set -eu -o pipefail
 
-PR_NUMBER=${CIRCLE_PULL_REQUEST//*pull\//}
-err=0
-
-if [ -z "$PR_NUMBER" ]; then
-    exit
-fi
-
-(set -x && git pull --ff-only origin "refs/pull/$PR_NUMBER/merge") || err=$?
+(set -x && git pull --ff-only origin "refs/heads/master") || err=$?
 
 if [ "$err" -ne "0" ]; then
     echo
