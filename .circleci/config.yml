@@ -198,7 +198,6 @@ jobs:
       - run:
           name: Detect not merged code
           command: |
-            env|sort
             ./scripts/merge_master.sh
       - run:
           name: Print the go version
