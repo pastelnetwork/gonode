@@ -2,6 +2,7 @@ package metadb
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"sync"
 	"testing"
@@ -10,6 +11,8 @@ import (
 )
 
 func TestWriteAndQuery(t *testing.T) {
+	t.Parallel()
+
 	// start the rqlite node
 	s := &service{
 		config: NewConfig(),
@@ -21,7 +24,6 @@ func TestWriteAndQuery(t *testing.T) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-
 		// start the rqlite server
 		assert.Nil(t, s.Run(ctx), "run service")
 	}()
@@ -30,36 +32,59 @@ func TestWriteAndQuery(t *testing.T) {
 
 	assert.NotNil(t, s.db, "store is nil")
 
-	// create the table
-	creation := "CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)"
-	result, err := s.Write(ctx, creation)
-	assert.Nil(t, err, "execute creation statement")
-	assert.Empty(t, result.Error, "result after execution")
+	writeTestCases := []struct {
+		stmt string
+		err  error
+	}{
+		{
+			stmt: "CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)",
+		},
+		{
+			stmt: "insert into foo(id, name) values(1,'alon')",
+		},
+		{
+			stmt: "insert into foo(id, name) values(2,'belayu')",
+		},
+	}
+	for i, tc := range writeTestCases {
+		tc := tc
+		t.Run(fmt.Sprintf("WriteTestCase-%d", i), func(t *testing.T) {
+			_, err := s.Write(ctx, tc.stmt)
+			assert.Equal(t, tc.err, err)
+		})
+	}
 
-	// insert the value to table
-	insertion := "insert into foo(id, name) values(1,'alon')"
-	result, err = s.Write(ctx, insertion)
-	assert.Nil(t, err, "execute insertion statement")
-	assert.Empty(t, result.Error, "result after execution")
+	queryTestCases := []struct {
+		stmt string
+		id   int64
+		name string
+		err  error
+	}{
+		{
+			stmt: "select * from foo where id = 1",
+			id:   1,
+			name: "alon",
+		},
+		{
+			stmt: "select * from foo where id = 2",
+			id:   2,
+			name: "belayu",
+		},
+	}
+	for i, tc := range queryTestCases {
+		tc := tc
+		t.Run(fmt.Sprintf("QueryTestCase-%d", i), func(t *testing.T) {
+			rows, err := s.Query(ctx, tc.stmt, "weak")
+			assert.Nil(t, err, "query statement")
 
-	// insert the value to table
-	insertion = "insert into foo(id, name) values(2,'belayu')"
-	result, err = s.Write(ctx, insertion)
-	assert.Nil(t, err, "execute insertion statement")
-	assert.Empty(t, result.Error, "result after execution")
-
-	// select a row from table with week level
-	selection := "select * from foo where id = 1"
-	rows, err := s.Query(ctx, selection, "weak")
-	assert.Nil(t, err, "query statements")
-
-	var id int64
-	var name string
-	for rows.Next() {
-		err := rows.Scan(&id, &name)
-		assert.Nil(t, err, "rows scan")
-		assert.Equal(t, int64(1), id)
-		assert.Equal(t, "alon", name)
+			var id int64
+			var name string
+			for rows.Next() {
+				assert.Equal(t, tc.err, rows.Scan(&id, &name))
+				assert.Equal(t, tc.id, id)
+				assert.Equal(t, tc.name, name)
+			}
+		})
 	}
 
 	cancel()

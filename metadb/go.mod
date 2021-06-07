@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/armon/go-metrics v0.3.7 // indirect
 	github.com/fatih/color v1.10.0 // indirect
-	github.com/hashicorp/go-hclog v0.16.0 // indirect
+	github.com/hashicorp/go-hclog v0.16.0
 	github.com/hashicorp/go-immutable-radix v1.3.0 // indirect
 	github.com/hashicorp/go-msgpack v1.1.5 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
