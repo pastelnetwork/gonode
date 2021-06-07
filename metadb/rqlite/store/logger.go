@@ -17,32 +17,32 @@ type Logger struct {
 
 // Log emits the message and args at the provided level
 func (logger *Logger) Log(level hclog.Level, msg string, args ...interface{}) {
-	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.fields).Logf(level.String(), msg, args...)
+	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.withFields(args)).Logf(level.String(), msg, args...)
 }
 
 // Debug emits the message and args at DEBUG level
 func (logger *Logger) Debug(msg string, args ...interface{}) {
-	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.fields).Debugf(msg, args...)
+	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.withFields(args)).Debug(msg)
 }
 
 // Trace emits the message and args at TRACE level
 func (logger *Logger) Trace(msg string, args ...interface{}) {
-	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.fields).Tracef(msg, args...)
+	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.withFields(args)).Trace(msg)
 }
 
 // Info emits the message and args at INFO level
 func (logger *Logger) Info(msg string, args ...interface{}) {
-	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.fields).Infof(msg, args...)
+	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.withFields(args)).Info(msg)
 }
 
 // Warn emits the message and args at WARN level
 func (logger *Logger) Warn(msg string, args ...interface{}) {
-	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.fields).Warnf(msg, args...)
+	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.withFields(args)).Warn(msg)
 }
 
 // Error emits the message and args at ERROR level
 func (logger *Logger) Error(msg string, args ...interface{}) {
-	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.fields).Errorf(msg, args...)
+	log.NewDefaultEntry().WithContext(logger.ctx).WithFields(logger.withFields(args)).Error(msg)
 }
 
 // IsTrace indicates that the logger would emit TRACE level logs
@@ -74,8 +74,14 @@ func (logger *Logger) IsError() bool {
 // the given key/value pairs. This is used to create a context specific
 // Logger.
 func (logger *Logger) With(args ...interface{}) hclog.Logger {
+	return &Logger{
+		fields: logger.withFields(args),
+	}
+}
+
+func (logger *Logger) withFields(args []interface{}) log.Fields {
 	if len(args)%2 != 0 {
-		return logger
+		return logger.fields
 	}
 
 	fields := make(log.Fields, len(logger.fields)+len(args)/2)
@@ -89,9 +95,7 @@ func (logger *Logger) With(args ...interface{}) hclog.Logger {
 		fields[key] = args[i+1]
 	}
 
-	return &Logger{
-		fields: fields,
-	}
+	return fields
 }
 
 // Named creates a new sub-Logger that a name decending from the current prefix.

@@ -5,6 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
+
+	"github.com/jpillora/longestcommon"
 )
 
 var (
@@ -30,7 +33,10 @@ func fileInfo(skip int) string {
 		file = "<???>"
 		line = 1
 	} else {
-		file, _ = filepath.Rel(runDir, file)
+		commonPath := longestcommon.Prefix([]string{runDir, file})
+		commonDir := filepath.Dir(commonPath)
+
+		file = strings.TrimPrefix(file, strings.TrimSuffix(commonDir, "/"))
 	}
 	return fmt.Sprintf("%s:%d", file, line)
 }
