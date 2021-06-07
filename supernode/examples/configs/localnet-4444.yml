@@ -15,3 +15,8 @@ p2p:
   port: 4454
   bootstrap_ip: "127.0.0.1"
   bootstrap_port: 1234
+
+metadb:
+  http_address: "0.0.0.0:4001"
+  raft_address: "0.0.0.0:4002"
+  data_dir: "4001"

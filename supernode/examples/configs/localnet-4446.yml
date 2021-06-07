@@ -13,3 +13,9 @@ node:
 p2p:
   listen_addresses: "0.0.0.0"
   port: 4456
+
+metadb:
+  http_address: "0.0.0.0:4005"
+  raft_address: "0.0.0.0:4006"
+  join_address: "0.0.0.0:4001"
+  data_dir: "4005"

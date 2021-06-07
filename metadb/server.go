@@ -21,7 +21,7 @@ const (
 	defaultRaftHeartbeatTimeout   = time.Second
 	defaultRaftElectionTimeout    = time.Second
 	defaultRaftApplyTimeout       = 10 * time.Second
-	defaultRaftOpenTimeout        = 120 * time.Second
+	defaultRaftOpenTimeout        = 60 * time.Second
 	defaultRaftWaitForLeader      = true
 	defaultRaftSnapThreshold      = 8192
 	defaultRaftSnapInterval       = 30 * time.Second

@@ -8,52 +8,82 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
-func TestWriteAndQuery(t *testing.T) {
-	t.Parallel()
+func TestSuite(t *testing.T) {
+	suite.Run(t, new(testSuite))
+}
 
-	// start the rqlite node
-	s := &service{
+type testSuite struct {
+	suite.Suite
+
+	s      *service
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
+}
+
+func (ts *testSuite) SetupSuite() {
+	ts.s = &service{
 		config: NewConfig(),
 		ready:  make(chan struct{}, 1),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
+	ts.ctx, ts.cancel = context.WithCancel(context.Background())
 
-	var wg sync.WaitGroup
-	wg.Add(1)
+	ts.wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer ts.wg.Done()
 		// start the rqlite server
-		assert.Nil(t, s.Run(ctx), "run service")
+		ts.Nil(ts.s.Run(ts.ctx), "run service")
 	}()
-	// wait until the rqlite node is ready
-	<-s.ready
+	<-ts.s.ready
 
-	assert.NotNil(t, s.db, "store is nil")
+	ts.NotNil(ts.s.db, "store is nil")
 
+	if _, err := ts.s.Write(ts.ctx, "CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)"); err != nil {
+		ts.T().Fatalf("write: %v", err)
+	}
+	if _, err := ts.s.Write(ts.ctx, "insert into foo(id, name) values(1,'1')"); err != nil {
+		ts.T().Fatalf("write: %v", err)
+	}
+	if _, err := ts.s.Write(ts.ctx, "insert into foo(id, name) values(2,'2')"); err != nil {
+		ts.T().Fatalf("write: %v", err)
+	}
+}
+
+func (ts *testSuite) TearDownSuite() {
+	if ts.cancel != nil {
+		ts.cancel()
+	}
+	ts.wg.Wait()
+
+	// remove the data directy
+	os.RemoveAll(ts.s.config.DataDir)
+}
+
+func (ts *testSuite) TestWrite() {
 	writeTestCases := []struct {
 		stmt string
 		err  error
 	}{
 		{
-			stmt: "CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)",
+			stmt: "insert into foo(id, name) values(3,'3')",
 		},
 		{
-			stmt: "insert into foo(id, name) values(1,'alon')",
-		},
-		{
-			stmt: "insert into foo(id, name) values(2,'belayu')",
+			stmt: "insert into foo(id, name) values(4,'4')",
 		},
 	}
 	for i, tc := range writeTestCases {
 		tc := tc
-		t.Run(fmt.Sprintf("WriteTestCase-%d", i), func(t *testing.T) {
-			_, err := s.Write(ctx, tc.stmt)
+		ts.T().Run(fmt.Sprintf("WriteTestCase-%d", i), func(t *testing.T) {
+			_, err := ts.s.Write(ts.ctx, tc.stmt)
 			assert.Equal(t, tc.err, err)
 		})
 	}
+}
 
+func (ts *testSuite) TestQuery() {
 	queryTestCases := []struct {
 		stmt string
 		id   int64
@@ -63,18 +93,18 @@ func TestWriteAndQuery(t *testing.T) {
 		{
 			stmt: "select * from foo where id = 1",
 			id:   1,
-			name: "alon",
+			name: "1",
 		},
 		{
 			stmt: "select * from foo where id = 2",
 			id:   2,
-			name: "belayu",
+			name: "2",
 		},
 	}
 	for i, tc := range queryTestCases {
 		tc := tc
-		t.Run(fmt.Sprintf("QueryTestCase-%d", i), func(t *testing.T) {
-			rows, err := s.Query(ctx, tc.stmt, "weak")
+		ts.T().Run(fmt.Sprintf("QueryTestCase-%d", i), func(t *testing.T) {
+			rows, err := ts.s.Query(ts.ctx, tc.stmt, "weak")
 			assert.Nil(t, err, "query statement")
 
 			var id int64
@@ -86,10 +116,4 @@ func TestWriteAndQuery(t *testing.T) {
 			}
 		})
 	}
-
-	cancel()
-	wg.Wait()
-
-	// remove the data directy
-	os.RemoveAll(s.config.DataDir)
 }

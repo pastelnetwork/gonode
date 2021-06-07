@@ -16,3 +16,8 @@ p2p:
   # bootstrap_ip: ""
   # bootstrap_port: ""
   # use_stun: true
+
+metadb:
+  http_address: "0.0.0.0:4001"
+  raft_address: "0.0.0.0:4002"
+  # data_dir: ""
