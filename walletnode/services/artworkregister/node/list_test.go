@@ -229,7 +229,7 @@ func TestNodesSendImage(t *testing.T) {
 
 				nodes.Add(&Node{
 					address:         a.address,
-					RegisterArtwork: client.RegArtWorkMock,
+					RegisterArtwork: client.RegisterArtwork,
 				})
 			}
 
@@ -238,9 +238,9 @@ func TestNodesSendImage(t *testing.T) {
 
 			//mock assertion each client
 			for _, client := range clients {
-				client.RegArtWorkMock.AssertExpectations(t)
-				client.RegArtWorkMock.AssertCalled(t, "ProbeImage", testCase.args.ctx, testCase.args.file)
-				client.RegArtWorkMock.AssertNumberOfCalls(t, "ProbeImage", testCase.numberProbeImageCall)
+				client.RegisterArtwork.AssertExpectations(t)
+				client.RegisterArtwork.AssertCalled(t, "ProbeImage", testCase.args.ctx, testCase.args.file)
+				client.RegisterArtwork.AssertNumberOfCalls(t, "ProbeImage", testCase.numberProbeImageCall)
 			}
 		})
 	}
