@@ -38,14 +38,20 @@ func (client *Client) ListenOnStorageNetworkFee(fee float64, returnErr error) *C
 
 // AssertMasterNodesTopCall MasterNodesTop call assertion
 func (client *Client) AssertMasterNodesTopCall(t *testing.T, expectedCalls int, arguments ...interface{}) *Client {
-	client.AssertCalled(t, client.masterNodesTopMethod, arguments...)
+	//don't check AssertCalled when expectedCall is 0. it become always fail
+	if expectedCalls > 0 {
+		client.AssertCalled(t, client.masterNodesTopMethod, arguments...)
+	}
 	client.AssertNumberOfCalls(t, client.masterNodesTopMethod, expectedCalls)
 	return client
 }
 
 // AssertStorageNetworkFeeCall StorageNetworkFee call assertion
 func (client *Client) AssertStorageNetworkFeeCall(t *testing.T, expectedCalls int, arguments ...interface{}) *Client {
-	client.AssertCalled(t, client.storageNetWorkFeeMethod, arguments...)
+	//don't check AssertCalled when expectedCall is 0. it become always fail
+	if expectedCalls > 0 {
+		client.AssertCalled(t, client.storageNetWorkFeeMethod, arguments...)
+	}
 	client.AssertNumberOfCalls(t, client.storageNetWorkFeeMethod, expectedCalls)
 	return client
 }

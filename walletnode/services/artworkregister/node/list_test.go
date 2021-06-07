@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
-	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -77,7 +76,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 	testCases := []struct {
 		nodes List
 		conn  []struct {
-			conn         *mocks.Connection
+			client       *test.Client
 			activated    bool
 			numberOfCall int
 		}
@@ -85,17 +84,17 @@ func TestNodesDisconnectInactive(t *testing.T) {
 		{
 			nodes: List{},
 			conn: []struct {
-				conn         *mocks.Connection
+				client       *test.Client
 				activated    bool
 				numberOfCall int
 			}{
 				{
-					conn:         &mocks.Connection{},
+					client:       test.NewMockClient(),
 					numberOfCall: 1,
 					activated:    false,
 				},
 				{
-					conn:         &mocks.Connection{},
+					client:       test.NewMockClient(),
 					numberOfCall: 0,
 					activated:    true,
 				},
@@ -110,10 +109,10 @@ func TestNodesDisconnectInactive(t *testing.T) {
 			t.Parallel()
 
 			for _, c := range testCase.conn {
-				c.conn.On("Close").Return(nil)
+				c.client.ListenOnClose(nil)
 
 				node := &Node{
-					Connection: c.conn,
+					Connection: c.client.Connection,
 					activated:  c.activated,
 				}
 
@@ -126,7 +125,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 				c := c
 
 				t.Run(fmt.Sprintf("close-called-%d", j), func(t *testing.T) {
-					c.conn.AssertNumberOfCalls(t, "Close", c.numberOfCall)
+					c.client.AssertCloseCall(t, c.numberOfCall)
 				})
 
 			}
@@ -239,8 +238,7 @@ func TestNodesSendImage(t *testing.T) {
 			//mock assertion each client
 			for _, client := range clients {
 				client.RegisterArtwork.AssertExpectations(t)
-				client.RegisterArtwork.AssertCalled(t, "ProbeImage", testCase.args.ctx, testCase.args.file)
-				client.RegisterArtwork.AssertNumberOfCalls(t, "ProbeImage", testCase.numberProbeImageCall)
+				client.AssertProbeImageCall(t, testCase.numberProbeImageCall, testCase.args.ctx, testCase.args.file)
 			}
 		})
 	}

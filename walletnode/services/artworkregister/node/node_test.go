@@ -65,10 +65,8 @@ func TestNodeConnect(t *testing.T) {
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second))
 			//mock assertion
 			clientMock.Client.AssertExpectations(t)
-			clientMock.Client.AssertCalled(t, "Connect", mock.Anything, testCase.address)
-			clientMock.Client.AssertNumberOfCalls(t, "Connect", testCase.numberConnectCall)
-			clientMock.Connection.AssertNumberOfCalls(t, "RegisterArtwork", testCase.numberRegisterArtWorkCall)
-
+			clientMock.AssertConnectCall(t, testCase.numberConnectCall, mock.Anything, testCase.address)
+			clientMock.AssertRegisterArtworkCall(t, testCase.numberRegisterArtWorkCall)
 		})
 	}
 }

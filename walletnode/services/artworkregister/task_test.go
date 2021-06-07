@@ -192,8 +192,6 @@ func TestTaskRun(t *testing.T) {
 func TestTaskMeshNodes(t *testing.T) {
 	t.Parallel()
 
-	t.Skip()
-
 	type nodeArg struct {
 		address  string
 		pastelID string
@@ -279,7 +277,11 @@ func TestTaskMeshNodes(t *testing.T) {
 				nodes.Add(node.NewNode(nodeClient.Client, n.address, n.pastelID))
 			}
 
-			task := &Task{}
+			service := &Service{
+				config: NewConfig(),
+			}
+
+			task := &Task{Service: service}
 			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 
 			testCase.assertion(t, err)
