@@ -22,7 +22,7 @@ type Client struct {
 	probeImageMethod      string
 	registerArtWorkMethod string
 	sessionMethod         string
-	sessIdMethod          string
+	sessIDMethod          string
 }
 
 // NewMockClient create new client mock
@@ -39,7 +39,7 @@ func NewMockClient() *Client {
 		probeImageMethod:      "ProbeImage",
 		registerArtWorkMethod: "RegisterArtwork",
 		sessionMethod:         "Session",
-		sessIdMethod:          "SessID",
+		sessIDMethod:          "SessID",
 	}
 }
 
@@ -127,9 +127,9 @@ func (client *Client) ListenOnSession(returnErr error) *Client {
 // AssertSessionCall assertion Session Call
 func (client *Client) AssertSessionCall(t *testing.T, expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(t, client.sessIdMethod, arguments...)
+		client.RegisterArtwork.AssertCalled(t, client.sessionMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(t, client.sessIdMethod, expectedCalls)
+	client.RegisterArtwork.AssertNumberOfCalls(t, client.sessionMethod, expectedCalls)
 	return client
 }
 
@@ -171,15 +171,15 @@ func (client *Client) AssertConnectToCall(t *testing.T, expectedCalls int, argum
 
 // ListenOnSessID listening SessID call and returns sessID from args
 func (client *Client) ListenOnSessID(sessID string) *Client {
-	client.RegisterArtwork.On(client.sessIdMethod).Return(sessID)
+	client.RegisterArtwork.On(client.sessIDMethod).Return(sessID)
 	return client
 }
 
 // AssertSessIDCall assertion SessID call
 func (client *Client) AssertSessIDCall(t *testing.T, expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(t, client.sessIdMethod, arguments...)
+		client.RegisterArtwork.AssertCalled(t, client.sessIDMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(t, client.sessIdMethod, expectedCalls)
+	client.RegisterArtwork.AssertNumberOfCalls(t, client.sessIDMethod, expectedCalls)
 	return client
 }
