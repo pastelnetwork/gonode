@@ -4,7 +4,7 @@ const (
 	defaultListenAddress = "0.0.0.0"
 	defaultHTTPPort      = 4001
 	defaultRaftPort      = 4002
-	defaultDataDir       = ".data"
+	defaultDataDir       = "./.rqlite"
 )
 
 // Config contains settings of the rqlite server

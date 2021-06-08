@@ -10,7 +10,7 @@ const (
 	logPrefix = "metadb"
 )
 
-// Service represents the rqlite cluster
+// Service represents the metadb service
 type Service interface {
 	// Run starts the rqlite service
 	Run(ctx context.Context) error
@@ -22,16 +22,20 @@ type Service interface {
 }
 
 type service struct {
-	config *Config       // the service configuration
-	db     *store.Store  // the store for accessing the rqlite cluster
-	ready  chan struct{} // mark the rqlite node is started
+	nodeID  string        // the node id for rqlite cluster
+	workDir string        // the work directory
+	config  *Config       // the service configuration
+	db      *store.Store  // the store for accessing the rqlite cluster
+	ready   chan struct{} // mark the rqlite node is started
 }
 
-// NewService returns a new service for rqlite cluster
-func NewService(config *Config) Service {
+// NewService returns a new service for metadb
+func NewService(config *Config, nodeID string, workDir string) Service {
 	return &service{
-		config: config,
-		ready:  make(chan struct{}, 5),
+		nodeID:  nodeID,
+		workDir: workDir,
+		config:  config,
+		ready:   make(chan struct{}, 5),
 	}
 }
 

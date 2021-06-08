@@ -379,6 +379,8 @@ func (s *Store) WaitForLeader(timeout time.Duration) (string, error) {
 
 	for {
 		select {
+		case <-s.ctx.Done():
+			return "", s.ctx.Err()
 		case <-tck.C:
 			l, err := s.LeaderAddr()
 			if err != nil {
@@ -410,6 +412,8 @@ func (s *Store) WaitForAppliedIndex(idx uint64, timeout time.Duration) error {
 
 	for {
 		select {
+		case <-s.ctx.Done():
+			return s.ctx.Err()
 		case <-tck.C:
 			if s.raft.AppliedIndex() >= idx {
 				return nil

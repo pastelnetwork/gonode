@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 
@@ -26,8 +27,10 @@ type testSuite struct {
 
 func (ts *testSuite) SetupSuite() {
 	ts.s = &service{
-		config: NewConfig(),
-		ready:  make(chan struct{}, 1),
+		nodeID:  "uuid",
+		workDir: "/tmp/",
+		config:  NewConfig(),
+		ready:   make(chan struct{}, 1),
 	}
 	ts.ctx, ts.cancel = context.WithCancel(context.Background())
 
@@ -59,7 +62,7 @@ func (ts *testSuite) TearDownSuite() {
 	ts.wg.Wait()
 
 	// remove the data directy
-	os.RemoveAll(ts.s.config.DataDir)
+	os.RemoveAll(filepath.Join(ts.s.workDir, ts.s.config.DataDir))
 }
 
 func (ts *testSuite) TestWrite() {

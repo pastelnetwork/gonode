@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"path/filepath"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -29,20 +30,14 @@ const (
 	defaultCompressionBatch       = 5
 )
 
-// the order is: node id, raft advertise address vs raft address
-func (s *service) idOrRaftAddr() string {
-	// if s.config.NodeID != "" {
-	// 	return s.config.NodeID
-	// }
-	// return s.config.RaftAddress
-	return "hello"
-}
-
 // determine the join addresses
 func (s *service) determineJoinAddresses(ctx context.Context) ([]string, error) {
 	var addrs []string
 
 	// <TODO> get the list of supernodes from Pastel RPC API, and try to connect automatically.
+	if s.config.HTTPPort != 4001 {
+		addrs = append(addrs, "localhost:4001")
+	}
 
 	return addrs, nil
 }
@@ -101,12 +96,13 @@ func (s *service) startClusterService(ctx context.Context, tn cluster.Transport)
 
 // create and open the store of rqlite cluster
 func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Store, error) {
+	raftDir := filepath.Join(s.workDir, s.config.DataDir)
 	// create and open the store, which is on disk
 	dbConf := store.NewDBConfig("", false)
 	db := store.New(ctx, raftTn, &store.Config{
 		DBConf: dbConf,
-		Dir:    s.config.DataDir,
-		ID:     s.idOrRaftAddr(),
+		Dir:    raftDir,
+		ID:     s.nodeID,
 	})
 
 	// set optional parameters on store
@@ -121,11 +117,11 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 
 	// a pre-existing node
 	bootstrap := false
-	isNew := store.IsNewNode(s.config.DataDir)
+	isNew := store.IsNewNode(raftDir)
 	if isNew {
 		bootstrap = true // new node, it needs to bootstrap
 	} else {
-		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
+		log.WithContext(ctx).Infof("node is detected in: %v", raftDir)
 	}
 
 	// determine the join addresses

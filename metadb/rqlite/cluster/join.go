@@ -83,6 +83,12 @@ func join(ctx context.Context, srcIP, joinAddr, id, addr string, voter bool, tls
 	}
 
 	for {
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		default:
+		}
+
 		b, err := json.Marshal(map[string]interface{}{
 			"id":    id,
 			"addr":  resv.String(),
