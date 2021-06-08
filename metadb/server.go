@@ -31,13 +31,10 @@ const (
 )
 
 // determine the join addresses
-func (s *service) determineJoinAddresses(ctx context.Context) ([]string, error) {
+func (s *service) determineJoinAddresses(_ context.Context) ([]string, error) {
 	var addrs []string
 
 	// <TODO> get the list of supernodes from Pastel RPC API, and try to connect automatically.
-	if s.config.HTTPPort != 4001 {
-		addrs = append(addrs, "localhost:4001")
-	}
 
 	return addrs, nil
 }
