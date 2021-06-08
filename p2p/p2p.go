@@ -100,7 +100,7 @@ func (service *p2p) configure(ctx context.Context) error {
 		IP:             service.config.ListenAddresses,
 		Port:           service.config.Port,
 		UseStun:        service.config.UseStun,
-		DataDir: service.config.DataDir,
+		DataDir:        service.config.DataDir,
 	})
 	if err != nil {
 		return err

@@ -72,9 +72,9 @@ func TestBootstrapTwoNodes(t *testing.T) {
 
 	id1, _ := newID()
 	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id1,
-		IP:             "127.0.0.1",
-		Port:           3000,
+		ID:      id1,
+		IP:      "127.0.0.1",
+		Port:    3000,
 		DataDir: ":memory:",
 	})
 
@@ -86,8 +86,8 @@ func TestBootstrapTwoNodes(t *testing.T) {
 				Port: 3000,
 			},
 		},
-		IP:             "127.0.0.1",
-		Port:           3001,
+		IP:      "127.0.0.1",
+		Port:    3001,
 		DataDir: ":memory:",
 	})
 
@@ -138,9 +138,9 @@ func TestBootstrapThreeNodes(t *testing.T) {
 
 	id1, _ := newID()
 	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id1,
-		IP:             "127.0.0.1",
-		Port:           3000,
+		ID:      id1,
+		IP:      "127.0.0.1",
+		Port:    3000,
 		DataDir: ":memory:",
 	})
 
@@ -153,9 +153,9 @@ func TestBootstrapThreeNodes(t *testing.T) {
 				Port: 3000,
 			},
 		},
-		IP:             "127.0.0.1",
-		Port:           3001,
-		ID:             id2,
+		IP:      "127.0.0.1",
+		Port:    3001,
+		ID:      id2,
 		DataDir: ":memory:",
 	})
 
@@ -167,8 +167,8 @@ func TestBootstrapThreeNodes(t *testing.T) {
 				Port: 3001,
 			},
 		},
-		IP:             "127.0.0.1",
-		Port:           3002,
+		IP:      "127.0.0.1",
+		Port:    3002,
 		DataDir: ":memory:",
 	})
 
@@ -240,9 +240,9 @@ func TestBootstrapNoID(t *testing.T) {
 
 	id1, _ := newID()
 	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id1,
-		IP:             "127.0.0.1",
-		Port:           3000,
+		ID:      id1,
+		IP:      "127.0.0.1",
+		Port:    3000,
 		DataDir: ":memory:",
 	})
 
@@ -253,8 +253,8 @@ func TestBootstrapNoID(t *testing.T) {
 				Port: 3000,
 			},
 		},
-		IP:             "127.0.0.1",
-		Port:           3001,
+		IP:      "127.0.0.1",
+		Port:    3001,
 		DataDir: ":memory:",
 	})
 
@@ -308,9 +308,9 @@ func TestReconnect(t *testing.T) {
 
 		id1, _ := newID()
 		dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-			ID:             id1,
-			IP:             "127.0.0.1",
-			Port:           3000,
+			ID:      id1,
+			IP:      "127.0.0.1",
+			Port:    3000,
 			DataDir: ":memory:",
 		})
 
@@ -322,8 +322,8 @@ func TestReconnect(t *testing.T) {
 					Port: 3000,
 				},
 			},
-			IP:             "127.0.0.1",
-			Port:           3001,
+			IP:      "127.0.0.1",
+			Port:    3001,
 			DataDir: ":memory:",
 		})
 
@@ -376,9 +376,9 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 
 	id1, _ := newID()
 	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id1,
-		IP:             "127.0.0.1",
-		Port:           3000,
+		ID:      id1,
+		IP:      "127.0.0.1",
+		Port:    3000,
 		DataDir: ":memory:",
 	})
 
@@ -390,8 +390,8 @@ func TestStoreAndFindLargeValue(t *testing.T) {
 				Port: 3000,
 			},
 		},
-		IP:             "127.0.0.1",
-		Port:           3001,
+		IP:      "127.0.0.1",
+		Port:    3001,
 		DataDir: ":memory:",
 	})
 
@@ -683,10 +683,10 @@ func TestStoreExpiration(t *testing.T) {
 	id := getIDWithValues(0)
 
 	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id,
-		Port:           3000,
-		IP:             "0.0.0.0",
-		TExpire:        time.Second,
+		ID:      id,
+		Port:    3000,
+		IP:      "0.0.0.0",
+		TExpire: time.Second,
 		DataDir: ":memory:",
 	})
 

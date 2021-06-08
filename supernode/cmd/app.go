@@ -31,7 +31,7 @@ const (
 	appUsage = "SuperNode" // TODO: Write a clear description.
 
 	tfmodelDir = "./tfmodels" // relatively from work-dir
-	p2pDir = "./p2p" // relatively from work-dir
+	p2pDir     = "./p2p"      // relatively from work-dir
 )
 
 var (
