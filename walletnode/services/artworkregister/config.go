@@ -23,6 +23,7 @@ type Config struct {
 
 	NumberSuperNodes int `mapstructure:"number_supernodes" json:"number_supernodes,omitempty"`
 
+	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration
 	connectTimeout         time.Duration
