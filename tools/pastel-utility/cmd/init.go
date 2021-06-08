@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/spf13/viper"
@@ -92,7 +93,7 @@ func initCommandLogic(ctx context.Context, config *configs.Config) error {
 	}
 
 	v := viper.New()
-	v.SetConfigType("env")
+	v.SetConfigType("json")
 	if err := v.Unmarshal(config); err != nil {
 		return err
 	}
@@ -202,12 +203,12 @@ func runWalletSubCommand(ctx context.Context, config *configs.Config) error {
 	}
 
 	v := viper.New()
-	v.SetConfigType("env")
-	if err := v.Unmarshal(config.WalletNode); err != nil {
+	v.SetConfigType("json")
+	if err := v.ReadConfig(bytes.NewBufferString(config.Init.String())); err != nil {
 		return err
 	}
 
-	walletConfigPath := fmt.Sprintf("%s/wallet.conf", walletNodePath)
+	walletConfigPath := fmt.Sprintf("%s/wallet.env", walletNodePath)
 
 	if config.Init.Force {
 		if err := v.WriteConfigAs(walletConfigPath); err != nil {
@@ -246,11 +247,11 @@ func runSuperNodeSubCommand(ctx context.Context, config *configs.Config) error {
 	}
 
 	v := viper.New()
-	if err := v.Unmarshal(config.SuperNode); err != nil {
+	if err := v.ReadConfig(bytes.NewBufferString(config.Start.String())); err != nil {
 		return err
 	}
 
-	superNodeConfigPath := fmt.Sprintf("%s/supernode.conf", superNodePath)
+	superNodeConfigPath := fmt.Sprintf("%s/supernode.env", superNodePath)
 
 	if config.Init.Force {
 		if err := v.WriteConfigAs(superNodeConfigPath); err != nil {

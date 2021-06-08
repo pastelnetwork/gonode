@@ -1,5 +1,7 @@
 package configs
 
+import "encoding/json"
+
 // Start contains config of the Start command
 type Start struct {
 	InteractiveMode bool   `json:"interactive_mode" mapstructure:"interactive_mode"`
@@ -19,6 +21,11 @@ type Start struct {
 	RPCPort         int    `json:"rpc_port" mapstructure:"rpc_port"`
 	NodeIP          string `json:"node_ip" mapstructure:"node_ip"`
 	NodePort        int    `json:"node_port" mapstructure:"node_port"`
+}
+
+func (s *Start) String() string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }
 
 // NewStart returns a new Start instance.
