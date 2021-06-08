@@ -116,7 +116,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	sys.RegisterInterruptHandler(cancel, func() {
+	sys.RegisterInterruptHandler(func() {
+		cancel()
 		log.WithContext(ctx).Info("Interrupt signal received. Gracefully shutting down...")
 	})
 
