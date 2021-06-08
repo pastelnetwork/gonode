@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"math"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -104,7 +105,7 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 			return nil, err
 		}
 	} else {
-		if err = store.Init(ctx, options.DataSourceName); err != nil {
+		if err = store.Init(ctx, filepath.Join(options.DataSourceName, dbFilename)); err != nil {
 			return nil, err
 		}
 	}
