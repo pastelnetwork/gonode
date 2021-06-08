@@ -34,8 +34,8 @@ func pullPastelAddressIDNodes(nodes node.List) []string {
 	return v
 }
 
-func newTestImageFile(fileName string) (*artwork.File, error) {
-	err := test.CreateBlankImage("./"+fileName, 400, 400)
+func newTestImageFile() (*artwork.File, error) {
+	fileName, err := test.CreateBlankImage("./", 400, 400)
 	if err != nil {
 		return nil, err
 	}
@@ -47,8 +47,6 @@ func newTestImageFile(fileName string) (*artwork.File, error) {
 
 func TestTaskRun(t *testing.T) {
 	t.Parallel()
-
-	t.Skip()
 
 	type fields struct {
 		Ticket *Ticket
@@ -62,18 +60,23 @@ func TestTaskRun(t *testing.T) {
 		primarySessID string
 		pastelIDS     []string
 		fingerPrint   []byte
+		signature     string
 		returnErr     error
 	}
 
 	testCases := []struct {
-		fields          fields
-		args            args
-		assertion       assert.ErrorAssertionFunc
-		numSessIDCall   int
-		numUpdateStatus int
+		fields            fields
+		args              args
+		assertion         assert.ErrorAssertionFunc
+		numSessIDCall     int
+		numUpdateStatus   int
+		numSignCall       int
+		numSessionCall    int
+		numConnectToCall  int
+		numProbeImageCall int
 	}{
 		{
-			fields: fields{&Ticket{MaximumFee: 0.5}},
+			fields: fields{&Ticket{MaximumFee: 0.5, ArtistPastelID: "1", ArtistPastelIDPassphrase: "2"}},
 			args: args{
 				taskID:     "1",
 				ctx:        context.Background(),
@@ -87,21 +90,26 @@ func TestTaskRun(t *testing.T) {
 				primarySessID: "sesid1",
 				pastelIDS:     []string{"2", "3", "4"},
 				fingerPrint:   []byte("match"),
+				signature:     "sign",
 				returnErr:     nil,
 			},
-			assertion:       assert.NoError,
-			numSessIDCall:   3,
-			numUpdateStatus: 3,
+			assertion:         assert.NoError,
+			numSessIDCall:     3,
+			numUpdateStatus:   3,
+			numSignCall:       1,
+			numSessionCall:    4,
+			numConnectToCall:  3,
+			numProbeImageCall: 4,
 		},
 	}
 
 	t.Run("group", func(t *testing.T) {
-		//create tmp image file
-		artworkFile, err := newTestImageFile("test.png")
+		//create global tmp image file on current dir
+		artworkFile, err := newTestImageFile()
 		assert.NoError(t, err)
 
 		defer func() {
-			os.Remove("./test.png")
+			os.Remove(fmt.Sprintf("./%s", artworkFile.Name()))
 		}()
 
 		for i, testCase := range testCases {
@@ -126,15 +134,13 @@ func TestTaskRun(t *testing.T) {
 					return testCase.args.fingerPrint
 				}
 
-				nodeClient.RegisterArtwork.On("ProbeImage",
-					mock.Anything,
-					mock.IsType(&artwork.File{})).
-					Return(customProbeImage, testCase.args.returnErr)
+				nodeClient.ListenOnProbeImage(customProbeImage, testCase.args.returnErr)
 
 				pastelClientMock := pastelMock.NewMockClient()
 				pastelClientMock.
 					ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr).
-					ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr)
+					ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr).
+					ListenOnSign(testCase.args.signature, testCase.args.returnErr)
 
 				service := &Service{
 					pastelClient: pastelClientMock.Client,
@@ -151,7 +157,7 @@ func TestTaskRun(t *testing.T) {
 				ticket := testCase.fields.Ticket
 				ticket.Image = artworkFile
 				task := &Task{
-					Task:    taskClient.TaskMock,
+					Task:    taskClient.Task,
 					Service: service,
 					Ticket:  ticket,
 				}
@@ -161,27 +167,30 @@ func TestTaskRun(t *testing.T) {
 				defer cancel()
 				testCase.assertion(t, task.Run(ctx))
 
-				taskClient.TaskMock.AssertExpectations(t)
-				taskClient.TaskMock.AssertCalled(t, "ID")
-				taskClient.TaskMock.AssertCalled(t, "UpdateStatus", mock.Anything)
-				taskClient.TaskMock.AssertCalled(t, "SetStatusNotifyFunc", mock.Anything)
-				taskClient.TaskMock.AssertNumberOfCalls(t, "UpdateStatus", testCase.numUpdateStatus)
+				taskClient.AssertExpectations(t)
+				taskClient.AssertIDCall(t, 1)
+				taskClient.AssertUpdateStatusCall(t, testCase.numUpdateStatus, mock.Anything)
+				taskClient.AssertSetStatusNotifyFuncCall(t, 1, mock.Anything)
 
 				// //pastelClient mock assertion
 				pastelClientMock.AssertExpectations(t)
 				pastelClientMock.AssertStorageNetworkFeeCall(t, 1, mock.Anything)
+				pastelClientMock.AssertSignCall(t, testCase.numSignCall,
+					mock.Anything,
+					testCase.args.fingerPrint,
+					ticket.ArtistPastelID,
+					ticket.ArtistPastelIDPassphrase,
+				)
 
 				// //nodeClient mock assertion
 				nodeClient.Client.AssertExpectations(t)
 				nodeClient.Connection.AssertExpectations(t)
 				nodeClient.RegisterArtwork.AssertExpectations(t)
-				nodeClient.RegisterArtwork.AssertCalled(t, "AcceptedNodes", mock.Anything)
-				nodeClient.RegisterArtwork.AssertNumberOfCalls(t, "AcceptedNodes", 1)
-				nodeClient.RegisterArtwork.AssertCalled(t, "SessID")
-				nodeClient.RegisterArtwork.AssertNumberOfCalls(t, "SessID", testCase.numSessIDCall)
-				nodeClient.RegisterArtwork.AssertCalled(t, "Session", mock.Anything, false)
-				nodeClient.RegisterArtwork.AssertCalled(t, "ConnectTo", mock.Anything, mock.Anything, testCase.args.primarySessID)
-				nodeClient.RegisterArtwork.AssertCalled(t, "ProbeImage", mock.Anything, mock.IsType(&artwork.File{}))
+				nodeClient.AssertAcceptedNodesCall(t, 1, mock.Anything)
+				nodeClient.AssertSessIDCall(t, testCase.numSessIDCall)
+				nodeClient.AssertSessionCall(t, testCase.numSessionCall, mock.Anything, false)
+				nodeClient.AssertConnectToCall(t, testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
+				nodeClient.AssertProbeImageCall(t, testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
 			})
 
 		}
@@ -209,10 +218,12 @@ func TestTaskMeshNodes(t *testing.T) {
 	}
 
 	testCases := []struct {
-		args          args
-		want          []string
-		assertion     assert.ErrorAssertionFunc
-		numSessIDCall int
+		args             args
+		want             []string
+		assertion        assert.ErrorAssertionFunc
+		numSessionCall   int
+		numSessIDCall    int
+		numConnectToCall int
 	}{
 		{
 			args: args{
@@ -233,9 +244,11 @@ func TestTaskMeshNodes(t *testing.T) {
 				returnErr:       nil,
 				acceptNodeErr:   nil,
 			},
-			assertion:     assert.NoError,
-			numSessIDCall: 6,
-			want:          []string{"1:127.0.0.1", "2:127.0.0.2", "4:127.0.0.4", "7:127.0.0.7"},
+			assertion:        assert.NoError,
+			numSessionCall:   7,
+			numSessIDCall:    6,
+			numConnectToCall: 6,
+			want:             []string{"1:127.0.0.1", "2:127.0.0.2", "4:127.0.0.4", "7:127.0.0.7"},
 		}, {
 			args: args{
 				ctx:          context.Background(),
@@ -251,9 +264,11 @@ func TestTaskMeshNodes(t *testing.T) {
 				returnErr:       nil,
 				acceptNodeErr:   fmt.Errorf("primary node not accepted"),
 			},
-			assertion:     assert.Error,
-			numSessIDCall: 2,
-			want:          nil,
+			assertion:        assert.Error,
+			numSessionCall:   3,
+			numSessIDCall:    2,
+			numConnectToCall: 2,
+			want:             nil,
 		},
 	}
 
@@ -287,16 +302,12 @@ func TestTaskMeshNodes(t *testing.T) {
 			testCase.assertion(t, err)
 			assert.Equal(t, testCase.want, pullPastelAddressIDNodes(got))
 
-			nodeClient.RegisterArtwork.AssertCalled(t, "AcceptedNodes", mock.Anything)
-			nodeClient.RegisterArtwork.AssertNumberOfCalls(t, "AcceptedNodes", 1)
-			nodeClient.RegisterArtwork.AssertCalled(t, "SessID")
-			nodeClient.RegisterArtwork.AssertNumberOfCalls(t, "SessID", testCase.numSessIDCall)
-			nodeClient.RegisterArtwork.AssertCalled(t, "Session", mock.Anything, false)
-			nodeClient.RegisterArtwork.AssertCalled(t, "ConnectTo", mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
-
+			nodeClient.AssertAcceptedNodesCall(t, 1, mock.Anything)
+			nodeClient.AssertSessIDCall(t, testCase.numSessIDCall)
+			nodeClient.AssertSessionCall(t, testCase.numSessionCall, mock.Anything, false)
+			nodeClient.AssertConnectToCall(t, testCase.numConnectToCall, mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
 			nodeClient.Client.AssertExpectations(t)
 			nodeClient.Connection.AssertExpectations(t)
-
 		})
 
 	}

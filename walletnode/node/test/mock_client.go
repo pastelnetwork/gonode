@@ -103,9 +103,9 @@ func (client *Client) AssertDoneCall(t *testing.T, expectedCalls int, arguments 
 	return client
 }
 
-// ListenOnProbeImage listening ProbeImage call and returns error from args
-func (client *Client) ListenOnProbeImage(fingerprint []byte, returnErr error) *Client {
-	client.RegisterArtwork.On(client.probeImageMethod, mock.Anything, mock.IsType(&artwork.File{})).Return(fingerprint, returnErr)
+// ListenOnProbeImage listening ProbeImage call and returns args value
+func (client *Client) ListenOnProbeImage(arguments ...interface{}) *Client {
+	client.RegisterArtwork.On(client.probeImageMethod, mock.Anything, mock.IsType(&artwork.File{})).Return(arguments...)
 	return client
 }
 

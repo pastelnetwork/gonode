@@ -3,19 +3,20 @@ package test
 import (
 	"image"
 	"image/png"
-	"os"
+	"io/ioutil"
 )
 
 //CreateBlankImage create blank png image for testing purpose only
-func CreateBlankImage(filePath string, w, h int) error {
+func CreateBlankImage(filePath string, w, h int) (string, error) {
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 
-	f, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE, 0600)
+	file, err := ioutil.TempFile(filePath, "*.png")
 	if err != nil {
-		return err
+		return "", err
 	}
-	defer f.Close()
 
-	png.Encode(f, img)
-	return nil
+	defer file.Close()
+
+	png.Encode(file, img)
+	return file.Name(), nil
 }
