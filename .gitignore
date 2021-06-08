@@ -1,3 +1,4 @@
 *.log
 **/mocks/
 **/vendor/
+.idea
