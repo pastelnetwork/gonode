@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -28,6 +29,8 @@ const cacheFileName = "cached"
 var evaluateNumberOfTimes = 500
 var rootDir = ""
 var numberOfImagesToValidate = 0
+
+var ctx context.Context
 
 // objective defines the objective of the study - find out the best aurpc value
 func objective(trial goptuna.Trial) (float64, error) {
@@ -117,7 +120,7 @@ func objective(trial goptuna.Trial) (float64, error) {
 		return 0, errors.New(err)
 	}
 
-	aurpcResult, err := auprc.MeasureAUPRC(config)
+	aurpcResult, err := auprc.MeasureAUPRC(ctx, config)
 	if err != nil {
 		return 0, errors.New(err)
 	}
@@ -202,6 +205,10 @@ func main() {
 
 	memoizer := dupedetection.GetMemoizer()
 	memoizer.Storage.LoadFile(cacheFileName)
+
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(context.Background())
+	defer cancel()
 
 	if err := runStudy(*goptunaStudyNamePtr); err != nil {
 		log.Print(errors.ErrorStack(err))

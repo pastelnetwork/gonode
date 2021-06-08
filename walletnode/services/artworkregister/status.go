@@ -4,30 +4,30 @@ package artworkregister
 const (
 	StatusTaskStarted Status = iota
 	StatusConnected
-	StatusImageUploaded
+	StatusImageProbed
 	// Ticket
 	StatusTicketAccepted
 	StatusTicketRegistered
 	StatusTicketActivated
 	// Error
 	ErrorInsufficientFee
-	StatusErrorFGPTNotMatch
+	StatusErrorFingerprintsNotMatch
 	// Final
 	StatusTaskRejected
 	StatusTaskCompleted
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted:       "Task Started",
-	StatusConnected:         "Connected",
-	StatusImageUploaded:     "Image Uploaded",
-	StatusTicketAccepted:    "Ticket Accepted",
-	StatusTicketRegistered:  "Ticket Registered",
-	StatusTicketActivated:   "Ticket Activated",
-	ErrorInsufficientFee:    "Error Insufficient Fee",
-	StatusErrorFGPTNotMatch: "Error FGPT Not Match",
-	StatusTaskRejected:      "Task Rejected",
-	StatusTaskCompleted:     "Task Completed",
+	StatusTaskStarted:               "Task Started",
+	StatusConnected:                 "Connected",
+	StatusImageProbed:               "Image Probed",
+	StatusTicketAccepted:            "Ticket Accepted",
+	StatusTicketRegistered:          "Ticket Registered",
+	StatusTicketActivated:           "Ticket Activated",
+	ErrorInsufficientFee:            "Error Insufficient Fee",
+	StatusErrorFingerprintsNotMatch: "Error Fingerprints Dont Match",
+	StatusTaskRejected:              "Task Rejected",
+	StatusTaskCompleted:             "Task Completed",
 }
 
 // Status represents status of the task

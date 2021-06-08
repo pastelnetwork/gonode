@@ -9,8 +9,8 @@ defaults: &defaults
     - image: "circleci/golang:<< parameters.version >>"
   environment:
     GO111MODULE: "on"
-    GOPATH: "/home/circleci/project/go"
-    PATH: "/home/circleci/.local/bin:/home/circleci/bin:/home/circleci/project/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    GOPATH: "/home/circleci/project/.go"
+    PATH: "/home/circleci/.local/bin:/home/circleci/bin:/home/circleci/project/.go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 commands:
   test:
@@ -18,11 +18,6 @@ commands:
       package:
         type: string
     steps:
-      - run:
-          name: "<< parameters.package >>: Go generate"
-          working_directory: ~/project/<< parameters.package >>
-          command: |
-            go generate ./...
       - run:
           name: "<< parameters.package >>: Fetch dependencies"
           working_directory: ~/project/<< parameters.package >>
@@ -147,7 +142,7 @@ commands:
       - run:
           name: "<< parameters.moduleSubDir >> << parameters.package >>: xgo build for << parameters.targets >>"
           command: |
-            GOPATH= xgo -go go-1.16.x --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
+            GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
 
             mkdir -p << parameters.outputDirectory >>
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
@@ -201,6 +196,10 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Detect not merged code
+          command: |
+            ./scripts/merge_master.sh
+      - run:
           name: Print the go version
           command: |
             go version
@@ -225,6 +224,11 @@ jobs:
           name: Install xgo
           command: |
             go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+      - run:
+          name: "Go generate"
+          working_directory: ~/project/
+          command: |
+            for d in ./*/ ; do (cd "$d" && if [[ -f go.mod ]]; then go generate ./... ; fi); done
       - persist_to_workspace:
           root: .
           paths:
@@ -254,6 +258,14 @@ jobs:
           at: .
       - test:
           package: "p2p"
+
+  test_metadb:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "metadb"
 
   test_pastel-api:
     <<: *defaults
@@ -333,8 +345,16 @@ jobs:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
           package: ""
-          targets: "darwin-10.14/amd64,windows/amd64,"
+          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
           binaryName: "walletnode"
+      - build:
+          buildContainerName: "supernode"
+          moduleSubDir: "supernode"
+          package: ""
+          targets: "linux/amd64,"
+          binaryName: "supernode"
+      - store_artifacts:
+          path: "build"
 
   # Whenever we create a GitHub release, build binaries for each OS, and upload them into the release
   release:
@@ -387,6 +407,9 @@ workflows:
           requires:
             - prepare_workspace
       - test_p2p:
+          requires:
+            - prepare_workspace
+      - test_metadb:
           requires:
             - prepare_workspace
       - test_pastel-api:

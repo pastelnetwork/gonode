@@ -17,12 +17,12 @@ func TestStatusNames(t *testing.T) {
 			expectedStatues: []Status{
 				StatusTaskStarted,
 				StatusConnected,
-				StatusImageUploaded,
+				StatusImageProbed,
 				StatusTicketAccepted,
 				StatusTicketRegistered,
 				StatusTicketActivated,
 				ErrorInsufficientFee,
-				StatusErrorFGPTNotMatch,
+				StatusErrorFingerprintsNotMatch,
 				StatusTaskRejected,
 				StatusTaskCompleted,
 			},
@@ -60,8 +60,8 @@ func TestStatusString(t *testing.T) {
 			status:        StatusConnected,
 			expectedValue: statusNames[StatusConnected],
 		}, {
-			status:        StatusImageUploaded,
-			expectedValue: statusNames[StatusImageUploaded],
+			status:        StatusImageProbed,
+			expectedValue: statusNames[StatusImageProbed],
 		}, {
 			status:        StatusTicketAccepted,
 			expectedValue: statusNames[StatusTicketAccepted],
@@ -75,8 +75,8 @@ func TestStatusString(t *testing.T) {
 			status:        ErrorInsufficientFee,
 			expectedValue: statusNames[ErrorInsufficientFee],
 		}, {
-			status:        StatusErrorFGPTNotMatch,
-			expectedValue: statusNames[StatusErrorFGPTNotMatch],
+			status:        StatusErrorFingerprintsNotMatch,
+			expectedValue: statusNames[StatusErrorFingerprintsNotMatch],
 		}, {
 			status:        StatusTaskRejected,
 			expectedValue: statusNames[StatusTaskRejected],

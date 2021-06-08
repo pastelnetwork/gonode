@@ -5,7 +5,6 @@ go 1.16
 require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/go-errors/errors v1.1.1
-	github.com/hashicorp/go-multierror v1.1.1
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/onsi/ginkgo v1.15.2 // indirect

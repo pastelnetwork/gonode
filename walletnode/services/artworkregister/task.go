@@ -10,14 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
-)
-
-const (
-	connectToNextNodeDelay = time.Millisecond * 200
-	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
-	connectToNodeTimeout   = time.Second * 1
-
-	thumbnailWidth, thumbnailHeight = 224, 224
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 )
 
 // Task is the task of registering new artwork.
@@ -33,7 +26,7 @@ func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
+		log.WithContext(ctx).WithField("status", status).Debugf("States updated")
 	})
 
 	log.WithContext(ctx).Debugf("Start task")
@@ -46,7 +39,6 @@ func (task *Task) Run(ctx context.Context) error {
 	}
 
 	task.UpdateStatus(StatusTaskCompleted)
-	log.WithContext(ctx).Debugf("Task is completed")
 	return nil
 }
 
@@ -70,31 +62,32 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
 
-	var nodes Nodes
+	var nodes node.List
+	var errs error
 	for primaryRank := range topNodes {
 		nodes, err = task.meshNodes(ctx, topNodes, primaryRank)
-		if err == nil {
-			break
-		}
-		log.WithContext(ctx).WithError(err).Warnf("Could not get mesh of nodes")
-	}
-	nodes.activate()
-	topNodes.disconnectInactive()
-
-	group, _ := errgroup.WithContext(ctx)
-	for _, node := range nodes {
-		node := node
-		group.Go(func() error {
-			defer cancel()
-
-			select {
-			case <-ctx.Done():
-				return errors.Errorf("task was canceled")
-			case <-node.conn.Done():
-				return errors.Errorf("%q unexpectedly closed the connection", node.Address)
+		if err != nil {
+			if errors.IsContextCanceled(err) {
+				return err
 			}
-		})
+			errs = errors.Append(errs, err)
+			log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
+			continue
+		}
+		break
 	}
+	if len(nodes) < task.config.NumberSuperNodes {
+		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
+	}
+
+	nodes.Activate()
+	topNodes.DisconnectInactive()
+
+	groupConnClose, _ := errgroup.WithContext(ctx)
+	groupConnClose.Go(func() error {
+		defer cancel()
+		return nodes.WaitConnClose(ctx)
+	})
 	task.UpdateStatus(StatusConnected)
 
 	log.WithContext(ctx).WithField("filename", task.Ticket.Image.Name()).Debugf("Copy image")
@@ -103,28 +96,38 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
-	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to thumbnail %dx%d", thumbnailWidth, thumbnailHeight)
+	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d", task.config.thumbnailWidth, task.config.thumbnailHeight)
 	if err := thumbnail.ResizeImage(thumbnailWidth, thumbnailHeight); err != nil {
 		return err
 	}
 
-	if err := nodes.sendImage(ctx, thumbnail); err != nil {
+	if err := nodes.ProbeImage(ctx, thumbnail); err != nil {
 		return err
 	}
 
-	task.UpdateStatus(StatusImageUploaded)
+	if err := nodes.MatchFingerprints(); err != nil {
+		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
+		return err
+	}
+	task.UpdateStatus(StatusImageProbed)
 
-	<-ctx.Done()
+	fingerprint := nodes.Fingerprint()
+	signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
+	if err != nil {
+		return err
+	}
 
-	return group.Wait()
+	fmt.Println(signature)
+
+	return groupConnClose.Wait()
 }
 
 // meshNodes establishes communication between supernodes.
-func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) (Nodes, error) {
-	var meshNodes Nodes
+func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex int) (node.List, error) {
+	var meshNodes node.List
 
 	primary := nodes[primaryIndex]
-	if err := primary.connect(ctx); err != nil {
+	if err := primary.Connect(ctx, task.config.connectTimeout); err != nil {
 		return nil, err
 	}
 	if err := primary.Session(ctx, true); err != nil {
@@ -134,7 +137,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
 
-	var secondaries Nodes
+	var secondaries node.List
 	go func() {
 		for i, node := range nodes {
 			node := node
@@ -146,28 +149,28 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 			select {
 			case <-nextConnCtx.Done():
 				return
-			case <-time.After(connectToNextNodeDelay):
+			case <-time.After(task.config.connectToNextNodeDelay):
 				go func() {
 					defer errors.Recover(log.Fatal)
 
-					if err := node.connect(ctx); err != nil {
+					if err := node.Connect(ctx, task.config.connectTimeout); err != nil {
 						return
 					}
 					if err := node.Session(ctx, false); err != nil {
 						return
 					}
-					secondaries.add(node)
+					secondaries.Add(node)
 
-					if err := node.ConnectTo(ctx, primary.PastelID, primary.SessID()); err != nil {
+					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
 						return
 					}
-					log.WithContext(ctx).Debugf("Seconary %s connected to primary", node.Address)
+					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
 				}()
 			}
 		}
 	}()
 
-	acceptCtx, acceptCancel := context.WithTimeout(ctx, acceptNodesTimeout)
+	acceptCtx, acceptCancel := context.WithTimeout(ctx, task.config.acceptNodesTimeout)
 	defer acceptCancel()
 
 	accepted, err := primary.AcceptedNodes(acceptCtx)
@@ -175,29 +178,29 @@ func (task *Task) meshNodes(ctx context.Context, nodes Nodes, primaryIndex int) 
 		return nil, err
 	}
 
-	meshNodes.add(primary)
+	meshNodes.Add(primary)
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 
-		node := secondaries.findByPastelID(pastelID)
+		node := secondaries.FindByPastelID(pastelID)
 		if node == nil {
 			return nil, errors.New("not found accepted node")
 		}
-		meshNodes.add(node)
+		meshNodes.Add(node)
 	}
 	return meshNodes, nil
 }
 
 func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
-	fee, err := task.pastelClient.StorageFee(ctx)
+	fee, err := task.pastelClient.StorageNetworkFee(ctx)
 	if err != nil {
 		return false, err
 	}
-	return fee.NetworkFee <= task.Ticket.MaximumFee, nil
+	return fee <= task.Ticket.MaximumFee, nil
 }
 
-func (task *Task) pastelTopNodes(ctx context.Context) (Nodes, error) {
-	var nodes Nodes
+func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
+	var nodes node.List
 
 	mns, err := task.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -207,11 +210,7 @@ func (task *Task) pastelTopNodes(ctx context.Context) (Nodes, error) {
 		if mn.Fee > task.Ticket.MaximumFee {
 			continue
 		}
-		nodes = append(nodes, &Node{
-			client:   task.Service.nodeClient,
-			Address:  mn.ExtAddress,
-			PastelID: mn.ExtKey,
-		})
+		nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
 	}
 
 	return nodes, nil

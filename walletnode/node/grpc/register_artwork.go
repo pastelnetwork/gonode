@@ -116,20 +116,20 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 	return nil
 }
 
-// UploadImage implements node.RegisterArtwork.UploadImage()
-func (service *registerArtwork) UploadImage(ctx context.Context, image *artwork.File) error {
+// ProbeImage implements node.RegisterArtwork.ProbeImage()
+func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	stream, err := service.client.UploadImage(ctx)
+	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return errors.Errorf("failed to open stream: %w", err)
+		return nil, errors.Errorf("failed to open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return errors.Errorf("failed to open file %q: %w", file.Name(), err)
+		return nil, errors.Errorf("failed to open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -140,21 +140,21 @@ func (service *registerArtwork) UploadImage(ctx context.Context, image *artwork.
 			break
 		}
 
-		req := &pb.UploadImageRequest{
+		req := &pb.ProbeImageRequest{
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return errors.Errorf("failed to send image data: %w", err).WithField("reqID", service.conn.id)
+			return nil, errors.Errorf("failed to send image data: %w", err).WithField("reqID", service.conn.id)
 		}
 	}
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return errors.Errorf("failed to receive send image response: %w", err)
+		return nil, errors.Errorf("failed to receive send image response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("UploadImage response")
+	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 
-	return nil
+	return resp.Fingerprint, nil
 }
 
 func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {

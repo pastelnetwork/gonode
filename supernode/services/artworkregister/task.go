@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -17,7 +18,8 @@ type Task struct {
 	task.Task
 	*Service
 
-	Image *artwork.File
+	ResampledArtwork *artwork.File
+	Artwork          *artwork.File
 
 	acceptedMu sync.Mutex
 	accpeted   Nodes
@@ -27,7 +29,7 @@ type Task struct {
 
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
+	ctx = task.context(ctx)
 	defer log.WithContext(ctx).Debug("Task canceled")
 	defer task.Cancel()
 
@@ -142,27 +144,55 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 	return nil
 }
 
-// UploadImage uploads an image
-func (task *Task) UploadImage(_ context.Context, image *artwork.File) error {
+// ProbeImage uploads the resampled image compute and return a fingerpirnt.
+func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
-		return err
+		return nil, err
 	}
 
 	task.NewAction(func(ctx context.Context) error {
-		task.Image = image
+		task.ResampledArtwork = file
+		defer task.ResampledArtwork.Remove()
+
+		<-ctx.Done()
+		return nil
+	})
+
+	var fingerprintData []byte
+
+	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageUploaded)
 
-		id, err := task.p2pClient.Store(ctx, image)
+		img, err := file.OpenImage()
+		if err != nil {
+			return err
+		}
+
+		fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
+		if err != nil {
+			return err
+		}
+
+		fingerprintData, err = zstd.CompressLevel(nil, fingerprints.Single().Bytes(), 22)
+		if err != nil {
+			return errors.Errorf("failed to compress fingerprint data: %w", err)
+		}
+
+		// NOTE: for testing Kademlia and should be removed before releasing.
+		data, err := file.Bytes()
+		if err != nil {
+			return err
+		}
+
+		id, err := task.p2pClient.Store(ctx, data)
 		if err != nil {
 			return err
 		}
 		log.WithContext(ctx).WithField("id", id).Debugf("Image stored into Kademlia")
-
-		<-ctx.Done()
-
-		return task.Image.Remove()
+		return nil
 	})
-	return nil
+
+	return fingerprintData, nil
 }
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
@@ -184,6 +214,10 @@ func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node,
 	}
 
 	return nil, errors.Errorf("node %q not found", nodeID)
+}
+
+func (task *Task) context(ctx context.Context) context.Context {
+	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
 }
 
 // NewTask returns a new Task instance.

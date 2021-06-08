@@ -1,4 +1,5 @@
 //go:generate mockery --name=FileStorage
+//go:generate mockery --name=File
 
 package storage
 

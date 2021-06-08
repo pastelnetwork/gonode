@@ -18,8 +18,7 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	done := make(chan bool)
-	port := 3000
+	port := 4000
 	dhts := []*DHT{}
 	for i := 0; i < 20; i++ {
 		id, _ := newID()
@@ -39,26 +38,23 @@ func TestBootstrapTwentyNodes(t *testing.T) {
 	}
 
 	for _, dht := range dhts {
+		dht := dht
+
 		assert.Equal(t, 0, dht.NumNodes())
 		go func(dht *DHT) {
 			err := dht.Listen(ctx)
 			assert.NoError(t, err)
-			done <- true
+
+			assert.Equal(t, 19, dht.NumNodes())
+
+			err = dht.Disconnect()
+			assert.NoError(t, err)
 		}(dht)
 		go func(dht *DHT) {
 			err := dht.Bootstrap(ctx)
 			assert.NoError(t, err)
 		}(dht)
-		time.Sleep(time.Millisecond * 200)
-	}
-
-	time.Sleep(time.Millisecond * 2000)
-
-	for _, dht := range dhts {
-		assert.Equal(t, 19, dht.NumNodes())
-		err := dht.Disconnect()
-		assert.NoError(t, err)
-		<-done
+		time.Sleep(time.Millisecond * 20)
 	}
 }
 

@@ -2,11 +2,10 @@ package artwork
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync/atomic"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage"
 )
@@ -27,7 +26,7 @@ func (storage *Storage) Run(ctx context.Context) error {
 	var errs error
 	for _, file := range storage.files {
 		if err := file.Remove(); err != nil {
-			errs = multierror.Append(errs, err)
+			errs = errors.Append(errs, err)
 		}
 	}
 
