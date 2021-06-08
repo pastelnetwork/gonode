@@ -14,7 +14,7 @@ import (
 	"github.com/kevinburke/nacl/secretbox"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/legroast"
-	pqtime "github.com/pastelnetwork/gonode/pqsignatures/internal/time"
+	pqtime "github.com/pastelnetwork/gonode/pqsignature/internal/time"
 )
 
 const (
