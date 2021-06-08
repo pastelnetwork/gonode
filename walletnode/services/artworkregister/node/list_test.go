@@ -89,12 +89,12 @@ func TestNodesDisconnectInactive(t *testing.T) {
 				numberOfCall int
 			}{
 				{
-					client:       test.NewMockClient(),
+					client:       test.NewMockClient(t),
 					numberOfCall: 1,
 					activated:    false,
 				},
 				{
-					client:       test.NewMockClient(),
+					client:       test.NewMockClient(t),
 					numberOfCall: 0,
 					activated:    true,
 				},
@@ -125,7 +125,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 				c := c
 
 				t.Run(fmt.Sprintf("close-called-%d", j), func(t *testing.T) {
-					c.client.AssertCloseCall(t, c.numberOfCall)
+					c.client.AssertCloseCall(c.numberOfCall)
 				})
 
 			}
@@ -221,7 +221,7 @@ func TestNodesSendImage(t *testing.T) {
 
 			for _, a := range testCase.nodes {
 				//client mock
-				client := test.NewMockClient()
+				client := test.NewMockClient(t)
 				//listen on uploadImage call
 				client.ListenOnProbeImage(testCase.fingerprint, testCase.err)
 				clients = append(clients, client)
@@ -238,7 +238,7 @@ func TestNodesSendImage(t *testing.T) {
 			//mock assertion each client
 			for _, client := range clients {
 				client.RegisterArtwork.AssertExpectations(t)
-				client.AssertProbeImageCall(t, testCase.numberProbeImageCall, testCase.args.ctx, testCase.args.file)
+				client.AssertProbeImageCall(testCase.numberProbeImageCall, testCase.args.ctx, testCase.args.file)
 			}
 		})
 	}
