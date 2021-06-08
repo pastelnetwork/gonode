@@ -74,7 +74,7 @@ type Options struct {
 
 	// a driver-specific data source name, usually consisting of
 	// at least a database name and connection information.
-	DataSourceName string
+	DataDir string
 }
 
 // NewDHT initializes a new DHT node. A store and options struct must be
@@ -93,7 +93,7 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 	dht.ht = ht
 	dht.networking = &realNetworking{}
 
-	if err = store.Init(ctx, options.DataSourceName); err != nil {
+	if err = store.Init(ctx, options.DataDir); err != nil {
 		return nil, err
 	}
 

@@ -19,7 +19,7 @@ type Config struct {
 	UseStun bool `mapstructure:"use_stun" json:"use_stun,omitempty"`
 	// a driver-specific data source name, usually consisting of
 	// at least a database name and connection information.
-	DataSourceName string `mapstructure:"data_source_name" json:"data_source_name,omitempty"`
+	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
 }
 
 // NewConfig returns a new Config instance.

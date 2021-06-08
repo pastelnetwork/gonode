@@ -31,6 +31,7 @@ const (
 	appUsage = "SuperNode" // TODO: Write a clear description.
 
 	tfmodelDir = "./tfmodels" // relatively from work-dir
+	p2pDir = "./p2p" // relatively from work-dir
 )
 
 var (
@@ -129,7 +130,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
 
 	// p2p service (currently using kademlia)
-	p2p := p2p.New(config.P2P)
+	p2p := p2p.New(config.P2P, filepath.Join(config.WorkDir, p2pDir))
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
