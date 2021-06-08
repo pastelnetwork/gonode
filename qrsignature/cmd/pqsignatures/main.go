@@ -16,10 +16,10 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/nfnt/resize"
 	"github.com/pastelnetwork/gonode/common/errors"
-	pqtime "github.com/pastelnetwork/gonode/pqsignature/internal/time"
-	pq "github.com/pastelnetwork/gonode/pqsignature/pkg/pqsignatures"
-	"github.com/pastelnetwork/gonode/pqsignature/pkg/qr"
-	"github.com/pastelnetwork/gonode/pqsignature/pkg/steganography"
+	pqtime "github.com/pastelnetwork/gonode/qrsignature/internal/time"
+	pq "github.com/pastelnetwork/gonode/qrsignature/pkg/pqsignatures"
+	"github.com/pastelnetwork/gonode/qrsignature/pkg/qr"
+	"github.com/pastelnetwork/gonode/qrsignature/pkg/steganography"
 	"golang.org/x/crypto/sha3"
 )
 

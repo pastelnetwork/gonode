@@ -4,7 +4,6 @@ package steganography
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -83,7 +82,6 @@ func EncodeNRGBA(writeBuffer *bytes.Buffer, rgbImage *image.NRGBA, message []byt
 	}
 
 	err := png.Encode(writeBuffer, rgbImage)
-	fmt.Println("err")
 	return err
 }
 

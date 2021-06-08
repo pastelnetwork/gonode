@@ -1,4 +1,4 @@
-module github.com/pastelnetwork/gonode/pqsignature
+module github.com/pastelnetwork/gonode/qrsignature
 
 go 1.16
 
