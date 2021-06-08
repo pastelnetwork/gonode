@@ -18,6 +18,7 @@ p2p:
   # use_stun: true
 
 metadb:
-  http_address: "0.0.0.0:4001"
-  raft_address: "0.0.0.0:4002"
+  listen_address: "0.0.0.0"
+  http_port: 4001
+  raft_port: 4002
   # data_dir: ""

@@ -15,7 +15,7 @@ p2p:
   port: 4455
 
 metadb:
-  http_address: "0.0.0.0:4003"
-  raft_address: "0.0.0.0:4004"
-  join_address: "0.0.0.0:4001"
+  listen_address: "0.0.0.0"
+  http_port: 4003
+  raft_port: 4004
   data_dir: "4003"

@@ -2,14 +2,13 @@ package metadb
 
 import (
 	"context"
+	"fmt"
 	"net"
-	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/cluster"
-	"github.com/pastelnetwork/gonode/metadb/rqlite/disco"
 	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/tcp"
@@ -32,36 +31,18 @@ const (
 
 // the order is: node id, raft advertise address vs raft address
 func (s *service) idOrRaftAddr() string {
-	if s.config.NodeID != "" {
-		return s.config.NodeID
-	}
-	return s.config.RaftAddress
+	// if s.config.NodeID != "" {
+	// 	return s.config.NodeID
+	// }
+	// return s.config.RaftAddress
+	return "hello"
 }
 
 // determine the join addresses
 func (s *service) determineJoinAddresses(ctx context.Context) ([]string, error) {
 	var addrs []string
-	if s.config.JoinAddress != "" {
-		// explicit join addresses are first priority.
-		addrs = strings.Split(s.config.JoinAddress, ",")
-	}
 
-	if s.config.DiscoveryID != "" {
-		log.WithContext(ctx).Infof("register with discovery service at %s with ID %s", s.config.DiscoveryURL, s.config.DiscoveryID)
-
-		c := disco.New(ctx, s.config.DiscoveryURL)
-		r, err := c.Register(s.config.DiscoveryID, s.config.HTTPAddress)
-		if err != nil {
-			return nil, errors.Errorf("discovery register: %w", err)
-		}
-		log.WithContext(ctx).Infof("discovery service responded with nodes: %v", r.Nodes)
-
-		for _, a := range r.Nodes {
-			if a != s.config.HTTPAddress {
-				addrs = append(addrs, a)
-			}
-		}
-	}
+	// <TODO> get the list of supernodes from Pastel RPC API, and try to connect automatically.
 
 	return addrs, nil
 }
@@ -83,8 +64,9 @@ func (s *service) waitForConsensus(ctx context.Context, dbStore *store.Store) er
 
 // start the http server
 func (s *service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs *cluster.Service) error {
+	httpAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.HTTPPort)
 	// create http server
-	server := httpd.New(ctx, s.config.HTTPAddress, dbStore, cs, nil)
+	server := httpd.New(ctx, httpAddr, dbStore, cs, nil)
 
 	// start the http server
 	return server.Start()
@@ -106,8 +88,10 @@ func (s *service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, 
 func (s *service) startClusterService(ctx context.Context, tn cluster.Transport) (*cluster.Service, error) {
 	c := cluster.New(ctx, tn)
 
+	httpAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.HTTPPort)
 	// set the api address
-	c.SetAPIAddr(s.config.HTTPAddress)
+	c.SetAPIAddr(httpAddr)
+
 	// open the cluster service
 	if err := c.Open(); err != nil {
 		return nil, err
@@ -171,13 +155,14 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 	if len(joins) > 0 && isNew {
 		log.WithContext(ctx).Infof("join addresses are: %v", joins)
 
+		raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
 		// join rqlite cluster
 		joinAddr, err := cluster.Join(
 			ctx,
 			"",
 			joins,
 			db.ID(),
-			s.config.RaftAddress,
+			raftAddr,
 			true,
 			defaultJoinAttempts,
 			defaultJoinInterval,
@@ -196,10 +181,11 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 func (s *service) startServer(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
+	raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
 	// create internode network mux and configure.
-	muxListener, err := net.Listen("tcp", s.config.RaftAddress)
+	muxListener, err := net.Listen("tcp", raftAddr)
 	if err != nil {
-		return errors.Errorf("listen on %s: %w", s.config.RaftAddress, err)
+		return errors.Errorf("listen on %s: %w", raftAddr, err)
 	}
 	mux, err := s.startNodeMux(ctx, muxListener)
 	if err != nil {
