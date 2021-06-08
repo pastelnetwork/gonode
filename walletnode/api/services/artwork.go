@@ -12,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
@@ -27,6 +28,7 @@ const (
 type Artwork struct {
 	*Common
 	register *artworkregister.Service
+	search   *artworksearch.Service
 	db       storage.KeyValue
 	imageTTL time.Duration
 }
@@ -150,18 +152,35 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 }
 
 // ArtSearch searches for artwork & streams the result based on filters
-func (service *Artwork) ArtSearch(_ context.Context, _ *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
+func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
 	defer stream.Close()
-	// TODO: Search Artwork & stream
+	taskID := service.search.AddTask(req)
+	task := service.search.Task(taskID)
 
-	return nil
+	sub := task.SubscribeSearchResult()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case ticket := <-sub:
+			res := &artworks.ArtSearchResult{
+				Name: ticket.ArtTicketData.AppTicketData.ArtworkTitle,
+				// TODO: Add rest of the fields
+			}
+			if err := stream.Send(res); err != nil {
+				return artworks.MakeInternalServerError(err)
+			}
+
+		}
+	}
 }
 
 // NewArtwork returns the artworks Artwork implementation.
-func NewArtwork(register *artworkregister.Service) *Artwork {
+func NewArtwork(register *artworkregister.Service, search *artworksearch.Service) *Artwork {
 	return &Artwork{
 		Common:   NewCommon(),
 		register: register,
+		search:   search,
 		db:       memory.NewKeyValue(),
 		imageTTL: defaultImageTTL,
 	}

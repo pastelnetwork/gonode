@@ -33,4 +33,10 @@ type Client interface {
 	// Verify verifies signed data by the given its signature and pastelID, if successful returns true.
 	// Command `pastelid verify "text" "signature" "PastelID"`.
 	Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error)
+	// ActTickets returns activated art tickets.
+	// Command `tickets list act`.
+	ActTickets(ctx context.Context, actType ActivationTicketType, minHeight int) (ActivationTickets, error)
+	// ActTickets returns art registration tickets.
+	// Command `tickets get <txid>`.
+	GetRegTicket(ctx context.Context, regTxid string) (*Ticket, error)
 }

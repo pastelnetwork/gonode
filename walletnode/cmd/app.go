@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
+
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -120,10 +122,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
-
+	artworkSearch := artworksearch.NewService(pastelClient, nil)
 	// api service
 	server := api.NewServer(config.API,
-		services.NewArtwork(artworkRegister),
+		services.NewArtwork(artworkRegister, artworkSearch),
 		services.NewSwagger(),
 	)
 
