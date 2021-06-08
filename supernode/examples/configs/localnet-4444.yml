@@ -13,7 +13,6 @@ node:
 p2p:
   listen_addresses: "0.0.0.0"
   port: 4454
-  # default value is assigned automatically, by concatenated CLI parameter `--work-dir` and `p2p` as a subfolder
-  data_dir: "path/to/p2p/data/dir"
+  memory_db: true
   bootstrap_ip: "127.0.0.1"
   bootstrap_port: 1234
