@@ -100,7 +100,8 @@ func (service *p2p) configure(ctx context.Context) error {
 		IP:             service.config.ListenAddresses,
 		Port:           service.config.Port,
 		UseStun:        service.config.UseStun,
-		DataDir:        service.config.DataDir,
+		DataSourceName: service.config.DataDir,
+		MemoryDB:       service.config.MemoryDB,
 	})
 	if err != nil {
 		return err
@@ -111,8 +112,7 @@ func (service *p2p) configure(ctx context.Context) error {
 }
 
 // New returns a new p2p instance.
-func New(config *Config, dataDir string) P2P {
-	config.DataDir = dataDir
+func New(config *Config) P2P {
 	return &p2p{
 		config: config,
 	}

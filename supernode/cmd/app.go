@@ -130,7 +130,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
 
 	// p2p service (currently using kademlia)
-	p2p := p2p.New(config.P2P, filepath.Join(config.WorkDir, p2pDir))
+	config.P2P.SetDefaultDataDir(filepath.Join(config.WorkDir, p2pDir))
+	p2p := p2p.New(config.P2P)
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
