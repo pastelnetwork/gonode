@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"sort"
 	"testing"
@@ -34,13 +35,13 @@ func pullPastelAddressIDNodes(nodes node.List) []string {
 	return v
 }
 
-func newTestImageFile() (*artwork.File, error) {
-	fileName, err := test.CreateBlankImage("./", 400, 400)
+func newTestImageFile(tmpDir, fileName string) (*artwork.File, error) {
+	err := test.CreateBlankImage(fmt.Sprintf("%s/%s", tmpDir, fileName), 400, 400)
 	if err != nil {
 		return nil, err
 	}
 
-	imageStorage := artwork.NewStorage(fs.NewFileStorage("./"))
+	imageStorage := artwork.NewStorage(fs.NewFileStorage(tmpDir))
 	imageFile := artwork.NewFile(imageStorage, fileName)
 	return imageFile, nil
 }
@@ -104,12 +105,15 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	t.Run("group", func(t *testing.T) {
-		//create global tmp image file on current dir
-		artworkFile, err := newTestImageFile()
+		//create global tmp dir for store fake image on current dir
+		tmpDir, err := ioutil.TempDir("", "task_run")
+		assert.NoError(t, err)
+
+		artworkFile, err := newTestImageFile(tmpDir, "test.png")
 		assert.NoError(t, err)
 
 		defer func() {
-			os.Remove(fmt.Sprintf("./%s", artworkFile.Name()))
+			os.RemoveAll(tmpDir)
 		}()
 
 		for i, testCase := range testCases {
@@ -124,17 +128,8 @@ func TestTaskRun(t *testing.T) {
 					ListenOnConnectTo(testCase.args.returnErr).
 					ListenOnSessID(testCase.args.primarySessID).
 					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
-					ListenOnDone()
-
-				// custom probe image listening call to get thumbnail file.
-				// should remove the generated thumbnail file
-				customProbeImage := func(ctx context.Context, image *artwork.File) []byte {
-					err := image.Remove()
-					assert.NoError(t, err)
-					return testCase.args.fingerPrint
-				}
-
-				nodeClient.ListenOnProbeImage(customProbeImage, testCase.args.returnErr)
+					ListenOnDone().
+					ListenOnProbeImage(testCase.args.fingerPrint, testCase.args.returnErr)
 
 				pastelClientMock := pastelMock.NewMockClient(t)
 				pastelClientMock.
