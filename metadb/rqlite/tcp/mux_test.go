@@ -6,8 +6,6 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"log"
 	"net"
 	"os"
 	"strings"
@@ -24,9 +22,9 @@ func TestMux(t *testing.T) {
 	if err := quick.Check(func(n uint8, msg []byte) bool {
 		if testing.Verbose() {
 			if len(msg) == 0 {
-				log.Printf("n=%d, <no message>", n)
+				t.Logf("n=%d, <no message>", n)
 			} else {
-				log.Printf("n=%d, hdr=%d, len=%d", n, msg[0], len(msg))
+				t.Logf("n=%d, hdr=%d, len=%d", n, msg[0], len(msg))
 			}
 		}
 
@@ -35,14 +33,11 @@ func TestMux(t *testing.T) {
 		defer tcpListener.Close()
 
 		// Setup muxer & listeners.
-		mux, err := NewMux(tcpListener, nil)
+		mux, err := NewMux(context.TODO(), tcpListener, nil)
 		if err != nil {
 			t.Fatalf("failed to create mux: %s", err.Error())
 		}
 		mux.Timeout = 200 * time.Millisecond
-		if !testing.Verbose() {
-			mux.Logger = log.New(ioutil.Discard, "", 0)
-		}
 
 		group, _ := errgroup.WithContext(context.Background())
 		for i := uint8(0); i < n; i++ {
@@ -136,14 +131,11 @@ func TestMux_Advertise(t *testing.T) {
 		Addr: "rqlite.com:8081",
 	}
 
-	mux, err := NewMux(tcpListener, addr)
+	mux, err := NewMux(context.TODO(), tcpListener, addr)
 	if err != nil {
 		t.Fatalf("failed to create mux: %s", err.Error())
 	}
 	mux.Timeout = 200 * time.Millisecond
-	if !testing.Verbose() {
-		mux.Logger = log.New(ioutil.Discard, "", 0)
-	}
 
 	layer := mux.Listen(1)
 	if layer.Addr().String() != addr.Addr {
@@ -162,7 +154,7 @@ func TestMux_Listen_ErrAlreadyRegistered(t *testing.T) {
 
 	// Register two listeners with the same header byte.
 	tcpListener := mustTCPListener("127.0.0.1:0")
-	mux, err := NewMux(tcpListener, nil)
+	mux, err := NewMux(context.TODO(), tcpListener, nil)
 	if err != nil {
 		t.Fatalf("failed to create mux: %s", err.Error())
 	}
@@ -179,7 +171,7 @@ func TestTLSMux(t *testing.T) {
 	key := x509.KeyFile("")
 	defer os.Remove(key)
 
-	mux, err := NewTLSMux(tcpListener, nil, cert, key, "")
+	mux, err := NewTLSMux(context.TODO(), tcpListener, nil, cert, key, "")
 	if err != nil {
 		t.Fatalf("failed to create mux: %s", err.Error())
 	}
@@ -208,7 +200,7 @@ func TestTLSMux_Fail(t *testing.T) {
 	key := x509.KeyFile("")
 	defer os.Remove(key)
 
-	_, err := NewTLSMux(tcpListener, nil, "xxxx", "yyyy", "")
+	_, err := NewTLSMux(context.TODO(), tcpListener, nil, "xxxx", "yyyy", "")
 	if err == nil {
 		t.Fatalf("created mux unexpectedly with bad resources")
 	}

@@ -15,7 +15,7 @@ import (
 )
 
 func Test_SingleNode(t *testing.T) {
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	defer node.Deprovision()
 
 	tests := []struct {
@@ -78,7 +78,7 @@ func Test_SingleNode(t *testing.T) {
 }
 
 func Test_SingleNodeMulti(t *testing.T) {
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	defer node.Deprovision()
 
 	tests := []struct {
@@ -140,7 +140,7 @@ func Test_SingleNodeMulti(t *testing.T) {
 
 func Test_SingleNodeConcurrentRequests(t *testing.T) {
 	var err error
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	node.Store.SetRequestCompression(1024, 1024) // Ensure no compression
 	defer node.Deprovision()
 
@@ -174,7 +174,7 @@ func Test_SingleNodeConcurrentRequests(t *testing.T) {
 
 func Test_SingleNodeConcurrentRequestsCompressed(t *testing.T) {
 	var err error
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	node.Store.SetRequestCompression(0, 0) // Ensure compression
 	defer node.Deprovision()
 
@@ -207,7 +207,7 @@ func Test_SingleNodeConcurrentRequestsCompressed(t *testing.T) {
 }
 
 func Test_SingleParameterizedNode(t *testing.T) {
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	defer node.Deprovision()
 
 	tests := []struct {
@@ -252,7 +252,7 @@ func Test_SingleParameterizedNode(t *testing.T) {
 // Test_SingleNodeSQLInjection demonstrates that using the non-parameterized API is vulnerable to
 // SQL injection attacks.
 func Test_SingleNodeSQLInjection(t *testing.T) {
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	defer node.Deprovision()
 
 	tests := []struct {
@@ -302,7 +302,7 @@ func Test_SingleNodeSQLInjection(t *testing.T) {
 // Test_SingleNodeNoSQLInjection demonstrates that using the parameterized API protects
 // against SQL injection attacks.
 func Test_SingleNodeNoSQLInjection(t *testing.T) {
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	defer node.Deprovision()
 
 	tests := []struct {
@@ -360,7 +360,7 @@ func Test_SingleNodeRestart(t *testing.T) {
 		t.Fatalf("failed to copy node test directory: %s", err)
 	}
 
-	mux := mustNewOpenMux("")
+	mux := mustNewOpenMux(context.TODO(), "")
 
 	node := mustNodeEncrypted(destdir, true, false, mux, "node1")
 	defer node.Deprovision()
@@ -392,7 +392,7 @@ func Test_SingleNodeRestart(t *testing.T) {
 }
 
 func Test_SingleNodeNodes(t *testing.T) {
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	defer node.Deprovision()
 
 	// Access endpoints to ensure the code is covered.
@@ -423,7 +423,7 @@ func Test_SingleNodeNodes(t *testing.T) {
 }
 
 func Test_SingleNodeCoverage(t *testing.T) {
-	node := mustNewLeaderNode()
+	node := mustNewLeaderNode(context.TODO())
 	defer node.Deprovision()
 
 	// Access endpoints to ensure the code is covered.
@@ -455,7 +455,7 @@ func Test_SingleNodeReopen(t *testing.T) {
 		t.Logf("running test %s, on-disk=%v", t.Name(), onDisk)
 
 		dir := mustTempDir()
-		mux := mustNewOpenMux("")
+		mux := mustNewOpenMux(context.TODO(), "")
 		node := mustNodeEncrypted(dir, true, false, mux, "")
 
 		if _, err := node.WaitForLeader(); err != nil {
@@ -495,7 +495,7 @@ func Test_SingleNodeNoopReopen(t *testing.T) {
 		t.Logf("running test %s, on-disk=%v", t.Name(), onDisk)
 
 		dir := mustTempDir()
-		mux := mustNewOpenMux("")
+		mux := mustNewOpenMux(context.TODO(), "")
 		node := mustNodeEncryptedOnDisk(dir, true, false, mux, "", false)
 
 		if _, err := node.WaitForLeader(); err != nil {
@@ -583,7 +583,7 @@ func Test_SingleNodeNoopSnapReopen(t *testing.T) {
 		t.Logf("running test %s, on-disk=%v", t.Name(), onDisk)
 
 		dir := mustTempDir()
-		mux := mustNewOpenMux("")
+		mux := mustNewOpenMux(context.TODO(), "")
 		node := mustNodeEncryptedOnDisk(dir, true, false, mux, "", onDisk)
 
 		if _, err := node.WaitForLeader(); err != nil {
@@ -676,7 +676,7 @@ func Test_SingleNodeNoopSnapLogsReopen(t *testing.T) {
 		t.Logf("running test %s, on-disk=%v", t.Name(), onDisk)
 
 		dir := mustTempDir()
-		mux := mustNewOpenMux("")
+		mux := mustNewOpenMux(context.TODO(), "")
 		node := mustNodeEncryptedOnDisk(dir, true, false, mux, "", onDisk)
 		raftAddr = node.RaftAddr
 		t.Logf("node listening for Raft on %s", raftAddr)

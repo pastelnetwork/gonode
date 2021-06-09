@@ -1,6 +1,7 @@
 package cluster
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -11,11 +12,11 @@ import (
 )
 
 func Test_NewServiceSetGetNodeAPIAddrMuxed(t *testing.T) {
-	ln, mux := mustNewMux()
+	ln, mux := mustNewMux(context.TODO())
 	go mux.Serve()
 	tn := mux.Listen(1) // Could be any byte value.
 
-	s := New(tn)
+	s := New(context.TODO(), tn)
 	if s == nil {
 		t.Fatalf("failed to create cluster service")
 	}
@@ -43,11 +44,11 @@ func Test_NewServiceSetGetNodeAPIAddrMuxed(t *testing.T) {
 }
 
 func Test_NewServiceSetGetNodeAPIAddrMuxedTLS(t *testing.T) {
-	ln, mux := mustNewTLSMux()
+	ln, mux := mustNewTLSMux(context.TODO())
 	go mux.Serve()
 	tn := mux.Listen(1) // Could be any byte value.
 
-	s := New(tn)
+	s := New(context.TODO(), tn)
 	if s == nil {
 		t.Fatalf("failed to create cluster service")
 	}
@@ -74,13 +75,13 @@ func Test_NewServiceSetGetNodeAPIAddrMuxedTLS(t *testing.T) {
 	}
 }
 
-func mustNewMux() (net.Listener, *tcp.Mux) {
+func mustNewMux(ctx context.Context) (net.Listener, *tcp.Mux) {
 	ln, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		panic("failed to create mock listener")
 	}
 
-	mux, err := tcp.NewMux(ln, nil)
+	mux, err := tcp.NewMux(ctx, ln, nil)
 	if err != nil {
 		panic(fmt.Sprintf("failed to create mux: %s", err))
 	}
@@ -88,7 +89,7 @@ func mustNewMux() (net.Listener, *tcp.Mux) {
 	return ln, mux
 }
 
-func mustNewTLSMux() (net.Listener, *tcp.Mux) {
+func mustNewTLSMux(ctx context.Context) (net.Listener, *tcp.Mux) {
 	ln, err := net.Listen("tcp", "localhost:0")
 	if err != nil {
 		panic("failed to create mock listener")
@@ -99,7 +100,7 @@ func mustNewTLSMux() (net.Listener, *tcp.Mux) {
 	key := x509.KeyFile("")
 	defer os.Remove(key)
 
-	mux, err := tcp.NewTLSMux(ln, nil, cert, key, "")
+	mux, err := tcp.NewTLSMux(ctx, ln, nil, cert, key, "")
 	if err != nil {
 		panic(fmt.Sprintf("failed to create TLS mux: %s", err))
 	}
