@@ -29,7 +29,8 @@ func runShow(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Show")
 	defer log.WithContext(ctx).Info("End")
 
-	log.WithContext(ctx).Infof("Config: %s", config)
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

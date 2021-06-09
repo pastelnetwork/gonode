@@ -61,7 +61,8 @@ func runInit(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Init")
 	defer log.WithContext(ctx).Info("End")
 
-	log.WithContext(ctx).Infof("Config: %s", config)
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -184,7 +185,8 @@ func runWalletSubCommand(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Infoln("Wallet Node Start")
 	defer log.WithContext(ctx).Infoln("Wallet Node End")
 
-	log.WithContext(ctx).Infof("Config: %s", config)
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -228,7 +230,8 @@ func runSuperNodeSubCommand(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Infoln("Super Node Start")
 	defer log.WithContext(ctx).Infoln("Super Node End")
 
-	log.WithContext(ctx).Infof("Config: %s", config)
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()

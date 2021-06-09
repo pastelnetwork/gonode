@@ -98,11 +98,8 @@ func runStart(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
 
-	configJSON, err := config.String()
-	if err != nil {
-		return err
-	}
-	log.WithContext(ctx).Infof("Config: %s", configJSON)
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
