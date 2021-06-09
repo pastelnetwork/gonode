@@ -275,6 +275,15 @@ jobs:
       - test:
           package: "tools/pastel-api"
 
+  test_pastel-utility:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - install_tensorflow
+      - test:
+          package: "tools/pastel-utility"
+
   test_proto:
     <<: *defaults
     steps:
@@ -413,6 +422,9 @@ workflows:
           requires:
             - prepare_workspace
       - test_pastel-api:
+          requires:
+            - prepare_workspace
+      - test_pastel-utility:
           requires:
             - prepare_workspace
       - test_proto:
