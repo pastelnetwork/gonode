@@ -3,7 +3,9 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"testing"
 	"time"
@@ -34,13 +36,13 @@ func pullPastelAddressIDNodes(nodes node.List) []string {
 	return v
 }
 
-func newTestImageFile() (*artwork.File, error) {
-	fileName, err := test.CreateBlankImage("./", 400, 400)
+func newTestImageFile(tmpDir, fileName string) (*artwork.File, error) {
+	err := test.CreateBlankImage(fmt.Sprintf("%s/%s", tmpDir, fileName), 400, 400)
 	if err != nil {
 		return nil, err
 	}
 
-	imageStorage := artwork.NewStorage(fs.NewFileStorage("./"))
+	imageStorage := artwork.NewStorage(fs.NewFileStorage(tmpDir))
 	imageFile := artwork.NewFile(imageStorage, fileName)
 	return imageFile, nil
 }
@@ -104,13 +106,17 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	t.Run("group", func(t *testing.T) {
-		//create global tmp image file on current dir
-		artworkFile, err := newTestImageFile()
+		//create tmp file to store fake image file
+		tmpFile, err := ioutil.TempFile("", "*.png")
 		assert.NoError(t, err)
 
-		defer func() {
-			os.Remove(fmt.Sprintf("./%s", artworkFile.Name()))
-		}()
+		err = tmpFile.Close()
+		assert.NoError(t, err)
+
+		defer os.Remove(tmpFile.Name())
+
+		artworkFile, err := newTestImageFile(filepath.Dir(tmpFile.Name()), filepath.Base(tmpFile.Name()))
+		assert.NoError(t, err)
 
 		for i, testCase := range testCases {
 			testCase := testCase
@@ -126,15 +132,12 @@ func TestTaskRun(t *testing.T) {
 					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 					ListenOnDone()
 
-				// custom probe image listening call to get thumbnail file.
-				// should remove the generated thumbnail file
-				customProbeImage := func(ctx context.Context, image *artwork.File) []byte {
-					err := image.Remove()
-					assert.NoError(t, err)
+				//need to remove generate thumbnail file
+				customProbeImageFunc := func(ctx context.Context, file *artwork.File) []byte {
+					file.Remove()
 					return testCase.args.fingerPrint
 				}
-
-				nodeClient.ListenOnProbeImage(customProbeImage, testCase.args.returnErr)
+				nodeClient.ListenOnProbeImage(customProbeImageFunc, testCase.args.returnErr)
 
 				pastelClientMock := pastelMock.NewMockClient(t)
 				pastelClientMock.
