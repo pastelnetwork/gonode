@@ -19,6 +19,6 @@ p2p:
 
 metadb:
   listen_address: "0.0.0.0"
-  http_port: 4001
-  raft_port: 4002
-  data_dir: "4001"
+  http_port: 4041
+  raft_port: 4042
+  data_dir: "metadb-4444"

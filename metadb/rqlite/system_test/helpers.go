@@ -64,7 +64,7 @@ func (n *Node) Deprovision() {
 
 // WaitForLeader blocks for up to 10 seconds until the node detects a leader.
 func (n *Node) WaitForLeader() (string, error) {
-	return n.Store.WaitForLeader(10 * time.Second)
+	return n.Store.WaitForLeader(context.TODO(), 10*time.Second)
 }
 
 // Execute executes a single statement against the node.
