@@ -13,5 +13,6 @@ node:
 p2p:
   listen_addresses: "0.0.0.0"
   port: 4454
+  memory_db: true
   bootstrap_ip: "127.0.0.1"
   bootstrap_port: 1234

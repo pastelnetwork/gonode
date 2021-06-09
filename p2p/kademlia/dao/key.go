@@ -19,7 +19,7 @@ type Key interface {
 	Delete(ctx context.Context, key []byte) error
 
 	// Init initializes the Store
-	Init(ctx context.Context) error
+	Init(ctx context.Context, dataSourceName string) error
 
 	// GetAllKeysForReplication should return the keys of all data to be
 	// replicated across the network. Typically all data should be
