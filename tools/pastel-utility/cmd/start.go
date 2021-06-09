@@ -115,20 +115,25 @@ func runStart(ctx context.Context, config *configs.Config) error {
 }
 
 func runStartNodeSubCommand(ctx context.Context, config *configs.Config) error {
-	// TODO: Implement start node command
-	panic("")
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
+	return nil
 }
 
 func runStartSuperNodeSubCommand(ctx context.Context, config *configs.Config) error {
-	// TODO: Implement start supper node command
-	panic("")
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
+	return nil
 }
 
 func runStartMasterNodeSubCommand(ctx context.Context, config *configs.Config) error {
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
 	return nil
 }
 
 func runStartWalletSubCommand(ctx context.Context, config *configs.Config) error {
-	// TODO: Implement wallet command
-	panic("")
+	log.WithContext(ctx).Infof("Config: ")
+	log.WithContext(ctx).Infof(config.String())
+	return nil
 }

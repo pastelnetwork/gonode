@@ -114,11 +114,7 @@ func initCommandLogic(ctx context.Context, config *configs.Config) error {
 		return err
 	}
 
-	if err := checkLocalAndRouterFirewalls(ctx, []string{"80", "21"}); err != nil {
-		return err
-	}
-
-	return nil
+	return checkLocalAndRouterFirewalls(ctx, []string{"80", "21"})
 }
 
 // downloadZksnarkParams downloads zksnark params to the specified forlder

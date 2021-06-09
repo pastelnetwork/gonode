@@ -10,10 +10,12 @@ import (
 const (
 	defaultLogLevel = "info"
 
+	// ZksnarkParamsURL ZksnarkParams download URL
 	ZksnarkParamsURL = "https://z.cash/downloads/"
 )
 
 var (
+	// ZksnarkParamsNames values
 	ZksnarkParamsNames = []string{
 		"sapling-spend.params",
 		"sapling-output.params",
