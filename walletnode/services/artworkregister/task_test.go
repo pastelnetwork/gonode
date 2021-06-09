@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"testing"
 	"time"
@@ -105,15 +106,16 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	t.Run("group", func(t *testing.T) {
-		//create global tmp dir for store fake image on current dir
-		tmpDir, err := ioutil.TempDir("", "artwork-*")
+		//create tmp file to store fake image file
+		tmpFile, err := ioutil.TempFile("", "*.png")
+		tmpFile.Close()
 		assert.NoError(t, err)
 
-		artworkFile, err := newTestImageFile(tmpDir, "test.png")
+		artworkFile, err := newTestImageFile(filepath.Dir(tmpFile.Name()), filepath.Base(tmpFile.Name()))
 		assert.NoError(t, err)
 
 		defer func() {
-			os.RemoveAll(tmpDir)
+			os.Remove(tmpFile.Name())
 		}()
 
 		for i, testCase := range testCases {
@@ -128,8 +130,14 @@ func TestTaskRun(t *testing.T) {
 					ListenOnConnectTo(testCase.args.returnErr).
 					ListenOnSessID(testCase.args.primarySessID).
 					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
-					ListenOnDone().
-					ListenOnProbeImage(testCase.args.fingerPrint, testCase.args.returnErr)
+					ListenOnDone()
+
+				//need to remove generate thumbnail file
+				customProbeImageFunc := func(ctx context.Context, file *artwork.File) []byte {
+					file.Remove()
+					return testCase.args.fingerPrint
+				}
+				nodeClient.ListenOnProbeImage(customProbeImageFunc, testCase.args.returnErr)
 
 				pastelClientMock := pastelMock.NewMockClient(t)
 				pastelClientMock.
