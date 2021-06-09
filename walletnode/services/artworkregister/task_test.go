@@ -108,15 +108,15 @@ func TestTaskRun(t *testing.T) {
 	t.Run("group", func(t *testing.T) {
 		//create tmp file to store fake image file
 		tmpFile, err := ioutil.TempFile("", "*.png")
-		tmpFile.Close()
 		assert.NoError(t, err)
+
+		err = tmpFile.Close()
+		assert.NoError(t, err)
+
+		defer os.Remove(tmpFile.Name())
 
 		artworkFile, err := newTestImageFile(filepath.Dir(tmpFile.Name()), filepath.Base(tmpFile.Name()))
 		assert.NoError(t, err)
-
-		defer func() {
-			os.Remove(tmpFile.Name())
-		}()
 
 		for i, testCase := range testCases {
 			testCase := testCase
