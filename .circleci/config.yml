@@ -280,6 +280,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - install_tensorflow
       - test:
           package: "tools/pastel-utility"
 
