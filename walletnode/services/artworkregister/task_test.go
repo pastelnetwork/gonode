@@ -106,7 +106,7 @@ func TestTaskRun(t *testing.T) {
 
 	t.Run("group", func(t *testing.T) {
 		//create global tmp dir for store fake image on current dir
-		tmpDir, err := ioutil.TempDir("", "task_run")
+		tmpDir, err := ioutil.TempDir("", "artwork-*")
 		assert.NoError(t, err)
 
 		artworkFile, err := newTestImageFile(tmpDir, "test.png")
