@@ -10,6 +10,7 @@ require (
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/supernode v0.0.0
 	github.com/pastelnetwork/gonode/walletnode v0.0.0
+	github.com/pastelnetwork/gonode/metadb v0.0.0
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/viper v1.7.1
 	github.com/stretchr/testify v1.7.0
@@ -24,4 +25,5 @@ replace (
 	github.com/pastelnetwork/gonode/proto => ../../proto
 	github.com/pastelnetwork/gonode/supernode => ../../supernode
 	github.com/pastelnetwork/gonode/walletnode => ../../walletnode
+	github.com/pastelnetwork/gonode/metadb => ../../metadb
 )
