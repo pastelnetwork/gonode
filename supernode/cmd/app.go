@@ -142,7 +142,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	)
 
 	// new metadb service
-	metadb := metadb.NewService(config.MetaDB, config.Node.PastelID, config.WorkDir)
+	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
 }

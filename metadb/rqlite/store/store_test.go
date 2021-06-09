@@ -26,7 +26,7 @@ func Test_OpenStoreSingleNode(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 	got, err := s.LeaderAddr()
 	if err != nil {
 		t.Fatalf("failed to get leader address: %s", err.Error())
@@ -50,7 +50,7 @@ func Test_OpenStoreCloseSingleNode(t *testing.T) {
 	if err := s.Open(true); err != nil {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 	if err := s.Close(true); err != nil {
 		t.Fatalf("failed to close single-node store: %s", err.Error())
 	}
@@ -64,7 +64,7 @@ func Test_SingleNodeInMemExecuteQuery(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	er := executeRequestFromStrings([]string{
 		`CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)`,
@@ -98,7 +98,7 @@ func Test_SingleNodeInMemExecuteQueryFail(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	er := executeRequestFromStrings([]string{
 		`INSERT INTO foo(id, name) VALUES(1, "fiona")`,
@@ -120,7 +120,7 @@ func Test_SingleNodeFileExecuteQuery(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	er := executeRequestFromStrings([]string{
 		`CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)`,
@@ -192,7 +192,7 @@ func Test_SingleNodeExecuteQueryTx(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	er := executeRequestFromStrings([]string{
 		`CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)`,
@@ -241,7 +241,7 @@ func Test_SingleNodeBackupBinary(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	dump := `PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -289,7 +289,7 @@ func Test_SingleNodeBackupText(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	dump := `PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -328,7 +328,7 @@ func Test_SingleNodeLoad(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	dump := `PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -364,7 +364,7 @@ func Test_SingleNodeSingleCommandTrigger(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	dump := `PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -404,7 +404,7 @@ func Test_SingleNodeLoadNoStatements(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	dump := `PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -424,7 +424,7 @@ func Test_SingleNodeLoadEmpty(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	dump := ``
 	_, err := s.Execute(executeRequestFromString(dump, false, false))
@@ -443,7 +443,7 @@ func Test_SingleNodeLoadAbortOnError(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	dump := `PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
@@ -499,7 +499,7 @@ func Test_SingleNodeLoadChinook(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	_, err := s.Execute(executeRequestFromString(chinook.DB, false, false))
 	if err != nil {
@@ -556,7 +556,7 @@ func Test_MultiNodeJoinRemove(t *testing.T) {
 		t.Fatalf("failed to open node for multi-node test: %s", err.Error())
 	}
 	defer s0.Close(true)
-	s0.WaitForLeader(10 * time.Second)
+	s0.WaitForLeader(context.TODO(), 10*time.Second)
 
 	s1 := mustNewStore(true)
 	defer os.RemoveAll(s1.Path())
@@ -574,7 +574,7 @@ func Test_MultiNodeJoinRemove(t *testing.T) {
 		t.Fatalf("failed to join to node at %s: %s", s0.Addr(), err.Error())
 	}
 
-	s1.WaitForLeader(10 * time.Second)
+	s1.WaitForLeader(context.TODO(), 10*time.Second)
 
 	got, err := s1.LeaderAddr()
 	if err != nil {
@@ -628,7 +628,7 @@ func Test_MultiNodeJoinNonVoterRemove(t *testing.T) {
 		t.Fatalf("failed to open node for multi-node test: %s", err.Error())
 	}
 	defer s0.Close(true)
-	s0.WaitForLeader(10 * time.Second)
+	s0.WaitForLeader(context.TODO(), 10*time.Second)
 
 	s1 := mustNewStore(true)
 	defer os.RemoveAll(s1.Path())
@@ -646,7 +646,7 @@ func Test_MultiNodeJoinNonVoterRemove(t *testing.T) {
 		t.Fatalf("failed to join to node at %s: %s", s0.Addr(), err.Error())
 	}
 
-	s1.WaitForLeader(10 * time.Second)
+	s1.WaitForLeader(context.TODO(), 10*time.Second)
 
 	// Check leader state on follower.
 	got, err := s1.LeaderAddr()
@@ -700,7 +700,7 @@ func Test_MultiNodeExecuteQuery(t *testing.T) {
 		t.Fatalf("failed to open node for multi-node test: %s", err.Error())
 	}
 	defer s0.Close(true)
-	s0.WaitForLeader(10 * time.Second)
+	s0.WaitForLeader(context.TODO(), 10*time.Second)
 
 	s1 := mustNewStore(true)
 	defer os.RemoveAll(s1.Path())
@@ -811,7 +811,7 @@ func Test_MultiNodeExecuteQueryFreshness(t *testing.T) {
 		t.Fatalf("failed to open node for multi-node test: %s", err.Error())
 	}
 	defer s0.Close(true)
-	s0.WaitForLeader(10 * time.Second)
+	s0.WaitForLeader(context.TODO(), 10*time.Second)
 
 	s1 := mustNewStore(true)
 	defer os.RemoveAll(s1.Path())
@@ -939,7 +939,7 @@ func Test_StoreLogTruncationMultinode(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s0.Close(true)
-	s0.WaitForLeader(10 * time.Second)
+	s0.WaitForLeader(context.TODO(), 10*time.Second)
 	nSnaps := stats.Get(numSnaphots).String()
 
 	// Write more than s.SnapshotThreshold statements.
@@ -976,7 +976,7 @@ func Test_StoreLogTruncationMultinode(t *testing.T) {
 	if err := s0.Join(s1.ID(), s1.Addr(), true); err != nil {
 		t.Fatalf("failed to join to node at %s: %s", s0.Addr(), err.Error())
 	}
-	s1.WaitForLeader(10 * time.Second)
+	s1.WaitForLeader(context.TODO(), 10*time.Second)
 	// Wait until the log entries have been applied to the follower,
 	// and then query.
 	if err := s1.WaitForAppliedIndex(8, 5*time.Second); err != nil {
@@ -1003,7 +1003,7 @@ func Test_SingleNodeSnapshotOnDisk(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	queries := []string{
 		`CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)`,
@@ -1065,7 +1065,7 @@ func Test_SingleNodeSnapshotInMem(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	queries := []string{
 		`CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)`,
@@ -1144,7 +1144,7 @@ func Test_SingleNodeRestoreNoncompressed(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	// Check restoration from a pre-compressed SQLite database snap.
 	// This is to test for backwards compatilibty of this code.
@@ -1175,7 +1175,7 @@ func Test_SingleNodeNoop(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s0.Close(true)
-	s0.WaitForLeader(10 * time.Second)
+	s0.WaitForLeader(context.TODO(), 10*time.Second)
 
 	if err := s0.Noop("1"); err != nil {
 		t.Fatalf("failed to write noop command: %s", err.Error())
@@ -1193,7 +1193,7 @@ func Test_IsLeader(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	if !s.IsLeader() {
 		t.Fatalf("single node is not leader!")
@@ -1208,7 +1208,7 @@ func Test_State(t *testing.T) {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
 	defer s.Close(true)
-	s.WaitForLeader(10 * time.Second)
+	s.WaitForLeader(context.TODO(), 10*time.Second)
 
 	state := s.State()
 	if state != Leader {

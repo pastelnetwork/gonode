@@ -41,7 +41,7 @@ func (s *service) determineJoinAddresses(_ context.Context) ([]string, error) {
 
 // wait until the store is in full consensus
 func (s *service) waitForConsensus(ctx context.Context, dbStore *store.Store) error {
-	if _, err := dbStore.WaitForLeader(defaultRaftOpenTimeout); err != nil {
+	if _, err := dbStore.WaitForLeader(ctx, defaultRaftOpenTimeout); err != nil {
 		if defaultRaftWaitForLeader {
 			return errors.Errorf("leader did not appear within timeout: %w", err)
 		}

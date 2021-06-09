@@ -10,8 +10,8 @@ const (
 	logPrefix = "metadb"
 )
 
-// Service represents the metadb service
-type Service interface {
+// MetaDB represents the metadb service
+type MetaDB interface {
 	// Run starts the rqlite service
 	Run(ctx context.Context) error
 	// Query execute a query, not support multple statements
@@ -29,8 +29,8 @@ type service struct {
 	ready   chan struct{} // mark the rqlite node is started
 }
 
-// NewService returns a new service for metadb
-func NewService(config *Config, nodeID string, workDir string) Service {
+// New returns a new service for metadb
+func New(config *Config, nodeID string) MetaDB {
 	return &service{
 		nodeID:  nodeID,
 		workDir: workDir,

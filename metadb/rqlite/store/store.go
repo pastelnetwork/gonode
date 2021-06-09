@@ -371,7 +371,7 @@ func (s *Store) Nodes() ([]*Server, error) {
 }
 
 // WaitForLeader blocks until a leader is detected, or the timeout expires.
-func (s *Store) WaitForLeader(timeout time.Duration) (string, error) {
+func (s *Store) WaitForLeader(ctx context.Context, timeout time.Duration) (string, error) {
 	tck := time.NewTicker(leaderWaitDelay)
 	defer tck.Stop()
 	tmr := time.NewTimer(timeout)
@@ -379,8 +379,8 @@ func (s *Store) WaitForLeader(timeout time.Duration) (string, error) {
 
 	for {
 		select {
-		case <-s.ctx.Done():
-			return "", s.ctx.Err()
+		case <-ctx.Done():
+			return "", ctx.Err()
 		case <-tck.C:
 			l, err := s.LeaderAddr()
 			if err != nil {
