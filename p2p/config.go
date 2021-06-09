@@ -17,6 +17,18 @@ type Config struct {
 	BootstrapPort string `mapstructure:"bootstrap_port" json:"bootstrap_port,omitempty"`
 	// Use STUN protocol for public addr discovery
 	UseStun bool `mapstructure:"use_stun" json:"use_stun,omitempty"`
+	// Default value is assigned automatically, by concatenated
+	// CLI parameter `--work-dir` and `p2p` as a subfolder
+	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
+	// if not specified, persistent database store is used
+	MemoryDB bool `mapstructure:"memory_db" json:"memory_db,omitempty"`
+}
+
+// SetDefaultDataDir assigns the value to DataDir if it wasn't specified in the config file.
+func (config *Config) SetDefaultDataDir(dir string) {
+	if config.DataDir == "" {
+		config.DataDir = dir
+	}
 }
 
 // NewConfig returns a new Config instance.
