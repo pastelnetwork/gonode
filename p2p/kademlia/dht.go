@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"math"
+	"path/filepath"
 	"sort"
 	"time"
 
@@ -15,6 +16,9 @@ import (
 	"github.com/pastelnetwork/gonode/p2p/kademlia/crypto"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/dao"
 )
+
+// dbFilename represents the file sqlite will use to store data.
+const dbFilename = "p2p.sqlite"
 
 // DHT represents the state of the local node in the distributed hash table
 type DHT struct {
@@ -71,6 +75,13 @@ type Options struct {
 
 	// The maximum time to wait for a response to any message
 	TMsgTimeout time.Duration
+
+	// a driver-specific data source name, usually consisting of
+	// at least a database name and connection information.
+	DataSourceName string
+
+	// if specified in-memory database is used.
+	MemoryDB bool
 }
 
 // NewDHT initializes a new DHT node. A store and options struct must be
@@ -89,8 +100,14 @@ func NewDHT(ctx context.Context, store dao.Key, options *Options) (*DHT, error) 
 	dht.ht = ht
 	dht.networking = &realNetworking{}
 
-	if err = store.Init(ctx); err != nil {
-		return nil, err
+	if options.MemoryDB {
+		if err = store.Init(ctx, ":memory:"); err != nil {
+			return nil, err
+		}
+	} else {
+		if err = store.Init(ctx, filepath.Join(options.DataSourceName, dbFilename)); err != nil {
+			return nil, err
+		}
 	}
 
 	if options.TExpire == 0 {

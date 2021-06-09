@@ -13,9 +13,9 @@ node:
 p2p:
   listen_addresses: "0.0.0.0"
   port: 4457
+  memory_db: true
 
 metadb:
   listen_address: "0.0.0.0"
   http_port: 4007
   raft_port: 4008
-  data_dir: "4007"
