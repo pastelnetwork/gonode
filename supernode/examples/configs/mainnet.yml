@@ -19,3 +19,8 @@ p2p:
   # bootstrap_ip: ""
   # bootstrap_port: ""
   # use_stun: true
+
+metadb:
+  listen_address: "0.0.0.0"
+  http_port: 4001
+  raft_port: 4002

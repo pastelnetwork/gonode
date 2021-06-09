@@ -1,19 +1,20 @@
 package tcp
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"errors"
 	"expvar"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
-	"os"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 const (
@@ -100,9 +101,6 @@ type Mux struct {
 	// The amount of time to wait for the first header byte.
 	Timeout time.Duration
 
-	// Out-of-band error logger
-	Logger *log.Logger
-
 	// Path to root X.509 certificate.
 	x509CACert string
 
@@ -116,29 +114,31 @@ type Mux struct {
 	InsecureSkipVerify bool
 
 	tlsConfig *tls.Config
+
+	ctx context.Context
 }
 
 // NewMux returns a new instance of Mux for ln. If adv is nil,
 // then the addr of ln is used.
-func NewMux(ln net.Listener, adv net.Addr) (*Mux, error) {
+func NewMux(ctx context.Context, ln net.Listener, adv net.Addr) (*Mux, error) {
 	addr := adv
 	if addr == nil {
 		addr = ln.Addr()
 	}
 
 	return &Mux{
+		ctx:     ctx,
 		ln:      ln,
 		addr:    addr,
 		m:       make(map[byte]*listener),
 		Timeout: DefaultTimeout,
-		Logger:  log.New(os.Stderr, "[mux] ", log.LstdFlags),
 	}, nil
 }
 
 // NewTLSMux returns a new instance of Mux for ln, and encrypts all traffic
 // using TLS. If adv is nil, then the addr of ln is used.
-func NewTLSMux(ln net.Listener, adv net.Addr, cert, key, caCert string) (*Mux, error) {
-	mux, err := NewMux(ln, adv)
+func NewTLSMux(ctx context.Context, ln net.Listener, adv net.Addr, cert, key, caCert string) (*Mux, error) {
+	mux, err := NewMux(ctx, ln, adv)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (mux *Mux) Serve() error {
 	if mux.tlsConfig != nil {
 		tlsStr = "TLS "
 	}
-	mux.Logger.Printf("%smux serving on %s, advertising %s", tlsStr, mux.ln.Addr().String(), mux.addr)
+	log.WithContext(mux.ctx).Infof("%smux serving on %s, advertising %s", tlsStr, mux.ln.Addr().String(), mux.addr)
 
 	for {
 		// Wait for the next connection.
@@ -215,7 +215,7 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	// Set a read deadline so connections with no data don't timeout.
 	if err := conn.SetReadDeadline(time.Now().Add(mux.Timeout)); err != nil {
 		conn.Close()
-		mux.Logger.Printf("tcp.Mux: cannot set read deadline: %s", err)
+		log.WithContext(mux.ctx).Errorf("tcp.Mux: cannot set read deadline: %s", err)
 		return
 	}
 
@@ -223,14 +223,14 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	var typ [1]byte
 	if _, err := io.ReadFull(conn, typ[:]); err != nil {
 		conn.Close()
-		mux.Logger.Printf("tcp.Mux: cannot read header byte: %s", err)
+		log.WithContext(mux.ctx).Errorf("tcp.Mux: cannot read header byte: %s", err)
 		return
 	}
 
 	// Reset read deadline and let the listener handle that.
 	if err := conn.SetReadDeadline(time.Time{}); err != nil {
 		conn.Close()
-		mux.Logger.Printf("tcp.Mux: cannot reset set read deadline: %s", err)
+		log.WithContext(mux.ctx).Errorf("tcp.Mux: cannot reset set read deadline: %s", err)
 		return
 	}
 
@@ -239,7 +239,7 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	if handler == nil {
 		conn.Close()
 		stats.Add(numUnregisteredHandlers, 1)
-		mux.Logger.Printf("tcp.Mux: handler not registered: %d (unsupported protocol?)", typ[0])
+		log.WithContext(mux.ctx).Errorf("tcp.Mux: handler not registered: %d (unsupported protocol?)", typ[0])
 		return
 	}
 
@@ -254,7 +254,7 @@ func (mux *Mux) Listen(header byte) *Layer {
 	if _, ok := mux.m[header]; ok {
 		panic(fmt.Sprintf("listener already registered under header byte: %d", header))
 	}
-	mux.Logger.Printf("received handler registration request for header %d", header)
+	log.WithContext(mux.ctx).Infof("received handler registration request for header %d", header)
 
 	// Create a new listener and assign it.
 	ln := &listener{

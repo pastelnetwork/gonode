@@ -19,6 +19,4 @@ require (
 
 )
 
-replace (
-	github.com/pastelnetwork/gonode/common => ../common
-)
+replace github.com/pastelnetwork/gonode/common => ../common
