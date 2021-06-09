@@ -46,7 +46,7 @@ func (s *service) waitForConsensus(ctx context.Context, dbStore *store.Store) er
 		}
 		log.WithContext(ctx).Infof("ignoring error while waiting for leader")
 	}
-	if err := dbStore.WaitForApplied(defaultRaftOpenTimeout); err != nil {
+	if err := dbStore.WaitForApplied(ctx, defaultRaftOpenTimeout); err != nil {
 		return errors.Errorf("store log not applied within timeout: %w", err)
 	}
 
