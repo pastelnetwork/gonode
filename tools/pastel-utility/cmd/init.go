@@ -288,7 +288,7 @@ func runSuperNodeSubCommand(ctx context.Context, config *configs.Config) error {
 		}
 	}
 
-	_, err = RunCMD("unzip", "./SavedMLModels.zip", "-d", tfmodelsPath)
+	_, err = RunCMD("unzip", fmt.Sprintf("%s/SavedMLModels.zip", defaultTempDir), "-d", tfmodelsPath)
 	if err != nil {
 		return err
 	}
@@ -301,7 +301,6 @@ func RunCMD(command string, args ...string) (string, error) {
 	cmd := exec.Command(command, args...)
 
 	stdout, err := cmd.Output()
-
 	if err != nil {
 		return "", err
 	}
