@@ -32,7 +32,6 @@ const (
 	appUsage = "SuperNode" // TODO: Write a clear description.
 
 	tfmodelDir = "./tfmodels" // relatively from work-dir
-	p2pDir     = "./p2p"      // relatively from work-dir
 )
 
 var (
@@ -131,8 +130,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
 
 	// p2p service (currently using kademlia)
-	config.P2P.SetDefaultDataDir(filepath.Join(config.WorkDir, p2pDir))
+	config.P2P.SetWorkDir(config.WorkDir)
 	p2p := p2p.New(config.P2P)
+
+	// new metadb service
+	config.MetaDB.SetWorkDir(config.WorkDir)
+	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
@@ -142,9 +145,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
-
-	// new metadb service
-	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
 }

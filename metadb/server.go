@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"path/filepath"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -93,12 +92,11 @@ func (s *service) startClusterService(ctx context.Context, tn cluster.Transport)
 
 // create and open the store of rqlite cluster
 func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Store, error) {
-	raftDir := filepath.Join(s.workDir, s.config.DataDir)
 	// create and open the store, which is on disk
 	dbConf := store.NewDBConfig("", false)
 	db := store.New(ctx, raftTn, &store.Config{
 		DBConf: dbConf,
-		Dir:    raftDir,
+		Dir:    s.config.DataDir,
 		ID:     s.nodeID,
 	})
 
@@ -114,11 +112,11 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 
 	// a pre-existing node
 	bootstrap := false
-	isNew := store.IsNewNode(raftDir)
+	isNew := store.IsNewNode(s.config.DataDir)
 	if isNew {
 		bootstrap = true // new node, it needs to bootstrap
 	} else {
-		log.WithContext(ctx).Infof("node is detected in: %v", raftDir)
+		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
 	// determine the join addresses

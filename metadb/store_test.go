@@ -3,6 +3,7 @@ package metadb
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -26,11 +27,16 @@ type testSuite struct {
 }
 
 func (ts *testSuite) SetupSuite() {
+	workDir, err := ioutil.TempDir("", "metadb-*")
+	assert.NoError(ts.T(), err)
+
+	config := NewConfig()
+	config.SetWorkDir(workDir)
+
 	ts.s = &service{
-		nodeID:  "uuid",
-		workDir: "/tmp/",
-		config:  NewConfig(),
-		ready:   make(chan struct{}, 1),
+		nodeID: "uuid",
+		config: config,
+		ready:  make(chan struct{}, 1),
 	}
 	ts.ctx, ts.cancel = context.WithCancel(context.Background())
 
@@ -62,7 +68,7 @@ func (ts *testSuite) TearDownSuite() {
 	ts.wg.Wait()
 
 	// remove the data directy
-	os.RemoveAll(filepath.Join(ts.s.workDir, ts.s.config.DataDir))
+	os.RemoveAll(filepath.Join(ts.s.config.DataDir))
 }
 
 func (ts *testSuite) TestWrite() {

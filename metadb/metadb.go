@@ -22,20 +22,18 @@ type MetaDB interface {
 }
 
 type service struct {
-	nodeID  string        // the node id for rqlite cluster
-	workDir string        // the work directory
-	config  *Config       // the service configuration
-	db      *store.Store  // the store for accessing the rqlite cluster
-	ready   chan struct{} // mark the rqlite node is started
+	nodeID string        // the node id for rqlite cluster
+	config *Config       // the service configuration
+	db     *store.Store  // the store for accessing the rqlite cluster
+	ready  chan struct{} // mark the rqlite node is started
 }
 
 // New returns a new service for metadb
 func New(config *Config, nodeID string) MetaDB {
 	return &service{
-		nodeID:  nodeID,
-		workDir: workDir,
-		config:  config,
-		ready:   make(chan struct{}, 5),
+		nodeID: nodeID,
+		config: config,
+		ready:  make(chan struct{}, 5),
 	}
 }
 
