@@ -143,7 +143,7 @@ func (file *File) Write(data []byte) error {
 
 // ResizeImage resizes image.
 func (file *File) ResizeImage(width, height int) error {
-	src, err := file.OpenImage()
+	src, err := file.LoadImage()
 	if err != nil {
 		return err
 	}
@@ -160,8 +160,8 @@ func (file *File) RemoveAfter(d time.Duration) {
 	}()
 }
 
-// OpenImage opens images from the file.
-func (file *File) OpenImage() (image.Image, error) {
+// LoadImage opens images from the file.
+func (file *File) LoadImage() (image.Image, error) {
 	f, err := file.Open()
 	if err != nil {
 		return nil, err
