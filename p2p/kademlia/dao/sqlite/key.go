@@ -29,8 +29,8 @@ func (k *Key) ExpireKeys(ctx context.Context) error {
 }
 
 // Init initializes the Store
-func (k *Key) Init(ctx context.Context) (closerr error) {
-	db, err := sql.Open("sqlite3", ":memory:")
+func (k *Key) Init(ctx context.Context, dataSourceName string) (closerr error) {
+	db, err := sql.Open("sqlite3", dataSourceName)
 	if err != nil {
 		return errors.Errorf("failed opening new sqlite connection: %w", err)
 	}

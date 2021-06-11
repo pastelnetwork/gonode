@@ -7,9 +7,7 @@ require (
 	github.com/c-bata/goptuna v0.8.1
 	github.com/corona10/goimghdr v0.0.0-20190614101314-9af2afa93d77
 	github.com/dgryski/go-onlinestats v0.0.0-20170612111826-1c7d19468768
-	github.com/disintegration/imaging v1.6.2
 	github.com/galeone/tensorflow v2.4.0-rc0.0.20210202175351-640a390c2283+incompatible
-	github.com/galeone/tfgo v0.0.0-20210204182614-84b9a5e77f79
 	github.com/gitchander/permutation v0.0.0-20210302120832-6ab79d7de174
 	github.com/kofalt/go-memoize v0.0.0-20200917044458-9b55a8d73e1c
 	github.com/kzahedi/goent v0.0.0-20190403094137-49773660fa36

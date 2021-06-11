@@ -3,24 +3,24 @@
 package http
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"expvar"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
-	"os"
 	"runtime"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
@@ -188,20 +188,20 @@ type Service struct {
 
 	BuildInfo map[string]interface{}
 
-	logger *log.Logger
+	ctx context.Context
 }
 
 // New returns an uninitialized HTTP service. If credentials is nil, then
 // the service performs no authentication and authorization checks.
-func New(addr string, store Store, cluster Cluster, credentials CredentialStore) *Service {
+func New(ctx context.Context, addr string, store Store, cluster Cluster, credentials CredentialStore) *Service {
 	return &Service{
+		ctx:             ctx,
 		addr:            addr,
 		store:           store,
 		cluster:         cluster,
 		start:           time.Now(),
 		statuses:        make(map[string]Statuser),
 		credentialStore: credentials,
-		logger:          log.New(os.Stderr, "[http] ", log.LstdFlags),
 	}
 }
 
@@ -227,17 +227,17 @@ func (s *Service) Start() error {
 		if err != nil {
 			return err
 		}
-		s.logger.Printf("secure HTTPS server enabled with cert %s, key %s", s.CertFile, s.KeyFile)
+		log.WithContext(s.ctx).Infof("secure HTTPS server enabled with cert %s, key %s", s.CertFile, s.KeyFile)
 	}
 	s.ln = ln
 
 	go func() {
 		err := server.Serve(s.ln)
 		if err != nil {
-			s.logger.Println("HTTP service Serve() returned:", err.Error())
+			log.WithContext(s.ctx).Errorf("HTTP service Serve() returned: %v", err.Error())
 		}
 	}()
-	s.logger.Println("service listening on", s.Addr())
+	log.WithContext(s.ctx).Infof("service listening on: %v", s.Addr())
 
 	return nil
 }
@@ -340,7 +340,7 @@ func (s *Service) handleJoin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.store.Join(remoteID.(string), remoteAddr.(string), voter.(bool)); err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -392,7 +392,7 @@ func (s *Service) handleRemove(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := s.store.Remove(remoteID); err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -435,7 +435,7 @@ func (s *Service) handleBackup(w http.ResponseWriter, r *http.Request) {
 
 	err = s.store.Backup(!noLeader, bf, w)
 	if err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -487,7 +487,7 @@ func (s *Service) handleLoad(w http.ResponseWriter, r *http.Request) {
 
 	results, err := s.store.ExecuteOrAbort(er)
 	if err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -738,7 +738,7 @@ func (s *Service) handleExecute(w http.ResponseWriter, r *http.Request) {
 
 	results, err := s.store.Execute(er)
 	if err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -816,7 +816,7 @@ func (s *Service) handleQuery(w http.ResponseWriter, r *http.Request) {
 
 	results, err := s.store.Query(qr)
 	if err != nil {
-		if err == store.ErrNotLeader {
+		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
 				http.Error(w, err.Error(), http.StatusServiceUnavailable)
@@ -998,7 +998,7 @@ func (s *Service) writeResponse(w http.ResponseWriter, r *http.Request, j *Respo
 	}
 	_, err = w.Write(b)
 	if err != nil {
-		s.logger.Println("writing response failed:", err.Error())
+		log.WithContext(s.ctx).Errorf("writing response failed: %v", err.Error())
 	}
 }
 
