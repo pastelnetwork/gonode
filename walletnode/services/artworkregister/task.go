@@ -53,6 +53,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
+	// Retrieve supernodes with highest ranks.
 	topNodes, err := task.pastelTopNodes(ctx)
 	if err != nil {
 		return err
@@ -62,6 +63,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
 
+	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
 	var nodes node.List
 	var errs error
 	for primaryRank := range topNodes {
@@ -80,9 +82,12 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
 	}
 
+	// Activate supernodes that are in the mesh.
 	nodes.Activate()
+	// Disconnect supernodes that are not involved in the process.
 	topNodes.DisconnectInactive()
 
+	// Cancel context when any connection is broken.
 	groupConnClose, _ := errgroup.WithContext(ctx)
 	groupConnClose.Go(func() error {
 		defer cancel()
@@ -90,6 +95,7 @@ func (task *Task) run(ctx context.Context) error {
 	})
 	task.UpdateStatus(StatusConnected)
 
+	// Create a thumbnail copy of the image.
 	log.WithContext(ctx).WithField("filename", task.Ticket.Image.Name()).Debugf("Copy image")
 	thumbnail, err := task.Ticket.Image.Copy()
 	if err != nil {
@@ -101,16 +107,19 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
+	// Send thumbnail to supernodes for probing.
 	if err := nodes.ProbeImage(ctx, thumbnail); err != nil {
 		return err
 	}
 
+	// Match fingerprints received from supernodes.
 	if err := nodes.MatchFingerprints(); err != nil {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
 		return err
 	}
 	task.UpdateStatus(StatusImageProbed)
 
+	// Sign fingerprint
 	fingerprint := nodes.Fingerprint()
 	signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
 	if err != nil {
@@ -119,6 +128,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	fmt.Println(signature)
 
+	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
 }
 
