@@ -22,7 +22,7 @@ type Task struct {
 	Artwork          *artwork.File
 
 	acceptedMu sync.Mutex
-	accpeted   Nodes
+	accepted   Nodes
 
 	connectedTo *Node
 }
@@ -84,7 +84,7 @@ func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
 			}
 		}
 	})
-	return task.accpeted, nil
+	return task.accepted, nil
 }
 
 // SessionNode accepts secondary node
@@ -97,7 +97,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
-		if node := task.accpeted.ByID(nodeID); node != nil {
+		if node := task.accepted.ByID(nodeID); node != nil {
 			return errors.Errorf("node %q is already registered", nodeID)
 		}
 
@@ -105,11 +105,11 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		if err != nil {
 			return err
 		}
-		task.accpeted.Add(node)
+		task.accepted.Add(node)
 
 		log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
 
-		if len(task.accpeted) >= task.config.NumberConnectedNodes {
+		if len(task.accepted) >= task.config.NumberConnectedNodes {
 			task.UpdateStatus(StatusConnected)
 		}
 		return nil
