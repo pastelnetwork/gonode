@@ -125,7 +125,7 @@ func (task *Task) AssertDoneCall(expectedCalls int, arguments ...interface{}) *T
 	return task
 }
 
-// ListenOnNewAction listening NewAction call and return chan from args
+// ListenOnNewAction listening NewAction call
 func (task *Task) ListenOnNewAction(ctx context.Context) *Task {
 	handleFunc := func(fn taskCommon.ActionFn) <-chan struct{} {
 		ch := make(chan struct{})
