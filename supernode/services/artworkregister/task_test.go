@@ -3,15 +3,19 @@ package artworkregister
 import (
 	"context"
 	"fmt"
-	"sync"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/common/service/artwork"
-	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	stateTest "github.com/pastelnetwork/gonode/common/service/task/test"
+	p2pTest "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/pastel/test"
+	"github.com/pastelnetwork/gonode/probe"
+	probeTest "github.com/pastelnetwork/gonode/probe/test"
+	nodeTest "github.com/pastelnetwork/gonode/supernode/node/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -65,7 +69,6 @@ func TestTaskSession(t *testing.T) {
 
 	type args struct {
 		ctx               context.Context
-		ch                chan struct{}
 		requiredStatus    Status
 		statusUpdate      Status
 		isPrimary         bool
@@ -82,7 +85,6 @@ func TestTaskSession(t *testing.T) {
 		{
 			args: args{
 				ctx:               context.Background(),
-				ch:                make(chan struct{}),
 				requiredStatus:    StatusTaskStarted,
 				statusUpdate:      StatusPrimaryMode,
 				isPrimary:         true,
@@ -95,7 +97,6 @@ func TestTaskSession(t *testing.T) {
 		}, {
 			args: args{
 				ctx:               context.Background(),
-				ch:                make(chan struct{}),
 				requiredStatus:    StatusTaskStarted,
 				statusUpdate:      StatusSecondaryMode,
 				isPrimary:         false,
@@ -108,7 +109,6 @@ func TestTaskSession(t *testing.T) {
 		}, {
 			args: args{
 				ctx:               context.Background(),
-				ch:                make(chan struct{}),
 				requiredStatus:    StatusTaskStarted,
 				requiredStatusErr: fmt.Errorf("Task started"),
 			},
@@ -125,7 +125,7 @@ func TestTaskSession(t *testing.T) {
 			clientTask := stateTest.NewMockTask(t)
 			clientTask.
 				ListenOnRequiredStatus(testCase.args.requiredStatusErr).
-				ListenOnNewAction(testCase.args.ctx, testCase.args.ch).
+				ListenOnNewAction(testCase.args.ctx).
 				ListenOnUpdateStatus()
 
 			task := &Task{
@@ -161,7 +161,6 @@ func TestTaskAcceptedNodes(t *testing.T) {
 		subcribeStatus    *state.Status
 		serverCtx         contextFunc
 		ctx               contextFunc
-		ch                chan struct{}
 	}
 
 	testCases := []struct {
@@ -179,7 +178,6 @@ func TestTaskAcceptedNodes(t *testing.T) {
 				subcribeStatus:    state.NewStatus(StatusConnected),
 				serverCtx:         context.Background,
 				ctx:               context.Background,
-				ch:                make(chan struct{}),
 			},
 			assertion:          assert.NoError,
 			assertExpectation:  true,
@@ -193,7 +191,6 @@ func TestTaskAcceptedNodes(t *testing.T) {
 				subcribeStatus:    state.NewStatus(StatusConnected),
 				serverCtx:         cancelContext,
 				ctx:               context.Background,
-				ch:                make(chan struct{}),
 			},
 			assertion:          assert.NoError,
 			assertExpectation:  true,
@@ -207,7 +204,6 @@ func TestTaskAcceptedNodes(t *testing.T) {
 				subcribeStatus:    state.NewStatus(StatusConnected),
 				serverCtx:         context.Background,
 				ctx:               cancelContext,
-				ch:                make(chan struct{}),
 			},
 			assertion:          assert.NoError,
 			assertExpectation:  true,
@@ -222,7 +218,6 @@ func TestTaskAcceptedNodes(t *testing.T) {
 				subcribeStatus:    state.NewStatus(StatusConnected),
 				serverCtx:         context.Background,
 				ctx:               context.Background,
-				ch:                make(chan struct{}),
 			},
 			assertion:          assert.Error,
 			assertExpectation:  false,
@@ -239,7 +234,7 @@ func TestTaskAcceptedNodes(t *testing.T) {
 			clientTask := stateTest.NewMockTask(t)
 			clientTask.
 				ListenOnRequiredStatus(testCase.args.requiredStatusErr).
-				ListenOnNewAction(testCase.args.ctx(), testCase.args.ch).
+				ListenOnNewAction(testCase.args.ctx()).
 				ListenOnSubscribeStatus(testCase.args.subcribeStatus)
 
 			task := &Task{
@@ -265,18 +260,22 @@ func TestTaskAcceptedNodes(t *testing.T) {
 func TestTaskSessionNode(t *testing.T) {
 	t.Parallel()
 
+	type fields struct {
+		acceptedNodes Nodes
+	}
+
 	type args struct {
 		ctx               context.Context
 		nodeID            string
 		requiredStatus    Status
 		requiredStatusErr error
-		ch                chan struct{}
 		statusUpdate      Status
 		nodes             pastel.MasterNodes
 		retunNodeErr      error
 	}
 
 	testCases := []struct {
+		fields             fields
 		args               args
 		assertion          assert.ErrorAssertionFunc
 		assertExpectation  bool
@@ -285,7 +284,49 @@ func TestTaskSessionNode(t *testing.T) {
 		updateStatusCall   int
 		pasteNodesTopCall  int
 	}{
-		// TODO: Add test cases.
+		{
+			fields: fields{Nodes{&Node{ID: "2"}}},
+			args: args{
+				ctx:               context.Background(),
+				nodeID:            "1",
+				requiredStatus:    StatusPrimaryMode,
+				requiredStatusErr: nil,
+				statusUpdate:      StatusConnected,
+				nodes: pastel.MasterNodes{
+					pastel.MasterNode{ExtKey: "1", ExtAddress: "127.0.0.1"},
+					pastel.MasterNode{ExtKey: "2", ExtAddress: "127.0.0.2"},
+					pastel.MasterNode{ExtKey: "3", ExtAddress: "127.0.0.3"},
+				},
+				retunNodeErr: nil,
+			},
+			assertion:          assert.NoError,
+			assertExpectation:  true,
+			requiredStatusCall: 1,
+			newActionCall:      1,
+			updateStatusCall:   1,
+			pasteNodesTopCall:  1,
+		}, {
+			fields: fields{Nodes{}},
+			args: args{
+				ctx:               context.Background(),
+				nodeID:            "1",
+				requiredStatus:    StatusPrimaryMode,
+				requiredStatusErr: nil,
+				statusUpdate:      StatusConnected,
+				nodes: pastel.MasterNodes{
+					pastel.MasterNode{ExtKey: "1", ExtAddress: "127.0.0.1"},
+					pastel.MasterNode{ExtKey: "2", ExtAddress: "127.0.0.2"},
+					pastel.MasterNode{ExtKey: "3", ExtAddress: "127.0.0.3"},
+				},
+				retunNodeErr: nil,
+			},
+			assertion:          assert.NoError,
+			assertExpectation:  false,
+			requiredStatusCall: 1,
+			newActionCall:      1,
+			updateStatusCall:   0,
+			pasteNodesTopCall:  1,
+		},
 	}
 
 	for i, testCase := range testCases {
@@ -295,7 +336,7 @@ func TestTaskSessionNode(t *testing.T) {
 			clientTask := stateTest.NewMockTask(t)
 			clientTask.
 				ListenOnRequiredStatus(testCase.args.requiredStatusErr).
-				ListenOnNewAction(testCase.args.ctx, testCase.args.ch).
+				ListenOnNewAction(testCase.args.ctx).
 				ListenOnUpdateStatus()
 
 			pastelClient := test.NewMockClient(t)
@@ -303,10 +344,12 @@ func TestTaskSessionNode(t *testing.T) {
 
 			service := &Service{
 				pastelClient: pastelClient,
+				config:       NewConfig(),
 			}
 			task := &Task{
-				Service: service,
-				Task:    clientTask.Task,
+				Service:  service,
+				Task:     clientTask.Task,
+				accepted: testCase.fields.acceptedNodes,
 			}
 
 			testCase.assertion(t, task.SessionNode(testCase.args.ctx, testCase.args.nodeID))
@@ -319,90 +362,223 @@ func TestTaskSessionNode(t *testing.T) {
 			clientTask.AssertRequiredStatusCall(testCase.requiredStatusCall, testCase.args.requiredStatus)
 			clientTask.AssertNewActionCall(testCase.newActionCall, mock.AnythingOfType(stateTest.ActionFn))
 			clientTask.AssertUpdateStatusCall(testCase.updateStatusCall, testCase.args.statusUpdate)
-
 			pastelClient.AssertMasterNodesTopCall(testCase.pasteNodesTopCall, mock.Anything)
 		})
 	}
 }
 
 func TestTaskConnectTo(t *testing.T) {
-	type fields struct {
-		Task             task.Task
-		Service          *Service
-		ResampledArtwork *artwork.File
-		Artwork          *artwork.File
-		acceptedMu       sync.Mutex
-		accpeted         Nodes
-		connectedTo      *Node
-	}
+	t.Parallel()
+
 	type args struct {
-		in0    context.Context
-		nodeID string
-		sessID string
+		ctx               context.Context
+		pastelID          string
+		nodeID            string
+		sessID            string
+		requiredStatus    Status
+		requiredStatusErr error
+		statusUpdate      Status
+		nodes             pastel.MasterNodes
+		retunNodeErr      error
+		returnConnectErr  error
+		returnSessionErr  error
 	}
-	tests := []struct {
-		name      string
-		fields    fields
-		args      args
-		assertion assert.ErrorAssertionFunc
+
+	testCases := []struct {
+		args               args
+		connectedTo        *Node
+		assertion          assert.ErrorAssertionFunc
+		assertExpectation  bool
+		requiredStatusCall int
+		newActionCall      int
+		updateStatusCall   int
+		pasteNodesTopCall  int
+		sessionCall        int
 	}{
-		// TODO: Add test cases.
+		{
+			args: args{
+				ctx:               context.Background(),
+				pastelID:          "123",
+				nodeID:            "1",
+				sessID:            "sesid",
+				requiredStatus:    StatusSecondaryMode,
+				requiredStatusErr: nil,
+				statusUpdate:      StatusConnected,
+				nodes: pastel.MasterNodes{
+					pastel.MasterNode{ExtKey: "1", ExtAddress: "127.0.0.1"},
+					pastel.MasterNode{ExtKey: "2", ExtAddress: "127.0.0.2"},
+					pastel.MasterNode{ExtKey: "3", ExtAddress: "127.0.0.3"},
+				},
+				retunNodeErr:     nil,
+				returnConnectErr: nil,
+				returnSessionErr: nil,
+			},
+			connectedTo:        &Node{ID: "1", Address: "127.0.0.1"},
+			assertion:          assert.NoError,
+			assertExpectation:  true,
+			requiredStatusCall: 1,
+			newActionCall:      1,
+			updateStatusCall:   1,
+			pasteNodesTopCall:  1,
+			sessionCall:        1,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			task := &Task{
-				Task:             tt.fields.Task,
-				Service:          tt.fields.Service,
-				ResampledArtwork: tt.fields.ResampledArtwork,
-				Artwork:          tt.fields.Artwork,
-				acceptedMu:       tt.fields.acceptedMu,
-				accpeted:         tt.fields.accpeted,
-				connectedTo:      tt.fields.connectedTo,
+
+	for i, testCase := range testCases {
+		testCase := testCase
+
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+			clientTask := stateTest.NewMockTask(t)
+			clientTask.
+				ListenOnRequiredStatus(testCase.args.requiredStatusErr).
+				ListenOnNewAction(testCase.args.ctx).
+				ListenOnUpdateStatus()
+
+			pastelClient := test.NewMockClient(t)
+			pastelClient.ListenOnMasterNodesTop(testCase.args.nodes, testCase.args.retunNodeErr)
+
+			nodeClient := nodeTest.NewMockClient(t)
+			nodeClient.
+				ListenOnConnectCall(testCase.args.returnConnectErr).
+				ListenOnRegisterArtworkCall().
+				ListenOnSessionCall(testCase.args.returnSessionErr)
+
+			service := &Service{
+				pastelClient: pastelClient,
+				nodeClient:   nodeClient.Client,
+				config:       NewConfig(),
 			}
-			tt.assertion(t, task.ConnectTo(tt.args.in0, tt.args.nodeID, tt.args.sessID))
+			service.config.PastelID = testCase.args.pastelID
+
+			task := &Task{
+				Service: service,
+				Task:    clientTask.Task,
+			}
+
+			testCase.assertion(t, task.ConnectTo(testCase.args.ctx, testCase.args.nodeID, testCase.args.sessID))
+
+			if testCase.assertExpectation {
+				assert.Equal(t, testCase.connectedTo.ID, task.connectedTo.ID)
+				assert.Equal(t, testCase.connectedTo.Address, task.connectedTo.Address)
+
+				clientTask.AssertExpectations(t)
+				pastelClient.AssertExpectations(t)
+				nodeClient.Client.AssertExpectations(t)
+				nodeClient.Connection.AssertExpectations(t)
+				nodeClient.RegisterArtwork.AssertExpectations(t)
+			}
+
+			clientTask.AssertRequiredStatusCall(testCase.requiredStatusCall, testCase.args.requiredStatus)
+			clientTask.AssertNewActionCall(testCase.newActionCall, mock.AnythingOfType(stateTest.ActionFn))
+			clientTask.AssertUpdateStatusCall(testCase.updateStatusCall, testCase.args.statusUpdate)
+			pastelClient.AssertMasterNodesTopCall(testCase.pasteNodesTopCall, mock.Anything)
+			nodeClient.AssertSessionCall(testCase.sessionCall, mock.Anything, testCase.args.pastelID, testCase.args.sessID)
 		})
 	}
 }
 
 func TestTaskProbeImage(t *testing.T) {
-	type fields struct {
-		Task             task.Task
-		Service          *Service
-		ResampledArtwork *artwork.File
-		Artwork          *artwork.File
-		acceptedMu       sync.Mutex
-		accpeted         Nodes
-		connectedTo      *Node
-	}
+	t.Parallel()
+
 	type args struct {
-		in0  context.Context
-		file *artwork.File
+		ctx               context.Context
+		requiredStatus    Status
+		requiredStatusErr error
+		statusUpdate      Status
+		fingerPrint       probe.Fingerprints
+		fingerPrintErr    error
+		storeID           string
+		storeErr          error
 	}
-	tests := []struct {
-		name      string
-		fields    fields
-		args      args
-		want      []byte
-		assertion assert.ErrorAssertionFunc
+
+	testCases := []struct {
+		args               args
+		assertion          assert.ErrorAssertionFunc
+		requiredStatusCall int
+		newActionCall      int
+		updateStatusCall   int
+		fingerPrintCall    int
+		storeCall          int
 	}{
-		// TODO: Add test cases.
+		{
+			args: args{
+				ctx:               context.Background(),
+				requiredStatus:    StatusConnected,
+				requiredStatusErr: nil,
+				statusUpdate:      StatusImageUploaded,
+				fingerPrint:       probe.Fingerprints{probe.Fingerprint{1}},
+				fingerPrintErr:    nil,
+				storeID:           "1",
+				storeErr:          nil,
+			},
+			assertion:          assert.NoError,
+			requiredStatusCall: 1,
+			newActionCall:      2,
+			updateStatusCall:   1,
+			storeCall:          1,
+			fingerPrintCall:    1,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			task := &Task{
-				Task:             tt.fields.Task,
-				Service:          tt.fields.Service,
-				ResampledArtwork: tt.fields.ResampledArtwork,
-				Artwork:          tt.fields.Artwork,
-				acceptedMu:       tt.fields.acceptedMu,
-				accpeted:         tt.fields.accpeted,
-				connectedTo:      tt.fields.connectedTo,
-			}
-			got, err := task.ProbeImage(tt.args.in0, tt.args.file)
-			tt.assertion(t, err)
-			assert.Equal(t, tt.want, got)
-		})
-	}
+
+	t.Run("group", func(t *testing.T) {
+		//create tmp file to store fake image file
+		tmpFile, err := ioutil.TempFile("", "*.png")
+		assert.NoError(t, err)
+
+		err = tmpFile.Close()
+		assert.NoError(t, err)
+
+		defer os.Remove(tmpFile.Name())
+
+		artworkFile, err := stateTest.NewTestImageFile(filepath.Dir(tmpFile.Name()), filepath.Base(tmpFile.Name()))
+		assert.NoError(t, err)
+
+		for i, testCase := range testCases {
+			testCase := testCase
+
+			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+
+				cancelCtx, cancel := context.WithCancel(testCase.args.ctx)
+				cancel()
+				clientTask := stateTest.NewMockTask(t)
+				clientTask.
+					ListenOnRequiredStatus(testCase.args.requiredStatusErr).
+					ListenOnNewAction(cancelCtx).
+					ListenOnUpdateStatus()
+
+				tensorClient := probeTest.NewMockTensor(t)
+				tensorClient.ListenOnFingerprints(testCase.args.fingerPrint, testCase.args.fingerPrintErr)
+
+				p2pClient := p2pTest.NewMockClient(t)
+				p2pClient.ListenOnStore(testCase.args.storeID, testCase.args.storeErr)
+
+				service := &Service{
+					probeTensor: tensorClient.Tensor,
+					p2pClient:   p2pClient.Client,
+					config:      NewConfig(),
+				}
+
+				task := &Task{
+					Task:    clientTask.Task,
+					Service: service,
+				}
+
+				got, err := task.ProbeImage(testCase.args.ctx, artworkFile)
+
+				testCase.assertion(t, err)
+				assert.NotNil(t, got)
+
+				clientTask.AssertExpectations(t)
+				clientTask.AssertRequiredStatusCall(testCase.requiredStatusCall, testCase.args.requiredStatus)
+				clientTask.AssertNewActionCall(testCase.newActionCall, mock.AnythingOfType(stateTest.ActionFn))
+				clientTask.AssertUpdateStatusCall(testCase.updateStatusCall, testCase.args.statusUpdate)
+
+				tensorClient.AssertFingerprintsCall(testCase.fingerPrintCall, mock.Anything, mock.Anything)
+				p2pClient.AssertStoreCall(testCase.storeCall, mock.Anything, mock.IsType([]byte{}))
+			})
+		}
+
+	})
 }
 
 func TestTaskPastelNodeByExtKey(t *testing.T) {
