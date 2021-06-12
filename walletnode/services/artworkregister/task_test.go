@@ -13,7 +13,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
-	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -34,17 +33,6 @@ func pullPastelAddressIDNodes(nodes node.List) []string {
 
 	sort.Strings(v)
 	return v
-}
-
-func newTestImageFile(tmpDir, fileName string) (*artwork.File, error) {
-	err := test.CreateBlankImage(fmt.Sprintf("%s/%s", tmpDir, fileName), 400, 400)
-	if err != nil {
-		return nil, err
-	}
-
-	imageStorage := artwork.NewStorage(fs.NewFileStorage(tmpDir))
-	imageFile := artwork.NewFile(imageStorage, fileName)
-	return imageFile, nil
 }
 
 func TestTaskRun(t *testing.T) {
@@ -115,7 +103,7 @@ func TestTaskRun(t *testing.T) {
 
 		defer os.Remove(tmpFile.Name())
 
-		artworkFile, err := newTestImageFile(filepath.Dir(tmpFile.Name()), filepath.Base(tmpFile.Name()))
+		artworkFile, err := stateMock.NewTestImageFile(filepath.Dir(tmpFile.Name()), filepath.Base(tmpFile.Name()))
 		assert.NoError(t, err)
 
 		for i, testCase := range testCases {
