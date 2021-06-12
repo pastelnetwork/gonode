@@ -1,3 +1,5 @@
+//go:generate mockery --name=Client
+
 package p2p
 
 import (

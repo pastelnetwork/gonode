@@ -33,7 +33,7 @@ func (nodes Nodes) ByID(id string) *Node {
 func (nodes *Nodes) Remove(id string) {
 	for i, node := range *nodes {
 		if node.ID == id {
-			*nodes = append((*nodes)[:i], (*nodes)[:i+1]...)
+			*nodes = append((*nodes)[:i], (*nodes)[i+1:]...)
 			break
 		}
 	}
