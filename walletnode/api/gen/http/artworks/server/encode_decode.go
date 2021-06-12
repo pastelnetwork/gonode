@@ -371,11 +371,12 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		var (
 			artist           *string
 			limit            int
-			artistName       *string
-			art              *string
-			series           *string
-			descr            *string
-			keyword          *string
+			query            string
+			artistName       bool
+			artTitle         bool
+			series           bool
+			descr            bool
+			keyword          bool
 			minCopies        *int
 			maxCopies        *int
 			minBlock         int
@@ -410,49 +411,71 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		if limit < 10 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 10, true))
 		}
-		artistNameRaw := r.URL.Query().Get("artist_name")
-		if artistNameRaw != "" {
-			artistName = &artistNameRaw
+		if limit > 200 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 200, false))
 		}
-		if artistName != nil {
-			if utf8.RuneCountInString(*artistName) > 256 {
-				err = goa.MergeErrors(err, goa.InvalidLengthError("artistName", *artistName, utf8.RuneCountInString(*artistName), 256, false))
+		query = r.URL.Query().Get("query")
+		if query == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("query", "query string"))
+		}
+		{
+			artistNameRaw := r.URL.Query().Get("artist_name")
+			if artistNameRaw == "" {
+				artistName = true
+			} else {
+				v, err2 := strconv.ParseBool(artistNameRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("artistName", artistNameRaw, "boolean"))
+				}
+				artistName = v
 			}
 		}
-		artRaw := r.URL.Query().Get("art")
-		if artRaw != "" {
-			art = &artRaw
-		}
-		if art != nil {
-			if utf8.RuneCountInString(*art) > 256 {
-				err = goa.MergeErrors(err, goa.InvalidLengthError("art", *art, utf8.RuneCountInString(*art), 256, false))
+		{
+			artTitleRaw := r.URL.Query().Get("art_title")
+			if artTitleRaw == "" {
+				artTitle = true
+			} else {
+				v, err2 := strconv.ParseBool(artTitleRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("artTitle", artTitleRaw, "boolean"))
+				}
+				artTitle = v
 			}
 		}
-		seriesRaw := r.URL.Query().Get("series")
-		if seriesRaw != "" {
-			series = &seriesRaw
-		}
-		if series != nil {
-			if utf8.RuneCountInString(*series) > 256 {
-				err = goa.MergeErrors(err, goa.InvalidLengthError("series", *series, utf8.RuneCountInString(*series), 256, false))
+		{
+			seriesRaw := r.URL.Query().Get("series")
+			if seriesRaw == "" {
+				series = true
+			} else {
+				v, err2 := strconv.ParseBool(seriesRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("series", seriesRaw, "boolean"))
+				}
+				series = v
 			}
 		}
-		descrRaw := r.URL.Query().Get("descr")
-		if descrRaw != "" {
-			descr = &descrRaw
-		}
-		if descr != nil {
-			if utf8.RuneCountInString(*descr) > 256 {
-				err = goa.MergeErrors(err, goa.InvalidLengthError("descr", *descr, utf8.RuneCountInString(*descr), 256, false))
+		{
+			descrRaw := r.URL.Query().Get("descr")
+			if descrRaw == "" {
+				descr = true
+			} else {
+				v, err2 := strconv.ParseBool(descrRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("descr", descrRaw, "boolean"))
+				}
+				descr = v
 			}
 		}
-		keywordRaw := r.URL.Query().Get("keyword")
-		if keywordRaw != "" {
-			keyword = &keywordRaw
-		}
-		if keyword != nil {
-			if utf8.RuneCountInString(*keyword) > 256 {
-				err = goa.MergeErrors(err, goa.InvalidLengthError("keyword", *keyword, utf8.RuneCountInString(*keyword), 256, false))
+		{
+			keywordRaw := r.URL.Query().Get("keyword")
+			if keywordRaw == "" {
+				keyword = true
+			} else {
+				v, err2 := strconv.ParseBool(keywordRaw)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("keyword", keywordRaw, "boolean"))
+				}
+				keyword = v
 			}
 		}
 		{
@@ -615,7 +638,7 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		if err != nil {
 			return nil, err
 		}
-		payload := NewArtSearchPayload(artist, limit, artistName, art, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore)
+		payload := NewArtSearchPayload(artist, limit, query, artistName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore)
 
 		return payload, nil
 	}
@@ -730,6 +753,45 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v *artworksvie
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         *v.SpendableAddress,
 		MaximumFee:               *v.MaximumFee,
+	}
+
+	return res
+}
+
+// marshalArtworksArtworkTicketToArtworkTicketResponseBody builds a value of
+// type *ArtworkTicketResponseBody from a value of type *artworks.ArtworkTicket.
+func marshalArtworksArtworkTicketToArtworkTicketResponseBody(v *artworks.ArtworkTicket) *ArtworkTicketResponseBody {
+	res := &ArtworkTicketResponseBody{
+		Name:                     v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           v.ArtistPastelID,
+		ArtistPastelIDPassphrase: v.ArtistPastelIDPassphrase,
+		ArtistName:               v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         v.SpendableAddress,
+		MaximumFee:               v.MaximumFee,
+	}
+
+	return res
+}
+
+// marshalArtworksFuzzyMatchToFuzzyMatchResponseBody builds a value of type
+// *FuzzyMatchResponseBody from a value of type *artworks.FuzzyMatch.
+func marshalArtworksFuzzyMatchToFuzzyMatchResponseBody(v *artworks.FuzzyMatch) *FuzzyMatchResponseBody {
+	res := &FuzzyMatchResponseBody{
+		Str:       v.Str,
+		FieldType: v.FieldType,
+		Score:     v.Score,
+	}
+	if v.MatchedIndexes != nil {
+		res.MatchedIndexes = make([]int, len(v.MatchedIndexes))
+		for i, val := range v.MatchedIndexes {
+			res.MatchedIndexes[i] = val
+		}
 	}
 
 	return res

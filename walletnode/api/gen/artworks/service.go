@@ -59,8 +59,8 @@ type RegisterTaskStateClientStream interface {
 // ArtSearchServerStream is the interface a "artSearch" endpoint server stream
 // must satisfy.
 type ArtSearchServerStream interface {
-	// Send streams instances of "ArtSearchResult".
-	Send(*ArtSearchResult) error
+	// Send streams instances of "ArtworkSearchResult".
+	Send(*ArtworkSearchResult) error
 	// Close closes the stream.
 	Close() error
 }
@@ -68,8 +68,8 @@ type ArtSearchServerStream interface {
 // ArtSearchClientStream is the interface a "artSearch" endpoint client stream
 // must satisfy.
 type ArtSearchClientStream interface {
-	// Recv reads instances of "ArtSearchResult" from the stream.
-	Recv() (*ArtSearchResult, error)
+	// Recv reads instances of "ArtworkSearchResult" from the stream.
+	Recv() (*ArtworkSearchResult, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -172,23 +172,25 @@ type ArtSearchPayload struct {
 	Artist *string
 	// Number of results to be return
 	Limit int
+	// Query is search query entered by user
+	Query string
 	// Name of the artist
-	ArtistName *string
-	// Art is artwork title
-	Art *string
-	// series refers to artwork series name
-	Series *string
-	// descr refers to artist written statement
-	Descr *string
-	// keyword is one of the values in artwork_keyword_set
-	Keyword *string
+	ArtistName bool
+	// Title of artwork
+	ArtTitle bool
+	// Artwork series name
+	Series bool
+	// Artist written statement
+	Descr bool
+	// Keyword that Artist assigns to Artwork
+	Keyword bool
 	// Minimum blocknum
 	MinBlock int
-	// maximum blocknum
+	// Maximum blocknum
 	MaxBlock *int
 	// Minimum number of created copies
 	MinCopies *int
-	// Maximum number of crated copies
+	// Maximum number of created copies
 	MaxCopies *int
 	// Minimum nsfw score
 	MinNsfwScore *int
@@ -200,34 +202,17 @@ type ArtSearchPayload struct {
 	MaxRarenessScore *int
 }
 
-// ArtSearchResult is the result type of the artworks service artSearch method.
-type ArtSearchResult struct {
+// ArtworkSearchResult is the result type of the artworks service artSearch
+// method.
+type ArtworkSearchResult struct {
+	// Artwork data
+	Artwork *ArtworkTicket
 	// Thumbnail image
 	Image []byte
-	// Name of the artwork
-	Name string
-	// Description of the artwork
-	Description *string
-	// Keywords
-	Keywords *string
-	// Series name
-	SeriesName *string
-	// Number of copies issued
-	IssuedCopies int
-	// Artwork creation video youtube URL
-	YoutubeURL *string
-	// Artist's PastelID
-	ArtistPastelID string
-	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string
-	// Name of the artist
-	ArtistName string
-	// Artist website URL
-	ArtistWebsiteURL *string
-	// Spendable address
-	SpendableAddress string
-	// Used to find a suitable masternode with a fee equal or less
-	MaximumFee float64
+	// Sort index of the match based on score
+	MatchIndex int
+	// Match result details
+	Matches []*FuzzyMatch
 }
 
 // Ticket of the registration artwork
@@ -256,6 +241,17 @@ type ArtworkTicket struct {
 	SpendableAddress string
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64
+}
+
+type FuzzyMatch struct {
+	// String that is matched
+	Str *string
+	// Field that is matched
+	FieldType *string
+	// The indexes of matched characters. Useful for highlighting matches
+	MatchedIndexes []int
+	// Score used to rank matches
+	Score *int
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.

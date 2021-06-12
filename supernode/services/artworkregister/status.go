@@ -42,6 +42,11 @@ func (status Status) IsFinal() bool {
 	return status == StatusTaskCanceled || status == StatusTaskCompleted
 }
 
+// IsFailure returns true if the task failed
+func (status Status) IsFailure() bool {
+	return status == StatusTaskCanceled
+}
+
 // StatusNames returns a sorted list of status names.
 func StatusNames() []string {
 	list := make([]string, len(statusNames))

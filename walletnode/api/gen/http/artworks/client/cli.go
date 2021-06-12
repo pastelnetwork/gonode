@@ -164,7 +164,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 	{
 		err = json.Unmarshal([]byte(artworksUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"Tm9iaXMgdGVtcG9yYSBvY2NhZWNhdGku\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"UmVydW0gZG9sb3JlbXF1ZSBpbiBvZGlvIHF1aWEgbGliZXJvLg==\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -183,7 +183,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 
 // BuildArtSearchPayload builds the payload for the artworks artSearch endpoint
 // from CLI flags.
-func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimit string, artworksArtSearchArtistName string, artworksArtSearchArt string, artworksArtSearchSeries string, artworksArtSearchDescr string, artworksArtSearchKeyword string, artworksArtSearchMinCopies string, artworksArtSearchMaxCopies string, artworksArtSearchMinBlock string, artworksArtSearchMaxBlock string, artworksArtSearchMinRarenessScore string, artworksArtSearchMaxRarenessScore string, artworksArtSearchMinNsfwScore string, artworksArtSearchMaxNsfwScore string) (*artworks.ArtSearchPayload, error) {
+func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimit string, artworksArtSearchQuery string, artworksArtSearchArtistName string, artworksArtSearchArtTitle string, artworksArtSearchSeries string, artworksArtSearchDescr string, artworksArtSearchKeyword string, artworksArtSearchMinCopies string, artworksArtSearchMaxCopies string, artworksArtSearchMinBlock string, artworksArtSearchMaxBlock string, artworksArtSearchMinRarenessScore string, artworksArtSearchMaxRarenessScore string, artworksArtSearchMinNsfwScore string, artworksArtSearchMaxNsfwScore string) (*artworks.ArtSearchPayload, error) {
 	var err error
 	var artist *string
 	{
@@ -211,78 +211,60 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 			if limit < 10 {
 				err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 10, true))
 			}
+			if limit > 200 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 200, false))
+			}
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
-	var artistName *string
+	var query string
+	{
+		query = artworksArtSearchQuery
+	}
+	var artistName bool
 	{
 		if artworksArtSearchArtistName != "" {
-			artistName = &artworksArtSearchArtistName
-			if artistName != nil {
-				if utf8.RuneCountInString(*artistName) > 256 {
-					err = goa.MergeErrors(err, goa.InvalidLengthError("artistName", *artistName, utf8.RuneCountInString(*artistName), 256, false))
-				}
-			}
+			artistName, err = strconv.ParseBool(artworksArtSearchArtistName)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("invalid value for artistName, must be BOOL")
 			}
 		}
 	}
-	var art *string
+	var artTitle bool
 	{
-		if artworksArtSearchArt != "" {
-			art = &artworksArtSearchArt
-			if art != nil {
-				if utf8.RuneCountInString(*art) > 256 {
-					err = goa.MergeErrors(err, goa.InvalidLengthError("art", *art, utf8.RuneCountInString(*art), 256, false))
-				}
-			}
+		if artworksArtSearchArtTitle != "" {
+			artTitle, err = strconv.ParseBool(artworksArtSearchArtTitle)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("invalid value for artTitle, must be BOOL")
 			}
 		}
 	}
-	var series *string
+	var series bool
 	{
 		if artworksArtSearchSeries != "" {
-			series = &artworksArtSearchSeries
-			if series != nil {
-				if utf8.RuneCountInString(*series) > 256 {
-					err = goa.MergeErrors(err, goa.InvalidLengthError("series", *series, utf8.RuneCountInString(*series), 256, false))
-				}
-			}
+			series, err = strconv.ParseBool(artworksArtSearchSeries)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("invalid value for series, must be BOOL")
 			}
 		}
 	}
-	var descr *string
+	var descr bool
 	{
 		if artworksArtSearchDescr != "" {
-			descr = &artworksArtSearchDescr
-			if descr != nil {
-				if utf8.RuneCountInString(*descr) > 256 {
-					err = goa.MergeErrors(err, goa.InvalidLengthError("descr", *descr, utf8.RuneCountInString(*descr), 256, false))
-				}
-			}
+			descr, err = strconv.ParseBool(artworksArtSearchDescr)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("invalid value for descr, must be BOOL")
 			}
 		}
 	}
-	var keyword *string
+	var keyword bool
 	{
 		if artworksArtSearchKeyword != "" {
-			keyword = &artworksArtSearchKeyword
-			if keyword != nil {
-				if utf8.RuneCountInString(*keyword) > 256 {
-					err = goa.MergeErrors(err, goa.InvalidLengthError("keyword", *keyword, utf8.RuneCountInString(*keyword), 256, false))
-				}
-			}
+			keyword, err = strconv.ParseBool(artworksArtSearchKeyword)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("invalid value for keyword, must be BOOL")
 			}
 		}
 	}
@@ -476,8 +458,9 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 	v := &artworks.ArtSearchPayload{}
 	v.Artist = artist
 	v.Limit = limit
+	v.Query = query
 	v.ArtistName = artistName
-	v.Art = art
+	v.ArtTitle = artTitle
 	v.Series = series
 	v.Descr = descr
 	v.Keyword = keyword

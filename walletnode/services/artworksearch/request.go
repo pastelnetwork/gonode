@@ -1,20 +1,63 @@
 package artworksearch
 
-import "github.com/pastelnetwork/gonode/common/service/artwork"
+// ArtSearchQueryField represents artsearch query-able field
+type ArtSearchQueryField string
+
+// List of types of activation ticket.
+const (
+	ArtSearchArtistName ArtSearchQueryField = "artist_name"
+	ArtSearchArtTitle   ArtSearchQueryField = "art_title"
+	ArtSearchSeries     ArtSearchQueryField = "series"
+	ArtSearchDescr      ArtSearchQueryField = "descr"
+	ArtSearchKeyword    ArtSearchQueryField = "keyword"
+)
+
+// ArtSearchQueryFields returns all query-able field names for an artwork
+var ArtSearchQueryFields = []string{
+	ArtSearchArtistName.String(),
+	ArtSearchArtTitle.String(),
+	ArtSearchSeries.String(),
+	ArtSearchDescr.String(),
+	ArtSearchKeyword.String(),
+}
+
+// String returns the string val of ArtSearchQueryField
+func (f ArtSearchQueryField) String() string {
+	return string(f)
+}
 
 // ArtSearchRequest represents artwork search payload
 type ArtSearchRequest struct {
-	Image                    *artwork.File `json:"image"`
-	Name                     string        `json:"name"`
-	Description              *string       `json:"description"`
-	Keywords                 *string       `json:"keywords"`
-	SeriesName               *string       `json:"series_name"`
-	IssuedCopies             int           `json:"issued_copies"`
-	YoutubeURL               *string       `json:"youtube_url"`
-	ArtistPastelID           string        `json:"artist_pastel_id"`
-	ArtistPastelIDPassphrase string        `json:"artist_pastel_id_passphrase"`
-	ArtistName               string        `json:"artist_name"`
-	ArtistWebsiteURL         *string       `json:"artist_website_url"`
-	SpendableAddress         string        `json:"spendable_address"`
-	MaximumFee               float64       `json:"maximum_fee"`
+	// Artist PastelID or special value; mine
+	Artist *string
+	// Number of results to be return
+	Limit int
+	// Query is search query entered by user
+	Query string
+	// Search in Name of the artist
+	ArtistName bool
+	// Search in Title of artwork
+	ArtTitle bool
+	// Search in Artwork series name
+	Series bool
+	// Search in Artist written statement
+	Descr bool
+	// Search Keywords that Artist assigns to Artwork
+	Keyword bool
+	// Minimum blocknum
+	MinBlock int
+	// Maximum blocknum
+	MaxBlock *int
+	// Minimum number of created copies
+	MinCopies *int
+	// Maximum number of created copies
+	MaxCopies *int
+	// Minimum nsfw score
+	MinNsfwScore *int
+	// Maximum nsfw score
+	MaxNsfwScore *int
+	// Minimum rareness score
+	MinRarenessScore *int
+	// Maximum rareness score
+	MaxRarenessScore *int
 }

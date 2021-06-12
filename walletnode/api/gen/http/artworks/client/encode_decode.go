@@ -560,21 +560,12 @@ func EncodeArtSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 			values.Add("artist", *p.Artist)
 		}
 		values.Add("limit", fmt.Sprintf("%v", p.Limit))
-		if p.ArtistName != nil {
-			values.Add("artist_name", *p.ArtistName)
-		}
-		if p.Art != nil {
-			values.Add("art", *p.Art)
-		}
-		if p.Series != nil {
-			values.Add("series", *p.Series)
-		}
-		if p.Descr != nil {
-			values.Add("descr", *p.Descr)
-		}
-		if p.Keyword != nil {
-			values.Add("keyword", *p.Keyword)
-		}
+		values.Add("query", p.Query)
+		values.Add("artist_name", fmt.Sprintf("%v", p.ArtistName))
+		values.Add("art_title", fmt.Sprintf("%v", p.ArtTitle))
+		values.Add("series", fmt.Sprintf("%v", p.Series))
+		values.Add("descr", fmt.Sprintf("%v", p.Descr))
+		values.Add("keyword", fmt.Sprintf("%v", p.Keyword))
 		if p.MinCopies != nil {
 			values.Add("min_copies", fmt.Sprintf("%v", *p.MinCopies))
 		}
@@ -637,7 +628,7 @@ func DecodeArtSearchResponse(decoder func(*http.Response) goahttp.Decoder, resto
 			if err != nil {
 				return nil, goahttp.ErrValidationError("artworks", "artSearch", err)
 			}
-			res := NewArtSearchResultOK(&body)
+			res := NewArtSearchArtworkSearchResultOK(&body)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
@@ -761,6 +752,45 @@ func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTi
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         v.SpendableAddress,
 		MaximumFee:               v.MaximumFee,
+	}
+
+	return res
+}
+
+// unmarshalArtworkTicketResponseBodyToArtworksArtworkTicket builds a value of
+// type *artworks.ArtworkTicket from a value of type *ArtworkTicketResponseBody.
+func unmarshalArtworkTicketResponseBodyToArtworksArtworkTicket(v *ArtworkTicketResponseBody) *artworks.ArtworkTicket {
+	res := &artworks.ArtworkTicket{
+		Name:                     *v.Name,
+		Description:              v.Description,
+		Keywords:                 v.Keywords,
+		SeriesName:               v.SeriesName,
+		IssuedCopies:             *v.IssuedCopies,
+		YoutubeURL:               v.YoutubeURL,
+		ArtistPastelID:           *v.ArtistPastelID,
+		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
+		ArtistName:               *v.ArtistName,
+		ArtistWebsiteURL:         v.ArtistWebsiteURL,
+		SpendableAddress:         *v.SpendableAddress,
+		MaximumFee:               *v.MaximumFee,
+	}
+
+	return res
+}
+
+// unmarshalFuzzyMatchResponseBodyToArtworksFuzzyMatch builds a value of type
+// *artworks.FuzzyMatch from a value of type *FuzzyMatchResponseBody.
+func unmarshalFuzzyMatchResponseBodyToArtworksFuzzyMatch(v *FuzzyMatchResponseBody) *artworks.FuzzyMatch {
+	res := &artworks.FuzzyMatch{
+		Str:       v.Str,
+		FieldType: v.FieldType,
+		Score:     v.Score,
+	}
+	if v.MatchedIndexes != nil {
+		res.MatchedIndexes = make([]int, len(v.MatchedIndexes))
+		for i, val := range v.MatchedIndexes {
+			res.MatchedIndexes[i] = val
+		}
 	}
 
 	return res

@@ -101,32 +101,14 @@ type UploadImageResponseBody struct {
 // ArtSearchResponseBody is the type of the "artworks" service "artSearch"
 // endpoint HTTP response body.
 type ArtSearchResponseBody struct {
+	// Artwork data
+	Artwork *ArtworkTicketResponseBody `form:"artwork" json:"artwork" xml:"artwork"`
 	// Thumbnail image
-	Image []byte `form:"image" json:"image" xml:"image"`
-	// Name of the artwork
-	Name string `form:"name" json:"name" xml:"name"`
-	// Description of the artwork
-	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
-	// Keywords
-	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
-	// Series name
-	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
-	// Number of copies issued
-	IssuedCopies int `form:"issued_copies" json:"issued_copies" xml:"issued_copies"`
-	// Artwork creation video youtube URL
-	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
-	// Artist's PastelID
-	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
-	// Passphrase of the artist's PastelID
-	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
-	// Name of the artist
-	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
-	// Artist website URL
-	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
-	// Spendable address
-	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
-	// Used to find a suitable masternode with a fee equal or less
-	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
+	Image []byte `form:"image,omitempty" json:"image,omitempty" xml:"image,omitempty"`
+	// Sort index of the match based on score
+	MatchIndex int `form:"match_index" json:"match_index" xml:"match_index"`
+	// Match result details
+	Matches []*FuzzyMatchResponseBody `form:"matches" json:"matches" xml:"matches"`
 }
 
 // RegisterBadRequestResponseBody is the type of the "artworks" service
@@ -408,6 +390,18 @@ type ArtworkTicketResponse struct {
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 }
 
+// FuzzyMatchResponseBody is used to define fields on response body types.
+type FuzzyMatchResponseBody struct {
+	// String that is matched
+	Str *string `form:"str,omitempty" json:"str,omitempty" xml:"str,omitempty"`
+	// Field that is matched
+	FieldType *string `form:"field_type,omitempty" json:"field_type,omitempty" xml:"field_type,omitempty"`
+	// The indexes of matched characters. Useful for highlighting matches
+	MatchedIndexes []int `form:"matched_indexes,omitempty" json:"matched_indexes,omitempty" xml:"matched_indexes,omitempty"`
+	// Score used to rank matches
+	Score *int `form:"score,omitempty" json:"score,omitempty" xml:"score,omitempty"`
+}
+
 // NewRegisterResponseBody builds the HTTP response body from the result of the
 // "register" endpoint of the "artworks" service.
 func NewRegisterResponseBody(res *artworksviews.RegisterResultView) *RegisterResponseBody {
@@ -469,21 +463,19 @@ func NewUploadImageResponseBody(res *artworksviews.ImageView) *UploadImageRespon
 
 // NewArtSearchResponseBody builds the HTTP response body from the result of
 // the "artSearch" endpoint of the "artworks" service.
-func NewArtSearchResponseBody(res *artworks.ArtSearchResult) *ArtSearchResponseBody {
+func NewArtSearchResponseBody(res *artworks.ArtworkSearchResult) *ArtSearchResponseBody {
 	body := &ArtSearchResponseBody{
-		Image:                    res.Image,
-		Name:                     res.Name,
-		Description:              res.Description,
-		Keywords:                 res.Keywords,
-		SeriesName:               res.SeriesName,
-		IssuedCopies:             res.IssuedCopies,
-		YoutubeURL:               res.YoutubeURL,
-		ArtistPastelID:           res.ArtistPastelID,
-		ArtistPastelIDPassphrase: res.ArtistPastelIDPassphrase,
-		ArtistName:               res.ArtistName,
-		ArtistWebsiteURL:         res.ArtistWebsiteURL,
-		SpendableAddress:         res.SpendableAddress,
-		MaximumFee:               res.MaximumFee,
+		Image:      res.Image,
+		MatchIndex: res.MatchIndex,
+	}
+	if res.Artwork != nil {
+		body.Artwork = marshalArtworksArtworkTicketToArtworkTicketResponseBody(res.Artwork)
+	}
+	if res.Matches != nil {
+		body.Matches = make([]*FuzzyMatchResponseBody, len(res.Matches))
+		for i, val := range res.Matches {
+			body.Matches[i] = marshalArtworksFuzzyMatchToFuzzyMatchResponseBody(val)
+		}
 	}
 	return body
 }
@@ -694,12 +686,13 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePa
 }
 
 // NewArtSearchPayload builds a artworks service artSearch endpoint payload.
-func NewArtSearchPayload(artist *string, limit int, artistName *string, art *string, series *string, descr *string, keyword *string, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *int, maxRarenessScore *int, minNsfwScore *int, maxNsfwScore *int) *artworks.ArtSearchPayload {
+func NewArtSearchPayload(artist *string, limit int, query string, artistName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *int, maxRarenessScore *int, minNsfwScore *int, maxNsfwScore *int) *artworks.ArtSearchPayload {
 	v := &artworks.ArtSearchPayload{}
 	v.Artist = artist
 	v.Limit = limit
+	v.Query = query
 	v.ArtistName = artistName
-	v.Art = art
+	v.ArtTitle = artTitle
 	v.Series = series
 	v.Descr = descr
 	v.Keyword = keyword

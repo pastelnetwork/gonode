@@ -1,24 +1,32 @@
 package pastel
 
-// ActivationTicketType represents a type of the activation ticket.
-type ActivationTicketType string
+// ActTicketType represents a type of the activation ticket.
+type ActTicketType string
 
 // List of types of activation ticket.
 const (
-	ActTicketAll       ActivationTicketType = "all"
-	ActTicketAvailable ActivationTicketType = "available"
-	ActTicketSold      ActivationTicketType = "sold"
+	ActTicketAll       ActTicketType = "all"
+	ActTicketAvailable ActTicketType = "available"
+	ActTicketSold      ActTicketType = "sold"
 )
 
-// ActivationTickets is a collection of ActivationTicket
-type ActivationTickets []ActivationTicket
+// ActTickets is a collection of ActTicket
+type ActTickets []ActTicket
 
-// ActivationTicket represents pastel activation ticket.
-type ActivationTicket struct {
+// ActTicket represents pastel activation ticket.
+type ActTicket struct {
+	Height        int           `json:"height"`
+	TXID          string        `json:"txid"`
+	ActTicketData ActTicketData `json:"ticket"`
+}
+
+// ActTicketData represents activation ticket properties
+type ActTicketData struct {
 	PastelID     string `json:"pastelID"`
 	Signature    string `json:"signature"`
 	Type         string `json:"type"`
 	ArtistHeight int    `json:"artist_height"`
 	RegTXID      string `json:"reg_txid"`
-	RegFee       int    `json:"reg_fee"`
+	StorageFee   int    `json:"storage_fee"`
+	Version      int    `json:"version"`
 }

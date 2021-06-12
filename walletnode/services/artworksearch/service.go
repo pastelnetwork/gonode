@@ -7,7 +7,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 )
 
 const (
@@ -47,7 +46,7 @@ func (service *Service) Task(id string) *Task {
 }
 
 // AddTask runs a new task of the artwork search and returns its taskID.
-func (service *Service) AddTask(request *artworks.ArtSearchPayload) string {
+func (service *Service) AddTask(request *ArtSearchRequest) string {
 	task := NewTask(service, request)
 	service.Worker.AddTask(task)
 

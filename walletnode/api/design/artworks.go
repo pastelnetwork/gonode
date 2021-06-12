@@ -3,6 +3,8 @@ package design
 import (
 	"time"
 
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
+
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
 	//revive:disable:dot-imports
@@ -125,21 +127,16 @@ var _ = Service("artworks", func() {
 		Meta("swagger:summary", "Streams the search result for Artwork")
 
 		Payload(SearchArtworkParams)
-		StreamingResult(func() {
-			Extend(ArtworkTicket)
-			Attribute("image", Bytes, func() {
-				Description("Thumbnail image")
-			})
-			Required("image")
-		})
+		StreamingResult(ArtworkSearchResult)
 
 		HTTP(func() {
 			GET("/search")
 			Params(func() {
 				Param("artist")
 				Param("limit")
+				Param("query")
 				Param("artist_name")
-				Param("art")
+				Param("art_title")
 				Param("series")
 				Param("descr")
 				Param("keyword")
@@ -158,6 +155,26 @@ var _ = Service("artworks", func() {
 		})
 	})
 
+})
+
+// ArtworkSearchResult is artwork search result.
+var ArtworkSearchResult = Type("ArtworkSearchResult", func() {
+	Description("Result of artwork search call")
+
+	Attribute("artwork", ArtworkTicket, func() {
+		Description("Artwork data")
+	})
+	Attribute("image", Bytes, func() {
+		Description("Thumbnail image")
+	})
+	Attribute("match_index", Int, func() {
+		Description("Sort index of the match based on score")
+	})
+	Attribute("matches", ArrayOf(FuzzyMatch), func() {
+		Description("Match result details")
+	})
+
+	Required("artwork", "matches", "match_index")
 })
 
 // ArtworkTicket is artwork register payload.
@@ -347,6 +364,23 @@ var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
 	Required("taskId")
 })
 
+// FuzzyMatch is search results detail
+var FuzzyMatch = Type("FuzzyMatch", func() {
+	Attribute("str", String, func() {
+		Description("String that is matched")
+	})
+	Attribute("field_type", String, func() {
+		Description("Field that is matched")
+		Enum(InterfaceSlice(artworksearch.ArtSearchQueryFields)...)
+	})
+	Attribute("matched_indexes", ArrayOf(Int), func() {
+		Description("The indexes of matched characters. Useful for highlighting matches")
+	})
+	Attribute("score", Int, func() {
+		Description("Score used to rank matches")
+	})
+})
+
 // SearchArtworkParams are query params to searchArtwork request
 var SearchArtworkParams = func() {
 	Attribute("artist", String, func() {
@@ -356,83 +390,78 @@ var SearchArtworkParams = func() {
 	Attribute("limit", Int, func() {
 		Description("Number of results to be return")
 		Minimum(10)
+		Maximum(200)
 		Default(10)
 		Example(10)
 	})
-
-	Attribute("artist_name", String, func() {
+	Attribute("query", String, func() {
+		Description("Query is search query entered by user")
+	})
+	Attribute("artist_name", Boolean, func() {
 		Description("Name of the artist")
-		MaxLength(256)
-		Example("Mona Lisa")
+		Default(true)
 	})
-	Attribute("art", String, func() {
-		Description("Art is artwork title")
-		MaxLength(256)
+	Attribute("art_title", Boolean, func() {
+		Description("Title of artwork")
+		Default(true)
 	})
-	Attribute("series", String, func() {
-		Description("series refers to artwork series name")
-		MaxLength(256)
+	Attribute("series", Boolean, func() {
+		Description("Artwork series name")
+		Default(true)
 	})
-	Attribute("descr", String, func() {
-		Description("descr refers to artist written statement")
-		MaxLength(256)
+	Attribute("descr", Boolean, func() {
+		Description("Artist written statement")
+		Default(true)
 	})
-
-	Attribute("keyword", String, func() {
-		Description("keyword is one of the values in artwork_keyword_set")
-		MaxLength(256)
+	Attribute("keyword", Boolean, func() {
+		Description("Keyword that Artist assigns to Artwork")
+		Default(true)
 	})
-
 	Attribute("min_block", Int, func() {
-		Description("Minimum blocknum ")
+		Description("Minimum blocknum")
 		Minimum(1)
 		Default(1)
 	})
-
 	Attribute("max_block", Int, func() {
-		Description("maximum blocknum")
+		Description("Maximum blocknum")
 		Minimum(1)
 	})
-
 	Attribute("min_copies", Int, func() {
 		Description("Minimum number of created copies")
 		Minimum(1)
 		Maximum(1000)
 		Example(1)
 	})
-
 	Attribute("max_copies", Int, func() {
-		Description("Maximum number of crated copies")
+		Description("Maximum number of created copies")
 		Minimum(1)
 		Maximum(1000)
 		Example(1000)
 	})
-
 	Attribute("min_nsfw_score", Int, func() {
 		Description("Minimum nsfw score")
 		Minimum(1)
 		Maximum(1000)
 		Example(1)
 	})
-
 	Attribute("max_nsfw_score", Int, func() {
 		Description("Maximum nsfw score")
 		Minimum(1)
 		Maximum(1000)
 		Example(1000)
 	})
-
 	Attribute("min_rareness_score", Int, func() {
-		Description("Minimum rareness score ")
+		Description("Minimum rareness score")
 		Minimum(1)
 		Maximum(1000)
 		Example(1)
 	})
-
 	Attribute("max_rareness_score", Int, func() {
 		Description("Maximum rareness score")
 		Minimum(1)
 		Maximum(1000)
 		Example(1000)
 	})
+
+	Required("query")
 }

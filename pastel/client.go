@@ -102,22 +102,22 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 }
 
 // ActTickets implements pastel.Client.ActTickets
-func (client *client) ActTickets(ctx context.Context, actType ActivationTicketType, minHeight int) (ActivationTickets, error) {
-	tickets := ActivationTickets{}
+func (client *client) ActTickets(ctx context.Context, actType ActTicketType, minHeight int) (ActTickets, error) {
+	tickets := ActTickets{}
 
 	if err := client.callFor(ctx, &tickets, "tickets", "list", "act", actType, minHeight); err != nil {
-		return nil, errors.Errorf("failed to get id tickets: %w", err)
+		return nil, errors.Errorf("failed to get act tickets: %w", err)
 	}
 
 	return tickets, nil
 }
 
-// GetRegTicket implements pastel.Client.GetRegTicket
-func (client *client) GetRegTicket(ctx context.Context, regTxid string) (*Ticket, error) {
-	ticket := &Ticket{}
+// RegTicket implements pastel.Client.RegTicket
+func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket, error) {
+	ticket := RegTicket{}
 
 	if err := client.callFor(ctx, &ticket, "tickets", "get", regTxid); err != nil {
-		return nil, errors.Errorf("failed to get reg ticket: %w", err)
+		return ticket, errors.Errorf("failed to get reg ticket: %w", err)
 	}
 
 	return ticket, nil

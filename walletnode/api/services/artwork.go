@@ -154,23 +154,28 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 // ArtSearch searches for artwork & streams the result based on filters
 func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
 	defer stream.Close()
-	taskID := service.search.AddTask(req)
+	searchReq := fromArtSearchRequest(req)
+	taskID := service.search.AddTask(searchReq)
 	task := service.search.Task(taskID)
 
-	sub := task.SubscribeSearchResult()
+	resultChan := task.SubscribeSearchResult()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
-		case ticket := <-sub:
-			res := &artworks.ArtSearchResult{
-				Name: ticket.ArtTicketData.AppTicketData.ArtworkTitle,
-				// TODO: Add rest of the fields
+		case srch, ok := <-resultChan:
+			if !ok {
+				if task.Status().IsFailure() {
+					return artworks.MakeInternalServerError(task.Error())
+				}
+
+				return nil
 			}
+
+			res := toArtSearchResult(srch)
 			if err := stream.Send(res); err != nil {
 				return artworks.MakeInternalServerError(err)
 			}
-
 		}
 	}
 }

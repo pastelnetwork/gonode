@@ -114,9 +114,9 @@ func (s *RegisterTaskStateServerStream) Close() error {
 	return s.conn.Close()
 }
 
-// Send streams instances of "artworks.ArtSearchResult" to the "artSearch"
+// Send streams instances of "artworks.ArtworkSearchResult" to the "artSearch"
 // endpoint websocket connection.
-func (s *ArtSearchServerStream) Send(v *artworks.ArtSearchResult) error {
+func (s *ArtSearchServerStream) Send(v *artworks.ArtworkSearchResult) error {
 	var err error
 	// Upgrade the HTTP connection to a websocket connection only once. Connection
 	// upgrade is done here so that authorization logic in the endpoint is executed

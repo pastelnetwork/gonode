@@ -25,7 +25,12 @@ func (status Status) String() string {
 
 // IsFinal returns true if the status is the final.
 func (status Status) IsFinal() bool {
-	return status == StatusTaskCompleted
+	return status == StatusTaskCompleted || status == StatusTaskFailure
+}
+
+// IsFailure returns true if the task failed due to an error
+func (status Status) IsFailure() bool {
+	return status == StatusTaskFailure
 }
 
 // StatusNames returns a sorted list of status names.

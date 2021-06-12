@@ -69,11 +69,11 @@ func (s *RegisterTaskStateClientStream) Recv() (*artworks.TaskState, error) {
 	return res, nil
 }
 
-// Recv reads instances of "artworks.ArtSearchResult" from the "artSearch"
+// Recv reads instances of "artworks.ArtworkSearchResult" from the "artSearch"
 // endpoint websocket connection.
-func (s *ArtSearchClientStream) Recv() (*artworks.ArtSearchResult, error) {
+func (s *ArtSearchClientStream) Recv() (*artworks.ArtworkSearchResult, error) {
 	var (
-		rv   *artworks.ArtSearchResult
+		rv   *artworks.ArtworkSearchResult
 		body ArtSearchResponseBody
 		err  error
 	)
@@ -89,6 +89,6 @@ func (s *ArtSearchClientStream) Recv() (*artworks.ArtSearchResult, error) {
 	if err != nil {
 		return rv, err
 	}
-	res := NewArtSearchResultOK(&body)
+	res := NewArtSearchArtworkSearchResultOK(&body)
 	return res, nil
 }

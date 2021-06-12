@@ -35,8 +35,8 @@ type Client interface {
 	Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error)
 	// ActTickets returns activated art tickets.
 	// Command `tickets list act`.
-	ActTickets(ctx context.Context, actType ActivationTicketType, minHeight int) (ActivationTickets, error)
+	ActTickets(ctx context.Context, actType ActTicketType, minHeight int) (ActTickets, error)
 	// ActTickets returns art registration tickets.
 	// Command `tickets get <txid>`.
-	GetRegTicket(ctx context.Context, regTxid string) (*Ticket, error)
+	RegTicket(ctx context.Context, regTxid string) (RegTicket, error)
 }
