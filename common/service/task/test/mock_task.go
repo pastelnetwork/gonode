@@ -126,11 +126,12 @@ func (task *Task) AssertDoneCall(expectedCalls int, arguments ...interface{}) *T
 }
 
 // ListenOnNewAction listening NewAction call and return chan from args
-func (task *Task) ListenOnNewAction(ctx context.Context, c chan struct{}) *Task {
+func (task *Task) ListenOnNewAction(ctx context.Context) *Task {
 	handleFunc := func(fn taskCommon.ActionFn) <-chan struct{} {
-		defer close(c)
+		ch := make(chan struct{})
+		defer close(ch)
 		fn(ctx)
-		return c
+		return ch
 	}
 	task.On(NewActionMethod, mock.Anything).Return(handleFunc)
 	return task
@@ -162,9 +163,6 @@ func (task *Task) AssertRunActionCall(expectedCalls int, arguments ...interface{
 
 // ListenOnSetStatusNotifyFunc listening SetStatusNotifyFunc call and return values from args
 func (task *Task) ListenOnSetStatusNotifyFunc(arguments ...interface{}) *Task {
-	// handleFunc := func(fn func(status *state.Status)) {
-	// 	fn(status)
-	// }
 	task.On(SetStatusNotifyFuncMethod, mock.Anything).Return(arguments...)
 	return task
 }

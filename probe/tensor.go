@@ -1,3 +1,5 @@
+//go:generate mockery --name=Tensor
+
 package probe
 
 import (
