@@ -9,10 +9,6 @@ import (
 )
 
 const (
-	// QRCodeCapacityAlphanumeric represents size for Alphanumeric
-	// 0–9, A–Z (upper-case only), space, $, %, *, +, -, ., /, :
-	QRCodeCapacityAlphanumeric QRCodeCapacity = 4296
-
 	// QRCodeCapacityBinary represents size for Binary
 	// ISO 8859-1
 	QRCodeCapacityBinary QRCodeCapacity = 2953

@@ -4,7 +4,7 @@ import "fmt"
 
 const (
 	positionQRSize     = 185
-	positionQRCapacity = QRCodeCapacityAlphanumeric
+	positionQRCapacity = QRCodeCapacityBinary
 )
 
 // Metadata represents service information about QR codes such as their names, coordinates on the canvas.
