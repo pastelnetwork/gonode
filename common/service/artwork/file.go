@@ -238,7 +238,7 @@ func (file *File) SaveImage(img image.Image) error {
 }
 
 type Encoder interface {
-	Encode(width, height int) (image.Image, error)
+	Encode(image.Image) (image.Image, error)
 }
 
 func (file *File) Encode(enc Encoder) error {
@@ -246,10 +246,8 @@ func (file *File) Encode(enc Encoder) error {
 	if err != nil {
 		return err
 	}
-	imgW := img.Bounds().Dx()
-	imgH := img.Bounds().Dy()
 
-	sigImg, err := enc.Encode(imgW, imgH)
+	sigImg, err := enc.Encode(img)
 	if err != nil {
 		return err
 	}
@@ -273,7 +271,7 @@ func (file *File) Encode(enc Encoder) error {
 		return errors.Errorf("failed to encode signature to data: %w", err)
 	}
 
-	if sigW := sigImg.Bounds().Dx(); sigW > imgW {
+	if sigW := sigImg.Bounds().Dx(); sigW > img.Bounds().Dx() {
 		img = imaging.Resize(img, sigW, 0, imaging.Lanczos)
 	}
 

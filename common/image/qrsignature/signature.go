@@ -28,8 +28,8 @@ func (sig *Signature) qrCodes() []*QRCode {
 	return append([]*QRCode{sig.metadata.qrCode}, qrCodes...)
 }
 
-// Encode encodes the data to QR codes and groups them on a new image with maintaining aspect ratios from the given `width`, `height` params.
-func (sig Signature) Encode(width, height int) (image.Image, error) {
+// Encode encodes the data to QR codes and groups them on a new image with maintaining aspect ratios from the given image.
+func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	// Generate QR codes from the payload data.
 	for _, payload := range sig.payloads {
 		if err := payload.Encode(); err != nil {
@@ -40,8 +40,11 @@ func (sig Signature) Encode(width, height int) (image.Image, error) {
 	// Sort QR codes by size to be more densely placed on the canvas.
 	qrCodes := sig.qrCodes()
 
+	imgW := img.Bounds().Dx()
+	imgH := img.Bounds().Dy()
+
 	// Set coordinates for each QR code.
-	canvas := NewCanvas(width, height)
+	canvas := NewCanvas(imgW, imgH)
 	for _, qrCode := range qrCodes {
 		canvas.FillPos(qrCode)
 	}
@@ -51,11 +54,11 @@ func (sig Signature) Encode(width, height int) (image.Image, error) {
 		return nil, err
 	}
 
-	// Obtain the real size of the canvas that can be bigger or less than the original values.
-	width, height = canvas.Size()
+	// Obtain the real size of the canvas that can be bigger or less than the original values but while maintaining aspect ratios and with clipping black edges.
+	imgW, imgH = canvas.Size()
 
-	// Create a new image from the QR codes.
-	dc := gg.NewContext(width, height)
+	// Draw all QR codes in on single image.
+	dc := gg.NewContext(imgW, imgH)
 	dc.SetRGB(255, 255, 255)
 	dc.Clear()
 	dc.SetColor(color.White)
@@ -63,7 +66,6 @@ func (sig Signature) Encode(width, height int) (image.Image, error) {
 	for _, qrCode := range qrCodes {
 		dc.DrawImageAnchored(qrCode, qrCode.X, qrCode.Y, 0, 0)
 	}
-
 	return dc.Image(), nil
 }
 
