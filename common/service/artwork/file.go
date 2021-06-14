@@ -8,12 +8,14 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/image/steganography"
 	"github.com/pastelnetwork/gonode/common/storage"
 )
 
@@ -24,9 +26,14 @@ type File struct {
 
 	storage *Storage
 
+	// if a file was created during the process, it should be deleted at the end.
 	isCreated bool
-	name      string
-	format    Format
+
+	// unique name within the storage.
+	name string
+
+	// file format, png, jpg, etc.
+	format Format
 }
 
 // Name returns filename.
@@ -41,8 +48,19 @@ func (file *File) String() string {
 // SetFormatFromExtension parses and sets image format from filename extension:
 // "jpg" (or "jpeg"), "png", "gif" are supported.
 func (file *File) SetFormatFromExtension(ext string) error {
-	if f, ok := formatExts[strings.ToLower(strings.TrimPrefix(ext, "."))]; ok {
-		file.format = f
+	if format, ok := formatExts[strings.ToLower(strings.TrimPrefix(ext, "."))]; ok {
+		file.format = format
+
+		if !file.isCreated {
+			return nil
+		}
+
+		newname := fmt.Sprintf("%s.%s", strings.TrimSuffix(file.name, filepath.Ext(file.name)), format)
+		if err := file.storage.Rename(file.name, newname); err != nil {
+			return err
+		}
+		file.name = newname
+
 		return nil
 	}
 	return ErrUnsupportedFormat
@@ -100,6 +118,8 @@ func (file *File) Copy() (*File, error) {
 	defer src.Close()
 
 	newFile := file.storage.NewFile()
+	newFile.format = file.format
+
 	dst, err := newFile.Create()
 	if err != nil {
 		return nil, err
@@ -215,6 +235,53 @@ func (file *File) SaveImage(img image.Image) error {
 		return nil
 	}
 	return ErrUnsupportedFormat
+}
+
+type Encoder interface {
+	Encode(width, height int) (image.Image, error)
+}
+
+func (file *File) Encode(enc Encoder) error {
+	img, err := file.LoadImage()
+	if err != nil {
+		return err
+	}
+	imgW := img.Bounds().Dx()
+	imgH := img.Bounds().Dy()
+
+	sigImg, err := enc.Encode(imgW, imgH)
+	if err != nil {
+		return err
+	}
+
+	// remove
+	sigFile, err := file.Copy()
+	if err != nil {
+		return err
+	}
+	if err := sigFile.SetFormatFromExtension("jpeg"); err != nil {
+		return err
+	}
+	if err := sigFile.SaveImage(sigImg); err != nil {
+		return err
+	}
+	return nil
+	// remove
+
+	sigData := new(bytes.Buffer)
+	if err := png.Encode(sigData, sigImg); err != nil {
+		return errors.Errorf("failed to encode signature to data: %w", err)
+	}
+
+	if sigW := sigImg.Bounds().Dx(); sigW > imgW {
+		img = imaging.Resize(img, sigW, 0, imaging.Lanczos)
+	}
+
+	img, err = steganography.Encode(img, sigData.Bytes())
+	if err != nil {
+		return errors.New(err)
+	}
+	return nil
 }
 
 // NewFile returns a newFile File instance.

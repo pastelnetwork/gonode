@@ -7,6 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
@@ -34,7 +35,7 @@ func (task *Task) Run(ctx context.Context) error {
 
 	if err := task.run(ctx); err != nil {
 		task.UpdateStatus(StatusTaskRejected)
-		log.WithContext(ctx).WithError(err).Warnf("Task is rejected")
+		log.WithContext(ctx).WithErrorStack(err).Warnf("Task is rejected")
 		return nil
 	}
 
@@ -121,12 +122,35 @@ func (task *Task) run(ctx context.Context) error {
 
 	// Sign fingerprint
 	fingerprint := nodes.Fingerprint()
-	signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
+	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(signature)
+	qrSig := qrsignature.New(
+		qrsignature.PostQuantumPubKey(pqPubKey),
+		qrsignature.Fingerprint(fingerprint),
+		qrsignature.Fingerprint(finger),
+		qrsignature.Ed448Signature(ed448Signature),
+		qrsignature.Ed448PubKey([]byte(task.Ticket.ArtistPastelID)),
+	)
+
+	// var qrSig qrsignature.Signature
+	// for i := 0; i < 15; i++ {
+	// 	length := rand.Intn(10000)
+	// 	if length == 0 {
+	// 		continue
+	// 	}
+
+	// 	str, _ := random.String(length, random.Base62Chars)
+	// 	qrSig = append(qrSig, qrsignature.Fingerprint([]byte(str)))
+	// }
+
+	if err := task.Ticket.Image.Encode(qrSig); err != nil {
+		return err
+	}
+
+	fmt.Println(string(ed448Signature))
 
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()

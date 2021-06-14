@@ -12,7 +12,6 @@ import (
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/skratchdot/open-golang/open"
 	"github.com/xlzd/gotp"
 	"golang.org/x/image/font/inconsolata"
 )
@@ -68,7 +67,7 @@ func SetupOTPAuthenticator(userEmail, otpSecretFilePath, qrCodeFilePath string) 
 	dc.DrawImageAnchored(im, W/2, H/2, 0.5, 0.5)
 
 	dc.SavePNG(qrCodeFilePath)
-	open.Start(qrCodeFilePath)
+	//open.Start(qrCodeFilePath)
 
 	return nil
 }
