@@ -11,16 +11,16 @@ import (
 
 // Store is the interface for implementing the storage mechanism for the DHT.
 type Store interface {
-	// Store a key/value pair for the local node with the given replication and expiration times.
+	// Store a key/value pair for the local node with the replication and expiration
 	Store(ctx context.Context, key []byte, data []byte, replication time.Time, expiration time.Time) error
 
-	// Retrieve the local key/value if it exists.
-	Retrieve(ctx context.Context, key []byte) []byte
+	// Retrieve the local key/value from store
+	Retrieve(ctx context.Context, key []byte) ([]byte, error)
 
-	// Delete a key/value pair from the Store
+	// Delete a key/value pair from the store
 	Delete(ctx context.Context, key []byte)
 
-	// Keys returns all the keys from the Store
+	// Keys returns all the keys from the store
 	Keys(ctx context.Context) [][]byte
 
 	// KeysForReplication returns the keys of all data to be replicated across the network
@@ -55,7 +55,7 @@ func (ms *MemoryStore) KeysForReplication(_ context.Context) [][]byte {
 	return keys
 }
 
-// ExpireKeys should expire all key/values due for expiration.
+// ExpireKeys should expire all key/values due for expiration
 func (ms *MemoryStore) ExpireKeys(_ context.Context) {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
@@ -97,17 +97,17 @@ func (ms *MemoryStore) Store(_ context.Context, key []byte, data []byte, replica
 }
 
 // Retrieve will return the local key/value if it exists
-func (ms *MemoryStore) Retrieve(_ context.Context, key []byte) (data []byte) {
+func (ms *MemoryStore) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
 	data, ok := ms.data[string(key)]
 	if !ok {
-		return nil
+		return nil, nil
 	}
 
 	logrus.Debugf("id: %s, retrieve key: %s, data: %v", ms.self.String(), hex.EncodeToString(key), hex.EncodeToString(data))
-	return data
+	return data, nil
 }
 
 // Delete deletes a key/value pair from the MemoryStore

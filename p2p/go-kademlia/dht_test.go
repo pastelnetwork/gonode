@@ -167,13 +167,89 @@ func (ts *testSuite) TestStoreAndRetrieve() {
 }
 
 func (ts *testSuite) TestStoreWithMain() {
-	res, err := ts.main.Store(ts.ctx, ts.Value)
+	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 
-	key := base58.Decode(res)
-	// retrieve the value for the key from storage
-	actual := ts.main.store.Retrieve(ts.ctx, key)
-	ts.Equal(ts.Value, actual)
+	// verify the value for dht store
+	ts.verifyValue(base58.Decode(encodedKey), ts.Value, ts.main)
+}
+
+func (ts *testSuite) TestStoreWithTwoNodes() {
+	// new a dht node
+	dht, err := ts.newDHTNode(ts.ctx, 6001, ts.bootstrapNodes, nil)
+	if err != nil {
+		ts.T().Fatalf("start a dht: %v", err)
+	}
+
+	// do the bootstrap
+	if err := dht.Bootstrap(ts.ctx); err != nil {
+		ts.T().Fatalf("do bootstrap: %v", err)
+	}
+
+	// start the dht node
+	if err := dht.Start(ts.ctx); err != nil {
+		ts.T().Fatalf("start dht node: %v", err)
+	}
+	defer dht.Stop(ts.ctx)
+
+	// store the key and value by main node
+	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+	ts.Equal(ts.Key, encodedKey)
+
+	// verify the value for dht store
+	ts.verifyValue(base58.Decode(encodedKey), ts.Value, ts.main, dht)
+}
+
+// verify the value stored for distributed hash table
+func (ts *testSuite) verifyValue(key []byte, value []byte, dhts ...*DHT) {
+	for _, dht := range dhts {
+		data, err := dht.store.Retrieve(ts.ctx, key)
+		if err != nil {
+			ts.T().Fatalf("store retrieve: %v", err)
+		}
+		ts.Equal(value, data)
+	}
+}
+
+func (ts *testSuite) TestStoreWith10Nodes() {
+	dhts := []*DHT{}
+
+	dhts = append(dhts, ts.main)
+
+	port := 6001
+	for i := 0; i < 9; i++ {
+		// new a dht node
+		dht, err := ts.newDHTNode(ts.ctx, port+i, ts.bootstrapNodes, nil)
+		if err != nil {
+			ts.T().Fatalf("start a dht: %v", err)
+		}
+
+		// do the bootstrap
+		if err := dht.Bootstrap(ts.ctx); err != nil {
+			ts.T().Fatalf("do bootstrap: %v", err)
+		}
+
+		// start the dht node
+		if err := dht.Start(ts.ctx); err != nil {
+			ts.T().Fatalf("start dht node: %v", err)
+		}
+		defer dht.Stop(ts.ctx)
+
+		dhts = append(dhts, dht)
+	}
+
+	// store the key and value by main node
+	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+	ts.Equal(ts.Key, encodedKey)
+
+	// verify the value for dht store
+	ts.verifyValue(base58.Decode(encodedKey), ts.Value, dhts...)
 }

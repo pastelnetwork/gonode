@@ -3,6 +3,7 @@ package kademlia
 import (
 	"bytes"
 	"encoding/hex"
+	"math"
 	"math/big"
 	"math/rand"
 	"sort"
@@ -120,6 +121,51 @@ func (ht *HashTable) refreshNode(id []byte) {
 	bucket = append(bucket[:offset], bucket[offset+1:]...)
 	bucket = append(bucket, current)
 	ht.routeTable[index] = bucket
+}
+
+// refreshTime returns the refresh time for bucket
+func (ht *HashTable) refreshTime(bucket int) time.Time {
+	ht.mutex.Lock()
+	defer ht.mutex.Unlock()
+
+	return ht.refreshers[bucket]
+}
+
+// randomIDFromBucket returns a random id based on the bucket index and self id
+func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
+	ht.mutex.Lock()
+	defer ht.mutex.Unlock()
+
+	// set the new ID to to be equal in every byte up to
+	// the byte of the first different bit in the bucket
+	index := bucket / 8
+	var id []byte
+	for i := 0; i < index; i++ {
+		id = append(id, ht.self.ID[i])
+	}
+	start := bucket % 8
+
+	var first byte
+	// check each bit from left to right in order
+	for i := 0; i < 8; i++ {
+		var bit bool
+		if i < start {
+			bit = hasBit(ht.self.ID[index], uint(i))
+		} else {
+			bit = rand.Intn(2) == 1
+		}
+		if bit {
+			first += byte(math.Pow(2, float64(7-i)))
+		}
+	}
+	id = append(id, first)
+
+	// randomize each remaining byte
+	for i := index + 1; i < 20; i++ {
+		id = append(id, byte(rand.Intn(256)))
+	}
+
+	return id
 }
 
 // nodeExists check if the node id is existed

@@ -103,7 +103,10 @@ func (s *Network) handleFindValue(ctx context.Context, conn net.Conn, message *M
 
 	data := &FindValueResponse{}
 	// retrieve the value from local storage
-	value := s.dht.store.Retrieve(ctx, request.Target)
+	value, err := s.dht.store.Retrieve(ctx, request.Target)
+	if err != nil {
+		return fmt.Errorf("store retrieve: %v", err)
+	}
 	if value != nil {
 		// return the value
 		data.Value = value

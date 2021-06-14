@@ -22,18 +22,18 @@ const (
 	defaultExpireTime    = time.Second * 86410
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
-	defaultRepublishTime = time.Second * 86400
-	defaultPingTime      = time.Second * 1
-	defaultReceiveTime   = time.Second * 2
+	defaultPingTime      = time.Second * 2
+	defaultUpdateTime    = time.Second * 15
 )
 
 // DHT represents the state of the local node in the distributed hash table
 type DHT struct {
-	ht      *HashTable // the hashtable for routing
-	options *Options   // the options of DHT
-	network *Network   // the network of DHT
-	store   Store      // the storage of DHT
-	mutex   sync.Mutex // mutex for update node
+	ht      *HashTable    // the hashtable for routing
+	options *Options      // the options of DHT
+	network *Network      // the network of DHT
+	store   Store         // the storage of DHT
+	mutex   sync.Mutex    // mutex for update node
+	done    chan struct{} // distributed hash table is done
 }
 
 // Options contains configuration options for the local node
@@ -62,16 +62,9 @@ type Options struct {
 	// required to publish its entire database
 	ReplicateTime time.Duration
 
-	// The time after which the original publisher must
-	// republish a key/value pair. Currently not implemented.
-	RepublishTime time.Duration
-
 	// The maximum time to wait for a response from a node before discarding
 	// it from the bucket
 	PingTime time.Duration
-
-	// The maximum time to wait for a response to any message
-	ReceiveTime time.Duration
 }
 
 // NewDHT returns a new DHT node
@@ -96,19 +89,14 @@ func NewDHT(store Store, options *Options) (*DHT, error) {
 	if options.ReplicateTime == 0 {
 		options.ReplicateTime = defaultReplicateTime
 	}
-	if options.RepublishTime == 0 {
-		options.RepublishTime = defaultReplicateTime
-	}
 	if options.PingTime == 0 {
 		options.PingTime = defaultPingTime
-	}
-	if options.ReceiveTime == 0 {
-		options.ReceiveTime = defaultReceiveTime
 	}
 
 	s := &DHT{
 		store:   store,
 		options: options,
+		done:    make(chan struct{}),
 	}
 	// new a hashtable with options
 	ht, err := NewHashTable(options)
@@ -134,11 +122,18 @@ func (s *DHT) Start(ctx context.Context) error {
 		return fmt.Errorf("start network: %v", err)
 	}
 
+	// start the update timer
+	go s.doUpdateWork(ctx, defaultUpdateTime)
+
 	return nil
 }
 
 // Stop the distributed hash table
 func (s *DHT) Stop(ctx context.Context) {
+	if s.done != nil {
+		close(s.done)
+	}
+
 	// stop the network
 	s.network.Stop(ctx)
 }
@@ -207,7 +202,10 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	}
 
 	// retrieve the key/value from local storage
-	value := s.store.Retrieve(ctx, decoded)
+	value, err := s.store.Retrieve(ctx, decoded)
+	if err != nil {
+		return nil, fmt.Errorf("store retrieve: %v", err)
+	}
 	// if not found locally, iterative find value from kademlia network
 	if value == nil {
 		data, err := s.iterate(ctx, IterateFindValue, decoded, nil)
@@ -492,32 +490,52 @@ func (s *DHT) addNode(node *Node) {
 	s.ht.routeTable[index] = bucket
 }
 
-// func (s *DHT) timers() {
-// 	t := time.NewTicker(time.Second)
-// 	for {
-// 		select {
-// 		case <-t.C:
-// 			// Refresh
-// 			for i := 0; i < B; i++ {
-// 				if time.Since(s.ht.getRefreshTimeForBucket(i)) > s.options.RefreshTime {
-// 					id := s.ht.getRandomIDFromBucket(K)
-// 					s.iterate(IterateFindNode, id, nil)
-// 				}
-// 			}
+// start a update timer to do refresh, replication, expiration work periodly
+func (s *DHT) doUpdateWork(ctx context.Context, interval time.Duration) {
+	// new a timer for refresh work periodly
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
 
-// 			// Replication
-// 			// keys := s.store.KeysForReplication()
-// 			// for _, key := range keys {
-// 			// 	value, _ := s.store.Retrieve(key)
-// 			// 	s.iterate(IterateStore, key, value)
-// 			// }
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-s.done:
+			return
+		case <-timer.C:
+			// refresh
+			for i := 0; i < B; i++ {
+				if time.Since(s.ht.refreshTime(i)) > s.options.RefreshTime {
+					// refresh the bucket by iterative find node
+					id := s.ht.randomIDFromBucket(K)
+					if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
+						logrus.Errorf("iterate find node: %v", err)
+					}
+				}
+			}
 
-// 			// // Expiration
-// 			// s.store.ExpireKeys()
-// 		case <-s.network.getDisconnect():
-// 			t.Stop()
-// 			s.network.timersFin()
-// 			return
-// 		}
-// 	}
-// }
+			// replication
+			keys := s.store.KeysForReplication(ctx)
+			for _, key := range keys {
+				value, err := s.store.Retrieve(ctx, key)
+				if err != nil {
+					logrus.Errorf("store retrieve: %v", err)
+					continue
+				}
+				if value == nil {
+					continue
+				}
+				// iteratve store the value
+				if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
+					logrus.Errorf("iterate store data: %v", err)
+				}
+			}
+
+			// expire the keys
+			s.store.ExpireKeys(ctx)
+
+			// reset the timer
+			timer.Reset(interval)
+		}
+	}
+}
