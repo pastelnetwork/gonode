@@ -24,12 +24,11 @@ func (pos *Metadata) Encode(payloads []*Payload) error {
 		}
 	}
 
-	data := []byte(positionVector)
-	if err := positionQRCapacity.Validate(data); err != nil {
+	if err := positionQRCapacity.Validate(positionVector); err != nil {
 		return err
 	}
 
-	img, err := pos.writer.Encode(data)
+	img, err := pos.writer.Encode(positionVector)
 	if err != nil {
 		return err
 	}

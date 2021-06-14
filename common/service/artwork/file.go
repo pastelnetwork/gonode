@@ -238,7 +238,7 @@ func (file *File) SaveImage(img image.Image) error {
 }
 
 type Encoder interface {
-	Encode(image.Image) (image.Image, error)
+	Encode(img image.Image) (image.Image, error)
 }
 
 func (file *File) Encode(enc Encoder) error {
@@ -251,20 +251,7 @@ func (file *File) Encode(enc Encoder) error {
 	if err != nil {
 		return err
 	}
-
-	// remove
-	sigFile, err := file.Copy()
-	if err != nil {
-		return err
-	}
-	if err := sigFile.SetFormatFromExtension("jpeg"); err != nil {
-		return err
-	}
-	if err := sigFile.SaveImage(sigImg); err != nil {
-		return err
-	}
-	return nil
-	// remove
+	// return file.SaveImage(sigImg)
 
 	sigData := new(bytes.Buffer)
 	if err := png.Encode(sigData, sigImg); err != nil {
@@ -279,7 +266,8 @@ func (file *File) Encode(enc Encoder) error {
 	if err != nil {
 		return errors.New(err)
 	}
-	return nil
+
+	return file.SaveImage(img)
 }
 
 // NewFile returns a newFile File instance.

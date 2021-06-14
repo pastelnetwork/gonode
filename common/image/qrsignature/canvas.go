@@ -43,7 +43,7 @@ type Canvas struct {
 
 // Size returns the canvas size with clipping black edges.
 func (canvas *Canvas) Size() (int, int) {
-	return canvas.yx.maxPos(0, canvas.height), canvas.xy.maxPos(0, canvas.width)
+	return canvas.width, canvas.height
 }
 
 // FillPos finds free space in the canvas and fills position points for the given qrcode.
@@ -58,26 +58,20 @@ func (canvas *Canvas) FillPos(qrCode *QRCode) {
 	for {
 		posX, posY = canvas.width, canvas.height
 
-		for x := 0; x <= canvas.width-size.X; x++ {
-			var y int
-
-			if max := canvas.xy.maxPos(x, size.X); y < max {
-				if canvas.height < max+size.Y {
-					continue
-				}
-				y = max
+		for x, y := 0, 0; x <= canvas.width-size.X; x++ {
+			if y = canvas.xy.maxPos(x, size.X); y+size.Y > canvas.height {
+				continue
 			}
-
 			if max := canvas.yx.maxPos(y, size.Y); x < max {
 				continue
 			}
-			if posY > y {
+			if (posX + posY) > (x + y) {
 				posY = y
 				posX = x
 			}
 		}
 
-		if posX == canvas.width {
+		if posX+size.X > canvas.width || posY+size.Y > canvas.height {
 			canvas.scale(1)
 			continue
 		}
@@ -108,9 +102,13 @@ func (canvas *Canvas) scale(pixels int) {
 }
 
 // NewCanvas returns a new Canvas instance.
-func NewCanvas(artW, artH int) *Canvas {
+func NewCanvas(width, height int) *Canvas {
 	return &Canvas{
-		ratioW: float64(artH) / float64(artW),
-		ratioH: float64(artW) / float64(artH),
+		ratioW: float64(height) / float64(width),
+		ratioH: float64(width) / float64(height),
+		// width:  width,
+		// height: height,
+		// xy:     make(CanvasAxis, width),
+		// yx:     make(CanvasAxis, height),
 	}
 }

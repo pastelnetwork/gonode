@@ -3,6 +3,7 @@ module github.com/pastelnetwork/gonode/walletnode
 go 1.16
 
 require (
+	github.com/DataDog/zstd v1.4.8 // indirect
 	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/pastelnetwork/gonode/common v0.0.0

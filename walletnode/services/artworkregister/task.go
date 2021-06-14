@@ -127,6 +127,14 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
+	sigFile, err := task.Ticket.Image.Copy()
+	if err != nil {
+		return err
+	}
+	if err := sigFile.SetFormatFromExtension("png"); err != nil {
+		return err
+	}
+
 	qrSig := qrsignature.New(
 		qrsignature.PostQuantumPubKey(pqPubKey),
 		qrsignature.Fingerprint(fingerprint),
@@ -135,18 +143,20 @@ func (task *Task) run(ctx context.Context) error {
 		qrsignature.Ed448PubKey([]byte(task.Ticket.ArtistPastelID)),
 	)
 
-	// var qrSig qrsignature.Signature
-	// for i := 0; i < 15; i++ {
-	// 	length := rand.Intn(10000)
+	// var payloads []*qrsignature.Payload
+	// for i := 0; i < 55; i++ {
+	// 	length := rand.Intn(3500)
 	// 	if length == 0 {
+	// 		fmt.Println("skip")
 	// 		continue
 	// 	}
 
 	// 	str, _ := random.String(length, random.Base62Chars)
-	// 	qrSig = append(qrSig, qrsignature.Fingerprint([]byte(str)))
+	// 	payloads = append(payloads, qrsignature.Fingerprint([]byte(str)))
 	// }
+	// qrSig := qrsignature.New(payloads...)
 
-	if err := task.Ticket.Image.Encode(qrSig); err != nil {
+	if err := sigFile.Encode(qrSig); err != nil {
 		return err
 	}
 

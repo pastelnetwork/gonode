@@ -19,7 +19,7 @@ const (
 type QRCodeCapacity int
 
 // Validate validates a length of the data.
-func (cap QRCodeCapacity) Validate(data []byte) error {
+func (cap QRCodeCapacity) Validate(data string) error {
 	if int(cap) < len(data) {
 		return errors.Errorf("exceeds the maximum allowed amount of data by %d characters", len(data)-int(cap))
 	}
@@ -33,8 +33,8 @@ type QRCodeWriter struct {
 }
 
 // Encode encodes given data into multiple QR codes.
-func (qr *QRCodeWriter) Encode(data []byte) (image.Image, error) {
-	img, err := qr.writer.Encode(string(data), gozxing.BarcodeFormat_QR_CODE, qr.imageSize, qr.imageSize, nil)
+func (qr *QRCodeWriter) Encode(data string) (image.Image, error) {
+	img, err := qr.writer.Encode(data, gozxing.BarcodeFormat_QR_CODE, qr.imageSize, qr.imageSize, nil)
 	if err != nil {
 		return nil, errors.Errorf("failed to encode data: %w", err)
 	}

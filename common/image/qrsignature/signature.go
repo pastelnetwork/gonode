@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/fogleman/gg"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Signature represents set of various data(payloads) that is represented in QR codes on the single canvas.
@@ -43,19 +44,22 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	imgW := img.Bounds().Dx()
 	imgH := img.Bounds().Dy()
 
-	// Set coordinates for each QR code.
+	log.Debug("start")
+
 	canvas := NewCanvas(imgW, imgH)
 	for _, qrCode := range qrCodes {
+		// Set coordinates for each QR code.
 		canvas.FillPos(qrCode)
 	}
+	// Obtain the real size of the canvas that can be bigger or less than the original values but while maintaining aspect ratios.
+	imgW, imgH = canvas.Size()
+
+	log.Debug("end")
 
 	// Generate (metadata) QR code that contains coordinates of all payload QR codes on the canvas.
 	if err := sig.metadata.Encode(sig.payloads); err != nil {
 		return nil, err
 	}
-
-	// Obtain the real size of the canvas that can be bigger or less than the original values but while maintaining aspect ratios and with clipping black edges.
-	imgW, imgH = canvas.Size()
 
 	// Draw all QR codes in on single image.
 	dc := gg.NewContext(imgW, imgH)
@@ -68,6 +72,10 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	}
 	return dc.Image(), nil
 }
+
+// func (sig Signature) Dencode(img image.Image) (image.Image, error) {
+
+// }
 
 // New returns a new Signature instance.
 func New(payload ...*Payload) *Signature {

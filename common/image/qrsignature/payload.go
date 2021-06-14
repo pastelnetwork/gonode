@@ -1,9 +1,11 @@
 package qrsignature
 
 import (
+	"encoding/base64"
 	"fmt"
 
-	"github.com/pastelnetwork/gonode/common/collection"
+	"github.com/DataDog/zstd"
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 const (
@@ -22,15 +24,23 @@ type Payload struct {
 
 // Encode encodes raw data to qrCode representation.
 func (payload *Payload) Encode() error {
-	raws := collection.SplitBytesBySize(payload.raw, int(payloadQRCapacity))
-	qrCodes := make([]*QRCode, len(raws))
+	output, err := zstd.CompressLevel(nil, payload.raw, 22)
+	if err != nil {
+		return errors.Errorf("failed to compress raw data: %w", err)
+	}
+	data := base64.StdEncoding.EncodeToString(output)
+	size := int(payloadQRCapacity)
 
-	for i, raw := range raws {
-		img, err := payload.writer.Encode(raw)
+	var qrCodes []*QRCode
+	for i, last := 0, len(data); i < last; i += size {
+		if i+size > last {
+			size = last - i
+		}
+		img, err := payload.writer.Encode(data[i : i+size])
 		if err != nil {
 			return fmt.Errorf("%q: %w", payload.name, err)
 		}
-		qrCodes[i] = NewQRCode(img)
+		qrCodes = append(qrCodes, NewQRCode(img))
 	}
 
 	payload.qrCodes = qrCodes
