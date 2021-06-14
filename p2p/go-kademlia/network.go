@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/utp"
@@ -56,7 +57,7 @@ func (s *Network) Stop(ctx context.Context) {
 	// close the socket
 	if s.socket != nil {
 		if err := s.socket.Close(); err != nil {
-			logrus.Infof("close socket: %v", err)
+			logrus.Debugf("close socket: %v", err)
 		}
 	}
 }
@@ -71,7 +72,7 @@ func (s *Network) handleFindNode(ctx context.Context, conn net.Conn, message *Me
 	s.dht.addNode(message.Sender)
 
 	// the closest contacts
-	closest := s.dht.ht.ClosestContacts(K, request.Target, []*Node{message.Sender})
+	closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
 
 	// new a response message
 	response := s.dht.newMessage(
@@ -108,7 +109,7 @@ func (s *Network) handleFindValue(ctx context.Context, conn net.Conn, message *M
 		data.Value = value
 	} else {
 		// return the closest contacts
-		closest := s.dht.ht.ClosestContacts(K, request.Target, []*Node{message.Sender})
+		closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
 		data.Closest = closest.Nodes
 	}
 
@@ -132,12 +133,13 @@ func (s *Network) handleStoreData(ctx context.Context, conn net.Conn, message *M
 	if !ok {
 		return errors.New("impossible: must be StoreDataRequest")
 	}
+	logrus.Debugf("handle store data: %v", message.String())
 
 	// add the sender to local hash table
 	s.dht.addNode(message.Sender)
 
 	// format the key
-	key := s.dht.store.GetKey(request.Data)
+	key := s.dht.hashKey(request.Data)
 	// expiration time for key
 	expiration := s.dht.keyExpireTime(key)
 	// replication time for key
@@ -183,7 +185,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 	for {
 		select {
 		case <-ctx.Done():
-			logrus.Infof("connection %s is done", conn.RemoteAddr().String())
+			logrus.Debugf("connection %s is done", conn.RemoteAddr().String())
 			return
 		default:
 		}
@@ -235,10 +237,14 @@ func (s *Network) serve(ctx context.Context) {
 		// accept the incomming connections
 		conn, err := s.socket.Accept()
 		if err != nil {
+			if strings.Contains(err.Error(), "closed") {
+				return
+			}
+
 			logrus.Errorf("socket accept: %v", err)
 			return
 		}
-		logrus.Infof("incomming connection: %v", conn.RemoteAddr())
+		logrus.Debugf("%v: incomming connection: %v", s.self.String(), conn.RemoteAddr())
 
 		// handle the connection requests
 		go s.handleConn(ctx, conn)

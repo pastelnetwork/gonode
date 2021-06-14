@@ -2,11 +2,14 @@ package kademlia
 
 import (
 	"bytes"
+	"encoding/hex"
 	"math/big"
 	"math/rand"
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -30,19 +33,20 @@ const (
 // HashTable represents the hashtable state
 type HashTable struct {
 	// The ID of the local node
-	Self *Node
+	self *Node
 
 	// Route table a list of all known nodes in the network
 	// Nodes within buckets are sorted by least recently seen e.g.
 	// [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 	//  ^                                                           ^
 	//  └ Least recently seen                    Most recently seen ┘
-	RouteTable [B][]*Node // 160x20
+	routeTable [][]*Node // 160x20
 
 	// mutex for route table
 	mutex sync.Mutex
 
-	refreshers [B]time.Time
+	// refresh time for every bucket
+	refreshers []time.Time
 }
 
 func init() {
@@ -52,46 +56,55 @@ func init() {
 // NewHashTable returns a new hashtable
 func NewHashTable(options *Options) (*HashTable, error) {
 	ht := &HashTable{
-		Self: &Node{
+		self: &Node{
 			IP:   options.IP,
 			Port: options.Port,
 		},
+		refreshers: make([]time.Time, B),
+		routeTable: make([][]*Node, B),
 	}
 	// init the id for hashtable
 	if options.ID != nil {
-		ht.Self.ID = options.ID
+		ht.self.ID = options.ID
 	} else {
 		id, err := newRandomID()
 		if err != nil {
 			return nil, err
 		}
-		ht.Self.ID = id
+		ht.self.ID = id
 	}
+	logrus.Debugf("id: %v", hex.EncodeToString(ht.self.ID))
 
 	// reset the refresh time for every bucket
 	for i := 0; i < B; i++ {
-		ht.ResetRefreshTime(i)
+		ht.resetRefreshTime(i)
 	}
 
 	return ht, nil
 }
 
-// ResetRefreshTime - reset the refresh time
-func (ht *HashTable) ResetRefreshTime(bucket int) {
+// reset the hashtable
+func (ht *HashTable) reset() {
+	ht.refreshers = make([]time.Time, B)
+	ht.routeTable = make([][]*Node, B)
+}
+
+// resetRefreshTime - reset the refresh time
+func (ht *HashTable) resetRefreshTime(bucket int) {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 	ht.refreshers[bucket] = time.Now()
 }
 
-// RefreshNode makes the node to the end
-func (ht *HashTable) RefreshNode(id []byte) {
+// refreshNode makes the node to the end
+func (ht *HashTable) refreshNode(id []byte) {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 
 	// bucket index of the node
-	index := BucketIndex(ht.Self.ID, id)
+	index := ht.bucketIndex(ht.self.ID, id)
 	// point to the bucket
-	bucket := ht.RouteTable[index]
+	bucket := ht.routeTable[index]
 
 	var offset int
 	// find the position of the node
@@ -106,15 +119,15 @@ func (ht *HashTable) RefreshNode(id []byte) {
 	current := bucket[offset]
 	bucket = append(bucket[:offset], bucket[offset+1:]...)
 	bucket = append(bucket, current)
-	ht.RouteTable[index] = bucket
+	ht.routeTable[index] = bucket
 }
 
-// NodeExists check if the node id is existed
-func (ht *HashTable) NodeExists(bucket int, id []byte) bool {
+// nodeExists check if the node id is existed
+func (ht *HashTable) nodeExists(bucket int, id []byte) bool {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 
-	for _, node := range ht.RouteTable[bucket] {
+	for _, node := range ht.routeTable[bucket] {
 		if bytes.Equal(node.ID, id) {
 			return true
 		}
@@ -122,13 +135,13 @@ func (ht *HashTable) NodeExists(bucket int, id []byte) bool {
 	return false
 }
 
-// ClosestContacts returns the closest contacts of target
-func (ht *HashTable) ClosestContacts(num int, target []byte, ignoredNodes []*Node) *NodeList {
+// closestContacts returns the closest contacts of target
+func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Node) *NodeList {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 
 	// find the bucket index in local route tables
-	index := BucketIndex(ht.Self.ID, target)
+	index := ht.bucketIndex(ht.self.ID, target)
 	indexList := []int{index}
 	i := index - 1
 	j := index + 1
@@ -149,8 +162,8 @@ func (ht *HashTable) ClosestContacts(num int, target []byte, ignoredNodes []*Nod
 	// select alpha contacts and add them to the node list
 	for left > 0 && len(indexList) > 0 {
 		index, indexList = indexList[0], indexList[1:]
-		for i := 0; i < len(ht.RouteTable[index]); i++ {
-			node := ht.RouteTable[index][i]
+		for i := 0; i < len(ht.routeTable[index]); i++ {
+			node := ht.routeTable[index][i]
 
 			ignored := false
 			for j := 0; j < len(ignoredNodes); j++ {
@@ -176,14 +189,14 @@ func (ht *HashTable) ClosestContacts(num int, target []byte, ignoredNodes []*Nod
 	return nl
 }
 
-// CloserNodes returns the closer nodes in bucket for id comparing the local node
-func (ht *HashTable) CloserNodes(bucket int, id []byte) [][]byte {
+// closerNodes returns the closer nodes in bucket for id comparing the local node
+func (ht *HashTable) closerNodes(bucket int, id []byte) [][]byte {
 	var nodes [][]byte
-	for _, node := range ht.RouteTable[bucket] {
+	for _, node := range ht.routeTable[bucket] {
 		// distance between id and self
-		d1 := ht.Distance(id, ht.Self.ID)
+		d1 := ht.distance(id, ht.self.ID)
 		// distance between id and node in bucket
-		d2 := ht.Distance(id, node.ID)
+		d2 := ht.distance(id, node.ID)
 
 		// if 2-self > 2-id
 		if d1.Sub(d1, d2).Sign() >= 0 {
@@ -194,16 +207,16 @@ func (ht *HashTable) CloserNodes(bucket int, id []byte) [][]byte {
 	return nodes
 }
 
-// GetBucketNodes returns the nodes count of the bucket
-func (ht *HashTable) GetBucketNodes(bucket int) int {
+// bucketNodes returns the nodes count of the bucket
+func (ht *HashTable) bucketNodes(bucket int) int {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 
-	return len(ht.RouteTable[bucket])
+	return len(ht.routeTable[bucket])
 }
 
-// Distance returns the distance between two ids
-func (ht *HashTable) Distance(id1 []byte, id2 []byte) *big.Int {
+// distance returns the distance between two ids
+func (ht *HashTable) distance(id1 []byte, id2 []byte) *big.Int {
 	var dst [K]byte
 	for i := 0; i < K; i++ {
 		dst[i] = id1[i] ^ id2[i]
@@ -211,8 +224,8 @@ func (ht *HashTable) Distance(id1 []byte, id2 []byte) *big.Int {
 	return big.NewInt(0).SetBytes(dst[:])
 }
 
-// BucketIndex return the bucket index from two node ids
-func BucketIndex(id1 []byte, id2 []byte) int {
+// bucketIndex return the bucket index from two node ids
+func (ht *HashTable) bucketIndex(id1 []byte, id2 []byte) int {
 	// look at each byte from left to right
 	for j := 0; j < len(id1); j++ {
 		// xor the byte
@@ -233,12 +246,12 @@ func BucketIndex(id1 []byte, id2 []byte) int {
 }
 
 // Count returns the number of nodes in route table
-func (ht *HashTable) TotalCount() int {
+func (ht *HashTable) totalCount() int {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 
 	var num int
-	for _, v := range ht.RouteTable {
+	for _, v := range ht.routeTable {
 		num += len(v)
 	}
 	return num
@@ -253,8 +266,7 @@ func newRandomID() ([]byte, error) {
 
 // Simple helper function to determine the value of a particular
 // bit in a byte by index
-
-// Example:
+//
 // number:  1
 // bits:    00000001
 // pos:     01234567

@@ -2,7 +2,10 @@ package kademlia
 
 import (
 	"bytes"
+	"encoding/hex"
+	"fmt"
 	"math/big"
+	"strings"
 )
 
 // Node is the over-the-wire representation of a node
@@ -15,6 +18,10 @@ type Node struct {
 
 	// port of the node
 	Port int
+}
+
+func (s *Node) String() string {
+	return fmt.Sprintf("%v-%v:%d", hex.EncodeToString(s.ID), s.IP, s.Port)
 }
 
 // NewNode returns a new node for bootstrapping
@@ -31,6 +38,14 @@ type NodeList struct {
 
 	// Comparator is the id to compare to
 	Comparator []byte
+}
+
+func (s *NodeList) String() string {
+	nodes := []string{}
+	for _, node := range s.Nodes {
+		nodes = append(nodes, node.String())
+	}
+	return strings.Join(nodes, ",")
 }
 
 // CompareNodes checks if two nodes are equal

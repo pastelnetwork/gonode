@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/gob"
+	"fmt"
 	"io"
 )
 
@@ -32,6 +33,10 @@ type Message struct {
 	Receiver    *Node       // the receiver node
 	MessageType int         // the message type
 	Data        interface{} // the real data for the request
+}
+
+func (m *Message) String() string {
+	return fmt.Sprintf("type: %v, sender: %v, receiver: %v, data type: %T", m.MessageType, m.Sender.String(), m.Receiver.String(), m.Data)
 }
 
 // FindNodeRequest defines the request data for find node
