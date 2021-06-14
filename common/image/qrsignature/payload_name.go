@@ -2,7 +2,7 @@ package qrsignature
 
 // List of available payloads
 const (
-	PayloadFingerprint PayloadName = iota
+	PayloadFingerprint PayloadName = iota + 1
 	PayloadPostQuantumSignature
 	PayloadPostQuantumPubKey
 	PayloadEd448Signature
@@ -15,6 +15,15 @@ var payloadNames = map[PayloadName]string{
 	PayloadPostQuantumPubKey:    "PQPubKey",
 	PayloadEd448Signature:       "Ed448Signature",
 	PayloadEd448PubKey:          "Ed448PubKey",
+}
+
+func payloadName(subText string) PayloadName {
+	for name, text := range payloadNames {
+		if text == subText {
+			return name
+		}
+	}
+	return PayloadName(0)
 }
 
 // PayloadName represents data that can be stored inside QR code.
