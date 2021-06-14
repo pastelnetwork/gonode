@@ -18,7 +18,7 @@ option.experimental_options["prefs"] = chrome_prefs
 chrome_prefs["profile.default_content_settings"] = {"images": 2}
 chrome_prefs["profile.managed_default_content_settings"] = {"images": 2}
 
-CATEGORIES = ['anime']
+CATEGORIES = ['hyperloop', 'manga',  'art', 'sports', 'contemporary']
 CATEGORY_IDX = 0
 
 DRIVER = webdriver.Chrome()

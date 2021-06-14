@@ -37,7 +37,7 @@ NORMAL_SIZE_IMG_URLS = {}
 USE_CMD_ARGS = 0
 # Input - output folders
 SAVE_FOLDER = ''
-
+# NFTs Collections Names
 ASSET_COLLECTION_NAME = []
 
 LAST_FOUND = False
@@ -149,6 +149,8 @@ def fetch_urls_and_images():
     global DRIVER
     global ASSET_COLLECTION_NAME
 
+    print(str(ASSET_COLLECTION_NAME))
+
     for collection in ASSET_COLLECTION_NAME:
         url = 'https://opensea.io/assets/{}'.format(collection)
         DRIVER.get(url)
@@ -246,12 +248,29 @@ def fetch_collections_names():
     html = DRIVER.page_source
     sleep(SCROLL_PAUSE_TIME)
 
-    # BeautifulSoup obj for scraping static data from html
-    soup = BeautifulSoup(html, 'html.parser')
-    next_data_script = soup.find('script', attrs={ 'id': '__NEXT_DATA__'})
-    content_string = str(next_data_script.contents)
-    ASSET_COLLECTION_NAME = re.findall('\"slug\"\:\"([a-zA-Z0-9-]+)\"', content_string)
-    print(str(ASSET_COLLECTION_NAME))
+    while True:
+        scroll_height = DRIVER.execute_script('return document.getElementsByClassName("Scrollbox--content")[0].scrollHeight;')
+        initial_collections_len = len(ASSET_COLLECTION_NAME)
+
+        # BeautifulSoup obj for scraping static data from html
+        soup = BeautifulSoup(html, 'html.parser')
+        next_data_script = soup.find('script', attrs={ 'id': '__NEXT_DATA__'})
+        content_string = str(next_data_script.contents)
+        collections_slugs = re.findall('\"slug\"\:\"([a-zA-Z0-9-]+)\"', content_string)
+
+        for slug in collections_slugs:
+            if slug not in NORMAL_SIZE_IMG_URLS:
+                ASSET_COLLECTION_NAME.append(slug)
+        
+        print('ASSET_COLLECTION_NAME='+str(len(ASSET_COLLECTION_NAME)))
+        if initial_collections_len == len(ASSET_COLLECTION_NAME):
+            break
+
+        DRIVER.execute_script('document.getElementsByClassName("Scrollbox--content")[0].scrollTop = {};'.format(scroll_height))
+        time.sleep(2)
+
+        if scroll_height >= 105000:
+            break
 
 if __name__ == '__main__':
     parse_folders()
