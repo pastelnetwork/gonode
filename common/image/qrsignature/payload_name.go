@@ -11,10 +11,10 @@ const (
 
 var payloadNames = map[PayloadName]string{
 	PayloadFingerprint:          "Fingerprint",
-	PayloadPostQuantumSignature: "PQ Signature",
-	PayloadPostQuantumPubKey:    "PQ Pub Key",
-	PayloadEd448Signature:       "Ed448 Signature",
-	PayloadEd448PubKey:          "Ed448 Pub Key",
+	PayloadPostQuantumSignature: "PQSignature",
+	PayloadPostQuantumPubKey:    "PQPubKey",
+	PayloadEd448Signature:       "Ed448Signature",
+	PayloadEd448PubKey:          "Ed448PubKey",
 }
 
 // PayloadName represents data that can be stored inside QR code.
@@ -50,4 +50,29 @@ func Ed448Signature(raw []byte) *Payload {
 // Ed448PubKey returns a new instance of Payload with preset PayloadEd448PubKey datatype.
 func Ed448PubKey(raw []byte) *Payload {
 	return NewPayload(raw, PayloadEd448PubKey)
+}
+
+// Fingerprint returns Fingerprint data.
+func (payloads *Payloads) Fingerprint() []byte {
+	return payloads.Raw(PayloadFingerprint)
+}
+
+// PostQuantumSignature returns PostQuantumSignature data.
+func (payloads *Payloads) PostQuantumSignature() []byte {
+	return payloads.Raw(PayloadPostQuantumSignature)
+}
+
+// PostQuantumPubKey returns PostQuantumPubKey data.
+func (payloads *Payloads) PostQuantumPubKey() []byte {
+	return payloads.Raw(PayloadPostQuantumPubKey)
+}
+
+// Ed448Signature returns Ed448Signature data.
+func (payloads *Payloads) Ed448Signature() []byte {
+	return payloads.Raw(PayloadEd448Signature)
+}
+
+// Ed448PubKey returns Ed448PubKey data.
+func (payloads *Payloads) Ed448PubKey() []byte {
+	return payloads.Raw(PayloadEd448PubKey)
 }

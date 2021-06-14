@@ -15,7 +15,6 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/image/steganography"
 	"github.com/pastelnetwork/gonode/common/storage"
 )
 
@@ -49,21 +48,22 @@ func (file *File) String() string {
 // "jpg" (or "jpeg"), "png", "gif" are supported.
 func (file *File) SetFormatFromExtension(ext string) error {
 	if format, ok := formatExts[strings.ToLower(strings.TrimPrefix(ext, "."))]; ok {
-		file.format = format
-
-		if !file.isCreated {
-			return nil
-		}
-
-		newname := fmt.Sprintf("%s.%s", strings.TrimSuffix(file.name, filepath.Ext(file.name)), format)
-		if err := file.storage.Rename(file.name, newname); err != nil {
-			return err
-		}
-		file.name = newname
-
-		return nil
+		return file.SetFormat(format)
 	}
 	return ErrUnsupportedFormat
+}
+
+// SetFormat sets file extension.
+func (file *File) SetFormat(format Format) error {
+	file.format = format
+
+	newname := fmt.Sprintf("%s.%s", strings.TrimSuffix(file.name, filepath.Ext(file.name)), format)
+	file.name = newname
+
+	if !file.isCreated {
+		return nil
+	}
+	return file.storage.Rename(file.name, newname)
 }
 
 // Format returns file extension.
@@ -118,7 +118,9 @@ func (file *File) Copy() (*File, error) {
 	defer src.Close()
 
 	newFile := file.storage.NewFile()
-	newFile.format = file.format
+	if err := newFile.SetFormat(file.format); err != nil {
+		return nil, err
+	}
 
 	dst, err := newFile.Create()
 	if err != nil {
@@ -247,27 +249,27 @@ func (file *File) Encode(enc Encoder) error {
 		return err
 	}
 
-	sigImg, err := enc.Encode(img)
+	encImg, err := enc.Encode(img)
 	if err != nil {
 		return err
 	}
-	// return file.SaveImage(sigImg)
+	return file.SaveImage(encImg)
+}
 
-	sigData := new(bytes.Buffer)
-	if err := png.Encode(sigData, sigImg); err != nil {
-		return errors.Errorf("failed to encode signature to data: %w", err)
-	}
+type Decoder interface {
+	Decode(img image.Image) error
+}
 
-	if sigW := sigImg.Bounds().Dx(); sigW > img.Bounds().Dx() {
-		img = imaging.Resize(img, sigW, 0, imaging.Lanczos)
-	}
-
-	img, err = steganography.Encode(img, sigData.Bytes())
+func (file *File) Decode(dec Decoder) error {
+	img, err := file.LoadImage()
 	if err != nil {
-		return errors.New(err)
+		return err
 	}
 
-	return file.SaveImage(img)
+	if err := dec.Decode(img); err != nil {
+		return err
+	}
+	return nil
 }
 
 // NewFile returns a newFile File instance.

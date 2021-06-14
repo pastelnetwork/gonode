@@ -14,7 +14,7 @@ type Metadata struct {
 }
 
 // Encode encodes meta data to qrCode representation.
-func (pos *Metadata) Encode(payloads []*Payload) error {
+func (pos *Metadata) Encode(payloads Payloads) error {
 	var positionVector string
 
 	for _, payload := range payloads {

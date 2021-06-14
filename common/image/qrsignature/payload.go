@@ -13,22 +13,59 @@ const (
 	payloadQRCapacity = QRCodeCapacityBinary
 )
 
+// Payloads represents multiple Payload.
+type Payloads []*Payload
+
+// Raw returns raw data by payload name.
+func (payloads *Payloads) Raw(name PayloadName) []byte {
+	for _, payload := range *payloads {
+		if payload.name == name {
+			return payload.raw
+		}
+	}
+	return nil
+}
+
 // Payload represents an independent piece of information to be saved as a sequence of qr codes.
 type Payload struct {
 	raw  []byte
 	name PayloadName
 
-	writer  *QRCodeWriter
 	qrCodes []*QRCode
 }
 
-// Encode encodes raw data to qrCode representation.
-func (payload *Payload) Encode() error {
-	output, err := zstd.CompressLevel(nil, payload.raw, 22)
-	if err != nil {
-		return errors.Errorf("failed to compress raw data: %w", err)
+// Decode decodes raw data from QR code representation.
+func (payload *Payload) Decode() error {
+	var data string
+
+	for _, qrCode := range payload.qrCodes {
+		text, err := qrCode.Decode()
+		if err != nil {
+			return errors.New(err)
+		}
+		data += text
 	}
-	data := base64.StdEncoding.EncodeToString(output)
+
+	raw, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		return errors.Errorf("failed to decode text to binary data: %w", err)
+	}
+
+	raw, err = zstd.Decompress(nil, raw)
+	if err != nil {
+		return errors.Errorf("failed to decompress binary data: %w", err)
+	}
+	payload.raw = raw
+	return nil
+}
+
+// Encode splits raw data into chunks and encodes them to QR code representation.
+func (payload *Payload) Encode() error {
+	raw, err := zstd.CompressLevel(nil, payload.raw, 22)
+	if err != nil {
+		return errors.Errorf("failed to compress binary data: %w", err)
+	}
+	data := base64.StdEncoding.EncodeToString(raw)
 	size := int(payloadQRCapacity)
 
 	var qrCodes []*QRCode
@@ -36,11 +73,12 @@ func (payload *Payload) Encode() error {
 		if i+size > last {
 			size = last - i
 		}
-		img, err := payload.writer.Encode(data[i : i+size])
-		if err != nil {
+
+		qrCode := NewQRCode(payloadQRMinSize)
+		if err := qrCode.Encode(data[i : i+size]); err != nil {
 			return fmt.Errorf("%q: %w", payload.name, err)
 		}
-		qrCodes = append(qrCodes, NewQRCode(img))
+		qrCodes = append(qrCodes, qrCode)
 	}
 
 	payload.qrCodes = qrCodes
@@ -52,7 +90,5 @@ func NewPayload(raw []byte, name PayloadName) *Payload {
 	return &Payload{
 		raw:  raw,
 		name: name,
-
-		writer: NewQRCodeWriter(payloadQRMinSize),
 	}
 }

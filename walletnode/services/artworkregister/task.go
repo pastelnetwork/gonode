@@ -1,6 +1,7 @@
 package artworkregister
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
@@ -103,8 +104,8 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
-	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d", task.config.thumbnailWidth, task.config.thumbnailHeight)
-	if err := thumbnail.ResizeImage(thumbnailWidth, thumbnailHeight); err != nil {
+	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %d pixeles", task.config.thumbnailSize)
+	if err := thumbnail.ResizeImage(thumbnailSize, 0); err != nil {
 		return err
 	}
 
@@ -121,46 +122,37 @@ func (task *Task) run(ctx context.Context) error {
 	task.UpdateStatus(StatusImageProbed)
 
 	// Sign fingerprint
-	fingerprint := nodes.Fingerprint()
+	fingerprint := finger //nodes.Fingerprint()
 	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
 	if err != nil {
 		return err
 	}
+	fmt.Println(string(ed448Signature))
 
-	sigFile, err := task.Ticket.Image.Copy()
+	signedImage, err := task.Ticket.Image.Copy()
 	if err != nil {
 		return err
 	}
-	if err := sigFile.SetFormatFromExtension("png"); err != nil {
-		return err
-	}
 
-	qrSig := qrsignature.New(
-		qrsignature.PostQuantumPubKey(pqPubKey),
+	// Encode data to the image.
+	encSig := qrsignature.New(
 		qrsignature.Fingerprint(fingerprint),
-		qrsignature.Fingerprint(finger),
+		qrsignature.PostQuantumPubKey(pqPubKey),
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey([]byte(task.Ticket.ArtistPastelID)),
 	)
-
-	// var payloads []*qrsignature.Payload
-	// for i := 0; i < 55; i++ {
-	// 	length := rand.Intn(3500)
-	// 	if length == 0 {
-	// 		fmt.Println("skip")
-	// 		continue
-	// 	}
-
-	// 	str, _ := random.String(length, random.Base62Chars)
-	// 	payloads = append(payloads, qrsignature.Fingerprint([]byte(str)))
-	// }
-	// qrSig := qrsignature.New(payloads...)
-
-	if err := sigFile.Encode(qrSig); err != nil {
+	if err := signedImage.Encode(encSig); err != nil {
 		return err
 	}
 
-	fmt.Println(string(ed448Signature))
+	// Decode data from the image, to make sure their integrity.
+	decSig := qrsignature.New()
+	if err := signedImage.Decode(decSig); err != nil {
+		return err
+	}
+	if !bytes.Equal(decSig.Fingerprint(), fingerprint) {
+		fmt.Printf("fingerprints don't match, dec:%d orig:%d\n", len(decSig.Fingerprint()), len(fingerprint))
+	}
 
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()

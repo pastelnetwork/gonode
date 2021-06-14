@@ -1,24 +1,29 @@
 package qrsignature
 
 import (
+	"bytes"
 	"image"
 	"image/color"
+	"image/png"
 	"sort"
 
+	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/image/steganography"
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Signature represents set of various data(payloads) that is represented in QR codes on the single canvas.
 type Signature struct {
+	Payloads
 	metadata *Metadata
-	payloads []*Payload
 }
 
 func (sig *Signature) qrCodes() []*QRCode {
 	var qrCodes []*QRCode
 
-	for _, payload := range sig.payloads {
+	for _, payload := range sig.Payloads {
 		qrCodes = append(qrCodes, payload.qrCodes...)
 	}
 
@@ -32,7 +37,7 @@ func (sig *Signature) qrCodes() []*QRCode {
 // Encode encodes the data to QR codes and groups them on a new image with maintaining aspect ratios from the given image.
 func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	// Generate QR codes from the payload data.
-	for _, payload := range sig.payloads {
+	for _, payload := range sig.Payloads {
 		if err := payload.Encode(); err != nil {
 			return nil, err
 		}
@@ -57,7 +62,7 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	log.Debug("end")
 
 	// Generate (metadata) QR code that contains coordinates of all payload QR codes on the canvas.
-	if err := sig.metadata.Encode(sig.payloads); err != nil {
+	if err := sig.metadata.Encode(sig.Payloads); err != nil {
 		return nil, err
 	}
 
@@ -70,17 +75,36 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	for _, qrCode := range qrCodes {
 		dc.DrawImageAnchored(qrCode, qrCode.X, qrCode.Y, 0, 0)
 	}
-	return dc.Image(), nil
+	sigImg := dc.Image()
+
+	// remove
+	return sigImg, nil
+
+	sigData := new(bytes.Buffer)
+	if err := png.Encode(sigData, sigImg); err != nil {
+		return nil, errors.Errorf("failed to encode signature to data: %w", err)
+	}
+
+	if sigW := sigImg.Bounds().Dx(); sigW > img.Bounds().Dx() {
+		img = imaging.Resize(img, sigW, 0, imaging.Lanczos)
+	}
+
+	img, err := steganography.Encode(img, sigData.Bytes())
+	if err != nil {
+		return nil, errors.New(err)
+	}
+	return img, nil
 }
 
-// func (sig Signature) Dencode(img image.Image) (image.Image, error) {
+func (sig Signature) Decode(img image.Image) error {
 
-// }
+	return nil
+}
 
 // New returns a new Signature instance.
-func New(payload ...*Payload) *Signature {
+func New(payloads ...*Payload) *Signature {
 	return &Signature{
+		Payloads: payloads,
 		metadata: NewMetadata(),
-		payloads: payload,
 	}
 }
