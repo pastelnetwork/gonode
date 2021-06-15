@@ -77,8 +77,8 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	}
 	sigImg := dc.Image()
 
-	// remove
-	return sigImg, nil
+	// TODO: remove
+	// return sigImg, nil
 
 	sigData := new(bytes.Buffer)
 	if err := png.Encode(sigData, sigImg); err != nil {
@@ -98,6 +98,14 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 
 // Decode decodes QR codes from the given image to raw data. The top-left QR code should contain the metadata of the rest.
 func (sig Signature) Decode(img image.Image) error {
+	msgLen := steganography.MaxEncodeSize(img)
+	data := steganography.Decode(msgLen, img)
+
+	img, _, err := image.Decode(bytes.NewReader(data))
+	if err != nil {
+		return errors.Errorf("failed to decode image from data: %w", err)
+	}
+
 	if err := sig.metadata.qrCode.CropFrom(img); err != nil {
 		return err
 	}

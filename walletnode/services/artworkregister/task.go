@@ -127,7 +127,8 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(ed448Signature))
+	pqSignature := []byte("sdfsdfs")
+	ed448PubKey := []byte(task.Ticket.ArtistPastelID)
 
 	signedImage, err := task.Ticket.Image.Copy()
 	if err != nil {
@@ -137,9 +138,10 @@ func (task *Task) run(ctx context.Context) error {
 	// Encode data to the image.
 	encSig := qrsignature.New(
 		qrsignature.Fingerprint(fingerprint),
+		qrsignature.PostQuantumSignature(pqSignature),
 		qrsignature.PostQuantumPubKey(pqPubKey),
 		qrsignature.Ed448Signature(ed448Signature),
-		qrsignature.Ed448PubKey([]byte(task.Ticket.ArtistPastelID)),
+		qrsignature.Ed448PubKey(ed448PubKey),
 	)
 	if err := signedImage.Encode(encSig); err != nil {
 		return err
@@ -151,8 +153,20 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 
-	if !bytes.Equal(decSig.Fingerprint(), fingerprint) {
-		fmt.Printf("fingerprints don't match, dec:%d orig:%d\n", len(decSig.Fingerprint()), len(fingerprint))
+	if !bytes.Equal(fingerprint, decSig.Fingerprint()) {
+		return errors.Errorf("fingerprints do not match, original len:%d, decoded len:%d\n", len(fingerprint), len(decSig.Fingerprint()))
+	}
+	if !bytes.Equal(pqSignature, decSig.PostQuantumSignature()) {
+		return errors.Errorf("post quantum signatures do not match, original len:%d, decoded len:%d\n", len(pqSignature), len(decSig.PostQuantumSignature()))
+	}
+	if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
+		return errors.Errorf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
+	}
+	if !bytes.Equal(ed448Signature, decSig.Ed448Signature()) {
+		return errors.Errorf("ed448 signatures do not match, original len:%d, decoded len:%d\n", len(ed448Signature), len(decSig.Ed448Signature()))
+	}
+	if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
+		return errors.Errorf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
 	}
 
 	// Wait for all connections to disconnect.
