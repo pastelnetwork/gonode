@@ -277,7 +277,7 @@ func computeImageDeepLearningFeatures(ctx context.Context, imageFilePath string)
 		return nil, err
 	}
 
-	img, err := thumbnail.OpenImage()
+	img, err := thumbnail.LoadImage()
 	if err != nil {
 		return nil, err
 	}

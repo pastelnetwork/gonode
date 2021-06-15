@@ -13,8 +13,7 @@ const (
 	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
 	connectTimeout         = time.Second * 2
 
-	thumbnailWidth  = 224
-	thumbnailHeight = 224
+	thumbnailSize = 224
 )
 
 // Config contains settings of the registering artwork.
@@ -23,12 +22,12 @@ type Config struct {
 
 	NumberSuperNodes int `mapstructure:"number_supernodes" json:"number_supernodes,omitempty"`
 
+	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration
 	connectTimeout         time.Duration
 
-	thumbnailWidth  int
-	thumbnailHeight int
+	thumbnailSize int
 }
 
 // NewConfig returns a new Config instance.
@@ -40,7 +39,6 @@ func NewConfig() *Config {
 		acceptNodesTimeout:     acceptNodesTimeout,
 		connectTimeout:         connectTimeout,
 
-		thumbnailWidth:  thumbnailWidth,
-		thumbnailHeight: thumbnailHeight,
+		thumbnailSize: thumbnailSize,
 	}
 }

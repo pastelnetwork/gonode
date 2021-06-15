@@ -18,13 +18,11 @@ var formatExts = map[string]Format{
 	"jpg":  JPEG,
 	"jpeg": JPEG,
 	"png":  PNG,
-	"gif":  GIF,
 }
 
 var formatNames = map[Format]string{
-	JPEG: "JPEG",
-	PNG:  "PNG",
-	GIF:  "GIF",
+	JPEG: "jpeg",
+	PNG:  "png",
 }
 
 // Format is an image file format.

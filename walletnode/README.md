@@ -105,7 +105,7 @@ go get github.com/vektra/mockery/v2/.../
 * In root directory `./gonode` run generating mock files for all modules:
 
 ``` shell
-for d in ./*/ ; do (cd "$d" && [[ -f go.mod ]] && go generate ./...); done
+for d in ./*/ ; do (cd "$d" && [[ -f go.mod ]] && go mod tidy && go generate ./...); done
 ```
 
 ##### Run tests
