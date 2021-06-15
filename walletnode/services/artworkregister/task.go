@@ -150,6 +150,7 @@ func (task *Task) run(ctx context.Context) error {
 	if err := signedImage.Decode(decSig); err != nil {
 		return err
 	}
+
 	if !bytes.Equal(decSig.Fingerprint(), fingerprint) {
 		fmt.Printf("fingerprints don't match, dec:%d orig:%d\n", len(decSig.Fingerprint()), len(fingerprint))
 	}

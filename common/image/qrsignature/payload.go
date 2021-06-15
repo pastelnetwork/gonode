@@ -26,6 +26,12 @@ func (payloads *Payloads) Raw(name PayloadName) []byte {
 	return nil
 }
 
+// NewPayloads returns a new Payloads instance.
+func NewPayloads(payloads ...*Payload) *Payloads {
+	p := Payloads(payloads)
+	return &p
+}
+
 // Payload represents an independent piece of information to be saved as a sequence of qr codes.
 type Payload struct {
 	raw  []byte

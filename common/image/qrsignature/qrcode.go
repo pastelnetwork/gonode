@@ -60,12 +60,30 @@ func (qr *QRCode) Encode(data string) error {
 	return nil
 }
 
+// CropBounds returns bounds for cropping image on the canvas.
+func (qr *QRCode) CropBounds() image.Rectangle {
+	return image.Rectangle{image.Point{qr.X, qr.Y}, image.Point{qr.X + qr.imageSize, qr.Y + qr.imageSize}}
+}
+
+// CropFrom crops QR code from the given image.
+func (qr *QRCode) CropFrom(img image.Image) error {
+	type subImager interface {
+		SubImage(r image.Rectangle) image.Image
+	}
+
+	imager, ok := img.(subImager)
+	if !ok {
+		return errors.New("image does not support cropping")
+	}
+
+	qr.Image = imager.SubImage(qr.CropBounds())
+	return nil
+}
+
 // NewQRCode returns a new QRCode instance.
 func NewQRCode(imageSize int) *QRCode {
 	return &QRCode{
 		imageSize: imageSize,
-		X:         -1,
-		Y:         -1,
 		writer:    qrcode.NewQRCodeWriter(),
 		reader:    qrcode.NewQRCodeReader(),
 		Image: &image.NRGBA{

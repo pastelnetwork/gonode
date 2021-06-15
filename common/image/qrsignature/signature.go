@@ -16,14 +16,14 @@ import (
 
 // Signature represents set of various data(payloads) that is represented in QR codes on the single canvas.
 type Signature struct {
-	Payloads
+	*Payloads
 	metadata *Metadata
 }
 
 func (sig *Signature) qrCodes() []*QRCode {
 	var qrCodes []*QRCode
 
-	for _, payload := range sig.Payloads {
+	for _, payload := range *sig.Payloads {
 		qrCodes = append(qrCodes, payload.qrCodes...)
 	}
 
@@ -37,7 +37,7 @@ func (sig *Signature) qrCodes() []*QRCode {
 // Encode encodes the data to QR codes and groups them on a new image with maintaining aspect ratios from the given image.
 func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	// Generate QR codes from the payload data.
-	for _, payload := range sig.Payloads {
+	for _, payload := range *sig.Payloads {
 		if err := payload.Encode(); err != nil {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	log.Debug("end")
 
 	// Generate (metadata) QR code that contains coordinates of all payload QR codes on the canvas.
-	if err := sig.metadata.Encode(sig.Payloads); err != nil {
+	if err := sig.metadata.Encode(*sig.Payloads); err != nil {
 		return nil, err
 	}
 
@@ -96,15 +96,34 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	return img, nil
 }
 
+// Decode decodes QR codes from the given image to raw data. The top-left QR code should contain the metadata of the rest.
 func (sig Signature) Decode(img image.Image) error {
+	if err := sig.metadata.qrCode.CropFrom(img); err != nil {
+		return err
+	}
 
+	if err := sig.metadata.Decode(sig.Payloads); err != nil {
+		return err
+	}
+
+	for _, payload := range *sig.Payloads {
+		for _, qrCode := range payload.qrCodes {
+			if err := qrCode.CropFrom(img); err != nil {
+				return err
+			}
+		}
+
+		if err := payload.Decode(); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 // New returns a new Signature instance.
 func New(payloads ...*Payload) *Signature {
 	return &Signature{
-		Payloads: payloads,
+		Payloads: NewPayloads(payloads...),
 		metadata: NewMetadata(),
 	}
 }

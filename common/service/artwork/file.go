@@ -265,11 +265,7 @@ func (file *File) Decode(dec Decoder) error {
 	if err != nil {
 		return err
 	}
-
-	if err := dec.Decode(img); err != nil {
-		return err
-	}
-	return nil
+	return dec.Decode(img)
 }
 
 // NewFile returns a newFile File instance.
