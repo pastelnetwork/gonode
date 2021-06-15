@@ -6,6 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/memory"
 )
 
 const (
@@ -94,7 +95,7 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 
 	// new the local storage
-	store := kademlia.NewMemStore()
+	store := memory.NewStore()
 
 	// new a kademlia distributed hash table
 	dht, err := kademlia.NewDHT(store, &kademlia.Options{

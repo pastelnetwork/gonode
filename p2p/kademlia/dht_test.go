@@ -9,6 +9,7 @@ import (
 
 	"github.com/jbenet/go-base58"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/memory"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -97,7 +98,7 @@ func (ts *testSuite) TearDownSuite() {
 }
 
 func (ts *testSuite) newDHTNode(ctx context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
-	store := NewMemStore()
+	store := memory.NewStore()
 
 	options := &Options{
 		IP:   ts.IP,
@@ -114,7 +115,6 @@ func (ts *testSuite) newDHTNode(ctx context.Context, port int, nodes []*Node, id
 	if err != nil {
 		return nil, fmt.Errorf("new dht: %v", err)
 	}
-	store.SetSelf(dht.ht.self)
 
 	return dht, nil
 }
