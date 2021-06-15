@@ -107,7 +107,7 @@ func (task *Task) run(ctx context.Context) error {
 	defer thumbnail.Remove()
 
 	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %d pixeles", task.config.thumbnailSize)
-	if err := thumbnail.ResizeImage(thumbnailSize, 0); err != nil {
+	if err := thumbnail.ResizeImage(thumbnailSize, thumbnailSize); err != nil {
 		return err
 	}
 
