@@ -10,7 +10,6 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/steganography"
-	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Signature represents set of various data(payloads) that is represented in QR codes on the single canvas.
@@ -44,15 +43,11 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	imgW := img.Bounds().Dx()
 	imgH := img.Bounds().Dy()
 
-	log.Debug("start")
-
 	canvas := NewCanvas(imgW, imgH)
 	// Set coordinates for each QR code.
 	canvas.FillPos(qrCodes)
 	// Obtain the real size of the canvas that can be bigger or less than the original values but while maintaining aspect ratio.
 	imgW, imgH = canvas.Size()
-
-	log.Debug("end")
 
 	// Generate (metadata) QR code that contains coordinates of all payload QR codes on the canvas.
 	if err := sig.metadata.Encode(*sig.Payloads); err != nil {

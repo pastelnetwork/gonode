@@ -123,7 +123,7 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusImageProbed)
 
-	fingerprint := []byte(finger) //nodes.Fingerprint()
+	fingerprint := nodes.Fingerprint()
 	finalImage, err := task.Ticket.Image.Copy()
 	if err != nil {
 		return err
