@@ -283,6 +283,14 @@ jobs:
       - test:
           package: "proto"
 
+  test_legroast:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "legroast"
+
   test_probe:
     <<: *defaults
     steps:
@@ -291,6 +299,14 @@ jobs:
       - install_tensorflow
       - test:
           package: "probe"
+
+  test_pqsignatures:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - test:
+          package: "pqsignatures"
 
   test_walletnode:
     <<: *defaults
@@ -319,6 +335,12 @@ jobs:
           docker_layer_caching: true
       - create-sources-container:
           containerName: "sourcesContainer"
+      - build:
+          buildContainerName: "pqsignatures"
+          moduleSubDir: "pqsignatures"
+          package: "cmd/pqsignatures"
+          targets: "darwin-10.14/amd64,windows/amd64,"
+          binaryName: "pqsignatures"
       - build:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
@@ -352,6 +374,12 @@ jobs:
             go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
       - create-sources-container:
           containerName: "sourcesContainer"
+      - release:
+          buildContainerName: "pqsignatures"
+          moduleSubDir: "pqsignatures"
+          package: "cmd/pqsignatures"
+          targets: "linux/amd64,darwin-10.14/amd64,windows/amd64,"
+          binaryName: "pqsignatures"
       - release:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
@@ -390,7 +418,13 @@ workflows:
       - test_proto:
           requires:
             - prepare_workspace
+      - test_legroast:
+          requires:
+            - prepare_workspace
       - test_probe:
+          requires:
+            - prepare_workspace
+      - test_pqsignatures:
           requires:
             - prepare_workspace
       - test_walletnode:
