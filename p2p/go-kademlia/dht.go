@@ -16,13 +16,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
+var (
 	defaultNetworkAddr   = "0.0.0.0"
-	defaultNetworkPort   = 3000
+	defaultNetworkPort   = 6000
 	defaultExpireTime    = time.Second * 86410
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
-	defaultPingTime      = time.Second * 2
+	defaultPingTime      = time.Second * 1
 	defaultUpdateTime    = time.Second * 15
 )
 
@@ -32,7 +32,6 @@ type DHT struct {
 	options *Options      // the options of DHT
 	network *Network      // the network of DHT
 	store   Store         // the storage of DHT
-	mutex   sync.Mutex    // mutex for update node
 	done    chan struct{} // distributed hash table is done
 }
 
@@ -47,24 +46,8 @@ type Options struct {
 	Port int
 
 	// The nodes being used to bootstrap the network. Without a bootstrap
-	// node there is no way to connect to the network. NetworkNodes can be
-	// initialized via s.NewNetworkNode()
+	// node there is no way to connect to the network
 	BootstrapNodes []*Node
-
-	// The time after which a key/value pair expires;
-	// this is a time-to-live (TTL) from the original publication date
-	ExpireTime time.Duration
-
-	// Seconds after which an otherwise unaccessed bucket must be refreshed
-	RefreshTime time.Duration
-
-	// The interval between Kademlia replication events, when a node is
-	// required to publish its entire database
-	ReplicateTime time.Duration
-
-	// The maximum time to wait for a response from a node before discarding
-	// it from the bucket
-	PingTime time.Duration
 }
 
 // NewDHT returns a new DHT node
@@ -79,18 +62,6 @@ func NewDHT(store Store, options *Options) (*DHT, error) {
 	}
 	if options.Port <= 0 {
 		options.Port = defaultNetworkPort
-	}
-	if options.ExpireTime == 0 {
-		options.ExpireTime = defaultExpireTime
-	}
-	if options.RefreshTime == 0 {
-		options.RefreshTime = defaultRefreshTime
-	}
-	if options.ReplicateTime == 0 {
-		options.ReplicateTime = defaultReplicateTime
-	}
-	if options.PingTime == 0 {
-		options.PingTime = defaultPingTime
 	}
 
 	s := &DHT{
@@ -157,11 +128,10 @@ func (s *DHT) keyExpireTime(key []byte) time.Time {
 	}
 	// if the nodes is more than maximum value, return the expire time
 	if score > K {
-		return time.Now().Add(s.options.ExpireTime)
+		return time.Now().Add(defaultExpireTime)
 	}
 
-	expire := s.options.ExpireTime
-	seconds := expire.Nanoseconds() * int64(math.Exp(float64(K/score)))
+	seconds := defaultExpireTime.Nanoseconds() * int64(math.Exp(float64(K/score)))
 	return time.Now().Add(time.Second * time.Duration(seconds))
 }
 
@@ -178,7 +148,7 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	// expire time for the key
 	expiration := s.keyExpireTime(key)
 	// replicate time for the key
-	replication := time.Now().Add(s.options.ReplicateTime)
+	replication := time.Now().Add(defaultReplicateTime)
 
 	// store the key to local storage
 	if err := s.store.Store(ctx, key, data, replication, expiration); err != nil {
@@ -236,7 +206,7 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 				// new a ping request message
 				request := s.newMessage(Ping, node, nil)
 				// new a context with timeout
-				ctx, cancel := context.WithTimeout(ctx, s.options.PingTime)
+				ctx, cancel := context.WithTimeout(ctx, defaultPingTime)
 				defer cancel()
 
 				// invoke the request and handle the response
@@ -302,6 +272,8 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 		// update the running goroutines
 		number++
 
+		logrus.Debugf("start work %v for node(%d): %s", iterativeType, len(nl.Nodes), node.String())
+
 		wg.Add(1)
 		// send and recive message concurrently
 		go func(receiver *Node) {
@@ -353,13 +325,15 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	if nl.Len() == 0 {
 		return nil, nil
 	}
-	logrus.Debugf("type: %v, target: %v, nodes: %v", iterativeType, hex.EncodeToString(target), nl.String())
+	logrus.Infof("type: %v, target: %v, nodes: %v", iterativeType, hex.EncodeToString(target), nl.String())
 
 	// keep the closer node
 	closestNode := nl.Nodes[0]
 	// if it's find node, reset the refresh timer
 	if iterativeType == IterateFindNode {
 		bucket := s.ht.bucketIndex(target, s.ht.self.ID)
+		logrus.Debugf("bucket for target: %v", hex.EncodeToString(target))
+
 		// reset the refresh time for the bucket
 		s.ht.resetRefreshTime(bucket)
 	}
@@ -377,7 +351,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		responses := s.doMultiWorkers(ctx, iterativeType, target, nl, contacted, searchRest)
 		// handle the response one by one
 		for _, response := range responses {
-			logrus.Debugf("response -> %v", response.String())
+			logrus.Infof("response -> %v", response.String())
 			// add the target node to the bucket
 			s.addNode(response.Sender)
 
@@ -405,6 +379,8 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 
 		// sort the nodes for node list
 		sort.Sort(nl)
+
+		logrus.Debugf("id: %v, iterate %d, sorted nodes: %v", hex.EncodeToString(s.ht.self.ID), iterativeType, nl.String())
 
 		// if closestNode is unchanged
 		if bytes.Equal(nl.Nodes[0].ID, closestNode.ID) || searchRest {
@@ -444,29 +420,29 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	}
 }
 
-// add a node into the appropriate k bucket
-func (s *DHT) addNode(node *Node) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
+// add a node into the appropriate k bucket, return the removed node
+func (s *DHT) addNode(node *Node) *Node {
 	// the bucket index for the node
 	index := s.ht.bucketIndex(s.ht.self.ID, node.ID)
 
 	// 1. if the node is existed, refresh the node to the end of bucket
-	if s.ht.nodeExists(index, node.ID) {
+	if s.ht.hasBucketNode(index, node.ID) {
 		s.ht.refreshNode(node.ID)
-		return
+		return nil
 	}
+
+	s.ht.mutex.Lock()
+	defer s.ht.mutex.Unlock()
 
 	// 2. if the bucket is full, ping the first node
 	bucket := s.ht.routeTable[index]
 	if len(bucket) == K {
-		node := bucket[0]
+		first := bucket[0]
 
 		// new a ping request message
-		request := s.newMessage(Ping, node, nil)
+		request := s.newMessage(Ping, first, nil)
 		// new a context with timeout
-		ctx, cancel := context.WithTimeout(context.Background(), s.options.PingTime)
+		ctx, cancel := context.WithTimeout(context.Background(), defaultPingTime)
 		defer cancel()
 
 		// invoke the request and handle the response
@@ -475,6 +451,12 @@ func (s *DHT) addNode(node *Node) {
 			// the node is down, remove the node from bucket
 			bucket = append(bucket, node)
 			bucket = bucket[1:]
+
+			// need to reset the route table with the bucket
+			s.ht.routeTable[index] = bucket
+
+			logrus.Debugf("bucket: %d, network call: %v: %v", index, request, err)
+			return first
 		}
 		logrus.Debugf("ping response: %v", response.String())
 
@@ -486,8 +468,10 @@ func (s *DHT) addNode(node *Node) {
 		bucket = append(bucket, node)
 	}
 
-	// need to reset the route table with the bucket
+	// need to update the route table with the bucket
 	s.ht.routeTable[index] = bucket
+
+	return nil
 }
 
 // start a update timer to do refresh, replication, expiration work periodly
@@ -505,7 +489,7 @@ func (s *DHT) doUpdateWork(ctx context.Context, interval time.Duration) {
 		case <-timer.C:
 			// refresh
 			for i := 0; i < B; i++ {
-				if time.Since(s.ht.refreshTime(i)) > s.options.RefreshTime {
+				if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
 					// refresh the bucket by iterative find node
 					id := s.ht.randomIDFromBucket(K)
 					if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {

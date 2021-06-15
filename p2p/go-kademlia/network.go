@@ -62,10 +62,10 @@ func (s *Network) Stop(ctx context.Context) {
 	}
 }
 
-func (s *Network) handleFindNode(ctx context.Context, conn net.Conn, message *Message) error {
+func (s *Network) handleFindNode(ctx context.Context, message *Message) ([]byte, error) {
 	request, ok := message.Data.(*FindNodeRequest)
 	if !ok {
-		return errors.New("impossible: must be FindNodeRequest")
+		return nil, errors.New("impossible: must be FindNodeRequest")
 	}
 
 	// add the sender to local hash table
@@ -80,22 +80,20 @@ func (s *Network) handleFindNode(ctx context.Context, conn net.Conn, message *Me
 		message.Sender,
 		&FindNodeResponse{Closest: closest.Nodes},
 	)
+
 	// send the response to client
 	encoded, err := encode(response)
 	if err != nil {
-		return fmt.Errorf("encode response for find node: %v", err)
-	}
-	if _, err := conn.Write(encoded); err != nil {
-		return fmt.Errorf("conn write: %v", err)
+		return nil, fmt.Errorf("encode response for find node: %v", err)
 	}
 
-	return nil
+	return encoded, nil
 }
 
-func (s *Network) handleFindValue(ctx context.Context, conn net.Conn, message *Message) error {
+func (s *Network) handleFindValue(ctx context.Context, message *Message) ([]byte, error) {
 	request, ok := message.Data.(*FindValueRequest)
 	if !ok {
-		return errors.New("impossible: must be FindValueRequest")
+		return nil, errors.New("impossible: must be FindValueRequest")
 	}
 
 	// add the sender to local hash table
@@ -105,7 +103,7 @@ func (s *Network) handleFindValue(ctx context.Context, conn net.Conn, message *M
 	// retrieve the value from local storage
 	value, err := s.dht.store.Retrieve(ctx, request.Target)
 	if err != nil {
-		return fmt.Errorf("store retrieve: %v", err)
+		return nil, fmt.Errorf("store retrieve: %v", err)
 	}
 	if value != nil {
 		// return the value
@@ -122,19 +120,16 @@ func (s *Network) handleFindValue(ctx context.Context, conn net.Conn, message *M
 	// send the response to client
 	encoded, err := encode(response)
 	if err != nil {
-		return fmt.Errorf("encode response for find value: %v", err)
-	}
-	if _, err := conn.Write(encoded); err != nil {
-		return fmt.Errorf("conn write: %v", err)
+		return nil, fmt.Errorf("encode response for find value: %v", err)
 	}
 
-	return nil
+	return encoded, nil
 }
 
-func (s *Network) handleStoreData(ctx context.Context, conn net.Conn, message *Message) error {
+func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte, error) {
 	request, ok := message.Data.(*StoreDataRequest)
 	if !ok {
-		return errors.New("impossible: must be StoreDataRequest")
+		return nil, errors.New("impossible: must be StoreDataRequest")
 	}
 	logrus.Debugf("handle store data: %v", message.String())
 
@@ -146,10 +141,10 @@ func (s *Network) handleStoreData(ctx context.Context, conn net.Conn, message *M
 	// expiration time for key
 	expiration := s.dht.keyExpireTime(key)
 	// replication time for key
-	replication := time.Now().Add(s.dht.options.ReplicateTime)
+	replication := time.Now().Add(defaultReplicateTime)
 	// store the data to local storage
 	if err := s.dht.store.Store(ctx, key, request.Data, replication, expiration); err != nil {
-		return fmt.Errorf("store the data: %v", err)
+		return nil, fmt.Errorf("store the data: %v", err)
 	}
 
 	// new a response message
@@ -157,28 +152,22 @@ func (s *Network) handleStoreData(ctx context.Context, conn net.Conn, message *M
 	// send the response to client
 	encoded, err := encode(response)
 	if err != nil {
-		return fmt.Errorf("encode response for store data: %v", err)
-	}
-	if _, err := conn.Write(encoded); err != nil {
-		return fmt.Errorf("conn write: %v", err)
+		return nil, fmt.Errorf("encode response for store data: %v", err)
 	}
 
-	return nil
+	return encoded, nil
 }
 
-func (s *Network) handlePing(ctx context.Context, conn net.Conn, message *Message) error {
+func (s *Network) handlePing(ctx context.Context, message *Message) ([]byte, error) {
 	// new a response message
 	response := s.dht.newMessage(Ping, message.Sender, nil)
 	// send the response to client
 	encoded, err := encode(response)
 	if err != nil {
-		return fmt.Errorf("encode response for ping: %v", err)
-	}
-	if _, err := conn.Write(encoded); err != nil {
-		return fmt.Errorf("conn write: %v", err)
+		return nil, fmt.Errorf("encode response for ping: %v", err)
 	}
 
-	return nil
+	return encoded, nil
 }
 
 // handle the connection request
@@ -203,33 +192,45 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			return
 		}
 
-		// received message which is from myself
-		if !CompareNodes(request.Receiver, s.self) {
-			logrus.Errorf("impossible: receiver is myself")
-			continue
-		}
-
+		var response []byte
 		switch request.MessageType {
 		case FindNode:
-			if err := s.handleFindNode(ctx, conn, request); err != nil {
+			encoded, err := s.handleFindNode(ctx, request)
+			if err != nil {
 				logrus.Errorf("handle find node request: %v", err)
+				continue
 			}
+			response = encoded
 		case FindValue:
 			// handle the request for finding value
-			if err := s.handleFindValue(ctx, conn, request); err != nil {
+			encoded, err := s.handleFindValue(ctx, request)
+			if err != nil {
 				logrus.Errorf("handle find value request: %v", err)
+				continue
 			}
+			response = encoded
 		case Ping:
-			if err := s.handlePing(ctx, conn, request); err != nil {
+			encoded, err := s.handlePing(ctx, request)
+			if err != nil {
 				logrus.Errorf("handle ping request: %v", err)
+				continue
 			}
+			response = encoded
 		case StoreData:
 			// handle the request for storing data
-			if err := s.handleStoreData(ctx, conn, request); err != nil {
+			encoded, err := s.handleStoreData(ctx, request)
+			if err != nil {
 				logrus.Errorf("handle store data request: %v", err)
+				continue
 			}
+			response = encoded
 		default:
 			logrus.Errorf("impossible: invalid message type: %v", request.MessageType)
+		}
+
+		// write the response
+		if _, err := conn.Write(response); err != nil {
+			logrus.Errorf("conn write: %v", err)
 		}
 	}
 }

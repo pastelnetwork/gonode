@@ -168,8 +168,8 @@ func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
 	return id
 }
 
-// nodeExists check if the node id is existed
-func (ht *HashTable) nodeExists(bucket int, id []byte) bool {
+// hasBucketNode check if the node id is existed in the bucket
+func (ht *HashTable) hasBucketNode(bucket int, id []byte) bool {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
 
@@ -178,6 +178,22 @@ func (ht *HashTable) nodeExists(bucket int, id []byte) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// hasNode check if the node id is exists in the hash table
+func (ht *HashTable) hasNode(id []byte) bool {
+	ht.mutex.Lock()
+	defer ht.mutex.Unlock()
+
+	for _, bucket := range ht.routeTable {
+		for _, node := range bucket {
+			if bytes.Equal(node.ID, id) {
+				return true
+			}
+		}
+	}
+
 	return false
 }
 

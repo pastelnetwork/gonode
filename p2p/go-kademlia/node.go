@@ -40,26 +40,13 @@ type NodeList struct {
 	Comparator []byte
 }
 
+// String returns the dump information for node list
 func (s *NodeList) String() string {
 	nodes := []string{}
 	for _, node := range s.Nodes {
 		nodes = append(nodes, node.String())
 	}
 	return strings.Join(nodes, ",")
-}
-
-// CompareNodes checks if two nodes are equal
-func CompareNodes(n1 *Node, n2 *Node) bool {
-	if n1 == nil || n2 == nil {
-		return false
-	}
-	if n1.IP != n2.IP {
-		return false
-	}
-	if n1.Port != n2.Port {
-		return false
-	}
-	return true
 }
 
 // DelNode deletes a node from list

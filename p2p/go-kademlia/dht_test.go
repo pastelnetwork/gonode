@@ -7,6 +7,7 @@ import (
 	"path"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/jbenet/go-base58"
 	"github.com/sirupsen/logrus"
@@ -35,10 +36,12 @@ type testSuite struct {
 func (ts *testSuite) SetupSuite() {
 	// init the log formatter for logrus
 	logrus.SetReportCaller(true)
-	if os.Getenv("DEBUG") == "true" {
+	if os.Getenv("LEVEL") == "debug" {
 		logrus.SetLevel(logrus.DebugLevel)
-	} else {
+	} else if os.Getenv("LEVEL") == "info" {
 		logrus.SetLevel(logrus.InfoLevel)
+	} else {
+		logrus.SetLevel(logrus.WarnLevel)
 	}
 	logrus.SetFormatter(&logrus.TextFormatter{
 		TimestampFormat: "15:04:05",
@@ -216,32 +219,41 @@ func (ts *testSuite) verifyValue(key []byte, value []byte, dhts ...*DHT) {
 	}
 }
 
-func (ts *testSuite) TestStoreWith10Nodes() {
+// start n nodes
+func (ts *testSuite) startNodes(n int) ([]*DHT, error) {
 	dhts := []*DHT{}
 
-	dhts = append(dhts, ts.main)
-
-	port := 6001
-	for i := 0; i < 9; i++ {
+	for i := 0; i < n; i++ {
 		// new a dht node
-		dht, err := ts.newDHTNode(ts.ctx, port+i, ts.bootstrapNodes, nil)
+		dht, err := ts.newDHTNode(ts.ctx, ts.bootstrapPort+i+1, ts.bootstrapNodes, nil)
 		if err != nil {
-			ts.T().Fatalf("start a dht: %v", err)
+			return nil, fmt.Errorf("start a dht: %v", err)
 		}
 
 		// do the bootstrap
 		if err := dht.Bootstrap(ts.ctx); err != nil {
-			ts.T().Fatalf("do bootstrap: %v", err)
+			return nil, fmt.Errorf("do bootstrap: %v", err)
 		}
 
 		// start the dht node
 		if err := dht.Start(ts.ctx); err != nil {
-			ts.T().Fatalf("start dht node: %v", err)
+			return nil, fmt.Errorf("start dht node: %v", err)
 		}
-		defer dht.Stop(ts.ctx)
-
 		dhts = append(dhts, dht)
 	}
+	return dhts, nil
+}
+
+func (ts *testSuite) TestStoreWith10Nodes() {
+	// start 10 nodes
+	dhts, err := ts.startNodes(10)
+	if err != nil {
+		ts.T().Fatalf("start nodes: %v", err)
+	}
+	for _, dht := range dhts {
+		defer dht.Stop(ts.ctx)
+	}
+	dhts = append(dhts, ts.main)
 
 	// store the key and value by main node
 	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
@@ -252,4 +264,86 @@ func (ts *testSuite) TestStoreWith10Nodes() {
 
 	// verify the value for dht store
 	ts.verifyValue(base58.Decode(encodedKey), ts.Value, dhts...)
+}
+
+func (ts *testSuite) TestIterativeFindNode() {
+	number := 2
+
+	// start the nodes
+	dhts, err := ts.startNodes(number)
+	if err != nil {
+		ts.T().Fatalf("start nodes: %v", err)
+	}
+	for _, dht := range dhts {
+		defer dht.Stop(ts.ctx)
+	}
+
+	if _, err := ts.main.iterate(ts.ctx, IterateFindNode, ts.main.ht.self.ID, nil); err != nil {
+		ts.T().Fatalf("iterative find node: %v", err)
+	}
+
+	for _, dht := range dhts {
+		ts.Equal(number, dht.ht.totalCount())
+	}
+}
+
+func (ts *testSuite) TestAddNodeForFull() {
+	// short the ping time
+	defaultPingTime = time.Millisecond * 200
+
+	full := false
+
+	for i := 0; i < 100; i++ {
+		id, _ := newRandomID()
+		node := &Node{
+			ID:   id,
+			IP:   ts.IP,
+			Port: ts.bootstrapPort + i + 1,
+		}
+		if removed := ts.main.addNode(node); removed != nil {
+			ts.Equal(false, ts.main.ht.hasNode(removed.ID))
+			full = true
+			break
+		}
+	}
+	ts.Equal(true, full)
+
+	full = false
+	for _, bucket := range ts.main.ht.routeTable {
+		if len(bucket) == K {
+			full = true
+		}
+	}
+	ts.Equal(true, full)
+}
+
+func (ts *testSuite) TestAddNodeForRefresh() {
+	number := 20
+	for i := 0; i < number; i++ {
+		id, _ := newRandomID()
+		node := &Node{
+			ID:   id,
+			IP:   ts.IP,
+			Port: ts.bootstrapPort + i + 1,
+		}
+		ts.main.addNode(node)
+	}
+	ts.Equal(number, ts.main.ht.totalCount())
+
+	// find the bucket which has the maximum number of nodes
+	index := 0
+	for i, bucket := range ts.main.ht.routeTable {
+		if len(bucket) > 0 {
+			index = i
+		}
+	}
+	bucket := ts.main.ht.routeTable[index]
+	first := bucket[0]
+
+	// refresh the hash table with the first node
+	ts.main.addNode(bucket[0])
+	bucket = ts.main.ht.routeTable[index]
+	last := bucket[len(bucket)-1]
+
+	ts.Equal(first.ID, last.ID)
 }
