@@ -1,18 +1,18 @@
 package cluster
 
 import (
+	"context"
 	"encoding/binary"
 	"expvar"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net"
-	"os"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -58,24 +58,24 @@ type Service struct {
 	mu      sync.RWMutex
 	https   bool   // Serving HTTPS?
 	apiAddr string // host:port this node serves the HTTP API.
-
-	logger *log.Logger
+	ctx     context.Context
 }
 
 // New returns a new instance of the cluster service
-func New(tn Transport) *Service {
+func New(ctx context.Context, tn Transport) *Service {
 	return &Service{
+		ctx:     ctx,
 		tn:      tn,
 		addr:    tn.Addr(),
 		timeout: 10 * time.Second,
-		logger:  log.New(os.Stderr, "[cluster] ", log.LstdFlags),
 	}
 }
 
 // Open opens the Service.
 func (s *Service) Open() error {
 	go s.serve()
-	s.logger.Println("service listening on", s.tn.Addr())
+
+	log.WithContext(s.ctx).Infof("service listening on: %v", s.tn.Addr())
 	return nil
 }
 

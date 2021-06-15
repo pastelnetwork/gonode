@@ -2,10 +2,10 @@ package command
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/protobuf/proto"
 )

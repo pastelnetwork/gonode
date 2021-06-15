@@ -53,22 +53,20 @@ func TestNodeConnect(t *testing.T) {
 			t.Parallel()
 
 			//create client mocks
-			client := test.NewMockClient()
+			clientMock := test.NewMockClient(t)
 
 			//listen needed method
-			client.ListenOnConnect(testCase.err).ListenOnRegisterArtwork()
+			clientMock.ListenOnConnect(testCase.err).ListenOnRegisterArtwork()
 
 			//set up node client only
-			testCase.node.Client = client.ClientMock
+			testCase.node.Client = clientMock.Client
 
 			//assertion error
 			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second))
 			//mock assertion
-			client.ClientMock.AssertExpectations(t)
-			client.ClientMock.AssertCalled(t, "Connect", mock.Anything, testCase.address)
-			client.ClientMock.AssertNumberOfCalls(t, "Connect", testCase.numberConnectCall)
-			client.ConnectionMock.AssertNumberOfCalls(t, "RegisterArtwork", testCase.numberRegisterArtWorkCall)
-
+			clientMock.Client.AssertExpectations(t)
+			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address)
+			clientMock.AssertRegisterArtworkCall(testCase.numberRegisterArtWorkCall)
 		})
 	}
 }

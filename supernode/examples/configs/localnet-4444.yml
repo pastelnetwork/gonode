@@ -13,5 +13,12 @@ node:
 p2p:
   listen_addresses: "0.0.0.0"
   port: 4454
+  memory_db: true
   bootstrap_ip: "127.0.0.1"
   bootstrap_port: 1234
+
+metadb:
+  listen_address: "0.0.0.0"
+  http_port: 4041
+  raft_port: 4042
+  data_dir: "metadb-4444"

@@ -77,13 +77,18 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 }
 
 // MatchFingerprints matches fingerprints.
-func (nodes *List) MatchFingerprints() error {
-	node := (*nodes)[0]
+func (nodes List) MatchFingerprints() error {
+	node := nodes[0]
 
-	for i := 1; i < len(*nodes); i++ {
-		if !bytes.Equal(node.fingerprint, (*nodes)[i].fingerprint) {
-			return errors.Errorf("fingerprints of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
+	for i := 1; i < len(nodes); i++ {
+		if !bytes.Equal(node.fingerprint, nodes[i].fingerprint) {
+			return errors.Errorf("fingerprints of nodes %q and %q didn't match", node.String(), nodes[i].String())
 		}
 	}
 	return nil
+}
+
+// Fingerprint returns fingerprint of the first node.
+func (nodes List) Fingerprint() []byte {
+	return nodes[0].fingerprint
 }

@@ -1,6 +1,7 @@
 package system
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -8,10 +9,10 @@ import (
 
 // Test_JoinLeaderNode tests a join operation between a leader and a new node.
 func Test_JoinLeaderNode(t *testing.T) {
-	leader := mustNewLeaderNode()
+	leader := mustNewLeaderNode(context.TODO())
 	defer leader.Deprovision()
 
-	node := mustNewNode(false)
+	node := mustNewNode(context.TODO(), false)
 	defer node.Deprovision()
 	if err := node.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -24,10 +25,10 @@ func Test_JoinLeaderNode(t *testing.T) {
 
 // Test_MultiNodeCluster tests formation of a 3-node cluster, and its operation.
 func Test_MultiNodeCluster(t *testing.T) {
-	node1 := mustNewLeaderNode()
+	node1 := mustNewLeaderNode(context.TODO())
 	defer node1.Deprovision()
 
-	node2 := mustNewNode(false)
+	node2 := mustNewNode(context.TODO(), false)
 	defer node2.Deprovision()
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -53,7 +54,7 @@ func Test_MultiNodeCluster(t *testing.T) {
 		t.Fatalf("got incorrect number of followers: %d", len(followers))
 	}
 
-	node3 := mustNewNode(false)
+	node3 := mustNewNode(context.TODO(), false)
 	defer node3.Deprovision()
 	if err := node3.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -159,10 +160,10 @@ func Test_MultiNodeCluster(t *testing.T) {
 
 // Test_MultiNodeClusterNodes checks nodes/ endpoint under various situations.
 func Test_MultiNodeClusterNodes(t *testing.T) {
-	node1 := mustNewLeaderNode()
+	node1 := mustNewLeaderNode(context.TODO())
 	defer node1.Deprovision()
 
-	node2 := mustNewNode(false)
+	node2 := mustNewNode(context.TODO(), false)
 	defer node2.Deprovision()
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -179,7 +180,7 @@ func Test_MultiNodeClusterNodes(t *testing.T) {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
 
-	node3 := mustNewNode(false)
+	node3 := mustNewNode(context.TODO(), false)
 	defer node3.Deprovision()
 	if err := node3.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -248,10 +249,10 @@ func Test_MultiNodeClusterNodes(t *testing.T) {
 
 // Test_MultiNodeClusterNodesNonVoter checks nodes/ endpoint with a non-voting node.
 func Test_MultiNodeClusterNodesNonVoter(t *testing.T) {
-	node1 := mustNewLeaderNode()
+	node1 := mustNewLeaderNode(context.TODO())
 	defer node1.Deprovision()
 
-	node2 := mustNewNode(false)
+	node2 := mustNewNode(context.TODO(), false)
 	defer node2.Deprovision()
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -268,7 +269,7 @@ func Test_MultiNodeClusterNodesNonVoter(t *testing.T) {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
 
-	node3 := mustNewNode(false)
+	node3 := mustNewNode(context.TODO(), false)
 	defer node3.Deprovision()
 	if err := node3.JoinAsNonVoter(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -306,13 +307,13 @@ func Test_MultiNodeClusterNodesNonVoter(t *testing.T) {
 // Test_MultiNodeClusterNodeEncrypted tests formation of a 3-node cluster, and its operation.
 // This test enables inter-node encryption, but keeps the unencrypted HTTP API.
 func Test_MultiNodeClusterNodeEncrypted(t *testing.T) {
-	node1 := mustNewNodeEncrypted(true, false, true)
+	node1 := mustNewNodeEncrypted(context.TODO(), true, false, true)
 	defer node1.Deprovision()
 	if _, err := node1.WaitForLeader(); err != nil {
 		t.Fatalf("node never became leader")
 	}
 
-	node2 := mustNewNodeEncrypted(false, false, true)
+	node2 := mustNewNodeEncrypted(context.TODO(), false, false, true)
 	defer node2.Deprovision()
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -338,7 +339,7 @@ func Test_MultiNodeClusterNodeEncrypted(t *testing.T) {
 		t.Fatalf("got incorrect number of followers: %d", len(followers))
 	}
 
-	node3 := mustNewNodeEncrypted(false, false, true)
+	node3 := mustNewNodeEncrypted(context.TODO(), false, false, true)
 	defer node3.Deprovision()
 	if err := node3.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -453,7 +454,7 @@ func Test_MultiNodeClusterNodeEncrypted(t *testing.T) {
 
 // Test_MultiNodeClusterSnapshot tests formation of a 3-node cluster, which involves sharing snapshots.
 func Test_MultiNodeClusterSnapshot(t *testing.T) {
-	node1 := mustNewLeaderNode()
+	node1 := mustNewLeaderNode(context.TODO())
 	defer node1.Deprovision()
 
 	if _, err := node1.Execute(`CREATE TABLE foo (id integer not null primary key, name text)`); err != nil {
@@ -469,7 +470,7 @@ func Test_MultiNodeClusterSnapshot(t *testing.T) {
 	}
 
 	// Join a second and third nodes, which will get database state via snapshots.
-	node2 := mustNewNode(false)
+	node2 := mustNewNode(context.TODO(), false)
 	defer node2.Deprovision()
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -479,7 +480,7 @@ func Test_MultiNodeClusterSnapshot(t *testing.T) {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
-	node3 := mustNewNode(false)
+	node3 := mustNewNode(context.TODO(), false)
 	defer node3.Deprovision()
 	if err := node3.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -557,10 +558,10 @@ func Test_MultiNodeClusterSnapshot(t *testing.T) {
 // Test_MultiNodeClusterWithNonVoter tests formation of a 4-node cluster, one of which is
 // a non-voter
 func Test_MultiNodeClusterWithNonVoter(t *testing.T) {
-	node1 := mustNewLeaderNode()
+	node1 := mustNewLeaderNode(context.TODO())
 	defer node1.Deprovision()
 
-	node2 := mustNewNode(false)
+	node2 := mustNewNode(context.TODO(), false)
 	defer node2.Deprovision()
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -577,7 +578,7 @@ func Test_MultiNodeClusterWithNonVoter(t *testing.T) {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
 
-	node3 := mustNewNode(false)
+	node3 := mustNewNode(context.TODO(), false)
 	defer node3.Deprovision()
 	if err := node3.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
@@ -594,7 +595,7 @@ func Test_MultiNodeClusterWithNonVoter(t *testing.T) {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
 
-	nonVoter := mustNewNode(false)
+	nonVoter := mustNewNode(context.TODO(), false)
 	defer nonVoter.Deprovision()
 	if err := nonVoter.JoinAsNonVoter(leader); err != nil {
 		t.Fatalf("non-voting node failed to join leader: %s", err.Error())

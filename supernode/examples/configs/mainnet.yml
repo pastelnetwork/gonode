@@ -10,6 +10,17 @@ node:
 p2p:
   listen_addresses: "0.0.0.0"
   port: 4445
+  # if not specified, persistent database store is used
+  memory_db: true
+
+  # default value is assigned automatically, by concatenated CLI parameter `--work-dir` and `p2p` as a subfolder.
+  # data_dir: "path/to/p2p/data/dir"
+
   # bootstrap_ip: ""
   # bootstrap_port: ""
   # use_stun: true
+
+metadb:
+  listen_address: "0.0.0.0"
+  http_port: 4001
+  raft_port: 4002
