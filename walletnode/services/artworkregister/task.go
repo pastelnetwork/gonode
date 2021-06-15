@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
@@ -103,6 +104,7 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	defer thumbnail.Remove()
 
 	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %d pixeles", task.config.thumbnailSize)
 	if err := thumbnail.ResizeImage(thumbnailSize, 0); err != nil {
@@ -121,19 +123,32 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusImageProbed)
 
+	fingerprint := nodes.Fingerprint()
+	finalImage, err := task.Ticket.Image.Copy()
+	if err != nil {
+		return err
+	}
+	defer finalImage.Remove()
+
+	if err := task.encodeFingerprint(ctx, fingerprint, finalImage); err != nil {
+		return err
+	}
+
+	// Wait for all connections to disconnect.
+	return groupConnClose.Wait()
+}
+
+func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, image *artwork.File) error {
 	// Sign fingerprint
-	fingerprint := finger //nodes.Fingerprint()
+	ed448PubKey := []byte(task.Ticket.ArtistPastelID)
 	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
 	if err != nil {
 		return err
 	}
-	pqSignature := []byte("sdfsdfs")
-	ed448PubKey := []byte(task.Ticket.ArtistPastelID)
 
-	signedImage, err := task.Ticket.Image.Copy()
-	if err != nil {
-		return err
-	}
+	// TODO: Should be replaced with real data from the Pastel API.
+	pqPubKey := []byte("pqPubKey")
+	pqSignature := []byte("pqSignature")
 
 	// Encode data to the image.
 	encSig := qrsignature.New(
@@ -143,13 +158,13 @@ func (task *Task) run(ctx context.Context) error {
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
-	if err := signedImage.Encode(encSig); err != nil {
+	if err := image.Encode(encSig); err != nil {
 		return err
 	}
 
 	// Decode data from the image, to make sure their integrity.
 	decSig := qrsignature.New()
-	if err := signedImage.Decode(decSig); err != nil {
+	if err := image.Decode(decSig); err != nil {
 		return err
 	}
 
@@ -168,9 +183,7 @@ func (task *Task) run(ctx context.Context) error {
 	if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
 		return errors.Errorf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
 	}
-
-	// Wait for all connections to disconnect.
-	return groupConnClose.Wait()
+	return nil
 }
 
 // meshNodes establishes communication between supernodes.

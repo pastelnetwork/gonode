@@ -239,10 +239,12 @@ func (file *File) SaveImage(img image.Image) error {
 	return ErrUnsupportedFormat
 }
 
+// Encoder represents an image encoder.
 type Encoder interface {
 	Encode(img image.Image) (image.Image, error)
 }
 
+// Encode encodes the image by the given encoder.
 func (file *File) Encode(enc Encoder) error {
 	img, err := file.LoadImage()
 	if err != nil {
@@ -256,10 +258,12 @@ func (file *File) Encode(enc Encoder) error {
 	return file.SaveImage(encImg)
 }
 
+// Decoder represents an image decoder.
 type Decoder interface {
 	Decode(img image.Image) error
 }
 
+// Decode decodes the image by the given decoder.
 func (file *File) Decode(dec Decoder) error {
 	img, err := file.LoadImage()
 	if err != nil {

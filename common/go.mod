@@ -3,9 +3,9 @@ module github.com/pastelnetwork/gonode/common
 go 1.16
 
 require (
-	github.com/DataDog/zstd v1.4.8 // indirect
+	github.com/DataDog/zstd v1.4.8
 	github.com/disintegration/imaging v1.6.2
-	github.com/fogleman/gg v1.3.0 // indirect
+	github.com/fogleman/gg v1.3.0
 	github.com/go-errors/errors v1.1.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629

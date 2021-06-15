@@ -77,9 +77,6 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	}
 	sigImg := dc.Image()
 
-	// TODO: remove
-	// return sigImg, nil
-
 	sigData := new(bytes.Buffer)
 	if err := png.Encode(sigData, sigImg); err != nil {
 		return nil, errors.Errorf("failed to encode signature to data: %w", err)
