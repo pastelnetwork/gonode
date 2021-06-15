@@ -274,12 +274,12 @@ func (s *Store) Close(wait bool) error {
 
 // WaitForApplied waits for all Raft log entries to to be applied to the
 // underlying database.
-func (s *Store) WaitForApplied(timeout time.Duration) error {
+func (s *Store) WaitForApplied(ctx context.Context, timeout time.Duration) error {
 	if timeout == 0 {
 		return nil
 	}
-	log.WithContext(s.ctx).Debugf("waiting for up to %s for application of initial logs", timeout)
-	if err := s.WaitForAppliedIndex(s.raft.LastIndex(), timeout); err != nil {
+	log.WithContext(ctx).Debugf("waiting for up to %s for application of initial logs", timeout)
+	if err := s.WaitForAppliedIndex(ctx, s.raft.LastIndex(), timeout); err != nil {
 		return errors.New(ErrOpenTimeout)
 	}
 	return nil
@@ -404,7 +404,7 @@ func (s *Store) SetRequestCompression(batch, size int) {
 
 // WaitForAppliedIndex blocks until a given log index has been applied,
 // or the timeout expires.
-func (s *Store) WaitForAppliedIndex(idx uint64, timeout time.Duration) error {
+func (s *Store) WaitForAppliedIndex(ctx context.Context, idx uint64, timeout time.Duration) error {
 	tck := time.NewTicker(appliedWaitDelay)
 	defer tck.Stop()
 	tmr := time.NewTimer(timeout)
@@ -412,7 +412,7 @@ func (s *Store) WaitForAppliedIndex(idx uint64, timeout time.Duration) error {
 
 	for {
 		select {
-		case <-s.ctx.Done():
+		case <-ctx.Done():
 			return s.ctx.Err()
 		case <-tck.C:
 			if s.raft.AppliedIndex() >= idx {

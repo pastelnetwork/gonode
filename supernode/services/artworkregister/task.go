@@ -173,7 +173,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 			return err
 		}
 
-		fingerprintData, err = zstd.CompressLevel(nil, fingerprints.Single().Bytes(), 22)
+		fingerprintData, err = zstd.CompressLevel(nil, fingerprints.Single().LSBTruncatedBytes(), 22)
 		if err != nil {
 			return errors.Errorf("failed to compress fingerprint data: %w", err)
 		}

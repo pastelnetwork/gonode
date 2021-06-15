@@ -749,7 +749,7 @@ func Test_MultiNodeExecuteQuery(t *testing.T) {
 
 	// Wait until the 3 log entries have been applied to the voting follower,
 	// and then query.
-	if err := s1.WaitForAppliedIndex(3, 5*time.Second); err != nil {
+	if err := s1.WaitForAppliedIndex(context.TODO(), 3, 5*time.Second); err != nil {
 		t.Fatalf("error waiting for follower to apply index: %s:", err.Error())
 	}
 
@@ -777,7 +777,7 @@ func Test_MultiNodeExecuteQuery(t *testing.T) {
 
 	// Wait until the 3 log entries have been applied to the non-voting follower,
 	// and then query.
-	if err := s2.WaitForAppliedIndex(3, 5*time.Second); err != nil {
+	if err := s2.WaitForAppliedIndex(context.TODO(), 3, 5*time.Second); err != nil {
 		t.Fatalf("error waiting for follower to apply index: %s:", err.Error())
 	}
 
@@ -849,7 +849,7 @@ func Test_MultiNodeExecuteQueryFreshness(t *testing.T) {
 
 	// Wait until the 3 log entries have been applied to the follower,
 	// and then query.
-	if err := s1.WaitForAppliedIndex(3, 5*time.Second); err != nil {
+	if err := s1.WaitForAppliedIndex(context.TODO(), 3, 5*time.Second); err != nil {
 		t.Fatalf("error waiting for follower to apply index: %s:", err.Error())
 	}
 
@@ -979,7 +979,7 @@ func Test_StoreLogTruncationMultinode(t *testing.T) {
 	s1.WaitForLeader(context.TODO(), 10*time.Second)
 	// Wait until the log entries have been applied to the follower,
 	// and then query.
-	if err := s1.WaitForAppliedIndex(8, 5*time.Second); err != nil {
+	if err := s1.WaitForAppliedIndex(context.TODO(), 8, 5*time.Second); err != nil {
 		t.Fatalf("error waiting for follower to apply index: %s:", err.Error())
 	}
 	qr := queryRequestFromString("SELECT count(*) FROM foo", false, true)
