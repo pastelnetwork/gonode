@@ -2,7 +2,9 @@ package qrsignature
 
 import (
 	"image"
+	"image/color"
 
+	"github.com/fogleman/gg"
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -11,7 +13,10 @@ import (
 const (
 	// QRCodeCapacityBinary represents size for Binary
 	// ISO 8859-1
-	QRCodeCapacityBinary QRCodeCapacity = 2953
+	qrCodeCapacityBinary QRCodeCapacity = 2953
+
+	qrCodeBorder      = 1
+	qrCodeTitleHeight = 40
 )
 
 // QRCodeCapacity represents maximum character storage dataCapacity that can be encoded with a single QRCodeWriter-code.
@@ -51,22 +56,28 @@ func (qr *QRCode) Decode() (string, error) {
 }
 
 // Encode generates a new QR code image by the given data.
-func (qr *QRCode) Encode(data string) error {
+func (qr *QRCode) Encode(title, data string) error {
 	img, err := qr.writer.Encode(data, gozxing.BarcodeFormat_QR_CODE, qr.imageSize, qr.imageSize, nil)
 	if err != nil {
 		return errors.Errorf("failed to encode data: %w", err)
 	}
-	qr.Image = img
+
+	size := img.Bounds().Size()
+
+	dc := gg.NewContext(size.X+qrCodeBorder*2, size.Y+qrCodeTitleHeight)
+	dc.SetRGB(255, 255, 255)
+	dc.Clear()
+	dc.SetColor(color.White)
+
+	dc.DrawStringAnchored(title, float64(size.X/2), float64(qrCodeTitleHeight/2), 0.5, 0.7)
+	dc.DrawImageAnchored(img, qrCodeBorder, qrCodeTitleHeight, 0, 0)
+
+	qr.Image = dc.Image()
 	return nil
 }
 
-// CropBounds returns bounds for cropping image on the canvas.
-func (qr *QRCode) CropBounds() image.Rectangle {
-	return image.Rectangle{image.Point{qr.X, qr.Y}, image.Point{qr.X + qr.imageSize, qr.Y + qr.imageSize}}
-}
-
-// CropFrom crops QR code from the given image.
-func (qr *QRCode) CropFrom(img image.Image) error {
+// Load crops QR code from the given image.
+func (qr *QRCode) Load(img image.Image) error {
 	type subImager interface {
 		SubImage(r image.Rectangle) image.Image
 	}
@@ -76,7 +87,8 @@ func (qr *QRCode) CropFrom(img image.Image) error {
 		return errors.New("image does not support cropping")
 	}
 
-	qr.Image = imager.SubImage(qr.CropBounds())
+	rect := image.Rectangle{image.Point{qr.X + qrCodeBorder, qr.Y + qrCodeTitleHeight}, image.Point{qr.X + qr.imageSize + qrCodeBorder, qr.Y + qr.imageSize + qrCodeTitleHeight}}
+	qr.Image = imager.SubImage(rect)
 	return nil
 }
 
@@ -89,8 +101,8 @@ func NewQRCode(imageSize int) *QRCode {
 		Image: &image.NRGBA{
 			Rect: image.Rectangle{
 				Max: image.Point{
-					X: imageSize,
-					Y: imageSize,
+					X: imageSize + qrCodeBorder*2,
+					Y: imageSize + qrCodeTitleHeight,
 				},
 			},
 		},

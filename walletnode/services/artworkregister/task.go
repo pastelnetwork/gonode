@@ -106,7 +106,7 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	defer thumbnail.Remove()
 
-	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %d pixeles", task.config.thumbnailSize)
+	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d pixeles", task.config.thumbnailSize, task.config.thumbnailSize)
 	if err := thumbnail.ResizeImage(thumbnailSize, thumbnailSize); err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusImageProbed)
 
-	fingerprint := nodes.Fingerprint()
+	fingerprint := []byte(finger) //nodes.Fingerprint()
 	finalImage, err := task.Ticket.Image.Copy()
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func (task *Task) run(ctx context.Context) error {
 	if err := task.encodeFingerprint(ctx, fingerprint, finalImage); err != nil {
 		return err
 	}
-
+	fmt.Println("OK")
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
 }

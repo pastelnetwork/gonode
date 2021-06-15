@@ -11,10 +11,10 @@ const (
 
 var payloadNames = map[PayloadName]string{
 	PayloadFingerprint:          "Fingerprint",
-	PayloadPostQuantumSignature: "PQSignature",
-	PayloadPostQuantumPubKey:    "PQPubKey",
-	PayloadEd448Signature:       "Ed448Signature",
-	PayloadEd448PubKey:          "Ed448PubKey",
+	PayloadPostQuantumSignature: "PQ Signature",
+	PayloadPostQuantumPubKey:    "PQ Pub Key",
+	PayloadEd448Signature:       "Ed448 Signature",
+	PayloadEd448PubKey:          "Ed448 Pub Key",
 }
 
 func payloadName(subText string) PayloadName {

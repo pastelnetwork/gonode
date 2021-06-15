@@ -3,14 +3,16 @@ package qrsignature
 import (
 	"encoding/base64"
 	"fmt"
+	"math"
 
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 const (
-	payloadQRMinSize  = 0
-	payloadQRCapacity = QRCodeCapacityBinary
+	payloadQRMinSize  = 185
+	payloadQRCapacity = qrCodeCapacityBinary
+	payloadQRTitleFmt = "%s part %d of %d"
 )
 
 // Payloads represents multiple Payload.
@@ -71,17 +73,24 @@ func (payload *Payload) Encode() error {
 	if err != nil {
 		return errors.Errorf("failed to compress binary data: %w", err)
 	}
+
 	data := base64.StdEncoding.EncodeToString(raw)
 	size := int(payloadQRCapacity)
+	total := int(math.Ceil(float64(len(data)) / float64(size)))
 
 	var qrCodes []*QRCode
-	for i, last := 0, len(data); i < last; i += size {
-		if i+size > last {
-			size = last - i
+	for i := 0; i < total; i++ {
+		data := data[i*size:]
+		if i < total-1 {
+			data = data[:size]
 		}
 
+		title := payload.name.String()
+		if total > 1 {
+			title = fmt.Sprintf(payloadQRTitleFmt, payload.name, i+1, total)
+		}
 		qrCode := NewQRCode(payloadQRMinSize)
-		if err := qrCode.Encode(data[i : i+size]); err != nil {
+		if err := qrCode.Encode(title, data); err != nil {
 			return fmt.Errorf("%q: %w", payload.name, err)
 		}
 		qrCodes = append(qrCodes, qrCode)

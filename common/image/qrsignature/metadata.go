@@ -11,7 +11,8 @@ import (
 
 const (
 	positionQRSize     = 185
-	positionQRCapacity = QRCodeCapacityBinary
+	positionQRCapacity = qrCodeCapacityBinary
+	positionQRTitle    = "QR Code Position Data"
 )
 
 // Metadata represents service information about QR codes such as their names, coordinates on the canvas.
@@ -26,7 +27,7 @@ func (metadata *Metadata) Decode(payloads *Payloads) error {
 		return errors.New(err)
 	}
 
-	payloadsData := strings.Split(data, ";")
+	payloadsData := strings.Split(strings.Trim(data, ";"), ";")
 	if len(payloadsData) == 0 {
 		return errors.Errorf("could not find payload data: %q", data)
 	}
@@ -91,13 +92,11 @@ func (metadata *Metadata) Encode(payloads Payloads) error {
 		}
 		payloadsData[i] = fmt.Sprintf("%v:%v", payload.name.String(), strings.Join(qrCodesPos, ","))
 	}
-
-	data := strings.Join(payloadsData, ";")
-
+	data := ";" + strings.Join(payloadsData, ";")
 	if err := positionQRCapacity.Validate(data); err != nil {
 		return err
 	}
-	return metadata.qrCode.Encode(data)
+	return metadata.qrCode.Encode(positionQRTitle, data)
 }
 
 // NewMetadata returns a new Metadata instance.

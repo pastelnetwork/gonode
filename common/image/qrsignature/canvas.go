@@ -47,7 +47,18 @@ func (canvas *Canvas) Size() (int, int) {
 }
 
 // FillPos finds free space in the canvas and fills position points for the given qrcode.
-func (canvas *Canvas) FillPos(qrCode *QRCode) {
+func (canvas *Canvas) FillPos(qrCodes []*QRCode) {
+	for i := 0; i < 2; i++ {
+		for _, qrCode := range qrCodes {
+			canvas.fillPos(qrCode)
+		}
+		// reset axis
+		canvas.xy = make(CanvasAxis, canvas.width)
+		canvas.yx = make(CanvasAxis, canvas.height)
+	}
+}
+
+func (canvas *Canvas) fillPos(qrCode *QRCode) {
 	size := qrCode.Bounds().Size()
 
 	if canvas.width == 0 {
@@ -65,7 +76,7 @@ func (canvas *Canvas) FillPos(qrCode *QRCode) {
 			if max := canvas.yx.maxPos(y, size.Y); x < max {
 				continue
 			}
-			if (posX + posY) > (x + y) {
+			if posY > y {
 				posY = y
 				posX = x
 			}
@@ -106,9 +117,5 @@ func NewCanvas(width, height int) *Canvas {
 	return &Canvas{
 		ratioW: float64(height) / float64(width),
 		ratioH: float64(width) / float64(height),
-		// width:  width,
-		// height: height,
-		// xy:     make(CanvasAxis, width),
-		// yx:     make(CanvasAxis, height),
 	}
 }

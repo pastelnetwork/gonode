@@ -5,7 +5,6 @@ import (
 	"image"
 	"image/color"
 	"image/png"
-	"sort"
 
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
@@ -26,10 +25,6 @@ func (sig *Signature) qrCodes() []*QRCode {
 	for _, payload := range *sig.Payloads {
 		qrCodes = append(qrCodes, payload.qrCodes...)
 	}
-
-	sort.Slice(qrCodes, func(i, j int) bool {
-		return qrCodes[i].Bounds().Size().X > qrCodes[j].Bounds().Size().X
-	})
 
 	return append([]*QRCode{sig.metadata.qrCode}, qrCodes...)
 }
@@ -52,11 +47,9 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 	log.Debug("start")
 
 	canvas := NewCanvas(imgW, imgH)
-	for _, qrCode := range qrCodes {
-		// Set coordinates for each QR code.
-		canvas.FillPos(qrCode)
-	}
-	// Obtain the real size of the canvas that can be bigger or less than the original values but while maintaining aspect ratios.
+	// Set coordinates for each QR code.
+	canvas.FillPos(qrCodes)
+	// Obtain the real size of the canvas that can be bigger or less than the original values but while maintaining aspect ratio.
 	imgW, imgH = canvas.Size()
 
 	log.Debug("end")
@@ -103,7 +96,7 @@ func (sig Signature) Decode(img image.Image) error {
 		return errors.Errorf("failed to decode image from data: %w", err)
 	}
 
-	if err := sig.metadata.qrCode.CropFrom(img); err != nil {
+	if err := sig.metadata.qrCode.Load(img); err != nil {
 		return err
 	}
 
@@ -113,7 +106,7 @@ func (sig Signature) Decode(img image.Image) error {
 
 	for _, payload := range *sig.Payloads {
 		for _, qrCode := range payload.qrCodes {
-			if err := qrCode.CropFrom(img); err != nil {
+			if err := qrCode.Load(img); err != nil {
 				return err
 			}
 		}
