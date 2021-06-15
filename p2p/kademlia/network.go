@@ -2,7 +2,6 @@ package kademlia
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -10,7 +9,9 @@ import (
 	"time"
 
 	"github.com/anacrolix/utp"
-	"github.com/sirupsen/logrus"
+
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 const (
@@ -57,7 +58,7 @@ func (s *Network) Stop(ctx context.Context) {
 	// close the socket
 	if s.socket != nil {
 		if err := s.socket.Close(); err != nil {
-			logrus.Debugf("close socket: %v", err)
+			log.WithContext(ctx).Errorf("close socket: %v", err)
 		}
 	}
 }
@@ -131,7 +132,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	if !ok {
 		return nil, errors.New("impossible: must be StoreDataRequest")
 	}
-	logrus.Debugf("handle store data: %v", message.String())
+	log.WithContext(ctx).Debugf("handle store data: %v", message.String())
 
 	// add the sender to local hash table
 	s.dht.addNode(message.Sender)
@@ -177,7 +178,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 	for {
 		select {
 		case <-ctx.Done():
-			logrus.Debugf("connection %s is done", conn.RemoteAddr().String())
+			log.WithContext(ctx).Debugf("connection %s is done", conn.RemoteAddr().String())
 			return
 		default:
 		}
@@ -188,7 +189,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			if err == io.EOF {
 				return
 			}
-			logrus.Errorf("read and decode: %v", err)
+			log.WithContext(ctx).Errorf("read and decode: %v", err)
 			return
 		}
 
@@ -197,7 +198,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 		case FindNode:
 			encoded, err := s.handleFindNode(ctx, request)
 			if err != nil {
-				logrus.Errorf("handle find node request: %v", err)
+				log.WithContext(ctx).Errorf("handle find node request: %v", err)
 				continue
 			}
 			response = encoded
@@ -205,14 +206,14 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			// handle the request for finding value
 			encoded, err := s.handleFindValue(ctx, request)
 			if err != nil {
-				logrus.Errorf("handle find value request: %v", err)
+				log.WithContext(ctx).Errorf("handle find value request: %v", err)
 				continue
 			}
 			response = encoded
 		case Ping:
 			encoded, err := s.handlePing(ctx, request)
 			if err != nil {
-				logrus.Errorf("handle ping request: %v", err)
+				log.WithContext(ctx).Errorf("handle ping request: %v", err)
 				continue
 			}
 			response = encoded
@@ -220,17 +221,17 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			// handle the request for storing data
 			encoded, err := s.handleStoreData(ctx, request)
 			if err != nil {
-				logrus.Errorf("handle store data request: %v", err)
+				log.WithContext(ctx).Errorf("handle store data request: %v", err)
 				continue
 			}
 			response = encoded
 		default:
-			logrus.Errorf("impossible: invalid message type: %v", request.MessageType)
+			log.WithContext(ctx).Errorf("impossible: invalid message type: %v", request.MessageType)
 		}
 
 		// write the response
 		if _, err := conn.Write(response); err != nil {
-			logrus.Errorf("conn write: %v", err)
+			log.WithContext(ctx).Errorf("conn write: %v", err)
 		}
 	}
 }
@@ -245,10 +246,10 @@ func (s *Network) serve(ctx context.Context) {
 				return
 			}
 
-			logrus.Errorf("socket accept: %v", err)
+			log.WithContext(ctx).Errorf("socket accept: %v", err)
 			return
 		}
-		logrus.Debugf("%v: incomming connection: %v", s.self.String(), conn.RemoteAddr())
+		log.WithContext(ctx).Debugf("%v: incomming connection: %v", s.self.String(), conn.RemoteAddr())
 
 		// handle the connection requests
 		go s.handleConn(ctx, conn)

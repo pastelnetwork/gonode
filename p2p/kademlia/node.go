@@ -2,77 +2,55 @@ package kademlia
 
 import (
 	"bytes"
+	"encoding/hex"
+	"fmt"
 	"math/big"
-	"net"
-	"strconv"
+	"strings"
 )
 
-// NetworkNode is the over-the-wire representation of a node
-type NetworkNode struct {
-	// ID is a 20 byte unique identifier
+// Node is the over-the-wire representation of a node
+type Node struct {
+	// id is a 20 byte unique identifier
 	ID []byte
 
-	// IP is the IPv4 address of the node
-	IP net.IP
+	// ip address of the node
+	IP string
 
-	// Port is the port of the node
+	// port of the node
 	Port int
 }
 
-// node represents a node in the network locally
-// a separate struct due to the fact that we may want to add some metadata
-// here later such as RTT, or LastSeen time
-type node struct {
-	*NetworkNode
+func (s *Node) String() string {
+	return fmt.Sprintf("%v-%v:%d", hex.EncodeToString(s.ID), s.IP, s.Port)
 }
 
-// NewNetworkNode creates a new NetworkNode for bootstrapping
-func NewNetworkNode(ip string, port string) *NetworkNode {
-	p, _ := strconv.Atoi(port)
-	return &NetworkNode{
-		IP:   net.ParseIP(ip),
-		Port: p,
+// NewNode returns a new node for bootstrapping
+func NewNode(ip string, port int) *Node {
+	return &Node{
+		IP:   ip,
+		Port: port,
 	}
 }
 
-func newNode(networkNode *NetworkNode) *node {
-	n := &node{}
-	n.NetworkNode = networkNode
-	return n
-}
+// NodeList is used in order to sort a list of nodes
+type NodeList struct {
+	Nodes []*Node
 
-// nodeList is used in order to sort a list of arbitrary nodes against a
-// comparator. These nodes are sorted by xor distance
-type shortList struct {
-	// Nodes are a list of nodes to be compared
-	Nodes []*NetworkNode
-
-	// Comparator is the ID to compare to
+	// Comparator is the id to compare to
 	Comparator []byte
 }
 
-func areNodesEqual(n1 *NetworkNode, n2 *NetworkNode, allowNilID bool) bool {
-	if n1 == nil || n2 == nil {
-		return false
+// String returns the dump information for node list
+func (s *NodeList) String() string {
+	nodes := []string{}
+	for _, node := range s.Nodes {
+		nodes = append(nodes, node.String())
 	}
-	if !allowNilID {
-		if n1.ID == nil || n2.ID == nil {
-			return false
-		}
-		if !bytes.Equal(n1.ID, n2.ID) {
-			return false
-		}
-	}
-	if !n1.IP.Equal(n2.IP) {
-		return false
-	}
-	if n1.Port != n2.Port {
-		return false
-	}
-	return true
+	return strings.Join(nodes, ",")
 }
 
-func (n *shortList) RemoveNode(node *NetworkNode) {
+// DelNode deletes a node from list
+func (n *NodeList) DelNode(node *Node) {
 	for i := 0; i < n.Len(); i++ {
 		if bytes.Equal(n.Nodes[i].ID, node.ID) {
 			n.Nodes = append(n.Nodes[:i], n.Nodes[i+1:]...)
@@ -81,53 +59,41 @@ func (n *shortList) RemoveNode(node *NetworkNode) {
 	}
 }
 
-func (n *shortList) AppendUniqueNetworkNodes(nodes []*NetworkNode) {
-	for _, vv := range nodes {
-		exists := false
-		for _, v := range n.Nodes {
-			if bytes.Equal(v.ID, vv.ID) {
-				exists = true
-				break
-			}
+// Exists return true if the node is already there
+func (n *NodeList) Exists(node *Node) bool {
+	for _, item := range n.Nodes {
+		if bytes.Equal(item.ID, node.ID) {
+			return true
 		}
-		if !exists {
-			n.Nodes = append(n.Nodes, vv)
+	}
+	return false
+}
+
+// AddNode appends the nodes to node list if it's not existed
+func (n *NodeList) AddNodes(nodes []*Node) {
+	for _, node := range nodes {
+		if !n.Exists(node) {
+			n.Nodes = append(n.Nodes, node)
 		}
 	}
 }
 
-func (n *shortList) AppendUnique(nodes []*node) {
-	for _, vv := range nodes {
-		exists := false
-		for _, v := range n.Nodes {
-			if bytes.Equal(v.ID, vv.ID) {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			n.Nodes = append(n.Nodes, vv.NetworkNode)
-		}
-	}
-}
-
-func (n *shortList) Len() int {
+func (n *NodeList) Len() int {
 	return len(n.Nodes)
 }
-
-func (n *shortList) Swap(i, j int) {
+func (n *NodeList) Swap(i, j int) {
 	n.Nodes[i], n.Nodes[j] = n.Nodes[j], n.Nodes[i]
 }
+func (n *NodeList) Less(i, j int) bool {
+	id := n.distance(n.Nodes[i].ID, n.Comparator)
+	jd := n.distance(n.Nodes[j].ID, n.Comparator)
 
-func (n *shortList) Less(i, j int) bool {
-	iDist := getDistance(n.Nodes[i].ID, n.Comparator)
-	jDist := getDistance(n.Nodes[j].ID, n.Comparator)
-	return iDist.Cmp(jDist) == -1
+	return id.Cmp(jd) == -1
 }
 
-func getDistance(id1 []byte, id2 []byte) *big.Int {
-	buf1 := new(big.Int).SetBytes(id1)
-	buf2 := new(big.Int).SetBytes(id2)
-	result := new(big.Int).Xor(buf1, buf2)
-	return result
+func (n *NodeList) distance(id1, id2 []byte) *big.Int {
+	o1 := new(big.Int).SetBytes(id1)
+	o2 := new(big.Int).SetBytes(id2)
+
+	return new(big.Int).Xor(o1, o2)
 }

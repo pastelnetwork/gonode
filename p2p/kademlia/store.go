@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sirupsen/logrus"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Store is the interface for implementing the storage mechanism for the DHT.
@@ -84,7 +84,7 @@ func (ms *MemoryStore) SetSelf(self *Node) {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (ms *MemoryStore) Store(_ context.Context, key []byte, data []byte, replication time.Time, expiration time.Time) error {
+func (ms *MemoryStore) Store(ctx context.Context, key []byte, data []byte, replication time.Time, expiration time.Time) error {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
@@ -92,12 +92,12 @@ func (ms *MemoryStore) Store(_ context.Context, key []byte, data []byte, replica
 	ms.expirations[string(key)] = expiration
 	ms.data[string(key)] = data
 
-	logrus.Debugf("id: %s, store key: %s, data: %v", ms.self.String(), hex.EncodeToString(key), hex.EncodeToString(data))
+	log.WithContext(ctx).Debugf("id: %s, store key: %s, data: %v", ms.self.String(), hex.EncodeToString(key), hex.EncodeToString(data))
 	return nil
 }
 
 // Retrieve will return the local key/value if it exists
-func (ms *MemoryStore) Retrieve(_ context.Context, key []byte) ([]byte, error) {
+func (ms *MemoryStore) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
@@ -106,7 +106,7 @@ func (ms *MemoryStore) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 		return nil, nil
 	}
 
-	logrus.Debugf("id: %s, retrieve key: %s, data: %v", ms.self.String(), hex.EncodeToString(key), hex.EncodeToString(data))
+	log.WithContext(ctx).Debugf("id: %s, retrieve key: %s, data: %v", ms.self.String(), hex.EncodeToString(key), hex.EncodeToString(data))
 	return data, nil
 }
 
@@ -120,7 +120,7 @@ func (ms *MemoryStore) Delete(_ context.Context, key []byte) {
 }
 
 // Keys returns all the keys from the Store
-func (ms *MemoryStore) Keys(ctx context.Context) [][]byte {
+func (ms *MemoryStore) Keys(_ context.Context) [][]byte {
 	ms.mutex.Lock()
 	defer ms.mutex.Unlock()
 
