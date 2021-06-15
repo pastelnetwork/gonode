@@ -283,14 +283,6 @@ jobs:
       - test:
           package: "proto"
 
-  test_legroast:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - test:
-          package: "legroast"
-
   test_probe:
     <<: *defaults
     steps:
@@ -299,14 +291,6 @@ jobs:
       - install_tensorflow
       - test:
           package: "probe"
-
-  test_pqsignatures:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - test:
-          package: "pqsignatures"
 
   test_walletnode:
     <<: *defaults
@@ -418,13 +402,7 @@ workflows:
       - test_proto:
           requires:
             - prepare_workspace
-      - test_legroast:
-          requires:
-            - prepare_workspace
       - test_probe:
-          requires:
-            - prepare_workspace
-      - test_pqsignatures:
           requires:
             - prepare_workspace
       - test_walletnode:
