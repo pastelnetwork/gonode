@@ -1,3 +1,3 @@
-// Probe pakcage represents image analysis techniques.
+// probe contains a set of image analysis tools.
 
 package probe

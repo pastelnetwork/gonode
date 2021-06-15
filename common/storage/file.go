@@ -27,6 +27,9 @@ type FileStorage interface {
 
 	// Remove removes a file by the given name.
 	Remove(name string) error
+
+	// Rename renames oldname to newname.
+	Rename(oldname, newname string) error
 }
 
 // File represents a file.

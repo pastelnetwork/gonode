@@ -77,16 +77,16 @@ func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTic
 }
 
 // Sign implements pastel.Client.Sign
-func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature string, err error) {
+func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error) {
 	var sign struct {
 		Signature string `json:"signature"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
 	if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase); err != nil {
-		return "", errors.Errorf("failed to sign data: %w", err)
+		return nil, errors.Errorf("failed to sign data: %w", err)
 	}
-	return sign.Signature, nil
+	return []byte(sign.Signature), nil
 }
 
 // Verify implements pastel.Client.Verify

@@ -63,8 +63,8 @@ func (tensor *tensor) Fingerprints(ctx context.Context, img image.Image) (Finger
 func (tensor *tensor) LoadModels(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logTensorPrefix)
 
-	log.WithContext(ctx).Debugf("Loading models...")
-	defer log.WithContext(ctx).WithDuration(time.Now()).Debugf("All models loaded")
+	log.WithContext(ctx).Info("Loading models...")
+	defer log.WithContext(ctx).WithDuration(time.Now()).Info("All models loaded")
 
 	return tensor.tfModels.Load(ctx, tensor.baseDir)
 }
