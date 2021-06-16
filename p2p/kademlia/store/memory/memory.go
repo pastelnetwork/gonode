@@ -75,7 +75,7 @@ func (s *Store) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 	return data, nil
 }
 
-// Delete deletes a key/value pair from the Store
+// Delete a key/value pair from the Store
 func (s *Store) Delete(_ context.Context, key []byte) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()

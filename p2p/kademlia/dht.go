@@ -14,6 +14,7 @@ import (
 
 	"github.com/jbenet/go-base58"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 )
 
 var (
@@ -23,7 +24,7 @@ var (
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
 	defaultPingTime      = time.Second * 1
-	defaultUpdateTime    = time.Second * 15
+	defaultUpdateTime    = time.Minute * 1
 )
 
 // DHT represents the state of the local node in the distributed hash table
@@ -93,8 +94,40 @@ func (s *DHT) Start(ctx context.Context) error {
 		return fmt.Errorf("start network: %v", err)
 	}
 
-	// start the update timer
-	go s.doUpdateWork(ctx, defaultUpdateTime)
+	// start a timer for doing update work
+	helpers.StartTimer(ctx, "update work", s.done, defaultUpdateTime, func() error {
+		// refresh
+		for i := 0; i < B; i++ {
+			if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
+				// refresh the bucket by iterative find node
+				id := s.ht.randomIDFromBucket(K)
+				if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
+					log.WithContext(ctx).Errorf("iterate find node: %v", err)
+				}
+			}
+		}
+
+		// replication
+		keys := s.store.KeysForReplication(ctx)
+		for _, key := range keys {
+			value, err := s.store.Retrieve(ctx, key)
+			if err != nil {
+				log.WithContext(ctx).Errorf("store retrieve: %v", err)
+				continue
+			}
+			if value != nil {
+				// iteratve store the value
+				if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
+					log.WithContext(ctx).Errorf("iterate store data: %v", err)
+				}
+			}
+		}
+
+		// expire the keys
+		s.store.ExpireKeys(ctx)
+
+		return nil
+	})
 
 	return nil
 }
@@ -472,54 +505,4 @@ func (s *DHT) addNode(node *Node) *Node {
 	s.ht.routeTable[index] = bucket
 
 	return nil
-}
-
-// start a update timer to do refresh, replication, expiration work periodly
-func (s *DHT) doUpdateWork(ctx context.Context, interval time.Duration) {
-	// new a timer for refresh work periodly
-	timer := time.NewTimer(interval)
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-s.done:
-			return
-		case <-timer.C:
-			// refresh
-			for i := 0; i < B; i++ {
-				if time.Since(s.ht.refreshTime(i)) > defaultRefreshTime {
-					// refresh the bucket by iterative find node
-					id := s.ht.randomIDFromBucket(K)
-					if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
-						log.WithContext(ctx).Errorf("iterate find node: %v", err)
-					}
-				}
-			}
-
-			// replication
-			keys := s.store.KeysForReplication(ctx)
-			for _, key := range keys {
-				value, err := s.store.Retrieve(ctx, key)
-				if err != nil {
-					log.WithContext(ctx).Errorf("store retrieve: %v", err)
-					continue
-				}
-				if value == nil {
-					continue
-				}
-				// iteratve store the value
-				if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
-					log.WithContext(ctx).Errorf("iterate store data: %v", err)
-				}
-			}
-
-			// expire the keys
-			s.store.ExpireKeys(ctx)
-
-			// reset the timer
-			timer.Reset(interval)
-		}
-	}
 }
