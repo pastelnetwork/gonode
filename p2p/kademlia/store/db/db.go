@@ -38,7 +38,7 @@ func NewStore(dataDir string) (*Badger, error) {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Badger) Store(ctx context.Context, key []byte, data []byte, replication time.Time, expiration time.Time) error {
+func (s *Badger) Store(_ context.Context, key []byte, data []byte, replication time.Time, expiration time.Time) error {
 	if err := s.db.Update(func(txn *badger.Txn) error {
 
 		return nil
