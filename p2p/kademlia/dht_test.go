@@ -139,7 +139,7 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 	return dht, nil
 }
 
-func (ts *testSuite) newDHTNodeWithDBStore(ctx context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
+func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
 	options := &Options{
 		IP:   ts.IP,
 		Port: port,
@@ -441,4 +441,23 @@ func (ts *testSuite) TestAddNodeForAppend() {
 
 	bucket := ts.main.ht.routeTable[index]
 	ts.Equal(id, bucket[len(bucket)-1].ID)
+}
+
+func (ts *testSuite) TestKeyExpireTime() {
+	number := 20
+	for i := 0; i < number; i++ {
+		id, err := newRandomID()
+		if err != nil {
+			ts.T().Fatalf("new random id: %v", err)
+		}
+		node := &Node{
+			ID:   id,
+			IP:   ts.IP,
+			Port: ts.bootstrapPort + i + 1,
+		}
+		ts.main.addNode(node)
+	}
+	ts.Equal(number, ts.main.ht.totalCount())
+
+	// ts.main.keyExpireTime()
 }

@@ -139,11 +139,7 @@ func (s *Badger) Delete(ctx context.Context, key []byte) {
 
 		// delete the expiration
 		ek := expirationPrefix + base58.Encode(key)
-		if err := txn.Delete([]byte(ek)); err != nil {
-			return err
-		}
-
-		return nil
+		return txn.Delete([]byte(ek))
 	}); err != nil {
 		log.WithContext(ctx).Errorf("badger delete: %v", err)
 		return
