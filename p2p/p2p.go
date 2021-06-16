@@ -15,13 +15,7 @@ const (
 
 // P2P represents the p2p service.
 type P2P interface {
-	// Retrieve data from the kademlia netowrk by key, return nil if not found
-	// - key is the base58 encoded identifier of the data
-	Retrieve(ctx context.Context, key string) ([]byte, error)
-
-	// Store data to the network, which will trigger the iterative store message
-	// - the base58 encoded identifier will be returned
-	Store(ctx context.Context, data []byte) (string, error)
+	Client
 
 	// Run the node of distributed hash table
 	Run(ctx context.Context) error
@@ -39,7 +33,7 @@ func (s *p2p) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	// configure the kademlia dht for p2p service
-	if err := s.configure(ctx); err != nil {
+	if err := s.configure(); err != nil {
 		return errors.Errorf("configure kademlia dht: %w", err)
 	}
 
@@ -87,7 +81,7 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 }
 
 // configure the distrubuted hash table for p2p service
-func (s *p2p) configure(ctx context.Context) error {
+func (s *p2p) configure() error {
 	var bootstrapNodes []*kademlia.Node
 	if s.config.BootstrapIP != "" || s.config.BootstrapPort > 0 {
 		bootstrapNode := kademlia.NewNode(s.config.BootstrapIP, s.config.BootstrapPort)

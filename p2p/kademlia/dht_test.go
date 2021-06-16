@@ -97,7 +97,7 @@ func (ts *testSuite) TearDownSuite() {
 	}
 }
 
-func (ts *testSuite) newDHTNode(ctx context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
+func (ts *testSuite) newDHTNode(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
 	store := memory.NewStore()
 
 	options := &Options{

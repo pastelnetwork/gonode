@@ -96,7 +96,7 @@ func (s *Store) Keys(_ context.Context) [][]byte {
 	return keys
 }
 
-// Init initializes the Store
+// NewStore returns a new memory store
 func NewStore() *Store {
 	return &Store{
 		data:         make(map[string][]byte),

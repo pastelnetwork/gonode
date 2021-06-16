@@ -50,18 +50,18 @@ func (s *NodeList) String() string {
 }
 
 // DelNode deletes a node from list
-func (n *NodeList) DelNode(node *Node) {
-	for i := 0; i < n.Len(); i++ {
-		if bytes.Equal(n.Nodes[i].ID, node.ID) {
-			n.Nodes = append(n.Nodes[:i], n.Nodes[i+1:]...)
+func (s *NodeList) DelNode(node *Node) {
+	for i := 0; i < s.Len(); i++ {
+		if bytes.Equal(s.Nodes[i].ID, node.ID) {
+			s.Nodes = append(s.Nodes[:i], s.Nodes[i+1:]...)
 			return
 		}
 	}
 }
 
 // Exists return true if the node is already there
-func (n *NodeList) Exists(node *Node) bool {
-	for _, item := range n.Nodes {
+func (s *NodeList) Exists(node *Node) bool {
+	for _, item := range s.Nodes {
 		if bytes.Equal(item.ID, node.ID) {
 			return true
 		}
@@ -69,29 +69,29 @@ func (n *NodeList) Exists(node *Node) bool {
 	return false
 }
 
-// AddNode appends the nodes to node list if it's not existed
-func (n *NodeList) AddNodes(nodes []*Node) {
+// AddNodes appends the nodes to node list if it's not existed
+func (s *NodeList) AddNodes(nodes []*Node) {
 	for _, node := range nodes {
-		if !n.Exists(node) {
-			n.Nodes = append(n.Nodes, node)
+		if !s.Exists(node) {
+			s.Nodes = append(s.Nodes, node)
 		}
 	}
 }
 
-func (n *NodeList) Len() int {
-	return len(n.Nodes)
+func (s *NodeList) Len() int {
+	return len(s.Nodes)
 }
-func (n *NodeList) Swap(i, j int) {
-	n.Nodes[i], n.Nodes[j] = n.Nodes[j], n.Nodes[i]
+func (s *NodeList) Swap(i, j int) {
+	s.Nodes[i], s.Nodes[j] = s.Nodes[j], s.Nodes[i]
 }
-func (n *NodeList) Less(i, j int) bool {
-	id := n.distance(n.Nodes[i].ID, n.Comparator)
-	jd := n.distance(n.Nodes[j].ID, n.Comparator)
+func (s *NodeList) Less(i, j int) bool {
+	id := s.distance(s.Nodes[i].ID, s.Comparator)
+	jd := s.distance(s.Nodes[j].ID, s.Comparator)
 
 	return id.Cmp(jd) == -1
 }
 
-func (n *NodeList) distance(id1, id2 []byte) *big.Int {
+func (s *NodeList) distance(id1, id2 []byte) *big.Int {
 	o1 := new(big.Int).SetBytes(id1)
 	o2 := new(big.Int).SetBytes(id2)
 

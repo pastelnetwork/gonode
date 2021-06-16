@@ -63,7 +63,7 @@ func (s *Network) Stop(ctx context.Context) {
 	}
 }
 
-func (s *Network) handleFindNode(ctx context.Context, message *Message) ([]byte, error) {
+func (s *Network) handleFindNode(_ context.Context, message *Message) ([]byte, error) {
 	request, ok := message.Data.(*FindNodeRequest)
 	if !ok {
 		return nil, errors.New("impossible: must be FindNodeRequest")
@@ -159,7 +159,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	return encoded, nil
 }
 
-func (s *Network) handlePing(ctx context.Context, message *Message) ([]byte, error) {
+func (s *Network) handlePing(_ context.Context, message *Message) ([]byte, error) {
 	// new a response message
 	response := s.dht.newMessage(Ping, message.Sender, nil)
 	// send the response to client

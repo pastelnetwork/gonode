@@ -11,20 +11,23 @@ import (
 )
 
 const (
+	// IterateStore - iterative store the data
 	IterateStore = iota
+	// IterateFindNode - iterative find node
 	IterateFindNode
+	// IterateFindValue - iterative find value
 	IterateFindValue
 )
 
 const (
-	// a small number representing the degree of parallelism in network calls
+	// Alpha - a small number representing the degree of parallelism in network calls
 	Alpha = 3
 
-	// the size in bits of the keys used to identify nodes and store and
+	// B - the size in bits of the keys used to identify nodes and store and
 	// retrieve data; in basic Kademlia this is 160, the length of a SHA1
 	B = 160
 
-	// the maximum number of contacts stored in a bucket
+	// K - the maximum number of contacts stored in a bucket
 	K = 20
 )
 
