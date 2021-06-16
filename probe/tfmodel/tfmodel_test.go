@@ -3,7 +3,6 @@ package tfmodel
 import (
 	"context"
 	"os"
-	"sync"
 	"testing"
 
 	tensorflow "github.com/galeone/tensorflow/tensorflow/go"
@@ -28,23 +27,17 @@ func (suite *tfTestSuite) SetupSuite() {
 	suite.modelBaseDir = dir
 	suite.fatal(err)
 
-	suite.mobileNet = &TFModel{
-		Mutex: sync.Mutex{},
-		Config: Config{
-			path:  test.MobileNetV2,
-			input: test.MobileNetV2Input,
-		},
-	}
+	suite.mobileNet = NewModel(Config{
+		path:  test.MobileNetV2,
+		input: test.MobileNetV2Input,
+	})
 	err = suite.mobileNet.Load(context.Background(), suite.modelBaseDir)
 	suite.fatal(err)
 
-	suite.nasNetMobile = &TFModel{
-		Mutex: sync.Mutex{},
-		Config: Config{
-			path:  test.NASNetMobile,
-			input: test.NASNetMobileInput,
-		},
-	}
+	suite.nasNetMobile = NewModel(Config{
+		path:  test.NASNetMobile,
+		input: test.NASNetMobileInput,
+	})
 	err = suite.nasNetMobile.Load(context.Background(), suite.modelBaseDir)
 	suite.fatal(err)
 }
@@ -74,7 +67,7 @@ func (suite *tfTestSuite) TestTFModel_Load() {
 		wantErr bool
 	}{
 		{
-			name: "path is not existing",
+			name: "conf.path is not provided",
 			conf: Config{},
 			args: args{
 				ctx:     context.Background(),
@@ -83,7 +76,7 @@ func (suite *tfTestSuite) TestTFModel_Load() {
 			wantErr: true,
 		},
 		{
-			name: "path is existing but not contains model",
+			name: "conf.path doesn't contain model",
 			conf: Config{
 				path: "somewhere",
 			},
@@ -96,11 +89,7 @@ func (suite *tfTestSuite) TestTFModel_Load() {
 	}
 	for _, tt := range tests {
 		suite.Run(tt.name, func() {
-			err := (&TFModel{
-				Mutex:  sync.Mutex{},
-				Config: tt.conf,
-				data:   nil,
-			}).Load(tt.args.ctx, tt.args.baseDir)
+			err := NewModel(tt.conf).Load(tt.args.ctx, tt.args.baseDir)
 			if tt.wantErr {
 				suite.Error(err)
 			} else {

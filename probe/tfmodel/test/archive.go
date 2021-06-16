@@ -37,7 +37,7 @@ func init() {
 	testBaseDir = regexp.MustCompile(`archive\.go`).ReplaceAllString(file, "")
 }
 
-//UnzipModels unzip testing models to temporary dir
+// UnzipModels unzips testing models into a temporary dir
 func UnzipModels() (unzippedBaseDir string, unzippedModels []string, err error) {
 	unzippedBaseDir, err = ioutil.TempDir("", "unzipped_models")
 	if err != nil {
