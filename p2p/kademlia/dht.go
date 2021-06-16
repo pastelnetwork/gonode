@@ -266,9 +266,9 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 		// ignore the contacted node
 		if contacted[string(node.ID)] {
 			continue
-		} else {
-			contacted[string(node.ID)] = true
 		}
+		contacted[string(node.ID)] = true
+
 		// update the running goroutines
 		number++
 
