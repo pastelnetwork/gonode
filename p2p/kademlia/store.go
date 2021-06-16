@@ -24,4 +24,7 @@ type Store interface {
 
 	// ExpireKeys expires all key/values
 	ExpireKeys(ctx context.Context)
+
+	// Close the store
+	Close(ctx context.Context)
 }

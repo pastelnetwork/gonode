@@ -96,6 +96,10 @@ func (s *Store) Keys(_ context.Context) [][]byte {
 	return keys
 }
 
+// Close the store
+func (s *Store) Close(_ context.Context) {
+}
+
 // NewStore returns a new memory store
 func NewStore() *Store {
 	return &Store{
