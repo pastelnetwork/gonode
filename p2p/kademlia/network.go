@@ -85,7 +85,7 @@ func (s *Network) handleFindNode(_ context.Context, message *Message) ([]byte, e
 	// send the response to client
 	encoded, err := encode(response)
 	if err != nil {
-		return nil, fmt.Errorf("encode response for find node: %v", err)
+		return nil, errors.Errorf("encode response for find node: %w", err)
 	}
 
 	return encoded, nil
@@ -104,7 +104,7 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) ([]byte
 	// retrieve the value from local storage
 	value, err := s.dht.store.Retrieve(ctx, request.Target)
 	if err != nil {
-		return nil, fmt.Errorf("store retrieve: %v", err)
+		return nil, errors.Errorf("store retrieve: %w", err)
 	}
 	if value != nil {
 		// return the value
@@ -121,7 +121,7 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) ([]byte
 	// send the response to client
 	encoded, err := encode(response)
 	if err != nil {
-		return nil, fmt.Errorf("encode response for find value: %v", err)
+		return nil, errors.Errorf("encode response for find value: %w", err)
 	}
 
 	return encoded, nil
@@ -145,7 +145,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	replication := time.Now().Add(defaultReplicateTime)
 	// store the data to local storage
 	if err := s.dht.store.Store(ctx, key, request.Data, replication, expiration); err != nil {
-		return nil, fmt.Errorf("store the data: %v", err)
+		return nil, errors.Errorf("store the data: %w", err)
 	}
 
 	// new a response message
@@ -153,7 +153,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	// send the response to client
 	encoded, err := encode(response)
 	if err != nil {
-		return nil, fmt.Errorf("encode response for store data: %v", err)
+		return nil, errors.Errorf("encode response for store data: %w", err)
 	}
 
 	return encoded, nil
@@ -165,7 +165,7 @@ func (s *Network) handlePing(_ context.Context, message *Message) ([]byte, error
 	// send the response to client
 	encoded, err := encode(response)
 	if err != nil {
-		return nil, fmt.Errorf("encode response for ping: %v", err)
+		return nil, errors.Errorf("encode response for ping: %w", err)
 	}
 
 	return encoded, nil
@@ -178,7 +178,6 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.WithContext(ctx).Debugf("connection %s is done", conn.RemoteAddr().String())
 			return
 		default:
 		}
@@ -263,7 +262,7 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 	// dial the remote address with udp network
 	conn, err := utp.DialContext(ctx, remoteAddr)
 	if err != nil {
-		return nil, fmt.Errorf("dial %q: %w", remoteAddr, err)
+		return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
 	}
 	defer conn.Close()
 
@@ -273,16 +272,16 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 	// encode and send the request message
 	data, err := encode(request)
 	if err != nil {
-		return nil, fmt.Errorf("encode: %v", err)
+		return nil, errors.Errorf("encode: %w", err)
 	}
 	if _, err := conn.Write(data); err != nil {
-		return nil, fmt.Errorf("conn write: %v", err)
+		return nil, errors.Errorf("conn write: %w", err)
 	}
 
 	// receive and decode the response message
 	response, err := decode(conn)
 	if err != nil {
-		return nil, fmt.Errorf("conn read: %v", err)
+		return nil, errors.Errorf("conn read: %w", err)
 	}
 
 	return response, nil

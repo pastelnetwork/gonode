@@ -2,10 +2,11 @@ package kademlia
 
 import (
 	"bytes"
-	"encoding/hex"
 	"fmt"
 	"math/big"
 	"strings"
+
+	"github.com/jbenet/go-base58"
 )
 
 // Node is the over-the-wire representation of a node
@@ -21,7 +22,7 @@ type Node struct {
 }
 
 func (s *Node) String() string {
-	return fmt.Sprintf("%v-%v:%d", hex.EncodeToString(s.ID), s.IP, s.Port)
+	return fmt.Sprintf("%v-%v:%d", base58.Encode(s.ID), s.IP, s.Port)
 }
 
 // NewNode returns a new node for bootstrapping

@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha1"
-	"encoding/hex"
-	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -53,10 +51,6 @@ type Options struct {
 
 // NewDHT returns a new DHT node
 func NewDHT(store Store, options *Options) (*DHT, error) {
-	if store == nil {
-		return nil, errors.New("store is nil")
-	}
-
 	// validate the options, if it's invalid, set them to default value
 	if options.IP == "" {
 		options.IP = defaultNetworkAddr
@@ -108,8 +102,8 @@ func (s *DHT) Start(ctx context.Context) error {
 		}
 
 		// replication
-		keys := s.store.KeysForReplication(ctx)
-		for _, key := range keys {
+		replicationKeys := s.store.KeysForReplication(ctx)
+		for _, key := range replicationKeys {
 			value, err := s.store.Retrieve(ctx, key)
 			if err != nil {
 				log.WithContext(ctx).Errorf("store retrieve: %v", err)
@@ -123,8 +117,11 @@ func (s *DHT) Start(ctx context.Context) error {
 			}
 		}
 
-		// expire the keys
-		s.store.ExpireKeys(ctx)
+		// expiration
+		expirationKeys := s.store.KeysForExpiration(ctx)
+		for _, key := range expirationKeys {
+			s.store.Delete(ctx, key)
+		}
 
 		return nil
 	})
@@ -358,14 +355,14 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	if nl.Len() == 0 {
 		return nil, nil
 	}
-	log.WithContext(ctx).Infof("type: %v, target: %v, nodes: %v", iterativeType, hex.EncodeToString(target), nl.String())
+	log.WithContext(ctx).Infof("type: %v, target: %v, nodes: %v", iterativeType, base58.Encode(target), nl.String())
 
 	// keep the closer node
 	closestNode := nl.Nodes[0]
 	// if it's find node, reset the refresh timer
 	if iterativeType == IterateFindNode {
 		bucket := s.ht.bucketIndex(target, s.ht.self.ID)
-		log.WithContext(ctx).Debugf("bucket for target: %v", hex.EncodeToString(target))
+		log.WithContext(ctx).Debugf("bucket for target: %v", base58.Encode(target))
 
 		// reset the refresh time for the bucket
 		s.ht.resetRefreshTime(bucket)
@@ -413,7 +410,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		// sort the nodes for node list
 		sort.Sort(nl)
 
-		log.WithContext(ctx).Debugf("id: %v, iterate %d, sorted nodes: %v", hex.EncodeToString(s.ht.self.ID), iterativeType, nl.String())
+		log.WithContext(ctx).Debugf("id: %v, iterate %d, sorted nodes: %v", base58.Encode(s.ht.self.ID), iterativeType, nl.String())
 
 		// if closestNode is unchanged
 		if bytes.Equal(nl.Nodes[0].ID, closestNode.ID) || searchRest {

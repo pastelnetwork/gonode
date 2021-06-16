@@ -1,11 +1,11 @@
-package memory
+package mem
 
 import (
 	"context"
-	"encoding/hex"
 	"sync"
 	"time"
 
+	"github.com/jbenet/go-base58"
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
@@ -33,31 +33,31 @@ func (s *Store) KeysForReplication(_ context.Context) [][]byte {
 	return keys
 }
 
-// ExpireKeys should expire all key/values due for expiration
-func (s *Store) ExpireKeys(_ context.Context) {
+// KeysForExpiration returns the keys of all data to be removed from local storage
+func (s *Store) KeysForExpiration(_ context.Context) [][]byte {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
+	keys := [][]byte{}
 	for k, v := range s.expirations {
 		if time.Now().After(v) {
-			delete(s.replications, k)
-			delete(s.expirations, k)
-			delete(s.data, k)
+			keys = append(keys, []byte(k))
 		}
 	}
+	return keys
 }
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Store) Store(ctx context.Context, key []byte, data []byte, replication time.Time, expiration time.Time) error {
+func (s *Store) Store(ctx context.Context, key []byte, value []byte, replication time.Time, expiration time.Time) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.replications[string(key)] = replication
 	s.expirations[string(key)] = expiration
-	s.data[string(key)] = data
+	s.data[string(key)] = value
 
-	log.WithContext(ctx).Debugf("store key: %s, data: %v", hex.EncodeToString(key), hex.EncodeToString(data))
+	log.WithContext(ctx).Debugf("store key: %s, data: %v", base58.Encode(key), base58.Encode(value))
 	return nil
 }
 
@@ -66,13 +66,13 @@ func (s *Store) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	data, ok := s.data[string(key)]
+	value, ok := s.data[string(key)]
 	if !ok {
 		return nil, nil
 	}
 
-	log.WithContext(ctx).Debugf("retrieve key: %s, data: %v", hex.EncodeToString(key), hex.EncodeToString(data))
-	return data, nil
+	log.WithContext(ctx).Debugf("retrieve key: %s, data: %v", base58.Encode(key), base58.Encode(value))
+	return value, nil
 }
 
 // Delete a key/value pair from the Store

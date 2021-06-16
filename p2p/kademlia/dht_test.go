@@ -2,14 +2,17 @@ package kademlia
 
 import (
 	"context"
-	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/jbenet/go-base58"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/store/memory"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -20,16 +23,19 @@ func TestSuite(t *testing.T) {
 type testSuite struct {
 	suite.Suite
 
-	Key   string
-	Value []byte
-	IP    string
+	Key     string
+	Value   []byte
+	IP      string
+	DataDir string
 
 	bootstrapPort  int
 	bootstrapNodes []*Node
 
-	main   *DHT
-	ctx    context.Context
-	cancel context.CancelFunc
+	dbStore  Store
+	memStore Store
+	main     *DHT
+	ctx      context.Context
+	cancel   context.CancelFunc
 }
 
 func (ts *testSuite) SetupSuite() {
@@ -50,12 +56,25 @@ func (ts *testSuite) SetupSuite() {
 			Port: ts.bootstrapPort,
 		},
 	}
+	// init the data directory for each test
+	workDir, err := ioutil.TempDir("", "p2p-test-*")
+	if err != nil {
+		ts.T().Fatalf("ioutil tempdir: %v", err)
+	}
 
 	ts.ctx, ts.cancel = context.WithCancel(context.Background())
 	ts.ctx = log.ContextWithPrefix(ts.ctx, "p2p-test")
 
+	// init the db store
+	dbStore, err := db.NewStore(ts.ctx, filepath.Join(workDir, "badger"))
+	if err != nil {
+		ts.T().Fatalf("new db store: %v", err)
+	}
+	ts.dbStore = dbStore
+	ts.memStore = mem.NewStore()
+
 	// init the main dht
-	dht, err := ts.newDHTNode(ts.ctx, ts.bootstrapPort, nil, nil)
+	dht, err := ts.newDHTNodeWithDBStore(ts.ctx, ts.bootstrapPort, nil, nil)
 	if err != nil {
 		ts.T().Fatalf("new main dht: %v", err)
 	}
@@ -95,11 +114,12 @@ func (ts *testSuite) TearDownSuite() {
 	if ts.main != nil {
 		ts.main.Stop(ts.ctx)
 	}
+	if ts.dbStore != nil {
+		ts.dbStore.Close(ts.ctx)
+	}
 }
 
-func (ts *testSuite) newDHTNode(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
-	store := memory.NewStore()
-
+func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
 	options := &Options{
 		IP:   ts.IP,
 		Port: port,
@@ -111,9 +131,29 @@ func (ts *testSuite) newDHTNode(_ context.Context, port int, nodes []*Node, id [
 		options.BootstrapNodes = nodes
 	}
 
-	dht, err := NewDHT(store, options)
+	dht, err := NewDHT(ts.memStore, options)
 	if err != nil {
-		return nil, fmt.Errorf("new dht: %v", err)
+		return nil, errors.Errorf("new dht: %w", err)
+	}
+
+	return dht, nil
+}
+
+func (ts *testSuite) newDHTNodeWithDBStore(ctx context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
+	options := &Options{
+		IP:   ts.IP,
+		Port: port,
+	}
+	if len(id) > 0 {
+		options.ID = id
+	}
+	if len(nodes) > 0 {
+		options.BootstrapNodes = nodes
+	}
+
+	dht, err := NewDHT(ts.dbStore, options)
+	if err != nil {
+		return nil, errors.Errorf("new dht: %w", err)
 	}
 
 	return dht, nil
@@ -121,7 +161,7 @@ func (ts *testSuite) newDHTNode(_ context.Context, port int, nodes []*Node, id [
 
 func (ts *testSuite) TestStartDHTNode() {
 	// new a dht node
-	dht, err := ts.newDHTNode(ts.ctx, 6001, ts.bootstrapNodes, nil)
+	dht, err := ts.newDHTNodeWithDBStore(ts.ctx, 6001, ts.bootstrapNodes, nil)
 	if err != nil {
 		ts.T().Fatalf("start a dht: %v", err)
 	}
@@ -144,6 +184,36 @@ func (ts *testSuite) TestRetrieveWithNil() {
 		ts.T().Fatalf("dht retrive: %v", err)
 	}
 	ts.Nil(value)
+}
+
+func (ts *testSuite) TestStoreAndRetrieveWithMemStore() {
+	// new a dht node
+	dht, err := ts.newDHTNodeWithMemStore(ts.ctx, 6001, ts.bootstrapNodes, nil)
+	if err != nil {
+		ts.T().Fatalf("start a dht: %v", err)
+	}
+
+	// do the bootstrap
+	if err := dht.Bootstrap(ts.ctx); err != nil {
+		ts.T().Fatalf("do bootstrap: %v", err)
+	}
+
+	// start the dht node
+	if err := dht.Start(ts.ctx); err != nil {
+		ts.T().Fatalf("start dht node: %v", err)
+	}
+	defer dht.Stop(ts.ctx)
+
+	key, err := dht.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+
+	value, err := dht.Retrieve(ts.ctx, key)
+	if err != nil {
+		ts.T().Fatalf("dht retrieve: %v", err)
+	}
+	ts.Equal(ts.Value, value)
 }
 
 func (ts *testSuite) TestStoreAndRetrieve() {
@@ -171,7 +241,7 @@ func (ts *testSuite) TestStoreWithMain() {
 
 func (ts *testSuite) TestStoreWithTwoNodes() {
 	// new a dht node
-	dht, err := ts.newDHTNode(ts.ctx, 6001, ts.bootstrapNodes, nil)
+	dht, err := ts.newDHTNodeWithDBStore(ts.ctx, 6001, ts.bootstrapNodes, nil)
 	if err != nil {
 		ts.T().Fatalf("start a dht: %v", err)
 	}
@@ -215,19 +285,19 @@ func (ts *testSuite) startNodes(n int) ([]*DHT, error) {
 
 	for i := 0; i < n; i++ {
 		// new a dht node
-		dht, err := ts.newDHTNode(ts.ctx, ts.bootstrapPort+i+1, ts.bootstrapNodes, nil)
+		dht, err := ts.newDHTNodeWithDBStore(ts.ctx, ts.bootstrapPort+i+1, ts.bootstrapNodes, nil)
 		if err != nil {
-			return nil, fmt.Errorf("start a dht: %v", err)
+			return nil, errors.Errorf("start a dht: %w", err)
 		}
 
 		// do the bootstrap
 		if err := dht.Bootstrap(ts.ctx); err != nil {
-			return nil, fmt.Errorf("do bootstrap: %v", err)
+			return nil, errors.Errorf("do bootstrap: %w", err)
 		}
 
 		// start the dht node
 		if err := dht.Start(ts.ctx); err != nil {
-			return nil, fmt.Errorf("start dht node: %v", err)
+			return nil, errors.Errorf("start dht node: %w", err)
 		}
 		dhts = append(dhts, dht)
 	}

@@ -22,8 +22,8 @@ type Store interface {
 	// KeysForReplication returns the keys of all data to be replicated across the network
 	KeysForReplication(ctx context.Context) [][]byte
 
-	// ExpireKeys expires all key/values
-	ExpireKeys(ctx context.Context)
+	// KeysForExpiration returns the keys of all data to be removed from local storage
+	KeysForExpiration(ctx context.Context) [][]byte
 
 	// Close the store
 	Close(ctx context.Context)
