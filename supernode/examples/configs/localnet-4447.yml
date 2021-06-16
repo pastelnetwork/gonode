@@ -11,9 +11,11 @@ node:
     port: 4447
 
 p2p:
-  listen_addresses: "0.0.0.0"
-  port: 4457
-  memory_db: true
+  listen_address: "0.0.0.0"
+  port: 6003
+  data_dir: "p2p-localnet-6003"
+  bootstrap_ip: "localhost"
+  bootstrap_port: 6000
 
 metadb:
   listen_address: "0.0.0.0"

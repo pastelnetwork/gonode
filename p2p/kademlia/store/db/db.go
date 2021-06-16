@@ -3,6 +3,7 @@ package db
 import (
 	"bytes"
 	"context"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -42,7 +43,10 @@ func NewStore(ctx context.Context, dataDir string) (*Badger, error) {
 	// init the badger options
 	badgerOptions := badger.DefaultOptions(dataDir)
 	badgerOptions = badgerOptions.WithCompression(options.ZSTD)
-	badgerOptions = badgerOptions.WithLogger(log.DefaultLogger)
+	// discard the log for badger
+	logger := log.NewLogger()
+	logger.SetOutput(ioutil.Discard)
+	badgerOptions = badgerOptions.WithLogger(logger)
 
 	// open the badger
 	db, err := badger.Open(badgerOptions)
@@ -142,7 +146,9 @@ func (s *Badger) Delete(ctx context.Context, key []byte) {
 		return nil
 	}); err != nil {
 		log.WithContext(ctx).Errorf("badger delete: %v", err)
+		return
 	}
+	log.WithContext(ctx).Infof("delete key: %s", base58.Encode(key))
 }
 
 // Keys returns all the keys from the Store

@@ -6,7 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 )
 
 const (
@@ -23,9 +23,10 @@ type P2P interface {
 
 // p2p structure to implements interface
 type p2p struct {
-	dht     *kademlia.DHT // the kademlia network
-	config  *Config       // the service configuration
-	running bool          // if the kademlia network is ready
+	store   kademlia.Store // the store for kademlia network
+	dht     *kademlia.DHT  // the kademlia network
+	config  *Config        // the service configuration
+	running bool           // if the kademlia network is ready
 }
 
 // Run the kademlia network
@@ -33,7 +34,7 @@ func (s *p2p) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	// configure the kademlia dht for p2p service
-	if err := s.configure(); err != nil {
+	if err := s.configure(ctx); err != nil {
 		return errors.Errorf("configure kademlia dht: %w", err)
 	}
 
@@ -53,6 +54,9 @@ func (s *p2p) Run(ctx context.Context) error {
 
 	// stop the node for kademlia network
 	s.dht.Stop(ctx)
+
+	// close the store of kademlia network
+	s.store.Close(ctx)
 
 	log.WithContext(ctx).Info("p2p service is stopped")
 	return nil
@@ -81,7 +85,7 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 }
 
 // configure the distrubuted hash table for p2p service
-func (s *p2p) configure() error {
+func (s *p2p) configure(ctx context.Context) error {
 	var bootstrapNodes []*kademlia.Node
 	if s.config.BootstrapIP != "" || s.config.BootstrapPort > 0 {
 		bootstrapNode := kademlia.NewNode(s.config.BootstrapIP, s.config.BootstrapPort)
@@ -89,7 +93,11 @@ func (s *p2p) configure() error {
 	}
 
 	// new the local storage
-	store := mem.NewStore()
+	store, err := db.NewStore(ctx, s.config.DataDir)
+	if err != nil {
+		return errors.Errorf("new kademlia store: %w", err)
+	}
+	s.store = store
 
 	// new a kademlia distributed hash table
 	dht, err := kademlia.NewDHT(store, &kademlia.Options{
