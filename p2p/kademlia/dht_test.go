@@ -347,6 +347,31 @@ func (ts *testSuite) TestIterativeFindNode() {
 	}
 }
 
+func (ts *testSuite) TestIterativeFindValue() {
+	number := 2
+
+	// start the nodes
+	dhts, err := ts.startNodes(number)
+	if err != nil {
+		ts.T().Fatalf("start nodes: %v", err)
+	}
+	for _, dht := range dhts {
+		defer dht.Stop(ts.ctx)
+	}
+
+	// store the key/value
+	key, err := ts.main.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+
+	value, err := ts.main.iterate(ts.ctx, IterateFindValue, base58.Decode(key), nil)
+	if err != nil {
+		ts.T().Fatalf("iterative find value: %v", err)
+	}
+	ts.Equal(ts.Value, value)
+}
+
 func (ts *testSuite) TestAddNodeForFull() {
 	// short the ping time
 	defaultPingTime = time.Millisecond * 200
@@ -462,4 +487,9 @@ func (ts *testSuite) TestKeyExpireTime() {
 	key := ts.main.hashKey(ts.Value)
 	expire := ts.main.keyExpireTime(ts.ctx, key)
 	ts.Greater(expire.Unix(), time.Now().Unix())
+}
+
+func (ts *testSuite) TestHashKey() {
+	key := ts.main.hashKey(ts.Value)
+	ts.Equal(K, len(key))
 }
