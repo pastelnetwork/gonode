@@ -140,9 +140,11 @@ func (s *DHT) Stop(ctx context.Context) {
 }
 
 // keyExpireTime returns the expire time of key
-func (s *DHT) keyExpireTime(key []byte) time.Time {
+func (s *DHT) keyExpireTime(ctx context.Context, key []byte) time.Time {
 	// calculate the bucket index with key and local node id
 	bucket := s.ht.bucketIndex(key, s.ht.self.ID)
+
+	log.WithContext(ctx).Debugf("bucket for key: %v, %v", bucket, base58.Encode(key))
 
 	var total int
 	// total nodes before the bucket which key in
@@ -162,6 +164,9 @@ func (s *DHT) keyExpireTime(key []byte) time.Time {
 	}
 
 	seconds := defaultExpireTime.Nanoseconds() * int64(math.Exp(float64(K/score)))
+
+	log.WithContext(ctx).Debugf("key score: %v, %v, %v, %v", bucket, total, len(closers), seconds)
+
 	return time.Now().Add(time.Second * time.Duration(seconds))
 }
 
@@ -176,7 +181,7 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	key := s.hashKey(data)
 
 	// expire time for the key
-	expiration := s.keyExpireTime(key)
+	expiration := s.keyExpireTime(ctx, key)
 	// replicate time for the key
 	replication := time.Now().Add(defaultReplicateTime)
 
@@ -281,6 +286,7 @@ func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Mes
 func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []byte, nl *NodeList, contacted map[string]bool, haveRest bool) []*Message {
 	var number int
 
+	var mux sync.Mutex
 	// nodes which will be removed
 	removedNodes := []*Node{}
 	// responses from remote node
@@ -326,20 +332,24 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 			response, err := s.network.Call(ctx, request)
 			if err != nil {
 				log.WithContext(ctx).Errorf("network call: %v, request: %v", err, request.String())
-
 				// node is unreachable, remove the node
 				removedNodes = append(removedNodes, receiver)
+				return
 			}
+
+			// add the mutex to avoid the data race
+			mux.Lock()
 			responses = append(responses, response)
+			mux.Unlock()
 		}(node)
 	}
+	// wait until tasks are done
+	wg.Wait()
+
 	// delete the node which is unreachable
 	for _, node := range removedNodes {
 		nl.DelNode(node)
 	}
-
-	// wait until tasks are done
-	wg.Wait()
 
 	return responses
 }

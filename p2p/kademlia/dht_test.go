@@ -459,5 +459,7 @@ func (ts *testSuite) TestKeyExpireTime() {
 	}
 	ts.Equal(number, ts.main.ht.totalCount())
 
-	// ts.main.keyExpireTime()
+	key := ts.main.hashKey(ts.Value)
+	expire := ts.main.keyExpireTime(ts.ctx, key)
+	ts.T().Logf("expre time: %v", expire)
 }
