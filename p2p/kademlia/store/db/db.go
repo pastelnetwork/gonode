@@ -35,7 +35,7 @@ func NewStore(ctx context.Context, dataDir string) (*Badger, error) {
 		done: make(chan struct{}),
 	}
 
-	log.WithContext(ctx).Infof("data dir: %v", dataDir)
+	log.WithContext(ctx).Debugf("data dir: %v", dataDir)
 	// mkdir the data directory for badger
 	if err := os.MkdirAll(dataDir, 0o755); err != nil {
 		return nil, errors.Errorf("mkdir %q: %w", dataDir, err)

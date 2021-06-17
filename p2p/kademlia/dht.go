@@ -144,8 +144,6 @@ func (s *DHT) keyExpireTime(ctx context.Context, key []byte) time.Time {
 	// calculate the bucket index with key and local node id
 	bucket := s.ht.bucketIndex(key, s.ht.self.ID)
 
-	log.WithContext(ctx).Debugf("bucket for key: %v, %v", bucket, base58.Encode(key))
-
 	var total int
 	// total nodes before the bucket which key in
 	for i := 0; i < bucket; i++ {
@@ -162,12 +160,11 @@ func (s *DHT) keyExpireTime(ctx context.Context, key []byte) time.Time {
 	if score > K {
 		return time.Now().Add(defaultExpireTime)
 	}
+	multiplier := int64(math.Exp(float64(K / score)))
+	seconds := defaultExpireTime.Nanoseconds() * multiplier
 
-	seconds := defaultExpireTime.Nanoseconds() * int64(math.Exp(float64(K/score)))
-
-	log.WithContext(ctx).Debugf("key score: %v, %v, %v, %v", bucket, total, len(closers), seconds)
-
-	return time.Now().Add(time.Second * time.Duration(seconds))
+	log.WithContext(ctx).Debugf("expire key: bucket %v, score %v, multiplier %v", bucket, score, multiplier)
+	return time.Now().Add(time.Duration(seconds))
 }
 
 // a hash key for the data

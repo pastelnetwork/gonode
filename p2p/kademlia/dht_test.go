@@ -444,7 +444,7 @@ func (ts *testSuite) TestAddNodeForAppend() {
 }
 
 func (ts *testSuite) TestKeyExpireTime() {
-	number := 20
+	number := 30
 	for i := 0; i < number; i++ {
 		id, err := newRandomID()
 		if err != nil {
@@ -461,5 +461,5 @@ func (ts *testSuite) TestKeyExpireTime() {
 
 	key := ts.main.hashKey(ts.Value)
 	expire := ts.main.keyExpireTime(ts.ctx, key)
-	ts.T().Logf("expre time: %v", expire)
+	ts.Greater(expire.Unix(), time.Now().Unix())
 }
