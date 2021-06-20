@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/sha1"
 	"fmt"
-	"math"
 	"sort"
 	"sync"
 	"time"
@@ -18,7 +17,6 @@ import (
 var (
 	defaultNetworkAddr   = "0.0.0.0"
 	defaultNetworkPort   = 6000
-	defaultExpireTime    = time.Second * 86410
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
 	defaultPingTime      = time.Second * 1
@@ -117,12 +115,6 @@ func (s *DHT) Start(ctx context.Context) error {
 			}
 		}
 
-		// expiration
-		expirationKeys := s.store.KeysForExpiration(ctx)
-		for _, key := range expirationKeys {
-			s.store.Delete(ctx, key)
-		}
-
 		return nil
 	})
 
@@ -139,34 +131,6 @@ func (s *DHT) Stop(ctx context.Context) {
 	s.network.Stop(ctx)
 }
 
-// keyExpireTime returns the expire time of key
-func (s *DHT) keyExpireTime(ctx context.Context, key []byte) time.Time {
-	// calculate the bucket index with key and local node id
-	bucket := s.ht.bucketIndex(key, s.ht.self.ID)
-
-	var total int
-	// total nodes before the bucket which key in
-	for i := 0; i < bucket; i++ {
-		total += s.ht.bucketNodes(i)
-	}
-
-	// find the nodes in bucket which is closer to key
-	closers := s.ht.closerNodes(bucket, key)
-	score := total + len(closers)
-	if score == 0 {
-		score = 1
-	}
-	// if the nodes is more than maximum value, return the expire time
-	if score > K {
-		return time.Now().Add(defaultExpireTime)
-	}
-	multiplier := int64(math.Exp(float64(K / score)))
-	seconds := defaultExpireTime.Nanoseconds() * multiplier
-
-	log.WithContext(ctx).Debugf("expire key: bucket %v, score %v, multiplier %v", bucket, score, multiplier)
-	return time.Now().Add(time.Duration(seconds))
-}
-
 // a hash key for the data
 func (s *DHT) hashKey(data []byte) []byte {
 	sha := sha1.Sum(data)
@@ -177,13 +141,11 @@ func (s *DHT) hashKey(data []byte) []byte {
 func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	key := s.hashKey(data)
 
-	// expire time for the key
-	expiration := s.keyExpireTime(ctx, key)
 	// replicate time for the key
 	replication := time.Now().Add(defaultReplicateTime)
 
 	// store the key to local storage
-	if err := s.store.Store(ctx, key, data, replication, expiration); err != nil {
+	if err := s.store.Store(ctx, key, data, replication); err != nil {
 		return "", fmt.Errorf("store data to local storage: %v", err)
 	}
 

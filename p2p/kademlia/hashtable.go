@@ -3,7 +3,6 @@ package kademlia
 import (
 	"bytes"
 	"math"
-	"math/big"
 	"math/rand"
 	"sort"
 	"sync"
@@ -81,12 +80,6 @@ func NewHashTable(options *Options) (*HashTable, error) {
 	}
 
 	return ht, nil
-}
-
-// reset the hashtable
-func (ht *HashTable) reset() {
-	ht.refreshers = make([]time.Time, B)
-	ht.routeTable = make([][]*Node, B)
 }
 
 // resetRefreshTime - reset the refresh time
@@ -248,41 +241,6 @@ func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Nod
 	sort.Sort(nl)
 
 	return nl
-}
-
-// closerNodes returns the closer nodes in bucket for id comparing the local node
-func (ht *HashTable) closerNodes(bucket int, id []byte) [][]byte {
-	var nodes [][]byte
-	for _, node := range ht.routeTable[bucket] {
-		// distance between id and self
-		d1 := ht.distance(id, ht.self.ID)
-		// distance between id and node in bucket
-		d2 := ht.distance(id, node.ID)
-
-		// if 2-self > 2-id
-		if d1.Sub(d1, d2).Sign() >= 0 {
-			nodes = append(nodes, node.ID)
-		}
-	}
-
-	return nodes
-}
-
-// bucketNodes returns the nodes count of the bucket
-func (ht *HashTable) bucketNodes(bucket int) int {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
-
-	return len(ht.routeTable[bucket])
-}
-
-// distance returns the distance between two ids
-func (ht *HashTable) distance(id1 []byte, id2 []byte) *big.Int {
-	var dst [K]byte
-	for i := 0; i < K; i++ {
-		dst[i] = id1[i] ^ id2[i]
-	}
-	return big.NewInt(0).SetBytes(dst[:])
 }
 
 // bucketIndex return the bucket index from two node ids

@@ -96,10 +96,16 @@ func (ts *testSuite) SetupTest() {
 	ts.Zero(len(keys))
 }
 
+// reset the hashtable
+func (ts *testSuite) resetHashtable() {
+	ts.main.ht.refreshers = make([]time.Time, B)
+	ts.main.ht.routeTable = make([][]*Node, B)
+}
+
 // run after each test in the suite
 func (ts *testSuite) TearDownTest() {
 	// reset the hashtable
-	ts.main.ht.reset()
+	ts.resetHashtable()
 
 	// reset the store
 	for _, key := range ts.main.store.Keys(ts.ctx) {
@@ -466,27 +472,6 @@ func (ts *testSuite) TestAddNodeForAppend() {
 
 	bucket := ts.main.ht.routeTable[index]
 	ts.Equal(id, bucket[len(bucket)-1].ID)
-}
-
-func (ts *testSuite) TestKeyExpireTime() {
-	number := 30
-	for i := 0; i < number; i++ {
-		id, err := newRandomID()
-		if err != nil {
-			ts.T().Fatalf("new random id: %v", err)
-		}
-		node := &Node{
-			ID:   id,
-			IP:   ts.IP,
-			Port: ts.bootstrapPort + i + 1,
-		}
-		ts.main.addNode(node)
-	}
-	ts.Equal(number, ts.main.ht.totalCount())
-
-	key := ts.main.hashKey(ts.Value)
-	expire := ts.main.keyExpireTime(ts.ctx, key)
-	ts.Greater(expire.Unix(), time.Now().Unix())
 }
 
 func (ts *testSuite) TestHashKey() {

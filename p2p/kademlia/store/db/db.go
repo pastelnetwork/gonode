@@ -14,13 +14,10 @@ import (
 	"github.com/jbenet/go-base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 )
 
 const (
-	replicationPrefix   = "r:"
-	expirationPrefix    = "e:"
-	defaultBadgerGCTime = 5 * time.Minute
+	replicationPrefix = "r:"
 )
 
 // Badger defines a key/value database for store
@@ -55,17 +52,12 @@ func NewStore(ctx context.Context, dataDir string) (*Badger, error) {
 	}
 	s.db = db
 
-	// start a timer for the badger GC
-	helpers.StartTimer(ctx, "badger gc", s.done, defaultBadgerGCTime, func() error {
-		return db.RunValueLogGC(0.7)
-	})
-
 	return s, nil
 }
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Badger) Store(ctx context.Context, key []byte, value []byte, replication time.Time, expiration time.Time) error {
+func (s *Badger) Store(ctx context.Context, key []byte, value []byte, replication time.Time) error {
 	if err := s.db.Update(func(txn *badger.Txn) error {
 		// set the key/value to badger
 		if err := txn.Set(key, value); err != nil {
@@ -77,13 +69,6 @@ func (s *Badger) Store(ctx context.Context, key []byte, value []byte, replicatio
 		rv := strconv.FormatInt(replication.Unix(), 10)
 		if err := txn.Set([]byte(rk), []byte(rv)); err != nil {
 			return errors.Errorf("transaction set replication: %w", err)
-		}
-
-		// set the expiration to badger
-		ek := expirationPrefix + base58.Encode(key)
-		ev := strconv.FormatInt(expiration.Unix(), 10)
-		if err := txn.Set([]byte(ek), []byte(ev)); err != nil {
-			return errors.Errorf("transaction set expiration: %w", err)
 		}
 
 		return nil
@@ -133,13 +118,7 @@ func (s *Badger) Delete(ctx context.Context, key []byte) {
 
 		// delete the replication
 		rk := replicationPrefix + base58.Encode(key)
-		if err := txn.Delete([]byte(rk)); err != nil {
-			return err
-		}
-
-		// delete the expiration
-		ek := expirationPrefix + base58.Encode(key)
-		return txn.Delete([]byte(ek))
+		return txn.Delete([]byte(rk))
 	}); err != nil {
 		log.WithContext(ctx).Errorf("badger delete: %v", err)
 		return
@@ -160,9 +139,6 @@ func (s *Badger) Keys(ctx context.Context) [][]byte {
 		for it.Rewind(); it.Valid(); it.Next() {
 			key := it.Item().Key()
 			if bytes.HasPrefix(key, []byte(replicationPrefix)) {
-				continue
-			}
-			if bytes.HasPrefix(key, []byte(expirationPrefix)) {
 				continue
 			}
 			keys = append(keys, key)
@@ -208,11 +184,6 @@ func (s *Badger) findKeysWithPrefix(ctx context.Context, prefix string) [][]byte
 	}
 
 	return keys
-}
-
-// KeysForExpiration returns the keys of all data to be removed from local storage
-func (s *Badger) KeysForExpiration(ctx context.Context) [][]byte {
-	return s.findKeysWithPrefix(ctx, expirationPrefix)
 }
 
 // KeysForReplication returns the keys of all data to be replicated across the network

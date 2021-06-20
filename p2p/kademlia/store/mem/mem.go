@@ -14,7 +14,6 @@ type Store struct {
 	mutex        sync.Mutex
 	data         map[string][]byte
 	replications map[string]time.Time
-	expirations  map[string]time.Time
 }
 
 // KeysForReplication should return the keys of all data to be
@@ -33,28 +32,13 @@ func (s *Store) KeysForReplication(_ context.Context) [][]byte {
 	return keys
 }
 
-// KeysForExpiration returns the keys of all data to be removed from local storage
-func (s *Store) KeysForExpiration(_ context.Context) [][]byte {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	keys := [][]byte{}
-	for k, v := range s.expirations {
-		if time.Now().After(v) {
-			keys = append(keys, []byte(k))
-		}
-	}
-	return keys
-}
-
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Store) Store(ctx context.Context, key []byte, value []byte, replication time.Time, expiration time.Time) error {
+func (s *Store) Store(ctx context.Context, key []byte, value []byte, replication time.Time) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.replications[string(key)] = replication
-	s.expirations[string(key)] = expiration
 	s.data[string(key)] = value
 
 	log.WithContext(ctx).Debugf("store key: %s, data: %v", base58.Encode(key), base58.Encode(value))
@@ -80,7 +64,6 @@ func (s *Store) Delete(_ context.Context, key []byte) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 	delete(s.replications, string(key))
-	delete(s.expirations, string(key))
 	delete(s.data, string(key))
 }
 
@@ -105,6 +88,5 @@ func NewStore() *Store {
 	return &Store{
 		data:         make(map[string][]byte),
 		replications: make(map[string]time.Time),
-		expirations:  make(map[string]time.Time),
 	}
 }

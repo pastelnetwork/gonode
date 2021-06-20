@@ -139,12 +139,10 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 
 	// format the key
 	key := s.dht.hashKey(request.Data)
-	// expiration time for key
-	expiration := s.dht.keyExpireTime(ctx, key)
 	// replication time for key
 	replication := time.Now().Add(defaultReplicateTime)
 	// store the data to local storage
-	if err := s.dht.store.Store(ctx, key, request.Data, replication, expiration); err != nil {
+	if err := s.dht.store.Store(ctx, key, request.Data, replication); err != nil {
 		return nil, errors.Errorf("store the data: %w", err)
 	}
 
