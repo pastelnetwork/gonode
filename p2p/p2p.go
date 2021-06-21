@@ -88,7 +88,10 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 func (s *p2p) configure(ctx context.Context) error {
 	var bootstrapNodes []*kademlia.Node
 	if s.config.BootstrapIP != "" || s.config.BootstrapPort > 0 {
-		bootstrapNode := kademlia.NewNode(s.config.BootstrapIP, s.config.BootstrapPort)
+		bootstrapNode := &kademlia.Node{
+			IP:   s.config.BootstrapIP,
+			Port: s.config.BootstrapPort,
+		}
 		bootstrapNodes = append(bootstrapNodes, bootstrapNode)
 	}
 

@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jbenet/go-base58"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 )
 
 var (
 	defaultNetworkAddr   = "0.0.0.0"
-	defaultNetworkPort   = 6000
+	defaultNetworkPort   = 4445
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
 	defaultPingTime      = time.Second * 1
@@ -168,7 +168,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err != nil {
-		return nil, fmt.Errorf("store retrieve: %v", err)
+		log.WithContext(ctx).Errorf("store retrive: %v", err)
 	}
 	// if not found locally, iterative find value from kademlia network
 	if value == nil {
@@ -350,7 +350,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		responses := s.doMultiWorkers(ctx, iterativeType, target, nl, contacted, searchRest)
 		// handle the response one by one
 		for _, response := range responses {
-			log.WithContext(ctx).Infof("response -> %v", response.String())
+			log.WithContext(ctx).Debugf("response: %v", response.String())
 			// add the target node to the bucket
 			s.addNode(response.Sender)
 

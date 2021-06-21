@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/jbenet/go-base58"
+	"github.com/btcsuite/btcutil/base58"
 )
 
 // Node is the over-the-wire representation of a node
@@ -23,14 +23,6 @@ type Node struct {
 
 func (s *Node) String() string {
 	return fmt.Sprintf("%v-%v:%d", base58.Encode(s.ID), s.IP, s.Port)
-}
-
-// NewNode returns a new node for bootstrapping
-func NewNode(ip string, port int) *Node {
-	return &Node{
-		IP:   ip,
-		Port: port,
-	}
 }
 
 // NodeList is used in order to sort a list of nodes

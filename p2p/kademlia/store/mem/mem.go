@@ -5,13 +5,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jbenet/go-base58"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Store is a simple in-memory key/value store used for unit testing
 type Store struct {
-	mutex        sync.Mutex
+	mutex        sync.RWMutex
 	data         map[string][]byte
 	replications map[string]time.Time
 }
@@ -20,8 +20,8 @@ type Store struct {
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
 func (s *Store) KeysForReplication(_ context.Context) [][]byte {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	var keys [][]byte
 	for k := range s.data {
@@ -47,8 +47,8 @@ func (s *Store) Store(ctx context.Context, key []byte, value []byte, replication
 
 // Retrieve will return the local key/value if it exists
 func (s *Store) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	value, ok := s.data[string(key)]
 	if !ok {
@@ -69,8 +69,8 @@ func (s *Store) Delete(_ context.Context, key []byte) {
 
 // Keys returns all the keys from the Store
 func (s *Store) Keys(_ context.Context) [][]byte {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	var keys [][]byte
 	for k := range s.data {

@@ -224,6 +224,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			response = encoded
 		default:
 			log.WithContext(ctx).Errorf("impossible: invalid message type: %v", request.MessageType)
+			return
 		}
 
 		// write the response
@@ -235,10 +236,31 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 
 // serve the incomming connection
 func (s *Network) serve(ctx context.Context) {
+	var tempDelay time.Duration // how long to sleep on accept failure
+
 	for {
 		// accept the incomming connections
 		conn, err := s.socket.Accept()
 		if err != nil {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+			if ne, ok := err.(net.Error); ok && ne.Temporary() {
+				if tempDelay == 0 {
+					tempDelay = 5 * time.Millisecond
+				} else {
+					tempDelay *= 2
+				}
+				if max := 1 * time.Second; tempDelay > max {
+					tempDelay = max
+				}
+				log.WithContext(ctx).Errorf("socket accept: %v; retrying in %v", err, tempDelay)
+
+				time.Sleep(tempDelay)
+				continue
+			}
 			if strings.Contains(err.Error(), "closed") {
 				return
 			}

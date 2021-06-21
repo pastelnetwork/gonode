@@ -43,7 +43,7 @@ type HashTable struct {
 	routeTable [][]*Node // 160x20
 
 	// mutex for route table
-	mutex sync.Mutex
+	mutex sync.RWMutex
 
 	// refresh time for every bucket
 	refreshers []time.Time
@@ -117,16 +117,16 @@ func (ht *HashTable) refreshNode(id []byte) {
 
 // refreshTime returns the refresh time for bucket
 func (ht *HashTable) refreshTime(bucket int) time.Time {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
 
 	return ht.refreshers[bucket]
 }
 
 // randomIDFromBucket returns a random id based on the bucket index and self id
 func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
 
 	// set the new ID to to be equal in every byte up to
 	// the byte of the first different bit in the bucket
@@ -162,8 +162,8 @@ func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
 
 // hasBucketNode check if the node id is existed in the bucket
 func (ht *HashTable) hasBucketNode(bucket int, id []byte) bool {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
 
 	for _, node := range ht.routeTable[bucket] {
 		if bytes.Equal(node.ID, id) {
@@ -175,8 +175,8 @@ func (ht *HashTable) hasBucketNode(bucket int, id []byte) bool {
 
 // hasNode check if the node id is exists in the hash table
 func (ht *HashTable) hasNode(id []byte) bool {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
 
 	for _, bucket := range ht.routeTable {
 		for _, node := range bucket {
@@ -191,8 +191,8 @@ func (ht *HashTable) hasNode(id []byte) bool {
 
 // closestContacts returns the closest contacts of target
 func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Node) *NodeList {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
 
 	// find the bucket index in local route tables
 	index := ht.bucketIndex(ht.self.ID, target)
@@ -266,8 +266,8 @@ func (ht *HashTable) bucketIndex(id1 []byte, id2 []byte) int {
 
 // Count returns the number of nodes in route table
 func (ht *HashTable) totalCount() int {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
 
 	var num int
 	for _, v := range ht.routeTable {

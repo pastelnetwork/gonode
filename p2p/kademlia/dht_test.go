@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jbenet/go-base58"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
