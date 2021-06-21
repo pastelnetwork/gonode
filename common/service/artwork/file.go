@@ -8,6 +8,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"io"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -24,9 +25,14 @@ type File struct {
 
 	storage *Storage
 
+	// if a file was created during the process, it should be deleted at the end.
 	isCreated bool
-	name      string
-	format    Format
+
+	// unique name within the storage.
+	name string
+
+	// file format, png, jpg, etc.
+	format Format
 }
 
 // Name returns filename.
@@ -41,11 +47,23 @@ func (file *File) String() string {
 // SetFormatFromExtension parses and sets image format from filename extension:
 // "jpg" (or "jpeg"), "png", "gif" are supported.
 func (file *File) SetFormatFromExtension(ext string) error {
-	if f, ok := formatExts[strings.ToLower(strings.TrimPrefix(ext, "."))]; ok {
-		file.format = f
-		return nil
+	if format, ok := formatExts[strings.ToLower(strings.TrimPrefix(ext, "."))]; ok {
+		return file.SetFormat(format)
 	}
 	return ErrUnsupportedFormat
+}
+
+// SetFormat sets file extension.
+func (file *File) SetFormat(format Format) error {
+	file.format = format
+
+	newname := fmt.Sprintf("%s.%s", strings.TrimSuffix(file.name, filepath.Ext(file.name)), format)
+	file.name = newname
+
+	if !file.isCreated {
+		return nil
+	}
+	return file.storage.Rename(file.name, newname)
 }
 
 // Format returns file extension.
@@ -100,6 +118,10 @@ func (file *File) Copy() (*File, error) {
 	defer src.Close()
 
 	newFile := file.storage.NewFile()
+	if err := newFile.SetFormat(file.format); err != nil {
+		return nil, err
+	}
+
 	dst, err := newFile.Create()
 	if err != nil {
 		return nil, err
@@ -143,7 +165,7 @@ func (file *File) Write(data []byte) error {
 
 // ResizeImage resizes image.
 func (file *File) ResizeImage(width, height int) error {
-	src, err := file.OpenImage()
+	src, err := file.LoadImage()
 	if err != nil {
 		return err
 	}
@@ -160,8 +182,8 @@ func (file *File) RemoveAfter(d time.Duration) {
 	}()
 }
 
-// OpenImage opens images from the file.
-func (file *File) OpenImage() (image.Image, error) {
+// LoadImage opens images from the file.
+func (file *File) LoadImage() (image.Image, error) {
 	f, err := file.Open()
 	if err != nil {
 		return nil, err
@@ -215,6 +237,39 @@ func (file *File) SaveImage(img image.Image) error {
 		return nil
 	}
 	return ErrUnsupportedFormat
+}
+
+// Encoder represents an image encoder.
+type Encoder interface {
+	Encode(img image.Image) (image.Image, error)
+}
+
+// Encode encodes the image by the given encoder.
+func (file *File) Encode(enc Encoder) error {
+	img, err := file.LoadImage()
+	if err != nil {
+		return err
+	}
+
+	encImg, err := enc.Encode(img)
+	if err != nil {
+		return err
+	}
+	return file.SaveImage(encImg)
+}
+
+// Decoder represents an image decoder.
+type Decoder interface {
+	Decode(img image.Image) error
+}
+
+// Decode decodes the image by the given decoder.
+func (file *File) Decode(dec Decoder) error {
+	img, err := file.LoadImage()
+	if err != nil {
+		return err
+	}
+	return dec.Decode(img)
 }
 
 // NewFile returns a newFile File instance.

@@ -163,7 +163,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageUploaded)
 
-		img, err := file.OpenImage()
+		img, err := file.LoadImage()
 		if err != nil {
 			return err
 		}
