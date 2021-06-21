@@ -105,7 +105,10 @@ type ArtSearchResponseBody struct {
 	Artwork *ArtworkTicketResponseBody `form:"artwork" json:"artwork" xml:"artwork"`
 	// Thumbnail image
 	Image []byte `form:"image,omitempty" json:"image,omitempty" xml:"image,omitempty"`
-	// Sort index of the match based on score
+	// txid
+	Txid string `form:"txid" json:"txid" xml:"txid"`
+	// Sort index of the match based on score.This must be used to sort results on
+	// UI.
 	MatchIndex int `form:"match_index" json:"match_index" xml:"match_index"`
 	// Match result details
 	Matches []*FuzzyMatchResponseBody `form:"matches" json:"matches" xml:"matches"`
@@ -466,6 +469,7 @@ func NewUploadImageResponseBody(res *artworksviews.ImageView) *UploadImageRespon
 func NewArtSearchResponseBody(res *artworks.ArtworkSearchResult) *ArtSearchResponseBody {
 	body := &ArtSearchResponseBody{
 		Image:      res.Image,
+		Txid:       res.Txid,
 		MatchIndex: res.MatchIndex,
 	}
 	if res.Artwork != nil {

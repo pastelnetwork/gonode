@@ -71,6 +71,7 @@ func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSea
 			Keywords:         &ticketData.ArtworkKeywordSet,
 			SeriesName:       &ticketData.ArtworkSeriesName,
 		},
+		Txid:       srch.TXID,
 		Image:      srch.Thumbnail,
 		MatchIndex: srch.MatchIndex,
 	}

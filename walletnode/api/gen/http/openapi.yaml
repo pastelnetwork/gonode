@@ -281,6 +281,7 @@ paths:
             required:
             - artwork
             - matches
+            - txid
             - match_index
         "400":
           description: Bad Request response.
@@ -632,7 +633,8 @@ definitions:
         format: byte
       match_index:
         type: integer
-        description: Sort index of the match based on score
+        description: Sort index of the match based on score.This must be used to sort
+          results on UI.
         example: 1471524570153364271
         format: int64
       matches:
@@ -669,6 +671,12 @@ definitions:
           - 6005803353292558659
           score: 9202476006944688065
           str: Ipsa quos omnis reprehenderit doloribus.
+      txid:
+        type: string
+        description: txid
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
     example:
       artwork:
         artist_name: Leonardo da Vinci
@@ -737,9 +745,11 @@ definitions:
         - 6005803353292558659
         score: 9202476006944688065
         str: Ipsa quos omnis reprehenderit doloribus.
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     required:
     - artwork
     - matches
+    - txid
     - match_index
   ArtworksRegisterBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'

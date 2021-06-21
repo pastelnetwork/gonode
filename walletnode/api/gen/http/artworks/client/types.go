@@ -105,7 +105,10 @@ type ArtSearchResponseBody struct {
 	Artwork *ArtworkTicketResponseBody `form:"artwork,omitempty" json:"artwork,omitempty" xml:"artwork,omitempty"`
 	// Thumbnail image
 	Image []byte `form:"image,omitempty" json:"image,omitempty" xml:"image,omitempty"`
-	// Sort index of the match based on score
+	// txid
+	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	// Sort index of the match based on score.This must be used to sort results on
+	// UI.
 	MatchIndex *int `form:"match_index,omitempty" json:"match_index,omitempty" xml:"match_index,omitempty"`
 	// Match result details
 	Matches []*FuzzyMatchResponseBody `form:"matches,omitempty" json:"matches,omitempty" xml:"matches,omitempty"`
@@ -644,6 +647,7 @@ func NewUploadImageInternalServerError(body *UploadImageInternalServerErrorRespo
 func NewArtSearchArtworkSearchResultOK(body *ArtSearchResponseBody) *artworks.ArtworkSearchResult {
 	v := &artworks.ArtworkSearchResult{
 		Image:      body.Image,
+		Txid:       *body.Txid,
 		MatchIndex: *body.MatchIndex,
 	}
 	v.Artwork = unmarshalArtworkTicketResponseBodyToArtworksArtworkTicket(body.Artwork)
@@ -711,12 +715,25 @@ func ValidateArtSearchResponseBody(body *ArtSearchResponseBody) (err error) {
 	if body.Matches == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("matches", "body"))
 	}
+	if body.Txid == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("txid", "body"))
+	}
 	if body.MatchIndex == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("match_index", "body"))
 	}
 	if body.Artwork != nil {
 		if err2 := ValidateArtworkTicketResponseBody(body.Artwork); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.Txid != nil {
+		if utf8.RuneCountInString(*body.Txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, true))
+		}
+	}
+	if body.Txid != nil {
+		if utf8.RuneCountInString(*body.Txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, false))
 		}
 	}
 	for _, e := range body.Matches {

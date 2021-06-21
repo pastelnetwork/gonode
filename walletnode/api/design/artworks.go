@@ -167,14 +167,20 @@ var ArtworkSearchResult = Type("ArtworkSearchResult", func() {
 	Attribute("image", Bytes, func() {
 		Description("Thumbnail image")
 	})
+	Attribute("txid", String, func() {
+		Description("txid")
+		MinLength(64)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
 	Attribute("match_index", Int, func() {
-		Description("Sort index of the match based on score")
+		Description("Sort index of the match based on score.This must be used to sort results on UI.")
 	})
 	Attribute("matches", ArrayOf(FuzzyMatch), func() {
 		Description("Match result details")
 	})
 
-	Required("artwork", "matches", "match_index")
+	Required("artwork", "matches", "txid", "match_index")
 })
 
 // ArtworkTicket is artwork register payload.

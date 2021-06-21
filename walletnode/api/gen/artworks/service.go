@@ -209,7 +209,10 @@ type ArtworkSearchResult struct {
 	Artwork *ArtworkTicket
 	// Thumbnail image
 	Image []byte
-	// Sort index of the match based on score
+	// txid
+	Txid string
+	// Sort index of the match based on score.This must be used to sort results on
+	// UI.
 	MatchIndex int
 	// Match result details
 	Matches []*FuzzyMatch

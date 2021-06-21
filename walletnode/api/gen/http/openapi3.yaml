@@ -587,6 +587,7 @@ paths:
                   - 6005803353292558659
                   score: 9202476006944688065
                   str: Ipsa quos omnis reprehenderit doloribus.
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         "400":
           description: Bad Request response.
           content:
@@ -669,7 +670,8 @@ components:
           format: binary
         match_index:
           type: integer
-          description: Sort index of the match based on score
+          description: Sort index of the match based on score.This must be used to
+            sort results on UI.
           example: 5330761874689937150
           format: int64
         matches:
@@ -692,6 +694,12 @@ components:
             - 6005803353292558659
             score: 9202476006944688065
             str: Ipsa quos omnis reprehenderit doloribus.
+        txid:
+          type: string
+          description: txid
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
       example:
         artwork:
           artist_name: Leonardo da Vinci
@@ -756,9 +764,11 @@ components:
           - 6005803353292558659
           score: 9202476006944688065
           str: Ipsa quos omnis reprehenderit doloribus.
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       required:
       - artwork
       - matches
+      - txid
       - match_index
     ArtworkTicket:
       type: object
