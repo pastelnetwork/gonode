@@ -30,22 +30,25 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name      string
 		args      args
 		assertion assert.ErrorAssertionFunc
 	}{
 		{
+			name:      "task run without error",
 			args:      args{"1", context.Background(), nil},
 			assertion: assert.NoError,
 		}, {
+			name:      "task run with error",
 			args:      args{"2", context.Background(), fmt.Errorf("runAction error")},
 			assertion: assert.Error,
 		},
 	}
 
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			clientTask := stateTest.NewMockTask(t)
 			clientTask.
 				ListenOnID(testCase.args.taskID).
@@ -76,6 +79,7 @@ func TestTaskSession(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name              string
 		args              args
 		assertion         assert.ErrorAssertionFunc
 		newActionCall     int
@@ -83,6 +87,7 @@ func TestTaskSession(t *testing.T) {
 		assertExpectation bool
 	}{
 		{
+			name: "primary node session mode",
 			args: args{
 				ctx:               context.Background(),
 				requiredStatus:    StatusTaskStarted,
@@ -95,6 +100,7 @@ func TestTaskSession(t *testing.T) {
 			updateStatusCall:  1,
 			assertExpectation: true,
 		}, {
+			name: "secondary node session mode",
 			args: args{
 				ctx:               context.Background(),
 				requiredStatus:    StatusTaskStarted,
@@ -107,6 +113,7 @@ func TestTaskSession(t *testing.T) {
 			updateStatusCall:  1,
 			assertExpectation: true,
 		}, {
+			name: "session error",
 			args: args{
 				ctx:               context.Background(),
 				requiredStatus:    StatusTaskStarted,
@@ -118,10 +125,11 @@ func TestTaskSession(t *testing.T) {
 			assertExpectation: false,
 		},
 	}
-	for i, testCase := range testCases {
+
+	for _, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			clientTask := stateTest.NewMockTask(t)
 			clientTask.
 				ListenOnRequiredStatus(testCase.args.requiredStatusErr).
@@ -164,6 +172,7 @@ func TestTaskAcceptedNodes(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name               string
 		args               args
 		assertion          assert.ErrorAssertionFunc
 		assertExpectation  bool
@@ -172,6 +181,7 @@ func TestTaskAcceptedNodes(t *testing.T) {
 		subcribeStatusCall int
 	}{
 		{
+			name: "node is accepted",
 			args: args{
 				requiredStatus:    StatusPrimaryMode,
 				requiredStatusErr: nil,
@@ -185,6 +195,7 @@ func TestTaskAcceptedNodes(t *testing.T) {
 			newActionCall:      1,
 			subcribeStatusCall: 1,
 		}, {
+			name: "serverCtx is timeout",
 			args: args{
 				requiredStatus:    StatusPrimaryMode,
 				requiredStatusErr: nil,
@@ -198,6 +209,7 @@ func TestTaskAcceptedNodes(t *testing.T) {
 			newActionCall:      1,
 			subcribeStatusCall: 1,
 		}, {
+			name: "ctx is timeout",
 			args: args{
 				requiredStatus:    StatusPrimaryMode,
 				requiredStatusErr: nil,
@@ -212,6 +224,7 @@ func TestTaskAcceptedNodes(t *testing.T) {
 			subcribeStatusCall: 1,
 		},
 		{
+			name: "node is not primary mode",
 			args: args{
 				requiredStatus:    StatusPrimaryMode,
 				requiredStatusErr: fmt.Errorf("node is not primary"),
@@ -227,10 +240,10 @@ func TestTaskAcceptedNodes(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			clientTask := stateTest.NewMockTask(t)
 			clientTask.
 				ListenOnRequiredStatus(testCase.args.requiredStatusErr).
@@ -275,6 +288,7 @@ func TestTaskSessionNode(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name               string
 		fields             fields
 		args               args
 		assertion          assert.ErrorAssertionFunc
@@ -285,6 +299,7 @@ func TestTaskSessionNode(t *testing.T) {
 		pasteNodesTopCall  int
 	}{
 		{
+			name:   "session node 2 accepted and update task status as accepted",
 			fields: fields{Nodes{&Node{ID: "2"}}},
 			args: args{
 				ctx:               context.Background(),
@@ -306,6 +321,7 @@ func TestTaskSessionNode(t *testing.T) {
 			updateStatusCall:   1,
 			pasteNodesTopCall:  1,
 		}, {
+			name:   "session node 1 accepted but connected nodes < defaultNumberConnectedNodes",
 			fields: fields{Nodes{}},
 			args: args{
 				ctx:               context.Background(),
@@ -329,10 +345,10 @@ func TestTaskSessionNode(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			clientTask := stateTest.NewMockTask(t)
 			clientTask.
 				ListenOnRequiredStatus(testCase.args.requiredStatusErr).
@@ -385,6 +401,7 @@ func TestTaskConnectTo(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name               string
 		args               args
 		connectedTo        *Node
 		assertion          assert.ErrorAssertionFunc
@@ -396,6 +413,7 @@ func TestTaskConnectTo(t *testing.T) {
 		sessionCall        int
 	}{
 		{
+			name: "connect to node 1 as secondary node succeed",
 			args: args{
 				ctx:               context.Background(),
 				pastelID:          "123",
@@ -424,10 +442,10 @@ func TestTaskConnectTo(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			clientTask := stateTest.NewMockTask(t)
 			clientTask.
 				ListenOnRequiredStatus(testCase.args.requiredStatusErr).
@@ -492,6 +510,7 @@ func TestTaskProbeImage(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name               string
 		args               args
 		assertion          assert.ErrorAssertionFunc
 		requiredStatusCall int
@@ -501,6 +520,7 @@ func TestTaskProbeImage(t *testing.T) {
 		storeCall          int
 	}{
 		{
+			name: "return valid fingerprint",
 			args: args{
 				ctx:               context.Background(),
 				requiredStatus:    StatusConnected,
@@ -533,10 +553,10 @@ func TestTaskProbeImage(t *testing.T) {
 		artworkFile, err := stateTest.NewTestImageFile(filepath.Dir(tmpFile.Name()), filepath.Base(tmpFile.Name()))
 		assert.NoError(t, err)
 
-		for i, testCase := range testCases {
+		for _, testCase := range testCases {
 			testCase := testCase
 
-			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+			t.Run(testCase.name, func(t *testing.T) {
 
 				cancelCtx, cancel := context.WithCancel(testCase.args.ctx)
 				cancel()
@@ -592,11 +612,13 @@ func TestTaskPastelNodeByExtKey(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name      string
 		args      args
 		want      *Node
 		assertion assert.ErrorAssertionFunc
 	}{
 		{
+			name: "get valid masternode with id 2",
 			args: args{
 				ctx:    context.Background(),
 				nodeID: "2",
@@ -610,6 +632,7 @@ func TestTaskPastelNodeByExtKey(t *testing.T) {
 			want:      &Node{ID: "2", Address: "127.0.0.2"},
 			assertion: assert.NoError,
 		}, {
+			name: "get not found masternode with id 4",
 			args: args{
 				ctx:    context.Background(),
 				nodeID: "4",
@@ -625,10 +648,10 @@ func TestTaskPastelNodeByExtKey(t *testing.T) {
 		},
 	}
 
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			client := test.NewMockClient(t)
 			client.ListenOnMasterNodesTop(testCase.args.nodes, testCase.args.returnErr)
 
@@ -656,19 +679,21 @@ func TestNewTask(t *testing.T) {
 	}
 
 	testCases := []struct {
+		name string
 		args args
 		want string
 	}{
 		{
+			name: "create new task",
 			args: args{},
 			want: statusNames[StatusTaskStarted],
 		},
 	}
 
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		testCase := testCase
 
-		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+		t.Run(testCase.name, func(t *testing.T) {
 			assert.Equal(t, testCase.want, NewTask(testCase.args.service).Task.Status().String())
 		})
 	}
