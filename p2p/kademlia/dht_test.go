@@ -478,3 +478,15 @@ func (ts *testSuite) TestHashKey() {
 	key := ts.main.hashKey(ts.Value)
 	ts.Equal(K, len(key))
 }
+
+func (ts *testSuite) TestRateLimiter() {
+	number := 150
+	// start 10 nodes
+	dhts, err := ts.startNodes(number)
+	if err != nil {
+		ts.T().Fatalf("start nodes: %v", err)
+	}
+	for _, dht := range dhts {
+		defer dht.Stop(ts.ctx)
+	}
+}

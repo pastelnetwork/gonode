@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/anacrolix/utp"
+	"go.uber.org/ratelimit"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -16,6 +17,7 @@ import (
 
 const (
 	defaultConnDeadline = 3 * time.Second
+	defaultConnRate     = 100
 )
 
 // Network for distributed hash table
@@ -238,7 +240,11 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 func (s *Network) serve(ctx context.Context) {
 	var tempDelay time.Duration // how long to sleep on accept failure
 
+	limiter := ratelimit.New(defaultConnRate) // per second
 	for {
+		// rate limiter for the incomming connections
+		limiter.Take()
+
 		// accept the incomming connections
 		conn, err := s.socket.Accept()
 		if err != nil {
