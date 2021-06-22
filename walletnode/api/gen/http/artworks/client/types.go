@@ -102,16 +102,53 @@ type UploadImageResponseBody struct {
 // endpoint HTTP response body.
 type ArtSearchResponseBody struct {
 	// Artwork data
-	Artwork *ArtworkTicketResponseBody `form:"artwork,omitempty" json:"artwork,omitempty" xml:"artwork,omitempty"`
-	// Thumbnail image
-	Image []byte `form:"image,omitempty" json:"image,omitempty" xml:"image,omitempty"`
-	// txid
-	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	Artwork *ArtworkSummaryResponseBody `form:"artwork,omitempty" json:"artwork,omitempty" xml:"artwork,omitempty"`
 	// Sort index of the match based on score.This must be used to sort results on
 	// UI.
 	MatchIndex *int `form:"match_index,omitempty" json:"match_index,omitempty" xml:"match_index,omitempty"`
 	// Match result details
 	Matches []*FuzzyMatchResponseBody `form:"matches,omitempty" json:"matches,omitempty" xml:"matches,omitempty"`
+}
+
+// ArtworkGetResponseBody is the type of the "artworks" service "artworkGet"
+// endpoint HTTP response body.
+type ArtworkGetResponseBody struct {
+	// version
+	Version *int `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
+	// Green flag
+	IsGreen *bool `form:"is_green,omitempty" json:"is_green,omitempty" xml:"is_green,omitempty"`
+	// how much artist should get on all future resales
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	// Storage fee
+	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
+	// nsfw score
+	NsfwScore *int `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
+	// rareness score
+	RarenessScore *int `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
+	// seen score
+	SeenScore *int `form:"seen_score,omitempty" json:"seen_score,omitempty" xml:"seen_score,omitempty"`
+	// Thumbnail image
+	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// txid
+	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	// Name of the artwork
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// Description of the artwork
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies
+	Copies *int `form:"copies,omitempty" json:"copies,omitempty" xml:"copies,omitempty"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Name of the artist
+	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 }
 
 // RegisterBadRequestResponseBody is the type of the "artworks" service
@@ -318,6 +355,61 @@ type ArtSearchInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// ArtworkGetBadRequestResponseBody is the type of the "artworks" service
+// "artworkGet" endpoint HTTP response body for the "BadRequest" error.
+type ArtworkGetBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// ArtworkGetNotFoundResponseBody is the type of the "artworks" service
+// "artworkGet" endpoint HTTP response body for the "NotFound" error.
+type ArtworkGetNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// ArtworkGetInternalServerErrorResponseBody is the type of the "artworks"
+// service "artworkGet" endpoint HTTP response body for the
+// "InternalServerError" error.
+type ArtworkGetInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -401,6 +493,32 @@ type ArtworkTicketResponse struct {
 	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
+}
+
+// ArtworkSummaryResponseBody is used to define fields on response body types.
+type ArtworkSummaryResponseBody struct {
+	// Thumbnail image
+	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// txid
+	Txid *string `form:"txid,omitempty" json:"txid,omitempty" xml:"txid,omitempty"`
+	// Name of the artwork
+	Title *string `form:"title,omitempty" json:"title,omitempty" xml:"title,omitempty"`
+	// Description of the artwork
+	Description *string `form:"description,omitempty" json:"description,omitempty" xml:"description,omitempty"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies
+	Copies *int `form:"copies,omitempty" json:"copies,omitempty" xml:"copies,omitempty"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Name of the artist
+	ArtistName *string `form:"artist_name,omitempty" json:"artist_name,omitempty" xml:"artist_name,omitempty"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 }
 
 // FuzzyMatchResponseBody is used to define fields on response body types.
@@ -646,11 +764,9 @@ func NewUploadImageInternalServerError(body *UploadImageInternalServerErrorRespo
 // endpoint result from a HTTP "OK" response.
 func NewArtSearchArtworkSearchResultOK(body *ArtSearchResponseBody) *artworks.ArtworkSearchResult {
 	v := &artworks.ArtworkSearchResult{
-		Image:      body.Image,
-		Txid:       *body.Txid,
 		MatchIndex: *body.MatchIndex,
 	}
-	v.Artwork = unmarshalArtworkTicketResponseBodyToArtworksArtworkTicket(body.Artwork)
+	v.Artwork = unmarshalArtworkSummaryResponseBodyToArtworksArtworkSummary(body.Artwork)
 	v.Matches = make([]*artworks.FuzzyMatch, len(body.Matches))
 	for i, val := range body.Matches {
 		v.Matches[i] = unmarshalFuzzyMatchResponseBodyToArtworksFuzzyMatch(val)
@@ -689,6 +805,78 @@ func NewArtSearchInternalServerError(body *ArtSearchInternalServerErrorResponseB
 	return v
 }
 
+// NewArtworkGetArtworkDetailOK builds a "artworks" service "artworkGet"
+// endpoint result from a HTTP "OK" response.
+func NewArtworkGetArtworkDetailOK(body *ArtworkGetResponseBody) *artworks.ArtworkDetail {
+	v := &artworks.ArtworkDetail{
+		Version:          body.Version,
+		IsGreen:          *body.IsGreen,
+		Royalty:          *body.Royalty,
+		StorageFee:       body.StorageFee,
+		NsfwScore:        *body.NsfwScore,
+		RarenessScore:    *body.RarenessScore,
+		SeenScore:        *body.SeenScore,
+		Thumbnail:        body.Thumbnail,
+		Txid:             *body.Txid,
+		Title:            *body.Title,
+		Description:      *body.Description,
+		Keywords:         body.Keywords,
+		SeriesName:       body.SeriesName,
+		Copies:           *body.Copies,
+		YoutubeURL:       body.YoutubeURL,
+		ArtistPastelID:   *body.ArtistPastelID,
+		ArtistName:       *body.ArtistName,
+		ArtistWebsiteURL: body.ArtistWebsiteURL,
+	}
+
+	return v
+}
+
+// NewArtworkGetBadRequest builds a artworks service artworkGet endpoint
+// BadRequest error.
+func NewArtworkGetBadRequest(body *ArtworkGetBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewArtworkGetNotFound builds a artworks service artworkGet endpoint NotFound
+// error.
+func NewArtworkGetNotFound(body *ArtworkGetNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewArtworkGetInternalServerError builds a artworks service artworkGet
+// endpoint InternalServerError error.
+func NewArtworkGetInternalServerError(body *ArtworkGetInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // ValidateRegisterTaskStateResponseBody runs the validations defined on
 // RegisterTaskStateResponseBody
 func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) (err error) {
@@ -715,15 +903,88 @@ func ValidateArtSearchResponseBody(body *ArtSearchResponseBody) (err error) {
 	if body.Matches == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("matches", "body"))
 	}
-	if body.Txid == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("txid", "body"))
-	}
 	if body.MatchIndex == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("match_index", "body"))
 	}
 	if body.Artwork != nil {
-		if err2 := ValidateArtworkTicketResponseBody(body.Artwork); err2 != nil {
+		if err2 := ValidateArtworkSummaryResponseBody(body.Artwork); err2 != nil {
 			err = goa.MergeErrors(err, err2)
+		}
+	}
+	for _, e := range body.Matches {
+		if e != nil {
+			if err2 := ValidateFuzzyMatchResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateArtworkGetResponseBody runs the validations defined on
+// ArtworkGetResponseBody
+func ValidateArtworkGetResponseBody(body *ArtworkGetResponseBody) (err error) {
+	if body.IsGreen == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("is_green", "body"))
+	}
+	if body.Royalty == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("royalty", "body"))
+	}
+	if body.SeenScore == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("seen_score", "body"))
+	}
+	if body.RarenessScore == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("rareness_score", "body"))
+	}
+	if body.NsfwScore == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("nsfw_score", "body"))
+	}
+	if body.Title == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("title", "body"))
+	}
+	if body.Description == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("description", "body"))
+	}
+	if body.ArtistName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_name", "body"))
+	}
+	if body.Copies == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("copies", "body"))
+	}
+	if body.ArtistPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.Txid == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("txid", "body"))
+	}
+	if body.NsfwScore != nil {
+		if *body.NsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.nsfw_score", *body.NsfwScore, 0, true))
+		}
+	}
+	if body.NsfwScore != nil {
+		if *body.NsfwScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.nsfw_score", *body.NsfwScore, 1000, false))
+		}
+	}
+	if body.RarenessScore != nil {
+		if *body.RarenessScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.rareness_score", *body.RarenessScore, 0, true))
+		}
+	}
+	if body.RarenessScore != nil {
+		if *body.RarenessScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.rareness_score", *body.RarenessScore, 1000, false))
+		}
+	}
+	if body.SeenScore != nil {
+		if *body.SeenScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.seen_score", *body.SeenScore, 0, true))
+		}
+	}
+	if body.SeenScore != nil {
+		if *body.SeenScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.seen_score", *body.SeenScore, 1000, false))
 		}
 	}
 	if body.Txid != nil {
@@ -736,11 +997,62 @@ func ValidateArtSearchResponseBody(body *ArtSearchResponseBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, false))
 		}
 	}
-	for _, e := range body.Matches {
-		if e != nil {
-			if err2 := ValidateFuzzyMatchResponseBody(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
+	if body.Title != nil {
+		if utf8.RuneCountInString(*body.Title) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.title", *body.Title, utf8.RuneCountInString(*body.Title), 256, false))
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 1024 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 1024, false))
+		}
+	}
+	if body.Keywords != nil {
+		if utf8.RuneCountInString(*body.Keywords) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.keywords", *body.Keywords, utf8.RuneCountInString(*body.Keywords), 256, false))
+		}
+	}
+	if body.SeriesName != nil {
+		if utf8.RuneCountInString(*body.SeriesName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
+		}
+	}
+	if body.Copies != nil {
+		if *body.Copies < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.copies", *body.Copies, 1, true))
+		}
+	}
+	if body.Copies != nil {
+		if *body.Copies > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.copies", *body.Copies, 1000, false))
+		}
+	}
+	if body.YoutubeURL != nil {
+		if utf8.RuneCountInString(*body.YoutubeURL) > 128 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", *body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, true))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, false))
+		}
+	}
+	if body.ArtistName != nil {
+		if utf8.RuneCountInString(*body.ArtistName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_name", *body.ArtistName, utf8.RuneCountInString(*body.ArtistName), 256, false))
+		}
+	}
+	if body.ArtistWebsiteURL != nil {
+		if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
 		}
 	}
 	return
@@ -989,6 +1301,78 @@ func ValidateArtSearchBadRequestResponseBody(body *ArtSearchBadRequestResponseBo
 // ValidateArtSearchInternalServerErrorResponseBody runs the validations
 // defined on artSearch_InternalServerError_response_body
 func ValidateArtSearchInternalServerErrorResponseBody(body *ArtSearchInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateArtworkGetBadRequestResponseBody runs the validations defined on
+// artworkGet_BadRequest_response_body
+func ValidateArtworkGetBadRequestResponseBody(body *ArtworkGetBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateArtworkGetNotFoundResponseBody runs the validations defined on
+// artworkGet_NotFound_response_body
+func ValidateArtworkGetNotFoundResponseBody(body *ArtworkGetNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateArtworkGetInternalServerErrorResponseBody runs the validations
+// defined on artworkGet_InternalServerError_response_body
+func ValidateArtworkGetInternalServerErrorResponseBody(body *ArtworkGetInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -1295,6 +1679,98 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 	if body.MaximumFee != nil {
 		if *body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
+		}
+	}
+	return
+}
+
+// ValidateArtworkSummaryResponseBody runs the validations defined on
+// ArtworkSummaryResponseBody
+func ValidateArtworkSummaryResponseBody(body *ArtworkSummaryResponseBody) (err error) {
+	if body.Title == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("title", "body"))
+	}
+	if body.Description == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("description", "body"))
+	}
+	if body.ArtistName == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_name", "body"))
+	}
+	if body.Copies == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("copies", "body"))
+	}
+	if body.ArtistPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.Txid == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("txid", "body"))
+	}
+	if body.Txid != nil {
+		if utf8.RuneCountInString(*body.Txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, true))
+		}
+	}
+	if body.Txid != nil {
+		if utf8.RuneCountInString(*body.Txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.txid", *body.Txid, utf8.RuneCountInString(*body.Txid), 64, false))
+		}
+	}
+	if body.Title != nil {
+		if utf8.RuneCountInString(*body.Title) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.title", *body.Title, utf8.RuneCountInString(*body.Title), 256, false))
+		}
+	}
+	if body.Description != nil {
+		if utf8.RuneCountInString(*body.Description) > 1024 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.description", *body.Description, utf8.RuneCountInString(*body.Description), 1024, false))
+		}
+	}
+	if body.Keywords != nil {
+		if utf8.RuneCountInString(*body.Keywords) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.keywords", *body.Keywords, utf8.RuneCountInString(*body.Keywords), 256, false))
+		}
+	}
+	if body.SeriesName != nil {
+		if utf8.RuneCountInString(*body.SeriesName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.series_name", *body.SeriesName, utf8.RuneCountInString(*body.SeriesName), 256, false))
+		}
+	}
+	if body.Copies != nil {
+		if *body.Copies < 1 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.copies", *body.Copies, 1, true))
+		}
+	}
+	if body.Copies != nil {
+		if *body.Copies > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.copies", *body.Copies, 1000, false))
+		}
+	}
+	if body.YoutubeURL != nil {
+		if utf8.RuneCountInString(*body.YoutubeURL) > 128 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.youtube_url", *body.YoutubeURL, utf8.RuneCountInString(*body.YoutubeURL), 128, false))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", *body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, true))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, false))
+		}
+	}
+	if body.ArtistName != nil {
+		if utf8.RuneCountInString(*body.ArtistName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_name", *body.ArtistName, utf8.RuneCountInString(*body.ArtistName), 256, false))
+		}
+	}
+	if body.ArtistWebsiteURL != nil {
+		if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
 		}
 	}
 	return

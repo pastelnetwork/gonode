@@ -45,6 +45,10 @@ type Client struct {
 	// endpoint.
 	ArtSearchDoer goahttp.Doer
 
+	// ArtworkGet Doer is the HTTP client used to make requests to the artworkGet
+	// endpoint.
+	ArtworkGetDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -85,6 +89,7 @@ func NewClient(
 		RegisterTasksDoer:     doer,
 		UploadImageDoer:       doer,
 		ArtSearchDoer:         doer,
+		ArtworkGetDoer:        doer,
 		CORSDoer:              doer,
 		RestoreResponseBody:   restoreBody,
 		scheme:                scheme,
@@ -262,5 +267,24 @@ func (c *Client) ArtSearch() goa.Endpoint {
 		}()
 		stream := &ArtSearchClientStream{conn: conn}
 		return stream, nil
+	}
+}
+
+// ArtworkGet returns an endpoint that makes HTTP requests to the artworks
+// service artworkGet server.
+func (c *Client) ArtworkGet() goa.Endpoint {
+	var (
+		decodeResponse = DecodeArtworkGetResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildArtworkGetRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.ArtworkGetDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("artworks", "artworkGet", err)
+		}
+		return decodeResponse(resp)
 	}
 }

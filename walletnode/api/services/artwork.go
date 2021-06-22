@@ -163,7 +163,7 @@ func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPa
 		select {
 		case <-ctx.Done():
 			return nil
-		case srch, ok := <-resultChan:
+		case search, ok := <-resultChan:
 			if !ok {
 				if task.Status().IsFailure() {
 					return artworks.MakeInternalServerError(task.Error())
@@ -172,12 +172,32 @@ func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPa
 				return nil
 			}
 
-			res := toArtSearchResult(srch)
+			res := toArtSearchResult(search)
 			if err := stream.Send(res); err != nil {
 				return artworks.MakeInternalServerError(err)
 			}
 		}
 	}
+}
+
+// ArtworkGet returns artowrk detail
+func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPayload) (res *artworks.ArtworkDetail, err error) {
+	ticket, err := service.search.RegTicket(ctx, p.Txid)
+	if err != nil {
+		return nil, artworks.MakeBadRequest(err)
+	}
+
+	res = toArtworkDetail(ticket)
+	data, found, err := service.search.FetchThumbnail(ctx, ticket)
+	if err != nil {
+		return nil, artworks.MakeInternalServerError(err)
+	}
+
+	if found {
+		res.Thumbnail = data
+	}
+
+	return res, nil
 }
 
 // NewArtwork returns the artworks Artwork implementation.

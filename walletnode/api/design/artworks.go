@@ -155,24 +155,35 @@ var _ = Service("artworks", func() {
 		})
 	})
 
+	Method("artworkGet", func() {
+		Description("Gets the Artwork detail")
+		Meta("swagger:summary", "Returns the detail of Artwork")
+
+		Payload(ArtworkGetParams)
+		Result(ArtworkDetail)
+
+		HTTP(func() {
+			GET("/{txid}")
+			Params(func() {
+				Param("txid")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
 })
 
 // ArtworkSearchResult is artwork search result.
 var ArtworkSearchResult = Type("ArtworkSearchResult", func() {
 	Description("Result of artwork search call")
 
-	Attribute("artwork", ArtworkTicket, func() {
+	Attribute("artwork", ArtworkSummary, func() {
 		Description("Artwork data")
 	})
-	Attribute("image", Bytes, func() {
-		Description("Thumbnail image")
-	})
-	Attribute("txid", String, func() {
-		Description("txid")
-		MinLength(64)
-		MaxLength(64)
-		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
-	})
+
 	Attribute("match_index", Int, func() {
 		Description("Sort index of the match based on score.This must be used to sort results on UI.")
 	})
@@ -180,7 +191,7 @@ var ArtworkSearchResult = Type("ArtworkSearchResult", func() {
 		Description("Match result details")
 	})
 
-	Required("artwork", "matches", "txid", "match_index")
+	Required("artwork", "matches", "match_index")
 })
 
 // ArtworkTicket is artwork register payload.
@@ -387,6 +398,18 @@ var FuzzyMatch = Type("FuzzyMatch", func() {
 	})
 })
 
+// ArtworkGetParams are request params to artworkGet Params
+var ArtworkGetParams = func() {
+	Attribute("txid", String, func() {
+		Description("txid")
+		MinLength(64)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
+
+	Required("txid")
+}
+
 // SearchArtworkParams are query params to searchArtwork request
 var SearchArtworkParams = func() {
 	Attribute("artist", String, func() {
@@ -471,3 +494,116 @@ var SearchArtworkParams = func() {
 
 	Required("query")
 }
+
+// ArtworkSummary is part of artwork search response.
+var ArtworkSummary = Type("ArtworkSummary", func() {
+	Description("Artwork response")
+
+	Attribute("thumbnail", Bytes, func() {
+		Description("Thumbnail image")
+	})
+
+	Attribute("txid", String, func() {
+		Description("txid")
+		MinLength(64)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
+
+	Attribute("title", String, func() {
+		Description("Name of the artwork")
+		MaxLength(256)
+		Example("Mona Lisa")
+	})
+	Attribute("description", String, func() {
+		Description("Description of the artwork")
+		MaxLength(1024)
+		Example("The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.")
+	})
+	Attribute("keywords", String, func() {
+		Description("Keywords")
+		MaxLength(256)
+		Example("Renaissance, sfumato, portrait")
+	})
+	Attribute("series_name", String, func() {
+		Description("Series name")
+		MaxLength(256)
+		Example("Famous artist")
+	})
+	Attribute("copies", Int, func() {
+		Description("Number of copies")
+		Minimum(1)
+		Maximum(1000)
+		Default(1)
+		Example(1)
+	})
+	Attribute("youtube_url", String, func() {
+		Description("Artwork creation video youtube URL")
+		MaxLength(128)
+		Example("https://www.youtube.com/watch?v=0xl6Ufo4ZX0")
+	})
+
+	Attribute("artist_pastelid", String, func() {
+		Meta("struct:field:name", "ArtistPastelID")
+		Description("Artist's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+
+	Attribute("artist_name", String, func() {
+		Description("Name of the artist")
+		MaxLength(256)
+		Example("Leonardo da Vinci")
+	})
+	Attribute("artist_website_url", String, func() {
+		Description("Artist website URL")
+		MaxLength(256)
+		Example("https://www.leonardodavinci.net")
+	})
+
+	Required("title", "description", "artist_name", "copies", "artist_pastelid", "txid")
+})
+
+// ArtworkDetail is artwork get response.
+var ArtworkDetail = Type("ArtworkDetail", func() {
+	Description("Artwork detail response")
+
+	Extend(ArtworkSummary)
+
+	Attribute("version", Int, func() {
+		Description("version")
+		Example(1)
+	})
+	Attribute("is_green", Boolean, func() {
+		Description("Green flag")
+	})
+	Attribute("royalty", Float64, func() {
+		Description("how much artist should get on all future resales")
+	})
+	Attribute("storage_fee", Int, func() {
+		Description("Storage fee")
+		Example(100)
+	})
+	Attribute("nsfw_score", Int, func() {
+		Description("nsfw score")
+		Minimum(0)
+		Maximum(1000)
+		Example(1000)
+	})
+	Attribute("rareness_score", Int, func() {
+		Description("rareness score")
+		Minimum(0)
+		Maximum(1000)
+		Example(1)
+	})
+	Attribute("seen_score", Int, func() {
+		Description("seen score")
+		Minimum(0)
+		Maximum(1000)
+		Example(1)
+	})
+
+	Required("is_green", "royalty", "seen_score", "rareness_score", "nsfw_score")
+})

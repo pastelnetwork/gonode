@@ -665,6 +665,118 @@ func DecodeArtSearchResponse(decoder func(*http.Response) goahttp.Decoder, resto
 	}
 }
 
+// BuildArtworkGetRequest instantiates a HTTP request object with method and
+// path set to call the "artworks" service "artworkGet" endpoint
+func (c *Client) BuildArtworkGetRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	var (
+		txid string
+	)
+	{
+		p, ok := v.(*artworks.ArtworkGetPayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("artworks", "artworkGet", "*artworks.ArtworkGetPayload", v)
+		}
+		txid = p.Txid
+	}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ArtworkGetArtworksPath(txid)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("artworks", "artworkGet", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// DecodeArtworkGetResponse returns a decoder for responses returned by the
+// artworks artworkGet endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeArtworkGetResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeArtworkGetResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body ArtworkGetResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "artworkGet", err)
+			}
+			err = ValidateArtworkGetResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artworkGet", err)
+			}
+			res := NewArtworkGetArtworkDetailOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body ArtworkGetBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "artworkGet", err)
+			}
+			err = ValidateArtworkGetBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artworkGet", err)
+			}
+			return nil, NewArtworkGetBadRequest(&body)
+		case http.StatusNotFound:
+			var (
+				body ArtworkGetNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "artworkGet", err)
+			}
+			err = ValidateArtworkGetNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artworkGet", err)
+			}
+			return nil, NewArtworkGetNotFound(&body)
+		case http.StatusInternalServerError:
+			var (
+				body ArtworkGetInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "artworkGet", err)
+			}
+			err = ValidateArtworkGetInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artworkGet", err)
+			}
+			return nil, NewArtworkGetInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("artworks", "artworkGet", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // unmarshalTaskStateResponseBodyToArtworksviewsTaskStateView builds a value of
 // type *artworksviews.TaskStateView from a value of type
 // *TaskStateResponseBody.
@@ -757,22 +869,22 @@ func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTi
 	return res
 }
 
-// unmarshalArtworkTicketResponseBodyToArtworksArtworkTicket builds a value of
-// type *artworks.ArtworkTicket from a value of type *ArtworkTicketResponseBody.
-func unmarshalArtworkTicketResponseBodyToArtworksArtworkTicket(v *ArtworkTicketResponseBody) *artworks.ArtworkTicket {
-	res := &artworks.ArtworkTicket{
-		Name:                     *v.Name,
-		Description:              v.Description,
-		Keywords:                 v.Keywords,
-		SeriesName:               v.SeriesName,
-		IssuedCopies:             *v.IssuedCopies,
-		YoutubeURL:               v.YoutubeURL,
-		ArtistPastelID:           *v.ArtistPastelID,
-		ArtistPastelIDPassphrase: *v.ArtistPastelIDPassphrase,
-		ArtistName:               *v.ArtistName,
-		ArtistWebsiteURL:         v.ArtistWebsiteURL,
-		SpendableAddress:         *v.SpendableAddress,
-		MaximumFee:               *v.MaximumFee,
+// unmarshalArtworkSummaryResponseBodyToArtworksArtworkSummary builds a value
+// of type *artworks.ArtworkSummary from a value of type
+// *ArtworkSummaryResponseBody.
+func unmarshalArtworkSummaryResponseBodyToArtworksArtworkSummary(v *ArtworkSummaryResponseBody) *artworks.ArtworkSummary {
+	res := &artworks.ArtworkSummary{
+		Thumbnail:        v.Thumbnail,
+		Txid:             *v.Txid,
+		Title:            *v.Title,
+		Description:      *v.Description,
+		Keywords:         v.Keywords,
+		SeriesName:       v.SeriesName,
+		Copies:           *v.Copies,
+		YoutubeURL:       v.YoutubeURL,
+		ArtistPastelID:   *v.ArtistPastelID,
+		ArtistName:       *v.ArtistName,
+		ArtistWebsiteURL: v.ArtistWebsiteURL,
 	}
 
 	return res

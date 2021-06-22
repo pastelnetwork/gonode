@@ -102,16 +102,53 @@ type UploadImageResponseBody struct {
 // endpoint HTTP response body.
 type ArtSearchResponseBody struct {
 	// Artwork data
-	Artwork *ArtworkTicketResponseBody `form:"artwork" json:"artwork" xml:"artwork"`
-	// Thumbnail image
-	Image []byte `form:"image,omitempty" json:"image,omitempty" xml:"image,omitempty"`
-	// txid
-	Txid string `form:"txid" json:"txid" xml:"txid"`
+	Artwork *ArtworkSummaryResponseBody `form:"artwork" json:"artwork" xml:"artwork"`
 	// Sort index of the match based on score.This must be used to sort results on
 	// UI.
 	MatchIndex int `form:"match_index" json:"match_index" xml:"match_index"`
 	// Match result details
 	Matches []*FuzzyMatchResponseBody `form:"matches" json:"matches" xml:"matches"`
+}
+
+// ArtworkGetResponseBody is the type of the "artworks" service "artworkGet"
+// endpoint HTTP response body.
+type ArtworkGetResponseBody struct {
+	// version
+	Version *int `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
+	// Green flag
+	IsGreen bool `form:"is_green" json:"is_green" xml:"is_green"`
+	// how much artist should get on all future resales
+	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
+	// Storage fee
+	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
+	// nsfw score
+	NsfwScore int `form:"nsfw_score" json:"nsfw_score" xml:"nsfw_score"`
+	// rareness score
+	RarenessScore int `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
+	// seen score
+	SeenScore int `form:"seen_score" json:"seen_score" xml:"seen_score"`
+	// Thumbnail image
+	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// txid
+	Txid string `form:"txid" json:"txid" xml:"txid"`
+	// Name of the artwork
+	Title string `form:"title" json:"title" xml:"title"`
+	// Description of the artwork
+	Description string `form:"description" json:"description" xml:"description"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies
+	Copies int `form:"copies" json:"copies" xml:"copies"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Name of the artist
+	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 }
 
 // RegisterBadRequestResponseBody is the type of the "artworks" service
@@ -318,6 +355,61 @@ type ArtSearchInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// ArtworkGetBadRequestResponseBody is the type of the "artworks" service
+// "artworkGet" endpoint HTTP response body for the "BadRequest" error.
+type ArtworkGetBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// ArtworkGetNotFoundResponseBody is the type of the "artworks" service
+// "artworkGet" endpoint HTTP response body for the "NotFound" error.
+type ArtworkGetNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// ArtworkGetInternalServerErrorResponseBody is the type of the "artworks"
+// service "artworkGet" endpoint HTTP response body for the
+// "InternalServerError" error.
+type ArtworkGetInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -391,6 +483,32 @@ type ArtworkTicketResponse struct {
 	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
+}
+
+// ArtworkSummaryResponseBody is used to define fields on response body types.
+type ArtworkSummaryResponseBody struct {
+	// Thumbnail image
+	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// txid
+	Txid string `form:"txid" json:"txid" xml:"txid"`
+	// Name of the artwork
+	Title string `form:"title" json:"title" xml:"title"`
+	// Description of the artwork
+	Description string `form:"description" json:"description" xml:"description"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies
+	Copies int `form:"copies" json:"copies" xml:"copies"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Name of the artist
+	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 }
 
 // FuzzyMatchResponseBody is used to define fields on response body types.
@@ -468,18 +586,42 @@ func NewUploadImageResponseBody(res *artworksviews.ImageView) *UploadImageRespon
 // the "artSearch" endpoint of the "artworks" service.
 func NewArtSearchResponseBody(res *artworks.ArtworkSearchResult) *ArtSearchResponseBody {
 	body := &ArtSearchResponseBody{
-		Image:      res.Image,
-		Txid:       res.Txid,
 		MatchIndex: res.MatchIndex,
 	}
 	if res.Artwork != nil {
-		body.Artwork = marshalArtworksArtworkTicketToArtworkTicketResponseBody(res.Artwork)
+		body.Artwork = marshalArtworksArtworkSummaryToArtworkSummaryResponseBody(res.Artwork)
 	}
 	if res.Matches != nil {
 		body.Matches = make([]*FuzzyMatchResponseBody, len(res.Matches))
 		for i, val := range res.Matches {
 			body.Matches[i] = marshalArtworksFuzzyMatchToFuzzyMatchResponseBody(val)
 		}
+	}
+	return body
+}
+
+// NewArtworkGetResponseBody builds the HTTP response body from the result of
+// the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetResponseBody(res *artworks.ArtworkDetail) *ArtworkGetResponseBody {
+	body := &ArtworkGetResponseBody{
+		Version:          res.Version,
+		IsGreen:          res.IsGreen,
+		Royalty:          res.Royalty,
+		StorageFee:       res.StorageFee,
+		NsfwScore:        res.NsfwScore,
+		RarenessScore:    res.RarenessScore,
+		SeenScore:        res.SeenScore,
+		Thumbnail:        res.Thumbnail,
+		Txid:             res.Txid,
+		Title:            res.Title,
+		Description:      res.Description,
+		Keywords:         res.Keywords,
+		SeriesName:       res.SeriesName,
+		Copies:           res.Copies,
+		YoutubeURL:       res.YoutubeURL,
+		ArtistPastelID:   res.ArtistPastelID,
+		ArtistName:       res.ArtistName,
+		ArtistWebsiteURL: res.ArtistWebsiteURL,
 	}
 	return body
 }
@@ -640,6 +782,48 @@ func NewArtSearchInternalServerErrorResponseBody(res *goa.ServiceError) *ArtSear
 	return body
 }
 
+// NewArtworkGetBadRequestResponseBody builds the HTTP response body from the
+// result of the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetBadRequestResponseBody(res *goa.ServiceError) *ArtworkGetBadRequestResponseBody {
+	body := &ArtworkGetBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewArtworkGetNotFoundResponseBody builds the HTTP response body from the
+// result of the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetNotFoundResponseBody(res *goa.ServiceError) *ArtworkGetNotFoundResponseBody {
+	body := &ArtworkGetNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewArtworkGetInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetInternalServerErrorResponseBody(res *goa.ServiceError) *ArtworkGetInternalServerErrorResponseBody {
+	body := &ArtworkGetInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewRegisterPayload builds a artworks service register endpoint payload.
 func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	v := &artworks.RegisterPayload{
@@ -708,6 +892,14 @@ func NewArtSearchPayload(artist *string, limit int, query string, artistName boo
 	v.MaxRarenessScore = maxRarenessScore
 	v.MinNsfwScore = minNsfwScore
 	v.MaxNsfwScore = maxNsfwScore
+
+	return v
+}
+
+// NewArtworkGetPayload builds a artworks service artworkGet endpoint payload.
+func NewArtworkGetPayload(txid string) *artworks.ArtworkGetPayload {
+	v := &artworks.ArtworkGetPayload{}
+	v.Txid = txid
 
 	return v
 }

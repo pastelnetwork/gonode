@@ -28,6 +28,7 @@ type Server struct {
 	RegisterTasks     http.Handler
 	UploadImage       http.Handler
 	ArtSearch         http.Handler
+	ArtworkGet        http.Handler
 	CORS              http.Handler
 }
 
@@ -80,11 +81,13 @@ func New(
 			{"RegisterTasks", "GET", "/artworks/register"},
 			{"UploadImage", "POST", "/artworks/register/upload"},
 			{"ArtSearch", "GET", "/artworks/search"},
+			{"ArtworkGet", "GET", "/artworks/{txid}"},
 			{"CORS", "OPTIONS", "/artworks/register"},
 			{"CORS", "OPTIONS", "/artworks/register/{taskId}/state"},
 			{"CORS", "OPTIONS", "/artworks/register/{taskId}"},
 			{"CORS", "OPTIONS", "/artworks/register/upload"},
 			{"CORS", "OPTIONS", "/artworks/search"},
+			{"CORS", "OPTIONS", "/artworks/{txid}"},
 		},
 		Register:          NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
 		RegisterTaskState: NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
@@ -92,6 +95,7 @@ func New(
 		RegisterTasks:     NewRegisterTasksHandler(e.RegisterTasks, mux, decoder, encoder, errhandler, formatter),
 		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
 		ArtSearch:         NewArtSearchHandler(e.ArtSearch, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.ArtSearchFn),
+		ArtworkGet:        NewArtworkGetHandler(e.ArtworkGet, mux, decoder, encoder, errhandler, formatter),
 		CORS:              NewCORSHandler(),
 	}
 }
@@ -107,6 +111,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.RegisterTasks = m(s.RegisterTasks)
 	s.UploadImage = m(s.UploadImage)
 	s.ArtSearch = m(s.ArtSearch)
+	s.ArtworkGet = m(s.ArtworkGet)
 	s.CORS = m(s.CORS)
 }
 
@@ -118,6 +123,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountRegisterTasksHandler(mux, h.RegisterTasks)
 	MountUploadImageHandler(mux, h.UploadImage)
 	MountArtSearchHandler(mux, h.ArtSearch)
+	MountArtworkGetHandler(mux, h.ArtworkGet)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -446,6 +452,57 @@ func NewArtSearchHandler(
 	})
 }
 
+// MountArtworkGetHandler configures the mux to serve the "artworks" service
+// "artworkGet" endpoint.
+func MountArtworkGetHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/artworks/{txid}", f)
+}
+
+// NewArtworkGetHandler creates a HTTP handler which loads the HTTP request and
+// calls the "artworks" service "artworkGet" endpoint.
+func NewArtworkGetHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeArtworkGetRequest(mux, decoder)
+		encodeResponse = EncodeArtworkGetResponse(encoder)
+		encodeError    = EncodeArtworkGetError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "artworkGet")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service artworks.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
@@ -461,6 +518,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/artworks/register/{taskId}", f)
 	mux.Handle("OPTIONS", "/artworks/register/upload", f)
 	mux.Handle("OPTIONS", "/artworks/search", f)
+	mux.Handle("OPTIONS", "/artworks/{txid}", f)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

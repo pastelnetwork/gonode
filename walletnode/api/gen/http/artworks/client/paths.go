@@ -40,3 +40,8 @@ func UploadImageArtworksPath() string {
 func ArtSearchArtworksPath() string {
 	return "/artworks/search"
 }
+
+// ArtworkGetArtworksPath returns the URL path to the artworks service artworkGet HTTP endpoint.
+func ArtworkGetArtworksPath(txid string) string {
+	return fmt.Sprintf("/artworks/%v", txid)
+}

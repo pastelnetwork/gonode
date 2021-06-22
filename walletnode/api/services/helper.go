@@ -3,6 +3,8 @@ package services
 import (
 	"time"
 
+	"github.com/pastelnetwork/gonode/pastel"
+
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
@@ -59,20 +61,21 @@ func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSearchResult {
 	ticketData := srch.RegTicketData.ArtTicketData.AppTicketData
 	res := &artworks.ArtworkSearchResult{
-		Artwork: &artworks.ArtworkTicket{
-			Name: ticketData.ArtworkTitle,
+		Artwork: &artworks.ArtworkSummary{
+			Txid:      srch.TXID,
+			Thumbnail: srch.Thumbnail,
+			Title:     ticketData.ArtworkTitle,
 
-			IssuedCopies:     srch.RegTicketData.ArtTicketData.Copies,
+			Copies:           srch.RegTicketData.ArtTicketData.Copies,
 			ArtistName:       ticketData.ArtistName,
 			YoutubeURL:       &ticketData.ArtworkCreationVideoYoutubeURL,
 			ArtistPastelID:   ticketData.AuthorPastelID,
 			ArtistWebsiteURL: &ticketData.ArtistWebsite,
-			Description:      &ticketData.ArtistWrittenStatement,
+			Description:      ticketData.ArtistWrittenStatement,
 			Keywords:         &ticketData.ArtworkKeywordSet,
 			SeriesName:       &ticketData.ArtworkSeriesName,
 		},
-		Txid:       srch.TXID,
-		Image:      srch.Thumbnail,
+
 		MatchIndex: srch.MatchIndex,
 	}
 
@@ -107,5 +110,27 @@ func fromArtSearchRequest(req *artworks.ArtSearchPayload) *artworksearch.ArtSear
 		MaxNsfwScore:     req.MaxNsfwScore,
 		MinRarenessScore: req.MinRarenessScore,
 		MaxRarenessScore: req.MaxRarenessScore,
+	}
+}
+
+func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
+	return &artworks.ArtworkDetail{
+		Txid:             ticket.TXID,
+		Title:            ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkTitle,
+		Copies:           ticket.RegTicketData.ArtTicketData.Copies,
+		ArtistName:       ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistName,
+		YoutubeURL:       &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkCreationVideoYoutubeURL,
+		ArtistPastelID:   ticket.RegTicketData.ArtTicketData.AppTicketData.AuthorPastelID,
+		ArtistWebsiteURL: &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistWebsite,
+		Description:      ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistWrittenStatement,
+		Keywords:         &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkKeywordSet,
+		SeriesName:       &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkSeriesName,
+		IsGreen:          ticket.RegTicketData.IsGreen,
+		Royalty:          float64(ticket.RegTicketData.Royalty),
+		RarenessScore:    ticket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
+		NsfwScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.NSFWScore,
+		SeenScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.SeenScore,
+		Version:          &ticket.RegTicketData.ArtTicketData.Version,
+		StorageFee:       &ticket.RegTicketData.StorageFee,
 	}
 }

@@ -7,7 +7,6 @@ import (
 
 	"sort"
 
-	b58 "github.com/jbenet/go-base58"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -71,7 +70,7 @@ func (task *Task) run(ctx context.Context) error {
 		}
 
 		group.Go(func() error {
-			regTicket, err := task.regTicket(ctx, &ticket)
+			regTicket, err := task.RegTicket(ctx, ticket.ActTicketData.RegTXID)
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg Ticket")
 
@@ -105,7 +104,7 @@ func (task *Task) run(ctx context.Context) error {
 
 		group.Go(func() error {
 
-			data, found, err := task.fetchThumbnail(ctx, res)
+			data, found, err := task.FetchThumbnail(ctx, res.RegTicket)
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("Fetch Thumbnail")
 
@@ -130,36 +129,8 @@ func (task *Task) run(ctx context.Context) error {
 	return group.Wait()
 }
 
-// fetchThumbnail pulls artwork thumbnail & sets RegTicketSearch.Thumbnail if found
-func (task *Task) fetchThumbnail(ctx context.Context, res *RegTicketSearch) (data []byte, found bool, err error) {
-	hash := res.RegTicketData.ArtTicketData.AppTicketData.ThumbnailHash
-	key := b58.Encode(hash)
-
-	return task.p2pClient.Get(ctx, key)
-}
-
-// regTicket pull art registration ticket from cNode & decodes base64 encoded fields
-func (task *Task) regTicket(ctx context.Context, ticket *pastel.ActTicket) (pastel.RegTicket, error) {
-	regTicket, err := task.pastelClient.RegTicket(ctx, ticket.ActTicketData.RegTXID)
-	if err != nil {
-		return regTicket, fmt.Errorf("fetch: %s", err)
-	}
-
-	if err := fromBase64(string(regTicket.RegTicketData.ArtTicket),
-		&regTicket.RegTicketData.ArtTicketData); err != nil {
-		return regTicket, fmt.Errorf("convert art ticket: %s", err)
-	}
-
-	if err := fromBase64(string(regTicket.RegTicketData.ArtTicketData.AppTicket),
-		&regTicket.RegTicketData.ArtTicketData.AppTicketData); err != nil {
-		return regTicket, fmt.Errorf("convert app ticket: %s", err)
-	}
-
-	return regTicket, nil
-}
-
 // filterRegTicket filters ticket against request params & checks if its a match
-func (task *Task) filterRegTicket(regTicket pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
+func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
 	if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
 		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
 		return srch, false
@@ -176,7 +147,7 @@ func (task *Task) filterRegTicket(regTicket pastel.RegTicket) (srch *RegTicketSe
 	}
 
 	regSearch := &RegTicketSearch{
-		RegTicket: &regTicket,
+		RegTicket: regTicket,
 	}
 
 	return regSearch.Search(task.request)

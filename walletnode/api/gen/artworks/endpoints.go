@@ -21,6 +21,7 @@ type Endpoints struct {
 	RegisterTasks     goa.Endpoint
 	UploadImage       goa.Endpoint
 	ArtSearch         goa.Endpoint
+	ArtworkGet        goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -51,6 +52,7 @@ func NewEndpoints(s Service) *Endpoints {
 		RegisterTasks:     NewRegisterTasksEndpoint(s),
 		UploadImage:       NewUploadImageEndpoint(s),
 		ArtSearch:         NewArtSearchEndpoint(s),
+		ArtworkGet:        NewArtworkGetEndpoint(s),
 	}
 }
 
@@ -62,6 +64,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterTasks = m(e.RegisterTasks)
 	e.UploadImage = m(e.UploadImage)
 	e.ArtSearch = m(e.ArtSearch)
+	e.ArtworkGet = m(e.ArtworkGet)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -134,5 +137,14 @@ func NewArtSearchEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		ep := req.(*ArtSearchEndpointInput)
 		return nil, s.ArtSearch(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewArtworkGetEndpoint returns an endpoint function that calls the method
+// "artworkGet" of service "artworks".
+func NewArtworkGetEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*ArtworkGetPayload)
+		return s.ArtworkGet(ctx, p)
 	}
 }

@@ -12,6 +12,52 @@ produces:
 - application/xml
 - application/gob
 paths:
+  /artworks/{txid}:
+    get:
+      tags:
+      - artworks
+      summary: Returns the detail of Artwork
+      description: Gets the Artwork detail
+      operationId: artworks#artworkGet
+      parameters:
+      - name: txid
+        in: path
+        description: txid
+        required: true
+        type: string
+        maxLength: 64
+        minLength: 64
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/ArtworksArtworkGetResponseBody'
+            required:
+            - is_green
+            - royalty
+            - seen_score
+            - rareness_score
+            - nsfw_score
+            - title
+            - description
+            - artist_name
+            - copies
+            - artist_pastelid
+            - txid
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/ArtworksArtworkGetBadRequestResponseBody'
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/ArtworksArtworkGetNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtworksArtworkGetInternalServerErrorResponseBody'
+      schemes:
+      - http
   /artworks/register:
     get:
       tags:
@@ -281,7 +327,6 @@ paths:
             required:
             - artwork
             - matches
-            - txid
             - match_index
         "400":
           description: Bad Request response.
@@ -294,6 +339,191 @@ paths:
       schemes:
       - ws
 definitions:
+  ArtworkSummaryResponseBody:
+    title: ArtworkSummaryResponseBody
+    type: object
+    properties:
+      artist_name:
+        type: string
+        description: Name of the artist
+        example: Leonardo da Vinci
+        maxLength: 256
+      artist_pastelid:
+        type: string
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+      artist_website_url:
+        type: string
+        description: Artist website URL
+        example: https://www.leonardodavinci.net
+        maxLength: 256
+      copies:
+        type: integer
+        description: Number of copies
+        default: 1
+        example: 1
+        minimum: 1
+        maximum: 1000
+      description:
+        type: string
+        description: Description of the artwork
+        example: The Mona Lisa is an oil painting by Italian artist, inventor, and
+          writer Leonardo da Vinci. Likely completed in 1506, the piece features a
+          portrait of a seated woman set against an imaginary landscape.
+        maxLength: 1024
+      keywords:
+        type: string
+        description: Keywords
+        example: Renaissance, sfumato, portrait
+        maxLength: 256
+      series_name:
+        type: string
+        description: Series name
+        example: Famous artist
+        maxLength: 256
+      thumbnail:
+        type: string
+        description: Thumbnail image
+        example:
+        - 69
+        - 116
+        - 32
+        - 113
+        - 117
+        - 105
+        - 98
+        - 117
+        - 115
+        - 100
+        - 97
+        - 109
+        - 32
+        - 118
+        - 105
+        - 116
+        - 97
+        - 101
+        - 32
+        - 113
+        - 117
+        - 97
+        - 101
+        - 114
+        - 97
+        - 116
+        - 32
+        - 110
+        - 105
+        - 104
+        - 105
+        - 108
+        - 32
+        - 113
+        - 117
+        - 105
+        - 97
+        - 32
+        - 100
+        - 111
+        - 108
+        - 111
+        - 114
+        - 101
+        - 46
+        format: byte
+      title:
+        type: string
+        description: Name of the artwork
+        example: Mona Lisa
+        maxLength: 256
+      txid:
+        type: string
+        description: txid
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
+      youtube_url:
+        type: string
+        description: Artwork creation video youtube URL
+        example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        maxLength: 128
+    description: Artwork response
+    example:
+      artist_name: Leonardo da Vinci
+      artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      artist_website_url: https://www.leonardodavinci.net
+      copies: 1
+      description: The Mona Lisa is an oil painting by Italian artist, inventor, and
+        writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
+        of a seated woman set against an imaginary landscape.
+      keywords: Renaissance, sfumato, portrait
+      series_name: Famous artist
+      thumbnail:
+      - 65
+      - 108
+      - 105
+      - 113
+      - 117
+      - 97
+      - 109
+      - 32
+      - 116
+      - 111
+      - 116
+      - 97
+      - 109
+      - 32
+      - 98
+      - 108
+      - 97
+      - 110
+      - 100
+      - 105
+      - 116
+      - 105
+      - 105
+      - 115
+      - 32
+      - 97
+      - 115
+      - 112
+      - 101
+      - 114
+      - 105
+      - 111
+      - 114
+      - 101
+      - 115
+      - 32
+      - 97
+      - 109
+      - 101
+      - 116
+      - 32
+      - 108
+      - 97
+      - 98
+      - 111
+      - 114
+      - 105
+      - 111
+      - 115
+      - 97
+      - 109
+      - 46
+      title: Mona Lisa
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+    required:
+    - title
+    - description
+    - artist_name
+    - copies
+    - artist_pastelid
+    - txid
   ArtworkTicketResponse:
     title: ArtworkTicketResponse
     type: object
@@ -493,7 +723,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -511,19 +741,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
         example: true
     description: artSearch_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -538,6 +768,169 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: artSearch_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksArtSearchResponseBody:
+    title: ArtworksArtSearchResponseBody
+    type: object
+    properties:
+      artwork:
+        $ref: '#/definitions/ArtworkSummaryResponseBody'
+      match_index:
+        type: integer
+        description: Sort index of the match based on score.This must be used to sort
+          results on UI.
+        example: 8434213671840868209
+        format: int64
+      matches:
+        type: array
+        items:
+          $ref: '#/definitions/FuzzyMatchResponseBody'
+        description: Match result details
+        example:
+        - field_type: art_title
+          matched_indexes:
+          - 8830161846526020474
+          - 6577107819799959969
+          - 7129840891655550567
+          - 2035670134737008339
+          score: 7525781640486193864
+          str: Aut ut voluptates rerum.
+        - field_type: art_title
+          matched_indexes:
+          - 8830161846526020474
+          - 6577107819799959969
+          - 7129840891655550567
+          - 2035670134737008339
+          score: 7525781640486193864
+          str: Aut ut voluptates rerum.
+        - field_type: art_title
+          matched_indexes:
+          - 8830161846526020474
+          - 6577107819799959969
+          - 7129840891655550567
+          - 2035670134737008339
+          score: 7525781640486193864
+          str: Aut ut voluptates rerum.
+        - field_type: art_title
+          matched_indexes:
+          - 8830161846526020474
+          - 6577107819799959969
+          - 7129840891655550567
+          - 2035670134737008339
+          score: 7525781640486193864
+          str: Aut ut voluptates rerum.
+    example:
+      artwork:
+        artist_name: Leonardo da Vinci
+        artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        artist_website_url: https://www.leonardodavinci.net
+        copies: 1
+        description: The Mona Lisa is an oil painting by Italian artist, inventor,
+          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+          a portrait of a seated woman set against an imaginary landscape.
+        keywords: Renaissance, sfumato, portrait
+        series_name: Famous artist
+        thumbnail:
+        - 77
+        - 111
+        - 100
+        - 105
+        - 32
+        - 110
+        - 105
+        - 115
+        - 105
+        - 32
+        - 101
+        - 111
+        - 115
+        - 32
+        - 98
+        - 108
+        - 97
+        - 110
+        - 100
+        - 105
+        - 116
+        - 105
+        - 105
+        - 115
+        - 32
+        - 101
+        - 105
+        - 117
+        - 115
+        - 46
+        title: Mona Lisa
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+      match_index: 4814867939427827932
+      matches:
+      - field_type: art_title
+        matched_indexes:
+        - 8830161846526020474
+        - 6577107819799959969
+        - 7129840891655550567
+        - 2035670134737008339
+        score: 7525781640486193864
+        str: Aut ut voluptates rerum.
+      - field_type: art_title
+        matched_indexes:
+        - 8830161846526020474
+        - 6577107819799959969
+        - 7129840891655550567
+        - 2035670134737008339
+        score: 7525781640486193864
+        str: Aut ut voluptates rerum.
+    required:
+    - artwork
+    - matches
+    - match_index
+  ArtworksArtworkGetBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
         example: true
       id:
         type: string
@@ -560,11 +953,56 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
-    description: artSearch_InternalServerError_response_body result type (default
+        example: true
+    description: artworkGet_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksArtworkGetInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: artworkGet_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -577,181 +1015,7 @@ definitions:
     - temporary
     - timeout
     - fault
-  ArtworksArtSearchResponseBody:
-    title: ArtworksArtSearchResponseBody
-    type: object
-    properties:
-      artwork:
-        $ref: '#/definitions/ArtworkTicketResponseBody'
-      image:
-        type: string
-        description: Thumbnail image
-        example:
-        - 65
-        - 117
-        - 116
-        - 32
-        - 115
-        - 101
-        - 100
-        - 32
-        - 113
-        - 117
-        - 111
-        - 32
-        - 99
-        - 111
-        - 110
-        - 115
-        - 101
-        - 113
-        - 117
-        - 97
-        - 116
-        - 117
-        - 114
-        - 32
-        - 108
-        - 105
-        - 98
-        - 101
-        - 114
-        - 111
-        - 32
-        - 110
-        - 105
-        - 104
-        - 105
-        - 108
-        - 32
-        - 114
-        - 101
-        - 114
-        - 117
-        - 109
-        - 46
-        format: byte
-      match_index:
-        type: integer
-        description: Sort index of the match based on score.This must be used to sort
-          results on UI.
-        example: 1471524570153364271
-        format: int64
-      matches:
-        type: array
-        items:
-          $ref: '#/definitions/FuzzyMatchResponseBody'
-        description: Match result details
-        example:
-        - field_type: artist_name
-          matched_indexes:
-          - 1328199889259013941
-          - 128626799559612606
-          - 6005803353292558659
-          score: 9202476006944688065
-          str: Ipsa quos omnis reprehenderit doloribus.
-        - field_type: artist_name
-          matched_indexes:
-          - 1328199889259013941
-          - 128626799559612606
-          - 6005803353292558659
-          score: 9202476006944688065
-          str: Ipsa quos omnis reprehenderit doloribus.
-        - field_type: artist_name
-          matched_indexes:
-          - 1328199889259013941
-          - 128626799559612606
-          - 6005803353292558659
-          score: 9202476006944688065
-          str: Ipsa quos omnis reprehenderit doloribus.
-        - field_type: artist_name
-          matched_indexes:
-          - 1328199889259013941
-          - 128626799559612606
-          - 6005803353292558659
-          score: 9202476006944688065
-          str: Ipsa quos omnis reprehenderit doloribus.
-      txid:
-        type: string
-        description: txid
-        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-        minLength: 64
-        maxLength: 64
-    example:
-      artwork:
-        artist_name: Leonardo da Vinci
-        artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-        artist_pastelid_passphrase: qwerasdf1234
-        artist_website_url: https://www.leonardodavinci.net
-        description: The Mona Lisa is an oil painting by Italian artist, inventor,
-          and writer Leonardo da Vinci. Likely completed in 1506, the piece features
-          a portrait of a seated woman set against an imaginary landscape.
-        issued_copies: 1
-        keywords: Renaissance, sfumato, portrait
-        maximum_fee: 100
-        name: Mona Lisa
-        series_name: Famous artist
-        spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
-        youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-      image:
-      - 69
-      - 117
-      - 109
-      - 32
-      - 101
-      - 108
-      - 105
-      - 103
-      - 101
-      - 110
-      - 100
-      - 105
-      - 32
-      - 118
-      - 101
-      - 108
-      - 105
-      - 116
-      - 32
-      - 115
-      - 101
-      - 113
-      - 117
-      - 105
-      - 32
-      - 118
-      - 111
-      - 108
-      - 117
-      - 112
-      - 116
-      - 97
-      - 116
-      - 101
-      - 46
-      match_index: 2815360942015725166
-      matches:
-      - field_type: artist_name
-        matched_indexes:
-        - 1328199889259013941
-        - 128626799559612606
-        - 6005803353292558659
-        score: 9202476006944688065
-        str: Ipsa quos omnis reprehenderit doloribus.
-      - field_type: artist_name
-        matched_indexes:
-        - 1328199889259013941
-        - 128626799559612606
-        - 6005803353292558659
-        score: 9202476006944688065
-        str: Ipsa quos omnis reprehenderit doloribus.
-      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-    required:
-    - artwork
-    - matches
-    - txid
-    - match_index
-  ArtworksRegisterBadRequestResponseBody:
+  ArtworksArtworkGetNotFoundResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -776,19 +1040,288 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
-    description: register_BadRequest_response_body result type (default view)
+        example: true
+    description: artworkGet_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: false
       timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksArtworkGetResponseBody:
+    title: ArtworksArtworkGetResponseBody
+    type: object
+    properties:
+      artist_name:
+        type: string
+        description: Name of the artist
+        example: Leonardo da Vinci
+        maxLength: 256
+      artist_pastelid:
+        type: string
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+      artist_website_url:
+        type: string
+        description: Artist website URL
+        example: https://www.leonardodavinci.net
+        maxLength: 256
+      copies:
+        type: integer
+        description: Number of copies
+        default: 1
+        example: 1
+        minimum: 1
+        maximum: 1000
+      description:
+        type: string
+        description: Description of the artwork
+        example: The Mona Lisa is an oil painting by Italian artist, inventor, and
+          writer Leonardo da Vinci. Likely completed in 1506, the piece features a
+          portrait of a seated woman set against an imaginary landscape.
+        maxLength: 1024
+      is_green:
+        type: boolean
+        description: Green flag
+        example: true
+      keywords:
+        type: string
+        description: Keywords
+        example: Renaissance, sfumato, portrait
+        maxLength: 256
+      nsfw_score:
+        type: integer
+        description: nsfw score
+        example: 1000
+        minimum: 0
+        maximum: 1000
+      rareness_score:
+        type: integer
+        description: rareness score
+        example: 1
+        minimum: 0
+        maximum: 1000
+      royalty:
+        type: number
+        description: how much artist should get on all future resales
+        example: 0.7353072232942272
+        format: double
+      seen_score:
+        type: integer
+        description: seen score
+        example: 1
+        minimum: 0
+        maximum: 1000
+      series_name:
+        type: string
+        description: Series name
+        example: Famous artist
+        maxLength: 256
+      storage_fee:
+        type: integer
+        description: Storage fee
+        example: 100
+        format: int64
+      thumbnail:
+        type: string
+        description: Thumbnail image
+        example:
+        - 78
+        - 111
+        - 115
+        - 116
+        - 114
+        - 117
+        - 109
+        - 32
+        - 105
+        - 110
+        - 32
+        - 100
+        - 105
+        - 103
+        - 110
+        - 105
+        - 115
+        - 115
+        - 105
+        - 109
+        - 111
+        - 115
+        - 32
+        - 115
+        - 105
+        - 110
+        - 116
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
+        - 109
+        - 32
+        - 110
+        - 105
+        - 115
+        - 105
+        - 32
+        - 109
+        - 111
+        - 108
+        - 101
+        - 115
+        - 116
+        - 105
+        - 97
+        - 101
+        - 46
+        format: byte
+      title:
+        type: string
+        description: Name of the artwork
+        example: Mona Lisa
+        maxLength: 256
+      txid:
+        type: string
+        description: txid
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+        minLength: 64
+        maxLength: 64
+      version:
+        type: integer
+        description: version
+        example: 1
+        format: int64
+      youtube_url:
+        type: string
+        description: Artwork creation video youtube URL
+        example: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        maxLength: 128
+    example:
+      artist_name: Leonardo da Vinci
+      artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      artist_website_url: https://www.leonardodavinci.net
+      copies: 1
+      description: The Mona Lisa is an oil painting by Italian artist, inventor, and
+        writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
+        of a seated woman set against an imaginary landscape.
+      is_green: true
+      keywords: Renaissance, sfumato, portrait
+      nsfw_score: 1000
+      rareness_score: 1
+      royalty: 0.40073431613877014
+      seen_score: 1
+      series_name: Famous artist
+      storage_fee: 100
+      thumbnail:
+      - 86
+      - 111
+      - 108
+      - 117
+      - 112
+      - 116
+      - 97
+      - 116
+      - 101
+      - 109
+      - 32
+      - 100
+      - 101
+      - 115
+      - 101
+      - 114
+      - 117
+      - 110
+      - 116
+      - 32
+      - 99
+      - 117
+      - 108
+      - 112
+      - 97
+      - 32
+      - 118
+      - 101
+      - 108
+      - 32
+      - 111
+      - 100
+      - 105
+      - 111
+      - 32
+      - 115
+      - 101
+      - 100
+      - 46
+      title: Mona Lisa
+      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      version: 1
+      youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+    required:
+    - is_green
+    - royalty
+    - seen_score
+    - rareness_score
+    - nsfw_score
+    - title
+    - description
+    - artist_name
+    - copies
+    - artist_pastelid
+    - txid
+  ArtworksRegisterBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: register_BadRequest_response_body result type (default view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: false
     required:
     - name
     - id
@@ -803,7 +1336,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -825,14 +1358,14 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: register_InternalServerError_response_body result type (default view)
     example:
       fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -984,7 +1517,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -997,7 +1530,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -1012,7 +1545,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1030,7 +1563,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -1066,6 +1599,8 @@ definitions:
           $ref: '#/definitions/TaskStateResponseBody'
         description: List of states from the very beginning of the process
         example:
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -1129,7 +1664,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1151,7 +1686,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
@@ -1159,7 +1694,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: false
     required:
     - name
@@ -1193,19 +1728,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTaskState_NotFound_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: false
+      temporary: true
+      timeout: true
     required:
     - name
     - id
@@ -1267,11 +1802,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTasks_InternalServerError_response_body result type (default
       view)
     example:
@@ -1380,14 +1915,14 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: uploadImage_BadRequest_response_body result type (default view)
     example:
       fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: false
     required:
     - name
@@ -1403,7 +1938,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1421,15 +1956,15 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -1450,34 +1985,28 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 73
-        - 108
-        - 108
+        - 81
+        - 117
         - 111
         - 32
-        - 105
-        - 117
+        - 99
+        - 111
+        - 110
         - 115
-        - 116
-        - 111
-        - 32
         - 101
-        - 116
-        - 32
-        - 112
+        - 113
+        - 117
         - 97
+        - 116
+        - 117
         - 114
+        - 32
+        - 108
         - 105
-        - 97
-        - 116
-        - 117
-        - 114
-        - 32
-        - 114
+        - 98
         - 101
         - 114
-        - 117
-        - 109
+        - 111
         - 46
         format: byte
       filename:
@@ -1485,52 +2014,40 @@ definitions:
         description: For internal use
     example:
       file:
-      - 81
+      - 82
+      - 101
+      - 114
       - 117
+      - 109
+      - 32
+      - 101
+      - 116
+      - 32
+      - 112
+      - 111
+      - 115
+      - 115
       - 105
+      - 109
+      - 117
+      - 115
+      - 32
+      - 109
+      - 97
+      - 103
+      - 110
+      - 105
+      - 32
+      - 101
+      - 115
+      - 116
       - 32
       - 113
       - 117
-      - 111
-      - 32
-      - 101
-      - 116
-      - 32
-      - 111
-      - 100
       - 105
-      - 111
-      - 32
-      - 118
-      - 111
-      - 108
-      - 117
-      - 112
-      - 116
-      - 97
-      - 116
+      - 100
       - 101
       - 109
-      - 32
-      - 118
-      - 111
-      - 108
-      - 117
-      - 112
-      - 116
-      - 97
-      - 115
-      - 32
-      - 118
-      - 111
-      - 108
-      - 117
-      - 112
-      - 116
-      - 97
-      - 116
-      - 101
-      - 115
       - 46
     required:
     - file
@@ -1563,7 +2080,7 @@ definitions:
       field_type:
         type: string
         description: Field that is matched
-        example: descr
+        example: keyword
         enum:
         - artist_name
         - art_title
@@ -1574,29 +2091,31 @@ definitions:
         type: array
         items:
           type: integer
-          example: 7250238816494942850
+          example: 8847714253081993945
           format: int64
         description: The indexes of matched characters. Useful for highlighting matches
         example:
-        - 2863226068842474850
-        - 7745062922982718225
-        - 6019456624729646395
+        - 6708386838329912700
+        - 4489476312926102647
+        - 2815360942015725166
+        - 5805442924672349589
       score:
         type: integer
         description: Score used to rank matches
-        example: 4602596880088602566
+        example: 3859555445529686132
         format: int64
       str:
         type: string
         description: String that is matched
-        example: Magni est quidem ad.
+        example: Vitae blanditiis soluta magnam ut.
     example:
-      field_type: keyword
+      field_type: descr
       matched_indexes:
-      - 4657208011319180966
-      - 4967634607206241350
-      score: 7559382628069304989
-      str: Aliquam totam blanditiis asperiores amet laboriosam.
+      - 6690899859921186966
+      - 7660541188725122689
+      - 4073618642813391788
+      score: 2424621105405144512
+      str: Excepturi qui.
   TaskResponseTiny:
     title: 'Mediatype identifier: application/vnd.artwork.register.task; view=default'
     type: object

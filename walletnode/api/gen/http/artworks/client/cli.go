@@ -164,7 +164,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 	{
 		err = json.Unmarshal([]byte(artworksUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"UmVydW0gZG9sb3JlbXF1ZSBpbiBvZGlvIHF1aWEgbGliZXJvLg==\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"T2RpbyBxdWkgdXQgdmVsIGV0IHF1YXNpIGV0Lg==\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -472,6 +472,29 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 	v.MaxRarenessScore = maxRarenessScore
 	v.MinNsfwScore = minNsfwScore
 	v.MaxNsfwScore = maxNsfwScore
+
+	return v, nil
+}
+
+// BuildArtworkGetPayload builds the payload for the artworks artworkGet
+// endpoint from CLI flags.
+func BuildArtworkGetPayload(artworksArtworkGetTxid string) (*artworks.ArtworkGetPayload, error) {
+	var err error
+	var txid string
+	{
+		txid = artworksArtworkGetTxid
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &artworks.ArtworkGetPayload{}
+	v.Txid = txid
 
 	return v, nil
 }

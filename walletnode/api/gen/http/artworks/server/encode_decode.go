@@ -684,6 +684,96 @@ func EncodeArtSearchError(encoder func(context.Context, http.ResponseWriter) goa
 	}
 }
 
+// EncodeArtworkGetResponse returns an encoder for responses returned by the
+// artworks artworkGet endpoint.
+func EncodeArtworkGetResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(*artworks.ArtworkDetail)
+		enc := encoder(ctx, w)
+		body := NewArtworkGetResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeArtworkGetRequest returns a decoder for requests sent to the artworks
+// artworkGet endpoint.
+func DecodeArtworkGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			txid string
+			err  error
+
+			params = mux.Vars(r)
+		)
+		txid = params["txid"]
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewArtworkGetPayload(txid)
+
+		return payload, nil
+	}
+}
+
+// EncodeArtworkGetError returns an encoder for errors returned by the
+// artworkGet artworks endpoint.
+func EncodeArtworkGetError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewArtworkGetBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", "BadRequest")
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "NotFound":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewArtworkGetNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", "NotFound")
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewArtworkGetInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // marshalArtworksviewsTaskStateViewToTaskStateResponseBody builds a value of
 // type *TaskStateResponseBody from a value of type
 // *artworksviews.TaskStateView.
@@ -758,22 +848,22 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v *artworksvie
 	return res
 }
 
-// marshalArtworksArtworkTicketToArtworkTicketResponseBody builds a value of
-// type *ArtworkTicketResponseBody from a value of type *artworks.ArtworkTicket.
-func marshalArtworksArtworkTicketToArtworkTicketResponseBody(v *artworks.ArtworkTicket) *ArtworkTicketResponseBody {
-	res := &ArtworkTicketResponseBody{
-		Name:                     v.Name,
-		Description:              v.Description,
-		Keywords:                 v.Keywords,
-		SeriesName:               v.SeriesName,
-		IssuedCopies:             v.IssuedCopies,
-		YoutubeURL:               v.YoutubeURL,
-		ArtistPastelID:           v.ArtistPastelID,
-		ArtistPastelIDPassphrase: v.ArtistPastelIDPassphrase,
-		ArtistName:               v.ArtistName,
-		ArtistWebsiteURL:         v.ArtistWebsiteURL,
-		SpendableAddress:         v.SpendableAddress,
-		MaximumFee:               v.MaximumFee,
+// marshalArtworksArtworkSummaryToArtworkSummaryResponseBody builds a value of
+// type *ArtworkSummaryResponseBody from a value of type
+// *artworks.ArtworkSummary.
+func marshalArtworksArtworkSummaryToArtworkSummaryResponseBody(v *artworks.ArtworkSummary) *ArtworkSummaryResponseBody {
+	res := &ArtworkSummaryResponseBody{
+		Thumbnail:        v.Thumbnail,
+		Txid:             v.Txid,
+		Title:            v.Title,
+		Description:      v.Description,
+		Keywords:         v.Keywords,
+		SeriesName:       v.SeriesName,
+		Copies:           v.Copies,
+		YoutubeURL:       v.YoutubeURL,
+		ArtistPastelID:   v.ArtistPastelID,
+		ArtistName:       v.ArtistName,
+		ArtistWebsiteURL: v.ArtistWebsiteURL,
 	}
 
 	return res

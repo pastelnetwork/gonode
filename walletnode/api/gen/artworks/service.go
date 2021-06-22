@@ -28,6 +28,8 @@ type Service interface {
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
 	// Streams the search result for artwork
 	ArtSearch(context.Context, *ArtSearchPayload, ArtSearchServerStream) (err error)
+	// Gets the Artwork detail
+	ArtworkGet(context.Context, *ArtworkGetPayload) (res *ArtworkDetail, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -38,7 +40,7 @@ const ServiceName = "artworks"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [6]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "artSearch"}
+var MethodNames = [7]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "artSearch", "artworkGet"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -206,16 +208,59 @@ type ArtSearchPayload struct {
 // method.
 type ArtworkSearchResult struct {
 	// Artwork data
-	Artwork *ArtworkTicket
-	// Thumbnail image
-	Image []byte
-	// txid
-	Txid string
+	Artwork *ArtworkSummary
 	// Sort index of the match based on score.This must be used to sort results on
 	// UI.
 	MatchIndex int
 	// Match result details
 	Matches []*FuzzyMatch
+}
+
+// ArtworkGetPayload is the payload type of the artworks service artworkGet
+// method.
+type ArtworkGetPayload struct {
+	// txid
+	Txid string
+}
+
+// ArtworkDetail is the result type of the artworks service artworkGet method.
+type ArtworkDetail struct {
+	// version
+	Version *int
+	// Green flag
+	IsGreen bool
+	// how much artist should get on all future resales
+	Royalty float64
+	// Storage fee
+	StorageFee *int
+	// nsfw score
+	NsfwScore int
+	// rareness score
+	RarenessScore int
+	// seen score
+	SeenScore int
+	// Thumbnail image
+	Thumbnail []byte
+	// txid
+	Txid string
+	// Name of the artwork
+	Title string
+	// Description of the artwork
+	Description string
+	// Keywords
+	Keywords *string
+	// Series name
+	SeriesName *string
+	// Number of copies
+	Copies int
+	// Artwork creation video youtube URL
+	YoutubeURL *string
+	// Artist's PastelID
+	ArtistPastelID string
+	// Name of the artist
+	ArtistName string
+	// Artist website URL
+	ArtistWebsiteURL *string
 }
 
 // Ticket of the registration artwork
@@ -244,6 +289,32 @@ type ArtworkTicket struct {
 	SpendableAddress string
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64
+}
+
+// Artwork response
+type ArtworkSummary struct {
+	// Thumbnail image
+	Thumbnail []byte
+	// txid
+	Txid string
+	// Name of the artwork
+	Title string
+	// Description of the artwork
+	Description string
+	// Keywords
+	Keywords *string
+	// Series name
+	SeriesName *string
+	// Number of copies
+	Copies int
+	// Artwork creation video youtube URL
+	YoutubeURL *string
+	// Artist's PastelID
+	ArtistPastelID string
+	// Name of the artist
+	ArtistName string
+	// Artist website URL
+	ArtistWebsiteURL *string
 }
 
 type FuzzyMatch struct {

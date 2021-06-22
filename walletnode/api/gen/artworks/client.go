@@ -21,10 +21,11 @@ type Client struct {
 	RegisterTasksEndpoint     goa.Endpoint
 	UploadImageEndpoint       goa.Endpoint
 	ArtSearchEndpoint         goa.Endpoint
+	ArtworkGetEndpoint        goa.Endpoint
 }
 
 // NewClient initializes a "artworks" service client given the endpoints.
-func NewClient(register, registerTaskState, registerTask, registerTasks, uploadImage, artSearch goa.Endpoint) *Client {
+func NewClient(register, registerTaskState, registerTask, registerTasks, uploadImage, artSearch, artworkGet goa.Endpoint) *Client {
 	return &Client{
 		RegisterEndpoint:          register,
 		RegisterTaskStateEndpoint: registerTaskState,
@@ -32,6 +33,7 @@ func NewClient(register, registerTaskState, registerTask, registerTasks, uploadI
 		RegisterTasksEndpoint:     registerTasks,
 		UploadImageEndpoint:       uploadImage,
 		ArtSearchEndpoint:         artSearch,
+		ArtworkGetEndpoint:        artworkGet,
 	}
 }
 
@@ -94,4 +96,14 @@ func (c *Client) ArtSearch(ctx context.Context, p *ArtSearchPayload) (res ArtSea
 		return
 	}
 	return ires.(ArtSearchClientStream), nil
+}
+
+// ArtworkGet calls the "artworkGet" endpoint of the "artworks" service.
+func (c *Client) ArtworkGet(ctx context.Context, p *ArtworkGetPayload) (res *ArtworkDetail, err error) {
+	var ires interface{}
+	ires, err = c.ArtworkGetEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*ArtworkDetail), nil
 }
