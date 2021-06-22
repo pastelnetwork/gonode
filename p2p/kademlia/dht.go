@@ -242,73 +242,77 @@ func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Mes
 	}
 }
 
-func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []byte, nl *NodeList, contacted map[string]bool, haveRest bool) []*Message {
-	var number int
-
-	var mux sync.Mutex
-	// nodes which will be removed
-	removedNodes := []*Node{}
+func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []byte, nl *NodeList, contacted map[string]bool, haveRest bool) chan *Message {
 	// responses from remote node
-	responses := []*Message{}
+	responses := make(chan *Message, Alpha)
 
-	var wg sync.WaitGroup
-	// send the message to the first (closest) alpha nodes
-	for _, node := range nl.Nodes {
-		// only contact alpha nodes
-		if number >= Alpha && !haveRest {
-			break
-		}
-		// ignore the contacted node
-		if contacted[string(node.ID)] {
-			continue
-		}
-		contacted[string(node.ID)] = true
+	go func() {
+		// the nodes which are unreachable
+		removedNodes := []*Node{}
 
-		// update the running goroutines
-		number++
+		var wg sync.WaitGroup
 
-		log.WithContext(ctx).Debugf("start work %v for node(%d): %s", iterativeType, len(nl.Nodes), node.String())
-
-		wg.Add(1)
-		// send and recive message concurrently
-		go func(receiver *Node) {
-			defer wg.Done()
-
-			var data interface{}
-			var messageType int
-			switch iterativeType {
-			case IterateFindNode, IterateStore:
-				messageType = FindNode
-				data = &FindNodeRequest{Target: target}
-			case IterateFindValue:
-				messageType = FindValue
-				data = &FindValueRequest{Target: target}
+		var number int
+		// send the message to the first (closest) alpha nodes
+		for _, node := range nl.Nodes {
+			// only contact alpha nodes
+			if number >= Alpha && !haveRest {
+				break
 			}
-
-			// new a request message
-			request := s.newMessage(messageType, receiver, data)
-			// send the request and receive the response
-			response, err := s.network.Call(ctx, request)
-			if err != nil {
-				log.WithContext(ctx).Errorf("network call: %v, request: %v", err, request.String())
-				// node is unreachable, remove the node
-				removedNodes = append(removedNodes, receiver)
-				return
+			// ignore the contacted node
+			if contacted[string(node.ID)] {
+				continue
 			}
+			contacted[string(node.ID)] = true
 
-			// add the mutex to avoid the data race
-			mux.Lock()
-			responses = append(responses, response)
-			mux.Unlock()
-		}(node)
-	}
-	// wait until tasks are done
-	wg.Wait()
+			// update the running goroutines
+			number++
 
-	// delete the node which is unreachable
-	for _, node := range removedNodes {
-		nl.DelNode(node)
-	}
+			log.WithContext(ctx).Debugf("start work %v for node: %s", iterativeType, node.String())
+
+			wg.Add(1)
+			// send and recive message concurrently
+			go func(receiver *Node) {
+				defer wg.Done()
+
+				var data interface{}
+				var messageType int
+				switch iterativeType {
+				case IterateFindNode, IterateStore:
+					messageType = FindNode
+					data = &FindNodeRequest{Target: target}
+				case IterateFindValue:
+					messageType = FindValue
+					data = &FindValueRequest{Target: target}
+				}
+
+				// new a request message
+				request := s.newMessage(messageType, receiver, data)
+				// send the request and receive the response
+				response, err := s.network.Call(ctx, request)
+				if err != nil {
+					log.WithContext(ctx).Errorf("network call: %v, request: %v", err, request.String())
+					// node is unreachable, remove the node
+					removedNodes = append(removedNodes, receiver)
+					return
+				}
+
+				// send the response to message channel
+				responses <- response
+			}(node)
+		}
+
+		// wait until tasks are done
+		wg.Wait()
+
+		// delete the node which is unreachable
+		for _, node := range removedNodes {
+			nl.DelNode(node)
+		}
+
+		// close the message channel
+		close(responses)
+	}()
 
 	return responses
 }
@@ -349,7 +353,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		// do the requests concurrently
 		responses := s.doMultiWorkers(ctx, iterativeType, target, nl, contacted, searchRest)
 		// handle the response one by one
-		for _, response := range responses {
+		for response := range responses {
 			log.WithContext(ctx).Debugf("response: %v", response.String())
 			// add the target node to the bucket
 			s.addNode(response.Sender)
