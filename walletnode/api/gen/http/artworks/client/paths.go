@@ -35,3 +35,8 @@ func RegisterTasksArtworksPath() string {
 func UploadImageArtworksPath() string {
 	return "/artworks/register/upload"
 }
+
+// DownloadArtworksPath returns the URL path to the artworks service download HTTP endpoint.
+func DownloadArtworksPath() string {
+	return "/artworks/download"
+}

@@ -98,6 +98,13 @@ type UploadImageResponseBody struct {
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 }
 
+// DownloadResponseBody is the type of the "artworks" service "download"
+// endpoint HTTP response body.
+type DownloadResponseBody struct {
+	// Task ID of the download process
+	TaskID string `form:"task_id" json:"task_id" xml:"task_id"`
+}
+
 // RegisterBadRequestResponseBody is the type of the "artworks" service
 // "register" endpoint HTTP response body for the "BadRequest" error.
 type RegisterBadRequestResponseBody struct {
@@ -265,6 +272,43 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// DownloadNotFoundResponseBody is the type of the "artworks" service
+// "download" endpoint HTTP response body for the "NotFound" error.
+type DownloadNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// DownloadInternalServerErrorResponseBody is the type of the "artworks"
+// service "download" endpoint HTTP response body for the "InternalServerError"
+// error.
+type DownloadInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -399,6 +443,15 @@ func NewUploadImageResponseBody(res *artworksviews.ImageView) *UploadImageRespon
 	return body
 }
 
+// NewDownloadResponseBody builds the HTTP response body from the result of the
+// "download" endpoint of the "artworks" service.
+func NewDownloadResponseBody(res *artworksviews.DownloadResultView) *DownloadResponseBody {
+	body := &DownloadResponseBody{
+		TaskID: *res.TaskID,
+	}
+	return body
+}
+
 // NewRegisterBadRequestResponseBody builds the HTTP response body from the
 // result of the "register" endpoint of the "artworks" service.
 func NewRegisterBadRequestResponseBody(res *goa.ServiceError) *RegisterBadRequestResponseBody {
@@ -527,6 +580,34 @@ func NewUploadImageInternalServerErrorResponseBody(res *goa.ServiceError) *Uploa
 	return body
 }
 
+// NewDownloadNotFoundResponseBody builds the HTTP response body from the
+// result of the "download" endpoint of the "artworks" service.
+func NewDownloadNotFoundResponseBody(res *goa.ServiceError) *DownloadNotFoundResponseBody {
+	body := &DownloadNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewDownloadInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "download" endpoint of the "artworks" service.
+func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *DownloadInternalServerErrorResponseBody {
+	body := &DownloadInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewRegisterPayload builds a artworks service register endpoint payload.
 func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	v := &artworks.RegisterPayload{
@@ -572,6 +653,16 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePa
 		Bytes:    body.Bytes,
 		Filename: body.Filename,
 	}
+
+	return v
+}
+
+// NewDownloadPayload builds a artworks service download endpoint payload.
+func NewDownloadPayload(txid string, pid string, authorization string) *artworks.DownloadPayload {
+	v := &artworks.DownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Authorization = authorization
 
 	return v
 }

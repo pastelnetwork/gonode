@@ -45,6 +45,14 @@ type Image struct {
 	View string
 }
 
+// DownloadResult is the viewed result type that is projected based on a view.
+type DownloadResult struct {
+	// Type to project
+	Projected *DownloadResultView
+	// View to render
+	View string
+}
+
 // RegisterResultView is a type that runs validations on a projected type.
 type RegisterResultView struct {
 	// Task ID of the registration process
@@ -111,6 +119,12 @@ type ImageView struct {
 	ExpiresIn *string
 }
 
+// DownloadResultView is a type that runs validations on a projected type.
+type DownloadResultView struct {
+	// Task ID of the download process
+	TaskID *string
+}
+
 var (
 	// RegisterResultMap is a map of attribute names in result type RegisterResult
 	// indexed by view name.
@@ -158,6 +172,13 @@ var (
 		"default": []string{
 			"image_id",
 			"expires_in",
+		},
+	}
+	// DownloadResultMap is a map of attribute names in result type DownloadResult
+	// indexed by view name.
+	DownloadResultMap = map[string][]string{
+		"default": []string{
+			"task_id",
 		},
 	}
 )
@@ -212,6 +233,18 @@ func ValidateImage(result *Image) (err error) {
 	return
 }
 
+// ValidateDownloadResult runs the validations defined on the viewed result
+// type DownloadResult.
+func ValidateDownloadResult(result *DownloadResult) (err error) {
+	switch result.View {
+	case "default", "":
+		err = ValidateDownloadResultView(result.Projected)
+	default:
+		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
+	}
+	return
+}
+
 // ValidateRegisterResultView runs the validations defined on
 // RegisterResultView using the "default" view.
 func ValidateRegisterResultView(result *RegisterResultView) (err error) {
@@ -254,8 +287,8 @@ func ValidateTaskViewTiny(result *TaskView) (err error) {
 		}
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	if result.Txid != nil {
@@ -299,8 +332,8 @@ func ValidateTaskView(result *TaskView) (err error) {
 		}
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range result.States {
@@ -337,8 +370,8 @@ func ValidateTaskStateView(result *TaskStateView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error FGPT Not Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error FGPT Not Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -489,6 +522,25 @@ func ValidateImageView(result *ImageView) (err error) {
 	}
 	if result.ExpiresIn != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))
+	}
+	return
+}
+
+// ValidateDownloadResultView runs the validations defined on
+// DownloadResultView using the "default" view.
+func ValidateDownloadResultView(result *DownloadResultView) (err error) {
+	if result.TaskID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("task_id", "result"))
+	}
+	if result.TaskID != nil {
+		if utf8.RuneCountInString(*result.TaskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, true))
+		}
+	}
+	if result.TaskID != nil {
+		if utf8.RuneCountInString(*result.TaskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, false))
+		}
 	}
 	return
 }

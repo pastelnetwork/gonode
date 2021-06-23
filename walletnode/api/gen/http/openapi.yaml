@@ -12,6 +12,49 @@ produces:
 - application/xml
 - application/gob
 paths:
+  /artworks/download:
+    get:
+      tags:
+      - artworks
+      summary: Downloads artwork
+      description: Download registered artwork.
+      operationId: artworks#download
+      parameters:
+      - name: '{txid}'
+        in: query
+        description: Art Registration Ticket transaction ID
+        required: true
+        type: string
+        maxLength: 64
+        minLength: 46
+      - name: '{pid}'
+        in: query
+        description: Owner's PastelID
+        required: true
+        type: string
+        maxLength: 86
+        minLength: 86
+        pattern: ^[a-zA-Z0-9]+$
+      - name: Basic {authorization}
+        in: header
+        description: Passphrase of the owner's PastelID
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/ArtworksDownloadResponseBody'
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/ArtworksDownloadNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/ArtworksDownloadInternalServerErrorResponseBody'
+      schemes:
+      - http
   /artworks/register:
     get:
       tags:
@@ -354,6 +397,111 @@ definitions:
     - artist_pastelid_passphrase
     - spendable_address
     - maximum_fee
+  ArtworksDownloadInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: download_InternalServerError_response_body result type (default view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksDownloadNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: download_NotFound_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  ArtworksDownloadResponseBody:
+    title: 'Mediatype identifier: application/vnd.artwork.download; view=default'
+    type: object
+    properties:
+      task_id:
+        type: string
+        description: Task ID of the download process
+        example: n6Qn6TFM
+        minLength: 8
+        maxLength: 8
+    description: DownloadResponseBody result type (default view)
+    example:
+      task_id: n6Qn6TFM
+    required:
+    - task_id
   ArtworksRegisterBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -680,12 +828,12 @@ definitions:
         enum:
         - Task Started
         - Connected
-        - Image Uploaded
+        - Image Probed
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
-        - Error FGPT Not Match
+        - Error Fingerprints Dont Match
         - Task Rejected
         - Task Completed
       ticket:
@@ -835,12 +983,12 @@ definitions:
         enum:
         - Task Started
         - Connected
-        - Image Uploaded
+        - Image Probed
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
-        - Error FGPT Not Match
+        - Error Fingerprints Dont Match
         - Task Rejected
         - Task Completed
     example:
@@ -1195,12 +1343,12 @@ definitions:
         enum:
         - Task Started
         - Connected
-        - Image Uploaded
+        - Image Probed
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
-        - Error FGPT Not Match
+        - Error Fingerprints Dont Match
         - Task Rejected
         - Task Completed
       ticket:
@@ -1250,12 +1398,12 @@ definitions:
         enum:
         - Task Started
         - Connected
-        - Image Uploaded
+        - Image Probed
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
-        - Error FGPT Not Match
+        - Error Fingerprints Dont Match
         - Task Rejected
         - Task Completed
     example:

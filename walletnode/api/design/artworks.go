@@ -119,6 +119,26 @@ var _ = Service("artworks", func() {
 			Response(StatusCreated)
 		})
 	})
+
+	Method("download", func() {
+		Description("Download registered artwork.")
+		Meta("swagger:summary", "Downloads artwork")
+
+		Payload(func() {
+			Extend(ArtworkDownloadPayload)
+		})
+		Result(ArtworkDownloadResult)
+
+		HTTP(func() {
+			GET("/download")
+			Header("authorization:Basic {authorization}")
+			Param("txid:{txid}")
+			Param("pid:{pid}")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
 })
 
 // ArtworkTicket is artwork register payload.
@@ -306,4 +326,42 @@ var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
 		Example("n6Qn6TFM")
 	})
 	Required("taskId")
+})
+
+// ArtworkDownloadPayload is artwork download payload.
+var ArtworkDownloadPayload = Type("ArtworkDownloadPayload", func() {
+	Attribute("txid", String, func() {
+		Description("Art Registration Ticket transaction ID")
+		MinLength(46)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
+	Attribute("pid", String, func() {
+		Meta("struct:field:name", "Pid")
+		Description("Owner's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+	Attribute("authorization", String, func() {
+		Meta("struct:field:name", "Authorization")
+		Description("Passphrase of the owner's PastelID")
+		Example("qwerasdf1234")
+	})
+	Required("txid", "pid", "authorization")
+})
+
+// ArtworkDownloadResult is artwork download result.
+var ArtworkDownloadResult = ResultType("application/vnd.artwork.download", func() {
+	TypeName("DownloadResult")
+	Attributes(func() {
+		Attribute("task_id", String, func() {
+			Description("Task ID of the download process")
+			MinLength(8)
+			MaxLength(8)
+			Example("n6Qn6TFM")
+		})
+	})
+	Required("task_id")
 })

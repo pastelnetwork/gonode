@@ -26,6 +26,8 @@ type Service interface {
 	RegisterTasks(context.Context) (res TaskCollection, err error)
 	// Upload the image that is used when registering a new artwork.
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
+	// Download registered artwork.
+	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -36,7 +38,7 @@ const ServiceName = "artworks"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [5]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage"}
+var MethodNames = [6]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "download"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -145,6 +147,22 @@ type Image struct {
 	ImageID string
 	// Image expiration
 	ExpiresIn string
+}
+
+// DownloadPayload is the payload type of the artworks service download method.
+type DownloadPayload struct {
+	// Art Registration Ticket transaction ID
+	Txid string
+	// Owner's PastelID
+	Pid string
+	// Passphrase of the owner's PastelID
+	Authorization string
+}
+
+// DownloadResult is the result type of the artworks service download method.
+type DownloadResult struct {
+	// Task ID of the download process
+	TaskID string
 }
 
 // Ticket of the registration artwork
@@ -280,6 +298,19 @@ func NewImage(vres *artworksviews.Image) *Image {
 func NewViewedImage(res *Image, view string) *artworksviews.Image {
 	p := newImageView(res)
 	return &artworksviews.Image{Projected: p, View: "default"}
+}
+
+// NewDownloadResult initializes result type DownloadResult from viewed result
+// type DownloadResult.
+func NewDownloadResult(vres *artworksviews.DownloadResult) *DownloadResult {
+	return newDownloadResult(vres.Projected)
+}
+
+// NewViewedDownloadResult initializes viewed result type DownloadResult from
+// result type DownloadResult using the given view.
+func NewViewedDownloadResult(res *DownloadResult, view string) *artworksviews.DownloadResult {
+	p := newDownloadResultView(res)
+	return &artworksviews.DownloadResult{Projected: p, View: "default"}
 }
 
 // newRegisterResult converts projected type RegisterResult to service type
@@ -433,6 +464,25 @@ func newImageView(res *Image) *artworksviews.ImageView {
 	vres := &artworksviews.ImageView{
 		ImageID:   &res.ImageID,
 		ExpiresIn: &res.ExpiresIn,
+	}
+	return vres
+}
+
+// newDownloadResult converts projected type DownloadResult to service type
+// DownloadResult.
+func newDownloadResult(vres *artworksviews.DownloadResultView) *DownloadResult {
+	res := &DownloadResult{}
+	if vres.TaskID != nil {
+		res.TaskID = *vres.TaskID
+	}
+	return res
+}
+
+// newDownloadResultView projects result type DownloadResult to projected type
+// DownloadResultView using the "default" view.
+func newDownloadResultView(res *DownloadResult) *artworksviews.DownloadResultView {
+	vres := &artworksviews.DownloadResultView{
+		TaskID: &res.TaskID,
 	}
 	return vres
 }

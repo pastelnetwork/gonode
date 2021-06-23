@@ -179,3 +179,46 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 
 	return v, nil
 }
+
+// BuildDownloadPayload builds the payload for the artworks download endpoint
+// from CLI flags.
+func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid string, artworksDownloadAuthorization string) (*artworks.DownloadPayload, error) {
+	var err error
+	var txid string
+	{
+		txid = artworksDownloadTxid
+		if utf8.RuneCountInString(txid) < 46 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 46, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var pid string
+	{
+		pid = artworksDownloadPid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var authorization string
+	{
+		authorization = artworksDownloadAuthorization
+	}
+	v := &artworks.DownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Authorization = authorization
+
+	return v, nil
+}

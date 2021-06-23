@@ -137,6 +137,11 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 	return res, nil
 }
 
+// Download registered artwork.
+func (service *Artwork) Download(context.Context, *artworks.DownloadPayload) (res *artworks.DownloadResult, err error) {
+	return
+}
+
 // Mount configures the mux to serve the artworks endpoints.
 func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := artworks.NewEndpoints(service)

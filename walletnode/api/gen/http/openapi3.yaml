@@ -5,6 +5,78 @@ info:
 servers:
 - url: http://localhost:8080
 paths:
+  /artworks/download:
+    get:
+      tags:
+      - artworks
+      summary: Downloads artwork
+      description: Download registered artwork.
+      operationId: artworks#download
+      parameters:
+      - name: '{txid}'
+        in: query
+        description: Art Registration Ticket transaction ID
+        allowEmptyValue: true
+        required: true
+        schema:
+          type: string
+          description: Art Registration Ticket transaction ID
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 46
+          maxLength: 64
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      - name: '{pid}'
+        in: query
+        description: Owner's PastelID
+        allowEmptyValue: true
+        required: true
+        schema:
+          type: string
+          description: Owner's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      - name: Basic {authorization}
+        in: header
+        description: Passphrase of the owner's PastelID
+        allowEmptyValue: true
+        required: true
+        schema:
+          type: string
+          description: Passphrase of the owner's PastelID
+          example: qwerasdf1234
+        example: qwerasdf1234
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadResult'
+              example:
+                task_id: n6Qn6TFM
+        "404":
+          description: Not Found response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
   /artworks/register:
     get:
       tags:
@@ -424,6 +496,19 @@ components:
       - artist_pastelid_passphrase
       - spendable_address
       - maximum_fee
+    DownloadResult:
+      type: object
+      properties:
+        task_id:
+          type: string
+          description: Task ID of the download process
+          example: n6Qn6TFM
+          minLength: 8
+          maxLength: 8
+      example:
+        task_id: n6Qn6TFM
+      required:
+      - task_id
     Error:
       type: object
       properties:
@@ -452,7 +537,7 @@ components:
         timeout:
           type: boolean
           description: Is the error a timeout?
-          example: true
+          example: false
       example:
         id: 3F1FKVRR
         message: Value of ID must be an integer
@@ -618,6 +703,10 @@ components:
             status: Task Started
           - date: 2006-01-02T15:04:05Z07:00
             status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
         status:
           type: string
           description: Status of the registration process
@@ -625,12 +714,12 @@ components:
           enum:
           - Task Started
           - Connected
-          - Image Uploaded
+          - Image Probed
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
-          - Error FGPT Not Match
+          - Error Fingerprints Dont Match
           - Task Rejected
           - Task Completed
         ticket:
@@ -688,12 +777,12 @@ components:
           enum:
           - Task Started
           - Connected
-          - Image Uploaded
+          - Image Probed
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
-          - Error FGPT Not Match
+          - Error Fingerprints Dont Match
           - Task Rejected
           - Task Completed
         ticket:
@@ -771,6 +860,24 @@ components:
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      - id: n6Qn6TFM
+        status: Task Started
+        ticket:
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          issued_copies: 1
+          keywords: Renaissance, sfumato, portrait
+          maximum_fee: 100
+          name: Mona Lisa
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     TaskState:
       type: object
       properties:
@@ -785,12 +892,12 @@ components:
           enum:
           - Task Started
           - Connected
-          - Image Uploaded
+          - Image Probed
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
-          - Error FGPT Not Match
+          - Error Fingerprints Dont Match
           - Task Rejected
           - Task Completed
       example:
@@ -806,43 +913,23 @@ components:
           type: string
           description: File to upload
           example:
-          - 83
-          - 117
+          - 86
+          - 101
           - 110
-          - 116
-          - 32
-          - 97
-          - 99
-          - 99
-          - 117
-          - 115
-          - 97
-          - 110
-          - 116
           - 105
-          - 117
+          - 97
           - 109
           - 32
-          - 105
-          - 112
-          - 115
-          - 117
-          - 109
+          - 102
+          - 97
+          - 99
+          - 101
+          - 114
+          - 101
           - 32
-          - 116
+          - 110
           - 111
-          - 116
-          - 97
-          - 109
-          - 32
-          - 101
-          - 115
-          - 116
-          - 32
-          - 117
           - 110
-          - 100
-          - 101
           - 46
           format: binary
         filename:
@@ -850,39 +937,19 @@ components:
           description: For internal use
       example:
         file:
-        - 69
-        - 105
+        - 70
         - 117
-        - 115
-        - 32
-        - 99
-        - 117
-        - 109
-        - 32
-        - 104
-        - 97
-        - 114
-        - 117
-        - 109
-        - 32
-        - 105
-        - 108
-        - 108
-        - 117
-        - 109
-        - 32
-        - 118
-        - 101
-        - 108
+        - 103
         - 105
         - 116
         - 32
-        - 118
+        - 116
         - 101
-        - 110
-        - 105
-        - 97
         - 109
+        - 112
+        - 111
+        - 114
+        - 97
         - 46
       required:
       - file

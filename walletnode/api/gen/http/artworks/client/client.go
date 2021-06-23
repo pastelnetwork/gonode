@@ -41,6 +41,10 @@ type Client struct {
 	// endpoint.
 	UploadImageDoer goahttp.Doer
 
+	// Download Doer is the HTTP client used to make requests to the download
+	// endpoint.
+	DownloadDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -80,6 +84,7 @@ func NewClient(
 		RegisterTaskDoer:      doer,
 		RegisterTasksDoer:     doer,
 		UploadImageDoer:       doer,
+		DownloadDoer:          doer,
 		CORSDoer:              doer,
 		RestoreResponseBody:   restoreBody,
 		scheme:                scheme,
@@ -128,8 +133,6 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		}
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
-		defer cancel()
-
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
@@ -211,6 +214,30 @@ func (c *Client) UploadImage(artworksUploadImageEncoderFn ArtworksUploadImageEnc
 		resp, err := c.UploadImageDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("artworks", "uploadImage", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// Download returns an endpoint that makes HTTP requests to the artworks
+// service download server.
+func (c *Client) Download() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDownloadRequest(c.encoder)
+		decodeResponse = DecodeDownloadResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildDownloadRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.DownloadDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("artworks", "download", err)
 		}
 		return decodeResponse(resp)
 	}

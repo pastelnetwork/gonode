@@ -20,6 +20,7 @@ type Endpoints struct {
 	RegisterTask      goa.Endpoint
 	RegisterTasks     goa.Endpoint
 	UploadImage       goa.Endpoint
+	Download          goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -40,6 +41,7 @@ func NewEndpoints(s Service) *Endpoints {
 		RegisterTask:      NewRegisterTaskEndpoint(s),
 		RegisterTasks:     NewRegisterTasksEndpoint(s),
 		UploadImage:       NewUploadImageEndpoint(s),
+		Download:          NewDownloadEndpoint(s),
 	}
 }
 
@@ -50,6 +52,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterTask = m(e.RegisterTask)
 	e.RegisterTasks = m(e.RegisterTasks)
 	e.UploadImage = m(e.UploadImage)
+	e.Download = m(e.Download)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -112,6 +115,20 @@ func NewUploadImageEndpoint(s Service) goa.Endpoint {
 			return nil, err
 		}
 		vres := NewViewedImage(res, "default")
+		return vres, nil
+	}
+}
+
+// NewDownloadEndpoint returns an endpoint function that calls the method
+// "download" of service "artworks".
+func NewDownloadEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*DownloadPayload)
+		res, err := s.Download(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedDownloadResult(res, "default")
 		return vres, nil
 	}
 }
