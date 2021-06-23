@@ -2,155 +2,205 @@ package kademlia
 
 import (
 	"bytes"
-	"context"
 	"math"
-	"math/big"
 	"math/rand"
-	"net"
 	"sort"
 	"sync"
 	"time"
-
-	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 const (
-	iterateStore = iota
-	iterateFindNode
-	iterateFindValue
+	// IterateStore - iterative store the data
+	IterateStore = iota
+	// IterateFindNode - iterative find node
+	IterateFindNode
+	// IterateFindValue - iterative find value
+	IterateFindValue
 )
 
 const (
-	// a small number representing the degree of parallelism in network calls
-	alpha = 3
+	// Alpha - a small number representing the degree of parallelism in network calls
+	Alpha = 3
 
-	// the size in bits of the keys used to identify nodes and store and
+	// B - the size in bits of the keys used to identify nodes and store and
 	// retrieve data; in basic Kademlia this is 160, the length of a SHA1
-	b = 160
+	B = 160
 
-	// the maximum number of contacts stored in a bucket
-	k = 20
+	// K - the maximum number of contacts stored in a bucket
+	K = 20
 )
 
-// hashTable represents the hashtable state
-type hashTable struct {
+// HashTable represents the hashtable state
+type HashTable struct {
 	// The ID of the local node
-	Self *NetworkNode
+	self *Node
 
-	// Routing table a list of all known nodes in the network
+	// Route table a list of all known nodes in the network
 	// Nodes within buckets are sorted by least recently seen e.g.
 	// [ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ][ ]
 	//  ^                                                           ^
 	//  └ Least recently seen                    Most recently seen ┘
-	RoutingTable [][]*node // 160x20
+	routeTable [][]*Node // 160x20
 
-	mutex *sync.Mutex
+	// mutex for route table
+	mutex sync.RWMutex
 
-	refreshMap [b]time.Time
+	// refresh time for every bucket
+	refreshers []time.Time
 }
 
-func newHashTable(options *Options) (*hashTable, error) {
-	ht := &hashTable{}
-
+func init() {
 	rand.Seed(time.Now().UnixNano())
+}
 
-	ht.mutex = &sync.Mutex{}
-	ht.Self = &NetworkNode{}
-
+// NewHashTable returns a new hashtable
+func NewHashTable(options *Options) (*HashTable, error) {
+	ht := &HashTable{
+		self: &Node{
+			IP:   options.IP,
+			Port: options.Port,
+		},
+		refreshers: make([]time.Time, B),
+		routeTable: make([][]*Node, B),
+	}
+	// init the id for hashtable
 	if options.ID != nil {
-		ht.Self.ID = options.ID
+		ht.self.ID = options.ID
 	} else {
-		id, err := newID()
+		id, err := newRandomID()
 		if err != nil {
 			return nil, err
 		}
-		ht.Self.ID = id
+		ht.self.ID = id
 	}
 
-	if options.IP == "" {
-		return nil, errors.New("not specified IP")
-	}
-
-	if options.Port == 0 {
-		return nil, errors.New("not specified port")
-	}
-
-	ht.setSelfAddr(options.IP, options.Port)
-
-	for i := 0; i < b; i++ {
-		ht.resetRefreshTimeForBucket(i)
-	}
-
-	for i := 0; i < b; i++ {
-		ht.RoutingTable = append(ht.RoutingTable, []*node{})
+	// reset the refresh time for every bucket
+	for i := 0; i < B; i++ {
+		ht.resetRefreshTime(i)
 	}
 
 	return ht, nil
 }
 
-func (ht *hashTable) setSelfAddr(ip string, port int) {
-	ht.Self.IP = net.ParseIP(ip)
-	ht.Self.Port = port
-}
-
-func (ht *hashTable) resetRefreshTimeForBucket(bucket int) {
+// resetRefreshTime - reset the refresh time
+func (ht *HashTable) resetRefreshTime(bucket int) {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
-	ht.refreshMap[bucket] = time.Now()
+	ht.refreshers[bucket] = time.Now()
 }
 
-func (ht *hashTable) getRefreshTimeForBucket(bucket int) time.Time {
+// refreshNode makes the node to the end
+func (ht *HashTable) refreshNode(id []byte) {
 	ht.mutex.Lock()
 	defer ht.mutex.Unlock()
-	return ht.refreshMap[bucket]
-}
 
-func (ht *hashTable) markNodeAsSeen(_ context.Context, node []byte) error {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
-	index := getBucketIndexFromDifferingBit(ht.Self.ID, node)
-	bucket := ht.RoutingTable[index]
-	nodeIndex := -1
+	// bucket index of the node
+	index := ht.bucketIndex(ht.self.ID, id)
+	// point to the bucket
+	bucket := ht.routeTable[index]
+
+	var offset int
+	// find the position of the node
 	for i, v := range bucket {
-		if bytes.Equal(v.ID, node) {
-			nodeIndex = i
+		if bytes.Equal(v.ID, id) {
+			offset = i
 			break
 		}
 	}
-	if nodeIndex == -1 {
-		return errors.New("tried to mark nonexistent node as seen")
-	}
 
-	n := bucket[nodeIndex]
-	bucket = append(bucket[:nodeIndex], bucket[nodeIndex+1:]...)
-	bucket = append(bucket, n)
-	ht.RoutingTable[index] = bucket
-
-	return nil
+	// makes the node to the end
+	current := bucket[offset]
+	bucket = append(bucket[:offset], bucket[offset+1:]...)
+	bucket = append(bucket, current)
+	ht.routeTable[index] = bucket
 }
 
-func (ht *hashTable) doesNodeExistInBucket(bucket int, node []byte) bool {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
-	for _, v := range ht.RoutingTable[bucket] {
-		if bytes.Equal(v.ID, node) {
+// refreshTime returns the refresh time for bucket
+func (ht *HashTable) refreshTime(bucket int) time.Time {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	return ht.refreshers[bucket]
+}
+
+// randomIDFromBucket returns a random id based on the bucket index and self id
+func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	// set the new ID to to be equal in every byte up to
+	// the byte of the first different bit in the bucket
+	index := bucket / 8
+	var id []byte
+	for i := 0; i < index; i++ {
+		id = append(id, ht.self.ID[i])
+	}
+	start := bucket % 8
+
+	var first byte
+	// check each bit from left to right in order
+	for i := 0; i < 8; i++ {
+		var bit bool
+		if i < start {
+			bit = hasBit(ht.self.ID[index], uint(i))
+		} else {
+			bit = rand.Intn(2) == 1
+		}
+		if bit {
+			first += byte(math.Pow(2, float64(7-i)))
+		}
+	}
+	id = append(id, first)
+
+	// randomize each remaining byte
+	for i := index + 1; i < 20; i++ {
+		id = append(id, byte(rand.Intn(256)))
+	}
+
+	return id
+}
+
+// hasBucketNode check if the node id is existed in the bucket
+func (ht *HashTable) hasBucketNode(bucket int, id []byte) bool {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	for _, node := range ht.routeTable[bucket] {
+		if bytes.Equal(node.ID, id) {
 			return true
 		}
 	}
 	return false
 }
 
-func (ht *hashTable) getClosestContacts(num int, target []byte, ignoredNodes []*NetworkNode) *shortList {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
-	// First we need to build the list of adjacent indices to our target
-	// in order
-	index := getBucketIndexFromDifferingBit(ht.Self.ID, target)
+// hasNode check if the node id is exists in the hash table
+func (ht *HashTable) hasNode(id []byte) bool {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	for _, bucket := range ht.routeTable {
+		for _, node := range bucket {
+			if bytes.Equal(node.ID, id) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// closestContacts returns the closest contacts of target
+func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Node) *NodeList {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	// find the bucket index in local route tables
+	index := ht.bucketIndex(ht.self.ID, target)
 	indexList := []int{index}
 	i := index - 1
 	j := index + 1
-	for len(indexList) < b {
-		if j < b {
+	for len(indexList) < B {
+		if j < B {
 			indexList = append(indexList, j)
 		}
 		if i >= 0 {
@@ -160,126 +210,42 @@ func (ht *hashTable) getClosestContacts(num int, target []byte, ignoredNodes []*
 		j++
 	}
 
-	sl := &shortList{}
+	nl := &NodeList{}
 
-	leftToAdd := num
-
-	// Next we select alpha contacts and add them to the short list
-	for leftToAdd > 0 && len(indexList) > 0 {
+	left := num
+	// select alpha contacts and add them to the node list
+	for left > 0 && len(indexList) > 0 {
 		index, indexList = indexList[0], indexList[1:]
-		bucketContacts := len(ht.RoutingTable[index])
-		for i := 0; i < bucketContacts; i++ {
+		for i := 0; i < len(ht.routeTable[index]); i++ {
+			node := ht.routeTable[index][i]
+
 			ignored := false
 			for j := 0; j < len(ignoredNodes); j++ {
-				if bytes.Equal(ht.RoutingTable[index][i].ID, ignoredNodes[j].ID) {
+				if bytes.Equal(node.ID, ignoredNodes[j].ID) {
 					ignored = true
 				}
 			}
 			if !ignored {
-				sl.AppendUnique([]*node{ht.RoutingTable[index][i]})
-				leftToAdd--
-				if leftToAdd == 0 {
+				// add the node to list
+				nl.AddNodes([]*Node{node})
+
+				left--
+				if left == 0 {
 					break
 				}
 			}
 		}
 	}
 
-	sort.Sort(sl)
+	// sort the node list
+	sort.Sort(nl)
 
-	return sl
+	return nl
 }
 
-// func (ht *hashTable) removeNode(ID []byte) {
-// 	ht.mutex.Lock()
-// 	defer ht.mutex.Unlock()
-
-// 	index := getBucketIndexFromDifferingBit(ht.Self.ID, ID)
-// 	bucket := ht.RoutingTable[index]
-
-// 	for i, v := range bucket {
-// 		if bytes.Equal(v.ID, ID) {
-// 			bucket = append(bucket[:i], bucket[i+1:]...)
-// 		}
-// 	}
-
-// 	ht.RoutingTable[index] = bucket
-// }
-
-func (ht *hashTable) getAllNodesInBucketCloserThan(bucket int, id []byte) [][]byte {
-	b := ht.RoutingTable[bucket]
-	var nodes [][]byte
-	for _, v := range b {
-		d1 := ht.getDistance(id, ht.Self.ID)
-		d2 := ht.getDistance(id, v.ID)
-
-		result := d1.Sub(d1, d2)
-		if result.Sign() > -1 {
-			nodes = append(nodes, v.ID)
-		}
-	}
-
-	return nodes
-}
-
-func (ht *hashTable) getTotalNodesInBucket(bucket int) int {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
-	return len(ht.RoutingTable[bucket])
-}
-
-func (ht *hashTable) getDistance(id1 []byte, id2 []byte) *big.Int {
-	var dst [k]byte
-	for i := 0; i < k; i++ {
-		dst[i] = id1[i] ^ id2[i]
-	}
-	ret := big.NewInt(0)
-	return ret.SetBytes(dst[:])
-}
-
-func (ht *hashTable) getRandomIDFromBucket(bucket int) []byte {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
-	// Set the new ID to to be equal in every byte up to
-	// the byte of the first differing bit in the bucket
-
-	byteIndex := bucket / 8
-	var id []byte
-	for i := 0; i < byteIndex; i++ {
-		id = append(id, ht.Self.ID[i])
-	}
-	differingBitStart := bucket % 8
-
-	var firstByte byte
-	// check each bit from left to right in order
-	for i := 0; i < 8; i++ {
-		// Set the value of the bit to be the same as the ID
-		// up to the differing bit. Then begin randomizing
-		var bit bool
-		if i < differingBitStart {
-			bit = hasBit(ht.Self.ID[byteIndex], uint(i))
-		} else {
-			bit = rand.Intn(2) == 1
-		}
-
-		if bit {
-			firstByte += byte(math.Pow(2, float64(7-i)))
-		}
-	}
-
-	id = append(id, firstByte)
-
-	// Randomize each remaining byte
-	for i := byteIndex + 1; i < 20; i++ {
-		randomByte := byte(rand.Intn(256))
-		id = append(id, randomByte)
-	}
-
-	return id
-}
-
-func getBucketIndexFromDifferingBit(id1 []byte, id2 []byte) int {
-	// Look at each byte from left to right
+// bucketIndex return the bucket index from two node ids
+func (ht *HashTable) bucketIndex(id1 []byte, id2 []byte) int {
+	// look at each byte from left to right
 	for j := 0; j < len(id1); j++ {
 		// xor the byte
 		xor := id1[j] ^ id2[j]
@@ -289,40 +255,37 @@ func getBucketIndexFromDifferingBit(id1 []byte, id2 []byte) int {
 			if hasBit(xor, uint(i)) {
 				byteIndex := j * 8
 				bitIndex := i
-				return b - (byteIndex + bitIndex) - 1
+				return B - (byteIndex + bitIndex) - 1
 			}
 		}
 	}
 
-	// the ids must be the same
-	// this should only happen during bootstrapping
+	// only happen during bootstrapping
 	return 0
 }
 
-func (ht *hashTable) totalNodes() int {
-	ht.mutex.Lock()
-	defer ht.mutex.Unlock()
-	var total int
-	for _, v := range ht.RoutingTable {
-		total += len(v)
+// Count returns the number of nodes in route table
+func (ht *HashTable) totalCount() int {
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	var num int
+	for _, v := range ht.routeTable {
+		num += len(v)
 	}
-	return total
+	return num
 }
 
-// newID generates a new random ID
-func newID() ([]byte, error) {
-	result := make([]byte, 20)
-	if _, err := rand.Read(result); err != nil {
-		return nil, errors.Errorf("failed to generate random bytes: %w", err)
-	}
-
-	return result, nil
+// newRandomID returns a new random id
+func newRandomID() ([]byte, error) {
+	id := make([]byte, 20)
+	_, err := rand.Read(id)
+	return id, err
 }
 
 // Simple helper function to determine the value of a particular
 // bit in a byte by index
-
-// Example:
+//
 // number:  1
 // bits:    00000001
 // pos:     01234567
