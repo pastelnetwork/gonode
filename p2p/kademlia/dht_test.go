@@ -167,7 +167,7 @@ func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []
 
 func (ts *testSuite) TestStartDHTNode() {
 	// new a dht node
-	dht, err := ts.newDHTNodeWithDBStore(ts.ctx, 6001, ts.bootstrapNodes, nil)
+	dht, err := ts.newDHTNodeWithDBStore(ts.ctx, 7000, ts.bootstrapNodes, nil)
 	if err != nil {
 		ts.T().Fatalf("start a dht: %v", err)
 	}
@@ -286,10 +286,10 @@ func (ts *testSuite) verifyValue(key []byte, value []byte, dhts ...*DHT) {
 }
 
 // start n nodes
-func (ts *testSuite) startNodes(n int) ([]*DHT, error) {
+func (ts *testSuite) startNodes(start, end int) ([]*DHT, error) {
 	dhts := []*DHT{}
 
-	for i := 0; i < n; i++ {
+	for i := start; i <= end; i++ {
 		// new a dht node
 		dht, err := ts.newDHTNodeWithDBStore(ts.ctx, ts.bootstrapPort+i+1, ts.bootstrapNodes, nil)
 		if err != nil {
@@ -311,8 +311,9 @@ func (ts *testSuite) startNodes(n int) ([]*DHT, error) {
 }
 
 func (ts *testSuite) TestStoreWith10Nodes() {
+	start, end := 1, 10
 	// start 10 nodes
-	dhts, err := ts.startNodes(10)
+	dhts, err := ts.startNodes(start, end)
 	if err != nil {
 		ts.T().Fatalf("start nodes: %v", err)
 	}
@@ -333,10 +334,9 @@ func (ts *testSuite) TestStoreWith10Nodes() {
 }
 
 func (ts *testSuite) TestIterativeFindNode() {
-	number := 2
-
+	start, end := 1, 10
 	// start the nodes
-	dhts, err := ts.startNodes(number)
+	dhts, err := ts.startNodes(start, end)
 	if err != nil {
 		ts.T().Fatalf("start nodes: %v", err)
 	}
@@ -349,15 +349,14 @@ func (ts *testSuite) TestIterativeFindNode() {
 	}
 
 	for _, dht := range dhts {
-		ts.Equal(number, dht.ht.totalCount())
+		ts.Equal(end-start+1, dht.ht.totalCount())
 	}
 }
 
 func (ts *testSuite) TestIterativeFindValue() {
-	number := 2
-
+	start, end := 1, 2
 	// start the nodes
-	dhts, err := ts.startNodes(number)
+	dhts, err := ts.startNodes(start, end)
 	if err != nil {
 		ts.T().Fatalf("start nodes: %v", err)
 	}
@@ -480,9 +479,9 @@ func (ts *testSuite) TestHashKey() {
 }
 
 func (ts *testSuite) TestRateLimiter() {
-	number := 150
+	start, end := 10, 50
 	// start 10 nodes
-	dhts, err := ts.startNodes(number)
+	dhts, err := ts.startNodes(start, end)
 	if err != nil {
 		ts.T().Fatalf("start nodes: %v", err)
 	}

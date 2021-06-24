@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/DataDog/zstd v1.4.8
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/go-errors/errors v1.1.1
@@ -14,6 +15,7 @@ require (
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/onsi/ginkgo v1.15.2 // indirect
 	github.com/onsi/gomega v1.11.0 // indirect
+	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/viper v1.7.1

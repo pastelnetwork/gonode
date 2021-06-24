@@ -13,6 +13,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/conn/secret"
 )
 
 const (
@@ -246,7 +247,7 @@ func (s *Network) serve(ctx context.Context) {
 		limiter.Take()
 
 		// accept the incomming connections
-		conn, err := s.socket.Accept()
+		c, err := s.socket.Accept()
 		if err != nil {
 			select {
 			case <-ctx.Done():
@@ -274,7 +275,10 @@ func (s *Network) serve(ctx context.Context) {
 			log.WithContext(ctx).Errorf("socket accept: %v", err)
 			return
 		}
-		log.WithContext(ctx).Debugf("%v: incomming connection: %v", s.self.String(), conn.RemoteAddr())
+		log.WithContext(ctx).Debugf("%v: incomming connection: %v", s.self.String(), c.RemoteAddr())
+
+		// secret the connection in server side
+		conn := secret.Server(c, &secret.Config{})
 
 		// handle the connection requests
 		go s.handleConn(ctx, conn)
@@ -286,10 +290,12 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 	remoteAddr := fmt.Sprintf("%s:%d", request.Sender.IP, request.Receiver.Port)
 
 	// dial the remote address with udp network
-	conn, err := utp.DialContext(ctx, remoteAddr)
+	c, err := utp.DialContext(ctx, remoteAddr)
 	if err != nil {
 		return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
 	}
+	// secret the connection in client side
+	conn := secret.Client(c, &secret.Config{})
 	defer conn.Close()
 
 	// set the deadline for read and write
