@@ -8,29 +8,22 @@ const (
 	defaultDataDir       = "p2p"
 )
 
-// Config contains settings of the supernode server.
+// Config contains settings of the p2p service
 type Config struct {
-	// The local IPv4 or IPv6 address
-	ListenAddresses string `mapstructure:"listen_addresses" json:"listen_address,omitempty"`
+	// the local IPv4 or IPv6 address
+	ListenAddress string `mapstructure:"listen_address" json:"listen_address,omitempty"`
 
-	// The local port to listen for connections on
+	// the local port to listen for connections on
 	Port int `mapstructure:"port" json:"port,omitempty"`
 
-	// IP Address to bootstrap against
+	// ip address to bootstrap
 	BootstrapIP string `mapstructure:"bootstrap_ip" json:"bootstrap_ip,omitempty"`
 
-	// Port to bootstrap against
-	BootstrapPort string `mapstructure:"bootstrap_port" json:"bootstrap_port,omitempty"`
+	// port to bootstrap
+	BootstrapPort int `mapstructure:"bootstrap_port" json:"bootstrap_port,omitempty"`
 
-	// Use STUN protocol for public addr discovery
-	UseStun bool `mapstructure:"use_stun" json:"use_stun,omitempty"`
-
-	// Default value is assigned automatically, by concatenated
-	// CLI parameter `--work-dir` and `p2p` as a subfolder
+	// data directory for badger
 	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
-
-	// if not specified, persistent database store is used
-	MemoryDB bool `mapstructure:"memory_db" json:"memory_db,omitempty"`
 }
 
 // SetWorkDir applies `workDir` to DataDir if it was not specified as an absolute path.
@@ -43,8 +36,8 @@ func (config *Config) SetWorkDir(workDir string) {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		ListenAddresses: defaultListenAddress,
-		Port:            defaultPort,
-		DataDir:         defaultDataDir,
+		ListenAddress: defaultListenAddress,
+		Port:          defaultPort,
+		DataDir:       defaultDataDir,
 	}
 }

@@ -3,10 +3,10 @@ package p2p
 import (
 	"context"
 
-	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/dao/mem"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 )
 
 const (
@@ -16,84 +16,102 @@ const (
 // P2P represents the p2p service.
 type P2P interface {
 	Client
+
+	// Run the node of distributed hash table
 	Run(ctx context.Context) error
 }
 
+// p2p structure to implements interface
 type p2p struct {
-	dht    *kademlia.DHT
-	config *Config
+	store   kademlia.Store // the store for kademlia network
+	dht     *kademlia.DHT  // the kademlia network
+	config  *Config        // the service configuration
+	running bool           // if the kademlia network is ready
 }
 
-// Run starts the DHT service
-func (service *p2p) Run(ctx context.Context) error {
+// Run the kademlia network
+func (s *p2p) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	if err := service.configure(ctx); err != nil {
-		return err
+	// configure the kademlia dht for p2p service
+	if err := s.configure(ctx); err != nil {
+		return errors.Errorf("configure kademlia dht: %w", err)
 	}
 
-	if err := service.dht.CreateSocket(); err != nil {
-		return err
+	// start the node for kademlia network
+	if err := s.dht.Start(ctx); err != nil {
+		return errors.Errorf("start the kademlia network: %w", err)
 	}
 
-	group, ctx := errgroup.WithContext(ctx)
-	group.Go(func() error {
-		log.WithContext(ctx).Infof("Kademlia server listening on %q", service.dht.GetNetworkAddr())
-		return service.dht.Listen(ctx)
-	})
-	group.Go(func() error {
-		<-ctx.Done()
-
-		log.WithContext(ctx).Infof("Shutting down Kademlia server at %q", service.dht.GetNetworkAddr())
-		return service.dht.Disconnect()
-	})
-
-	if err := service.dht.Bootstrap(ctx); err != nil {
-		return err
+	// join the kademlia network if bootstrap nodes is set
+	if err := s.dht.Bootstrap(ctx); err != nil {
+		return errors.Errorf("bootstrap the node: %w", err)
 	}
+	s.running = true
 
-	return group.Wait()
+	// block until context is done
+	<-ctx.Done()
+
+	// stop the node for kademlia network
+	s.dht.Stop(ctx)
+
+	// close the store of kademlia network
+	s.store.Close(ctx)
+
+	log.WithContext(ctx).Info("p2p service is stopped")
+	return nil
 }
 
-// Store stores data on the network. This will trigger an iterateStore message.
-// The base58 encoded identifier will be returned if the store is successful.
-func (service *p2p) Store(ctx context.Context, data []byte) (id string, err error) {
+// Store data into the kademlia network
+func (s *p2p) Store(ctx context.Context, data []byte) (string, error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
-	return service.dht.Store(ctx, data)
+	if !s.running {
+		return "", errors.New("p2p service is not running")
+	}
+
+	return s.dht.Store(ctx, data)
 }
 
-// Get retrieves data from the networking using key. Key is the base58 encoded
-// identifier of the data.
-func (service *p2p) Get(ctx context.Context, key string) (data []byte, found bool, err error) {
+// Retrive the data from the kademlia network
+func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
-	return service.dht.Get(ctx, key)
+	if !s.running {
+		return nil, errors.New("p2p service is not running")
+	}
+
+	return s.dht.Retrieve(ctx, key)
 }
 
-// configure configures service DHT
-func (service *p2p) configure(ctx context.Context) error {
-	var bootstrapNodes []*kademlia.NetworkNode
-	if service.config.BootstrapIP != "" || service.config.BootstrapPort != "" {
-		bootstrapNode := kademlia.NewNetworkNode(service.config.BootstrapIP, service.config.BootstrapPort)
+// configure the distrubuted hash table for p2p service
+func (s *p2p) configure(ctx context.Context) error {
+	var bootstrapNodes []*kademlia.Node
+	if s.config.BootstrapIP != "" || s.config.BootstrapPort > 0 {
+		bootstrapNode := &kademlia.Node{
+			IP:   s.config.BootstrapIP,
+			Port: s.config.BootstrapPort,
+		}
 		bootstrapNodes = append(bootstrapNodes, bootstrapNode)
 	}
 
-	dht, err := kademlia.NewDHT(ctx, &mem.Key{}, &kademlia.Options{
+	// new the local storage
+	store, err := db.NewStore(ctx, s.config.DataDir)
+	if err != nil {
+		return errors.Errorf("new kademlia store: %w", err)
+	}
+	s.store = store
+
+	// new a kademlia distributed hash table
+	dht, err := kademlia.NewDHT(store, &kademlia.Options{
 		BootstrapNodes: bootstrapNodes,
-		IP:             service.config.ListenAddresses,
-		Port:           service.config.Port,
-		UseStun:        service.config.UseStun,
-		DataSourceName: service.config.DataDir,
-		MemoryDB:       service.config.MemoryDB,
+		IP:             s.config.ListenAddress,
+		Port:           s.config.Port,
 	})
 	if err != nil {
-		return err
+		return errors.Errorf("new kademlia dht: %w", err)
 	}
-	service.dht = dht
+	s.dht = dht
 
 	return nil
 }
