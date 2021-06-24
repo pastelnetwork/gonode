@@ -3,7 +3,6 @@ package pastel
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"net"
 	"strconv"
 	"strings"
@@ -103,17 +102,7 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
-	err := client.CallForWithContext(ctx, &object, method, params)
-	if err != nil {
-		if err, ok := err.(*json.UnmarshalTypeError); ok {
-			return errors.New(err)
-		}
-		return errors.Errorf("could not call method %q, %w", method, err)
-	}
-	if object == nil {
-		return errors.New("nothing found")
-	}
-	return nil
+	return client.CallForWithContext(ctx, object, method, params)
 }
 
 // NewClient returns a new Client instance.

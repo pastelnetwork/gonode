@@ -83,7 +83,10 @@ func (service *Service) Tasks() []*Task {
 
 // Task returns the task of the registration artwork by the given id.
 func (service *Service) Task(id string) *Task {
-	return service.Worker.Task(id).(*Task)
+	if t := service.Worker.Task(id); t != nil {
+		return t.(*Task)
+	}
+	return nil
 }
 
 // AddTask runs a new task of the registration artwork and returns its taskID.
