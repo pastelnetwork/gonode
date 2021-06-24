@@ -138,14 +138,15 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 }
 
 // Download registered artwork.
-func (service *Artwork) Download(context.Context, *artworks.DownloadPayload) (res *artworks.DownloadResult, err error) {
+func (service *Artwork) Download(_ context.Context, p *artworks.DownloadPayload) (res *artworks.DownloadResult, err error) {
+	log.Infof("Art Download Payload: %v", p)
 	return
 }
 
 // Mount configures the mux to serve the artworks endpoints.
 func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := artworks.NewEndpoints(service)
-	srv := server.New(endpoints, nil, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc(ctx, service))
+	srv := server.New(endpoints, mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, &websocket.Upgrader{}, nil, UploadImageDecoderFunc(ctx, service))
 	server.Mount(mux, srv)
 
 	for _, m := range srv.Mounts {

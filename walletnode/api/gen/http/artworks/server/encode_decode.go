@@ -385,9 +385,9 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 			authorization string
 			err           error
 		)
-		txid = r.URL.Query().Get("{txid}")
+		txid = r.URL.Query().Get("txid")
 		if txid == "" {
-			err = goa.MergeErrors(err, goa.MissingFieldError("{txid}", "query string"))
+			err = goa.MergeErrors(err, goa.MissingFieldError("txid", "query string"))
 		}
 		if utf8.RuneCountInString(txid) < 46 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 46, true))
@@ -395,9 +395,9 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if utf8.RuneCountInString(txid) > 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
 		}
-		pid = r.URL.Query().Get("{pid}")
+		pid = r.URL.Query().Get("pid")
 		if pid == "" {
-			err = goa.MergeErrors(err, goa.MissingFieldError("{pid}", "query string"))
+			err = goa.MergeErrors(err, goa.MissingFieldError("pid", "query string"))
 		}
 		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
 		if utf8.RuneCountInString(pid) < 86 {
@@ -406,9 +406,9 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if utf8.RuneCountInString(pid) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
 		}
-		authorization = r.Header.Get("Basic {authorization}")
+		authorization = r.URL.Query().Get("Authorization")
 		if authorization == "" {
-			err = goa.MergeErrors(err, goa.MissingFieldError("Basic {authorization}", "header"))
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "query string"))
 		}
 		if err != nil {
 			return nil, err

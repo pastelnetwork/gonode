@@ -124,6 +124,8 @@ var _ = Service("artworks", func() {
 		Description("Download registered artwork.")
 		Meta("swagger:summary", "Downloads artwork")
 
+		Security(APIKeyAuth)
+
 		Payload(func() {
 			Extend(ArtworkDownloadPayload)
 		})
@@ -131,9 +133,9 @@ var _ = Service("artworks", func() {
 
 		HTTP(func() {
 			GET("/download")
-			Header("authorization:Basic {authorization}")
-			Param("txid:{txid}")
-			Param("pid:{pid}")
+			Param("txid")
+			Param("pid")
+			Param("key")
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -344,12 +346,17 @@ var ArtworkDownloadPayload = Type("ArtworkDownloadPayload", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
-	Attribute("authorization", String, func() {
-		Meta("struct:field:name", "Authorization")
-		Description("Passphrase of the owner's PastelID")
-		Example("qwerasdf1234")
-	})
-	Required("txid", "pid", "authorization")
+	// Attribute("authorization", String, func() {
+	// 	Meta("struct:field:name", "Authorization")
+	// 	Description("Passphrase of the owner's PastelID")
+	// 	Example("Basic qwerasdf1234")
+	// })
+	APIKey("api_key", "key", String, "Passphrase of the owner's PastelID")
+	Required("txid", "pid", "key")
+})
+
+var APIKeyAuth = APIKeySecurity("key", func() {
+	Description("Art Owner's passphrase to authenticate")
 })
 
 // ArtworkDownloadResult is artwork download result.

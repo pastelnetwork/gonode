@@ -20,14 +20,14 @@ paths:
       description: Download registered artwork.
       operationId: artworks#download
       parameters:
-      - name: '{txid}'
+      - name: txid
         in: query
         description: Art Registration Ticket transaction ID
         required: true
         type: string
         maxLength: 64
         minLength: 46
-      - name: '{pid}'
+      - name: pid
         in: query
         description: Owner's PastelID
         required: true
@@ -35,8 +35,8 @@ paths:
         maxLength: 86
         minLength: 86
         pattern: ^[a-zA-Z0-9]+$
-      - name: Basic {authorization}
-        in: header
+      - name: Authorization
+        in: query
         description: Passphrase of the owner's PastelID
         required: true
         type: string

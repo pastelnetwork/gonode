@@ -13,7 +13,7 @@ paths:
       description: Download registered artwork.
       operationId: artworks#download
       parameters:
-      - name: '{txid}'
+      - name: txid
         in: query
         description: Art Registration Ticket transaction ID
         allowEmptyValue: true
@@ -25,7 +25,7 @@ paths:
           minLength: 46
           maxLength: 64
         example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-      - name: '{pid}'
+      - name: pid
         in: query
         description: Owner's PastelID
         allowEmptyValue: true
@@ -38,16 +38,16 @@ paths:
           minLength: 86
           maxLength: 86
         example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-      - name: Basic {authorization}
-        in: header
+      - name: Authorization
+        in: query
         description: Passphrase of the owner's PastelID
         allowEmptyValue: true
         required: true
         schema:
           type: string
           description: Passphrase of the owner's PastelID
-          example: qwerasdf1234
-        example: qwerasdf1234
+          example: Basic qwerasdf1234
+        example: Basic qwerasdf1234
       responses:
         "200":
           description: OK response.
