@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	// GetMethod represent Get method name
-	GetMethod = "Get"
+	// RetrieveMethod represent Retrieve method name
+	RetrieveMethod = "Retrieve"
 
 	// StoreMethod represent Store method name
 	StoreMethod = "Store"
@@ -29,24 +29,24 @@ func NewMockClient(t *testing.T) *Client {
 	}
 }
 
-// ListenOnGet listening Get call and returns values from args
-func (client *Client) ListenOnGet(data []byte, found bool, err error) *Client {
-	client.On(GetMethod, mock.Anything, mock.IsType(string(""))).Return(data, found, err)
+// ListenOnRetrieve listening Retrieve call and returns values from args
+func (client *Client) ListenOnRetrieve(data []byte, err error) *Client {
+	client.On(RetrieveMethod, mock.Anything, mock.IsType(string(""))).Return(data, err)
 	return client
 }
 
-// ListenOnStore listening STore call and returns values from args
+// ListenOnStore listening Store call and returns values from args
 func (client *Client) ListenOnStore(id string, err error) *Client {
 	client.On(StoreMethod, mock.Anything, mock.IsType([]byte{})).Return(id, err)
 	return client
 }
 
-// AssertGetCall assertion Get call
-func (client *Client) AssertGetCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertRetrieveCall assertion Retrieve call
+func (client *Client) AssertRetrieveCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.AssertCalled(client.t, GetMethod, arguments...)
+		client.AssertCalled(client.t, RetrieveMethod, arguments...)
 	}
-	client.AssertNumberOfCalls(client.t, GetMethod, expectedCalls)
+	client.AssertNumberOfCalls(client.t, RetrieveMethod, expectedCalls)
 	return client
 }
 
