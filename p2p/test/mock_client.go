@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	// GetMethod represent Retrieve method name
+	// RetrieveMethod represent Retrieve method name
 	RetrieveMethod = "Retrieve"
 
 	// StoreMethod represent Store method name
