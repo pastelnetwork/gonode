@@ -17,7 +17,7 @@ const (
 	ED448PubKeySize = 56
 	// ED448PriKeySize - private key size of ed448
 	ED448PriKeySize = 144
-	// SecretKeySize - secret key size of aes256
+	// AESSecretKeySize - secret key size of aes256
 	AESSecretKeySize = 32
 	// HandshakeTimeout - the default timeout for handshake read and write
 	HandshakeTimeout = 2 * time.Second

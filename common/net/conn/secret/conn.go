@@ -48,12 +48,21 @@ type Conn struct {
 }
 
 // Implements net.Conn
-func (s *Conn) LocalAddr() net.Addr           { return s.conn.LocalAddr() }
-func (s *Conn) RemoteAddr() net.Addr          { return s.conn.RemoteAddr() }
+// LocalAddr local address of connection
+func (s *Conn) LocalAddr() net.Addr { return s.conn.LocalAddr() }
+
+// RemoteAddr remote address of connection
+func (s *Conn) RemoteAddr() net.Addr { return s.conn.RemoteAddr() }
+
+// SetDeadline set deadline for connection
 func (s *Conn) SetDeadline(t time.Time) error { return s.conn.SetDeadline(t) }
+
+// SetReadDeadline set read deadline for connection
 func (s *Conn) SetReadDeadline(t time.Time) error {
 	return s.conn.SetReadDeadline(t)
 }
+
+// SetWriteDeadline set write deadline for connection
 func (s *Conn) SetWriteDeadline(t time.Time) error {
 	return s.conn.SetWriteDeadline(t)
 }
