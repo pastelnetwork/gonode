@@ -47,7 +47,6 @@ type Conn struct {
 	secret []byte
 }
 
-// Implements net.Conn
 // LocalAddr local address of connection
 func (s *Conn) LocalAddr() net.Addr { return s.conn.LocalAddr() }
 
