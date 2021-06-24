@@ -20,7 +20,7 @@ const (
 	// AESSecretKeySize - secret key size of aes256
 	AESSecretKeySize = 32
 	// HandshakeTimeout - the default timeout for handshake read and write
-	HandshakeTimeout = 2 * time.Second
+	HandshakeTimeout = 15 * time.Second
 )
 
 // key exchange request
