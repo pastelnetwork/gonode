@@ -658,11 +658,11 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePa
 }
 
 // NewDownloadPayload builds a artworks service download endpoint payload.
-func NewDownloadPayload(txid string, pid string, authorization string) *artworks.DownloadPayload {
+func NewDownloadPayload(txid string, pid string, key string) *artworks.DownloadPayload {
 	v := &artworks.DownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
-	v.Authorization = authorization
+	v.Key = key
 
 	return v
 }

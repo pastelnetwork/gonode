@@ -182,7 +182,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 
 // BuildDownloadPayload builds the payload for the artworks download endpoint
 // from CLI flags.
-func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid string, artworksDownloadAuthorization string) (*artworks.DownloadPayload, error) {
+func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid string, artworksDownloadKey string) (*artworks.DownloadPayload, error) {
 	var err error
 	var txid string
 	{
@@ -211,14 +211,14 @@ func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid strin
 			return nil, err
 		}
 	}
-	var authorization string
+	var key string
 	{
-		authorization = artworksDownloadAuthorization
+		key = artworksDownloadKey
 	}
 	v := &artworks.DownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
-	v.Authorization = authorization
+	v.Key = key
 
 	return v, nil
 }

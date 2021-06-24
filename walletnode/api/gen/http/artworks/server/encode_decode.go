@@ -380,10 +380,10 @@ func EncodeDownloadResponse(encoder func(context.Context, http.ResponseWriter) g
 func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			txid          string
-			pid           string
-			authorization string
-			err           error
+			txid string
+			pid  string
+			key  string
+			err  error
 		)
 		txid = r.URL.Query().Get("txid")
 		if txid == "" {
@@ -406,14 +406,14 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if utf8.RuneCountInString(pid) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
 		}
-		authorization = r.URL.Query().Get("Authorization")
-		if authorization == "" {
-			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "query string"))
+		key = r.URL.Query().Get("k")
+		if key == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("k", "query string"))
 		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDownloadPayload(txid, pid, authorization)
+		payload := NewDownloadPayload(txid, pid, key)
 
 		return payload, nil
 	}

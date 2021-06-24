@@ -54,7 +54,7 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 			if err := image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
 				return artworks.MakeBadRequest(err)
 			}
-			service.register.Storage.AddFile(image)
+			//service.register.Storage.AddFile(image)
 			filename = image.Name()
 			log.WithContext(ctx).Debugf("Upload image new name %q", filename)
 
@@ -68,7 +68,7 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 				return artworks.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filename, err))
 			}
 			log.WithContext(ctx).Debugf("Uploaded image to %q", filename)
-			log.WithContext(ctx).Debugf("Storage files %v", service.register.Storage.Files())
+			//log.WithContext(ctx).Debugf("Storage files %v", service.register.Storage.Files())
 
 			res.Filename = &filename
 		}

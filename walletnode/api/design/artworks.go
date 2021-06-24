@@ -135,7 +135,7 @@ var _ = Service("artworks", func() {
 			GET("/download")
 			Param("txid")
 			Param("pid")
-			Param("key")
+			Param("key:k") // Provide the key as a query string param "k"
 			Response("NotFound", StatusNotFound)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -351,11 +351,14 @@ var ArtworkDownloadPayload = Type("ArtworkDownloadPayload", func() {
 	// 	Description("Passphrase of the owner's PastelID")
 	// 	Example("Basic qwerasdf1234")
 	// })
-	APIKey("api_key", "key", String, "Passphrase of the owner's PastelID")
+	APIKeyField(1, "api_key", "key", String, func() {
+		Description("API key")
+		Example("abcdef12345")
+	})
 	Required("txid", "pid", "key")
 })
 
-var APIKeyAuth = APIKeySecurity("key", func() {
+var APIKeyAuth = APIKeySecurity("api_key", func() {
 	Description("Art Owner's passphrase to authenticate")
 })
 

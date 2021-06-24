@@ -12,6 +12,7 @@ import (
 
 	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/goa/v3/security"
 )
 
 // Pastel Artwork
@@ -28,6 +29,12 @@ type Service interface {
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
 	// Download registered artwork.
 	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
+}
+
+// Auther defines the authorization functions to be implemented by the service.
+type Auther interface {
+	// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+	APIKeyAuth(ctx context.Context, key string, schema *security.APIKeyScheme) (context.Context, error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -155,8 +162,8 @@ type DownloadPayload struct {
 	Txid string
 	// Owner's PastelID
 	Pid string
-	// Passphrase of the owner's PastelID
-	Authorization string
+	// API key
+	Key string
 }
 
 // DownloadResult is the result type of the artworks service download method.

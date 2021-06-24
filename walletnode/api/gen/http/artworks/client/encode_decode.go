@@ -550,7 +550,7 @@ func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*ht
 		values := req.URL.Query()
 		values.Add("txid", p.Txid)
 		values.Add("pid", p.Pid)
-		values.Add("Authorization", p.Authorization)
+		values.Add("k", p.Key)
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}

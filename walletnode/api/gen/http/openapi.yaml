@@ -35,9 +35,9 @@ paths:
         maxLength: 86
         minLength: 86
         pattern: ^[a-zA-Z0-9]+$
-      - name: Authorization
+      - name: k
         in: query
-        description: Passphrase of the owner's PastelID
+        description: API key
         required: true
         type: string
       responses:
@@ -55,6 +55,8 @@ paths:
             $ref: '#/definitions/ArtworksDownloadInternalServerErrorResponseBody'
       schemes:
       - http
+      security:
+      - api_key_query_k: []
   /artworks/register:
     get:
       tags:
@@ -1412,3 +1414,9 @@ definitions:
     required:
     - date
     - status
+securityDefinitions:
+  api_key_query_k:
+    type: apiKey
+    description: Art Owner's passphrase to authenticate
+    name: k
+    in: query

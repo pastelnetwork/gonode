@@ -11,6 +11,7 @@ import (
 	"context"
 
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/goa/v3/security"
 )
 
 // Endpoints wraps the "artworks" service endpoints.
@@ -35,13 +36,15 @@ type RegisterTaskStateEndpointInput struct {
 
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
+	// Casting service to Auther interface
+	a := s.(Auther)
 	return &Endpoints{
 		Register:          NewRegisterEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
 		RegisterTask:      NewRegisterTaskEndpoint(s),
 		RegisterTasks:     NewRegisterTasksEndpoint(s),
 		UploadImage:       NewUploadImageEndpoint(s),
-		Download:          NewDownloadEndpoint(s),
+		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
 	}
 }
 
@@ -121,9 +124,19 @@ func NewUploadImageEndpoint(s Service) goa.Endpoint {
 
 // NewDownloadEndpoint returns an endpoint function that calls the method
 // "download" of service "artworks".
-func NewDownloadEndpoint(s Service) goa.Endpoint {
+func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*DownloadPayload)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
 		res, err := s.Download(ctx, p)
 		if err != nil {
 			return nil, err
