@@ -58,7 +58,12 @@ func (file *File) SetFormat(format Format) error {
 	file.format = format
 
 	newname := fmt.Sprintf("%s.%s", strings.TrimSuffix(file.name, filepath.Ext(file.name)), format)
+	oldname := file.name
 	file.name = newname
+
+	if err := file.storage.Update(oldname, newname, file); err != nil {
+		return err
+	}
 
 	if !file.isCreated {
 		return nil
