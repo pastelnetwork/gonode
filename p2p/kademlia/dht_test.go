@@ -1,714 +1,491 @@
 package kademlia
 
 import (
-	"bytes"
 	"context"
-	"net"
-	"strconv"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/pastelnetwork/gonode/p2p/kademlia/dao/mem"
-	"github.com/stretchr/testify/assert"
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
+	"github.com/stretchr/testify/suite"
 )
 
-// Creates twenty DHTs and bootstraps each with the previous
-// at the end all should know about each other
-func TestBootstrapTwentyNodes(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func TestSuite(t *testing.T) {
+	suite.Run(t, new(testSuite))
+}
 
-	port := 4000
+type testSuite struct {
+	suite.Suite
+
+	Key     string
+	Value   []byte
+	IP      string
+	DataDir string
+
+	bootstrapPort  int
+	bootstrapNodes []*Node
+
+	dbStore  Store
+	memStore Store
+	main     *DHT
+	ctx      context.Context
+	cancel   context.CancelFunc
+}
+
+func (ts *testSuite) SetupSuite() {
+	// init the log level
+	if os.Getenv("LEVEL") == "debug" {
+		log.SetLevelName("debug")
+	} else if os.Getenv("LEVEL") == "info" {
+		log.SetLevelName("info")
+	} else {
+		log.SetLevelName("warn")
+	}
+
+	ts.IP = "127.0.0.1"
+	ts.bootstrapPort = 6000
+	ts.bootstrapNodes = []*Node{
+		{
+			IP:   ts.IP,
+			Port: ts.bootstrapPort,
+		},
+	}
+	// init the data directory for each test
+	workDir, err := ioutil.TempDir("", "p2p-test-*")
+	if err != nil {
+		ts.T().Fatalf("ioutil tempdir: %v", err)
+	}
+
+	ts.ctx, ts.cancel = context.WithCancel(context.Background())
+	ts.ctx = log.ContextWithPrefix(ts.ctx, "p2p-test")
+
+	// init the db store
+	dbStore, err := db.NewStore(ts.ctx, filepath.Join(workDir, "badger"))
+	if err != nil {
+		ts.T().Fatalf("new db store: %v", err)
+	}
+	ts.dbStore = dbStore
+	ts.memStore = mem.NewStore()
+
+	// init the main dht
+	dht, err := ts.newDHTNodeWithDBStore(ts.ctx, ts.bootstrapPort, nil, nil)
+	if err != nil {
+		ts.T().Fatalf("new main dht: %v", err)
+	}
+	// start the main dht
+	if err := dht.Start(ts.ctx); err != nil {
+		ts.T().Fatalf("start main dht: %v", err)
+	}
+	ts.main = dht
+
+	// init key and value for one data
+	ts.Value = []byte("hello world")
+	ts.Key = base58.Encode(dht.hashKey(ts.Value))
+}
+
+// run before each test in the suite
+func (ts *testSuite) SetupTest() {
+	// make sure the store is empty
+	keys := ts.main.store.Keys(ts.ctx)
+	ts.Zero(len(keys))
+}
+
+// reset the hashtable
+func (ts *testSuite) resetHashtable() {
+	ts.main.ht.refreshers = make([]time.Time, B)
+	ts.main.ht.routeTable = make([][]*Node, B)
+}
+
+// run after each test in the suite
+func (ts *testSuite) TearDownTest() {
+	// reset the hashtable
+	ts.resetHashtable()
+
+	// reset the store
+	for _, key := range ts.main.store.Keys(ts.ctx) {
+		ts.main.store.Delete(ts.ctx, key)
+	}
+}
+
+func (ts *testSuite) TearDownSuite() {
+	if ts.cancel != nil {
+		ts.cancel()
+	}
+	if ts.main != nil {
+		ts.main.Stop(ts.ctx)
+	}
+	if ts.dbStore != nil {
+		ts.dbStore.Close(ts.ctx)
+	}
+}
+
+func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
+	options := &Options{
+		IP:   ts.IP,
+		Port: port,
+	}
+	if len(id) > 0 {
+		options.ID = id
+	}
+	if len(nodes) > 0 {
+		options.BootstrapNodes = nodes
+	}
+
+	dht, err := NewDHT(ts.memStore, options)
+	if err != nil {
+		return nil, errors.Errorf("new dht: %w", err)
+	}
+
+	return dht, nil
+}
+
+func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
+	options := &Options{
+		IP:   ts.IP,
+		Port: port,
+	}
+	if len(id) > 0 {
+		options.ID = id
+	}
+	if len(nodes) > 0 {
+		options.BootstrapNodes = nodes
+	}
+
+	dht, err := NewDHT(ts.dbStore, options)
+	if err != nil {
+		return nil, errors.Errorf("new dht: %w", err)
+	}
+
+	return dht, nil
+}
+
+func (ts *testSuite) TestStartDHTNode() {
+	// new a dht node
+	dht, err := ts.newDHTNodeWithDBStore(ts.ctx, 7000, ts.bootstrapNodes, nil)
+	if err != nil {
+		ts.T().Fatalf("start a dht: %v", err)
+	}
+
+	// do the bootstrap
+	if err := dht.Bootstrap(ts.ctx); err != nil {
+		ts.T().Fatalf("do bootstrap: %v", err)
+	}
+
+	// start the dht node
+	if err := dht.Start(ts.ctx); err != nil {
+		ts.T().Fatalf("start dht node: %v", err)
+	}
+	defer dht.Stop(ts.ctx)
+}
+
+func (ts *testSuite) TestRetrieveWithNil() {
+	value, err := ts.main.Retrieve(ts.ctx, string(ts.Key))
+	if err != nil {
+		ts.T().Fatalf("dht retrive: %v", err)
+	}
+	ts.Nil(value)
+}
+
+func (ts *testSuite) TestStoreAndRetrieveWithMemStore() {
+	// new a dht node
+	dht, err := ts.newDHTNodeWithMemStore(ts.ctx, 6001, ts.bootstrapNodes, nil)
+	if err != nil {
+		ts.T().Fatalf("start a dht: %v", err)
+	}
+
+	// do the bootstrap
+	if err := dht.Bootstrap(ts.ctx); err != nil {
+		ts.T().Fatalf("do bootstrap: %v", err)
+	}
+
+	// start the dht node
+	if err := dht.Start(ts.ctx); err != nil {
+		ts.T().Fatalf("start dht node: %v", err)
+	}
+	defer dht.Stop(ts.ctx)
+
+	key, err := dht.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+
+	value, err := dht.Retrieve(ts.ctx, key)
+	if err != nil {
+		ts.T().Fatalf("dht retrieve: %v", err)
+	}
+	ts.Equal(ts.Value, value)
+}
+
+func (ts *testSuite) TestStoreAndRetrieve() {
+	key, err := ts.main.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+
+	value, err := ts.main.Retrieve(ts.ctx, key)
+	if err != nil {
+		ts.T().Fatalf("dht retrieve: %v", err)
+	}
+	ts.Equal(ts.Value, value)
+}
+
+func (ts *testSuite) TestStoreWithMain() {
+	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+
+	// verify the value for dht store
+	ts.verifyValue(base58.Decode(encodedKey), ts.Value, ts.main)
+}
+
+func (ts *testSuite) TestStoreWithTwoNodes() {
+	// new a dht node
+	dht, err := ts.newDHTNodeWithDBStore(ts.ctx, 6001, ts.bootstrapNodes, nil)
+	if err != nil {
+		ts.T().Fatalf("start a dht: %v", err)
+	}
+
+	// do the bootstrap
+	if err := dht.Bootstrap(ts.ctx); err != nil {
+		ts.T().Fatalf("do bootstrap: %v", err)
+	}
+
+	// start the dht node
+	if err := dht.Start(ts.ctx); err != nil {
+		ts.T().Fatalf("start dht node: %v", err)
+	}
+	defer dht.Stop(ts.ctx)
+
+	// store the key and value by main node
+	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+	ts.Equal(ts.Key, encodedKey)
+
+	// verify the value for dht store
+	ts.verifyValue(base58.Decode(encodedKey), ts.Value, ts.main, dht)
+}
+
+// verify the value stored for distributed hash table
+func (ts *testSuite) verifyValue(key []byte, value []byte, dhts ...*DHT) {
+	for _, dht := range dhts {
+		data, err := dht.store.Retrieve(ts.ctx, key)
+		if err != nil {
+			ts.T().Fatalf("store retrieve: %v", err)
+		}
+		ts.Equal(value, data)
+	}
+}
+
+// start n nodes
+func (ts *testSuite) startNodes(start, end int) ([]*DHT, error) {
 	dhts := []*DHT{}
-	for i := 0; i < 20; i++ {
-		id, _ := newID()
-		dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-			ID:   id,
-			IP:   "127.0.0.1",
-			Port: port,
-			BootstrapNodes: []*NetworkNode{
-				NewNetworkNode("127.0.0.1", strconv.Itoa(port-1)),
-			},
-			DataSourceName: ":memory:",
-		})
-		port++
+
+	for i := start; i <= end; i++ {
+		// new a dht node
+		dht, err := ts.newDHTNodeWithDBStore(ts.ctx, ts.bootstrapPort+i+1, ts.bootstrapNodes, nil)
+		if err != nil {
+			return nil, errors.Errorf("start a dht: %w", err)
+		}
+
+		// do the bootstrap
+		if err := dht.Bootstrap(ts.ctx); err != nil {
+			return nil, errors.Errorf("do bootstrap: %w", err)
+		}
+
+		// start the dht node
+		if err := dht.Start(ts.ctx); err != nil {
+			return nil, errors.Errorf("start dht node: %w", err)
+		}
 		dhts = append(dhts, dht)
-		err := dht.CreateSocket()
-		assert.NoError(t, err)
+	}
+	return dhts, nil
+}
+
+func (ts *testSuite) TestStoreWith10Nodes() {
+	start, end := 1, 10
+	// start 10 nodes
+	dhts, err := ts.startNodes(start, end)
+	if err != nil {
+		ts.T().Fatalf("start nodes: %v", err)
+	}
+	for _, dht := range dhts {
+		defer dht.Stop(ts.ctx)
+	}
+	dhts = append(dhts, ts.main)
+
+	// store the key and value by main node
+	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
+	ts.Equal(ts.Key, encodedKey)
+
+	// verify the value for dht store
+	ts.verifyValue(base58.Decode(encodedKey), ts.Value, dhts...)
+}
+
+func (ts *testSuite) TestIterativeFindNode() {
+	start, end := 1, 10
+	// start the nodes
+	dhts, err := ts.startNodes(start, end)
+	if err != nil {
+		ts.T().Fatalf("start nodes: %v", err)
+	}
+	for _, dht := range dhts {
+		defer dht.Stop(ts.ctx)
+	}
+
+	if _, err := ts.main.iterate(ts.ctx, IterateFindNode, ts.main.ht.self.ID, nil); err != nil {
+		ts.T().Fatalf("iterative find node: %v", err)
 	}
 
 	for _, dht := range dhts {
-		dht := dht
-
-		assert.Equal(t, 0, dht.NumNodes())
-		go func(dht *DHT) {
-			err := dht.Listen(ctx)
-			assert.NoError(t, err)
-
-			assert.Equal(t, 19, dht.NumNodes())
-
-			err = dht.Disconnect()
-			assert.NoError(t, err)
-		}(dht)
-		go func(dht *DHT) {
-			err := dht.Bootstrap(ctx)
-			assert.NoError(t, err)
-		}(dht)
-		time.Sleep(time.Millisecond * 20)
+		ts.Equal(end-start+1, dht.ht.totalCount())
 	}
 }
 
-// Creates two DHTs, bootstrap one using the other, ensure that they both know
-// about each other afterwards.
-func TestBootstrapTwoNodes(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (ts *testSuite) TestIterativeFindValue() {
+	start, end := 1, 2
+	// start the nodes
+	dhts, err := ts.startNodes(start, end)
+	if err != nil {
+		ts.T().Fatalf("start nodes: %v", err)
+	}
+	for _, dht := range dhts {
+		defer dht.Stop(ts.ctx)
+	}
 
-	done := make(chan bool)
+	// store the key/value
+	key, err := ts.main.Store(ts.ctx, ts.Value)
+	if err != nil {
+		ts.T().Fatalf("dht store: %v", err)
+	}
 
-	id1, _ := newID()
-	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id1,
-		IP:             "127.0.0.1",
-		Port:           3000,
-		DataSourceName: ":memory:",
-	})
-
-	dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		BootstrapNodes: []*NetworkNode{
-			{
-				ID:   id1,
-				IP:   net.ParseIP("127.0.0.1"),
-				Port: 3000,
-			},
-		},
-		IP:             "127.0.0.1",
-		Port:           3001,
-		DataSourceName: ":memory:",
-	})
-
-	err := dht1.CreateSocket()
-	assert.NoError(t, err)
-
-	err = dht2.CreateSocket()
-	assert.NoError(t, err)
-
-	assert.Equal(t, 0, dht1.NumNodes())
-	assert.Equal(t, 0, dht2.NumNodes())
-
-	go func() {
-		go func() {
-			err := dht2.Bootstrap(ctx)
-			assert.NoError(t, err)
-
-			time.Sleep(50 * time.Millisecond)
-
-			err = dht2.Disconnect()
-			assert.NoError(t, err)
-
-			err = dht1.Disconnect()
-			assert.NoError(t, err)
-			done <- true
-		}()
-		err := dht2.Listen(ctx)
-		assert.NoError(t, err)
-		done <- true
-	}()
-
-	err = dht1.Listen(ctx)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 1, dht1.NumNodes())
-	assert.Equal(t, 1, dht2.NumNodes())
-	<-done
-	<-done
+	value, err := ts.main.iterate(ts.ctx, IterateFindValue, base58.Decode(key), nil)
+	if err != nil {
+		ts.T().Fatalf("iterative find value: %v", err)
+	}
+	ts.Equal(ts.Value, value)
 }
 
-// Creates three DHTs, bootstrap B using A, bootstrap C using B. A should know
-// about both B and C
-func TestBootstrapThreeNodes(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (ts *testSuite) TestAddNodeForFull() {
+	// short the ping time
+	defaultPingTime = time.Millisecond * 200
 
-	done := make(chan bool)
-
-	id1, _ := newID()
-	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id1,
-		IP:             "127.0.0.1",
-		Port:           3000,
-		DataSourceName: ":memory:",
-	})
-
-	id2, _ := newID()
-	dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		BootstrapNodes: []*NetworkNode{
-			{
-				ID:   id1,
-				IP:   net.ParseIP("127.0.0.1"),
-				Port: 3000,
-			},
-		},
-		IP:             "127.0.0.1",
-		Port:           3001,
-		ID:             id2,
-		DataSourceName: ":memory:",
-	})
-
-	dht3, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		BootstrapNodes: []*NetworkNode{
-			{
-				ID:   id2,
-				IP:   net.ParseIP("127.0.0.1"),
-				Port: 3001,
-			},
-		},
-		IP:             "127.0.0.1",
-		Port:           3002,
-		DataSourceName: ":memory:",
-	})
-
-	err := dht1.CreateSocket()
-	assert.NoError(t, err)
-
-	err = dht2.CreateSocket()
-	assert.NoError(t, err)
-
-	err = dht3.CreateSocket()
-	assert.NoError(t, err)
-
-	assert.Equal(t, 0, dht1.NumNodes())
-	assert.Equal(t, 0, dht2.NumNodes())
-	assert.Equal(t, 0, dht3.NumNodes())
-
-	go func(dht1 *DHT, dht2 *DHT, dht3 *DHT) {
-		go func(dht1 *DHT, dht2 *DHT, dht3 *DHT) {
-			err := dht2.Bootstrap(ctx)
-			assert.NoError(t, err)
-
-			go func(dht1 *DHT, dht2 *DHT, dht3 *DHT) {
-				err := dht3.Bootstrap(ctx)
-				assert.NoError(t, err)
-
-				time.Sleep(500 * time.Millisecond)
-
-				err = dht1.Disconnect()
-				assert.NoError(t, err)
-
-				time.Sleep(100 * time.Millisecond)
-
-				err = dht2.Disconnect()
-				assert.NoError(t, err)
-
-				err = dht3.Disconnect()
-				assert.NoError(t, err)
-				done <- true
-			}(dht1, dht2, dht3)
-
-			err = dht3.Listen(ctx)
-			assert.NoError(t, err)
-			done <- true
-		}(dht1, dht2, dht3)
-		err := dht2.Listen(ctx)
-		assert.NoError(t, err)
-		done <- true
-	}(dht1, dht2, dht3)
-
-	err = dht1.Listen(ctx)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 2, dht1.NumNodes())
-	assert.Equal(t, 2, dht2.NumNodes())
-	assert.Equal(t, 2, dht3.NumNodes())
-
-	<-done
-	<-done
-	<-done
-}
-
-// Creates two DHTs and bootstraps using only IP:Port. Connecting node should
-// ping the first node to find its ID
-func TestBootstrapNoID(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	done := make(chan bool)
-
-	id1, _ := newID()
-	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id1,
-		IP:             "127.0.0.1",
-		Port:           3000,
-		DataSourceName: ":memory:",
-	})
-
-	dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		BootstrapNodes: []*NetworkNode{
-			{
-				IP:   net.ParseIP("127.0.0.1"),
-				Port: 3000,
-			},
-		},
-		IP:             "127.0.0.1",
-		Port:           3001,
-		DataSourceName: ":memory:",
-	})
-
-	err := dht1.CreateSocket()
-	assert.NoError(t, err)
-
-	err = dht2.CreateSocket()
-	assert.NoError(t, err)
-
-	assert.Equal(t, 0, dht1.NumNodes())
-	assert.Equal(t, 0, dht2.NumNodes())
-
-	go func() {
-		go func() {
-			err := dht2.Bootstrap(ctx)
-			assert.NoError(t, err)
-
-			time.Sleep(50 * time.Millisecond)
-
-			err = dht2.Disconnect()
-			assert.NoError(t, err)
-
-			err = dht1.Disconnect()
-			assert.NoError(t, err)
-			done <- true
-		}()
-		err := dht2.Listen(ctx)
-		assert.NoError(t, err)
-		done <- true
-	}()
-
-	err = dht1.Listen(ctx)
-	assert.NoError(t, err)
-
-	assert.Equal(t, 1, dht1.NumNodes())
-	assert.Equal(t, 1, dht2.NumNodes())
-
-	<-done
-	<-done
-}
-
-// Create two DHTs have them connect and bootstrap, then disconnect. Repeat
-// 100 times to ensure that we can use the same IP and port without EADDRINUSE
-// errors.
-func TestReconnect(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	full := false
 
 	for i := 0; i < 100; i++ {
-		done := make(chan bool)
-
-		id1, _ := newID()
-		dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-			ID:             id1,
-			IP:             "127.0.0.1",
-			Port:           3000,
-			DataSourceName: ":memory:",
-		})
-
-		dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-			BootstrapNodes: []*NetworkNode{
-				{
-					ID:   id1,
-					IP:   net.ParseIP("127.0.0.1"),
-					Port: 3000,
-				},
-			},
-			IP:             "127.0.0.1",
-			Port:           3001,
-			DataSourceName: ":memory:",
-		})
-
-		err := dht1.CreateSocket()
-		assert.NoError(t, err)
-
-		err = dht2.CreateSocket()
-		assert.NoError(t, err)
-
-		assert.Equal(t, 0, dht1.NumNodes())
-
-		go func() {
-			go func() {
-				err := dht2.Bootstrap(ctx)
-				assert.NoError(t, err)
-
-				err = dht2.Disconnect()
-				assert.NoError(t, err)
-
-				err = dht1.Disconnect()
-				assert.NoError(t, err)
-
-				done <- true
-			}()
-			err := dht2.Listen(ctx)
-			assert.NoError(t, err)
-			done <- true
-
-		}()
-
-		err = dht1.Listen(ctx)
-		assert.NoError(t, err)
-
-		assert.Equal(t, 1, dht1.NumNodes())
-		assert.Equal(t, 1, dht2.NumNodes())
-
-		<-done
-		<-done
+		id, _ := newRandomID()
+		node := &Node{
+			ID:   id,
+			IP:   ts.IP,
+			Port: ts.bootstrapPort + i + 1,
+		}
+		if removed := ts.main.addNode(node); removed != nil {
+			ts.Equal(false, ts.main.ht.hasNode(removed.ID))
+			full = true
+			break
+		}
 	}
+	ts.Equal(true, full)
+
+	full = false
+	for _, bucket := range ts.main.ht.routeTable {
+		if len(bucket) == K {
+			full = true
+		}
+	}
+	ts.Equal(true, full)
 }
 
-// Create two DHTs and have them connect. Send a store message with 100mb
-// payload from one node to another. Ensure that the other node now has
-// this data in its store.
-func TestStoreAndFindLargeValue(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (ts *testSuite) TestAddNodeForRefresh() {
+	number := 20
+	for i := 0; i < number; i++ {
+		id, _ := newRandomID()
+		node := &Node{
+			ID:   id,
+			IP:   ts.IP,
+			Port: ts.bootstrapPort + i + 1,
+		}
+		ts.main.addNode(node)
+	}
+	ts.Equal(number, ts.main.ht.totalCount())
 
-	done := make(chan bool)
+	// find the bucket which has the maximum number of nodes
+	index := 0
+	for i, bucket := range ts.main.ht.routeTable {
+		if len(bucket) > 0 {
+			index = i
+		}
+	}
+	bucket := ts.main.ht.routeTable[index]
+	count := len(bucket)
+	first := bucket[0]
 
-	id1, _ := newID()
-	dht1, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id1,
-		IP:             "127.0.0.1",
-		Port:           3000,
-		DataSourceName: ":memory:",
-	})
-
-	dht2, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		BootstrapNodes: []*NetworkNode{
-			{
-				ID:   id1,
-				IP:   net.ParseIP("127.0.0.1"),
-				Port: 3000,
-			},
-		},
-		IP:             "127.0.0.1",
-		Port:           3001,
-		DataSourceName: ":memory:",
-	})
-
-	err := dht1.CreateSocket()
-	assert.NoError(t, err)
-
-	err = dht2.CreateSocket()
-	assert.NoError(t, err)
-
-	go func() {
-		err := dht1.Listen(ctx)
-		assert.NoError(t, err)
-		done <- true
-	}()
-
-	go func() {
-		err := dht2.Listen(ctx)
-		assert.NoError(t, err)
-		done <- true
-	}()
-
-	time.Sleep(1 * time.Second)
-
-	dht2.Bootstrap(ctx)
-
-	payload := [1000000]byte{}
-
-	id, err := dht1.Store(ctx, payload[:])
-	assert.NoError(t, err)
-
-	time.Sleep(1 * time.Second)
-
-	value, exists, err := dht2.Get(ctx, id)
-	assert.NoError(t, err)
-	assert.Equal(t, true, exists)
-	assert.Equal(t, 0, bytes.Compare(payload[:], value))
-
-	err = dht1.Disconnect()
-	assert.NoError(t, err)
-
-	err = dht2.Disconnect()
-	assert.NoError(t, err)
-
-	<-done
-	<-done
+	// refresh the hash table with the first node
+	ts.main.addNode(bucket[0])
+	bucket = ts.main.ht.routeTable[index]
+	ts.Equal(count, len(bucket))
+	ts.Equal(first.ID, bucket[len(bucket)-1].ID)
 }
 
-// Tests sending a message which results in an error when attempting to
-// send over uTP
-func TestNetworkingSendError(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (ts *testSuite) TestAddNodeForAppend() {
+	number := 20
+	for i := 0; i < number; i++ {
+		id, err := newRandomID()
+		if err != nil {
+			ts.T().Fatalf("new random id: %v", err)
+		}
+		node := &Node{
+			ID:   id,
+			IP:   ts.IP,
+			Port: ts.bootstrapPort + i + 1,
+		}
+		ts.main.addNode(node)
+	}
+	ts.Equal(number, ts.main.ht.totalCount())
 
-	networking := newMockNetworking()
-	id := getIDWithValues(0)
-	done := make(chan (int))
+	// calculate the bucket index for a new random id
+	id, err := newRandomID()
+	if err != nil {
+		ts.T().Fatalf("new random id: %v", err)
+	}
+	index := ts.main.ht.bucketIndex(ts.main.ht.self.ID, id)
 
-	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
+	// add the node to hash table
+	node := &Node{
 		ID:   id,
-		Port: 3000,
-		IP:   "0.0.0.0",
-		BootstrapNodes: []*NetworkNode{{
-			ID:   getZerodIDWithNthByte(1, byte(255)),
-			Port: 3001,
-			IP:   net.ParseIP("0.0.0.0"),
-		},
-		},
-		DataSourceName: ":memory:",
-	})
+		IP:   ts.IP,
+		Port: ts.bootstrapPort + number + 1,
+	}
+	ts.main.addNode(node)
 
-	dht.networking = networking
-	dht.CreateSocket()
-
-	go func() {
-		dht.Listen(ctx)
-	}()
-
-	go func() {
-		v := <-networking.recv
-		assert.Nil(t, v)
-		close(done)
-	}()
-
-	networking.failNextSendMessage()
-
-	dht.Bootstrap(ctx)
-
-	dht.Disconnect()
-
-	<-done
+	bucket := ts.main.ht.routeTable[index]
+	ts.Equal(id, bucket[len(bucket)-1].ID)
 }
 
-// Tests sending a message which results in a successful send, but the node
-// never responds
-func TestNodeResponseSendError(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	networking := newMockNetworking()
-	id := getIDWithValues(0)
-	done := make(chan (int))
-
-	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:   id,
-		Port: 3000,
-		IP:   "0.0.0.0",
-		BootstrapNodes: []*NetworkNode{{
-			ID:   getZerodIDWithNthByte(1, byte(255)),
-			Port: 3001,
-			IP:   net.ParseIP("0.0.0.0"),
-		},
-		},
-		DataSourceName: ":memory:",
-	})
-
-	dht.networking = networking
-	dht.CreateSocket()
-
-	queries := 0
-
-	go func() {
-		dht.Listen(ctx)
-	}()
-
-	go func() {
-		for {
-			query := <-networking.recv
-			if query == nil {
-				return
-			}
-			if queries == 1 {
-				// Don't respond
-				close(done)
-			} else {
-				queries++
-				res := mockFindNodeResponse(query, getZerodIDWithNthByte(2, byte(255)))
-				networking.send <- res
-			}
-		}
-	}()
-
-	dht.Bootstrap(ctx)
-
-	assert.Equal(t, 1, dht.ht.totalNodes())
-
-	dht.Disconnect()
-
-	<-done
+func (ts *testSuite) TestHashKey() {
+	key := ts.main.hashKey(ts.Value)
+	ts.Equal(K, len(key))
 }
 
-// Tests a bucket refresh by setting a very low TRefresh value, adding a single
-// node to a bucket, and waiting for the refresh message for the bucket
-func TestBucketRefresh(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	networking := newMockNetworking()
-	id := getIDWithValues(0)
-	done := make(chan (int))
-	refresh := make(chan (int))
-
-	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:       id,
-		Port:     3000,
-		IP:       "0.0.0.0",
-		TRefresh: time.Second * 2,
-		BootstrapNodes: []*NetworkNode{{
-			ID:   getZerodIDWithNthByte(1, byte(255)),
-			Port: 3001,
-			IP:   net.ParseIP("0.0.0.0"),
-		},
-		},
-		DataSourceName: ":memory:",
-	})
-
-	dht.networking = networking
-	dht.CreateSocket()
-
-	queries := 0
-
-	go func() {
-		dht.Listen(ctx)
-	}()
-
-	go func() {
-		for {
-			query := <-networking.recv
-			if query == nil {
-				close(done)
-				return
-			}
-			queries++
-
-			res := mockFindNodeResponseEmpty(query)
-			networking.send <- res
-
-			if queries == 2 {
-				close(refresh)
-			}
-		}
-	}()
-
-	dht.Bootstrap(ctx)
-
-	assert.Equal(t, 1, dht.ht.totalNodes())
-
-	<-refresh
-
-	dht.Disconnect()
-
-	<-done
-}
-
-// Tets store replication by setting the TReplicate time to a very small value.
-// Stores some data, and then expects another store message in TReplicate time
-func TestStoreReplication(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	networking := newMockNetworking()
-	id := getIDWithValues(0)
-	done := make(chan (int))
-	replicate := make(chan (int))
-
-	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:         id,
-		Port:       3000,
-		IP:         "0.0.0.0",
-		TReplicate: time.Second * 2,
-		BootstrapNodes: []*NetworkNode{{
-			ID:   getZerodIDWithNthByte(1, byte(255)),
-			Port: 3001,
-			IP:   net.ParseIP("0.0.0.0"),
-		},
-		},
-		DataSourceName: ":memory:",
-	})
-
-	dht.networking = networking
-	dht.CreateSocket()
-
-	go func() {
-		dht.Listen(ctx)
-	}()
-
-	stores := 0
-
-	go func() {
-		for {
-			query := <-networking.recv
-			if query == nil {
-				close(done)
-				return
-			}
-
-			switch query.Type {
-			case messageTypeFindNode:
-				res := mockFindNodeResponseEmpty(query)
-				networking.send <- res
-			case messageTypeStore:
-				stores++
-				d := query.Data.(*queryDataStore)
-				assert.Equal(t, []byte("foo"), d.Data)
-				if stores == 2 {
-					close(replicate)
-				}
-			}
-		}
-	}()
-
-	dht.Bootstrap(ctx)
-
-	dht.Store(ctx, []byte("foo"))
-
-	<-replicate
-
-	dht.Disconnect()
-
-	<-done
-}
-
-// Test Expiration by setting TExpire to a very low value. Store a value,
-// and then wait longer than TExpire. The value should no longer exist in
-// the store.
-func TestStoreExpiration(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	id := getIDWithValues(0)
-
-	dht, _ := NewDHT(ctx, getInMemoryStore(), &Options{
-		ID:             id,
-		Port:           3000,
-		IP:             "0.0.0.0",
-		TExpire:        time.Second,
-		DataSourceName: ":memory:",
-	})
-
-	dht.CreateSocket()
-
-	go func() {
-		dht.Listen(ctx)
-	}()
-
-	k, _ := dht.Store(ctx, []byte("foo"))
-
-	v, exists, _ := dht.Get(ctx, k)
-	assert.Equal(t, true, exists)
-
-	assert.Equal(t, []byte("foo"), v)
-
-	<-time.After(time.Second * 3)
-
-	_, exists, _ = dht.Get(ctx, k)
-
-	assert.Equal(t, false, exists)
-
-	dht.Disconnect()
-}
-
-func getInMemoryStore() *mem.Key {
-	memStore := &mem.Key{}
-	return memStore
+func (ts *testSuite) TestRateLimiter() {
+	start, end := 10, 50
+	// start 10 nodes
+	dhts, err := ts.startNodes(start, end)
+	if err != nil {
+		ts.T().Fatalf("start nodes: %v", err)
+	}
+	for _, dht := range dhts {
+		defer dht.Stop(ts.ctx)
+	}
 }

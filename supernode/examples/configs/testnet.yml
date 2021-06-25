@@ -11,17 +11,11 @@ node:
     port: 4444
 
 p2p:
-  listen_addresses: "0.0.0.0"
-  port: 4445
-  # if not specified, persistent database store is used
-  memory_db: true
-
-  # default value is assigned automatically, by concatenated CLI parameter `--work-dir` and `p2p` as a subfolder.
-  # data_dir: "path/to/p2p/data/dir"
-
+  listen_address: "0.0.0.0"
+  port: 6000
+  data_dir: "p2p-testnet"
   # bootstrap_ip: ""
   # bootstrap_port: ""
-  # use_stun: true
 
 metadb:
   listen_address: "0.0.0.0"

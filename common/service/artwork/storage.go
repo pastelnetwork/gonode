@@ -53,6 +53,22 @@ func (storage *Storage) File(name string) (*File, error) {
 	return file, nil
 }
 
+// Update changes the key to identify a *File to a new key
+func (storage *Storage) Update(oldname, newname string, file *File) error {
+	f, ok := storage.files[oldname]
+	if !ok {
+		return errors.New("file not found")
+	}
+
+	if f != file {
+		return errors.New("not the same file")
+	}
+
+	delete(storage.files, oldname)
+	storage.files[newname] = file
+	return nil
+}
+
 // NewStorage returns a new Storage instance.
 func NewStorage(storage storage.FileStorage) *Storage {
 	prefix, _ := random.String(8, random.Base62Chars)
