@@ -31,10 +31,17 @@ paths:
                     inventor, and writer Leonardo da Vinci. Likely completed in 1506,
                     the piece features a portrait of a seated woman set against an
                     imaginary landscape.
+                  green: false
+                  image_thumbnail:
+                    bottom_right_x: 640
+                    bottom_right_y: 480
+                    top_left_x: 0
+                    top_left_y: 0
                   issued_copies: 1
                   keywords: Renaissance, sfumato, portrait
                   maximum_fee: 100
                   name: Mona Lisa
+                  royalty: 12
                   series_name: Famous artist
                   spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -50,10 +57,17 @@ paths:
                     inventor, and writer Leonardo da Vinci. Likely completed in 1506,
                     the piece features a portrait of a seated woman set against an
                     imaginary landscape.
+                  green: false
+                  image_thumbnail:
+                    bottom_right_x: 640
+                    bottom_right_y: 480
+                    top_left_x: 0
+                    top_left_y: 0
                   issued_copies: 1
                   keywords: Renaissance, sfumato, portrait
                   maximum_fee: 100
                   name: Mona Lisa
+                  royalty: 12
                   series_name: Famous artist
                   spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -88,11 +102,18 @@ paths:
               description: The Mona Lisa is an oil painting by Italian artist, inventor,
                 and writer Leonardo da Vinci. Likely completed in 1506, the piece
                 features a portrait of a seated woman set against an imaginary landscape.
+              green: false
               image_id: VK7mpAqZ
+              image_thumbnail:
+                bottom_right_x: 640
+                bottom_right_y: 480
+                top_left_x: 0
+                top_left_y: 0
               issued_copies: 1
               keywords: Renaissance, sfumato, portrait
               maximum_fee: 100
               name: Mona Lisa
+              royalty: 12
               series_name: Famous artist
               spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
               youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -170,10 +191,17 @@ paths:
                     inventor, and writer Leonardo da Vinci. Likely completed in 1506,
                     the piece features a portrait of a seated woman set against an
                     imaginary landscape.
+                  green: false
+                  image_thumbnail:
+                    bottom_right_x: 640
+                    bottom_right_y: 480
+                    top_left_x: 0
+                    top_left_y: 0
                   issued_copies: 1
                   keywords: Renaissance, sfumato, portrait
                   maximum_fee: 100
                   name: Mona Lisa
+                  royalty: 12
                   series_name: Famous artist
                   spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -360,6 +388,14 @@ components:
             writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
           maxLength: 1024
+        green:
+          type: boolean
+          description: To donate 2% of the sale proceeds on every sale to TeamTrees
+            which plants trees
+          default: false
+          example: false
+        image_thumbnail:
+          $ref: '#/components/schemas/Thumbnailcoordinate2'
         issued_copies:
           type: integer
           description: Number of copies issued
@@ -383,6 +419,14 @@ components:
           description: Name of the artwork
           example: Mona Lisa
           maxLength: 256
+        royalty:
+          type: number
+          description: Percentage the artist received in future sales. If set to 0%
+            he only get paids for the first sale on each copy of the NFT
+          default: 0
+          example: 12
+          minimum: 0
+          maximum: 100
         series_name:
           type: string
           description: Series name
@@ -409,10 +453,17 @@ components:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
+        green: false
+        image_thumbnail:
+          bottom_right_x: 640
+          bottom_right_y: 480
+          top_left_x: 0
+          top_left_y: 0
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
         name: Mona Lisa
+        royalty: 12
         series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -515,12 +566,20 @@ components:
             writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
           maxLength: 1024
+        green:
+          type: boolean
+          description: To donate 2% of the sale proceeds on every sale to TeamTrees
+            which plants trees
+          default: false
+          example: false
         image_id:
           type: string
           description: Uploaded image ID
           example: VK7mpAqZ
           minLength: 8
           maxLength: 8
+        image_thumbnail:
+          $ref: '#/components/schemas/Thumbnailcoordinate'
         issued_copies:
           type: integer
           description: Number of copies issued
@@ -544,6 +603,14 @@ components:
           description: Name of the artwork
           example: Mona Lisa
           maxLength: 256
+        royalty:
+          type: number
+          description: Percentage the artist received in future sales. If set to 0%
+            he only get paids for the first sale on each copy of the NFT
+          default: 0
+          example: 12
+          minimum: 0
+          maximum: 100
         series_name:
           type: string
           description: Series name
@@ -569,11 +636,18 @@ components:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
+        green: false
         image_id: VK7mpAqZ
+        image_thumbnail:
+          bottom_right_x: 640
+          bottom_right_y: 480
+          top_left_x: 0
+          top_left_y: 0
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
         name: Mona Lisa
+        royalty: 12
         series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -625,12 +699,12 @@ components:
           enum:
           - Task Started
           - Connected
-          - Image Uploaded
+          - Image Probed
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
-          - Error FGPT Not Match
+          - Error Fingerprints Dont Match
           - Task Rejected
           - Task Completed
         ticket:
@@ -660,10 +734,17 @@ components:
           description: The Mona Lisa is an oil painting by Italian artist, inventor,
             and writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
+          green: false
+          image_thumbnail:
+            bottom_right_x: 640
+            bottom_right_y: 480
+            top_left_x: 0
+            top_left_y: 0
           issued_copies: 1
           keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
           name: Mona Lisa
+          royalty: 12
           series_name: Famous artist
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -688,12 +769,12 @@ components:
           enum:
           - Task Started
           - Connected
-          - Image Uploaded
+          - Image Probed
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
-          - Error FGPT Not Match
+          - Error Fingerprints Dont Match
           - Task Rejected
           - Task Completed
         ticket:
@@ -716,10 +797,17 @@ components:
           description: The Mona Lisa is an oil painting by Italian artist, inventor,
             and writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
+          green: false
+          image_thumbnail:
+            bottom_right_x: 640
+            bottom_right_y: 480
+            top_left_x: 0
+            top_left_y: 0
           issued_copies: 1
           keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
           name: Mona Lisa
+          royalty: 12
           series_name: Famous artist
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -745,10 +833,17 @@ components:
           description: The Mona Lisa is an oil painting by Italian artist, inventor,
             and writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
+          green: false
+          image_thumbnail:
+            bottom_right_x: 640
+            bottom_right_y: 480
+            top_left_x: 0
+            top_left_y: 0
           issued_copies: 1
           keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
           name: Mona Lisa
+          royalty: 12
           series_name: Famous artist
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -763,10 +858,17 @@ components:
           description: The Mona Lisa is an oil painting by Italian artist, inventor,
             and writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
+          green: false
+          image_thumbnail:
+            bottom_right_x: 640
+            bottom_right_y: 480
+            top_left_x: 0
+            top_left_y: 0
           issued_copies: 1
           keywords: Renaissance, sfumato, portrait
           maximum_fee: 100
           name: Mona Lisa
+          royalty: 12
           series_name: Famous artist
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
@@ -785,12 +887,12 @@ components:
           enum:
           - Task Started
           - Connected
-          - Image Uploaded
+          - Image Probed
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
-          - Error FGPT Not Match
+          - Error Fingerprints Dont Match
           - Task Rejected
           - Task Completed
       example:
@@ -799,6 +901,82 @@ components:
       required:
       - date
       - status
+    Thumbnailcoordinate:
+      type: object
+      properties:
+        bottom_right_x:
+          type: integer
+          description: X coordinate of the thumbnail's bottom right conner
+          default: 0
+          example: 640
+          format: int64
+        bottom_right_y:
+          type: integer
+          description: Y coordinate of the thumbnail's bottom right conner
+          default: 0
+          example: 480
+          format: int64
+        top_left_x:
+          type: integer
+          description: X coordinate of the thumbnail's top left conner
+          default: 0
+          example: 0
+          format: int64
+        top_left_y:
+          type: integer
+          description: Y coordinate of the thumbnail's top left conner
+          default: 0
+          example: 0
+          format: int64
+      description: Coordinate of the thumbnail
+      example:
+        bottom_right_x: 640
+        bottom_right_y: 480
+        top_left_x: 0
+        top_left_y: 0
+      required:
+      - top_left_x
+      - top_left_y
+      - bottom_right_x
+      - bottom_right_y
+    Thumbnailcoordinate2:
+      type: object
+      properties:
+        bottom_right_x:
+          type: integer
+          description: X coordinate of the thumbnail's bottom right conner
+          default: 0
+          example: 640
+          format: int64
+        bottom_right_y:
+          type: integer
+          description: Y coordinate of the thumbnail's bottom right conner
+          default: 0
+          example: 480
+          format: int64
+        top_left_x:
+          type: integer
+          description: X coordinate of the thumbnail's top left conner
+          default: 0
+          example: 0
+          format: int64
+        top_left_y:
+          type: integer
+          description: Y coordinate of the thumbnail's top left conner
+          default: 0
+          example: 0
+          format: int64
+      description: Coordinate of the thumbnail
+      example:
+        bottom_right_x: 640
+        bottom_right_y: 480
+        top_left_x: 0
+        top_left_y: 0
+      required:
+      - top_left_x
+      - top_left_y
+      - bottom_right_x
+      - bottom_right_y
     UploadImageRequestBody:
       type: object
       properties:
