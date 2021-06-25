@@ -1,13 +1,16 @@
 package artworkregister
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
@@ -34,7 +37,7 @@ func (task *Task) Run(ctx context.Context) error {
 
 	if err := task.run(ctx); err != nil {
 		task.UpdateStatus(StatusTaskRejected)
-		log.WithContext(ctx).WithError(err).Warnf("Task is rejected")
+		log.WithContext(ctx).WithErrorStack(err).Warnf("Task is rejected")
 		return nil
 	}
 
@@ -53,6 +56,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
 	}
 
+	// Retrieve supernodes with highest ranks.
 	topNodes, err := task.pastelTopNodes(ctx)
 	if err != nil {
 		return err
@@ -62,6 +66,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
 
+	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
 	var nodes node.List
 	var errs error
 	for primaryRank := range topNodes {
@@ -80,9 +85,12 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
 	}
 
+	// Activate supernodes that are in the mesh.
 	nodes.Activate()
+	// Disconnect supernodes that are not involved in the process.
 	topNodes.DisconnectInactive()
 
+	// Cancel context when any connection is broken.
 	groupConnClose, _ := errgroup.WithContext(ctx)
 	groupConnClose.Go(func() error {
 		defer cancel()
@@ -90,21 +98,25 @@ func (task *Task) run(ctx context.Context) error {
 	})
 	task.UpdateStatus(StatusConnected)
 
+	// Create a thumbnail copy of the image.
 	log.WithContext(ctx).WithField("filename", task.Ticket.Image.Name()).Debugf("Copy image")
 	thumbnail, err := task.Ticket.Image.Copy()
 	if err != nil {
 		return err
 	}
+	defer thumbnail.Remove()
 
-	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d", task.config.thumbnailWidth, task.config.thumbnailHeight)
-	if err := thumbnail.ResizeImage(thumbnailWidth, thumbnailHeight); err != nil {
+	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d pixeles", task.config.thumbnailSize, task.config.thumbnailSize)
+	if err := thumbnail.ResizeImage(thumbnailSize, thumbnailSize); err != nil {
 		return err
 	}
 
+	// Send thumbnail to supernodes for probing.
 	if err := nodes.ProbeImage(ctx, thumbnail); err != nil {
 		return err
 	}
 
+	// Match fingerprints received from supernodes.
 	if err := nodes.MatchFingerprints(); err != nil {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
 		return err
@@ -112,14 +124,66 @@ func (task *Task) run(ctx context.Context) error {
 	task.UpdateStatus(StatusImageProbed)
 
 	fingerprint := nodes.Fingerprint()
-	signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
+	finalImage, err := task.Ticket.Image.Copy()
+	if err != nil {
+		return err
+	}
+	defer finalImage.Remove()
+
+	if err := task.encodeFingerprint(ctx, fingerprint, finalImage); err != nil {
+		return err
+	}
+	fmt.Println("OK")
+	// Wait for all connections to disconnect.
+	return groupConnClose.Wait()
+}
+
+func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, image *artwork.File) error {
+	// Sign fingerprint
+	ed448PubKey := []byte(task.Ticket.ArtistPastelID)
+	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(signature)
+	// TODO: Should be replaced with real data from the Pastel API.
+	pqPubKey := []byte("pqPubKey")
+	pqSignature := []byte("pqSignature")
 
-	return groupConnClose.Wait()
+	// Encode data to the image.
+	encSig := qrsignature.New(
+		qrsignature.Fingerprint(fingerprint),
+		qrsignature.PostQuantumSignature(pqSignature),
+		qrsignature.PostQuantumPubKey(pqPubKey),
+		qrsignature.Ed448Signature(ed448Signature),
+		qrsignature.Ed448PubKey(ed448PubKey),
+	)
+	if err := image.Encode(encSig); err != nil {
+		return err
+	}
+
+	// Decode data from the image, to make sure their integrity.
+	decSig := qrsignature.New()
+	if err := image.Decode(decSig); err != nil {
+		return err
+	}
+
+	if !bytes.Equal(fingerprint, decSig.Fingerprint()) {
+		return errors.Errorf("fingerprints do not match, original len:%d, decoded len:%d\n", len(fingerprint), len(decSig.Fingerprint()))
+	}
+	if !bytes.Equal(pqSignature, decSig.PostQuantumSignature()) {
+		return errors.Errorf("post quantum signatures do not match, original len:%d, decoded len:%d\n", len(pqSignature), len(decSig.PostQuantumSignature()))
+	}
+	if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
+		return errors.Errorf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
+	}
+	if !bytes.Equal(ed448Signature, decSig.Ed448Signature()) {
+		return errors.Errorf("ed448 signatures do not match, original len:%d, decoded len:%d\n", len(ed448Signature), len(decSig.Ed448Signature()))
+	}
+	if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
+		return errors.Errorf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
+	}
+	return nil
 }
 
 // meshNodes establishes communication between supernodes.

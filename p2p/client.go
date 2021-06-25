@@ -1,16 +1,14 @@
 package p2p
 
-import (
-	"context"
-)
+import "context"
 
-// Client represents an interaction with a distributed hash table.
+// Client exposes the interfaces for p2p service
 type Client interface {
-	// Get retrieves data from the networking using key. Key is the base58 encoded
-	// identifier of the data.
-	Get(ctx context.Context, key string) (data []byte, found bool, err error)
+	// Retrieve data from the kademlia netowrk by key, return nil if not found
+	// - key is the base58 encoded identifier of the data
+	Retrieve(ctx context.Context, key string) ([]byte, error)
 
-	// Store stores data on the network. This will trigger an iterateStore message.
-	// The base58 encoded identifier will be returned if the store is successful.
-	Store(ctx context.Context, data []byte) (id string, err error)
+	// Store data to the network, which will trigger the iterative store message
+	// - the base58 encoded identifier will be returned
+	Store(ctx context.Context, data []byte) (string, error)
 }

@@ -62,6 +62,23 @@ func (fs *FS) Remove(filename string) error {
 	return nil
 }
 
+// Rename renames oldName to newName.
+func (fs *FS) Rename(oldname, newname string) error {
+	if oldname == newname {
+		return nil
+	}
+
+	oldname = filepath.Join(fs.dir, oldname)
+	newname = filepath.Join(fs.dir, newname)
+
+	log.WithPrefix(logPrefix).Debugf("Rename file %q to %q", oldname, newname)
+
+	if err := os.Rename(oldname, newname); err != nil {
+		return errors.Errorf("failed to rename file %q to %q: %w", oldname, newname, err)
+	}
+	return nil
+}
+
 // NewFileStorage returns new FS instance. Where `dir` is the path for storing files.
 func NewFileStorage(dir string) storage.FileStorage {
 	return &FS{

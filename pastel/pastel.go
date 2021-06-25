@@ -28,7 +28,7 @@ type Client interface {
 
 	// Sign signs data by the given pastelID and passphrase, if successful returns signature.
 	// Command `pastelid sign "text" "PastelID" "passphrase"`.
-	Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature string, err error)
+	Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error)
 
 	// Verify verifies signed data by the given its signature and pastelID, if successful returns true.
 	// Command `pastelid verify "text" "signature" "PastelID"`.

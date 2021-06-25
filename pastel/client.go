@@ -3,7 +3,6 @@ package pastel
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"net"
 	"strconv"
 	"strings"
@@ -77,16 +76,16 @@ func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTic
 }
 
 // Sign implements pastel.Client.Sign
-func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature string, err error) {
+func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error) {
 	var sign struct {
 		Signature string `json:"signature"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
 	if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase); err != nil {
-		return "", errors.Errorf("failed to sign data: %w", err)
+		return nil, errors.Errorf("failed to sign data: %w", err)
 	}
-	return sign.Signature, nil
+	return []byte(sign.Signature), nil
 }
 
 // Verify implements pastel.Client.Verify
@@ -103,17 +102,7 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
-	err := client.CallForWithContext(ctx, &object, method, params)
-	if err != nil {
-		if err, ok := err.(*json.UnmarshalTypeError); ok {
-			return errors.New(err)
-		}
-		return errors.Errorf("could not call method %q, %w", method, err)
-	}
-	if object == nil {
-		return errors.New("nothing found")
-	}
-	return nil
+	return client.CallForWithContext(ctx, object, method, params)
 }
 
 // NewClient returns a new Client instance.
