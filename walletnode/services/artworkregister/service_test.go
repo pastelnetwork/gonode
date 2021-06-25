@@ -210,8 +210,8 @@ func TestServiceAddTask(t *testing.T) {
 
 			group, ctx := errgroup.WithContext(context.Background())
 			group.Go(func() error {
-				tId := service.AddTask(tt.args.ticket)
-				assert.NotEmpty(t, tId)
+				taskID := service.AddTask(tt.args.ticket)
+				assert.NotEmpty(t, taskID)
 				return nil
 			})
 
