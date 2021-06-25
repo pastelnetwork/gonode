@@ -156,8 +156,8 @@ func TestServiceTask(t *testing.T) {
 
 			group, ctx := errgroup.WithContext(context.Background())
 			group.Go(func() error {
-				tId := service.AddTask(&Ticket{Name: tt.args.ticketName})
-				task := service.Task(tId)
+				taskID := service.AddTask(&Ticket{Name: tt.args.ticketName})
+				task := service.Task(taskID)
 				assert.Equal(t, tt.want, parseTicketNames(task))
 
 				return nil
