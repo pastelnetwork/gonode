@@ -547,10 +547,13 @@ func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*ht
 		if !ok {
 			return goahttp.ErrInvalidType("artworks", "download", "*artworks.DownloadPayload", v)
 		}
+		{
+			head := p.Key
+			req.Header.Set("Authorization", head)
+		}
 		values := req.URL.Query()
 		values.Add("txid", p.Txid)
 		values.Add("pid", p.Pid)
-		values.Add("k", p.Key)
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}

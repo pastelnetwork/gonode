@@ -17,6 +17,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
 
 	goahttp "goa.design/goa/v3/http"
+	"goa.design/goa/v3/security"
 )
 
 const (
@@ -140,6 +141,11 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 // Download registered artwork.
 func (service *Artwork) Download(_ context.Context, p *artworks.DownloadPayload) (res *artworks.DownloadResult, err error) {
 	log.Infof("Art Download Payload: %v", p)
+	return
+}
+
+// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+func (service *Artwork) APIKeyAuth(ctx_ context.Context, key string, schema *security.APIKeyScheme) (ctx context.Context, err error) {
 	return
 }
 

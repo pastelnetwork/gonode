@@ -11,6 +11,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strings"
 	"unicode/utf8"
 
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
@@ -406,14 +407,19 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if utf8.RuneCountInString(pid) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
 		}
-		key = r.URL.Query().Get("k")
+		key = r.Header.Get("Authorization")
 		if key == "" {
-			err = goa.MergeErrors(err, goa.MissingFieldError("k", "query string"))
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
 		}
 		if err != nil {
 			return nil, err
 		}
 		payload := NewDownloadPayload(txid, pid, key)
+		if strings.Contains(payload.Key, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Key, " ", 2)[1]
+			payload.Key = cred
+		}
 
 		return payload, nil
 	}

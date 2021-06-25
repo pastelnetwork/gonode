@@ -35,8 +35,8 @@ paths:
         maxLength: 86
         minLength: 86
         pattern: ^[a-zA-Z0-9]+$
-      - name: k
-        in: query
+      - name: Authorization
+        in: header
         description: API key
         required: true
         type: string
@@ -56,7 +56,7 @@ paths:
       schemes:
       - http
       security:
-      - api_key_query_k: []
+      - api_key_header_Authorization: []
   /artworks/register:
     get:
       tags:
@@ -1415,8 +1415,8 @@ definitions:
     - date
     - status
 securityDefinitions:
-  api_key_query_k:
+  api_key_header_Authorization:
     type: apiKey
     description: Art Owner's passphrase to authenticate
-    name: k
-    in: query
+    name: Authorization
+    in: header

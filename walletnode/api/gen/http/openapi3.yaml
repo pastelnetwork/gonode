@@ -38,16 +38,6 @@ paths:
           minLength: 86
           maxLength: 86
         example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-      - name: k
-        in: query
-        description: API key
-        allowEmptyValue: true
-        required: true
-        schema:
-          type: string
-          description: API key
-          example: abcdef12345
-        example: abcdef12345
       responses:
         "200":
           description: OK response.
@@ -78,7 +68,7 @@ paths:
                 message: Value of ID must be an integer
                 name: bad_request
       security:
-      - api_key_query_k: []
+      - api_key_header_Authorization: []
   /artworks/register:
     get:
       tags:
@@ -956,8 +946,8 @@ components:
       required:
       - file
   securitySchemes:
-    api_key_query_k:
+    api_key_header_Authorization:
       type: apiKey
       description: Art Owner's passphrase to authenticate
-      name: k
-      in: query
+      name: Authorization
+      in: header
