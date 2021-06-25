@@ -3,52 +3,61 @@ package artworkregister
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/stretchr/testify/assert"
 )
+
+func parseTicketNames(tasks ...*Task) []string {
+	var s []string
+	for _, t := range tasks {
+		s = append(s, t.Ticket.Name)
+	}
+	return s
+}
 
 func TestServiceRun(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Worker       *task.Worker
-		Storage      *artwork.Storage
-		config       *Config
-		db           storage.KeyValue
-		pastelClient pastel.Client
-		nodeClient   node.Client
-	}
-
-	type args struct {
-		ctx context.Context
+		Worker  *task.Worker
+		Storage *artwork.Storage
+		config  *Config
 	}
 
 	tests := []struct {
 		name      string
 		fields    fields
-		args      args
 		assertion assert.ErrorAssertionFunc
 	}{
-		// TODO: Add test cases.
+		{
+			name: "run service",
+			fields: fields{
+				Worker:  task.NewWorker(),
+				Storage: artwork.NewStorage(fs.NewFileStorage("./")),
+				config:  NewConfig(),
+			},
+			assertion: assert.NoError,
+		},
 	}
 
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
 			service := &Service{
-				Worker:       tt.fields.Worker,
-				Storage:      tt.fields.Storage,
-				config:       tt.fields.config,
-				db:           tt.fields.db,
-				pastelClient: tt.fields.pastelClient,
-				nodeClient:   tt.fields.nodeClient,
+				Worker:  tt.fields.Worker,
+				Storage: tt.fields.Storage,
+				config:  tt.fields.config,
 			}
-			tt.assertion(t, service.Run(tt.args.ctx))
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			defer cancel()
+
+			tt.assertion(t, service.Run(ctx))
 		})
 	}
 }
@@ -57,31 +66,54 @@ func TestServiceTasks(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Worker       *task.Worker
-		Storage      *artwork.Storage
-		config       *Config
-		db           storage.KeyValue
-		pastelClient pastel.Client
-		nodeClient   node.Client
+		Worker *task.Worker
+		config *Config
 	}
+
+	type args struct {
+		ticketNames []string
+	}
+
 	tests := []struct {
 		name   string
 		fields fields
-		want   []*Task
+		args   args
+		want   []string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "get tasks",
+			fields: fields{
+				Worker: task.NewWorker(),
+				config: NewConfig(),
+			},
+			args: args{
+				ticketNames: []string{"ticket 1", "ticket 2"},
+			},
+			want: []string{"ticket 1", "ticket 2"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			service := &Service{
-				Worker:       tt.fields.Worker,
-				Storage:      tt.fields.Storage,
-				config:       tt.fields.config,
-				db:           tt.fields.db,
-				pastelClient: tt.fields.pastelClient,
-				nodeClient:   tt.fields.nodeClient,
+				Worker: tt.fields.Worker,
+				config: tt.fields.config,
 			}
-			assert.Equal(t, tt.want, service.Tasks())
+
+			group, ctx := errgroup.WithContext(context.Background())
+			group.Go(func() error {
+				for _, t := range tt.args.ticketNames {
+					service.AddTask(&Ticket{Name: t})
+				}
+
+				assert.Equal(t, tt.want, parseTicketNames(service.Tasks()...))
+
+				return nil
+			})
+
+			service.Run(ctx)
+
+			err := group.Wait()
+			assert.NoError(t, err)
 		})
 	}
 }
@@ -100,7 +132,7 @@ func TestServiceTask(t *testing.T) {
 		name   string
 		fields fields
 		args   args
-		want   string
+		want   []string
 	}{
 		{
 			name: "get task with given id",
@@ -109,7 +141,7 @@ func TestServiceTask(t *testing.T) {
 				config: NewConfig(),
 			},
 			args: args{"Ticket 1"},
-			want: "Ticket 1",
+			want: []string{"Ticket 1"},
 		},
 	}
 
@@ -126,7 +158,7 @@ func TestServiceTask(t *testing.T) {
 			group.Go(func() error {
 				tId := service.AddTask(&Ticket{Name: tt.args.ticketName})
 				task := service.Task(tId)
-				assert.Equal(t, tt.want, task.Ticket.Name)
+				assert.Equal(t, tt.want, parseTicketNames(task))
 
 				return nil
 			})
