@@ -283,7 +283,51 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Default(false)
 	})
 
+<<<<<<< HEAD
 	Attribute("image_thumbnail", ThumbnailCoordinate)
+=======
+	Attribute("thumbnail_coordinates", func() {
+		Description("Cordinate of the image thumbnail")
+		// Attribute("top_left", Coordinate)
+		// Attribute("bottom_right", Coordinate)
+		// Attribute("top_left", func() {
+		// 	Extend(Coordinate)
+		// })
+		// Attribute("bottom_right", func() {
+		// 	Extend(Coordinate)
+		// })
+		Attribute("top_left_x", Int64, "Top left conner x coordinate", func() {
+			Example(0)
+			Default(0)
+		})
+		Attribute("top_left_y", Int64, "Top left conner y coordinate", func() {
+			Example(0)
+			Default(0)
+		})
+		Attribute("bottom_right_x", Int64, "Bottom right conner x coordinate", func() {
+			Example(0)
+			Default(0)
+		})
+		Attribute("bottom_right_y", Int64, "Bottom right conner y coordinate", func() {
+			Example(0)
+			Default(0)
+		})
+		Required("top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y")
+		// Attribute("top_left", func() {
+		// 	Attribute("x", Int64, "x coordinate")
+		// 	Attribute("y", Int64, "y coordinate")
+		// 	Required("x", "y")
+		// 	Example(Val{"x": 100, "y": 100})
+		// })
+		// Attribute("bottom_right", func() {
+		// 	Attribute("x", Int64, "x coordinate")
+		// 	Attribute("y", Int64, "y coordinate")
+		// 	Example(Val{"x": 400, "y": 400})
+		// 	Required("x", "y")
+		// })
+		// Required("top_left", "bottom_right")
+	})
+>>>>>>> d9e667b (Add default value and example for new fields)
 
 	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
