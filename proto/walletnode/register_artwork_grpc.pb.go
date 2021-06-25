@@ -30,6 +30,8 @@ type RegisterArtworkClient interface {
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
+	// Upload the Image and the thumb coordinate
+	UploadImage(ctx context.Context, in *UploadImageRequest, opts ...grpc.CallOption) (*UploadImageReply, error)
 }
 
 type registerArtworkClient struct {
@@ -132,6 +134,15 @@ func (c *registerArtworkClient) SendTicket(ctx context.Context, in *SendTicketRe
 	return out, nil
 }
 
+func (c *registerArtworkClient) UploadImage(ctx context.Context, in *UploadImageRequest, opts ...grpc.CallOption) (*UploadImageReply, error) {
+	out := new(UploadImageReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/UploadImage", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterArtworkServer is the server API for RegisterArtwork service.
 // All implementations must embed UnimplementedRegisterArtworkServer
 // for forward compatibility
@@ -148,6 +159,8 @@ type RegisterArtworkServer interface {
 	ProbeImage(RegisterArtwork_ProbeImageServer) error
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
+	// Upload the Image and the thumb coordinate
+	UploadImage(context.Context, *UploadImageRequest) (*UploadImageReply, error)
 	mustEmbedUnimplementedRegisterArtworkServer()
 }
 
@@ -169,6 +182,9 @@ func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageS
 }
 func (UnimplementedRegisterArtworkServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
+}
+func (UnimplementedRegisterArtworkServer) UploadImage(context.Context, *UploadImageRequest) (*UploadImageReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UploadImage not implemented")
 }
 func (UnimplementedRegisterArtworkServer) mustEmbedUnimplementedRegisterArtworkServer() {}
 
@@ -289,6 +305,24 @@ func _RegisterArtwork_SendTicket_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterArtwork_UploadImage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadImageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).UploadImage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterArtwork/UploadImage",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).UploadImage(ctx, req.(*UploadImageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterArtwork_ServiceDesc is the grpc.ServiceDesc for RegisterArtwork service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -307,6 +341,10 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendTicket",
 			Handler:    _RegisterArtwork_SendTicket_Handler,
+		},
+		{
+			MethodName: "UploadImage",
+			Handler:    _RegisterArtwork_UploadImage_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
