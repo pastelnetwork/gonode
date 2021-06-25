@@ -196,6 +196,49 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Example(100)
 	})
 
+	Attribute("royalty", Float64, func() {
+		Description("Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT")
+		Default(0.0)
+		Example(12.0)
+		Minimum(0.0)
+		Maximum(100.0)
+	})
+
+	Attribute("green", Boolean, func() {
+		Description("To donate 2% of the sale proceeds on every sale to TeamTrees which plants trees")
+		Default(false)
+	})
+
+	Attribute("thumbnail_coordinates", func() {
+		Description("Cordinate of the image thumbnail")
+		// Attribute("top_left", Coordinate)
+		// Attribute("bottom_right", Coordinate)
+		// Attribute("top_left", func() {
+		// 	Extend(Coordinate)
+		// })
+		// Attribute("bottom_right", func() {
+		// 	Extend(Coordinate)
+		// })
+		Attribute("top_left_x", Int64, "Top left conner x coordinate")
+		Attribute("top_left_y", Int64, "Top left conner y coordinate")
+		Attribute("botoom_right_x", Int64, "Bottom right conner x coordinate")
+		Attribute("bootom_right_y", Int64, "Bottom right conner y coordinate")
+		Required("top_left_x", "top_left_y", "botoom_right_x", "")
+		// Attribute("top_left", func() {
+		// 	Attribute("x", Int64, "x coordinate")
+		// 	Attribute("y", Int64, "y coordinate")
+		// 	Required("x", "y")
+		// 	Example(Val{"x": 100, "y": 100})
+		// })
+		// Attribute("bottom_right", func() {
+		// 	Attribute("x", Int64, "x coordinate")
+		// 	Attribute("y", Int64, "y coordinate")
+		// 	Example(Val{"x": 400, "y": 400})
+		// 	Required("x", "y")
+		// })
+		// Required("top_left", "bottom_right")
+	})
+
 	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 
