@@ -25,6 +25,7 @@ type Connection interface {
 	RaptorQ() RaptorQ
 }
 
-// RegisterArtwork contains methods for registering artwork.
+// RaptorQ contains methods for request services from RaptorQ service.
 type RaptorQ interface {
+	Encode(ctx context.Context, data []byte) ([][]byte, error)
 }
