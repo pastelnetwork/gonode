@@ -87,11 +87,12 @@ func TestServiceTasks(t *testing.T) {
 				config: NewConfig(),
 			},
 			args: args{
-				ticketNames: []string{"ticket 1", "ticket 2"},
+				ticketNames: []string{"ticket 1"},
 			},
-			want: []string{"ticket 1", "ticket 2"},
+			want: []string{"ticket 1"},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			service := &Service{
@@ -105,7 +106,8 @@ func TestServiceTasks(t *testing.T) {
 					service.AddTask(&Ticket{Name: t})
 				}
 
-				assert.Equal(t, tt.want, parseTicketNames(service.Tasks()...))
+				tasks := service.Tasks()
+				assert.Equal(t, tt.want, parseTicketNames(tasks...))
 
 				return nil
 			})
@@ -116,6 +118,7 @@ func TestServiceTasks(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+
 }
 
 func TestServiceTask(t *testing.T) {
@@ -199,6 +202,7 @@ func TestServiceAddTask(t *testing.T) {
 			},
 		},
 	}
+
 	for _, tt := range tests {
 		tt := tt
 
@@ -221,4 +225,5 @@ func TestServiceAddTask(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+
 }

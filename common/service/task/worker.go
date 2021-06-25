@@ -17,6 +17,9 @@ type Worker struct {
 
 // Tasks returns all tasks.
 func (worker *Worker) Tasks() []Task {
+	worker.Lock()
+	defer worker.Unlock()
+
 	return worker.tasks
 }
 

@@ -269,7 +269,6 @@ func TestTaskMeshNodes(t *testing.T) {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-
 			//create new client mock
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
