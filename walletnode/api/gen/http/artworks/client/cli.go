@@ -163,7 +163,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 	{
 		err = json.Unmarshal([]byte(artworksUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVsIHZvbHVwdGF0ZW0gcHJvdmlkZW50IGRvbG9yaWJ1cy4=\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"QXV0IGRvbG9yZXMgdXQgZnVnaXQgdGVtcG9yYSBwZXJmZXJlbmRpcyBkb2xvcmlidXMu\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -219,6 +219,52 @@ func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid strin
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key
+
+	return v, nil
+}
+
+// BuildDownloadTaskStateEndpointPayload builds the payload for the artworks
+// downloadTaskState endpoint from CLI flags.
+func BuildDownloadTaskStateEndpointPayload(artworksDownloadTaskStateTaskID string) (*artworks.DownloadTaskStatePayload, error) {
+	var err error
+	var taskID string
+	{
+		taskID = artworksDownloadTaskStateTaskID
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &artworks.DownloadTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v, nil
+}
+
+// BuildDowloadTaskPayload builds the payload for the artworks dowloadTask
+// endpoint from CLI flags.
+func BuildDowloadTaskPayload(artworksDowloadTaskTaskID string) (*artworks.DowloadTaskPayload, error) {
+	var err error
+	var taskID string
+	{
+		taskID = artworksDowloadTaskTaskID
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &artworks.DowloadTaskPayload{}
+	v.TaskID = taskID
 
 	return v, nil
 }

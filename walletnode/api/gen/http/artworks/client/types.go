@@ -105,6 +105,32 @@ type DownloadResponseBody struct {
 	TaskID *string `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
 }
 
+// DownloadTaskStateResponseBody is the type of the "artworks" service
+// "downloadTaskState" endpoint HTTP response body.
+type DownloadTaskStateResponseBody struct {
+	// Date of the status creation
+	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
+	// Status of the download process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
+// DowloadTaskResponseBody is the type of the "artworks" service "dowloadTask"
+// endpoint HTTP response body.
+type DowloadTaskResponseBody struct {
+	// JOb ID of the downloading process
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Status of the downloading process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// List of states from the very beginning of the process
+	States []*DownloadTaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
+	// File downloaded
+	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+}
+
+// DownloadTasksResponseBody is the type of the "artworks" service
+// "downloadTasks" endpoint HTTP response body.
+type DownloadTasksResponseBody []*DownloadTaskResponse
+
 // RegisterBadRequestResponseBody is the type of the "artworks" service
 // "register" endpoint HTTP response body for the "BadRequest" error.
 type RegisterBadRequestResponseBody struct {
@@ -309,6 +335,99 @@ type DownloadInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// DownloadTaskStateNotFoundResponseBody is the type of the "artworks" service
+// "downloadTaskState" endpoint HTTP response body for the "NotFound" error.
+type DownloadTaskStateNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DownloadTaskStateInternalServerErrorResponseBody is the type of the
+// "artworks" service "downloadTaskState" endpoint HTTP response body for the
+// "InternalServerError" error.
+type DownloadTaskStateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DowloadTaskNotFoundResponseBody is the type of the "artworks" service
+// "dowloadTask" endpoint HTTP response body for the "NotFound" error.
+type DowloadTaskNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DowloadTaskInternalServerErrorResponseBody is the type of the "artworks"
+// service "dowloadTask" endpoint HTTP response body for the
+// "InternalServerError" error.
+type DowloadTaskInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DownloadTasksInternalServerErrorResponseBody is the type of the "artworks"
+// service "downloadTasks" endpoint HTTP response body for the
+// "InternalServerError" error.
+type DownloadTasksInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -392,6 +511,26 @@ type ArtworkTicketResponse struct {
 	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
+}
+
+// DownloadTaskResponse is used to define fields on response body types.
+type DownloadTaskResponse struct {
+	// JOb ID of the downloading process
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Status of the downloading process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+	// List of states from the very beginning of the process
+	States []*DownloadTaskStateResponse `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
+	// File downloaded
+	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+}
+
+// DownloadTaskStateResponse is used to define fields on response body types.
+type DownloadTaskStateResponse struct {
+	// Date of the status creation
+	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
+	// Status of the download process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 }
 
 // NewRegisterRequestBody builds the HTTP request body from the payload of the
@@ -621,9 +760,9 @@ func NewUploadImageInternalServerError(body *UploadImageInternalServerErrorRespo
 	return v
 }
 
-// NewDownloadResultViewOK builds a "artworks" service "download" endpoint
-// result from a HTTP "OK" response.
-func NewDownloadResultViewOK(body *DownloadResponseBody) *artworksviews.DownloadResultView {
+// NewDownloadResultViewAccepted builds a "artworks" service "download"
+// endpoint result from a HTTP "Accepted" response.
+func NewDownloadResultViewAccepted(body *DownloadResponseBody) *artworksviews.DownloadResultView {
 	v := &artworksviews.DownloadResultView{
 		TaskID: body.TaskID,
 	}
@@ -661,9 +800,140 @@ func NewDownloadInternalServerError(body *DownloadInternalServerErrorResponseBod
 	return v
 }
 
+// NewDownloadTaskStateOK builds a "artworks" service "downloadTaskState"
+// endpoint result from a HTTP "OK" response.
+func NewDownloadTaskStateOK(body *DownloadTaskStateResponseBody) *artworks.DownloadTaskState {
+	v := &artworks.DownloadTaskState{
+		Date:   *body.Date,
+		Status: *body.Status,
+	}
+
+	return v
+}
+
+// NewDownloadTaskStateNotFound builds a artworks service downloadTaskState
+// endpoint NotFound error.
+func NewDownloadTaskStateNotFound(body *DownloadTaskStateNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDownloadTaskStateInternalServerError builds a artworks service
+// downloadTaskState endpoint InternalServerError error.
+func NewDownloadTaskStateInternalServerError(body *DownloadTaskStateInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDowloadTaskDownloadTaskOK builds a "artworks" service "dowloadTask"
+// endpoint result from a HTTP "OK" response.
+func NewDowloadTaskDownloadTaskOK(body *DowloadTaskResponseBody) *artworksviews.DownloadTaskView {
+	v := &artworksviews.DownloadTaskView{
+		ID:     body.ID,
+		Status: body.Status,
+		Bytes:  body.Bytes,
+	}
+	if body.States != nil {
+		v.States = make([]*artworksviews.DownloadTaskStateView, len(body.States))
+		for i, val := range body.States {
+			v.States[i] = unmarshalDownloadTaskStateResponseBodyToArtworksviewsDownloadTaskStateView(val)
+		}
+	}
+
+	return v
+}
+
+// NewDowloadTaskNotFound builds a artworks service dowloadTask endpoint
+// NotFound error.
+func NewDowloadTaskNotFound(body *DowloadTaskNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDowloadTaskInternalServerError builds a artworks service dowloadTask
+// endpoint InternalServerError error.
+func NewDowloadTaskInternalServerError(body *DowloadTaskInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDownloadTasksDownloadTaskCollectionOK builds a "artworks" service
+// "downloadTasks" endpoint result from a HTTP "OK" response.
+func NewDownloadTasksDownloadTaskCollectionOK(body DownloadTasksResponseBody) artworksviews.DownloadTaskCollectionView {
+	v := make([]*artworksviews.DownloadTaskView, len(body))
+	for i, val := range body {
+		v[i] = unmarshalDownloadTaskResponseToArtworksviewsDownloadTaskView(val)
+	}
+	return v
+}
+
+// NewDownloadTasksInternalServerError builds a artworks service downloadTasks
+// endpoint InternalServerError error.
+func NewDownloadTasksInternalServerError(body *DownloadTasksInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // ValidateRegisterTaskStateResponseBody runs the validations defined on
 // RegisterTaskStateResponseBody
 func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) (err error) {
+	if body.Date == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	if body.Status != nil {
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		}
+	}
+	return
+}
+
+// ValidateDownloadTaskStateResponseBody runs the validations defined on
+// DownloadTaskStateResponseBody
+func ValidateDownloadTaskStateResponseBody(body *DownloadTaskStateResponseBody) (err error) {
 	if body.Date == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
 	}
@@ -921,6 +1191,126 @@ func ValidateDownloadNotFoundResponseBody(body *DownloadNotFoundResponseBody) (e
 // ValidateDownloadInternalServerErrorResponseBody runs the validations defined
 // on download_InternalServerError_response_body
 func ValidateDownloadInternalServerErrorResponseBody(body *DownloadInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDownloadTaskStateNotFoundResponseBody runs the validations defined
+// on downloadTaskState_NotFound_response_body
+func ValidateDownloadTaskStateNotFoundResponseBody(body *DownloadTaskStateNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDownloadTaskStateInternalServerErrorResponseBody runs the
+// validations defined on downloadTaskState_InternalServerError_response_body
+func ValidateDownloadTaskStateInternalServerErrorResponseBody(body *DownloadTaskStateInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDowloadTaskNotFoundResponseBody runs the validations defined on
+// dowloadTask_NotFound_response_body
+func ValidateDowloadTaskNotFoundResponseBody(body *DowloadTaskNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDowloadTaskInternalServerErrorResponseBody runs the validations
+// defined on dowloadTask_InternalServerError_response_body
+func ValidateDowloadTaskInternalServerErrorResponseBody(body *DowloadTaskInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDownloadTasksInternalServerErrorResponseBody runs the validations
+// defined on downloadTasks_InternalServerError_response_body
+func ValidateDownloadTasksInternalServerErrorResponseBody(body *DownloadTasksInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -1227,6 +1617,60 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 	if body.MaximumFee != nil {
 		if *body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
+		}
+	}
+	return
+}
+
+// ValidateDownloadTaskResponse runs the validations defined on
+// DownloadTaskResponse
+func ValidateDownloadTaskResponse(body *DownloadTaskResponse) (err error) {
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	if body.Bytes == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+	}
+	if body.ID != nil {
+		if utf8.RuneCountInString(*body.ID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.id", *body.ID, utf8.RuneCountInString(*body.ID), 8, true))
+		}
+	}
+	if body.ID != nil {
+		if utf8.RuneCountInString(*body.ID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.id", *body.ID, utf8.RuneCountInString(*body.ID), 8, false))
+		}
+	}
+	if body.Status != nil {
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		}
+	}
+	for _, e := range body.States {
+		if e != nil {
+			if err2 := ValidateDownloadTaskStateResponse(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateDownloadTaskStateResponse runs the validations defined on
+// DownloadTaskStateResponse
+func ValidateDownloadTaskStateResponse(body *DownloadTaskStateResponse) (err error) {
+	if body.Date == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	if body.Status != nil {
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return

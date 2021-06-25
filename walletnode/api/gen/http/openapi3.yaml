@@ -9,6 +9,190 @@ paths:
     get:
       tags:
       - artworks
+      summary: Returns list of tasks
+      description: List of all tasks.
+      operationId: artworks#downloadTasks
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadTaskResponseTinyCollection'
+              example:
+              - file:
+                - 68
+                - 111
+                - 108
+                - 111
+                - 114
+                - 101
+                - 32
+                - 118
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
+                - 97
+                - 116
+                - 101
+                - 109
+                - 32
+                - 105
+                - 108
+                - 108
+                - 111
+                - 32
+                - 110
+                - 111
+                - 98
+                - 105
+                - 115
+                - 32
+                - 116
+                - 101
+                - 109
+                - 112
+                - 111
+                - 114
+                - 97
+                - 46
+                id: n6Qn6TFM
+                status: Task Started
+              - file:
+                - 68
+                - 111
+                - 108
+                - 111
+                - 114
+                - 101
+                - 32
+                - 118
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
+                - 97
+                - 116
+                - 101
+                - 109
+                - 32
+                - 105
+                - 108
+                - 108
+                - 111
+                - 32
+                - 110
+                - 111
+                - 98
+                - 105
+                - 115
+                - 32
+                - 116
+                - 101
+                - 109
+                - 112
+                - 111
+                - 114
+                - 97
+                - 46
+                id: n6Qn6TFM
+                status: Task Started
+              - file:
+                - 68
+                - 111
+                - 108
+                - 111
+                - 114
+                - 101
+                - 32
+                - 118
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
+                - 97
+                - 116
+                - 101
+                - 109
+                - 32
+                - 105
+                - 108
+                - 108
+                - 111
+                - 32
+                - 110
+                - 111
+                - 98
+                - 105
+                - 115
+                - 32
+                - 116
+                - 101
+                - 109
+                - 112
+                - 111
+                - 114
+                - 97
+                - 46
+                id: n6Qn6TFM
+                status: Task Started
+              - file:
+                - 68
+                - 111
+                - 108
+                - 111
+                - 114
+                - 101
+                - 32
+                - 118
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
+                - 97
+                - 116
+                - 101
+                - 109
+                - 32
+                - 105
+                - 108
+                - 108
+                - 111
+                - 32
+                - 110
+                - 111
+                - 98
+                - 105
+                - 115
+                - 32
+                - 116
+                - 101
+                - 109
+                - 112
+                - 111
+                - 114
+                - 97
+                - 46
+                id: n6Qn6TFM
+                status: Task Started
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+    post:
+      tags:
+      - artworks
       summary: Downloads artwork
       description: Download registered artwork.
       operationId: artworks#download
@@ -39,8 +223,8 @@ paths:
           maxLength: 86
         example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
       responses:
-        "200":
-          description: OK response.
+        "202":
+          description: Accepted response.
           content:
             application/json:
               schema:
@@ -69,6 +253,151 @@ paths:
                 name: bad_request
       security:
       - api_key_header_Authorization: []
+  /artworks/download/{taskId}:
+    get:
+      tags:
+      - artworks
+      summary: Find task by ID
+      description: Returns a single task.
+      operationId: artworks#dowloadTask
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the download process
+        required: true
+        schema:
+          type: string
+          description: Task ID of the download process
+          example: n6Qn6TFM
+          minLength: 8
+          maxLength: 8
+        example: n6Qn6TFM
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DowloadTaskResponseBody'
+              example:
+                file:
+                - 76
+                - 97
+                - 98
+                - 111
+                - 114
+                - 105
+                - 111
+                - 115
+                - 97
+                - 109
+                - 32
+                - 108
+                - 97
+                - 98
+                - 111
+                - 114
+                - 101
+                - 32
+                - 98
+                - 101
+                - 97
+                - 116
+                - 97
+                - 101
+                - 32
+                - 97
+                - 108
+                - 105
+                - 97
+                - 115
+                - 32
+                - 100
+                - 101
+                - 98
+                - 105
+                - 116
+                - 105
+                - 115
+                - 46
+                id: n6Qn6TFM
+                states:
+                - date: 2006-01-02T15:04:05Z07:00
+                  status: Task Started
+                - date: 2006-01-02T15:04:05Z07:00
+                  status: Task Started
+                - date: 2006-01-02T15:04:05Z07:00
+                  status: Task Started
+                status: Task Started
+        "404":
+          description: Not Found response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /artworks/download/{taskId}/state:
+    get:
+      tags:
+      - artworks
+      summary: Streams state by task ID
+      description: Streams the state of the download process.
+      operationId: artworks#downloadTaskState
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the download process
+        required: true
+        schema:
+          type: string
+          description: Task ID of the download process
+          example: n6Qn6TFM
+          minLength: 8
+          maxLength: 8
+        example: n6Qn6TFM
+      responses:
+        "101":
+          description: Switching Protocols response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskState'
+              example:
+                date: 2006-01-02T15:04:05Z07:00
+                status: Task Started
+        "404":
+          description: Not Found response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
   /artworks/register:
     get:
       tags:
@@ -326,30 +655,46 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 86
-              - 101
-              - 108
+              - 65
+              - 117
+              - 116
               - 32
-              - 118
+              - 100
               - 111
               - 108
+              - 111
+              - 114
+              - 101
+              - 115
+              - 32
               - 117
-              - 112
               - 116
-              - 97
+              - 32
+              - 102
+              - 117
+              - 103
+              - 105
+              - 116
+              - 32
               - 116
               - 101
               - 109
+              - 112
+              - 111
+              - 114
+              - 97
               - 32
               - 112
+              - 101
               - 114
-              - 111
-              - 118
-              - 105
-              - 100
+              - 102
+              - 101
+              - 114
               - 101
               - 110
-              - 116
+              - 100
+              - 105
+              - 115
               - 32
               - 100
               - 111
@@ -488,6 +833,127 @@ components:
       - artist_pastelid_passphrase
       - spendable_address
       - maximum_fee
+    DowloadTaskResponseBody:
+      type: object
+      properties:
+        file:
+          type: string
+          description: File downloaded
+          example:
+          - 77
+          - 105
+          - 110
+          - 105
+          - 109
+          - 97
+          - 32
+          - 101
+          - 120
+          - 99
+          - 101
+          - 112
+          - 116
+          - 117
+          - 114
+          - 105
+          - 46
+          format: binary
+        id:
+          type: string
+          description: JOb ID of the downloading process
+          example: n6Qn6TFM
+          minLength: 8
+          maxLength: 8
+        states:
+          type: array
+          items:
+            $ref: '#/components/schemas/TaskState'
+          description: List of states from the very beginning of the process
+          example:
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
+          - date: 2006-01-02T15:04:05Z07:00
+            status: Task Started
+        status:
+          type: string
+          description: Status of the downloading process
+          example: Task Started
+          enum:
+          - Task Started
+          - Connected
+          - Error Fingerprints Dont Match
+          - Task Rejected
+          - Task Completed
+      description: DowloadTaskResponseBody result type (default view)
+      example:
+        file:
+        - 78
+        - 111
+        - 115
+        - 116
+        - 114
+        - 117
+        - 109
+        - 32
+        - 109
+        - 105
+        - 110
+        - 117
+        - 115
+        - 32
+        - 110
+        - 111
+        - 115
+        - 116
+        - 114
+        - 117
+        - 109
+        - 32
+        - 101
+        - 97
+        - 32
+        - 118
+        - 101
+        - 114
+        - 105
+        - 116
+        - 97
+        - 116
+        - 105
+        - 115
+        - 32
+        - 115
+        - 101
+        - 113
+        - 117
+        - 105
+        - 32
+        - 118
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 46
+        id: n6Qn6TFM
+        states:
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
+        status: Task Started
+      required:
+      - id
+      - status
+      - file
     DownloadResult:
       type: object
       properties:
@@ -501,13 +967,234 @@ components:
         task_id: n6Qn6TFM
       required:
       - task_id
+    DownloadTaskResponseTiny:
+      type: object
+      properties:
+        file:
+          type: string
+          description: File downloaded
+          example:
+          - 69
+          - 118
+          - 101
+          - 110
+          - 105
+          - 101
+          - 116
+          - 32
+          - 97
+          - 117
+          - 116
+          - 32
+          - 101
+          - 116
+          - 32
+          - 117
+          - 116
+          - 32
+          - 99
+          - 117
+          - 109
+          - 113
+          - 117
+          - 101
+          - 32
+          - 97
+          - 109
+          - 101
+          - 116
+          - 32
+          - 100
+          - 101
+          - 98
+          - 105
+          - 116
+          - 105
+          - 115
+          - 46
+          format: binary
+        id:
+          type: string
+          description: JOb ID of the downloading process
+          example: n6Qn6TFM
+          minLength: 8
+          maxLength: 8
+        status:
+          type: string
+          description: Status of the downloading process
+          example: Task Started
+          enum:
+          - Task Started
+          - Connected
+          - Error Fingerprints Dont Match
+          - Task Rejected
+          - Task Completed
+      description: Image downloaded payload (tiny view)
+      example:
+        file:
+        - 65
+        - 112
+        - 101
+        - 114
+        - 105
+        - 97
+        - 109
+        - 32
+        - 115
+        - 117
+        - 115
+        - 99
+        - 105
+        - 112
+        - 105
+        - 116
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
+        - 109
+        - 46
+        id: n6Qn6TFM
+        status: Task Started
+      required:
+      - id
+      - status
+      - file
+    DownloadTaskResponseTinyCollection:
+      type: array
+      items:
+        $ref: '#/components/schemas/DownloadTaskResponseTiny'
+      description: DownloadTasksResponseBody is the result type for an array of DownloadTaskResponse
+        (tiny view)
+      example:
+      - file:
+        - 68
+        - 111
+        - 108
+        - 111
+        - 114
+        - 101
+        - 32
+        - 118
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 32
+        - 105
+        - 108
+        - 108
+        - 111
+        - 32
+        - 110
+        - 111
+        - 98
+        - 105
+        - 115
+        - 32
+        - 116
+        - 101
+        - 109
+        - 112
+        - 111
+        - 114
+        - 97
+        - 46
+        id: n6Qn6TFM
+        status: Task Started
+      - file:
+        - 68
+        - 111
+        - 108
+        - 111
+        - 114
+        - 101
+        - 32
+        - 118
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 32
+        - 105
+        - 108
+        - 108
+        - 111
+        - 32
+        - 110
+        - 111
+        - 98
+        - 105
+        - 115
+        - 32
+        - 116
+        - 101
+        - 109
+        - 112
+        - 111
+        - 114
+        - 97
+        - 46
+        id: n6Qn6TFM
+        status: Task Started
+      - file:
+        - 68
+        - 111
+        - 108
+        - 111
+        - 114
+        - 101
+        - 32
+        - 118
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
+        - 116
+        - 101
+        - 109
+        - 32
+        - 105
+        - 108
+        - 108
+        - 111
+        - 32
+        - 110
+        - 111
+        - 98
+        - 105
+        - 115
+        - 32
+        - 116
+        - 101
+        - 109
+        - 112
+        - 111
+        - 114
+        - 97
+        - 46
+        id: n6Qn6TFM
+        status: Task Started
     Error:
       type: object
       properties:
         fault:
           type: boolean
           description: Is the error a server-side fault?
-          example: true
+          example: false
         id:
           type: string
           description: ID is a unique identifier for this particular occurrence of
@@ -525,11 +1212,11 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: false
+          example: true
         timeout:
           type: boolean
           description: Is the error a timeout?
-          example: false
+          example: true
       example:
         id: 3F1FKVRR
         message: Value of ID must be an integer
@@ -697,8 +1384,6 @@ components:
             status: Task Started
           - date: 2006-01-02T15:04:05Z07:00
             status: Task Started
-          - date: 2006-01-02T15:04:05Z07:00
-            status: Task Started
         status:
           type: string
           description: Status of the registration process
@@ -726,6 +1411,8 @@ components:
       example:
         id: n6Qn6TFM
         states:
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -870,6 +1557,24 @@ components:
           spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      - id: n6Qn6TFM
+        status: Task Started
+        ticket:
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          issued_copies: 1
+          keywords: Renaissance, sfumato, portrait
+          maximum_fee: 100
+          name: Mona Lisa
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     TaskState:
       type: object
       properties:
@@ -905,23 +1610,55 @@ components:
           type: string
           description: File to upload
           example:
-          - 86
-          - 101
-          - 110
+          - 76
+          - 97
+          - 98
+          - 111
+          - 114
           - 105
+          - 111
+          - 115
           - 97
           - 109
           - 32
-          - 102
-          - 97
-          - 99
+          - 108
+          - 105
+          - 98
           - 101
           - 114
+          - 111
+          - 32
+          - 116
+          - 101
+          - 110
+          - 101
+          - 116
+          - 117
+          - 114
+          - 32
+          - 118
+          - 105
+          - 116
+          - 97
           - 101
           - 32
+          - 98
+          - 108
+          - 97
           - 110
+          - 100
+          - 105
+          - 116
+          - 105
+          - 105
+          - 115
+          - 32
+          - 115
           - 111
-          - 110
+          - 108
+          - 117
+          - 116
+          - 97
           - 46
           format: binary
         filename:
@@ -929,18 +1666,45 @@ components:
           description: For internal use
       example:
         file:
-        - 70
+        - 85
+        - 116
+        - 32
+        - 101
         - 117
+        - 109
+        - 32
+        - 101
+        - 108
+        - 105
         - 103
+        - 101
+        - 110
+        - 100
+        - 105
+        - 32
+        - 118
+        - 101
+        - 108
         - 105
         - 116
         - 32
+        - 115
+        - 101
+        - 113
+        - 117
+        - 105
+        - 32
+        - 118
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
         - 116
         - 101
-        - 109
-        - 112
-        - 111
-        - 114
+        - 32
+        - 101
         - 97
         - 46
       required:

@@ -16,12 +16,15 @@ import (
 
 // Endpoints wraps the "artworks" service endpoints.
 type Endpoints struct {
-	Register          goa.Endpoint
-	RegisterTaskState goa.Endpoint
-	RegisterTask      goa.Endpoint
-	RegisterTasks     goa.Endpoint
-	UploadImage       goa.Endpoint
-	Download          goa.Endpoint
+	Register                  goa.Endpoint
+	RegisterTaskState         goa.Endpoint
+	RegisterTask              goa.Endpoint
+	RegisterTasks             goa.Endpoint
+	UploadImage               goa.Endpoint
+	Download                  goa.Endpoint
+	DownloadTaskStateEndpoint goa.Endpoint
+	DowloadTask               goa.Endpoint
+	DownloadTasks             goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -34,17 +37,30 @@ type RegisterTaskStateEndpointInput struct {
 	Stream RegisterTaskStateServerStream
 }
 
+// DownloadTaskStateEndpointEndpointInput holds both the payload and the server
+// stream of the "downloadTaskState" method.
+type DownloadTaskStateEndpointEndpointInput struct {
+	// Payload is the method payload.
+	Payload *DownloadTaskStatePayload
+	// Stream is the server stream used by the "downloadTaskState" method to send
+	// data.
+	Stream DownloadTaskStateEndpointServerStream
+}
+
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
 	a := s.(Auther)
 	return &Endpoints{
-		Register:          NewRegisterEndpoint(s),
-		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
-		RegisterTask:      NewRegisterTaskEndpoint(s),
-		RegisterTasks:     NewRegisterTasksEndpoint(s),
-		UploadImage:       NewUploadImageEndpoint(s),
-		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
+		Register:                  NewRegisterEndpoint(s),
+		RegisterTaskState:         NewRegisterTaskStateEndpoint(s),
+		RegisterTask:              NewRegisterTaskEndpoint(s),
+		RegisterTasks:             NewRegisterTasksEndpoint(s),
+		UploadImage:               NewUploadImageEndpoint(s),
+		Download:                  NewDownloadEndpoint(s, a.APIKeyAuth),
+		DownloadTaskStateEndpoint: NewDownloadTaskStateEndpointEndpoint(s),
+		DowloadTask:               NewDowloadTaskEndpoint(s),
+		DownloadTasks:             NewDownloadTasksEndpoint(s),
 	}
 }
 
@@ -56,6 +72,9 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterTasks = m(e.RegisterTasks)
 	e.UploadImage = m(e.UploadImage)
 	e.Download = m(e.Download)
+	e.DownloadTaskStateEndpoint = m(e.DownloadTaskStateEndpoint)
+	e.DowloadTask = m(e.DowloadTask)
+	e.DownloadTasks = m(e.DownloadTasks)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -142,6 +161,42 @@ func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.En
 			return nil, err
 		}
 		vres := NewViewedDownloadResult(res, "default")
+		return vres, nil
+	}
+}
+
+// NewDownloadTaskStateEndpointEndpoint returns an endpoint function that calls
+// the method "downloadTaskState" of service "artworks".
+func NewDownloadTaskStateEndpointEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		ep := req.(*DownloadTaskStateEndpointEndpointInput)
+		return nil, s.DownloadTaskStateEndpoint(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewDowloadTaskEndpoint returns an endpoint function that calls the method
+// "dowloadTask" of service "artworks".
+func NewDowloadTaskEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*DowloadTaskPayload)
+		res, err := s.DowloadTask(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedDownloadTask(res, "default")
+		return vres, nil
+	}
+}
+
+// NewDownloadTasksEndpoint returns an endpoint function that calls the method
+// "downloadTasks" of service "artworks".
+func NewDownloadTasksEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		res, err := s.DownloadTasks(ctx)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedDownloadTaskCollection(res, "tiny")
 		return vres, nil
 	}
 }

@@ -3,6 +3,7 @@ package design
 import (
 	"time"
 
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
 	//revive:disable:dot-imports
@@ -132,11 +133,62 @@ var _ = Service("artworks", func() {
 		Result(ArtworkDownloadResult)
 
 		HTTP(func() {
-			GET("/download")
+			POST("/download")
 			Param("txid")
 			Param("pid")
 			// Header("key:Authorization") // Provide the key in Authorization header (default)
 			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusAccepted)
+		})
+	})
+
+	Method("downloadTaskState", func() {
+		Description("Streams the state of the download process.")
+		Meta("swagger:summary", "Streams state by task ID")
+
+		Payload(func() {
+			Extend(DownloadTaskPayload)
+		})
+		StreamingResult(ArtworkDownloadTaskState)
+
+		HTTP(func() {
+			GET("/download/{taskId}/state")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("dowloadTask", func() {
+		Description("Returns a single task.")
+		Meta("swagger:summary", "Find task by ID")
+
+		Payload(func() {
+			Extend(DownloadTaskPayload)
+		})
+		Result(ArtworkDownloadTaskResult, func() {
+			View("default")
+		})
+
+		HTTP(func() {
+			GET("/download/{taskId}")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("downloadTasks", func() {
+		Description("List of all tasks.")
+		Meta("swagger:summary", "Returns list of tasks")
+
+		Result(CollectionOf(ArtworkDownloadTaskResult), func() {
+			View("tiny")
+		})
+
+		HTTP(func() {
+			GET("/download")
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
 		})
@@ -346,15 +398,6 @@ var ArtworkDownloadPayload = Type("ArtworkDownloadPayload", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
-	// Attribute("authorization", String, func() {
-	// 	Meta("struct:field:name", "Authorization")
-	// 	Description("Passphrase of the owner's PastelID")
-	// 	Example("Basic qwerasdf1234")
-	// })
-	// APIKeyField(1, "api_key", "key", String, func() {
-	// 	Description("API key")
-	// 	Example("Basic abcdef12345")
-	// })
 	APIKey("api_key", "key", String, func() {
 		Description("Passphrase of the owner's PastelID")
 		Example("Basic abcdef12345")
@@ -378,4 +421,67 @@ var ArtworkDownloadResult = ResultType("application/vnd.artwork.download", func(
 		})
 	})
 	Required("task_id")
+})
+
+// ArtworkDownloadTaskResult is task streaming of the artwork download.
+var ArtworkDownloadTaskResult = ResultType("application/vnd.artwork.download.task", func() {
+	TypeName("DownloadTask")
+	Attributes(func() {
+		Attribute("id", String, func() {
+			Description("JOb ID of the downloading process")
+			MinLength(8)
+			MaxLength(8)
+			Example("n6Qn6TFM")
+		})
+		Attribute("status", String, func() {
+			Description("Status of the downloading process")
+			Example(artworkdownload.StatusNames()[0])
+			Enum(InterfaceSlice(artworkdownload.StatusNames())...)
+		})
+		Attribute("states", ArrayOf(ArtworkDownloadTaskState), func() {
+			Description("List of states from the very beginning of the process")
+		})
+		Description("Image downloaded payload")
+		Attribute("file", Bytes, func() {
+			Meta("struct:field:name", "Bytes")
+			Description("File downloaded")
+		})
+		// Attribute("filename", String, func() {
+		// 	Meta("swagger:example", "false")
+		// 	Description("For internal use")
+		// })
+	})
+
+	View("tiny", func() {
+		Attribute("id")
+		Attribute("status")
+		Attribute("file")
+	})
+
+	Required("id", "status", "file")
+})
+
+// ArtworkDownloadTaskState is task streaming of the artwork registration.
+var ArtworkDownloadTaskState = Type("DownloadTaskState", func() {
+	Attribute("date", String, func() {
+		Description("Date of the status creation")
+		Example(time.RFC3339)
+	})
+	Attribute("status", String, func() {
+		Description("Status of the download process")
+		Example(artworkregister.StatusNames()[0])
+		Enum(InterfaceSlice(artworkregister.StatusNames())...)
+	})
+	Required("date", "status")
+})
+
+// DownloadTaskPayload represents a payload for returning task.
+var DownloadTaskPayload = Type("DownloadTaskPayload", func() {
+	Attribute("taskId", String, "Task ID of the download process", func() {
+		TypeName("taskID")
+		MinLength(8)
+		MaxLength(8)
+		Example("n6Qn6TFM")
+	})
+	Required("taskId")
 })

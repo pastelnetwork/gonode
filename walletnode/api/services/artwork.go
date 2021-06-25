@@ -146,6 +146,21 @@ func (service *Artwork) Download(_ context.Context, p *artworks.DownloadPayload)
 
 // APIKeyAuth implements the authorization logic for the APIKey security scheme.
 func (service *Artwork) APIKeyAuth(ctx_ context.Context, key string, schema *security.APIKeyScheme) (ctx context.Context, err error) {
+	return ctx_, nil
+}
+
+// Streams the state of the download process.
+func (service *Artwork) DownloadTaskStateEndpoint(ctx context.Context, p *artworks.DownloadTaskStatePayload, stream artworks.DownloadTaskStateEndpointServerStream) (err error) {
+	return nil
+}
+
+// Returns a single task.
+func (service *Artwork) DowloadTask(ctx context.Context, p *artworks.DowloadTaskPayload) (res *artworks.DownloadTask, err error) {
+	return nil, nil
+}
+
+// List of all tasks.
+func (service *Artwork) DownloadTasks(ctx context.Context) (res artworks.DownloadTaskCollection, err error) {
 	return
 }
 

@@ -29,6 +29,12 @@ type Service interface {
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
 	// Download registered artwork.
 	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
+	// Streams the state of the download process.
+	DownloadTaskStateEndpoint(context.Context, *DownloadTaskStatePayload, DownloadTaskStateEndpointServerStream) (err error)
+	// Returns a single task.
+	DowloadTask(context.Context, *DowloadTaskPayload) (res *DownloadTask, err error)
+	// List of all tasks.
+	DownloadTasks(context.Context) (res DownloadTaskCollection, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -45,7 +51,7 @@ const ServiceName = "artworks"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [6]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "download"}
+var MethodNames = [9]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "download", "downloadTaskState", "dowloadTask", "downloadTasks"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -61,6 +67,22 @@ type RegisterTaskStateServerStream interface {
 type RegisterTaskStateClientStream interface {
 	// Recv reads instances of "TaskState" from the stream.
 	Recv() (*TaskState, error)
+}
+
+// DownloadTaskStateEndpointServerStream is the interface a "downloadTaskState"
+// endpoint server stream must satisfy.
+type DownloadTaskStateEndpointServerStream interface {
+	// Send streams instances of "DownloadTaskState".
+	Send(*DownloadTaskState) error
+	// Close closes the stream.
+	Close() error
+}
+
+// DownloadTaskStateEndpointClientStream is the interface a "downloadTaskState"
+// endpoint client stream must satisfy.
+type DownloadTaskStateEndpointClientStream interface {
+	// Recv reads instances of "DownloadTaskState" from the stream.
+	Recv() (*DownloadTaskState, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -162,7 +184,7 @@ type DownloadPayload struct {
 	Txid string
 	// Owner's PastelID
 	Pid string
-	// API key
+	// Passphrase of the owner's PastelID
 	Key string
 }
 
@@ -171,6 +193,45 @@ type DownloadResult struct {
 	// Task ID of the download process
 	TaskID string
 }
+
+// DownloadTaskStatePayload is the payload type of the artworks service
+// downloadTaskState method.
+type DownloadTaskStatePayload struct {
+	// Task ID of the download process
+	TaskID string
+}
+
+// DownloadTaskState is the result type of the artworks service
+// downloadTaskState method.
+type DownloadTaskState struct {
+	// Date of the status creation
+	Date string
+	// Status of the download process
+	Status string
+}
+
+// DowloadTaskPayload is the payload type of the artworks service dowloadTask
+// method.
+type DowloadTaskPayload struct {
+	// Task ID of the download process
+	TaskID string
+}
+
+// DownloadTask is the result type of the artworks service dowloadTask method.
+type DownloadTask struct {
+	// JOb ID of the downloading process
+	ID string
+	// Status of the downloading process
+	Status string
+	// List of states from the very beginning of the process
+	States []*DownloadTaskState
+	// File downloaded
+	Bytes []byte
+}
+
+// DownloadTaskCollection is the result type of the artworks service
+// downloadTasks method.
+type DownloadTaskCollection []*DownloadTask
 
 // Ticket of the registration artwork
 type ArtworkTicket struct {
@@ -318,6 +379,63 @@ func NewDownloadResult(vres *artworksviews.DownloadResult) *DownloadResult {
 func NewViewedDownloadResult(res *DownloadResult, view string) *artworksviews.DownloadResult {
 	p := newDownloadResultView(res)
 	return &artworksviews.DownloadResult{Projected: p, View: "default"}
+}
+
+// NewDownloadTask initializes result type DownloadTask from viewed result type
+// DownloadTask.
+func NewDownloadTask(vres *artworksviews.DownloadTask) *DownloadTask {
+	var res *DownloadTask
+	switch vres.View {
+	case "tiny":
+		res = newDownloadTaskTiny(vres.Projected)
+	case "default", "":
+		res = newDownloadTask(vres.Projected)
+	}
+	return res
+}
+
+// NewViewedDownloadTask initializes viewed result type DownloadTask from
+// result type DownloadTask using the given view.
+func NewViewedDownloadTask(res *DownloadTask, view string) *artworksviews.DownloadTask {
+	var vres *artworksviews.DownloadTask
+	switch view {
+	case "tiny":
+		p := newDownloadTaskViewTiny(res)
+		vres = &artworksviews.DownloadTask{Projected: p, View: "tiny"}
+	case "default", "":
+		p := newDownloadTaskView(res)
+		vres = &artworksviews.DownloadTask{Projected: p, View: "default"}
+	}
+	return vres
+}
+
+// NewDownloadTaskCollection initializes result type DownloadTaskCollection
+// from viewed result type DownloadTaskCollection.
+func NewDownloadTaskCollection(vres artworksviews.DownloadTaskCollection) DownloadTaskCollection {
+	var res DownloadTaskCollection
+	switch vres.View {
+	case "tiny":
+		res = newDownloadTaskCollectionTiny(vres.Projected)
+	case "default", "":
+		res = newDownloadTaskCollection(vres.Projected)
+	}
+	return res
+}
+
+// NewViewedDownloadTaskCollection initializes viewed result type
+// DownloadTaskCollection from result type DownloadTaskCollection using the
+// given view.
+func NewViewedDownloadTaskCollection(res DownloadTaskCollection, view string) artworksviews.DownloadTaskCollection {
+	var vres artworksviews.DownloadTaskCollection
+	switch view {
+	case "tiny":
+		p := newDownloadTaskCollectionViewTiny(res)
+		vres = artworksviews.DownloadTaskCollection{Projected: p, View: "tiny"}
+	case "default", "":
+		p := newDownloadTaskCollectionView(res)
+		vres = artworksviews.DownloadTaskCollection{Projected: p, View: "default"}
+	}
+	return vres
 }
 
 // newRegisterResult converts projected type RegisterResult to service type
@@ -494,6 +612,111 @@ func newDownloadResultView(res *DownloadResult) *artworksviews.DownloadResultVie
 	return vres
 }
 
+// newDownloadTaskTiny converts projected type DownloadTask to service type
+// DownloadTask.
+func newDownloadTaskTiny(vres *artworksviews.DownloadTaskView) *DownloadTask {
+	res := &DownloadTask{
+		Bytes: vres.Bytes,
+	}
+	if vres.ID != nil {
+		res.ID = *vres.ID
+	}
+	if vres.Status != nil {
+		res.Status = *vres.Status
+	}
+	return res
+}
+
+// newDownloadTask converts projected type DownloadTask to service type
+// DownloadTask.
+func newDownloadTask(vres *artworksviews.DownloadTaskView) *DownloadTask {
+	res := &DownloadTask{
+		Bytes: vres.Bytes,
+	}
+	if vres.ID != nil {
+		res.ID = *vres.ID
+	}
+	if vres.Status != nil {
+		res.Status = *vres.Status
+	}
+	if vres.States != nil {
+		res.States = make([]*DownloadTaskState, len(vres.States))
+		for i, val := range vres.States {
+			res.States[i] = transformArtworksviewsDownloadTaskStateViewToDownloadTaskState(val)
+		}
+	}
+	return res
+}
+
+// newDownloadTaskViewTiny projects result type DownloadTask to projected type
+// DownloadTaskView using the "tiny" view.
+func newDownloadTaskViewTiny(res *DownloadTask) *artworksviews.DownloadTaskView {
+	vres := &artworksviews.DownloadTaskView{
+		ID:     &res.ID,
+		Status: &res.Status,
+		Bytes:  res.Bytes,
+	}
+	return vres
+}
+
+// newDownloadTaskView projects result type DownloadTask to projected type
+// DownloadTaskView using the "default" view.
+func newDownloadTaskView(res *DownloadTask) *artworksviews.DownloadTaskView {
+	vres := &artworksviews.DownloadTaskView{
+		ID:     &res.ID,
+		Status: &res.Status,
+		Bytes:  res.Bytes,
+	}
+	if res.States != nil {
+		vres.States = make([]*artworksviews.DownloadTaskStateView, len(res.States))
+		for i, val := range res.States {
+			vres.States[i] = transformDownloadTaskStateToArtworksviewsDownloadTaskStateView(val)
+		}
+	}
+	return vres
+}
+
+// newDownloadTaskCollectionTiny converts projected type DownloadTaskCollection
+// to service type DownloadTaskCollection.
+func newDownloadTaskCollectionTiny(vres artworksviews.DownloadTaskCollectionView) DownloadTaskCollection {
+	res := make(DownloadTaskCollection, len(vres))
+	for i, n := range vres {
+		res[i] = newDownloadTaskTiny(n)
+	}
+	return res
+}
+
+// newDownloadTaskCollection converts projected type DownloadTaskCollection to
+// service type DownloadTaskCollection.
+func newDownloadTaskCollection(vres artworksviews.DownloadTaskCollectionView) DownloadTaskCollection {
+	res := make(DownloadTaskCollection, len(vres))
+	for i, n := range vres {
+		res[i] = newDownloadTask(n)
+	}
+	return res
+}
+
+// newDownloadTaskCollectionViewTiny projects result type
+// DownloadTaskCollection to projected type DownloadTaskCollectionView using
+// the "tiny" view.
+func newDownloadTaskCollectionViewTiny(res DownloadTaskCollection) artworksviews.DownloadTaskCollectionView {
+	vres := make(artworksviews.DownloadTaskCollectionView, len(res))
+	for i, n := range res {
+		vres[i] = newDownloadTaskViewTiny(n)
+	}
+	return vres
+}
+
+// newDownloadTaskCollectionView projects result type DownloadTaskCollection to
+// projected type DownloadTaskCollectionView using the "default" view.
+func newDownloadTaskCollectionView(res DownloadTaskCollection) artworksviews.DownloadTaskCollectionView {
+	vres := make(artworksviews.DownloadTaskCollectionView, len(res))
+	for i, n := range res {
+		vres[i] = newDownloadTaskView(n)
+	}
+	return vres
+}
+
 // transformArtworksviewsArtworkTicketViewToArtworkTicket builds a value of
 // type *ArtworkTicket from a value of type *artworksviews.ArtworkTicketView.
 func transformArtworksviewsArtworkTicketViewToArtworkTicket(v *artworksviews.ArtworkTicketView) *ArtworkTicket {
@@ -560,6 +783,36 @@ func transformTaskStateToArtworksviewsTaskStateView(v *TaskState) *artworksviews
 		return nil
 	}
 	res := &artworksviews.TaskStateView{
+		Date:   &v.Date,
+		Status: &v.Status,
+	}
+
+	return res
+}
+
+// transformArtworksviewsDownloadTaskStateViewToDownloadTaskState builds a
+// value of type *DownloadTaskState from a value of type
+// *artworksviews.DownloadTaskStateView.
+func transformArtworksviewsDownloadTaskStateViewToDownloadTaskState(v *artworksviews.DownloadTaskStateView) *DownloadTaskState {
+	if v == nil {
+		return nil
+	}
+	res := &DownloadTaskState{
+		Date:   *v.Date,
+		Status: *v.Status,
+	}
+
+	return res
+}
+
+// transformDownloadTaskStateToArtworksviewsDownloadTaskStateView builds a
+// value of type *artworksviews.DownloadTaskStateView from a value of type
+// *DownloadTaskState.
+func transformDownloadTaskStateToArtworksviewsDownloadTaskStateView(v *DownloadTaskState) *artworksviews.DownloadTaskStateView {
+	if v == nil {
+		return nil
+	}
+	res := &artworksviews.DownloadTaskStateView{
 		Date:   &v.Date,
 		Status: &v.Status,
 	}

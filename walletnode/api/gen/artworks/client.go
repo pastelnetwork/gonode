@@ -15,23 +15,29 @@ import (
 
 // Client is the "artworks" service client.
 type Client struct {
-	RegisterEndpoint          goa.Endpoint
-	RegisterTaskStateEndpoint goa.Endpoint
-	RegisterTaskEndpoint      goa.Endpoint
-	RegisterTasksEndpoint     goa.Endpoint
-	UploadImageEndpoint       goa.Endpoint
-	DownloadEndpoint          goa.Endpoint
+	RegisterEndpoint                  goa.Endpoint
+	RegisterTaskStateEndpoint         goa.Endpoint
+	RegisterTaskEndpoint              goa.Endpoint
+	RegisterTasksEndpoint             goa.Endpoint
+	UploadImageEndpoint               goa.Endpoint
+	DownloadEndpoint                  goa.Endpoint
+	DownloadTaskStateEndpointEndpoint goa.Endpoint
+	DowloadTaskEndpoint               goa.Endpoint
+	DownloadTasksEndpoint             goa.Endpoint
 }
 
 // NewClient initializes a "artworks" service client given the endpoints.
-func NewClient(register, registerTaskState, registerTask, registerTasks, uploadImage, download goa.Endpoint) *Client {
+func NewClient(register, registerTaskState, registerTask, registerTasks, uploadImage, download, downloadTaskStateEndpoint, dowloadTask, downloadTasks goa.Endpoint) *Client {
 	return &Client{
-		RegisterEndpoint:          register,
-		RegisterTaskStateEndpoint: registerTaskState,
-		RegisterTaskEndpoint:      registerTask,
-		RegisterTasksEndpoint:     registerTasks,
-		UploadImageEndpoint:       uploadImage,
-		DownloadEndpoint:          download,
+		RegisterEndpoint:                  register,
+		RegisterTaskStateEndpoint:         registerTaskState,
+		RegisterTaskEndpoint:              registerTask,
+		RegisterTasksEndpoint:             registerTasks,
+		UploadImageEndpoint:               uploadImage,
+		DownloadEndpoint:                  download,
+		DownloadTaskStateEndpointEndpoint: downloadTaskStateEndpoint,
+		DowloadTaskEndpoint:               dowloadTask,
+		DownloadTasksEndpoint:             downloadTasks,
 	}
 }
 
@@ -94,4 +100,35 @@ func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res *Downloa
 		return
 	}
 	return ires.(*DownloadResult), nil
+}
+
+// DownloadTaskStateEndpoint calls the "downloadTaskState" endpoint of the
+// "artworks" service.
+func (c *Client) DownloadTaskStateEndpoint(ctx context.Context, p *DownloadTaskStatePayload) (res DownloadTaskStateEndpointClientStream, err error) {
+	var ires interface{}
+	ires, err = c.DownloadTaskStateEndpointEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(DownloadTaskStateEndpointClientStream), nil
+}
+
+// DowloadTask calls the "dowloadTask" endpoint of the "artworks" service.
+func (c *Client) DowloadTask(ctx context.Context, p *DowloadTaskPayload) (res *DownloadTask, err error) {
+	var ires interface{}
+	ires, err = c.DowloadTaskEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*DownloadTask), nil
+}
+
+// DownloadTasks calls the "downloadTasks" endpoint of the "artworks" service.
+func (c *Client) DownloadTasks(ctx context.Context) (res DownloadTaskCollection, err error) {
+	var ires interface{}
+	ires, err = c.DownloadTasksEndpoint(ctx, nil)
+	if err != nil {
+		return
+	}
+	return ires.(DownloadTaskCollection), nil
 }
