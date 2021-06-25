@@ -128,8 +128,6 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		}
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
-		defer cancel()
-
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {

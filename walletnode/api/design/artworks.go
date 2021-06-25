@@ -210,47 +210,7 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Default(false)
 	})
 
-	Attribute("thumbnail_coordinates", func() {
-		Description("Cordinate of the image thumbnail")
-		// Attribute("top_left", Coordinate)
-		// Attribute("bottom_right", Coordinate)
-		// Attribute("top_left", func() {
-		// 	Extend(Coordinate)
-		// })
-		// Attribute("bottom_right", func() {
-		// 	Extend(Coordinate)
-		// })
-		Attribute("top_left_x", Int64, "Top left conner x coordinate", func() {
-			Example(0)
-			Default(0)
-		})
-		Attribute("top_left_y", Int64, "Top left conner y coordinate", func() {
-			Example(0)
-			Default(0)
-		})
-		Attribute("bottom_right_x", Int64, "Bottom right conner x coordinate", func() {
-			Example(0)
-			Default(0)
-		})
-		Attribute("bottom_right_y", Int64, "Bottom right conner y coordinate", func() {
-			Example(0)
-			Default(0)
-		})
-		Required("top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y")
-		// Attribute("top_left", func() {
-		// 	Attribute("x", Int64, "x coordinate")
-		// 	Attribute("y", Int64, "y coordinate")
-		// 	Required("x", "y")
-		// 	Example(Val{"x": 100, "y": 100})
-		// })
-		// Attribute("bottom_right", func() {
-		// 	Attribute("x", Int64, "x coordinate")
-		// 	Attribute("y", Int64, "y coordinate")
-		// 	Example(Val{"x": 400, "y": 400})
-		// 	Required("x", "y")
-		// })
-		// Required("top_left", "bottom_right")
-	})
+	Attribute("image_thumbnail", ThumbnailCoordinate)
 
 	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
@@ -362,4 +322,35 @@ var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
 		Example("n6Qn6TFM")
 	})
 	Required("taskId")
+})
+
+var ThumbnailCoordinate = ResultType("ThumbnailCoordinate", func() {
+	Description("Coordinate of the thumbnail")
+	Attribute("top_left_x", Int64, func() {
+		Description("X coordinate of the thumbnail's top left conner")
+		Example(0)
+		Default(0)
+	})
+	Attribute("top_left_y", Int64, func() {
+		Description("Y coordinate of the thumbnail's top left conner")
+		Example(0)
+		Default(0)
+	})
+	Attribute("bottom_right_x", Int64, func() {
+		Description("X coordinate of the thumbnail's bottom right conner")
+		Example(640)
+		Default(0)
+	})
+	Attribute("bottom_right_y", Int64, func() {
+		Description("Y coordinate of the thumbnail's bottom right conner")
+		Example(480)
+		Default(0)
+	})
+	View("default", func() {
+		Attribute("top_left_x")
+		Attribute("top_left_y")
+		Attribute("bottom_right_x")
+		Attribute("bottom_right_y")
+	})
+	Required("top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y")
 })
