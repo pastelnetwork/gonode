@@ -774,6 +774,23 @@ func EncodeArtworkGetError(encoder func(context.Context, http.ResponseWriter) go
 	}
 }
 
+// unmarshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate builds
+// a value of type *artworks.Thumbnailcoordinate from a value of type
+// *ThumbnailcoordinateRequestBody.
+func unmarshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate(v *ThumbnailcoordinateRequestBody) *artworks.Thumbnailcoordinate {
+	if v == nil {
+		return nil
+	}
+	res := &artworks.Thumbnailcoordinate{
+		TopLeftX:     *v.TopLeftX,
+		TopLeftY:     *v.TopLeftY,
+		BottomRightX: *v.BottomRightX,
+		BottomRightY: *v.BottomRightY,
+	}
+
+	return res
+}
+
 // marshalArtworksviewsTaskStateViewToTaskStateResponseBody builds a value of
 // type *TaskStateResponseBody from a value of type
 // *artworksviews.TaskStateView.
@@ -806,6 +823,38 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody(v *artwork
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         *v.SpendableAddress,
 		MaximumFee:               *v.MaximumFee,
+	}
+	if v.Royalty != nil {
+		res.Royalty = *v.Royalty
+	}
+	if v.Green != nil {
+		res.Green = *v.Green
+	}
+	if v.Royalty == nil {
+		res.Royalty = 0
+	}
+	if v.Green == nil {
+		res.Green = false
+	}
+	if v.ImageThumbnail != nil {
+		res.ImageThumbnail = marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponseBody(v.ImageThumbnail)
+	}
+
+	return res
+}
+
+// marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponseBody
+// builds a value of type *ThumbnailcoordinateResponseBody from a value of type
+// *artworksviews.ThumbnailcoordinateView.
+func marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponseBody(v *artworksviews.ThumbnailcoordinateView) *ThumbnailcoordinateResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &ThumbnailcoordinateResponseBody{
+		TopLeftX:     *v.TopLeftX,
+		TopLeftY:     *v.TopLeftY,
+		BottomRightX: *v.BottomRightX,
+		BottomRightY: *v.BottomRightY,
 	}
 
 	return res
@@ -843,6 +892,38 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v *artworksvie
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         *v.SpendableAddress,
 		MaximumFee:               *v.MaximumFee,
+	}
+	if v.Royalty != nil {
+		res.Royalty = *v.Royalty
+	}
+	if v.Green != nil {
+		res.Green = *v.Green
+	}
+	if v.Royalty == nil {
+		res.Royalty = 0
+	}
+	if v.Green == nil {
+		res.Green = false
+	}
+	if v.ImageThumbnail != nil {
+		res.ImageThumbnail = marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v.ImageThumbnail)
+	}
+
+	return res
+}
+
+// marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponse
+// builds a value of type *ThumbnailcoordinateResponse from a value of type
+// *artworksviews.ThumbnailcoordinateView.
+func marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v *artworksviews.ThumbnailcoordinateView) *ThumbnailcoordinateResponse {
+	if v == nil {
+		return nil
+	}
+	res := &ThumbnailcoordinateResponse{
+		TopLeftX:     *v.TopLeftX,
+		TopLeftY:     *v.TopLeftY,
+		BottomRightX: *v.BottomRightX,
+		BottomRightY: *v.BottomRightY,
 	}
 
 	return res

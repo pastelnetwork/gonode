@@ -98,6 +98,25 @@ type ArtworkTicketView struct {
 	SpendableAddress *string
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee *float64
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty *float64
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green          *bool
+	ImageThumbnail *ThumbnailcoordinateView
+}
+
+// ThumbnailcoordinateView is a type that runs validations on a projected type.
+type ThumbnailcoordinateView struct {
+	// X coordinate of the thumbnail's top left conner
+	TopLeftX *int64
+	// Y coordinate of the thumbnail's top left conner
+	TopLeftY *int64
+	// X coordinate of the thumbnail's bottom right conner
+	BottomRightX *int64
+	// Y coordinate of the thumbnail's bottom right conner
+	BottomRightY *int64
 }
 
 // TaskCollectionView is a type that runs validations on a projected type.
@@ -158,6 +177,16 @@ var (
 		"default": []string{
 			"image_id",
 			"expires_in",
+		},
+	}
+	// ThumbnailcoordinateMap is a map of attribute names in result type
+	// Thumbnailcoordinate indexed by view name.
+	ThumbnailcoordinateMap = map[string][]string{
+		"default": []string{
+			"top_left_x",
+			"top_left_y",
+			"bottom_right_x",
+			"bottom_right_y",
 		},
 	}
 )
@@ -442,6 +471,39 @@ func ValidateArtworkTicketView(result *ArtworkTicketView) (err error) {
 		if *result.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("result.maximum_fee", *result.MaximumFee, 1e-05, true))
 		}
+	}
+	if result.Royalty != nil {
+		if *result.Royalty < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.royalty", *result.Royalty, 0, true))
+		}
+	}
+	if result.Royalty != nil {
+		if *result.Royalty > 100 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.royalty", *result.Royalty, 100, false))
+		}
+	}
+	if result.ImageThumbnail != nil {
+		if err2 := ValidateThumbnailcoordinateView(result.ImageThumbnail); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateThumbnailcoordinateView runs the validations defined on
+// ThumbnailcoordinateView using the "default" view.
+func ValidateThumbnailcoordinateView(result *ThumbnailcoordinateView) (err error) {
+	if result.TopLeftX == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("top_left_x", "result"))
+	}
+	if result.TopLeftY == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("top_left_y", "result"))
+	}
+	if result.BottomRightX == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("bottom_right_x", "result"))
+	}
+	if result.BottomRightY == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("bottom_right_y", "result"))
 	}
 	return
 }
