@@ -153,11 +153,11 @@ type Thumbnail struct {
 	Large  []byte `json:"large"`
 }
 
-func (ts *testSuite) randomCasesForThumbnails(n int) []*Thumbnail {
+func (ts *testSuite) randomCasesForThumbnails(start, end int) []*Thumbnail {
 	small, medium, large := [10]byte{}, [15]byte{}, [20]byte{}
 
 	thumbnails := []*Thumbnail{}
-	for i := 0; i < n; i++ {
+	for i := start; i <= end; i++ {
 		rand.Read(small[:])
 		rand.Read(medium[:])
 		rand.Read(large[:])
@@ -173,7 +173,7 @@ func (ts *testSuite) randomCasesForThumbnails(n int) []*Thumbnail {
 }
 
 func (ts *testSuite) TestThumbnailTable() {
-	for i, tc := range ts.randomCasesForThumbnails(5) {
+	for i, tc := range ts.randomCasesForThumbnails(5, 10) {
 		tc := tc
 		ts.T().Run(fmt.Sprintf("ThumbnailTestCase-%d", i), func(t *testing.T) {
 			// insert the thumbnail to db
@@ -201,7 +201,7 @@ func (ts *testSuite) TestThumbnailTable() {
 }
 
 func (ts *testSuite) TestAddThumbnailTwice() {
-	for i, tc := range ts.randomCasesForThumbnails(1) {
+	for i, tc := range ts.randomCasesForThumbnails(1, 1) {
 		tc := tc
 		ts.T().Run(fmt.Sprintf("ThumbnailTestCase-%d", i), func(t *testing.T) {
 			// insert the thumbnail to db
