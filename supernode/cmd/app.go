@@ -176,7 +176,15 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	})
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p, metadb)
+	artworkRegister := artworkregister.NewService(
+		&config.ArtworkRegister,
+		fileStorage,
+		probeTensor,
+		pastelClient,
+		nodeClient,
+		p2p,
+		metadb,
+	)
 
 	// server
 	grpc := server.New(config.Server,

@@ -2,8 +2,6 @@ package metadb
 
 import (
 	"path/filepath"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -33,7 +31,6 @@ func (config *Config) SetWorkDir(workDir string) {
 	if !filepath.IsAbs(config.DataDir) {
 		config.DataDir = filepath.Join(workDir, config.DataDir)
 	}
-	logrus.Infof("data dir: %v", config.DataDir)
 }
 
 // NewConfig returns a new Config instance.

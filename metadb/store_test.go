@@ -199,3 +199,20 @@ func (ts *testSuite) TestThumbnailTable() {
 		})
 	}
 }
+
+func (ts *testSuite) TestAddThumbnailTwice() {
+	for i, tc := range ts.randomCasesForThumbnails(1) {
+		tc := tc
+		ts.T().Run(fmt.Sprintf("ThumbnailTestCase-%d", i), func(t *testing.T) {
+			// insert the thumbnail to db
+			insertion := "insert into thumbnails(key,small,medium,large) values(?,?,?,?)"
+			if _, err := ts.s.Write(ts.ctx, insertion, tc.Key, tc.Small, tc.Medium, tc.Large); err != nil {
+				ts.T().Fatalf("write: %v", err)
+			}
+
+			// insert the same thumbnail again
+			_, err := ts.s.Write(ts.ctx, insertion, tc.Key, tc.Small, tc.Medium, tc.Large)
+			ts.NotNil(err)
+		})
+	}
+}
