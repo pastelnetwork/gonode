@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
@@ -29,6 +30,7 @@ type Service struct {
 	pastelClient pastel.Client
 	nodeClient   node.Client
 	p2pClient    p2p.Client
+	metadbClient metadb.Client
 }
 
 // Run starts task
@@ -67,13 +69,14 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, fileStorage storage.FileStorage, probeTensor probe.Tensor, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client) *Service {
+func NewService(config *Config, fileStorage storage.FileStorage, probeTensor probe.Tensor, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client, metadbClient metadb.Client) *Service {
 	return &Service{
 		config:       config,
 		probeTensor:  probeTensor,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
 		p2pClient:    p2pClient,
+		metadbClient: metadbClient,
 		Worker:       task.NewWorker(),
 		Storage:      artwork.NewStorage(fileStorage),
 	}

@@ -21,6 +21,12 @@ service RegisterArtwork {
 
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
+
+    // GetThumbnail queries a thumbnail by key from the supernode
+    rpc GetThumbnail(GetThumbnailRequest) returns (GetThumbnailReply);
+
+    // AddThumbnail stores a new thumbnail to the supernode
+    rpc AddThumbnail(AddThumbnailRequest) returns (AddThumbnailReply);
 }
 
 message SessionRequest {
@@ -63,5 +69,25 @@ message SendTicketRequest {
 }
 message SendTicketReply {
     string ticket_txid = 1;
+}
+
+message Thumbnail {
+    string key = 1;
+    bytes small = 2;
+    bytes medium = 3;
+    bytes large = 4;
+}
+
+message GetThumbnailRequest {
+    string key = 1;
+}
+message GetThumbnailReply {
+    Thumbnail thumbnail = 1;
+}
+
+message AddThumbnailRequest {
+   Thumbnail thumbnail = 1;
+}
+message AddThumbnailReply {
 }
 

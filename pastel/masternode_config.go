@@ -9,6 +9,7 @@ type MasterNodeConfig struct {
 	OutputIndex string `json:"outputIndex"`
 	ExtAddress  string `json:"extAddress"`
 	ExtKey      string `json:"extKey"`
+	ExtP2P      string `json:"extP2P"`
 	ExtCfg      string `json:"extCfg"`
 	Status      string `json:"status"`
 }

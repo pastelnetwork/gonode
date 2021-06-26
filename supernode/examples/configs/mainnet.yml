@@ -9,12 +9,10 @@ node:
 
 p2p:
   listen_address: "0.0.0.0"
-  port: 6000
   data_dir: "p2p"
   # bootstrap_ip: ""
   # bootstrap_port: ""
 
 metadb:
   listen_address: "0.0.0.0"
-  http_port: 4001
-  raft_port: 4002
+  data_dir: "metadb"

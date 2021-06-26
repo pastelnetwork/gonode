@@ -1,11 +1,15 @@
 package metadb
 
-import "path/filepath"
+import (
+	"path/filepath"
+
+	"github.com/sirupsen/logrus"
+)
 
 const (
 	defaultListenAddress = "0.0.0.0"
-	defaultHTTPPort      = 4001
-	defaultRaftPort      = 4002
+	defaultHTTPPort      = 4446
+	defaultRaftPort      = 4447
 	defaultDataDir       = "metadb"
 )
 
@@ -29,6 +33,7 @@ func (config *Config) SetWorkDir(workDir string) {
 	if !filepath.IsAbs(config.DataDir) {
 		config.DataDir = filepath.Join(workDir, config.DataDir)
 	}
+	logrus.Infof("data dir: %v", config.DataDir)
 }
 
 // NewConfig returns a new Config instance.

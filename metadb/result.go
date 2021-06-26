@@ -2,7 +2,6 @@ package metadb
 
 import (
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -118,48 +117,29 @@ func (qr *QueryResult) Scan(dest ...interface{}) error {
 		if src == nil {
 			continue
 		}
+
 		switch d := d.(type) {
-		case *time.Time:
-			if src == nil {
-				continue
-			}
-			t, err := toTime(src)
-			if err != nil {
-				return errors.Errorf("%v: bad time col:(%d/%s) val:%v", err, n, qr.Columns()[n], src)
-			}
-			*d = t
-		case *int:
+		case *bool:
 			switch src := src.(type) {
-			case float64:
-				*d = int(src)
-			case int64:
-				*d = int(src)
-			case string:
-				i, err := strconv.Atoi(src)
-				if err != nil {
-					return err
-				}
-				*d = i
+			case bool:
+				*d = src
 			default:
-				return errors.Errorf("invalid int col:%d type:%T val:%v", n, src, src)
+				return errors.Errorf("invalid bool col:%d type:%T val:%v", n, src, src)
 			}
 		case *int64:
 			switch src := src.(type) {
-			case float64:
-				*d = int64(src)
 			case int64:
 				*d = src
-			case string:
-				i, err := strconv.ParseInt(src, 10, 64)
-				if err != nil {
-					return err
-				}
-				*d = i
 			default:
 				return errors.Errorf("invalid int64 col:%d type:%T val:%v", n, src, src)
 			}
 		case *float64:
-			*d = float64(src.(float64))
+			switch src := src.(type) {
+			case float64:
+				*d = src
+			default:
+				return errors.Errorf("invalid float64 col:%d type:%T val:%v", n, src, src)
+			}
 		case *string:
 			switch src := src.(type) {
 			case string:
@@ -167,8 +147,15 @@ func (qr *QueryResult) Scan(dest ...interface{}) error {
 			default:
 				return errors.Errorf("invalid string col:%d type:%T val:%v", n, src, src)
 			}
+		case *[]uint8:
+			switch src := src.(type) {
+			case []uint8:
+				*d = src
+			default:
+				return errors.Errorf("invalid []uint8 col:%d type:%T val:%v", n, src, src)
+			}
 		default:
-			return errors.Errorf("unknown destination type (%T) to scan into in variable #%d", d, n)
+			return errors.Errorf("unknown type (%T) to scan into in variable #%d", d, n)
 		}
 	}
 
@@ -182,7 +169,6 @@ func (qr *QueryResult) Types() []string {
 
 // WriteResult holds the result of a single statement sent to Write().
 type WriteResult struct {
-	Error        string
 	Timing       float64
 	RowsAffected int64 // affected by the change
 	LastInsertID int64 // if relevant, otherwise zero value

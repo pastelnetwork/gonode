@@ -178,6 +178,51 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	return nil
 }
 
+// AddThumbnail implements walletnode.RegisterArtworkServer.AddThumbnail()
+func (service *RegisterArtwork) AddThumbnail(ctx context.Context, req *pb.AddThumbnailRequest) (*pb.AddThumbnailReply, error) {
+	if req.Thumbnail == nil {
+		return nil, errors.New("thumbnail is empty")
+	}
+
+	log.WithContext(ctx).WithField("req", req).Debugf("AddThumbnail request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := task.AddThumbnail(ctx, req.Thumbnail); err != nil {
+		return nil, errors.Errorf("add thumbnail: %w", err)
+	}
+	resp := &pb.AddThumbnailReply{}
+
+	log.WithContext(ctx).WithField("resp", resp).Debugf("AddThumbnail response")
+	return resp, nil
+}
+
+// GetThumbnail implements walletnode.RegisterArtworkServer.GetThumbnail()
+func (service *RegisterArtwork) GetThumbnail(ctx context.Context, req *pb.GetThumbnailRequest) (*pb.GetThumbnailReply, error) {
+	if req.Key == "" {
+		return nil, errors.New("key is empty")
+	}
+
+	log.WithContext(ctx).WithField("req", req).Debugf("GetThumbnail request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	thumbnail, err := task.GetThumbnail(ctx, req.Key)
+	if err != nil {
+		return nil, errors.Errorf("query thumbnail: %w", err)
+	}
+	resp := &pb.GetThumbnailReply{
+		Thumbnail: thumbnail,
+	}
+
+	log.WithContext(ctx).WithField("resp", resp).Debugf("GetThumbnail response")
+	return resp, nil
+}
+
 // Desc returns a description of the service.
 func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
 	return &pb.RegisterArtwork_ServiceDesc

@@ -11,6 +11,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/metadb"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 )
 
 // Task is the task of registering new artwork.
@@ -193,6 +195,41 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	})
 
 	return fingerprintData, nil
+}
+
+// AddThumbnail appends the new thumbnail to metadb
+func (task *Task) AddThumbnail(ctx context.Context, thumbnail *pb.Thumbnail) error {
+	statement := "insert into thumbnails(key,small,medium,large) values(?,?,?,?)"
+
+	if _, err := task.metadbClient.Write(ctx,
+		statement,
+		thumbnail.Key,
+		thumbnail.Small,
+		thumbnail.Medium,
+		thumbnail.Large,
+	); err != nil {
+		return errors.Errorf("insert thumbnail: %w", err)
+	}
+
+	return nil
+}
+
+// GetThumbnail queries the thumbnail by key
+func (task *Task) GetThumbnail(ctx context.Context, key string) (*pb.Thumbnail, error) {
+	statement := fmt.Sprintf("select * from thumbnails where key='%s'", key)
+	rows, err := task.metadbClient.Query(ctx, statement, metadb.ReadLevelWeak)
+	if err != nil {
+		return nil, errors.Errorf("query thumbnail: %w", err)
+	}
+	if rows == nil {
+		return nil, errors.Errorf("thumbnail not found: %s", key)
+	}
+
+	var thumbnail pb.Thumbnail
+	for rows.Next() {
+		rows.Scan(&thumbnail.Key, &thumbnail.Small, &thumbnail.Medium, &thumbnail.Large)
+	}
+	return &thumbnail, nil
 }
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {

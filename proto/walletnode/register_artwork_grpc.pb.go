@@ -30,6 +30,10 @@ type RegisterArtworkClient interface {
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
+	// GetThumbnail queries a thumbnail by key from the supernode
+	GetThumbnail(ctx context.Context, in *GetThumbnailRequest, opts ...grpc.CallOption) (*GetThumbnailReply, error)
+	// AddThumbnail stores a new thumbnail to the supernode
+	AddThumbnail(ctx context.Context, in *AddThumbnailRequest, opts ...grpc.CallOption) (*AddThumbnailReply, error)
 }
 
 type registerArtworkClient struct {
@@ -132,6 +136,24 @@ func (c *registerArtworkClient) SendTicket(ctx context.Context, in *SendTicketRe
 	return out, nil
 }
 
+func (c *registerArtworkClient) GetThumbnail(ctx context.Context, in *GetThumbnailRequest, opts ...grpc.CallOption) (*GetThumbnailReply, error) {
+	out := new(GetThumbnailReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/GetThumbnail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registerArtworkClient) AddThumbnail(ctx context.Context, in *AddThumbnailRequest, opts ...grpc.CallOption) (*AddThumbnailReply, error) {
+	out := new(AddThumbnailReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/AddThumbnail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterArtworkServer is the server API for RegisterArtwork service.
 // All implementations must embed UnimplementedRegisterArtworkServer
 // for forward compatibility
@@ -148,6 +170,10 @@ type RegisterArtworkServer interface {
 	ProbeImage(RegisterArtwork_ProbeImageServer) error
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
+	// GetThumbnail queries a thumbnail by key from the supernode
+	GetThumbnail(context.Context, *GetThumbnailRequest) (*GetThumbnailReply, error)
+	// AddThumbnail stores a new thumbnail to the supernode
+	AddThumbnail(context.Context, *AddThumbnailRequest) (*AddThumbnailReply, error)
 	mustEmbedUnimplementedRegisterArtworkServer()
 }
 
@@ -169,6 +195,12 @@ func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageS
 }
 func (UnimplementedRegisterArtworkServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
+}
+func (UnimplementedRegisterArtworkServer) GetThumbnail(context.Context, *GetThumbnailRequest) (*GetThumbnailReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetThumbnail not implemented")
+}
+func (UnimplementedRegisterArtworkServer) AddThumbnail(context.Context, *AddThumbnailRequest) (*AddThumbnailReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddThumbnail not implemented")
 }
 func (UnimplementedRegisterArtworkServer) mustEmbedUnimplementedRegisterArtworkServer() {}
 
@@ -289,6 +321,42 @@ func _RegisterArtwork_SendTicket_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterArtwork_GetThumbnail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetThumbnailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).GetThumbnail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterArtwork/GetThumbnail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).GetThumbnail(ctx, req.(*GetThumbnailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegisterArtwork_AddThumbnail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddThumbnailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).AddThumbnail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterArtwork/AddThumbnail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).AddThumbnail(ctx, req.(*AddThumbnailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterArtwork_ServiceDesc is the grpc.ServiceDesc for RegisterArtwork service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -308,6 +376,14 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "SendTicket",
 			Handler:    _RegisterArtwork_SendTicket_Handler,
 		},
+		{
+			MethodName: "GetThumbnail",
+			Handler:    _RegisterArtwork_GetThumbnail_Handler,
+		},
+		{
+			MethodName: "AddThumbnail",
+			Handler:    _RegisterArtwork_AddThumbnail_Handler,
+		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
@@ -322,5 +398,5 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "walletnode/register_artwork.proto",
+	Metadata: "register_artwork.proto",
 }

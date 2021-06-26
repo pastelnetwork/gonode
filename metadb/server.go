@@ -213,6 +213,13 @@ func (s *service) startServer(ctx context.Context) error {
 	// mark the rqlite node is ready
 	s.ready <- struct{}{}
 
+	// do some logic after the rqlite node is ready
+	if s.afterFunc != nil {
+		if err := s.afterFunc(); err != nil {
+			return errors.Errorf("after func: %w", err)
+		}
+	}
+
 	// block until context is done
 	<-ctx.Done()
 

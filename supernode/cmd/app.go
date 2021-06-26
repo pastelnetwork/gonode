@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -79,6 +81,37 @@ func NewApp() *cli.App {
 			}
 		}
 
+		// fetch the master node config by pastel client
+		pastelClient := pastel.NewClient(config.Pastel)
+		masterConfig, err := pastelClient.MasterNodeConfig(ctx)
+		if err == nil {
+			// update the config for metadb
+			if masterConfig.ExtCfg != "" {
+				parts := strings.Split(masterConfig.ExtCfg, ";")
+				if len(parts) == 2 {
+					port, err := strconv.Atoi(parts[0])
+					if err != nil {
+						return errors.Errorf("invalid ext-cfg:%s, %w", masterConfig.ExtCfg, err)
+					}
+					config.MetaDB.HTTPPort = port
+
+					port, err = strconv.Atoi(parts[1])
+					if err != nil {
+						return errors.Errorf("invalid ext-cfg:%s, %w", masterConfig.ExtCfg, err)
+					}
+					config.MetaDB.RaftPort = port
+				}
+			}
+			// update tthe config for p2p
+			if masterConfig.ExtP2P != "" {
+				port, err := strconv.Atoi(masterConfig.ExtP2P)
+				if err != nil {
+					return errors.Errorf("invalid ext-p2p:%s, %w", masterConfig.ExtP2P, err)
+				}
+				config.P2P.Port = port
+			}
+		}
+
 		if config.Quiet {
 			log.SetOutput(ioutil.Discard)
 		} else {
@@ -137,9 +170,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// new metadb service
 	config.MetaDB.SetWorkDir(config.WorkDir)
 	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
+	// set the after function for metadb
+	metadb.AfterFunc(func() error {
+		return migrate(ctx, metadb)
+	})
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p, metadb)
 
 	// server
 	grpc := server.New(config.Server,
@@ -148,4 +185,22 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	)
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
+}
+
+// database migrations for metadb
+func migrate(ctx context.Context, handler metadb.MetaDB) error {
+	tableThumbnails := `
+		CREATE TABLE IF NOT EXISTS thumbnails (
+			key TEXT PRIMARY KEY,
+			small BLOB,
+			medium BLOB,
+			large BLOB
+		)
+	`
+	// try to create the thumbnails table
+	if _, err := handler.Write(ctx, tableThumbnails); err != nil {
+		return errors.Errorf("create table thumbnail: %w", err)
+	}
+
+	return nil
 }

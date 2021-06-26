@@ -20,12 +20,33 @@ const (
 )
 
 // Write execute a statement, not support multple statements
-func (s *service) Write(_ context.Context, statement string) (*WriteResult, error) {
+func (s *service) Write(_ context.Context, statement string, params ...interface{}) (*WriteResult, error) {
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
 	}
 	if len(strings.Split(statement, ";")) > AllowedSubStatement {
 		return nil, errors.New("only support one sub statement")
+	}
+
+	// validate the parameters
+	parameters := []*command.Parameter{}
+	for _, parameter := range params {
+		var item *command.Parameter
+		switch v := parameter.(type) {
+		case bool:
+			item = &command.Parameter{Value: &command.Parameter_B{B: v}}
+		case int64:
+			item = &command.Parameter{Value: &command.Parameter_I{I: v}}
+		case float64:
+			item = &command.Parameter{Value: &command.Parameter_D{D: v}}
+		case string:
+			item = &command.Parameter{Value: &command.Parameter_S{S: v}}
+		case []uint8:
+			item = &command.Parameter{Value: &command.Parameter_Y{Y: v}}
+		default:
+			return nil, errors.Errorf("parameter type is not supported: %T", v)
+		}
+		parameters = append(parameters, item)
 	}
 
 	// prepare the execute command request
@@ -34,7 +55,8 @@ func (s *service) Write(_ context.Context, statement string) (*WriteResult, erro
 			Transaction: true,
 			Statements: []*command.Statement{
 				{
-					Sql: statement,
+					Sql:        statement,
+					Parameters: parameters,
 				},
 			},
 		},
@@ -46,13 +68,15 @@ func (s *service) Write(_ context.Context, statement string) (*WriteResult, erro
 	if err != nil {
 		return nil, errors.Errorf("execute statement: %w", err)
 	}
-	firsts := results[0]
+	first := results[0]
+	if first.Error != "" {
+		return nil, errors.Errorf("execute statement: %s", first.Error)
+	}
 
 	return &WriteResult{
-		Error:        firsts.Error,
-		Timing:       firsts.Time,
-		RowsAffected: firsts.RowsAffected,
-		LastInsertID: firsts.LastInsertID,
+		Timing:       first.Time,
+		RowsAffected: first.RowsAffected,
+		LastInsertID: first.LastInsertID,
 	}, nil
 }
 
@@ -100,6 +124,9 @@ func (s *service) Query(_ context.Context, statement string, level string) (*Que
 		return nil, errors.Errorf("query statement: %w", err)
 	}
 	first := rows[0]
+	if first.Error != "" {
+		return nil, errors.Errorf("query statement: %s", first.Error)
+	}
 
 	return &QueryResult{
 		columns:   first.Columns,
