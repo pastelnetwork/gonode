@@ -22,7 +22,7 @@ service RegisterArtwork {
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
 
-    // Upload the Image and the thumb coordinate
+    // Upload the image after pq signature is appended along with its thumbnail coordinates
     rpc UploadImage(UploadImageRequest) returns (UploadImageReply);
 }
 
@@ -69,14 +69,17 @@ message SendTicketReply {
 }
 
 message UploadImageRequest {
-    message ThumbnailCoordinate {
+    message Coordinate {
       int64 top_left_x = 1;
       int64 top_left_y = 2;
       int64 bottom_right_x = 3;
       int64 bottom_right_y = 4;
     }
-    bytes image = 1; 
-    ThumbnailCoordinate thumbnail_coordinate = 2;
+    oneof payload {
+      bytes image_piece = 1;
+      // Should be included in the last piece of image only
+      Coordinate thumbnail = 2;
+    }
 }
 
 message UploadImageReply {
