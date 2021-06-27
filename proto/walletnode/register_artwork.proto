@@ -23,7 +23,7 @@ service RegisterArtwork {
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
 
     // Upload the image after pq signature is appended along with its thumbnail coordinates
-    rpc UploadImage(UploadImageRequest) returns (UploadImageReply);
+    rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
 }
 
 message SessionRequest {
@@ -83,5 +83,5 @@ message UploadImageRequest {
 }
 
 message UploadImageReply {
-   bytes payload = 1;
+   bytes thumbnail_hash = 1;
 }
