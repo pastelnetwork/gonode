@@ -180,7 +180,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 }
 
 // UploadImageWithThumbnail implements walletnode.RegisterArtwork.UploadImageWithThumbnail
-func (service *RegisterArtwork) UploadImageWithThumbnail(stream pb.RegisterArtwork_UploadImageServer) error {
+func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
 	ctx := stream.Context()
 	log.WithContext(ctx).Debug("NASDSADASDASDSADSADASDAS1")
 

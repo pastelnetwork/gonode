@@ -8,6 +8,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 )
@@ -66,6 +67,7 @@ func (task *task) Cancel() {
 
 	select {
 	case <-task.Done():
+		log.Debugf("task %s cancelled", task.ID())
 		return
 	default:
 		close(task.doneCh)
@@ -86,7 +88,9 @@ func (task *task) RunAction(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
+			log.WithContext(ctx).Debug("context done")
 		case <-task.Done():
+			log.WithContext(ctx).Debugf("task %s done", task.ID())
 			cancel()
 		case action := <-task.actionCh:
 			group.Go(func() error {

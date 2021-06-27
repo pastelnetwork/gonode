@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	uploadImageBufferSize = 2 * 1024
+	uploadImageBufferSize = 32 * 1024
 )
 
 type registerArtwork struct {
@@ -136,7 +136,6 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	buffer := make([]byte, uploadImageBufferSize)
 	for {
 		n, err := file.Read(buffer)
-		log.WithContext(ctx).Debugf("Bytes read %d\n", n)
 		if err == io.EOF {
 			break
 		}
@@ -182,10 +181,13 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	for {
 		n, err := file.Read(buffer)
 		log.WithContext(ctx).Debugf("Read byte %d", n)
-		if err == io.EOF {
+		if err != nil && err == io.EOF {
 			log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("EOF")
 			lastPiece = true
 			break
+		} else if err != nil {
+			log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("Error %w", err)
+			return nil, err
 		}
 
 		req := &pb.UploadImageRequest{

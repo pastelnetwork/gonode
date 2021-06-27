@@ -153,13 +153,13 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 		return nil, err
 	}
 
-	task.NewAction(func(ctx context.Context) error {
-		task.ResampledArtwork = file
-		defer task.ResampledArtwork.Remove()
+	// task.NewAction(func(ctx context.Context) error {
+	// 	task.ResampledArtwork = file
+	// 	defer task.ResampledArtwork.Remove()
 
-		<-ctx.Done()
-		return nil
-	})
+	// 	<-ctx.Done()
+	// 	return nil
+	// })
 
 	var fingerprintData []byte
 
@@ -182,16 +182,16 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 		}
 
 		// NOTE: for testing Kademlia and should be removed before releasing.
-		data, err := file.Bytes()
-		if err != nil {
-			return err
-		}
+		// data, err := file.Bytes()
+		// if err != nil {
+		// 	return err
+		// }
 
-		id, err := task.p2pClient.Store(ctx, data)
-		if err != nil {
-			return err
-		}
-		log.WithContext(ctx).WithField("id", id).Debugf("Image stored into Kademlia")
+		// id, err := task.p2pClient.Store(ctx, data)
+		// if err != nil {
+		// 	return err
+		// }
+		// log.WithContext(ctx).WithField("id", id).Debugf("Image stored into Kademlia")
 		return nil
 	})
 
@@ -202,9 +202,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 // generate the image thumbnail from the coordinate provided for user and return
 // the hash for the genreated thumbnail
 func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File, thumbnail artwork.ImageThumbnail) ([]byte, error) {
-	log.Debugf("Supernode UploadImageWithThumbnail 1")
 	if err := task.RequiredStatus(StatusImageProbed); err != nil {
-		log.Debugf("Supernode UploadImageWithThumbnail 2")
 		return nil, err
 	}
 
