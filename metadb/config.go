@@ -6,8 +6,8 @@ import (
 
 const (
 	defaultListenAddress = "0.0.0.0"
-	defaultHTTPPort      = 4446
-	defaultRaftPort      = 4447
+	defaultHTTPPort      = 4448
+	defaultRaftPort      = 4449
 	defaultDataDir       = "metadb"
 )
 
