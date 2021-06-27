@@ -19,6 +19,12 @@ service RegisterArtwork {
     // ProbeImage uploads the resampled image compute and return a fingerpirnt.
     rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
+    // SendArtTicket sends a signed art-ticket to the supernode.
+    rpc SendSignedArtTicket(SendSignedArtTicketRequest) returns (SendSignedArtTicketReply);
+
+    // SendPreBurntTxFeeId sends tx_id of 10% burnt transaction fee to the supernode.
+    rpc SendPreBurntTxFeeId(SendPreBurntTxFeeIdRequest) returns (SendPreBurntTxFeeIdReply);
+
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
 }
@@ -51,6 +57,20 @@ message ProbeImageRequest {
 }
 message ProbeImageReply {
     bytes fingerprint = 1;
+}
+
+message SendSignedArtTicketRequest {
+    bytes art_ticket = 1;
+    bytes artist_signature = 2;
+}
+message SendSignedArtTicketReply {
+    int64 registration_fee = 1;
+}
+
+message SendPreBurntTxFeeIdRequest {
+    string txid = 1;
+}
+message SendPreBurntTxFeeIdReply {
 }
 
 message SendTicketRequest {
