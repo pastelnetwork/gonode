@@ -244,6 +244,35 @@ func (file *File) SaveImage(img image.Image) error {
 	return ErrUnsupportedFormat
 }
 
+// Thumbnail creates a thumbnail file from the artwork file and store in to starage layer
+func (file *File) Thumbnail(coordinate ImageThumbnail) (*File, error) {
+	f := NewFile(file.storage, "thumbnail-of-"+file.name)
+	if f == nil {
+		return nil, errors.Errorf("failed to create new file for thumbnail-of-%q", file.Name())
+	}
+
+	img, err := file.LoadImage()
+	if err != nil {
+		return nil, errors.Errorf("failed to load image from file %q", file.Name())
+	}
+
+	type thumnailMaker interface {
+		SubImage(image.Rectangle) (image.Image, error)
+	}
+
+	rect := image.Rect(int(coordinate.TopLeftX), int(coordinate.TopLeftY), int(coordinate.BottomRightX), int(coordinate.BottomRightY))
+	thumbnail, err := img.(thumnailMaker).SubImage(rect)
+	if err != nil {
+		return nil, errors.Errorf("failed to generate thumbnail %w", err).WithField("filename", f.Name())
+	}
+
+	if err := f.SaveImage(thumbnail); err != nil {
+		return nil, errors.Errorf("failed to save thumbnail to file %w", err).WithField("filename", f.Name())
+	}
+
+	return f, nil
+}
+
 // Encoder represents an image encoder.
 type Encoder interface {
 	Encode(img image.Image) (image.Image, error)

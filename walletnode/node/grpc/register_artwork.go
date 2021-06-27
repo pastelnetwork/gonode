@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	uploadImageBufferSize = 32 * 1024
+	uploadImageBufferSize = 2 * 1024
 )
 
 type registerArtwork struct {
@@ -136,6 +136,7 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	buffer := make([]byte, uploadImageBufferSize)
 	for {
 		n, err := file.Read(buffer)
+		log.WithContext(ctx).Debugf("Bytes read %d\n", n)
 		if err == io.EOF {
 			break
 		}
@@ -155,6 +156,77 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 
 	return resp.Fingerprint, nil
+}
+
+// UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
+func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ImageThumbnail) ([]byte, error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	log.WithContext(ctx).Debug("Start upload image and thumbnail to node")
+	stream, err := service.client.UploadImage(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to open stream: %w", err)
+	}
+	defer stream.CloseSend()
+
+	file, err := image.Open()
+	if err != nil {
+		return nil, errors.Errorf("failed to open file %q: %w", file.Name(), err)
+	}
+	defer file.Close()
+
+	buffer := make([]byte, uploadImageBufferSize/2)
+	lastPiece := false
+	counter := 0
+	for {
+		n, err := file.Read(buffer)
+		log.WithContext(ctx).Debugf("Read byte %d", n)
+		if err == io.EOF {
+			log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("EOF")
+			lastPiece = true
+			break
+		}
+
+		req := &pb.UploadImageRequest{
+			Payload: &pb.UploadImageRequest_ImagePiece{
+				ImagePiece: buffer[:n],
+			},
+		}
+
+		if err := stream.Send(req); err != nil {
+			log.WithContext(ctx).Debugf("Counter: %q", counter)
+			return nil, errors.Errorf("failed to send image data: %w", err).WithField("ReqID", service.conn.id)
+		}
+		counter++
+	}
+
+	if !lastPiece {
+		return nil, errors.Errorf("failed to read all image data")
+	}
+
+	thumnailReq := &pb.UploadImageRequest{
+		Payload: &pb.UploadImageRequest_Thumbnail{
+			Thumbnail: &pb.UploadImageRequest_Coordinate{
+				TopLeftX:     thumbnail.TopLeftX,
+				TopLeftY:     thumbnail.TopLeftY,
+				BottomRightX: thumbnail.BottomRightX,
+				BottomRightY: thumbnail.BottomRightY,
+			},
+		},
+	}
+
+	if err := stream.Send(thumnailReq); err != nil {
+		return nil, errors.Errorf("failed to send image thumbnail: %w", err).WithField("ReqID", service.conn.id)
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, errors.Errorf("failed to receive upload image response: %w", err)
+	}
+	log.WithContext(ctx).WithField("thumbnailHashLength", len(resp.ThumbnailHash)).Debugf("UploadImageWithThumbnail response")
+
+	return resp.ThumbnailHash, nil
 }
 
 func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {

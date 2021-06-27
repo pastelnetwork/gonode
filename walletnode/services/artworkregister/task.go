@@ -133,6 +133,18 @@ func (task *Task) run(ctx context.Context) error {
 	if err := task.encodeFingerprint(ctx, fingerprint, finalImage); err != nil {
 		return err
 	}
+
+	// Upload image with pqgsinganature and its thumb to supernodes
+	if err := nodes.UploadImageWithThumbnail(ctx, finalImage, task.Ticket.Thumbnail); err != nil {
+		return err
+	}
+	// Match thumbnail hashes receiveed from supernodes
+	if err := nodes.MatchThumbnailHashes(); err != nil {
+		task.UpdateStatus(StatusErrorThumbnailHashsesNotMatch)
+		return err
+	}
+	task.UpdateStatus(StatusImageAndThumbnailUploaded)
+
 	fmt.Println("OK")
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
