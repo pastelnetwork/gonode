@@ -7,6 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
@@ -175,6 +176,72 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		return errors.Errorf("failed to send ProbeImage response: %w", err)
 	}
 	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
+	return nil
+}
+
+// UploadImageWithThumbnail implements walletnode.RegisterArtwork.UploadImageWithThumbnail
+func (service *RegisterArtwork) UploadImageWithThumbnail(stream pb.RegisterArtwork_UploadImageServer) error {
+	ctx := stream.Context()
+	log.WithContext(ctx).Debug("NASDSADASDASDSADSADASDAS1")
+
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return err
+	}
+
+	image := service.Storage.NewFile()
+	imageFile, err := image.Create()
+	if err != nil {
+		return errors.Errorf("failed to open image file %q: %w", imageFile.Name(), err)
+	}
+	defer imageFile.Close()
+	log.WithContext(ctx).WithField("filename", imageFile.Name()).Debugf("UploadImageWithThumbnail request")
+
+	imageWriter := bufio.NewWriter(imageFile)
+	defer imageWriter.Flush()
+
+	thumbnail := artwork.ImageThumbnail{}
+	for {
+		req, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			if status.Code(err) == codes.Canceled {
+				return errors.New("connection closed")
+			}
+			return errors.Errorf("failed to receive UploadImageWithThumbnail: %w", err)
+		}
+
+		if imagePiece := req.GetImagePiece(); imagePiece != nil {
+			if _, err := imageWriter.Write(imagePiece); err != nil {
+				return errors.Errorf("failed to write to file %q: %w", imageFile.Name(), err)
+			}
+		} else {
+			if cordinates := req.GetThumbnail(); cordinates != nil {
+				thumbnail.TopLeftX = cordinates.TopLeftX
+				thumbnail.TopLeftY = cordinates.TopLeftY
+				thumbnail.BottomRightX = cordinates.BottomRightX
+				thumbnail.BottomRightY = cordinates.BottomRightY
+			}
+		}
+	}
+
+	thumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
+	if err != nil {
+		return err
+	}
+	if thumbnailHash == nil {
+		return errors.New("could not compute thumbnailHash data")
+	}
+
+	resp := &pb.UploadImageReply{
+		ThumbnailHash: thumbnailHash,
+	}
+	if err := stream.SendAndClose(resp); err != nil {
+		return errors.Errorf("failed to send UploadImageAndThumbnail response: %w", err)
+	}
+	log.WithContext(ctx).WithField("thumbnailHashLenght", len(resp.ThumbnailHash)).Debugf("UploadImageAndThumbnail response")
 	return nil
 }
 

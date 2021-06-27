@@ -13,8 +13,9 @@ type Node struct {
 	node.RegisterArtwork
 	node.Connection
 
-	activated   bool
-	fingerprint []byte
+	activated    bool
+	fingerprint  []byte
+	thumnailHash []byte
 
 	address  string
 	pastelID string

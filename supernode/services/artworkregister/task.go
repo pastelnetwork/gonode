@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync"
 
 	"github.com/DataDog/zstd"
@@ -11,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"golang.org/x/crypto/sha3"
 )
 
 // Task is the task of registering new artwork.
@@ -20,6 +22,7 @@ type Task struct {
 
 	ResampledArtwork *artwork.File
 	Artwork          *artwork.File
+	Thumbnail        *artwork.File
 
 	acceptedMu sync.Mutex
 	accpeted   Nodes
@@ -161,7 +164,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	var fingerprintData []byte
 
 	<-task.NewAction(func(ctx context.Context) error {
-		task.UpdateStatus(StatusImageUploaded)
+		task.UpdateStatus(StatusImageProbed)
 
 		img, err := file.LoadImage()
 		if err != nil {
@@ -193,6 +196,51 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	})
 
 	return fingerprintData, nil
+}
+
+// UploadImageWithThumbnail uploads the image that contained image with pqsignature
+// generate the image thumbnail from the coordinate provided for user and return
+// the hash for the genreated thumbnail
+func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File, thumbnail artwork.ImageThumbnail) ([]byte, error) {
+	log.Debugf("Supernode UploadImageWithThumbnail 1")
+	if err := task.RequiredStatus(StatusImageProbed); err != nil {
+		log.Debugf("Supernode UploadImageWithThumbnail 2")
+		return nil, err
+	}
+
+	thumbnailFile, err := file.Thumbnail(thumbnail)
+	if err != nil {
+		return nil, err
+	}
+
+	task.NewAction(func(ctx context.Context) error {
+		task.Artwork = file
+		task.Thumbnail = thumbnailFile
+
+		<-ctx.Done()
+		return nil
+	})
+
+	var thumbnailHash []byte
+
+	<-task.NewAction(func(ctx context.Context) error {
+		task.UpdateStatus(StatusImageAndThumbnailUploaded)
+
+		hash := sha3.New256()
+		f, err := task.Thumbnail.Open()
+		if err != nil {
+			return errors.Errorf("failed to open thumbnail file for hashing %w", err).WithField("FileName", f.Name())
+		}
+		if _, err := io.Copy(hash, f); err != nil {
+			return errors.Errorf("failed to hash thumbnail file %w", err).WithField("FileName", f.Name())
+		}
+
+		thumbnailHash = hash.Sum(thumbnailHash)
+		<-ctx.Done()
+		return nil
+	})
+
+	return thumbnailHash, nil
 }
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
