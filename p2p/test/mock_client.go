@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	// GetMethod represent Get name method
-	GetMethod = "Get"
+	// RetrieveMethod represent Get name method
+	RetrieveMethod = "Retrieve"
 
 	// StoreMethod represent Store name method
 	StoreMethod = "Store"
@@ -29,9 +29,9 @@ func NewMockClient(t *testing.T) *Client {
 	}
 }
 
-// ListenOnGet listening MasterNodesTop and returns data, found flag, and error from args
-func (client *Client) ListenOnGet(data []byte, found bool, err error) *Client {
-	client.On(GetMethod, mock.Anything, mock.Anything).Return(data, found, err)
+// ListenOnRetrieve listening Retrieve and returns data, and error from args
+func (client *Client) ListenOnRetrieve(data []byte, err error) *Client {
+	client.On(RetrieveMethod, mock.Anything, mock.Anything).Return(data, err)
 	return client
 }
 

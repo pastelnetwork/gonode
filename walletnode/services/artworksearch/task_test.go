@@ -181,7 +181,7 @@ func TestRunTask(t *testing.T) {
 				pastelClientMock.ListenOnRegTicket(ticket.ActTicketData.RegTXID, testCase.args.regTickets[i], testCase.args.regTicketErr)
 			}
 
-			p2pClientMock.ListenOnGet([]byte{}, false, nil)
+			p2pClientMock.ListenOnRetrieve([]byte{}, nil)
 			service := &Service{
 				pastelClient: pastelClientMock.Client,
 				p2pClient:    p2pClientMock,
