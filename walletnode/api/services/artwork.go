@@ -11,6 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
@@ -28,6 +29,7 @@ const (
 type Artwork struct {
 	*Common
 	register *artworkregister.Service
+	download *artworkdownload.Service
 	db       storage.KeyValue
 	imageTTL time.Duration
 }
@@ -140,7 +142,7 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 
 // Download registered artwork.
 func (service *Artwork) Download(_ context.Context, p *artworks.DownloadPayload) (res *artworks.DownloadResult, err error) {
-	log.Infof("Art Download Payload: %v", p)
+	// taskID := service.download.AddTask()
 	return
 }
 
@@ -150,7 +152,7 @@ func (service *Artwork) APIKeyAuth(ctx_ context.Context, key string, schema *sec
 }
 
 // Streams the state of the download process.
-func (service *Artwork) DownloadTaskStateEndpoint(ctx context.Context, p *artworks.DownloadTaskStatePayload, stream artworks.DownloadTaskStateEndpointServerStream) (err error) {
+func (service *Artwork) DownloadTaskStateEndpoint(ctx context.Context, p *artworks.DownloadTaskStatePayload, stream artworks.DownloadTaskStateServerStream) (err error) {
 	return nil
 }
 

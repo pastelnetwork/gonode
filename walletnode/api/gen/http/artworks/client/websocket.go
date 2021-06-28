@@ -18,8 +18,8 @@ import (
 // ConnConfigurer holds the websocket connection configurer functions for the
 // streaming endpoints in "artworks" service.
 type ConnConfigurer struct {
-	RegisterTaskStateFn         goahttp.ConnConfigureFunc
-	DownloadTaskStateEndpointFn goahttp.ConnConfigureFunc
+	RegisterTaskStateFn goahttp.ConnConfigureFunc
+	DownloadTaskStateFn goahttp.ConnConfigureFunc
 }
 
 // RegisterTaskStateClientStream implements the
@@ -30,7 +30,7 @@ type RegisterTaskStateClientStream struct {
 }
 
 // DownloadTaskStateClientStream implements the
-// artworks.DownloadTaskStateEndpointClientStream interface.
+// artworks.DownloadTaskStateClientStream interface.
 type DownloadTaskStateClientStream struct {
 	// conn is the underlying websocket connection.
 	conn *websocket.Conn
@@ -40,8 +40,8 @@ type DownloadTaskStateClientStream struct {
 // with fn for all the streaming endpoints in "artworks" service.
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
-		RegisterTaskStateFn:         fn,
-		DownloadTaskStateEndpointFn: fn,
+		RegisterTaskStateFn: fn,
+		DownloadTaskStateFn: fn,
 	}
 }
 
@@ -69,11 +69,11 @@ func (s *RegisterTaskStateClientStream) Recv() (*artworks.TaskState, error) {
 	return res, nil
 }
 
-// Recv reads instances of "artworks.DownloadTaskState" from the
+// Recv reads instances of "artworks.ArtDownloadTaskState" from the
 // "downloadTaskState" endpoint websocket connection.
-func (s *DownloadTaskStateClientStream) Recv() (*artworks.DownloadTaskState, error) {
+func (s *DownloadTaskStateClientStream) Recv() (*artworks.ArtDownloadTaskState, error) {
 	var (
-		rv   *artworks.DownloadTaskState
+		rv   *artworks.ArtDownloadTaskState
 		body DownloadTaskStateResponseBody
 		err  error
 	)
@@ -89,6 +89,6 @@ func (s *DownloadTaskStateClientStream) Recv() (*artworks.DownloadTaskState, err
 	if err != nil {
 		return rv, err
 	}
-	res := NewDownloadTaskStateOK(&body)
+	res := NewDownloadTaskStateArtDownloadTaskStateOK(&body)
 	return res, nil
 }

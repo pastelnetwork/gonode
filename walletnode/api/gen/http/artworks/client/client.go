@@ -45,9 +45,9 @@ type Client struct {
 	// endpoint.
 	DownloadDoer goahttp.Doer
 
-	// DownloadTaskStateEndpoint Doer is the HTTP client used to make requests to
-	// the downloadTaskState endpoint.
-	DownloadTaskStateEndpointDoer goahttp.Doer
+	// DownloadTaskState Doer is the HTTP client used to make requests to the
+	// downloadTaskState endpoint.
+	DownloadTaskStateDoer goahttp.Doer
 
 	// DowloadTask Doer is the HTTP client used to make requests to the dowloadTask
 	// endpoint.
@@ -91,23 +91,23 @@ func NewClient(
 		cfn = &ConnConfigurer{}
 	}
 	return &Client{
-		RegisterDoer:                  doer,
-		RegisterTaskStateDoer:         doer,
-		RegisterTaskDoer:              doer,
-		RegisterTasksDoer:             doer,
-		UploadImageDoer:               doer,
-		DownloadDoer:                  doer,
-		DownloadTaskStateEndpointDoer: doer,
-		DowloadTaskDoer:               doer,
-		DownloadTasksDoer:             doer,
-		CORSDoer:                      doer,
-		RestoreResponseBody:           restoreBody,
-		scheme:                        scheme,
-		host:                          host,
-		decoder:                       dec,
-		encoder:                       enc,
-		dialer:                        dialer,
-		configurer:                    cfn,
+		RegisterDoer:          doer,
+		RegisterTaskStateDoer: doer,
+		RegisterTaskDoer:      doer,
+		RegisterTasksDoer:     doer,
+		UploadImageDoer:       doer,
+		DownloadDoer:          doer,
+		DownloadTaskStateDoer: doer,
+		DowloadTaskDoer:       doer,
+		DownloadTasksDoer:     doer,
+		CORSDoer:              doer,
+		RestoreResponseBody:   restoreBody,
+		scheme:                scheme,
+		host:                  host,
+		decoder:               dec,
+		encoder:               enc,
+		dialer:                dialer,
+		configurer:            cfn,
 	}
 }
 
@@ -258,14 +258,14 @@ func (c *Client) Download() goa.Endpoint {
 	}
 }
 
-// DownloadTaskStateEndpoint returns an endpoint that makes HTTP requests to
-// the artworks service downloadTaskState server.
-func (c *Client) DownloadTaskStateEndpoint() goa.Endpoint {
+// DownloadTaskState returns an endpoint that makes HTTP requests to the
+// artworks service downloadTaskState server.
+func (c *Client) DownloadTaskState() goa.Endpoint {
 	var (
-		decodeResponse = DecodeDownloadTaskStateEndpointResponse(c.decoder, c.RestoreResponseBody)
+		decodeResponse = DecodeDownloadTaskStateResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildDownloadTaskStateEndpointRequest(ctx, v)
+		req, err := c.BuildDownloadTaskStateRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -278,8 +278,8 @@ func (c *Client) DownloadTaskStateEndpoint() goa.Endpoint {
 			}
 			return nil, goahttp.ErrRequestError("artworks", "downloadTaskState", err)
 		}
-		if c.configurer.DownloadTaskStateEndpointFn != nil {
-			conn = c.configurer.DownloadTaskStateEndpointFn(conn, cancel)
+		if c.configurer.DownloadTaskStateFn != nil {
+			conn = c.configurer.DownloadTaskStateFn(conn, cancel)
 		}
 		go func() {
 			<-ctx.Done()

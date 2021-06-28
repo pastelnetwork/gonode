@@ -75,6 +75,16 @@ func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTic
 	return tickets, nil
 }
 
+// TicketOwnership implements pastel.Client.TicketOwnership
+func (client *client) TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error) {
+	ownership := OwnershipTicket{}
+
+	if err := client.callFor(ctx, &ownership, "tickets", "tools", "validateownership", txID, pastelID, passphrase); err != nil {
+		return "", errors.Errorf("failed to get ticket ownership: %w", err)
+	}
+	return ownership.Trade, nil
+}
+
 // Sign implements pastel.Client.Sign
 func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error) {
 	var sign struct {

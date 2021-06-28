@@ -21,17 +21,17 @@ import (
 
 // Server lists the artworks service endpoint HTTP handlers.
 type Server struct {
-	Mounts                    []*MountPoint
-	Register                  http.Handler
-	RegisterTaskState         http.Handler
-	RegisterTask              http.Handler
-	RegisterTasks             http.Handler
-	UploadImage               http.Handler
-	Download                  http.Handler
-	DownloadTaskStateEndpoint http.Handler
-	DowloadTask               http.Handler
-	DownloadTasks             http.Handler
-	CORS                      http.Handler
+	Mounts            []*MountPoint
+	Register          http.Handler
+	RegisterTaskState http.Handler
+	RegisterTask      http.Handler
+	RegisterTasks     http.Handler
+	UploadImage       http.Handler
+	Download          http.Handler
+	DownloadTaskState http.Handler
+	DowloadTask       http.Handler
+	DownloadTasks     http.Handler
+	CORS              http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -83,7 +83,7 @@ func New(
 			{"RegisterTasks", "GET", "/artworks/register"},
 			{"UploadImage", "POST", "/artworks/register/upload"},
 			{"Download", "POST", "/artworks/download"},
-			{"DownloadTaskStateEndpoint", "GET", "/artworks/download/{taskId}/state"},
+			{"DownloadTaskState", "GET", "/artworks/download/{taskId}/state"},
 			{"DowloadTask", "GET", "/artworks/download/{taskId}"},
 			{"DownloadTasks", "GET", "/artworks/download"},
 			{"CORS", "OPTIONS", "/artworks/register"},
@@ -94,16 +94,16 @@ func New(
 			{"CORS", "OPTIONS", "/artworks/download/{taskId}/state"},
 			{"CORS", "OPTIONS", "/artworks/download/{taskId}"},
 		},
-		Register:                  NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
-		RegisterTaskState:         NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
-		RegisterTask:              NewRegisterTaskHandler(e.RegisterTask, mux, decoder, encoder, errhandler, formatter),
-		RegisterTasks:             NewRegisterTasksHandler(e.RegisterTasks, mux, decoder, encoder, errhandler, formatter),
-		UploadImage:               NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
-		Download:                  NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter),
-		DownloadTaskStateEndpoint: NewDownloadTaskStateEndpointHandler(e.DownloadTaskStateEndpoint, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.DownloadTaskStateEndpointFn),
-		DowloadTask:               NewDowloadTaskHandler(e.DowloadTask, mux, decoder, encoder, errhandler, formatter),
-		DownloadTasks:             NewDownloadTasksHandler(e.DownloadTasks, mux, decoder, encoder, errhandler, formatter),
-		CORS:                      NewCORSHandler(),
+		Register:          NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
+		RegisterTaskState: NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
+		RegisterTask:      NewRegisterTaskHandler(e.RegisterTask, mux, decoder, encoder, errhandler, formatter),
+		RegisterTasks:     NewRegisterTasksHandler(e.RegisterTasks, mux, decoder, encoder, errhandler, formatter),
+		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
+		Download:          NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter),
+		DownloadTaskState: NewDownloadTaskStateHandler(e.DownloadTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.DownloadTaskStateFn),
+		DowloadTask:       NewDowloadTaskHandler(e.DowloadTask, mux, decoder, encoder, errhandler, formatter),
+		DownloadTasks:     NewDownloadTasksHandler(e.DownloadTasks, mux, decoder, encoder, errhandler, formatter),
+		CORS:              NewCORSHandler(),
 	}
 }
 
@@ -118,7 +118,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.RegisterTasks = m(s.RegisterTasks)
 	s.UploadImage = m(s.UploadImage)
 	s.Download = m(s.Download)
-	s.DownloadTaskStateEndpoint = m(s.DownloadTaskStateEndpoint)
+	s.DownloadTaskState = m(s.DownloadTaskState)
 	s.DowloadTask = m(s.DowloadTask)
 	s.DownloadTasks = m(s.DownloadTasks)
 	s.CORS = m(s.CORS)
@@ -132,7 +132,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountRegisterTasksHandler(mux, h.RegisterTasks)
 	MountUploadImageHandler(mux, h.UploadImage)
 	MountDownloadHandler(mux, h.Download)
-	MountDownloadTaskStateEndpointHandler(mux, h.DownloadTaskStateEndpoint)
+	MountDownloadTaskStateHandler(mux, h.DownloadTaskState)
 	MountDowloadTaskHandler(mux, h.DowloadTask)
 	MountDownloadTasksHandler(mux, h.DownloadTasks)
 	MountCORSHandler(mux, h.CORS)
@@ -450,9 +450,9 @@ func NewDownloadHandler(
 	})
 }
 
-// MountDownloadTaskStateEndpointHandler configures the mux to serve the
-// "artworks" service "downloadTaskState" endpoint.
-func MountDownloadTaskStateEndpointHandler(mux goahttp.Muxer, h http.Handler) {
+// MountDownloadTaskStateHandler configures the mux to serve the "artworks"
+// service "downloadTaskState" endpoint.
+func MountDownloadTaskStateHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -462,9 +462,9 @@ func MountDownloadTaskStateEndpointHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("GET", "/artworks/download/{taskId}/state", f)
 }
 
-// NewDownloadTaskStateEndpointHandler creates a HTTP handler which loads the
-// HTTP request and calls the "artworks" service "downloadTaskState" endpoint.
-func NewDownloadTaskStateEndpointHandler(
+// NewDownloadTaskStateHandler creates a HTTP handler which loads the HTTP
+// request and calls the "artworks" service "downloadTaskState" endpoint.
+func NewDownloadTaskStateHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -475,8 +475,8 @@ func NewDownloadTaskStateEndpointHandler(
 	configurer goahttp.ConnConfigureFunc,
 ) http.Handler {
 	var (
-		decodeRequest = DecodeDownloadTaskStateEndpointRequest(mux, decoder)
-		encodeError   = EncodeDownloadTaskStateEndpointError(encoder, formatter)
+		decodeRequest = DecodeDownloadTaskStateRequest(mux, decoder)
+		encodeError   = EncodeDownloadTaskStateError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
@@ -491,7 +491,7 @@ func NewDownloadTaskStateEndpointHandler(
 		}
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
-		v := &artworks.DownloadTaskStateEndpointEndpointInput{
+		v := &artworks.DownloadTaskStateEndpointInput{
 			Stream: &DownloadTaskStateServerStream{
 				upgrader:   upgrader,
 				configurer: configurer,

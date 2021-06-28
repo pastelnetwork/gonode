@@ -41,8 +41,8 @@ func DownloadArtworksPath() string {
 	return "/artworks/download"
 }
 
-// DownloadTaskStateEndpointArtworksPath returns the URL path to the artworks service downloadTaskState HTTP endpoint.
-func DownloadTaskStateEndpointArtworksPath(taskID string) string {
+// DownloadTaskStateArtworksPath returns the URL path to the artworks service downloadTaskState HTTP endpoint.
+func DownloadTaskStateArtworksPath(taskID string) string {
 	return fmt.Sprintf("/artworks/download/%v/state", taskID)
 }
 

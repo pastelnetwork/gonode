@@ -4,8 +4,10 @@ package artworkdownload
 const (
 	StatusTaskStarted Status = iota
 	StatusConnected
+	StatusDownloaded
 	// Error
 	StatusErrorFingerprintsNotMatch
+	StatusErrorNotEnoughSuperNode
 	// Final
 	StatusTaskRejected
 	StatusTaskCompleted
@@ -15,6 +17,7 @@ var statusNames = map[Status]string{
 	StatusTaskStarted:               "Task Started",
 	StatusConnected:                 "Connected",
 	StatusErrorFingerprintsNotMatch: "Error Fingerprints Dont Match",
+	StatusErrorNotEnoughMasterNode:  "Error Not Enough SuperNode"
 	StatusTaskRejected:              "Task Rejected",
 	StatusTaskCompleted:             "Task Completed",
 }

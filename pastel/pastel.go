@@ -26,6 +26,10 @@ type Client interface {
 	// Command `tickets list id`.
 	IDTickets(ctx context.Context, idType IDTicketType) (IDTickets, error)
 
+	// TicketOwnership returns ownership by the given pastelID and passphrase, if successful returns owership.
+	// Command `tickets tools validateownership txid pastelid passphrase`.
+	TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error)
+
 	// Sign signs data by the given pastelID and passphrase, if successful returns signature.
 	// Command `pastelid sign "text" "PastelID" "passphrase"`.
 	Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error)

@@ -187,8 +187,8 @@ func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid strin
 	var txid string
 	{
 		txid = artworksDownloadTxid
-		if utf8.RuneCountInString(txid) < 46 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 46, true))
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
 		}
 		if utf8.RuneCountInString(txid) > 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
@@ -223,9 +223,9 @@ func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid strin
 	return v, nil
 }
 
-// BuildDownloadTaskStateEndpointPayload builds the payload for the artworks
+// BuildDownloadTaskStatePayload builds the payload for the artworks
 // downloadTaskState endpoint from CLI flags.
-func BuildDownloadTaskStateEndpointPayload(artworksDownloadTaskStateTaskID string) (*artworks.DownloadTaskStatePayload, error) {
+func BuildDownloadTaskStatePayload(artworksDownloadTaskStateTaskID string) (*artworks.DownloadTaskStatePayload, error) {
 	var err error
 	var taskID string
 	{

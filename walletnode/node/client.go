@@ -24,6 +24,8 @@ type Connection interface {
 	Done() <-chan struct{}
 	// RegisterArtwork returns a new RegisterArtwork stream.
 	RegisterArtwork() RegisterArtwork
+	// DownloadArtwork returns a new DownloadArtwork stream.
+	DownloadArtwork() DownloadArtwork
 }
 
 // RegisterArtwork contains methods for registering artwork.
@@ -38,4 +40,10 @@ type RegisterArtwork interface {
 	ConnectTo(ctx context.Context, nodeKey, sessID string) error
 	// ProbeImage uploads image to supernode.
 	ProbeImage(ctx context.Context, image *artwork.File) (fingerprintData []byte, err error)
+}
+
+// DownloadArtwork contains methods for downloading artwork.
+type DownloadArtwork interface {
+	// Download sends image downloading request to supernode.
+	Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error)
 }

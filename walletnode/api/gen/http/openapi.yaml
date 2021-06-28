@@ -43,7 +43,7 @@ paths:
         required: true
         type: string
         maxLength: 64
-        minLength: 46
+        minLength: 64
       - name: pid
         in: query
         description: Owner's PastelID
@@ -287,6 +287,30 @@ paths:
       schemes:
       - http
 definitions:
+  ArtDownloadTaskStateResponseBody:
+    title: ArtDownloadTaskStateResponseBody
+    type: object
+    properties:
+      date:
+        type: string
+        description: Date of the status creation
+        example: 2006-01-02T15:04:05Z07:00
+      status:
+        type: string
+        description: Status of the download process
+        example: Task Started
+        enum:
+        - Task Started
+        - Connected
+        - Error Fingerprints Dont Match
+        - Task Rejected
+        - Task Completed
+    example:
+      date: 2006-01-02T15:04:05Z07:00
+      status: Task Started
+    required:
+    - date
+    - status
   ArtworkTicketResponse:
     title: ArtworkTicketResponse
     type: object
@@ -627,7 +651,7 @@ definitions:
       states:
         type: array
         items:
-          $ref: '#/definitions/DownloadTaskStateResponseBody'
+          $ref: '#/definitions/ArtDownloadTaskStateResponseBody'
         description: List of states from the very beginning of the process
         example:
         - date: 2006-01-02T15:04:05Z07:00
@@ -1021,11 +1045,6 @@ definitions:
         enum:
         - Task Started
         - Connected
-        - Image Probed
-        - Ticket Accepted
-        - Ticket Registered
-        - Ticket Activated
-        - Error Insufficient Fee
         - Error Fingerprints Dont Match
         - Task Rejected
         - Task Completed
@@ -1996,35 +2015,6 @@ definitions:
     - id
     - status
     - file
-  DownloadTaskStateResponseBody:
-    title: DownloadTaskStateResponseBody
-    type: object
-    properties:
-      date:
-        type: string
-        description: Date of the status creation
-        example: 2006-01-02T15:04:05Z07:00
-      status:
-        type: string
-        description: Status of the download process
-        example: Task Started
-        enum:
-        - Task Started
-        - Connected
-        - Image Probed
-        - Ticket Accepted
-        - Ticket Registered
-        - Ticket Activated
-        - Error Insufficient Fee
-        - Error Fingerprints Dont Match
-        - Task Rejected
-        - Task Completed
-    example:
-      date: 2006-01-02T15:04:05Z07:00
-      status: Task Started
-    required:
-    - date
-    - status
   TaskResponseTiny:
     title: 'Mediatype identifier: application/vnd.artwork.register.task; view=default'
     type: object

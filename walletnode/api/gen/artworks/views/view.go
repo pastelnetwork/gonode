@@ -149,13 +149,13 @@ type DownloadTaskView struct {
 	// Status of the downloading process
 	Status *string
 	// List of states from the very beginning of the process
-	States []*DownloadTaskStateView
+	States []*ArtDownloadTaskStateView
 	// File downloaded
 	Bytes []byte
 }
 
-// DownloadTaskStateView is a type that runs validations on a projected type.
-type DownloadTaskStateView struct {
+// ArtDownloadTaskStateView is a type that runs validations on a projected type.
+type ArtDownloadTaskStateView struct {
 	// Date of the status creation
 	Date *string
 	// Status of the download process
@@ -703,7 +703,7 @@ func ValidateDownloadTaskView(result *DownloadTaskView) (err error) {
 	}
 	for _, e := range result.States {
 		if e != nil {
-			if err2 := ValidateDownloadTaskStateView(e); err2 != nil {
+			if err2 := ValidateArtDownloadTaskStateView(e); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -711,9 +711,9 @@ func ValidateDownloadTaskView(result *DownloadTaskView) (err error) {
 	return
 }
 
-// ValidateDownloadTaskStateView runs the validations defined on
-// DownloadTaskStateView.
-func ValidateDownloadTaskStateView(result *DownloadTaskStateView) (err error) {
+// ValidateArtDownloadTaskStateView runs the validations defined on
+// ArtDownloadTaskStateView.
+func ValidateArtDownloadTaskStateView(result *ArtDownloadTaskStateView) (err error) {
 	if result.Date == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("date", "result"))
 	}
@@ -721,8 +721,8 @@ func ValidateDownloadTaskStateView(result *DownloadTaskStateView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return

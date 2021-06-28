@@ -390,8 +390,8 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if txid == "" {
 			err = goa.MergeErrors(err, goa.MissingFieldError("txid", "query string"))
 		}
-		if utf8.RuneCountInString(txid) < 46 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 46, true))
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
 		}
 		if utf8.RuneCountInString(txid) > 64 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
@@ -465,9 +465,9 @@ func EncodeDownloadError(encoder func(context.Context, http.ResponseWriter) goah
 	}
 }
 
-// DecodeDownloadTaskStateEndpointRequest returns a decoder for requests sent
-// to the artworks downloadTaskState endpoint.
-func DecodeDownloadTaskStateEndpointRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+// DecodeDownloadTaskStateRequest returns a decoder for requests sent to the
+// artworks downloadTaskState endpoint.
+func DecodeDownloadTaskStateRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
 			taskID string
@@ -491,9 +491,9 @@ func DecodeDownloadTaskStateEndpointRequest(mux goahttp.Muxer, decoder func(*htt
 	}
 }
 
-// EncodeDownloadTaskStateEndpointError returns an encoder for errors returned
-// by the downloadTaskState artworks endpoint.
-func EncodeDownloadTaskStateEndpointError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeDownloadTaskStateError returns an encoder for errors returned by the
+// downloadTaskState artworks endpoint.
+func EncodeDownloadTaskStateError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		en, ok := v.(ErrorNamer)
@@ -723,14 +723,14 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v *artworksvie
 	return res
 }
 
-// marshalArtworksviewsDownloadTaskStateViewToDownloadTaskStateResponseBody
-// builds a value of type *DownloadTaskStateResponseBody from a value of type
-// *artworksviews.DownloadTaskStateView.
-func marshalArtworksviewsDownloadTaskStateViewToDownloadTaskStateResponseBody(v *artworksviews.DownloadTaskStateView) *DownloadTaskStateResponseBody {
+// marshalArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskStateResponseBody
+// builds a value of type *ArtDownloadTaskStateResponseBody from a value of
+// type *artworksviews.ArtDownloadTaskStateView.
+func marshalArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskStateResponseBody(v *artworksviews.ArtDownloadTaskStateView) *ArtDownloadTaskStateResponseBody {
 	if v == nil {
 		return nil
 	}
-	res := &DownloadTaskStateResponseBody{
+	res := &ArtDownloadTaskStateResponseBody{
 		Date:   *v.Date,
 		Status: *v.Status,
 	}

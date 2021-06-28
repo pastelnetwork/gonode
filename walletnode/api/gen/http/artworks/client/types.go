@@ -122,7 +122,7 @@ type DowloadTaskResponseBody struct {
 	// Status of the downloading process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// List of states from the very beginning of the process
-	States []*DownloadTaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
+	States []*ArtDownloadTaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// File downloaded
 	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
 }
@@ -513,6 +513,15 @@ type ArtworkTicketResponse struct {
 	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
 }
 
+// ArtDownloadTaskStateResponseBody is used to define fields on response body
+// types.
+type ArtDownloadTaskStateResponseBody struct {
+	// Date of the status creation
+	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
+	// Status of the download process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
 // DownloadTaskResponse is used to define fields on response body types.
 type DownloadTaskResponse struct {
 	// JOb ID of the downloading process
@@ -520,13 +529,13 @@ type DownloadTaskResponse struct {
 	// Status of the downloading process
 	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
 	// List of states from the very beginning of the process
-	States []*DownloadTaskStateResponse `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
+	States []*ArtDownloadTaskStateResponse `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// File downloaded
 	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
 }
 
-// DownloadTaskStateResponse is used to define fields on response body types.
-type DownloadTaskStateResponse struct {
+// ArtDownloadTaskStateResponse is used to define fields on response body types.
+type ArtDownloadTaskStateResponse struct {
 	// Date of the status creation
 	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
 	// Status of the download process
@@ -800,10 +809,10 @@ func NewDownloadInternalServerError(body *DownloadInternalServerErrorResponseBod
 	return v
 }
 
-// NewDownloadTaskStateOK builds a "artworks" service "downloadTaskState"
-// endpoint result from a HTTP "OK" response.
-func NewDownloadTaskStateOK(body *DownloadTaskStateResponseBody) *artworks.DownloadTaskState {
-	v := &artworks.DownloadTaskState{
+// NewDownloadTaskStateArtDownloadTaskStateOK builds a "artworks" service
+// "downloadTaskState" endpoint result from a HTTP "OK" response.
+func NewDownloadTaskStateArtDownloadTaskStateOK(body *DownloadTaskStateResponseBody) *artworks.ArtDownloadTaskState {
+	v := &artworks.ArtDownloadTaskState{
 		Date:   *body.Date,
 		Status: *body.Status,
 	}
@@ -850,9 +859,9 @@ func NewDowloadTaskDownloadTaskOK(body *DowloadTaskResponseBody) *artworksviews.
 		Bytes:  body.Bytes,
 	}
 	if body.States != nil {
-		v.States = make([]*artworksviews.DownloadTaskStateView, len(body.States))
+		v.States = make([]*artworksviews.ArtDownloadTaskStateView, len(body.States))
 		for i, val := range body.States {
-			v.States[i] = unmarshalDownloadTaskStateResponseBodyToArtworksviewsDownloadTaskStateView(val)
+			v.States[i] = unmarshalArtDownloadTaskStateResponseBodyToArtworksviewsArtDownloadTaskStateView(val)
 		}
 	}
 
@@ -941,8 +950,8 @@ func ValidateDownloadTaskStateResponseBody(body *DownloadTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1622,6 +1631,23 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 	return
 }
 
+// ValidateArtDownloadTaskStateResponseBody runs the validations defined on
+// ArtDownloadTaskStateResponseBody
+func ValidateArtDownloadTaskStateResponseBody(body *ArtDownloadTaskStateResponseBody) (err error) {
+	if body.Date == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	if body.Status != nil {
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		}
+	}
+	return
+}
+
 // ValidateDownloadTaskResponse runs the validations defined on
 // DownloadTaskResponse
 func ValidateDownloadTaskResponse(body *DownloadTaskResponse) (err error) {
@@ -1651,7 +1677,7 @@ func ValidateDownloadTaskResponse(body *DownloadTaskResponse) (err error) {
 	}
 	for _, e := range body.States {
 		if e != nil {
-			if err2 := ValidateDownloadTaskStateResponse(e); err2 != nil {
+			if err2 := ValidateArtDownloadTaskStateResponse(e); err2 != nil {
 				err = goa.MergeErrors(err, err2)
 			}
 		}
@@ -1659,9 +1685,9 @@ func ValidateDownloadTaskResponse(body *DownloadTaskResponse) (err error) {
 	return
 }
 
-// ValidateDownloadTaskStateResponse runs the validations defined on
-// DownloadTaskStateResponse
-func ValidateDownloadTaskStateResponse(body *DownloadTaskStateResponse) (err error) {
+// ValidateArtDownloadTaskStateResponse runs the validations defined on
+// ArtDownloadTaskStateResponse
+func ValidateArtDownloadTaskStateResponse(body *ArtDownloadTaskStateResponse) (err error) {
 	if body.Date == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
 	}
@@ -1669,8 +1695,8 @@ func ValidateDownloadTaskStateResponse(body *DownloadTaskStateResponse) (err err
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return

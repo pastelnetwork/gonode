@@ -386,7 +386,7 @@ var RegisterTaskPayload = Type("RegisterTaskPayload", func() {
 var ArtworkDownloadPayload = Type("ArtworkDownloadPayload", func() {
 	Attribute("txid", String, func() {
 		Description("Art Registration Ticket transaction ID")
-		MinLength(46)
+		MinLength(64)
 		MaxLength(64)
 		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
 	})
@@ -462,15 +462,15 @@ var ArtworkDownloadTaskResult = ResultType("application/vnd.artwork.download.tas
 })
 
 // ArtworkDownloadTaskState is task streaming of the artwork registration.
-var ArtworkDownloadTaskState = Type("DownloadTaskState", func() {
+var ArtworkDownloadTaskState = Type("ArtDownloadTaskState", func() {
 	Attribute("date", String, func() {
 		Description("Date of the status creation")
 		Example(time.RFC3339)
 	})
 	Attribute("status", String, func() {
 		Description("Status of the download process")
-		Example(artworkregister.StatusNames()[0])
-		Enum(InterfaceSlice(artworkregister.StatusNames())...)
+		Example(artworkdownload.StatusNames()[0])
+		Enum(InterfaceSlice(artworkdownload.StatusNames())...)
 	})
 	Required("date", "status")
 })

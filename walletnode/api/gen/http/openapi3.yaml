@@ -206,7 +206,7 @@ paths:
           type: string
           description: Art Registration Ticket transaction ID
           example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-          minLength: 46
+          minLength: 64
           maxLength: 64
         example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       - name: pid

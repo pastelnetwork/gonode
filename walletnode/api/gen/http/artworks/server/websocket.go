@@ -21,8 +21,8 @@ import (
 // ConnConfigurer holds the websocket connection configurer functions for the
 // streaming endpoints in "artworks" service.
 type ConnConfigurer struct {
-	RegisterTaskStateFn         goahttp.ConnConfigureFunc
-	DownloadTaskStateEndpointFn goahttp.ConnConfigureFunc
+	RegisterTaskStateFn goahttp.ConnConfigureFunc
+	DownloadTaskStateFn goahttp.ConnConfigureFunc
 }
 
 // RegisterTaskStateServerStream implements the
@@ -45,7 +45,7 @@ type RegisterTaskStateServerStream struct {
 }
 
 // DownloadTaskStateServerStream implements the
-// artworks.DownloadTaskStateEndpointServerStream interface.
+// artworks.DownloadTaskStateServerStream interface.
 type DownloadTaskStateServerStream struct {
 	once sync.Once
 	// upgrader is the websocket connection upgrader.
@@ -67,8 +67,8 @@ type DownloadTaskStateServerStream struct {
 // with fn for all the streaming endpoints in "artworks" service.
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
-		RegisterTaskStateFn:         fn,
-		DownloadTaskStateEndpointFn: fn,
+		RegisterTaskStateFn: fn,
+		DownloadTaskStateFn: fn,
 	}
 }
 
@@ -114,9 +114,9 @@ func (s *RegisterTaskStateServerStream) Close() error {
 	return s.conn.Close()
 }
 
-// Send streams instances of "artworks.DownloadTaskState" to the
+// Send streams instances of "artworks.ArtDownloadTaskState" to the
 // "downloadTaskState" endpoint websocket connection.
-func (s *DownloadTaskStateServerStream) Send(v *artworks.DownloadTaskState) error {
+func (s *DownloadTaskStateServerStream) Send(v *artworks.ArtDownloadTaskState) error {
 	var err error
 	// Upgrade the HTTP connection to a websocket connection only once. Connection
 	// upgrade is done here so that authorization logic in the endpoint is executed

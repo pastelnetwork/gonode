@@ -122,7 +122,7 @@ type DowloadTaskResponseBody struct {
 	// Status of the downloading process
 	Status string `form:"status" json:"status" xml:"status"`
 	// List of states from the very beginning of the process
-	States []*DownloadTaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
+	States []*ArtDownloadTaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// File downloaded
 	Bytes []byte `form:"file" json:"file" xml:"file"`
 }
@@ -503,6 +503,15 @@ type ArtworkTicketResponse struct {
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 }
 
+// ArtDownloadTaskStateResponseBody is used to define fields on response body
+// types.
+type ArtDownloadTaskStateResponseBody struct {
+	// Date of the status creation
+	Date string `form:"date" json:"date" xml:"date"`
+	// Status of the download process
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
 // DownloadTaskResponseTiny is used to define fields on response body types.
 type DownloadTaskResponseTiny struct {
 	// JOb ID of the downloading process
@@ -583,7 +592,7 @@ func NewDownloadResponseBody(res *artworksviews.DownloadResultView) *DownloadRes
 
 // NewDownloadTaskStateResponseBody builds the HTTP response body from the
 // result of the "downloadTaskState" endpoint of the "artworks" service.
-func NewDownloadTaskStateResponseBody(res *artworks.DownloadTaskState) *DownloadTaskStateResponseBody {
+func NewDownloadTaskStateResponseBody(res *artworks.ArtDownloadTaskState) *DownloadTaskStateResponseBody {
 	body := &DownloadTaskStateResponseBody{
 		Date:   res.Date,
 		Status: res.Status,
@@ -600,9 +609,9 @@ func NewDowloadTaskResponseBody(res *artworksviews.DownloadTaskView) *DowloadTas
 		Bytes:  res.Bytes,
 	}
 	if res.States != nil {
-		body.States = make([]*DownloadTaskStateResponseBody, len(res.States))
+		body.States = make([]*ArtDownloadTaskStateResponseBody, len(res.States))
 		for i, val := range res.States {
-			body.States[i] = marshalArtworksviewsDownloadTaskStateViewToDownloadTaskStateResponseBody(val)
+			body.States[i] = marshalArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskStateResponseBody(val)
 		}
 	}
 	return body

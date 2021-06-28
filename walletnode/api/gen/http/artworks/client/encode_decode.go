@@ -633,10 +633,9 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 	}
 }
 
-// BuildDownloadTaskStateEndpointRequest instantiates a HTTP request object
-// with method and path set to call the "artworks" service "downloadTaskState"
-// endpoint
-func (c *Client) BuildDownloadTaskStateEndpointRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+// BuildDownloadTaskStateRequest instantiates a HTTP request object with method
+// and path set to call the "artworks" service "downloadTaskState" endpoint
+func (c *Client) BuildDownloadTaskStateRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
 		taskID string
 	)
@@ -654,7 +653,7 @@ func (c *Client) BuildDownloadTaskStateEndpointRequest(ctx context.Context, v in
 	case "https":
 		scheme = "wss"
 	}
-	u := &url.URL{Scheme: scheme, Host: c.host, Path: DownloadTaskStateEndpointArtworksPath(taskID)}
+	u := &url.URL{Scheme: scheme, Host: c.host, Path: DownloadTaskStateArtworksPath(taskID)}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, goahttp.ErrInvalidURL("artworks", "downloadTaskState", u.String(), err)
@@ -666,14 +665,14 @@ func (c *Client) BuildDownloadTaskStateEndpointRequest(ctx context.Context, v in
 	return req, nil
 }
 
-// DecodeDownloadTaskStateEndpointResponse returns a decoder for responses
-// returned by the artworks downloadTaskState endpoint. restoreBody controls
-// whether the response body should be restored after having been read.
-// DecodeDownloadTaskStateEndpointResponse may return the following errors:
+// DecodeDownloadTaskStateResponse returns a decoder for responses returned by
+// the artworks downloadTaskState endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+// DecodeDownloadTaskStateResponse may return the following errors:
 //	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeDownloadTaskStateEndpointResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeDownloadTaskStateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -701,7 +700,7 @@ func DecodeDownloadTaskStateEndpointResponse(decoder func(*http.Response) goahtt
 			if err != nil {
 				return nil, goahttp.ErrValidationError("artworks", "downloadTaskState", err)
 			}
-			res := NewDownloadTaskStateOK(&body)
+			res := NewDownloadTaskStateArtDownloadTaskStateOK(&body)
 			return res, nil
 		case http.StatusNotFound:
 			var (
@@ -1003,14 +1002,14 @@ func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTi
 	return res
 }
 
-// unmarshalDownloadTaskStateResponseBodyToArtworksviewsDownloadTaskStateView
-// builds a value of type *artworksviews.DownloadTaskStateView from a value of
-// type *DownloadTaskStateResponseBody.
-func unmarshalDownloadTaskStateResponseBodyToArtworksviewsDownloadTaskStateView(v *DownloadTaskStateResponseBody) *artworksviews.DownloadTaskStateView {
+// unmarshalArtDownloadTaskStateResponseBodyToArtworksviewsArtDownloadTaskStateView
+// builds a value of type *artworksviews.ArtDownloadTaskStateView from a value
+// of type *ArtDownloadTaskStateResponseBody.
+func unmarshalArtDownloadTaskStateResponseBodyToArtworksviewsArtDownloadTaskStateView(v *ArtDownloadTaskStateResponseBody) *artworksviews.ArtDownloadTaskStateView {
 	if v == nil {
 		return nil
 	}
-	res := &artworksviews.DownloadTaskStateView{
+	res := &artworksviews.ArtDownloadTaskStateView{
 		Date:   v.Date,
 		Status: v.Status,
 	}
@@ -1028,23 +1027,23 @@ func unmarshalDownloadTaskResponseToArtworksviewsDownloadTaskView(v *DownloadTas
 		Bytes:  v.Bytes,
 	}
 	if v.States != nil {
-		res.States = make([]*artworksviews.DownloadTaskStateView, len(v.States))
+		res.States = make([]*artworksviews.ArtDownloadTaskStateView, len(v.States))
 		for i, val := range v.States {
-			res.States[i] = unmarshalDownloadTaskStateResponseToArtworksviewsDownloadTaskStateView(val)
+			res.States[i] = unmarshalArtDownloadTaskStateResponseToArtworksviewsArtDownloadTaskStateView(val)
 		}
 	}
 
 	return res
 }
 
-// unmarshalDownloadTaskStateResponseToArtworksviewsDownloadTaskStateView
-// builds a value of type *artworksviews.DownloadTaskStateView from a value of
-// type *DownloadTaskStateResponse.
-func unmarshalDownloadTaskStateResponseToArtworksviewsDownloadTaskStateView(v *DownloadTaskStateResponse) *artworksviews.DownloadTaskStateView {
+// unmarshalArtDownloadTaskStateResponseToArtworksviewsArtDownloadTaskStateView
+// builds a value of type *artworksviews.ArtDownloadTaskStateView from a value
+// of type *ArtDownloadTaskStateResponse.
+func unmarshalArtDownloadTaskStateResponseToArtworksviewsArtDownloadTaskStateView(v *ArtDownloadTaskStateResponse) *artworksviews.ArtDownloadTaskStateView {
 	if v == nil {
 		return nil
 	}
-	res := &artworksviews.DownloadTaskStateView{
+	res := &artworksviews.ArtDownloadTaskStateView{
 		Date:   v.Date,
 		Status: v.Status,
 	}

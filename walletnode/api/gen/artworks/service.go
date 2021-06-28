@@ -30,7 +30,7 @@ type Service interface {
 	// Download registered artwork.
 	Download(context.Context, *DownloadPayload) (res *DownloadResult, err error)
 	// Streams the state of the download process.
-	DownloadTaskStateEndpoint(context.Context, *DownloadTaskStatePayload, DownloadTaskStateEndpointServerStream) (err error)
+	DownloadTaskState(context.Context, *DownloadTaskStatePayload, DownloadTaskStateServerStream) (err error)
 	// Returns a single task.
 	DowloadTask(context.Context, *DowloadTaskPayload) (res *DownloadTask, err error)
 	// List of all tasks.
@@ -69,20 +69,20 @@ type RegisterTaskStateClientStream interface {
 	Recv() (*TaskState, error)
 }
 
-// DownloadTaskStateEndpointServerStream is the interface a "downloadTaskState"
+// DownloadTaskStateServerStream is the interface a "downloadTaskState"
 // endpoint server stream must satisfy.
-type DownloadTaskStateEndpointServerStream interface {
-	// Send streams instances of "DownloadTaskState".
-	Send(*DownloadTaskState) error
+type DownloadTaskStateServerStream interface {
+	// Send streams instances of "ArtDownloadTaskState".
+	Send(*ArtDownloadTaskState) error
 	// Close closes the stream.
 	Close() error
 }
 
-// DownloadTaskStateEndpointClientStream is the interface a "downloadTaskState"
+// DownloadTaskStateClientStream is the interface a "downloadTaskState"
 // endpoint client stream must satisfy.
-type DownloadTaskStateEndpointClientStream interface {
-	// Recv reads instances of "DownloadTaskState" from the stream.
-	Recv() (*DownloadTaskState, error)
+type DownloadTaskStateClientStream interface {
+	// Recv reads instances of "ArtDownloadTaskState" from the stream.
+	Recv() (*ArtDownloadTaskState, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -201,9 +201,9 @@ type DownloadTaskStatePayload struct {
 	TaskID string
 }
 
-// DownloadTaskState is the result type of the artworks service
+// ArtDownloadTaskState is the result type of the artworks service
 // downloadTaskState method.
-type DownloadTaskState struct {
+type ArtDownloadTaskState struct {
 	// Date of the status creation
 	Date string
 	// Status of the download process
@@ -224,7 +224,7 @@ type DownloadTask struct {
 	// Status of the downloading process
 	Status string
 	// List of states from the very beginning of the process
-	States []*DownloadTaskState
+	States []*ArtDownloadTaskState
 	// File downloaded
 	Bytes []byte
 }
@@ -640,9 +640,9 @@ func newDownloadTask(vres *artworksviews.DownloadTaskView) *DownloadTask {
 		res.Status = *vres.Status
 	}
 	if vres.States != nil {
-		res.States = make([]*DownloadTaskState, len(vres.States))
+		res.States = make([]*ArtDownloadTaskState, len(vres.States))
 		for i, val := range vres.States {
-			res.States[i] = transformArtworksviewsDownloadTaskStateViewToDownloadTaskState(val)
+			res.States[i] = transformArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskState(val)
 		}
 	}
 	return res
@@ -668,9 +668,9 @@ func newDownloadTaskView(res *DownloadTask) *artworksviews.DownloadTaskView {
 		Bytes:  res.Bytes,
 	}
 	if res.States != nil {
-		vres.States = make([]*artworksviews.DownloadTaskStateView, len(res.States))
+		vres.States = make([]*artworksviews.ArtDownloadTaskStateView, len(res.States))
 		for i, val := range res.States {
-			vres.States[i] = transformDownloadTaskStateToArtworksviewsDownloadTaskStateView(val)
+			vres.States[i] = transformArtDownloadTaskStateToArtworksviewsArtDownloadTaskStateView(val)
 		}
 	}
 	return vres
@@ -790,14 +790,14 @@ func transformTaskStateToArtworksviewsTaskStateView(v *TaskState) *artworksviews
 	return res
 }
 
-// transformArtworksviewsDownloadTaskStateViewToDownloadTaskState builds a
-// value of type *DownloadTaskState from a value of type
-// *artworksviews.DownloadTaskStateView.
-func transformArtworksviewsDownloadTaskStateViewToDownloadTaskState(v *artworksviews.DownloadTaskStateView) *DownloadTaskState {
+// transformArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskState builds
+// a value of type *ArtDownloadTaskState from a value of type
+// *artworksviews.ArtDownloadTaskStateView.
+func transformArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskState(v *artworksviews.ArtDownloadTaskStateView) *ArtDownloadTaskState {
 	if v == nil {
 		return nil
 	}
-	res := &DownloadTaskState{
+	res := &ArtDownloadTaskState{
 		Date:   *v.Date,
 		Status: *v.Status,
 	}
@@ -805,14 +805,14 @@ func transformArtworksviewsDownloadTaskStateViewToDownloadTaskState(v *artworksv
 	return res
 }
 
-// transformDownloadTaskStateToArtworksviewsDownloadTaskStateView builds a
-// value of type *artworksviews.DownloadTaskStateView from a value of type
-// *DownloadTaskState.
-func transformDownloadTaskStateToArtworksviewsDownloadTaskStateView(v *DownloadTaskState) *artworksviews.DownloadTaskStateView {
+// transformArtDownloadTaskStateToArtworksviewsArtDownloadTaskStateView builds
+// a value of type *artworksviews.ArtDownloadTaskStateView from a value of type
+// *ArtDownloadTaskState.
+func transformArtDownloadTaskStateToArtworksviewsArtDownloadTaskStateView(v *ArtDownloadTaskState) *artworksviews.ArtDownloadTaskStateView {
 	if v == nil {
 		return nil
 	}
-	res := &artworksviews.DownloadTaskStateView{
+	res := &artworksviews.ArtDownloadTaskStateView{
 		Date:   &v.Date,
 		Status: &v.Status,
 	}
