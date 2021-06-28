@@ -18,6 +18,11 @@ func (conn *clientConn) RegisterArtwork() node.RegisterArtwork {
 	return newRegisterArtwork(conn)
 }
 
+// DownloadArtwork implements node.Connection.DownloadArtwork()
+func (conn *clientConn) DownloadArtwork() node.DownloadArtwork {
+	return newDownloadArtwork(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

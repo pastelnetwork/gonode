@@ -6,20 +6,25 @@ const (
 	StatusConnected
 	StatusDownloaded
 	// Error
-	StatusErrorFingerprintsNotMatch
+	StatusErrorFilesNotMatch
 	StatusErrorNotEnoughSuperNode
+	StatusErrorNotEnoughFiles
+	StatusErrorDownloadFailed
 	// Final
 	StatusTaskRejected
 	StatusTaskCompleted
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted:               "Task Started",
-	StatusConnected:                 "Connected",
-	StatusErrorFingerprintsNotMatch: "Error Fingerprints Dont Match",
-	StatusErrorNotEnoughMasterNode:  "Error Not Enough SuperNode"
-	StatusTaskRejected:              "Task Rejected",
-	StatusTaskCompleted:             "Task Completed",
+	StatusTaskStarted:             "Task Started",
+	StatusConnected:               "Connected",
+	StatusDownloaded:              "Downloaded",
+	StatusErrorFilesNotMatch:      "Error Fingerprints Dont Match",
+	StatusErrorNotEnoughSuperNode: "Error Not Enough SuperNode",
+	StatusErrorNotEnoughFiles:     "Error Not Enough Downloaded Filed",
+	StatusErrorDownloadFailed:     "Error Download Failed",
+	StatusTaskRejected:            "Task Rejected",
+	StatusTaskCompleted:           "Task Completed",
 }
 
 // Status represents status of the task

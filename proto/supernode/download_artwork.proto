@@ -6,7 +6,7 @@ package supernode;
 
 service DownloadArtwork {
     // Download downloads artwork by given txid, timestamp signature.
-    rpc Download(stream DownloadRequest) returns (DownloadReply);
+    rpc Download(DownloadRequest) returns (stream DownloadReply);
 }
 
 message DownloadRequest {

@@ -950,8 +950,8 @@ func ValidateDownloadTaskStateResponseBody(body *DownloadTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Downloaded" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Downloaded", "Error Fingerprints Dont Match", "Error Not Enough SuperNode", "Error Not Enough Downloaded Filed", "Error Download Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1641,8 +1641,8 @@ func ValidateArtDownloadTaskStateResponseBody(body *ArtDownloadTaskStateResponse
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Downloaded" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Downloaded", "Error Fingerprints Dont Match", "Error Not Enough SuperNode", "Error Not Enough Downloaded Filed", "Error Download Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1671,8 +1671,8 @@ func ValidateDownloadTaskResponse(body *DownloadTaskResponse) (err error) {
 		}
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Downloaded" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Downloaded", "Error Fingerprints Dont Match", "Error Not Enough SuperNode", "Error Not Enough Downloaded Filed", "Error Download Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range body.States {
@@ -1695,8 +1695,8 @@ func ValidateArtDownloadTaskStateResponse(body *ArtDownloadTaskStateResponse) (e
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Downloaded" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error Not Enough SuperNode" || *body.Status == "Error Not Enough Downloaded Filed" || *body.Status == "Error Download Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Downloaded", "Error Fingerprints Dont Match", "Error Not Enough SuperNode", "Error Not Enough Downloaded Filed", "Error Download Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return

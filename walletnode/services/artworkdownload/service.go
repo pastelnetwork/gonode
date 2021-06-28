@@ -50,8 +50,8 @@ func (service *Service) Task(id string) *Task {
 }
 
 // AddTask adds a new task of the artwork downloading and returns its taskID.
-func (service *Service) AddTask(ticketOwner *TicketOwner) string {
-	task := NewTask(service, ticketOwner)
+func (service *Service) AddTask(ticket *Ticket) string {
+	task := NewTask(service, ticket)
 	service.Worker.AddTask(task)
 
 	return task.ID()

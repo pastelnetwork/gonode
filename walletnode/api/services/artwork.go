@@ -152,7 +152,7 @@ func (service *Artwork) APIKeyAuth(ctx_ context.Context, key string, schema *sec
 }
 
 // Streams the state of the download process.
-func (service *Artwork) DownloadTaskStateEndpoint(ctx context.Context, p *artworks.DownloadTaskStatePayload, stream artworks.DownloadTaskStateServerStream) (err error) {
+func (service *Artwork) DownloadTaskState(ctx context.Context, p *artworks.DownloadTaskStatePayload, stream artworks.DownloadTaskStateServerStream) (err error) {
 	return nil
 }
 

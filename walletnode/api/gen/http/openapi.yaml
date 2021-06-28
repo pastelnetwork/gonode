@@ -302,7 +302,11 @@ definitions:
         enum:
         - Task Started
         - Connected
+        - Downloaded
         - Error Fingerprints Dont Match
+        - Error Not Enough SuperNode
+        - Error Not Enough Downloaded Filed
+        - Error Download Failed
         - Task Rejected
         - Task Completed
     example:
@@ -669,7 +673,11 @@ definitions:
         enum:
         - Task Started
         - Connected
+        - Downloaded
         - Error Fingerprints Dont Match
+        - Error Not Enough SuperNode
+        - Error Not Enough Downloaded Filed
+        - Error Download Failed
         - Task Rejected
         - Task Completed
     description: DowloadTaskResponseBody result type (default view)
@@ -1045,7 +1053,11 @@ definitions:
         enum:
         - Task Started
         - Connected
+        - Downloaded
         - Error Fingerprints Dont Match
+        - Error Not Enough SuperNode
+        - Error Not Enough Downloaded Filed
+        - Error Download Failed
         - Task Rejected
         - Task Completed
     example:
@@ -1968,7 +1980,11 @@ definitions:
         enum:
         - Task Started
         - Connected
+        - Downloaded
         - Error Fingerprints Dont Match
+        - Error Not Enough SuperNode
+        - Error Not Enough Downloaded Filed
+        - Error Download Failed
         - Task Rejected
         - Task Completed
     description: Image downloaded payload (tiny view) (default view)

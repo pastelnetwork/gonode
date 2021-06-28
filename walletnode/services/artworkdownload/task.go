@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
@@ -67,27 +68,50 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.New("Unable to find enough Supernodes")
 	}
 
+	var connectedNodes node.List
+	var errs error
+	// Connect to top supernodes
+	for _, node := range topNodes {
+		if err := node.Connect(ctx, task.config.connectTimeout); err == nil {
+			connectedNodes.Add(node)
+		} else {
+			errs = errors.Append(errs, err)
+		}
+	}
+
+	if len(connectedNodes) < task.config.NumberSuperNodes {
+		task.UpdateStatus(StatusErrorNotEnoughSuperNode)
+		return errors.Errorf("Could not connect enough %d supernodes: %w", task.config.NumberSuperNodes, errs)
+	}
+	task.UpdateStatus(StatusConnected)
+
 	// Send download request to all top supernodes.
 	var nodes node.List
-	var errs error
-	group, _ := errgroup.WithContext(ctx)
-	for _, node := range topNodes {
-		group.Go(func() (err error) {
-			node.file, err = node.Download(ctx, txid, timestamp, signature, ttxid)
-			if err != nil {
-				errs = append(errs, err)
-
-			}
-			return err
-		})
+	var downloadErrs error
+	errsChan := make(chan error, len(connectedNodes))
+	nodesChan := make(chan *node.Node, len(connectedNodes))
+	err = connectedNodes.Download(ctx, task.Ticket.TXID, string(timestamp), string(signature), ttxid, nodesChan, errsChan)
+	if err != nil {
+		task.UpdateStatus(StatusErrorDownloadFailed)
+		return err
+	}
+	close(errsChan)
+	close(nodesChan)
+	for node := range nodesChan {
+		nodes = append(nodes, node)
+	}
+	for err := range errsChan {
+		downloadErrs = errors.Append(errs, err)
 	}
 	if len(nodes) < task.config.NumberSuperNodes {
-		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
+		task.UpdateStatus(StatusErrorNotEnoughFiles)
+		return errors.Errorf("Not downloading enough files from %d supernodes: %w", task.config.NumberSuperNodes, downloadErrs)
 	}
+	task.UpdateStatus(StatusDownloaded)
 
-	// Activate supernodes that are in the mesh.
+	// Activate supernodes that returned file successfully.
 	nodes.Activate()
-	// Disconnect supernodes that are not involved in the process.
+	// Disconnect supernodes that did not return file.
 	topNodes.DisconnectInactive()
 
 	// Cancel context when any connection is broken.
@@ -96,7 +120,15 @@ func (task *Task) run(ctx context.Context) error {
 		defer cancel()
 		return nodes.WaitConnClose(ctx)
 	})
-	task.UpdateStatus(StatusDownloaded)
+
+	// Check files are the same
+	err = nodes.MatchFiles()
+	if err != nil {
+		task.UpdateStatus(StatusErrorFilesNotMatch)
+		return err
+	}
+
+	// TODO: Send file to the caller
 
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
@@ -244,10 +276,7 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 		return nil, err
 	}
 	for _, mn := range mns {
-		if mn.Fee > task.Ticket.MaximumFee {
-			continue
-		}
-		nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
+		nodes.Add(node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
 	}
 
 	return nodes, nil

@@ -19,7 +19,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DownloadArtworkClient interface {
 	// Download downloads artwork by given txid, timestamp signature.
-	Download(ctx context.Context, opts ...grpc.CallOption) (DownloadArtwork_DownloadClient, error)
+	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DownloadArtwork_DownloadClient, error)
 }
 
 type downloadArtworkClient struct {
@@ -30,18 +30,23 @@ func NewDownloadArtworkClient(cc grpc.ClientConnInterface) DownloadArtworkClient
 	return &downloadArtworkClient{cc}
 }
 
-func (c *downloadArtworkClient) Download(ctx context.Context, opts ...grpc.CallOption) (DownloadArtwork_DownloadClient, error) {
+func (c *downloadArtworkClient) Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DownloadArtwork_DownloadClient, error) {
 	stream, err := c.cc.NewStream(ctx, &DownloadArtwork_ServiceDesc.Streams[0], "/supernode.DownloadArtwork/Download", opts...)
 	if err != nil {
 		return nil, err
 	}
 	x := &downloadArtworkDownloadClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
 	return x, nil
 }
 
 type DownloadArtwork_DownloadClient interface {
-	Send(*DownloadRequest) error
-	CloseAndRecv() (*DownloadReply, error)
+	Recv() (*DownloadReply, error)
 	grpc.ClientStream
 }
 
@@ -49,14 +54,7 @@ type downloadArtworkDownloadClient struct {
 	grpc.ClientStream
 }
 
-func (x *downloadArtworkDownloadClient) Send(m *DownloadRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *downloadArtworkDownloadClient) CloseAndRecv() (*DownloadReply, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
+func (x *downloadArtworkDownloadClient) Recv() (*DownloadReply, error) {
 	m := new(DownloadReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -69,7 +67,7 @@ func (x *downloadArtworkDownloadClient) CloseAndRecv() (*DownloadReply, error) {
 // for forward compatibility
 type DownloadArtworkServer interface {
 	// Download downloads artwork by given txid, timestamp signature.
-	Download(DownloadArtwork_DownloadServer) error
+	Download(*DownloadRequest, DownloadArtwork_DownloadServer) error
 	mustEmbedUnimplementedDownloadArtworkServer()
 }
 
@@ -77,7 +75,7 @@ type DownloadArtworkServer interface {
 type UnimplementedDownloadArtworkServer struct {
 }
 
-func (UnimplementedDownloadArtworkServer) Download(DownloadArtwork_DownloadServer) error {
+func (UnimplementedDownloadArtworkServer) Download(*DownloadRequest, DownloadArtwork_DownloadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Download not implemented")
 }
 func (UnimplementedDownloadArtworkServer) mustEmbedUnimplementedDownloadArtworkServer() {}
@@ -94,12 +92,15 @@ func RegisterDownloadArtworkServer(s grpc.ServiceRegistrar, srv DownloadArtworkS
 }
 
 func _DownloadArtwork_Download_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(DownloadArtworkServer).Download(&downloadArtworkDownloadServer{stream})
+	m := new(DownloadRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DownloadArtworkServer).Download(m, &downloadArtworkDownloadServer{stream})
 }
 
 type DownloadArtwork_DownloadServer interface {
-	SendAndClose(*DownloadReply) error
-	Recv() (*DownloadRequest, error)
+	Send(*DownloadReply) error
 	grpc.ServerStream
 }
 
@@ -107,16 +108,8 @@ type downloadArtworkDownloadServer struct {
 	grpc.ServerStream
 }
 
-func (x *downloadArtworkDownloadServer) SendAndClose(m *DownloadReply) error {
+func (x *downloadArtworkDownloadServer) Send(m *DownloadReply) error {
 	return x.ServerStream.SendMsg(m)
-}
-
-func (x *downloadArtworkDownloadServer) Recv() (*DownloadRequest, error) {
-	m := new(DownloadRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
 }
 
 // DownloadArtwork_ServiceDesc is the grpc.ServiceDesc for DownloadArtwork service.
@@ -130,7 +123,7 @@ var DownloadArtwork_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Download",
 			Handler:       _DownloadArtwork_Download_Handler,
-			ClientStreams: true,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "download_artwork.proto",

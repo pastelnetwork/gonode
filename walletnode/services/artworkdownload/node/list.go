@@ -75,12 +75,17 @@ func (nodes List) MatchFiles() error {
 }
 
 // Download download image from supernodes.
-func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string) error {
+func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string, nodeChan chan *Node, errChan chan error) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
 			node.file, err = node.Download(ctx, txid, timestamp, signature, ttxid)
+			if err != nil {
+				errChan <- err
+			} else {
+				nodeChan <- node
+			}
 			return err
 		})
 	}
