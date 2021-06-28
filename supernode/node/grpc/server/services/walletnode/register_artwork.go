@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
@@ -182,7 +183,6 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 // UploadImageWithThumbnail implements walletnode.RegisterArtwork.UploadImageWithThumbnail
 func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
 	ctx := stream.Context()
-	log.WithContext(ctx).Debug("NASDSADASDASDSADSADASDAS1")
 
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -194,13 +194,14 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	if err != nil {
 		return errors.Errorf("failed to open image file %q: %w", imageFile.Name(), err)
 	}
-	defer imageFile.Close()
+	// defer imageFile.Close()
 	log.WithContext(ctx).WithField("filename", imageFile.Name()).Debugf("UploadImageWithThumbnail request")
 
 	imageWriter := bufio.NewWriter(imageFile)
-	defer imageWriter.Flush()
+	// defer imageWriter.Flush()
 
 	thumbnail := artwork.ImageThumbnail{}
+	imageSize := 0
 	for {
 		req, err := stream.Recv()
 		if err != nil {
@@ -214,7 +215,9 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		}
 
 		if imagePiece := req.GetImagePiece(); imagePiece != nil {
-			if _, err := imageWriter.Write(imagePiece); err != nil {
+			n, err := imageWriter.Write(imagePiece)
+			imageSize += n
+			if err != nil {
 				return errors.Errorf("failed to write to file %q: %w", imageFile.Name(), err)
 			}
 		} else {
@@ -225,6 +228,12 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 				thumbnail.BottomRightY = cordinates.BottomRightY
 			}
 		}
+	}
+
+	log.WithContext(ctx).Debugf("Receive %d\n", imageSize)
+	decoder := qrsignature.New()
+	if err := image.Decode(decoder); err != nil {
+		return errors.Errorf("failed to decode image %w", err).WithField("FileName", imageFile.Name())
 	}
 
 	thumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)

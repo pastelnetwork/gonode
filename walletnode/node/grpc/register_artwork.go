@@ -175,12 +175,12 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	}
 	defer file.Close()
 
-	buffer := make([]byte, uploadImageBufferSize/2)
+	buffer := make([]byte, uploadImageBufferSize)
 	lastPiece := false
-	counter := 0
+	payloadSize := 0
 	for {
 		n, err := file.Read(buffer)
-		log.WithContext(ctx).Debugf("Read byte %d", n)
+		payloadSize += n
 		if err != nil && err == io.EOF {
 			log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("EOF")
 			lastPiece = true
@@ -197,12 +197,11 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 		}
 
 		if err := stream.Send(req); err != nil {
-			log.WithContext(ctx).Debugf("Counter: %q", counter)
 			return nil, errors.Errorf("failed to send image data: %w", err).WithField("ReqID", service.conn.id)
 		}
-		counter++
 	}
 
+	log.WithContext(ctx).Debugf("Encoded Image Size :%d\n", payloadSize)
 	if !lastPiece {
 		return nil, errors.Errorf("failed to read all image data")
 	}

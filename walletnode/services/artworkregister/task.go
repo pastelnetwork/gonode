@@ -128,7 +128,8 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer finalImage.Remove()
+	log.WithContext(ctx).WithField("FileName", finalImage.Name()).Debugf("final image")
+	// defer finalImage.Remove()
 
 	if err := task.encodeFingerprint(ctx, fingerprint, finalImage); err != nil {
 		return err
@@ -150,7 +151,7 @@ func (task *Task) run(ctx context.Context) error {
 	return groupConnClose.Wait()
 }
 
-func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, image *artwork.File) error {
+func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
 	// Sign fingerprint
 	ed448PubKey := []byte(task.Ticket.ArtistPastelID)
 	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
@@ -170,13 +171,14 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, ima
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
-	if err := image.Encode(encSig); err != nil {
+	if err := img.Encode(encSig); err != nil {
 		return err
 	}
 
 	// Decode data from the image, to make sure their integrity.
 	decSig := qrsignature.New()
-	if err := image.Decode(decSig); err != nil {
+	copyImage, _ := img.Copy()
+	if err := copyImage.Decode(decSig); err != nil {
 		return err
 	}
 
