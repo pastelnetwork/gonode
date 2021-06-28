@@ -65,11 +65,11 @@ func NewService(pastelClient pastel.Client, p2pClient p2p.Client) *Service {
 }
 
 // FetchThumbnail gets artwork thumbnail
-func (service *Service) FetchThumbnail(ctx context.Context, res *pastel.RegTicket) (data []byte, found bool, err error) {
+func (service *Service) FetchThumbnail(ctx context.Context, res *pastel.RegTicket) (data []byte, err error) {
 	hash := res.RegTicketData.ArtTicketData.AppTicketData.ThumbnailHash
 	key := b58.Encode(hash)
 
-	return service.p2pClient.Get(ctx, key)
+	return service.p2pClient.Retrieve(ctx, key)
 }
 
 // RegTicket pull art registration ticket from cNode & decodes base64 encoded fields

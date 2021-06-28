@@ -188,14 +188,12 @@ func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPa
 	}
 
 	res = toArtworkDetail(ticket)
-	data, found, err := service.search.FetchThumbnail(ctx, ticket)
+	data, err := service.search.FetchThumbnail(ctx, ticket)
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
 
-	if found {
-		res.Thumbnail = data
-	}
+	res.Thumbnail = data
 
 	return res, nil
 }

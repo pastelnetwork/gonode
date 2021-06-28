@@ -104,18 +104,14 @@ func (task *Task) run(ctx context.Context) error {
 
 		group.Go(func() error {
 
-			data, found, err := task.FetchThumbnail(ctx, res.RegTicket)
+			data, err := task.FetchThumbnail(ctx, res.RegTicket)
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("Fetch Thumbnail")
 
 				return fmt.Errorf("txid: %s - err: %s", res.TXID, err)
 			}
 
-			if found {
-				res.Thumbnail = data
-			} else {
-				log.WithContext(ctx).WithField("txid", res.TXID).Warn("Thumbnail not found")
-			}
+			res.Thumbnail = data
 
 			// Post on result channel
 			task.resultChan <- res
