@@ -190,6 +190,7 @@ func (file *File) RemoveAfter(d time.Duration) {
 
 // LoadImage opens images from the file.
 func (file *File) LoadImage() (image.Image, error) {
+	log.Debugf("Load image %s\n", file.Name())
 	f, err := file.Open()
 	if err != nil {
 		log.Debug("Failed to open")
@@ -255,17 +256,12 @@ func (file *File) Thumbnail(coordinate ImageThumbnail) (*File, error) {
 
 	img, err := file.LoadImage()
 	if err != nil {
-		log.Debug(err)
 		return nil, errors.Errorf("failed to load image from file %w", err).WithField("Filename", file.Name())
 	}
 
-	type thumnailMaker interface {
-		SubImage(image.Rectangle) (image.Image, error)
-	}
-
 	rect := image.Rect(int(coordinate.TopLeftX), int(coordinate.TopLeftY), int(coordinate.BottomRightX), int(coordinate.BottomRightY))
-	thumbnail, err := img.(thumnailMaker).SubImage(rect)
-	if err != nil {
+	thumbnail := imaging.Crop(img, rect)
+	if thumbnail == nil {
 		return nil, errors.Errorf("failed to generate thumbnail %w", err).WithField("filename", f.Name())
 	}
 
