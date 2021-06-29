@@ -33,4 +33,8 @@ type Client interface {
 	// Verify verifies signed data by the given its signature and pastelID, if successful returns true.
 	// Command `pastelid verify "text" "signature" "PastelID"`.
 	Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error)
+
+	// Do an transaction by the given address to sent to and ammount to send, if successful return id of transaction.
+	// Command `sendtoaddress  "pastelId" "amount"`.
+	SendToAddress(ctx context.Context, pastelId string, amount int64) (txId TxIdType, error error)
 }

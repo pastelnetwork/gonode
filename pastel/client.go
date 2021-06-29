@@ -3,6 +3,7 @@ package pastel
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -99,6 +100,18 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 		return false, errors.Errorf("failed to verify data: %w", err)
 	}
 	return verify.Verification, nil
+}
+
+// StorageFee implements pastel.Client.StorageFee
+func (client *client) SendToAddress(ctx context.Context, pastelId string, amount int64) (txId TxIdType, error error) {
+	var transactionId struct {
+		TransactionId TxIdType `json:"transactionid"`
+	}
+
+	if err := client.callFor(ctx, &transactionId, "sendtoaddress", pastelId, fmt.Sprint(amount)); err != nil {
+		return "", errors.Errorf("failed to send to address: %w", err)
+	}
+	return transactionId.TransactionId, nil
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
