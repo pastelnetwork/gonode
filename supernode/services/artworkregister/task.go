@@ -222,10 +222,10 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 
 		f, err := task.Thumbnail.Open()
 		if err != nil {
-			return errors.Errorf("failed to open thumbnail file for hashing %w", err).WithField("FileName", f.Name())
+			return errors.Errorf("failed to open thumbnail file for hashing %w", err).WithField("FileName", task.Thumbnail.Name())
 		}
 		if _, err := io.Copy(hash, f); err != nil {
-			return errors.Errorf("failed to hash thumbnail file %w", err).WithField("FileName", f.Name())
+			return errors.Errorf("failed to hash thumbnail file %w", err).WithField("FileName", task.Thumbnail.Name())
 		}
 
 		thumbnailHash = hash.Sum(thumbnailHash)
