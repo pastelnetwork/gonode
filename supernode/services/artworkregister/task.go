@@ -153,13 +153,13 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 		return nil, err
 	}
 
-	// task.NewAction(func(ctx context.Context) error {
-	// 	task.ResampledArtwork = file
-	// 	defer task.ResampledArtwork.Remove()
+	task.NewAction(func(ctx context.Context) error {
+		task.ResampledArtwork = file
+		defer task.ResampledArtwork.Remove()
 
-	// 	<-ctx.Done()
-	// 	return nil
-	// })
+		<-ctx.Done()
+		return nil
+	})
 
 	var fingerprintData []byte
 
@@ -206,25 +206,20 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 		return nil, err
 	}
 
-	thumbnailFile, err := file.Thumbnail(thumbnail)
-	if err != nil {
-		return nil, err
-	}
-
-	task.NewAction(func(ctx context.Context) error {
-		task.Artwork = file
-		task.Thumbnail = thumbnailFile
-
-		<-ctx.Done()
-		return nil
-	})
-
-	var thumbnailHash []byte
-
+	thumbnailHash := make([]byte, 256)
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageAndThumbnailUploaded)
 
+		thumbnailFile, err := file.Thumbnail(thumbnail)
+		if err != nil {
+			return errors.Errorf("failed to generate thumbnail %w", err)
+		}
+
+		task.Artwork = file
+		task.Thumbnail = thumbnailFile
+		thumbnailHash := make([]byte, 256)
 		hash := sha3.New256()
+
 		f, err := task.Thumbnail.Open()
 		if err != nil {
 			return errors.Errorf("failed to open thumbnail file for hashing %w", err).WithField("FileName", f.Name())
@@ -234,7 +229,6 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 		}
 
 		thumbnailHash = hash.Sum(thumbnailHash)
-		<-ctx.Done()
 		return nil
 	})
 

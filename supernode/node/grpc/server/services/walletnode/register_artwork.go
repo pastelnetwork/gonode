@@ -6,7 +6,6 @@ import (
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
@@ -200,8 +199,9 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	imageWriter := bufio.NewWriter(imageFile)
 	// defer imageWriter.Flush()
 
-	thumbnail := artwork.ImageThumbnail{}
 	imageSize := 0
+	thumbnail := artwork.ImageThumbnail{}
+
 	for {
 		req, err := stream.Recv()
 		if err != nil {
@@ -231,10 +231,6 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	}
 
 	log.WithContext(ctx).Debugf("Receive %d\n", imageSize)
-	decoder := qrsignature.New()
-	if err := image.Decode(decoder); err != nil {
-		return errors.Errorf("failed to decode image %w", err).WithField("FileName", imageFile.Name())
-	}
 
 	thumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
 	if err != nil {
