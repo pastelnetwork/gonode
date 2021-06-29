@@ -246,11 +246,11 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 					}
 					hash = metaData.Hash
 
-					// if metaData.Format != "" {
-					// 	if err := image.SetFormatFromExtension(metaData.Format); err != nil {
-					// 		log.WithField("Filename", imageFile.Name()).Errorf("failed to set format %s for file", metaData.Format)
-					// 	}
-					// }
+					if metaData.Format != "" {
+						if err := image.SetFormatFromExtension(metaData.Format); err != nil {
+							log.WithField("Filename", imageFile.Name()).Errorf("failed to set format %s for file", metaData.Format)
+						}
+					}
 				}
 			}
 		}

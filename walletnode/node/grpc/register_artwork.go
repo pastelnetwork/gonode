@@ -180,14 +180,6 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	buffer := make([]byte, uploadImageBufferSize)
 	lastPiece := false
 	payloadSize := 0
-
-	hasher := sha3.New256()
-	if _, err := io.Copy(hasher, file); err != nil {
-		return nil, errors.Errorf("failed to compute artwork hash %w", err)
-	}
-	hash := hasher.Sum(nil)
-	log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("hash: %s", base64.URLEncoding.EncodeToString(hash))
-
 	for {
 		n, err := file.Read(buffer)
 		payloadSize += n
@@ -215,6 +207,14 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	if !lastPiece {
 		return nil, errors.Errorf("failed to read all image data")
 	}
+
+	file.Seek(0, io.SeekStart)
+	hasher := sha3.New256()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return nil, errors.Errorf("failed to compute artwork hash %w", err)
+	}
+	hash := hasher.Sum(nil)
+	log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("hash: %s", base64.URLEncoding.EncodeToString(hash))
 
 	thumnailReq := &pb.UploadImageRequest{
 		Payload: &pb.UploadImageRequest_MetaData_{
