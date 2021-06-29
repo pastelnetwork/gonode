@@ -78,10 +78,12 @@ message UploadImageRequest {
     message MetaData {
       // size of the image
       int64 size = 1;
+      // valid image format such as jpeg, png ...
+      string format = 2;
       // sha3-256 hash of the image
-      bytes hash = 2;
+      bytes hash = 3;
       // thumbnail of the image
-      Coordinate thumbnail = 3;
+      Coordinate thumbnail = 4;
     }
     oneof payload {
       bytes image_piece = 1;
