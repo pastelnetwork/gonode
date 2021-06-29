@@ -190,7 +190,6 @@ func (file *File) RemoveAfter(d time.Duration) {
 
 // LoadImage opens images from the file.
 func (file *File) LoadImage() (image.Image, error) {
-	log.Debugf("Load image %s\n", file.Name())
 	f, err := file.Open()
 	if err != nil {
 		log.Debug("Failed to open")
