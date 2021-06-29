@@ -24,6 +24,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 
@@ -140,12 +141,15 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
+	artworkDownload := artworkdownload.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
 
 	// server
 	grpc := server.New(config.Server,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
+		walletnode.NewDownloadArtwork(artworkDownload),
+		supernode.NewDownloadArtwork(artworkDownload),
 	)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload)
 }
