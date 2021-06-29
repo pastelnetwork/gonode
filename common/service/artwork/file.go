@@ -267,6 +267,7 @@ func (file *File) Thumbnail(coordinate ImageThumbnail) (*File, error) {
 	if err := f.SaveImage(thumbnail); err != nil {
 		return nil, errors.Errorf("failed to save thumbnail to file %w", err).WithField("filename", f.Name())
 	}
+	f.SetFormat(file.Format())
 
 	return f, nil
 }

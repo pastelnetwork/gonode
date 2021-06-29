@@ -17,7 +17,7 @@ type Ticket struct {
 	ArtistWebsiteURL         *string                `json:"artist_website_url"`
 	SpendableAddress         string                 `json:"spendable_address"`
 	MaximumFee               float64                `json:"maximum_fee"`
-	Green                    bool                   `json:"royalty"`
+	Green                    bool                   `json:"green"`
 	Royalty                  float64                `json:"royalty"`
 	Thumbnail                artwork.ImageThumbnail `json:"image_thumbnail"`
 }

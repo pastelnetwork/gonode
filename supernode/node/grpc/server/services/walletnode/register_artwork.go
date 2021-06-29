@@ -2,7 +2,9 @@ package walletnode
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -11,6 +13,7 @@ import (
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -193,44 +196,96 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	if err != nil {
 		return errors.Errorf("failed to open image file %q: %w", imageFile.Name(), err)
 	}
-	// defer imageFile.Close()
 	log.WithContext(ctx).WithField("filename", imageFile.Name()).Debugf("UploadImageWithThumbnail request")
 
 	imageWriter := bufio.NewWriter(imageFile)
-	// defer imageWriter.Flush()
 
-	imageSize := 0
+	imageSize := int64(0)
 	thumbnail := artwork.ImageThumbnail{}
+	hash := make([]byte, 0)
 
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			if status.Code(err) == codes.Canceled {
-				return errors.New("connection closed")
-			}
-			return errors.Errorf("failed to receive UploadImageWithThumbnail: %w", err)
-		}
+	err = func() error {
+		defer imageFile.Close()
+		defer imageWriter.Flush()
 
-		if imagePiece := req.GetImagePiece(); imagePiece != nil {
-			n, err := imageWriter.Write(imagePiece)
-			imageSize += n
+		for {
+			req, err := stream.Recv()
 			if err != nil {
-				return errors.Errorf("failed to write to file %q: %w", imageFile.Name(), err)
+				if err == io.EOF {
+					break
+				}
+				if status.Code(err) == codes.Canceled {
+					return errors.New("connection closed")
+				}
+				return errors.Errorf("failed to receive UploadImageWithThumbnail: %w", err)
 			}
-		} else {
-			if cordinates := req.GetThumbnail(); cordinates != nil {
-				thumbnail.TopLeftX = cordinates.TopLeftX
-				thumbnail.TopLeftY = cordinates.TopLeftY
-				thumbnail.BottomRightX = cordinates.BottomRightX
-				thumbnail.BottomRightY = cordinates.BottomRightY
+
+			if imagePiece := req.GetImagePiece(); imagePiece != nil {
+				n, err := imageWriter.Write(imagePiece)
+				imageSize += int64(n)
+				if err != nil {
+					return errors.Errorf("failed to write to file %q: %w", imageFile.Name(), err)
+				}
+			} else {
+				if metaData := req.GetMetaData(); metaData != nil {
+					if metaData.Size != imageSize {
+						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size, imageSize)
+					}
+
+					cordinates := metaData.GetThumbnail()
+					if cordinates == nil {
+						return errors.Errorf("no thumbnail coordinates")
+					}
+					thumbnail.TopLeftX = cordinates.TopLeftX
+					thumbnail.TopLeftY = cordinates.TopLeftY
+					thumbnail.BottomRightX = cordinates.BottomRightX
+					thumbnail.BottomRightY = cordinates.BottomRightY
+
+					if metaData.Hash == nil {
+						return errors.Errorf("empty hash")
+					}
+					hash = metaData.Hash
+
+					// if metaData.Format != "" {
+					// 	if err := image.SetFormatFromExtension(metaData.Format); err != nil {
+					// 		log.WithField("Filename", imageFile.Name()).Errorf("failed to set format %s for file", metaData.Format)
+					// 	}
+					// }
+				}
 			}
 		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
 	}
 
-	log.WithContext(ctx).Debugf("Receive %d\n", imageSize)
+	err = func() error {
+		hasher := sha3.New256()
+		f, fileErr := image.Open()
+		if fileErr != nil {
+			return errors.Errorf("failed to open file %w", fileErr)
+		}
+		defer f.Close()
+
+		if _, err := io.Copy(hasher, f); err != nil {
+			log.WithField("Filename", imageFile.Name()).Errorf("failed to hash file %w", err)
+		}
+		hashFromPayload := hasher.Sum(nil)
+		if bytes.Compare(hashFromPayload, hash) != 0 {
+			log.WithField("Filename", imageFile.Name()).Debugf("caculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
+			log.WithField("Filename", imageFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
+			return errors.Errorf("wrong hash")
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
+	}
 
 	thumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
 	if err != nil {

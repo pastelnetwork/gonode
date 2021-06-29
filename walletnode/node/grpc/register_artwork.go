@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -178,6 +180,14 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	buffer := make([]byte, uploadImageBufferSize)
 	lastPiece := false
 	payloadSize := 0
+
+	hasher := sha3.New256()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return nil, errors.Errorf("failed to compute artwork hash %w", err)
+	}
+	hash := hasher.Sum(nil)
+	log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("hash: %s", base64.URLEncoding.EncodeToString(hash))
+
 	for {
 		n, err := file.Read(buffer)
 		payloadSize += n
@@ -207,12 +217,17 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	}
 
 	thumnailReq := &pb.UploadImageRequest{
-		Payload: &pb.UploadImageRequest_Thumbnail{
-			Thumbnail: &pb.UploadImageRequest_Coordinate{
-				TopLeftX:     thumbnail.TopLeftX,
-				TopLeftY:     thumbnail.TopLeftY,
-				BottomRightX: thumbnail.BottomRightX,
-				BottomRightY: thumbnail.BottomRightY,
+		Payload: &pb.UploadImageRequest_MetaData_{
+			MetaData: &pb.UploadImageRequest_MetaData{
+				Hash:   hash[:],
+				Size:   int64(payloadSize),
+				Format: image.Format().String(),
+				Thumbnail: &pb.UploadImageRequest_Coordinate{
+					TopLeftX:     thumbnail.TopLeftX,
+					TopLeftY:     thumbnail.TopLeftY,
+					BottomRightX: thumbnail.BottomRightX,
+					BottomRightY: thumbnail.BottomRightY,
+				},
 			},
 		},
 	}
