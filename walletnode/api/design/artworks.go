@@ -210,7 +210,7 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Default(false)
 	})
 
-	Attribute("image_thumbnail", ThumbnailCoordinate)
+	Attribute("thumbnail_coordinate", ThumbnailCoordinate)
 
 	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
 })

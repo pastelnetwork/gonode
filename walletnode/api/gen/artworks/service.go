@@ -87,8 +87,8 @@ type RegisterPayload struct {
 	Royalty float64
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green          bool
-	ImageThumbnail *Thumbnailcoordinate
+	Green               bool
+	ThumbnailCoordinate *Thumbnailcoordinate
 }
 
 // RegisterResult is the result type of the artworks service register method.
@@ -197,8 +197,8 @@ type ArtworkTicket struct {
 	Royalty float64
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green          bool
-	ImageThumbnail *Thumbnailcoordinate
+	Green               bool
+	ThumbnailCoordinate *Thumbnailcoordinate
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.
@@ -538,8 +538,8 @@ func transformArtworksviewsArtworkTicketViewToArtworkTicket(v *artworksviews.Art
 	if v.Green == nil {
 		res.Green = false
 	}
-	if v.ImageThumbnail != nil {
-		res.ImageThumbnail = transformArtworksviewsThumbnailcoordinateViewToThumbnailcoordinate(v.ImageThumbnail)
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = transformArtworksviewsThumbnailcoordinateViewToThumbnailcoordinate(v.ThumbnailCoordinate)
 	}
 
 	return res
@@ -595,8 +595,8 @@ func transformArtworkTicketToArtworksviewsArtworkTicketView(v *ArtworkTicket) *a
 		Royalty:                  &v.Royalty,
 		Green:                    &v.Green,
 	}
-	if v.ImageThumbnail != nil {
-		res.ImageThumbnail = transformThumbnailcoordinateToArtworksviewsThumbnailcoordinateView(v.ImageThumbnail)
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = transformThumbnailcoordinateToArtworksviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
 	}
 
 	return res

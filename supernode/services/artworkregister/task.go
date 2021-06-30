@@ -201,14 +201,14 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 // UploadImageWithThumbnail uploads the image that contained image with pqsignature
 // generate the image thumbnail from the coordinate provided for user and return
 // the hash for the genreated thumbnail
-func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File, thumbnail artwork.ImageThumbnail) ([]byte, error) {
+func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File, thumbnail artwork.ThumbnailCoordinate) ([]byte, error) {
 	if err := task.RequiredStatus(StatusImageProbed); err != nil {
-		return nil, err
+		return nil, errors.Errorf("require status %s not satisfied", StatusImageProbed)
 	}
 
-	thumbnailHash := make([]byte, 256)
+	thumbnailHash := make([]byte, 0)
 	<-task.NewAction(func(ctx context.Context) error {
-		task.UpdateStatus(StatusImageAndThumbnailUploaded)
+		task.UpdateStatus(StatusImageAndThumbnailCoordinateUploaded)
 
 		thumbnailFile, err := file.Thumbnail(thumbnail)
 		if err != nil {
@@ -217,7 +217,6 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 
 		task.Artwork = file
 		task.Thumbnail = thumbnailFile
-		thumbnailHash := make([]byte, 256)
 		hash := sha3.New256()
 
 		f, err := task.Thumbnail.Open()
@@ -228,7 +227,7 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 			return errors.Errorf("failed to hash thumbnail file %w", err).WithField("FileName", task.Thumbnail.Name())
 		}
 
-		thumbnailHash = hash.Sum(thumbnailHash)
+		thumbnailHash = hash.Sum(nil)
 		return nil
 	})
 

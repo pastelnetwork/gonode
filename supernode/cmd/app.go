@@ -15,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/metadb"
+	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/probe/tfmodel"
@@ -131,15 +132,14 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
-	// p2p := p2p.New(config.P2P)
+	p2p := p2p.New(config.P2P)
 
 	// new metadb service
 	config.MetaDB.SetWorkDir(config.WorkDir)
 	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
 
 	// business logic services
-	// artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, nil)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
 
 	// server
 	grpc := server.New(config.Server,

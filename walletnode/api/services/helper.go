@@ -11,11 +11,11 @@ import (
 )
 
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Ticket {
-	thumbnail := artwork.ImageThumbnail{
-		TopLeftX:     payload.ImageThumbnail.TopLeftX,
-		TopLeftY:     payload.ImageThumbnail.TopLeftY,
-		BottomRightX: payload.ImageThumbnail.BottomRightX,
-		BottomRightY: payload.ImageThumbnail.BottomRightY,
+	thumbnail := artwork.ThumbnailCoordinate{
+		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
+		TopLeftY:     payload.ThumbnailCoordinate.TopLeftY,
+		BottomRightX: payload.ThumbnailCoordinate.BottomRightX,
+		BottomRightY: payload.ThumbnailCoordinate.BottomRightY,
 	}
 
 	return &artworkregister.Ticket{
@@ -59,7 +59,7 @@ func toArtworkTicket(ticket *artworkregister.Ticket) *artworks.ArtworkTicket {
 		MaximumFee:               ticket.MaximumFee,
 		Green:                    ticket.Green,
 		Royalty:                  ticket.Royalty,
-		ImageThumbnail:           &thumbnail,
+		ThumbnailCoordinate:      &thumbnail,
 	}
 }
 

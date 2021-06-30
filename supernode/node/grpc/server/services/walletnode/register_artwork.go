@@ -188,7 +188,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
-		return err
+		return errors.Errorf("task not found %w", err)
 	}
 
 	image := service.Storage.NewFile()
@@ -201,7 +201,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	imageWriter := bufio.NewWriter(imageFile)
 
 	imageSize := int64(0)
-	thumbnail := artwork.ImageThumbnail{}
+	thumbnail := artwork.ThumbnailCoordinate{}
 	hash := make([]byte, 0)
 
 	err = func() error {
@@ -248,7 +248,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 
 					if metaData.Format != "" {
 						if err := image.SetFormatFromExtension(metaData.Format); err != nil {
-							log.WithField("Filename", imageFile.Name()).Errorf("failed to set format %s for file", metaData.Format)
+							return errors.Errorf("failed to set format %s for file %s", metaData.Format, image.Name())
 						}
 					}
 				}
@@ -296,12 +296,13 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	}
 
 	resp := &pb.UploadImageReply{
-		ThumbnailHash: thumbnailHash,
+		ThumbnailHash: thumbnailHash[:],
 	}
+	log.WithContext(ctx).Debugf("hash: %x\n", thumbnailHash)
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("failed to send UploadImageAndThumbnail response: %w", err)
 	}
-	log.WithContext(ctx).WithField("thumbnailHashLenght", len(resp.ThumbnailHash)).Debugf("UploadImageAndThumbnail response")
+
 	return nil
 }
 
