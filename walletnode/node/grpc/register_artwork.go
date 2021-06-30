@@ -188,8 +188,7 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 			lastPiece = true
 			break
 		} else if err != nil {
-			log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("Error %w", err)
-			return nil, err
+			return nil, errors.WithField("Filename", file.Name()).Errorf("read file faile %w", err)
 		}
 
 		req := &pb.UploadImageRequest{
