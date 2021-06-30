@@ -45,4 +45,8 @@ type Client interface {
 	// ActTickets returns art registration tickets.
 	// Command `tickets get <txid>`.
 	RegTicket(ctx context.Context, regTxid string) (RegTicket, error)
+
+	// GetBlockCount returns the number of blocks in the best valid block chain
+	// Command `getblockcount `
+	GetBlockCount(ctx context.Context) (int64, error)
 }

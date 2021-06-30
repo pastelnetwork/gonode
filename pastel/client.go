@@ -136,6 +136,19 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	return ticket, nil
 }
 
+func (client *client) GetBlockCount(ctx context.Context) (int64, error) {
+	res, err := client.CallWithContext(ctx, "getblockcount", "")
+	if err != nil {
+		return 0, errors.Errorf("failed to call getblockcount: %w", err)
+	}
+
+	if res.Error != nil {
+		return 0, errors.Errorf("failed to get block count: %w", err)
+	}
+
+	return res.GetInt()
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }
