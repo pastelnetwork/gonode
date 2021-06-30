@@ -88,6 +88,30 @@ func (nodes List) MatchFingerprints() error {
 	return nil
 }
 
+// UploadImageWithThumbnail uploads the image with pqsignatured appended and thumbnail's coordinate to super nodes
+func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.File, thumbnail artwork.ThumbnailCoordinate) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() (err error) {
+			node.thumnailHash, err = node.UploadImageWithThumbnail(ctx, file, thumbnail)
+			return err
+		})
+	}
+	return group.Wait()
+}
+
+// MatchThumbnailHashes matches thumbnail's hashes recevied from super nodes
+func (nodes List) MatchThumbnailHashes() error {
+	node := nodes[0]
+	for i := 1; i < len(nodes); i++ {
+		if !bytes.Equal(node.thumnailHash, nodes[i].thumnailHash) {
+			return errors.Errorf("thumbnail hash of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+	}
+	return nil
+}
+
 // Fingerprint returns fingerprint of the first node.
 func (nodes List) Fingerprint() []byte {
 	return nodes[0].fingerprint

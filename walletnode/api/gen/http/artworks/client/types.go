@@ -44,6 +44,13 @@ type RegisterRequestBody struct {
 	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green               bool                            `form:"green" json:"green" xml:"green"`
+	ThumbnailCoordinate *ThumbnailcoordinateRequestBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 }
 
 // UploadImageRequestBody is the type of the "artworks" service "uploadImage"
@@ -410,6 +417,19 @@ type ArtworkGetInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// ThumbnailcoordinateRequestBody is used to define fields on request body
+// types.
+type ThumbnailcoordinateRequestBody struct {
+	// X coordinate of the thumbnail's top left conner
+	TopLeftX int64 `form:"top_left_x" json:"top_left_x" xml:"top_left_x"`
+	// Y coordinate of the thumbnail's top left conner
+	TopLeftY int64 `form:"top_left_y" json:"top_left_y" xml:"top_left_y"`
+	// X coordinate of the thumbnail's bottom right conner
+	BottomRightX int64 `form:"bottom_right_x" json:"bottom_right_x" xml:"bottom_right_x"`
+	// Y coordinate of the thumbnail's bottom right conner
+	BottomRightY int64 `form:"bottom_right_y" json:"bottom_right_y" xml:"bottom_right_y"`
+}
+
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -444,6 +464,26 @@ type ArtworkTicketResponseBody struct {
 	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green               *bool                            `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
+	ThumbnailCoordinate *ThumbnailcoordinateResponseBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
+}
+
+// ThumbnailcoordinateResponseBody is used to define fields on response body
+// types.
+type ThumbnailcoordinateResponseBody struct {
+	// X coordinate of the thumbnail's top left conner
+	TopLeftX *int64 `form:"top_left_x,omitempty" json:"top_left_x,omitempty" xml:"top_left_x,omitempty"`
+	// Y coordinate of the thumbnail's top left conner
+	TopLeftY *int64 `form:"top_left_y,omitempty" json:"top_left_y,omitempty" xml:"top_left_y,omitempty"`
+	// X coordinate of the thumbnail's bottom right conner
+	BottomRightX *int64 `form:"bottom_right_x,omitempty" json:"bottom_right_x,omitempty" xml:"bottom_right_x,omitempty"`
+	// Y coordinate of the thumbnail's bottom right conner
+	BottomRightY *int64 `form:"bottom_right_y,omitempty" json:"bottom_right_y,omitempty" xml:"bottom_right_y,omitempty"`
 }
 
 // TaskResponse is used to define fields on response body types.
@@ -493,6 +533,25 @@ type ArtworkTicketResponse struct {
 	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green               *bool                        `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
+	ThumbnailCoordinate *ThumbnailcoordinateResponse `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
+}
+
+// ThumbnailcoordinateResponse is used to define fields on response body types.
+type ThumbnailcoordinateResponse struct {
+	// X coordinate of the thumbnail's top left conner
+	TopLeftX *int64 `form:"top_left_x,omitempty" json:"top_left_x,omitempty" xml:"top_left_x,omitempty"`
+	// Y coordinate of the thumbnail's top left conner
+	TopLeftY *int64 `form:"top_left_y,omitempty" json:"top_left_y,omitempty" xml:"top_left_y,omitempty"`
+	// X coordinate of the thumbnail's bottom right conner
+	BottomRightX *int64 `form:"bottom_right_x,omitempty" json:"bottom_right_x,omitempty" xml:"bottom_right_x,omitempty"`
+	// Y coordinate of the thumbnail's bottom right conner
+	BottomRightY *int64 `form:"bottom_right_y,omitempty" json:"bottom_right_y,omitempty" xml:"bottom_right_y,omitempty"`
 }
 
 // ArtworkSummaryResponseBody is used to define fields on response body types.
@@ -550,6 +609,23 @@ func NewRegisterRequestBody(p *artworks.RegisterPayload) *RegisterRequestBody {
 		ArtistWebsiteURL:         p.ArtistWebsiteURL,
 		SpendableAddress:         p.SpendableAddress,
 		MaximumFee:               p.MaximumFee,
+		Royalty:                  p.Royalty,
+		Green:                    p.Green,
+	}
+	{
+		var zero float64
+		if body.Royalty == zero {
+			body.Royalty = 0
+		}
+	}
+	{
+		var zero bool
+		if body.Green == zero {
+			body.Green = false
+		}
+	}
+	if p.ThumbnailCoordinate != nil {
+		body.ThumbnailCoordinate = marshalArtworksThumbnailcoordinateToThumbnailcoordinateRequestBody(p.ThumbnailCoordinate)
 	}
 	return body
 }
@@ -887,8 +963,8 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1404,8 +1480,8 @@ func ValidateTaskStateResponseBody(body *TaskStateResponseBody) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1511,6 +1587,39 @@ func ValidateArtworkTicketResponseBody(body *ArtworkTicketResponseBody) (err err
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
 		}
 	}
+	if body.Royalty != nil {
+		if *body.Royalty < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 0, true))
+		}
+	}
+	if body.Royalty != nil {
+		if *body.Royalty > 100 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 100, false))
+		}
+	}
+	if body.ThumbnailCoordinate != nil {
+		if err2 := ValidateThumbnailcoordinateResponseBody(body.ThumbnailCoordinate); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateThumbnailcoordinateResponseBody runs the validations defined on
+// ThumbnailcoordinateResponseBody
+func ValidateThumbnailcoordinateResponseBody(body *ThumbnailcoordinateResponseBody) (err error) {
+	if body.TopLeftX == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("top_left_x", "body"))
+	}
+	if body.TopLeftY == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("top_left_y", "body"))
+	}
+	if body.BottomRightX == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("bottom_right_x", "body"))
+	}
+	if body.BottomRightY == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("bottom_right_y", "body"))
+	}
 	return
 }
 
@@ -1536,8 +1645,8 @@ func ValidateTaskResponse(body *TaskResponse) (err error) {
 		}
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range body.States {
@@ -1574,8 +1683,8 @@ func ValidateTaskStateResponse(body *TaskStateResponse) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1680,6 +1789,39 @@ func ValidateArtworkTicketResponse(body *ArtworkTicketResponse) (err error) {
 		if *body.MaximumFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
 		}
+	}
+	if body.Royalty != nil {
+		if *body.Royalty < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 0, true))
+		}
+	}
+	if body.Royalty != nil {
+		if *body.Royalty > 100 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 100, false))
+		}
+	}
+	if body.ThumbnailCoordinate != nil {
+		if err2 := ValidateThumbnailcoordinateResponse(body.ThumbnailCoordinate); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	return
+}
+
+// ValidateThumbnailcoordinateResponse runs the validations defined on
+// ThumbnailcoordinateResponse
+func ValidateThumbnailcoordinateResponse(body *ThumbnailcoordinateResponse) (err error) {
+	if body.TopLeftX == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("top_left_x", "body"))
+	}
+	if body.TopLeftY == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("top_left_y", "body"))
+	}
+	if body.BottomRightX == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("bottom_right_x", "body"))
+	}
+	if body.BottomRightY == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("bottom_right_y", "body"))
 	}
 	return
 }

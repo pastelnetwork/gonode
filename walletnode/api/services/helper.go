@@ -8,11 +8,20 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 )
 
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Ticket {
+	thumbnail := artwork.ThumbnailCoordinate{
+		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
+		TopLeftY:     payload.ThumbnailCoordinate.TopLeftY,
+		BottomRightX: payload.ThumbnailCoordinate.BottomRightX,
+		BottomRightY: payload.ThumbnailCoordinate.BottomRightY,
+	}
+
 	return &artworkregister.Ticket{
 		Name:                     payload.Name,
 		Description:              payload.Description,
@@ -26,10 +35,19 @@ func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Tic
 		ArtistWebsiteURL:         payload.ArtistWebsiteURL,
 		SpendableAddress:         payload.SpendableAddress,
 		MaximumFee:               payload.MaximumFee,
+		Green:                    payload.Green,
+		Royalty:                  payload.Royalty,
+		Thumbnail:                thumbnail,
 	}
 }
 
 func toArtworkTicket(ticket *artworkregister.Ticket) *artworks.ArtworkTicket {
+	thumbnail := artworks.Thumbnailcoordinate{
+		TopLeftX:     ticket.Thumbnail.TopLeftX,
+		TopLeftY:     ticket.Thumbnail.TopLeftY,
+		BottomRightY: ticket.Thumbnail.BottomRightX,
+		BottomRightX: ticket.Thumbnail.BottomRightY,
+	}
 	return &artworks.ArtworkTicket{
 		Name:                     ticket.Name,
 		Description:              ticket.Description,
@@ -43,6 +61,9 @@ func toArtworkTicket(ticket *artworkregister.Ticket) *artworks.ArtworkTicket {
 		ArtistWebsiteURL:         ticket.ArtistWebsiteURL,
 		SpendableAddress:         ticket.SpendableAddress,
 		MaximumFee:               ticket.MaximumFee,
+		Green:                    ticket.Green,
+		Royalty:                  ticket.Royalty,
+		ThumbnailCoordinate:      &thumbnail,
 	}
 }
 

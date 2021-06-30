@@ -30,6 +30,8 @@ type RegisterArtworkClient interface {
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
+	// Upload the image after pq signature is appended along with its thumbnail coordinates
+	UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_UploadImageClient, error)
 }
 
 type registerArtworkClient struct {
@@ -132,6 +134,40 @@ func (c *registerArtworkClient) SendTicket(ctx context.Context, in *SendTicketRe
 	return out, nil
 }
 
+func (c *registerArtworkClient) UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_UploadImageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterArtwork_ServiceDesc.Streams[2], "/walletnode.RegisterArtwork/UploadImage", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &registerArtworkUploadImageClient{stream}
+	return x, nil
+}
+
+type RegisterArtwork_UploadImageClient interface {
+	Send(*UploadImageRequest) error
+	CloseAndRecv() (*UploadImageReply, error)
+	grpc.ClientStream
+}
+
+type registerArtworkUploadImageClient struct {
+	grpc.ClientStream
+}
+
+func (x *registerArtworkUploadImageClient) Send(m *UploadImageRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *registerArtworkUploadImageClient) CloseAndRecv() (*UploadImageReply, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UploadImageReply)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // RegisterArtworkServer is the server API for RegisterArtwork service.
 // All implementations must embed UnimplementedRegisterArtworkServer
 // for forward compatibility
@@ -148,6 +184,8 @@ type RegisterArtworkServer interface {
 	ProbeImage(RegisterArtwork_ProbeImageServer) error
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
+	// Upload the image after pq signature is appended along with its thumbnail coordinates
+	UploadImage(RegisterArtwork_UploadImageServer) error
 	mustEmbedUnimplementedRegisterArtworkServer()
 }
 
@@ -169,6 +207,9 @@ func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageS
 }
 func (UnimplementedRegisterArtworkServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
+}
+func (UnimplementedRegisterArtworkServer) UploadImage(RegisterArtwork_UploadImageServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadImage not implemented")
 }
 func (UnimplementedRegisterArtworkServer) mustEmbedUnimplementedRegisterArtworkServer() {}
 
@@ -289,6 +330,32 @@ func _RegisterArtwork_SendTicket_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterArtwork_UploadImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterArtworkServer).UploadImage(&registerArtworkUploadImageServer{stream})
+}
+
+type RegisterArtwork_UploadImageServer interface {
+	SendAndClose(*UploadImageReply) error
+	Recv() (*UploadImageRequest, error)
+	grpc.ServerStream
+}
+
+type registerArtworkUploadImageServer struct {
+	grpc.ServerStream
+}
+
+func (x *registerArtworkUploadImageServer) SendAndClose(m *UploadImageReply) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *registerArtworkUploadImageServer) Recv() (*UploadImageRequest, error) {
+	m := new(UploadImageRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // RegisterArtwork_ServiceDesc is the grpc.ServiceDesc for RegisterArtwork service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -319,6 +386,11 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ProbeImage",
 			Handler:       _RegisterArtwork_ProbeImage_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "UploadImage",
+			Handler:       _RegisterArtwork_UploadImage_Handler,
 			ClientStreams: true,
 		},
 	},

@@ -126,24 +126,37 @@ func (task *Task) run(ctx context.Context) error {
 	fingerprint := nodes.Fingerprint()
 	finalImage, err := task.Ticket.Image.Copy()
 	if err != nil {
-		return err
+		return errors.Errorf("copy image to encode failed %w", err)
 	}
-	defer finalImage.Remove()
+	log.WithContext(ctx).WithField("FileName", finalImage.Name()).Debugf("final image")
+	// defer finalImage.Remove()
 
 	if err := task.encodeFingerprint(ctx, fingerprint, finalImage); err != nil {
-		return err
+		return errors.Errorf("encode image with fingerprint %w", err)
 	}
+
+	// Upload image with pqgsinganature and its thumb to supernodes
+	if err := nodes.UploadImageWithThumbnail(ctx, finalImage, task.Ticket.Thumbnail); err != nil {
+		return errors.Errorf("upload encoded image and thumbnail coordinate failed %w", err)
+	}
+	// Match thumbnail hashes receiveed from supernodes
+	if err := nodes.MatchThumbnailHashes(); err != nil {
+		task.UpdateStatus(StatusErrorThumbnailHashsesNotMatch)
+		return errors.Errorf("thumbnail hash returns by supenodes not mached %w", err)
+	}
+	task.UpdateStatus(StatusImageAndThumbnailUploaded)
+
 	fmt.Println("OK")
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
 }
 
-func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, image *artwork.File) error {
+func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
 	// Sign fingerprint
 	ed448PubKey := []byte(task.Ticket.ArtistPastelID)
 	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
 	if err != nil {
-		return err
+		return errors.Errorf("sign fingerprint with pastelId and pastelPassphrase failed %w", err)
 	}
 
 	// TODO: Should be replaced with real data from the Pastel API.
@@ -158,13 +171,14 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, ima
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
-	if err := image.Encode(encSig); err != nil {
+	if err := img.Encode(encSig); err != nil {
 		return err
 	}
 
 	// Decode data from the image, to make sure their integrity.
 	decSig := qrsignature.New()
-	if err := image.Decode(decSig); err != nil {
+	copyImage, _ := img.Copy()
+	if err := copyImage.Decode(decSig); err != nil {
 		return err
 	}
 

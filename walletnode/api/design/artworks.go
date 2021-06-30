@@ -269,6 +269,22 @@ var ArtworkTicket = Type("ArtworkTicket", func() {
 		Example(100)
 	})
 
+	Attribute("royalty", Float64, func() {
+		Description("Percentage the artist received in future sales. If set to 0% he only get paids for the first sale on each copy of the NFT")
+		Default(0.0)
+		Example(12.0)
+		Minimum(0.0)
+		Maximum(100.0)
+	})
+
+	Attribute("green", Boolean, func() {
+		Description("To donate 2% of the sale proceeds on every sale to TeamTrees which plants trees")
+		Example(false)
+		Default(false)
+	})
+
+	Attribute("thumbnail_coordinate", ThumbnailCoordinate)
+
 	Required("artist_name", "name", "issued_copies", "artist_pastelid", "artist_pastelid_passphrase", "spendable_address", "maximum_fee")
 })
 
@@ -606,4 +622,35 @@ var ArtworkDetail = Type("ArtworkDetail", func() {
 	})
 
 	Required("is_green", "royalty", "seen_score", "rareness_score", "nsfw_score")
+})
+
+var ThumbnailCoordinate = ResultType("ThumbnailCoordinate", func() {
+	Description("Coordinate of the thumbnail")
+	Attribute("top_left_x", Int64, func() {
+		Description("X coordinate of the thumbnail's top left conner")
+		Example(0)
+		Default(0)
+	})
+	Attribute("top_left_y", Int64, func() {
+		Description("Y coordinate of the thumbnail's top left conner")
+		Example(0)
+		Default(0)
+	})
+	Attribute("bottom_right_x", Int64, func() {
+		Description("X coordinate of the thumbnail's bottom right conner")
+		Example(640)
+		Default(0)
+	})
+	Attribute("bottom_right_y", Int64, func() {
+		Description("Y coordinate of the thumbnail's bottom right conner")
+		Example(480)
+		Default(0)
+	})
+	View("default", func() {
+		Attribute("top_left_x")
+		Attribute("top_left_y")
+		Attribute("bottom_right_x")
+		Attribute("bottom_right_y")
+	})
+	Required("top_left_x", "top_left_y", "bottom_right_x", "bottom_right_y")
 })
