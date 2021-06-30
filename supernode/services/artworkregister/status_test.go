@@ -20,7 +20,7 @@ func TestStatusNames(t *testing.T) {
 				StatusSecondaryMode,
 				StatusConnected,
 				StatusImageProbed,
-				StatusImageAndThumbnailUploaded,
+				StatusImageAndThumbnailCoordinateUploaded,
 				StatusTaskCanceled,
 				StatusTaskCompleted,
 			},
@@ -67,8 +67,8 @@ func TestStatusString(t *testing.T) {
 			status:        StatusImageProbed,
 			expectedValue: statusNames[StatusImageProbed],
 		}, {
-			status:        StatusImageAndThumbnailUploaded,
-			expectedValue: statusNames[StatusImageAndThumbnailUploaded],
+			status:        StatusImageAndThumbnailCoordinateUploaded,
+			expectedValue: statusNames[StatusImageAndThumbnailCoordinateUploaded],
 		}, {
 			status:        StatusTaskCanceled,
 			expectedValue: statusNames[StatusTaskCanceled],

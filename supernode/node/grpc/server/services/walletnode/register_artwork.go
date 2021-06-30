@@ -271,7 +271,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		defer f.Close()
 
 		if _, err := io.Copy(hasher, f); err != nil {
-			return errors.WithField("Filename", image.Name()).Errorf("hash file failed %w", err)
+			return errors.Errorf("hash file failed %w", err)
 		}
 		hashFromPayload := hasher.Sum(nil)
 		if bytes.Compare(hashFromPayload, hash) != 0 {
