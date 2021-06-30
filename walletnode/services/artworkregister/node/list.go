@@ -89,7 +89,7 @@ func (nodes List) MatchFingerprints() error {
 }
 
 // UploadImageWithThumbnail uploads the image with pqsignatured appended and thumbnail's coordinate to super nodes
-func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.File, thumbnail artwork.ImageThumbnail) error {
+func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.File, thumbnail artwork.ThumbnailCoordinate) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node

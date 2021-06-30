@@ -25,7 +25,7 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 	{
 		err = json.Unmarshal([]byte(artworksRegisterBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_name\": \"Leonardo da Vinci\",\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"artist_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"green\": false,\n      \"image_id\": \"VK7mpAqZ\",\n      \"image_thumbnail\": {\n         \"bottom_right_x\": 640,\n         \"bottom_right_y\": 480,\n         \"top_left_x\": 0,\n         \"top_left_y\": 0\n      },\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"maximum_fee\": 100,\n      \"name\": \"Mona Lisa\",\n      \"royalty\": 12,\n      \"series_name\": \"Famous artist\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_name\": \"Leonardo da Vinci\",\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"artist_website_url\": \"https://www.leonardodavinci.net\",\n      \"description\": \"The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.\",\n      \"green\": false,\n      \"image_id\": \"VK7mpAqZ\",\n      \"issued_copies\": 1,\n      \"keywords\": \"Renaissance, sfumato, portrait\",\n      \"maximum_fee\": 100,\n      \"name\": \"Mona Lisa\",\n      \"royalty\": 12,\n      \"series_name\": \"Famous artist\",\n      \"spendable_address\": \"PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j\",\n      \"thumbnail_coordinate\": {\n         \"bottom_right_x\": 640,\n         \"bottom_right_y\": 480,\n         \"top_left_x\": 0,\n         \"top_left_y\": 0\n      },\n      \"youtube_url\": \"https://www.youtube.com/watch?v=0xl6Ufo4ZX0\"\n   }'")
 		}
 		if utf8.RuneCountInString(body.ImageID) < 8 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.image_id", body.ImageID, utf8.RuneCountInString(body.ImageID), 8, true))
@@ -126,8 +126,8 @@ func BuildRegisterPayload(artworksRegisterBody string) (*artworks.RegisterPayloa
 			v.Green = false
 		}
 	}
-	if body.ImageThumbnail != nil {
-		v.ImageThumbnail = marshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate(body.ImageThumbnail)
+	if body.ThumbnailCoordinate != nil {
+		v.ThumbnailCoordinate = marshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate(body.ThumbnailCoordinate)
 	}
 
 	return v, nil

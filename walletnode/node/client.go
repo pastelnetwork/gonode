@@ -39,5 +39,5 @@ type RegisterArtwork interface {
 	// ProbeImage uploads image to supernode.
 	ProbeImage(ctx context.Context, image *artwork.File) (fingerprintData []byte, err error)
 	// UploadImage uploads the image with pqsignature and its thumbnail to supernodes
-	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ImageThumbnail) (thumbnailHash []byte, err error)
+	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (thumbnailHash []byte, err error)
 }

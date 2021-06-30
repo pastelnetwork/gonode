@@ -846,8 +846,8 @@ func unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView(v *Artwo
 		Royalty:                  v.Royalty,
 		Green:                    v.Green,
 	}
-	if v.ImageThumbnail != nil {
-		res.ImageThumbnail = unmarshalThumbnailcoordinateResponseBodyToArtworksviewsThumbnailcoordinateView(v.ImageThumbnail)
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseBodyToArtworksviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
 	}
 
 	return res
@@ -923,8 +923,8 @@ func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTi
 		Royalty:                  v.Royalty,
 		Green:                    v.Green,
 	}
-	if v.ImageThumbnail != nil {
-		res.ImageThumbnail = unmarshalThumbnailcoordinateResponseToArtworksviewsThumbnailcoordinateView(v.ImageThumbnail)
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseToArtworksviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
 	}
 
 	return res

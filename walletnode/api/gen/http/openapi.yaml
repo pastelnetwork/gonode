@@ -562,8 +562,6 @@ definitions:
           which plants trees
         default: false
         example: false
-      image_thumbnail:
-        $ref: '#/definitions/ThumbnailcoordinateResponse'
       issued_copies:
         type: integer
         description: Number of copies issued
@@ -607,6 +605,8 @@ definitions:
         pattern: ^[a-zA-Z0-9]+$
         minLength: 35
         maxLength: 35
+      thumbnail_coordinate:
+        $ref: '#/definitions/ThumbnailcoordinateResponse'
       youtube_url:
         type: string
         description: Artwork creation video youtube URL
@@ -622,11 +622,6 @@ definitions:
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
       green: false
-      image_thumbnail:
-        bottom_right_x: 640
-        bottom_right_y: 480
-        top_left_x: 0
-        top_left_y: 0
       issued_copies: 1
       keywords: Renaissance, sfumato, portrait
       maximum_fee: 100
@@ -634,6 +629,11 @@ definitions:
       royalty: 12
       series_name: Famous artist
       spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+      thumbnail_coordinate:
+        bottom_right_x: 640
+        bottom_right_y: 480
+        top_left_x: 0
+        top_left_y: 0
       youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
     required:
     - artist_name
@@ -681,8 +681,6 @@ definitions:
           which plants trees
         default: false
         example: false
-      image_thumbnail:
-        $ref: '#/definitions/ThumbnailcoordinateResponseBody'
       issued_copies:
         type: integer
         description: Number of copies issued
@@ -726,6 +724,8 @@ definitions:
         pattern: ^[a-zA-Z0-9]+$
         minLength: 35
         maxLength: 35
+      thumbnail_coordinate:
+        $ref: '#/definitions/ThumbnailcoordinateResponseBody'
       youtube_url:
         type: string
         description: Artwork creation video youtube URL
@@ -741,11 +741,6 @@ definitions:
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
       green: false
-      image_thumbnail:
-        bottom_right_x: 640
-        bottom_right_y: 480
-        top_left_x: 0
-        top_left_y: 0
       issued_copies: 1
       keywords: Renaissance, sfumato, portrait
       maximum_fee: 100
@@ -753,6 +748,11 @@ definitions:
       royalty: 12
       series_name: Famous artist
       spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+      thumbnail_coordinate:
+        bottom_right_x: 640
+        bottom_right_y: 480
+        top_left_x: 0
+        top_left_y: 0
       youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
     required:
     - artist_name
@@ -1464,8 +1464,6 @@ definitions:
         example: VK7mpAqZ
         minLength: 8
         maxLength: 8
-      image_thumbnail:
-        $ref: '#/definitions/ThumbnailcoordinateRequestBody'
       issued_copies:
         type: integer
         description: Number of copies issued
@@ -1509,6 +1507,8 @@ definitions:
         pattern: ^[a-zA-Z0-9]+$
         minLength: 35
         maxLength: 35
+      thumbnail_coordinate:
+        $ref: '#/definitions/ThumbnailcoordinateRequestBody'
       youtube_url:
         type: string
         description: Artwork creation video youtube URL
@@ -1524,11 +1524,6 @@ definitions:
         of a seated woman set against an imaginary landscape.
       green: false
       image_id: VK7mpAqZ
-      image_thumbnail:
-        bottom_right_x: 640
-        bottom_right_y: 480
-        top_left_x: 0
-        top_left_y: 0
       issued_copies: 1
       keywords: Renaissance, sfumato, portrait
       maximum_fee: 100
@@ -1536,6 +1531,11 @@ definitions:
       royalty: 12
       series_name: Famous artist
       spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+      thumbnail_coordinate:
+        bottom_right_x: 640
+        bottom_right_y: 480
+        top_left_x: 0
+        top_left_y: 0
       youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
     required:
     - image_id
@@ -1682,11 +1682,13 @@ definitions:
         - Task Started
         - Connected
         - Image Probed
+        - Image And Thumbnail Uploaded
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
         - Error Fingerprints Dont Match
+        - Error ThumbnailHashes Dont Match
         - Task Rejected
         - Task Completed
       ticket:
@@ -1715,11 +1717,6 @@ definitions:
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
         green: false
-        image_thumbnail:
-          bottom_right_x: 640
-          bottom_right_y: 480
-          top_left_x: 0
-          top_left_y: 0
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
@@ -1727,6 +1724,11 @@ definitions:
         royalty: 12
         series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+        thumbnail_coordinate:
+          bottom_right_x: 640
+          bottom_right_y: 480
+          top_left_x: 0
+          top_left_y: 0
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     required:
@@ -1840,11 +1842,13 @@ definitions:
         - Task Started
         - Connected
         - Image Probed
+        - Image And Thumbnail Uploaded
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
         - Error Fingerprints Dont Match
+        - Error ThumbnailHashes Dont Match
         - Task Rejected
         - Task Completed
     example:
@@ -1928,11 +1932,6 @@ definitions:
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
         green: false
-        image_thumbnail:
-          bottom_right_x: 640
-          bottom_right_y: 480
-          top_left_x: 0
-          top_left_y: 0
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
@@ -1940,6 +1939,11 @@ definitions:
         royalty: 12
         series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+        thumbnail_coordinate:
+          bottom_right_x: 640
+          bottom_right_y: 480
+          top_left_x: 0
+          top_left_y: 0
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     - id: n6Qn6TFM
@@ -1962,11 +1966,6 @@ definitions:
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
         green: false
-        image_thumbnail:
-          bottom_right_x: 640
-          bottom_right_y: 480
-          top_left_x: 0
-          top_left_y: 0
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
@@ -1974,6 +1973,11 @@ definitions:
         royalty: 12
         series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+        thumbnail_coordinate:
+          bottom_right_x: 640
+          bottom_right_y: 480
+          top_left_x: 0
+          top_left_y: 0
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
   ArtworksUploadImageBadRequestResponseBody:
@@ -2224,11 +2228,13 @@ definitions:
         - Task Started
         - Connected
         - Image Probed
+        - Image And Thumbnail Uploaded
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
         - Error Fingerprints Dont Match
+        - Error ThumbnailHashes Dont Match
         - Task Rejected
         - Task Completed
       ticket:
@@ -2252,11 +2258,6 @@ definitions:
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
         green: false
-        image_thumbnail:
-          bottom_right_x: 640
-          bottom_right_y: 480
-          top_left_x: 0
-          top_left_y: 0
         issued_copies: 1
         keywords: Renaissance, sfumato, portrait
         maximum_fee: 100
@@ -2264,6 +2265,11 @@ definitions:
         royalty: 12
         series_name: Famous artist
         spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+        thumbnail_coordinate:
+          bottom_right_x: 640
+          bottom_right_y: 480
+          top_left_x: 0
+          top_left_y: 0
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     required:
@@ -2286,11 +2292,13 @@ definitions:
         - Task Started
         - Connected
         - Image Probed
+        - Image And Thumbnail Uploaded
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
         - Error Insufficient Fee
         - Error Fingerprints Dont Match
+        - Error ThumbnailHashes Dont Match
         - Task Rejected
         - Task Completed
     example:

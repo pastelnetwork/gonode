@@ -49,8 +49,8 @@ type RegisterRequestBody struct {
 	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green          *bool                           `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
-	ImageThumbnail *ThumbnailcoordinateRequestBody `form:"image_thumbnail,omitempty" json:"image_thumbnail,omitempty" xml:"image_thumbnail,omitempty"`
+	Green               *bool                           `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
+	ThumbnailCoordinate *ThumbnailcoordinateRequestBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 }
 
 // UploadImageRequestBody is the type of the "artworks" service "uploadImage"
@@ -456,8 +456,8 @@ type ArtworkTicketResponseBody struct {
 	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green          bool                             `form:"green" json:"green" xml:"green"`
-	ImageThumbnail *ThumbnailcoordinateResponseBody `form:"image_thumbnail,omitempty" json:"image_thumbnail,omitempty" xml:"image_thumbnail,omitempty"`
+	Green               bool                             `form:"green" json:"green" xml:"green"`
+	ThumbnailCoordinate *ThumbnailcoordinateResponseBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 }
 
 // ThumbnailcoordinateResponseBody is used to define fields on response body
@@ -515,8 +515,8 @@ type ArtworkTicketResponse struct {
 	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
 	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
 	// trees
-	Green          bool                         `form:"green" json:"green" xml:"green"`
-	ImageThumbnail *ThumbnailcoordinateResponse `form:"image_thumbnail,omitempty" json:"image_thumbnail,omitempty" xml:"image_thumbnail,omitempty"`
+	Green               bool                         `form:"green" json:"green" xml:"green"`
+	ThumbnailCoordinate *ThumbnailcoordinateResponse `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 }
 
 // ThumbnailcoordinateResponse is used to define fields on response body types.
@@ -912,8 +912,8 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	if body.Green == nil {
 		v.Green = false
 	}
-	if body.ImageThumbnail != nil {
-		v.ImageThumbnail = unmarshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate(body.ImageThumbnail)
+	if body.ThumbnailCoordinate != nil {
+		v.ThumbnailCoordinate = unmarshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate(body.ThumbnailCoordinate)
 	}
 
 	return v
@@ -1101,8 +1101,8 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 100, false))
 		}
 	}
-	if body.ImageThumbnail != nil {
-		if err2 := ValidateThumbnailcoordinateRequestBody(body.ImageThumbnail); err2 != nil {
+	if body.ThumbnailCoordinate != nil {
+		if err2 := ValidateThumbnailcoordinateRequestBody(body.ThumbnailCoordinate); err2 != nil {
 			err = goa.MergeErrors(err, err2)
 		}
 	}

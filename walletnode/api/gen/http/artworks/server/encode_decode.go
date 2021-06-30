@@ -836,8 +836,8 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponseBody(v *artwork
 	if v.Green == nil {
 		res.Green = false
 	}
-	if v.ImageThumbnail != nil {
-		res.ImageThumbnail = marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponseBody(v.ImageThumbnail)
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponseBody(v.ThumbnailCoordinate)
 	}
 
 	return res
@@ -905,8 +905,8 @@ func marshalArtworksviewsArtworkTicketViewToArtworkTicketResponse(v *artworksvie
 	if v.Green == nil {
 		res.Green = false
 	}
-	if v.ImageThumbnail != nil {
-		res.ImageThumbnail = marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v.ImageThumbnail)
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v.ThumbnailCoordinate)
 	}
 
 	return res

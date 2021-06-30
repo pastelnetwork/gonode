@@ -160,7 +160,7 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
-func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ImageThumbnail) ([]byte, error) {
+func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) ([]byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -240,7 +240,7 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	if err != nil {
 		return nil, errors.Errorf("failed to receive upload image response: %w", err)
 	}
-	log.WithContext(ctx).WithField("thumbnailHashLength", len(resp.ThumbnailHash)).Debugf("UploadImageWithThumbnail response")
+	log.WithContext(ctx).Debugf("hash: %x", resp.ThumbnailHash)
 
 	return resp.ThumbnailHash, nil
 }

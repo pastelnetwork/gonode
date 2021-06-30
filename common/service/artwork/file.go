@@ -247,7 +247,7 @@ func (file *File) SaveImage(img image.Image) error {
 }
 
 // Thumbnail creates a thumbnail file from the artwork file and store in to starage layer
-func (file *File) Thumbnail(coordinate ImageThumbnail) (*File, error) {
+func (file *File) Thumbnail(coordinate ThumbnailCoordinate) (*File, error) {
 	f := NewFile(file.storage, "thumbnail-of-"+file.name)
 	if f == nil {
 		return nil, errors.Errorf("failed to create new file for thumbnail-of-%q", file.Name())
