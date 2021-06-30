@@ -15,6 +15,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 )
 
@@ -68,7 +69,7 @@ func (file *File) SetFormat(format Format) error {
 	if !file.isCreated {
 		return nil
 	}
-	return file.storage.Rename(file.name, newname)
+	return file.storage.Rename(oldname, newname)
 }
 
 // Format returns file extension.
@@ -191,6 +192,7 @@ func (file *File) RemoveAfter(d time.Duration) {
 func (file *File) LoadImage() (image.Image, error) {
 	f, err := file.Open()
 	if err != nil {
+		log.Debug("Failed to open")
 		return nil, err
 	}
 	defer f.Close()
@@ -242,6 +244,32 @@ func (file *File) SaveImage(img image.Image) error {
 		return nil
 	}
 	return ErrUnsupportedFormat
+}
+
+// Thumbnail creates a thumbnail file from the artwork file and store in to starage layer
+func (file *File) Thumbnail(coordinate ThumbnailCoordinate) (*File, error) {
+	f := NewFile(file.storage, "thumbnail-of-"+file.name)
+	if f == nil {
+		return nil, errors.Errorf("failed to create new file for thumbnail-of-%q", file.Name())
+	}
+	f.SetFormat(file.Format())
+
+	img, err := file.LoadImage()
+	if err != nil {
+		return nil, errors.Errorf("failed to load image from file %w", err).WithField("Filename", file.Name())
+	}
+
+	rect := image.Rect(int(coordinate.TopLeftX), int(coordinate.TopLeftY), int(coordinate.BottomRightX), int(coordinate.BottomRightY))
+	thumbnail := imaging.Crop(img, rect)
+	if thumbnail == nil {
+		return nil, errors.Errorf("failed to generate thumbnail %w", err).WithField("filename", f.Name())
+	}
+
+	if err := f.SaveImage(thumbnail); err != nil {
+		return nil, errors.Errorf("failed to save thumbnail to file %w", err).WithField("filename", f.Name())
+	}
+
+	return f, nil
 }
 
 // Encoder represents an image encoder.

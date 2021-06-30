@@ -21,7 +21,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	goa.design/goa/v3 v3.3.1
 	goa.design/plugins/v3 v3.3.1
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
+	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
 	golang.org/x/image v0.0.0-20210216034530-4410531fe030 // indirect
 	golang.org/x/net v0.0.0-20210510120150-4163338589ed // indirect
 	golang.org/x/sys v0.0.0-20210616094352-59db8d763f22 // indirect

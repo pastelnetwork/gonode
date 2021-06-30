@@ -2,14 +2,18 @@ package walletnode
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -175,6 +179,130 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		return errors.Errorf("failed to send ProbeImage response: %w", err)
 	}
 	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
+	return nil
+}
+
+// UploadImageWithThumbnail implements walletnode.RegisterArtwork.UploadImageWithThumbnail
+func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
+	ctx := stream.Context()
+
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return errors.Errorf("task not found %w", err)
+	}
+
+	image := service.Storage.NewFile()
+	imageFile, err := image.Create()
+	if err != nil {
+		return errors.Errorf("failed to open image file %q: %w", imageFile.Name(), err)
+	}
+	log.WithContext(ctx).WithField("filename", imageFile.Name()).Debugf("UploadImageWithThumbnail request")
+
+	imageWriter := bufio.NewWriter(imageFile)
+
+	imageSize := int64(0)
+	thumbnail := artwork.ThumbnailCoordinate{}
+	hash := make([]byte, 0)
+
+	err = func() error {
+		defer imageFile.Close()
+		defer imageWriter.Flush()
+
+		for {
+			req, err := stream.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				if status.Code(err) == codes.Canceled {
+					return errors.New("connection closed")
+				}
+				return errors.Errorf("failed to receive UploadImageWithThumbnail: %w", err)
+			}
+
+			if imagePiece := req.GetImagePiece(); imagePiece != nil {
+				n, err := imageWriter.Write(imagePiece)
+				imageSize += int64(n)
+				if err != nil {
+					return errors.Errorf("failed to write to file %q: %w", imageFile.Name(), err)
+				}
+			} else {
+				if metaData := req.GetMetaData(); metaData != nil {
+					if metaData.Size != imageSize {
+						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size, imageSize)
+					}
+
+					cordinates := metaData.GetThumbnail()
+					if cordinates == nil {
+						return errors.Errorf("no thumbnail coordinates")
+					}
+					thumbnail.TopLeftX = cordinates.TopLeftX
+					thumbnail.TopLeftY = cordinates.TopLeftY
+					thumbnail.BottomRightX = cordinates.BottomRightX
+					thumbnail.BottomRightY = cordinates.BottomRightY
+
+					if metaData.Hash == nil {
+						return errors.Errorf("empty hash")
+					}
+					hash = metaData.Hash
+
+					if metaData.Format != "" {
+						if err := image.SetFormatFromExtension(metaData.Format); err != nil {
+							return errors.Errorf("failed to set format %s for file %s", metaData.Format, image.Name())
+						}
+					}
+				}
+			}
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	err = func() error {
+		hasher := sha3.New256()
+		f, fileErr := image.Open()
+		if fileErr != nil {
+			return errors.Errorf("failed to open file %w", fileErr)
+		}
+		defer f.Close()
+
+		if _, err := io.Copy(hasher, f); err != nil {
+			return errors.Errorf("hash file failed %w", err)
+		}
+		hashFromPayload := hasher.Sum(nil)
+		if bytes.Compare(hashFromPayload, hash) != 0 {
+			log.WithField("Filename", imageFile.Name()).Debugf("caculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
+			log.WithField("Filename", imageFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
+			return errors.Errorf("wrong hash")
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	thumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
+	if err != nil {
+		return err
+	}
+	if thumbnailHash == nil {
+		return errors.New("could not compute thumbnailHash data")
+	}
+
+	resp := &pb.UploadImageReply{
+		ThumbnailHash: thumbnailHash[:],
+	}
+	log.WithContext(ctx).Debugf("hash: %x\n", thumbnailHash)
+	if err := stream.SendAndClose(resp); err != nil {
+		return errors.Errorf("failed to send UploadImageAndThumbnail response: %w", err)
+	}
+
 	return nil
 }
 

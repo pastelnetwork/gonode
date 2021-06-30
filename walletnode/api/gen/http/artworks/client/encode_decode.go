@@ -777,6 +777,40 @@ func DecodeArtworkGetResponse(decoder func(*http.Response) goahttp.Decoder, rest
 	}
 }
 
+// marshalArtworksThumbnailcoordinateToThumbnailcoordinateRequestBody builds a
+// value of type *ThumbnailcoordinateRequestBody from a value of type
+// *artworks.Thumbnailcoordinate.
+func marshalArtworksThumbnailcoordinateToThumbnailcoordinateRequestBody(v *artworks.Thumbnailcoordinate) *ThumbnailcoordinateRequestBody {
+	if v == nil {
+		return nil
+	}
+	res := &ThumbnailcoordinateRequestBody{
+		TopLeftX:     v.TopLeftX,
+		TopLeftY:     v.TopLeftY,
+		BottomRightX: v.BottomRightX,
+		BottomRightY: v.BottomRightY,
+	}
+
+	return res
+}
+
+// marshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate builds a
+// value of type *artworks.Thumbnailcoordinate from a value of type
+// *ThumbnailcoordinateRequestBody.
+func marshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate(v *ThumbnailcoordinateRequestBody) *artworks.Thumbnailcoordinate {
+	if v == nil {
+		return nil
+	}
+	res := &artworks.Thumbnailcoordinate{
+		TopLeftX:     v.TopLeftX,
+		TopLeftY:     v.TopLeftY,
+		BottomRightX: v.BottomRightX,
+		BottomRightY: v.BottomRightY,
+	}
+
+	return res
+}
+
 // unmarshalTaskStateResponseBodyToArtworksviewsTaskStateView builds a value of
 // type *artworksviews.TaskStateView from a value of type
 // *TaskStateResponseBody.
@@ -809,6 +843,28 @@ func unmarshalArtworkTicketResponseBodyToArtworksviewsArtworkTicketView(v *Artwo
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         v.SpendableAddress,
 		MaximumFee:               v.MaximumFee,
+		Royalty:                  v.Royalty,
+		Green:                    v.Green,
+	}
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseBodyToArtworksviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
+	}
+
+	return res
+}
+
+// unmarshalThumbnailcoordinateResponseBodyToArtworksviewsThumbnailcoordinateView
+// builds a value of type *artworksviews.ThumbnailcoordinateView from a value
+// of type *ThumbnailcoordinateResponseBody.
+func unmarshalThumbnailcoordinateResponseBodyToArtworksviewsThumbnailcoordinateView(v *ThumbnailcoordinateResponseBody) *artworksviews.ThumbnailcoordinateView {
+	if v == nil {
+		return nil
+	}
+	res := &artworksviews.ThumbnailcoordinateView{
+		TopLeftX:     v.TopLeftX,
+		TopLeftY:     v.TopLeftY,
+		BottomRightX: v.BottomRightX,
+		BottomRightY: v.BottomRightY,
 	}
 
 	return res
@@ -864,6 +920,28 @@ func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTi
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         v.SpendableAddress,
 		MaximumFee:               v.MaximumFee,
+		Royalty:                  v.Royalty,
+		Green:                    v.Green,
+	}
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = unmarshalThumbnailcoordinateResponseToArtworksviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
+	}
+
+	return res
+}
+
+// unmarshalThumbnailcoordinateResponseToArtworksviewsThumbnailcoordinateView
+// builds a value of type *artworksviews.ThumbnailcoordinateView from a value
+// of type *ThumbnailcoordinateResponse.
+func unmarshalThumbnailcoordinateResponseToArtworksviewsThumbnailcoordinateView(v *ThumbnailcoordinateResponse) *artworksviews.ThumbnailcoordinateView {
+	if v == nil {
+		return nil
+	}
+	res := &artworksviews.ThumbnailcoordinateView{
+		TopLeftX:     v.TopLeftX,
+		TopLeftY:     v.TopLeftY,
+		BottomRightX: v.BottomRightX,
+		BottomRightY: v.BottomRightY,
 	}
 
 	return res

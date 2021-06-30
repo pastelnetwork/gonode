@@ -44,6 +44,13 @@ type RegisterRequestBody struct {
 	SpendableAddress *string `form:"spendable_address,omitempty" json:"spendable_address,omitempty" xml:"spendable_address,omitempty"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee *float64 `form:"maximum_fee,omitempty" json:"maximum_fee,omitempty" xml:"maximum_fee,omitempty"`
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green               *bool                           `form:"green,omitempty" json:"green,omitempty" xml:"green,omitempty"`
+	ThumbnailCoordinate *ThumbnailcoordinateRequestBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
 }
 
 // UploadImageRequestBody is the type of the "artworks" service "uploadImage"
@@ -444,6 +451,26 @@ type ArtworkTicketResponseBody struct {
 	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green               bool                             `form:"green" json:"green" xml:"green"`
+	ThumbnailCoordinate *ThumbnailcoordinateResponseBody `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
+}
+
+// ThumbnailcoordinateResponseBody is used to define fields on response body
+// types.
+type ThumbnailcoordinateResponseBody struct {
+	// X coordinate of the thumbnail's top left conner
+	TopLeftX int64 `form:"top_left_x" json:"top_left_x" xml:"top_left_x"`
+	// Y coordinate of the thumbnail's top left conner
+	TopLeftY int64 `form:"top_left_y" json:"top_left_y" xml:"top_left_y"`
+	// X coordinate of the thumbnail's bottom right conner
+	BottomRightX int64 `form:"bottom_right_x" json:"bottom_right_x" xml:"bottom_right_x"`
+	// Y coordinate of the thumbnail's bottom right conner
+	BottomRightY int64 `form:"bottom_right_y" json:"bottom_right_y" xml:"bottom_right_y"`
 }
 
 // TaskResponseTiny is used to define fields on response body types.
@@ -483,6 +510,25 @@ type ArtworkTicketResponse struct {
 	SpendableAddress string `form:"spendable_address" json:"spendable_address" xml:"spendable_address"`
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green               bool                         `form:"green" json:"green" xml:"green"`
+	ThumbnailCoordinate *ThumbnailcoordinateResponse `form:"thumbnail_coordinate,omitempty" json:"thumbnail_coordinate,omitempty" xml:"thumbnail_coordinate,omitempty"`
+}
+
+// ThumbnailcoordinateResponse is used to define fields on response body types.
+type ThumbnailcoordinateResponse struct {
+	// X coordinate of the thumbnail's top left conner
+	TopLeftX int64 `form:"top_left_x" json:"top_left_x" xml:"top_left_x"`
+	// Y coordinate of the thumbnail's top left conner
+	TopLeftY int64 `form:"top_left_y" json:"top_left_y" xml:"top_left_y"`
+	// X coordinate of the thumbnail's bottom right conner
+	BottomRightX int64 `form:"bottom_right_x" json:"bottom_right_x" xml:"bottom_right_x"`
+	// Y coordinate of the thumbnail's bottom right conner
+	BottomRightY int64 `form:"bottom_right_y" json:"bottom_right_y" xml:"bottom_right_y"`
 }
 
 // ArtworkSummaryResponseBody is used to define fields on response body types.
@@ -521,6 +567,19 @@ type FuzzyMatchResponseBody struct {
 	MatchedIndexes []int `form:"matched_indexes,omitempty" json:"matched_indexes,omitempty" xml:"matched_indexes,omitempty"`
 	// Score used to rank matches
 	Score *int `form:"score,omitempty" json:"score,omitempty" xml:"score,omitempty"`
+}
+
+// ThumbnailcoordinateRequestBody is used to define fields on request body
+// types.
+type ThumbnailcoordinateRequestBody struct {
+	// X coordinate of the thumbnail's top left conner
+	TopLeftX *int64 `form:"top_left_x,omitempty" json:"top_left_x,omitempty" xml:"top_left_x,omitempty"`
+	// Y coordinate of the thumbnail's top left conner
+	TopLeftY *int64 `form:"top_left_y,omitempty" json:"top_left_y,omitempty" xml:"top_left_y,omitempty"`
+	// X coordinate of the thumbnail's bottom right conner
+	BottomRightX *int64 `form:"bottom_right_x,omitempty" json:"bottom_right_x,omitempty" xml:"bottom_right_x,omitempty"`
+	// Y coordinate of the thumbnail's bottom right conner
+	BottomRightY *int64 `form:"bottom_right_y,omitempty" json:"bottom_right_y,omitempty" xml:"bottom_right_y,omitempty"`
 }
 
 // NewRegisterResponseBody builds the HTTP response body from the result of the
@@ -841,6 +900,21 @@ func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 		SpendableAddress:         *body.SpendableAddress,
 		MaximumFee:               *body.MaximumFee,
 	}
+	if body.Royalty != nil {
+		v.Royalty = *body.Royalty
+	}
+	if body.Green != nil {
+		v.Green = *body.Green
+	}
+	if body.Royalty == nil {
+		v.Royalty = 0
+	}
+	if body.Green == nil {
+		v.Green = false
+	}
+	if body.ThumbnailCoordinate != nil {
+		v.ThumbnailCoordinate = unmarshalThumbnailcoordinateRequestBodyToArtworksThumbnailcoordinate(body.ThumbnailCoordinate)
+	}
 
 	return v
 }
@@ -1017,6 +1091,21 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.maximum_fee", *body.MaximumFee, 1e-05, true))
 		}
 	}
+	if body.Royalty != nil {
+		if *body.Royalty < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 0, true))
+		}
+	}
+	if body.Royalty != nil {
+		if *body.Royalty > 100 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.royalty", *body.Royalty, 100, false))
+		}
+	}
+	if body.ThumbnailCoordinate != nil {
+		if err2 := ValidateThumbnailcoordinateRequestBody(body.ThumbnailCoordinate); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
 	return
 }
 
@@ -1025,6 +1114,24 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 func ValidateUploadImageRequestBody(body *UploadImageRequestBody) (err error) {
 	if body.Bytes == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+	}
+	return
+}
+
+// ValidateThumbnailcoordinateRequestBody runs the validations defined on
+// ThumbnailcoordinateRequestBody
+func ValidateThumbnailcoordinateRequestBody(body *ThumbnailcoordinateRequestBody) (err error) {
+	if body.TopLeftX == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("top_left_x", "body"))
+	}
+	if body.TopLeftY == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("top_left_y", "body"))
+	}
+	if body.BottomRightX == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("bottom_right_x", "body"))
+	}
+	if body.BottomRightY == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("bottom_right_y", "body"))
 	}
 	return
 }

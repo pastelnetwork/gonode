@@ -102,6 +102,13 @@ type RegisterPayload struct {
 	SpendableAddress string
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty float64
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green               bool
+	ThumbnailCoordinate *Thumbnailcoordinate
 }
 
 // RegisterResult is the result type of the artworks service register method.
@@ -263,6 +270,18 @@ type ArtworkDetail struct {
 	ArtistWebsiteURL *string
 }
 
+// Coordinate of the thumbnail
+type Thumbnailcoordinate struct {
+	// X coordinate of the thumbnail's top left conner
+	TopLeftX int64
+	// Y coordinate of the thumbnail's top left conner
+	TopLeftY int64
+	// X coordinate of the thumbnail's bottom right conner
+	BottomRightX int64
+	// Y coordinate of the thumbnail's bottom right conner
+	BottomRightY int64
+}
+
 // Ticket of the registration artwork
 type ArtworkTicket struct {
 	// Name of the artwork
@@ -289,6 +308,13 @@ type ArtworkTicket struct {
 	SpendableAddress string
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64
+	// Percentage the artist received in future sales. If set to 0% he only get
+	// paids for the first sale on each copy of the NFT
+	Royalty float64
+	// To donate 2% of the sale proceeds on every sale to TeamTrees which plants
+	// trees
+	Green               bool
+	ThumbnailCoordinate *Thumbnailcoordinate
 }
 
 // Artwork response
@@ -528,6 +554,49 @@ func newTaskView(res *Task) *artworksviews.TaskView {
 	return vres
 }
 
+// newThumbnailcoordinate converts projected type Thumbnailcoordinate to
+// service type Thumbnailcoordinate.
+func newThumbnailcoordinate(vres *artworksviews.ThumbnailcoordinateView) *Thumbnailcoordinate {
+	res := &Thumbnailcoordinate{}
+	if vres.TopLeftX != nil {
+		res.TopLeftX = *vres.TopLeftX
+	}
+	if vres.TopLeftY != nil {
+		res.TopLeftY = *vres.TopLeftY
+	}
+	if vres.BottomRightX != nil {
+		res.BottomRightX = *vres.BottomRightX
+	}
+	if vres.BottomRightY != nil {
+		res.BottomRightY = *vres.BottomRightY
+	}
+	if vres.TopLeftX == nil {
+		res.TopLeftX = 0
+	}
+	if vres.TopLeftY == nil {
+		res.TopLeftY = 0
+	}
+	if vres.BottomRightX == nil {
+		res.BottomRightX = 0
+	}
+	if vres.BottomRightY == nil {
+		res.BottomRightY = 0
+	}
+	return res
+}
+
+// newThumbnailcoordinateView projects result type Thumbnailcoordinate to
+// projected type ThumbnailcoordinateView using the "default" view.
+func newThumbnailcoordinateView(res *Thumbnailcoordinate) *artworksviews.ThumbnailcoordinateView {
+	vres := &artworksviews.ThumbnailcoordinateView{
+		TopLeftX:     &res.TopLeftX,
+		TopLeftY:     &res.TopLeftY,
+		BottomRightX: &res.BottomRightX,
+		BottomRightY: &res.BottomRightY,
+	}
+	return vres
+}
+
 // newTaskCollectionTiny converts projected type TaskCollection to service type
 // TaskCollection.
 func newTaskCollectionTiny(vres artworksviews.TaskCollectionView) TaskCollection {
@@ -610,6 +679,38 @@ func transformArtworksviewsArtworkTicketViewToArtworkTicket(v *artworksviews.Art
 		SpendableAddress:         *v.SpendableAddress,
 		MaximumFee:               *v.MaximumFee,
 	}
+	if v.Royalty != nil {
+		res.Royalty = *v.Royalty
+	}
+	if v.Green != nil {
+		res.Green = *v.Green
+	}
+	if v.Royalty == nil {
+		res.Royalty = 0
+	}
+	if v.Green == nil {
+		res.Green = false
+	}
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = transformArtworksviewsThumbnailcoordinateViewToThumbnailcoordinate(v.ThumbnailCoordinate)
+	}
+
+	return res
+}
+
+// transformArtworksviewsThumbnailcoordinateViewToThumbnailcoordinate builds a
+// value of type *Thumbnailcoordinate from a value of type
+// *artworksviews.ThumbnailcoordinateView.
+func transformArtworksviewsThumbnailcoordinateViewToThumbnailcoordinate(v *artworksviews.ThumbnailcoordinateView) *Thumbnailcoordinate {
+	if v == nil {
+		return nil
+	}
+	res := &Thumbnailcoordinate{
+		TopLeftX:     *v.TopLeftX,
+		TopLeftY:     *v.TopLeftY,
+		BottomRightX: *v.BottomRightX,
+		BottomRightY: *v.BottomRightY,
+	}
 
 	return res
 }
@@ -644,6 +745,28 @@ func transformArtworkTicketToArtworksviewsArtworkTicketView(v *ArtworkTicket) *a
 		ArtistWebsiteURL:         v.ArtistWebsiteURL,
 		SpendableAddress:         &v.SpendableAddress,
 		MaximumFee:               &v.MaximumFee,
+		Royalty:                  &v.Royalty,
+		Green:                    &v.Green,
+	}
+	if v.ThumbnailCoordinate != nil {
+		res.ThumbnailCoordinate = transformThumbnailcoordinateToArtworksviewsThumbnailcoordinateView(v.ThumbnailCoordinate)
+	}
+
+	return res
+}
+
+// transformThumbnailcoordinateToArtworksviewsThumbnailcoordinateView builds a
+// value of type *artworksviews.ThumbnailcoordinateView from a value of type
+// *Thumbnailcoordinate.
+func transformThumbnailcoordinateToArtworksviewsThumbnailcoordinateView(v *Thumbnailcoordinate) *artworksviews.ThumbnailcoordinateView {
+	if v == nil {
+		return nil
+	}
+	res := &artworksviews.ThumbnailcoordinateView{
+		TopLeftX:     &v.TopLeftX,
+		TopLeftY:     &v.TopLeftY,
+		BottomRightX: &v.BottomRightX,
+		BottomRightY: &v.BottomRightY,
 	}
 
 	return res

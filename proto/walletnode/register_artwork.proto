@@ -27,6 +27,9 @@ service RegisterArtwork {
 
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
+
+    // Upload the image after pq signature is appended along with its thumbnail coordinates
+    rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
 }
 
 message SessionRequest {
@@ -85,3 +88,30 @@ message SendTicketReply {
     string ticket_txid = 1;
 }
 
+message UploadImageRequest {
+    message Coordinate {
+      int64 top_left_x = 1;
+      int64 top_left_y = 2;
+      int64 bottom_right_x = 3;
+      int64 bottom_right_y = 4;
+    }
+    message MetaData {
+      // size of the image
+      int64 size = 1;
+      // valid image format such as jpeg, png ...
+      string format = 2;
+      // sha3-256 hash of the image
+      bytes hash = 3;
+      // thumbnail of the image
+      Coordinate thumbnail = 4;
+    }
+    oneof payload {
+      bytes image_piece = 1;
+      // Should be included in the last piece of image only
+      MetaData meta_data = 2;
+    }
+}
+
+message UploadImageReply {
+   bytes thumbnail_hash = 1;
+}

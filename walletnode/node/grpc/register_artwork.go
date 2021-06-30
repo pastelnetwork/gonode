@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -155,6 +157,91 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 
 	return resp.Fingerprint, nil
+}
+
+// UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
+func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) ([]byte, error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	log.WithContext(ctx).Debug("Start upload image and thumbnail to node")
+	stream, err := service.client.UploadImage(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to open stream: %w", err)
+	}
+	defer stream.CloseSend()
+
+	file, err := image.Open()
+	if err != nil {
+		return nil, errors.Errorf("failed to open file %q: %w", file.Name(), err)
+	}
+	defer file.Close()
+
+	buffer := make([]byte, uploadImageBufferSize)
+	lastPiece := false
+	payloadSize := 0
+	for {
+		n, err := file.Read(buffer)
+		payloadSize += n
+		if err != nil && err == io.EOF {
+			log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("EOF")
+			lastPiece = true
+			break
+		} else if err != nil {
+			return nil, errors.Errorf("read file faile %w", err)
+		}
+
+		req := &pb.UploadImageRequest{
+			Payload: &pb.UploadImageRequest_ImagePiece{
+				ImagePiece: buffer[:n],
+			},
+		}
+
+		if err := stream.Send(req); err != nil {
+			return nil, errors.Errorf("failed to send image data: %w", err).WithField("ReqID", service.conn.id)
+		}
+	}
+
+	log.WithContext(ctx).Debugf("Encoded Image Size :%d\n", payloadSize)
+	if !lastPiece {
+		return nil, errors.Errorf("failed to read all image data")
+	}
+
+	file.Seek(0, io.SeekStart)
+	hasher := sha3.New256()
+	if _, err := io.Copy(hasher, file); err != nil {
+		return nil, errors.Errorf("failed to compute artwork hash %w", err)
+	}
+	hash := hasher.Sum(nil)
+	log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("hash: %s", base64.URLEncoding.EncodeToString(hash))
+
+	thumnailReq := &pb.UploadImageRequest{
+		Payload: &pb.UploadImageRequest_MetaData_{
+			MetaData: &pb.UploadImageRequest_MetaData{
+				Hash:   hash[:],
+				Size:   int64(payloadSize),
+				Format: image.Format().String(),
+				Thumbnail: &pb.UploadImageRequest_Coordinate{
+					TopLeftX:     thumbnail.TopLeftX,
+					TopLeftY:     thumbnail.TopLeftY,
+					BottomRightX: thumbnail.BottomRightX,
+					BottomRightY: thumbnail.BottomRightY,
+				},
+			},
+		},
+	}
+
+	if err := stream.Send(thumnailReq); err != nil {
+		return nil, errors.Errorf("failed to send image thumbnail: %w", err).WithField("ReqID", service.conn.id)
+	}
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		return nil, errors.Errorf("failed to receive upload image response: %w", err)
+	}
+	log.WithContext(ctx).Debugf("hash: %x", resp.ThumbnailHash)
+
+	return resp.ThumbnailHash, nil
 }
 
 func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {
