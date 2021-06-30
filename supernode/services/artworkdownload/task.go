@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/DataDog/zstd"
-	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -40,180 +38,42 @@ func (task *Task) Run(ctx context.Context) error {
 	return task.RunAction(ctx)
 }
 
-// Session is handshake wallet to supernode
-func (task *Task) Session(_ context.Context, isPrimary bool) error {
-	if err := task.RequiredStatus(StatusTaskStarted); err != nil {
-		return err
-	}
-
-	<-task.NewAction(func(ctx context.Context) error {
-		if isPrimary {
-			log.WithContext(ctx).Debugf("Acts as primary node")
-			task.UpdateStatus(StatusPrimaryMode)
-			return nil
-		}
-
-		log.WithContext(ctx).Debugf("Acts as secondary node")
-		task.UpdateStatus(StatusSecondaryMode)
-
-		return nil
-	})
-	return nil
-}
-
-// AcceptedNodes waits for connection supernodes, as soon as there is the required amount returns them.
-func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
-	if err := task.RequiredStatus(StatusPrimaryMode); err != nil {
-		return nil, err
-	}
-
-	<-task.NewAction(func(ctx context.Context) error {
-		log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
-
-		sub := task.SubscribeStatus()
-		for {
-			select {
-			case <-serverCtx.Done():
-				return nil
-			case <-ctx.Done():
-				return nil
-			case status := <-sub():
-				if status.Is(StatusConnected) {
-					return nil
-				}
-			}
-		}
-	})
-	return task.accpeted, nil
-}
-
-// SessionNode accepts secondary node
-func (task *Task) SessionNode(_ context.Context, nodeID string) error {
-	task.acceptedMu.Lock()
-	defer task.acceptedMu.Unlock()
-
-	if err := task.RequiredStatus(StatusPrimaryMode); err != nil {
-		return err
-	}
-
-	<-task.NewAction(func(ctx context.Context) error {
-		if node := task.accpeted.ByID(nodeID); node != nil {
-			return errors.Errorf("node %q is already registered", nodeID)
-		}
-
-		node, err := task.pastelNodeByExtKey(ctx, nodeID)
-		if err != nil {
-			return err
-		}
-		task.accpeted.Add(node)
-
-		log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
-
-		if len(task.accpeted) >= task.config.NumberConnectedNodes {
-			task.UpdateStatus(StatusConnected)
-		}
-		return nil
-	})
-	return nil
-}
-
-// ConnectTo connects to primary node
-func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
-	if err := task.RequiredStatus(StatusSecondaryMode); err != nil {
-		return err
-	}
-
-	task.NewAction(func(ctx context.Context) error {
-		node, err := task.pastelNodeByExtKey(ctx, nodeID)
-		if err != nil {
-			return err
-		}
-
-		if err := node.connect(ctx); err != nil {
-			return err
-		}
-
-		if err := node.Session(ctx, task.config.PastelID, sessID); err != nil {
-			return err
-		}
-
-		task.connectedTo = node
-		task.UpdateStatus(StatusConnected)
-		return nil
-	})
-	return nil
-}
-
-// ProbeImage uploads the resampled image compute and return a fingerpirnt.
-func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
+// Download downloads image and return the image.
+func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return nil, err
 	}
 
-	task.NewAction(func(ctx context.Context) error {
-		task.ResampledArtwork = file
-		defer task.ResampledArtwork.Remove()
-
-		<-ctx.Done()
-		return nil
-	})
-
-	var fingerprintData []byte
+	var file []byte
 
 	<-task.NewAction(func(ctx context.Context) error {
-		task.UpdateStatus(StatusImageUploaded)
+		// Validate timestamp is not older then 10 minutes
+		// Get Art Registration ticket by txid
 
-		img, err := file.LoadImage()
-		if err != nil {
-			return err
+		if len(ttxid) == 0 {
+			// validate timestamp signature with PastelID from Trade ticket
+			// by calling command `pastelid verify timestamp-string sig PastelID passphrase`
+		} else {
+			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
+			// by calling command `tickets list trade available`
+
+			// Validate that Trade ticket with ttxid is in the list
+
+			// Validate timestamp signature with PastelID from Trade ticket
+			// by calling command `pastelid verify timestamp-string sig PastelID passphrase`
 		}
 
-		fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
-		if err != nil {
-			return err
-		}
+		// Get the list of “symbols/chunks” - rq_ids - from Art Registration ticket and request them from Kademlia
 
-		fingerprintData, err = zstd.CompressLevel(nil, fingerprints.Single().LSBTruncatedBytes(), 22)
-		if err != nil {
-			return errors.Errorf("failed to compress fingerprint data: %w", err)
-		}
+		// Validate that the hash of each “symbol/chunk” matches its id
 
-		// NOTE: for testing Kademlia and should be removed before releasing.
-		data, err := file.Bytes()
-		if err != nil {
-			return err
-		}
+		// When all “symbols/chunks” are received, pass them to the Kademlia server to decode (also passing encoder parameters: rq_coti" and “rq_ssoti”)
 
-		id, err := task.p2pClient.Store(ctx, data)
-		if err != nil {
-			return err
-		}
-		log.WithContext(ctx).WithField("id", id).Debugf("Image stored into Kademlia")
+		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
 		return nil
 	})
 
-	return fingerprintData, nil
-}
-
-func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
-	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, masterNode := range masterNodes {
-		if masterNode.ExtKey != nodeID {
-			continue
-		}
-		node := &Node{
-			client:  task.Service.nodeClient,
-			ID:      masterNode.ExtKey,
-			Address: masterNode.ExtAddress,
-		}
-		return node, nil
-	}
-
-	return nil, errors.Errorf("node %q not found", nodeID)
+	return file, nil
 }
 
 func (task *Task) context(ctx context.Context) context.Context {

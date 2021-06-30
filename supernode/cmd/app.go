@@ -148,7 +148,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),
-		supernode.NewDownloadArtwork(artworkDownload),
 	)
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload)
