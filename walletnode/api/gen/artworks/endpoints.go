@@ -20,6 +20,8 @@ type Endpoints struct {
 	RegisterTask      goa.Endpoint
 	RegisterTasks     goa.Endpoint
 	UploadImage       goa.Endpoint
+	ArtSearch         goa.Endpoint
+	ArtworkGet        goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -32,6 +34,15 @@ type RegisterTaskStateEndpointInput struct {
 	Stream RegisterTaskStateServerStream
 }
 
+// ArtSearchEndpointInput holds both the payload and the server stream of the
+// "artSearch" method.
+type ArtSearchEndpointInput struct {
+	// Payload is the method payload.
+	Payload *ArtSearchPayload
+	// Stream is the server stream used by the "artSearch" method to send data.
+	Stream ArtSearchServerStream
+}
+
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
@@ -40,6 +51,8 @@ func NewEndpoints(s Service) *Endpoints {
 		RegisterTask:      NewRegisterTaskEndpoint(s),
 		RegisterTasks:     NewRegisterTasksEndpoint(s),
 		UploadImage:       NewUploadImageEndpoint(s),
+		ArtSearch:         NewArtSearchEndpoint(s),
+		ArtworkGet:        NewArtworkGetEndpoint(s),
 	}
 }
 
@@ -50,6 +63,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterTask = m(e.RegisterTask)
 	e.RegisterTasks = m(e.RegisterTasks)
 	e.UploadImage = m(e.UploadImage)
+	e.ArtSearch = m(e.ArtSearch)
+	e.ArtworkGet = m(e.ArtworkGet)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -113,5 +128,23 @@ func NewUploadImageEndpoint(s Service) goa.Endpoint {
 		}
 		vres := NewViewedImage(res, "default")
 		return vres, nil
+	}
+}
+
+// NewArtSearchEndpoint returns an endpoint function that calls the method
+// "artSearch" of service "artworks".
+func NewArtSearchEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		ep := req.(*ArtSearchEndpointInput)
+		return nil, s.ArtSearch(ctx, ep.Payload, ep.Stream)
+	}
+}
+
+// NewArtworkGetEndpoint returns an endpoint function that calls the method
+// "artworkGet" of service "artworks".
+func NewArtworkGetEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*ArtworkGetPayload)
+		return s.ArtworkGet(ctx, p)
 	}
 }

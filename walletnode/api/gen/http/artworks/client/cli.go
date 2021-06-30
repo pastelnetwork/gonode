@@ -10,6 +10,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"unicode/utf8"
 
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
@@ -163,7 +164,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 	{
 		err = json.Unmarshal([]byte(artworksUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"VmVsIHZvbHVwdGF0ZW0gcHJvdmlkZW50IGRvbG9yaWJ1cy4=\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"T2RpbyBxdWkgdXQgdmVsIGV0IHF1YXNpIGV0Lg==\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -176,6 +177,324 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 		Bytes:    body.Bytes,
 		Filename: body.Filename,
 	}
+
+	return v, nil
+}
+
+// BuildArtSearchPayload builds the payload for the artworks artSearch endpoint
+// from CLI flags.
+func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimit string, artworksArtSearchQuery string, artworksArtSearchArtistName string, artworksArtSearchArtTitle string, artworksArtSearchSeries string, artworksArtSearchDescr string, artworksArtSearchKeyword string, artworksArtSearchMinCopies string, artworksArtSearchMaxCopies string, artworksArtSearchMinBlock string, artworksArtSearchMaxBlock string, artworksArtSearchMinRarenessScore string, artworksArtSearchMaxRarenessScore string, artworksArtSearchMinNsfwScore string, artworksArtSearchMaxNsfwScore string) (*artworks.ArtSearchPayload, error) {
+	var err error
+	var artist *string
+	{
+		if artworksArtSearchArtist != "" {
+			artist = &artworksArtSearchArtist
+			if artist != nil {
+				if utf8.RuneCountInString(*artist) > 256 {
+					err = goa.MergeErrors(err, goa.InvalidLengthError("artist", *artist, utf8.RuneCountInString(*artist), 256, false))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var limit int
+	{
+		if artworksArtSearchLimit != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchLimit, 10, 64)
+			limit = int(v)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for limit, must be INT")
+			}
+			if limit < 10 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 10, true))
+			}
+			if limit > 200 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("limit", limit, 200, false))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var query string
+	{
+		query = artworksArtSearchQuery
+	}
+	var artistName bool
+	{
+		if artworksArtSearchArtistName != "" {
+			artistName, err = strconv.ParseBool(artworksArtSearchArtistName)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for artistName, must be BOOL")
+			}
+		}
+	}
+	var artTitle bool
+	{
+		if artworksArtSearchArtTitle != "" {
+			artTitle, err = strconv.ParseBool(artworksArtSearchArtTitle)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for artTitle, must be BOOL")
+			}
+		}
+	}
+	var series bool
+	{
+		if artworksArtSearchSeries != "" {
+			series, err = strconv.ParseBool(artworksArtSearchSeries)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for series, must be BOOL")
+			}
+		}
+	}
+	var descr bool
+	{
+		if artworksArtSearchDescr != "" {
+			descr, err = strconv.ParseBool(artworksArtSearchDescr)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for descr, must be BOOL")
+			}
+		}
+	}
+	var keyword bool
+	{
+		if artworksArtSearchKeyword != "" {
+			keyword, err = strconv.ParseBool(artworksArtSearchKeyword)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for keyword, must be BOOL")
+			}
+		}
+	}
+	var minCopies *int
+	{
+		if artworksArtSearchMinCopies != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchMinCopies, 10, 64)
+			val := int(v)
+			minCopies = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for minCopies, must be INT")
+			}
+			if minCopies != nil {
+				if *minCopies < 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minCopies", *minCopies, 1, true))
+				}
+			}
+			if minCopies != nil {
+				if *minCopies > 1000 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minCopies", *minCopies, 1000, false))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var maxCopies *int
+	{
+		if artworksArtSearchMaxCopies != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchMaxCopies, 10, 64)
+			val := int(v)
+			maxCopies = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for maxCopies, must be INT")
+			}
+			if maxCopies != nil {
+				if *maxCopies < 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxCopies", *maxCopies, 1, true))
+				}
+			}
+			if maxCopies != nil {
+				if *maxCopies > 1000 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxCopies", *maxCopies, 1000, false))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var minBlock int
+	{
+		if artworksArtSearchMinBlock != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchMinBlock, 10, 64)
+			minBlock = int(v)
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for minBlock, must be INT")
+			}
+			if minBlock < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minBlock", minBlock, 1, true))
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var maxBlock *int
+	{
+		if artworksArtSearchMaxBlock != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchMaxBlock, 10, 64)
+			val := int(v)
+			maxBlock = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for maxBlock, must be INT")
+			}
+			if maxBlock != nil {
+				if *maxBlock < 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxBlock", *maxBlock, 1, true))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var minRarenessScore *int
+	{
+		if artworksArtSearchMinRarenessScore != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchMinRarenessScore, 10, 64)
+			val := int(v)
+			minRarenessScore = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for minRarenessScore, must be INT")
+			}
+			if minRarenessScore != nil {
+				if *minRarenessScore < 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1, true))
+				}
+			}
+			if minRarenessScore != nil {
+				if *minRarenessScore > 1000 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1000, false))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var maxRarenessScore *int
+	{
+		if artworksArtSearchMaxRarenessScore != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchMaxRarenessScore, 10, 64)
+			val := int(v)
+			maxRarenessScore = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for maxRarenessScore, must be INT")
+			}
+			if maxRarenessScore != nil {
+				if *maxRarenessScore < 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1, true))
+				}
+			}
+			if maxRarenessScore != nil {
+				if *maxRarenessScore > 1000 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1000, false))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var minNsfwScore *int
+	{
+		if artworksArtSearchMinNsfwScore != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchMinNsfwScore, 10, 64)
+			val := int(v)
+			minNsfwScore = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for minNsfwScore, must be INT")
+			}
+			if minNsfwScore != nil {
+				if *minNsfwScore < 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1, true))
+				}
+			}
+			if minNsfwScore != nil {
+				if *minNsfwScore > 1000 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1000, false))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var maxNsfwScore *int
+	{
+		if artworksArtSearchMaxNsfwScore != "" {
+			var v int64
+			v, err = strconv.ParseInt(artworksArtSearchMaxNsfwScore, 10, 64)
+			val := int(v)
+			maxNsfwScore = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for maxNsfwScore, must be INT")
+			}
+			if maxNsfwScore != nil {
+				if *maxNsfwScore < 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1, true))
+				}
+			}
+			if maxNsfwScore != nil {
+				if *maxNsfwScore > 1000 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1000, false))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	v := &artworks.ArtSearchPayload{}
+	v.Artist = artist
+	v.Limit = limit
+	v.Query = query
+	v.ArtistName = artistName
+	v.ArtTitle = artTitle
+	v.Series = series
+	v.Descr = descr
+	v.Keyword = keyword
+	v.MinCopies = minCopies
+	v.MaxCopies = maxCopies
+	v.MinBlock = minBlock
+	v.MaxBlock = maxBlock
+	v.MinRarenessScore = minRarenessScore
+	v.MaxRarenessScore = maxRarenessScore
+	v.MinNsfwScore = minNsfwScore
+	v.MaxNsfwScore = maxNsfwScore
+
+	return v, nil
+}
+
+// BuildArtworkGetPayload builds the payload for the artworks artworkGet
+// endpoint from CLI flags.
+func BuildArtworkGetPayload(artworksArtworkGetTxid string) (*artworks.ArtworkGetPayload, error) {
+	var err error
+	var txid string
+	{
+		txid = artworksArtworkGetTxid
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &artworks.ArtworkGetPayload{}
+	v.Txid = txid
 
 	return v, nil
 }
