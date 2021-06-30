@@ -12,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
@@ -27,6 +28,7 @@ const (
 type Artwork struct {
 	*Common
 	register *artworkregister.Service
+	search   *artworksearch.Service
 	db       storage.KeyValue
 	imageTTL time.Duration
 }
@@ -149,11 +151,59 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 	return srv
 }
 
+// ArtSearch searches for artwork & streams the result based on filters
+func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
+	defer stream.Close()
+	searchReq := fromArtSearchRequest(req)
+	taskID := service.search.AddTask(searchReq)
+	task := service.search.Task(taskID)
+
+	resultChan := task.SubscribeSearchResult()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case search, ok := <-resultChan:
+			if !ok {
+				if task.Status().IsFailure() {
+					return artworks.MakeInternalServerError(task.Error())
+				}
+
+				return nil
+			}
+
+			res := toArtSearchResult(search)
+			if err := stream.Send(res); err != nil {
+				return artworks.MakeInternalServerError(err)
+			}
+		}
+	}
+}
+
+// ArtworkGet returns artowrk detail
+func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPayload) (res *artworks.ArtworkDetail, err error) {
+	ticket, err := service.search.RegTicket(ctx, p.Txid)
+	if err != nil {
+		return nil, artworks.MakeBadRequest(err)
+	}
+
+	res = toArtworkDetail(ticket)
+	data, err := service.search.FetchThumbnail(ctx, ticket)
+	if err != nil {
+		return nil, artworks.MakeInternalServerError(err)
+	}
+
+	res.Thumbnail = data
+
+	return res, nil
+}
+
 // NewArtwork returns the artworks Artwork implementation.
-func NewArtwork(register *artworkregister.Service) *Artwork {
+func NewArtwork(register *artworkregister.Service, search *artworksearch.Service) *Artwork {
 	return &Artwork{
 		Common:   NewCommon(),
 		register: register,
+		search:   search,
 		db:       memory.NewKeyValue(),
 		imageTTL: defaultImageTTL,
 	}

@@ -35,3 +35,13 @@ func RegisterTasksArtworksPath() string {
 func UploadImageArtworksPath() string {
 	return "/artworks/register/upload"
 }
+
+// ArtSearchArtworksPath returns the URL path to the artworks service artSearch HTTP endpoint.
+func ArtSearchArtworksPath() string {
+	return "/artworks/search"
+}
+
+// ArtworkGetArtworksPath returns the URL path to the artworks service artworkGet HTTP endpoint.
+func ArtworkGetArtworksPath(txid string) string {
+	return fmt.Sprintf("/artworks/%v", txid)
+}

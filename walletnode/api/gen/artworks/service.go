@@ -26,6 +26,10 @@ type Service interface {
 	RegisterTasks(context.Context) (res TaskCollection, err error)
 	// Upload the image that is used when registering a new artwork.
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
+	// Streams the search result for artwork
+	ArtSearch(context.Context, *ArtSearchPayload, ArtSearchServerStream) (err error)
+	// Gets the Artwork detail
+	ArtworkGet(context.Context, *ArtworkGetPayload) (res *ArtworkDetail, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -36,7 +40,7 @@ const ServiceName = "artworks"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [5]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage"}
+var MethodNames = [7]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "artSearch", "artworkGet"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -52,6 +56,22 @@ type RegisterTaskStateServerStream interface {
 type RegisterTaskStateClientStream interface {
 	// Recv reads instances of "TaskState" from the stream.
 	Recv() (*TaskState, error)
+}
+
+// ArtSearchServerStream is the interface a "artSearch" endpoint server stream
+// must satisfy.
+type ArtSearchServerStream interface {
+	// Send streams instances of "ArtworkSearchResult".
+	Send(*ArtworkSearchResult) error
+	// Close closes the stream.
+	Close() error
+}
+
+// ArtSearchClientStream is the interface a "artSearch" endpoint client stream
+// must satisfy.
+type ArtSearchClientStream interface {
+	// Recv reads instances of "ArtworkSearchResult" from the stream.
+	Recv() (*ArtworkSearchResult, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -147,6 +167,102 @@ type Image struct {
 	ExpiresIn string
 }
 
+// ArtSearchPayload is the payload type of the artworks service artSearch
+// method.
+type ArtSearchPayload struct {
+	// Artist PastelID or special value; mine
+	Artist *string
+	// Number of results to be return
+	Limit int
+	// Query is search query entered by user
+	Query string
+	// Name of the artist
+	ArtistName bool
+	// Title of artwork
+	ArtTitle bool
+	// Artwork series name
+	Series bool
+	// Artist written statement
+	Descr bool
+	// Keyword that Artist assigns to Artwork
+	Keyword bool
+	// Minimum blocknum
+	MinBlock int
+	// Maximum blocknum
+	MaxBlock *int
+	// Minimum number of created copies
+	MinCopies *int
+	// Maximum number of created copies
+	MaxCopies *int
+	// Minimum nsfw score
+	MinNsfwScore *int
+	// Maximum nsfw score
+	MaxNsfwScore *int
+	// Minimum rareness score
+	MinRarenessScore *int
+	// Maximum rareness score
+	MaxRarenessScore *int
+}
+
+// ArtworkSearchResult is the result type of the artworks service artSearch
+// method.
+type ArtworkSearchResult struct {
+	// Artwork data
+	Artwork *ArtworkSummary
+	// Sort index of the match based on score.This must be used to sort results on
+	// UI.
+	MatchIndex int
+	// Match result details
+	Matches []*FuzzyMatch
+}
+
+// ArtworkGetPayload is the payload type of the artworks service artworkGet
+// method.
+type ArtworkGetPayload struct {
+	// txid
+	Txid string
+}
+
+// ArtworkDetail is the result type of the artworks service artworkGet method.
+type ArtworkDetail struct {
+	// version
+	Version *int
+	// Green flag
+	IsGreen bool
+	// how much artist should get on all future resales
+	Royalty float64
+	// Storage fee
+	StorageFee *int
+	// nsfw score
+	NsfwScore int
+	// rareness score
+	RarenessScore int
+	// seen score
+	SeenScore int
+	// Thumbnail image
+	Thumbnail []byte
+	// txid
+	Txid string
+	// Name of the artwork
+	Title string
+	// Description of the artwork
+	Description string
+	// Keywords
+	Keywords *string
+	// Series name
+	SeriesName *string
+	// Number of copies
+	Copies int
+	// Artwork creation video youtube URL
+	YoutubeURL *string
+	// Artist's PastelID
+	ArtistPastelID string
+	// Name of the artist
+	ArtistName string
+	// Artist website URL
+	ArtistWebsiteURL *string
+}
+
 // Ticket of the registration artwork
 type ArtworkTicket struct {
 	// Name of the artwork
@@ -173,6 +289,43 @@ type ArtworkTicket struct {
 	SpendableAddress string
 	// Used to find a suitable masternode with a fee equal or less
 	MaximumFee float64
+}
+
+// Artwork response
+type ArtworkSummary struct {
+	// Thumbnail image
+	Thumbnail []byte
+	// txid
+	Txid string
+	// Name of the artwork
+	Title string
+	// Description of the artwork
+	Description string
+	// Keywords
+	Keywords *string
+	// Series name
+	SeriesName *string
+	// Number of copies
+	Copies int
+	// Artwork creation video youtube URL
+	YoutubeURL *string
+	// Artist's PastelID
+	ArtistPastelID string
+	// Name of the artist
+	ArtistName string
+	// Artist website URL
+	ArtistWebsiteURL *string
+}
+
+type FuzzyMatch struct {
+	// String that is matched
+	Str *string
+	// Field that is matched
+	FieldType *string
+	// The indexes of matched characters. Useful for highlighting matches
+	MatchedIndexes []int
+	// Score used to rank matches
+	Score *int
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.

@@ -17,6 +17,12 @@ const (
 
 	// SignMethod represent Sign name method
 	SignMethod = "Sign"
+
+	// ActTicketsMethod represent ActTickets name method
+	ActTicketsMethod = "ActTickets"
+
+	// RegTicketMethod represent RegTicket name method
+	RegTicketMethod = "RegTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -77,5 +83,17 @@ func (client *Client) AssertSignCall(expectedCalls int, arguments ...interface{}
 		client.AssertCalled(client.t, SignMethod, arguments...)
 	}
 	client.AssertNumberOfCalls(client.t, SignMethod, expectedCalls)
+	return client
+}
+
+// ListenOnActTickets listening ActTickets and returns tickets and error from args
+func (client *Client) ListenOnActTickets(tickets pastel.ActTickets, err error) *Client {
+	client.On(ActTicketsMethod, mock.Anything, mock.Anything, mock.Anything).Return(tickets, err)
+	return client
+}
+
+// ListenOnRegTicket listening RegTicket and returns ticket and error from args
+func (client *Client) ListenOnRegTicket(id string, ticket pastel.RegTicket, err error) *Client {
+	client.On(RegTicketMethod, mock.Anything, id).Return(ticket, err)
 	return client
 }

@@ -1,29 +1,15 @@
-package artworkregister
+package artworksearch
 
 // List of task statuses.
 const (
 	StatusTaskStarted Status = iota
-
-	// Mode
-	StatusPrimaryMode
-	StatusSecondaryMode
-
-	// Process
-	StatusConnected
-	StatusImageUploaded
-
-	// Final
-	StatusTaskCanceled
+	StatusTaskFailure
 	StatusTaskCompleted
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted:   "Task started",
-	StatusPrimaryMode:   "Primary Mode",
-	StatusSecondaryMode: "Secondary Mode",
-	StatusConnected:     "Connected",
-	StatusImageUploaded: "Image Uploaded",
-	StatusTaskCanceled:  "Task Canceled",
+	StatusTaskStarted:   "Task Started",
+	StatusTaskFailure:   "Task Failed",
 	StatusTaskCompleted: "Task Completed",
 }
 
@@ -39,12 +25,12 @@ func (status Status) String() string {
 
 // IsFinal returns true if the status is the final.
 func (status Status) IsFinal() bool {
-	return status == StatusTaskCanceled || status == StatusTaskCompleted
+	return status == StatusTaskCompleted || status == StatusTaskFailure
 }
 
-// IsFailure returns true if the task failed
+// IsFailure returns true if the task failed due to an error
 func (status Status) IsFailure() bool {
-	return status == StatusTaskCanceled
+	return status == StatusTaskFailure
 }
 
 // StatusNames returns a sorted list of status names.

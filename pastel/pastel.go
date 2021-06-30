@@ -37,4 +37,12 @@ type Client interface {
 	// Do an transaction by the given address to sent to and ammount to send, if successful return id of transaction.
 	// Command `sendtoaddress  "pastelId" "amount"`.
 	SendToAddress(ctx context.Context, pastelId string, amount int64) (txId TxIdType, error error)
+
+	// ActTickets returns activated art tickets.
+	// Command `tickets list act`.
+	ActTickets(ctx context.Context, actType ActTicketType, minHeight int) (ActTickets, error)
+
+	// ActTickets returns art registration tickets.
+	// Command `tickets get <txid>`.
+	RegTicket(ctx context.Context, regTxid string) (RegTicket, error)
 }
