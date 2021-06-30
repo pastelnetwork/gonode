@@ -25,7 +25,6 @@ type Config struct {
 	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration
-	connectTimeout         time.Duration
 
 	thumbnailSize int
 }
@@ -37,7 +36,6 @@ func NewConfig() *Config {
 
 		connectToNextNodeDelay: connectToNextNodeDelay,
 		acceptNodesTimeout:     acceptNodesTimeout,
-		connectTimeout:         connectTimeout,
 
 		thumbnailSize: thumbnailSize,
 	}

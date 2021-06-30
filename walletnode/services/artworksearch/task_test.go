@@ -2,19 +2,17 @@ package artworksearch
 
 import (
 	"context"
-	b64 "encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"testing"
-	"time"
 
 	"github.com/pastelnetwork/gonode/pastel"
 
 	"github.com/pastelnetwork/gonode/common/service/task"
-	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	nodeMock "github.com/pastelnetwork/gonode/walletnode/node/test"
+	thumbnail "github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,23 +22,6 @@ const (
 )
 
 func TestRunTask(t *testing.T) {
-	t.Parallel()
-
-	toBase64 := func(from interface{}) ([]byte, error) {
-		testBytes, err := json.Marshal(from)
-		return []byte(b64.StdEncoding.EncodeToString([]byte(testBytes))), err
-	}
-
-	assignBase64strs := func(ticket *pastel.RegTicket) {
-		base64Bytes, err := toBase64(ticket.RegTicketData.ArtTicketData.AppTicketData)
-		assert.Nil(t, err)
-		ticket.RegTicketData.ArtTicketData.AppTicket = base64Bytes
-
-		base64Bytes, err = toBase64(ticket.RegTicketData.ArtTicketData)
-		assert.Nil(t, err)
-		ticket.RegTicketData.ArtTicket = base64Bytes
-	}
-
 	regTicketA := pastel.RegTicket{
 		TXID: testIDA,
 		RegTicketData: pastel.RegTicketData{
@@ -66,8 +47,13 @@ func TestRunTask(t *testing.T) {
 		},
 	}
 
-	assignBase64strs(&regTicketA)
-	assignBase64strs(&regTicketB)
+	assignBase64strs(t, &regTicketA)
+	assignBase64strs(t, &regTicketB)
+
+	nodes := pastel.MasterNodes{}
+	for i := 0; i < 10; i++ {
+		nodes = append(nodes, pastel.MasterNode{})
+	}
 
 	type args struct {
 		actTickets    pastel.ActTickets
@@ -162,16 +148,18 @@ func TestRunTask(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
 	for name, testCase := range testCases {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("testCase- %v", name), func(t *testing.T) {
-			t.Parallel()
-
 			pastelClientMock := pastelMock.NewMockClient(t)
-			p2pClientMock := p2pMock.NewMockClient(t)
 
 			pastelClientMock.ListenOnActTickets(testCase.args.actTickets, testCase.args.actTicketsErr)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
+
+			nodeClientMock := nodeMock.NewMockClient(t)
+			nodeClientMock.ListenOnConnect(nil).ListenOnRegisterArtwork().ListenOnClose(nil)
 
 			if len(testCase.args.actTickets) != len(testCase.args.regTickets) {
 				t.Fatalf("#act_tickets != # reg_tickets")
@@ -181,17 +169,14 @@ func TestRunTask(t *testing.T) {
 				pastelClientMock.ListenOnRegTicket(ticket.ActTicketData.RegTXID, testCase.args.regTickets[i], testCase.args.regTicketErr)
 			}
 
-			p2pClientMock.ListenOnRetrieve([]byte{}, nil)
 			service := &Service{
 				pastelClient: pastelClientMock.Client,
-				p2pClient:    p2pClientMock,
+				nodeClient:   nodeClientMock,
+				config:       NewConfig(),
 			}
 
 			task := NewTask(service, testCase.args.req)
 			resultChan := task.SubscribeSearchResult()
-
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
 
 			go task.Run(ctx)
 
@@ -237,7 +222,10 @@ func TestNewTask(t *testing.T) {
 		req     *ArtSearchRequest
 	}
 
-	service := &Service{}
+	service := &Service{
+		config: NewConfig(),
+	}
+
 	req := &ArtSearchRequest{}
 
 	testCases := map[string]struct {
@@ -250,9 +238,10 @@ func TestNewTask(t *testing.T) {
 				req:     req,
 			},
 			want: &Task{
-				Task:    task.New(StatusTaskStarted),
-				Service: service,
-				request: req,
+				Task:            task.New(StatusTaskStarted),
+				Service:         service,
+				request:         req,
+				thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectTimeout),
 			},
 		},
 	}

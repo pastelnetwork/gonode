@@ -127,7 +127,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
-	artworkSearch := artworksearch.NewService(pastelClient, p2p)
+	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, p2p, nodeClient)
 	// api service
 	server := api.NewServer(config.API,
 		services.NewArtwork(artworkRegister, artworkSearch),
