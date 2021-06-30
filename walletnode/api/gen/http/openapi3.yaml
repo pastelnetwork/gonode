@@ -2060,3 +2060,6 @@ components:
         - 46
       required:
       - file
+tags:
+- name: artworks
+  description: Pastel Artwork

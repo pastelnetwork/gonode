@@ -182,7 +182,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	return nil
 }
 
-// UploadImageWithThumbnail implements walletnode.RegisterArtwork.UploadImageWithThumbnail
+// UploadImage implements walletnode.RegisterArtwork.UploadImageWithThumbnail
 func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
 	ctx := stream.Context()
 
