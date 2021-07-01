@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -47,20 +49,58 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 	var file []byte
 
 	<-task.NewAction(func(ctx context.Context) error {
-		// Validate timestamp is not older then 10 minutes
-		// Get Art Registration ticket by txid
+		// Validate timestamp is not older than 10 minutes
+		now := time.Now()
+		lastTenMinutes := now.Add(time.Duration(-10) * time.Minute)
+		requestTime, _ = time.Parse(time.RFC3339, timestamp)
+		if lastTenMinutes.After(requestTime) {
+			return file, errors.New("Request time is older than 10 minutes")
+		}
 
-		if len(ttxid) == 0 {
-			// validate timestamp signature with PastelID from Trade ticket
-			// by calling command `pastelid verify timestamp-string sig PastelID passphrase`
-		} else {
+		// Get Art Registration ticket by txid
+		artRegTicket, err := task.pastelClient.GetTicket(ctx, txid)
+		if err != nil {
+			return file, err
+		}
+
+		pastelID := string(artRegTicket.Author)
+
+		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
 			// by calling command `tickets list trade available`
+			tradeTickets, err := task.ListAvailableTradeTickets(ctx, string(artRegTicket.Author))
+			if err != nil {
+				return file, err
+			}
 
 			// Validate that Trade ticket with ttxid is in the list
+			if len(tradeTickets) == 0 {
+				return file, errors.New(fmt.Sprintf("Could not get any available trade ticket of PastelID %s", string(artRegTicket.Author)))
+			}
+			isTXIDValid := false
+			for _, t := range tradeTickets {
+				if t.ArtTXID == ttxid {
+					isTXIDValid = true
+					pastelID = t.PastelID
+					break
+				}
+			}
+			if !isTXIDValid {
+				return file, errors.New(fmt.Sprintf("Not found trade ticket of transaction %s", ttxid))
+			}
 
-			// Validate timestamp signature with PastelID from Trade ticket
-			// by calling command `pastelid verify timestamp-string sig PastelID passphrase`
+			// // Validate timestamp signature with PastelID from Trade ticket
+			// // by calling command `pastelid verify timestamp-string signature PastelID`
+			// isValid, err := task.pastelClient.Verify(ctx, []byte(timestamp), signature, string(artRegTicket.Author))
+			// if err != nil {
+			// 	return file, err
+			// }
+		}
+		// Validate timestamp signature with PastelID from Trade ticket
+		// by calling command `pastelid verify timestamp-string signature PastelID`
+		isValid, err := task.pastelClient.Verify(ctx, []byte(timestamp), signature, pastelID)
+		if err != nil {
+			return file, err
 		}
 
 		// Get the list of “symbols/chunks” - rq_ids - from Art Registration ticket and request them from Kademlia

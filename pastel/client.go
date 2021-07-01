@@ -85,6 +85,24 @@ func (client *client) TicketOwnership(ctx context.Context, txID, pastelID, passp
 	return ownership.Trade, nil
 }
 
+// GetTicket implements pastel.Client.GetTicket
+func (client *client) GetTicket(ctx context.Context, txID string) (*RegisterTicket, error) {
+	registerTicket := RegisterTicket{}
+	if err := client.callFor(ctx, &registerTicket, "tickets", "get", txID); err != nil {
+		return nil, errors.Errorf("failed to get register ticket of transaction %s: %w", txID, err)
+	}
+	return &registerTicket, nil
+}
+
+// ListAvailableTradeTickets implements pastel.Client.ListAvailableTradeTickets
+func (client *client) ListAvailableTradeTickets(ctx context.Context, pastelID string) ([]TradeTicket, error) {
+	tradeTicket := []TradeTicket{}
+	if err := client.callFor(ctx, &tradeTicket, "tickets", "list", "trade", "available", pastelID); err != nil {
+		return nil, errors.Errorf("failed to get available trade tickets of Pastel ID %s: %w", pastelID, err)
+	}
+	return tradeTicket, nil
+}
+
 // Sign implements pastel.Client.Sign
 func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error) {
 	var sign struct {

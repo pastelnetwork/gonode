@@ -27,8 +27,16 @@ type Client interface {
 	IDTickets(ctx context.Context, idType IDTicketType) (IDTickets, error)
 
 	// TicketOwnership returns ownership by the given pastelID and passphrase, if successful returns owership.
-	// Command `tickets tools validateownership txid pastelid passphrase`.
+	// Command `tickets tools validateownership <txid> <pastelid> <passphrase>`.
 	TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error)
+
+	// GetTicket returns the Art Register ticket by the given transaction ID.
+	// Command `tickets get <txid>`.
+	GetTicket(ctx context.Context, txID string) (RegisterTicket, error)
+
+	// ListAvailableTradeTickets returns list available trade tickets by the given pastelID.
+	// Command `tickets list trade available <pastelID>`.
+	ListAvailableTradeTickets(ctx context.Context, pastelID string) (TradeTicket, error)
 
 	// Sign signs data by the given pastelID and passphrase, if successful returns signature.
 	// Command `pastelid sign "text" "PastelID" "passphrase"`.
