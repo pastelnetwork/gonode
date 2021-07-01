@@ -49,6 +49,36 @@ func (service *raptorQ) Encode(ctx context.Context, data []byte) ([][]byte, erro
 	return output, nil
 }
 
+func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte) (*node.EncodeInfo, error) {
+	if data == nil {
+		return nil, errors.Errorf("invalid data")
+	}
+
+	ctx = service.contextWithLogPrefix(ctx)
+
+	req := pb.UploadDataRequest{
+		Data: data,
+	}
+
+	res, err := service.client.EncoderInfo(ctx, &req)
+	if err != nil {
+		return nil, errors.Errorf("failed to send request: %w", err)
+	}
+
+	output := &node.EncodeInfo{
+		SymbolIds: res.Name,
+		EncoderParam: node.EncoderParameters{
+			TransferLength:  res.EncoderParams.TransferLength,
+			SymbolSize:      res.EncoderParams.SymbolSize,
+			NumSourceBlocks: res.EncoderParams.NumSourceBlocks,
+			NumSubBlocks:    res.EncoderParams.NumSubBlocks,
+			SymbolAlignment: res.EncoderParams.SymbolAlignment,
+		},
+	}
+
+	return output, nil
+}
+
 func (service *raptorQ) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
