@@ -3,10 +3,14 @@ package artworkregister
 import (
 	"context"
 	"fmt"
+	"image"
 	"io"
 	"sync"
 
 	"github.com/DataDog/zstd"
+	"github.com/disintegration/imaging"
+	"github.com/kolesa-team/go-webp/encoder"
+	"github.com/kolesa-team/go-webp/webp"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -22,7 +26,9 @@ type Task struct {
 
 	ResampledArtwork *artwork.File
 	Artwork          *artwork.File
-	Thumbnail        *artwork.File
+	PreviewThumbnail *artwork.File
+	MediumThumbnail  *artwork.File
+	SmallThumbnail   *artwork.File
 
 	acceptedMu sync.Mutex
 	accpeted   Nodes
@@ -201,37 +207,83 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 // UploadImageWithThumbnail uploads the image that contained image with pqsignature
 // generate the image thumbnail from the coordinate provided for user and return
 // the hash for the genreated thumbnail
-func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File, thumbnail artwork.ThumbnailCoordinate) ([]byte, error) {
-	if err := task.RequiredStatus(StatusImageProbed); err != nil {
-		return nil, errors.Errorf("require status %s not satisfied", StatusImageProbed)
+func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File, coordinate artwork.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
+	var err error
+	if err = task.RequiredStatus(StatusImageProbed); err != nil {
+		return nil, nil, nil, errors.Errorf("require status %s not satisfied", StatusImageProbed)
 	}
 
-	thumbnailHash := make([]byte, 0)
+	previewThumbnailHash := make([]byte, 0)
+	mediumThumbnailHash := make([]byte, 0)
+	smallThumbnailHash := make([]byte, 0)
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageAndThumbnailCoordinateUploaded)
 
-		thumbnailFile, err := file.Thumbnail(thumbnail)
-		if err != nil {
-			return errors.Errorf("failed to generate thumbnail %w", err)
-		}
-
 		task.Artwork = file
-		task.Thumbnail = thumbnailFile
-		hash := sha3.New256()
 
-		f, err := task.Thumbnail.Open()
+		previewThumbnailHash, err = task.hashThumbnail(previewThumbnail, nil)
 		if err != nil {
-			return errors.Errorf("failed to open thumbnail file for hashing %w", err).WithField("FileName", task.Thumbnail.Name())
-		}
-		if _, err := io.Copy(hash, f); err != nil {
-			return errors.Errorf("failed to hash thumbnail file %w", err).WithField("FileName", task.Thumbnail.Name())
+			return errors.Errorf("hash preview thumbnail failed %w", err)
 		}
 
-		thumbnailHash = hash.Sum(nil)
+		rect := image.Rect(int(coordinate.TopLeftX), int(coordinate.TopLeftY), int(coordinate.BottomRightX), int(coordinate.BottomRightY))
+		mediumThumbnailHash, err = task.hashThumbnail(mediumThumbnail, &rect)
+		if err != nil {
+			return errors.Errorf("hash medium thumbnail failed %w", err)
+		}
+
+		smallThumbnailHash, err = task.hashThumbnail(smallThumbnail, &rect)
+		if err != nil {
+			return errors.Errorf("hash small thumbnail failed %w", err)
+		}
 		return nil
 	})
 
-	return thumbnailHash, nil
+	return previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, nil
+}
+
+func (task *Task) hashThumbnail(thumbnail thumbnailType, rect *image.Rectangle) ([]byte, error) {
+	f := task.Storage.NewFile()
+	if f == nil {
+		return nil, errors.Errorf("failed to create thumbnail file")
+	}
+
+	previewFile, err := f.Create()
+	if err != nil {
+		return nil, errors.Errorf("failed to create file %s %w", f.Name(), err)
+	}
+	defer previewFile.Close()
+
+	srcImg, err := task.Artwork.LoadImage()
+	if err != nil {
+		return nil, errors.Errorf("failed to load image from artwork %s %w", task.Artwork.Name(), err)
+	}
+
+	var thumbnailImg image.Image
+	if rect != nil {
+		thumbnailImg = imaging.Crop(srcImg, *rect)
+	} else {
+		thumbnailImg = srcImg
+	}
+
+	log.Debugf("Encode with target size %d and quality %f", thumbnails[thumbnail].targetSize, thumbnails[thumbnail].quality)
+	encoderOptions, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, thumbnails[thumbnail].quality)
+	encoderOptions.TargetSize = thumbnails[thumbnail].targetSize
+	if err != nil {
+		return nil, errors.Errorf("failed to create lossless encoder option %w", err)
+	}
+	if err := webp.Encode(previewFile, thumbnailImg, encoderOptions); err != nil {
+		return nil, errors.Errorf("failed to encode to webp format %w", err)
+	}
+	log.Debugf("preview thumbnail %s", f.Name())
+
+	previewFile.Seek(0, io.SeekStart)
+	hasher := sha3.New256()
+	if _, err := io.Copy(hasher, previewFile); err != nil {
+		return nil, errors.Errorf("hash failed %w", err)
+	}
+
+	return hasher.Sum(nil), nil
 }
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {

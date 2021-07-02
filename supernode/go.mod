@@ -4,6 +4,8 @@ go 1.16
 
 require (
 	github.com/DataDog/zstd v1.4.8
+	github.com/disintegration/imaging v1.6.2
+	github.com/kolesa-team/go-webp v1.0.0
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/metadb v0.0.0
 	github.com/pastelnetwork/gonode/p2p v0.0.0

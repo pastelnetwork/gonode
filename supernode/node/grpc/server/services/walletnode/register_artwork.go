@@ -287,18 +287,19 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		return err
 	}
 
-	thumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
+	previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
 	if err != nil {
 		return err
 	}
-	if thumbnailHash == nil {
-		return errors.New("could not compute thumbnailHash data")
-	}
 
 	resp := &pb.UploadImageReply{
-		ThumbnailHash: thumbnailHash[:],
+		PreviewThumbnailHash: previewThumbnailHash[:],
+		MediumThumbnailHash:  mediumThumbnailHash[:],
+		SmallThumbnailHash:   smallThumbnailHash[:],
 	}
-	log.WithContext(ctx).Debugf("hash: %x\n", thumbnailHash)
+	log.WithContext(ctx).Debugf("preview thumbnail hash: %x\n", previewThumbnailHash)
+	log.WithContext(ctx).Debugf("medium thumbnail hash: %x\n", mediumThumbnailHash)
+	log.WithContext(ctx).Debugf("small thumbnail hash: %x\n", smallThumbnailHash)
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("failed to send UploadImageAndThumbnail response: %w", err)
 	}

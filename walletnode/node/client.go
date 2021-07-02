@@ -38,6 +38,6 @@ type RegisterArtwork interface {
 	ConnectTo(ctx context.Context, nodeKey, sessID string) error
 	// ProbeImage uploads image to supernode.
 	ProbeImage(ctx context.Context, image *artwork.File) (fingerprintData []byte, err error)
-	// UploadImage uploads the image with pqsignature and its thumbnail to supernodes
-	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (thumbnailHash []byte, err error)
+	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
+	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (previewHash []byte, mediumThumbnailHash []byte, smallThumbnailHash []byte, err error)
 }
