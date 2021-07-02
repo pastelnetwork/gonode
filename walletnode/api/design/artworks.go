@@ -624,6 +624,7 @@ var ArtworkDetail = Type("ArtworkDetail", func() {
 	Required("is_green", "royalty", "seen_score", "rareness_score", "nsfw_score")
 })
 
+// ThumbnailCoordinate is the cordinate of the cropped region selectd by user
 var ThumbnailCoordinate = ResultType("ThumbnailCoordinate", func() {
 	Description("Coordinate of the thumbnail")
 	Attribute("top_left_x", Int64, func() {
