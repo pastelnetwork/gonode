@@ -24,7 +24,7 @@ type Connection interface {
 	// RegisterArtwork returns a new RegisterArtwork stream.
 	RegisterArtwork() RegisterArtwork
 	// DownloadArtwork returns a new DownloadArtwork stream.
-	DownloadArtwork() DownloadArtwork
+	// DownloadArtwork() DownloadArtwork
 }
 
 // RegisterArtwork represents an interaction stream with supernodes for registering artwork.
@@ -35,10 +35,10 @@ type RegisterArtwork interface {
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 }
 
-// DownloadArtwork represents an interaction stream with supernodes for downloading artwork.
-type DownloadArtwork interface {
-	// SessID returns the taskID received from the server during the handshake.
-	SessID() (taskID string)
-	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
-	Session(ctx context.Context, nodeID, sessID string) (err error)
-}
+// // DownloadArtwork represents an interaction stream with supernodes for downloading artwork.
+// type DownloadArtwork interface {
+// 	// SessID returns the taskID received from the server during the handshake.
+// 	SessID() (taskID string)
+// 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
+// 	Session(ctx context.Context, nodeID, sessID string) (err error)
+// }

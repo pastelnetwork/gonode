@@ -3,7 +3,7 @@ package walletnode
 import (
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
-	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"google.golang.org/grpc"
 )
 
@@ -15,7 +15,7 @@ type DownloadArtwork struct {
 }
 
 // Download downloads artwork by given txid, timestamp and signature.
-func (service *DownloadArtwork) Download(m *DownloadRequest, stream DownloadArtwork_DownloadServer) error {
+func (service *DownloadArtwork) Download(m *pb.DownloadRequest, stream pb.DownloadArtwork_DownloadServer) error {
 	// Create new task
 
 	// Call task download
@@ -31,7 +31,7 @@ func (service *DownloadArtwork) Desc() *grpc.ServiceDesc {
 }
 
 // NewDownloadArtwork returns a new DownloadArtwork instance.
-func NewDownloadArtwork(service *artworkregister.Service) *DownloadArtwork {
+func NewDownloadArtwork(service *artworkdownload.Service) *DownloadArtwork {
 	return &DownloadArtwork{
 		DownloadArtwork: common.NewDownloadArtwork(service),
 	}
