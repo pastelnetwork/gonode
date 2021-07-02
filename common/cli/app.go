@@ -29,7 +29,7 @@ func (app *App) AddFlags(flags ...*Flag) {
 	}
 }
 
-// SetBeforeFunc sets the Before fucntion for the cli.App
+// SetBeforeFunc sets the Before function for the cli.App
 // An action to execute before any subcommands are run, but after the context is ready.
 func (app *App) SetBeforeFunc(beforeFn func() error) {
 	app.Before = func(c *cli.Context) error {
