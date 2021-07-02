@@ -26,6 +26,7 @@ type Task struct {
 
 	ResampledArtwork *artwork.File
 	Artwork          *artwork.File
+
 	PreviewThumbnail *artwork.File
 	MediumThumbnail  *artwork.File
 	SmallThumbnail   *artwork.File
@@ -223,7 +224,7 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 
 		previewThumbnailHash, err = task.hashThumbnail(previewThumbnail, nil)
 		if err != nil {
-			return errors.Errorf("hash preview thumbnail failed %w", err)
+			return errors.Errorf("failed to generate thumbnail %w", err)
 		}
 
 		rect := image.Rect(int(coordinate.TopLeftX), int(coordinate.TopLeftY), int(coordinate.BottomRightX), int(coordinate.BottomRightY))
