@@ -67,6 +67,7 @@ commands:
             equal: [ "linux/amd64,", << parameters.targets >>  ]
           steps:
           - install_libwebp
+      - install_libwebp
       - xgo-build:
           sourcesContainerName: "sourcesContainer"
           buildContainerName: << parameters.buildContainerName >>
