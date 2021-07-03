@@ -199,6 +199,7 @@ commands:
             ./configure --enable-everything
             make
             sudo make install
+            sudo /sbin/ldconfig -v
 
 jobs:
   prepare_workspace:
