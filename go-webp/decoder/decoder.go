@@ -22,7 +22,7 @@
 package decoder
 
 /*
-#cgo LDFLAGS: -L${SRCDIR}/../C/lib -lwebp
+#cgo LDFLAGS: -L${SRCDIR}/../C/lib -lwebp -lm
 #cgo CFLAGS: -I${SRCDIR}/../C/include
 #include <stdlib.h>
 #include <webp/decode.h>

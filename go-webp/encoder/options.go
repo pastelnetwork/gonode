@@ -22,7 +22,7 @@
 package encoder
 
 /*
-#cgo LDFLAGS: -L${SRCDIR}/../C/lib -lwebp
+#cgo LDFLAGS: -L${SRCDIR}/../C/lib -lwebp -lm
 #cgo CFLAGS: -I${SRCDIR}/../C/include
 #include <webp/encode.h>
 */
