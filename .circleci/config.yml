@@ -61,6 +61,12 @@ commands:
       binaryName:
         type: string
     steps:
+      - run: echo << parameters.targets >>
+      - when:
+          condition:  
+            equal: [ "linux/amd64,", << parameters.targets >>  ]
+          steps:
+          - install_libwebp
       - xgo-build:
           sourcesContainerName: "sourcesContainer"
           buildContainerName: << parameters.buildContainerName >>
@@ -189,6 +195,8 @@ commands:
             wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
             sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
             sudo /sbin/ldconfig -v
+  install_libwebp:
+    steps:
       - run:
           name: Install libwebp
           command: |
