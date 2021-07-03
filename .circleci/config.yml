@@ -341,6 +341,7 @@ jobs:
       - attach_workspace:
           at: .
       - install_tensorflow
+      - install_libwebp
       - test:
           package: "supernode"
 
