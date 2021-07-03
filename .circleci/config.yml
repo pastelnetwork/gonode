@@ -149,6 +149,15 @@ commands:
       - run:
           name: "<< parameters.moduleSubDir >> << parameters.package >>: xgo build for << parameters.targets >>"
           command: |
+            sudo apt-get install libjpeg-dev libpng-dev libtiff-dev libgif-dev
+            wget https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.2.0.tar.gz
+            tar -xvf libwebp-1.2.0.tar.gz
+            cd libwebp-1.2.0
+            ./configure --enable-everything
+            make
+            sudo make install
+            sudo /sbin/ldconfig -v
+
             GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
 
             mkdir -p << parameters.outputDirectory >>
