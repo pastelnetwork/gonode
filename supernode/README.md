@@ -8,13 +8,13 @@
 1. Build SuperNode app:
     1. Install libtensorflow
         - For Linux:
-            - For lastest CPU (supports avx/avx2 instructions)
+            - For new CPUs which supports avx/avx2 instructions
                 ``` shell
                 wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
                 sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
                 sudo /sbin/ldconfig -v
                 ```
-            - For old CPU - have to build libtensor by yourself:
+            - For older CPU, have to build libtensorflow by yourself:
                 ``` shell
                 # Install bazel
                 wget https://github.com/bazelbuild/bazel/releases/download/3.1.0/bazel-3.1.0-installer-linux-x86_64.sh
