@@ -125,9 +125,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// api service
 	server := api.NewServer(config.API,
-		services.NewArtwork(artworkRegister, artworkDownload),
+		services.NewArtwork(artworkRegister,
+			artworkDownload,
+		),
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, server, artworkRegister)
+	return runServices(ctx, server, artworkRegister, artworkDownload)
 }
