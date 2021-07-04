@@ -35,8 +35,8 @@ type Client interface {
 	Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error)
 
 	// Do an transaction by the given address to sent to and ammount to send, if successful return id of transaction.
-	// Command `sendtoaddress  "pastelId" "amount"`.
-	SendToAddress(ctx context.Context, pastelId string, amount int64) (txId TxIdType, error error)
+	// Command `sendtoaddress  "pastelID" "amount"`.
+	SendToAddress(ctx context.Context, pastelID string, amount int64) (txID TxIDType, error error)
 
 	// ActTickets returns activated art tickets.
 	// Command `tickets list act`.

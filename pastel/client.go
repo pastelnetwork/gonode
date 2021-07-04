@@ -103,15 +103,15 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 }
 
 // StorageFee implements pastel.Client.StorageFee
-func (client *client) SendToAddress(ctx context.Context, pastelId string, amount int64) (txId TxIdType, error error) {
-	var transactionId struct {
-		TransactionId TxIdType `json:"transactionid"`
+func (client *client) SendToAddress(ctx context.Context, pastelID string, amount int64) (txID TxIDType, error error) {
+	var transactionID struct {
+		TransactionID TxIDType `json:"transactionid"`
 	}
 
-	if err := client.callFor(ctx, &transactionId, "sendtoaddress", pastelId, fmt.Sprint(amount)); err != nil {
+	if err := client.callFor(ctx, &transactionID, "sendtoaddress", pastelID, fmt.Sprint(amount)); err != nil {
 		return "", errors.Errorf("failed to send to address: %w", err)
 	}
-	return transactionId.TransactionId, nil
+	return transactionID.TransactionID, nil
 }
 
 // ActTickets implements pastel.Client.ActTickets
