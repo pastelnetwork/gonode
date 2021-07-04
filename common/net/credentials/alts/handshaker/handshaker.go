@@ -126,7 +126,7 @@ type altsHandshaker struct {
 }
 
 // NewClientHandshaker creates a ALTS handshaker
-func NewClientHandshaker(ctx context.Context, conn net.Conn, opts *ClientHandshakerOptions) (alts.Handshaker, error) {
+func NewClientHandshaker(_ context.Context, conn net.Conn, opts *ClientHandshakerOptions) (alts.Handshaker, error) {
 	return &altsHandshaker{
 		protocol:   rekeyRecordProtocol,
 		conn:       conn,
@@ -136,7 +136,7 @@ func NewClientHandshaker(ctx context.Context, conn net.Conn, opts *ClientHandsha
 }
 
 // NewServerHandshaker creates a ALTS handshaker
-func NewServerHandshaker(ctx context.Context, conn net.Conn, opts *ServerHandshakerOptions) (alts.Handshaker, error) {
+func NewServerHandshaker(_ context.Context, conn net.Conn, opts *ServerHandshakerOptions) (alts.Handshaker, error) {
 	return &altsHandshaker{
 		protocol:   rekeyRecordProtocol,
 		conn:       conn,
@@ -228,7 +228,7 @@ func (s *altsHandshaker) doClientHandshake() error {
 
 // ClientHandshake starts and completes a client ALTS handshaking. Once
 // done, ClientHandshake returns a secure connection.
-func (s *altsHandshaker) ClientHandshake(ctx context.Context) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ClientHandshake(_ context.Context) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -291,7 +291,7 @@ func (s *altsHandshaker) doServerHandshake() error {
 
 // ServerHandshake starts and completes a server ALTS handshaking for GCP. Once
 // done, ServerHandshake returns a secure connection.
-func (s *altsHandshaker) ServerHandshake(ctx context.Context) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ServerHandshake(_ context.Context) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
