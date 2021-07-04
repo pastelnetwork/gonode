@@ -28,6 +28,10 @@ type RegisterArtworkClient interface {
 	ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error)
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
+	// SendArtTicket sends a signed art-ticket to the supernode.
+	SendSignedArtTicket(ctx context.Context, in *SendSignedArtTicketRequest, opts ...grpc.CallOption) (*SendSignedArtTicketReply, error)
+	// SendPreBurntTxFeeId sends tx_id of 10% burnt transaction fee to the supernode.
+	SendPreBurntTxFeeId(ctx context.Context, in *SendPreBurntTxFeeIdRequest, opts ...grpc.CallOption) (*SendPreBurntTxFeeIdReply, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
 	// Upload the image after pq signature is appended along with its thumbnail coordinates
@@ -125,6 +129,24 @@ func (x *registerArtworkProbeImageClient) CloseAndRecv() (*ProbeImageReply, erro
 	return m, nil
 }
 
+func (c *registerArtworkClient) SendSignedArtTicket(ctx context.Context, in *SendSignedArtTicketRequest, opts ...grpc.CallOption) (*SendSignedArtTicketReply, error) {
+	out := new(SendSignedArtTicketReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendSignedArtTicket", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registerArtworkClient) SendPreBurntTxFeeId(ctx context.Context, in *SendPreBurntTxFeeIdRequest, opts ...grpc.CallOption) (*SendPreBurntTxFeeIdReply, error) {
+	out := new(SendPreBurntTxFeeIdReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendPreBurntTxFeeId", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *registerArtworkClient) SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error) {
 	out := new(SendTicketReply)
 	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendTicket", in, out, opts...)
@@ -182,6 +204,10 @@ type RegisterArtworkServer interface {
 	ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error)
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
 	ProbeImage(RegisterArtwork_ProbeImageServer) error
+	// SendArtTicket sends a signed art-ticket to the supernode.
+	SendSignedArtTicket(context.Context, *SendSignedArtTicketRequest) (*SendSignedArtTicketReply, error)
+	// SendPreBurntTxFeeId sends tx_id of 10% burnt transaction fee to the supernode.
+	SendPreBurntTxFeeId(context.Context, *SendPreBurntTxFeeIdRequest) (*SendPreBurntTxFeeIdReply, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
 	// Upload the image after pq signature is appended along with its thumbnail coordinates
@@ -204,6 +230,12 @@ func (UnimplementedRegisterArtworkServer) ConnectTo(context.Context, *ConnectToR
 }
 func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageServer) error {
 	return status.Errorf(codes.Unimplemented, "method ProbeImage not implemented")
+}
+func (UnimplementedRegisterArtworkServer) SendSignedArtTicket(context.Context, *SendSignedArtTicketRequest) (*SendSignedArtTicketReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendSignedArtTicket not implemented")
+}
+func (UnimplementedRegisterArtworkServer) SendPreBurntTxFeeId(context.Context, *SendPreBurntTxFeeIdRequest) (*SendPreBurntTxFeeIdReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendPreBurntTxFeeId not implemented")
 }
 func (UnimplementedRegisterArtworkServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
@@ -312,6 +344,42 @@ func (x *registerArtworkProbeImageServer) Recv() (*ProbeImageRequest, error) {
 	return m, nil
 }
 
+func _RegisterArtwork_SendSignedArtTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendSignedArtTicketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).SendSignedArtTicket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterArtwork/SendSignedArtTicket",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).SendSignedArtTicket(ctx, req.(*SendSignedArtTicketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegisterArtwork_SendPreBurntTxFeeId_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendPreBurntTxFeeIdRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).SendPreBurntTxFeeId(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterArtwork/SendPreBurntTxFeeId",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).SendPreBurntTxFeeId(ctx, req.(*SendPreBurntTxFeeIdRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RegisterArtwork_SendTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendTicketRequest)
 	if err := dec(in); err != nil {
@@ -370,6 +438,14 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConnectTo",
 			Handler:    _RegisterArtwork_ConnectTo_Handler,
+		},
+		{
+			MethodName: "SendSignedArtTicket",
+			Handler:    _RegisterArtwork_SendSignedArtTicket_Handler,
+		},
+		{
+			MethodName: "SendPreBurntTxFeeId",
+			Handler:    _RegisterArtwork_SendPreBurntTxFeeId_Handler,
 		},
 		{
 			MethodName: "SendTicket",

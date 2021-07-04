@@ -3,6 +3,7 @@ package pastel
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -101,6 +102,18 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 	return verify.Verification, nil
 }
 
+// StorageFee implements pastel.Client.StorageFee
+func (client *client) SendToAddress(ctx context.Context, pastelID string, amount int64) (txID TxIDType, error error) {
+	var transactionID struct {
+		TransactionID TxIDType `json:"transactionid"`
+	}
+
+	if err := client.callFor(ctx, &transactionID, "sendtoaddress", pastelID, fmt.Sprint(amount)); err != nil {
+		return "", errors.Errorf("failed to send to address: %w", err)
+	}
+	return transactionID.TransactionID, nil
+}
+
 // ActTickets implements pastel.Client.ActTickets
 func (client *client) ActTickets(ctx context.Context, actType ActTicketType, minHeight int) (ActTickets, error) {
 	tickets := ActTickets{}
@@ -121,6 +134,19 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	}
 
 	return ticket, nil
+}
+
+func (client *client) GetBlockCount(ctx context.Context) (int64, error) {
+	res, err := client.CallWithContext(ctx, "getblockcount", "")
+	if err != nil {
+		return 0, errors.Errorf("failed to call getblockcount: %w", err)
+	}
+
+	if res.Error != nil {
+		return 0, errors.Errorf("failed to get block count: %w", err)
+	}
+
+	return res.GetInt()
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {

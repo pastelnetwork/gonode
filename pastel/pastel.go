@@ -33,10 +33,20 @@ type Client interface {
 	// Verify verifies signed data by the given its signature and pastelID, if successful returns true.
 	// Command `pastelid verify "text" "signature" "PastelID"`.
 	Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error)
+
+	// Do an transaction by the given address to sent to and ammount to send, if successful return id of transaction.
+	// Command `sendtoaddress  "pastelID" "amount"`.
+	SendToAddress(ctx context.Context, pastelID string, amount int64) (txID TxIDType, error error)
+
 	// ActTickets returns activated art tickets.
 	// Command `tickets list act`.
 	ActTickets(ctx context.Context, actType ActTicketType, minHeight int) (ActTickets, error)
+
 	// ActTickets returns art registration tickets.
 	// Command `tickets get <txid>`.
 	RegTicket(ctx context.Context, regTxid string) (RegTicket, error)
+
+	// GetBlockCount returns the number of blocks in the best valid block chain
+	// Command `getblockcount `
+	GetBlockCount(ctx context.Context) (int64, error)
 }

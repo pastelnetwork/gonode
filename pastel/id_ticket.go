@@ -1,5 +1,8 @@
 package pastel
 
+// TxIDType represents a type of transaction id
+type TxIDType string
+
 // IDTicketType represents a type of the id ticket.
 type IDTicketType string
 
