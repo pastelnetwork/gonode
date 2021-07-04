@@ -182,7 +182,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	return nil
 }
 
-// UploadImageWithThumbnail implements walletnode.RegisterArtwork.UploadImageWithThumbnail
+// UploadImage implements walletnode.RegisterArtwork.UploadImageWithThumbnail
 func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
 	ctx := stream.Context()
 
@@ -274,7 +274,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 			return errors.Errorf("hash file failed %w", err)
 		}
 		hashFromPayload := hasher.Sum(nil)
-		if bytes.Compare(hashFromPayload, hash) != 0 {
+		if !bytes.Equal(hashFromPayload, hash) {
 			log.WithField("Filename", imageFile.Name()).Debugf("caculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
 			log.WithField("Filename", imageFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
 			return errors.Errorf("wrong hash")
@@ -287,18 +287,20 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		return err
 	}
 
-	thumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
+	previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
 	if err != nil {
 		return err
 	}
-	if thumbnailHash == nil {
-		return errors.New("could not compute thumbnailHash data")
-	}
 
 	resp := &pb.UploadImageReply{
-		ThumbnailHash: thumbnailHash[:],
+		PreviewThumbnailHash: previewThumbnailHash[:],
+		MediumThumbnailHash:  mediumThumbnailHash[:],
+		SmallThumbnailHash:   smallThumbnailHash[:],
 	}
-	log.WithContext(ctx).Debugf("hash: %x\n", thumbnailHash)
+	log.WithContext(ctx).Debugf("preview thumbnail hash: %x\n", previewThumbnailHash)
+	log.WithContext(ctx).Debugf("medium thumbnail hash: %x\n", mediumThumbnailHash)
+	log.WithContext(ctx).Debugf("small thumbnail hash: %x\n", smallThumbnailHash)
+
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("failed to send UploadImageAndThumbnail response: %w", err)
 	}

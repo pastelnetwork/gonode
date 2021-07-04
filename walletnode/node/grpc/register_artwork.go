@@ -160,20 +160,20 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
-func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) ([]byte, error) {
+func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	log.WithContext(ctx).Debug("Start upload image and thumbnail to node")
 	stream, err := service.client.UploadImage(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to open stream: %w", err)
+		return nil, nil, nil, errors.Errorf("failed to open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, errors.Errorf("failed to open file %q: %w", file.Name(), err)
+		return nil, nil, nil, errors.Errorf("failed to open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -188,7 +188,7 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 			lastPiece = true
 			break
 		} else if err != nil {
-			return nil, errors.Errorf("read file faile %w", err)
+			return nil, nil, nil, errors.Errorf("read file faile %w", err)
 		}
 
 		req := &pb.UploadImageRequest{
@@ -198,19 +198,19 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 		}
 
 		if err := stream.Send(req); err != nil {
-			return nil, errors.Errorf("failed to send image data: %w", err).WithField("ReqID", service.conn.id)
+			return nil, nil, nil, errors.Errorf("failed to send image data: %w", err).WithField("ReqID", service.conn.id)
 		}
 	}
 
 	log.WithContext(ctx).Debugf("Encoded Image Size :%d\n", payloadSize)
 	if !lastPiece {
-		return nil, errors.Errorf("failed to read all image data")
+		return nil, nil, nil, errors.Errorf("failed to read all image data")
 	}
 
 	file.Seek(0, io.SeekStart)
 	hasher := sha3.New256()
 	if _, err := io.Copy(hasher, file); err != nil {
-		return nil, errors.Errorf("failed to compute artwork hash %w", err)
+		return nil, nil, nil, errors.Errorf("failed to compute artwork hash %w", err)
 	}
 	hash := hasher.Sum(nil)
 	log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("hash: %s", base64.URLEncoding.EncodeToString(hash))
@@ -232,16 +232,18 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	}
 
 	if err := stream.Send(thumnailReq); err != nil {
-		return nil, errors.Errorf("failed to send image thumbnail: %w", err).WithField("ReqID", service.conn.id)
+		return nil, nil, nil, errors.Errorf("failed to send image thumbnail: %w", err).WithField("ReqID", service.conn.id)
 	}
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, errors.Errorf("failed to receive upload image response: %w", err)
+		return nil, nil, nil, errors.Errorf("failed to receive upload image response: %w", err)
 	}
-	log.WithContext(ctx).Debugf("hash: %x", resp.ThumbnailHash)
+	log.WithContext(ctx).Debugf("preview medium hash: %x", resp.PreviewThumbnailHash)
+	log.WithContext(ctx).Debugf("medium thumbnail hash: %x", resp.MediumThumbnailHash)
+	log.WithContext(ctx).Debugf("small thumbnail hash: %x", resp.SmallThumbnailHash)
 
-	return resp.ThumbnailHash, nil
+	return resp.PreviewThumbnailHash, resp.MediumThumbnailHash, resp.SmallThumbnailHash, nil
 }
 
 func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {

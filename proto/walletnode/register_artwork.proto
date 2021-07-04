@@ -113,5 +113,7 @@ message UploadImageRequest {
 }
 
 message UploadImageReply {
-   bytes thumbnail_hash = 1;
+   bytes preview_thumbnail_hash = 1;
+   bytes medium_thumbnail_hash = 2;
+   bytes small_thumbnail_hash = 3;
 }
