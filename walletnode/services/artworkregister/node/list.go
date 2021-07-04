@@ -94,7 +94,7 @@ func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.F
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			node.thumnailHash, err = node.UploadImageWithThumbnail(ctx, file, thumbnail)
+			node.previewHash, node.mediumThumbnailHash, node.smallThumbnailHash, err = node.UploadImageWithThumbnail(ctx, file, thumbnail)
 			return err
 		})
 	}
@@ -105,8 +105,14 @@ func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.F
 func (nodes List) MatchThumbnailHashes() error {
 	node := nodes[0]
 	for i := 1; i < len(nodes); i++ {
-		if !bytes.Equal(node.thumnailHash, nodes[i].thumnailHash) {
-			return errors.Errorf("thumbnail hash of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		if !bytes.Equal(node.previewHash, nodes[i].previewHash) {
+			return errors.Errorf("hash of preview thumbnail of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+		if !bytes.Equal(node.mediumThumbnailHash, nodes[i].mediumThumbnailHash) {
+			return errors.Errorf("hash of medium thumbnail of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+		if !bytes.Equal(node.smallThumbnailHash, nodes[i].smallThumbnailHash) {
+			return errors.Errorf("hash of small thumbnail of nodes %q and %q didn't match", node.String(), nodes[i].String())
 		}
 	}
 	return nil
