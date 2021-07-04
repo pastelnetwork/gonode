@@ -45,12 +45,12 @@ type altsTC struct {
 }
 
 // NewClientCreds constructs a client-side ALTS TransportCredentials object.
-func NewClientCreds(opts *ClientOptions) credentials.TransportCredentials {
+func NewClientCreds(_ *ClientOptions) credentials.TransportCredentials {
 	return newALTS(alts.ClientSide)
 }
 
 // NewServerCreds constructs a server-side ALTS TransportCredentials object.
-func NewServerCreds(opts *ServerOptions) credentials.TransportCredentials {
+func NewServerCreds(_ *ServerOptions) credentials.TransportCredentials {
 	return newALTS(alts.ServerSide)
 }
 
@@ -65,7 +65,7 @@ func newALTS(side alts.Side) credentials.TransportCredentials {
 }
 
 // ClientHandshake implements the client side handshake protocol.
-func (g *altsTC) ClientHandshake(ctx context.Context, addr string, rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
+func (g *altsTC) ClientHandshake(ctx context.Context, _ string, rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
 	opts := handshaker.DefaultClientHandshakerOptions()
 	chs, err := handshaker.NewClientHandshaker(ctx, rawConn, opts)
 	if err != nil {
