@@ -4,22 +4,21 @@ go 1.16
 
 require (
 	github.com/anacrolix/sync v0.3.0 // indirect
-	github.com/bradfitz/slice v0.0.0-20180809154707-2b758aa73013 // indirect
 	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
 	github.com/go-errors/errors v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6 // indirect
+	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/pastelnetwork/gonode/common v0.0.0
-	github.com/pastelnetwork/gonode/p2p v0.0.0-20210615205941-9aa3fc8e6fee // indirect
+	github.com/pastelnetwork/gonode/p2p v0.0.0-20210615205941-9aa3fc8e6fee
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
-	github.com/sahilm/fuzzy v0.1.0 // indirect
+	github.com/sahilm/fuzzy v0.1.0
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
-	go4.org v0.0.0-20201209231011-d4a079459e60 // indirect
 	goa.design/goa/v3 v3.3.1
 	goa.design/plugins/v3 v3.3.1
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
@@ -34,7 +33,7 @@ require (
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
+	github.com/pastelnetwork/gonode/p2p => ../p2p
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto
-	github.com/pastelnetwork/gonode/p2p => ../p2p
 )
