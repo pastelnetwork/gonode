@@ -109,14 +109,14 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 			if err != nil {
 				return err
 			}
-			// Validate that the hash of each “symbol/chunk” matches its id
+			// Validate that the hash of each "symbol/chunk" matches its id
 			h := sha3.Sum256(data)
 			if string(h[:]) != id {
 				return errors.New("Mismatch symbol id")
 			}
 		}
 
-		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_coti" and “rq_ssoti”)
+		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_coti and rq_ssoti)
 
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
 		return nil
