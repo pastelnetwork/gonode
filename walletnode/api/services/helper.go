@@ -5,6 +5,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 )
 
@@ -47,6 +48,26 @@ func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 
 	for _, status := range statuses {
 		states = append(states, &artworks.TaskState{
+			Date:   status.CreatedAt.Format(time.RFC3339),
+			Status: status.String(),
+		})
+	}
+	return states
+}
+
+func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Ticket {
+	return &artworkdownload.Ticket{
+		Txid:               payload.Txid,
+		PastelID:           payload.Pid,
+		PastelIDPassphrase: payload.Key,
+	}
+}
+
+func toArtworkDownloadStates(statuses []*state.Status) []*artworks.ArtDownloadTaskState {
+	var states []*artworks.ArtDownloadTaskState
+
+	for _, status := range statuses {
+		states = append(states, &artworks.ArtDownloadTaskState{
 			Date:   status.CreatedAt.Format(time.RFC3339),
 			Status: status.String(),
 		})

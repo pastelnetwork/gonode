@@ -141,9 +141,15 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 }
 
 // Download registered artwork.
-func (service *Artwork) Download(_ context.Context, p *artworks.DownloadPayload) (res *artworks.DownloadResult, err error) {
-	// taskID := service.download.AddTask()
-	return
+func (service *Artwork) Download(ctx context.Context, p *artworks.DownloadPayload) (res *artworks.DownloadResult, err error) {
+	log.WithContext(ctx).Info("Start downloading")
+	ticket := fromDownloadPayload(p)
+	taskID := service.download.AddTask(ticket)
+	res = &artworks.DownloadResult{
+		TaskID: taskID,
+	}
+	log.WithContext(ctx).Info("Started download task")
+	return res, nil
 }
 
 // APIKeyAuth implements the authorization logic for the APIKey security scheme.
@@ -151,19 +157,64 @@ func (service *Artwork) APIKeyAuth(ctx_ context.Context, key string, schema *sec
 	return ctx_, nil
 }
 
-// Streams the state of the download process.
+// DownloadTaskState streams the state of the download process.
 func (service *Artwork) DownloadTaskState(ctx context.Context, p *artworks.DownloadTaskStatePayload, stream artworks.DownloadTaskStateServerStream) (err error) {
-	return nil
+	defer stream.Close()
+
+	task := service.download.Task(p.TaskID)
+	if task == nil {
+		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+	}
+
+	sub := task.SubscribeStatus()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case status := <-sub():
+			if status.IsFinal() {
+				return nil
+			}
+			res := &artworks.ArtDownloadTaskState{
+				Date:   status.CreatedAt.Format(time.RFC3339),
+				Status: status.String(),
+			}
+			if err := stream.Send(res); err != nil {
+				return artworks.MakeInternalServerError(err)
+			}
+
+		}
+	}
 }
 
-// Returns a single task.
+// DowloadTask returns a single task.
 func (service *Artwork) DowloadTask(ctx context.Context, p *artworks.DowloadTaskPayload) (res *artworks.DownloadTask, err error) {
-	return nil, nil
+	task := service.download.Task(p.TaskID)
+	if task == nil {
+		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+	}
+
+	res = &artworks.DownloadTask{
+		ID:     p.TaskID,
+		Status: task.Status().String(),
+		States: toArtworkDownloadStates(task.StatusHistory()),
+		Bytes:  task.File,
+	}
+	return res, nil
 }
 
-// List of all tasks.
+// DownloadTasks returns list of all tasks.
 func (service *Artwork) DownloadTasks(ctx context.Context) (res artworks.DownloadTaskCollection, err error) {
-	return
+	tasks := service.download.Tasks()
+	for _, task := range tasks {
+		res = append(res, &artworks.DownloadTask{
+			ID:     task.ID(),
+			Status: task.Status().String(),
+			Bytes:  task.File,
+		})
+	}
+	return res, nil
 }
 
 // Mount configures the mux to serve the artworks endpoints.
@@ -179,10 +230,11 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 }
 
 // NewArtwork returns the artworks Artwork implementation.
-func NewArtwork(register *artworkregister.Service) *Artwork {
+func NewArtwork(register *artworkregister.Service, download *artworkdownload.Service) *Artwork {
 	return &Artwork{
 		Common:   NewCommon(),
 		register: register,
+		download: download,
 		db:       memory.NewKeyValue(),
 		imageTTL: defaultImageTTL,
 	}

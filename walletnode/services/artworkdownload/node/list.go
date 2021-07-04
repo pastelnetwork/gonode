@@ -74,6 +74,11 @@ func (nodes List) MatchFiles() error {
 	return nil
 }
 
+// File returns downloaded file.
+func (nodes List) File() []byte {
+	return nodes[0].file
+}
+
 // Download download image from supernodes.
 func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string, nodeChan chan *Node, errChan chan error) error {
 	group, _ := errgroup.WithContext(ctx)
