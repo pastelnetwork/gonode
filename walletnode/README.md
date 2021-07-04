@@ -5,26 +5,33 @@
 
 ## Quick Start
 
-1. Without any parameters, `walletnode` tries to find and read all settings from the config file `walletnode.yml` in the [default dir](#default_dir):
+1. Build WalletNode app:
+    ``` shell
+    cd ./wallletnode
+    go build ./
+    ```
 
-``` shell
-./walletnode
-```
+2. Start WalletNode - there're some options:
+    1. Without any parameters, `walletnode` tries to find and read all settings from the config file `walletnode.yml` in the [default dir](#default_dir):
 
-2. Specified config files.
+    ``` shell
+    ./walletnode
+    ```
 
-``` shell
-./walletnode
-    --pastel-config-file ./examples/configs/pastel.conf
-    --config-file ./examples/configs/mainnet.yml
-```
+    2. Specified config files.
 
-3. The following set of parameters is suitable for debugging the process.
+    ``` shell
+    ./walletnode
+        --pastel-config-file ./examples/configs/pastel.conf
+        --config-file ./examples/configs/mainnet.yml
+    ```
 
-``` shell
-WALLETNODE_DEBUG=1 \
-./walletnode --log-level debug
-```
+    3. The following set of parameters is suitable for debugging the process.
+
+    ``` shell
+    WALLETNODE_DEBUG=1 \
+    ./walletnode --log-level debug
+    ```
 
 
 ### CLI Options

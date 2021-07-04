@@ -5,26 +5,61 @@
 
 ## Quick Start
 
-1. Without any parameters, `supernode` tries to find and read all settings from the config file `supernode.yml` in the [default dir](#default_dir):
+1. Build SuperNode app:
+    1. Install libtensorflow
+        - For Linux:
+            - For lastest CPU (supports avx/avx2 instructions)
+                ``` shell
+                wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+                sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
+                sudo /sbin/ldconfig -v
+                ```
+            - For old CPU - have to build libtensor by yourself:
+                ``` shell
+                # Install bazel
+                wget https://github.com/bazelbuild/bazel/releases/download/3.1.0/bazel-3.1.0-installer-linux-x86_64.sh
+                chmod u+x bazel-3.1.0-installer-linux-x86_64.sh
+                sudo ./bazel-3.1.0-installer-linux-x86_64.sh
 
-``` shell
-./supernode
-```
+                # Build libtensorflow
+                wget https://github.com/tensorflow/tensorflow/archive/refs/tags/v2.4.0.tar.gz
+                tar xvf ./v2.4.0.tar.gz
+                cd tensorflow-2.4.0
+                ./configure #set options you want
+                bazel build --config opt //tensorflow/tools/lib_package:libtensorflow
+                sudo tar -C /usr/local -xzf bazel-bin/tensorflow/tools/lib_package/libtensorflow.tar.gz
 
-2. Specified config files:
+                ```
 
-``` shell
-./supernode
-    --pastel-config-file ./examples/configs/pastel.conf
-    --config-file ./examples/configs/mainnet.yml
-```
+        - For Window/Mac (TBD):
 
-3. The following set of parameters is suitable for debugging the process:
+    2. Build:
+    ``` shell
+    cd ./supernode
+    go build ./
+    ```  
 
-``` shell
-SUPERNODE_DEBUG=1 \
-./supernode --log-level debug
-```
+2. Start supernode - there're some options:
+    1. Without any parameters, `supernode` tries to find and read all settings from the config file `supernode.yml` in the [default dir](#default_dir):
+
+    ``` shell
+    ./supernode
+    ```
+
+    2. Specified config files:
+
+    ``` shell
+    ./supernode
+        --pastel-config-file ./examples/configs/pastel.conf
+        --config-file ./examples/configs/mainnet.yml
+    ```
+
+    3. The following set of parameters is suitable for debugging the process:
+
+    ``` shell
+    SUPERNODE_DEBUG=1 \
+    ./supernode --log-level debug
+    ```
 
 
 ### CLI Options
