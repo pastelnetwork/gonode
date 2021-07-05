@@ -89,29 +89,20 @@ func (task *Task) run(ctx context.Context) error {
 	// Send download request to all top supernodes.
 	var nodes node.List
 	var downloadErrs error
-	errsChan := make(chan error, len(connectedNodes))
-	nodesChan := make(chan *node.Node, len(connectedNodes))
-	err = connectedNodes.Download(ctx, task.Ticket.Txid, string(timestamp), string(signature), ttxid, nodesChan, errsChan)
+	err = connectedNodes.Download(ctx, task.Ticket.Txid, string(timestamp), string(signature), ttxid, downloadErrs)
 	if err != nil {
 		task.UpdateStatus(StatusErrorDownloadFailed)
 		return err
 	}
-	close(errsChan)
-	close(nodesChan)
-	for node := range nodesChan {
-		nodes = append(nodes, node)
-	}
-	for err := range errsChan {
-		downloadErrs = errors.Append(errs, err)
-	}
+
+	nodes = connectedNodes.Active()
+
 	if len(nodes) < task.config.NumberSuperNodes {
 		task.UpdateStatus(StatusErrorNotEnoughFiles)
 		return errors.Errorf("Not downloading enough files from %d supernodes: %w", task.config.NumberSuperNodes, downloadErrs)
 	}
 	task.UpdateStatus(StatusDownloaded)
 
-	// Activate supernodes that returned file successfully.
-	nodes.Activate()
 	// Disconnect supernodes that did not return file.
 	topNodes.DisconnectInactive()
 

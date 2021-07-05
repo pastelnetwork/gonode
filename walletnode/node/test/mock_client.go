@@ -36,6 +36,9 @@ const (
 
 	// SessIDMethod represent SessID name method
 	SessIDMethod = "SessID"
+
+	// DownloadMethod represent Download name method
+	DownloadMethod = "Download"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -44,6 +47,7 @@ type Client struct {
 	*mocks.Client
 	*mocks.Connection
 	*mocks.RegisterArtwork
+	*mocks.DownloadArtwork
 }
 
 // NewMockClient create new client mock
@@ -53,6 +57,7 @@ func NewMockClient(t *testing.T) *Client {
 		Client:          &mocks.Client{},
 		Connection:      &mocks.Connection{},
 		RegisterArtwork: &mocks.RegisterArtwork{},
+		DownloadArtwork: &mocks.DownloadArtwork{},
 	}
 }
 
@@ -194,5 +199,20 @@ func (client *Client) AssertSessIDCall(expectedCalls int, arguments ...interface
 		client.RegisterArtwork.AssertCalled(client.t, SessIDMethod, arguments...)
 	}
 	client.RegisterArtwork.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
+	return client
+}
+
+// ListenOnDownload listening Download call and returns args value
+func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
+	client.DownloadArtwork.On(DownloadMethod, mock.Anything, mock.IsType(&artwork.File{})).Return(arguments...)
+	return client
+}
+
+// AssertDownloadCall assertion Download call
+func (client *Client) AssertDownloadCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.DownloadArtwork.AssertCalled(client.t, DownloadMethod, arguments...)
+	}
+	client.DownloadArtwork.AssertNumberOfCalls(client.t, DownloadMethod, expectedCalls)
 	return client
 }

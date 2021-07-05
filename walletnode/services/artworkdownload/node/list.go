@@ -18,10 +18,14 @@ func (nodes *List) Add(node *Node) {
 
 // Activate marks all nodes as activated.
 // Since any node can be present in the same time in several List and Node is a pointer, this is reflected in all lists.
-func (nodes *List) Activate() {
+func (nodes *List) Active() List {
+	activeNodes := List{}
 	for _, node := range *nodes {
-		node.activated = true
+		if node.activated {
+			activeNodes = append(activeNodes, node)
+		}
 	}
+	return activeNodes
 }
 
 // DisconnectInactive disconnects nodes which were not marked as activated.
@@ -52,16 +56,6 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 	return group.Wait()
 }
 
-// FindByPastelID returns node by its patstelID.
-func (nodes List) FindByPastelID(id string) *Node {
-	for _, node := range nodes {
-		if node.pastelID == id {
-			return node
-		}
-	}
-	return nil
-}
-
 // MatchFiles matches files.
 func (nodes List) MatchFiles() error {
 	node := nodes[0]
@@ -80,8 +74,10 @@ func (nodes List) File() []byte {
 }
 
 // Download download image from supernodes.
-func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string, nodeChan chan *Node, errChan chan error) error {
+func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string, downloadErrs error) error {
 	group, _ := errgroup.WithContext(ctx)
+	errChan := make(chan error, len(*nodes))
+
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
@@ -89,10 +85,17 @@ func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttx
 			if err != nil {
 				errChan <- err
 			} else {
-				nodeChan <- node
+				node.activated = true
 			}
 			return err
 		})
 	}
-	return group.Wait()
+	err := group.Wait()
+
+	close(errChan)
+
+	for err := range errChan {
+		downloadErrs = errors.Append(downloadErrs, err)
+	}
+	return err
 }
