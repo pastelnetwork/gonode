@@ -48,5 +48,13 @@ type Client interface {
 
 	// GetBlockCount returns the number of blocks in the best valid block chain
 	// Command `getblockcount `
-	GetBlockCount(ctx context.Context) (int64, error)
+	GetBlockCount(ctx context.Context) (int32, error)
+
+	// GetBlockHash returns the hash of block
+	// Command `getblockhash <blkIndex> `
+	GetBlockHash(ctx context.Context, blkIndex int32) (string, error)
+
+	// GetInfo returns the general info of wallet server
+	// Command `getinfo `
+	GetInfo(ctx context.Context) (*GetInfoResult, error)
 }

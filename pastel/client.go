@@ -149,6 +149,29 @@ func (client *client) GetBlockCount(ctx context.Context) (int64, error) {
 	return res.GetInt()
 }
 
+func (client *client) GetBlockHash(ctx context.Context, blkIndex int32) (string, error) {
+	res, err := client.CallWithContext(ctx, "getblockhash", fmt.Sprint(blkIndex))
+	if err != nil {
+		return "", errors.Errorf("failed to call getblockhash: %w", err)
+	}
+
+	if res.Error != nil {
+		return "", errors.Errorf("failed to get block hash: %w", err)
+	}
+
+	return res.GetString()
+}
+
+func (client *client) GetInfo(ctx context.Context) (*GetInfoResult, error) {
+	info := &GetInfoResult{}
+
+	if err := client.callFor(ctx, info, "getinfo", ""); err != nil {
+		return info, errors.Errorf("failed to get info: %w", err)
+	}
+
+	return info, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }
