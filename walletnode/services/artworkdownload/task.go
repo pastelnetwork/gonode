@@ -47,14 +47,14 @@ func (task *Task) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	ttxid, err := task.validateTicketOwnership(ctx, task.Ticket.Txid, task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
+	ttxid, err := task.pastelClient.TicketOwnership(ctx, task.Ticket.Txid, task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
 	if err != nil {
 		return err
 	}
 
 	// Sign current-timestamp with PsstelID passed in request
 	timestamp := time.Now().Format(time.RFC3339)
-	signature, err := task.signTimestamp(ctx, timestamp, task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
+	signature, err := task.pastelClient.Sign(ctx, []byte(timestamp), task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
 	if err != nil {
 		return err
 	}
@@ -125,15 +125,6 @@ func (task *Task) run(ctx context.Context) error {
 
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
-}
-
-func (task *Task) signTimestamp(ctx context.Context, timestamp, pastelID, passphrase string) ([]byte, error) {
-	return task.pastelClient.Sign(ctx, []byte(timestamp), pastelID, passphrase)
-}
-
-func (task *Task) validateTicketOwnership(ctx context.Context, txid, pastelID, passphrase string) (ttxid string, err error) {
-	ttxid, err = task.pastelClient.TicketOwnership(ctx, txid, pastelID, passphrase)
-	return
 }
 
 func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {

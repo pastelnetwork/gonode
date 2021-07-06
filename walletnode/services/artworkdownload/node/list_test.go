@@ -237,15 +237,15 @@ func TestNodesDownload(t *testing.T) {
 			args:               args{context.Background(), "txid", "timestamp", "signature", "ttxid"},
 			err:                nil,
 			file:               []byte("test"),
-			numberDownloadCall: 2,
+			numberDownloadCall: 1,
 		},
-		// {
-		// 	nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
-		// 	args:                 args{context.Background(), "txid", "timestamp", "signature", "ttxid"},
-		// 	err:                  fmt.Errorf("failed to open stream"),
-		// 	file:                 nil,
-		// 	numberProbeImageCall: 1,
-		// },
+		{
+			nodes:              []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
+			args:               args{context.Background(), "txid", "timestamp", "signature", "ttxid"},
+			err:                fmt.Errorf("failed to open stream"),
+			file:               nil,
+			numberDownloadCall: 1,
+		},
 	}
 
 	for i, testCase := range testCases {
@@ -280,7 +280,7 @@ func TestNodesDownload(t *testing.T) {
 			for _, client := range clients {
 				client.DownloadArtwork.AssertExpectations(t)
 				client.AssertDownloadCall(testCase.numberDownloadCall, testCase.args.ctx,
-					testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid, downloadErrs)
+					testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid)
 			}
 		})
 	}

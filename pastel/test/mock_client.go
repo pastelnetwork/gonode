@@ -17,6 +17,9 @@ const (
 
 	// SignMethod represent Sign name method
 	SignMethod = "Sign"
+
+	// TicketOwnershipMethod represents TicketOwnership method name
+	TicketOwnershipMethod = "TicketOwnership"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -46,7 +49,7 @@ func (client *Client) ListenOnStorageNetworkFee(fee float64, returnErr error) *C
 }
 
 // ListenOnSign listening Sign call aand returns values from args
-func (client *Client) ListenOnSign(signature string, returnErr error) *Client {
+func (client *Client) ListenOnSign(signature []byte, returnErr error) *Client {
 	client.On(SignMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string(""))).Return(signature, returnErr)
 	return client
 }
@@ -77,5 +80,20 @@ func (client *Client) AssertSignCall(expectedCalls int, arguments ...interface{}
 		client.AssertCalled(client.t, SignMethod, arguments...)
 	}
 	client.AssertNumberOfCalls(client.t, SignMethod, expectedCalls)
+	return client
+}
+
+// ListenOnTicketOwnership listening TicketOwnership call and returns values from args
+func (client *Client) ListenOnTicketOwnership(ttxID string, returnErr error) *Client {
+	client.On(TicketOwnershipMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string("")), mock.IsType(string(""))).Return(ttxID, returnErr)
+	return client
+}
+
+// AssertTicketOwnershipCall TicketOwnership call assertion
+func (client *Client) AssertTicketOwnershipCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.AssertCalled(client.t, TicketOwnershipMethod, arguments...)
+	}
+	client.AssertNumberOfCalls(client.t, TicketOwnershipMethod, expectedCalls)
 	return client
 }

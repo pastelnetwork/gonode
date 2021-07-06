@@ -31,6 +31,9 @@ const (
 	// RegisterArtworkMethod represent RegisterArtwork name method
 	RegisterArtworkMethod = "RegisterArtwork"
 
+	// DownloadArtworkMethod represent DownloadArtwork name method
+	DownloadArtworkMethod = "DownloadArtwork"
+
 	// SessionMethod represent Session name method
 	SessionMethod = "Session"
 
@@ -73,6 +76,21 @@ func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...
 		client.Connection.AssertCalled(client.t, RegisterArtworkMethod, arguments...)
 	}
 	client.Connection.AssertNumberOfCalls(client.t, RegisterArtworkMethod, expectedCalls)
+	return client
+}
+
+// ListenOnDownloadArtwork listening DownloadArtwork call
+func (client *Client) ListenOnDownloadArtwork() *Client {
+	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadArtwork)
+	return client
+}
+
+// AssertDownloadArtworkCall assertion DownloadArtwork call
+func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.Connection.AssertCalled(client.t, DownloadArtworkMethod, arguments...)
+	}
+	client.Connection.AssertNumberOfCalls(client.t, DownloadArtworkMethod, expectedCalls)
 	return client
 }
 
@@ -204,7 +222,11 @@ func (client *Client) AssertSessIDCall(expectedCalls int, arguments ...interface
 
 // ListenOnDownload listening Download call and returns args value
 func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
-	client.DownloadArtwork.On(DownloadMethod, mock.Anything, mock.IsType(&artwork.File{})).Return(arguments...)
+	client.DownloadArtwork.On(DownloadMethod, mock.Anything,
+		mock.IsType(string("")),
+		mock.IsType(string("")),
+		mock.IsType(string("")),
+		mock.IsType(string(""))).Return(arguments...)
 	return client
 }
 

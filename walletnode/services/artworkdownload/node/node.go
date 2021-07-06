@@ -20,12 +20,12 @@ type Node struct {
 	pastelID string
 }
 
-func (node *Node) String() string {
+func (node Node) String() string {
 	return node.address
 }
 
 // PastelID returns pastelID
-func (node *Node) PastelID() string {
+func (node Node) PastelID() string {
 	return node.pastelID
 }
 
