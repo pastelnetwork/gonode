@@ -6,6 +6,8 @@ const (
 	StatusConnected
 	StatusImageProbed
 	StatusImageAndThumbnailUploaded
+	StatusGenRaptorQSymbols
+
 	// Ticket
 	StatusTicketAccepted
 	StatusTicketRegistered
@@ -14,6 +16,7 @@ const (
 	ErrorInsufficientFee
 	StatusErrorFingerprintsNotMatch
 	StatusErrorThumbnailHashsesNotMatch
+	StatusErrorGenRaptorQSymbolsFailed
 	// Final
 	StatusTaskRejected
 	StatusTaskCompleted

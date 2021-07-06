@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/anacrolix/sync v0.3.0 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/go-errors/errors v1.4.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/huandu/xstrings v1.3.2 // indirect
@@ -13,6 +14,7 @@ require (
 	github.com/pastelnetwork/gonode/p2p v0.0.0-20210615205941-9aa3fc8e6fee
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
+	github.com/pastelnetwork/gonode/raptorq v0.0.0
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -31,4 +33,5 @@ replace (
 	github.com/pastelnetwork/gonode/p2p => ../p2p
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto
+	github.com/pastelnetwork/gonode/raptorq => ../raptorq
 )

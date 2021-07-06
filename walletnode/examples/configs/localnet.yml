@@ -8,3 +8,7 @@ node:
   api:
     hostname: "localhost"
     port: 8080
+
+raptorq:
+  hostname: "locahost"
+  port: 50051

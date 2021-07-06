@@ -22,6 +22,9 @@ type Config struct {
 
 	NumberSuperNodes int `mapstructure:"number_supernodes" json:"number_supernodes,omitempty"`
 
+	// raptorq service
+	RaptorQServiceAddress string `mapstructure:"raptorq_service" json:"raptorq_service,omitempty"`
+
 	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration

@@ -52,6 +52,22 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
 	return nil
 }
 
+func (node *Node) Fingerprint() []byte {
+	return node.fingerprint
+}
+
+func (node *Node) PreviewHash() []byte {
+	return node.previewHash
+}
+
+func (node *Node) MediumThumbnailHash() []byte {
+	return node.previewHash
+}
+
+func (node *Node) SmallThumbnailHash() []byte {
+	return node.smallThumbnailHash
+}
+
 // NewNode returns a new Node instance.
 func NewNode(client node.Client, address, pastelID string) *Node {
 	return &Node{
