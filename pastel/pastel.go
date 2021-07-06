@@ -57,4 +57,8 @@ type Client interface {
 	// GetInfo returns the general info of wallet server
 	// Command `getinfo `
 	GetInfo(ctx context.Context) (*GetInfoResult, error)
+
+	// GetTransaction returns details of transaction
+	// Command `gettransaction  <txid>`
+	GetTransaction(ctx context.Context, txID TxIDType) (*GetTransactionResult, error)
 }

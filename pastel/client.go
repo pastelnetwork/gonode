@@ -136,7 +136,7 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	return ticket, nil
 }
 
-func (client *client) GetBlockCount(ctx context.Context) (int64, error) {
+func (client *client) GetBlockCount(ctx context.Context) (int32, error) {
 	res, err := client.CallWithContext(ctx, "getblockcount", "")
 	if err != nil {
 		return 0, errors.Errorf("failed to call getblockcount: %w", err)
@@ -146,7 +146,9 @@ func (client *client) GetBlockCount(ctx context.Context) (int64, error) {
 		return 0, errors.Errorf("failed to get block count: %w", err)
 	}
 
-	return res.GetInt()
+	cnt, err := res.GetInt()
+
+	return int32(cnt), err
 }
 
 func (client *client) GetBlockHash(ctx context.Context, blkIndex int32) (string, error) {
@@ -163,13 +165,23 @@ func (client *client) GetBlockHash(ctx context.Context, blkIndex int32) (string,
 }
 
 func (client *client) GetInfo(ctx context.Context) (*GetInfoResult, error) {
-	info := &GetInfoResult{}
+	result := &GetInfoResult{}
 
-	if err := client.callFor(ctx, info, "getinfo", ""); err != nil {
-		return info, errors.Errorf("failed to get info: %w", err)
+	if err := client.callFor(ctx, result, "getinfo", ""); err != nil {
+		return result, errors.Errorf("failed to get info: %w", err)
 	}
 
-	return info, nil
+	return result, nil
+}
+
+func (client *client) GetTransaction(ctx context.Context, txID TxIDType) (*GetTransactionResult, error) {
+	result := &GetTransactionResult{}
+
+	if err := client.callFor(ctx, result, "gettransaction", string(txID)); err != nil {
+		return result, errors.Errorf("failed to get transaction: %w", err)
+	}
+
+	return result, nil
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
