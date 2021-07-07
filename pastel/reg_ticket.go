@@ -90,3 +90,14 @@ type RegisterArtRequest struct {
 	Key2        string
 	Fee         int64
 }
+
+type GetRegisterArtFeeRequest struct {
+	Ticket      *ArtTicket
+	Signatures  *TicketSignatures
+	Mn1PastelId string
+	Pasphase    string
+	Key1        string
+	Key2        string
+	Fee         int64
+	ImgSizeInMb int64
+}

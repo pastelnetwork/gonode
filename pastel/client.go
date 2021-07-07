@@ -216,6 +216,18 @@ func (client *client) GetArtTicketFeePerKB(ctx context.Context) (int64, error) {
 	return artticketFee.ArtticketFee, nil
 }
 
+func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegisterArtFeeRequest) (int64, error) {
+	var totalStorageFee struct {
+		TotalStorageFee int64 `json:"totalstoragefee"`
+	}
+
+	// FIXME: fix here
+	if err := client.callFor(ctx, &totalStorageFee, "gettotalstoragefee", "TBD"); err != nil {
+		return 0, errors.Errorf("failed to call gettotalstoragefee: %w", err)
+	}
+	return totalStorageFee.TotalStorageFee, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }

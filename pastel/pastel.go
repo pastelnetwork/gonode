@@ -73,4 +73,9 @@ type Client interface {
 	// GetArtTicketFeePerKB return network ticket fee
 	// Command `storagefee  getartticketfee`
 	GetArtTicketFeePerKB(ctx context.Context) (int64, error)
+
+	// GetRegisterArtFee return fee of ticket
+	// refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 12
+	// Command `gettotalstoragefee ...`
+	GetRegisterArtFee(ctx context.Context, request GetRegisterArtFeeRequest) (int64, error)
 }
