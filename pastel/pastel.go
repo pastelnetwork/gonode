@@ -78,4 +78,10 @@ type Client interface {
 	// refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 12
 	// Command `gettotalstoragefee ...`
 	GetRegisterArtFee(ctx context.Context, request GetRegisterArtFeeRequest) (int64, error)
+
+	// RegisterArtTicket register an art ticket
+	// Refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 18
+	// Command `tickets register art ...`
+	// Return txid of transaction
+	RegisterArtTicket(ctx context.Context, reqquest RegisterArtRequest) (string, error)
 }

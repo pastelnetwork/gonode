@@ -228,6 +228,18 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	return totalStorageFee.TotalStorageFee, nil
 }
 
+func (client *client) RegisterArtTicket(ctx context.Context, reqquest RegisterArtRequest) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	// FIXME: fix here
+	if err := client.callFor(ctx, &txID, "tickets", "register", "art", "TBD"); err != nil {
+		return "", errors.Errorf("failed to call register art ticket: %w", err)
+	}
+	return txID.TxID, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }
