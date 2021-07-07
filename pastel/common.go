@@ -50,3 +50,23 @@ type GetTransactionResult struct {
 	Details         []GetTransactionDetailsResult `json:"details"`
 	Hex             string                        `json:"hex"`
 }
+
+// GetBlockVerboseResult models the data from the getblock command when the
+// verbose flag is set to 1 - getblock returns an object
+// whose tx field is an array of transaction hashes
+type GetBlockVerbose1Result struct {
+	Hash             string   `json:"hash"`
+	Confirmations    int64    `json:"confirmations"`
+	Size             int32    `json:"size"`
+	Height           int64    `json:"height"`
+	Version          int32    `json:"version"`
+	MerkleRoot       string   `json:"merkleroot"`
+	FinalSaplingRoot string   `json:"finalsaplingroot"`
+	Tx               []string `json:"tx,omitempty"`
+	Time             int64    `json:"time"`
+	Nonce            uint32   `json:"nonce"`
+	Bits             string   `json:"bits"`
+	Difficulty       float64  `json:"difficulty"`
+	PreviousHash     string   `json:"previousblockhash"`
+	NextHash         string   `json:"nextblockhash,omitempty"`
+}

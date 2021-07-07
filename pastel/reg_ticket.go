@@ -1,5 +1,7 @@
 package pastel
 
+// Refer https://pastel.wiki/en/Architecture/Components/TicketStructures
+
 // RegTickets is a collection of RegTicket
 type RegTickets []RegTicket
 
@@ -68,4 +70,23 @@ type AppTicket struct {
 	RQIDs   []string `json:"rq_ids"`
 	RQCoti  int64    `json:"rq_coti"`
 	RQSsoti int64    `json:"rq_ssoti"`
+}
+
+type TicketSignatures struct {
+	Artist map[string][]byte `json:"artist,omitempty"`
+	Mn1    map[string][]byte `json:"mn1,omitempty"`
+	Mn2    map[string][]byte `json:"mn2,omitempty"`
+	Mn3    map[string][]byte `json:"mn3,omitempty"`
+}
+
+// Command
+// "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "key1", "key2", 100)")
+type RegisterArtRequest struct {
+	Ticket      *ArtTicket
+	Signatures  *TicketSignatures
+	Mn1PastelId string
+	Pasphase    string
+	Key1        string
+	Key2        string
+	Fee         int64
 }
