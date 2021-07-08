@@ -35,7 +35,7 @@ inline double prho(std::vector<double> x,
     mu_x /= w_sum;
     mu_y /= w_sum;
 
-    // substract mean from x and y
+    // subtract mean from x and y
     for (size_t i = 0; i < n; i++) {
         x[i] -= mu_x;
         y[i] -= mu_y;

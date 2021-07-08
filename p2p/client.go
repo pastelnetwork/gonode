@@ -6,7 +6,7 @@ import "context"
 
 // Client exposes the interfaces for p2p service
 type Client interface {
-	// Retrieve data from the kademlia netowrk by key, return nil if not found
+	// Retrieve data from the kademlia network by key, return nil if not found
 	// - key is the base58 encoded identifier of the data
 	Retrieve(ctx context.Context, key string) ([]byte, error)
 
