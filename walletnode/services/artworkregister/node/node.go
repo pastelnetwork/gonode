@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
@@ -20,6 +21,9 @@ type Node struct {
 	previewHash         []byte
 	mediumThumbnailHash []byte
 	smallThumbnailHash  []byte
+
+	registrationFee int64
+	regArtTxId      pastel.TxIDType
 
 	address  string
 	pastelID string
@@ -50,22 +54,6 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
 	node.Connection = conn
 	node.RegisterArtwork = conn.RegisterArtwork()
 	return nil
-}
-
-func (node *Node) Fingerprint() []byte {
-	return node.fingerprint
-}
-
-func (node *Node) PreviewHash() []byte {
-	return node.previewHash
-}
-
-func (node *Node) MediumThumbnailHash() []byte {
-	return node.previewHash
-}
-
-func (node *Node) SmallThumbnailHash() []byte {
-	return node.smallThumbnailHash
 }
 
 // NewNode returns a new Node instance.

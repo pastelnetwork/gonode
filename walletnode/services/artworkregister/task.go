@@ -26,6 +26,9 @@ type Task struct {
 
 	Request *Request
 
+	// information of nodes
+	nodes node.List
+
 	// task data to create RegArt ticket
 	fingerprints                 []byte
 	fingerprintsHash             []byte
@@ -46,6 +49,7 @@ type Task struct {
 	// TODO: call cNodeAPI to get the following info
 	blockTxID string
 	blockNum  int
+	burnTxId  pastel.TxIDType
 
 	// TODO: the following info is supposed return by supernodes
 	rarenessScore int
@@ -126,6 +130,7 @@ func (task *Task) run(ctx context.Context) error {
 		return nodes.WaitConnClose(ctx)
 	})
 	task.UpdateStatus(StatusConnected)
+	task.nodes = nodes
 
 	// Create a thumbnail copy of the image.
 	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debugf("Copy image")
@@ -151,7 +156,7 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	}
 	task.UpdateStatus(StatusImageProbed)
-	task.fingerprints = nodes[0].Fingerprint()
+	task.fingerprints = nodes.Fingerprint()
 	if task.fingerprintsHash, err = sha3256hash(task.fingerprints); err != nil {
 		return errors.Errorf("failed to hash fingerprints %w", err)
 	}
@@ -189,9 +194,9 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusImageAndThumbnailUploaded)
 
-	task.previewHash = nodes[0].PreviewHash()
-	task.mediumThumbnailHash = nodes[0].MediumThumbnailHash()
-	task.smallThumbnailHash = nodes[0].SmallThumbnailHash()
+	task.previewHash = nodes.PreviewHash()
+	task.mediumThumbnailHash = nodes.MediumThumbnailHash()
+	task.smallThumbnailHash = nodes.SmallThumbnailHash()
 
 	// Connect to rq serivce to get rq symbols identifier
 	if task.rqids, err = task.genRQIDS(ctx); err != nil {
@@ -204,12 +209,39 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("failed to create ticket %w", err)
 	}
 
-	if buf, err := json.MarshalIndent(ticket, "", "  "); err != nil {
+	buf, err := json.MarshalIndent(ticket, "", "  ")
+	if err != nil {
 		return errors.Errorf("failed to marshal ticket %w", err)
 	} else {
 		log.Debug(string(buf))
 	}
 
+	// sign ticket
+	artistSignature, err := task.signTicket(ctx, ticket)
+	if err != nil {
+		return errors.Errorf("failed to sign ticket %w", err)
+	}
+	ticket.RegTicketData.Signatures.Artist[task.Request.ArtistPastelID] = artistSignature
+
+	// send signed ticket to supernodes to calculate registration fee
+	if err := nodes.UploadSignedTicket(ctx, buf, artistSignature); err != nil {
+		return errors.Errorf("failed to upload signed ticket %w", err)
+	}
+
+	if err := nodes.MatchRegistrationFee(); err != nil {
+		return errors.Errorf("registration fees don't matched %w", err)
+	}
+
+	// burn 10 % of registration fee by sending to unspendable address with has the format of PtPasteLBurnAddressXXXXXXXXXTWPm3E
+	burnedAmount := nodes.RegistrationFee() / 10
+	if task.burnTxId, err = task.pastelClient.SendToAddress(ctx, "PtPasteLBurnAddressXXXXXXXXXTWPm3E", burnedAmount); err != nil {
+		return errors.Errorf("failed to burn 10% of transaction fee %w", err)
+	}
+
+	// send the txid of the preburn transaction to super nodes
+	if err := nodes.SendPreBurntFeeTxId(ctx, task.burnTxId); err != nil {
+		return errors.Errorf("failed to send txId of preburnt fee transaction %w", err)
+	}
 	fmt.Println("OK")
 
 	// Wait for all connections to disconnect.
@@ -420,23 +452,11 @@ func (task *Task) createTicket() (*pastel.RegTicket, error) {
 		RegTicketData: pastel.RegTicketData{
 			Type:         "art-reg",
 			ArtistHeight: 0,
-			Signatures: pastel.Signatures{
-				SignatureAuthor: pastel.Signature{
-					PubKey:    []byte("TBD"),
-					Signature: []byte("TBD"),
-				},
-				Signature1: pastel.Signature{
-					PubKey:    []byte("TBD"),
-					Signature: []byte("TBD"),
-				},
-				Signature2: pastel.Signature{
-					PubKey:    []byte("TBD"),
-					Signature: []byte("TBD"),
-				},
-				Signature3: pastel.Signature{
-					PubKey:    []byte("TBD"),
-					Signature: []byte("TBD"),
-				},
+			Signatures: pastel.TicketSignatures{
+				Artist: make(map[string][]byte),
+				Mn1:    make(map[string][]byte),
+				Mn2:    make(map[string][]byte),
+				Mn3:    make(map[string][]byte),
 			},
 			Key1:        fmt.Sprintf("%x", task.fingerprints),
 			Key2:        "TBD",
@@ -497,6 +517,21 @@ func (task *Task) createTicket() (*pastel.RegTicket, error) {
 	return ticket, nil
 }
 
+func (task *Task) signTicket(ctx context.Context, ticket *pastel.RegTicket) ([]byte, error) {
+	js, err := json.Marshal(ticket)
+	if err != nil {
+		return nil, errors.Errorf("failed to encode ticket %w", err)
+	}
+
+	signature, err := task.pastelClient.Sign(ctx, js, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	if err != nil {
+		return nil, errors.Errorf("failed to sign ticket %w", err)
+	}
+
+	return signature, nil
+}
+
+//
 // NewTask returns a new Task instance.
 func NewTask(service *Service, Ticket *Request) *Task {
 	return &Task{

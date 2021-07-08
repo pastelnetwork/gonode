@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -253,6 +254,43 @@ func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context
 
 func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
+}
+
+// SendSigned
+func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte) (int64, error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	log.WithContext(ctx).Debug("send signed ticket and signature to super node")
+	req := pb.SendSignedArtTicketRequest{
+		ArtTicket:       ticket,
+		ArtistSignature: signature,
+	}
+
+	rsp, err := service.client.SendSignedArtTicket(ctx, &req)
+	if err != nil {
+		return -1, errors.Errorf("failed to send signed ticket and its signature to node %w", err)
+	}
+
+	return rsp.RegistrationFee, nil
+}
+
+func (service *registerArtwork) SendPreBurntFeeTxId(ctx context.Context, txid pastel.TxIDType) (pastel.TxIDType, error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	log.WithContext(ctx).Debug("send burned txid to super node")
+	req := pb.SendPreBurntTxFeeIdRequest{
+		Txid: string(txid),
+	}
+
+	_, err := service.client.SendPreBurntTxFeeId(ctx, &req)
+	if err != nil {
+		return "", errors.Errorf("failed to send burned txid to super node %w", err)
+	}
+
+	// TODO: response from sending preburned TxId should be the TxId of RegActTicket
+	return "RegArtTxID", nil
 }
 
 func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {

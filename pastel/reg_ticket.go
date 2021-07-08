@@ -1,5 +1,7 @@
 package pastel
 
+// Refer https://pastel.wiki/en/Architecture/Components/TicketStructures
+
 // RegTickets is a collection of RegTicket
 type RegTickets []RegTicket
 
@@ -12,18 +14,18 @@ type RegTicket struct {
 
 // RegTicketData is Pastel Registration ticket structure
 type RegTicketData struct {
-	Type          string     `json:"type"`
-	ArtistHeight  int        `json:"artist_height"`
-	Signatures    Signatures `json:"signatures"`
-	Key1          string     `json:"key1"`
-	Key2          string     `json:"key2"`
-	IsGreen       bool       `json:"is_green"`
-	StorageFee    int        `json:"storage_fee"`
-	TotalCopies   int        `json:"total_copies"`
-	Royalty       int        `json:"royalty"`
-	Version       int        `json:"version"`
-	ArtTicket     []byte     `json:"art_ticket"`
-	ArtTicketData ArtTicket  `json:"-"`
+	Type          string           `json:"type"`
+	ArtistHeight  int              `json:"artist_height"`
+	Signatures    TicketSignatures `json:"signatures"`
+	Key1          string           `json:"key1"`
+	Key2          string           `json:"key2"`
+	IsGreen       bool             `json:"is_green"`
+	StorageFee    int              `json:"storage_fee"`
+	TotalCopies   int              `json:"total_copies"`
+	Royalty       int              `json:"royalty"`
+	Version       int              `json:"version"`
+	ArtTicket     []byte           `json:"art_ticket"`
+	ArtTicketData ArtTicket        `json:"-"`
 }
 
 // ArtTicket is Pastel Art Ticket
@@ -73,16 +75,32 @@ type AppTicket struct {
 	RQSsoti int64    `json:"rq_ssoti"`
 }
 
-// Signature represents signatures element of art ticket
-type Signature struct {
-	Signature []byte `json:"signature"`
-	PubKey    []byte `json:"pubkey"`
+type TicketSignatures struct {
+	Artist map[string][]byte `json:"artist,omitempty"`
+	Mn1    map[string][]byte `json:"mn1,omitempty"`
+	Mn2    map[string][]byte `json:"mn2,omitempty"`
+	Mn3    map[string][]byte `json:"mn3,omitempty"`
 }
 
-// Signature represents signalture element of signatures
-type Signatures struct {
-	SignatureAuthor Signature `json:"signature_author"`
-	Signature1      Signature `json:"signature_1"`
-	Signature2      Signature `json:"signature_2"`
-	Signature3      Signature `json:"signature_3"`
+// Command
+// "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "key1", "key2", 100)")
+type RegisterArtRequest struct {
+	Ticket      *ArtTicket
+	Signatures  *TicketSignatures
+	Mn1PastelId string
+	Pasphase    string
+	Key1        string
+	Key2        string
+	Fee         int64
+}
+
+type GetRegisterArtFeeRequest struct {
+	Ticket      *ArtTicket
+	Signatures  *TicketSignatures
+	Mn1PastelId string
+	Pasphase    string
+	Key1        string
+	Key2        string
+	Fee         int64
+	ImgSizeInMb int64
 }

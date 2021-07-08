@@ -136,7 +136,17 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	return ticket, nil
 }
 
-func (client *client) GetBlockCount(ctx context.Context) (int64, error) {
+func (client *client) GetBlockVerbose1(ctx context.Context, blkHeight int32) (*GetBlockVerbose1Result, error) {
+	result := &GetBlockVerbose1Result{}
+
+	if err := client.callFor(ctx, result, "getblock", fmt.Sprint(blkHeight), "1"); err != nil {
+		return result, errors.Errorf("failed to get block: %w", err)
+	}
+
+	return result, nil
+}
+
+func (client *client) GetBlockCount(ctx context.Context) (int32, error) {
 	res, err := client.CallWithContext(ctx, "getblockcount", "")
 	if err != nil {
 		return 0, errors.Errorf("failed to call getblockcount: %w", err)
@@ -146,7 +156,88 @@ func (client *client) GetBlockCount(ctx context.Context) (int64, error) {
 		return 0, errors.Errorf("failed to get block count: %w", err)
 	}
 
-	return res.GetInt()
+	cnt, err := res.GetInt()
+
+	return int32(cnt), err
+}
+
+func (client *client) GetBlockHash(ctx context.Context, blkIndex int32) (string, error) {
+	res, err := client.CallWithContext(ctx, "getblockhash", fmt.Sprint(blkIndex))
+	if err != nil {
+		return "", errors.Errorf("failed to call getblockhash: %w", err)
+	}
+
+	if res.Error != nil {
+		return "", errors.Errorf("failed to get block hash: %w", err)
+	}
+
+	return res.GetString()
+}
+
+func (client *client) GetInfo(ctx context.Context) (*GetInfoResult, error) {
+	result := &GetInfoResult{}
+
+	if err := client.callFor(ctx, result, "getinfo", ""); err != nil {
+		return result, errors.Errorf("failed to get info: %w", err)
+	}
+
+	return result, nil
+}
+
+func (client *client) GetTransaction(ctx context.Context, txID TxIDType) (*GetTransactionResult, error) {
+	result := &GetTransactionResult{}
+
+	if err := client.callFor(ctx, result, "gettransaction", string(txID)); err != nil {
+		return result, errors.Errorf("failed to get transaction: %w", err)
+	}
+
+	return result, nil
+}
+
+func (client *client) GetNetworkFeePerMB(ctx context.Context) (int64, error) {
+	var networkFee struct {
+		NetworkFee int64 `json:"networkfee"`
+	}
+
+	if err := client.callFor(ctx, &networkFee, "storagefee", "getnetworkfee"); err != nil {
+		return 0, errors.Errorf("failed to call storagefee: %w", err)
+	}
+	return networkFee.NetworkFee, nil
+}
+
+func (client *client) GetArtTicketFeePerKB(ctx context.Context) (int64, error) {
+	var artticketFee struct {
+		ArtticketFee int64 `json:"artticketfee"`
+	}
+
+	if err := client.callFor(ctx, &artticketFee, "storagefee", "getartticketfee"); err != nil {
+		return 0, errors.Errorf("failed to call storagefee: %w", err)
+	}
+	return artticketFee.ArtticketFee, nil
+}
+
+func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegisterArtFeeRequest) (int64, error) {
+	var totalStorageFee struct {
+		TotalStorageFee int64 `json:"totalstoragefee"`
+	}
+
+	// FIXME: fix here
+	if err := client.callFor(ctx, &totalStorageFee, "gettotalstoragefee", "TBD"); err != nil {
+		return 0, errors.Errorf("failed to call gettotalstoragefee: %w", err)
+	}
+	return totalStorageFee.TotalStorageFee, nil
+}
+
+func (client *client) RegisterArtTicket(ctx context.Context, reqquest RegisterArtRequest) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	// FIXME: fix here
+	if err := client.callFor(ctx, &txID, "tickets", "register", "art", "TBD"); err != nil {
+		return "", errors.Errorf("failed to call register art ticket: %w", err)
+	}
+	return txID.TxID, nil
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
