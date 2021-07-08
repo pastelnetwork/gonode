@@ -14,6 +14,7 @@ type Node struct {
 	node.Connection
 
 	activated bool
+	done      bool
 	file      []byte
 
 	address  string

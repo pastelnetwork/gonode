@@ -44,7 +44,7 @@ func (task *Task) Run(ctx context.Context) error {
 
 // Download downloads image and return the image.
 func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
-	if err := task.RequiredStatus(StatusConnected); err != nil {
+	if err := task.RequiredStatus(StatusTaskStarted); err != nil {
 		return nil, err
 	}
 

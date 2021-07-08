@@ -32,13 +32,14 @@ func (service *downloadArtwork) Download(ctx context.Context, txid, timestamp, s
 		err = errors.Errorf("failed to open stream: %w", err)
 		return
 	}
-	// defer stream.CloseSend()
+	defer stream.CloseSend()
 
 	// Receive file
 	for {
 		var resp *pb.DownloadReply
 		resp, err = stream.Recv()
 		if err == io.EOF {
+			err = nil
 			break
 		}
 		if err != nil {

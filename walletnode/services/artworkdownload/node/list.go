@@ -37,6 +37,16 @@ func (nodes *List) DisconnectInactive() {
 	}
 }
 
+// Disconnect disconnects all nodes.
+func (nodes *List) Disconnect() {
+	for _, node := range *nodes {
+		if node.Connection != nil {
+			node.Connection.Close()
+			node.done = true
+		}
+	}
+}
+
 // WaitConnClose waits for the connection closing by any supernodes.
 func (nodes *List) WaitConnClose(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
@@ -48,6 +58,9 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 			case <-ctx.Done():
 				return nil
 			case <-node.Connection.Done():
+				if node.done {
+					return nil
+				}
 				return errors.Errorf("%q unexpectedly closed the connection", node)
 			}
 		})

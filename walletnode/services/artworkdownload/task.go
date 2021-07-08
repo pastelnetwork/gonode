@@ -89,7 +89,7 @@ func (task *Task) run(ctx context.Context) error {
 	// Send download request to all top supernodes.
 	var nodes node.List
 	var downloadErrs error
-	err = connectedNodes.Download(ctx, task.Ticket.Txid, string(timestamp), string(signature), ttxid, downloadErrs)
+	err = connectedNodes.Download(ctx, task.Ticket.Txid, timestamp, string(signature), ttxid, downloadErrs)
 	if err != nil {
 		task.UpdateStatus(StatusErrorDownloadFailed)
 		return err
@@ -99,7 +99,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	if len(nodes) < task.config.NumberSuperNodes {
 		task.UpdateStatus(StatusErrorNotEnoughFiles)
-		return errors.Errorf("Not downloading enough files from %d supernodes: %w", task.config.NumberSuperNodes, downloadErrs)
+		return errors.Errorf("Could not download enough files from %d supernodes: %w", task.config.NumberSuperNodes, downloadErrs)
 	}
 	task.UpdateStatus(StatusDownloaded)
 
@@ -122,6 +122,9 @@ func (task *Task) run(ctx context.Context) error {
 
 	// Store file to send to the caller
 	task.File = nodes.File()
+
+	// Disconnect all noded after finished downloading.
+	nodes.Disconnect()
 
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
