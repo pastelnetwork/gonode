@@ -10,6 +10,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
@@ -524,128 +525,9 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 	}
 }
 
-// BuildDownloadRequest instantiates a HTTP request object with method and path
-// set to call the "artworks" service "download" endpoint
-func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DownloadArtworksPath()}
-	req, err := http.NewRequest("POST", u.String(), nil)
-	if err != nil {
-		return nil, goahttp.ErrInvalidURL("artworks", "download", u.String(), err)
-	}
-	if ctx != nil {
-		req = req.WithContext(ctx)
-	}
-
-	return req, nil
-}
-
-// EncodeDownloadRequest returns an encoder for requests sent to the artworks
-// download server.
-func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
-	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*artworks.DownloadPayload)
-		if !ok {
-			return goahttp.ErrInvalidType("artworks", "download", "*artworks.DownloadPayload", v)
-		}
-		{
-			head := p.Key
-			req.Header.Set("Authorization", head)
-		}
-		values := req.URL.Query()
-		values.Add("txid", p.Txid)
-		values.Add("pid", p.Pid)
-		req.URL.RawQuery = values.Encode()
-		return nil
-	}
-}
-
-// DecodeDownloadResponse returns a decoder for responses returned by the
-// artworks download endpoint. restoreBody controls whether the response body
-// should be restored after having been read.
-// DecodeDownloadResponse may return the following errors:
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
-func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
-	return func(resp *http.Response) (interface{}, error) {
-		if restoreBody {
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
-			}
-			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			defer func() {
-				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			}()
-		} else {
-			defer resp.Body.Close()
-		}
-		switch resp.StatusCode {
-		case http.StatusAccepted:
-			var (
-				body DownloadResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "download", err)
-			}
-			p := NewDownloadResultViewAccepted(&body)
-			view := "default"
-			vres := &artworksviews.DownloadResult{Projected: p, View: view}
-			if err = artworksviews.ValidateDownloadResult(vres); err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "download", err)
-			}
-			res := artworks.NewDownloadResult(vres)
-			return res, nil
-		case http.StatusNotFound:
-			var (
-				body DownloadNotFoundResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "download", err)
-			}
-			err = ValidateDownloadNotFoundResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "download", err)
-			}
-			return nil, NewDownloadNotFound(&body)
-		case http.StatusInternalServerError:
-			var (
-				body DownloadInternalServerErrorResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "download", err)
-			}
-			err = ValidateDownloadInternalServerErrorResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "download", err)
-			}
-			return nil, NewDownloadInternalServerError(&body)
-		default:
-			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("artworks", "download", resp.StatusCode, string(body))
-		}
-	}
-}
-
-// BuildDownloadTaskStateRequest instantiates a HTTP request object with method
-// and path set to call the "artworks" service "downloadTaskState" endpoint
-func (c *Client) BuildDownloadTaskStateRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	var (
-		taskID string
-	)
-	{
-		p, ok := v.(*artworks.DownloadTaskStatePayload)
-		if !ok {
-			return nil, goahttp.ErrInvalidType("artworks", "downloadTaskState", "*artworks.DownloadTaskStatePayload", v)
-		}
-		taskID = p.TaskID
-	}
+// BuildArtSearchRequest instantiates a HTTP request object with method and
+// path set to call the "artworks" service "artSearch" endpoint
+func (c *Client) BuildArtSearchRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	scheme := c.scheme
 	switch c.scheme {
 	case "http":
@@ -653,10 +535,10 @@ func (c *Client) BuildDownloadTaskStateRequest(ctx context.Context, v interface{
 	case "https":
 		scheme = "wss"
 	}
-	u := &url.URL{Scheme: scheme, Host: c.host, Path: DownloadTaskStateArtworksPath(taskID)}
+	u := &url.URL{Scheme: scheme, Host: c.host, Path: ArtSearchArtworksPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("artworks", "downloadTaskState", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("artworks", "artSearch", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -665,14 +547,60 @@ func (c *Client) BuildDownloadTaskStateRequest(ctx context.Context, v interface{
 	return req, nil
 }
 
-// DecodeDownloadTaskStateResponse returns a decoder for responses returned by
-// the artworks downloadTaskState endpoint. restoreBody controls whether the
-// response body should be restored after having been read.
-// DecodeDownloadTaskStateResponse may return the following errors:
-//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+// EncodeArtSearchRequest returns an encoder for requests sent to the artworks
+// artSearch server.
+func EncodeArtSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*artworks.ArtSearchPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("artworks", "artSearch", "*artworks.ArtSearchPayload", v)
+		}
+		values := req.URL.Query()
+		if p.Artist != nil {
+			values.Add("artist", *p.Artist)
+		}
+		values.Add("limit", fmt.Sprintf("%v", p.Limit))
+		values.Add("query", p.Query)
+		values.Add("artist_name", fmt.Sprintf("%v", p.ArtistName))
+		values.Add("art_title", fmt.Sprintf("%v", p.ArtTitle))
+		values.Add("series", fmt.Sprintf("%v", p.Series))
+		values.Add("descr", fmt.Sprintf("%v", p.Descr))
+		values.Add("keyword", fmt.Sprintf("%v", p.Keyword))
+		if p.MinCopies != nil {
+			values.Add("min_copies", fmt.Sprintf("%v", *p.MinCopies))
+		}
+		if p.MaxCopies != nil {
+			values.Add("max_copies", fmt.Sprintf("%v", *p.MaxCopies))
+		}
+		values.Add("min_block", fmt.Sprintf("%v", p.MinBlock))
+		if p.MaxBlock != nil {
+			values.Add("max_block", fmt.Sprintf("%v", *p.MaxBlock))
+		}
+		if p.MinRarenessScore != nil {
+			values.Add("min_rareness_score", fmt.Sprintf("%v", *p.MinRarenessScore))
+		}
+		if p.MaxRarenessScore != nil {
+			values.Add("max_rareness_score", fmt.Sprintf("%v", *p.MaxRarenessScore))
+		}
+		if p.MinNsfwScore != nil {
+			values.Add("min_nsfw_score", fmt.Sprintf("%v", *p.MinNsfwScore))
+		}
+		if p.MaxNsfwScore != nil {
+			values.Add("max_nsfw_score", fmt.Sprintf("%v", *p.MaxNsfwScore))
+		}
+		req.URL.RawQuery = values.Encode()
+		return nil
+	}
+}
+
+// DecodeArtSearchResponse returns a decoder for responses returned by the
+// artworks artSearch endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeArtSearchResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeDownloadTaskStateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeArtSearchResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -689,71 +617,71 @@ func DecodeDownloadTaskStateResponse(decoder func(*http.Response) goahttp.Decode
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body DownloadTaskStateResponseBody
+				body ArtSearchResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "downloadTaskState", err)
+				return nil, goahttp.ErrDecodingError("artworks", "artSearch", err)
 			}
-			err = ValidateDownloadTaskStateResponseBody(&body)
+			err = ValidateArtSearchResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "downloadTaskState", err)
+				return nil, goahttp.ErrValidationError("artworks", "artSearch", err)
 			}
-			res := NewDownloadTaskStateArtDownloadTaskStateOK(&body)
+			res := NewArtSearchArtworkSearchResultOK(&body)
 			return res, nil
-		case http.StatusNotFound:
+		case http.StatusBadRequest:
 			var (
-				body DownloadTaskStateNotFoundResponseBody
+				body ArtSearchBadRequestResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "downloadTaskState", err)
+				return nil, goahttp.ErrDecodingError("artworks", "artSearch", err)
 			}
-			err = ValidateDownloadTaskStateNotFoundResponseBody(&body)
+			err = ValidateArtSearchBadRequestResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "downloadTaskState", err)
+				return nil, goahttp.ErrValidationError("artworks", "artSearch", err)
 			}
-			return nil, NewDownloadTaskStateNotFound(&body)
+			return nil, NewArtSearchBadRequest(&body)
 		case http.StatusInternalServerError:
 			var (
-				body DownloadTaskStateInternalServerErrorResponseBody
+				body ArtSearchInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "downloadTaskState", err)
+				return nil, goahttp.ErrDecodingError("artworks", "artSearch", err)
 			}
-			err = ValidateDownloadTaskStateInternalServerErrorResponseBody(&body)
+			err = ValidateArtSearchInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "downloadTaskState", err)
+				return nil, goahttp.ErrValidationError("artworks", "artSearch", err)
 			}
-			return nil, NewDownloadTaskStateInternalServerError(&body)
+			return nil, NewArtSearchInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("artworks", "downloadTaskState", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("artworks", "artSearch", resp.StatusCode, string(body))
 		}
 	}
 }
 
-// BuildDowloadTaskRequest instantiates a HTTP request object with method and
-// path set to call the "artworks" service "dowloadTask" endpoint
-func (c *Client) BuildDowloadTaskRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+// BuildArtworkGetRequest instantiates a HTTP request object with method and
+// path set to call the "artworks" service "artworkGet" endpoint
+func (c *Client) BuildArtworkGetRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
-		taskID string
+		txid string
 	)
 	{
-		p, ok := v.(*artworks.DowloadTaskPayload)
+		p, ok := v.(*artworks.ArtworkGetPayload)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("artworks", "dowloadTask", "*artworks.DowloadTaskPayload", v)
+			return nil, goahttp.ErrInvalidType("artworks", "artworkGet", "*artworks.ArtworkGetPayload", v)
 		}
-		taskID = p.TaskID
+		txid = p.Txid
 	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DowloadTaskArtworksPath(taskID)}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ArtworkGetArtworksPath(txid)}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("artworks", "dowloadTask", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("artworks", "artworkGet", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -762,14 +690,15 @@ func (c *Client) BuildDowloadTaskRequest(ctx context.Context, v interface{}) (*h
 	return req, nil
 }
 
-// DecodeDowloadTaskResponse returns a decoder for responses returned by the
-// artworks dowloadTask endpoint. restoreBody controls whether the response
-// body should be restored after having been read.
-// DecodeDowloadTaskResponse may return the following errors:
+// DecodeArtworkGetResponse returns a decoder for responses returned by the
+// artworks artworkGet endpoint. restoreBody controls whether the response body
+// should be restored after having been read.
+// DecodeArtworkGetResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeDowloadTaskResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeArtworkGetResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -786,126 +715,64 @@ func DecodeDowloadTaskResponse(decoder func(*http.Response) goahttp.Decoder, res
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body DowloadTaskResponseBody
+				body ArtworkGetResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "dowloadTask", err)
+				return nil, goahttp.ErrDecodingError("artworks", "artworkGet", err)
 			}
-			p := NewDowloadTaskDownloadTaskOK(&body)
-			view := "default"
-			vres := &artworksviews.DownloadTask{Projected: p, View: view}
-			if err = artworksviews.ValidateDownloadTask(vres); err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "dowloadTask", err)
+			err = ValidateArtworkGetResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artworkGet", err)
 			}
-			res := artworks.NewDownloadTask(vres)
+			res := NewArtworkGetArtworkDetailOK(&body)
 			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body ArtworkGetBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("artworks", "artworkGet", err)
+			}
+			err = ValidateArtworkGetBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("artworks", "artworkGet", err)
+			}
+			return nil, NewArtworkGetBadRequest(&body)
 		case http.StatusNotFound:
 			var (
-				body DowloadTaskNotFoundResponseBody
+				body ArtworkGetNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "dowloadTask", err)
+				return nil, goahttp.ErrDecodingError("artworks", "artworkGet", err)
 			}
-			err = ValidateDowloadTaskNotFoundResponseBody(&body)
+			err = ValidateArtworkGetNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "dowloadTask", err)
+				return nil, goahttp.ErrValidationError("artworks", "artworkGet", err)
 			}
-			return nil, NewDowloadTaskNotFound(&body)
+			return nil, NewArtworkGetNotFound(&body)
 		case http.StatusInternalServerError:
 			var (
-				body DowloadTaskInternalServerErrorResponseBody
+				body ArtworkGetInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "dowloadTask", err)
+				return nil, goahttp.ErrDecodingError("artworks", "artworkGet", err)
 			}
-			err = ValidateDowloadTaskInternalServerErrorResponseBody(&body)
+			err = ValidateArtworkGetInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "dowloadTask", err)
+				return nil, goahttp.ErrValidationError("artworks", "artworkGet", err)
 			}
-			return nil, NewDowloadTaskInternalServerError(&body)
+			return nil, NewArtworkGetInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("artworks", "dowloadTask", resp.StatusCode, string(body))
-		}
-	}
-}
-
-// BuildDownloadTasksRequest instantiates a HTTP request object with method and
-// path set to call the "artworks" service "downloadTasks" endpoint
-func (c *Client) BuildDownloadTasksRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DownloadTasksArtworksPath()}
-	req, err := http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, goahttp.ErrInvalidURL("artworks", "downloadTasks", u.String(), err)
-	}
-	if ctx != nil {
-		req = req.WithContext(ctx)
-	}
-
-	return req, nil
-}
-
-// DecodeDownloadTasksResponse returns a decoder for responses returned by the
-// artworks downloadTasks endpoint. restoreBody controls whether the response
-// body should be restored after having been read.
-// DecodeDownloadTasksResponse may return the following errors:
-//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
-//	- error: internal error
-func DecodeDownloadTasksResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
-	return func(resp *http.Response) (interface{}, error) {
-		if restoreBody {
-			b, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				return nil, err
-			}
-			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			defer func() {
-				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-			}()
-		} else {
-			defer resp.Body.Close()
-		}
-		switch resp.StatusCode {
-		case http.StatusOK:
-			var (
-				body DownloadTasksResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "downloadTasks", err)
-			}
-			p := NewDownloadTasksDownloadTaskCollectionOK(body)
-			view := "tiny"
-			vres := artworksviews.DownloadTaskCollection{Projected: p, View: view}
-			if err = artworksviews.ValidateDownloadTaskCollection(vres); err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "downloadTasks", err)
-			}
-			res := artworks.NewDownloadTaskCollection(vres)
-			return res, nil
-		case http.StatusInternalServerError:
-			var (
-				body DownloadTasksInternalServerErrorResponseBody
-				err  error
-			)
-			err = decoder(resp).Decode(&body)
-			if err != nil {
-				return nil, goahttp.ErrDecodingError("artworks", "downloadTasks", err)
-			}
-			err = ValidateDownloadTasksInternalServerErrorResponseBody(&body)
-			if err != nil {
-				return nil, goahttp.ErrValidationError("artworks", "downloadTasks", err)
-			}
-			return nil, NewDownloadTasksInternalServerError(&body)
-		default:
-			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("artworks", "downloadTasks", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("artworks", "artworkGet", resp.StatusCode, string(body))
 		}
 	}
 }
@@ -1002,50 +869,40 @@ func unmarshalArtworkTicketResponseToArtworksviewsArtworkTicketView(v *ArtworkTi
 	return res
 }
 
-// unmarshalArtDownloadTaskStateResponseBodyToArtworksviewsArtDownloadTaskStateView
-// builds a value of type *artworksviews.ArtDownloadTaskStateView from a value
-// of type *ArtDownloadTaskStateResponseBody.
-func unmarshalArtDownloadTaskStateResponseBodyToArtworksviewsArtDownloadTaskStateView(v *ArtDownloadTaskStateResponseBody) *artworksviews.ArtDownloadTaskStateView {
-	if v == nil {
-		return nil
-	}
-	res := &artworksviews.ArtDownloadTaskStateView{
-		Date:   v.Date,
-		Status: v.Status,
+// unmarshalArtworkSummaryResponseBodyToArtworksArtworkSummary builds a value
+// of type *artworks.ArtworkSummary from a value of type
+// *ArtworkSummaryResponseBody.
+func unmarshalArtworkSummaryResponseBodyToArtworksArtworkSummary(v *ArtworkSummaryResponseBody) *artworks.ArtworkSummary {
+	res := &artworks.ArtworkSummary{
+		Thumbnail:        v.Thumbnail,
+		Txid:             *v.Txid,
+		Title:            *v.Title,
+		Description:      *v.Description,
+		Keywords:         v.Keywords,
+		SeriesName:       v.SeriesName,
+		Copies:           *v.Copies,
+		YoutubeURL:       v.YoutubeURL,
+		ArtistPastelID:   *v.ArtistPastelID,
+		ArtistName:       *v.ArtistName,
+		ArtistWebsiteURL: v.ArtistWebsiteURL,
 	}
 
 	return res
 }
 
-// unmarshalDownloadTaskResponseToArtworksviewsDownloadTaskView builds a value
-// of type *artworksviews.DownloadTaskView from a value of type
-// *DownloadTaskResponse.
-func unmarshalDownloadTaskResponseToArtworksviewsDownloadTaskView(v *DownloadTaskResponse) *artworksviews.DownloadTaskView {
-	res := &artworksviews.DownloadTaskView{
-		ID:     v.ID,
-		Status: v.Status,
-		Bytes:  v.Bytes,
+// unmarshalFuzzyMatchResponseBodyToArtworksFuzzyMatch builds a value of type
+// *artworks.FuzzyMatch from a value of type *FuzzyMatchResponseBody.
+func unmarshalFuzzyMatchResponseBodyToArtworksFuzzyMatch(v *FuzzyMatchResponseBody) *artworks.FuzzyMatch {
+	res := &artworks.FuzzyMatch{
+		Str:       v.Str,
+		FieldType: v.FieldType,
+		Score:     v.Score,
 	}
-	if v.States != nil {
-		res.States = make([]*artworksviews.ArtDownloadTaskStateView, len(v.States))
-		for i, val := range v.States {
-			res.States[i] = unmarshalArtDownloadTaskStateResponseToArtworksviewsArtDownloadTaskStateView(val)
+	if v.MatchedIndexes != nil {
+		res.MatchedIndexes = make([]int, len(v.MatchedIndexes))
+		for i, val := range v.MatchedIndexes {
+			res.MatchedIndexes[i] = val
 		}
-	}
-
-	return res
-}
-
-// unmarshalArtDownloadTaskStateResponseToArtworksviewsArtDownloadTaskStateView
-// builds a value of type *artworksviews.ArtDownloadTaskStateView from a value
-// of type *ArtDownloadTaskStateResponse.
-func unmarshalArtDownloadTaskStateResponseToArtworksviewsArtDownloadTaskStateView(v *ArtDownloadTaskStateResponse) *artworksviews.ArtDownloadTaskStateView {
-	if v == nil {
-		return nil
-	}
-	res := &artworksviews.ArtDownloadTaskStateView{
-		Date:   v.Date,
-		Status: v.Status,
 	}
 
 	return res

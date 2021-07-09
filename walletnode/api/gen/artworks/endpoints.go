@@ -11,7 +11,6 @@ import (
 	"context"
 
 	goa "goa.design/goa/v3/pkg"
-	"goa.design/goa/v3/security"
 )
 
 // Endpoints wraps the "artworks" service endpoints.
@@ -21,10 +20,8 @@ type Endpoints struct {
 	RegisterTask      goa.Endpoint
 	RegisterTasks     goa.Endpoint
 	UploadImage       goa.Endpoint
-	Download          goa.Endpoint
-	DownloadTaskState goa.Endpoint
-	DowloadTask       goa.Endpoint
-	DownloadTasks     goa.Endpoint
+	ArtSearch         goa.Endpoint
+	ArtworkGet        goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -37,30 +34,25 @@ type RegisterTaskStateEndpointInput struct {
 	Stream RegisterTaskStateServerStream
 }
 
-// DownloadTaskStateEndpointInput holds both the payload and the server stream
-// of the "downloadTaskState" method.
-type DownloadTaskStateEndpointInput struct {
+// ArtSearchEndpointInput holds both the payload and the server stream of the
+// "artSearch" method.
+type ArtSearchEndpointInput struct {
 	// Payload is the method payload.
-	Payload *DownloadTaskStatePayload
-	// Stream is the server stream used by the "downloadTaskState" method to send
-	// data.
-	Stream DownloadTaskStateServerStream
+	Payload *ArtSearchPayload
+	// Stream is the server stream used by the "artSearch" method to send data.
+	Stream ArtSearchServerStream
 }
 
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
-	// Casting service to Auther interface
-	a := s.(Auther)
 	return &Endpoints{
 		Register:          NewRegisterEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
 		RegisterTask:      NewRegisterTaskEndpoint(s),
 		RegisterTasks:     NewRegisterTasksEndpoint(s),
 		UploadImage:       NewUploadImageEndpoint(s),
-		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
-		DownloadTaskState: NewDownloadTaskStateEndpoint(s),
-		DowloadTask:       NewDowloadTaskEndpoint(s),
-		DownloadTasks:     NewDownloadTasksEndpoint(s),
+		ArtSearch:         NewArtSearchEndpoint(s),
+		ArtworkGet:        NewArtworkGetEndpoint(s),
 	}
 }
 
@@ -71,10 +63,8 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.RegisterTask = m(e.RegisterTask)
 	e.RegisterTasks = m(e.RegisterTasks)
 	e.UploadImage = m(e.UploadImage)
-	e.Download = m(e.Download)
-	e.DownloadTaskState = m(e.DownloadTaskState)
-	e.DowloadTask = m(e.DowloadTask)
-	e.DownloadTasks = m(e.DownloadTasks)
+	e.ArtSearch = m(e.ArtSearch)
+	e.ArtworkGet = m(e.ArtworkGet)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -141,62 +131,20 @@ func NewUploadImageEndpoint(s Service) goa.Endpoint {
 	}
 }
 
-// NewDownloadEndpoint returns an endpoint function that calls the method
-// "download" of service "artworks".
-func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+// NewArtSearchEndpoint returns an endpoint function that calls the method
+// "artSearch" of service "artworks".
+func NewArtSearchEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*DownloadPayload)
-		var err error
-		sc := security.APIKeyScheme{
-			Name:           "api_key",
-			Scopes:         []string{},
-			RequiredScopes: []string{},
-		}
-		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
-		if err != nil {
-			return nil, err
-		}
-		res, err := s.Download(ctx, p)
-		if err != nil {
-			return nil, err
-		}
-		vres := NewViewedDownloadResult(res, "default")
-		return vres, nil
+		ep := req.(*ArtSearchEndpointInput)
+		return nil, s.ArtSearch(ctx, ep.Payload, ep.Stream)
 	}
 }
 
-// NewDownloadTaskStateEndpoint returns an endpoint function that calls the
-// method "downloadTaskState" of service "artworks".
-func NewDownloadTaskStateEndpoint(s Service) goa.Endpoint {
+// NewArtworkGetEndpoint returns an endpoint function that calls the method
+// "artworkGet" of service "artworks".
+func NewArtworkGetEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		ep := req.(*DownloadTaskStateEndpointInput)
-		return nil, s.DownloadTaskState(ctx, ep.Payload, ep.Stream)
-	}
-}
-
-// NewDowloadTaskEndpoint returns an endpoint function that calls the method
-// "dowloadTask" of service "artworks".
-func NewDowloadTaskEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*DowloadTaskPayload)
-		res, err := s.DowloadTask(ctx, p)
-		if err != nil {
-			return nil, err
-		}
-		vres := NewViewedDownloadTask(res, "default")
-		return vres, nil
-	}
-}
-
-// NewDownloadTasksEndpoint returns an endpoint function that calls the method
-// "downloadTasks" of service "artworks".
-func NewDownloadTasksEndpoint(s Service) goa.Endpoint {
-	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		res, err := s.DownloadTasks(ctx)
-		if err != nil {
-			return nil, err
-		}
-		vres := NewViewedDownloadTaskCollection(res, "tiny")
-		return vres, nil
+		p := req.(*ArtworkGetPayload)
+		return s.ArtworkGet(ctx, p)
 	}
 }

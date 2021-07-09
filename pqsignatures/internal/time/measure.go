@@ -10,7 +10,7 @@ import (
 )
 
 // Measure retrieves name of the caller function and prints it along with elapsed time
-// Should be deffered in the beggining of function to measure
+// Should be deffered in the beginning of function to measure
 func Measure(start time.Time) {
 	elapsed := time.Since(start)
 	pc, _, _, _ := runtime.Caller(1)

@@ -167,7 +167,7 @@ func maxQRCodeSize(images []Image) image.Point {
 	return image.Point{maxQRCodeImageSideSizeX, maxQRCodeImageSideSizeY + textYPadding + rowYPadding}
 }
 
-// ImagesFitOutputSize verifies if containerSize has enough capacity to accomodate all QR-codes images
+// ImagesFitOutputSize verifies if containerSize has enough capacity to accommodate all QR-codes images
 func ImagesFitOutputSize(images []Image, containerSize image.Point) error {
 	maxQRCodeSize := maxQRCodeSize(images)
 
@@ -178,7 +178,7 @@ func ImagesFitOutputSize(images []Image, containerSize image.Point) error {
 		return OutputSizeTooSmall
 	}
 
-	// Substract 1 to reserve it for position vector
+	// Subtract 1 to reserve it for position vector
 	totalCapacity := capacityX*capacityY - 1
 
 	if totalCapacity < len(images) {

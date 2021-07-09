@@ -11,6 +11,7 @@ import (
 type SubStatus interface {
 	fmt.Stringer
 	IsFinal() bool
+	IsFailure() bool
 }
 
 // Status represents a state of the task.

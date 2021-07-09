@@ -22,7 +22,7 @@ import (
 // streaming endpoints in "artworks" service.
 type ConnConfigurer struct {
 	RegisterTaskStateFn goahttp.ConnConfigureFunc
-	DownloadTaskStateFn goahttp.ConnConfigureFunc
+	ArtSearchFn         goahttp.ConnConfigureFunc
 }
 
 // RegisterTaskStateServerStream implements the
@@ -44,9 +44,9 @@ type RegisterTaskStateServerStream struct {
 	conn *websocket.Conn
 }
 
-// DownloadTaskStateServerStream implements the
-// artworks.DownloadTaskStateServerStream interface.
-type DownloadTaskStateServerStream struct {
+// ArtSearchServerStream implements the artworks.ArtSearchServerStream
+// interface.
+type ArtSearchServerStream struct {
 	once sync.Once
 	// upgrader is the websocket connection upgrader.
 	upgrader goahttp.Upgrader
@@ -68,7 +68,7 @@ type DownloadTaskStateServerStream struct {
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
 		RegisterTaskStateFn: fn,
-		DownloadTaskStateFn: fn,
+		ArtSearchFn:         fn,
 	}
 }
 
@@ -114,9 +114,9 @@ func (s *RegisterTaskStateServerStream) Close() error {
 	return s.conn.Close()
 }
 
-// Send streams instances of "artworks.ArtDownloadTaskState" to the
-// "downloadTaskState" endpoint websocket connection.
-func (s *DownloadTaskStateServerStream) Send(v *artworks.ArtDownloadTaskState) error {
+// Send streams instances of "artworks.ArtworkSearchResult" to the "artSearch"
+// endpoint websocket connection.
+func (s *ArtSearchServerStream) Send(v *artworks.ArtworkSearchResult) error {
 	var err error
 	// Upgrade the HTTP connection to a websocket connection only once. Connection
 	// upgrade is done here so that authorization logic in the endpoint is executed
@@ -136,12 +136,12 @@ func (s *DownloadTaskStateServerStream) Send(v *artworks.ArtDownloadTaskState) e
 		return err
 	}
 	res := v
-	body := NewDownloadTaskStateResponseBody(res)
+	body := NewArtSearchResponseBody(res)
 	return s.conn.WriteJSON(body)
 }
 
-// Close closes the "downloadTaskState" endpoint websocket connection.
-func (s *DownloadTaskStateServerStream) Close() error {
+// Close closes the "artSearch" endpoint websocket connection.
+func (s *ArtSearchServerStream) Close() error {
 	var err error
 	if s.conn == nil {
 		return nil

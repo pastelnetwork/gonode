@@ -19,7 +19,7 @@ import (
 // streaming endpoints in "artworks" service.
 type ConnConfigurer struct {
 	RegisterTaskStateFn goahttp.ConnConfigureFunc
-	DownloadTaskStateFn goahttp.ConnConfigureFunc
+	ArtSearchFn         goahttp.ConnConfigureFunc
 }
 
 // RegisterTaskStateClientStream implements the
@@ -29,9 +29,9 @@ type RegisterTaskStateClientStream struct {
 	conn *websocket.Conn
 }
 
-// DownloadTaskStateClientStream implements the
-// artworks.DownloadTaskStateClientStream interface.
-type DownloadTaskStateClientStream struct {
+// ArtSearchClientStream implements the artworks.ArtSearchClientStream
+// interface.
+type ArtSearchClientStream struct {
 	// conn is the underlying websocket connection.
 	conn *websocket.Conn
 }
@@ -41,7 +41,7 @@ type DownloadTaskStateClientStream struct {
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
 		RegisterTaskStateFn: fn,
-		DownloadTaskStateFn: fn,
+		ArtSearchFn:         fn,
 	}
 }
 
@@ -69,12 +69,12 @@ func (s *RegisterTaskStateClientStream) Recv() (*artworks.TaskState, error) {
 	return res, nil
 }
 
-// Recv reads instances of "artworks.ArtDownloadTaskState" from the
-// "downloadTaskState" endpoint websocket connection.
-func (s *DownloadTaskStateClientStream) Recv() (*artworks.ArtDownloadTaskState, error) {
+// Recv reads instances of "artworks.ArtworkSearchResult" from the "artSearch"
+// endpoint websocket connection.
+func (s *ArtSearchClientStream) Recv() (*artworks.ArtworkSearchResult, error) {
 	var (
-		rv   *artworks.ArtDownloadTaskState
-		body DownloadTaskStateResponseBody
+		rv   *artworks.ArtworkSearchResult
+		body ArtSearchResponseBody
 		err  error
 	)
 	err = s.conn.ReadJSON(&body)
@@ -85,10 +85,10 @@ func (s *DownloadTaskStateClientStream) Recv() (*artworks.ArtDownloadTaskState, 
 	if err != nil {
 		return rv, err
 	}
-	err = ValidateDownloadTaskStateResponseBody(&body)
+	err = ValidateArtSearchResponseBody(&body)
 	if err != nil {
 		return rv, err
 	}
-	res := NewDownloadTaskStateArtDownloadTaskStateOK(&body)
+	res := NewArtSearchArtworkSearchResultOK(&body)
 	return res, nil
 }

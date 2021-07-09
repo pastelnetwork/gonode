@@ -10,7 +10,7 @@ const (
 	defaultNumberSuperNodes = 3
 
 	connectToNextNodeDelay = time.Millisecond * 200
-	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
+	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accepted by primary nodes.
 	connectTimeout         = time.Second * 2
 
 	thumbnailSize = 224

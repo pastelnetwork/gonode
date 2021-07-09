@@ -446,7 +446,7 @@ func measureSimilarityOfCandidateImageToDatabase(ctx context.Context, imageFileP
 		candidateImageFingerprint, err = getImageDeepLearningFeaturesCombinedVectorForSingleImage(ctx, imageFilePath)
 	}
 	lengthOfCandidateImageFingerprint := len(candidateImageFingerprint)
-	fmt.Printf("\nCandidate image fingerpint consists from %v numbers", lengthOfCandidateImageFingerprint)
+	fmt.Printf("\nCandidate image fingerprint consists from %v numbers", lengthOfCandidateImageFingerprint)
 	if err != nil {
 		return 0, errors.New(err)
 	}

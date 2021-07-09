@@ -45,6 +45,11 @@ func (status Status) IsFinal() bool {
 	return status == StatusTaskCompleted || status == StatusTaskRejected
 }
 
+// IsFailure returns true if the status is the failure.
+func (status Status) IsFailure() bool {
+	return status == ErrorInsufficientFee || status == StatusTaskRejected || status == StatusErrorFingerprintsNotMatch
+}
+
 // StatusNames returns a sorted list of status names.
 func StatusNames() []string {
 	list := make([]string, len(statusNames))

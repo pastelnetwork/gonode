@@ -27,10 +27,8 @@ type Server struct {
 	RegisterTask      http.Handler
 	RegisterTasks     http.Handler
 	UploadImage       http.Handler
-	Download          http.Handler
-	DownloadTaskState http.Handler
-	DowloadTask       http.Handler
-	DownloadTasks     http.Handler
+	ArtSearch         http.Handler
+	ArtworkGet        http.Handler
 	CORS              http.Handler
 }
 
@@ -82,27 +80,22 @@ func New(
 			{"RegisterTask", "GET", "/artworks/register/{taskId}"},
 			{"RegisterTasks", "GET", "/artworks/register"},
 			{"UploadImage", "POST", "/artworks/register/upload"},
-			{"Download", "POST", "/artworks/download"},
-			{"DownloadTaskState", "GET", "/artworks/download/{taskId}/state"},
-			{"DowloadTask", "GET", "/artworks/download/{taskId}"},
-			{"DownloadTasks", "GET", "/artworks/download"},
+			{"ArtSearch", "GET", "/artworks/search"},
+			{"ArtworkGet", "GET", "/artworks/{txid}"},
 			{"CORS", "OPTIONS", "/artworks/register"},
 			{"CORS", "OPTIONS", "/artworks/register/{taskId}/state"},
 			{"CORS", "OPTIONS", "/artworks/register/{taskId}"},
 			{"CORS", "OPTIONS", "/artworks/register/upload"},
-			{"CORS", "OPTIONS", "/artworks/download"},
-			{"CORS", "OPTIONS", "/artworks/download/{taskId}/state"},
-			{"CORS", "OPTIONS", "/artworks/download/{taskId}"},
+			{"CORS", "OPTIONS", "/artworks/search"},
+			{"CORS", "OPTIONS", "/artworks/{txid}"},
 		},
 		Register:          NewRegisterHandler(e.Register, mux, decoder, encoder, errhandler, formatter),
 		RegisterTaskState: NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
 		RegisterTask:      NewRegisterTaskHandler(e.RegisterTask, mux, decoder, encoder, errhandler, formatter),
 		RegisterTasks:     NewRegisterTasksHandler(e.RegisterTasks, mux, decoder, encoder, errhandler, formatter),
 		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
-		Download:          NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter),
-		DownloadTaskState: NewDownloadTaskStateHandler(e.DownloadTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.DownloadTaskStateFn),
-		DowloadTask:       NewDowloadTaskHandler(e.DowloadTask, mux, decoder, encoder, errhandler, formatter),
-		DownloadTasks:     NewDownloadTasksHandler(e.DownloadTasks, mux, decoder, encoder, errhandler, formatter),
+		ArtSearch:         NewArtSearchHandler(e.ArtSearch, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.ArtSearchFn),
+		ArtworkGet:        NewArtworkGetHandler(e.ArtworkGet, mux, decoder, encoder, errhandler, formatter),
 		CORS:              NewCORSHandler(),
 	}
 }
@@ -117,10 +110,8 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.RegisterTask = m(s.RegisterTask)
 	s.RegisterTasks = m(s.RegisterTasks)
 	s.UploadImage = m(s.UploadImage)
-	s.Download = m(s.Download)
-	s.DownloadTaskState = m(s.DownloadTaskState)
-	s.DowloadTask = m(s.DowloadTask)
-	s.DownloadTasks = m(s.DownloadTasks)
+	s.ArtSearch = m(s.ArtSearch)
+	s.ArtworkGet = m(s.ArtworkGet)
 	s.CORS = m(s.CORS)
 }
 
@@ -131,10 +122,8 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountRegisterTaskHandler(mux, h.RegisterTask)
 	MountRegisterTasksHandler(mux, h.RegisterTasks)
 	MountUploadImageHandler(mux, h.UploadImage)
-	MountDownloadHandler(mux, h.Download)
-	MountDownloadTaskStateHandler(mux, h.DownloadTaskState)
-	MountDowloadTaskHandler(mux, h.DowloadTask)
-	MountDownloadTasksHandler(mux, h.DownloadTasks)
+	MountArtSearchHandler(mux, h.ArtSearch)
+	MountArtworkGetHandler(mux, h.ArtworkGet)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -399,72 +388,21 @@ func NewUploadImageHandler(
 	})
 }
 
-// MountDownloadHandler configures the mux to serve the "artworks" service
-// "download" endpoint.
-func MountDownloadHandler(mux goahttp.Muxer, h http.Handler) {
+// MountArtSearchHandler configures the mux to serve the "artworks" service
+// "artSearch" endpoint.
+func MountArtSearchHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("POST", "/artworks/download", f)
+	mux.Handle("GET", "/artworks/search", f)
 }
 
-// NewDownloadHandler creates a HTTP handler which loads the HTTP request and
-// calls the "artworks" service "download" endpoint.
-func NewDownloadHandler(
-	endpoint goa.Endpoint,
-	mux goahttp.Muxer,
-	decoder func(*http.Request) goahttp.Decoder,
-	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
-	errhandler func(context.Context, http.ResponseWriter, error),
-	formatter func(err error) goahttp.Statuser,
-) http.Handler {
-	var (
-		decodeRequest  = DecodeDownloadRequest(mux, decoder)
-		encodeResponse = EncodeDownloadResponse(encoder)
-		encodeError    = EncodeDownloadError(encoder, formatter)
-	)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "download")
-		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
-		payload, err := decodeRequest(r)
-		if err != nil {
-			if err := encodeError(ctx, w, err); err != nil {
-				errhandler(ctx, w, err)
-			}
-			return
-		}
-		res, err := endpoint(ctx, payload)
-		if err != nil {
-			if err := encodeError(ctx, w, err); err != nil {
-				errhandler(ctx, w, err)
-			}
-			return
-		}
-		if err := encodeResponse(ctx, w, res); err != nil {
-			errhandler(ctx, w, err)
-		}
-	})
-}
-
-// MountDownloadTaskStateHandler configures the mux to serve the "artworks"
-// service "downloadTaskState" endpoint.
-func MountDownloadTaskStateHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
-	if !ok {
-		f = func(w http.ResponseWriter, r *http.Request) {
-			h.ServeHTTP(w, r)
-		}
-	}
-	mux.Handle("GET", "/artworks/download/{taskId}/state", f)
-}
-
-// NewDownloadTaskStateHandler creates a HTTP handler which loads the HTTP
-// request and calls the "artworks" service "downloadTaskState" endpoint.
-func NewDownloadTaskStateHandler(
+// NewArtSearchHandler creates a HTTP handler which loads the HTTP request and
+// calls the "artworks" service "artSearch" endpoint.
+func NewArtSearchHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -475,12 +413,12 @@ func NewDownloadTaskStateHandler(
 	configurer goahttp.ConnConfigureFunc,
 ) http.Handler {
 	var (
-		decodeRequest = DecodeDownloadTaskStateRequest(mux, decoder)
-		encodeError   = EncodeDownloadTaskStateError(encoder, formatter)
+		decodeRequest = DecodeArtSearchRequest(mux, decoder)
+		encodeError   = EncodeArtSearchError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "downloadTaskState")
+		ctx = context.WithValue(ctx, goa.MethodKey, "artSearch")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -491,15 +429,15 @@ func NewDownloadTaskStateHandler(
 		}
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
-		v := &artworks.DownloadTaskStateEndpointInput{
-			Stream: &DownloadTaskStateServerStream{
+		v := &artworks.ArtSearchEndpointInput{
+			Stream: &ArtSearchServerStream{
 				upgrader:   upgrader,
 				configurer: configurer,
 				cancel:     cancel,
 				w:          w,
 				r:          r,
 			},
-			Payload: payload.(*artworks.DownloadTaskStatePayload),
+			Payload: payload.(*artworks.ArtSearchPayload),
 		}
 		_, err = endpoint(ctx, v)
 		if err != nil {
@@ -514,21 +452,21 @@ func NewDownloadTaskStateHandler(
 	})
 }
 
-// MountDowloadTaskHandler configures the mux to serve the "artworks" service
-// "dowloadTask" endpoint.
-func MountDowloadTaskHandler(mux goahttp.Muxer, h http.Handler) {
+// MountArtworkGetHandler configures the mux to serve the "artworks" service
+// "artworkGet" endpoint.
+func MountArtworkGetHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("GET", "/artworks/download/{taskId}", f)
+	mux.Handle("GET", "/artworks/{txid}", f)
 }
 
-// NewDowloadTaskHandler creates a HTTP handler which loads the HTTP request
-// and calls the "artworks" service "dowloadTask" endpoint.
-func NewDowloadTaskHandler(
+// NewArtworkGetHandler creates a HTTP handler which loads the HTTP request and
+// calls the "artworks" service "artworkGet" endpoint.
+func NewArtworkGetHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -537,13 +475,13 @@ func NewDowloadTaskHandler(
 	formatter func(err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeDowloadTaskRequest(mux, decoder)
-		encodeResponse = EncodeDowloadTaskResponse(encoder)
-		encodeError    = EncodeDowloadTaskError(encoder, formatter)
+		decodeRequest  = DecodeArtworkGetRequest(mux, decoder)
+		encodeResponse = EncodeArtworkGetResponse(encoder)
+		encodeError    = EncodeArtworkGetError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "dowloadTask")
+		ctx = context.WithValue(ctx, goa.MethodKey, "artworkGet")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -553,50 +491,6 @@ func NewDowloadTaskHandler(
 			return
 		}
 		res, err := endpoint(ctx, payload)
-		if err != nil {
-			if err := encodeError(ctx, w, err); err != nil {
-				errhandler(ctx, w, err)
-			}
-			return
-		}
-		if err := encodeResponse(ctx, w, res); err != nil {
-			errhandler(ctx, w, err)
-		}
-	})
-}
-
-// MountDownloadTasksHandler configures the mux to serve the "artworks" service
-// "downloadTasks" endpoint.
-func MountDownloadTasksHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
-	if !ok {
-		f = func(w http.ResponseWriter, r *http.Request) {
-			h.ServeHTTP(w, r)
-		}
-	}
-	mux.Handle("GET", "/artworks/download", f)
-}
-
-// NewDownloadTasksHandler creates a HTTP handler which loads the HTTP request
-// and calls the "artworks" service "downloadTasks" endpoint.
-func NewDownloadTasksHandler(
-	endpoint goa.Endpoint,
-	mux goahttp.Muxer,
-	decoder func(*http.Request) goahttp.Decoder,
-	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
-	errhandler func(context.Context, http.ResponseWriter, error),
-	formatter func(err error) goahttp.Statuser,
-) http.Handler {
-	var (
-		encodeResponse = EncodeDownloadTasksResponse(encoder)
-		encodeError    = EncodeDownloadTasksError(encoder, formatter)
-	)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "downloadTasks")
-		ctx = context.WithValue(ctx, goa.ServiceKey, "artworks")
-		var err error
-		res, err := endpoint(ctx, nil)
 		if err != nil {
 			if err := encodeError(ctx, w, err); err != nil {
 				errhandler(ctx, w, err)
@@ -623,9 +517,8 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/artworks/register/{taskId}/state", f)
 	mux.Handle("OPTIONS", "/artworks/register/{taskId}", f)
 	mux.Handle("OPTIONS", "/artworks/register/upload", f)
-	mux.Handle("OPTIONS", "/artworks/download", f)
-	mux.Handle("OPTIONS", "/artworks/download/{taskId}/state", f)
-	mux.Handle("OPTIONS", "/artworks/download/{taskId}", f)
+	mux.Handle("OPTIONS", "/artworks/search", f)
+	mux.Handle("OPTIONS", "/artworks/{txid}", f)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

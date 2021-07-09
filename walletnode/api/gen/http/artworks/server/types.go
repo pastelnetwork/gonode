@@ -98,38 +98,58 @@ type UploadImageResponseBody struct {
 	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 }
 
-// DownloadResponseBody is the type of the "artworks" service "download"
+// ArtSearchResponseBody is the type of the "artworks" service "artSearch"
 // endpoint HTTP response body.
-type DownloadResponseBody struct {
-	// Task ID of the download process
-	TaskID string `form:"task_id" json:"task_id" xml:"task_id"`
+type ArtSearchResponseBody struct {
+	// Artwork data
+	Artwork *ArtworkSummaryResponseBody `form:"artwork" json:"artwork" xml:"artwork"`
+	// Sort index of the match based on score.This must be used to sort results on
+	// UI.
+	MatchIndex int `form:"match_index" json:"match_index" xml:"match_index"`
+	// Match result details
+	Matches []*FuzzyMatchResponseBody `form:"matches" json:"matches" xml:"matches"`
 }
 
-// DownloadTaskStateResponseBody is the type of the "artworks" service
-// "downloadTaskState" endpoint HTTP response body.
-type DownloadTaskStateResponseBody struct {
-	// Date of the status creation
-	Date string `form:"date" json:"date" xml:"date"`
-	// Status of the download process
-	Status string `form:"status" json:"status" xml:"status"`
-}
-
-// DowloadTaskResponseBody is the type of the "artworks" service "dowloadTask"
+// ArtworkGetResponseBody is the type of the "artworks" service "artworkGet"
 // endpoint HTTP response body.
-type DowloadTaskResponseBody struct {
-	// JOb ID of the downloading process
-	ID string `form:"id" json:"id" xml:"id"`
-	// Status of the downloading process
-	Status string `form:"status" json:"status" xml:"status"`
-	// List of states from the very beginning of the process
-	States []*ArtDownloadTaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
-	// File downloaded
-	Bytes []byte `form:"file" json:"file" xml:"file"`
+type ArtworkGetResponseBody struct {
+	// version
+	Version *int `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
+	// Green flag
+	IsGreen bool `form:"is_green" json:"is_green" xml:"is_green"`
+	// how much artist should get on all future resales
+	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
+	// Storage fee
+	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
+	// nsfw score
+	NsfwScore int `form:"nsfw_score" json:"nsfw_score" xml:"nsfw_score"`
+	// rareness score
+	RarenessScore int `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
+	// seen score
+	SeenScore int `form:"seen_score" json:"seen_score" xml:"seen_score"`
+	// Thumbnail image
+	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// txid
+	Txid string `form:"txid" json:"txid" xml:"txid"`
+	// Name of the artwork
+	Title string `form:"title" json:"title" xml:"title"`
+	// Description of the artwork
+	Description string `form:"description" json:"description" xml:"description"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies
+	Copies int `form:"copies" json:"copies" xml:"copies"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Name of the artist
+	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 }
-
-// DownloadTaskResponseTinyCollection is the type of the "artworks" service
-// "downloadTasks" endpoint HTTP response body.
-type DownloadTaskResponseTinyCollection []*DownloadTaskResponseTiny
 
 // RegisterBadRequestResponseBody is the type of the "artworks" service
 // "register" endpoint HTTP response body for the "BadRequest" error.
@@ -298,9 +318,9 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// DownloadNotFoundResponseBody is the type of the "artworks" service
-// "download" endpoint HTTP response body for the "NotFound" error.
-type DownloadNotFoundResponseBody struct {
+// ArtSearchBadRequestResponseBody is the type of the "artworks" service
+// "artSearch" endpoint HTTP response body for the "BadRequest" error.
+type ArtSearchBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -316,47 +336,10 @@ type DownloadNotFoundResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// DownloadInternalServerErrorResponseBody is the type of the "artworks"
-// service "download" endpoint HTTP response body for the "InternalServerError"
-// error.
-type DownloadInternalServerErrorResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// DownloadTaskStateNotFoundResponseBody is the type of the "artworks" service
-// "downloadTaskState" endpoint HTTP response body for the "NotFound" error.
-type DownloadTaskStateNotFoundResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// DownloadTaskStateInternalServerErrorResponseBody is the type of the
-// "artworks" service "downloadTaskState" endpoint HTTP response body for the
+// ArtSearchInternalServerErrorResponseBody is the type of the "artworks"
+// service "artSearch" endpoint HTTP response body for the
 // "InternalServerError" error.
-type DownloadTaskStateInternalServerErrorResponseBody struct {
+type ArtSearchInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -372,9 +355,9 @@ type DownloadTaskStateInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// DowloadTaskNotFoundResponseBody is the type of the "artworks" service
-// "dowloadTask" endpoint HTTP response body for the "NotFound" error.
-type DowloadTaskNotFoundResponseBody struct {
+// ArtworkGetBadRequestResponseBody is the type of the "artworks" service
+// "artworkGet" endpoint HTTP response body for the "BadRequest" error.
+type ArtworkGetBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -390,29 +373,28 @@ type DowloadTaskNotFoundResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// DowloadTaskInternalServerErrorResponseBody is the type of the "artworks"
-// service "dowloadTask" endpoint HTTP response body for the
+// ArtworkGetNotFoundResponseBody is the type of the "artworks" service
+// "artworkGet" endpoint HTTP response body for the "NotFound" error.
+type ArtworkGetNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// ArtworkGetInternalServerErrorResponseBody is the type of the "artworks"
+// service "artworkGet" endpoint HTTP response body for the
 // "InternalServerError" error.
-type DowloadTaskInternalServerErrorResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// DownloadTasksInternalServerErrorResponseBody is the type of the "artworks"
-// service "downloadTasks" endpoint HTTP response body for the
-// "InternalServerError" error.
-type DownloadTasksInternalServerErrorResponseBody struct {
+type ArtworkGetInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -503,23 +485,42 @@ type ArtworkTicketResponse struct {
 	MaximumFee float64 `form:"maximum_fee" json:"maximum_fee" xml:"maximum_fee"`
 }
 
-// ArtDownloadTaskStateResponseBody is used to define fields on response body
-// types.
-type ArtDownloadTaskStateResponseBody struct {
-	// Date of the status creation
-	Date string `form:"date" json:"date" xml:"date"`
-	// Status of the download process
-	Status string `form:"status" json:"status" xml:"status"`
+// ArtworkSummaryResponseBody is used to define fields on response body types.
+type ArtworkSummaryResponseBody struct {
+	// Thumbnail image
+	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// txid
+	Txid string `form:"txid" json:"txid" xml:"txid"`
+	// Name of the artwork
+	Title string `form:"title" json:"title" xml:"title"`
+	// Description of the artwork
+	Description string `form:"description" json:"description" xml:"description"`
+	// Keywords
+	Keywords *string `form:"keywords,omitempty" json:"keywords,omitempty" xml:"keywords,omitempty"`
+	// Series name
+	SeriesName *string `form:"series_name,omitempty" json:"series_name,omitempty" xml:"series_name,omitempty"`
+	// Number of copies
+	Copies int `form:"copies" json:"copies" xml:"copies"`
+	// Artwork creation video youtube URL
+	YoutubeURL *string `form:"youtube_url,omitempty" json:"youtube_url,omitempty" xml:"youtube_url,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Name of the artist
+	ArtistName string `form:"artist_name" json:"artist_name" xml:"artist_name"`
+	// Artist website URL
+	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 }
 
-// DownloadTaskResponseTiny is used to define fields on response body types.
-type DownloadTaskResponseTiny struct {
-	// JOb ID of the downloading process
-	ID string `form:"id" json:"id" xml:"id"`
-	// Status of the downloading process
-	Status string `form:"status" json:"status" xml:"status"`
-	// File downloaded
-	Bytes []byte `form:"file" json:"file" xml:"file"`
+// FuzzyMatchResponseBody is used to define fields on response body types.
+type FuzzyMatchResponseBody struct {
+	// String that is matched
+	Str *string `form:"str,omitempty" json:"str,omitempty" xml:"str,omitempty"`
+	// Field that is matched
+	FieldType *string `form:"field_type,omitempty" json:"field_type,omitempty" xml:"field_type,omitempty"`
+	// The indexes of matched characters. Useful for highlighting matches
+	MatchedIndexes []int `form:"matched_indexes,omitempty" json:"matched_indexes,omitempty" xml:"matched_indexes,omitempty"`
+	// Score used to rank matches
+	Score *int `form:"score,omitempty" json:"score,omitempty" xml:"score,omitempty"`
 }
 
 // NewRegisterResponseBody builds the HTTP response body from the result of the
@@ -581,48 +582,46 @@ func NewUploadImageResponseBody(res *artworksviews.ImageView) *UploadImageRespon
 	return body
 }
 
-// NewDownloadResponseBody builds the HTTP response body from the result of the
-// "download" endpoint of the "artworks" service.
-func NewDownloadResponseBody(res *artworksviews.DownloadResultView) *DownloadResponseBody {
-	body := &DownloadResponseBody{
-		TaskID: *res.TaskID,
+// NewArtSearchResponseBody builds the HTTP response body from the result of
+// the "artSearch" endpoint of the "artworks" service.
+func NewArtSearchResponseBody(res *artworks.ArtworkSearchResult) *ArtSearchResponseBody {
+	body := &ArtSearchResponseBody{
+		MatchIndex: res.MatchIndex,
 	}
-	return body
-}
-
-// NewDownloadTaskStateResponseBody builds the HTTP response body from the
-// result of the "downloadTaskState" endpoint of the "artworks" service.
-func NewDownloadTaskStateResponseBody(res *artworks.ArtDownloadTaskState) *DownloadTaskStateResponseBody {
-	body := &DownloadTaskStateResponseBody{
-		Date:   res.Date,
-		Status: res.Status,
+	if res.Artwork != nil {
+		body.Artwork = marshalArtworksArtworkSummaryToArtworkSummaryResponseBody(res.Artwork)
 	}
-	return body
-}
-
-// NewDowloadTaskResponseBody builds the HTTP response body from the result of
-// the "dowloadTask" endpoint of the "artworks" service.
-func NewDowloadTaskResponseBody(res *artworksviews.DownloadTaskView) *DowloadTaskResponseBody {
-	body := &DowloadTaskResponseBody{
-		ID:     *res.ID,
-		Status: *res.Status,
-		Bytes:  res.Bytes,
-	}
-	if res.States != nil {
-		body.States = make([]*ArtDownloadTaskStateResponseBody, len(res.States))
-		for i, val := range res.States {
-			body.States[i] = marshalArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskStateResponseBody(val)
+	if res.Matches != nil {
+		body.Matches = make([]*FuzzyMatchResponseBody, len(res.Matches))
+		for i, val := range res.Matches {
+			body.Matches[i] = marshalArtworksFuzzyMatchToFuzzyMatchResponseBody(val)
 		}
 	}
 	return body
 }
 
-// NewDownloadTaskResponseTinyCollection builds the HTTP response body from the
-// result of the "downloadTasks" endpoint of the "artworks" service.
-func NewDownloadTaskResponseTinyCollection(res artworksviews.DownloadTaskCollectionView) DownloadTaskResponseTinyCollection {
-	body := make([]*DownloadTaskResponseTiny, len(res))
-	for i, val := range res {
-		body[i] = marshalArtworksviewsDownloadTaskViewToDownloadTaskResponseTiny(val)
+// NewArtworkGetResponseBody builds the HTTP response body from the result of
+// the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetResponseBody(res *artworks.ArtworkDetail) *ArtworkGetResponseBody {
+	body := &ArtworkGetResponseBody{
+		Version:          res.Version,
+		IsGreen:          res.IsGreen,
+		Royalty:          res.Royalty,
+		StorageFee:       res.StorageFee,
+		NsfwScore:        res.NsfwScore,
+		RarenessScore:    res.RarenessScore,
+		SeenScore:        res.SeenScore,
+		Thumbnail:        res.Thumbnail,
+		Txid:             res.Txid,
+		Title:            res.Title,
+		Description:      res.Description,
+		Keywords:         res.Keywords,
+		SeriesName:       res.SeriesName,
+		Copies:           res.Copies,
+		YoutubeURL:       res.YoutubeURL,
+		ArtistPastelID:   res.ArtistPastelID,
+		ArtistName:       res.ArtistName,
+		ArtistWebsiteURL: res.ArtistWebsiteURL,
 	}
 	return body
 }
@@ -755,10 +754,10 @@ func NewUploadImageInternalServerErrorResponseBody(res *goa.ServiceError) *Uploa
 	return body
 }
 
-// NewDownloadNotFoundResponseBody builds the HTTP response body from the
-// result of the "download" endpoint of the "artworks" service.
-func NewDownloadNotFoundResponseBody(res *goa.ServiceError) *DownloadNotFoundResponseBody {
-	body := &DownloadNotFoundResponseBody{
+// NewArtSearchBadRequestResponseBody builds the HTTP response body from the
+// result of the "artSearch" endpoint of the "artworks" service.
+func NewArtSearchBadRequestResponseBody(res *goa.ServiceError) *ArtSearchBadRequestResponseBody {
+	body := &ArtSearchBadRequestResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -769,10 +768,10 @@ func NewDownloadNotFoundResponseBody(res *goa.ServiceError) *DownloadNotFoundRes
 	return body
 }
 
-// NewDownloadInternalServerErrorResponseBody builds the HTTP response body
-// from the result of the "download" endpoint of the "artworks" service.
-func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *DownloadInternalServerErrorResponseBody {
-	body := &DownloadInternalServerErrorResponseBody{
+// NewArtSearchInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "artSearch" endpoint of the "artworks" service.
+func NewArtSearchInternalServerErrorResponseBody(res *goa.ServiceError) *ArtSearchInternalServerErrorResponseBody {
+	body := &ArtSearchInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -783,10 +782,10 @@ func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *Download
 	return body
 }
 
-// NewDownloadTaskStateNotFoundResponseBody builds the HTTP response body from
-// the result of the "downloadTaskState" endpoint of the "artworks" service.
-func NewDownloadTaskStateNotFoundResponseBody(res *goa.ServiceError) *DownloadTaskStateNotFoundResponseBody {
-	body := &DownloadTaskStateNotFoundResponseBody{
+// NewArtworkGetBadRequestResponseBody builds the HTTP response body from the
+// result of the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetBadRequestResponseBody(res *goa.ServiceError) *ArtworkGetBadRequestResponseBody {
+	body := &ArtworkGetBadRequestResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -797,11 +796,10 @@ func NewDownloadTaskStateNotFoundResponseBody(res *goa.ServiceError) *DownloadTa
 	return body
 }
 
-// NewDownloadTaskStateInternalServerErrorResponseBody builds the HTTP response
-// body from the result of the "downloadTaskState" endpoint of the "artworks"
-// service.
-func NewDownloadTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) *DownloadTaskStateInternalServerErrorResponseBody {
-	body := &DownloadTaskStateInternalServerErrorResponseBody{
+// NewArtworkGetNotFoundResponseBody builds the HTTP response body from the
+// result of the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetNotFoundResponseBody(res *goa.ServiceError) *ArtworkGetNotFoundResponseBody {
+	body := &ArtworkGetNotFoundResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -812,39 +810,10 @@ func NewDownloadTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) 
 	return body
 }
 
-// NewDowloadTaskNotFoundResponseBody builds the HTTP response body from the
-// result of the "dowloadTask" endpoint of the "artworks" service.
-func NewDowloadTaskNotFoundResponseBody(res *goa.ServiceError) *DowloadTaskNotFoundResponseBody {
-	body := &DowloadTaskNotFoundResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewDowloadTaskInternalServerErrorResponseBody builds the HTTP response body
-// from the result of the "dowloadTask" endpoint of the "artworks" service.
-func NewDowloadTaskInternalServerErrorResponseBody(res *goa.ServiceError) *DowloadTaskInternalServerErrorResponseBody {
-	body := &DowloadTaskInternalServerErrorResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewDownloadTasksInternalServerErrorResponseBody builds the HTTP response
-// body from the result of the "downloadTasks" endpoint of the "artworks"
-// service.
-func NewDownloadTasksInternalServerErrorResponseBody(res *goa.ServiceError) *DownloadTasksInternalServerErrorResponseBody {
-	body := &DownloadTasksInternalServerErrorResponseBody{
+// NewArtworkGetInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetInternalServerErrorResponseBody(res *goa.ServiceError) *ArtworkGetInternalServerErrorResponseBody {
+	body := &ArtworkGetInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -904,29 +873,33 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePa
 	return v
 }
 
-// NewDownloadPayload builds a artworks service download endpoint payload.
-func NewDownloadPayload(txid string, pid string, key string) *artworks.DownloadPayload {
-	v := &artworks.DownloadPayload{}
+// NewArtSearchPayload builds a artworks service artSearch endpoint payload.
+func NewArtSearchPayload(artist *string, limit int, query string, artistName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *int, maxRarenessScore *int, minNsfwScore *int, maxNsfwScore *int) *artworks.ArtSearchPayload {
+	v := &artworks.ArtSearchPayload{}
+	v.Artist = artist
+	v.Limit = limit
+	v.Query = query
+	v.ArtistName = artistName
+	v.ArtTitle = artTitle
+	v.Series = series
+	v.Descr = descr
+	v.Keyword = keyword
+	v.MinCopies = minCopies
+	v.MaxCopies = maxCopies
+	v.MinBlock = minBlock
+	v.MaxBlock = maxBlock
+	v.MinRarenessScore = minRarenessScore
+	v.MaxRarenessScore = maxRarenessScore
+	v.MinNsfwScore = minNsfwScore
+	v.MaxNsfwScore = maxNsfwScore
+
+	return v
+}
+
+// NewArtworkGetPayload builds a artworks service artworkGet endpoint payload.
+func NewArtworkGetPayload(txid string) *artworks.ArtworkGetPayload {
+	v := &artworks.ArtworkGetPayload{}
 	v.Txid = txid
-	v.Pid = pid
-	v.Key = key
-
-	return v
-}
-
-// NewDownloadTaskStatePayload builds a artworks service downloadTaskState
-// endpoint payload.
-func NewDownloadTaskStatePayload(taskID string) *artworks.DownloadTaskStatePayload {
-	v := &artworks.DownloadTaskStatePayload{}
-	v.TaskID = taskID
-
-	return v
-}
-
-// NewDowloadTaskPayload builds a artworks service dowloadTask endpoint payload.
-func NewDowloadTaskPayload(taskID string) *artworks.DowloadTaskPayload {
-	v := &artworks.DowloadTaskPayload{}
-	v.TaskID = taskID
 
 	return v
 }
