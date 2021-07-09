@@ -10,6 +10,9 @@ const (
 type Config struct {
 	common.Config `mapstructure:",squash" json:"-"`
 
+	// raptorq service
+	RaptorQServiceAddress string `mapstructure:"raptorq_service" json:"raptorq_service,omitempty"`
+
 	NumberConnectedNodes int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
 }
 

@@ -1,11 +1,15 @@
 package artworkregister
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"image"
 	"io"
+	"reflect"
 	"sync"
+	"time"
 
 	"github.com/DataDog/zstd"
 	"github.com/disintegration/imaging"
@@ -16,6 +20,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -24,8 +29,11 @@ type Task struct {
 	task.Task
 	*Service
 
+	Ticket           *pastel.RegTicket
 	ResampledArtwork *artwork.File
 	Artwork          *artwork.File
+
+	FingerprintsData []byte
 
 	PreviewThumbnail *artwork.File
 	MediumThumbnail  *artwork.File
@@ -175,19 +183,13 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 
 		img, err := file.LoadImage()
 		if err != nil {
-			return err
+			return errors.Errorf("failed to load image %s %w", file.Name(), err)
 		}
 
-		fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
+		fingerprintData, err = task.genFingerprintsData(ctx, img)
 		if err != nil {
-			return err
+			return errors.Errorf("failed to generate fingerprints data %w", err)
 		}
-
-		fingerprintData, err = zstd.CompressLevel(nil, fingerprints.Single().LSBTruncatedBytes(), 22)
-		if err != nil {
-			return errors.Errorf("failed to compress fingerprint data: %w", err)
-		}
-
 		// NOTE: for testing Kademlia and should be removed before releasing.
 		// data, err := file.Bytes()
 		// if err != nil {
@@ -202,7 +204,176 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 		return nil
 	})
 
+	task.FingerprintsData = fingerprintData
 	return fingerprintData, nil
+}
+
+// GetRegistrationFee get the fee to register artwork to bockchain
+func (task *Task) GetRegistrationFee(ctx context.Context, serializedTicket []byte) (int64, error) {
+	var err error
+	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
+		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
+	}
+
+	var registrationFee int64
+	<-task.NewAction(func(ctx context.Context) error {
+		task.UpdateStatus(StatusRegistrationFeeCalculated)
+
+		// TODO: fix this like how can we get the signature before calling cNode
+		var ticket pastel.RegTicket
+		if err := json.Unmarshal(serializedTicket, &ticket); err != nil {
+			return errors.Errorf("failed to unmarshal ticket %w", err)
+		}
+
+		task.Ticket = &ticket
+		// req := pastel.GetRegisterArtFeeRequest{
+		// 	Ticket:     &ticket.RegTicketData.ArtTicketData,
+		// 	Signatures: &ticket.RegTicketData.Signatures,
+		// 	Mn1PastelId: func() {
+		// 		if task.Status() == StatusPrimaryMode {
+		// 			return
+		// 		}
+		// 	}() ,
+		// }
+		// task.pastelClient.GetRegisterArtFee(ctx, req)
+
+		registrationFee = 15
+		return nil
+	})
+
+	return registrationFee, nil
+}
+
+func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) error {
+	var err error
+	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
+		return errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
+	}
+
+	<-task.NewAction(func(ctx context.Context) error {
+		var confirmationChn chan error
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+
+		validationFn := func(ctx context.Context) {
+			var err error
+			var confirmation *int64
+			defer func() {
+				if err != nil && err != context.Canceled {
+					confirmationChn <- err
+				} else {
+					// Either error is nil or the context is cancelled
+					// so no one read from confirmation
+					close(confirmationChn)
+				}
+			}()
+
+			const maxRetry = 3
+			var txResult *pastel.GetTransactionResult
+			for i := 0; i < maxRetry; i++ {
+				txResult, err = task.pastelClient.GetTransaction(ctx, pastel.TxIDType(txid))
+				if err != nil {
+					err = errors.Errorf("failed to get transaction ID %w", err)
+					return
+				}
+				if *confirmation = txResult.Confirmations; *confirmation >= 2 {
+					err = nil
+					return
+				}
+
+				// Sleep but responsive to context
+				select {
+				case <-ctx.Done():
+					err = ctx.Err()
+					return
+				case <-time.After(150 * time.Second):
+				}
+			}
+
+			err = errors.Errorf("timeout when wating for confirmation of transaction %s, confirmations %d ", txid, txResult.Confirmations)
+		}
+		go validationFn(ctx)
+
+		// resample image and validate the finger prints data
+		copyArtwork, err := task.Artwork.Copy()
+		if err != nil {
+			return errors.Errorf("failed to create copy of artwork %s %w", task.Artwork.Name(), err)
+		}
+		defer copyArtwork.Remove()
+
+		if err := copyArtwork.ResizeImage(224, 224); err != nil {
+			return errors.Errorf("failed to resize copy of artwork %w", err)
+		}
+
+		resizeImg, err := copyArtwork.LoadImage()
+		if err != nil {
+			return errors.Errorf("failed to load image from copied artwork %w", err)
+		}
+
+		fingerprintsData, err := task.genFingerprintsData(ctx, resizeImg)
+		if err != nil {
+			return errors.Errorf("failed to generate fingerprints data %w", err)
+		}
+
+		if !bytes.Equal(task.FingerprintsData, fingerprintsData) {
+			return errors.Errorf("fingerprints not matched")
+		}
+
+		// generate raptorQ symbols
+		rqids, err := task.genRQIDS(ctx)
+		if err != nil {
+			return errors.Errorf("failed to generate rqids %w", err)
+		}
+		if !reflect.DeepEqual(rqids, task.Ticket.RegTicketData.ArtTicketData.AppTicketData.RQIDs) {
+			return errors.Errorf("raptorQ symbols identifiers not matched")
+		}
+
+		// sign the ticket
+
+		err = <-confirmationChn
+		if err != nil {
+
+		}
+		return nil
+	})
+
+	return nil
+}
+
+func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) ([]byte, error) {
+	fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
+	if err != nil {
+		return nil, err
+	}
+
+	fingerprintsData, err := zstd.CompressLevel(nil, fingerprints.Single().LSBTruncatedBytes(), 22)
+	if err != nil {
+		return nil, errors.Errorf("failed to compress fingerprint data: %w", err)
+	}
+
+	return fingerprintsData, nil
+}
+
+func (task *Task) genRQIDS(ctx context.Context) ([]string, error) {
+	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
+	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
+	if err != nil {
+		return nil, errors.Errorf("failed to connect to raptorQ service %w", err)
+	}
+	defer conn.Close()
+
+	content, err := task.Artwork.Bytes()
+	if err != nil {
+		return nil, errors.Errorf("failed to read image contents")
+	}
+
+	rq := conn.RaptorQ()
+	encodeInfo, err := rq.EncodeInfo(ctx, content)
+	if err != nil {
+		return nil, errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
+	}
+
+	return encodeInfo.SymbolIds, nil
 }
 
 // UploadImageWithThumbnail uploads the image that contained image with pqsignature
