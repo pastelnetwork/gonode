@@ -221,20 +221,63 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 		TotalStorageFee int64 `json:"totalstoragefee"`
 	}
 
-	// FIXME: fix here
-	if err := client.callFor(ctx, &totalStorageFee, "gettotalstoragefee", "TBD"); err != nil {
+	// command : tickets tools gettotalstoragefee "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee" "imagesize"
+	tickets, err := EncodeArtTicket(*request.Ticket)
+	if err != nil {
+		return 0, errors.Errorf("failed to encode ticket: %w", err)
+	}
+
+	signatures, err := EncodeSignatures(*request.Signatures)
+	if err != nil {
+		return 0, errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "tools")
+	params = append(params, "gettotalstoragefee")
+	params = append(params, tickets)
+	params = append(params, signatures)
+	params = append(params, request.Mn1PastelId)
+	params = append(params, request.Pasphase)
+	params = append(params, request.Key1)
+	params = append(params, request.Key2)
+	params = append(params, fmt.Sprint(request.Fee))
+	params = append(params, fmt.Sprint(request.ImgSizeInMb))
+
+	if err := client.callFor(ctx, &totalStorageFee, "tickets", params...); err != nil {
 		return 0, errors.Errorf("failed to call gettotalstoragefee: %w", err)
 	}
 	return totalStorageFee.TotalStorageFee, nil
 }
 
-func (client *client) RegisterArtTicket(ctx context.Context, reqquest RegisterArtRequest) (string, error) {
+func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (string, error) {
 	var txID struct {
 		TxID string `json:"txid"`
 	}
 
-	// FIXME: fix here
-	if err := client.callFor(ctx, &txID, "tickets", "register", "art", "TBD"); err != nil {
+	tickets, err := EncodeArtTicket(*request.Ticket)
+	if err != nil {
+		return "", errors.Errorf("failed to encode ticket: %w", err)
+	}
+
+	signatures, err := EncodeSignatures(*request.Signatures)
+	if err != nil {
+		return "", errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "register")
+	params = append(params, "art")
+	params = append(params, tickets)
+	params = append(params, signatures)
+	params = append(params, request.Mn1PastelId)
+	params = append(params, request.Pasphase)
+	params = append(params, request.Key1)
+	params = append(params, request.Key2)
+	params = append(params, fmt.Sprint(request.Fee))
+
+	// command : tickets register art "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee"
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
 		return "", errors.Errorf("failed to call register art ticket: %w", err)
 	}
 	return txID.TxID, nil
