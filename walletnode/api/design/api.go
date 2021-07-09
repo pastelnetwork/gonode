@@ -14,6 +14,7 @@ var _ = API("walletnode", func() {
 
 	Server("walletnode", func() {
 		Services("artworks", "swagger")
+		Services("userdatas", "swagger")
 
 		Host("localhost", func() {
 			URI("http://localhost:8080")
