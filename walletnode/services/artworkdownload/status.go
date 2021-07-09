@@ -42,6 +42,15 @@ func (status Status) IsFinal() bool {
 	return status == StatusTaskCompleted || status == StatusTaskRejected
 }
 
+// IsFailure returns true if the task failed due to an error
+func (status Status) IsFailure() bool {
+	return (status == StatusErrorFilesNotMatch ||
+		status == StatusErrorNotEnoughSuperNode ||
+		status == StatusErrorNotEnoughFiles ||
+		status == StatusErrorDownloadFailed ||
+		status == StatusTaskRejected)
+}
+
 // StatusNames returns a sorted list of status names.
 func StatusNames() []string {
 	list := make([]string, len(statusNames))

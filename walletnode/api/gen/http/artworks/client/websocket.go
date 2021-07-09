@@ -20,6 +20,7 @@ import (
 type ConnConfigurer struct {
 	RegisterTaskStateFn goahttp.ConnConfigureFunc
 	ArtSearchFn         goahttp.ConnConfigureFunc
+	DownloadTaskStateFn goahttp.ConnConfigureFunc
 }
 
 // RegisterTaskStateClientStream implements the
@@ -36,12 +37,20 @@ type ArtSearchClientStream struct {
 	conn *websocket.Conn
 }
 
+// DownloadTaskStateClientStream implements the
+// artworks.DownloadTaskStateClientStream interface.
+type DownloadTaskStateClientStream struct {
+	// conn is the underlying websocket connection.
+	conn *websocket.Conn
+}
+
 // NewConnConfigurer initializes the websocket connection configurer function
 // with fn for all the streaming endpoints in "artworks" service.
 func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
 		RegisterTaskStateFn: fn,
 		ArtSearchFn:         fn,
+		DownloadTaskStateFn: fn,
 	}
 }
 
@@ -90,5 +99,29 @@ func (s *ArtSearchClientStream) Recv() (*artworks.ArtworkSearchResult, error) {
 		return rv, err
 	}
 	res := NewArtSearchArtworkSearchResultOK(&body)
+	return res, nil
+}
+
+// Recv reads instances of "artworks.ArtDownloadTaskState" from the
+// "downloadTaskState" endpoint websocket connection.
+func (s *DownloadTaskStateClientStream) Recv() (*artworks.ArtDownloadTaskState, error) {
+	var (
+		rv   *artworks.ArtDownloadTaskState
+		body DownloadTaskStateResponseBody
+		err  error
+	)
+	err = s.conn.ReadJSON(&body)
+	if websocket.IsCloseError(err, websocket.CloseNormalClosure) {
+		s.conn.Close()
+		return rv, io.EOF
+	}
+	if err != nil {
+		return rv, err
+	}
+	err = ValidateDownloadTaskStateResponseBody(&body)
+	if err != nil {
+		return rv, err
+	}
+	res := NewDownloadTaskStateArtDownloadTaskStateOK(&body)
 	return res, nil
 }

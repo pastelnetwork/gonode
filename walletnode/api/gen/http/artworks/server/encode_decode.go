@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"unicode/utf8"
 
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
@@ -774,6 +775,291 @@ func EncodeArtworkGetError(encoder func(context.Context, http.ResponseWriter) go
 	}
 }
 
+// EncodeDownloadResponse returns an encoder for responses returned by the
+// artworks download endpoint.
+func EncodeDownloadResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(*artworksviews.DownloadResult)
+		enc := encoder(ctx, w)
+		body := NewDownloadResponseBody(res.Projected)
+		w.WriteHeader(http.StatusAccepted)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeDownloadRequest returns a decoder for requests sent to the artworks
+// download endpoint.
+func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			txid string
+			pid  string
+			key  string
+			err  error
+		)
+		txid = r.URL.Query().Get("txid")
+		if txid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("txid", "query string"))
+		}
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		pid = r.URL.Query().Get("pid")
+		if pid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("pid", "query string"))
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		key = r.Header.Get("Authorization")
+		if key == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("Authorization", "header"))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewDownloadPayload(txid, pid, key)
+		if strings.Contains(payload.Key, " ") {
+			// Remove authorization scheme prefix (e.g. "Bearer")
+			cred := strings.SplitN(payload.Key, " ", 2)[1]
+			payload.Key = cred
+		}
+
+		return payload, nil
+	}
+}
+
+// EncodeDownloadError returns an encoder for errors returned by the download
+// artworks endpoint.
+func EncodeDownloadError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "NotFound":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewDownloadNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", "NotFound")
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewDownloadInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// DecodeDownloadTaskStateRequest returns a decoder for requests sent to the
+// artworks downloadTaskState endpoint.
+func DecodeDownloadTaskStateRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			taskID string
+			err    error
+
+			params = mux.Vars(r)
+		)
+		taskID = params["taskId"]
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewDownloadTaskStatePayload(taskID)
+
+		return payload, nil
+	}
+}
+
+// EncodeDownloadTaskStateError returns an encoder for errors returned by the
+// downloadTaskState artworks endpoint.
+func EncodeDownloadTaskStateError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "NotFound":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewDownloadTaskStateNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", "NotFound")
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewDownloadTaskStateInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeDowloadTaskResponse returns an encoder for responses returned by the
+// artworks dowloadTask endpoint.
+func EncodeDowloadTaskResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(*artworksviews.DownloadTask)
+		enc := encoder(ctx, w)
+		body := NewDowloadTaskResponseBody(res.Projected)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeDowloadTaskRequest returns a decoder for requests sent to the artworks
+// dowloadTask endpoint.
+func DecodeDowloadTaskRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			taskID string
+			err    error
+
+			params = mux.Vars(r)
+		)
+		taskID = params["taskId"]
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		}
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewDowloadTaskPayload(taskID)
+
+		return payload, nil
+	}
+}
+
+// EncodeDowloadTaskError returns an encoder for errors returned by the
+// dowloadTask artworks endpoint.
+func EncodeDowloadTaskError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "NotFound":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewDowloadTaskNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", "NotFound")
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewDowloadTaskInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeDownloadTasksResponse returns an encoder for responses returned by the
+// artworks downloadTasks endpoint.
+func EncodeDownloadTasksResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(artworksviews.DownloadTaskCollection)
+		enc := encoder(ctx, w)
+		body := NewDownloadTaskResponseTinyCollection(res.Projected)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// EncodeDownloadTasksError returns an encoder for errors returned by the
+// downloadTasks artworks endpoint.
+func EncodeDownloadTasksError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewDownloadTasksInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // marshalArtworksviewsTaskStateViewToTaskStateResponseBody builds a value of
 // type *TaskStateResponseBody from a value of type
 // *artworksviews.TaskStateView.
@@ -882,6 +1168,34 @@ func marshalArtworksFuzzyMatchToFuzzyMatchResponseBody(v *artworks.FuzzyMatch) *
 		for i, val := range v.MatchedIndexes {
 			res.MatchedIndexes[i] = val
 		}
+	}
+
+	return res
+}
+
+// marshalArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskStateResponseBody
+// builds a value of type *ArtDownloadTaskStateResponseBody from a value of
+// type *artworksviews.ArtDownloadTaskStateView.
+func marshalArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskStateResponseBody(v *artworksviews.ArtDownloadTaskStateView) *ArtDownloadTaskStateResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &ArtDownloadTaskStateResponseBody{
+		Date:   *v.Date,
+		Status: *v.Status,
+	}
+
+	return res
+}
+
+// marshalArtworksviewsDownloadTaskViewToDownloadTaskResponseTiny builds a
+// value of type *DownloadTaskResponseTiny from a value of type
+// *artworksviews.DownloadTaskView.
+func marshalArtworksviewsDownloadTaskViewToDownloadTaskResponseTiny(v *artworksviews.DownloadTaskView) *DownloadTaskResponseTiny {
+	res := &DownloadTaskResponseTiny{
+		ID:     *v.ID,
+		Status: *v.Status,
+		Bytes:  v.Bytes,
 	}
 
 	return res
