@@ -1,5 +1,11 @@
 package pastel
 
+import (
+	"encoding/json"
+
+	"github.com/pastelnetwork/gonode/common/errors"
+)
+
 // Refer https://pastel.wiki/en/Architecture/Components/TicketStructures
 
 // RegTickets is a collection of RegTicket
@@ -31,11 +37,12 @@ type RegTicketData struct {
 // ArtTicket is Pastel Art Ticket
 type ArtTicket struct {
 	Version       int       `json:"version"`
-	Blocknum      int       `json:"blocknum"`
 	Author        []byte    `json:"author"`
+	Blocknum      int       `json:"blocknum"`
 	DataHash      []byte    `json:"data_hash"`
 	Copies        int       `json:"copies"`
-	Reserved      []byte    `json:"reserved"`
+	Royalty       int       `json:"royalty"`
+	Green         string    `json:"green"`
 	AppTicket     []byte    `json:"app_ticket"`
 	AppTicketData AppTicket `json:"-"`
 }
@@ -103,4 +110,52 @@ type GetRegisterArtFeeRequest struct {
 	Key2        string
 	Fee         int64
 	ImgSizeInMb int64
+}
+
+func EncodeArtTicket(ticket ArtTicket) (string, error) {
+	appTicket, err := json.Marshal(ticket.AppTicketData)
+	if err != nil {
+		return "", errors.Errorf("failed to marshal app ticket data: %w", err)
+	}
+
+	// ArtTicket is Pastel Art Ticket
+	artTicket := struct {
+		Version   int    `json:"version"`
+		Author    []byte `json:"author"`
+		Blocknum  int    `json:"blocknum"`
+		DataHash  []byte `json:"data_hash"`
+		Copies    int    `json:"copies"`
+		Royalty   int    `json:"royalty"`
+		Green     string `json:"green"`
+		AppTicket []byte `json:"app_ticket"`
+	}{
+		Version:   ticket.Version,
+		Author:    ticket.Author,
+		Blocknum:  ticket.Blocknum,
+		DataHash:  ticket.DataHash,
+		Copies:    ticket.Copies,
+		Royalty:   ticket.Royalty,
+		Green:     ticket.Green,
+		AppTicket: appTicket,
+	}
+
+	b, err := json.Marshal(artTicket)
+	if err != nil {
+		return "", errors.Errorf("failed to marshal art ticket: %w", err)
+	}
+
+	return string(b), nil
+}
+
+func EncodeSignatures(signatures TicketSignatures) (string, error) {
+	// reset signatures of Mn1 if any
+	signatures.Mn1 = nil
+
+	b, err := json.Marshal(signatures)
+
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }

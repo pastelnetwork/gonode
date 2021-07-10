@@ -50,11 +50,7 @@ message EncoderInfoReply {
 }
 
 message EncoderParameters {
-  uint64 transfer_length = 1;   //u64
-  uint32 symbol_size = 2;       //u16
-  uint32 num_source_blocks = 3; //u8
-  uint32 num_sub_blocks = 4;    //u16
-  uint32 symbol_alignment = 5;  //u8
+  bytes oti = 1;   //12 bytes
 }
 
 message SymbolReply {

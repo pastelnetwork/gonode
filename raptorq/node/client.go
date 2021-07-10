@@ -9,11 +9,7 @@ import (
 )
 
 type EncoderParameters struct {
-	TransferLength  uint64
-	SymbolSize      uint32
-	NumSourceBlocks uint32
-	NumSubBlocks    uint32
-	SymbolAlignment uint32
+	Oti []byte
 }
 
 type EncodeInfo struct {
