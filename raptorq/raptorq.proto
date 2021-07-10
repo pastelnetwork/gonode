@@ -1,0 +1,69 @@
+// Copyright (c) 2021-2021 The Pastel Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/raptorq";
+
+package raptorq;
+
+service RaptorQ {
+  // Get list of symbol ids and encoder parameter
+  //
+  // Performs encoding, but doesn't return actual symbols, instead returns list of symbol's identifiers
+  //
+  // Input: data blob
+  // Output:
+  //      Symbols
+  rpc EncoderInfo(UploadDataRequest) returns(EncoderInfoReply);
+
+  // Encode input data blob into symbols
+  //
+  // Performs encoding, and returns actual symbols as gRPC stream
+  //
+  // Input:
+  //      Data blob
+  //
+  // Output:
+  //      List of symbol ids, where id = SHA3-256(symbol)
+  rpc Encode(UploadDataRequest) returns(stream SymbolReply);
+
+  // Decode symbols back into original data blob
+  //
+  // Performs decoding, and returns original data blob
+  //
+  // Input:
+  //      Encoder parameters and/or symbols one by one over gRPC stream
+  //
+  // Output:
+  //      Data blob
+  rpc Decode(stream UploadSymbolsRequest) returns(DownloadDataReply);
+}
+
+message UploadDataRequest {
+  bytes data = 1;
+}
+
+message EncoderInfoReply {
+  repeated string name = 1;
+  EncoderParameters encoder_params = 2;
+}
+
+message EncoderParameters {
+  bytes oti = 1;   //12 bytes
+}
+
+message SymbolReply {
+  bytes symbol = 1;
+}
+
+message UploadSymbolsRequest {
+  oneof params_or_symbols_oneof {
+    EncoderParameters encoder_params = 1;
+    bytes symbol = 2;
+  }
+}
+
+message DownloadDataReply {
+  bytes data = 1;
+}
