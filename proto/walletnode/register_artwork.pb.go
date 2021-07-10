@@ -386,19 +386,68 @@ func (x *ProbeImageReply) GetFingerprint() []byte {
 	return nil
 }
 
+type EncoderParameters struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Oti []byte `protobuf:"bytes,1,opt,name=oti,proto3" json:"oti,omitempty"` //12 bytes
+}
+
+func (x *EncoderParameters) Reset() {
+	*x = EncoderParameters{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_walletnode_register_artwork_proto_msgTypes[8]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *EncoderParameters) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EncoderParameters) ProtoMessage() {}
+
+func (x *EncoderParameters) ProtoReflect() protoreflect.Message {
+	mi := &file_walletnode_register_artwork_proto_msgTypes[8]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EncoderParameters.ProtoReflect.Descriptor instead.
+func (*EncoderParameters) Descriptor() ([]byte, []int) {
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *EncoderParameters) GetOti() []byte {
+	if x != nil {
+		return x.Oti
+	}
+	return nil
+}
+
 type SendSignedArtTicketRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ArtTicket       []byte `protobuf:"bytes,1,opt,name=art_ticket,json=artTicket,proto3" json:"art_ticket,omitempty"`
-	ArtistSignature []byte `protobuf:"bytes,2,opt,name=artist_signature,json=artistSignature,proto3" json:"artist_signature,omitempty"`
+	ArtTicket        []byte             `protobuf:"bytes,1,opt,name=art_ticket,json=artTicket,proto3" json:"art_ticket,omitempty"`
+	ArtistSignature  []byte             `protobuf:"bytes,2,opt,name=artist_signature,json=artistSignature,proto3" json:"artist_signature,omitempty"`
+	EncodeParameters *EncoderParameters `protobuf:"bytes,3,opt,name=encode_parameters,json=encodeParameters,proto3" json:"encode_parameters,omitempty"`
+	EncodeFiles      map[string][]byte  `protobuf:"bytes,4,rep,name=encode_files,json=encodeFiles,proto3" json:"encode_files,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 }
 
 func (x *SendSignedArtTicketRequest) Reset() {
 	*x = SendSignedArtTicketRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[8]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[9]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -411,7 +460,7 @@ func (x *SendSignedArtTicketRequest) String() string {
 func (*SendSignedArtTicketRequest) ProtoMessage() {}
 
 func (x *SendSignedArtTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[8]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[9]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -424,7 +473,7 @@ func (x *SendSignedArtTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendSignedArtTicketRequest.ProtoReflect.Descriptor instead.
 func (*SendSignedArtTicketRequest) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{8}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *SendSignedArtTicketRequest) GetArtTicket() []byte {
@@ -441,6 +490,20 @@ func (x *SendSignedArtTicketRequest) GetArtistSignature() []byte {
 	return nil
 }
 
+func (x *SendSignedArtTicketRequest) GetEncodeParameters() *EncoderParameters {
+	if x != nil {
+		return x.EncodeParameters
+	}
+	return nil
+}
+
+func (x *SendSignedArtTicketRequest) GetEncodeFiles() map[string][]byte {
+	if x != nil {
+		return x.EncodeFiles
+	}
+	return nil
+}
+
 type SendSignedArtTicketReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -452,7 +515,7 @@ type SendSignedArtTicketReply struct {
 func (x *SendSignedArtTicketReply) Reset() {
 	*x = SendSignedArtTicketReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[9]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[10]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -465,7 +528,7 @@ func (x *SendSignedArtTicketReply) String() string {
 func (*SendSignedArtTicketReply) ProtoMessage() {}
 
 func (x *SendSignedArtTicketReply) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[9]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[10]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -478,7 +541,7 @@ func (x *SendSignedArtTicketReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendSignedArtTicketReply.ProtoReflect.Descriptor instead.
 func (*SendSignedArtTicketReply) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{9}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *SendSignedArtTicketReply) GetRegistrationFee() int64 {
@@ -499,7 +562,7 @@ type SendPreBurntTxFeeIdRequest struct {
 func (x *SendPreBurntTxFeeIdRequest) Reset() {
 	*x = SendPreBurntTxFeeIdRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[10]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -512,7 +575,7 @@ func (x *SendPreBurntTxFeeIdRequest) String() string {
 func (*SendPreBurntTxFeeIdRequest) ProtoMessage() {}
 
 func (x *SendPreBurntTxFeeIdRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[10]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -525,7 +588,7 @@ func (x *SendPreBurntTxFeeIdRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendPreBurntTxFeeIdRequest.ProtoReflect.Descriptor instead.
 func (*SendPreBurntTxFeeIdRequest) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{10}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *SendPreBurntTxFeeIdRequest) GetTxid() string {
@@ -544,7 +607,7 @@ type SendPreBurntTxFeeIdReply struct {
 func (x *SendPreBurntTxFeeIdReply) Reset() {
 	*x = SendPreBurntTxFeeIdReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[11]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -557,7 +620,7 @@ func (x *SendPreBurntTxFeeIdReply) String() string {
 func (*SendPreBurntTxFeeIdReply) ProtoMessage() {}
 
 func (x *SendPreBurntTxFeeIdReply) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[11]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -570,7 +633,7 @@ func (x *SendPreBurntTxFeeIdReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendPreBurntTxFeeIdReply.ProtoReflect.Descriptor instead.
 func (*SendPreBurntTxFeeIdReply) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{11}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{12}
 }
 
 type SendTicketRequest struct {
@@ -589,7 +652,7 @@ type SendTicketRequest struct {
 func (x *SendTicketRequest) Reset() {
 	*x = SendTicketRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[12]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -602,7 +665,7 @@ func (x *SendTicketRequest) String() string {
 func (*SendTicketRequest) ProtoMessage() {}
 
 func (x *SendTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[12]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -615,7 +678,7 @@ func (x *SendTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendTicketRequest.ProtoReflect.Descriptor instead.
 func (*SendTicketRequest) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{12}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SendTicketRequest) GetTicket() []byte {
@@ -671,7 +734,7 @@ type SendTicketReply struct {
 func (x *SendTicketReply) Reset() {
 	*x = SendTicketReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[13]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -684,7 +747,7 @@ func (x *SendTicketReply) String() string {
 func (*SendTicketReply) ProtoMessage() {}
 
 func (x *SendTicketReply) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[13]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -697,7 +760,7 @@ func (x *SendTicketReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SendTicketReply.ProtoReflect.Descriptor instead.
 func (*SendTicketReply) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{13}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SendTicketReply) GetTicketTxid() string {
@@ -721,7 +784,7 @@ type UploadImageRequest struct {
 func (x *UploadImageRequest) Reset() {
 	*x = UploadImageRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[14]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -734,7 +797,7 @@ func (x *UploadImageRequest) String() string {
 func (*UploadImageRequest) ProtoMessage() {}
 
 func (x *UploadImageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[14]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -747,7 +810,7 @@ func (x *UploadImageRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadImageRequest.ProtoReflect.Descriptor instead.
 func (*UploadImageRequest) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{14}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{15}
 }
 
 func (m *UploadImageRequest) GetPayload() isUploadImageRequest_Payload {
@@ -801,7 +864,7 @@ type UploadImageReply struct {
 func (x *UploadImageReply) Reset() {
 	*x = UploadImageReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[15]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -814,7 +877,7 @@ func (x *UploadImageReply) String() string {
 func (*UploadImageReply) ProtoMessage() {}
 
 func (x *UploadImageReply) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[15]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -827,7 +890,7 @@ func (x *UploadImageReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadImageReply.ProtoReflect.Descriptor instead.
 func (*UploadImageReply) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{15}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *UploadImageReply) GetPreviewThumbnailHash() []byte {
@@ -862,7 +925,7 @@ type AcceptedNodesReply_Peer struct {
 func (x *AcceptedNodesReply_Peer) Reset() {
 	*x = AcceptedNodesReply_Peer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[16]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -875,7 +938,7 @@ func (x *AcceptedNodesReply_Peer) String() string {
 func (*AcceptedNodesReply_Peer) ProtoMessage() {}
 
 func (x *AcceptedNodesReply_Peer) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[16]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -912,7 +975,7 @@ type UploadImageRequest_Coordinate struct {
 func (x *UploadImageRequest_Coordinate) Reset() {
 	*x = UploadImageRequest_Coordinate{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[17]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -925,7 +988,7 @@ func (x *UploadImageRequest_Coordinate) String() string {
 func (*UploadImageRequest_Coordinate) ProtoMessage() {}
 
 func (x *UploadImageRequest_Coordinate) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[17]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -938,7 +1001,7 @@ func (x *UploadImageRequest_Coordinate) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadImageRequest_Coordinate.ProtoReflect.Descriptor instead.
 func (*UploadImageRequest_Coordinate) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{14, 0}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{15, 0}
 }
 
 func (x *UploadImageRequest_Coordinate) GetTopLeftX() int64 {
@@ -987,7 +1050,7 @@ type UploadImageRequest_MetaData struct {
 func (x *UploadImageRequest_MetaData) Reset() {
 	*x = UploadImageRequest_MetaData{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_artwork_proto_msgTypes[18]
+		mi := &file_walletnode_register_artwork_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1000,7 +1063,7 @@ func (x *UploadImageRequest_MetaData) String() string {
 func (*UploadImageRequest_MetaData) ProtoMessage() {}
 
 func (x *UploadImageRequest_MetaData) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_artwork_proto_msgTypes[18]
+	mi := &file_walletnode_register_artwork_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1013,7 +1076,7 @@ func (x *UploadImageRequest_MetaData) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UploadImageRequest_MetaData.ProtoReflect.Descriptor instead.
 func (*UploadImageRequest_MetaData) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{14, 1}
+	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{15, 1}
 }
 
 func (x *UploadImageRequest_MetaData) GetSize() int64 {
@@ -1075,14 +1138,31 @@ var file_walletnode_register_artwork_proto_rawDesc = []byte{
 	0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x22, 0x33, 0x0a, 0x0f, 0x50, 0x72, 0x6f, 0x62, 0x65, 0x49,
 	0x6d, 0x61, 0x67, 0x65, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x20, 0x0a, 0x0b, 0x66, 0x69, 0x6e,
 	0x67, 0x65, 0x72, 0x70, 0x72, 0x69, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0b,
-	0x66, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x70, 0x72, 0x69, 0x6e, 0x74, 0x22, 0x66, 0x0a, 0x1a, 0x53,
-	0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x41, 0x72, 0x74, 0x54, 0x69, 0x63, 0x6b,
-	0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x61, 0x72, 0x74,
-	0x5f, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x61,
-	0x72, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x29, 0x0a, 0x10, 0x61, 0x72, 0x74, 0x69,
-	0x73, 0x74, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01,
-	0x28, 0x0c, 0x52, 0x0f, 0x61, 0x72, 0x74, 0x69, 0x73, 0x74, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74,
-	0x75, 0x72, 0x65, 0x22, 0x45, 0x0a, 0x18, 0x53, 0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65,
+	0x66, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x70, 0x72, 0x69, 0x6e, 0x74, 0x22, 0x25, 0x0a, 0x11, 0x45,
+	0x6e, 0x63, 0x6f, 0x64, 0x65, 0x72, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73,
+	0x12, 0x10, 0x0a, 0x03, 0x6f, 0x74, 0x69, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x6f,
+	0x74, 0x69, 0x22, 0xce, 0x02, 0x0a, 0x1a, 0x53, 0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65,
+	0x64, 0x41, 0x72, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x61, 0x72, 0x74, 0x5f, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x61, 0x72, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74,
+	0x12, 0x29, 0x0a, 0x10, 0x61, 0x72, 0x74, 0x69, 0x73, 0x74, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61,
+	0x74, 0x75, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x0f, 0x61, 0x72, 0x74, 0x69,
+	0x73, 0x74, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x4a, 0x0a, 0x11, 0x65,
+	0x6e, 0x63, 0x6f, 0x64, 0x65, 0x5f, 0x70, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1d, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e,
+	0x6f, 0x64, 0x65, 0x2e, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x72, 0x50, 0x61, 0x72, 0x61, 0x6d,
+	0x65, 0x74, 0x65, 0x72, 0x73, 0x52, 0x10, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x50, 0x61, 0x72,
+	0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x12, 0x5a, 0x0a, 0x0c, 0x65, 0x6e, 0x63, 0x6f, 0x64,
+	0x65, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x04, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x37, 0x2e,
+	0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e, 0x64, 0x53,
+	0x69, 0x67, 0x6e, 0x65, 0x64, 0x41, 0x72, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x2e, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x46, 0x69, 0x6c, 0x65,
+	0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x52, 0x0b, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x46, 0x69,
+	0x6c, 0x65, 0x73, 0x1a, 0x3e, 0x0a, 0x10, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x46, 0x69, 0x6c,
+	0x65, 0x73, 0x45, 0x6e, 0x74, 0x72, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c,
+	0x75, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x3a,
+	0x02, 0x38, 0x01, 0x22, 0x45, 0x0a, 0x18, 0x53, 0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65,
 	0x64, 0x41, 0x72, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12,
 	0x29, 0x0a, 0x10, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f,
 	0x66, 0x65, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x03, 0x52, 0x0f, 0x72, 0x65, 0x67, 0x69, 0x73,
@@ -1207,7 +1287,7 @@ func file_walletnode_register_artwork_proto_rawDescGZIP() []byte {
 	return file_walletnode_register_artwork_proto_rawDescData
 }
 
-var file_walletnode_register_artwork_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_walletnode_register_artwork_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_walletnode_register_artwork_proto_goTypes = []interface{}{
 	(*SessionRequest)(nil),                // 0: walletnode.SessionRequest
 	(*SessionReply)(nil),                  // 1: walletnode.SessionReply
@@ -1217,43 +1297,47 @@ var file_walletnode_register_artwork_proto_goTypes = []interface{}{
 	(*ConnectToReply)(nil),                // 5: walletnode.ConnectToReply
 	(*ProbeImageRequest)(nil),             // 6: walletnode.ProbeImageRequest
 	(*ProbeImageReply)(nil),               // 7: walletnode.ProbeImageReply
-	(*SendSignedArtTicketRequest)(nil),    // 8: walletnode.SendSignedArtTicketRequest
-	(*SendSignedArtTicketReply)(nil),      // 9: walletnode.SendSignedArtTicketReply
-	(*SendPreBurntTxFeeIdRequest)(nil),    // 10: walletnode.SendPreBurntTxFeeIdRequest
-	(*SendPreBurntTxFeeIdReply)(nil),      // 11: walletnode.SendPreBurntTxFeeIdReply
-	(*SendTicketRequest)(nil),             // 12: walletnode.SendTicketRequest
-	(*SendTicketReply)(nil),               // 13: walletnode.SendTicketReply
-	(*UploadImageRequest)(nil),            // 14: walletnode.UploadImageRequest
-	(*UploadImageReply)(nil),              // 15: walletnode.UploadImageReply
-	(*AcceptedNodesReply_Peer)(nil),       // 16: walletnode.AcceptedNodesReply.Peer
-	(*UploadImageRequest_Coordinate)(nil), // 17: walletnode.UploadImageRequest.Coordinate
-	(*UploadImageRequest_MetaData)(nil),   // 18: walletnode.UploadImageRequest.MetaData
+	(*EncoderParameters)(nil),             // 8: walletnode.EncoderParameters
+	(*SendSignedArtTicketRequest)(nil),    // 9: walletnode.SendSignedArtTicketRequest
+	(*SendSignedArtTicketReply)(nil),      // 10: walletnode.SendSignedArtTicketReply
+	(*SendPreBurntTxFeeIdRequest)(nil),    // 11: walletnode.SendPreBurntTxFeeIdRequest
+	(*SendPreBurntTxFeeIdReply)(nil),      // 12: walletnode.SendPreBurntTxFeeIdReply
+	(*SendTicketRequest)(nil),             // 13: walletnode.SendTicketRequest
+	(*SendTicketReply)(nil),               // 14: walletnode.SendTicketReply
+	(*UploadImageRequest)(nil),            // 15: walletnode.UploadImageRequest
+	(*UploadImageReply)(nil),              // 16: walletnode.UploadImageReply
+	(*AcceptedNodesReply_Peer)(nil),       // 17: walletnode.AcceptedNodesReply.Peer
+	nil,                                   // 18: walletnode.SendSignedArtTicketRequest.EncodeFilesEntry
+	(*UploadImageRequest_Coordinate)(nil), // 19: walletnode.UploadImageRequest.Coordinate
+	(*UploadImageRequest_MetaData)(nil),   // 20: walletnode.UploadImageRequest.MetaData
 }
 var file_walletnode_register_artwork_proto_depIdxs = []int32{
-	16, // 0: walletnode.AcceptedNodesReply.peers:type_name -> walletnode.AcceptedNodesReply.Peer
-	18, // 1: walletnode.UploadImageRequest.meta_data:type_name -> walletnode.UploadImageRequest.MetaData
-	17, // 2: walletnode.UploadImageRequest.MetaData.thumbnail:type_name -> walletnode.UploadImageRequest.Coordinate
-	0,  // 3: walletnode.RegisterArtwork.Session:input_type -> walletnode.SessionRequest
-	2,  // 4: walletnode.RegisterArtwork.AcceptedNodes:input_type -> walletnode.AcceptedNodesRequest
-	4,  // 5: walletnode.RegisterArtwork.ConnectTo:input_type -> walletnode.ConnectToRequest
-	6,  // 6: walletnode.RegisterArtwork.ProbeImage:input_type -> walletnode.ProbeImageRequest
-	8,  // 7: walletnode.RegisterArtwork.SendSignedArtTicket:input_type -> walletnode.SendSignedArtTicketRequest
-	10, // 8: walletnode.RegisterArtwork.SendPreBurntTxFeeId:input_type -> walletnode.SendPreBurntTxFeeIdRequest
-	12, // 9: walletnode.RegisterArtwork.SendTicket:input_type -> walletnode.SendTicketRequest
-	14, // 10: walletnode.RegisterArtwork.UploadImage:input_type -> walletnode.UploadImageRequest
-	1,  // 11: walletnode.RegisterArtwork.Session:output_type -> walletnode.SessionReply
-	3,  // 12: walletnode.RegisterArtwork.AcceptedNodes:output_type -> walletnode.AcceptedNodesReply
-	5,  // 13: walletnode.RegisterArtwork.ConnectTo:output_type -> walletnode.ConnectToReply
-	7,  // 14: walletnode.RegisterArtwork.ProbeImage:output_type -> walletnode.ProbeImageReply
-	9,  // 15: walletnode.RegisterArtwork.SendSignedArtTicket:output_type -> walletnode.SendSignedArtTicketReply
-	11, // 16: walletnode.RegisterArtwork.SendPreBurntTxFeeId:output_type -> walletnode.SendPreBurntTxFeeIdReply
-	13, // 17: walletnode.RegisterArtwork.SendTicket:output_type -> walletnode.SendTicketReply
-	15, // 18: walletnode.RegisterArtwork.UploadImage:output_type -> walletnode.UploadImageReply
-	11, // [11:19] is the sub-list for method output_type
-	3,  // [3:11] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	17, // 0: walletnode.AcceptedNodesReply.peers:type_name -> walletnode.AcceptedNodesReply.Peer
+	8,  // 1: walletnode.SendSignedArtTicketRequest.encode_parameters:type_name -> walletnode.EncoderParameters
+	18, // 2: walletnode.SendSignedArtTicketRequest.encode_files:type_name -> walletnode.SendSignedArtTicketRequest.EncodeFilesEntry
+	20, // 3: walletnode.UploadImageRequest.meta_data:type_name -> walletnode.UploadImageRequest.MetaData
+	19, // 4: walletnode.UploadImageRequest.MetaData.thumbnail:type_name -> walletnode.UploadImageRequest.Coordinate
+	0,  // 5: walletnode.RegisterArtwork.Session:input_type -> walletnode.SessionRequest
+	2,  // 6: walletnode.RegisterArtwork.AcceptedNodes:input_type -> walletnode.AcceptedNodesRequest
+	4,  // 7: walletnode.RegisterArtwork.ConnectTo:input_type -> walletnode.ConnectToRequest
+	6,  // 8: walletnode.RegisterArtwork.ProbeImage:input_type -> walletnode.ProbeImageRequest
+	9,  // 9: walletnode.RegisterArtwork.SendSignedArtTicket:input_type -> walletnode.SendSignedArtTicketRequest
+	11, // 10: walletnode.RegisterArtwork.SendPreBurntTxFeeId:input_type -> walletnode.SendPreBurntTxFeeIdRequest
+	13, // 11: walletnode.RegisterArtwork.SendTicket:input_type -> walletnode.SendTicketRequest
+	15, // 12: walletnode.RegisterArtwork.UploadImage:input_type -> walletnode.UploadImageRequest
+	1,  // 13: walletnode.RegisterArtwork.Session:output_type -> walletnode.SessionReply
+	3,  // 14: walletnode.RegisterArtwork.AcceptedNodes:output_type -> walletnode.AcceptedNodesReply
+	5,  // 15: walletnode.RegisterArtwork.ConnectTo:output_type -> walletnode.ConnectToReply
+	7,  // 16: walletnode.RegisterArtwork.ProbeImage:output_type -> walletnode.ProbeImageReply
+	10, // 17: walletnode.RegisterArtwork.SendSignedArtTicket:output_type -> walletnode.SendSignedArtTicketReply
+	12, // 18: walletnode.RegisterArtwork.SendPreBurntTxFeeId:output_type -> walletnode.SendPreBurntTxFeeIdReply
+	14, // 19: walletnode.RegisterArtwork.SendTicket:output_type -> walletnode.SendTicketReply
+	16, // 20: walletnode.RegisterArtwork.UploadImage:output_type -> walletnode.UploadImageReply
+	13, // [13:21] is the sub-list for method output_type
+	5,  // [5:13] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_walletnode_register_artwork_proto_init() }
@@ -1359,7 +1443,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendSignedArtTicketRequest); i {
+			switch v := v.(*EncoderParameters); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1371,7 +1455,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[9].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendSignedArtTicketReply); i {
+			switch v := v.(*SendSignedArtTicketRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1383,7 +1467,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[10].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendPreBurntTxFeeIdRequest); i {
+			switch v := v.(*SendSignedArtTicketReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1395,7 +1479,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendPreBurntTxFeeIdReply); i {
+			switch v := v.(*SendPreBurntTxFeeIdRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1407,7 +1491,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendTicketRequest); i {
+			switch v := v.(*SendPreBurntTxFeeIdReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1419,7 +1503,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendTicketReply); i {
+			switch v := v.(*SendTicketRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1431,7 +1515,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadImageRequest); i {
+			switch v := v.(*SendTicketReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1443,7 +1527,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*UploadImageReply); i {
+			switch v := v.(*UploadImageRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1455,7 +1539,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AcceptedNodesReply_Peer); i {
+			switch v := v.(*UploadImageReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1467,6 +1551,18 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*AcceptedNodesReply_Peer); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_walletnode_register_artwork_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UploadImageRequest_Coordinate); i {
 			case 0:
 				return &v.state
@@ -1478,7 +1574,7 @@ func file_walletnode_register_artwork_proto_init() {
 				return nil
 			}
 		}
-		file_walletnode_register_artwork_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+		file_walletnode_register_artwork_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*UploadImageRequest_MetaData); i {
 			case 0:
 				return &v.state
@@ -1491,7 +1587,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 	}
-	file_walletnode_register_artwork_proto_msgTypes[14].OneofWrappers = []interface{}{
+	file_walletnode_register_artwork_proto_msgTypes[15].OneofWrappers = []interface{}{
 		(*UploadImageRequest_ImagePiece)(nil),
 		(*UploadImageRequest_MetaData_)(nil),
 	}
@@ -1501,7 +1597,7 @@ func file_walletnode_register_artwork_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_walletnode_register_artwork_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

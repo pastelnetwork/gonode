@@ -78,6 +78,17 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 }
 
+func (service *RegisterArtwork) SendArtTicketSignature(ctx context.Context, req *pb.SendArtTicketSignatureRequest) (*pb.SendArtTicketSignatureReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendArtTicketSignature request")
+	_, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// FIXME : implementation here
+	return &pb.SendArtTicketSignatureReply{}, nil
+}
+
 // Desc returns a description of the service.
 func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
 	return &pb.RegisterArtwork_ServiceDesc

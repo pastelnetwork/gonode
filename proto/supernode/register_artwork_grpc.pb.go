@@ -21,6 +21,8 @@ type RegisterArtworkClient interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
 	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_SessionClient, error)
+	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg art session id to primary supernode
+	SendArtTicketSignature(ctx context.Context, in *SendArtTicketSignatureRequest, opts ...grpc.CallOption) (*SendArtTicketSignatureReply, error)
 }
 
 type registerArtworkClient struct {
@@ -62,6 +64,15 @@ func (x *registerArtworkSessionClient) Recv() (*SessionReply, error) {
 	return m, nil
 }
 
+func (c *registerArtworkClient) SendArtTicketSignature(ctx context.Context, in *SendArtTicketSignatureRequest, opts ...grpc.CallOption) (*SendArtTicketSignatureReply, error) {
+	out := new(SendArtTicketSignatureReply)
+	err := c.cc.Invoke(ctx, "/supernode.RegisterArtwork/SendArtTicketSignature", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterArtworkServer is the server API for RegisterArtwork service.
 // All implementations must embed UnimplementedRegisterArtworkServer
 // for forward compatibility
@@ -69,6 +80,8 @@ type RegisterArtworkServer interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
 	Session(RegisterArtwork_SessionServer) error
+	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg art session id to primary supernode
+	SendArtTicketSignature(context.Context, *SendArtTicketSignatureRequest) (*SendArtTicketSignatureReply, error)
 	mustEmbedUnimplementedRegisterArtworkServer()
 }
 
@@ -78,6 +91,9 @@ type UnimplementedRegisterArtworkServer struct {
 
 func (UnimplementedRegisterArtworkServer) Session(RegisterArtwork_SessionServer) error {
 	return status.Errorf(codes.Unimplemented, "method Session not implemented")
+}
+func (UnimplementedRegisterArtworkServer) SendArtTicketSignature(context.Context, *SendArtTicketSignatureRequest) (*SendArtTicketSignatureReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendArtTicketSignature not implemented")
 }
 func (UnimplementedRegisterArtworkServer) mustEmbedUnimplementedRegisterArtworkServer() {}
 
@@ -118,13 +134,36 @@ func (x *registerArtworkSessionServer) Recv() (*SessionRequest, error) {
 	return m, nil
 }
 
+func _RegisterArtwork_SendArtTicketSignature_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendArtTicketSignatureRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).SendArtTicketSignature(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/supernode.RegisterArtwork/SendArtTicketSignature",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).SendArtTicketSignature(ctx, req.(*SendArtTicketSignatureRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterArtwork_ServiceDesc is the grpc.ServiceDesc for RegisterArtwork service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "supernode.RegisterArtwork",
 	HandlerType: (*RegisterArtworkServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "SendArtTicketSignature",
+			Handler:    _RegisterArtwork_SendArtTicketSignature_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Session",
