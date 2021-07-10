@@ -3,9 +3,11 @@ module github.com/pastelnetwork/gonode/walletnode
 go 1.16
 
 require (
+	github.com/DataDog/zstd v1.4.8 // indirect
 	github.com/anacrolix/sync v0.3.0 // indirect
 	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/go-errors/errors v1.4.0 // indirect
+	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6

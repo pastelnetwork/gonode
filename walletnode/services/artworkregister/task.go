@@ -3,8 +3,12 @@ package artworkregister
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -17,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
+	"golang.org/x/crypto/sha3"
 )
 
 // Task is the task of registering new artwork.
@@ -199,10 +204,12 @@ func (task *Task) run(ctx context.Context) error {
 	task.smallThumbnailHash = nodes.SmallThumbnailHash()
 
 	// Connect to rq serivce to get rq symbols identifier
-	if task.rqids, err = task.genRQIDS(ctx); err != nil {
+	rqidsList, err := task.genRQIDSList(ctx)
+	if err != nil {
 		task.UpdateStatus(StatusErrorGenRaptorQSymbolsFailed)
 		return errors.Errorf("gen RaptorQ symbols' identifiers failed %w", err)
 	}
+	task.rqids = rqidsList.Identifiers()
 
 	ticket, err := task.createTicket()
 	if err != nil {
@@ -216,12 +223,11 @@ func (task *Task) run(ctx context.Context) error {
 		log.Debug(string(buf))
 	}
 
-	// sign ticket
+	// sign ticket with artist signature
 	artistSignature, err := task.signTicket(ctx, ticket)
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
-	ticket.RegTicketData.Signatures.Artist[task.Request.ArtistPastelID] = artistSignature
 
 	// send signed ticket to supernodes to calculate registration fee
 	if err := nodes.UploadSignedTicket(ctx, buf, artistSignature); err != nil {
@@ -233,6 +239,7 @@ func (task *Task) run(ctx context.Context) error {
 	}
 
 	// burn 10 % of registration fee by sending to unspendable address with has the format of PtPasteLBurnAddressXXXXXXXXXTWPm3E
+	// TODO: make this as configuration
 	burnedAmount := nodes.RegistrationFee() / 10
 	if task.burnTxId, err = task.pastelClient.SendToAddress(ctx, "PtPasteLBurnAddressXXXXXXXXXTWPm3E", burnedAmount); err != nil {
 		return errors.Errorf("failed to burn 10% of transaction fee %w", err)
@@ -392,7 +399,7 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 	return nodes, nil
 }
 
-func (task *Task) genRQIDS(ctx context.Context) ([]string, error) {
+func (task *Task) genRQIDSList(ctx context.Context) (RQIDSList, error) {
 	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
 	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
 	if err != nil {
@@ -411,10 +418,80 @@ func (task *Task) genRQIDS(ctx context.Context) ([]string, error) {
 		return nil, errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
 
-	return encodeInfo.SymbolIds, nil
+	var list RQIDSList
+	for i := 0; i < task.config.NumberRQIDSFiles; i++ {
+		item, err := func() (*RQIDS, error) {
+			// FIXME: fill the real block_hash after it is confirmed
+			rqidsFiles, err := createRQIDSFile(encodeInfo.SymbolIds, []byte("BLOCK_HASH"))
+			if err != nil {
+				return nil, errors.Errorf("failed to create rqids file %w", err)
+			}
+
+			file, err := os.OpenFile(rqidsFiles, os.O_RDWR|os.O_APPEND, 0644)
+			if err != nil {
+				return nil, errors.Errorf("failed to open rqids file %s %w", rqidsFiles, err)
+			}
+			defer file.Close()
+			defer os.Remove(file.Name())
+
+			buf, err := ioutil.ReadAll(file)
+			if err != nil {
+				return nil, errors.Errorf("failed to read rqids file %s %w", rqidsFiles, err)
+			}
+
+			// sign the file
+			signature, err := task.pastelClient.Sign(ctx, buf, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+			if err != nil {
+				return nil, errors.Errorf("failed to sign rqids file %s %w", rqidsFiles, err)
+			}
+
+			// FIXME: remove this after confimartion that file identifier = hash(file + signature)
+			// zstd.BestCompression is 20
+			// Maximum level compression is 22 and it was use to compress the fingerprints so here we do the same
+			// compressedSignature, err := zstd.CompressLevel(nil, signature, 22)
+			// if err != nil {
+			// 	return nil, errors.Errorf("failed to compress signature of rqids file %s %w", rqidsFiles, err)
+			// }
+
+			// append the signature to end of the file
+			if _, err := file.Write(signature); err != nil {
+				return nil, errors.Errorf("failed to")
+			}
+
+			// hash the file and sum
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				return nil, errors.Errorf("failed to send to begin of file %s %w", file.Name(), err)
+			}
+			hasher := sha3.New256()
+			if _, err := io.Copy(hasher, file); err != nil {
+				return nil, errors.Errorf("failed to hash rqids file %s %w", rqidsFiles, err)
+			}
+
+			if _, err := file.Seek(0, io.SeekStart); err != nil {
+				return nil, errors.Errorf("failed to send to begin of file %s %w", file.Name(), err)
+			}
+			rqids := &RQIDS{
+				Id:      base64.StdEncoding.EncodeToString(hasher.Sum(nil)),
+				Content: []byte{},
+			}
+
+			if rqids.Content, err = ioutil.ReadAll(file); err != nil {
+				return nil, errors.Errorf("failed to read content of rqids file %s %w", file.Name(), err)
+			}
+
+			return rqids, nil
+		}()
+
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, item)
+	}
+
+	return list, nil
 }
 
-func (task *Task) createTicket() (*pastel.RegTicket, error) {
+func (task *Task) createTicket() (*pastel.ArtTicket, error) {
 	if task.fingerprints == nil {
 		return nil, errors.Errorf("empty fingerprints")
 	}
@@ -446,78 +523,42 @@ func (task *Task) createTicket() (*pastel.RegTicket, error) {
 	}
 
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
-	ticket := &pastel.RegTicket{
-		Height: 0,
-		TXID:   "TBD",
-		RegTicketData: pastel.RegTicketData{
-			Type:         "art-reg",
-			ArtistHeight: 0,
-			Signatures: pastel.TicketSignatures{
-				Artist: make(map[string][]byte),
-				Mn1:    make(map[string][]byte),
-				Mn2:    make(map[string][]byte),
-				Mn3:    make(map[string][]byte),
-			},
-			Key1:        fmt.Sprintf("%x", task.fingerprints),
-			Key2:        "TBD",
-			IsGreen:     task.Request.Green,
-			StorageFee:  0,
-			TotalCopies: task.Request.IssuedCopies,
-			Royalty:     int(task.Request.Royalty),
-			Version:     1,
-			ArtTicketData: pastel.ArtTicket{
-				Version:  1,
-				Blocknum: 0,
-				Author:   pastelID,
-				DataHash: task.datahash,
-				Copies:   task.Request.IssuedCopies,
-				AppTicketData: pastel.AppTicket{
-					AuthorPastelID:                 task.Request.ArtistPastelID,
-					BlockTxID:                      "TBD",
-					BlockNum:                       0,
-					ArtistName:                     task.Request.ArtistName,
-					ArtistWebsite:                  safeString(task.Request.ArtistWebsiteURL),
-					ArtistWrittenStatement:         safeString(task.Request.Description),
-					ArtworkCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
-					ArtworkKeywordSet:              safeString(task.Request.Keywords),
-					TotalCopies:                    task.Request.IssuedCopies,
-					PreviewHash:                    task.previewHash,
-					Thumbnail1Hash:                 task.mediumThumbnailHash,
-					Thumbnail2Hash:                 task.smallThumbnailHash,
-					DataHash:                       task.datahash,
-					Fingerprints:                   task.fingerprints,
-					FingerprintsHash:               task.fingerprintsHash,
-					FingerprintsSignature:          task.fingerprintSignature,
-					RarenessScore:                  task.rarenessScore,
-					NSFWScore:                      task.nsfwScore,
-					SeenScore:                      task.seenScore,
-					RQIDs:                          task.rqids,
-					RQCoti:                         0,
-					RQSsoti:                        0,
-				},
-			},
-		}}
-
-	// encode RegTicket.ArtTicket.AppticketData as []byte
-	appTicketData := ticket.RegTicketData.ArtTicketData.AppTicketData
-	appTicket, err := json.Marshal(appTicketData)
-	if err != nil {
-		return nil, errors.Errorf("failed to encode app ticket data %w", err)
+	ticket := &pastel.ArtTicket{
+		Version:  1,
+		Blocknum: 0,
+		Author:   pastelID,
+		DataHash: task.datahash,
+		Copies:   task.Request.IssuedCopies,
+		AppTicketData: pastel.AppTicket{
+			AuthorPastelID:                 task.Request.ArtistPastelID,
+			BlockTxID:                      "TBD",
+			BlockNum:                       0,
+			ArtistName:                     task.Request.ArtistName,
+			ArtistWebsite:                  safeString(task.Request.ArtistWebsiteURL),
+			ArtistWrittenStatement:         safeString(task.Request.Description),
+			ArtworkCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
+			ArtworkKeywordSet:              safeString(task.Request.Keywords),
+			TotalCopies:                    task.Request.IssuedCopies,
+			PreviewHash:                    task.previewHash,
+			Thumbnail1Hash:                 task.mediumThumbnailHash,
+			Thumbnail2Hash:                 task.smallThumbnailHash,
+			DataHash:                       task.datahash,
+			Fingerprints:                   task.fingerprints,
+			FingerprintsHash:               task.fingerprintsHash,
+			FingerprintsSignature:          task.fingerprintSignature,
+			RarenessScore:                  task.rarenessScore,
+			NSFWScore:                      task.nsfwScore,
+			SeenScore:                      task.seenScore,
+			RQIDs:                          task.rqids,
+			RQCoti:                         0,
+			RQSsoti:                        0,
+		},
 	}
-	ticket.RegTicketData.ArtTicketData.AppTicket = appTicket[:]
-
-	// encode RegTicket.ArtTicketData as []byte
-	artTicketData := ticket.RegTicketData.ArtTicketData
-	artTicket, err := json.Marshal(artTicketData)
-	if err != nil {
-		return nil, errors.Errorf("failed to encode art ticket data %w", err)
-	}
-	ticket.RegTicketData.ArtTicket = artTicket
 
 	return ticket, nil
 }
 
-func (task *Task) signTicket(ctx context.Context, ticket *pastel.RegTicket) ([]byte, error) {
+func (task *Task) signTicket(ctx context.Context, ticket *pastel.ArtTicket) ([]byte, error) {
 	js, err := json.Marshal(ticket)
 	if err != nil {
 		return nil, errors.Errorf("failed to encode ticket %w", err)
