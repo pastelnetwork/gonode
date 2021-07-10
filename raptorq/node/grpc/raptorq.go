@@ -68,11 +68,7 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte) (*node.Enco
 	output := &node.EncodeInfo{
 		SymbolIds: res.Name,
 		EncoderParam: node.EncoderParameters{
-			TransferLength:  res.EncoderParams.TransferLength,
-			SymbolSize:      res.EncoderParams.SymbolSize,
-			NumSourceBlocks: res.EncoderParams.NumSourceBlocks,
-			NumSubBlocks:    res.EncoderParams.NumSubBlocks,
-			SymbolAlignment: res.EncoderParams.SymbolAlignment,
+			Oti: res.EncoderParams.Oti,
 		},
 	}
 
