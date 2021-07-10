@@ -62,9 +62,15 @@ message ProbeImageReply {
     bytes fingerprint = 1;
 }
 
+message EncoderParameters {
+  bytes oti = 1;   //12 bytes
+}
+
 message SendSignedArtTicketRequest {
     bytes art_ticket = 1;
     bytes artist_signature = 2;
+    EncoderParameters encode_parameters = 3;
+    repeated bytes encode_identifier_files = 4;
 }
 message SendSignedArtTicketReply {
     int64 registration_fee = 1;
