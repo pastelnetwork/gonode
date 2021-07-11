@@ -38,8 +38,8 @@ type RegTicketData struct {
 type ArtTicket struct {
 	Version       int       `json:"version"`
 	Author        []byte    `json:"author"`
-	Blocknum      int       `json:"blocknum"`
-	DataHash      []byte    `json:"data_hash"`
+	BlockNum      int       `json:"blocknum"`
+	BlockHash     []byte    `json:"block_hash"`
 	Copies        int       `json:"copies"`
 	Royalty       int       `json:"royalty"`
 	Green         string    `json:"green"`
@@ -77,9 +77,8 @@ type AppTicket struct {
 	NSFWScore     int `json:"nsfw_score"`
 	SeenScore     int `json:"seen_score"`
 
-	RQIDs   []string `json:"rq_ids"`
-	RQCoti  int64    `json:"rq_coti"`
-	RQSsoti int64    `json:"rq_ssoti"`
+	RQIDs []string `json:"rq_ids"`
+	RQOti []byte   `json:"rq_oti"`
 }
 
 type TicketSignatures struct {
@@ -115,8 +114,8 @@ type GetRegisterArtFeeRequest struct {
 type internalArtTicket struct {
 	Version   int    `json:"version"`
 	Author    []byte `json:"author"`
-	Blocknum  int    `json:"blocknum"`
-	DataHash  []byte `json:"data_hash"`
+	BlockNum  int    `json:"blocknum"`
+	BlockHash []byte `json:"block_hash"`
 	Copies    int    `json:"copies"`
 	Royalty   int    `json:"royalty"`
 	Green     string `json:"green"`
@@ -133,8 +132,8 @@ func EncodeArtTicket(ticket *ArtTicket) ([]byte, error) {
 	artTicket := internalArtTicket{
 		Version:   ticket.Version,
 		Author:    ticket.Author,
-		Blocknum:  ticket.Blocknum,
-		DataHash:  ticket.DataHash,
+		BlockNum:  ticket.BlockNum,
+		BlockHash: ticket.BlockHash,
 		Copies:    ticket.Copies,
 		Royalty:   ticket.Royalty,
 		Green:     ticket.Green,
@@ -167,8 +166,8 @@ func DecodeArtTicket(b []byte) (*ArtTicket, error) {
 	return &ArtTicket{
 		Version:       res.Version,
 		Author:        res.Author,
-		Blocknum:      res.Blocknum,
-		DataHash:      res.DataHash,
+		BlockNum:      res.BlockNum,
+		BlockHash:     res.BlockHash,
 		Copies:        res.Copies,
 		Royalty:       res.Royalty,
 		Green:         res.Green,

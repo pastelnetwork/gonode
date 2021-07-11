@@ -24,8 +24,8 @@ func TestEncodeArtTicket(t *testing.T) {
 	inputTicket := ArtTicket{
 		Version:       1,
 		Author:        []byte{2, 3, 4},
-		Blocknum:      5,
-		DataHash:      []byte{6, 7, 8},
+		BlockNum:      5,
+		BlockHash:     []byte{6, 7, 8},
 		Copies:        9,
 		Royalty:       10,
 		Green:         "11",
@@ -40,8 +40,8 @@ func TestEncodeArtTicket(t *testing.T) {
 	fmt.Println(string(encoded))
 	assert.Equal(t, inputTicket.Version, outputTicket.Version)
 	assert.Equal(t, inputTicket.Author, outputTicket.Author)
-	assert.Equal(t, inputTicket.Blocknum, outputTicket.Blocknum)
-	assert.Equal(t, inputTicket.DataHash, outputTicket.DataHash)
+	assert.Equal(t, inputTicket.BlockNum, outputTicket.BlockNum)
+	assert.Equal(t, inputTicket.BlockHash, outputTicket.BlockHash)
 	assert.Equal(t, inputTicket.Copies, outputTicket.Copies)
 	assert.Equal(t, inputTicket.Royalty, outputTicket.Royalty)
 	assert.Equal(t, inputTicket.Green, outputTicket.Green)
