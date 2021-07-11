@@ -38,8 +38,8 @@ type RegTicketData struct {
 type ArtTicket struct {
 	Version       int       `json:"version"`
 	Author        []byte    `json:"author"`
-	Blocknum      int       `json:"blocknum"`
-	DataHash      []byte    `json:"data_hash"`
+	BlockNum      int       `json:"blocknum"`
+	BlockHash     []byte    `json:"block_hash"`
 	Copies        int       `json:"copies"`
 	Royalty       int       `json:"royalty"`
 	Green         string    `json:"green"`
@@ -77,9 +77,8 @@ type AppTicket struct {
 	NSFWScore     int `json:"nsfw_score"`
 	SeenScore     int `json:"seen_score"`
 
-	RQIDs   []string `json:"rq_ids"`
-	RQCoti  int64    `json:"rq_coti"`
-	RQSsoti int64    `json:"rq_ssoti"`
+	RQIDs []string `json:"rq_ids"`
+	RQOti []byte   `json:"rq_oti"`
 }
 
 type TicketSignatures struct {
@@ -112,27 +111,29 @@ type GetRegisterArtFeeRequest struct {
 	ImgSizeInMb int64
 }
 
-func EncodeArtTicket(ticket ArtTicket) (string, error) {
+type internalArtTicket struct {
+	Version   int    `json:"version"`
+	Author    []byte `json:"author"`
+	BlockNum  int    `json:"blocknum"`
+	BlockHash []byte `json:"block_hash"`
+	Copies    int    `json:"copies"`
+	Royalty   int    `json:"royalty"`
+	Green     string `json:"green"`
+	AppTicket []byte `json:"app_ticket"`
+}
+
+func EncodeArtTicket(ticket *ArtTicket) ([]byte, error) {
 	appTicket, err := json.Marshal(ticket.AppTicketData)
 	if err != nil {
-		return "", errors.Errorf("failed to marshal app ticket data: %w", err)
+		return nil, errors.Errorf("failed to marshal app ticket data: %w", err)
 	}
 
 	// ArtTicket is Pastel Art Ticket
-	artTicket := struct {
-		Version   int    `json:"version"`
-		Author    []byte `json:"author"`
-		Blocknum  int    `json:"blocknum"`
-		DataHash  []byte `json:"data_hash"`
-		Copies    int    `json:"copies"`
-		Royalty   int    `json:"royalty"`
-		Green     string `json:"green"`
-		AppTicket []byte `json:"app_ticket"`
-	}{
+	artTicket := internalArtTicket{
 		Version:   ticket.Version,
 		Author:    ticket.Author,
-		Blocknum:  ticket.Blocknum,
-		DataHash:  ticket.DataHash,
+		BlockNum:  ticket.BlockNum,
+		BlockHash: ticket.BlockHash,
 		Copies:    ticket.Copies,
 		Royalty:   ticket.Royalty,
 		Green:     ticket.Green,
@@ -141,21 +142,49 @@ func EncodeArtTicket(ticket ArtTicket) (string, error) {
 
 	b, err := json.Marshal(artTicket)
 	if err != nil {
-		return "", errors.Errorf("failed to marshal art ticket: %w", err)
+		return nil, errors.Errorf("failed to marshal art ticket: %w", err)
 	}
 
-	return string(b), nil
+	return b, nil
 }
 
-func EncodeSignatures(signatures TicketSignatures) (string, error) {
+func DecodeArtTicket(b []byte) (*ArtTicket, error) {
+	res := internalArtTicket{}
+	err := json.Unmarshal(b, &res)
+
+	if err != nil {
+		return nil, errors.Errorf("failed to unmarshal art ticket: %w", err)
+	}
+
+	appTicket := AppTicket{}
+
+	err = json.Unmarshal(res.AppTicket, &appTicket)
+	if err != nil {
+		return nil, errors.Errorf("failed to unmarshal app ticket data: %w", err)
+	}
+
+	return &ArtTicket{
+		Version:       res.Version,
+		Author:        res.Author,
+		BlockNum:      res.BlockNum,
+		BlockHash:     res.BlockHash,
+		Copies:        res.Copies,
+		Royalty:       res.Royalty,
+		Green:         res.Green,
+		AppTicketData: appTicket,
+	}, nil
+
+}
+
+func EncodeSignatures(signatures TicketSignatures) ([]byte, error) {
 	// reset signatures of Mn1 if any
 	signatures.Mn1 = nil
 
 	b, err := json.Marshal(signatures)
 
 	if err != nil {
-		return "", err
+		return nil, errors.Errorf("failed to marshal signatures: %w", err)
 	}
 
-	return string(b), nil
+	return b, nil
 }

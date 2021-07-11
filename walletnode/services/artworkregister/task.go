@@ -48,8 +48,7 @@ type Task struct {
 	fingerprintSignature []byte
 
 	// TODO: need to update rqservice code to return the following info
-	rqcoti  int64
-	rqssoti int64
+	rqoti []byte
 
 	// TODO: call cNodeAPI to get the following info
 	blockTxID string
@@ -211,12 +210,12 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.rqids = rqidsList.Identifiers()
 
-	ticket, err := task.createTicket()
+	ticket, err := task.createTicket(ctx)
 	if err != nil {
 		return errors.Errorf("failed to create ticket %w", err)
 	}
 
-	buf, err := json.MarshalIndent(ticket, "", "  ")
+	buf, err := pastel.EncodeArtTicket(ticket)
 	if err != nil {
 		return errors.Errorf("failed to marshal ticket %w", err)
 	} else {
@@ -491,7 +490,7 @@ func (task *Task) genRQIDSList(ctx context.Context) (RQIDSList, error) {
 	return list, nil
 }
 
-func (task *Task) createTicket() (*pastel.ArtTicket, error) {
+func (task *Task) createTicket(ctx context.Context) (*pastel.ArtTicket, error) {
 	if task.fingerprints == nil {
 		return nil, errors.Errorf("empty fingerprints")
 	}
@@ -522,13 +521,33 @@ func (task *Task) createTicket() (*pastel.ArtTicket, error) {
 		return nil, errors.Errorf("base58 decode artist PastelID failed")
 	}
 
+	// Get block num
+	blockNum, err := task.pastelClient.GetBlockCount(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to get block num: %w", err)
+	}
+
+	// Get block hash string
+	blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
+	if err != nil {
+		return nil, errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
+	}
+
+	// Decode hash string to byte
+	blockHash, err := base64.StdEncoding.DecodeString(blockInfo.Hash)
+	if err != nil {
+		return nil, errors.Errorf("failed to convert hash string %s to bytes: %w", blockInfo.Hash, err)
+	}
+
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.ArtTicket{
-		Version:  1,
-		Blocknum: 0,
-		Author:   pastelID,
-		DataHash: task.datahash,
-		Copies:   task.Request.IssuedCopies,
+		Version:   1,
+		Author:    pastelID,
+		BlockNum:  int(blockNum),
+		BlockHash: blockHash,
+		Copies:    task.Request.IssuedCopies,
+		Royalty:   0,  // Not supported yet by cNode
+		Green:     "", // Not supported yet by cNode
 		AppTicketData: pastel.AppTicket{
 			AuthorPastelID:                 task.Request.ArtistPastelID,
 			BlockTxID:                      "TBD",
@@ -550,8 +569,7 @@ func (task *Task) createTicket() (*pastel.ArtTicket, error) {
 			NSFWScore:                      task.nsfwScore,
 			SeenScore:                      task.seenScore,
 			RQIDs:                          task.rqids,
-			RQCoti:                         0,
-			RQSsoti:                        0,
+			RQOti:                          task.rqoti,
 		},
 	}
 

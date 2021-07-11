@@ -308,8 +308,8 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	return nil
 }
 
-// SignTicket implements walletnode.RegisterArtwork.SignTicket
-func (service *RegisterArtwork) SignTicket(ctx context.Context, req *pb.SendSignedArtTicketRequest) (*pb.SendSignedArtTicketReply, error) {
+// SendSignedArtTicket implements walletnode.RegisterArtwork.SendSignedArtTicket
+func (service *RegisterArtwork) SendSignedArtTicket(ctx context.Context, req *pb.SendSignedArtTicketRequest) (*pb.SendSignedArtTicketReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SignTicket request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {

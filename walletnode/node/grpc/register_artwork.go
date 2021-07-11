@@ -256,7 +256,7 @@ func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-// SendSigned
+// SendSignedTicket
 func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
