@@ -5,7 +5,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
 	//revive:disable:dot-imports
@@ -183,65 +182,14 @@ var _ = Service("artworks", func() {
 		Payload(func() {
 			Extend(ArtworkDownloadPayload)
 		})
-		Result(ArtworkDownloadResult)
+		StreamingResult(ArtworkDownloadResult)
 
 		HTTP(func() {
-			POST("/download")
+			GET("/download")
 			Param("txid")
 			Param("pid")
 			// Header("key:Authorization") // Provide the key in Authorization header (default)
 			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusAccepted)
-		})
-	})
-
-	Method("downloadTaskState", func() {
-		Description("Streams the state of the download process.")
-		Meta("swagger:summary", "Streams state by task ID")
-
-		Payload(func() {
-			Extend(DownloadTaskPayload)
-		})
-		StreamingResult(ArtworkDownloadTaskState)
-
-		HTTP(func() {
-			GET("/download/{taskId}/state")
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusOK)
-		})
-	})
-
-	Method("dowloadTask", func() {
-		Description("Returns a single task.")
-		Meta("swagger:summary", "Find task by ID")
-
-		Payload(func() {
-			Extend(DownloadTaskPayload)
-		})
-		Result(ArtworkDownloadTaskResult, func() {
-			View("default")
-		})
-
-		HTTP(func() {
-			GET("/download/{taskId}")
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusOK)
-		})
-	})
-
-	Method("downloadTasks", func() {
-		Description("List of all tasks.")
-		Meta("swagger:summary", "Returns list of tasks")
-
-		Result(CollectionOf(ArtworkDownloadTaskResult), func() {
-			View("tiny")
-		})
-
-		HTTP(func() {
-			GET("/download")
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
 		})
@@ -711,75 +659,9 @@ var APIKeyAuth = APIKeySecurity("api_key", func() {
 var ArtworkDownloadResult = ResultType("application/vnd.artwork.download", func() {
 	TypeName("DownloadResult")
 	Attributes(func() {
-		Attribute("task_id", String, func() {
-			Description("Task ID of the download process")
-			MinLength(8)
-			MaxLength(8)
-			Example("n6Qn6TFM")
-		})
-	})
-	Required("task_id")
-})
-
-// ArtworkDownloadTaskResult is task streaming of the artwork download.
-var ArtworkDownloadTaskResult = ResultType("application/vnd.artwork.download.task", func() {
-	TypeName("DownloadTask")
-	Attributes(func() {
-		Attribute("id", String, func() {
-			Description("JOb ID of the downloading process")
-			MinLength(8)
-			MaxLength(8)
-			Example("n6Qn6TFM")
-		})
-		Attribute("status", String, func() {
-			Description("Status of the downloading process")
-			Example(artworkdownload.StatusNames()[0])
-			Enum(InterfaceSlice(artworkdownload.StatusNames())...)
-		})
-		Attribute("states", ArrayOf(ArtworkDownloadTaskState), func() {
-			Description("List of states from the very beginning of the process")
-		})
-		Description("Image downloaded payload")
 		Attribute("file", Bytes, func() {
-			Meta("struct:field:name", "Bytes")
 			Description("File downloaded")
 		})
-		// Attribute("filename", String, func() {
-		// 	Meta("swagger:example", "false")
-		// 	Description("For internal use")
-		// })
 	})
-
-	View("tiny", func() {
-		Attribute("id")
-		Attribute("status")
-		Attribute("file")
-	})
-
-	Required("id", "status", "file")
-})
-
-// ArtworkDownloadTaskState is task streaming of the artwork registration.
-var ArtworkDownloadTaskState = Type("ArtDownloadTaskState", func() {
-	Attribute("date", String, func() {
-		Description("Date of the status creation")
-		Example(time.RFC3339)
-	})
-	Attribute("status", String, func() {
-		Description("Status of the download process")
-		Example(artworkdownload.StatusNames()[0])
-		Enum(InterfaceSlice(artworkdownload.StatusNames())...)
-	})
-	Required("date", "status")
-})
-
-// DownloadTaskPayload represents a payload for returning task.
-var DownloadTaskPayload = Type("DownloadTaskPayload", func() {
-	Attribute("taskId", String, "Task ID of the download process", func() {
-		TypeName("taskID")
-		MinLength(8)
-		MaxLength(8)
-		Example("n6Qn6TFM")
-	})
-	Required("taskId")
+	Required("file")
 })

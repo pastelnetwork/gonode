@@ -154,35 +154,9 @@ type ArtworkGetResponseBody struct {
 // DownloadResponseBody is the type of the "artworks" service "download"
 // endpoint HTTP response body.
 type DownloadResponseBody struct {
-	// Task ID of the download process
-	TaskID string `form:"task_id" json:"task_id" xml:"task_id"`
-}
-
-// DownloadTaskStateResponseBody is the type of the "artworks" service
-// "downloadTaskState" endpoint HTTP response body.
-type DownloadTaskStateResponseBody struct {
-	// Date of the status creation
-	Date string `form:"date" json:"date" xml:"date"`
-	// Status of the download process
-	Status string `form:"status" json:"status" xml:"status"`
-}
-
-// DowloadTaskResponseBody is the type of the "artworks" service "dowloadTask"
-// endpoint HTTP response body.
-type DowloadTaskResponseBody struct {
-	// JOb ID of the downloading process
-	ID string `form:"id" json:"id" xml:"id"`
-	// Status of the downloading process
-	Status string `form:"status" json:"status" xml:"status"`
-	// List of states from the very beginning of the process
-	States []*ArtDownloadTaskStateResponseBody `form:"states,omitempty" json:"states,omitempty" xml:"states,omitempty"`
 	// File downloaded
-	Bytes []byte `form:"file" json:"file" xml:"file"`
+	File []byte `form:"file" json:"file" xml:"file"`
 }
-
-// DownloadTaskResponseTinyCollection is the type of the "artworks" service
-// "downloadTasks" endpoint HTTP response body.
-type DownloadTaskResponseTinyCollection []*DownloadTaskResponseTiny
 
 // RegisterBadRequestResponseBody is the type of the "artworks" service
 // "register" endpoint HTTP response body for the "BadRequest" error.
@@ -480,99 +454,6 @@ type DownloadInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// DownloadTaskStateNotFoundResponseBody is the type of the "artworks" service
-// "downloadTaskState" endpoint HTTP response body for the "NotFound" error.
-type DownloadTaskStateNotFoundResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// DownloadTaskStateInternalServerErrorResponseBody is the type of the
-// "artworks" service "downloadTaskState" endpoint HTTP response body for the
-// "InternalServerError" error.
-type DownloadTaskStateInternalServerErrorResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// DowloadTaskNotFoundResponseBody is the type of the "artworks" service
-// "dowloadTask" endpoint HTTP response body for the "NotFound" error.
-type DowloadTaskNotFoundResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// DowloadTaskInternalServerErrorResponseBody is the type of the "artworks"
-// service "dowloadTask" endpoint HTTP response body for the
-// "InternalServerError" error.
-type DowloadTaskInternalServerErrorResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
-// DownloadTasksInternalServerErrorResponseBody is the type of the "artworks"
-// service "downloadTasks" endpoint HTTP response body for the
-// "InternalServerError" error.
-type DownloadTasksInternalServerErrorResponseBody struct {
-	// Name is the name of this class of errors.
-	Name string `form:"name" json:"name" xml:"name"`
-	// ID is a unique identifier for this particular occurrence of the problem.
-	ID string `form:"id" json:"id" xml:"id"`
-	// Message is a human-readable explanation specific to this occurrence of the
-	// problem.
-	Message string `form:"message" json:"message" xml:"message"`
-	// Is the error temporary?
-	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
-	// Is the error a timeout?
-	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
-	// Is the error a server-side fault?
-	Fault bool `form:"fault" json:"fault" xml:"fault"`
-}
-
 // TaskStateResponseBody is used to define fields on response body types.
 type TaskStateResponseBody struct {
 	// Date of the status creation
@@ -686,25 +567,6 @@ type FuzzyMatchResponseBody struct {
 	Score *int `form:"score,omitempty" json:"score,omitempty" xml:"score,omitempty"`
 }
 
-// ArtDownloadTaskStateResponseBody is used to define fields on response body
-// types.
-type ArtDownloadTaskStateResponseBody struct {
-	// Date of the status creation
-	Date string `form:"date" json:"date" xml:"date"`
-	// Status of the download process
-	Status string `form:"status" json:"status" xml:"status"`
-}
-
-// DownloadTaskResponseTiny is used to define fields on response body types.
-type DownloadTaskResponseTiny struct {
-	// JOb ID of the downloading process
-	ID string `form:"id" json:"id" xml:"id"`
-	// Status of the downloading process
-	Status string `form:"status" json:"status" xml:"status"`
-	// File downloaded
-	Bytes []byte `form:"file" json:"file" xml:"file"`
-}
-
 // NewRegisterResponseBody builds the HTTP response body from the result of the
 // "register" endpoint of the "artworks" service.
 func NewRegisterResponseBody(res *artworksviews.RegisterResultView) *RegisterResponseBody {
@@ -812,44 +674,7 @@ func NewArtworkGetResponseBody(res *artworks.ArtworkDetail) *ArtworkGetResponseB
 // "download" endpoint of the "artworks" service.
 func NewDownloadResponseBody(res *artworksviews.DownloadResultView) *DownloadResponseBody {
 	body := &DownloadResponseBody{
-		TaskID: *res.TaskID,
-	}
-	return body
-}
-
-// NewDownloadTaskStateResponseBody builds the HTTP response body from the
-// result of the "downloadTaskState" endpoint of the "artworks" service.
-func NewDownloadTaskStateResponseBody(res *artworks.ArtDownloadTaskState) *DownloadTaskStateResponseBody {
-	body := &DownloadTaskStateResponseBody{
-		Date:   res.Date,
-		Status: res.Status,
-	}
-	return body
-}
-
-// NewDowloadTaskResponseBody builds the HTTP response body from the result of
-// the "dowloadTask" endpoint of the "artworks" service.
-func NewDowloadTaskResponseBody(res *artworksviews.DownloadTaskView) *DowloadTaskResponseBody {
-	body := &DowloadTaskResponseBody{
-		ID:     *res.ID,
-		Status: *res.Status,
-		Bytes:  res.Bytes,
-	}
-	if res.States != nil {
-		body.States = make([]*ArtDownloadTaskStateResponseBody, len(res.States))
-		for i, val := range res.States {
-			body.States[i] = marshalArtworksviewsArtDownloadTaskStateViewToArtDownloadTaskStateResponseBody(val)
-		}
-	}
-	return body
-}
-
-// NewDownloadTaskResponseTinyCollection builds the HTTP response body from the
-// result of the "downloadTasks" endpoint of the "artworks" service.
-func NewDownloadTaskResponseTinyCollection(res artworksviews.DownloadTaskCollectionView) DownloadTaskResponseTinyCollection {
-	body := make([]*DownloadTaskResponseTiny, len(res))
-	for i, val := range res {
-		body[i] = marshalArtworksviewsDownloadTaskViewToDownloadTaskResponseTiny(val)
+		File: res.File,
 	}
 	return body
 }
@@ -1080,78 +905,6 @@ func NewDownloadInternalServerErrorResponseBody(res *goa.ServiceError) *Download
 	return body
 }
 
-// NewDownloadTaskStateNotFoundResponseBody builds the HTTP response body from
-// the result of the "downloadTaskState" endpoint of the "artworks" service.
-func NewDownloadTaskStateNotFoundResponseBody(res *goa.ServiceError) *DownloadTaskStateNotFoundResponseBody {
-	body := &DownloadTaskStateNotFoundResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewDownloadTaskStateInternalServerErrorResponseBody builds the HTTP response
-// body from the result of the "downloadTaskState" endpoint of the "artworks"
-// service.
-func NewDownloadTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) *DownloadTaskStateInternalServerErrorResponseBody {
-	body := &DownloadTaskStateInternalServerErrorResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewDowloadTaskNotFoundResponseBody builds the HTTP response body from the
-// result of the "dowloadTask" endpoint of the "artworks" service.
-func NewDowloadTaskNotFoundResponseBody(res *goa.ServiceError) *DowloadTaskNotFoundResponseBody {
-	body := &DowloadTaskNotFoundResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewDowloadTaskInternalServerErrorResponseBody builds the HTTP response body
-// from the result of the "dowloadTask" endpoint of the "artworks" service.
-func NewDowloadTaskInternalServerErrorResponseBody(res *goa.ServiceError) *DowloadTaskInternalServerErrorResponseBody {
-	body := &DowloadTaskInternalServerErrorResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
-// NewDownloadTasksInternalServerErrorResponseBody builds the HTTP response
-// body from the result of the "downloadTasks" endpoint of the "artworks"
-// service.
-func NewDownloadTasksInternalServerErrorResponseBody(res *goa.ServiceError) *DownloadTasksInternalServerErrorResponseBody {
-	body := &DownloadTasksInternalServerErrorResponseBody{
-		Name:      res.Name,
-		ID:        res.ID,
-		Message:   res.Message,
-		Temporary: res.Temporary,
-		Timeout:   res.Timeout,
-		Fault:     res.Fault,
-	}
-	return body
-}
-
 // NewRegisterPayload builds a artworks service register endpoint payload.
 func NewRegisterPayload(body *RegisterRequestBody) *artworks.RegisterPayload {
 	v := &artworks.RegisterPayload{
@@ -1238,23 +991,6 @@ func NewDownloadPayload(txid string, pid string, key string) *artworks.DownloadP
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key
-
-	return v
-}
-
-// NewDownloadTaskStatePayload builds a artworks service downloadTaskState
-// endpoint payload.
-func NewDownloadTaskStatePayload(taskID string) *artworks.DownloadTaskStatePayload {
-	v := &artworks.DownloadTaskStatePayload{}
-	v.TaskID = taskID
-
-	return v
-}
-
-// NewDowloadTaskPayload builds a artworks service dowloadTask endpoint payload.
-func NewDowloadTaskPayload(taskID string) *artworks.DowloadTaskPayload {
-	v := &artworks.DowloadTaskPayload{}
-	v.TaskID = taskID
 
 	return v
 }

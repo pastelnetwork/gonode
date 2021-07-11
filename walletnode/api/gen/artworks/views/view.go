@@ -53,23 +53,6 @@ type DownloadResult struct {
 	View string
 }
 
-// DownloadTask is the viewed result type that is projected based on a view.
-type DownloadTask struct {
-	// Type to project
-	Projected *DownloadTaskView
-	// View to render
-	View string
-}
-
-// DownloadTaskCollection is the viewed result type that is projected based on
-// a view.
-type DownloadTaskCollection struct {
-	// Type to project
-	Projected DownloadTaskCollectionView
-	// View to render
-	View string
-}
-
 // RegisterResultView is a type that runs validations on a projected type.
 type RegisterResultView struct {
 	// Task ID of the registration process
@@ -138,33 +121,9 @@ type ImageView struct {
 
 // DownloadResultView is a type that runs validations on a projected type.
 type DownloadResultView struct {
-	// Task ID of the download process
-	TaskID *string
-}
-
-// DownloadTaskView is a type that runs validations on a projected type.
-type DownloadTaskView struct {
-	// JOb ID of the downloading process
-	ID *string
-	// Status of the downloading process
-	Status *string
-	// List of states from the very beginning of the process
-	States []*ArtDownloadTaskStateView
 	// File downloaded
-	Bytes []byte
+	File []byte
 }
-
-// ArtDownloadTaskStateView is a type that runs validations on a projected type.
-type ArtDownloadTaskStateView struct {
-	// Date of the status creation
-	Date *string
-	// Status of the download process
-	Status *string
-}
-
-// DownloadTaskCollectionView is a type that runs validations on a projected
-// type.
-type DownloadTaskCollectionView []*DownloadTaskView
 
 var (
 	// RegisterResultMap is a map of attribute names in result type RegisterResult
@@ -219,36 +178,6 @@ var (
 	// indexed by view name.
 	DownloadResultMap = map[string][]string{
 		"default": []string{
-			"task_id",
-		},
-	}
-	// DownloadTaskMap is a map of attribute names in result type DownloadTask
-	// indexed by view name.
-	DownloadTaskMap = map[string][]string{
-		"tiny": []string{
-			"id",
-			"status",
-			"file",
-		},
-		"default": []string{
-			"id",
-			"status",
-			"states",
-			"file",
-		},
-	}
-	// DownloadTaskCollectionMap is a map of attribute names in result type
-	// DownloadTaskCollection indexed by view name.
-	DownloadTaskCollectionMap = map[string][]string{
-		"tiny": []string{
-			"id",
-			"status",
-			"file",
-		},
-		"default": []string{
-			"id",
-			"status",
-			"states",
 			"file",
 		},
 	}
@@ -312,34 +241,6 @@ func ValidateDownloadResult(result *DownloadResult) (err error) {
 		err = ValidateDownloadResultView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
-	}
-	return
-}
-
-// ValidateDownloadTask runs the validations defined on the viewed result type
-// DownloadTask.
-func ValidateDownloadTask(result *DownloadTask) (err error) {
-	switch result.View {
-	case "tiny":
-		err = ValidateDownloadTaskViewTiny(result.Projected)
-	case "default", "":
-		err = ValidateDownloadTaskView(result.Projected)
-	default:
-		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"tiny", "default"})
-	}
-	return
-}
-
-// ValidateDownloadTaskCollection runs the validations defined on the viewed
-// result type DownloadTaskCollection.
-func ValidateDownloadTaskCollection(result DownloadTaskCollection) (err error) {
-	switch result.View {
-	case "tiny":
-		err = ValidateDownloadTaskCollectionViewTiny(result.Projected)
-	case "default", "":
-		err = ValidateDownloadTaskCollectionView(result.Projected)
-	default:
-		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"tiny", "default"})
 	}
 	return
 }
@@ -628,124 +529,8 @@ func ValidateImageView(result *ImageView) (err error) {
 // ValidateDownloadResultView runs the validations defined on
 // DownloadResultView using the "default" view.
 func ValidateDownloadResultView(result *DownloadResultView) (err error) {
-	if result.TaskID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("task_id", "result"))
-	}
-	if result.TaskID != nil {
-		if utf8.RuneCountInString(*result.TaskID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, true))
-		}
-	}
-	if result.TaskID != nil {
-		if utf8.RuneCountInString(*result.TaskID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, false))
-		}
-	}
-	return
-}
-
-// ValidateDownloadTaskViewTiny runs the validations defined on
-// DownloadTaskView using the "tiny" view.
-func ValidateDownloadTaskViewTiny(result *DownloadTaskView) (err error) {
-	if result.ID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("id", "result"))
-	}
-	if result.Status == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
-	}
-	if result.Bytes == nil {
+	if result.File == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file", "result"))
-	}
-	if result.ID != nil {
-		if utf8.RuneCountInString(*result.ID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.id", *result.ID, utf8.RuneCountInString(*result.ID), 8, true))
-		}
-	}
-	if result.ID != nil {
-		if utf8.RuneCountInString(*result.ID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.id", *result.ID, utf8.RuneCountInString(*result.ID), 8, false))
-		}
-	}
-	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Downloaded" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error Not Enough SuperNode" || *result.Status == "Error Not Enough Downloaded Filed" || *result.Status == "Error Download Failed" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Downloaded", "Error Fingerprints Dont Match", "Error Not Enough SuperNode", "Error Not Enough Downloaded Filed", "Error Download Failed", "Task Rejected", "Task Completed"}))
-		}
-	}
-	return
-}
-
-// ValidateDownloadTaskView runs the validations defined on DownloadTaskView
-// using the "default" view.
-func ValidateDownloadTaskView(result *DownloadTaskView) (err error) {
-	if result.ID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("id", "result"))
-	}
-	if result.Status == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
-	}
-	if result.Bytes == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file", "result"))
-	}
-	if result.ID != nil {
-		if utf8.RuneCountInString(*result.ID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.id", *result.ID, utf8.RuneCountInString(*result.ID), 8, true))
-		}
-	}
-	if result.ID != nil {
-		if utf8.RuneCountInString(*result.ID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.id", *result.ID, utf8.RuneCountInString(*result.ID), 8, false))
-		}
-	}
-	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Downloaded" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error Not Enough SuperNode" || *result.Status == "Error Not Enough Downloaded Filed" || *result.Status == "Error Download Failed" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Downloaded", "Error Fingerprints Dont Match", "Error Not Enough SuperNode", "Error Not Enough Downloaded Filed", "Error Download Failed", "Task Rejected", "Task Completed"}))
-		}
-	}
-	for _, e := range result.States {
-		if e != nil {
-			if err2 := ValidateArtDownloadTaskStateView(e); err2 != nil {
-				err = goa.MergeErrors(err, err2)
-			}
-		}
-	}
-	return
-}
-
-// ValidateArtDownloadTaskStateView runs the validations defined on
-// ArtDownloadTaskStateView.
-func ValidateArtDownloadTaskStateView(result *ArtDownloadTaskStateView) (err error) {
-	if result.Date == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("date", "result"))
-	}
-	if result.Status == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
-	}
-	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Downloaded" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error Not Enough SuperNode" || *result.Status == "Error Not Enough Downloaded Filed" || *result.Status == "Error Download Failed" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Downloaded", "Error Fingerprints Dont Match", "Error Not Enough SuperNode", "Error Not Enough Downloaded Filed", "Error Download Failed", "Task Rejected", "Task Completed"}))
-		}
-	}
-	return
-}
-
-// ValidateDownloadTaskCollectionViewTiny runs the validations defined on
-// DownloadTaskCollectionView using the "tiny" view.
-func ValidateDownloadTaskCollectionViewTiny(result DownloadTaskCollectionView) (err error) {
-	for _, item := range result {
-		if err2 := ValidateDownloadTaskViewTiny(item); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
-	}
-	return
-}
-
-// ValidateDownloadTaskCollectionView runs the validations defined on
-// DownloadTaskCollectionView using the "default" view.
-func ValidateDownloadTaskCollectionView(result DownloadTaskCollectionView) (err error) {
-	for _, item := range result {
-		if err2 := ValidateDownloadTaskView(item); err2 != nil {
-			err = goa.MergeErrors(err, err2)
-		}
 	}
 	return
 }

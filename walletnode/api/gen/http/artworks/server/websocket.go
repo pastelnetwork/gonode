@@ -23,7 +23,7 @@ import (
 type ConnConfigurer struct {
 	RegisterTaskStateFn goahttp.ConnConfigureFunc
 	ArtSearchFn         goahttp.ConnConfigureFunc
-	DownloadTaskStateFn goahttp.ConnConfigureFunc
+	DownloadFn          goahttp.ConnConfigureFunc
 }
 
 // RegisterTaskStateServerStream implements the
@@ -64,9 +64,8 @@ type ArtSearchServerStream struct {
 	conn *websocket.Conn
 }
 
-// DownloadTaskStateServerStream implements the
-// artworks.DownloadTaskStateServerStream interface.
-type DownloadTaskStateServerStream struct {
+// DownloadServerStream implements the artworks.DownloadServerStream interface.
+type DownloadServerStream struct {
 	once sync.Once
 	// upgrader is the websocket connection upgrader.
 	upgrader goahttp.Upgrader
@@ -89,7 +88,7 @@ func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
 		RegisterTaskStateFn: fn,
 		ArtSearchFn:         fn,
-		DownloadTaskStateFn: fn,
+		DownloadFn:          fn,
 	}
 }
 
@@ -177,9 +176,9 @@ func (s *ArtSearchServerStream) Close() error {
 	return s.conn.Close()
 }
 
-// Send streams instances of "artworks.ArtDownloadTaskState" to the
-// "downloadTaskState" endpoint websocket connection.
-func (s *DownloadTaskStateServerStream) Send(v *artworks.ArtDownloadTaskState) error {
+// Send streams instances of "artworks.DownloadResult" to the "download"
+// endpoint websocket connection.
+func (s *DownloadServerStream) Send(v *artworks.DownloadResult) error {
 	var err error
 	// Upgrade the HTTP connection to a websocket connection only once. Connection
 	// upgrade is done here so that authorization logic in the endpoint is executed
@@ -198,13 +197,13 @@ func (s *DownloadTaskStateServerStream) Send(v *artworks.ArtDownloadTaskState) e
 	if err != nil {
 		return err
 	}
-	res := v
-	body := NewDownloadTaskStateResponseBody(res)
+	res := artworks.NewViewedDownloadResult(v, "default")
+	body := NewDownloadResponseBody(res.Projected)
 	return s.conn.WriteJSON(body)
 }
 
-// Close closes the "downloadTaskState" endpoint websocket connection.
-func (s *DownloadTaskStateServerStream) Close() error {
+// Close closes the "download" endpoint websocket connection.
+func (s *DownloadServerStream) Close() error {
 	var err error
 	if s.conn == nil {
 		return nil

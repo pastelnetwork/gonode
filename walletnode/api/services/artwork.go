@@ -143,30 +143,12 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 }
 
 // Download registered artwork.
-func (service *Artwork) Download(ctx context.Context, p *artworks.DownloadPayload) (res *artworks.DownloadResult, err error) {
+func (service *Artwork) Download(ctx context.Context, p *artworks.DownloadPayload, stream artworks.DownloadServerStream) (err error) {
 	log.WithContext(ctx).Info("Start downloading")
+	defer log.WithContext(ctx).Info("Finished downloading")
 	ticket := fromDownloadPayload(p)
 	taskID := service.download.AddTask(ticket)
-	res = &artworks.DownloadResult{
-		TaskID: taskID,
-	}
-	log.WithContext(ctx).Info("Started download task")
-	return res, nil
-}
-
-// APIKeyAuth implements the authorization logic for the APIKey security scheme.
-func (service *Artwork) APIKeyAuth(ctx_ context.Context, key string, schema *security.APIKeyScheme) (ctx context.Context, err error) {
-	return ctx_, nil
-}
-
-// DownloadTaskState streams the state of the download process.
-func (service *Artwork) DownloadTaskState(ctx context.Context, p *artworks.DownloadTaskStatePayload, stream artworks.DownloadTaskStateServerStream) (err error) {
-	defer stream.Close()
-
-	task := service.download.Task(p.TaskID)
-	if task == nil {
-		return artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
-	}
+	task := service.download.Task(taskID)
 
 	sub := task.SubscribeStatus()
 
@@ -175,48 +157,26 @@ func (service *Artwork) DownloadTaskState(ctx context.Context, p *artworks.Downl
 		case <-ctx.Done():
 			return nil
 		case status := <-sub():
-			if status.IsFinal() {
-				return nil
-			}
-			res := &artworks.ArtDownloadTaskState{
-				Date:   status.CreatedAt.Format(time.RFC3339),
-				Status: status.String(),
-			}
-			if err := stream.Send(res); err != nil {
-				return artworks.MakeInternalServerError(err)
+			if status.IsFailure() {
+				return artworks.MakeInternalServerError(task.Error())
 			}
 
+			if status.IsFinal() {
+				res := &artworks.DownloadResult{
+					File: task.File,
+				}
+				if err := stream.Send(res); err != nil {
+					return artworks.MakeInternalServerError(err)
+				}
+				return nil
+			}
 		}
 	}
 }
 
-// DowloadTask returns a single task.
-func (service *Artwork) DowloadTask(ctx context.Context, p *artworks.DowloadTaskPayload) (res *artworks.DownloadTask, err error) {
-	task := service.download.Task(p.TaskID)
-	if task == nil {
-		return nil, artworks.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
-	}
-
-	res = &artworks.DownloadTask{
-		ID:     p.TaskID,
-		Status: task.Status().String(),
-		States: toArtworkDownloadStates(task.StatusHistory()),
-		Bytes:  task.File,
-	}
-	return res, nil
-}
-
-// DownloadTasks returns list of all tasks.
-func (service *Artwork) DownloadTasks(ctx context.Context) (res artworks.DownloadTaskCollection, err error) {
-	tasks := service.download.Tasks()
-	for _, task := range tasks {
-		res = append(res, &artworks.DownloadTask{
-			ID:     task.ID(),
-			Status: task.Status().String(),
-			Bytes:  task.File,
-		})
-	}
-	return res, nil
+// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+func (service *Artwork) APIKeyAuth(ctx_ context.Context, key string, schema *security.APIKeyScheme) (ctx context.Context, err error) {
+	return ctx_, nil
 }
 
 // Mount configures the mux to serve the artworks endpoints.

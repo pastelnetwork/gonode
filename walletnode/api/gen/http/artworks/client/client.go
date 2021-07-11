@@ -53,18 +53,6 @@ type Client struct {
 	// endpoint.
 	DownloadDoer goahttp.Doer
 
-	// DownloadTaskState Doer is the HTTP client used to make requests to the
-	// downloadTaskState endpoint.
-	DownloadTaskStateDoer goahttp.Doer
-
-	// DowloadTask Doer is the HTTP client used to make requests to the dowloadTask
-	// endpoint.
-	DowloadTaskDoer goahttp.Doer
-
-	// DownloadTasks Doer is the HTTP client used to make requests to the
-	// downloadTasks endpoint.
-	DownloadTasksDoer goahttp.Doer
-
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -107,9 +95,6 @@ func NewClient(
 		ArtSearchDoer:         doer,
 		ArtworkGetDoer:        doer,
 		DownloadDoer:          doer,
-		DownloadTaskStateDoer: doer,
-		DowloadTaskDoer:       doer,
-		DownloadTasksDoer:     doer,
 		CORSDoer:              doer,
 		RestoreResponseBody:   restoreBody,
 		scheme:                scheme,
@@ -321,25 +306,6 @@ func (c *Client) Download() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.DownloadDoer.Do(req)
-		if err != nil {
-			return nil, goahttp.ErrRequestError("artworks", "download", err)
-		}
-		return decodeResponse(resp)
-	}
-}
-
-// DownloadTaskState returns an endpoint that makes HTTP requests to the
-// artworks service downloadTaskState server.
-func (c *Client) DownloadTaskState() goa.Endpoint {
-	var (
-		decodeResponse = DecodeDownloadTaskStateResponse(c.decoder, c.RestoreResponseBody)
-	)
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildDownloadTaskStateRequest(ctx, v)
-		if err != nil {
-			return nil, err
-		}
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
@@ -347,10 +313,10 @@ func (c *Client) DownloadTaskState() goa.Endpoint {
 			if resp != nil {
 				return decodeResponse(resp)
 			}
-			return nil, goahttp.ErrRequestError("artworks", "downloadTaskState", err)
+			return nil, goahttp.ErrRequestError("artworks", "download", err)
 		}
-		if c.configurer.DownloadTaskStateFn != nil {
-			conn = c.configurer.DownloadTaskStateFn(conn, cancel)
+		if c.configurer.DownloadFn != nil {
+			conn = c.configurer.DownloadFn(conn, cancel)
 		}
 		go func() {
 			<-ctx.Done()
@@ -361,45 +327,7 @@ func (c *Client) DownloadTaskState() goa.Endpoint {
 			)
 			conn.Close()
 		}()
-		stream := &DownloadTaskStateClientStream{conn: conn}
+		stream := &DownloadClientStream{conn: conn}
 		return stream, nil
-	}
-}
-
-// DowloadTask returns an endpoint that makes HTTP requests to the artworks
-// service dowloadTask server.
-func (c *Client) DowloadTask() goa.Endpoint {
-	var (
-		decodeResponse = DecodeDowloadTaskResponse(c.decoder, c.RestoreResponseBody)
-	)
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildDowloadTaskRequest(ctx, v)
-		if err != nil {
-			return nil, err
-		}
-		resp, err := c.DowloadTaskDoer.Do(req)
-		if err != nil {
-			return nil, goahttp.ErrRequestError("artworks", "dowloadTask", err)
-		}
-		return decodeResponse(resp)
-	}
-}
-
-// DownloadTasks returns an endpoint that makes HTTP requests to the artworks
-// service downloadTasks server.
-func (c *Client) DownloadTasks() goa.Endpoint {
-	var (
-		decodeResponse = DecodeDownloadTasksResponse(c.decoder, c.RestoreResponseBody)
-	)
-	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildDownloadTasksRequest(ctx, v)
-		if err != nil {
-			return nil, err
-		}
-		resp, err := c.DownloadTasksDoer.Do(req)
-		if err != nil {
-			return nil, goahttp.ErrRequestError("artworks", "downloadTasks", err)
-		}
-		return decodeResponse(resp)
 	}
 }

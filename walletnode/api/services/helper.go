@@ -143,15 +143,3 @@ func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Tic
 		PastelIDPassphrase: payload.Key,
 	}
 }
-
-func toArtworkDownloadStates(statuses []*state.Status) []*artworks.ArtDownloadTaskState {
-	var states []*artworks.ArtDownloadTaskState
-
-	for _, status := range statuses {
-		states = append(states, &artworks.ArtDownloadTaskState{
-			Date:   status.CreatedAt.Format(time.RFC3339),
-			Status: status.String(),
-		})
-	}
-	return states
-}

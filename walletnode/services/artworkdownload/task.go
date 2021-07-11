@@ -20,6 +20,7 @@ type Task struct {
 
 	Ticket *Ticket
 	File   []byte
+	err    error
 }
 
 // Run starts the task
@@ -34,6 +35,7 @@ func (task *Task) Run(ctx context.Context) error {
 	defer log.WithContext(ctx).Debugf("End task")
 
 	if err := task.run(ctx); err != nil {
+		task.err = err
 		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithErrorStack(err).Warnf("Task is rejected")
 		return nil
@@ -41,6 +43,10 @@ func (task *Task) Run(ctx context.Context) error {
 
 	task.UpdateStatus(StatusTaskCompleted)
 	return nil
+}
+
+func (task *Task) Error() error {
+	return task.err
 }
 
 func (task *Task) run(ctx context.Context) error {

@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goahttp "goa.design/goa/v3/http"
 )
 
@@ -20,7 +21,7 @@ import (
 type ConnConfigurer struct {
 	RegisterTaskStateFn goahttp.ConnConfigureFunc
 	ArtSearchFn         goahttp.ConnConfigureFunc
-	DownloadTaskStateFn goahttp.ConnConfigureFunc
+	DownloadFn          goahttp.ConnConfigureFunc
 }
 
 // RegisterTaskStateClientStream implements the
@@ -37,9 +38,8 @@ type ArtSearchClientStream struct {
 	conn *websocket.Conn
 }
 
-// DownloadTaskStateClientStream implements the
-// artworks.DownloadTaskStateClientStream interface.
-type DownloadTaskStateClientStream struct {
+// DownloadClientStream implements the artworks.DownloadClientStream interface.
+type DownloadClientStream struct {
 	// conn is the underlying websocket connection.
 	conn *websocket.Conn
 }
@@ -50,7 +50,7 @@ func NewConnConfigurer(fn goahttp.ConnConfigureFunc) *ConnConfigurer {
 	return &ConnConfigurer{
 		RegisterTaskStateFn: fn,
 		ArtSearchFn:         fn,
-		DownloadTaskStateFn: fn,
+		DownloadFn:          fn,
 	}
 }
 
@@ -102,12 +102,12 @@ func (s *ArtSearchClientStream) Recv() (*artworks.ArtworkSearchResult, error) {
 	return res, nil
 }
 
-// Recv reads instances of "artworks.ArtDownloadTaskState" from the
-// "downloadTaskState" endpoint websocket connection.
-func (s *DownloadTaskStateClientStream) Recv() (*artworks.ArtDownloadTaskState, error) {
+// Recv reads instances of "artworks.DownloadResult" from the "download"
+// endpoint websocket connection.
+func (s *DownloadClientStream) Recv() (*artworks.DownloadResult, error) {
 	var (
-		rv   *artworks.ArtDownloadTaskState
-		body DownloadTaskStateResponseBody
+		rv   *artworks.DownloadResult
+		body DownloadResponseBody
 		err  error
 	)
 	err = s.conn.ReadJSON(&body)
@@ -118,10 +118,10 @@ func (s *DownloadTaskStateClientStream) Recv() (*artworks.ArtDownloadTaskState, 
 	if err != nil {
 		return rv, err
 	}
-	err = ValidateDownloadTaskStateResponseBody(&body)
-	if err != nil {
-		return rv, err
+	res := NewDownloadResultViewOK(&body)
+	vres := &artworksviews.DownloadResult{res, "default"}
+	if err := artworksviews.ValidateDownloadResult(vres); err != nil {
+		return rv, goahttp.ErrValidationError("artworks", "download", err)
 	}
-	res := NewDownloadTaskStateArtDownloadTaskStateOK(&body)
-	return res, nil
+	return artworks.NewDownloadResult(vres), nil
 }
