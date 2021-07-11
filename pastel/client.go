@@ -222,7 +222,7 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	}
 
 	// command : tickets tools gettotalstoragefee "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee" "imagesize"
-	tickets, err := EncodeArtTicket(*request.Ticket)
+	tickets, err := EncodeArtTicket(request.Ticket)
 	if err != nil {
 		return 0, errors.Errorf("failed to encode ticket: %w", err)
 	}
@@ -235,8 +235,8 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	params := []interface{}{}
 	params = append(params, "tools")
 	params = append(params, "gettotalstoragefee")
-	params = append(params, tickets)
-	params = append(params, signatures)
+	params = append(params, string(tickets))
+	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelId)
 	params = append(params, request.Pasphase)
 	params = append(params, request.Key1)
@@ -255,7 +255,7 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 		TxID string `json:"txid"`
 	}
 
-	tickets, err := EncodeArtTicket(*request.Ticket)
+	tickets, err := EncodeArtTicket(request.Ticket)
 	if err != nil {
 		return "", errors.Errorf("failed to encode ticket: %w", err)
 	}
@@ -268,8 +268,8 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 	params := []interface{}{}
 	params = append(params, "register")
 	params = append(params, "art")
-	params = append(params, tickets)
-	params = append(params, signatures)
+	params = append(params, string(tickets))
+	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelId)
 	params = append(params, request.Pasphase)
 	params = append(params, request.Key1)

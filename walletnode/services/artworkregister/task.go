@@ -216,7 +216,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("failed to create ticket %w", err)
 	}
 
-	buf, err := json.MarshalIndent(ticket, "", "  ")
+	buf, err := pastel.EncodeArtTicket(ticket)
 	if err != nil {
 		return errors.Errorf("failed to marshal ticket %w", err)
 	} else {
