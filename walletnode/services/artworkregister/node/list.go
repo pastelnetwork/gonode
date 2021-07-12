@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/pastel"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
 // List represents multiple Node.
@@ -124,12 +125,12 @@ func (nodes *List) MatchThumbnailHashes() error {
 }
 
 // UploadSignedTicket uploads regart ticket and its signature to super nodes
-func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte) error {
+func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() error {
-			fee, err := node.SendSignedTicket(ctx, ticket, signature)
+			fee, err := node.SendSignedTicket(ctx, ticket, signature, rqids, encoderParams)
 			if err != nil {
 				return err
 			}

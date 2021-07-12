@@ -23,3 +23,11 @@ func (rqidsList RQIDSList) Identifiers() []string {
 	}
 	return identifier
 }
+
+func (rqidsList RQIDSList) ToMap() map[string][]byte {
+	m := make(map[string][]byte, len(rqidsList))
+	for _, rqids := range rqidsList {
+		m[rqids.Id] = rqids.Content
+	}
+	return m
+}

@@ -14,6 +14,7 @@ require (
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-00010101000000-000000000000
 	github.com/stretchr/testify v1.7.0
+	go.uber.org/atomic v1.8.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	google.golang.org/grpc v1.38.0
 )

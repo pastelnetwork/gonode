@@ -21,7 +21,8 @@ message SessionReply {
 }
 
 message SendArtTicketSignatureRequest {
-    bytes  signature = 1;
+    string nodeID = 1;
+    bytes  signature = 2;
 }
 message SendArtTicketSignatureReply {
 }

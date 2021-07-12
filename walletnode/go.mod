@@ -21,6 +21,7 @@ require (
 	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
+	go.uber.org/atomic v1.8.0 // indirect
 	goa.design/goa/v3 v3.4.3
 	goa.design/plugins/v3 v3.4.3
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e

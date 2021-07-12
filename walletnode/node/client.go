@@ -9,6 +9,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/pastel"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
 // Client represents a base connection interface.
@@ -42,7 +43,7 @@ type RegisterArtwork interface {
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
 	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (previewHash []byte, mediumThumbnailHash []byte, smallThumbnailHash []byte, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
-	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte) (int64, error)
+	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
 	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
 	SendPreBurntFeeTxId(ctx context.Context, txid pastel.TxIDType) (pastel.TxIDType, error)
 }

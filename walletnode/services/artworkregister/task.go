@@ -7,11 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
-	"os"
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
@@ -20,6 +19,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
+	rq "github.com/pastelnetwork/gonode/raptorq"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 	"golang.org/x/crypto/sha3"
 )
@@ -203,12 +204,17 @@ func (task *Task) run(ctx context.Context) error {
 	task.smallThumbnailHash = nodes.SmallThumbnailHash()
 
 	// Connect to rq serivce to get rq symbols identifier
-	rqidsList, err := task.genRQIDSList(ctx)
+	rqSymbolIdFiles, encoderParams, err := task.genRQIdentifiersFiles(ctx)
 	if err != nil {
 		task.UpdateStatus(StatusErrorGenRaptorQSymbolsFailed)
 		return errors.Errorf("gen RaptorQ symbols' identifiers failed %w", err)
 	}
-	task.rqids = rqidsList.Identifiers()
+	if len(rqSymbolIdFiles) < 1 {
+		return errors.Errorf("nuber of raptorq symbol identifiers files must be greter than 1")
+	}
+	if task.rqids, err = rqSymbolIdFiles.FileIdentifers(); err != nil {
+		return errors.Errorf("failed to get rq symbols' identifier file's identifier %w", err)
+	}
 
 	ticket, err := task.createTicket(ctx)
 	if err != nil {
@@ -229,7 +235,11 @@ func (task *Task) run(ctx context.Context) error {
 	}
 
 	// send signed ticket to supernodes to calculate registration fee
-	if err := nodes.UploadSignedTicket(ctx, buf, artistSignature); err != nil {
+	symbolsIdFilesMap, err := rqSymbolIdFiles.ToMap()
+	if err != nil {
+		return errors.Errorf("failed to create rq symbol identifiers files map %w", err)
+	}
+	if err := nodes.UploadSignedTicket(ctx, buf, artistSignature, symbolsIdFilesMap, *encoderParams); err != nil {
 		return errors.Errorf("failed to upload signed ticket %w", err)
 	}
 
@@ -398,96 +408,69 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 	return nodes, nil
 }
 
-func (task *Task) genRQIDSList(ctx context.Context) (RQIDSList, error) {
+func (task *Task) genRQIdentifiersFiles(ctx context.Context) (rq.SymbolIdFiles, *rqnode.EncoderParameters, error) {
 	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
 	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
 	if err != nil {
-		return nil, errors.Errorf("failed to connect to raptorQ service %w", err)
+		return nil, nil, errors.Errorf("failed to connect to raptorQ service %w", err)
 	}
 	defer conn.Close()
 
 	content, err := task.Request.Image.Bytes()
 	if err != nil {
-		return nil, errors.Errorf("failed to read image contents")
+		return nil, nil, errors.Errorf("failed to read image contents")
 	}
 
 	rq := conn.RaptorQ()
 	encodeInfo, err := rq.EncodeInfo(ctx, content)
 	if err != nil {
-		return nil, errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
+		return nil, nil, errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
 
-	var list RQIDSList
+	files := rq.SymbolIdFiles{}
 	for i := 0; i < task.config.NumberRQIDSFiles; i++ {
-		item, err := func() (*RQIDS, error) {
-			// FIXME: fill the real block_hash after it is confirmed
-			rqidsFiles, err := createRQIDSFile(encodeInfo.SymbolIds, []byte("BLOCK_HASH"))
-			if err != nil {
-				return nil, errors.Errorf("failed to create rqids file %w", err)
-			}
-
-			file, err := os.OpenFile(rqidsFiles, os.O_RDWR|os.O_APPEND, 0644)
-			if err != nil {
-				return nil, errors.Errorf("failed to open rqids file %s %w", rqidsFiles, err)
-			}
-			defer file.Close()
-			defer os.Remove(file.Name())
-
-			buf, err := ioutil.ReadAll(file)
-			if err != nil {
-				return nil, errors.Errorf("failed to read rqids file %s %w", rqidsFiles, err)
-			}
-
-			// sign the file
-			signature, err := task.pastelClient.Sign(ctx, buf, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
-			if err != nil {
-				return nil, errors.Errorf("failed to sign rqids file %s %w", rqidsFiles, err)
-			}
-
-			// FIXME: remove this after confimartion that file identifier = hash(file + signature)
-			// zstd.BestCompression is 20
-			// Maximum level compression is 22 and it was use to compress the fingerprints so here we do the same
-			// compressedSignature, err := zstd.CompressLevel(nil, signature, 22)
-			// if err != nil {
-			// 	return nil, errors.Errorf("failed to compress signature of rqids file %s %w", rqidsFiles, err)
-			// }
-
-			// append the signature to end of the file
-			if _, err := file.Write(signature); err != nil {
-				return nil, errors.Errorf("failed to")
-			}
-
-			// hash the file and sum
-			if _, err := file.Seek(0, io.SeekStart); err != nil {
-				return nil, errors.Errorf("failed to send to begin of file %s %w", file.Name(), err)
-			}
-			hasher := sha3.New256()
-			if _, err := io.Copy(hasher, file); err != nil {
-				return nil, errors.Errorf("failed to hash rqids file %s %w", rqidsFiles, err)
-			}
-
-			if _, err := file.Seek(0, io.SeekStart); err != nil {
-				return nil, errors.Errorf("failed to send to begin of file %s %w", file.Name(), err)
-			}
-			rqids := &RQIDS{
-				Id:      base64.StdEncoding.EncodeToString(hasher.Sum(nil)),
-				Content: []byte{},
-			}
-
-			if rqids.Content, err = ioutil.ReadAll(file); err != nil {
-				return nil, errors.Errorf("failed to read content of rqids file %s %w", file.Name(), err)
-			}
-
-			return rqids, nil
-		}()
-
+		f, err := task.createRQIDSFile(ctx, encodeInfo.SymbolIds, "BLOCK_HASH")
 		if err != nil {
-			return nil, err
+			return nil, nil, errors.Errorf("failed to create rqids file %w", err)
 		}
-		list = append(list, item)
+
+		files = append(files, f)
 	}
 
-	return list, nil
+	return files, &encodeInfo.EncoderParam, nil
+}
+
+func (task *Task) createRQIDSFile(ctx context.Context, symbols []string, blockHash string) (*rq.SymbolIdFile, error) {
+	symbolIdFile := rq.SymbolIdFile{
+		Id:                uuid.New().String(),
+		BlockHash:         blockHash,
+		SymbolIdentifiers: symbols,
+		Signature:         nil,
+	}
+
+	js, err := json.Marshal(&symbolIdFile)
+	if err != nil {
+		return nil, errors.Errorf("failed to marshal identifiers file %w", err)
+	}
+
+	symbolIdFile.Signature, err = task.pastelClient.Sign(ctx, js, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	if err != nil {
+		return nil, errors.Errorf("failed to sign identifier file %w", err)
+	}
+
+	js, err = json.Marshal(&symbolIdFile)
+	if err != nil {
+		return nil, errors.Errorf("failed to marshal identifiers file with signature %w", err)
+	}
+
+	hasher := sha3.New256()
+	src := bytes.NewReader(js)
+	if _, err := io.Copy(hasher, src); err != nil {
+		return nil, errors.Errorf("failed to hash identifiers file %w", err)
+	}
+	symbolIdFile.FileIdentifer = string(hasher.Sum(nil))
+
+	return &symbolIdFile, nil
 }
 
 func (task *Task) createTicket(ctx context.Context) (*pastel.ArtTicket, error) {

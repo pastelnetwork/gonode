@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"image"
 	"io"
-	"reflect"
+	"sort"
 	"sync"
 	"time"
 
@@ -21,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
+	rq "github.com/pastelnetwork/gonode/raptorq"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -29,7 +30,7 @@ type Task struct {
 	task.Task
 	*Service
 
-	Ticket           *pastel.RegTicket
+	Ticket           *pastel.ArtTicket
 	ResampledArtwork *artwork.File
 	Artwork          *artwork.File
 
@@ -42,6 +43,15 @@ type Task struct {
 	acceptedMu sync.Mutex
 	accpeted   Nodes
 
+	RQIDS map[string][]byte
+	Oti   []byte
+
+	// valid only for a task run as primary
+	peersArtTicketSignatureMtx *sync.Mutex
+	peersArtTicketSignature    map[string][]byte
+	allSignaturesReceived      chan struct{}
+
+	// valid only for secondary node
 	connectedTo *Node
 }
 
@@ -209,23 +219,25 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
-func (task *Task) GetRegistrationFee(ctx context.Context, serializedTicket []byte) (int64, error) {
+func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, rqids map[string][]byte, oti []byte) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
 		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
 	}
+
+	task.Oti = oti
+	task.RQIDS = rqids
 
 	var registrationFee int64
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusRegistrationFeeCalculated)
 
 		// TODO: fix this like how can we get the signature before calling cNode
-		var ticket pastel.RegTicket
-		if err := json.Unmarshal(serializedTicket, &ticket); err != nil {
-			return errors.Errorf("failed to unmarshal ticket %w", err)
+		task.Ticket, err = pastel.DecodeArtTicket(ticket)
+		if err != nil {
+			return errors.Errorf("failed to decode art ticket %w", err)
 		}
 
-		task.Ticket = &ticket
 		// req := pastel.GetRegisterArtFeeRequest{
 		// 	Ticket:     &ticket.RegTicketData.ArtTicketData,
 		// 	Signatures: &ticket.RegTicketData.Signatures,
@@ -248,6 +260,28 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) e
 	var err error
 	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
 		return errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
+	}
+
+	// Only primary node start this action
+	if task.connectedTo == nil {
+		taskFn := func(ctx context.Context) {
+			<-task.NewAction(func(ctx context.Context) error {
+				log.WithContext(ctx).Debug("waiting for signature from peers")
+				for {
+					select {
+					case <-ctx.Done():
+						err := ctx.Err()
+						if err != nil {
+							log.WithContext(ctx).Debug("waiting for signature from peers cancelled or timeout")
+						}
+						return err
+					case <-task.allSignaturesReceived:
+
+					}
+				}
+			})
+		}
+		go taskFn(ctx)
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
@@ -319,20 +353,30 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) e
 			return errors.Errorf("fingerprints not matched")
 		}
 
-		// generate raptorQ symbols
-		rqids, err := task.genRQIDS(ctx)
+		// compare rqsymbols
+		err = task.compareRQSymbolId(ctx)
 		if err != nil {
 			return errors.Errorf("failed to generate rqids %w", err)
 		}
-		if !reflect.DeepEqual(rqids, task.Ticket.RegTicketData.ArtTicketData.AppTicketData.RQIDs) {
-			return errors.Errorf("raptorQ symbols identifiers not matched")
-		}
 
-		// sign the ticket
+		// sign the ticket if not primary node
+		if task.connectedTo != nil {
+			ticket, err := pastel.EncodeArtTicket(task.Ticket)
+			if err != nil {
+				return errors.Errorf("failed to serialize art ticket %w", err)
+			}
+			signature, err := task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase)
+			if err != nil {
+				return errors.Errorf("failed to sign ticket %w", err)
+			}
+			if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, signature); err != nil {
+				return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.connectedTo.ID, task.connectedTo.Address, err)
+			}
+		}
 
 		err = <-confirmationChn
 		if err != nil {
-
+			return errors.Errorf("failed to validate preburn transaction validation %w", err)
 		}
 		return nil
 	})
@@ -354,26 +398,52 @@ func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) ([]b
 	return fingerprintsData, nil
 }
 
-func (task *Task) genRQIDS(ctx context.Context) ([]string, error) {
+func (task *Task) compareRQSymbolId(ctx context.Context) error {
 	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
 	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
 	if err != nil {
-		return nil, errors.Errorf("failed to connect to raptorQ service %w", err)
+		return errors.Errorf("failed to connect to raptorQ service %w", err)
 	}
 	defer conn.Close()
 
 	content, err := task.Artwork.Bytes()
 	if err != nil {
-		return nil, errors.Errorf("failed to read image contents")
+		return errors.Errorf("failed to read image contents")
 	}
 
-	rq := conn.RaptorQ()
-	encodeInfo, err := rq.EncodeInfo(ctx, content)
+	rqService := conn.RaptorQ()
+	encodeInfo, err := rqService.EncodeInfo(ctx, content)
 	if err != nil {
-		return nil, errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
+		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
 
-	return encodeInfo.SymbolIds, nil
+	// pick just one file to compare rq symbols
+	if len(task.RQIDS) == 0 {
+		return errors.Errorf("no symbols identifiers file")
+	}
+
+	var rqSymbolIdFile rq.SymbolIdFile
+	for _, v := range task.RQIDS {
+		if err := json.Unmarshal(v, &rqSymbolIdFile); err != nil {
+			return errors.Errorf("failed to unmarshal raptorq symbols identifiers file %w", err)
+		}
+		break
+	}
+
+	// sorting to make sure the comparision is correct
+	sort.Strings(encodeInfo.SymbolIds)
+	sort.Strings(rqSymbolIdFile.SymbolIdentifiers)
+	if len(encodeInfo.SymbolIds) != len(rqSymbolIdFile.SymbolIdentifiers) {
+		return errors.Errorf("number of raptorq symbols doesn't matched")
+	}
+
+	for i := range encodeInfo.SymbolIds {
+		if encodeInfo.SymbolIds[i] != rqSymbolIdFile.SymbolIdentifiers[i] {
+			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, rqSymbolIdFile.SymbolIdentifiers[i], encodeInfo.SymbolIds[i])
+		}
+	}
+
+	return nil
 }
 
 // UploadImageWithThumbnail uploads the image that contained image with pqsignature
@@ -458,6 +528,32 @@ func (task *Task) hashThumbnail(thumbnail thumbnailType, rect *image.Rectangle) 
 	return hasher.Sum(nil), nil
 }
 
+func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) error {
+	task.peersArtTicketSignatureMtx.Lock()
+	defer task.peersArtTicketSignatureMtx.Unlock()
+
+	if err := task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
+		return err
+	}
+
+	<-task.NewAction(func(ctx context.Context) error {
+		log.WithContext(ctx).Debugf("receive art ticket signature from node %s", nodeID)
+		if node := task.accpeted.ByID(nodeID); node == nil {
+			return errors.Errorf("node %s not in accepted list", nodeID)
+		}
+
+		task.peersArtTicketSignature[nodeID] = signature
+		if len(task.peersArtTicketSignature) == len(task.accpeted) {
+			log.WithContext(ctx).Debug("all signature received")
+			go func() {
+				close(task.allSignaturesReceived)
+			}()
+		}
+		return nil
+	})
+	return nil
+}
+
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
@@ -486,7 +582,10 @@ func (task *Task) context(ctx context.Context) context.Context {
 // NewTask returns a new Task instance.
 func NewTask(service *Service) *Task {
 	return &Task{
-		Task:    task.New(StatusTaskStarted),
-		Service: service,
+		Task:                       task.New(StatusTaskStarted),
+		Service:                    service,
+		peersArtTicketSignatureMtx: &sync.Mutex{},
+		peersArtTicketSignature:    make(map[string][]byte),
+		allSignaturesReceived:      make(chan struct{}),
 	}
 }

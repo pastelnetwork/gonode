@@ -12,6 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc/codes"
@@ -257,7 +258,7 @@ func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) contex
 }
 
 // SendSignedTicket
-func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte) (int64, error) {
+func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -265,6 +266,10 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 	req := pb.SendSignedArtTicketRequest{
 		ArtTicket:       ticket,
 		ArtistSignature: signature,
+		EncodeParameters: &pb.EncoderParameters{
+			Oti: encoderParams.Oti,
+		},
+		EncodeFiles: rqids,
 	}
 
 	rsp, err := service.client.SendSignedArtTicket(ctx, &req)

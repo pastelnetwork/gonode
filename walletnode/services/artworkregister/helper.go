@@ -3,7 +3,6 @@ package artworkregister
 import (
 	"bytes"
 	"encoding/base64"
-	"fmt"
 	"io"
 	"os"
 	"path"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
+	rq "github.com/pastelnetwork/gonode/raptorq"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -44,12 +44,12 @@ func createRQIDSFile(rqids []string, blockHash []byte) (string, error) {
 	}
 	defer file.Close()
 
-	var content []string
-
-	uuid := uuid.New()
-	content = append(content, uuid.String())
-
-	content = append(content, fmt.Sprintf("%x", blockHash))
+	identifierFile := rq.IdentifierFile{
+		Id:        uuid.New().String()
+		BlockHash: "",
+		Symbols:   []string{},
+		Signature: []byte{},
+	}
 
 	hasher := sha3.New256()
 
