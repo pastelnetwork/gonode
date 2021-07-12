@@ -60,6 +60,9 @@ message ProbeImageRequest {
 }
 message ProbeImageReply {
     bytes fingerprint = 1;
+    int32 rareness_score = 2;
+    int32 nsfw_score = 3;
+    int32 seen_score = 4;
 }
 
 message EncoderParameters {

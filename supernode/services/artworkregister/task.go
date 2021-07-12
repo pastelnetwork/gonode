@@ -34,7 +34,10 @@ type Task struct {
 	ResampledArtwork *artwork.File
 	Artwork          *artwork.File
 
-	FingerprintsData []byte
+	fingerprintsData []byte
+	rarenessScore    int
+	nSFWScore        int
+	seenScore        int
 
 	PreviewThumbnail *artwork.File
 	MediumThumbnail  *artwork.File
@@ -175,7 +178,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 }
 
 // ProbeImage uploads the resampled image compute and return a fingerpirnt.
-func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
+func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.FingerAndScores, error) {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return nil, err
 	}
@@ -188,7 +191,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 		return nil
 	})
 
-	var fingerprintData []byte
+	var fingerAndScores *pastel.FingerAndScores
 
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageProbed)
@@ -198,7 +201,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 			return errors.Errorf("failed to load image %s %w", file.Name(), err)
 		}
 
-		fingerprintData, err = task.genFingerprintsData(ctx, img)
+		fingerAndScores, err = task.genFingerprintsData(ctx, img)
 		if err != nil {
 			return errors.Errorf("failed to generate fingerprints data %w", err)
 		}
@@ -216,8 +219,11 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 		return nil
 	})
 
-	task.FingerprintsData = fingerprintData
-	return fingerprintData, nil
+	task.fingerprintsData = fingerAndScores.FingerprintData
+	task.rarenessScore = fingerAndScores.RarenessScore
+	task.nSFWScore = fingerAndScores.NSFWScore
+	task.seenScore = fingerAndScores.SeenScore
+	return fingerAndScores, nil
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
@@ -324,13 +330,25 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 			return errors.Errorf("failed to load image from copied artwork %w", err)
 		}
 
-		fingerprintsData, err := task.genFingerprintsData(ctx, resizeImg)
+		fingerAndScores, err := task.genFingerprintsData(ctx, resizeImg)
 		if err != nil {
 			return errors.Errorf("failed to generate fingerprints data %w", err)
 		}
 
-		if !bytes.Equal(task.FingerprintsData, fingerprintsData) {
+		if !bytes.Equal(task.fingerprintsData, fingerAndScores.FingerprintData) {
 			return errors.Errorf("fingerprints not matched")
+		}
+
+		if task.rarenessScore != fingerAndScores.RarenessScore {
+			return errors.Errorf("rareness score not matched")
+		}
+
+		if task.nSFWScore != fingerAndScores.NSFWScore {
+			return errors.Errorf("NSFW score not matched")
+		}
+
+		if task.seenScore != fingerAndScores.SeenScore {
+			return errors.Errorf("seen score not matched")
 		}
 
 		// compare rqsymbols
@@ -438,7 +456,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	return artRegTxid, nil
 }
 
-func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) ([]byte, error) {
+func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pastel.FingerAndScores, error) {
 	fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
 	if err != nil {
 		return nil, err
@@ -449,7 +467,12 @@ func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) ([]b
 		return nil, errors.Errorf("failed to compress fingerprint data: %w", err)
 	}
 
-	return fingerprintsData, nil
+	return &pastel.FingerAndScores{
+		FingerprintData: fingerprintsData,
+		RarenessScore:   0, // TBD
+		NSFWScore:       0, // TBD
+		SeenScore:       0, // TBD
+	}, nil
 }
 
 func (task *Task) compareRQSymbolId(ctx context.Context) error {
