@@ -336,11 +336,14 @@ func (service *RegisterArtwork) SendPreBurntTxFeeId(ctx context.Context, req *pb
 		return nil, errors.Errorf("failed to get task from meta data %w", err)
 	}
 
-	if err := task.ValidatePreBurnTransaction(ctx, req.Txid); err != nil {
+	artRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
+	if err != nil {
 		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
 	}
 
-	rsp := pb.SendPreBurntTxFeeIdReply{}
+	rsp := pb.SendPreBurntTxFeeIdReply{
+		ArtRegTxid: artRegTxid,
+	}
 	return &rsp, nil
 }
 

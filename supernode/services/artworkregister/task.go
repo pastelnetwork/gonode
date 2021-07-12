@@ -46,6 +46,8 @@ type Task struct {
 	RQIDS map[string][]byte
 	Oti   []byte
 
+	ownSignature []byte
+
 	// valid only for a task run as primary
 	peersArtTicketSignatureMtx *sync.Mutex
 	peersArtTicketSignature    map[string][]byte
@@ -256,32 +258,10 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, rqids m
 	return registrationFee, nil
 }
 
-func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) error {
+func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
 	var err error
 	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
-		return errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
-	}
-
-	// Only primary node start this action
-	if task.connectedTo == nil {
-		taskFn := func(ctx context.Context) {
-			<-task.NewAction(func(ctx context.Context) error {
-				log.WithContext(ctx).Debug("waiting for signature from peers")
-				for {
-					select {
-					case <-ctx.Done():
-						err := ctx.Err()
-						if err != nil {
-							log.WithContext(ctx).Debug("waiting for signature from peers cancelled or timeout")
-						}
-						return err
-					case <-task.allSignaturesReceived:
-
-					}
-				}
-			})
-		}
-		go taskFn(ctx)
+		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
@@ -360,16 +340,16 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) e
 		}
 
 		// sign the ticket if not primary node
+		ticket, err := pastel.EncodeArtTicket(task.Ticket)
+		if err != nil {
+			return errors.Errorf("failed to serialize art ticket %w", err)
+		}
+		task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase)
+		if err != nil {
+			return errors.Errorf("failed to sign ticket %w", err)
+		}
 		if task.connectedTo != nil {
-			ticket, err := pastel.EncodeArtTicket(task.Ticket)
-			if err != nil {
-				return errors.Errorf("failed to serialize art ticket %w", err)
-			}
-			signature, err := task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase)
-			if err != nil {
-				return errors.Errorf("failed to sign ticket %w", err)
-			}
-			if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, signature); err != nil {
+			if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, task.ownSignature); err != nil {
 				return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.connectedTo.ID, task.connectedTo.Address, err)
 			}
 		}
@@ -381,7 +361,81 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) e
 		return nil
 	})
 
-	return nil
+	// this is kinda ugly here but the above task failed will cancel on the context and subsequent task
+	// only primary node start this action
+	var artRegTxid string
+	if task.connectedTo == nil {
+		<-task.NewAction(func(ctx context.Context) error {
+			log.WithContext(ctx).Debug("waiting for signature from peers")
+			for {
+				select {
+				case <-ctx.Done():
+					err := ctx.Err()
+					if err != nil {
+						log.WithContext(ctx).Debug("waiting for signature from peers cancelled or timeout")
+					}
+					return err
+				case <-task.allSignaturesReceived:
+					log.WithContext(ctx).Debugf("all signature received so start validation")
+
+					// verify signature from secondary nodes
+					data, err := pastel.EncodeArtTicket(task.Ticket)
+					if err != nil {
+						return errors.Errorf("failed to encoded art ticket %w", err)
+					}
+					for nodeID, signature := range task.peersArtTicketSignature {
+						if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID); err != nil {
+							return errors.Errorf("failed to verify signature %s of node %s", signature, nodeID)
+						} else {
+							if !ok {
+								return errors.Errorf("signature of node %s mistmatch", nodeID)
+							}
+						}
+					}
+
+					// FIXME: verify rareness score and other scores
+
+					// Register ArtRegTicket
+					// TODO: fix this after merge other branch
+					req := pastel.RegisterArtRequest{
+						Ticket: &pastel.ArtTicket{
+							Version:   task.Ticket.Version,
+							Author:    task.Ticket.Author,
+							BlockNum:  task.Ticket.BlockNum,
+							BlockHash: task.Ticket.BlockHash,
+							Copies:    task.Ticket.Copies,
+							Royalty:   task.Ticket.Royalty,
+							Green:     task.Ticket.Green,
+							AppTicket: data,
+						},
+						Signatures: &pastel.TicketSignatures{
+							Artist: map[string][]byte{},
+							Mn1: map[string][]byte{
+								task.config.PastelID: task.ownSignature,
+							},
+							Mn2: map[string][]byte{
+								task.accpeted[0].ID: task.peersArtTicketSignature[task.accpeted[0].ID],
+							},
+							Mn3: map[string][]byte{
+								task.accpeted[1].ID: task.peersArtTicketSignature[task.accpeted[1].ID],
+							},
+						},
+						Mn1PastelId: task.config.PastelID,
+						Pasphase:    task.config.PassPhrase,
+						Key1:        "TBD",
+						Key2:        "TBD",
+						Fee:         0,
+					}
+					artRegTxid, err = task.pastelClient.RegisterArtTicket(ctx, req)
+					if err != nil {
+						return errors.Errorf("failed to register art work %s", err)
+					}
+				}
+			}
+		})
+	}
+
+	return artRegTxid, nil
 }
 
 func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) ([]byte, error) {

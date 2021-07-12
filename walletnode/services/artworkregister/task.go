@@ -421,8 +421,8 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) (rq.SymbolIdFiles, 
 		return nil, nil, errors.Errorf("failed to read image contents")
 	}
 
-	rq := conn.RaptorQ()
-	encodeInfo, err := rq.EncodeInfo(ctx, content)
+	rqService := conn.RaptorQ()
+	encodeInfo, err := rqService.EncodeInfo(ctx, content)
 	if err != nil {
 		return nil, nil, errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}

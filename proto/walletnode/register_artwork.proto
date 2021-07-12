@@ -80,6 +80,7 @@ message SendPreBurntTxFeeIdRequest {
     string txid = 1;
 }
 message SendPreBurntTxFeeIdReply {
+    string art_reg_txid = 1;
 }
 
 message SendTicketRequest {
