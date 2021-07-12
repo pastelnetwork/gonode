@@ -45,7 +45,7 @@ func createRQIDSFile(rqids []string, blockHash []byte) (string, error) {
 	defer file.Close()
 
 	identifierFile := rq.IdentifierFile{
-		Id:        uuid.New().String()
+		Id:        uuid.New().String(),
 		BlockHash: "",
 		Symbols:   []string{},
 		Signature: []byte{},

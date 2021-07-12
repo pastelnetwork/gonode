@@ -56,9 +56,8 @@ type Task struct {
 	blockNum  int
 	burnTxId  pastel.TxIDType
 
-	// TODO: the following info is supposed return by supernodes
 	rarenessScore int
-	nsfwScore     int
+	nSFWScore     int
 	seenScore     int
 }
 
@@ -156,7 +155,7 @@ func (task *Task) run(ctx context.Context) error {
 	}
 
 	// Match fingerprints received from supernodes.
-	if err := nodes.MatchFingerprints(); err != nil {
+	if err := nodes.MatchFingerprintAndScores(); err != nil {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
 		return err
 	}
@@ -166,7 +165,10 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("failed to hash fingerprints %w", err)
 	}
 
-	// task.Ticket.Fingerprint = nodes.Fingerprint()
+	task.rarenessScore = nodes.RarenessScore()
+	task.nSFWScore = nodes.NSFWScore()
+	task.seenScore = nodes.SeenScore()
+
 	finalImage, err := task.Request.Image.Copy()
 	if err != nil {
 		return errors.Errorf("copy image to encode failed %w", err)
@@ -549,7 +551,7 @@ func (task *Task) createTicket(ctx context.Context) (*pastel.ArtTicket, error) {
 			FingerprintsHash:               task.fingerprintsHash,
 			FingerprintsSignature:          task.fingerprintSignature,
 			RarenessScore:                  task.rarenessScore,
-			NSFWScore:                      task.nsfwScore,
+			NSFWScore:                      task.nSFWScore,
 			SeenScore:                      task.seenScore,
 			RQIDs:                          task.rqids,
 			RQOti:                          task.rqoti,

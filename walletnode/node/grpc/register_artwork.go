@@ -121,7 +121,7 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
+func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) (*pastel.FingerAndScores, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -158,7 +158,12 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	}
 	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 
-	return resp.Fingerprint, nil
+	return &pastel.FingerAndScores{
+		FingerprintData: resp.Fingerprint,
+		RarenessScore:   int(resp.RarenessScore),
+		NSFWScore:       int(resp.NsfwScore),
+		SeenScore:       int(resp.SeenScore),
+	}, nil
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()

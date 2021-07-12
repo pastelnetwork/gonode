@@ -71,20 +71,33 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			node.fingerprint, err = node.ProbeImage(ctx, file)
+			res, err := node.ProbeImage(ctx, file)
+			node.fingerprint = res.FingerprintData
+			node.rarenessScore = res.RarenessScore
+			node.nSFWScore = res.NSFWScore
+			node.seenScore = res.SeenScore
 			return err
 		})
 	}
 	return group.Wait()
 }
 
-// MatchFingerprints matches fingerprints.
-func (nodes List) MatchFingerprints() error {
+// MatchFingerprintAndScores matches fingerprints.
+func (nodes List) MatchFingerprintAndScores() error {
 	node := nodes[0]
 
 	for i := 1; i < len(nodes); i++ {
 		if !bytes.Equal(node.fingerprint, nodes[i].fingerprint) {
 			return errors.Errorf("fingerprints of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+		if node.rarenessScore != nodes[i].rarenessScore {
+			return errors.Errorf("rareness score of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+		if node.nSFWScore != nodes[i].nSFWScore {
+			return errors.Errorf("NSFWS score of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+		if node.seenScore != nodes[i].seenScore {
+			return errors.Errorf("seen score of nodes %q and %q didn't match", node.String(), nodes[i].String())
 		}
 	}
 	return nil
@@ -177,6 +190,17 @@ func (nodes *List) RegistrationFee() int64 {
 // Fingerprint returns fingerprint of the first node.
 func (nodes *List) Fingerprint() []byte {
 	return (*nodes)[0].fingerprint
+}
+
+// Returns scores
+func (nodes *List) RarenessScore() int {
+	return (*nodes)[0].rarenessScore
+}
+func (nodes *List) NSFWScore() int {
+	return (*nodes)[0].nSFWScore
+}
+func (nodes *List) SeenScore() int {
+	return (*nodes)[0].seenScore
 }
 
 // PreviewHash returns the hash of the preview thumbnail calculated by the first node

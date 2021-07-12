@@ -14,8 +14,11 @@ type Node struct {
 	node.RegisterArtwork
 	node.Connection
 
-	activated   bool
-	fingerprint []byte
+	activated     bool
+	fingerprint   []byte
+	rarenessScore int
+	nSFWScore     int
+	seenScore     int
 
 	// thumbnail hash
 	previewHash         []byte

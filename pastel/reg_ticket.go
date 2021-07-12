@@ -47,6 +47,13 @@ type ArtTicket struct {
 	AppTicketData AppTicket `json:"-"`
 }
 
+type FingerAndScores struct {
+	FingerprintData []byte
+	RarenessScore   int
+	NSFWScore       int
+	SeenScore       int
+}
+
 // AppTicket represents pastel App ticket.
 type AppTicket struct {
 	AuthorPastelID string `json:"author_pastel_id"`

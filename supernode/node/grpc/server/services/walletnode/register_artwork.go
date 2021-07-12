@@ -164,7 +164,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		}
 	}
 
-	fingerprint, err := task.ProbeImage(ctx, image)
+	fingerAndScores, err := task.ProbeImage(ctx, image)
 	if err != nil {
 		return err
 	}
@@ -173,8 +173,12 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	}
 
 	resp := &pb.ProbeImageReply{
-		Fingerprint: fingerprint,
+		Fingerprint:   fingerAndScores.FingerprintData,
+		RarenessScore: fingerAndScores.RarenessScore,
+		NsfwScore:     fingerAndScores.NSFWScore,
+		SeenScore:     fingerAndScores.SeenScore,
 	}
+
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("failed to send ProbeImage response: %w", err)
 	}
