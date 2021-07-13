@@ -329,9 +329,9 @@ func (service *RegisterArtwork) SendSignedArtTicket(ctx context.Context, req *pb
 	return &rsp, nil
 }
 
-// SendPreBurntTxFeeId implements walletnode.RegisterArtwork.SendPreBurntTxFeeId
-func (service *RegisterArtwork) SendPreBurntTxFeeId(ctx context.Context, req *pb.SendPreBurntTxFeeIdRequest) (*pb.SendPreBurntTxFeeIdReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurntTxFeeIdRequest request")
+// SendPreBurntFeeTxId implements walletnode.RegisterArtwork.SendPreBurntFeeTxId
+func (service *RegisterArtwork) SendPreBurntFeeTxId(ctx context.Context, req *pb.SendPreBurntFeeTxIdRequest) (*pb.SendPreBurntFeeTxIdReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurntFeeTxIdRequest request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to get task from meta data %w", err)
@@ -342,7 +342,7 @@ func (service *RegisterArtwork) SendPreBurntTxFeeId(ctx context.Context, req *pb
 		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
 	}
 
-	rsp := pb.SendPreBurntTxFeeIdReply{
+	rsp := pb.SendPreBurntFeeTxIdReply{
 		ArtRegTxid: artRegTxid,
 	}
 	return &rsp, nil

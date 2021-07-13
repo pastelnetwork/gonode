@@ -290,11 +290,11 @@ func (service *registerArtwork) SendPreBurntFeeTxId(ctx context.Context, txid pa
 	ctx = service.contextWithMDSessID(ctx)
 
 	log.WithContext(ctx).Debug("send burned txid to super node")
-	req := pb.SendPreBurntTxFeeIdRequest{
+	req := pb.SendPreBurntFeeTxIdRequest{
 		Txid: string(txid),
 	}
 
-	_, err := service.client.SendPreBurntTxFeeId(ctx, &req)
+	_, err := service.client.SendPreBurntFeeTxId(ctx, &req)
 	if err != nil {
 		return "", errors.Errorf("failed to send burned txid to super node %w", err)
 	}
