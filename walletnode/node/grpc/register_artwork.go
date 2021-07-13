@@ -263,7 +263,7 @@ func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) contex
 }
 
 // SendSignedTicket
-func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error) {
+func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -271,6 +271,8 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 	req := pb.SendSignedArtTicketRequest{
 		ArtTicket:       ticket,
 		ArtistSignature: signature,
+		Key1:            key1,
+		Key2:            key2,
 		EncodeParameters: &pb.EncoderParameters{
 			Oti: encoderParams.Oti,
 		},

@@ -51,6 +51,11 @@ type Task struct {
 
 	ownSignature []byte
 
+	artistSignature []byte
+	key1            string
+	key2            string
+	registrationFee int64
+
 	// valid only for a task run as primary
 	peersArtTicketSignatureMtx *sync.Mutex
 	peersArtTicketSignature    map[string][]byte
@@ -227,7 +232,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
-func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, rqids map[string][]byte, oti []byte) (int64, error) {
+func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistSignature []byte, key1 string, key2 string, rqids map[string][]byte, oti []byte) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
 		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
@@ -235,8 +240,10 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, rqids m
 
 	task.Oti = oti
 	task.RQIDS = rqids
+	task.artistSignature = artistSignature
+	task.key1 = key1
+	task.key2 = key2
 
-	var registrationFee int64
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusRegistrationFeeCalculated)
 
@@ -246,22 +253,38 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, rqids m
 			return errors.Errorf("failed to decode art ticket %w", err)
 		}
 
-		// req := pastel.GetRegisterArtFeeRequest{
-		// 	Ticket:     &ticket.RegTicketData.ArtTicketData,
-		// 	Signatures: &ticket.RegTicketData.Signatures,
-		// 	Mn1PastelId: func() {
-		// 		if task.Status() == StatusPrimaryMode {
-		// 			return
-		// 		}
-		// 	}() ,
-		// }
-		// task.pastelClient.GetRegisterArtFee(ctx, req)
+		// Assume passphase is 16-bytes length
+		fakePassPhaseBytes := [16]byte{}
 
-		registrationFee = 15
+		getFeeRequest := pastel.GetRegisterArtFeeRequest{
+			Ticket: task.Ticket,
+			Signatures: &pastel.TicketSignatures{
+				Artist: map[string][]byte{
+					task.Service.config.PastelID: artistSignature,
+				},
+				Mn2: map[string][]byte{
+					task.Service.config.PastelID: artistSignature,
+				},
+				Mn3: map[string][]byte{
+					task.Service.config.PastelID: artistSignature,
+				},
+			},
+			Mn1PastelId: task.Service.config.PastelID, // all ID has same lenght, so can use any id here
+			Pasphase:    string(fakePassPhaseBytes[:]),
+			Key1:        key1,
+			Key2:        key2,
+			Fee:         0, // fake data
+			ImgSizeInMb: 0, // TBD
+		}
+
+		task.registrationFee, err = task.pastelClient.GetRegisterArtFee(ctx, getFeeRequest)
+		if err != nil {
+			return errors.Errorf("failed to get register art fee %w", err)
+		}
 		return nil
 	})
 
-	return registrationFee, nil
+	return task.registrationFee, nil
 }
 
 func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
@@ -427,7 +450,9 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 							AppTicket: data,
 						},
 						Signatures: &pastel.TicketSignatures{
-							Artist: map[string][]byte{},
+							Artist: map[string][]byte{
+								"TBD": task.artistSignature,
+							},
 							Mn1: map[string][]byte{
 								task.config.PastelID: task.ownSignature,
 							},
@@ -440,9 +465,9 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 						},
 						Mn1PastelId: task.config.PastelID,
 						Pasphase:    task.config.PassPhrase,
-						Key1:        "TBD",
-						Key2:        "TBD",
-						Fee:         0,
+						Key1:        task.key1,
+						Key2:        task.key2,
+						Fee:         task.registrationFee,
 					}
 					artRegTxid, err = task.pastelClient.RegisterArtTicket(ctx, req)
 					if err != nil {

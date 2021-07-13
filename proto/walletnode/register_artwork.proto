@@ -72,8 +72,10 @@ message EncoderParameters {
 message SendSignedArtTicketRequest {
     bytes art_ticket = 1;
     bytes artist_signature = 2;
-    EncoderParameters encode_parameters = 3;
-    map<string, bytes> encode_files = 4;
+    string key1 = 3;
+    string key2 = 4;
+    EncoderParameters encode_parameters = 5;
+    map<string, bytes> encode_files = 6;
 }
 message SendSignedArtTicketReply {
     int64 registration_fee = 1;

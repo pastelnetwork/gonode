@@ -143,7 +143,7 @@ func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signat
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() error {
-			fee, err := node.SendSignedTicket(ctx, ticket, signature, rqids, encoderParams)
+			fee, err := node.SendSignedTicket(ctx, ticket, signature, "TBD", "TBD", rqids, encoderParams)
 			if err != nil {
 				return err
 			}
