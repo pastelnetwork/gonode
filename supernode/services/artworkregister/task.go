@@ -298,7 +298,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, txid, 3, 150*time.Second, 4)
+		confirmationChn := task.waitConfirmation(ctx, pastel.TxIDType(txid), 3, 150*time.Second, 4)
 
 		if err = task.matchFingersPrintAndScores(ctx); err != nil {
 			return errors.Errorf("fingerprints or scores don't matched")
@@ -416,9 +416,9 @@ func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, minConfirmation int64, waitTime time.Duration, maxRetry int) <-chan error {
+func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid pastel.TxIDType, minConfirmation int64, waitTime time.Duration, maxRetry int) <-chan error {
 	var ch chan error
-	go func(ctx context.Context, txid string) {
+	go func(ctx context.Context, txid pastel.TxIDType) {
 		defer close(ch)
 		retry := 0
 		for {
@@ -427,7 +427,7 @@ func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, min
 				// context cancelled or abort by caller so no need to return anything
 				return
 			case <-time.After(waitTime):
-				txResult, err := task.pastelClient.GetTransaction(ctx, pastel.TxIDType(txid))
+				txResult, err := task.pastelClient.GetTransaction(ctx, txid)
 				if err != nil {
 					ch <- errors.Errorf("failed to get transaction ID %w", err)
 					return
@@ -483,7 +483,7 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) registerArt(ctx context.Context) (string, error) {
+func (task *Task) registerArt(ctx context.Context) (pastel.TxIDType, error) {
 	log.WithContext(ctx).Debugf("all signature received so start validation")
 	// verify signature from secondary nodes
 	data, err := pastel.EncodeArtTicket(task.Ticket)
