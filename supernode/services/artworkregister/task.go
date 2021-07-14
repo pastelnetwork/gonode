@@ -287,7 +287,7 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 	return task.registrationFee, nil
 }
 
-func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
+func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (pastel.TxIDType, error) {
 	var err error
 	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
 		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
@@ -404,7 +404,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 	// this is kinda ugly here but the above task failed will cancel on the context and subsequent task
 	// only primary node start this action
-	var artRegTxid string
+	var artRegTxid pastel.TxIDType
 	if task.connectedTo == nil {
 		<-task.NewAction(func(ctx context.Context) error {
 			log.WithContext(ctx).Debug("waiting for signature from peers")

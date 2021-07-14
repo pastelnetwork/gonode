@@ -83,5 +83,10 @@ type Client interface {
 	// Refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 18
 	// Command `tickets register art ...`
 	// Return txid of transaction
-	RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (string, error)
+	RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (TxIDType, error)
+
+	// RegisterActTicket activates an registered art ticket
+	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
+	// Return txid of ArtActivateTicket
+	RegisterActTicket(ctx context.Context, regTicketTxid TxIDType, artistHeight int, fee int64, pastelID string, passphrase string) (TxIDType, error)
 }

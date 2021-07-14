@@ -36,6 +36,7 @@ type Task struct {
 	nodes node.List
 
 	// task data to create RegArt ticket
+	artistHeight                 int
 	fingerprints                 []byte
 	fingerprintsHash             []byte
 	imageEncodedWithFingerprints *artwork.File
@@ -52,9 +53,10 @@ type Task struct {
 	rqoti []byte
 
 	// TODO: call cNodeAPI to get the following info
-	blockTxID string
-	blockNum  int
-	burnTxId  pastel.TxIDType
+	blockTxID       string
+	burnTxId        pastel.TxIDType
+	artTxid         pastel.TxIDType
+	registrationFee int64
 
 	rarenessScore int
 	nSFWScore     int
@@ -251,7 +253,8 @@ func (task *Task) run(ctx context.Context) error {
 
 	// burn 10 % of registration fee by sending to unspendable address with has the format of PtPasteLBurnAddressXXXXXXXXXTWPm3E
 	// TODO: make this as configuration
-	burnedAmount := nodes.RegistrationFee() / 10
+	task.registrationFee = nodes.RegistrationFee()
+	burnedAmount := task.registrationFee / 10
 	if task.burnTxId, err = task.pastelClient.SendToAddress(ctx, "PtPasteLBurnAddressXXXXXXXXXTWPm3E", burnedAmount); err != nil {
 		return errors.Errorf("failed to burn 10% of transaction fee %w", err)
 	}
@@ -262,8 +265,64 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	fmt.Println("OK")
 
+	// TODO : get back task.artTxid
+	// Wait for confirmation
+
+	// Register act ticket for activate previous art ticket
+	// TODO : retry serveral times??
+	//actTxid, err := task.RegisterActTicket(ctx)
+	actTxid, err := task.RegisterActTicket(ctx)
+	if err != nil {
+		return errors.Errorf("failed to register act ticket %w", err)
+	}
+
+	// Wait until actTxid is valid
+	// TODO : consider 10 confirmations & 5 minutes as configurations?
+	err = task.waitTxidValid(ctx, actTxid, 10, 5*time.Minute)
+	if err != nil {
+		return errors.Errorf("failed to  wait act ticket valid %w", err)
+	}
+
 	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
+}
+
+func (task *Task) waitTxidValid(ctx context.Context, txID pastel.TxIDType, expectedConfirms int64, timeout time.Duration) error {
+	start := time.Now()
+	for {
+		// if timeout == 0 , wait forever
+		if (timeout != 0) && (time.Since(start) > timeout) {
+			return errors.New("timeout expired")
+		}
+
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done %w", ctx.Err())
+		default:
+		}
+
+		checkConfirms := func() error {
+			subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+			defer cancel()
+
+			result, err := task.pastelClient.GetTransaction(subCtx, txID)
+			if err != nil {
+				errors.Errorf("failed to get transaction %w", err)
+			}
+
+			if result.Confirmations >= expectedConfirms {
+				return nil
+			}
+
+			return errors.Errorf("confirmations not meet %d", result.Confirmations)
+		}
+
+		if err := checkConfirms(); err != nil {
+			log.WithContext(ctx).Errorf("check confirmations failed : %v", err)
+			continue
+		}
+		return nil
+	}
 }
 
 func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
@@ -508,6 +567,7 @@ func (task *Task) createTicket(ctx context.Context) (*pastel.ArtTicket, error) {
 
 	// Get block num
 	blockNum, err := task.pastelClient.GetBlockCount(ctx)
+	task.artistHeight = int(blockNum)
 	if err != nil {
 		return nil, errors.Errorf("failed to get block num: %w", err)
 	}
@@ -573,6 +633,10 @@ func (task *Task) signTicket(ctx context.Context, ticket *pastel.ArtTicket) ([]b
 	}
 
 	return signature, nil
+}
+
+func (task *Task) RegisterActTicket(ctx context.Context) (pastel.TxIDType, error) {
+	return task.pastelClient.RegisterActTicket(ctx, task.artTxid, task.artistHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
 }
 
 //

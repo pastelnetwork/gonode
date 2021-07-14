@@ -343,7 +343,7 @@ func (service *RegisterArtwork) SendPreBurntFeeTxId(ctx context.Context, req *pb
 	}
 
 	rsp := pb.SendPreBurntFeeTxIdReply{
-		ArtRegTxid: artRegTxid,
+		ArtRegTxid: string(artRegTxid),
 	}
 	return &rsp, nil
 }
