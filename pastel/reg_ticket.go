@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/probe"
 )
 
 // Refer https://pastel.wiki/en/Architecture/Components/TicketStructures
@@ -49,6 +50,7 @@ type ArtTicket struct {
 
 type FingerAndScores struct {
 	FingerprintData []byte
+	Fingerprints    probe.Fingerprints
 	RarenessScore   int
 	NSFWScore       int
 	SeenScore       int

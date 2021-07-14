@@ -21,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/probe"
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	"golang.org/x/crypto/sha3"
 )
@@ -35,6 +36,7 @@ type Task struct {
 	Artwork          *artwork.File
 
 	fingerprintsData []byte
+	fingerprints     probe.Fingerprints
 	rarenessScore    int
 	nSFWScore        int
 	seenScore        int
@@ -49,6 +51,7 @@ type Task struct {
 	RQIDS map[string][]byte
 	Oti   []byte
 
+	// signature of ticket data signed by node's pateslID
 	ownSignature []byte
 
 	artistSignature []byte
@@ -225,6 +228,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 	})
 
 	task.fingerprintsData = fingerAndScores.FingerprintData
+	task.fingerprints = fingerAndScores.Fingerprints
 	task.rarenessScore = fingerAndScores.RarenessScore
 	task.nSFWScore = fingerAndScores.NSFWScore
 	task.seenScore = fingerAndScores.SeenScore
@@ -294,84 +298,10 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
-		var confirmationChn chan error
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
+		confirmationChn := task.waitConfirmation(ctx, txid, 3, 150*time.Second, 4)
 
-		validationFn := func(ctx context.Context) {
-			var err error
-			var confirmation *int64
-			defer func() {
-				if err != nil && err != context.Canceled {
-					confirmationChn <- err
-				} else {
-					// Either error is nil or the context is cancelled
-					// so no one read from confirmation
-					close(confirmationChn)
-				}
-			}()
-
-			const maxRetry = 3
-			var txResult *pastel.GetTransactionResult
-			for i := 0; i < maxRetry; i++ {
-				txResult, err = task.pastelClient.GetTransaction(ctx, pastel.TxIDType(txid))
-				if err != nil {
-					err = errors.Errorf("failed to get transaction ID %w", err)
-					return
-				}
-				if *confirmation = txResult.Confirmations; *confirmation >= 2 {
-					err = nil
-					return
-				}
-
-				// Sleep but responsive to context
-				select {
-				case <-ctx.Done():
-					err = ctx.Err()
-					return
-				case <-time.After(150 * time.Second):
-				}
-			}
-
-			err = errors.Errorf("timeout when wating for confirmation of transaction %s, confirmations %d ", txid, txResult.Confirmations)
-		}
-		go validationFn(ctx)
-
-		// resample image and validate the finger prints data
-		copyArtwork, err := task.Artwork.Copy()
-		if err != nil {
-			return errors.Errorf("failed to create copy of artwork %s %w", task.Artwork.Name(), err)
-		}
-		defer copyArtwork.Remove()
-
-		if err := copyArtwork.ResizeImage(224, 224); err != nil {
-			return errors.Errorf("failed to resize copy of artwork %w", err)
-		}
-
-		resizeImg, err := copyArtwork.LoadImage()
-		if err != nil {
-			return errors.Errorf("failed to load image from copied artwork %w", err)
-		}
-
-		fingerAndScores, err := task.genFingerprintsData(ctx, resizeImg)
-		if err != nil {
-			return errors.Errorf("failed to generate fingerprints data %w", err)
-		}
-
-		if !bytes.Equal(task.fingerprintsData, fingerAndScores.FingerprintData) {
-			return errors.Errorf("fingerprints not matched")
-		}
-
-		if task.rarenessScore != fingerAndScores.RarenessScore {
-			return errors.Errorf("rareness score not matched")
-		}
-
-		if task.nSFWScore != fingerAndScores.NSFWScore {
-			return errors.Errorf("NSFW score not matched")
-		}
-
-		if task.seenScore != fingerAndScores.SeenScore {
-			return errors.Errorf("seen score not matched")
+		if err = task.matchFingersPrintAndScores(ctx); err != nil {
+			return errors.Errorf("fingerprints or scores don't matched")
 		}
 
 		// compare rqsymbols
@@ -381,18 +311,8 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 		}
 
 		// sign the ticket if not primary node
-		ticket, err := pastel.EncodeArtTicket(task.Ticket)
-		if err != nil {
-			return errors.Errorf("failed to serialize art ticket %w", err)
-		}
-		task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase)
-		if err != nil {
-			return errors.Errorf("failed to sign ticket %w", err)
-		}
-		if task.connectedTo != nil {
-			if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, task.ownSignature); err != nil {
-				return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.connectedTo.ID, task.connectedTo.Address, err)
-			}
+		if err = task.signAndSendArtTicket(ctx, task.connectedTo != nil); err != nil {
+			return errors.Errorf("failed to signed and send art ticket")
 		}
 
 		err = <-confirmationChn
@@ -419,66 +339,257 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 				case <-task.allSignaturesReceived:
 					log.WithContext(ctx).Debugf("all signature received so start validation")
 
-					// verify signature from secondary nodes
-					data, err := pastel.EncodeArtTicket(task.Ticket)
-					if err != nil {
-						return errors.Errorf("failed to encoded art ticket %w", err)
-					}
-					for nodeID, signature := range task.peersArtTicketSignature {
-						if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID); err != nil {
-							return errors.Errorf("failed to verify signature %s of node %s", signature, nodeID)
-						} else {
-							if !ok {
-								return errors.Errorf("signature of node %s mistmatch", nodeID)
-							}
-						}
+					if err := task.verifyPeersSingature(ctx); err != nil {
+						return errors.Errorf("peers' singature mismatched %w", err)
 					}
 
-					// FIXME: verify rareness score and other scores
-
-					// Register ArtRegTicket
-					// TODO: fix this after merge other branch
-					req := pastel.RegisterArtRequest{
-						Ticket: &pastel.ArtTicket{
-							Version:   task.Ticket.Version,
-							Author:    task.Ticket.Author,
-							BlockNum:  task.Ticket.BlockNum,
-							BlockHash: task.Ticket.BlockHash,
-							Copies:    task.Ticket.Copies,
-							Royalty:   task.Ticket.Royalty,
-							Green:     task.Ticket.Green,
-							AppTicket: data,
-						},
-						Signatures: &pastel.TicketSignatures{
-							Artist: map[string][]byte{
-								"TBD": task.artistSignature,
-							},
-							Mn1: map[string][]byte{
-								task.config.PastelID: task.ownSignature,
-							},
-							Mn2: map[string][]byte{
-								task.accpeted[0].ID: task.peersArtTicketSignature[task.accpeted[0].ID],
-							},
-							Mn3: map[string][]byte{
-								task.accpeted[1].ID: task.peersArtTicketSignature[task.accpeted[1].ID],
-							},
-						},
-						Mn1PastelId: task.config.PastelID,
-						Pasphase:    task.config.PassPhrase,
-						Key1:        task.key1,
-						Key2:        task.key2,
-						Fee:         task.registrationFee,
-					}
-					artRegTxid, err = task.pastelClient.RegisterArtTicket(ctx, req)
+					artRegTxid, err = task.registerArt(ctx)
 					if err != nil {
-						return errors.Errorf("failed to register art work %s", err)
+						return errors.Errorf("failed to register art %w", err)
 					}
+
+					confirmations := task.waitConfirmation(ctx, artRegTxid, 10, 150*time.Second, 11)
+					err = <-confirmations
+					if err != nil {
+						return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
+					}
+
+					if err := task.storeRaptorQSymbols(ctx); err != nil {
+						return errors.Errorf("failed to store raptor symbols %w", err)
+					}
+
+					if err := task.storeThumbnails(ctx); err != nil {
+						return errors.Errorf("failed to store thumbnails %w", err)
+					}
+
+					if err := task.storeFingerprints(ctx); err != nil {
+						return errors.Errorf("failed to store fingerprints %w", err)
+					}
+
+					return nil
 				}
 			}
 		})
 	}
 
 	return artRegTxid, nil
+}
+
+func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
+	log.WithContext(ctx).Debug("match fingerprints and scores")
+
+	copyArtwork, err := task.Artwork.Copy()
+	if err != nil {
+		return errors.Errorf("failed to create copy of artwork %s %w", task.Artwork.Name(), err)
+	}
+	defer copyArtwork.Remove()
+
+	if err := copyArtwork.ResizeImage(224, 224); err != nil {
+		return errors.Errorf("failed to resize copy of artwork %w", err)
+	}
+
+	resizeImg, err := copyArtwork.LoadImage()
+	if err != nil {
+		return errors.Errorf("failed to load image from copied artwork %w", err)
+	}
+
+	fingerAndScores, err := task.genFingerprintsData(ctx, resizeImg)
+	if err != nil {
+		return errors.Errorf("failed to generate fingerprints data %w", err)
+	}
+
+	if !bytes.Equal(task.fingerprintsData, fingerAndScores.FingerprintData) {
+		return errors.Errorf("fingerprints not matched")
+	}
+
+	if task.rarenessScore != fingerAndScores.RarenessScore {
+		return errors.Errorf("rareness score not matched")
+	}
+
+	if task.nSFWScore != fingerAndScores.NSFWScore {
+		return errors.Errorf("NSFW score not matched")
+	}
+
+	if task.seenScore != fingerAndScores.SeenScore {
+		return errors.Errorf("seen score not matched")
+	}
+	return nil
+}
+
+func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, minConfirmation int64, waitTime time.Duration, maxRetry int) <-chan error {
+	var ch chan error
+	go func(ctx context.Context, txid string) {
+		defer close(ch)
+		retry := 0
+		for {
+			select {
+			case <-ctx.Done():
+				// context cancelled or abort by caller so no need to return anything
+				return
+			case <-time.After(waitTime):
+				txResult, err := task.pastelClient.GetTransaction(ctx, pastel.TxIDType(txid))
+				if err != nil {
+					ch <- errors.Errorf("failed to get transaction ID %w", err)
+					return
+				}
+				if txResult.Confirmations >= minConfirmation {
+					ch <- nil
+					return
+				}
+				if retry++; retry >= maxRetry {
+					ch <- errors.Errorf("timeout when wating for confirmation of transaction %s, confirmations %d ", txid, txResult.Confirmations)
+					return
+				}
+			}
+		}
+	}(ctx, prebunrtTxid)
+	return ch
+}
+
+// sign and send art ticket if not primary
+func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) error {
+	ticket, err := pastel.EncodeArtTicket(task.Ticket)
+	if err != nil {
+		return errors.Errorf("failed to serialize art ticket %w", err)
+	}
+	task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase)
+	if err != nil {
+		return errors.Errorf("failed to sign ticket %w", err)
+	}
+	if !isPrimary {
+		if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, task.ownSignature); err != nil {
+			return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.connectedTo.ID, task.connectedTo.Address, err)
+		}
+	}
+	return nil
+}
+
+func (task *Task) verifyPeersSingature(ctx context.Context) error {
+	log.WithContext(ctx).Debugf("all signature received so start validation")
+
+	data, err := pastel.EncodeArtTicket(task.Ticket)
+	if err != nil {
+		return errors.Errorf("failed to encoded art ticket %w", err)
+	}
+	for nodeID, signature := range task.peersArtTicketSignature {
+		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID); err != nil {
+			return errors.Errorf("failed to verify signature %s of node %s", signature, nodeID)
+		} else {
+			if !ok {
+				return errors.Errorf("signature of node %s mistmatch", nodeID)
+			}
+		}
+	}
+	return nil
+}
+
+func (task *Task) registerArt(ctx context.Context) (string, error) {
+	log.WithContext(ctx).Debugf("all signature received so start validation")
+	// verify signature from secondary nodes
+	data, err := pastel.EncodeArtTicket(task.Ticket)
+	if err != nil {
+		return "", errors.Errorf("failed to encoded art ticket %w", err)
+	}
+
+	req := pastel.RegisterArtRequest{
+		Ticket: &pastel.ArtTicket{
+			Version:   task.Ticket.Version,
+			Author:    task.Ticket.Author,
+			BlockNum:  task.Ticket.BlockNum,
+			BlockHash: task.Ticket.BlockHash,
+			Copies:    task.Ticket.Copies,
+			Royalty:   task.Ticket.Royalty,
+			Green:     task.Ticket.Green,
+			AppTicket: data,
+		},
+		Signatures: &pastel.TicketSignatures{
+			Artist: map[string][]byte{
+				task.Ticket.AppTicketData.AuthorPastelID: task.artistSignature,
+			},
+			Mn1: map[string][]byte{
+				task.config.PastelID: task.ownSignature,
+			},
+			Mn2: map[string][]byte{
+				task.accpeted[0].ID: task.peersArtTicketSignature[task.accpeted[0].ID],
+			},
+			Mn3: map[string][]byte{
+				task.accpeted[1].ID: task.peersArtTicketSignature[task.accpeted[1].ID],
+			},
+		},
+		Mn1PastelId: task.config.PastelID,
+		Pasphase:    task.config.PassPhrase,
+		Key1:        task.key1,
+		Key2:        task.key2,
+		Fee:         task.registrationFee,
+	}
+
+	artRegTxid, err := task.pastelClient.RegisterArtTicket(ctx, req)
+	if err != nil {
+		return "", errors.Errorf("failed to register art work %s", err)
+	}
+	return artRegTxid, nil
+}
+
+func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
+	data, err := task.Artwork.Bytes()
+	if err != nil {
+		return errors.Errorf("failed to read image data %w", err)
+	}
+
+	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
+	if err != nil {
+		return errors.Errorf("failed to connect to raptorq service %w", err)
+	}
+
+	rqservice := conn.RaptorQ()
+	symbols, err := rqservice.Encode(ctx, data)
+	if err != nil {
+		return errors.Errorf("failed to create raptorq symbol from image %s %w", task.Artwork.Name(), err)
+	}
+
+	for name, data := range task.RQIDS {
+		if _, err := task.p2pClient.Store(ctx, data); err != nil {
+			return errors.Errorf("failed to store raptorq symbols id files %s %w", name, err)
+		}
+	}
+
+	for i := range symbols {
+		if _, err := task.p2pClient.Store(ctx, symbols[i]); err != nil {
+			return errors.Errorf("failed to store symbol %d into kamedila %w", i, err)
+		}
+	}
+
+	return nil
+}
+
+func (task *Task) storeThumbnails(ctx context.Context) error {
+	storeFn := func(ctx context.Context, artwork *artwork.File) (string, error) {
+		data, err := artwork.Bytes()
+		if err != nil {
+			return "", errors.Errorf("failed to get data from artwork %s", artwork.Name())
+		}
+		return task.p2pClient.Store(ctx, data)
+	}
+
+	if _, err := storeFn(ctx, task.PreviewThumbnail); err != nil {
+		return errors.Errorf("failed to store preview thumbnail into kamedila %w", err)
+	}
+	if _, err := storeFn(ctx, task.MediumThumbnail); err != nil {
+		return errors.Errorf("failed to store medium thumbnail into kamedila %w", err)
+	}
+	if _, err := storeFn(ctx, task.SmallThumbnail); err != nil {
+		return errors.Errorf("failed to store small thumbnail into kamedila %w", err)
+	}
+
+	return nil
+}
+
+func (task *Task) storeFingerprints(ctx context.Context) error {
+	data := task.fingerprints.Single().Bytes()
+	if _, err := task.p2pClient.Store(ctx, data); err != nil {
+		return errors.Errorf("failed to store fingerprints into kamedila")
+	}
+	return nil
 }
 
 func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pastel.FingerAndScores, error) {
@@ -494,6 +605,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pa
 
 	return &pastel.FingerAndScores{
 		FingerprintData: fingerprintsData,
+		Fingerprints:    fingerprints,
 		RarenessScore:   0, // TBD
 		NSFWScore:       0, // TBD
 		SeenScore:       0, // TBD
