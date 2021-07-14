@@ -53,7 +53,7 @@ func TestTaskRun(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Ticket *Ticket
+		Request *Request
 	}
 
 	type args struct {
@@ -80,7 +80,7 @@ func TestTaskRun(t *testing.T) {
 		numProbeImageCall int
 	}{
 		{
-			fields: fields{&Ticket{MaximumFee: 0.5, ArtistPastelID: "1", ArtistPastelIDPassphrase: "2"}},
+			fields: fields{&Request{MaximumFee: 0.5, ArtistPastelID: "1", ArtistPastelIDPassphrase: "2"}},
 			args: args{
 				taskID:     "1",
 				ctx:        context.Background(),
@@ -159,12 +159,12 @@ func TestTaskRun(t *testing.T) {
 					ListenOnUpdateStatus().
 					ListenOnSetStatusNotifyFunc()
 
-				ticket := testCase.fields.Ticket
-				ticket.Image = artworkFile
+				Request := testCase.fields.Request
+				Request.Image = artworkFile
 				task := &Task{
 					Task:    taskClient.Task,
 					Service: service,
-					Ticket:  ticket,
+					Request: Request,
 				}
 
 				//create context with timeout to automatically end process after 1 sec
@@ -183,8 +183,8 @@ func TestTaskRun(t *testing.T) {
 				pastelClientMock.AssertSignCall(testCase.numSignCall,
 					mock.Anything,
 					testCase.args.fingerPrint,
-					ticket.ArtistPastelID,
-					ticket.ArtistPastelIDPassphrase,
+					Request.ArtistPastelID,
+					Request.ArtistPastelIDPassphrase,
 				)
 
 				// //nodeClient mock assertion
@@ -322,7 +322,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Ticket *Ticket
+		Request *Request
 	}
 
 	type args struct {
@@ -339,7 +339,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 	}{
 		{
 			fields: fields{
-				Ticket: &Ticket{MaximumFee: 0.5},
+				Request: &Request{MaximumFee: 0.5},
 			},
 			args: args{
 				ctx:        context.Background(),
@@ -350,7 +350,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 		},
 		{
 			fields: fields{
-				Ticket: &Ticket{MaximumFee: 0.5},
+				Request: &Request{MaximumFee: 0.5},
 			},
 			args: args{
 				ctx:        context.Background(),
@@ -384,7 +384,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 
 			task := &Task{
 				Service: service,
-				Ticket:  testCase.fields.Ticket,
+				Request: testCase.fields.Request,
 			}
 
 			got, err := task.isSuitableStorageFee(testCase.args.ctx)
@@ -402,8 +402,8 @@ func TestTaskPastelTopNodes(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Task   task.Task
-		Ticket *Ticket
+		Task    task.Task
+		Request *Request
 	}
 
 	type args struct {
@@ -420,7 +420,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 	}{
 		{
 			fields: fields{
-				Ticket: &Ticket{
+				Request: &Request{
 					MaximumFee: 0.30,
 				},
 			},
@@ -439,7 +439,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			assertion: assert.NoError,
 		}, {
 			fields: fields{
-				Ticket: &Ticket{
+				Request: &Request{
 					MaximumFee: 0.3,
 				},
 			},
@@ -482,7 +482,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			task := &Task{
 				Task:    testCase.fields.Task,
 				Service: service,
-				Ticket:  testCase.fields.Ticket,
+				Request: testCase.fields.Request,
 			}
 			got, err := task.pastelTopNodes(testCase.args.ctx)
 			testCase.assertion(t, err)
@@ -501,11 +501,11 @@ func TestNewTask(t *testing.T) {
 
 	type args struct {
 		service *Service
-		Ticket  *Ticket
+		Request *Request
 	}
 
 	service := &Service{}
-	ticket := &Ticket{}
+	Request := &Request{}
 
 	testCases := []struct {
 		args args
@@ -514,12 +514,12 @@ func TestNewTask(t *testing.T) {
 		{
 			args: args{
 				service: service,
-				Ticket:  ticket,
+				Request: Request,
 			},
 			want: &Task{
 				Task:    task.New(StatusTaskStarted),
 				Service: service,
-				Ticket:  ticket,
+				Request: Request,
 			},
 		},
 	}
@@ -529,9 +529,9 @@ func TestNewTask(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			task := NewTask(testCase.args.service, testCase.args.Ticket)
+			task := NewTask(testCase.args.service, testCase.args.Request)
 			assert.Equal(t, testCase.want.Service, task.Service)
-			assert.Equal(t, testCase.want.Ticket, task.Ticket)
+			assert.Equal(t, testCase.want.Request, task.Request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
 		})
 	}
