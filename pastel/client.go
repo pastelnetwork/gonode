@@ -250,9 +250,9 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	return totalStorageFee.TotalStorageFee, nil
 }
 
-func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (string, error) {
+func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (TxIDType, error) {
 	var txID struct {
-		TxID string `json:"txid"`
+		TxID TxIDType `json:"txid"`
 	}
 
 	tickets, err := EncodeArtTicket(request.Ticket)
@@ -280,6 +280,28 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
 		return "", errors.Errorf("failed to call register art ticket: %w", err)
 	}
+	return txID.TxID, nil
+}
+
+func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid TxIDType, artistHeight int, fee int64, pastelID string, passphrase string) (TxIDType, error) {
+	var txID struct {
+		TxID TxIDType `json:"txid"`
+	}
+
+	params := []interface{}{}
+	params = append(params, "register")
+	params = append(params, "act")
+	params = append(params, regTicketTxid)
+	params = append(params, fmt.Sprint(artistHeight))
+	params = append(params, fmt.Sprint(fee))
+	params = append(params, pastelID)
+	params = append(params, passphrase)
+
+	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call register act ticket: %w", err)
+	}
+
 	return txID.TxID, nil
 }
 
