@@ -175,6 +175,10 @@ func (nodes *List) SendPreBurntFeeTxId(ctx context.Context, txid pastel.TxIDType
 			if err != nil {
 				return err
 			}
+			if !node.IsPrimary() && ticketTxId != "" {
+				return errors.Errorf("receive response %s from secondary node", ticketTxId)
+			}
+
 			node.regArtTxId = ticketTxId
 			return nil
 		})
@@ -216,4 +220,21 @@ func (nodes *List) MediumThumbnailHash() []byte {
 // SmallThumbnailHash returns the hash of the small thumbnail calculated by the first node
 func (nodes *List) SmallThumbnailHash() []byte {
 	return (*nodes)[0].smallThumbnailHash
+}
+
+func (nodes *List) SetPrimary(primaryIndex int) {
+	(*nodes)[primaryIndex].isPrimary = true
+}
+
+func (node *Node) IsPrimary() bool {
+	return node.isPrimary
+}
+
+func (nodes *List) RegArtTicketId() pastel.TxIDType {
+	for i := range *nodes {
+		if (*nodes)[i].isPrimary {
+			return (*nodes)[i].regArtTxId
+		}
+	}
+	return pastel.TxIDType("")
 }

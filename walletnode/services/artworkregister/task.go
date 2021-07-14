@@ -263,8 +263,18 @@ func (task *Task) run(ctx context.Context) error {
 	if err := nodes.SendPreBurntFeeTxId(ctx, task.burnTxId); err != nil {
 		return errors.Errorf("failed to send txId of preburnt fee transaction %w", err)
 	}
-	fmt.Println("OK")
 
+	regArtTxId := nodes.RegArtTicketId()
+	if regArtTxId == "" {
+		return errors.Errorf("regArtTxId is empty")
+	}
+
+	// close the connections
+	for i := range nodes {
+		if err := nodes[i].Connection.Close(); err != nil {
+			return errors.Errorf("failed to close connection to node %s %w", nodes[i].PastelID(), err)
+		}
+	}
 	// TODO : get back task.artTxid
 	// Wait for confirmation
 
@@ -432,6 +442,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	}
 
 	meshNodes.Add(primary)
+	meshNodes.SetPrimary(primaryIndex)
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 

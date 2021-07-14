@@ -14,6 +14,7 @@ type Node struct {
 	node.RegisterArtwork
 	node.Connection
 
+	isPrimary     bool
 	activated     bool
 	fingerprint   []byte
 	rarenessScore int

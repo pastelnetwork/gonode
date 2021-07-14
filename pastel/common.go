@@ -70,3 +70,7 @@ type GetBlockVerbose1Result struct {
 	PreviousHash     string   `json:"previousblockhash"`
 	NextHash         string   `json:"nextblockhash,omitempty"`
 }
+
+func (t TxIDType) Valid() bool {
+	return t != ""
+}
