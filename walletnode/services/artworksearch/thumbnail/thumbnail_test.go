@@ -3,6 +3,7 @@ package thumbnail
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -17,25 +18,22 @@ func TestConnect(t *testing.T) {
 	t.Parallel()
 	nodes := pastel.MasterNodes{}
 	for i := 0; i < 10; i++ {
-		nodes = append(nodes, pastel.MasterNode{})
+		nodes = append(nodes, pastel.MasterNode{ExtAddress: fmt.Sprint(i)})
 	}
 
 	pastelClientMock := pastelMock.NewMockClient(t)
 	pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
-	nodeClientMock := nodeMock.NewMockClient(t)
-	nodeClientMock.ListenOnConnect(nil).ListenOnRegisterArtwork().ListenOnClose(nil)
-
-	helper := New(pastelClientMock, nodeClientMock, 2*time.Second)
-
 	tests := map[string]struct {
 		helper      Helper
 		connections uint
+		nodeErr     error
 		err         error
 	}{
-		"one":           {helper: helper, connections: 1, err: nil},
-		"max":           {helper: helper, connections: 10, err: nil},
-		"more-than-max": {helper: helper, connections: maxConnections + 1, err: errors.New(maxConnectionsErr)},
+		"one":              {connections: 1, err: nil},
+		"max":              {connections: 10, err: nil},
+		"more-than-max":    {connections: maxConnections + 1, err: errors.New(maxConnectionsErr)},
+		"node-connect-err": {connections: 4, nodeErr: errors.New("test"), err: errors.New("test")},
 	}
 
 	for name, tc := range tests {
@@ -43,8 +41,23 @@ func TestConnect(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			err := tc.helper.Connect(context.Background(), tc.connections)
+
+			nodeClientMock := nodeMock.NewMockClient(t)
+			if tc.nodeErr == nil {
+				nodeClientMock.ListenOnConnect("", nil)
+			} else {
+				nodeClientMock.ListenOnConnect("0", nil)
+				nodeClientMock.ListenOnConnect("1", nil)
+				nodeClientMock.ListenOnConnect("2", nil)
+				nodeClientMock.ListenOnConnect("3", tc.nodeErr)
+			}
+			nodeClientMock.ListenOnClose(nil)
+
+			helper := New(pastelClientMock, nodeClientMock, 2*time.Second)
+
+			err := helper.Connect(context.Background(), tc.connections)
 			assert.Equal(t, tc.err, err)
+			helper.Close()
 		})
 	}
 }
@@ -60,7 +73,7 @@ func TestFetch(t *testing.T) {
 	pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 	nodeClientMock := nodeMock.NewMockClient(t)
-	nodeClientMock.ListenOnConnect(nil).ListenOnRegisterArtwork().ListenOnClose(nil)
+	nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().ListenOnClose(nil)
 
 	helper := New(pastelClientMock, nodeClientMock, 2*time.Second)
 

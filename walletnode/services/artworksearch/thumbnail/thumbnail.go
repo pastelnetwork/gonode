@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
 	nodeClient "github.com/pastelnetwork/gonode/walletnode/node"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/node"
 )
 
 const (
@@ -69,6 +69,8 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 	for _, node := range nodes {
 		node := node
 		if err := node.Connect(ctx, t.timeOut); err != nil {
+			t.Close()
+
 			return err
 		}
 
@@ -143,12 +145,12 @@ func (t *thumbnailHelper) pastelTopNodes(ctx context.Context, connections uint) 
 
 // Close closes request channel. Once Close is called, the helper can no longer fetch thumbnails
 func (t *thumbnailHelper) Close() {
+	t.closeMutex.Lock()
+	defer t.closeMutex.Unlock()
+
 	if t.isClosed {
 		return
 	}
-
-	t.closeMutex.Lock()
-	defer t.closeMutex.Unlock()
 
 	t.isClosed = true
 	close(t.reqCh)

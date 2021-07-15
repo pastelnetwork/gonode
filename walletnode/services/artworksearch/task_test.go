@@ -159,7 +159,7 @@ func TestRunTask(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 			nodeClientMock := nodeMock.NewMockClient(t)
-			nodeClientMock.ListenOnConnect(nil).ListenOnRegisterArtwork().ListenOnClose(nil)
+			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().ListenOnClose(nil)
 
 			if len(testCase.args.actTickets) != len(testCase.args.regTickets) {
 				t.Fatalf("#act_tickets != # reg_tickets")
