@@ -44,12 +44,13 @@ func (task *Task) Run(ctx context.Context) error {
 
 // Download downloads image and return the image.
 func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
-	if err := task.RequiredStatus(StatusTaskStarted); err != nil {
+	var err error
+	if err = task.RequiredStatus(StatusTaskStarted); err != nil {
 		return nil, err
 	}
 
 	var file []byte
-	var artRegTicket *pastel.RegisterTicket
+	var artRegTicket pastel.RegTicket
 
 	<-task.NewAction(func(ctx context.Context) error {
 		// Validate timestamp is not older than 10 minutes
@@ -60,26 +61,26 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 			return errors.New("Request time is older than 10 minutes")
 		}
 
-		var err error
 		// Get Art Registration ticket by txid
-		artRegTicket, err = task.pastelClient.GetTicket(ctx, txid)
+		artRegTicket, err = task.pastelClient.RegTicket(ctx, txid)
 		if err != nil {
 			return err
 		}
 
-		pastelID := string(artRegTicket.Author)
+		pastelID := artRegTicket.RegTicketData.ArtTicketData.AppTicketData.AuthorPastelID
 
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
 			// by calling command `tickets list trade available`
-			tradeTickets, err := task.pastelClient.ListAvailableTradeTickets(ctx, string(artRegTicket.Author))
+			var tradeTickets []pastel.TradeTicket
+			tradeTickets, err = task.pastelClient.ListAvailableTradeTickets(ctx)
 			if err != nil {
 				return err
 			}
 
 			// Validate that Trade ticket with ttxid is in the list
 			if len(tradeTickets) == 0 {
-				return errors.New(fmt.Sprintf("Could not get any available trade ticket of PastelID %s", string(artRegTicket.Author)))
+				return errors.New("Could not get any available trade tickets")
 			}
 			isTXIDValid := false
 			for _, t := range tradeTickets {
@@ -95,7 +96,8 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 		}
 		// Validate timestamp signature with PastelID from Trade ticket
 		// by calling command `pastelid verify timestamp-string signature PastelID`
-		isValid, err := task.pastelClient.Verify(ctx, []byte(timestamp), signature, pastelID)
+		var isValid bool
+		isValid, err = task.pastelClient.Verify(ctx, []byte(timestamp), signature, pastelID)
 		if err != nil {
 			return err
 		}
@@ -103,26 +105,33 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 			return errors.New("Invalid timestamp")
 		}
 
-		// Get the list of “symbols/chunks” - rq_ids - from Art Registration ticket and request them from Kademlia
-		for _, id := range artRegTicket.RqIds {
-			data, err := task.p2pClient.Retrieve(ctx, id)
+		// FIXME: Get the list of “symbols/chunks” - rq_ids - from Art Registration ticket and request them from Kademlia
+		for _, id := range artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs {
+			var data []byte
+			data, err = task.p2pClient.Retrieve(ctx, id)
 			if err != nil {
 				return err
 			}
 			// Validate that the hash of each "symbol/chunk" matches its id
 			h := sha3.Sum256(data)
 			if string(h[:]) != id {
-				return errors.New("Mismatch symbol id")
+				err = errors.New("Symbol id mismatched")
+				return err
 			}
 		}
 
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_coti and rq_ssoti)
 
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
+		fileHash := sha3.Sum256(file)
+		if string(fileHash[:]) != string(artRegTicket.RegTicketData.ArtTicketData.AppTicketData.DataHash) {
+			err = errors.New("File mismatched")
+			return err
+		}
 		return nil
 	})
 
-	return file, nil
+	return file, err
 }
 
 func (task *Task) context(ctx context.Context) context.Context {

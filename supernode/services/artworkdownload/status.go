@@ -5,7 +5,6 @@ const (
 	StatusTaskStarted Status = iota
 
 	// Process
-	StatusConnected
 	StatusImageDownloaded
 
 	// Final
@@ -15,7 +14,6 @@ const (
 
 var statusNames = map[Status]string{
 	StatusTaskStarted:     "Task started",
-	StatusConnected:       "Connected",
 	StatusImageDownloaded: "Image Downloaded",
 	StatusTaskCanceled:    "Task Canceled",
 	StatusTaskCompleted:   "Task Completed",
@@ -34,6 +32,11 @@ func (status Status) String() string {
 // IsFinal returns true if the status is the final.
 func (status Status) IsFinal() bool {
 	return status == StatusTaskCanceled || status == StatusTaskCompleted
+}
+
+// IsFailure returns true if the task failed due to an error
+func (status Status) IsFailure() bool {
+	return status == StatusTaskCanceled
 }
 
 // StatusNames returns a sorted list of status names.
