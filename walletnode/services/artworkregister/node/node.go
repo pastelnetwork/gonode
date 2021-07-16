@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
@@ -27,7 +26,7 @@ type Node struct {
 	smallThumbnailHash  []byte
 
 	registrationFee int64
-	regArtTxId      pastel.TxIDType
+	regArtTxId      string
 
 	address  string
 	pastelID string

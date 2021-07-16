@@ -287,13 +287,13 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 	return rsp.RegistrationFee, nil
 }
 
-func (service *registerArtwork) SendPreBurntFeeTxId(ctx context.Context, txid pastel.TxIDType) (pastel.TxIDType, error) {
+func (service *registerArtwork) SendPreBurntFeeTxId(ctx context.Context, txid string) (string, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	log.WithContext(ctx).Debug("send burned txid to super node")
 	req := pb.SendPreBurntFeeTxIdRequest{
-		Txid: string(txid),
+		Txid: txid,
 	}
 
 	rsp, err := service.client.SendPreBurntFeeTxId(ctx, &req)
@@ -302,7 +302,7 @@ func (service *registerArtwork) SendPreBurntFeeTxId(ctx context.Context, txid pa
 	}
 
 	// TODO: response from sending preburned TxId should be the TxId of RegActTicket
-	return pastel.TxIDType(rsp.ArtRegTxid), nil
+	return rsp.ArtRegTxid, nil
 }
 
 func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {

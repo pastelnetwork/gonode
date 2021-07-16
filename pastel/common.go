@@ -1,8 +1,5 @@
 package pastel
 
-// TxIDType represents a type of transaction id
-type TxIDType string
-
 // GetInfoResult models the data returned by the server getinfo
 // command.
 // Refer https://github.com/pastelnetwork/pastel/blob/d8c0520c590693f4282f72e8553d79beeaf9da27/src/rpc/misc.cpp#L45
@@ -69,8 +66,4 @@ type GetBlockVerbose1Result struct {
 	Difficulty       float64  `json:"difficulty"`
 	PreviousHash     string   `json:"previousblockhash"`
 	NextHash         string   `json:"nextblockhash,omitempty"`
-}
-
-func (t TxIDType) Valid() bool {
-	return t != ""
 }

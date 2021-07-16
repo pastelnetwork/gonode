@@ -54,8 +54,8 @@ type Task struct {
 
 	// TODO: call cNodeAPI to get the following info
 	blockTxID       string
-	burnTxId        pastel.TxIDType
-	artTxid         pastel.TxIDType
+	burnTxId        string
+	regArtTxid      string
 	registrationFee int64
 
 	rarenessScore int
@@ -264,8 +264,8 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("failed to send txId of preburnt fee transaction %w", err)
 	}
 
-	regArtTxId := nodes.RegArtTicketId()
-	if regArtTxId == "" {
+	task.regArtTxid = nodes.RegArtTicketId()
+	if task.regArtTxid == "" {
 		return errors.Errorf("regArtTxId is empty")
 	}
 
@@ -275,12 +275,8 @@ func (task *Task) run(ctx context.Context) error {
 			return errors.Errorf("failed to close connection to node %s %w", nodes[i].PastelID(), err)
 		}
 	}
-	// TODO : get back task.artTxid
-	// Wait for confirmation
 
 	// Register act ticket for activate previous art ticket
-	// TODO : retry serveral times??
-	//actTxid, err := task.RegisterActTicket(ctx)
 	actTxid, err := task.RegisterActTicket(ctx)
 	if err != nil {
 		return errors.Errorf("failed to register act ticket %w", err)
@@ -297,7 +293,7 @@ func (task *Task) run(ctx context.Context) error {
 	return groupConnClose.Wait()
 }
 
-func (task *Task) waitTxidValid(ctx context.Context, txID pastel.TxIDType, expectedConfirms int64, timeout time.Duration) error {
+func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, timeout time.Duration) error {
 	start := time.Now()
 	for {
 		// if timeout == 0 , wait forever
@@ -646,8 +642,8 @@ func (task *Task) signTicket(ctx context.Context, ticket *pastel.ArtTicket) ([]b
 	return signature, nil
 }
 
-func (task *Task) RegisterActTicket(ctx context.Context) (pastel.TxIDType, error) {
-	return task.pastelClient.RegisterActTicket(ctx, task.artTxid, task.artistHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+func (task *Task) RegisterActTicket(ctx context.Context) (string, error) {
+	return task.pastelClient.RegisterActTicket(ctx, task.regArtTxid, task.artistHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
 }
 
 //

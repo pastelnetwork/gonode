@@ -103,9 +103,9 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 }
 
 // StorageFee implements pastel.Client.StorageFee
-func (client *client) SendToAddress(ctx context.Context, pastelID string, amount int64) (txID TxIDType, error error) {
+func (client *client) SendToAddress(ctx context.Context, pastelID string, amount int64) (txID string, error error) {
 	var transactionID struct {
-		TransactionID TxIDType `json:"transactionid"`
+		TransactionID string `json:"transactionid"`
 	}
 
 	if err := client.callFor(ctx, &transactionID, "sendtoaddress", pastelID, fmt.Sprint(amount)); err != nil {
@@ -184,10 +184,10 @@ func (client *client) GetInfo(ctx context.Context) (*GetInfoResult, error) {
 	return result, nil
 }
 
-func (client *client) GetTransaction(ctx context.Context, txID TxIDType) (*GetTransactionResult, error) {
+func (client *client) GetTransaction(ctx context.Context, txID string) (*GetTransactionResult, error) {
 	result := &GetTransactionResult{}
 
-	if err := client.callFor(ctx, result, "gettransaction", string(txID)); err != nil {
+	if err := client.callFor(ctx, result, "gettransaction", txID); err != nil {
 		return result, errors.Errorf("failed to get transaction: %w", err)
 	}
 
@@ -250,9 +250,9 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	return totalStorageFee.TotalStorageFee, nil
 }
 
-func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (TxIDType, error) {
+func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (string, error) {
 	var txID struct {
-		TxID TxIDType `json:"txid"`
+		TxID string `json:"txid"`
 	}
 
 	tickets, err := EncodeArtTicket(request.Ticket)
@@ -283,9 +283,9 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 	return txID.TxID, nil
 }
 
-func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid TxIDType, artistHeight int, fee int64, pastelID string, passphrase string) (TxIDType, error) {
+func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error) {
 	var txID struct {
-		TxID TxIDType `json:"txid"`
+		TxID string `json:"txid"`
 	}
 
 	params := []interface{}{}

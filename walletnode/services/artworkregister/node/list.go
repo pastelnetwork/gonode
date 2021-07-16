@@ -7,7 +7,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
-	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
@@ -166,7 +165,7 @@ func (nodes *List) MatchRegistrationFee() error {
 }
 
 // SendPreBurntFeeTxId send txid of transaction in which 10% of registration fee is preburnt
-func (nodes *List) SendPreBurntFeeTxId(ctx context.Context, txid pastel.TxIDType) error {
+func (nodes *List) SendPreBurntFeeTxId(ctx context.Context, txid string) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
@@ -230,11 +229,11 @@ func (node *Node) IsPrimary() bool {
 	return node.isPrimary
 }
 
-func (nodes *List) RegArtTicketId() pastel.TxIDType {
+func (nodes *List) RegArtTicketId() string {
 	for i := range *nodes {
 		if (*nodes)[i].isPrimary {
 			return (*nodes)[i].regArtTxId
 		}
 	}
-	return pastel.TxIDType("")
+	return string("")
 }
