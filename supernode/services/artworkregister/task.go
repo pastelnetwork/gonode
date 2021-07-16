@@ -291,14 +291,14 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 	return task.registrationFee, nil
 }
 
-func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (pastel.TxIDType, error) {
+func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
 	var err error
 	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
 		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, pastel.TxIDType(txid), 3, 150*time.Second, 4)
+		confirmationChn := task.waitConfirmation(ctx, string(txid), 3, 150*time.Second, 4)
 
 		if err = task.matchFingersPrintAndScores(ctx); err != nil {
 			return errors.Errorf("fingerprints or scores don't matched")
@@ -324,7 +324,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 	// this is kinda ugly here but the above task failed will cancel on the context and subsequent task
 	// only primary node start this action
-	var artRegTxid pastel.TxIDType
+	var artRegTxid string
 	if task.connectedTo == nil {
 		<-task.NewAction(func(ctx context.Context) error {
 			log.WithContext(ctx).Debug("waiting for signature from peers")
@@ -416,9 +416,9 @@ func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid pastel.TxIDType, minConfirmation int64, waitTime time.Duration, maxRetry int) <-chan error {
+func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, minConfirmation int64, waitTime time.Duration, maxRetry int) <-chan error {
 	var ch chan error
-	go func(ctx context.Context, txid pastel.TxIDType) {
+	go func(ctx context.Context, txid string) {
 		defer close(ch)
 		retry := 0
 		for {
@@ -483,7 +483,7 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) registerArt(ctx context.Context) (pastel.TxIDType, error) {
+func (task *Task) registerArt(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debugf("all signature received so start validation")
 	// verify signature from secondary nodes
 	data, err := pastel.EncodeArtTicket(task.Ticket)

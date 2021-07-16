@@ -36,7 +36,7 @@ type Client interface {
 
 	// Do an transaction by the given address to sent to and ammount to send, if successful return id of transaction.
 	// Command `sendtoaddress  "pastelID" "amount"`.
-	SendToAddress(ctx context.Context, pastelID string, amount int64) (txID TxIDType, error error)
+	SendToAddress(ctx context.Context, pastelID string, amount int64) (txID string, error error)
 
 	// ActTickets returns activated art tickets.
 	// Command `tickets list act`.
@@ -64,7 +64,7 @@ type Client interface {
 
 	// GetTransaction returns details of transaction
 	// Command `gettransaction  <txid>`
-	GetTransaction(ctx context.Context, txID TxIDType) (*GetTransactionResult, error)
+	GetTransaction(ctx context.Context, txID string) (*GetTransactionResult, error)
 
 	// GetNetworkFeePerMB return network storage fee
 	// Command `storagefee  getnetworkfee`
@@ -83,10 +83,10 @@ type Client interface {
 	// Refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 18
 	// Command `tickets register art ...`
 	// Return txid of transaction
-	RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (TxIDType, error)
+	RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (string, error)
 
 	// RegisterActTicket activates an registered art ticket
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
 	// Return txid of ArtActivateTicket
-	RegisterActTicket(ctx context.Context, regTicketTxid TxIDType, artistHeight int, fee int64, pastelID string, passphrase string) (TxIDType, error)
+	RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error)
 }
