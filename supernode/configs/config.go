@@ -17,11 +17,12 @@ const (
 type Config struct {
 	DefaultDir string `json:"-"`
 
-	LogLevel string `mapstructure:"log-level" json:"log-level,omitempty"`
-	LogFile  string `mapstructure:"log-file" json:"log-file,omitempty"`
-	Quiet    bool   `mapstructure:"quiet" json:"quiet"`
-	TempDir  string `mapstructure:"temp-dir" json:"temp-dir"`
-	WorkDir  string `mapstructure:"work-dir" json:"work-dir"`
+	LogLevel   string `mapstructure:"log-level" json:"log-level,omitempty"`
+	LogFile    string `mapstructure:"log-file" json:"log-file,omitempty"`
+	Quiet      bool   `mapstructure:"quiet" json:"quiet"`
+	TempDir    string `mapstructure:"temp-dir" json:"temp-dir"`
+	WorkDir    string `mapstructure:"work-dir" json:"work-dir"`
+	RqFilesDir string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
 
 	Node    `mapstructure:"node" json:"node,omitempty"`
 	Pastel  *pastel.Config  `mapstructure:"pastel-api" json:"pastel-api,omitempty"`

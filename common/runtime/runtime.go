@@ -9,7 +9,7 @@ import (
 )
 
 // PrintExecutionTime retrieves name of the caller function and prints it along with elapsed time
-// Typical call of PrintExecutionTime should be deffered in the beggining of the function to measure
+// Typical call of PrintExecutionTime should be deffered in the beginning of the function to measure
 func PrintExecutionTime(start time.Time) {
 	elapsed := time.Since(start)
 	pc, _, _, _ := runtime.Caller(1)

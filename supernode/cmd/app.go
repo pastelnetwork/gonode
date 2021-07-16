@@ -34,6 +34,7 @@ const (
 	appUsage = "SuperNode" // TODO: Write a clear description.
 
 	tfmodelDir = "./tfmodels" // relatively from work-dir
+	rqFilesDir = "rqfiles"
 )
 
 var (
@@ -43,6 +44,7 @@ var (
 	defaultWorkDir          = filepath.Join(defaultPath, appName)
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
+	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
 )
 
 // NewApp inits a new command line interface.
@@ -62,6 +64,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
 		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
+		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -102,6 +105,10 @@ func NewApp() *cli.App {
 
 		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
 			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
+		}
+
+		if err := os.MkdirAll(config.RqFilesDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create rq-files-dir %q, %w", config.RqFilesDir, err)
 		}
 
 		return runApp(ctx, config)

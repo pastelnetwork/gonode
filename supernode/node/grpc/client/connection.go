@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// clientConn represents grpc client conneciton.
+// clientConn represents grpc client connection.
 type clientConn struct {
 	*commongrpc.ClientConn
 
