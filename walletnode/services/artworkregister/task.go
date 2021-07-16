@@ -276,13 +276,6 @@ func (task *Task) run(ctx context.Context) error {
 		}
 	}
 
-	// Wait for register act ticket id is valid
-	// TODO : consider 10 confirmations & 5 minutes as configurations?
-	err = task.waitTxidValid(ctx, task.regArtTxid, 10, 5*time.Minute)
-	if err != nil {
-		return errors.Errorf("failed to  wait art ticket valid %w", err)
-	}
-
 	// Register act ticket for activate previous art ticket
 	actTxid, err := task.RegisterActTicket(ctx)
 	if err != nil {

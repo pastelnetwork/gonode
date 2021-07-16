@@ -298,7 +298,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, string(txid), 3, 150*time.Second, 4)
+		confirmationChn := task.waitConfirmation(ctx, txid, 3, 150*time.Second, 4)
 
 		if err = task.matchFingersPrintAndScores(ctx); err != nil {
 			return errors.Errorf("fingerprints or scores don't matched")
