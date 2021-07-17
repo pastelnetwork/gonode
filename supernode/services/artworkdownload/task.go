@@ -2,6 +2,8 @@ package artworkdownload
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -63,6 +65,12 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 
 		// Get Art Registration ticket by txid
 		artRegTicket, err = task.pastelClient.RegTicket(ctx, txid)
+		if err != nil {
+			return err
+		}
+
+		// Decode Art Ticket
+		err = task.decodeRegTicket(&artRegTicket)
 		if err != nil {
 			return err
 		}
@@ -132,6 +140,34 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 	})
 
 	return file, err
+}
+
+func (task *Task) decodeRegTicket(artRegTicket *pastel.RegTicket) error {
+	n := base64.StdEncoding.DecodedLen(len(artRegTicket.RegTicketData.ArtTicket))
+	artTicketData := make([]byte, n)
+	_, err := base64.StdEncoding.Decode(artTicketData, artRegTicket.RegTicketData.ArtTicket)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Could not decode art ticket. %w", err))
+	}
+
+	err = json.Unmarshal(artTicketData, &artRegTicket.RegTicketData.ArtTicketData)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Could not parse art ticket. %w", err))
+	}
+
+	n = base64.StdEncoding.DecodedLen(len(artRegTicket.RegTicketData.ArtTicketData.AppTicket))
+	appTicketData := make([]byte, n)
+	_, err = base64.StdEncoding.Decode(appTicketData, artRegTicket.RegTicketData.ArtTicketData.AppTicket)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Could not decode app ticket. %w", err))
+	}
+
+	err = json.Unmarshal(appTicketData, &artRegTicket.RegTicketData.ArtTicketData.AppTicketData)
+	if err != nil {
+		return errors.New(fmt.Sprintf("Could not parse app ticket. %w", err))
+	}
+
+	return nil
 }
 
 func (task *Task) context(ctx context.Context) context.Context {
