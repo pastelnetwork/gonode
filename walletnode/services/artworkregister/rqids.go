@@ -21,6 +21,7 @@ func (rqidsList RQIDSList) Identifiers() []string {
 	for _, rqids := range rqidsList {
 		identifier = append(identifier, rqids.Id)
 	}
+
 	return identifier
 }
 
