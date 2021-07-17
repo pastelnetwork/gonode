@@ -13,8 +13,8 @@ type clientConn struct {
 	id string
 }
 
-func (conn *clientConn) RaptorQ() node.RaptorQ {
-	return newRaptorQ(conn)
+func (conn *clientConn) RaptorQ(config *node.Config) node.RaptorQ {
+	return newRaptorQ(conn, config)
 }
 
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
