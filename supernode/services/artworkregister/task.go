@@ -782,7 +782,7 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 }
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
-	masterNodes, err := task.pastelClient.MasterNodesList(ctx)
+	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
 	log.WithContext(ctx).Debugf("master node %s", masterNodes)
 
 	if err != nil {

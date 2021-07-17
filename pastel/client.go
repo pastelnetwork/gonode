@@ -139,7 +139,7 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 func (client *client) GetBlockVerbose1(ctx context.Context, blkHeight int32) (*GetBlockVerbose1Result, error) {
 	result := &GetBlockVerbose1Result{}
 
-	if err := client.callFor(ctx, result, "getblock", fmt.Sprint(blkHeight), "1"); err != nil {
+	if err := client.callFor(ctx, result, "getblock", fmt.Sprint(blkHeight), 1); err != nil {
 		return result, errors.Errorf("failed to get block: %w", err)
 	}
 
@@ -147,13 +147,13 @@ func (client *client) GetBlockVerbose1(ctx context.Context, blkHeight int32) (*G
 }
 
 func (client *client) GetBlockCount(ctx context.Context) (int32, error) {
-	res, err := client.CallWithContext(ctx, "getblockcount", "")
+	res, err := client.CallWithContext(ctx, "getblockcount")
 	if err != nil {
 		return 0, errors.Errorf("failed to call getblockcount: %w", err)
 	}
 
 	if res.Error != nil {
-		return 0, errors.Errorf("failed to get block count: %w", err)
+		return 0, errors.Errorf("failed to get block count: %w", res.Error)
 	}
 
 	cnt, err := res.GetInt()
@@ -168,7 +168,7 @@ func (client *client) GetBlockHash(ctx context.Context, blkIndex int32) (string,
 	}
 
 	if res.Error != nil {
-		return "", errors.Errorf("failed to get block hash: %w", err)
+		return "", errors.Errorf("failed to get block hash: %w", res.Error)
 	}
 
 	return res.GetString()

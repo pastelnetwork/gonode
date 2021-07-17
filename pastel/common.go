@@ -61,7 +61,7 @@ type GetBlockVerbose1Result struct {
 	FinalSaplingRoot string   `json:"finalsaplingroot"`
 	Tx               []string `json:"tx,omitempty"`
 	Time             int64    `json:"time"`
-	Nonce            uint32   `json:"nonce"`
+	Nonce            string   `json:"nonce"`
 	Bits             string   `json:"bits"`
 	Difficulty       float64  `json:"difficulty"`
 	PreviousHash     string   `json:"previousblockhash"`
