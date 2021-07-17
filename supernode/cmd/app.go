@@ -149,6 +149,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// raptorq client
 	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
+
 	rqClient := rqgrpc.NewClient()
 
 	// business logic services
