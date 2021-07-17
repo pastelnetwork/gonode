@@ -42,10 +42,10 @@ func (config *Config) String() string {
 func New() *Config {
 	return &Config{
 		LogLevel: defaultLogLevel,
-
-		Node:   NewNode(),
-		Pastel: pastel.NewConfig(),
-		P2P:    p2p.NewConfig(),
-		MetaDB: metadb.NewConfig(),
+		Node:     NewNode(),
+		Pastel:   pastel.NewConfig(),
+		P2P:      p2p.NewConfig(),
+		MetaDB:   metadb.NewConfig(),
+		RaptorQ:  raptorq.NewConfig(),
 	}
 }

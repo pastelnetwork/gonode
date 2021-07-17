@@ -59,6 +59,10 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
 	return nil
 }
 
+func (node *Node) Address() string {
+	return node.address
+}
+
 // NewNode returns a new Node instance.
 func NewNode(client node.Client, address, pastelID string) *Node {
 	return &Node{

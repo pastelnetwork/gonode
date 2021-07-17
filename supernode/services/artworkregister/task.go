@@ -144,7 +144,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 
 		node, err := task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
-			return err
+			return errors.Errorf("failed to get node by extID %s %w", nodeID, err)
 		}
 		task.accepted.Add(node)
 
@@ -510,10 +510,10 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 				task.config.PastelID: task.ownSignature,
 			},
 			Mn2: map[string][]byte{
-				task.accpeted[0].ID: task.peersArtTicketSignature[task.accpeted[0].ID],
+				task.accepted[0].ID: task.peersArtTicketSignature[task.accepted[0].ID],
 			},
 			Mn3: map[string][]byte{
-				task.accpeted[1].ID: task.peersArtTicketSignature[task.accpeted[1].ID],
+				task.accepted[1].ID: task.peersArtTicketSignature[task.accepted[1].ID],
 			},
 		},
 		Mn1PastelId: task.config.PastelID,
@@ -752,12 +752,12 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 
 	<-task.NewAction(func(ctx context.Context) error {
 		log.WithContext(ctx).Debugf("receive art ticket signature from node %s", nodeID)
-		if node := task.accpeted.ByID(nodeID); node == nil {
+		if node := task.accepted.ByID(nodeID); node == nil {
 			return errors.Errorf("node %s not in accepted list", nodeID)
 		}
 
 		task.peersArtTicketSignature[nodeID] = signature
-		if len(task.peersArtTicketSignature) == len(task.accpeted) {
+		if len(task.peersArtTicketSignature) == len(task.accepted) {
 			log.WithContext(ctx).Debug("all signature received")
 			go func() {
 				close(task.allSignaturesReceived)
@@ -769,7 +769,9 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 }
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
-	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
+	masterNodes, err := task.pastelClient.MasterNodesList(ctx)
+	log.WithContext(ctx).Debugf("master node %s", masterNodes)
+
 	if err != nil {
 		return nil, err
 	}

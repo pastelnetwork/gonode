@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sort"
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -97,6 +98,11 @@ func (task *Task) run(ctx context.Context) error {
 
 	// Retrieve supernodes with highest ranks.
 	topNodes, err := task.pastelTopNodes(ctx)
+
+	// TODO: Remove this when releaset because in localnet there is no need to start 10 gonode
+	// and chase the log
+	sort.SliceStable(topNodes, func(i, j int) bool { return topNodes[i].Address() <= topNodes[j].Address() })
+
 	if err != nil {
 		return err
 	}
