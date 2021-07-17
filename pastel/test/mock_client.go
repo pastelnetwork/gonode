@@ -30,8 +30,14 @@ const (
 	// GetBlockCountMethod represent  GetBlockCount method
 	GetBlockCountMethod = "GetBlockCount"
 
-	// FindTicketByID represent FindTicketByID method
-	FindTicketByID = "FindTicketByID"
+	// FindTicketByIDMethod represent find ticket by ID method
+	FindTicketByIDMethod = "FindTicketByID"
+
+	// SendFromAddressMethod represent send from address method
+	SendFromAddressMethod = "SendFromAddress"
+
+	// GetRawTransactionVerbose1Method  represent GetRawTransactionVerbose1 method
+	GetRawTransactionVerbose1Method = "GetRawTransactionVerbose1"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -62,7 +68,19 @@ func (client *Client) ListenOnStorageNetworkFee(fee float64, returnErr error) *C
 
 // ListenOnSign listening Sign call aand returns values from args
 func (client *Client) ListenOnSign(signature []byte, returnErr error) *Client {
-	client.On(SignMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.IsType(string(""))).Return(signature, returnErr)
+	client.On(SignMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(signature, returnErr)
+	return client
+}
+
+// ListenOnSendFromAddressMethod listening Send From Address Method & return txn id & err from args
+func (client *Client) ListenOnSendFromAddress(burnTxnID string, returnErr error) *Client {
+	client.On(SendFromAddressMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(burnTxnID, returnErr)
+	return client
+}
+
+// ListenOnGetRawTransactionVerbose1 listens on GetRawTransactionVerbose1 & return result & err
+func (client *Client) ListenOnGetRawTransactionVerbose1(res *pastel.GetRawTransactionVerbose1Result, returnErr error) *Client {
+	client.On(GetRawTransactionVerbose1Method, mock.Anything, mock.IsType(string(""))).Return(res, returnErr)
 	return client
 }
 
@@ -121,6 +139,6 @@ func (client *Client) ListenOnGetBlockVerbose1(blockInfo *pastel.GetBlockVerbose
 
 // ListenOnFindTicketByID listening FindTicketByID
 func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err error) *Client {
-	client.On(FindTicketByID, mock.Anything, mock.Anything).Return(idticket, err)
+	client.On(FindTicketByIDMethod, mock.Anything, mock.Anything).Return(idticket, err)
 	return client
 }

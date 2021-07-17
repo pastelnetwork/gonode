@@ -663,6 +663,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 		return errors.Errorf("fingerprints aren't matched")
 	}
 	task.UpdateStatus(StatusImageProbed)
+
 	task.fingerprints = task.nodes.Fingerprint()
 	if task.fingerprintsHash, err = sha3256hash(task.fingerprints); err != nil {
 		return errors.Errorf("failed to hash fingerprints %w", err)
@@ -737,10 +738,10 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 
 	// check if fee is over-expection
 	task.registrationFee = task.nodes.RegistrationFee()
+
 	if task.registrationFee > int64(task.Request.MaximumFee) {
 		return errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
 	}
-
 	task.registrationFee = task.nodes.RegistrationFee()
 
 	return nil
