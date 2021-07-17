@@ -547,7 +547,7 @@ func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawS
 	symbolIdFile := rq.SymbolIdFile{
 		Id:                rawFile.Id,
 		BlockHash:         rawFile.BlockHash,
-		PastelId:          rawFile.BlockHash,
+		PastelId:          rawFile.PastelId,
 		SymbolIdentifiers: rawFile.SymbolIdentifiers,
 		Signature:         nil,
 	}
