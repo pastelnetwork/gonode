@@ -27,7 +27,6 @@ func TestGetSearchableFields(t *testing.T) {
 					ArtworkSeriesName: "Science Art Lake",
 				},
 			},
-			TotalCopes: 10,
 		},
 	}
 
