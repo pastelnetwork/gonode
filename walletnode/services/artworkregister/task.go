@@ -461,6 +461,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 		return nil, err
 	}
 
+	primary.SetPrimary(true)
 	meshNodes.Add(primary)
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
@@ -597,33 +598,33 @@ func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawS
 
 func (task *Task) createTicket(ctx context.Context) (*pastel.ArtTicket, error) {
 	if task.fingerprints == nil {
-		return nil, errors.Errorf("empty fingerprints")
+		return nil, errEmptyFingerprints
 	}
 	if task.fingerprintsHash == nil {
-		return nil, errors.Errorf("empty fingerprints hash")
+		return nil, errEmptyFingerprintsHash
 	}
 	if task.fingerprintSignature == nil {
-		return nil, errors.Errorf("empty fingerprint signature")
+		return nil, errEmptyFingerprintSignature
 	}
 	if task.datahash == nil {
-		return nil, errors.Errorf("empty data hash")
+		return nil, errEmptyDatahash
 	}
 	if task.previewHash == nil {
-		return nil, errors.Errorf("empty preview hash")
+		return nil, errEmptyPreviewHash
 	}
 	if task.mediumThumbnailHash == nil {
-		return nil, errors.Errorf("empty medium thumbnail hash")
+		return nil, errEmptyMediumThumbnailHash
 	}
 	if task.smallThumbnailHash == nil {
-		return nil, errors.Errorf("empty small thumbnail hash")
+		return nil, errEmptySmallThumbnailHash
 	}
 	if task.rqids == nil {
-		return nil, errors.Errorf("empty RaptorQ symbols identifiers")
+		return nil, errEmptyRaptorQSymbols
 	}
 
 	pastelID := base58.Decode(task.Request.ArtistPastelID)
 	if pastelID == nil {
-		return nil, errors.Errorf("base58 decode artist PastelID failed")
+		return nil, errDecodePastelID
 	}
 
 	// TODO: fill all 0 and "TBD" value with real values when other API ready

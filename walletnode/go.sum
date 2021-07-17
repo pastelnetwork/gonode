@@ -661,8 +661,8 @@ github.com/pa-m/randomkit v0.0.0-20191001073902-db4fd80633df/go.mod h1:rEyYBR/jb
 github.com/pa-m/sklearn v0.0.0-20200711083454-beb861ee48b1/go.mod h1:JW+JEtEKV272AzwXvxX3OQ2IGB8PP+YdeJpS5UWmVfc=
 github.com/pact-foundation/pact-go v1.0.4/go.mod h1:uExwJY4kCzNPcHRj+hCR/HBbOOIwwtUjcrb0b5/5kLM=
 github.com/pascaldekloe/goe v0.0.0-20180627143212-57f6aae5913c/go.mod h1:lzWF7FIEvWOWxwDKqyGYQf6ZUaNfKdP144TG7ZOy1lc=
-github.com/pastelnetwork/gonode/probe v0.0.0-20210708185245-02e8c0ae2dd3 h1:ozsCobYIGD+EuiGAQ0ytI06Fw7tKvYpLAkyIzfl4Yhs=
-github.com/pastelnetwork/gonode/probe v0.0.0-20210708185245-02e8c0ae2dd3/go.mod h1:zP/CXd7iWoGKHxDAmVl2uQhYjV8vCFBapOAQF5AW9M4=
+github.com/pastelnetwork/gonode/probe v0.0.0-20210716145051-623a1d4cc3b7 h1:tLs9PvUraNLK5bbTF5KrrzYE4Aa4DKmhvOPMbMUIcMQ=
+github.com/pastelnetwork/gonode/probe v0.0.0-20210716145051-623a1d4cc3b7/go.mod h1:zP/CXd7iWoGKHxDAmVl2uQhYjV8vCFBapOAQF5AW9M4=
 github.com/patrickmn/go-cache v2.1.0+incompatible/go.mod h1:3Qf8kWWT7OJRJbdiICTKqZju1ZixQ/KpMGzzAfe6+WQ=
 github.com/pborman/uuid v1.2.0/go.mod h1:X/NO0urCmaxf9VXbdlT7C2Yzkj2IKimNn4k+gtPdI/k=
 github.com/pelletier/go-toml v1.2.0/go.mod h1:5z9KED0ma1S8pY6P1sdut58dfprrGBbd/94hg7ilaic=

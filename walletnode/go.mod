@@ -14,7 +14,6 @@ require (
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/p2p v0.0.0-20210615205941-9aa3fc8e6fee
 	github.com/pastelnetwork/gonode/pastel v0.0.0
-	github.com/pastelnetwork/gonode/probe v0.0.0-20210708185245-02e8c0ae2dd3 // indirect
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0
 	github.com/sahilm/fuzzy v0.1.0

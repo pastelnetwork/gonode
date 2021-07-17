@@ -7,15 +7,20 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/google/uuid"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	rq "github.com/pastelnetwork/gonode/raptorq"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 	"github.com/stretchr/testify/assert"
@@ -145,7 +150,7 @@ func TestTaskRun(t *testing.T) {
 				pastelClientMock.
 					ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr).
 					ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr).
-					ListenOnSign(testCase.args.signature, testCase.args.returnErr)
+					ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr)
 
 				service := &Service{
 					pastelClient: pastelClientMock.Client,
@@ -533,6 +538,328 @@ func TestNewTask(t *testing.T) {
 			assert.Equal(t, testCase.want.Service, task.Service)
 			assert.Equal(t, testCase.want.Request, task.Request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
+		})
+	}
+}
+
+func TestTaskCreateTicket(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		task *Task
+	}
+
+	testCases := map[string]struct {
+		args    args
+		want    *pastel.ArtTicket
+		wantErr error
+	}{
+		"fingerprints-error": {
+			args: args{
+				task: &Task{
+					fingerprintSignature: []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					rqids:                []string{},
+					datahash:             []byte{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyFingerprints,
+			want:    nil,
+		},
+		"fingerprints-hash-error": {
+			args: args{
+				task: &Task{
+					fingerprints:         []byte{},
+					fingerprintSignature: []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					rqids:                []string{},
+					datahash:             []byte{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyFingerprintsHash,
+			want:    nil,
+		},
+		"fingerprints-signature-error": {
+			args: args{
+				task: &Task{
+					fingerprints:        []byte{},
+					fingerprintsHash:    []byte{},
+					previewHash:         []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					rqids:               []string{},
+					datahash:            []byte{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyFingerprintSignature,
+			want:    nil,
+		},
+		"data-hash-error": {
+			args: args{
+				task: &Task{
+					fingerprints:         []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					previewHash:          []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyDatahash,
+			want:    nil,
+		},
+		"preview-hash-error": {
+			args: args{
+				task: &Task{
+					fingerprints:         []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					datahash:             []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyPreviewHash,
+			want:    nil,
+		},
+		"medium-thumbnail-error": {
+			args: args{
+				task: &Task{
+					fingerprints:         []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					previewHash:          []byte{},
+					datahash:             []byte{},
+					smallThumbnailHash:   []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyMediumThumbnailHash,
+			want:    nil,
+		},
+		"small-thumbnail-error": {
+			args: args{
+				task: &Task{
+					fingerprints:         []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					datahash:             []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptySmallThumbnailHash,
+			want:    nil,
+		},
+		"raptorQ-symbols-error": {
+			args: args{
+				task: &Task{
+					fingerprints:         []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					datahash:             []byte{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyRaptorQSymbols,
+			want:    nil,
+		},
+		"success": {
+			args: args{
+				task: &Task{
+					fingerprints:         []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					datahash:             []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+						ArtistName:     "test-name",
+						IssuedCopies:   10,
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			blockNum := 1
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetBlockCount(int32(blockNum), nil).
+				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			pastelID := base58.Decode(tc.args.task.Request.ArtistPastelID)
+
+			tc.want = &pastel.ArtTicket{
+				Version:   1,
+				Author:    pastelID,
+				BlockNum:  blockNum,
+				BlockHash: []byte{},
+				Copies:    tc.args.task.Request.IssuedCopies,
+				AppTicketData: pastel.AppTicket{
+					AuthorPastelID:                 tc.args.task.Request.ArtistPastelID,
+					BlockTxID:                      "TBD",
+					BlockNum:                       0,
+					ArtistName:                     tc.args.task.Request.ArtistName,
+					ArtistWebsite:                  safeString(tc.args.task.Request.ArtistWebsiteURL),
+					ArtistWrittenStatement:         safeString(tc.args.task.Request.Description),
+					ArtworkCreationVideoYoutubeURL: safeString(tc.args.task.Request.YoutubeURL),
+					ArtworkKeywordSet:              safeString(tc.args.task.Request.Keywords),
+					TotalCopies:                    tc.args.task.Request.IssuedCopies,
+					PreviewHash:                    tc.args.task.previewHash,
+					Thumbnail1Hash:                 tc.args.task.mediumThumbnailHash,
+					Thumbnail2Hash:                 tc.args.task.smallThumbnailHash,
+					DataHash:                       tc.args.task.datahash,
+					Fingerprints:                   tc.args.task.fingerprints,
+					FingerprintsHash:               tc.args.task.fingerprintsHash,
+					FingerprintsSignature:          tc.args.task.fingerprintSignature,
+					RarenessScore:                  tc.args.task.rarenessScore,
+					NSFWScore:                      tc.args.task.nSFWScore,
+					SeenScore:                      tc.args.task.seenScore,
+					RQIDs:                          tc.args.task.rqids,
+					RQOti:                          tc.args.task.rqoti,
+				},
+			}
+
+			got, err := tc.args.task.createTicket(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.Equal(t, tc.wantErr.Error(), err.Error())
+			} else {
+				assert.Nil(t, err)
+				assert.NotNil(t, got)
+				assert.Equal(t, *tc.want, *got)
+			}
+
+		})
+	}
+}
+
+func TestTaskCreateRQIDsFile(t *testing.T) {
+	t.Parallel()
+
+	testErrStr := "test-err"
+	type args struct {
+		task      *Task
+		symbols   []string
+		blockHash string
+		signErr   error
+	}
+
+	testCases := map[string]struct {
+		args     args
+		want     *rq.SymbolIdFile
+		wantErr  error
+		wantSign []byte
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				symbols:   []string{"test-s1, test-s2"},
+				blockHash: "test-block-hash",
+			},
+			wantErr: nil,
+			want: &rq.SymbolIdFile{
+				Id:                uuid.New().String(),
+				BlockHash:         "test-block-hash",
+				SymbolIdentifiers: []string{"test-s1, test-s2"},
+				Signature:         []byte("test-signature"),
+			},
+			wantSign: []byte("test-signature"),
+		},
+		"error": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				signErr: errors.New(testErrStr),
+			},
+			wantErr: errors.New(testErrStr),
+			want:    nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			got, err := tc.args.task.createRQIDSFile(context.Background(), tc.args.symbols, tc.args.blockHash)
+
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), testErrStr))
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want.SymbolIdentifiers, got.SymbolIdentifiers)
+				assert.Equal(t, tc.want.BlockHash, got.BlockHash)
+				assert.Equal(t, tc.want.Signature, got.Signature)
+			}
 		})
 	}
 }
