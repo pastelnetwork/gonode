@@ -47,7 +47,7 @@ func readFileLines(path string) ([]string, error) {
 	if err != nil {
 		return nil, errors.Errorf("failed to read file: %w", err)
 	}
-	return strings.Split(string(b), "/n"), nil
+	return strings.Split(string(b), "\n"), nil
 }
 
 func createTaskFolder(base string) (string, error) {
