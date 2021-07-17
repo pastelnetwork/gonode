@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
@@ -37,7 +36,8 @@ type Task struct {
 	nodes node.List
 
 	// task data to create RegArt ticket
-	artistHeight                 int
+	artistBlockHeight            int
+	artistBlockHash              []byte
 	fingerprints                 []byte
 	fingerprintsHash             []byte
 	imageEncodedWithFingerprints *artwork.File
@@ -143,6 +143,11 @@ func (task *Task) run(ctx context.Context) error {
 	})
 	task.UpdateStatus(StatusConnected)
 	task.nodes = nodes
+
+	// get block height + hash
+	if err := task.getBlock(ctx); err != nil {
+		return errors.Errorf("failed to get current block heigth %w", err)
+	}
 
 	// Create a thumbnail copy of the image.
 	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debugf("Copy image")
@@ -482,6 +487,30 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 	return nodes, nil
 }
 
+// determine current block height & hash of it
+func (task *Task) getBlock(ctx context.Context) error {
+	// Get block num
+	blockNum, err := task.pastelClient.GetBlockCount(ctx)
+	task.artistBlockHeight = int(blockNum)
+	if err != nil {
+		return errors.Errorf("failed to get block num: %w", err)
+	}
+
+	// Get block hash string
+	blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
+	if err != nil {
+		return errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
+	}
+
+	// Decode hash string to byte
+	task.artistBlockHash, err = base64.StdEncoding.DecodeString(blockInfo.Hash)
+	if err != nil {
+		return errors.Errorf("failed to convert hash string %s to bytes: %w", blockInfo.Hash, err)
+	}
+
+	return nil
+}
+
 func (task *Task) genRQIdentifiersFiles(ctx context.Context) (rq.SymbolIdFiles, *rqnode.EncoderParameters, error) {
 	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
 	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
@@ -495,15 +524,21 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) (rq.SymbolIdFiles, 
 		return nil, nil, errors.Errorf("failed to read image contents")
 	}
 
-	rqService := conn.RaptorQ()
-	encodeInfo, err := rqService.EncodeInfo(ctx, content)
+	rqService := conn.RaptorQ(&rqnode.Config{
+		RqFilesDir: task.Service.config.RqFilesDir,
+	})
+
+	// FIXME :
+	// - check format of artis block hash should be base58 or not
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, string(task.artistBlockHash), task.Request.ArtistPastelID)
 	if err != nil {
 		return nil, nil, errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
 
 	files := rq.SymbolIdFiles{}
-	for i := 0; i < task.config.NumberRQIDSFiles; i++ {
-		f, err := task.createRQIDSFile(ctx, encodeInfo.SymbolIds, "BLOCK_HASH")
+	for _, rawSymbolIdFile := range encodeInfo.SymbolIdFiles {
+
+		f, err := task.convertToSymbolIdFile(ctx, rawSymbolIdFile)
 		if err != nil {
 			return nil, nil, errors.Errorf("failed to create rqids file %w", err)
 		}
@@ -514,11 +549,12 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) (rq.SymbolIdFiles, 
 	return files, &encodeInfo.EncoderParam, nil
 }
 
-func (task *Task) createRQIDSFile(ctx context.Context, symbols []string, blockHash string) (*rq.SymbolIdFile, error) {
+func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawSymbolIdFile) (*rq.SymbolIdFile, error) {
 	symbolIdFile := rq.SymbolIdFile{
-		Id:                uuid.New().String(),
-		BlockHash:         blockHash,
-		SymbolIdentifiers: symbols,
+		Id:                rawFile.Id,
+		BlockHash:         rawFile.BlockHash,
+		PastelId:          rawFile.PastelId,
+		SymbolIdentifiers: rawFile.SymbolIdentifiers,
 		Signature:         nil,
 	}
 
@@ -578,31 +614,12 @@ func (task *Task) createTicket(ctx context.Context) (*pastel.ArtTicket, error) {
 		return nil, errors.Errorf("base58 decode artist PastelID failed")
 	}
 
-	// Get block num
-	blockNum, err := task.pastelClient.GetBlockCount(ctx)
-	task.artistHeight = int(blockNum)
-	if err != nil {
-		return nil, errors.Errorf("failed to get block num: %w", err)
-	}
-
-	// Get block hash string
-	blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
-	if err != nil {
-		return nil, errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
-	}
-
-	// Decode hash string to byte
-	blockHash, err := base64.StdEncoding.DecodeString(blockInfo.Hash)
-	if err != nil {
-		return nil, errors.Errorf("failed to convert hash string %s to bytes: %w", blockInfo.Hash, err)
-	}
-
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.ArtTicket{
 		Version:   1,
 		Author:    pastelID,
-		BlockNum:  int(blockNum),
-		BlockHash: blockHash,
+		BlockNum:  task.artistBlockHeight,
+		BlockHash: task.artistBlockHash,
 		Copies:    task.Request.IssuedCopies,
 		Royalty:   0,  // Not supported yet by cNode
 		Green:     "", // Not supported yet by cNode
@@ -649,7 +666,7 @@ func (task *Task) signTicket(ctx context.Context, ticket *pastel.ArtTicket) ([]b
 }
 
 func (task *Task) RegisterActTicket(ctx context.Context) (string, error) {
-	return task.pastelClient.RegisterActTicket(ctx, task.regArtTxid, task.artistHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	return task.pastelClient.RegisterActTicket(ctx, task.regArtTxid, task.artistBlockHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
 }
 
 //

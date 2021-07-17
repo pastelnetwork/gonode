@@ -23,6 +23,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
 	rq "github.com/pastelnetwork/gonode/raptorq"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -541,8 +542,11 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 		return errors.Errorf("failed to connect to raptorq service %w", err)
 	}
 
-	rqservice := conn.RaptorQ()
-	symbols, err := rqservice.Encode(ctx, data)
+	rqService := conn.RaptorQ(&rqnode.Config{
+		RqFilesDir: task.Service.config.RqFilesDir,
+	})
+
+	ecodeResp, err := rqService.Encode(ctx, data)
 	if err != nil {
 		return errors.Errorf("failed to create raptorq symbol from image %s %w", task.Artwork.Name(), err)
 	}
@@ -553,9 +557,9 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 		}
 	}
 
-	for i := range symbols {
-		if _, err := task.p2pClient.Store(ctx, symbols[i]); err != nil {
-			return errors.Errorf("failed to store symbol %d into kamedila %w", i, err)
+	for id, symbol := range ecodeResp.Symbols {
+		if _, err := task.p2pClient.Store(ctx, symbol); err != nil {
+			return errors.Errorf("failed to store symbolid %s into kamedila %w", id, err)
 		}
 	}
 
@@ -625,17 +629,21 @@ func (task *Task) compareRQSymbolId(ctx context.Context) error {
 		return errors.Errorf("failed to read image contents")
 	}
 
-	rqService := conn.RaptorQ()
-	encodeInfo, err := rqService.EncodeInfo(ctx, content)
-	if err != nil {
-		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
-	}
+	rqService := conn.RaptorQ(&rqnode.Config{
+		RqFilesDir: task.Service.config.RqFilesDir,
+	})
 
-	// pick just one file to compare rq symbols
 	if len(task.RQIDS) == 0 {
 		return errors.Errorf("no symbols identifiers file")
 	}
 
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.RQIDS)), string(task.Ticket.BlockHash), task.Ticket.AppTicketData.AuthorPastelID)
+
+	if err != nil {
+		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
+	}
+
+	// pick just one file from wallnode to compare rq symbols
 	var rqSymbolIdFile rq.SymbolIdFile
 	for _, v := range task.RQIDS {
 		if err := json.Unmarshal(v, &rqSymbolIdFile); err != nil {
@@ -644,16 +652,21 @@ func (task *Task) compareRQSymbolId(ctx context.Context) error {
 		break
 	}
 
-	// sorting to make sure the comparision is correct
-	sort.Strings(encodeInfo.SymbolIds)
+	// pick just one file generated to compare
+	var rqRawSymbolIdFile rqnode.RawSymbolIdFile
+	for _, v := range encodeInfo.SymbolIdFiles {
+		rqRawSymbolIdFile = v
+		break
+	}
 	sort.Strings(rqSymbolIdFile.SymbolIdentifiers)
-	if len(encodeInfo.SymbolIds) != len(rqSymbolIdFile.SymbolIdentifiers) {
+	sort.Strings(rqRawSymbolIdFile.SymbolIdentifiers)
+	if len(rqRawSymbolIdFile.SymbolIdentifiers) != len(rqSymbolIdFile.SymbolIdentifiers) {
 		return errors.Errorf("number of raptorq symbols doesn't matched")
 	}
 
-	for i := range encodeInfo.SymbolIds {
-		if encodeInfo.SymbolIds[i] != rqSymbolIdFile.SymbolIdentifiers[i] {
-			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, rqSymbolIdFile.SymbolIdentifiers[i], encodeInfo.SymbolIds[i])
+	for i := range rqSymbolIdFile.SymbolIdentifiers {
+		if rqSymbolIdFile.SymbolIdentifiers[i] != rqRawSymbolIdFile.SymbolIdentifiers[i] {
+			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, rqSymbolIdFile.SymbolIdentifiers[i], rqRawSymbolIdFile.SymbolIdentifiers[i])
 		}
 	}
 

@@ -3,11 +3,9 @@ module github.com/pastelnetwork/gonode/walletnode
 go 1.16
 
 require (
-	github.com/DataDog/zstd v1.4.8 // indirect
 	github.com/anacrolix/sync v0.3.0 // indirect
-	github.com/btcsuite/btcutil v1.0.2 // indirect
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/go-errors/errors v1.4.0 // indirect
-	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/websocket v1.4.2
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6
@@ -19,10 +17,7 @@ require (
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0
 	github.com/sahilm/fuzzy v0.1.0
-	github.com/smartystreets/assertions v1.2.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
-	github.com/vektra/mockery/v2 v2.9.0 // indirect
 	go.uber.org/atomic v1.8.0 // indirect
 	goa.design/goa/v3 v3.4.3
 	goa.design/plugins/v3 v3.4.3
