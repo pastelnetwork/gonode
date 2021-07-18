@@ -260,7 +260,6 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 		}
 
 		// Assume passphase is 16-bytes length
-		fakePassPhaseBytes := [16]byte{}
 
 		getFeeRequest := pastel.GetRegisterArtFeeRequest{
 			Ticket: task.Ticket,
@@ -276,7 +275,7 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 				},
 			},
 			Mn1PastelId: task.Service.config.PastelID, // all ID has same lenght, so can use any id here
-			Pasphase:    string(fakePassPhaseBytes[:]),
+			Passphrase:  task.config.PassPhrase,
 			Key1:        key1,
 			Key2:        key2,
 			Fee:         0, // fake data

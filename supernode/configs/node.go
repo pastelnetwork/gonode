@@ -11,6 +11,7 @@ type Node struct {
 	ArtworkRegister artworkregister.Config `mapstructure:",squash" json:"artwork_register,omitempty"`
 	Server          *server.Config         `mapstructure:"server" json:"server,omitempty"`
 	PastelID        string                 `mapstructure:"pastel_id" json:"pastel_id,omitempty"`
+	PassPhrase      string                 `mapstructure:"pass_phrase" json:"pass_phrase,omitempty"`
 }
 
 // NewNode returns a new Node instance

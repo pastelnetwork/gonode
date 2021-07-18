@@ -113,7 +113,7 @@ type GetRegisterArtFeeRequest struct {
 	Ticket      *ArtTicket
 	Signatures  *TicketSignatures
 	Mn1PastelId string
-	Pasphase    string
+	Passphrase  string
 	Key1        string
 	Key2        string
 	Fee         int64

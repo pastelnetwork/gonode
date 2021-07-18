@@ -1,11 +1,12 @@
 pastel-api:
   hostname: "127.0.0.1"
-  port: 29932
-  username: "4446"
-  password: ""
+  port: 12158
+  username: "rt"
+  password: "rt"
 
 node:
-  pastel_id: jXa9V7SpRAvyJx53Jh3ffrEXxutuAeXUToePpzCsg8ucwB4rRf2zfuhQsdfKB8SEV4dTbE1HFGCdmWk4P9TENZ
+  pastel_id: jXYRTihJ4oABwtLoRmQoo8NjLL43MacBiHuyQruXz1H6MHj5XyrCjMrA9SV9suPrrfHWG5NX5TMMLQ1x9YSoB7 
+  pass_phrase: "123456"
   server:
     listen_addresses: "0.0.0.0"
     port: 4446

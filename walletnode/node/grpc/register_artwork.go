@@ -267,7 +267,6 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	log.WithContext(ctx).Debug("send signed ticket and signature to super node")
 	req := pb.SendSignedArtTicketRequest{
 		ArtTicket:       ticket,
 		ArtistSignature: signature,

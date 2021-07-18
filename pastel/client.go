@@ -222,10 +222,12 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	}
 
 	// command : tickets tools gettotalstoragefee "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee" "imagesize"
-	tickets, err := EncodeArtTicket(request.Ticket)
+	ticket, err := EncodeArtTicket(request.Ticket)
 	if err != nil {
 		return 0, errors.Errorf("failed to encode ticket: %w", err)
 	}
+
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
 
 	signatures, err := EncodeSignatures(*request.Signatures)
 	if err != nil {
@@ -235,14 +237,15 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	params := []interface{}{}
 	params = append(params, "tools")
 	params = append(params, "gettotalstoragefee")
-	params = append(params, string(tickets))
+	params = append(params, ticketBlob)
 	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelId)
-	params = append(params, request.Pasphase)
+	params = append(params, request.Passphrase)
 	params = append(params, request.Key1)
 	params = append(params, request.Key2)
-	params = append(params, fmt.Sprint(request.Fee))
-	params = append(params, fmt.Sprint(request.ImgSizeInMb))
+	params = append(params, request.Fee)
+	// params = append(params, request.ImgSizeInMb)
+	params = append(params, 12)
 
 	if err := client.callFor(ctx, &totalStorageFee, "tickets", params...); err != nil {
 		return 0, errors.Errorf("failed to call gettotalstoragefee: %w", err)

@@ -578,7 +578,7 @@ func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawS
 	if _, err := io.Copy(hasher, src); err != nil {
 		return nil, errors.Errorf("failed to hash identifiers file %w", err)
 	}
-	symbolIdFile.FileIdentifer = string(hasher.Sum(nil))
+	symbolIdFile.FileIdentifer = base58.Encode(hasher.Sum(nil))
 
 	return &symbolIdFile, nil
 }
