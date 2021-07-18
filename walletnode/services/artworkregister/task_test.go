@@ -2,6 +2,7 @@ package artworkregister
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,6 +22,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rq "github.com/pastelnetwork/gonode/raptorq"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 	"github.com/stretchr/testify/assert"
@@ -734,20 +736,13 @@ func TestTaskCreateTicket(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 			t.Parallel()
 
-			blockNum := 1
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnGetBlockCount(int32(blockNum), nil).
-				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
-			tc.args.task.Service.pastelClient = pastelClientMock
-
 			pastelID := base58.Decode(tc.args.task.Request.ArtistPastelID)
 
 			tc.want = &pastel.ArtTicket{
-				Version:   1,
-				Author:    pastelID,
-				BlockNum:  blockNum,
-				BlockHash: []byte{},
-				Copies:    tc.args.task.Request.IssuedCopies,
+				Version:  1,
+				Author:   pastelID,
+				BlockNum: tc.args.task.artistBlockHeight,
+				Copies:   tc.args.task.Request.IssuedCopies,
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID:                 tc.args.task.Request.ArtistPastelID,
 					BlockTxID:                      "TBD",
@@ -787,15 +782,111 @@ func TestTaskCreateTicket(t *testing.T) {
 	}
 }
 
-func TestTaskCreateRQIDsFile(t *testing.T) {
+func TestTaskGetBlock(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		task            *Task
+		blockCountErr   error
+		blockVerboseErr error
+		blockNum        int32
+		blockInfo       *pastel.GetBlockVerbose1Result
+	}
+
+	testCases := map[string]struct {
+		args                  args
+		wantArtistblockHash   []byte
+		wantArtistBlockHeight int
+		wantErr               error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				blockNum: int32(10),
+				blockInfo: &pastel.GetBlockVerbose1Result{
+					Hash: "testhash",
+				},
+			},
+			wantArtistBlockHeight: 10,
+			wantErr:               nil,
+		},
+		"block-count-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				blockNum: int32(10),
+				blockInfo: &pastel.GetBlockVerbose1Result{
+					Hash: "testhash",
+				},
+				blockCountErr: errors.New("block-count-err"),
+			},
+			wantArtistBlockHeight: 10,
+			wantErr:               errors.New("block-count-err"),
+		},
+		"block-verbose-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				blockNum: int32(10),
+				blockInfo: &pastel.GetBlockVerbose1Result{
+					Hash: "testhash",
+				},
+				blockVerboseErr: errors.New("verbose-err"),
+			},
+			wantArtistBlockHeight: 10,
+			wantErr:               errors.New("verbose-err"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetBlockCount(tc.args.blockNum, tc.args.blockCountErr).
+				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			blockhash, err := base64.StdEncoding.DecodeString(tc.args.blockInfo.Hash)
+			assert.Nil(t, err)
+			tc.wantArtistblockHash = blockhash
+
+			err = tc.args.task.getBlock(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.wantArtistblockHash, tc.args.task.artistBlockHash)
+				assert.Equal(t, tc.wantArtistBlockHeight, tc.args.task.artistBlockHeight)
+			}
+		})
+	}
+}
+
+func TestTaskConvertToSymbolIdFile(t *testing.T) {
 	t.Parallel()
 
 	testErrStr := "test-err"
 	type args struct {
-		task      *Task
-		symbols   []string
-		blockHash string
-		signErr   error
+		task    *Task
+		signErr error
+		inFile  rqnode.RawSymbolIdFile
 	}
 
 	testCases := map[string]struct {
@@ -812,8 +903,12 @@ func TestTaskCreateRQIDsFile(t *testing.T) {
 					},
 					Service: &Service{},
 				},
-				symbols:   []string{"test-s1, test-s2"},
-				blockHash: "test-block-hash",
+				inFile: rqnode.RawSymbolIdFile{
+					Id:                uuid.New().String(),
+					SymbolIdentifiers: []string{"test-s1, test-s2"},
+					BlockHash:         "test-block-hash",
+					PastelId:          "test-pastel-id",
+				},
 			},
 			wantErr: nil,
 			want: &rq.SymbolIdFile{
@@ -849,7 +944,7 @@ func TestTaskCreateRQIDsFile(t *testing.T) {
 			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			got, err := tc.args.task.createRQIDSFile(context.Background(), tc.args.symbols, tc.args.blockHash)
+			got, err := tc.args.task.convertToSymbolIdFile(context.Background(), tc.args.inFile)
 
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
