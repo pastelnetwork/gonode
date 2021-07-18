@@ -3,7 +3,7 @@ package artworkregister
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -225,7 +225,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("gen RaptorQ symbols' identifiers failed %w", err)
 	}
 	if len(rqSymbolIdFiles) < 1 {
-		return errors.Errorf("nuber of raptorq symbol identifiers files must be greter than 1")
+		return errors.Errorf("nuber of raptorq symbol identifiers files must be greater than 1")
 	}
 	if task.rqids, err = rqSymbolIdFiles.FileIdentifers(); err != nil {
 		return errors.Errorf("failed to get rq symbols' identifier file's identifier %w", err)
@@ -503,7 +503,7 @@ func (task *Task) getBlock(ctx context.Context) error {
 	}
 
 	// Decode hash string to byte
-	task.artistBlockHash, err = base64.StdEncoding.DecodeString(blockInfo.Hash)
+	task.artistBlockHash, err = hex.DecodeString(blockInfo.Hash)
 	if err != nil {
 		return errors.Errorf("failed to convert hash string %s to bytes: %w", blockInfo.Hash, err)
 	}
@@ -530,7 +530,7 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) (rq.SymbolIdFiles, 
 
 	// FIXME :
 	// - check format of artis block hash should be base58 or not
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, string(task.artistBlockHash), task.Request.ArtistPastelID)
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, hex.EncodeToString(task.artistBlockHash), task.Request.ArtistPastelID)
 	if err != nil {
 		return nil, nil, errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
@@ -625,8 +625,8 @@ func (task *Task) createTicket(ctx context.Context) (*pastel.ArtTicket, error) {
 		Green:     "", // Not supported yet by cNode
 		AppTicketData: pastel.AppTicket{
 			AuthorPastelID:                 task.Request.ArtistPastelID,
-			BlockTxID:                      "TBD",
-			BlockNum:                       0,
+			BlockTxID:                      task.blockTxID,
+			BlockNum:                       task.artistBlockHeight,
 			ArtistName:                     task.Request.ArtistName,
 			ArtistWebsite:                  safeString(task.Request.ArtistWebsiteURL),
 			ArtistWrittenStatement:         safeString(task.Request.Description),
