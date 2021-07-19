@@ -262,9 +262,14 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("registration fees don't matched %w", err)
 	}
 
+	// check if fee is over-expection
+	task.registrationFee = nodes.RegistrationFee()
+	if task.registrationFee > int64(task.Request.MaximumFee) {
+		errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
+	}
+
 	// burn 10 % of registration fee by sending to unspendable address with has the format of PtPasteLBurnAddressXXXXXXXXXTWPm3E
 	// TODO: make this as configuration
-	task.registrationFee = nodes.RegistrationFee()
 	burnedAmount := task.registrationFee / 10
 	if task.burnTxId, err = task.pastelClient.SendToAddress(ctx, "PtPasteLBurnAddressXXXXXXXXXTWPm3E", burnedAmount); err != nil {
 		return errors.Errorf("failed to burn 10 percent of transaction fee %w", err)

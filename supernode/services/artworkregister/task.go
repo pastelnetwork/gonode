@@ -36,6 +36,7 @@ type Task struct {
 	Ticket           *pastel.ArtTicket
 	ResampledArtwork *artwork.File
 	Artwork          *artwork.File
+	imageSizeBytes   int
 
 	fingerprintsData []byte
 	fingerprints     probe.Fingerprints
@@ -279,7 +280,7 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 			Key1:        key1,
 			Key2:        key2,
 			Fee:         0, // fake data
-			ImgSizeInMb: 0, // TBD
+			ImgSizeInMb: int64(task.imageSizeBytes) / (1024 * 1024),
 		}
 
 		task.registrationFee, err = task.pastelClient.GetRegisterArtFee(ctx, getFeeRequest)
@@ -689,6 +690,14 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 		task.UpdateStatus(StatusImageAndThumbnailCoordinateUploaded)
 
 		task.Artwork = file
+
+		// Determine file size
+		// TODO: improve it by call stats on file
+		fileBytes, err := file.Bytes()
+		if err != nil {
+			return errors.Errorf("failed to read image file %w", err)
+		}
+		task.imageSizeBytes = len(fileBytes)
 
 		previewThumbnailHash, err = task.hashThumbnail(previewThumbnail, nil)
 		if err != nil {
