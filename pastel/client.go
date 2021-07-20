@@ -3,6 +3,7 @@ package pastel
 import (
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strconv"
@@ -110,6 +111,23 @@ func (client *client) SendToAddress(ctx context.Context, pastelID string, amount
 
 	if err := client.callFor(ctx, &transactionID, "sendtoaddress", pastelID, fmt.Sprint(amount)); err != nil {
 		return "", errors.Errorf("failed to send to address: %w", err)
+	}
+	return transactionID.TransactionID, nil
+}
+
+func (client *client) SendFromAddress(ctx context.Context, fromID string, toID string, amount float64) (txID string, error error) {
+	var transactionID struct {
+		TransactionID string `json:"transactionid"`
+	}
+
+	amounts := map[string]float64{toID: amount}
+	amountsBytes, err := json.Marshal(amounts)
+	if err != nil {
+		return "", errors.Errorf("failed to marshal amounts: %w", err)
+	}
+
+	if err := client.callFor(ctx, &transactionID, "sendmany", fromID, string(amountsBytes)); err != nil {
+		return "", errors.Errorf("failed to send many: %w", err)
 	}
 	return transactionID.TransactionID, nil
 }
