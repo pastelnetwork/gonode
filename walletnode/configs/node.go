@@ -10,6 +10,7 @@ type Node struct {
 	// `squash` field cannot be pointer
 	ArtworkRegister artworkregister.Config `mapstructure:",squash" json:"artwork_register,omitempty"`
 	API             *api.Config            `mapstructure:"api" json:"api,omitempty"`
+	BurnAddress     string                 `mapstructure:"burn_address" json:"burn_address,omitempty"`
 }
 
 // NewNode returns a new Node instance

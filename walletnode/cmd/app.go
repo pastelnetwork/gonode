@@ -139,6 +139,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
 	rqClient := rqgrpc.NewClient()
 
+	// burn address
+	config.ArtworkRegister.BurnAddress = config.BurnAddress
+
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient, rqClient)
 	artworkSearch := artworksearch.NewService(pastelClient, p2p)

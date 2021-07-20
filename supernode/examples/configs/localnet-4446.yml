@@ -5,8 +5,8 @@ pastel-api:
   password: "rt"
 
 node:
-  pastel_id: jXYRTihJ4oABwtLoRmQoo8NjLL43MacBiHuyQruXz1H6MHj5XyrCjMrA9SV9suPrrfHWG5NX5TMMLQ1x9YSoB7 
-  pass_phrase: "123456"
+  pastel_id: jXaMnqwbdCFhNJFDhTPGryxxB8brGkAZ14qVzywRB9jahNEZDKQZwquUzaQt7gFKPppi7rXYKxWobhbFvL2R2M 
+  pass_phrase: "passphrase"
   server:
     listen_addresses: "0.0.0.0"
     port: 4446
@@ -23,3 +23,7 @@ metadb:
   http_port: 4061
   raft_port: 4062
   data_dir: "metadb-4446"
+
+raptorq:
+  hostname: "localhost"
+  port: 50053

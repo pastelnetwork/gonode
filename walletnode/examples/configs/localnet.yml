@@ -1,6 +1,6 @@
 pastel-api:
   hostname: "127.0.0.1"
-  port: 12170
+  port: 12172
   username: "rt"
   password: "rt"
 
@@ -8,6 +8,7 @@ node:
   api:
     hostname: "localhost"
     port: 8080
+  burn_address: tPce2T47TFPcHPj3sKiKdFLhQpmzJ1tkzjr 
 
 raptorq:
   hostname: "locahost"

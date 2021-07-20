@@ -301,29 +301,30 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	<-task.NewAction(func(ctx context.Context) error {
 		confirmationChn := task.waitConfirmation(ctx, txid, 3, 150*time.Second, 4)
 
-		if err = task.matchFingersPrintAndScores(ctx); err != nil {
+		if err := task.matchFingersPrintAndScores(ctx); err != nil {
 			return errors.Errorf("fingerprints or scores don't matched")
 		}
 
 		// compare rqsymbols
-		err = task.compareRQSymbolId(ctx)
-		if err != nil {
+		if err := task.compareRQSymbolId(ctx); err != nil {
 			return errors.Errorf("failed to generate rqids %w", err)
 		}
 
 		// sign the ticket if not primary node
-		if err = task.signAndSendArtTicket(ctx, task.connectedTo != nil); err != nil {
+		log.WithContext(ctx).Debugf("isPrimary: %d", task.connectedTo == nil)
+		if err := task.signAndSendArtTicket(ctx, task.connectedTo == nil); err != nil {
 			return errors.Errorf("failed to signed and send art ticket")
 		}
 
-		err = <-confirmationChn
-		if err != nil {
+		log.WithContext(ctx).Debugf("waiting for confimation")
+		if err := <-confirmationChn; err != nil {
 			return errors.Errorf("failed to validate preburn transaction validation %w", err)
 		}
+		log.WithContext(ctx).Debugf("confirmation done")
+
 		return nil
 	})
 
-	// this is kinda ugly here but the above task failed will cancel on the context and subsequent task
 	// only primary node start this action
 	var artRegTxid string
 	if task.connectedTo == nil {
@@ -418,7 +419,7 @@ func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 }
 
 func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, minConfirmation int64, waitTime time.Duration, maxRetry int) <-chan error {
-	var ch chan error
+	ch := make(chan error)
 	go func(ctx context.Context, txid string) {
 		defer close(ch)
 		retry := 0
@@ -426,6 +427,8 @@ func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, min
 			select {
 			case <-ctx.Done():
 				// context cancelled or abort by caller so no need to return anything
+				log.WithContext(ctx).Debugf("context done: %w", ctx.Err())
+				ch <- ctx.Err()
 				return
 			case <-time.After(waitTime):
 				txResult, err := task.pastelClient.GetTransaction(ctx, txid)
@@ -458,7 +461,8 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
 	if !isPrimary {
-		if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, task.ownSignature); err != nil {
+		log.WithContext(ctx).Debug("send signed articket to primary node")
+		if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, task.config.PastelID, task.ownSignature); err != nil {
 			return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.connectedTo.ID, task.connectedTo.Address, err)
 		}
 	}

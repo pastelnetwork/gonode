@@ -31,5 +31,5 @@ type RegisterArtwork interface {
 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 	// Send signature of ticket to primary supernode
-	SendArtTicketSignature(ctx context.Context, signature []byte) error
+	SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }

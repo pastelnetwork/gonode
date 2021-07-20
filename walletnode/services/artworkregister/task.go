@@ -266,9 +266,10 @@ func (task *Task) run(ctx context.Context) error {
 	// TODO: make this as configuration
 	task.registrationFee = nodes.RegistrationFee()
 	burnedAmount := task.registrationFee / 10
-	if task.burnTxId, err = task.pastelClient.SendToAddress(ctx, "PtPasteLBurnAddressXXXXXXXXXTWPm3E", burnedAmount); err != nil {
+	if task.burnTxId, err = task.pastelClient.SendToAddress(ctx, task.config.BurnAddress, burnedAmount); err != nil {
 		return errors.Errorf("failed to burn 10 percent of transaction fee %w", err)
 	}
+	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxId)
 
 	// send the txid of the preburn transaction to super nodes
 	if err := nodes.SendPreBurntFeeTxId(ctx, task.burnTxId); err != nil {

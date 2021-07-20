@@ -30,6 +30,9 @@ type Config struct {
 	RaptorQServiceAddress string `mapstructure:"raptorq_service" json:"raptorq_service,omitempty"`
 	RqFilesDir            string
 
+	// BurnAddress
+	BurnAddress string
+
 	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration
