@@ -1,6 +1,6 @@
 pastel-api:
   hostname: "127.0.0.1"
-  port: 12172
+  port: 12173
   username: "rt"
   password: "rt"
 

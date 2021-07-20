@@ -298,6 +298,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
 	}
 
+	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
 	<-task.NewAction(func(ctx context.Context) error {
 		confirmationChn := task.waitConfirmation(ctx, txid, 3, 150*time.Second, 4)
 
@@ -431,9 +432,10 @@ func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, min
 				ch <- ctx.Err()
 				return
 			case <-time.After(waitTime):
+				log.WithContext(ctx).Debugf("retry: %d", retry)
 				txResult, err := task.pastelClient.GetTransaction(ctx, txid)
 				if err != nil {
-					ch <- errors.Errorf("failed to get transaction ID %w", err)
+					ch <- errors.Errorf("failed to get transaction %s: %w", txid, err)
 					return
 				}
 				if txResult.Confirmations >= minConfirmation {

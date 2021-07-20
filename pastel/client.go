@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 )
 
@@ -114,6 +115,54 @@ func (client *client) SendToAddress(ctx context.Context, burnAddress string, amo
 	}
 
 	return res.GetString()
+}
+
+func (client *client) SendFromAddress(ctx context.Context, fromAddr string, toAddr string, amount float64) (txID string, error error) {
+	type payment struct {
+		To  string  `json:"address"`
+		Fee float64 `json:"amount"`
+	}
+	p := payment{toAddr, amount}
+
+	receivers := []payment{p}
+
+	res, err := client.CallWithContext(ctx, "z_sendmany", fromAddr, receivers)
+	if err != nil {
+		return "", errors.Errorf("failed to call z_sendmany: %w", err)
+	}
+
+	if res.Error != nil {
+		return "", errors.Errorf("failed to sendmany: %w", res.Error)
+	}
+
+	opid, err := res.GetString()
+	if err != nil {
+		return "", errors.Errorf("failed to get operationid: %w", err)
+	}
+
+	opstatus := []struct {
+		Error *struct {
+			Code int    `json:"code"`
+			Msg  string `json:"message"`
+		}
+		Result struct {
+			Txid string `json:"txid"`
+		} `json:"resutl"`
+	}{}
+	if err := client.callFor(ctx, &opstatus, "z_getoperationstatus", []string{opid}); err != nil {
+		return "", errors.Errorf("failed to call z_getoperationstatus: %w", err)
+	}
+
+	if len(opstatus) == 0 {
+		return "", errors.Errorf("operationstatus is empty")
+	}
+
+	if opstatus[0].Error != nil {
+		return "", errors.Errorf("operation failed code: %d, msg: %s", opstatus[0].Error.Code, opstatus[0].Error.Msg)
+	}
+
+	log.WithContext(ctx).Debugf("preburn-txid: %s", opstatus[0].Result.Txid)
+	return opstatus[0].Result.Txid, nil
 }
 
 // ActTickets implements pastel.Client.ActTickets

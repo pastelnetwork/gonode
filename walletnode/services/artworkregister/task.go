@@ -264,9 +264,11 @@ func (task *Task) run(ctx context.Context) error {
 
 	// burn 10 % of registration fee by sending to unspendable address with has the format of PtPasteLBurnAddressXXXXXXXXXTWPm3E
 	// TODO: make this as configuration
+	// TODO: currently this is the calculation is incorrect and mke the burnedAmount too big
 	task.registrationFee = nodes.RegistrationFee()
-	burnedAmount := task.registrationFee / 10
-	if task.burnTxId, err = task.pastelClient.SendToAddress(ctx, task.config.BurnAddress, burnedAmount); err != nil {
+	burnedAmount := float64(task.registrationFee) / 100000
+
+	if task.burnTxId, err = task.pastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount); err != nil {
 		return errors.Errorf("failed to burn 10 percent of transaction fee %w", err)
 	}
 	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxId)
@@ -662,7 +664,6 @@ func (task *Task) signTicket(ctx context.Context, ticket *pastel.ArtTicket) ([]b
 	if err != nil {
 		return nil, errors.Errorf("failed to sign ticket %w", err)
 	}
-
 	return signature, nil
 }
 
