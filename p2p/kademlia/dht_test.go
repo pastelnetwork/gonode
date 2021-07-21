@@ -475,7 +475,7 @@ func (ts *testSuite) TestAddNodeForAppend() {
 
 func (ts *testSuite) TestHashKey() {
 	key := ts.main.hashKey(ts.Value)
-	ts.Equal(K, len(key))
+	ts.Equal(B/8, len(key))
 }
 
 func (ts *testSuite) TestRateLimiter() {
