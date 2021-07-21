@@ -25,6 +25,12 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
+	mdlgrpc "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc"
+	mdlclient "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/client"
+	mdlserver "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server"
+	mdlsupernode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/supernode"
+	mdlwalletnode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/walletnode"
 )
 
 const (
@@ -146,6 +152,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
+
+		// ----Userdata Services----
+		userdataNodeClient := userdatagrpc.NewClient()
+		userdataProcess := userdataprocess.NewService(pastelClient, userdataNodeClient)
+	
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
 }

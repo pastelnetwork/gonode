@@ -7,7 +7,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -112,35 +111,53 @@ func (service *processUserdata) ConnectTo(ctx context.Context, nodeID, sessID st
 	return nil
 }
 
-// ProbeImage implements node.ProcessUserdata.ProbeImage()
-func (service *processUserdata) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
+// SendUserdata implements node.ProcessUserdata.SendUserdata()
+func (service *processUserdata) SendUserdata(ctx context.Context, request *userdata.UserdataProcessRequestSigned)
+		(result *userdata.UserdataProcessResult, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	stream, err := service.client.ProbeImage(ctx)
+	stream, err := service.client.SendUserdata(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
-	file, err := image.Open()
-	if err != nil {
-		return nil, errors.Errorf("failed to open file %q: %w", file.Name(), err)
-	}
-	defer file.Close()
-
-	buffer := make([]byte, uploadImageBufferSize)
 	for {
-		n, err := file.Read(buffer)
-		if err == io.EOF {
-			break
-		}
+		// Generate protobuf request reqProto
+		reqProto := &pb.UserdataRequest{}
 
-		req := &pb.ProbeImageRequest{
-			Payload: buffer[:n],
+		reqProto.Realname = request.Userdata.Realname,
+		reqProto.Facebook_link = request.Userdata.FacebookLink,
+		reqProto.Twitter_link = request.Userdata.TwitterLink,
+		reqProto.Native_currency = request.Userdata.NativeCurrency,
+		reqProto.Location = request.Userdata.Location
+		reqProto.Primary_language = request.Userdata.PrimaryLanguage
+		reqProto.Categories = request.Userdata.Categories
+		reqProto.Biography = request.Userdata.Biography
+		reqProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
+	
+		if request.Userdata.AvatarImage.Content != nil && len(request.Userdata.AvatarImage.Content) > 0 {
+			image.AvatarImage.Content = make ([]byte, len(request.Userdata.AvatarImage.Content))
+			copy(reqProto.AvatarImage.Content,request.Userdata.AvatarImage.Content)
 		}
-		if err := stream.Send(req); err != nil {
-			return nil, errors.Errorf("failed to send image data: %w", err).WithField("reqID", service.conn.id)
+		reqProto.AvatarImage.Filename := request.Userdata.AvatarImage.Filename
+
+		if request.Userdata.CoverPhoto.Content != nil && len(request.Userdata.CoverPhoto.Content) > 0 {
+			image.CoverPhoto.Content = make ([]byte, len(request.Userdata.CoverPhoto.Content))
+			copy(reqProto.CoverPhoto.Content,request.Userdata.CoverPhoto.Content)
+		}
+		reqProto.CoverPhoto.Filename := request.Userdata.CoverPhoto.Filename
+		
+		reqProto.ArtistPastelID = request.Userdata.ArtistPastelID 
+		reqProto.Timestamp = request.Userdata.Timestamp  
+		reqProto.PreviousBlockHash = request.Userdata.PreviousBlockHash
+		reqProto.UserdataHash = request.Userdata.UserdataHash
+		reqProto.Signature = request.Userdata.Signature
+
+		// Send the request to the protobuf stream
+		if err := stream.Send(reqProto); err != nil {
+			return nil, errors.Errorf("failed to userdata to protobuf stream: %w", err).WithField("reqID", service.conn.id)
 		}
 	}
 
@@ -150,7 +167,23 @@ func (service *processUserdata) ProbeImage(ctx context.Context, image *artwork.F
 	}
 	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 
-	return resp.Fingerprint, nil
+	
+	// Convert protobuf response to UserdataProcessResult then return it
+	result := &userdata.UserdataProcessResult {
+		ResponseCode: 		resp.UserdataReply.ResponseCode,
+		Detail:				resp.UserdataReply.Detail,
+		Realname:			resp.UserdataReply.Realname,
+		FacebookLink:		resp.UserdataReply.FacebookLink,
+		TwitterLink:		resp.UserdataReply.TwitterLink,
+		NativeCurrency:		resp.UserdataReply.NativeCurrency,
+		Location:			resp.UserdataReply.Location,
+		PrimaryLanguage:	resp.UserdataReply.PrimaryLanguage,
+		Categories:			resp.UserdataReply.Categories,
+		AvatarImage:		resp.UserdataReply.AvatarImage,
+		CoverPhoto:			resp.UserdataReply.CoverPhoto,
+	}
+	
+	return result, nil
 }
 
 func (service *processUserdata) contextWithMDSessID(ctx context.Context) context.Context {

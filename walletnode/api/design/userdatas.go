@@ -1,10 +1,7 @@
 package design
 
 import (
-	"time"
-
-	// TODO: Generate this services
-	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
+	// "time"
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
@@ -33,10 +30,10 @@ var _ = Service("userdatas", func() {
 		Payload(func() {
 			Extend(UserSpecifiedData)
 		})
-		Result(UserdataProcessResult)
+		StreamingResult(UserdataProcessResult)
 
 		HTTP(func() {
-			POST("/userdata")
+			POST("/update")
 			MultipartRequest()
 
 			// Define error HTTP statuses.
@@ -45,131 +42,7 @@ var _ = Service("userdatas", func() {
 			Response(StatusCreated)
 		})
 	})
-
-	Method("processUserdataTaskState", func() {
-		Description("Streams the state of the userdata process.")
-		Meta("swagger:summary", "Streams state by task ID")
-
-		Payload(func() {
-			Extend(ProcessTaskPayload)
-		})
-		StreamingResult(UserdataProcessTaskState)
-
-		HTTP(func() {
-			GET("/task/{taskId}/state")
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusOK)
-		})
-	})
-
-	Method("processUserdataTask", func() {
-		Description("Returns a single task.")
-		Meta("swagger:summary", "Find task by ID")
-
-		Payload(func() {
-			Extend(ProcessTaskPayload)
-		})
-		Result(UserdataProcessTaskResult, func() {
-			View("default")
-		})
-
-		HTTP(func() {
-			GET("/task/{taskId}")
-			Response("NotFound", StatusNotFound)
-			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusOK)
-		})
-	})
-
-	Method("processUserdataTasks", func() {
-		Description("List of all tasks.")
-		Meta("swagger:summary", "Returns list of tasks")
-
-		Result(CollectionOf(UserdataProcessTaskResult), func() {
-			View("tiny")
-		})
-
-		HTTP(func() {
-			GET("/task")
-			Response("InternalServerError", StatusInternalServerError)
-			Response(StatusOK)
-		})
-	})
-
 })
-
-// UserdataProcessResult is user data process result.
-var UserdataProcessResult = ResultType("application/userdata.process", func() {
-	TypeName("processResult")
-	Attributes(func() {
-		Attribute("task_id", String, func() {
-			Description("Task ID of the user data process")
-			MinLength(8)
-			MaxLength(8)
-			Example("n6Qn6TFM")
-		})
-	})
-	Required("task_id")
-})
-
-// UserdataProcessTaskResult is task streaming of the userdate process.
-var UserdataProcessTaskResult = ResultType("application/userdata.process", func() {
-	TypeName("Task")
-	Attributes(func() {
-		Attribute("id", String, func() {
-			Description("JOb ID of the userdata process")
-			MinLength(8)
-			MaxLength(8)
-			Example("n6Qn6TFM")
-		})
-		Attribute("status", String, func() {
-			Description("Status of the userdata process")
-			Example(userdataprocess.StatusNames()[0])
-			Enum(InterfaceSlice(userdataprocess.StatusNames())...)
-		})
-		Attribute("states", ArrayOf(UserdataProcessTaskState), func() {
-			Description("List of states from the very beginning of the process")
-		})
-	})
-
-	View("tiny", func() {
-		Attribute("id")
-		Attribute("status")
-	})
-
-	Required("id", "status")
-})
-
-// UserdataProcessTaskState is task streaming of the userdata process.
-var UserdataProcessTaskState = Type("TaskState", func() {
-	Attribute("date", String, func() {
-		Description("Date of the status creation")
-		Example(time.RFC3339)
-	})
-	Attribute("status", String, func() {
-		Description("Status of the registration process")
-		Example(userdataprocess.StatusNames()[0])
-		Enum(InterfaceSlice(userdataprocess.StatusNames())...)
-	})
-	Required("date", "status")
-})
-
-// ImageUploadPayload represents a payload for uploading image.
-var ImageUploadPayload = Type("ImageUploadPayload", func() {
-	Description("Image upload payload")
-	Attribute("file", Bytes, func() {
-		Meta("struct:field:name", "Bytes")
-		Description("File to upload")
-	})
-	Attribute("filename", String, func() {
-		Meta("swagger:example", "false")
-		Description("For internal use")
-	})
-	Required("file")
-})
-
-
 // ProcessTaskPayload represents a payload for returning task.
 var ProcessTaskPayload = Type("ProcessTaskPayload", func() {
 	Attribute("taskId", String, "Task ID of the user data process", func() {
@@ -186,24 +59,28 @@ var UserSpecifiedData = Type("UserSpecifiedData", func() {
 	Description("User Specified Data storing")
 
 	Attribute("realname", String, func() {
+		Meta("struct:field:name", "Realname")
 		Description("Real name of the user")
 		MaxLength(256)
 		Example("Williams Scottish")
 	})
 
 	Attribute("facebook_link", String, func() {
+		Meta("struct:field:name", "FacebookLink")
 		Description("Facebook link of the user")
 		MaxLength(128)
 		Example("https://www.facebook.com/Williams_Scottish")
 	})
 
 	Attribute("twitter_link", String, func() {
+		Meta("struct:field:name", "TwitterLink")
 		Description("Twitter link of the user")
 		MaxLength(128)
 		Example("https://www.twitter.com/@Williams_Scottish")
 	})
 
 	Attribute("native_currency", String, func() {
+		Meta("struct:field:name", "NativeCurrency")
 		Description("Native currency of user in ISO 4217 Alphabetic Code")
 		MinLength(3)
 		MaxLength(3)
@@ -211,39 +88,37 @@ var UserSpecifiedData = Type("UserSpecifiedData", func() {
 	})
 
 	Attribute("location", String, func() {
+		Meta("struct:field:name", "Location")
 		Description("Location of the user")
 		MaxLength(256)
 		Example("New York, US")
 	})
 
 	Attribute("primary_language", String, func() {
+		Meta("struct:field:name", "PrimaryLanguage")
 		Description("Primary language of the user")
 		MaxLength(30)
 		Example("English")
 	})
 
-	Attribute("categories", ArrayOf(String), func() {
+	Attribute("categories", String, func() {
+		Meta("struct:field:name", "Categories")
 		Description("The categories of user's work")
 	})
 
 	Attribute("biography", String, func() {
+		Meta("struct:field:name", "Biography")
 		Description("Biography of the user")
 		MaxLength(1024)
 		Example("I'm a digital artist based in Paris, France. ...")
 	})
 
-	Attribute("avatar_image", ImageUploadPayload, func() {
+	Attribute("avatar_image", UserImageUploadPayload, func() {
 		Description("Avatar image of the user")
 	})
 
-	Attribute("cover_photo", ImageUploadPayload, func() {
+	Attribute("cover_photo", UserImageUploadPayload, func() {
 		Description("Cover photo of the user")
-	})
-
-	Attribute("biography", String, func() {
-		Description("Biography of the user")
-		MaxLength(1024)
-		Example("I'm a digital artist based in Paris, France. ...")
 	})
 
 	Attribute("artist_pastelid", String, func() {
@@ -319,28 +194,28 @@ var UserdataProcessResult = Type("UserdataProcessResult", func() {
 		MaxLength(256)
 	})
 
-	Attribute("biography", String, func() {
-		Description("Error detail on biography")
+	Attribute("avatar_image", String, func() {
+		Description("Error detail on avatar")
 		MaxLength(256)
 	})
 
 	Attribute("cover_photo", String, func() {
-		Description("Error detail on biography")
+		Description("Error detail on cover photo")
 		MaxLength(256)
 	})
 	Required("response_code", "detail")
 })
 
-// ImageUploadPayload represents a payload for uploading image.
-var ImageUploadPayload = Type("ImageUploadPayload", func() {
-	Description("Image upload payload")
-	Attribute("file", Bytes, func() {
-		Meta("struct:field:name", "Bytes")
+// UserImageUploadPayload represents a payload for uploading image.
+var UserImageUploadPayload = Type("UserImageUploadPayload", func() {
+	Description("User image upload payload")
+	Attribute("content", Bytes, func() {
+		Meta("struct:field:name", "Content")
 		Description("File to upload")
 	})
 	Attribute("filename", String, func() {
 		Meta("swagger:example", "false")
-		Description("For internal use")
+		Description("File name of the user image")
 	})
-	Required("file")
+	Required("content")
 })

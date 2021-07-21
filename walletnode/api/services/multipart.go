@@ -7,11 +7,16 @@ import (
 	"mime/multipart"
 	"path/filepath"
 	"strings"
+	"encoding/json"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
+
+	userdatas "github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/userdatas/server"
 )
 
 const (
@@ -72,4 +77,69 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 		*p = &res
 		return nil
 	}
+}
+
+
+// UserdatasProcessUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/update".
+// The decoder must populate the argument p after encoding.
+func UserdatasProcessUserdataDecoderFunc(ctx context.Context, service *Userdata) server.ArtworksUploadImageDecoderFunc {
+	return func(reader *multipart.Reader, p **userdatas.ProcessUserdataPayload) error {
+
+		formValues := make(map[string]interface{})
+
+		for {
+			part, err := reader.NextPart()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				return userdatas.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
+			}
+
+			if part.FormName() != imagePartName {
+				// Process for other field that's not a file
+				buffer, err := io.ioutil.ReadAll(part)
+				if err != nil {
+					return userdatas.MakeInternalServerError(errors.Errorf("could not process fields: %w", err))
+				}
+				formValues[part.FormName()] = string(buffer)
+				log.WithContext(ctx).Debugf("Multipart process field: %q", formValues[part.FormName()])
+
+			} else {
+				// Process for the field that have a files
+				contentType, _, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
+				if err != nil {
+					return userdatas.MakeBadRequest(errors.Errorf("could not parse Content-Type: %w", err))
+				}
+	
+				if !strings.HasPrefix(contentType, contentTypePrefix) {
+					return userdatas.MakeBadRequest(errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix))
+				}
+	
+				filename := part.FileName()
+				filePart := new(bytes.Buffer)
+				if _, err := io.Copy(filePart, part); err != nil {
+					return userdatas.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filename, err))
+				}
+				
+				formValues[part.FormName()] = UserImageUploadPayload{filePart.Bytes(), &filename}
+				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
+			}
+
+			res, err := CreateFromMap (formValues) // Convert entire map object contain all form fields and its value, into a go struct
+			if err != nil {
+				return userdatas.MakeBadRequest(errors.Errorf("Could not convert formValues to object: %w", err))
+			}
+		}
+
+		*p = &res
+		return nil
+	}
+}
+
+// Convert map object contain fields to ProcessUserdataPayload object
+func CreateFromMap(m map[string]interface{}) (userdatas.ProcessUserdataPayload, error) {
+    var result userdatas.ProcessUserdataPayload
+    err := mapstructure.Decode(m, &result)
+    return result, err
 }

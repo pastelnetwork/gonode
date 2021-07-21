@@ -10,6 +10,10 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+
+	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 )
 
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Ticket {
@@ -133,4 +137,58 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 		Version:          &ticket.RegTicketData.ArtTicketData.Version,
 		StorageFee:       &ticket.RegTicketData.StorageFee,
 	}
+}
+
+// fromUserdataProcessRequest convert the request receive from swagger api to request object that will send to super nodes
+func fromUserdataProcessRequest(req *userdatas.ProcessUserdataPayload) *userdata.UserdataProcessRequest {
+	request := &userdata.UserdataProcessRequest{}
+
+	if req.Realname != nil 					{ request.Realname 			:= *(req.Realname) }
+	if req.FacebookLink != nil 				{ request.FacebookLink 		:= *(req.FacebookLink) }
+	if req.TwitterLink != nil 				{ request.TwitterLink 		:= *(req.TwitterLink) }
+	if req.Location != nil 					{ request.Location 			:= *(req.Location) }
+	if req.PrimaryLanguage != nil 			{ request.PrimaryLanguage 	:= *(req.PrimaryLanguage) }
+	if req.Categories != nil 				{ request.Categories 		:= *(req.Categories) }
+	if req.Biography != nil 				{ request.Biography 		:= *(req.Biography) }
+	if req.AvatarImage != nil { 
+		if req.AvatarImage.Content != nil && len(req.AvatarImage.Content) > 0 {
+			request.AvatarImage.Content = make ([]byte, len(req.AvatarImage.Content))
+			copy(request.AvatarImage.Content,req.AvatarImage.Content)
+		}
+		request.AvatarImage.Filename := *(req.AvatarImage.Filename)
+	}
+	if req.CoverPhoto != nil { 
+		if req.CoverPhoto.Content != nil && len(req.CoverPhoto.Content) > 0 {
+			request.CoverPhoto.Content = make ([]byte, len(req.CoverPhoto.Content))
+			copy(request.CoverPhoto.Content,req.CoverPhoto.Content)
+		}
+		request.CoverPhoto.Filename := *(req.CoverPhoto.Filename)
+	}
+
+	if req.ArtistPastelID != nil 			{ request.ArtistPastelID 	:= *(req.ArtistPastelID) }
+	if req.ArtistPastelIDPassphrase != nil 	{ request.ArtistPastelIDPassphrase := *(req.ArtistPastelIDPassphrase) }
+
+	request.Timestamp 	 					= time.Now().Unix() 	// The moment request is prepared to send to super nodes
+	request.Signature 						= "" 					// Signature will be generated later when prepare to send
+	request.PreviousBlockHash				= ""					// PreviousBlockHash will be generated later when prepare to send
+	
+	return request
+}
+
+// toUserdataProcessResult convert the final response receive from super nodes and reponse to swagger api
+func toUserdataProcessResult(result *userdata.UserdataProcessResult) *userdatas.UserdataProcessResult {
+	res := &userdatas.UserdataProcessResult{
+			ResponseCode: 		result.ResponseCode,
+			Detail:				result.Detail,
+			Realname:			&result.Realname,
+			FacebookLink:		&result.FacebookLink,
+			TwitterLink:		&result.TwitterLink,
+			NativeCurrency:		&result.NativeCurrency,
+			Location:			&result.Location,
+			PrimaryLanguage:	&result.PrimaryLanguage,
+			Categories:			&result.Categories,
+			AvatarImage:		&result.AvatarImage,
+			CoverPhoto:			&result.CoverPhoto,
+		}
+	return res
 }
