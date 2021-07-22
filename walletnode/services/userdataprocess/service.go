@@ -6,6 +6,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -45,7 +46,7 @@ func (service *Service) Task(id string) *Task {
 }
 
 // AddTask runs a new task of the userdata process and returns its taskID.
-func (service *Service) AddTask(request *UserdataProcessRequest) string {
+func (service *Service) AddTask(request *userdata.UserdataProcessRequest) string {
 	task := NewTask(service, request)
 	service.Worker.AddTask(task)
 

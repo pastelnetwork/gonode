@@ -19,9 +19,9 @@ type Task struct {
 	task.Task
 	*Service
 
-	resultChan chan *UserdataProcessResult
+	resultChan chan *userdata.UserdataProcessResult
 	err        error
-	request    *UserdataProcessRequest
+	request    *userdata.UserdataProcessRequest
 }
 
 // Run starts the task
@@ -139,10 +139,18 @@ func (task *Task) run(ctx context.Context) error {
 	}
 
 	// Send userdata to supernodes for storing in MDL's rqlite db.
+
 	if err := nodes.SendUserdata(ctx, userdata) ; err != nil {
 		return err
 	} else {
 
+		res, err :=task.AggregateResult(ctx, nodes)
+		if err != nil {
+			return nil, err
+		}
+		// Post on result channel
+		task.resultChan <- res
+		log.WithContext(ctx).WithField("userdata_result", res).Debug("Posted userdata result")
 	}
 
 	// close the connections
@@ -157,7 +165,7 @@ func (task *Task) run(ctx context.Context) error {
 }
 
 // AggregateResult aggregate all results return by all supernode, and consider it valid or not
-func (task *Task) AggregateResult(ctx context.Context,nodes node.List) (UserdataProcessResult, error) {
+func (task *Task) AggregateResult(ctx context.Context,nodes node.List) (userdata.UserdataProcessResult, error) {
 	aggregate := make(map[string][]int)
 	count := 0
 	for i, node := range nodes {
@@ -309,7 +317,7 @@ func (task *Task) SubscribeProcessResult() <-chan *UserdataProcessResult {
 }
 
 // NewTask returns a new Task instance.
-func NewTask(service *Service, request *UserdataProcessRequest) *Task {
+func NewTask(service *Service, request *userdata.UserdataProcessRequest) *Task {
 	return &Task{
 		Task:       task.New(StatusTaskStarted),
 		Service:    service,

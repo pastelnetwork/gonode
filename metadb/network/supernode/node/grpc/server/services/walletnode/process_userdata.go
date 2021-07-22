@@ -123,8 +123,8 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
-// SendSignedArtTicket implements walletnode.RegisterArtwork.SendSignedArtTicket
-func (service *RegisterArtwork) SendSignedArtTicket(ctx context.Context, req *pb.SendSignedArtTicketRequest) (*pb.SendSignedArtTicketReply, error) {
+// SendUserdata implements walletnode.ProcessUserdata.SendUserdata
+func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.SendSignedArtTicketRequest) (*pb.SendSignedArtTicketReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SignTicket request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {

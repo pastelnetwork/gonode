@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/pastelnetwork/gonode/supernode/node"
+	"github.com/pastelnetwork/gonode/metadb/network/supernode/node"
 )
 
 const (
@@ -41,7 +41,7 @@ func (nodes *Nodes) Remove(id string) {
 
 // Node represents a single supernode
 type Node struct {
-	node.RegisterArtwork
+	node.ProcessUserdata
 	client node.Client
 	conn   node.Connection
 
@@ -59,6 +59,6 @@ func (node *Node) connect(ctx context.Context) error {
 	}
 
 	node.conn = conn
-	node.RegisterArtwork = conn.RegisterArtwork()
+	node.ProcessUserdata = conn.ProcessUserdata()
 	return nil
 }
