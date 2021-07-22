@@ -2,8 +2,9 @@ package artworkregister
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/hex"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,10 +20,12 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
+	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 	"github.com/stretchr/testify/assert"
@@ -745,7 +748,7 @@ func TestTaskCreateTicket(t *testing.T) {
 				Copies:   tc.args.task.Request.IssuedCopies,
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID:                 tc.args.task.Request.ArtistPastelID,
-					BlockTxID:                      "TBD",
+					BlockTxID:                      tc.args.task.blockTxID,
 					BlockNum:                       0,
 					ArtistName:                     tc.args.task.Request.ArtistName,
 					ArtistWebsite:                  safeString(tc.args.task.Request.ArtistWebsiteURL),
@@ -809,7 +812,7 @@ func TestTaskGetBlock(t *testing.T) {
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
-					Hash: "testhash",
+					Hash: "000000007465737468617368",
 				},
 			},
 			wantArtistBlockHeight: 10,
@@ -825,7 +828,7 @@ func TestTaskGetBlock(t *testing.T) {
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
-					Hash: "testhash",
+					Hash: "000000007465737468617368",
 				},
 				blockCountErr: errors.New("block-count-err"),
 			},
@@ -842,7 +845,7 @@ func TestTaskGetBlock(t *testing.T) {
 				},
 				blockNum: int32(10),
 				blockInfo: &pastel.GetBlockVerbose1Result{
-					Hash: "testhash",
+					Hash: "000000007465737468617368",
 				},
 				blockVerboseErr: errors.New("verbose-err"),
 			},
@@ -862,7 +865,7 @@ func TestTaskGetBlock(t *testing.T) {
 				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			blockhash, err := base64.StdEncoding.DecodeString(tc.args.blockInfo.Hash)
+			blockhash, err := hex.DecodeString(tc.args.blockInfo.Hash)
 			assert.Nil(t, err)
 			tc.wantArtistblockHash = blockhash
 
@@ -954,6 +957,292 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 				assert.Equal(t, tc.want.SymbolIdentifiers, got.SymbolIdentifiers)
 				assert.Equal(t, tc.want.BlockHash, got.BlockHash)
 				assert.Equal(t, tc.want.Signature, got.Signature)
+			}
+		})
+	}
+}
+
+func TestTaskGenRQIdentifiersFiles(t *testing.T) {
+	type args struct {
+		task              *Task
+		connectReturns    rqnode.Connection
+		connectErr        error
+		encodeInfoReturns *rqnode.EncodeInfo
+		encodeInfoErr     error
+		readErr           error
+		signErr           error
+	}
+
+	testCases := map[string]struct {
+		args              args
+		wantErr           error
+		wantSymbolIDFiles rq.SymbolIdFiles
+		wantEncoderParams *rqnode.EncoderParameters
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIdFiles: map[string]rqnode.RawSymbolIdFile{
+						"test-file": rqnode.RawSymbolIdFile{
+							Id:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelId:          "test-pastel-id",
+						},
+					},
+				},
+				readErr: io.EOF,
+			},
+			wantErr: nil,
+		},
+		"connect-error": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				readErr: io.EOF,
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIdFiles: make(map[string]rqnode.RawSymbolIdFile),
+				},
+				connectErr: errors.New("test-err"),
+			},
+			wantErr: errors.New("test-err"),
+		},
+
+		"encode-info-error": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				readErr: io.EOF,
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIdFiles: make(map[string]rqnode.RawSymbolIdFile),
+				},
+				encodeInfoErr: errors.New("test-err"),
+			},
+			wantErr: errors.New("test-err"),
+		},
+		"read-error": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				readErr: errors.New("test-err"),
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIdFiles: make(map[string]rqnode.RawSymbolIdFile),
+				},
+			},
+			wantErr: errors.New("read image"),
+		},
+		"sign-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIdFiles: map[string]rqnode.RawSymbolIdFile{
+						"test-file": rqnode.RawSymbolIdFile{
+							Id:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelId:          "test-pastel-id",
+						},
+					},
+				},
+				readErr: io.EOF,
+				signErr: errors.New("tes-err"),
+			},
+			wantErr: errors.New("rqids file"),
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign([]byte("test-signature"), tc.args.signErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			raptorQMock := rqMock.NewMockRaptorQ(t)
+			raptorQMock.ListenOnEncodeInfo(tc.args.encodeInfoReturns, tc.args.encodeInfoErr)
+
+			connMock := rqMock.NewMockConnection(t)
+			connMock.ListenOnRaptorQ(raptorQMock, nil).ListenOnClose(nil)
+
+			rqClientMock := rqMock.NewMockClient(t)
+			rqClientMock.ListenOnConnect(connMock, tc.args.connectErr)
+			tc.args.task.Service.rqClient = rqClientMock
+
+			fsMock := storageMock.NewMockFileStorage()
+			fileMock := storageMock.NewMockFile()
+			fileMock.ListenOnClose(nil).ListenOnRead(0, tc.args.readErr)
+
+			storage := artwork.NewStorage(fsMock)
+
+			fsMock.ListenOnOpen(fileMock, nil)
+
+			tc.args.task.Request.Image = artwork.NewFile(storage, "test")
+
+			_, _, err := tc.args.task.genRQIdentifiersFiles(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskEncodeFingerprint(t *testing.T) {
+	type args struct {
+		task        *Task
+		fingerprint []byte
+		img         *artwork.File
+		signReturns []byte
+		signErr     error
+	}
+
+	testCases := map[string]struct {
+		args     args
+		wantErr  error
+		wantSign []byte
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{},
+				},
+				img:         &artwork.File{},
+				signReturns: []byte("test-signature"),
+				fingerprint: []byte("test-fingerprint"),
+			},
+			wantErr: errors.New("failed to decode image"),
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+			fileStorageMock := storageMock.NewMockFileStorage()
+			storage := artwork.NewStorage(fileStorageMock)
+
+			fileMock := storageMock.NewMockFile()
+			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF).ListenOnName("test")
+
+			file := artwork.NewFile(storage, "test-file")
+			fileStorageMock.ListenOnOpen(fileMock, nil)
+
+			err := tc.args.task.encodeFingerprint(context.Background(), tc.args.fingerprint, file)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				fmt.Println(err.Error())
+				assert.Nil(t, err)
+			}
+		})
+	}
+
+}
+
+func TestTaskSignTicket(t *testing.T) {
+	type args struct {
+		task        *Task
+		artTicket   *pastel.ArtTicket
+		signErr     error
+		signReturns []byte
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				artTicket: &pastel.ArtTicket{},
+			},
+			wantErr: nil,
+		},
+		"err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				artTicket: &pastel.ArtTicket{},
+				signErr:   errors.New("test"),
+			},
+			wantErr: errors.New("test"),
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			sign, err := tc.args.task.signTicket(context.Background(), tc.args.artTicket)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.args.signReturns, sign)
 			}
 		})
 	}

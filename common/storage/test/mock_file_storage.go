@@ -8,30 +8,30 @@ import (
 
 // FileStorage implementing storage.FileStorage mock for testing purpose
 type FileStorage struct {
-	FileStorageMock *mocks.FileStorage
+	*mocks.FileStorage
 }
 
 // NewMockFileStorage new FileStorage instance
 func NewMockFileStorage() *FileStorage {
 	return &FileStorage{
-		FileStorageMock: &mocks.FileStorage{},
+		FileStorage: &mocks.FileStorage{},
 	}
 }
 
 // ListenOnOpen listening Open call and returns file and error from args
 func (f *FileStorage) ListenOnOpen(file storage.File, err error) *FileStorage {
-	f.FileStorageMock.On("Open", mock.AnythingOfType("string")).Return(file, err)
+	f.On("Open", mock.AnythingOfType("string")).Return(file, err)
 	return f
 }
 
 // ListenOnCreate listening Create call and returns file and error from args
 func (f *FileStorage) ListenOnCreate(file storage.File, err error) *FileStorage {
-	f.FileStorageMock.On("Create", mock.AnythingOfType("string")).Return(file, err)
+	f.On("Create", mock.AnythingOfType("string")).Return(file, err)
 	return f
 }
 
 // ListenOnRemove listening Remove call and returns error from args
 func (f *FileStorage) ListenOnRemove(err error) *FileStorage {
-	f.FileStorageMock.On("Remove", mock.AnythingOfType("string")).Return(err)
+	f.On("Remove", mock.AnythingOfType("string")).Return(err)
 	return f
 }
