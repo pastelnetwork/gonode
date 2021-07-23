@@ -50,9 +50,12 @@ func readFileLines(path string) ([]string, error) {
 	return strings.Split(string(b), "\n"), nil
 }
 
-func createTaskFolder(base string) (string, error) {
+func createTaskFolder(base string, subDirs ...string) (string, error) {
 	taskId := randId()
 	taskPath := filepath.Join(base, taskId)
+	for _, subDir := range subDirs {
+		taskPath = filepath.Join(taskPath, subDir)
+	}
 	err := os.MkdirAll(taskPath, 0777)
 
 	if err != nil {
@@ -77,6 +80,25 @@ func createInputEncodeFile(base string, data []byte) (taskPath string, inputFile
 	}
 
 	return taskPath, inputFile, nil
+}
+
+func createInputDecodeSymbols(base string, symbols map[string][]byte) (path string, err error) {
+	path, err = createTaskFolder(base, symbolFileSubdir)
+
+	if err != nil {
+		return "", errors.Errorf("failed to create task folder: %w", err)
+	}
+
+	for id, data := range symbols {
+		symbolFile := filepath.Join(path, id)
+		err = writeFile(symbolFile, data)
+
+		if err != nil {
+			return "", errors.Errorf("failed to create symbol file: %w", err)
+		}
+	}
+
+	return path, nil
 }
 
 // scan symbol id files in "meta" folder, return map of file Ids & contents of file (as list of line)
@@ -241,6 +263,35 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 		EncoderParam: node.EncoderParameters{
 			Oti: res.EncoderParameters,
 		},
+	}
+
+	return output, nil
+}
+
+func (service *raptorQ) Decode(ctx context.Context, encodeInfo *node.Encode) (*node.Decode, error) {
+	if encodeInfo == nil {
+		return nil, errors.Errorf("invalid encode info")
+	}
+
+	ctx = service.contextWithLogPrefix(ctx)
+
+	symbolsDir, err := createInputDecodeSymbols(service.config.RqFilesDir, encodeInfo.Symbols)
+	if err != nil {
+		return nil, errors.Errorf("failed to create symbol files: %w", err)
+	}
+
+	req := pb.DecodeRequest{
+		EncoderParameters: encodeInfo.EncoderParam.Oti,
+		Path:              symbolsDir,
+	}
+
+	res, err := service.client.Decode(ctx, &req)
+	if err != nil {
+		return nil, errors.Errorf("failed to send request: %w", err)
+	}
+
+	output := &node.Decode{
+		Path: res.Path,
 	}
 
 	return output, nil

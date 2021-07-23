@@ -33,6 +33,10 @@ type Encode struct {
 	EncoderParam EncoderParameters
 }
 
+type Decode struct {
+	Path string
+}
+
 // Client represents a base connection interface.
 type Client interface {
 	// Connect connects to the server at the given address.
@@ -56,4 +60,7 @@ type RaptorQ interface {
 
 	// Get encode info(include encode parameters + symbol id files)
 	EncodeInfo(ctx context.Context, data []byte, copies uint32, blockHash string, pastelID string) (*EncodeInfo, error)
+
+	// Decode returns a path to restored file.
+	Decode(ctx context.Context, encodeInfo *Encode) (*Decode, error)
 }
