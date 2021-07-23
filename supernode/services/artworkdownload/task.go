@@ -93,7 +93,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			return err
 		}
 
-		pastelID := artRegTicket.RegTicketData.ArtTicketData.Author
+		pastelID := string(artRegTicket.RegTicketData.ArtTicketData.Author)
 
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
