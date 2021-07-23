@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -264,14 +265,14 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 		getFeeRequest := pastel.GetRegisterArtFeeRequest{
 			Ticket: task.Ticket,
 			Signatures: &pastel.TicketSignatures{
-				Artist: map[string][]byte{
-					task.Ticket.AppTicketData.AuthorPastelID: artistSignature,
+				Artist: map[string]string{
+					task.Ticket.AppTicketData.AuthorPastelID: string(artistSignature),
 				},
-				Mn2: map[string][]byte{
-					task.Service.config.PastelID: artistSignature,
+				Mn2: map[string]string{
+					task.Service.config.PastelID: string(artistSignature),
 				},
-				Mn3: map[string][]byte{
-					task.Service.config.PastelID: artistSignature,
+				Mn3: map[string]string{
+					task.Service.config.PastelID: string(artistSignature),
 				},
 			},
 			Mn1PastelId: task.Service.config.PastelID, // all ID has same lenght, so can use any id here
@@ -433,7 +434,7 @@ func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, min
 				return
 			case <-time.After(waitTime):
 				log.WithContext(ctx).Debugf("retry: %d", retry)
-				txResult, _ := task.pastelClient.GetTransaction(ctx, txid)
+				txResult, _ := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
 				if txResult.Confirmations >= minConfirmation {
 					ch <- nil
 					return
@@ -506,17 +507,17 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 			AppTicket: data,
 		},
 		Signatures: &pastel.TicketSignatures{
-			Artist: map[string][]byte{
-				task.Ticket.AppTicketData.AuthorPastelID: task.artistSignature,
+			Artist: map[string]string{
+				task.Ticket.AppTicketData.AuthorPastelID: base64.StdEncoding.EncodeToString(task.artistSignature),
 			},
-			Mn1: map[string][]byte{
-				task.config.PastelID: task.ownSignature,
+			Mn1: map[string]string{
+				task.config.PastelID: base64.StdEncoding.EncodeToString(task.ownSignature),
 			},
-			Mn2: map[string][]byte{
-				task.accepted[0].ID: task.peersArtTicketSignature[task.accepted[0].ID],
+			Mn2: map[string]string{
+				task.accepted[0].ID: base64.StdEncoding.EncodeToString(task.peersArtTicketSignature[task.accepted[0].ID]),
 			},
-			Mn3: map[string][]byte{
-				task.accepted[1].ID: task.peersArtTicketSignature[task.accepted[1].ID],
+			Mn3: map[string]string{
+				task.accepted[1].ID: base64.StdEncoding.EncodeToString(task.peersArtTicketSignature[task.accepted[1].ID]),
 			},
 		},
 		Mn1PastelId: task.config.PastelID,

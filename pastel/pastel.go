@@ -71,6 +71,10 @@ type Client interface {
 	// Command `gettransaction  <txid>`
 	GetTransaction(ctx context.Context, txID string) (*GetTransactionResult, error)
 
+	// GetRawTransactionVerbose1 returns details of an raw transaction
+	// Command `getrawtransaction  <txid> 1`
+	GetRawTransactionVerbose1(ctx context.Context, txID string) (*GetRawTransactionVerbose1Result, error)
+
 	// GetNetworkFeePerMB return network storage fee
 	// Command `storagefee  getnetworkfee`
 	GetNetworkFeePerMB(ctx context.Context) (int64, error)

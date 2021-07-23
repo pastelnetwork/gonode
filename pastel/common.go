@@ -68,29 +68,6 @@ type GetBlockVerbose1Result struct {
 	NextHash         string   `json:"nextblockhash,omitempty"`
 }
 
-// {
-//     "id": "opid-39c1cdc7-6dbc-4ad9-be0a-4693918d5d77",
-//     "status": "success",
-//     "creation_time": 1626973263,
-//     "result": {
-//       "txid": "8ec1c6f5c4ef15b749191f5cb0d95b8c4de9a497842be8690c5285e0adab2ec9"
-//     },
-//     "execution_secs": 0.003088334,
-//     "method": "z_sendmany",
-//     "params": {
-//       "fromaddress": "tPWLZyFoXe5EdQPhV2G7Y45gZGRQzn1wRHp",
-//       "amounts": [
-//         {
-//           "address": "tPce2T47TFPcHPj3sKiKdFLhQpmzJ1tkzjr",
-//           "amount": 6.12
-//         }
-//       ],
-//       "minconf": 1,
-//       "fee": 0.1
-//     }
-//   }
-//
-
 // Amount sent to Address
 type Amount struct {
 	Address string  `json:"address"`
@@ -116,6 +93,7 @@ type GetOperationStatusError struct {
 	Code int    `json:"code"`
 }
 
+// GetOperationStatusResult describes the result of an operation identified by Id
 type GetOperationStatusResult struct {
 	Id            string                  `json:"id,omitempty"`
 	Status        string                  `json:"status,omitemptyi"`
@@ -126,4 +104,12 @@ type GetOperationStatusResult struct {
 	Params        GetOperationStatusParam `json:"params"`
 	MinConf       int                     `json:"min_conf"`
 	Fee           float64                 `json:"fee"`
+}
+
+// GetRawTransactionVerbose1Result describes the result of "getrawtranasction txid 1"
+type GetRawTransactionVerbose1Result struct {
+	// Other information are omitted here because we don't care
+	// They can be added later if there are business requirements
+	Txid          string `json:"string"`
+	Confirmations int64  `json:"confirmations"`
 }

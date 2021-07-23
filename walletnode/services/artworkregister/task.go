@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -255,13 +256,14 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
+	artistSignatureBlob := base64.StdEncoding.EncodeToString(artistSignature)
 
 	// send signed ticket to supernodes to calculate registration fee
 	symbolsIdFilesMap, err := rqSymbolIdFiles.ToMap()
 	if err != nil {
 		return errors.Errorf("failed to create rq symbol identifiers files map %w", err)
 	}
-	if err := nodes.UploadSignedTicket(ctx, buf, artistSignature, symbolsIdFilesMap, *encoderParams); err != nil {
+	if err := nodes.UploadSignedTicket(ctx, buf, []byte(artistSignatureBlob), symbolsIdFilesMap, *encoderParams); err != nil {
 		return errors.Errorf("failed to upload signed ticket %w", err)
 	}
 
@@ -662,12 +664,12 @@ func (task *Task) createTicket(ctx context.Context) (*pastel.ArtTicket, error) {
 }
 
 func (task *Task) signTicket(ctx context.Context, ticket *pastel.ArtTicket) ([]byte, error) {
-	js, err := json.Marshal(ticket)
+	data, err := pastel.EncodeArtTicket(ticket)
 	if err != nil {
 		return nil, errors.Errorf("failed to encode ticket %w", err)
 	}
 
-	signature, err := task.pastelClient.Sign(ctx, js, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	signature, err := task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
 	if err != nil {
 		return nil, errors.Errorf("failed to sign ticket %w", err)
 	}

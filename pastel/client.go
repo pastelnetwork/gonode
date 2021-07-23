@@ -94,14 +94,14 @@ func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphras
 // Verify implements pastel.Client.Verify
 func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
 	var verify struct {
-		Verification bool `json:"verification"`
+		Verification string `json:"verification"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
 	if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID); err != nil {
 		return false, errors.Errorf("failed to verify data: %w", err)
 	}
-	return verify.Verification, nil
+	return verify.Verification == "OK", nil
 }
 
 // StorageFee implements pastel.Client.StorageFee
@@ -242,6 +242,16 @@ func (client *client) GetTransaction(ctx context.Context, txID string) (*GetTran
 	return result, nil
 }
 
+func (client *client) GetRawTransactionVerbose1(ctx context.Context, txID string) (*GetRawTransactionVerbose1Result, error) {
+	result := &GetRawTransactionVerbose1Result{}
+
+	if err := client.callFor(ctx, result, "getrawtransaction", txID, 1); err != nil {
+		return result, errors.Errorf("failed to get transaction: %w", err)
+	}
+
+	return result, nil
+}
+
 func (client *client) GetNetworkFeePerMB(ctx context.Context) (int64, error) {
 	var networkFee struct {
 		NetworkFee int64 `json:"networkfee"`
@@ -306,10 +316,11 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 		TxID string `json:"txid"`
 	}
 
-	tickets, err := EncodeArtTicket(request.Ticket)
+	ticket, err := EncodeArtTicket(request.Ticket)
 	if err != nil {
 		return "", errors.Errorf("failed to encode ticket: %w", err)
 	}
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
 
 	signatures, err := EncodeSignatures(*request.Signatures)
 	if err != nil {
@@ -319,7 +330,7 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 	params := []interface{}{}
 	params = append(params, "register")
 	params = append(params, "art")
-	params = append(params, string(tickets))
+	params = append(params, string(ticketBlob))
 	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelId)
 	params = append(params, request.Pasphase)

@@ -43,7 +43,7 @@ ports = {
 }
 
 keys = ports.keys()
-minerId = 14
+minerId = 13
 nodes = []
 
 # generate nodes

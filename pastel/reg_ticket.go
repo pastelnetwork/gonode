@@ -91,10 +91,10 @@ type AppTicket struct {
 }
 
 type TicketSignatures struct {
-	Artist map[string][]byte `json:"artist,omitempty"`
-	Mn1    map[string][]byte `json:"mn1,omitempty"`
-	Mn2    map[string][]byte `json:"mn2,omitempty"`
-	Mn3    map[string][]byte `json:"mn3,omitempty"`
+	Artist map[string]string `json:"artist,omitempty"`
+	Mn1    map[string]string `json:"mn1,omitempty"`
+	Mn2    map[string]string `json:"mn2,omitempty"`
+	Mn3    map[string]string `json:"mn3,omitempty"`
 }
 
 // Command
