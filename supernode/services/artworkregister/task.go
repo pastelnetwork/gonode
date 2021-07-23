@@ -489,22 +489,17 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 
 func (task *Task) registerArt(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debugf("all signature received so start validation")
-	// verify signature from secondary nodes
-	data, err := pastel.EncodeArtTicket(task.Ticket)
-	if err != nil {
-		return "", errors.Errorf("failed to encoded art ticket %w", err)
-	}
 
 	req := pastel.RegisterArtRequest{
 		Ticket: &pastel.ArtTicket{
-			Version:   task.Ticket.Version,
-			Author:    task.Ticket.Author,
-			BlockNum:  task.Ticket.BlockNum,
-			BlockHash: task.Ticket.BlockHash,
-			Copies:    task.Ticket.Copies,
-			Royalty:   task.Ticket.Royalty,
-			Green:     task.Ticket.Green,
-			AppTicket: data,
+			Version:       task.Ticket.Version,
+			Author:        task.Ticket.Author,
+			BlockNum:      task.Ticket.BlockNum,
+			BlockHash:     task.Ticket.BlockHash,
+			Copies:        task.Ticket.Copies,
+			Royalty:       task.Ticket.Royalty,
+			Green:         task.Ticket.Green,
+			AppTicketData: task.Ticket.AppTicketData,
 		},
 		Signatures: &pastel.TicketSignatures{
 			Artist: map[string]string{
