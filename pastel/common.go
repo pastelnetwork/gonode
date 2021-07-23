@@ -67,3 +67,63 @@ type GetBlockVerbose1Result struct {
 	PreviousHash     string   `json:"previousblockhash"`
 	NextHash         string   `json:"nextblockhash,omitempty"`
 }
+
+// {
+//     "id": "opid-39c1cdc7-6dbc-4ad9-be0a-4693918d5d77",
+//     "status": "success",
+//     "creation_time": 1626973263,
+//     "result": {
+//       "txid": "8ec1c6f5c4ef15b749191f5cb0d95b8c4de9a497842be8690c5285e0adab2ec9"
+//     },
+//     "execution_secs": 0.003088334,
+//     "method": "z_sendmany",
+//     "params": {
+//       "fromaddress": "tPWLZyFoXe5EdQPhV2G7Y45gZGRQzn1wRHp",
+//       "amounts": [
+//         {
+//           "address": "tPce2T47TFPcHPj3sKiKdFLhQpmzJ1tkzjr",
+//           "amount": 6.12
+//         }
+//       ],
+//       "minconf": 1,
+//       "fee": 0.1
+//     }
+//   }
+//
+
+// Amount sent to Address
+type Amount struct {
+	Address string  `json:"address"`
+	Amount  float64 `json:"amount"`
+}
+
+// GetOperationStatusParam describes  the params of operation
+type GetOperationStatusParam struct {
+	FromAddress string   `json:"from_address"`
+	Amounts     []Amount `json:"amounts"`
+	MinConf     int      `json:"min_conf"`
+	Fee         float64  `json:"fee"`
+}
+
+// GetOperationStatusTxid describes the result transaction id of the operation
+type GetOperationStatusTxid struct {
+	Txid string `json:"txid"`
+}
+
+// GetOperationStatusError describes the reason why the operation failed
+type GetOperationStatusError struct {
+	Msg  string `json:"msg"`
+	Code int    `json:"code"`
+}
+
+type GetOperationStatusResult struct {
+	Id            string                  `json:"id,omitempty"`
+	Status        string                  `json:"status,omitemptyi"`
+	Error         GetOperationStatusError `json:"error,omitempty"`
+	Result        GetOperationStatusTxid  `json:"result"`
+	ExecutionSecs float64                 `json:"execution_secs"`
+	Method        string                  `json:"method"`
+	Params        GetOperationStatusParam `json:"params"`
+	MinConf       int                     `json:"min_conf"`
+	Fee           float64                 `json:"fee"`
+}

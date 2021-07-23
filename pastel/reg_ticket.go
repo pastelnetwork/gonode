@@ -127,7 +127,7 @@ type internalArtTicket struct {
 	BlockHash []byte `json:"block_hash"`
 	Copies    int    `json:"copies"`
 	Royalty   int    `json:"royalty"`
-	Green     string `json:"green"`
+	Green     string `json:"green_address"`
 	AppTicket []byte `json:"app_ticket"`
 }
 

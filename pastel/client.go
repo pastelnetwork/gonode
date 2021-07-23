@@ -7,6 +7,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -118,15 +119,9 @@ func (client *client) SendToAddress(ctx context.Context, burnAddress string, amo
 }
 
 func (client *client) SendFromAddress(ctx context.Context, fromAddr string, toAddr string, amount float64) (txID string, error error) {
-	type payment struct {
-		To  string  `json:"address"`
-		Fee float64 `json:"amount"`
-	}
-	p := payment{toAddr, amount}
+	amounts := []Amount{{toAddr, amount}}
 
-	receivers := []payment{p}
-
-	res, err := client.CallWithContext(ctx, "z_sendmany", fromAddr, receivers)
+	res, err := client.CallWithContext(ctx, "z_sendmanywithchangetosender", fromAddr, amounts)
 	if err != nil {
 		return "", errors.Errorf("failed to call z_sendmany: %w", err)
 	}
@@ -140,28 +135,30 @@ func (client *client) SendFromAddress(ctx context.Context, fromAddr string, toAd
 		return "", errors.Errorf("failed to get operationid: %w", err)
 	}
 
-	opstatus := []struct {
-		Error *struct {
-			Code int    `json:"code"`
-			Msg  string `json:"message"`
+	opstatus := []GetOperationStatusResult{}
+	for i := 0; i < 10; i++ {
+		if err := client.callFor(ctx, &opstatus, "z_getoperationstatus", []string{opid}); err != nil {
+			return "", errors.Errorf("failed to call z_getoperationstatus: %w", err)
 		}
-		Result struct {
-			Txid string `json:"txid"`
-		} `json:"resutl"`
-	}{}
-	if err := client.callFor(ctx, &opstatus, "z_getoperationstatus", []string{opid}); err != nil {
-		return "", errors.Errorf("failed to call z_getoperationstatus: %w", err)
+
+		if len(opstatus) == 0 {
+			return "", errors.Errorf("operationstatus is empty")
+		}
+
+		if opstatus[0].Error.Code != 0 {
+			return "", errors.Errorf("operation failed code: %d, msg: %s", opstatus[0].Error.Code, opstatus[0].Error.Msg)
+		}
+
+		if opstatus[0].Status == "executing" {
+			log.WithContext(ctx).Debugf("operation is executing - wait: %d", i)
+			time.Sleep(5 * time.Second)
+		}
 	}
 
-	if len(opstatus) == 0 {
-		return "", errors.Errorf("operationstatus is empty")
+	if opstatus[0].Result.Txid == "" {
+		return "", errors.Errorf("empty txid")
 	}
 
-	if opstatus[0].Error != nil {
-		return "", errors.Errorf("operation failed code: %d, msg: %s", opstatus[0].Error.Code, opstatus[0].Error.Msg)
-	}
-
-	log.WithContext(ctx).Debugf("preburn-txid: %s", opstatus[0].Result.Txid)
 	return opstatus[0].Result.Txid, nil
 }
 

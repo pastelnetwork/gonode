@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"sort"
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -98,24 +97,32 @@ func (task *Task) run(ctx context.Context) error {
 
 	// Retrieve supernodes with highest ranks.
 	topNodes, err := task.pastelTopNodes(ctx)
-
-	// TODO: Remove this when releaset because in localnet there is no need to start 10 gonode
-	// and chase the log
-	sort.SliceStable(topNodes, func(i, j int) bool { return topNodes[i].Address() <= topNodes[j].Address() })
-
 	if err != nil {
 		return err
 	}
+
 	if len(topNodes) < task.config.NumberSuperNodes {
 		task.UpdateStatus(ErrorInsufficientFee)
 		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
+	// TODO: Remove this when releaset because in localnet there is no need to start 10 gonode
+	// and chase the log
+	pinned := []string{"127.0.0.1:4444", "127.0.0.1:4445", "127.0.0.1:4446"}
+	pinnedMn := make([]*node.Node, 0)
+	for i := range topNodes {
+		for j := range pinned {
+			if topNodes[i].Address() == pinned[j] {
+				pinnedMn = append(pinnedMn, topNodes[i])
+			}
+		}
+	}
+	log.WithContext(ctx).Debugf("%v", pinnedMn)
 
 	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
 	var nodes node.List
 	var errs error
-	for primaryRank := range topNodes {
-		nodes, err = task.meshNodes(ctx, topNodes, primaryRank)
+	for primaryRank := range pinnedMn {
+		nodes, err = task.meshNodes(ctx, pinnedMn, primaryRank)
 		if err != nil {
 			if errors.IsContextCanceled(err) {
 				return err
@@ -266,7 +273,7 @@ func (task *Task) run(ctx context.Context) error {
 	// TODO: make this as configuration
 	// TODO: currently this is the calculation is incorrect and mke the burnedAmount too big
 	task.registrationFee = nodes.RegistrationFee()
-	burnedAmount := float64(task.registrationFee) / 100000
+	burnedAmount := float64(task.registrationFee) / 100
 
 	if task.burnTxId, err = task.pastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount); err != nil {
 		return errors.Errorf("failed to burn 10 percent of transaction fee %w", err)
@@ -370,28 +377,29 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	}
 	task.fingerprintSignature = pqSignature
 
+	// TODO: check with the change in legroast
 	// Decode data from the image, to make sure their integrity.
-	decSig := qrsignature.New()
-	copyImage, _ := img.Copy()
-	if err := copyImage.Decode(decSig); err != nil {
-		return err
-	}
+	// decSig := qrsignature.New()
+	// copyImage, _ := img.Copy()
+	// if err := copyImage.Decode(decSig); err != nil {
+	// 	return err
+	// }
 
-	if !bytes.Equal(fingerprint, decSig.Fingerprint()) {
-		return errors.Errorf("fingerprints do not match, original len:%d, decoded len:%d\n", len(fingerprint), len(decSig.Fingerprint()))
-	}
-	if !bytes.Equal(pqSignature, decSig.PostQuantumSignature()) {
-		return errors.Errorf("post quantum signatures do not match, original len:%d, decoded len:%d\n", len(pqSignature), len(decSig.PostQuantumSignature()))
-	}
-	if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
-		return errors.Errorf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
-	}
-	if !bytes.Equal(ed448Signature, decSig.Ed448Signature()) {
-		return errors.Errorf("ed448 signatures do not match, original len:%d, decoded len:%d\n", len(ed448Signature), len(decSig.Ed448Signature()))
-	}
-	if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
-		return errors.Errorf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
-	}
+	// if !bytes.Equal(fingerprint, decSig.Fingerprint()) {
+	// 	return errors.Errorf("fingerprints do not match, original len:%d, decoded len:%d\n", len(fingerprint), len(decSig.Fingerprint()))
+	// }
+	// if !bytes.Equal(pqSignature, decSig.PostQuantumSignature()) {
+	// 	return errors.Errorf("post quantum signatures do not match, original len:%d, decoded len:%d\n", len(pqSignature), len(decSig.PostQuantumSignature()))
+	// }
+	// if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
+	// 	return errors.Errorf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
+	// }
+	// if !bytes.Equal(ed448Signature, decSig.Ed448Signature()) {
+	// 	return errors.Errorf("ed448 signatures do not match, original len:%d, decoded len:%d\n", len(ed448Signature), len(decSig.Ed448Signature()))
+	// }
+	// if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
+	// 	return errors.Errorf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
+	// }
 	return nil
 }
 
@@ -452,7 +460,6 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	}
 
 	meshNodes.Add(primary)
-	meshNodes.SetPrimary(primaryIndex)
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 

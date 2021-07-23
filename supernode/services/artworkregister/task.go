@@ -265,7 +265,7 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 			Ticket: task.Ticket,
 			Signatures: &pastel.TicketSignatures{
 				Artist: map[string][]byte{
-					task.Service.config.PastelID: artistSignature,
+					task.Ticket.AppTicketData.AuthorPastelID: artistSignature,
 				},
 				Mn2: map[string][]byte{
 					task.Service.config.PastelID: artistSignature,
@@ -278,8 +278,8 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 			Passphrase:  task.config.PassPhrase,
 			Key1:        key1,
 			Key2:        key2,
-			Fee:         0, // fake data
-			ImgSizeInMb: 0, // TBD
+			Fee:         10, // fake data
+			ImgSizeInMb: 0,  // TBD
 		}
 
 		task.registrationFee, err = task.pastelClient.GetRegisterArtFee(ctx, getFeeRequest)
@@ -300,7 +300,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, txid, 3, 150*time.Second, 4)
+		confirmationChn := task.waitConfirmation(ctx, txid, 3, 30*time.Second, 20)
 
 		if err := task.matchFingersPrintAndScores(ctx); err != nil {
 			return errors.Errorf("fingerprints or scores don't matched")
@@ -433,11 +433,7 @@ func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, min
 				return
 			case <-time.After(waitTime):
 				log.WithContext(ctx).Debugf("retry: %d", retry)
-				txResult, err := task.pastelClient.GetTransaction(ctx, txid)
-				if err != nil {
-					ch <- errors.Errorf("failed to get transaction %s: %w", txid, err)
-					return
-				}
+				txResult, _ := task.pastelClient.GetTransaction(ctx, txid)
 				if txResult.Confirmations >= minConfirmation {
 					ch <- nil
 					return
