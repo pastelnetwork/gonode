@@ -109,15 +109,19 @@ func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphras
 
 // Verify implements pastel.Client.Verify
 func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+	ok = false
 	var verify struct {
-		Verification bool `json:"verification"`
+		Verification string `json:"verification"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
 	if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID); err != nil {
 		return false, errors.Errorf("failed to verify data: %w", err)
 	}
-	return verify.Verification, nil
+	if verify.Verification == "OK" {
+		ok = true
+	}
+	return ok, nil
 }
 
 // ActTickets implements pastel.Client.ActTickets

@@ -12,27 +12,29 @@ type RegTicket struct {
 
 // RegTicketData is Pastel Registration ticket structure
 type RegTicketData struct {
-	Type          string    `json:"type"`
-	ArtistHeight  int       `json:"artist_height"`
-	Key1          string    `json:"key1"`
-	Key2          string    `json:"key2"`
-	IsGreen       bool      `json:"is_green"`
-	StorageFee    int       `json:"storage_fee"`
-	TotalCopes    int       `json:"total_copes"`
-	Royalty       int       `json:"royalty"`
-	Version       int       `json:"version"`
-	ArtTicket     []byte    `json:"art_ticket"`
-	ArtTicketData ArtTicket `json:"-"`
+	Type          string           `json:"type"`
+	ArtistHeight  int              `json:"artist_height"`
+	Signatures    TicketSignatures `json:"signatures"`
+	Key1          string           `json:"key1"`
+	Key2          string           `json:"key2"`
+	IsGreen       bool             `json:"is_green"`
+	StorageFee    int              `json:"storage_fee"`
+	TotalCopies   int              `json:"total_copies"`
+	Royalty       int              `json:"royalty"`
+	Version       int              `json:"version"`
+	ArtTicket     []byte           `json:"art_ticket"`
+	ArtTicketData ArtTicket        `json:"-"`
 }
 
 // ArtTicket is Pastel Art Ticket
 type ArtTicket struct {
 	Version       int       `json:"version"`
-	Blocknum      int       `json:"blocknum"`
 	Author        []byte    `json:"author"`
-	DataHash      []byte    `json:"data_hash"`
+	BlockNum      int       `json:"blocknum"`
+	BlockHash     []byte    `json:"block_hash"`
 	Copies        int       `json:"copies"`
-	Reserved      []byte    `json:"reserved"`
+	Royalty       int       `json:"royalty"`
+	Green         string    `json:"green_address"`
 	AppTicket     []byte    `json:"app_ticket"`
 	AppTicketData AppTicket `json:"-"`
 }
@@ -42,7 +44,6 @@ type AppTicket struct {
 	AuthorPastelID string `json:"author_pastel_id"`
 	BlockTxID      string `json:"block_tx_id"`
 	BlockNum       int    `json:"block_num"`
-	ImageHash      string `json:"image_hash"`
 
 	ArtistName             string `json:"artist_name"`
 	ArtistWebsite          string `json:"artist_website"`
@@ -54,8 +55,11 @@ type AppTicket struct {
 	ArtworkKeywordSet              string `json:"artwork_keyword_set"`
 	TotalCopies                    int    `json:"total_copies"`
 
-	ThumbnailHash []byte `json:"thumbnail_hash"`
-	DataHash      []byte `json:"data_hash"`
+	PreviewHash    []byte `json:"preview_hash"`
+	Thumbnail1Hash []byte `json:"thumbnail1_hash"`
+	Thumbnail2Hash []byte `json:"thumbnail2_hash"`
+
+	DataHash []byte `json:"data_hash"`
 
 	Fingerprints          []byte `json:"fingerprints"`
 	FingerprintsHash      []byte `json:"fingerprints_hash"`
@@ -65,7 +69,13 @@ type AppTicket struct {
 	NSFWScore     int `json:"nsfw_score"`
 	SeenScore     int `json:"seen_score"`
 
-	RQIDs   []string `json:"rq_ids"`
-	RQCoti  int64    `json:"rq_coti"`
-	RQSsoti int64    `json:"rq_ssoti"`
+	RQIDs []string `json:"rq_ids"`
+	RQOti []byte   `json:"rq_oti"`
+}
+
+type TicketSignatures struct {
+	Artist map[string]string `json:"artist,omitempty"`
+	Mn1    map[string]string `json:"mn1,omitempty"`
+	Mn2    map[string]string `json:"mn2,omitempty"`
+	Mn3    map[string]string `json:"mn3,omitempty"`
 }
