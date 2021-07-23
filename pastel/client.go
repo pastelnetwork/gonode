@@ -295,7 +295,7 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	params := []interface{}{}
 	params = append(params, "tools")
 	params = append(params, "gettotalstoragefee")
-	params = append(params, ticketBlob)
+	params = append(params, string(ticketBlob))
 	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelId)
 	params = append(params, request.Passphrase)
