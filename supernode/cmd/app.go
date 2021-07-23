@@ -108,6 +108,10 @@ func NewApp() *cli.App {
 			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
 		}
 
+		if err := os.MkdirAll(config.RqFilesDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create rq-files-dir %q, %w", config.RqFilesDir, err)
+		}
+
 		return runApp(ctx, config)
 	})
 
