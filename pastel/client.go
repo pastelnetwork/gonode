@@ -355,7 +355,7 @@ func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid strin
 	params = append(params, "act")
 	params = append(params, regTicketTxid)
 	params = append(params, fmt.Sprint(artistHeight))
-	params = append(params, fmt.Sprint(fee))
+	params = append(params, fee)
 	params = append(params, pastelID)
 	params = append(params, passphrase)
 

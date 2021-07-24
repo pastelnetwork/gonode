@@ -3,7 +3,6 @@ package artworkregister
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -256,14 +255,13 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
-	artistSignatureBlob := base64.StdEncoding.EncodeToString(artistSignature)
 
 	// send signed ticket to supernodes to calculate registration fee
 	symbolsIdFilesMap, err := rqSymbolIdFiles.ToMap()
 	if err != nil {
 		return errors.Errorf("failed to create rq symbol identifiers files map %w", err)
 	}
-	if err := nodes.UploadSignedTicket(ctx, buf, []byte(artistSignatureBlob), symbolsIdFilesMap, *encoderParams); err != nil {
+	if err := nodes.UploadSignedTicket(ctx, buf, []byte(artistSignature), symbolsIdFilesMap, *encoderParams); err != nil {
 		return errors.Errorf("failed to upload signed ticket %w", err)
 	}
 
@@ -292,65 +290,63 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("regArtTxId is empty")
 	}
 
+	registerActCtx := context.Background()
+	// Register act ticket for activate previous art ticket
+	actTxid, err := task.RegisterActTicket(registerActCtx)
+	if err != nil {
+		return errors.Errorf("failed to register act ticket %w", err)
+	}
+	log.Debugf("reg-act-txid: %s", actTxid)
+
+	// Wait until actTxid is valid
+	// TODO : consider 10 confirmations & 5 minutes as configurations?
+	err = task.waitTxidValid(registerActCtx, actTxid, 10, 5*time.Minute)
+	if err != nil {
+		return errors.Errorf("failed to  wait act ticket valid %w", err)
+	}
+	log.Debugf("reg-act-tixd is confirmed")
+
+	// Wait for all connections to disconnect.
 	// close the connections
 	for i := range nodes {
 		if err := nodes[i].Connection.Close(); err != nil {
 			return errors.Errorf("failed to close connection to node %s %w", nodes[i].PastelID(), err)
 		}
 	}
-
-	// Register act ticket for activate previous art ticket
-	actTxid, err := task.RegisterActTicket(ctx)
-	if err != nil {
-		return errors.Errorf("failed to register act ticket %w", err)
-	}
-
-	// Wait until actTxid is valid
-	// TODO : consider 10 confirmations & 5 minutes as configurations?
-	err = task.waitTxidValid(ctx, actTxid, 10, 5*time.Minute)
-	if err != nil {
-		return errors.Errorf("failed to  wait act ticket valid %w", err)
-	}
-
-	// Wait for all connections to disconnect.
 	return groupConnClose.Wait()
 }
 
 func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, timeout time.Duration) error {
-	start := time.Now()
 	for {
-		// if timeout == 0 , wait forever
-		if (timeout != 0) && (time.Since(start) > timeout) {
-			return errors.New("timeout expired")
-		}
-
 		select {
 		case <-ctx.Done():
 			return errors.Errorf("context done %w", ctx.Err())
-		default:
-		}
+		case <-time.After(15 * time.Second):
+			checkConfirms := func() error {
+				subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+				defer cancel()
 
-		checkConfirms := func() error {
-			subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
-			defer cancel()
+				result, err := task.pastelClient.GetRawTransactionVerbose1(subCtx, txID)
+				if err != nil {
+					errors.Errorf("failed to get transaction %w", err)
+				}
 
-			result, err := task.pastelClient.GetTransaction(subCtx, txID)
-			if err != nil {
-				errors.Errorf("failed to get transaction %w", err)
+				if result.Confirmations >= expectedConfirms {
+					return nil
+				}
+
+				return errors.Errorf("confirmations not meet %d", result.Confirmations)
 			}
 
-			if result.Confirmations >= expectedConfirms {
+			err := checkConfirms()
+			if err != nil {
+				log.WithContext(ctx).Errorf("check confirmations failed : %v", err)
+			} else {
 				return nil
 			}
-
-			return errors.Errorf("confirmations not meet %d", result.Confirmations)
+		case <-time.After(timeout):
+			return errors.Errorf("timeout")
 		}
-
-		if err := checkConfirms(); err != nil {
-			log.WithContext(ctx).Errorf("check confirmations failed : %v", err)
-			continue
-		}
-		return nil
 	}
 }
 
@@ -416,6 +412,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	if err := primary.Session(ctx, true); err != nil {
 		return nil, err
 	}
+	primary.SetPrimary(true)
 
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
@@ -680,7 +677,6 @@ func (task *Task) RegisterActTicket(ctx context.Context) (string, error) {
 	return task.pastelClient.RegisterActTicket(ctx, task.regArtTxid, task.artistBlockHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
 }
 
-//
 // NewTask returns a new Task instance.
 func NewTask(service *Service, Ticket *Request) *Task {
 	return &Task{

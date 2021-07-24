@@ -3,7 +3,6 @@ package artworkregister
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -352,7 +351,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 						return errors.Errorf("failed to register art %w", err)
 					}
 
-					confirmations := task.waitConfirmation(ctx, artRegTxid, 10, 150*time.Second, 11)
+					confirmations := task.waitConfirmation(ctx, artRegTxid, 10, 30*time.Second, 55)
 					err = <-confirmations
 					if err != nil {
 						return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
@@ -503,23 +502,24 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 		},
 		Signatures: &pastel.TicketSignatures{
 			Artist: map[string]string{
-				task.Ticket.AppTicketData.AuthorPastelID: base64.StdEncoding.EncodeToString(task.artistSignature),
+				task.Ticket.AppTicketData.AuthorPastelID: string(task.artistSignature),
 			},
 			Mn1: map[string]string{
-				task.config.PastelID: base64.StdEncoding.EncodeToString(task.ownSignature),
+				task.config.PastelID: string(task.ownSignature),
 			},
 			Mn2: map[string]string{
-				task.accepted[0].ID: base64.StdEncoding.EncodeToString(task.peersArtTicketSignature[task.accepted[0].ID]),
+				task.accepted[0].ID: string(task.peersArtTicketSignature[task.accepted[0].ID]),
 			},
 			Mn3: map[string]string{
-				task.accepted[1].ID: base64.StdEncoding.EncodeToString(task.peersArtTicketSignature[task.accepted[1].ID]),
+				task.accepted[1].ID: string(task.peersArtTicketSignature[task.accepted[1].ID]),
 			},
 		},
 		Mn1PastelId: task.config.PastelID,
 		Pasphase:    task.config.PassPhrase,
-		Key1:        task.key1,
-		Key2:        task.key2,
-		Fee:         task.registrationFee,
+		// TODO: fix this when how to get key1 and key2 are finalized
+		Key1: task.key1,
+		Key2: task.key2,
+		Fee:  task.registrationFee,
 	}
 
 	artRegTxid, err := task.pastelClient.RegisterArtTicket(ctx, req)
@@ -530,7 +530,7 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 }
 
 func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
-	data, err := task.Artwork.Bytes()
+	img, err := task.Artwork.Bytes()
 	if err != nil {
 		return errors.Errorf("failed to read image data %w", err)
 	}
@@ -544,7 +544,7 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 		RqFilesDir: task.Service.config.RqFilesDir,
 	})
 
-	ecodeResp, err := rqService.Encode(ctx, data)
+	encodeResp, err := rqService.Encode(ctx, img)
 	if err != nil {
 		return errors.Errorf("failed to create raptorq symbol from image %s %w", task.Artwork.Name(), err)
 	}
@@ -555,7 +555,7 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 		}
 	}
 
-	for id, symbol := range ecodeResp.Symbols {
+	for id, symbol := range encodeResp.Symbols {
 		if _, err := task.p2pClient.Store(ctx, symbol); err != nil {
 			return errors.Errorf("failed to store symbolid %s into kamedila %w", id, err)
 		}
@@ -748,6 +748,15 @@ func (task *Task) hashThumbnail(thumbnail thumbnailType, rect *image.Rectangle) 
 	hasher := sha3.New256()
 	if _, err := io.Copy(hasher, previewFile); err != nil {
 		return nil, errors.Errorf("hash failed %w", err)
+	}
+
+	switch thumbnail {
+	case previewThumbnail:
+		task.PreviewThumbnail = f
+	case mediumThumbnail:
+		task.MediumThumbnail = f
+	case smallThumbnail:
+		task.SmallThumbnail = f
 	}
 
 	return hasher.Sum(nil), nil

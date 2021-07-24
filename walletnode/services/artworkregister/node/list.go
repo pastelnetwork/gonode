@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -141,8 +142,11 @@ func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signat
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
+		// TODO: Fix this when method to generate key1 and key2 are finalized
+		key1 := "key1-" + uuid.New().String()
+		key2 := "key2-" + uuid.New().String()
 		group.Go(func() error {
-			fee, err := node.SendSignedTicket(ctx, ticket, signature, "TBD", "TBD", rqids, encoderParams)
+			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, rqids, encoderParams)
 			if err != nil {
 				return err
 			}
@@ -221,14 +225,17 @@ func (nodes *List) SmallThumbnailHash() []byte {
 	return (*nodes)[0].smallThumbnailHash
 }
 
-func (nodes *List) SetPrimary(primaryIndex int) {
-	(*nodes)[primaryIndex].isPrimary = true
+// SetPrimary promotes a supernode to primary role which handle the write to Kamedila
+func (node *Node) SetPrimary(primary bool) {
+	node.isPrimary = primary
 }
 
+// IsPrimary returns true if this node has been promoted to primary in meshNode session
 func (node *Node) IsPrimary() bool {
 	return node.isPrimary
 }
 
+// RegArtTicketId return txid of RegArt ticket
 func (nodes *List) RegArtTicketId() string {
 	for i := range *nodes {
 		if (*nodes)[i].isPrimary {

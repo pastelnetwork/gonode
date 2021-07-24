@@ -161,6 +161,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	// return runServices(ctx, metadb, grpc, p2p, artworkRegister)
-	return runServices(ctx, metadb, grpc, artworkRegister)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
 }
