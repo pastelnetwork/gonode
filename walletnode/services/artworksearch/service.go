@@ -66,7 +66,7 @@ func NewService(pastelClient pastel.Client, p2pClient p2p.Client) *Service {
 
 // FetchThumbnail gets artwork thumbnail
 func (service *Service) FetchThumbnail(ctx context.Context, res *pastel.RegTicket) (data []byte, err error) {
-	hash := res.RegTicketData.ArtTicketData.AppTicketData.ThumbnailHash
+	hash := res.RegTicketData.ArtTicketData.AppTicketData.Thumbnail2Hash
 	key := b58.Encode(hash)
 
 	return service.p2pClient.Retrieve(ctx, key)
