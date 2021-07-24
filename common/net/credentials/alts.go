@@ -40,27 +40,33 @@ func DefaultServerOptions() *ServerOptions {
 // altsTC is the credentials required for authenticating a connection using ALTS.
 // It implements credentials.TransportCredentials interface.
 type altsTC struct {
-	info *credentials.ProtocolInfo
-	side alts.Side
+	info     *credentials.ProtocolInfo
+	side     alts.Side
+	signInfo *alts.SignInfo
+	sign     alts.Sign
+	verify   alts.Verify
 }
 
 // NewClientCreds constructs a client-side ALTS TransportCredentials object.
-func NewClientCreds(_ *ClientOptions) credentials.TransportCredentials {
-	return newALTS(alts.ClientSide)
+func NewClientCreds(sign alts.Sign, verify alts.Verify, info *alts.SignInfo) credentials.TransportCredentials {
+	return newALTS(alts.ClientSide, sign, verify, info)
 }
 
 // NewServerCreds constructs a server-side ALTS TransportCredentials object.
-func NewServerCreds(_ *ServerOptions) credentials.TransportCredentials {
-	return newALTS(alts.ServerSide)
+func NewServerCreds(sign alts.Sign, verify alts.Verify, info *alts.SignInfo) credentials.TransportCredentials {
+	return newALTS(alts.ServerSide, sign, verify, info)
 }
 
-func newALTS(side alts.Side) credentials.TransportCredentials {
+func newALTS(side alts.Side, sign alts.Sign, verify alts.Verify, info *alts.SignInfo) credentials.TransportCredentials {
 	return &altsTC{
 		info: &credentials.ProtocolInfo{
 			SecurityProtocol: "alts",
 			SecurityVersion:  "0.1",
 		},
-		side: side,
+		side:     side,
+		sign:     sign,
+		signInfo: info,
+		verify:   verify,
 	}
 }
 
@@ -77,7 +83,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, _ string, rawConn net.Conn
 		}
 	}()
 
-	secureConn, authInfo, err := chs.ClientHandshake(ctx)
+	secureConn, authInfo, err := chs.ClientHandshake(ctx, g.sign, g.verify, g.signInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -101,7 +107,7 @@ func (g *altsTC) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthIn
 		}
 	}()
 
-	secureConn, authInfo, err := shs.ServerHandshake(ctx)
+	secureConn, authInfo, err := shs.ServerHandshake(ctx, g.sign, g.verify, g.signInfo)
 	if err != nil {
 		return nil, nil, err
 	}
