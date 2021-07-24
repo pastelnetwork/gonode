@@ -6,11 +6,12 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 
+	"github.com/GoKillers/libsodium-go/cryptohash"
 	"github.com/otrv4/ed448"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts/authinfo"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts/conn"
@@ -27,18 +28,23 @@ const (
 	// ED448PriKeySize - private key size of ed448
 	ED448PriKeySize = 144
 	// record protocol name
-	rekeyRecordProtocol = "ALTSRP_GCM_AES128_REKEY"
+	rekeyRecordAesProtocol    = "ALTSRP_GCM_AES128_REKEY"
+	recordxChaChaPolyProtocol = "ALTSRP_XCHACHA20_POLY1305_IETF"
 )
 
 var (
 	altsRecordFuncs = map[string]conn.ALTSRecordFunc{
 		// ALTS handshaker protocols.
-		rekeyRecordProtocol: func(s alts.Side, key []byte) (conn.ALTSRecordCrypto, error) {
+		rekeyRecordAesProtocol: func(s alts.Side, key []byte) (conn.ALTSRecordCrypto, error) {
 			return conn.NewAES128GCMRekey(s, key)
+		},
+		recordxChaChaPolyProtocol: func(s alts.Side, key []byte) (conn.ALTSRecordCrypto, error) {
+			return conn.NewxChaCha20Poly1305IETF(key)
 		},
 	}
 	recordKeyLen = map[string]int{
-		rekeyRecordProtocol: 44,
+		rekeyRecordAesProtocol:    44,
+		recordxChaChaPolyProtocol: 56,
 	}
 	// control number of concurrent created (but not closed) handshakers.
 	mu                   sync.Mutex
@@ -79,14 +85,18 @@ func release() {
 	mu.Unlock()
 }
 
-// key exchange request
-type kexECDHRequest struct {
-	PubKey []byte // the client's public key
+// data exchange request
+type dataExchangeRequest struct {
+	PubKey    []byte // the client's public key
+	PastelID  string
+	Signature []byte
 }
 
-// key exchange response
-type kexECDHResponse struct {
-	PubKey []byte // the server's public key
+// data exchange response
+type dataExchangeResponse struct {
+	PubKey    []byte // the server's public key
+	PastelID  string
+	Signature []byte
 }
 
 // ClientHandshakerOptions contains the client handshaker options that can
@@ -128,7 +138,7 @@ type altsHandshaker struct {
 // NewClientHandshaker creates a ALTS handshaker
 func NewClientHandshaker(_ context.Context, conn net.Conn, opts *ClientHandshakerOptions) (alts.Handshaker, error) {
 	return &altsHandshaker{
-		protocol:   rekeyRecordProtocol,
+		protocol:   recordxChaChaPolyProtocol,
 		conn:       conn,
 		clientOpts: opts,
 		side:       alts.ClientSide,
@@ -138,7 +148,7 @@ func NewClientHandshaker(_ context.Context, conn net.Conn, opts *ClientHandshake
 // NewServerHandshaker creates a ALTS handshaker
 func NewServerHandshaker(_ context.Context, conn net.Conn, opts *ServerHandshakerOptions) (alts.Handshaker, error) {
 	return &altsHandshaker{
-		protocol:   rekeyRecordProtocol,
+		protocol:   recordxChaChaPolyProtocol,
 		conn:       conn,
 		serverOpts: opts,
 		side:       alts.ServerSide,
@@ -195,7 +205,8 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 	return nil
 }
 
-func (s *altsHandshaker) doClientHandshake() error {
+func (s *altsHandshaker) doClientHandshake(ctx context.Context, sign alts.Sign,
+	verify alts.Verify, signInfo *alts.SignInfo) error {
 	curve := ed448.NewCurve()
 	// generate the private and public key for client
 	priv, pub, ok := curve.GenerateKeys()
@@ -203,32 +214,46 @@ func (s *altsHandshaker) doClientHandshake() error {
 		return errors.New("failed to generate keys")
 	}
 
-	request := kexECDHRequest{PubKey: pub[:]}
+	signature, err := sign(ctx, pub[:], signInfo.PastelID, signInfo.PassPhrase)
+	if err != nil {
+		return fmt.Errorf("failed to generate signature: %w", err)
+	}
+
+	request := dataExchangeRequest{
+		PubKey:    pub[:],
+		Signature: signature,
+		PastelID:  signInfo.PastelID,
+	}
 	// encode and write the client's handshake record
 	if err := s.writeHandshake(&request); err != nil {
 		return fmt.Errorf("write handshake: %w", err)
 	}
 
 	// read and decode the client's handshake record
-	var response kexECDHResponse
+	var response dataExchangeResponse
 	if err := s.readHandshake(&response); err != nil {
 		return fmt.Errorf("read handshake: %w", err)
+	}
+
+	if ok, err := verify(ctx, response.PubKey, string(response.Signature), response.PastelID); err != nil || !ok {
+		return fmt.Errorf("failed to verify server public key: %w", err)
 	}
 
 	var serverPubKey [ED448PubKeySize]byte
 	copy(serverPubKey[:], response.PubKey)
 	// compute the secret key for connection
 	secret := curve.ComputeSecret(priv, serverPubKey)
-
+	hash, _ := cryptohash.CryptoHash(secret[:])
 	// update the record key
-	s.key = secret[:]
+	s.key = hash
 
 	return nil
 }
 
 // ClientHandshake starts and completes a client ALTS handshaking. Once
 // done, ClientHandshake returns a secure connection.
-func (s *altsHandshaker) ClientHandshake(_ context.Context) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ClientHandshake(ctx context.Context, sign alts.Sign,
+	verify alts.Verify, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -239,10 +264,10 @@ func (s *altsHandshaker) ClientHandshake(_ context.Context) (net.Conn, credentia
 	}
 
 	// do the client handshake
-	if err := s.doClientHandshake(); err != nil {
+	if err := s.doClientHandshake(ctx, sign, verify, signInfo); err != nil {
 		return nil, nil, fmt.Errorf("do client handshake: %w", err)
 	}
-	log.Print("client handshake is complete")
+	log.WithContext(ctx).Debugf("client handshake is complete")
 
 	// The handshaker returns a 128 bytes key. It should be truncated based
 	// on the returned record protocol.
@@ -259,11 +284,16 @@ func (s *altsHandshaker) ClientHandshake(_ context.Context) (net.Conn, credentia
 	return sc, authinfo.New(), nil
 }
 
-func (s *altsHandshaker) doServerHandshake() error {
+func (s *altsHandshaker) doServerHandshake(ctx context.Context, sign alts.Sign,
+	verify alts.Verify, signInfo *alts.SignInfo) error {
 	// read and decode the client's handshake record
-	var request kexECDHRequest
+	var request dataExchangeRequest
 	if err := s.readHandshake(&request); err != nil {
 		return fmt.Errorf("read handshake: %w", err)
+	}
+
+	if ok, err := verify(ctx, request.PubKey, string(request.Signature), request.PastelID); err != nil || !ok {
+		return fmt.Errorf("failed to verify public key: %w", err)
 	}
 
 	curve := ed448.NewCurve()
@@ -273,14 +303,23 @@ func (s *altsHandshaker) doServerHandshake() error {
 		return errors.New("failed to generate keys")
 	}
 
+	signature, err := sign(ctx, pub[:], signInfo.PastelID, signInfo.PassPhrase)
+	if err != nil {
+		return fmt.Errorf("failed to generate signature: %w", err)
+	}
+
 	var clientPubKey [ED448PubKeySize]byte
 	copy(clientPubKey[:], request.PubKey)
 	// compute the secret key for connection
 	secret := curve.ComputeSecret(priv, clientPubKey)
+	hash, _ := cryptohash.CryptoHash(secret[:])
 	// update the record key
-	s.key = secret[:]
-
-	response := kexECDHResponse{PubKey: pub[:]}
+	s.key = hash
+	response := dataExchangeResponse{
+		PubKey:    pub[:],
+		Signature: signature,
+		PastelID:  signInfo.PastelID,
+	}
 	// encode and write the server's handshake record
 	if err := s.writeHandshake(&response); err != nil {
 		return fmt.Errorf("write handshake: %w", err)
@@ -291,7 +330,8 @@ func (s *altsHandshaker) doServerHandshake() error {
 
 // ServerHandshake starts and completes a server ALTS handshaking for GCP. Once
 // done, ServerHandshake returns a secure connection.
-func (s *altsHandshaker) ServerHandshake(_ context.Context) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ServerHandshake(ctx context.Context, sign alts.Sign,
+	verify alts.Verify, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -302,10 +342,10 @@ func (s *altsHandshaker) ServerHandshake(_ context.Context) (net.Conn, credentia
 	}
 
 	// do the server handshake
-	if err := s.doServerHandshake(); err != nil {
+	if err := s.doServerHandshake(ctx, sign, verify, signInfo); err != nil {
 		return nil, nil, fmt.Errorf("do server handshake: %w", err)
 	}
-	log.Print("server handshake is complete")
+	log.WithContext(ctx).Debugf("server handshake is complete")
 
 	// The handshaker returns a 128 bytes key. It should be truncated based
 	// on the returned record protocol.
