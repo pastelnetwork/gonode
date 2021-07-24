@@ -1,7 +1,6 @@
 //go:generate mockery --name=Client
 //go:generate mockery --name=Connection
 //go:generate mockery --name=RegisterArtwork
-//go:generate mockery --name=DownloadArtwork
 
 package node
 
@@ -23,8 +22,6 @@ type Connection interface {
 	Done() <-chan struct{}
 	// RegisterArtwork returns a new RegisterArtwork stream.
 	RegisterArtwork() RegisterArtwork
-	// DownloadArtwork returns a new DownloadArtwork stream.
-	// DownloadArtwork() DownloadArtwork
 }
 
 // RegisterArtwork represents an interaction stream with supernodes for registering artwork.
@@ -34,11 +31,3 @@ type RegisterArtwork interface {
 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 }
-
-// // DownloadArtwork represents an interaction stream with supernodes for downloading artwork.
-// type DownloadArtwork interface {
-// 	// SessID returns the taskID received from the server during the handshake.
-// 	SessID() (taskID string)
-// 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
-// 	Session(ctx context.Context, nodeID, sessID string) (err error)
-// }
