@@ -302,8 +302,7 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	params = append(params, request.Key1)
 	params = append(params, request.Key2)
 	params = append(params, request.Fee)
-	// params = append(params, request.ImgSizeInMb)
-	params = append(params, 12)
+	params = append(params, request.ImgSizeInMb)
 
 	if err := client.callFor(ctx, &totalStorageFee, "tickets", params...); err != nil {
 		return 0, errors.Errorf("failed to call gettotalstoragefee: %w", err)
