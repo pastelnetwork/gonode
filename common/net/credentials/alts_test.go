@@ -1,13 +1,17 @@
 package credentials
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 	"net"
 	"sync"
 	"testing"
+	"time"
 
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/net/credentials/apis/greeter"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -18,7 +22,49 @@ var (
 )
 
 func TestSecretConnWithGRPC(t *testing.T) {
-	altsTCServer := NewServerCreds(DefaultServerOptions())
+	cSignature := make([]byte, 20)
+	sSignature := make([]byte, 20)
+	rand.Read(cSignature)
+	rand.Read(sSignature)
+	var sPubKey []byte
+	var cPubKey []byte
+	signInfoClient := &alts.SignInfo{
+		PastelID:   "client_pastel_id",
+		PassPhrase: "client_pass_phrase",
+	}
+
+	signInfoServer := &alts.SignInfo{
+		PastelID:   "server_pastel_id",
+		PassPhrase: "server_pass_phrase",
+	}
+
+	cSign := func(ctx context.Context, data []byte, pastelID, passPhrase string) ([]byte, error) {
+		cPubKey = data
+		return cSignature, nil
+	}
+
+	cVerify := func(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+		if bytes.Equal(data, sPubKey) && bytes.Equal([]byte(signature), sSignature) &&
+			pastelID == signInfoServer.PastelID {
+			return true, nil
+		}
+		return false, fmt.Errorf("failed to verify client side")
+	}
+
+	sSign := func(ctx context.Context, data []byte, pastelID, passPhrase string) ([]byte, error) {
+		sPubKey = data
+		return sSignature, nil
+	}
+
+	sVerify := func(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+		if bytes.Equal(data, cPubKey) && bytes.Equal([]byte(signature), cSignature) &&
+			pastelID == signInfoClient.PastelID {
+			return true, nil
+		}
+		return false, fmt.Errorf("failed to verify server side")
+	}
+
+	altsTCServer := NewServerCreds(sSign, sVerify, signInfoServer)
 	s := &greeter.Greeter{}
 	server := grpc.NewServer(grpc.Creds(altsTCServer))
 	greeter.RegisterGreeterServiceServer(server, s)
@@ -36,8 +82,12 @@ func TestSecretConnWithGRPC(t *testing.T) {
 		server.Serve(ln)
 	}()
 
-	altsTCClient := NewClientCreds(DefaultClientOptions())
-	conn, err := grpc.Dial(
+	altsTCClient := NewClientCreds(cSign, cVerify, signInfoClient)
+	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	defer cancel()
+
+	conn, err := grpc.DialContext(
+		ctx,
 		address,
 		grpc.WithBlock(),
 		grpc.WithTransportCredentials(altsTCClient),
