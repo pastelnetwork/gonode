@@ -11,7 +11,7 @@ import (
 
 // Node is the over-the-wire representation of a node
 type Node struct {
-	// id is a 20 byte unique identifier
+	// id is a 32 byte unique identifier
 	ID []byte
 
 	// ip address of the node
