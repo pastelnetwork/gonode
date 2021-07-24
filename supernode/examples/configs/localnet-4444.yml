@@ -20,3 +20,8 @@ metadb:
   http_port: 4041
   raft_port: 4042
   data_dir: "metadb-4444"
+
+dupe-detection:
+  input_dir: "input"
+  output_dir: "output"
+  data_file: "dupe_detection_image_fingerprint_database.sqlite"
