@@ -19,7 +19,7 @@ var statusNames = map[Status]string{
 	StatusTaskStarted:             "Task Started",
 	StatusConnected:               "Connected",
 	StatusDownloaded:              "Downloaded",
-	StatusErrorFilesNotMatch:      "Error Fingerprints Dont Match",
+	StatusErrorFilesNotMatch:      "Error File Don't Match",
 	StatusErrorNotEnoughSuperNode: "Error Not Enough SuperNode",
 	StatusErrorNotEnoughFiles:     "Error Not Enough Downloaded Filed",
 	StatusErrorDownloadFailed:     "Error Download Failed",

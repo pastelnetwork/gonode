@@ -5,10 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -17,7 +13,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -33,9 +28,6 @@ const (
 type Task struct {
 	task.Task
 	*Service
-
-	ResampledArtwork *artwork.File
-	Artwork          *artwork.File
 
 	RQSymbolsDir string
 }
@@ -277,13 +269,6 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 				continue
 			}
 
-			// Write all symbols to files and store in a directory and pass to rqservice for decoding
-			// err = task.writeSymbolsToFiles(symbols)
-			// if err != nil {
-			// 	task.removeAllSymbolFiles()
-			// 	continue
-			// }
-
 			// Restore artwork
 			var decodeInfo *rqnode.Decode
 			encodeInfo := rqnode.Encode{
@@ -301,17 +286,10 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			}
 			task.UpdateStatus(StatusFileDecoded)
 
-			var restoredFile []byte
-			restoredFile, err = ioutil.ReadFile(decodeInfo.Path)
-			if err != nil {
-				err = errors.Errorf("Failed read file: %w. Path: %s", err, decodeInfo.Path)
-				task.UpdateStatus(StatusFileReadingFailed)
-				continue
-			}
 			// log.WithContext(ctx).Debugf("Restored file path: %s", decodeInfo.Path)
 			// log.WithContext(ctx).Debugf("Restored file: %s", string(restoredFile))
 			// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-			fileHash := sha3.Sum256(restoredFile)
+			fileHash := sha3.Sum256(decodeInfo.File)
 
 			if bytes.Compare(fileHash[:], artRegTicket.RegTicketData.ArtTicketData.AppTicketData.DataHash) != 0 {
 				err = errors.New("File mismatched")
@@ -319,7 +297,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 				continue
 			}
 
-			file = restoredFile
+			file = decodeInfo.File
 			break
 		}
 
@@ -378,41 +356,6 @@ func (task Task) getRQSymbolIDs(rqIDsData []byte) (rqIDs []string, err error) {
 	rqIDs = lines[3:]
 
 	return
-}
-
-func (task *Task) writeSymbolsToFiles(symbols map[string][]byte) error {
-	for id, symbol := range symbols {
-		filePath := path.Join(task.RQSymbolsDir, id)
-		f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, os.ModePerm)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		_, err = f.Write(symbol)
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (task *Task) removeAllSymbolFiles() error {
-	d, err := os.Open(task.RQSymbolsDir)
-	if err != nil {
-		return err
-	}
-	defer d.Close()
-	names, err := d.Readdirnames(1)
-	if err != nil && err != io.EOF {
-		return err
-	}
-	for _, name := range names {
-		err = os.RemoveAll(path.Join(task.RQSymbolsDir, name))
-		if err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 func (task *Task) context(ctx context.Context) context.Context {

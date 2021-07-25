@@ -43,12 +43,7 @@ func (service *Service) Run(ctx context.Context) error {
 	return group.Wait()
 }
 
-// Task returns the task of the registration artwork by the given id.
-func (service *Service) Task(id string) *Task {
-	return service.Worker.Task(id).(*Task)
-}
-
-// NewTask runs a new task of the registration artwork and returns its taskID.
+// NewTask runs a new task of the downloading artwork and returns its taskID.
 func (service *Service) NewTask() *Task {
 	task := NewTask(service)
 	service.Worker.AddTask(task)

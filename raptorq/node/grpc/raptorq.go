@@ -290,8 +290,13 @@ func (service *raptorQ) Decode(ctx context.Context, encodeInfo *node.Encode) (*n
 		return nil, errors.Errorf("failed to send request: %w", err)
 	}
 
+	restoredFile, err := readFile(res.Path)
+	if err != nil {
+		return nil, errors.Errorf("failed to read file: %w, Path: %s", err, res.Path)
+	}
+
 	output := &node.Decode{
-		Path: res.Path,
+		File: restoredFile,
 	}
 
 	return output, nil

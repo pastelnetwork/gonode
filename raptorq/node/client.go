@@ -34,7 +34,7 @@ type Encode struct {
 }
 
 type Decode struct {
-	Path string
+	File []byte
 }
 
 // Client represents a base connection interface.
