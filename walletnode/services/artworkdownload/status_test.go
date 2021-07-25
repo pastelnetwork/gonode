@@ -8,7 +8,7 @@ import (
 )
 
 func TestStatusNames(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	testCases := []struct {
 		expectedStatues []Status
@@ -34,7 +34,7 @@ func TestStatusNames(t *testing.T) {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("testCase:%d", i), func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			var expectedNames []string
 			for _, status := range testCase.expectedStatues {
@@ -48,7 +48,7 @@ func TestStatusNames(t *testing.T) {
 }
 
 func TestStatusString(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	testCases := []struct {
 		status        Status
@@ -88,7 +88,7 @@ func TestStatusString(t *testing.T) {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("status:%v/value:%s", testCase.status, testCase.expectedValue), func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			value := testCase.status.String()
 			assert.Equal(t, testCase.expectedValue, value)
@@ -97,7 +97,7 @@ func TestStatusString(t *testing.T) {
 }
 
 func TestStatusIsFinal(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	testCases := []struct {
 		status        Status
@@ -137,7 +137,7 @@ func TestStatusIsFinal(t *testing.T) {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("status:%v/value:%v", testCase.status, testCase.expectedValue), func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			value := testCase.status.IsFinal()
 			assert.Equal(t, testCase.expectedValue, value)
@@ -146,7 +146,7 @@ func TestStatusIsFinal(t *testing.T) {
 }
 
 func TestStatusIsFailure(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	testCases := []struct {
 		status        Status
@@ -186,7 +186,7 @@ func TestStatusIsFailure(t *testing.T) {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("status:%v/value:%v", testCase.status, testCase.expectedValue), func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			value := testCase.status.IsFailure()
 			assert.Equal(t, testCase.expectedValue, value)

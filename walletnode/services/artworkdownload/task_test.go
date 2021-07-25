@@ -21,7 +21,7 @@ func newTestNode(address, pastelID string) *node.Node {
 }
 
 func TestNewTask(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	type args struct {
 		service *Service
@@ -51,7 +51,7 @@ func TestNewTask(t *testing.T) {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			task := NewTask(testCase.args.service, testCase.args.Ticket)
 			assert.Equal(t, testCase.want.Service, task.Service)
@@ -62,7 +62,7 @@ func TestNewTask(t *testing.T) {
 }
 
 func TestTaskPastelTopNodes(t *testing.T) {
-	t.Parallel()
+	// t.Parallel()
 
 	type fields struct {
 		Task   task.Task
@@ -113,7 +113,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 		testCase := testCase
 
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
-			t.Parallel()
+			// t.Parallel()
 
 			//create new mock service
 			pastelClient := pastelMock.NewMockClient(t)
@@ -139,7 +139,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 
 }
 
-func TestRun(t *testing.T) {
+func TestTaskRun(t *testing.T) {
 	// t.Skip()
 
 	// t.Parallel()
@@ -151,6 +151,7 @@ func TestRun(t *testing.T) {
 		masterNodesTopErr  error
 		connectErr         error
 		downloadErr        error
+		closeErr           error
 		signErr            error
 		file               []byte
 		ttxid              string
@@ -175,6 +176,7 @@ func TestRun(t *testing.T) {
 		numDownload        int
 		numDownLoadArtwork int
 		numDone            int
+		numClose           int
 	}{
 		{
 			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
@@ -186,6 +188,7 @@ func TestRun(t *testing.T) {
 				masterNodesTopErr:  nil,
 				connectErr:         nil,
 				downloadErr:        nil,
+				closeErr:           nil,
 				file:               []byte("testfile"),
 				ttxid:              "ttxid",
 				signature:          []byte("sign"),
@@ -205,6 +208,7 @@ func TestRun(t *testing.T) {
 			numDownload:        3,
 			numDownLoadArtwork: 3,
 			numDone:            3,
+			numClose:           3,
 		},
 		{
 			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
@@ -216,6 +220,7 @@ func TestRun(t *testing.T) {
 				masterNodesTopErr:  nil,
 				connectErr:         nil,
 				downloadErr:        nil,
+				closeErr:           nil,
 				file:               []byte("testfile"),
 				ttxid:              "ttxid",
 				signature:          []byte("sign"),
@@ -235,6 +240,7 @@ func TestRun(t *testing.T) {
 			numDownload:        0,
 			numDownLoadArtwork: 0,
 			numDone:            0,
+			numClose:           0,
 		},
 		{
 			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
@@ -246,6 +252,7 @@ func TestRun(t *testing.T) {
 				masterNodesTopErr:  nil,
 				connectErr:         nil,
 				downloadErr:        nil,
+				closeErr:           nil,
 				file:               []byte("testfile"),
 				ttxid:              "ttxid",
 				signature:          []byte("sign"),
@@ -265,6 +272,7 @@ func TestRun(t *testing.T) {
 			numDownload:        0,
 			numDownLoadArtwork: 0,
 			numDone:            0,
+			numClose:           0,
 		},
 		{
 			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
@@ -276,6 +284,7 @@ func TestRun(t *testing.T) {
 				masterNodesTopErr:  fmt.Errorf("failed to get top masternodes"),
 				connectErr:         nil,
 				downloadErr:        nil,
+				closeErr:           nil,
 				file:               []byte("testfile"),
 				ttxid:              "ttxid",
 				signature:          []byte("sign"),
@@ -295,6 +304,7 @@ func TestRun(t *testing.T) {
 			numDownLoadArtwork: 0,
 			numDownload:        0,
 			numDone:            0,
+			numClose:           0,
 		},
 		{
 			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
@@ -306,6 +316,7 @@ func TestRun(t *testing.T) {
 				masterNodesTopErr:  nil,
 				connectErr:         fmt.Errorf("failed to dial supernoded address"),
 				downloadErr:        nil,
+				closeErr:           nil,
 				file:               []byte("testfile"),
 				ttxid:              "ttxid",
 				signature:          []byte("sign"),
@@ -325,6 +336,39 @@ func TestRun(t *testing.T) {
 			numDownLoadArtwork: 0,
 			numDownload:        0,
 			numDone:            0,
+			numClose:           0,
+		},
+		{
+			fields: fields{Ticket: &Ticket{Txid: "txid", PastelID: "pastelid", PastelIDPassphrase: "passphrase"}},
+			args: args{
+				ctx:                context.Background(),
+				returnErr:          nil,
+				ticketOwnershipErr: nil,
+				signErr:            nil,
+				masterNodesTopErr:  nil,
+				connectErr:         nil,
+				downloadErr:        fmt.Errorf("failed to download"),
+				closeErr:           nil,
+				file:               []byte("testfile"),
+				ttxid:              "ttxid",
+				signature:          []byte("sign"),
+				returnMn: pastel.MasterNodes{
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
+					pastel.MasterNode{ExtAddress: "127.0.0.1:4446", ExtKey: "3"},
+				},
+				taskID: "downloadtask",
+			},
+			assertion:          assert.NoError,
+			numUpdateStatus:    3,
+			numTicketOwnership: 1,
+			numSign:            1,
+			numMasterNodesTop:  1,
+			numConnect:         3,
+			numDownLoadArtwork: 3,
+			numDownload:        3,
+			numDone:            0,
+			numClose:           0,
 		},
 	}
 
@@ -346,6 +390,9 @@ func TestRun(t *testing.T) {
 			}
 			if testCase.numDone > 0 {
 				nodeClient.ListenOnDone()
+			}
+			if testCase.numClose > 0 {
+				nodeClient.ListenOnClose(testCase.args.closeErr)
 			}
 
 			pastelClient := pastelMock.NewMockClient(t)
