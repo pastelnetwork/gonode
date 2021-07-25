@@ -73,6 +73,7 @@ type AppTicket struct {
 	RQOti []byte   `json:"rq_oti"`
 }
 
+// TicketSignatures represents pastel Ticket signature
 type TicketSignatures struct {
 	Artist map[string]string `json:"artist,omitempty"`
 	Mn1    map[string]string `json:"mn1,omitempty"`

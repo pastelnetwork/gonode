@@ -1,6 +1,6 @@
 package pastel
 
-// FIXME
+// TradeTicket represents pastel Trade ticket
 type TradeTicket struct {
 	Type      string `json:"type"`      // "trade",
 	PastelID  string `json:"pastelID"`  // PastelID of the buyer

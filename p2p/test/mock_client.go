@@ -35,6 +35,7 @@ func (client *Client) ListenOnRetrieve(data []byte, err error) *Client {
 	return client
 }
 
+// AssertRetrieveCall is Retrieve call assertion
 func (client *Client) AssertRetrieveCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.AssertCalled(client.t, RetrieveMethod, arguments...)

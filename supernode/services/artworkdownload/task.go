@@ -20,8 +20,8 @@ import (
 )
 
 const (
-	MinRQIDsFileLine = 4
-	RQSymbolsDirName = "symbols"
+	minRQIDsFileLine = 4
+	rqSymbolsDirName = "symbols"
 )
 
 // Task is the task of registering new artwork.
@@ -48,14 +48,14 @@ func (task *Task) Run(ctx context.Context) error {
 }
 
 // Download downloads image and return the image.
-func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
+func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
 	var err error
 	if err = task.RequiredStatus(StatusTaskStarted); err != nil {
 		return nil, err
 	}
 
 	// Create directory for storing symbols of Artwork
-	// task.RQSymbolsDir = path.Join(task.Service.config.RqFilesDir, task.ID(), RQSymbolsDirName)
+	// task.RQSymbolsDir = path.Join(task.Service.config.RqFilesDir, task.ID(), rqSymbolsDirName)
 	// err = os.MkdirAll(task.RQSymbolsDir, os.ModePerm)
 	// if err != nil {
 	// 	return nil, err
@@ -348,7 +348,7 @@ func (task Task) getRQSymbolIDs(rqIDsData []byte) (rqIDs []string, err error) {
 	// Third line is PASTELID
 	// All the rest are rq IDs
 
-	if len(lines) < MinRQIDsFileLine {
+	if len(lines) < minRQIDsFileLine {
 		err = errors.Errorf("Invalid symbol identifiers file: %s", string(rqIDsData))
 		return
 	}
