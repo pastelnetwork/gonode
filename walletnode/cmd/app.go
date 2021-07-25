@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
@@ -140,7 +141,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	rqClient := rqgrpc.NewClient()
 
 	// burn address
+	// TODO: this should be hardcoded with format like Ptxxxxxxx
 	config.ArtworkRegister.BurnAddress = config.BurnAddress
+	config.ArtworkRegister.RegArtTxMinConfirmations = config.RegArtTxMinConfirmations
+	config.ArtworkRegister.RegArtTxTimeout = time.Duration(config.RegArtTxTimeout * int(time.Minute))
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient, rqClient)

@@ -301,7 +301,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, txid, 3, 30*time.Second, 20)
+		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), task.config.PreburntTxConfirmationTimeout)
 
 		if err := task.matchFingersPrintAndScores(ctx); err != nil {
 			return errors.Errorf("fingerprints or scores don't matched")
@@ -352,11 +352,11 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 						return errors.Errorf("failed to register art %w", err)
 					}
 
-					confirmations := task.waitConfirmation(ctx, artRegTxid, 10, 30*time.Second, 55)
-					err = <-confirmations
-					if err != nil {
-						return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
-					}
+					// confirmations := task.waitConfirmation(ctx, artRegTxid, 10, 30*time.Second, 55)
+					// err = <-confirmations
+					// if err != nil {
+					// 	return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
+					// }
 
 					if err := task.storeRaptorQSymbols(ctx); err != nil {
 						return errors.Errorf("failed to store raptor symbols %w", err)
@@ -420,7 +420,7 @@ func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, minConfirmation int64, waitTime time.Duration, maxRetry int) <-chan error {
+func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, timeout time.Duration) <-chan error {
 	ch := make(chan error)
 	go func(ctx context.Context, txid string) {
 		defer close(ch)
@@ -432,20 +432,19 @@ func (task *Task) waitConfirmation(ctx context.Context, prebunrtTxid string, min
 				log.WithContext(ctx).Debugf("context done: %w", ctx.Err())
 				ch <- ctx.Err()
 				return
-			case <-time.After(waitTime):
+			case <-time.After(15 * time.Second):
 				log.WithContext(ctx).Debugf("retry: %d", retry)
 				txResult, _ := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
 				if txResult.Confirmations >= minConfirmation {
 					ch <- nil
 					return
 				}
-				if retry++; retry >= maxRetry {
-					ch <- errors.Errorf("timeout when wating for confirmation of transaction %s, confirmations %d ", txid, txResult.Confirmations)
-					return
-				}
+			case <-time.After(timeout):
+				ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
+				return
 			}
 		}
-	}(ctx, prebunrtTxid)
+	}(ctx, txid)
 	return ch
 }
 

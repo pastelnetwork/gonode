@@ -7,6 +7,9 @@ pastel-api:
 node:
   pastel_id: jXaVfh4pbZ578ga44wx4hrYVJsu8oiU2QpRGyfbi4Xkptvd2LYdj1Wyo1MASGvzi5HrtjkipwpqUQMYNaBwA4X
   pass_phrase: "passphrase"
+  preburnt_tx_min_confirmation: 3
+  # Timeout in minutes
+  preburnt_tx_confirmation_timeout: 8 
   server:
     listen_addresses: "0.0.0.0"
     port: 4445

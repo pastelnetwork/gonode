@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -150,6 +151,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// raptorq client
 	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
+	config.ArtworkRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
+	config.ArtworkRegister.PreburntTxConfirmationTimeout = time.Duration(config.PreburntTxConfirmationTimeout * int(time.Minute))
 	rqClient := rqgrpc.NewClient()
 
 	// business logic services

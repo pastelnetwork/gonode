@@ -16,6 +16,9 @@ const (
 	connectTimeout         = time.Second * 2
 
 	thumbnailSize = 224
+
+	regArtTxMinConfirmation = 10
+	regArtTxTimeout         = 10 * time.Minute
 )
 
 // Config contains settings of the registering artwork.
@@ -31,7 +34,9 @@ type Config struct {
 	RqFilesDir            string
 
 	// BurnAddress
-	BurnAddress string
+	BurnAddress              string        `mapstructure:"burn_address" json:"burn_address,omitempty"`
+	RegArtTxMinConfirmations int           `mapstructure:"reg_art_tx_min_confirmations" json:"reg_art_tx_min_confirmations,omitempty"`
+	RegArtTxTimeout          time.Duration `mapstructure:"reg_art_tx_timeout" json:"reg_art_tx_timeout,omitempty"`
 
 	// internal settings
 	connectToNextNodeDelay time.Duration
@@ -48,9 +53,11 @@ func NewConfig() *Config {
 
 		NumberRQIDSFiles: defaultNumberRQIDSFiles,
 
-		connectToNextNodeDelay: connectToNextNodeDelay,
-		acceptNodesTimeout:     acceptNodesTimeout,
-		connectTimeout:         connectTimeout,
+		RegArtTxMinConfirmations: regArtTxMinConfirmation,
+		RegArtTxTimeout:          regArtTxTimeout,
+		connectToNextNodeDelay:   connectToNextNodeDelay,
+		acceptNodesTimeout:       acceptNodesTimeout,
+		connectTimeout:           connectTimeout,
 
 		thumbnailSize: thumbnailSize,
 	}
