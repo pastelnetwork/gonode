@@ -47,24 +47,24 @@ func doHTTP(scheme, host string, timeout int, debug bool) *cli.Client {
 	)
 }
 
-func registerTicket(client *cli.Client, imageId string) (string, error) {
+func registerTicket(client *cli.Client, artistId string, passphrase string, spendable_address string, imageId string) (string, error) {
 	endpoint := client.Register()
 	payloadJson := fmt.Sprintf(
 		`{
 		  "artist_name": "Leonardo da Vinci",
-		  "artist_pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
-		  "artist_pastelid_passphrase": "passphrase",
+		  "artist_pastelid": "%s",
+		  "artist_pastelid_passphrase": "%s",
 		  "artist_website_url": "https://www.leonardodavinci.net",
 		  "description": "The Mona Lisa is an oil painting by Italian artist, inventor, and writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait of a seated woman set against an imaginary landscape.",
 		  "green": false,
 		  "image_id": "%s",
 		  "issued_copies": 1,
 		  "keywords": "Renaissance, sfumato, portrait",
-		  "maximum_fee": 100,
+		  "maximum_fee": 500,
 		  "name": "Mona Lisa",
 		  "royalty": 12,
 		  "series_name": "Famous artist",
-		  "spendable_address": "PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j",
+		  "spendable_address": "%s",
 		  "thumbnail_coordinate": {
 		    "bottom_right_x": 640,
 		    "bottom_right_y": 480,
@@ -72,7 +72,7 @@ func registerTicket(client *cli.Client, imageId string) (string, error) {
 		    "top_left_y": 0
 		  },
 		  "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"
-		}`, imageId)
+		}`, artistId, passphrase, imageId, spendable_address)
 	payload, err := cli.BuildRegisterPayload(payloadJson)
 	if err != nil {
 		return "", errors.Wrap(err, "error creating payload")
@@ -129,18 +129,21 @@ func watchStatus(client *cli.Client, taskId string) error {
 
 func main() {
 	var (
-		imageId = flag.String("imageid", "", "image id")
+		imageId    = flag.String("imageid", "", "image id")
+		artistId   = flag.String("artist", "", "artist's pastelid")
+		passphrase = flag.String("passphrase", "", "passphrase associated with artist pastelid")
+		addr       = flag.String("addr", "", "spendable addr")
 	)
-	flag.Usage = usage
+	//flag.Usage = usage
 	flag.Parse()
-	if len(*imageId) == 0 {
+	if len(*imageId) == 0 || len(*artistId) == 0 || len(*passphrase) == 0 || len(*addr) == 0 {
 		usage()
 		return
 	}
 	client := doHTTP("http", "localhost:8080", 100, true)
 
 	fmt.Println("****************Register Ticket*************************")
-	taskId, err := registerTicket(client, *imageId)
+	taskId, err := registerTicket(client, *artistId, *passphrase, *addr, *imageId)
 	if err != nil {
 		fmt.Println(fmt.Errorf("error register ticket: %v", err))
 		os.Exit(-1)
@@ -164,17 +167,20 @@ func prettyPrint(s interface{}) {
 func usage() {
 	fmt.Fprintf(os.Stderr, `%s is a command line client to simulate ui
 
-Usage:
-    %s [-imageid IMAGEID]
+ Usage:
+     %s [-imageid IMAGEID]
 
-    -imageid IMAGEID:  image id
+     -imageid    string:  image id
+     -artist     string:  artist's pastelid 
+     -passphrase string:  passphrase associated with artist's pastelid 
+     -addr       string:  address associated with artist's pastelid 
 
-Commands:
-%s
-Additional help:
-   None
+ Commands:
+ %s
+ Additional help:
+    None
 
-Example:
-%s -imageid 12345678
-`, os.Args[0], os.Args[0], os.Args[0], os.Args[0])
+ Example:
+ %s -imageid 12345678 -artist jXXXX -passphrase 1234 -addr tXXX
+ `, os.Args[0], os.Args[0], os.Args[0], os.Args[0])
 }
