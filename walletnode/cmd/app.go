@@ -145,6 +145,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.ArtworkRegister.BurnAddress = config.BurnAddress
 	config.ArtworkRegister.RegArtTxMinConfirmations = config.RegArtTxMinConfirmations
 	config.ArtworkRegister.RegArtTxTimeout = time.Duration(config.RegArtTxTimeout * int(time.Minute))
+	config.ArtworkRegister.RegActTxMinConfirmations = config.RegActTxMinConfirmations
+	config.ArtworkRegister.RegActTxTimeout = time.Duration(config.RegActTxTimeout * int(time.Minute))
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient, rqClient)

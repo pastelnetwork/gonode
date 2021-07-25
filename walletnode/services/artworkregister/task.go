@@ -288,14 +288,18 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("failed to send txId of preburnt fee transaction %w", err)
 	}
 
+	newCtx := context.Background()
 	task.regArtTxid = nodes.RegArtTicketId()
 	if task.regArtTxid == "" {
 		return errors.Errorf("regArtTxId is empty")
 	}
+	log.Debugf("reg-att-txid: %s", task.regArtTxid)
+	if err := task.waitTxidValid(newCtx, task.regArtTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout); err != nil {
+		return errors.Errorf("reg-art transaction(%s) is not valid: %w", task.regArtTxid, err)
+	}
 
-	registerActCtx := context.Background()
 	// Register act ticket for activate previous art ticket
-	actTxid, err := task.RegisterActTicket(registerActCtx)
+	actTxid, err := task.RegisterActTicket(newCtx)
 	if err != nil {
 		return errors.Errorf("failed to register act ticket %w", err)
 	}
@@ -303,7 +307,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// Wait until actTxid is valid
 	// TODO : consider 10 confirmations & 5 minutes as configurations?
-	err = task.waitTxidValid(registerActCtx, actTxid, 10, 5*time.Minute)
+	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), task.config.RegActTxTimeout)
 	if err != nil {
 		return errors.Errorf("failed to  wait act ticket valid %w", err)
 	}

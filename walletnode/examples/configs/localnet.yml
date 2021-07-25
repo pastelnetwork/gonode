@@ -8,9 +8,12 @@ node:
   api:
     hostname: "localhost"
     port: 8080
-  reg_art_tx_min_confirmation: 10
+  reg_art_tx_min_confirmations: 10
   # Timeout waiting for 
-  reg_art_tx_confirmation_timeout: 30
+  reg_art_tx_timeout: 26
+  reg_act_tx_min_confirmations: 5 
+  # Timeout waiting for 
+  reg_act_tx_timeout: 13
   burn_address: tPce2T47TFPcHPj3sKiKdFLhQpmzJ1tkzjr 
 
 raptorq:
