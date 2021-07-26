@@ -37,7 +37,7 @@ func (nodes *List) DisconnectInactive() {
 }
 
 // WaitConnClose waits for the connection closing by any supernodes.
-func (nodes *List) WaitConnClose(ctx context.Context) error {
+func (nodes *List) WaitConnClose(ctx context.Context, done <-chan struct{}) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	for _, node := range *nodes {
@@ -48,6 +48,8 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 				return nil
 			case <-node.Connection.Done():
 				return errors.Errorf("%q unexpectedly closed the connection", node)
+			case <-done:
+				return nil
 			}
 		})
 	}
