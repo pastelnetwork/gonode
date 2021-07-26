@@ -153,10 +153,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-		// ----Userdata Services----
-		userdataNodeClient := userdatagrpc.NewClient()
-		userdataProcess := userdataprocess.NewService(pastelClient, userdataNodeClient)
+	// ----Userdata Services----
+	userdataNodeClient := mdlclient.New()
+	userdataProcess := userdataprocess.NewService(pastelClient, pastelClient, userdataNodeClient)
+
+	// Userdata grpc server
+	mdlgrpc := mdlserver.New(config.Server,
+		mdlwalletnode.NewProcessUserdata(userdataProcess),
+		mdlsupernode.NewProcessUserdata(userdataProcess),
+	)
 	
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, mdlgrpc, userdataProcess )
 }

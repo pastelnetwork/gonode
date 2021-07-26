@@ -144,5 +144,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, server, artworkRegister, artworkSearch)
+	return runServices(ctx, server, artworkRegister, artworkSearch, userdataProcess)
 }
