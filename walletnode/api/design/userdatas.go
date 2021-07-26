@@ -42,6 +42,25 @@ var _ = Service("userdatas", func() {
 			Response(StatusCreated)
 		})
 	})
+
+	Method("userdataGet", func() {
+		Description("Gets the Userdata detail")
+		Meta("swagger:summary", "Returns the detail of Userdata")
+
+		Payload(UserdataGetParams)
+		Result(UserSpecifiedData)
+
+		HTTP(func() {
+			GET("/{pastelid}")
+			Params(func() {
+				Param("pastelid")
+			})
+			Response("BadRequest", StatusBadRequest)
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
 })
 // ProcessTaskPayload represents a payload for returning task.
 var ProcessTaskPayload = Type("ProcessTaskPayload", func() {
@@ -219,3 +238,15 @@ var UserImageUploadPayload = Type("UserImageUploadPayload", func() {
 	})
 	Required("content")
 })
+
+// UserdataGet are request params to UserdataGet Params
+var UserdataGetParams = func() {
+	Attribute("pastelid", String, func() {
+		Description("pastelid")
+		MinLength(64)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
+
+	Required("pastelid")
+}
