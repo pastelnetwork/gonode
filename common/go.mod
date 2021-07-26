@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/DataDog/zstd v1.4.8
-	github.com/GoKillers/libsodium-go v0.0.0-20171022220152-dd733721c3cb // indirect
+	github.com/GoKillers/libsodium-go v0.0.0-20171022220152-dd733721c3cb
 	github.com/cloudflare/circl v1.0.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
