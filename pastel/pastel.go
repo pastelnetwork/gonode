@@ -27,12 +27,13 @@ type Client interface {
 	IDTickets(ctx context.Context, idType IDTicketType) (IDTickets, error)
 
 	// Sign signs data by the given pastelID and passphrase, if successful returns signature.
-	// Command `pastelid sign "text" "PastelID" "passphrase"`.
-	Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error)
+	// Command `pastelid sign "text" "PastelID" "passphrase"` "algorithm"
+	// Algorithm is ed448[default] or legroast
+	Sign(ctx context.Context, data []byte, pastelID, passphrase string, algorithm string) (signature []byte, err error)
 
 	// Verify verifies signed data by the given its signature and pastelID, if successful returns true.
 	// Command `pastelid verify "text" "signature" "PastelID"`.
-	Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error)
+	Verify(ctx context.Context, data []byte, signature, pastelID string, algorithm string) (ok bool, err error)
 
 	// Do an transaction by the given address to sent to and ammount to send, if successful return id of transaction.
 	// input account is default account
@@ -98,4 +99,8 @@ type Client interface {
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
 	// Return txid of ArtActivateTicket
 	RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error)
+
+	// FindTicketById returns the register ticket of pastelid
+	// Command `tickets find id <pastelid>`
+	FindTicketById(ctx context.Context, pastelid string) (*IDTicket, error)
 }

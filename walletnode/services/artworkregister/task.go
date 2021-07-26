@@ -222,27 +222,33 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
 	// Sign fingerprint
 	ed448PubKey := []byte(task.Request.ArtistPastelID)
-	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
 	if err != nil {
 		return errors.Errorf("sign fingerprint with pastelId and pastelPassphrase failed %w", err)
 	}
 
 	// TODO: Should be replaced with real data from the Pastel API.
-	pqPubKey := []byte("pqPubKey")
-	pqSignature := []byte("pqSignature")
+	ticket, err := task.pastelClient.FindTicketById(ctx, task.Request.ArtistPastelID)
+	if err != nil {
+		return errors.Errorf("faild to find register tick of artist pastel id:%s :%w", task.Request.ArtistPastelID, err)
+	}
+	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "legroast")
+	if err != nil {
+		return errors.Errorf("failed to sign fingerprint with legroats: %w", err)
+	}
 
 	// Encode data to the image.
 	encSig := qrsignature.New(
 		qrsignature.Fingerprint(fingerprint),
 		qrsignature.PostQuantumSignature(pqSignature),
-		qrsignature.PostQuantumPubKey(pqPubKey),
+		qrsignature.PostQuantumPubKey([]byte(ticket.Signature)),
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
 	if err := img.Encode(encSig); err != nil {
 		return err
 	}
-	task.fingerprintSignature = pqSignature
+	task.fingerprintSignature = ed448Signature
 
 	// TODO: check with the change in legroast
 	// Decode data from the image, to make sure their integrity.
@@ -454,7 +460,7 @@ func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawS
 		return nil, errors.Errorf("failed to marshal identifiers file %w", err)
 	}
 
-	symbolIdFile.Signature, err = task.pastelClient.Sign(ctx, js, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	symbolIdFile.Signature, err = task.pastelClient.Sign(ctx, js, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
 	if err != nil {
 		return nil, errors.Errorf("failed to sign identifier file %w", err)
 	}
@@ -549,7 +555,7 @@ func (task *Task) signTicket(ctx context.Context) error {
 		return errors.Errorf("failed to encode ticket %w", err)
 	}
 
-	task.artistSignature, err = task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	task.artistSignature, err = task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}

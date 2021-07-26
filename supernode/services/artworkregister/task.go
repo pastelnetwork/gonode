@@ -449,7 +449,7 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 	if err != nil {
 		return errors.Errorf("failed to serialize art ticket %w", err)
 	}
-	task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase)
+	task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase, "ed448")
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
@@ -470,7 +470,7 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 		return errors.Errorf("failed to encoded art ticket %w", err)
 	}
 	for nodeID, signature := range task.peersArtTicketSignature {
-		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID); err != nil {
+		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID, "ed448"); err != nil {
 			return errors.Errorf("failed to verify signature %s of node %s", signature, nodeID)
 		} else {
 			if !ok {

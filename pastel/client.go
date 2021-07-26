@@ -78,29 +78,49 @@ func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTic
 	return tickets, nil
 }
 
+func (client *client) FindTicketById(ctx context.Context, pastelId string) (*IDTicket, error) {
+	ticket := IDTicket{}
+
+	if err := client.callFor(ctx, &ticket, "tickets", "find", "id", pastelId); err != nil {
+		return nil, errors.Errorf("failed to get id tickets: %w", err)
+	}
+	return &ticket, nil
+}
+
 // Sign implements pastel.Client.Sign
-func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error) {
+func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string, algorithm string) (signature []byte, err error) {
 	var sign struct {
 		Signature string `json:"signature"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
-	if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase); err != nil {
-		return nil, errors.Errorf("failed to sign data: %w", err)
+	switch algorithm {
+	case "ed448", "legroast":
+		if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase, algorithm); err != nil {
+			return nil, errors.Errorf("failed to sign data: %w", err)
+		}
+	default:
+		return nil, errors.Errorf("unsupported algorithm %s", algorithm)
 	}
 	return []byte(sign.Signature), nil
 }
 
 // Verify implements pastel.Client.Verify
-func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string, algorithm string) (ok bool, err error) {
 	var verify struct {
 		Verification string `json:"verification"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
-	if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID); err != nil {
-		return false, errors.Errorf("failed to verify data: %w", err)
+	switch algorithm {
+	case "ed448", "legroast":
+		if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID, algorithm); err != nil {
+			return false, errors.Errorf("failed to verify data: %w", err)
+		}
+	default:
+		return false, errors.Errorf("unsupported algoritm %s", algorithm)
 	}
+
 	return verify.Verification == "OK", nil
 }
 
