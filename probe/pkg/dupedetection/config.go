@@ -3,9 +3,12 @@ package dupedetection
 import "path/filepath"
 
 const (
-	DefaultInputDir  = "input"
+	// DefaultInputDir that dd-service monitors for the new file to generate fingerprints
+	DefaultInputDir = "input"
+	// DefaultOutputDir that dd-service uses to put new fingerprints
 	DefaultOutputDir = "output"
-	DefaultDataFile  = "dupe_detection_image_fingerprint_database.sqlite"
+	// DefaultDataFile is path to the SQLite database used by dd-service
+	DefaultDataFile = "dupe_detection_image_fingerprint_database.sqlite"
 )
 
 // Config contains settings of the dupe detection service
