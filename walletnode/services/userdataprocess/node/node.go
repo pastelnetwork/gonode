@@ -4,9 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/walletnode/node"
-	"github.com/pastelnetwork/gonode/service/userdata"
+	"github.com/pastelnetwork/gonode/metadb/network/walletnode/node"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
 // Node represent supernode connection.
@@ -17,7 +16,8 @@ type Node struct {
 	activated     bool
 	address  string
 	pastelID string
-	result *UserdataProcessResult
+	Result *userdata.UserdataProcessResult
+	isPrimary     bool
 }
 
 func (node *Node) String() string {
@@ -46,7 +46,6 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
 	node.ProcessUserdata = conn.ProcessUserdata()
 	return nil
 }
-
 
 // NewNode returns a new Node instance.
 func NewNode(client node.Client, address, pastelID string) *Node {

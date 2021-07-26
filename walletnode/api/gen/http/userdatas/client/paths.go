@@ -7,7 +7,16 @@
 
 package client
 
+import (
+	"fmt"
+)
+
 // ProcessUserdataUserdatasPath returns the URL path to the userdatas service processUserdata HTTP endpoint.
 func ProcessUserdataUserdatasPath() string {
 	return "/userdatas/update"
+}
+
+// UserdataGetUserdatasPath returns the URL path to the userdatas service userdataGet HTTP endpoint.
+func UserdataGetUserdatasPath(pastelid string) string {
+	return fmt.Sprintf("/userdatas/%v", pastelid)
 }

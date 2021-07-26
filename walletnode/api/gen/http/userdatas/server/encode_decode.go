@@ -10,6 +10,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"unicode/utf8"
 
 	userdatas "github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 	goahttp "goa.design/goa/v3/http"
@@ -99,6 +100,96 @@ func EncodeProcessUserdataError(encoder func(context.Context, http.ResponseWrite
 	}
 }
 
+// EncodeUserdataGetResponse returns an encoder for responses returned by the
+// userdatas userdataGet endpoint.
+func EncodeUserdataGetResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(*userdatas.UserSpecifiedData)
+		enc := encoder(ctx, w)
+		body := NewUserdataGetResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeUserdataGetRequest returns a decoder for requests sent to the
+// userdatas userdataGet endpoint.
+func DecodeUserdataGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			pastelid string
+			err      error
+
+			params = mux.Vars(r)
+		)
+		pastelid = params["pastelid"]
+		if utf8.RuneCountInString(pastelid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 64, true))
+		}
+		if utf8.RuneCountInString(pastelid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+		payload := NewUserdataGetPayload(pastelid)
+
+		return payload, nil
+	}
+}
+
+// EncodeUserdataGetError returns an encoder for errors returned by the
+// userdataGet userdatas endpoint.
+func EncodeUserdataGetError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewUserdataGetBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", "BadRequest")
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "NotFound":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewUserdataGetNotFoundResponseBody(res)
+			}
+			w.Header().Set("goa-error", "NotFound")
+			w.WriteHeader(http.StatusNotFound)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewUserdataGetInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // unmarshalUserImageUploadPayloadRequestBodyToUserdatasUserImageUploadPayload
 // builds a value of type *userdatas.UserImageUploadPayload from a value of
 // type *UserImageUploadPayloadRequestBody.
@@ -107,7 +198,22 @@ func unmarshalUserImageUploadPayloadRequestBodyToUserdatasUserImageUploadPayload
 		return nil
 	}
 	res := &userdatas.UserImageUploadPayload{
-		Bytes:    v.Bytes,
+		Content:  v.Content,
+		Filename: v.Filename,
+	}
+
+	return res
+}
+
+// marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadResponseBody
+// builds a value of type *UserImageUploadPayloadResponseBody from a value of
+// type *userdatas.UserImageUploadPayload.
+func marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadResponseBody(v *userdatas.UserImageUploadPayload) *UserImageUploadPayloadResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &UserImageUploadPayloadResponseBody{
+		Content:  v.Content,
 		Filename: v.Filename,
 	}
 

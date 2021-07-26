@@ -16,12 +16,14 @@ import (
 // Client is the "userdatas" service client.
 type Client struct {
 	ProcessUserdataEndpoint goa.Endpoint
+	UserdataGetEndpoint     goa.Endpoint
 }
 
 // NewClient initializes a "userdatas" service client given the endpoints.
-func NewClient(processUserdata goa.Endpoint) *Client {
+func NewClient(processUserdata, userdataGet goa.Endpoint) *Client {
 	return &Client{
 		ProcessUserdataEndpoint: processUserdata,
+		UserdataGetEndpoint:     userdataGet,
 	}
 }
 
@@ -34,4 +36,14 @@ func (c *Client) ProcessUserdata(ctx context.Context, p *ProcessUserdataPayload)
 		return
 	}
 	return ires.(*UserdataProcessResult), nil
+}
+
+// UserdataGet calls the "userdataGet" endpoint of the "userdatas" service.
+func (c *Client) UserdataGet(ctx context.Context, p *UserdataGetPayload) (res *UserSpecifiedData, err error) {
+	var ires interface{}
+	ires, err = c.UserdataGetEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*UserSpecifiedData), nil
 }

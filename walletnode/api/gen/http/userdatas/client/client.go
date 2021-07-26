@@ -23,6 +23,10 @@ type Client struct {
 	// processUserdata endpoint.
 	ProcessUserdataDoer goahttp.Doer
 
+	// UserdataGet Doer is the HTTP client used to make requests to the userdataGet
+	// endpoint.
+	UserdataGetDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -51,6 +55,7 @@ func NewClient(
 ) *Client {
 	return &Client{
 		ProcessUserdataDoer: doer,
+		UserdataGetDoer:     doer,
 		CORSDoer:            doer,
 		RestoreResponseBody: restoreBody,
 		scheme:              scheme,
@@ -79,6 +84,25 @@ func (c *Client) ProcessUserdata(userdatasProcessUserdataEncoderFn UserdatasProc
 		resp, err := c.ProcessUserdataDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("userdatas", "processUserdata", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UserdataGet returns an endpoint that makes HTTP requests to the userdatas
+// service userdataGet server.
+func (c *Client) UserdataGet() goa.Endpoint {
+	var (
+		decodeResponse = DecodeUserdataGetResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildUserdataGetRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UserdataGetDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userdatas", "userdataGet", err)
 		}
 		return decodeResponse(resp)
 	}

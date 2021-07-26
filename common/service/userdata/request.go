@@ -29,7 +29,7 @@ type UserdataProcessRequest struct {
 	// Passphrase of the artist's PastelID
 	ArtistPastelIDPassphrase string
 	// Epoch Timestamp of the request (generated, not sending by UI)
-	Timestamp int
+	Timestamp int32
 	// Previous block hash in the chain (generated, not sending by UI)
 	PreviousBlockHash string
 }
@@ -56,7 +56,7 @@ type UserImageUpload struct {
 // processUserdata method.
 type UserdataProcessResult struct {
 	// Result of the request is success or not
-	ResponseCode ResponseCode
+	ResponseCode int32
 	// The detail of why result is success/fail, depend on response_code
 	Detail string
 	// Error detail on realname

@@ -30,7 +30,7 @@ var _ = Service("userdatas", func() {
 		Payload(func() {
 			Extend(UserSpecifiedData)
 		})
-		StreamingResult(UserdataProcessResult)
+		Result(UserdataProcessResult)
 
 		HTTP(func() {
 			POST("/update")

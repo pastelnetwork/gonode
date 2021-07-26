@@ -2,7 +2,7 @@ package grpc
 
 import (
 	commongrpc "github.com/pastelnetwork/gonode/common/net/grpc"
-	"github.com/pastelnetwork/gonode/raptorq/node"
+	"github.com/pastelnetwork/gonode/metadb/network/walletnode/node"
 	"google.golang.org/grpc"
 )
 
@@ -13,7 +13,7 @@ type clientConn struct {
 	id string
 }
 
-func (conn *clientConn) UserdataProcess() node.UserdataProcess {
+func (conn *clientConn) UserdataProcess() node.ProcessUserdata {
 	return newProcessUserdata(conn)
 }
 

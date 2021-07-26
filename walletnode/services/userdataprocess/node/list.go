@@ -1,12 +1,10 @@
 package node
 
 import (
-	"bytes"
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
@@ -65,17 +63,25 @@ func (nodes *List) FindByPastelID(id string) *Node {
 }
 
 // SendUserdata sends the userdata to supernodes for verification and store in MDL
-func (nodes *List) SendUserdata(ctx context.Context, req *UserdataProcessRequestSigned) error {
+func (nodes *List) SendUserdata(ctx context.Context, req *userdata.UserdataProcessRequestSigned) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
 			res, err := node.SendUserdata(ctx, req)
-			node.result = &res
+			node.Result = res
 			return err
 		})
 	}
 	return group.Wait()
 }
 
+// SetPrimary promotes a supernode to primary role \
+func (node *Node) SetPrimary(primary bool) {
+	node.isPrimary = primary
+}
 
+// IsPrimary returns true if this node has been promoted to primary in meshNode session
+func (node *Node) IsPrimary() bool {
+	return node.isPrimary
+}

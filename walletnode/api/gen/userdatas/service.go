@@ -17,6 +17,8 @@ import (
 type Service interface {
 	// Runs a user data update process
 	ProcessUserdata(context.Context, *ProcessUserdataPayload) (res *UserdataProcessResult, err error)
+	// Gets the Userdata detail
+	UserdataGet(context.Context, *UserdataGetPayload) (res *UserSpecifiedData, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -27,7 +29,7 @@ const ServiceName = "userdatas"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [1]string{"processUserdata"}
+var MethodNames = [2]string{"processUserdata", "userdataGet"}
 
 // ProcessUserdataPayload is the payload type of the userdatas service
 // processUserdata method.
@@ -81,16 +83,52 @@ type UserdataProcessResult struct {
 	Categories *string
 	// Error detail on biography
 	Biography *string
-	// Error detail on biography
+	// Error detail on avatar
 	AvatarImage *string
-	// Error detail on biography
+	// Error detail on cover photo
 	CoverPhoto *string
+}
+
+// UserdataGetPayload is the payload type of the userdatas service userdataGet
+// method.
+type UserdataGetPayload struct {
+	// pastelid
+	Pastelid string
+}
+
+// UserSpecifiedData is the result type of the userdatas service userdataGet
+// method.
+type UserSpecifiedData struct {
+	// Real name of the user
+	Realname *string
+	// Facebook link of the user
+	FacebookLink *string
+	// Twitter link of the user
+	TwitterLink *string
+	// Native currency of user in ISO 4217 Alphabetic Code
+	NativeCurrency *string
+	// Location of the user
+	Location *string
+	// Primary language of the user
+	PrimaryLanguage *string
+	// The categories of user's work
+	Categories *string
+	// Biography of the user
+	Biography *string
+	// Avatar image of the user
+	AvatarImage *UserImageUploadPayload
+	// Cover photo of the user
+	CoverPhoto *UserImageUploadPayload
+	// Artist's PastelID
+	ArtistPastelID string
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string
 }
 
 // User image upload payload
 type UserImageUploadPayload struct {
 	// File to upload
-	Bytes []byte
+	Content []byte
 	// File name of the user image
 	Filename *string
 }

@@ -3,21 +3,24 @@ package userdataprocess
 import (
 	"context"
 	"fmt"
-	"sync"
-
-	"sort"
+	"encoding/json"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess/node"
 )
 
 // Task is the task of searching for artwork.
 type Task struct {
 	task.Task
 	*Service
+
+	// information of nodes
+	nodes node.List
 
 	resultChan chan *userdata.UserdataProcessResult
 	err        error
@@ -97,6 +100,9 @@ func (task *Task) run(ctx context.Context) error {
 
 	// Get the previous block hash
 	// Get block num
+	
+	// TODO: Unblock this part after merge
+	/*
 	blockNum, err := task.pastelClient.GetBlockCount(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to get block num: %w", err)
@@ -106,36 +112,39 @@ func (task *Task) run(ctx context.Context) error {
 	blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
 	if err != nil {
 		return nil, errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
-	}
+	}*/
 
 	// Decode hash string to byte
-	task.request.PreviousBlockHash  = blockInfo.Hash
+	task.request.PreviousBlockHash  = "" /*blockInfo.Hash*/
 	if err != nil {
-		return nil, errors.Errorf("failed to convert hash string %s to bytes: %w", blockInfo.Hash, err)
+		return errors.Errorf("failed to convert hash string %s to bytes: %w", ""/*blockInfo.Hash*/, err)
 	}
 
-	// Get the value of task.Request.ArtistPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
-	passphrase := task.Request.ArtistPastelIDPassphrase
-	task.Request.ArtistPastelIDPassphrase = ""
+	// Get the value of task.request.ArtistPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
+	passphrase := task.request.ArtistPastelIDPassphrase
+	task.request.ArtistPastelIDPassphrase = ""
 	// Marshal task.request to byte array for signing
 	js, err := json.Marshal(task.request)
 	if err != nil {
-		return nil, errors.Errorf("failed to encode request %w", err)
+		return errors.Errorf("failed to encode request %w", err)
 	}
 
 	// Hash the request
-	hashvalue = userdata.sha3256hash(js)
-
-	// Sign request with Wallet Node's pastelID and passphrase
-	signature, err := task.pastelClient.Sign(ctx, hashvalue, task.Request.ArtistPastelID, passphrase)
+	hashvalue,err := userdata.Sha3256hash(js)
 	if err != nil {
-		return nil, errors.Errorf("failed to sign ticket %w", err)
+		return errors.Errorf("failed to hash request %w", err)
 	}
 
-	userdata := &UserdataProcessRequestSigned{
-		Userdata: 		&(task.Request),
-		UserdataHash:	hashvalue,
-		Signature:		signature,
+	// Sign request with Wallet Node's pastelID and passphrase
+	signature, err := task.pastelClient.Sign(ctx, hashvalue, task.request.ArtistPastelID, passphrase)
+	if err != nil {
+		return errors.Errorf("failed to sign ticket %w", err)
+	}
+
+	userdata := &userdata.UserdataProcessRequestSigned{
+		Userdata: 		task.request,
+		UserdataHash:	string(hashvalue),
+		Signature:		string(signature),
 	}
 
 	// Send userdata to supernodes for storing in MDL's rqlite db.
@@ -146,10 +155,10 @@ func (task *Task) run(ctx context.Context) error {
 
 		res, err :=task.AggregateResult(ctx, nodes)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		// Post on result channel
-		task.resultChan <- res
+		task.resultChan <- &res
 		log.WithContext(ctx).WithField("userdata_result", res).Debug("Posted userdata result")
 	}
 
@@ -170,26 +179,29 @@ func (task *Task) AggregateResult(ctx context.Context,nodes node.List) (userdata
 	count := 0
 	for i, node := range nodes {
 		node := node
-		if node.result != nil {
+		if node.Result != nil {
 			count++
 			// Marshal result to get the hash value
-			js, err := json.Marshal(*(node.result))
+			js, err := json.Marshal(*(node.Result))
 			if err != nil {
 				errors.Errorf("failed marshal the result %w", err)
 			}
 			log.WithContext(ctx).Debugf("Node result print:%s", string(js))
 
 			// Hash the result
-			hashvalue = userdata.sha3256hash(js)
-			aggregate[hashvalue] = append(aggregate[hashvalue],i)
+			hashvalue, err := userdata.Sha3256hash(js)
+			if err != nil {
+				errors.Errorf("failed hash the result %w", err)
+			}
+			aggregate[string(hashvalue)] = append(aggregate[string(hashvalue)],i)
 		}
 	}
 
 	if count < task.config.MinimalNodeConfirmSuccess {
 		// If there is not enough reponse from supernodes
-		return &UserdataProcessResult{
-			ResponseCode: userdata.ERROR_NOT_ENOUGH_SUPERNODE_RESPONSE
-			Detail 		: userdata.Description[userdata.ERROR_NOT_ENOUGH_SUPERNODE_RESPONSE]
+		return userdata.UserdataProcessResult{
+			ResponseCode: userdata.ErrorNotEnoughSupernodeResponse,
+			Detail 		: userdata.Description[userdata.ErrorNotEnoughSupernodeResponse],
 		}, nil
 	}
 
@@ -203,19 +215,19 @@ func (task *Task) AggregateResult(ctx context.Context,nodes node.List) (userdata
 	}
 
 	if len(aggregate[finalHashKey]) < task.config.MinimalNodeConfirmSuccess {
-		return &UserdataProcessResult{
-			ResponseCode: userdata.ERROR_NOT_ENOUGH_SUPERNODE_CONFIRM
-			Detail 		: userdata.Description[userdata.ERROR_NOT_ENOUGH_SUPERNODE_CONFIRM]
+		return userdata.UserdataProcessResult{
+			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm,
+			Detail 		: userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
 		}, nil
 	}
 
 	// There is enough supernodes verified our request, so we return that response
 	if (len(aggregate[finalHashKey]) > 0 && nodes[(aggregate[finalHashKey])[0]] != nil) {
-		result := *(nodes[(aggregate[finalHashKey])[0]].result)
+		result := *(nodes[(aggregate[finalHashKey])[0]].Result)
 		return result, nil
 	}
 	
-	return nil, errors.Errorf("failed to Aggregate Result")
+	return userdata.UserdataProcessResult{}, errors.Errorf("failed to Aggregate Result")
 }
 
 
@@ -312,7 +324,7 @@ func (task *Task) Error() error {
 }
 
 // SubscribeProcessResult returns the result state of userdata process
-func (task *Task) SubscribeProcessResult() <-chan *UserdataProcessResult {
+func (task *Task) SubscribeProcessResult() <-chan *userdata.UserdataProcessResult {
 	return task.resultChan
 }
 
@@ -322,6 +334,6 @@ func NewTask(service *Service, request *userdata.UserdataProcessRequest) *Task {
 		Task:       task.New(StatusTaskStarted),
 		Service:    service,
 		request:    request,
-		resultChan: make(chan *UserdataProcessResult),
+		resultChan: make(chan *userdata.UserdataProcessResult),
 	}
 }

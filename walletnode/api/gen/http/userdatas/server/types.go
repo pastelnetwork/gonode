@@ -66,10 +66,39 @@ type ProcessUserdataResponseBody struct {
 	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
 	// Error detail on biography
 	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
-	// Error detail on biography
+	// Error detail on avatar
 	AvatarImage *string `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
-	// Error detail on biography
+	// Error detail on cover photo
 	CoverPhoto *string `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
+}
+
+// UserdataGetResponseBody is the type of the "userdatas" service "userdataGet"
+// endpoint HTTP response body.
+type UserdataGetResponseBody struct {
+	// Real name of the user
+	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	// Facebook link of the user
+	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
+	// Twitter link of the user
+	TwitterLink *string `form:"twitter_link,omitempty" json:"twitter_link,omitempty" xml:"twitter_link,omitempty"`
+	// Native currency of user in ISO 4217 Alphabetic Code
+	NativeCurrency *string `form:"native_currency,omitempty" json:"native_currency,omitempty" xml:"native_currency,omitempty"`
+	// Location of the user
+	Location *string `form:"location,omitempty" json:"location,omitempty" xml:"location,omitempty"`
+	// Primary language of the user
+	PrimaryLanguage *string `form:"primary_language,omitempty" json:"primary_language,omitempty" xml:"primary_language,omitempty"`
+	// The categories of user's work
+	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
+	// Biography of the user
+	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
+	// Avatar image of the user
+	AvatarImage *UserImageUploadPayloadResponseBody `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
+	// Cover photo of the user
+	CoverPhoto *UserImageUploadPayloadResponseBody `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
 }
 
 // ProcessUserdataBadRequestResponseBody is the type of the "userdatas" service
@@ -109,11 +138,75 @@ type ProcessUserdataInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// UserdataGetBadRequestResponseBody is the type of the "userdatas" service
+// "userdataGet" endpoint HTTP response body for the "BadRequest" error.
+type UserdataGetBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// UserdataGetNotFoundResponseBody is the type of the "userdatas" service
+// "userdataGet" endpoint HTTP response body for the "NotFound" error.
+type UserdataGetNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// UserdataGetInternalServerErrorResponseBody is the type of the "userdatas"
+// service "userdataGet" endpoint HTTP response body for the
+// "InternalServerError" error.
+type UserdataGetInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// UserImageUploadPayloadResponseBody is used to define fields on response body
+// types.
+type UserImageUploadPayloadResponseBody struct {
+	// File to upload
+	Content []byte `form:"content" json:"content" xml:"content"`
+	// File name of the user image
+	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
+}
+
 // UserImageUploadPayloadRequestBody is used to define fields on request body
 // types.
 type UserImageUploadPayloadRequestBody struct {
 	// File to upload
-	Bytes []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+	Content []byte `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
 	// File name of the user image
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
@@ -134,6 +227,30 @@ func NewProcessUserdataResponseBody(res *userdatas.UserdataProcessResult) *Proce
 		Biography:       res.Biography,
 		AvatarImage:     res.AvatarImage,
 		CoverPhoto:      res.CoverPhoto,
+	}
+	return body
+}
+
+// NewUserdataGetResponseBody builds the HTTP response body from the result of
+// the "userdataGet" endpoint of the "userdatas" service.
+func NewUserdataGetResponseBody(res *userdatas.UserSpecifiedData) *UserdataGetResponseBody {
+	body := &UserdataGetResponseBody{
+		Realname:                 res.Realname,
+		FacebookLink:             res.FacebookLink,
+		TwitterLink:              res.TwitterLink,
+		NativeCurrency:           res.NativeCurrency,
+		Location:                 res.Location,
+		PrimaryLanguage:          res.PrimaryLanguage,
+		Categories:               res.Categories,
+		Biography:                res.Biography,
+		ArtistPastelID:           res.ArtistPastelID,
+		ArtistPastelIDPassphrase: res.ArtistPastelIDPassphrase,
+	}
+	if res.AvatarImage != nil {
+		body.AvatarImage = marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadResponseBody(res.AvatarImage)
+	}
+	if res.CoverPhoto != nil {
+		body.CoverPhoto = marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadResponseBody(res.CoverPhoto)
 	}
 	return body
 }
@@ -167,6 +284,48 @@ func NewProcessUserdataInternalServerErrorResponseBody(res *goa.ServiceError) *P
 	return body
 }
 
+// NewUserdataGetBadRequestResponseBody builds the HTTP response body from the
+// result of the "userdataGet" endpoint of the "userdatas" service.
+func NewUserdataGetBadRequestResponseBody(res *goa.ServiceError) *UserdataGetBadRequestResponseBody {
+	body := &UserdataGetBadRequestResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewUserdataGetNotFoundResponseBody builds the HTTP response body from the
+// result of the "userdataGet" endpoint of the "userdatas" service.
+func NewUserdataGetNotFoundResponseBody(res *goa.ServiceError) *UserdataGetNotFoundResponseBody {
+	body := &UserdataGetNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewUserdataGetInternalServerErrorResponseBody builds the HTTP response body
+// from the result of the "userdataGet" endpoint of the "userdatas" service.
+func NewUserdataGetInternalServerErrorResponseBody(res *goa.ServiceError) *UserdataGetInternalServerErrorResponseBody {
+	body := &UserdataGetInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewProcessUserdataPayload builds a userdatas service processUserdata
 // endpoint payload.
 func NewProcessUserdataPayload(body *ProcessUserdataRequestBody) *userdatas.ProcessUserdataPayload {
@@ -188,6 +347,15 @@ func NewProcessUserdataPayload(body *ProcessUserdataRequestBody) *userdatas.Proc
 	if body.CoverPhoto != nil {
 		v.CoverPhoto = unmarshalUserImageUploadPayloadRequestBodyToUserdatasUserImageUploadPayload(body.CoverPhoto)
 	}
+
+	return v
+}
+
+// NewUserdataGetPayload builds a userdatas service userdataGet endpoint
+// payload.
+func NewUserdataGetPayload(pastelid string) *userdatas.UserdataGetPayload {
+	v := &userdatas.UserdataGetPayload{}
+	v.Pastelid = pastelid
 
 	return v
 }
@@ -270,8 +438,8 @@ func ValidateProcessUserdataRequestBody(body *ProcessUserdataRequestBody) (err e
 // ValidateUserImageUploadPayloadRequestBody runs the validations defined on
 // UserImageUploadPayloadRequestBody
 func ValidateUserImageUploadPayloadRequestBody(body *UserImageUploadPayloadRequestBody) (err error) {
-	if body.Bytes == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+	if body.Content == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("content", "body"))
 	}
 	return
 }

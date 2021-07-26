@@ -4,7 +4,7 @@ package userdata
 
 // List common code 
 const (
-	SuccessProcess  ResponseCode = iota
+	SuccessProcess = iota
 
 	// Error for Secondary Supernode verify process
 	ErrorNotEnoughSupernode
@@ -31,10 +31,9 @@ const (
 )
 
 // ResponseCode for Supernode reponse
-type ResponseCode byte
 
 // Description of ResponseCode
-var Description = map[ResponseCode]string{
+var Description = map[int32]string{
 	SuccessProcess:               			"User specified data set successfully",
 	ErrorNotEnoughSupernode:         		"The process verify signature in primary Supernode success",
 	ErrorNotEnoughSupernodeResponse:		"Not enough SuperNodes reply",

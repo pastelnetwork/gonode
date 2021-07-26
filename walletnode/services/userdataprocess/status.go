@@ -3,16 +3,19 @@ package userdataprocess
 // List of task statuses.
 const (
 	StatusTaskStarted Status = iota
+	StatusConnected
 	StatusTaskFailure
 	StatusTaskCompleted
 	ErrorNotEnoughMasterNode
+	StatusErrorNotEnoughMasterNode
 )
 
 var statusNames = map[Status]string{
 	StatusTaskStarted:   "Task Started",
+	StatusConnected:	 "Connected",
 	StatusTaskFailure:   "Task Failed",
 	StatusTaskCompleted: "Task Completed",
-	StatusErrorNotEnoughMasterNode: "Error not enough Master Node to send data"
+	StatusErrorNotEnoughMasterNode: "Error not enough Master Node to send data",
 }
 
 // Status represents status of the task

@@ -66,10 +66,39 @@ type ProcessUserdataResponseBody struct {
 	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
 	// Error detail on biography
 	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
-	// Error detail on biography
+	// Error detail on avatar
 	AvatarImage *string `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
-	// Error detail on biography
+	// Error detail on cover photo
 	CoverPhoto *string `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
+}
+
+// UserdataGetResponseBody is the type of the "userdatas" service "userdataGet"
+// endpoint HTTP response body.
+type UserdataGetResponseBody struct {
+	// Real name of the user
+	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	// Facebook link of the user
+	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
+	// Twitter link of the user
+	TwitterLink *string `form:"twitter_link,omitempty" json:"twitter_link,omitempty" xml:"twitter_link,omitempty"`
+	// Native currency of user in ISO 4217 Alphabetic Code
+	NativeCurrency *string `form:"native_currency,omitempty" json:"native_currency,omitempty" xml:"native_currency,omitempty"`
+	// Location of the user
+	Location *string `form:"location,omitempty" json:"location,omitempty" xml:"location,omitempty"`
+	// Primary language of the user
+	PrimaryLanguage *string `form:"primary_language,omitempty" json:"primary_language,omitempty" xml:"primary_language,omitempty"`
+	// The categories of user's work
+	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
+	// Biography of the user
+	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
+	// Avatar image of the user
+	AvatarImage *UserImageUploadPayloadResponseBody `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
+	// Cover photo of the user
+	CoverPhoto *UserImageUploadPayloadResponseBody `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
 }
 
 // ProcessUserdataBadRequestResponseBody is the type of the "userdatas" service
@@ -109,11 +138,75 @@ type ProcessUserdataInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// UserdataGetBadRequestResponseBody is the type of the "userdatas" service
+// "userdataGet" endpoint HTTP response body for the "BadRequest" error.
+type UserdataGetBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// UserdataGetNotFoundResponseBody is the type of the "userdatas" service
+// "userdataGet" endpoint HTTP response body for the "NotFound" error.
+type UserdataGetNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// UserdataGetInternalServerErrorResponseBody is the type of the "userdatas"
+// service "userdataGet" endpoint HTTP response body for the
+// "InternalServerError" error.
+type UserdataGetInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
 // UserImageUploadPayloadRequestBody is used to define fields on request body
 // types.
 type UserImageUploadPayloadRequestBody struct {
 	// File to upload
-	Bytes []byte `form:"file" json:"file" xml:"file"`
+	Content []byte `form:"content" json:"content" xml:"content"`
+	// File name of the user image
+	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
+}
+
+// UserImageUploadPayloadResponseBody is used to define fields on response body
+// types.
+type UserImageUploadPayloadResponseBody struct {
+	// File to upload
+	Content []byte `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
 	// File name of the user image
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
@@ -193,6 +286,76 @@ func NewProcessUserdataInternalServerError(body *ProcessUserdataInternalServerEr
 	return v
 }
 
+// NewUserdataGetUserSpecifiedDataOK builds a "userdatas" service "userdataGet"
+// endpoint result from a HTTP "OK" response.
+func NewUserdataGetUserSpecifiedDataOK(body *UserdataGetResponseBody) *userdatas.UserSpecifiedData {
+	v := &userdatas.UserSpecifiedData{
+		Realname:                 body.Realname,
+		FacebookLink:             body.FacebookLink,
+		TwitterLink:              body.TwitterLink,
+		NativeCurrency:           body.NativeCurrency,
+		Location:                 body.Location,
+		PrimaryLanguage:          body.PrimaryLanguage,
+		Categories:               body.Categories,
+		Biography:                body.Biography,
+		ArtistPastelID:           *body.ArtistPastelID,
+		ArtistPastelIDPassphrase: *body.ArtistPastelIDPassphrase,
+	}
+	if body.AvatarImage != nil {
+		v.AvatarImage = unmarshalUserImageUploadPayloadResponseBodyToUserdatasUserImageUploadPayload(body.AvatarImage)
+	}
+	if body.CoverPhoto != nil {
+		v.CoverPhoto = unmarshalUserImageUploadPayloadResponseBodyToUserdatasUserImageUploadPayload(body.CoverPhoto)
+	}
+
+	return v
+}
+
+// NewUserdataGetBadRequest builds a userdatas service userdataGet endpoint
+// BadRequest error.
+func NewUserdataGetBadRequest(body *UserdataGetBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewUserdataGetNotFound builds a userdatas service userdataGet endpoint
+// NotFound error.
+func NewUserdataGetNotFound(body *UserdataGetNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewUserdataGetInternalServerError builds a userdatas service userdataGet
+// endpoint InternalServerError error.
+func NewUserdataGetInternalServerError(body *UserdataGetInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // ValidateProcessUserdataResponseBody runs the validations defined on
 // ProcessUserdataResponseBody
 func ValidateProcessUserdataResponseBody(body *ProcessUserdataResponseBody) (err error) {
@@ -260,6 +423,81 @@ func ValidateProcessUserdataResponseBody(body *ProcessUserdataResponseBody) (err
 	return
 }
 
+// ValidateUserdataGetResponseBody runs the validations defined on
+// UserdataGetResponseBody
+func ValidateUserdataGetResponseBody(body *UserdataGetResponseBody) (err error) {
+	if body.ArtistPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
+	}
+	if body.ArtistPastelIDPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
+	}
+	if body.Realname != nil {
+		if utf8.RuneCountInString(*body.Realname) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.Realname, utf8.RuneCountInString(*body.Realname), 256, false))
+		}
+	}
+	if body.FacebookLink != nil {
+		if utf8.RuneCountInString(*body.FacebookLink) > 128 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.facebook_link", *body.FacebookLink, utf8.RuneCountInString(*body.FacebookLink), 128, false))
+		}
+	}
+	if body.TwitterLink != nil {
+		if utf8.RuneCountInString(*body.TwitterLink) > 128 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.twitter_link", *body.TwitterLink, utf8.RuneCountInString(*body.TwitterLink), 128, false))
+		}
+	}
+	if body.NativeCurrency != nil {
+		if utf8.RuneCountInString(*body.NativeCurrency) < 3 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.native_currency", *body.NativeCurrency, utf8.RuneCountInString(*body.NativeCurrency), 3, true))
+		}
+	}
+	if body.NativeCurrency != nil {
+		if utf8.RuneCountInString(*body.NativeCurrency) > 3 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.native_currency", *body.NativeCurrency, utf8.RuneCountInString(*body.NativeCurrency), 3, false))
+		}
+	}
+	if body.Location != nil {
+		if utf8.RuneCountInString(*body.Location) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.location", *body.Location, utf8.RuneCountInString(*body.Location), 256, false))
+		}
+	}
+	if body.PrimaryLanguage != nil {
+		if utf8.RuneCountInString(*body.PrimaryLanguage) > 30 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.primary_language", *body.PrimaryLanguage, utf8.RuneCountInString(*body.PrimaryLanguage), 30, false))
+		}
+	}
+	if body.Biography != nil {
+		if utf8.RuneCountInString(*body.Biography) > 1024 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.biography", *body.Biography, utf8.RuneCountInString(*body.Biography), 1024, false))
+		}
+	}
+	if body.AvatarImage != nil {
+		if err2 := ValidateUserImageUploadPayloadResponseBody(body.AvatarImage); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.CoverPhoto != nil {
+		if err2 := ValidateUserImageUploadPayloadResponseBody(body.CoverPhoto); err2 != nil {
+			err = goa.MergeErrors(err, err2)
+		}
+	}
+	if body.ArtistPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.artist_pastelid", *body.ArtistPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, true))
+		}
+	}
+	if body.ArtistPastelID != nil {
+		if utf8.RuneCountInString(*body.ArtistPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_pastelid", *body.ArtistPastelID, utf8.RuneCountInString(*body.ArtistPastelID), 86, false))
+		}
+	}
+	return
+}
+
 // ValidateProcessUserdataBadRequestResponseBody runs the validations defined
 // on processUserdata_BadRequest_response_body
 func ValidateProcessUserdataBadRequestResponseBody(body *ProcessUserdataBadRequestResponseBody) (err error) {
@@ -308,11 +546,92 @@ func ValidateProcessUserdataInternalServerErrorResponseBody(body *ProcessUserdat
 	return
 }
 
+// ValidateUserdataGetBadRequestResponseBody runs the validations defined on
+// userdataGet_BadRequest_response_body
+func ValidateUserdataGetBadRequestResponseBody(body *UserdataGetBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateUserdataGetNotFoundResponseBody runs the validations defined on
+// userdataGet_NotFound_response_body
+func ValidateUserdataGetNotFoundResponseBody(body *UserdataGetNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateUserdataGetInternalServerErrorResponseBody runs the validations
+// defined on userdataGet_InternalServerError_response_body
+func ValidateUserdataGetInternalServerErrorResponseBody(body *UserdataGetInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
 // ValidateUserImageUploadPayloadRequestBody runs the validations defined on
 // UserImageUploadPayloadRequestBody
 func ValidateUserImageUploadPayloadRequestBody(body *UserImageUploadPayloadRequestBody) (err error) {
-	if body.Bytes == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+	if body.Content == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("content", "body"))
+	}
+	return
+}
+
+// ValidateUserImageUploadPayloadResponseBody runs the validations defined on
+// UserImageUploadPayloadResponseBody
+func ValidateUserImageUploadPayloadResponseBody(body *UserImageUploadPayloadResponseBody) (err error) {
+	if body.Content == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("content", "body"))
 	}
 	return
 }

@@ -2,7 +2,6 @@ package userdataprocess
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -17,6 +16,7 @@ const (
 // Service represents a service for the userdata process
 type Service struct {
 	*task.Worker
+	config       *Config
 	pastelClient pastel.Client
 }
 
@@ -54,8 +54,9 @@ func (service *Service) AddTask(request *userdata.UserdataProcessRequest) string
 }
 
 // NewService returns a new Service instance.
-func NewService(pastelClient pastel.Client) *Service {
+func NewService(config *Config, pastelClient pastel.Client) *Service {
 	return &Service{
+		config:       config,
 		pastelClient: pastelClient,
 		Worker:       task.NewWorker(),
 	}

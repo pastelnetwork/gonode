@@ -7,9 +7,10 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/proto"
-	pb "github.com/pastelnetwork/gonode/proto/walletnode"
-	"github.com/pastelnetwork/gonode/walletnode/node"
+	"github.com/pastelnetwork/gonode/metadb/network/proto"
+	pb "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode"
+	"github.com/pastelnetwork/gonode/metadb/network/walletnode/node"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -112,8 +113,7 @@ func (service *processUserdata) ConnectTo(ctx context.Context, nodeID, sessID st
 }
 
 // SendUserdata implements node.ProcessUserdata.SendUserdata()
-func (service *processUserdata) SendUserdata(ctx context.Context, request *userdata.UserdataProcessRequestSigned)
-		(result *userdata.UserdataProcessResult, err error) {
+func (service *processUserdata) SendUserdata(ctx context.Context, request *userdata.UserdataProcessRequestSigned) (result *userdata.UserdataProcessResult, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -127,31 +127,31 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 		// Generate protobuf request reqProto
 		reqProto := &pb.UserdataRequest{}
 
-		reqProto.Realname = request.Userdata.Realname,
-		reqProto.Facebook_link = request.Userdata.FacebookLink,
-		reqProto.Twitter_link = request.Userdata.TwitterLink,
-		reqProto.Native_currency = request.Userdata.NativeCurrency,
+		reqProto.Realname = request.Userdata.Realname
+		reqProto.FacebookLink = request.Userdata.FacebookLink
+		reqProto.TwitterLink = request.Userdata.TwitterLink
+		reqProto.NativeCurrency = request.Userdata.NativeCurrency
 		reqProto.Location = request.Userdata.Location
-		reqProto.Primary_language = request.Userdata.PrimaryLanguage
+		reqProto.PrimaryLanguage = request.Userdata.PrimaryLanguage
 		reqProto.Categories = request.Userdata.Categories
 		reqProto.Biography = request.Userdata.Biography
 		reqProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
 	
 		if request.Userdata.AvatarImage.Content != nil && len(request.Userdata.AvatarImage.Content) > 0 {
-			image.AvatarImage.Content = make ([]byte, len(request.Userdata.AvatarImage.Content))
+			reqProto.AvatarImage.Content = make ([]byte, len(request.Userdata.AvatarImage.Content))
 			copy(reqProto.AvatarImage.Content,request.Userdata.AvatarImage.Content)
 		}
-		reqProto.AvatarImage.Filename := request.Userdata.AvatarImage.Filename
+		reqProto.AvatarImage.Filename = request.Userdata.AvatarImage.Filename
 
 		reqProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
 		if request.Userdata.CoverPhoto.Content != nil && len(request.Userdata.CoverPhoto.Content) > 0 {
-			image.CoverPhoto.Content = make ([]byte, len(request.Userdata.CoverPhoto.Content))
+			reqProto.CoverPhoto.Content = make ([]byte, len(request.Userdata.CoverPhoto.Content))
 			copy(reqProto.CoverPhoto.Content,request.Userdata.CoverPhoto.Content)
 		}
-		reqProto.CoverPhoto.Filename := request.Userdata.CoverPhoto.Filename
+		reqProto.CoverPhoto.Filename = request.Userdata.CoverPhoto.Filename
 		
 		reqProto.ArtistPastelID = request.Userdata.ArtistPastelID 
-		reqProto.Timestamp = request.Userdata.Timestamp  
+		reqProto.Timestamp = request.Userdata.Timestamp
 		reqProto.PreviousBlockHash = request.Userdata.PreviousBlockHash
 		reqProto.UserdataHash = request.UserdataHash
 		reqProto.Signature = request.Signature
@@ -164,24 +164,22 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, errors.Errorf("failed to receive send image response: %w", err)
+		return nil, errors.Errorf("failed to receive userdata result from SN: %w", err)
 	}
-	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
-
 	
 	// Convert protobuf response to UserdataProcessResult then return it
-	result := &userdata.UserdataProcessResult {
-		ResponseCode: 		resp.UserdataReply.ResponseCode,
-		Detail:				resp.UserdataReply.Detail,
-		Realname:			resp.UserdataReply.Realname,
+	result = &userdata.UserdataProcessResult {
+		ResponseCode: 		resp.ResponseCode,
+		Detail:				resp.Detail,
+		Realname:			resp.Realname,
 		FacebookLink:		resp.UserdataReply.FacebookLink,
-		TwitterLink:		resp.UserdataReply.TwitterLink,
-		NativeCurrency:		resp.UserdataReply.NativeCurrency,
-		Location:			resp.UserdataReply.Location,
-		PrimaryLanguage:	resp.UserdataReply.PrimaryLanguage,
-		Categories:			resp.UserdataReply.Categories,
-		AvatarImage:		resp.UserdataReply.AvatarImage,
-		CoverPhoto:			resp.UserdataReply.CoverPhoto,
+		TwitterLink:		resp.TwitterLink,
+		NativeCurrency:		resp.NativeCurrency,
+		Location:			resp.Location,
+		PrimaryLanguage:	resp.PrimaryLanguage,
+		Categories:			resp.Categories,
+		AvatarImage:		resp.AvatarImage,
+		CoverPhoto:			resp.CoverPhoto,
 	}
 	
 	return result, nil

@@ -1,6 +1,6 @@
 //go:generate mockery --name=Client
 //go:generate mockery --name=Connection
-//go:generate mockery --name=RegisterArtwork
+//go:generate mockery --name=ProcessUserdata
 
 package node
 

@@ -24,7 +24,7 @@ func BuildProcessUserdataPayload(userdatasProcessUserdataBody string) (*userdata
 	{
 		err = json.Unmarshal([]byte(userdatasProcessUserdataBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"avatar_image\": {\n         \"file\": \"TmloaWwgcmVydW0gZXQu\"\n      },\n      \"biography\": \"I\\'m a digital artist based in Paris, France. ...\",\n      \"categories\": \"Voluptas voluptates totam aut sed quo consequatur.\",\n      \"cover_photo\": {\n         \"file\": \"TmloaWwgcmVydW0gZXQu\"\n      },\n      \"facebook_link\": \"https://www.facebook.com/Williams_Scottish\",\n      \"location\": \"New York, US\",\n      \"native_currency\": \"USD\",\n      \"primary_language\": \"English\",\n      \"realname\": \"Williams Scottish\",\n      \"twitter_link\": \"https://www.twitter.com/@Williams_Scottish\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"avatar_image\": {\n         \"content\": \"TWFnbmkgZXN0IHF1aWRlbSBhZC4=\"\n      },\n      \"biography\": \"I\\'m a digital artist based in Paris, France. ...\",\n      \"categories\": \"Nihil rerum et.\",\n      \"cover_photo\": {\n         \"content\": \"TWFnbmkgZXN0IHF1aWRlbSBhZC4=\"\n      },\n      \"facebook_link\": \"https://www.facebook.com/Williams_Scottish\",\n      \"location\": \"New York, US\",\n      \"native_currency\": \"USD\",\n      \"primary_language\": \"English\",\n      \"realname\": \"Williams Scottish\",\n      \"twitter_link\": \"https://www.twitter.com/@Williams_Scottish\"\n   }'")
 		}
 		if body.Realname != nil {
 			if utf8.RuneCountInString(*body.Realname) > 256 {
@@ -95,6 +95,29 @@ func BuildProcessUserdataPayload(userdatasProcessUserdataBody string) (*userdata
 	if body.CoverPhoto != nil {
 		v.CoverPhoto = marshalUserImageUploadPayloadRequestBodyToUserdatasUserImageUploadPayload(body.CoverPhoto)
 	}
+
+	return v, nil
+}
+
+// BuildUserdataGetPayload builds the payload for the userdatas userdataGet
+// endpoint from CLI flags.
+func BuildUserdataGetPayload(userdatasUserdataGetPastelid string) (*userdatas.UserdataGetPayload, error) {
+	var err error
+	var pastelid string
+	{
+		pastelid = userdatasUserdataGetPastelid
+		if utf8.RuneCountInString(pastelid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 64, true))
+		}
+		if utf8.RuneCountInString(pastelid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &userdatas.UserdataGetPayload{}
+	v.Pastelid = pastelid
 
 	return v, nil
 }

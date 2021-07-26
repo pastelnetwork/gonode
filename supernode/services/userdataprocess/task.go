@@ -189,7 +189,7 @@ func (task *Task) supernodeProcessUserdata(ctx context.Context, req * userdata.U
 		return userdata.UserdataProcessResult{}, errors.Errorf("failed to encode validateResult %w", err)
 	}
 	// Hash the validateResult
-	snRequest.UserdataResultHash = userdata.sha3256hash(js)
+	snRequest.UserdataResultHash = userdata.Sha3256hash(js)
 	snRequest.UserdataHash = req.UserdataHash
 
 	task.ownSNData = snRequest // At this step this SuperNodeRequest only contain UserdataResultHash and UserdataHash
