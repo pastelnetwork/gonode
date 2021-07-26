@@ -24,6 +24,7 @@ const (
 	minimalNodeConfirmSuccess 	= 8
 )
 
+
 // Task is the task of registering new artwork.
 type Task struct {
 	task.Task
@@ -42,6 +43,9 @@ type Task struct {
 
 	// valid only for secondary node
 	connectedTo *Node
+
+	// valid only for primary node
+	connectToLeader *Node
 }
 
 // Run starts the task
@@ -135,7 +139,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 }
 
 // ConnectTo connects to primary node
-func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
+func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string, nodetype int ) error {
 	if err := task.RequiredStatus(StatusSecondaryMode); err != nil {
 		return err
 	}
@@ -154,7 +158,13 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 			return err
 		}
 
-		task.connectedTo = node
+		if nodetype == NodeTypePrimary{
+			task.connectedTo = node
+		} else if nodetype == NodeTypeLeader {
+			task.connectedToLeader = node
+		} else {
+			return errors.Errorf("Invalid NodeType")
+		}
 		task.UpdateStatus(StatusConnected)
 		return nil
 	})

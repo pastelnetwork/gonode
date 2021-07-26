@@ -16,13 +16,18 @@ const (
 	SuccessValidateContent
 	ErrorOnContent
 
-	// Error for Primary Supernode verify process
+	// Status for Primary Supernode verify process
 	SuccessAddDataToPrimarySupernode
 	ErrorPrimarySupernodeFailToProcess
 	ErrorSignatureMismatchBetweenSupernode
 	ErrorUserdataMismatchBetweenSupernode
 	SuccessVerifyAllSignature
 	ErrorPrimarySupernodeVerifyFail
+
+	// Status for actual write to rqlite db
+	SuccessWriteToRQLiteDB
+	ErrorWriteToRQLiteDBFail
+
 )
 
 // ResponseCode for Supernode reponse
@@ -45,4 +50,7 @@ var Description = map[ResponseCode]string{
 	
 	SuccessVerifyAllSignature:				"User specified data set successfully",
 	ErrorPrimarySupernodeVerifyFail:		"The process verify signature in primary Supernode fail",
+
+	SuccessWriteToRQLiteDB:					"Data is written to rqlite db successfully",
+	ErrorWriteToRQLiteDBFail:				"Data fail to write to rqlite db",
 }

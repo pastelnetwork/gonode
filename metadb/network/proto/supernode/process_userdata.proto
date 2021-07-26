@@ -10,7 +10,11 @@ service ProcessUserdata {
     rpc Session(stream SessionRequest) returns (stream SessionReply);
 
 	// SendUserdataToPrimary send signed userdata from other supernodes to primary supernode
-    rpc SendUserdataToPrimary(SuperNodeRequest) returns (SuperNodeReply);
+	rpc SendUserdataToPrimary(SuperNodeRequest) returns (SuperNodeReply);
+	
+	// SendUserdataToLeader send final userdata to supernode contain rqlite leader
+	rpc SendUserdataToLeader(UserdataRequest) returns (SuperNodeReply);
+
 }
 
 message SessionRequest {
@@ -38,4 +42,44 @@ message SuperNodeReply {
 	int32 response_code    = 1;
 	// The detail of why result is success/fail, depend on response_code
 	string detail          = 2;
+}
+
+
+message UserdataRequest {
+    // Real name of the user
+	string realname                             = 1;
+	// Facebook link of the user
+	string facebook_link                        = 2;
+	// Twitter link of the user
+	string twitter_link                         = 3;
+	// Native currency of user in ISO 4217 Alphabetic Code
+	string native_currency                      = 4;
+	// Location of the user
+	string location                             = 5;
+	// Primary language of the user
+	string primary_language                     = 6;
+	// The categories of user's work
+	string categories                           = 7;
+	// Biography of the user
+    string biography                            = 8;
+    
+    message UserImageUpload
+    {
+        bytes content   = 1;
+        string filename = 2;
+    }
+	// Avatar image of the user
+	UserImageUpload avatar_image                = 9;
+	// Cover photo of the user
+	UserImageUpload cover_photo                 = 10;
+	// Artist's PastelID
+	string artist_pastelID              		= 11;
+	// Epoch Timestamp of the request
+	int32 timestamp                    			= 12;
+	// Previous block hash in the chain
+	string previous_block_hash           		= 13;
+	// UserdataHash represents UserdataProcessRequest's hash value, to make sure UserdataProcessRequest's integrity 
+	string userdata_hash						= 14;
+	// Signature of the userdata_hash
+	string signature							= 15;
 }

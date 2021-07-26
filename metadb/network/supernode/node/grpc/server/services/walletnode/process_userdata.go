@@ -114,7 +114,7 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pb.ConnectTo
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
+	if err := task.ConnectTo(ctx, req.NodeID, req.SessID, common.NodeTypePrimary); err != nil {
 		return nil, err
 	}
 
@@ -179,7 +179,24 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 			Cover_photo			: processResult.CoverPhoto,
 		}
 	} else {
-		// TODO: Process actual write to rqlite db happen here
+		// Process actual write to rqlite db happen here
+		<-task.NewAction(func(ctx context.Context) error {
+			// Send data to SN contain the leader rqlite
+			if err := task.ConnectTo(ctx, req.NodeID, req.SessID, common.NodeTypeLeader); err != nil {
+				return err
+			} else {
+				if task.connectedToLeader != nil {
+					if _, err := task.connectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
+						return errors.Errorf("failed to send userdata to leader rqlite node %s at address %s %w", task.connectedToLeader.ID, task.connectedToLeader.Address, err)
+					}
+				} else {
+					return return errors.Errorf("leader rqlite node object is empty")
+				}
+				
+			}
+
+			return nil
+		})
 
 		return &pb.UserdataReply {
 			Response_code		: processResult.ResponseCode

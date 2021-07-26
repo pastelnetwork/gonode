@@ -23,6 +23,8 @@ type ProcessUserdataClient interface {
 	Session(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SessionClient, error)
 	// SendUserdataToPrimary send signed userdata from other supernodes to primary supernode
 	SendUserdataToPrimary(ctx context.Context, in *SuperNodeRequest, opts ...grpc.CallOption) (*SuperNodeReply, error)
+	// SendUserdataToLeader send final userdata to supernode contain rqlite leader
+	SendUserdataToLeader(ctx context.Context, in *UserdataRequest, opts ...grpc.CallOption) (*SuperNodeReply, error)
 }
 
 type processUserdataClient struct {
@@ -73,6 +75,15 @@ func (c *processUserdataClient) SendUserdataToPrimary(ctx context.Context, in *S
 	return out, nil
 }
 
+func (c *processUserdataClient) SendUserdataToLeader(ctx context.Context, in *UserdataRequest, opts ...grpc.CallOption) (*SuperNodeReply, error) {
+	out := new(SuperNodeReply)
+	err := c.cc.Invoke(ctx, "/supernode.ProcessUserdata/SendUserdataToLeader", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProcessUserdataServer is the server API for ProcessUserdata service.
 // All implementations must embed UnimplementedProcessUserdataServer
 // for forward compatibility
@@ -82,6 +93,8 @@ type ProcessUserdataServer interface {
 	Session(ProcessUserdata_SessionServer) error
 	// SendUserdataToPrimary send signed userdata from other supernodes to primary supernode
 	SendUserdataToPrimary(context.Context, *SuperNodeRequest) (*SuperNodeReply, error)
+	// SendUserdataToLeader send final userdata to supernode contain rqlite leader
+	SendUserdataToLeader(context.Context, *UserdataRequest) (*SuperNodeReply, error)
 	mustEmbedUnimplementedProcessUserdataServer()
 }
 
@@ -94,6 +107,9 @@ func (UnimplementedProcessUserdataServer) Session(ProcessUserdata_SessionServer)
 }
 func (UnimplementedProcessUserdataServer) SendUserdataToPrimary(context.Context, *SuperNodeRequest) (*SuperNodeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendUserdataToPrimary not implemented")
+}
+func (UnimplementedProcessUserdataServer) SendUserdataToLeader(context.Context, *UserdataRequest) (*SuperNodeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendUserdataToLeader not implemented")
 }
 func (UnimplementedProcessUserdataServer) mustEmbedUnimplementedProcessUserdataServer() {}
 
@@ -152,6 +168,24 @@ func _ProcessUserdata_SendUserdataToPrimary_Handler(srv interface{}, ctx context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProcessUserdata_SendUserdataToLeader_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UserdataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProcessUserdataServer).SendUserdataToLeader(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/supernode.ProcessUserdata/SendUserdataToLeader",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProcessUserdataServer).SendUserdataToLeader(ctx, req.(*UserdataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProcessUserdata_ServiceDesc is the grpc.ServiceDesc for ProcessUserdata service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -162,6 +196,10 @@ var ProcessUserdata_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendUserdataToPrimary",
 			Handler:    _ProcessUserdata_SendUserdataToPrimary_Handler,
+		},
+		{
+			MethodName: "SendUserdataToLeader",
+			Handler:    _ProcessUserdata_SendUserdataToLeader_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

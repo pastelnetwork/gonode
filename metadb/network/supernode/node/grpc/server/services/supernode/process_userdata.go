@@ -80,7 +80,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 }
 
 
-// SendArtTicketSignature implements supernode.ProcessUserdataServer.SendUserdataToPrimary()
+// SendUserdataToPrimary implements supernode.ProcessUserdataServer.SendUserdataToPrimary()
 func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *pb.SuperNodeRequest) (*pb.SuperNodeReply, error) {
 	// This code run in primary supernode
 
@@ -108,6 +108,24 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 	return &pb.SuperNodeReply{
 		Response_code: userdata.SuccessAddDataToPrimarySupernode
 		Detail: userdata.Description[userdata.SuccessAddDataToPrimarySupernode]
+	}, nil
+}
+
+// SendUserdataToLeader implements supernode.ProcessUserdataServer.SendUserdataToLeader()
+func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *pb.UserdataRequest) (*pb.SuperNodeReply, error) {
+	// This code run in supernode contain leader rqlite db
+	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdataToLeader request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Process write the data to rqlite happen here
+	// @TuanTran
+
+	return &pb.SuperNodeReply{
+		Response_code: userdata.SuccessWriteToRQLiteDB
+		Detail: userdata.Description[userdata.SuccessWriteToRQLiteDB]
 	}, nil
 }
 

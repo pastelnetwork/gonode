@@ -25,7 +25,7 @@ type Connection interface {
 	ProcessUserdata() ProcessUserdata
 }
 
-// ProcessUserdata represents an interaction stream with supernodes for registering artwork.
+// ProcessUserdata represents an interaction stream with supernodes for sending userdata.
 type ProcessUserdata interface {
 	// SessID returns the taskID received from the server during the handshake.
 	SessID() (taskID string)
@@ -33,4 +33,6 @@ type ProcessUserdata interface {
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 	// Send userdata to primary supernode
 	SendUserdataToPrimary(ctx context.Context, dataSigned userdata.SuperNodeRequest) (userdata.SuperNodeReply, error)
+	// Send userdata to supernode with leader rqlite
+	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.UserdataProcessRequest) (userdata.SuperNodeReply, error)
 }

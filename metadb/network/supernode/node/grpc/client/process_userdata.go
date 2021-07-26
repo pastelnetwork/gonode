@@ -96,6 +96,51 @@ func (service *processUserdata) SendUserdataToPrimary(ctx context.Context, dataS
 	}, err
 }
 
+func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalUserdata userdata.UserdataProcessRequest) (userdata.SuperNodeReply, error){
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	// Generate protobuf request reqProto
+	reqProto := &pb.UserdataRequest{}
+
+	reqProto.Realname = finalUserdata.Userdata.Realname,
+	reqProto.Facebook_link = finalUserdata.Userdata.FacebookLink,
+	reqProto.Twitter_link = finalUserdata.Userdata.TwitterLink,
+	reqProto.Native_currency = finalUserdata.Userdata.NativeCurrency,
+	reqProto.Location = finalUserdata.Userdata.Location
+	reqProto.Primary_language = finalUserdata.Userdata.PrimaryLanguage
+	reqProto.Categories = finalUserdata.Userdata.Categories
+	reqProto.Biography = finalUserdata.Userdata.Biography
+	reqProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
+
+	if finalUserdata.Userdata.AvatarImage.Content != nil && len(finalUserdata.Userdata.AvatarImage.Content) > 0 {
+		image.AvatarImage.Content = make ([]byte, len(finalUserdata.Userdata.AvatarImage.Content))
+		copy(reqProto.AvatarImage.Content,finalUserdata.Userdata.AvatarImage.Content)
+	}
+	reqProto.AvatarImage.Filename := finalUserdata.Userdata.AvatarImage.Filename
+
+	reqProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
+	if finalUserdata.Userdata.CoverPhoto.Content != nil && len(finalUserdata.Userdata.CoverPhoto.Content) > 0 {
+		image.CoverPhoto.Content = make ([]byte, len(finalUserdata.Userdata.CoverPhoto.Content))
+		copy(reqProto.CoverPhoto.Content,finalUserdata.Userdata.CoverPhoto.Content)
+	}
+	reqProto.CoverPhoto.Filename := finalUserdata.Userdata.CoverPhoto.Filename
+	
+	reqProto.ArtistPastelID = finalUserdata.Userdata.ArtistPastelID 
+	reqProto.Timestamp = finalUserdata.Userdata.Timestamp  
+	reqProto.PreviousBlockHash = finalUserdata.Userdata.PreviousBlockHash
+	reqProto.UserdataHash = finalUserdata.UserdataHash
+	reqProto.Signature = finalUserdata.Signature
+
+	// Send the data
+	resp, err := service.client.SendUserdataToLeader(ctx, &reqProto)
+
+	return userdata.SuperNodeReply {
+		ResponseCode	: resp.ResponseCode
+		Detail			: resp.Detail
+	}, err
+}
+
 func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
 	return &processUserdata{
 		conn:   conn,

@@ -9,10 +9,17 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-// ProcessUserdata represents common grpc service for registration artwork.
+// ProcessUserdata represents common grpc service for process userdata.
 type ProcessUserdata struct {
 	*processuserdata.Service
 }
+
+const (
+	// NodeTypePrimary connect to Primary node
+	NodeTypePrimary				= 0
+	// NodeTypeLeader connect to Leader node
+	NodeTypeLeader				= 1
+)
 
 // SessID retrieves SessID from the metadata.
 func (service *ProcessUserdata) SessID(ctx context.Context) (string, bool) {
