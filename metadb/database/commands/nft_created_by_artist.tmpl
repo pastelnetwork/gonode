@@ -1,0 +1,11 @@
+{{/* The list of NFTs created by that user */}}
+
+SELECT
+    art_instance_metadata.instance_id,
+    art_instance_metadata.art_id,
+    art_metadata.copies,
+    art_metadata.created_timestamp
+FROM
+    art_instance_metadata LEFT JOIN art_metadata USING(art_id)
+WHERE
+    artist_pastel_id = '{{.}}'

@@ -1,0 +1,13 @@
+{{/* insert a new art to database */}}
+
+INSERT INTO art_metadata (
+    art_id,
+    artist_pastel_id,
+    copies,
+    created_timestamp
+) VALUES (
+    '{{.ArtID}}',
+    '{{.ArtistPastelID}}',
+    {{.Copies}},
+    {{.CreatedTimestamp}}
+)

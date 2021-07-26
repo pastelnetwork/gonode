@@ -1,0 +1,9 @@
+{{/* Write new record to follow_relations table */}}
+
+INSERT INTO follow_relations (
+    follower_pastel_id,
+    followee_pastel_id
+) VALUES (
+    '{{.FollowerPastelID}}',
+    '{{.FolloweePastelID}}'
+);

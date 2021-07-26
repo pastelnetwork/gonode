@@ -1,0 +1,22 @@
+{{/* insert a new transaction to database 
+Constraint:
+    - If the NFT currently sale by the artist, seller_pastel_id should be the pastel_id of the artist
+    - If the NFT is currently owned by another user, seller_pastel_id should be the pastel_id of that user
+After the transaction is successfully writen to db, owner_pastel_id and price in art_instance_metadata will be updated
+*/}}
+
+INSERT INTO transactions (
+    transaction_id,
+    instance_id,
+    timestamp,
+    seller_pastel_id,
+    buyer_pastel_id,
+    price
+) VALUES (
+    '{{.TransactionID}}',
+    '{{.InstanceID}}',
+    {{.Timestamp}},
+    '{{.SellerPastelID}}',
+    '{{.BuyerPastelID}}',
+    {{.Price}}
+);

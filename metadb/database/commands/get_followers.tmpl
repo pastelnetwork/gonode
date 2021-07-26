@@ -1,0 +1,8 @@
+{{/* Get followers of a user */}}
+
+SELECT
+    follower_pastel_id
+FROM
+    follow_relations
+WHERE
+    followee_pastel_id = '{{.}}';
