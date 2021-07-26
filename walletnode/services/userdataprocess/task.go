@@ -120,7 +120,7 @@ func (task *Task) run(ctx context.Context) error {
 	// Marshal task.request to byte array for signing
 	js, err := json.Marshal(task.request)
 	if err != nil {
-		return nil, errors.Errorf("failed to encode ticket %w", err)
+		return nil, errors.Errorf("failed to encode request %w", err)
 	}
 
 	// Hash the request

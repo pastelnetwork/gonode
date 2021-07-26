@@ -44,7 +44,7 @@ type UserdataProcessRequestSigned struct {
 }
 
 
-// Store user's upload image 
+// UserImageUpload store user's upload image 
 type UserImageUpload struct {
 	// File to upload
 	Content []byte
@@ -56,7 +56,7 @@ type UserImageUpload struct {
 // processUserdata method.
 type UserdataProcessResult struct {
 	// Result of the request is success or not
-	ResponseCode Code
+	ResponseCode ResponseCode
 	// The detail of why result is success/fail, depend on response_code
 	Detail string
 	// Error detail on realname
@@ -81,20 +81,17 @@ type UserdataProcessResult struct {
 	CoverPhoto string
 }
 
-// SuperNodeRequest represents the UserdataProcessRequest request 
+// SuperNodeRequest represents the UserdataProcessResult request
 // together with the SuperNode info which signed the request
 type SuperNodeRequest struct {
-	Userdata *UserdataProcessRequest
 	// UserdataHash represents UserdataProcessRequest's hash value, to make sure UserdataProcessRequest's integrity 
 	UserdataHash string
-	// UserdataResult represents supernode data validation result for the Userdata 
-	UserdataResult *UserdataProcessResult
 	// UserdataResultHash represents UserdataProcessResult's hash value, to make sure UserdataProcessResult's integrity 
 	UserdataResultHash string
 	// SuperNodeSignature is the digital signature created by supernode for the [UserdataResultHash+UserdataHash]
 	HashSignature string
-	// Supernode's pastelID of this supernode generate this SuperNodeRequest
-	SuperNodePastelID string
+	// NodeID is supernode's pastelID of this supernode generate this SuperNodeRequest
+	NodeID string
 }
 
 // SuperNodeReply represents the response for SuperNodeRequest

@@ -1,6 +1,7 @@
 package supernode
 
 import (
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"context"
 	"io"
 
@@ -78,19 +79,36 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 	}
 }
 
-// SendArtTicketSignature implements supernode.RegisterArtworkServer.SendArtTicketSignature()
+
+// SendArtTicketSignature implements supernode.ProcessUserdataServer.SendUserdataToPrimary()
 func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *pb.SuperNodeRequest) (*pb.SuperNodeReply, error) {
+	// This code run in primary supernode
+
 	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdataToPrimary request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := task.AddPeerArticketSignature(req.NodeID, req.Signature); err != nil {
-		return nil, errors.Errorf("failed to add peer signature %w", err)
+	snrequest := userdata.SuperNodeRequest{
+		UserdataHash		: req.Userdata_hash,
+		UserdataResultHash	: req.Userdata_result_hash,
+		HashSignature		: req.Hash_signature,
+		NodeID				: req.Supernode_pastelID,
 	}
 
-	return &pb.SendArtTicketSignatureReply{}, nil
+	if err := task.AddPeerSNDataSigned(snrequest); err != nil {
+		errors.Errorf("failed to add peer signature %w", err)
+		return &pb.SuperNodeReply{
+			Response_code: userdata.ErrorPrimarySupernodeFailToProcess
+			Detail: userdata.Description[userdata.ErrorPrimarySupernodeFailToProcess]
+		}, nil
+	}
+
+	return &pb.SuperNodeReply{
+		Response_code: userdata.SuccessAddDataToPrimarySupernode
+		Detail: userdata.Description[userdata.SuccessAddDataToPrimarySupernode]
+	}, nil
 }
 
 // Desc returns a description of the service.

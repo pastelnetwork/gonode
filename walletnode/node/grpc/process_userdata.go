@@ -143,6 +143,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 		}
 		reqProto.AvatarImage.Filename := request.Userdata.AvatarImage.Filename
 
+		reqProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
 		if request.Userdata.CoverPhoto.Content != nil && len(request.Userdata.CoverPhoto.Content) > 0 {
 			image.CoverPhoto.Content = make ([]byte, len(request.Userdata.CoverPhoto.Content))
 			copy(reqProto.CoverPhoto.Content,request.Userdata.CoverPhoto.Content)
@@ -152,8 +153,8 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 		reqProto.ArtistPastelID = request.Userdata.ArtistPastelID 
 		reqProto.Timestamp = request.Userdata.Timestamp  
 		reqProto.PreviousBlockHash = request.Userdata.PreviousBlockHash
-		reqProto.UserdataHash = request.Userdata.UserdataHash
-		reqProto.Signature = request.Userdata.Signature
+		reqProto.UserdataHash = request.UserdataHash
+		reqProto.Signature = request.Signature
 
 		// Send the request to the protobuf stream
 		if err := stream.Send(reqProto); err != nil {

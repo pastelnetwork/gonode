@@ -80,6 +80,22 @@ func (service *processUserdata) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
+func (service *processUserdata) SendUserdataToPrimary(ctx context.Context, dataSigned userdata.SuperNodeRequest) (userdata.SuperNodeReply, error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+	resp, err := service.client.SendUserdataToPrimary(ctx, &pb.SuperNodeRequest{
+		Userdata_hash			: dataSigned.UserdataHash
+		Userdata_result_hash	: dataSigned.UserdataResultHash
+		Hash_signature			: dataSigned.HashSignature
+		NodeID					: dataSigned.NodeID
+	})
+
+	return userdata.SuperNodeReply {
+		ResponseCode	: resp.ResponseCode
+		Detail			: resp.Detail
+	}, err
+}
+
 func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
 	return &processUserdata{
 		conn:   conn,

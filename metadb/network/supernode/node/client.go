@@ -32,5 +32,5 @@ type ProcessUserdata interface {
 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 	// Send userdata to primary supernode
-	SendUserdataToPrimary(ctx context.Context, userdataSigned SuperNodeRequest) error
+	SendUserdataToPrimary(ctx context.Context, dataSigned userdata.SuperNodeRequest) (userdata.SuperNodeReply, error)
 }

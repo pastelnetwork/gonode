@@ -123,24 +123,72 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
-// SendUserdata implements walletnode.ProcessUserdata.SendUserdata
-func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.SendSignedArtTicketRequest) (*pb.SendSignedArtTicketReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SignTicket request")
+
+// SendUserdata implements walletnode.ProcessUserdataServer.SendUserdata()
+func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.UserdataRequest) (*pb.UserdataReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdata request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to get task from metada %w", err)
+		return nil, err
+	}
+	// Convert protobuf request to UserdataProcessRequest
+	request := UserdataProcessRequestSigned{}
+
+	request.Userdata.Realname = req.Realname
+	request.Userdata.FacebookLink = req.Facebook_link
+	request.Userdata.TwitterLink=req.Twitter_link
+	request.Userdata.NativeCurrency= req.Native_currency
+	request.Userdata.Location= req.Location
+	request.Userdata.PrimaryLanguage= req.Primary_language
+	request.Userdata.Categories=req.Categories
+	request.Userdata.Biography= req.Biography
+
+	if req.AvatarImage.Content != nil && len(req.AvatarImage.Content) > 0 {
+		req.AvatarImage.Content = make ([]byte, len(req.AvatarImage.Content))
+		copy(request.Userdata.AvatarImage.Content,req.AvatarImage.Content)
+	}
+	request.Userdata.AvatarImage.Filename = req.AvatarImage.Filename
+
+	if req.CoverPhoto.Content != nil && len(req.CoverPhoto.Content) > 0 {
+		req.CoverPhoto.Content = make ([]byte, len(req.CoverPhoto.Content))
+		copy(request.Userdata.CoverPhoto.Content,req.CoverPhoto.Content)
+	}
+	request.Userdata.CoverPhoto.Filename := req.CoverPhoto.Filename
+
+	request.Userdata.ArtistPastelID  = req.ArtistPastelID
+	request.Userdata.Timestamp   = req.Timestamp
+	request.Userdata.PreviousBlockHash=req.PreviousBlockHash
+	request.UserdataHash = req.UserdataHash 
+	request.Signature = req.Signature
+
+
+	processResult := task.supernodeProcessUserdata(ctx, request)
+	if processResult.ResponseCode == userdata.ErrorOnContent {
+		return &pb.UserdataReply {
+			Response_code 		: processResult.ResponseCode
+			Detail				: processResult.Detail
+			Realname 			: processResult.Realname,
+			Facebook_link 		: processResult.FacebookLink,
+			Twitter_link 		: processResult.TwitterLink,
+			Native_currency 	: processResult.NativeCurrency,
+			Location 			: processResult.Location,
+			Primary_language 	: processResult.PrimaryLanguage,
+			Categories 			: processResult.Categories,
+			Biography 			: processResult.Biography,
+			Avatar_image		: processResult.AvatarImage,
+			Cover_photo			: processResult.CoverPhoto,
+		}
+	} else {
+		// TODO: Process actual write to rqlite db happen here
+
+		return &pb.UserdataReply {
+			Response_code		: processResult.ResponseCode
+			Detail				: processResult.Detail
+		}
 	}
 
-	registrationFee, err := task.GetRegistrationFee(ctx, req.ArtTicket, req.ArtistSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
-	if err != nil {
-		return nil, errors.Errorf("failed to get total storage fee %w", err)
-	}
-
-	rsp := pb.SendSignedArtTicketReply{
-		RegistrationFee: registrationFee,
-	}
-
-	return &rsp, nil
+	// Should never get here
+	return &pb.UserdataReply {}, nil
 }
 
 

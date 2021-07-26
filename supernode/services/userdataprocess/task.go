@@ -3,29 +3,25 @@ package userdataprocess
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"image"
 	"io"
-	"sort"
 	"sync"
-	"time"
 
-	"github.com/DataDog/zstd"
-	"github.com/disintegration/imaging"
-	"github.com/kolesa-team/go-webp/encoder"
-	"github.com/kolesa-team/go-webp/webp"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/probe"
-	rq "github.com/pastelnetwork/gonode/raptorq"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+
 	"golang.org/x/crypto/sha3"
+)
+
+const (
+	// TODO: Move this to config pass from app.go later. 
+	defaultNumberSuperNodes 	= 10
+	minimalNodeConfirmSuccess 	= 8
 )
 
 // Task is the task of registering new artwork.
@@ -36,16 +32,13 @@ type Task struct {
 	acceptedMu sync.Mutex
 	accepted   Nodes
 
-
-	// signature of ticket data signed by node's pateslID
-	ownSignature []byte
-
-	artistSignature []byte
+	// userdata signed by this supernode
+	ownSNData SuperNodeRequest
 
 	// valid only for a task run as primary
-	peersArtTicketSignatureMtx *sync.Mutex
-	peersArtTicketSignature    map[string][]byte
-	allSignaturesReceived      chan struct{}
+	peersSNDataSignedMtx 		*sync.Mutex
+	peersSNDataSigned   		map[string]SuperNodeRequest
+	allPeersSNDatasReceived     chan struct{}
 
 	// valid only for secondary node
 	connectedTo *Node
@@ -168,42 +161,40 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 	return nil
 }
 
-func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
-	var err error
-	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
-		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
+func (task *Task) supernodeProcessUserdata(ctx context.Context, req * userdata.UserdataProcessRequestSigned) (userdata.UserdataProcessResult, error) {
+	log.WithContext(ctx).Debugf("supernodeProcessUserdata on user PastelID: %s",req.ArtistPastelID)
+
+	validateResult := task.validateUserdata(req)
+	if validateResult.ResponseCode == userdata.ErrorOnContent {
+		// If the request from Walletnode fail the validation, return the response to Walletnode and stop process further
+		return validateResult, nil
 	}
 
-	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
+	// Validation the request from Walletnode successful, we continue to get acknowledgement and confirmation process from multiple SNs
+	snRequest := SuperNodeRequest{}
+
+	// Marshal validateResult to byte array for signing
+	js, err := json.Marshal(validateResult)
+	if err != nil {
+		return userdata.UserdataProcessResult{}, errors.Errorf("failed to encode validateResult %w", err)
+	}
+	// Hash the validateResult
+	snRequest.UserdataResultHash = userdata.sha3256hash(js)
+	snRequest.UserdataHash = req.UserdataHash
+
+	task.ownSNData = snRequest // At this step this SuperNodeRequest only contain UserdataResultHash and UserdataHash
+
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, txid, 3, 150*time.Second, 4)
-
-		if err := task.matchFingersPrintAndScores(ctx); err != nil {
-			return errors.Errorf("fingerprints or scores don't matched")
-		}
-
-		// compare rqsymbols
-		if err := task.compareRQSymbolId(ctx); err != nil {
-			return errors.Errorf("failed to generate rqids %w", err)
-		}
-
-		// sign the ticket if not primary node
+		// sign the data if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %d", task.connectedTo == nil)
-		if err := task.signAndSendArtTicket(ctx, task.connectedTo == nil); err != nil {
-			return errors.Errorf("failed to signed and send art ticket")
+		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, task.connectedTo == nil); err != nil {
+			return errors.Errorf("failed to signed and send SuperNodeRequest")
 		}
-
-		log.WithContext(ctx).Debugf("waiting for confimation")
-		if err := <-confirmationChn; err != nil {
-			return errors.Errorf("failed to validate preburn transaction validation %w", err)
-		}
-		log.WithContext(ctx).Debugf("confirmation done")
-
 		return nil
 	})
 
 	// only primary node start this action
-	var artRegTxid string
+	var processResult userdata.UserdataProcessResult
 	if task.connectedTo == nil {
 		<-task.NewAction(func(ctx context.Context) error {
 			log.WithContext(ctx).Debug("waiting for signature from peers")
@@ -212,157 +203,189 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 				case <-ctx.Done():
 					err := ctx.Err()
 					if err != nil {
-						log.WithContext(ctx).Debug("waiting for signature from peers cancelled or timeout")
+						log.WithContext(ctx).Debug("waiting for SuperNodeRequest from peers cancelled or timeout")
 					}
 					return err
-				case <-task.allSignaturesReceived:
-					log.WithContext(ctx).Debugf("all signature received so start validation")
+				case <-task.allPeersSNDatasReceived:
+					log.WithContext(ctx).Debugf("all SuperNodeRequest received so start validation")
 
-					if err := task.verifyPeersSingature(ctx); err != nil {
-						return errors.Errorf("peers' singature mismatched %w", err)
+					if resp, err := task.verifyPeersUserdata(ctx); err != nil {
+						return errors.Errorf("fail to verifyPeersUserdata: %w", err)
+					} else {
+						processResult = resp
+						return nil
 					}
-
-					artRegTxid, err = task.registerArt(ctx)
-					if err != nil {
-						return errors.Errorf("failed to register art %w", err)
-					}
-
-					confirmations := task.waitConfirmation(ctx, artRegTxid, 10, 150*time.Second, 11)
-					err = <-confirmations
-					if err != nil {
-						return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
-					}
-
-					if err := task.storeRaptorQSymbols(ctx); err != nil {
-						return errors.Errorf("failed to store raptor symbols %w", err)
-					}
-
-					if err := task.storeThumbnails(ctx); err != nil {
-						return errors.Errorf("failed to store thumbnails %w", err)
-					}
-
-					if err := task.storeFingerprints(ctx); err != nil {
-						return errors.Errorf("failed to store fingerprints %w", err)
-					}
-
-					return nil
 				}
 			}
 		})
 	}
 
-	return artRegTxid, nil
+	return processResult, nil
 }
 
-// sign and send art ticket if not primary
-func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) error {
-	ticket, err := pastel.EncodeArtTicket(task.Ticket)
+
+// Sign and send SNDataSigned if not primary
+func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.SuperNodeRequest, isPrimary bool) error {
+	log.WithContext(ctx).Debugf("signAndSendSNDataSigned begin to sign SuperNodeRequest")
+	signature, err := task.pastelClient.Sign(ctx, sndata.UserdataHash + sndata.UserdataResultHash, task.config.PastelID, task.config.PassPhrase)
 	if err != nil {
-		return errors.Errorf("failed to serialize art ticket %w", err)
-	}
-	task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase)
-	if err != nil {
-		return errors.Errorf("failed to sign ticket %w", err)
+		return errors.Errorf("failed to sign sndata %w", err)
 	}
 	if !isPrimary {
-		log.WithContext(ctx).Debug("send signed articket to primary node")
-		if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, task.config.PastelID, task.ownSignature); err != nil {
+		sndata.HashSignature = signature
+		sndata.NodeID = task.config.PastelID
+		log.WithContext(ctx).Debug("send signed sndata to primary node")
+		if _, err := task.connectedTo.ProcessUserdata.SendUserdataToPrimary(ctx, sndata); err != nil {
 			return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.connectedTo.ID, task.connectedTo.Address, err)
 		}
 	}
 	return nil
 }
 
-func (task *Task) verifyPeersSingature(ctx context.Context) error {
-	log.WithContext(ctx).Debugf("all signature received so start validation")
+func (task *Task) AddPeerSNDataSigned(snrequest userdata.SuperNodeRequest) error {
+	log.WithContext(ctx).Debugf("AddPeerSNDataSigned begin to aggregate SuperNodeRequest")
 
-	data, err := pastel.EncodeArtTicket(task.Ticket)
-	if err != nil {
-		return errors.Errorf("failed to encoded art ticket %w", err)
-	}
-	for nodeID, signature := range task.peersArtTicketSignature {
-		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID); err != nil {
-			return errors.Errorf("failed to verify signature %s of node %s", signature, nodeID)
-		} else {
-			if !ok {
-				return errors.Errorf("signature of node %s mistmatch", nodeID)
-			}
-		}
-	}
-	return nil
-}
-
-func (task *Task) registerArt(ctx context.Context) (string, error) {
-	log.WithContext(ctx).Debugf("all signature received so start validation")
-	// verify signature from secondary nodes
-	data, err := pastel.EncodeArtTicket(task.Ticket)
-	if err != nil {
-		return "", errors.Errorf("failed to encoded art ticket %w", err)
-	}
-
-	req := pastel.RegisterArtRequest{
-		Ticket: &pastel.ArtTicket{
-			Version:   task.Ticket.Version,
-			Author:    task.Ticket.Author,
-			BlockNum:  task.Ticket.BlockNum,
-			BlockHash: task.Ticket.BlockHash,
-			Copies:    task.Ticket.Copies,
-			Royalty:   task.Ticket.Royalty,
-			Green:     task.Ticket.Green,
-			AppTicket: data,
-		},
-		Signatures: &pastel.TicketSignatures{
-			Artist: map[string][]byte{
-				task.Ticket.AppTicketData.AuthorPastelID: task.artistSignature,
-			},
-			Mn1: map[string][]byte{
-				task.config.PastelID: task.ownSignature,
-			},
-			Mn2: map[string][]byte{
-				task.accepted[0].ID: task.peersArtTicketSignature[task.accepted[0].ID],
-			},
-			Mn3: map[string][]byte{
-				task.accepted[1].ID: task.peersArtTicketSignature[task.accepted[1].ID],
-			},
-		},
-		Mn1PastelId: task.config.PastelID,
-		Pasphase:    task.config.PassPhrase,
-		Key1:        task.key1,
-		Key2:        task.key2,
-		Fee:         task.registrationFee,
-	}
-
-	artRegTxid, err := task.pastelClient.RegisterArtTicket(ctx, req)
-	if err != nil {
-		return "", errors.Errorf("failed to register art work %s", err)
-	}
-	return artRegTxid, nil
-}
-func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) error {
-	task.peersArtTicketSignatureMtx.Lock()
-	defer task.peersArtTicketSignatureMtx.Unlock()
-
-	if err := task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
-		return err
-	}
+	task.peersSNDataSignedMtx.Lock()
+	defer task.peersSNDataSignedMtx.Unlock()
 
 	<-task.NewAction(func(ctx context.Context) error {
-		log.WithContext(ctx).Debugf("receive art ticket signature from node %s", nodeID)
-		if node := task.accepted.ByID(nodeID); node == nil {
-			return errors.Errorf("node %s not in accepted list", nodeID)
+		log.WithContext(ctx).Debugf("receive supernode userdata result signed from node %s", snrequest.NodeID)
+		if node := task.accepted.ByID(snrequest.NodeID); node == nil {
+			return errors.Errorf("node %s not in accepted list", snrequest.NodeID)
 		}
 
-		task.peersArtTicketSignature[nodeID] = signature
-		if len(task.peersArtTicketSignature) == len(task.accepted) {
+		task.peersSNDataSigned[snrequest.NodeID] = snrequest
+		if len(task.peersSNDataSigned) == len(task.accepted) {
 			log.WithContext(ctx).Debug("all signature received")
 			go func() {
-				close(task.allSignaturesReceived)
+				close(task.allPeersSNDatasReceived)
 			}()
 		}
 		return nil
 	})
 	return nil
 }
+
+
+func (task *Task) verifyPeersUserdata(ctx context.Context) (UserdataProcessResult, error) {
+	log.WithContext(ctx).Debugf("all supernode data signed received so start validation")
+	var reply UserdataReply
+	successCount := 0
+	dataMatchingCount := 0
+	aggregate := make(map[string][]string)
+	for _,sndata := range task.peersSNDataSigned {		
+		// Verify the data
+		if ok, err := task.pastelClient.Verify(ctx, sndata.UserdataHash + sndata.UserdataResultHash, string(sndata.Signature), sndata.NodeID); err != nil {
+			errors.Errorf("failed to verify signature %s of node %s", userdata.Signature, sndata.NodeID)
+			continue
+		} else {
+			if !ok {
+				errors.Errorf("signature of node %s mistmatch", sndata.NodeID)
+				continue
+			} else {
+				successCount++
+				if task.ownSNData.UserdataHash == sndata.UserdataHash &&
+					task.ownSNData.UserdataResultHash == sndata.UserdataResultHash	{
+					dataMatchingCount++
+				}
+			}
+		}
+	}
+
+	if successCount < minimalNodeConfirmSuccess - 1  {
+		// If there is not enough userdata signed from other supernodes
+		return &UserdataProcessResult{
+			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm
+			Detail 		: userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm]
+		}, nil
+	} else if dataMatchingCount < minimalNodeConfirmSuccess - 1 {
+		// If the userdata between supernodes is not matching with each other
+		return &UserdataProcessResult{
+			ResponseCode: userdata.ErrorUserdataMismatchBetweenSupernode
+			Detail 		: userdata.Description[userdata.ErrorUserdataMismatchBetweenSupernode]
+		}, nil
+	} else {
+		// Success 
+		return &UserdataProcessResult{
+			ResponseCode: userdata.SuccessVerifyAllSignature
+			Detail 		: userdata.Description[userdata.SuccessVerifyAllSignature]
+		}, nil
+	}
+}
+
+
+func (task *Task) validateUserdata(req * userdata.UserdataProcessRequest) (userdata.UserdataProcessResult, error) {
+	result := UserdataProcessResult{}
+
+	textLengthLimit := 1000
+
+	contentValidation := userdata.SuccessValidateContent
+
+	// Biography validation
+	if len(req.Biography) > textLengthLimit {
+		result.Biography = "Biography text length is greater than the limit " + string(textLengthLimit) + " characters"
+		errorOnContent = userdata.ErrorOnContent
+	}
+
+	// Primary Language validation
+	// TODO: Or the “Primary Language” field might be limited to a list of language names that we can validate against 
+	// (this way we can avoid the problem of users writing in “Russian” and “русский” which creates confusion and data fragmentation).
+
+	// FacebookLink validation
+	if !(strings.Contains(strings.ToLower(req.FacebookLink), "facebook.com") || strings.Contains(strings.ToLower(req.FacebookLink), "fb.com")){
+		result.Biography = "Facebook Link is not valid"
+		errorOnContent = userdata.ErrorOnContent
+	}
+
+	// Image validation
+	// Image Extension validation
+	allowExtension := []string{".png", ".jpeg", ".jpg"}
+	isAvatarMatchExtention := false
+	isCoverPhotoMatchExtention := false
+	for _ , extension := range allowExtension {
+		if strings.Contains(strings.ToLower(req.AvatarImage.Filename) , extension){
+			isAvatarMatchExtention = true
+		}
+		if strings.Contains(strings.ToLower(req.CoverPhoto.Filename) , extension){
+			isCoverPhotoMatchExtention = true
+		}
+	}
+	if !isAvatarMatchExtention {
+		result.AvatarImage = "Avatar extension must be in the following: " + strings.Join(allowExtension,",")
+		errorOnContent = userdata.ErrorOnContent
+	}
+	if !isCoverPhotoExtention {
+		result.CoverPhoto = "CoverPhoto extension must be in the following: " + strings.Join(allowExtension,",")
+		errorOnContent = userdata.ErrorOnContent
+	}
+
+	// Image Size validation
+	minSizeLimit = 10 * 1024 // 10 kb
+	maxSizeLimit =  1000 * 1024 // 1000 kb
+	if len(req.AvatarImage.Content) < minSizeLimit || len(req.AvatarImage.Content) > maxSizeLimit {
+		result.AvatarImage = "Avatar size must be in the range: [" + minSizeLimit  + "-" + maxSizeLimit + "]"
+		errorOnContent = userdata.ErrorOnContent
+	}
+	if len(req.CoverPhoto.Content) > photoSizeLimit {
+		result.CoverPhoto = "Cover Photo size must be in the range: [" + minSizeLimit  + "-" + maxSizeLimit + "]"
+		errorOnContent = userdata.ErrorOnContent
+	}
+
+	// Image Resolution validation
+	// TODO: Requirement not specified yet, will do later
+
+
+	// Other field Validation
+	// TODO: Requirement not specified yet, will do later
+
+
+	result.ResponseCode = contentValidation
+	result.Detail		= userdata.Description[contentValidation]
+	return result
+}
+
+
+
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
@@ -396,8 +419,8 @@ func NewTask(service *Service) *Task {
 	return &Task{
 		Task:                       task.New(StatusTaskStarted),
 		Service:                    service,
-		peersArtTicketSignatureMtx: &sync.Mutex{},
-		peersArtTicketSignature:    make(map[string][]byte),
-		allSignaturesReceived:      make(chan struct{}),
+		peersSNDataSignedMtx: 		&sync.Mutex{},
+		peersSNDataSigned:    		make(map[string][]byte),
+		allPeersSNDatasReceived:    make(chan struct{}),
 	}
 }
