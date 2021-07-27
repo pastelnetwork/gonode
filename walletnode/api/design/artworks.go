@@ -651,6 +651,7 @@ var ArtworkDownloadPayload = Type("ArtworkDownloadPayload", func() {
 	Required("txid", "pid", "key")
 })
 
+// APIKeyAuth is donwload security schemes.
 var APIKeyAuth = APIKeySecurity("api_key", func() {
 	Description("Art Owner's passphrase to authenticate")
 })

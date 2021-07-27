@@ -175,8 +175,8 @@ func (service *Artwork) Download(ctx context.Context, p *artworks.DownloadPayloa
 }
 
 // APIKeyAuth implements the authorization logic for the APIKey security scheme.
-func (service *Artwork) APIKeyAuth(ctx_ context.Context, key string, schema *security.APIKeyScheme) (ctx context.Context, err error) {
-	return ctx_, nil
+func (service *Artwork) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
+	return ctx, nil
 }
 
 // Mount configures the mux to serve the artworks endpoints.
