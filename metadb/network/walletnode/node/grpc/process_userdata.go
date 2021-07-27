@@ -172,7 +172,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 		ResponseCode: 		resp.ResponseCode,
 		Detail:				resp.Detail,
 		Realname:			resp.Realname,
-		FacebookLink:		resp.UserdataReply.FacebookLink,
+		FacebookLink:		resp.FacebookLink,
 		TwitterLink:		resp.TwitterLink,
 		NativeCurrency:		resp.NativeCurrency,
 		Location:			resp.Location,
@@ -191,7 +191,7 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 	ctx = service.contextWithMDSessID(ctx)
 
 	reqProto := &pb.RetrieveRequest{
-		userpastelid:userpastelid
+		Userpastelid : userpastelid,
 	}
 	resp, err := service.client.ReceiveUserdata(ctx, reqProto)
 	if err != nil {
@@ -202,11 +202,11 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 	response := userdata.UserdataProcessRequest{}
 
 	response.Realname = resp.Realname
-	response.FacebookLink = resp.Facebook_link
-	response.TwitterLink=resp.Twitter_link
-	response.NativeCurrency= resp.Native_currency
+	response.FacebookLink = resp.FacebookLink
+	response.TwitterLink=resp.TwitterLink
+	response.NativeCurrency= resp.NativeCurrency
 	response.Location= resp.Location
-	response.PrimaryLanguage= resp.Primary_language
+	response.PrimaryLanguage= resp.PrimaryLanguage
 	response.Categories=resp.Categories
 	response.Biography= resp.Biography
 
@@ -220,13 +220,13 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 		resp.CoverPhoto.Content = make ([]byte, len(resp.CoverPhoto.Content))
 		copy(response.CoverPhoto.Content,resp.CoverPhoto.Content)
 	}
-	response.CoverPhoto.Filename := resp.CoverPhoto.Filename
+	response.CoverPhoto.Filename = resp.CoverPhoto.Filename
 
 	response.ArtistPastelID  = resp.ArtistPastelID
 	response.Timestamp   = resp.Timestamp
 	response.PreviousBlockHash=resp.PreviousBlockHash
 
-	return response, nil
+	return &response, nil
 }
 
 func (service *processUserdata) contextWithMDSessID(ctx context.Context) context.Context {

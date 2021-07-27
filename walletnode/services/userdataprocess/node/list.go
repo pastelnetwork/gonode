@@ -82,7 +82,7 @@ func (nodes *List) ReceiveUserdata(ctx context.Context, pasteluserid string) err
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			res, err := node.RetrieveUserdata(ctx, pasteluserid)
+			res, err := node.ReceiveUserdata(ctx, pasteluserid)
 			node.ResultGet = res
 			return err
 		})

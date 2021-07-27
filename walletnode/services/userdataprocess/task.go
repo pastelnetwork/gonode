@@ -85,7 +85,7 @@ func (task *Task) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
 	}
 	
-	if len(nodes) < task.config.NumberSuperNodes {
+	if maxNode != 1 && len(nodes) < task.config.NumberSuperNodes {
 		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
 	}
 
@@ -105,12 +105,18 @@ func (task *Task) run(ctx context.Context) error {
 
 	if task.request == nil {
 		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
-		if res, err := nodes.ReceiveUserdata(ctx, task.userpastelid) ; err != nil {
+		if err := nodes.ReceiveUserdata(ctx, task.userpastelid) ; err != nil {
 			return err
 		} else {
 			// Post on result channel
-			task.resultChanGet <- &res
-			log.WithContext(ctx).WithField("userdata_get", res).Debug("Finished retrieve userdata")
+			node := nodes[0]
+			if node.ResultGet != nil {
+				task.resultChanGet <- node.ResultGet
+			} else {
+				return errors.Errorf("failed to receive userdata")
+			}
+			
+			log.WithContext(ctx).Debug("Finished retrieve userdata")
 		}
 	} else {
 		// PROCESS TO SET/UPDATE USERDATA TO METADATA LAYER
@@ -362,12 +368,12 @@ func (task *Task) SubscribeProcessResultGet() <-chan *userdata.UserdataProcessRe
 }
 
 // NewTask returns a new Task instance.
-func NewTask(service *Service, request *userdata.UserdataProcessRequest, retrieve string) *Task {
+func NewTask(service *Service, request *userdata.UserdataProcessRequest, userpastelid string) *Task {
 	return &Task{
 		Task:       task.New(StatusTaskStarted),
 		Service:    service,
 		request:    request,
-		retrieve:	retrieve,	
+		userpastelid:	userpastelid,	
 		resultChan: make(chan *userdata.UserdataProcessResult),
 	}
 }

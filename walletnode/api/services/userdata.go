@@ -33,34 +33,9 @@ func (service *Userdata) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.S
 }
 
 // ProcessUserdata will send userdata to Super Nodes to store in Metadata layer 
-func (service *Userdata) ProcessUserdata(ctx context.Context, req *userdatas.ProcessUserdataPayload) (*userdatas.UserSpecifiedData, error) {
+func (service *Userdata) ProcessUserdata(ctx context.Context, req *userdatas.ProcessUserdataPayload) (*userdatas.UserdataProcessResult, error) {
 	request := fromUserdataProcessRequest(req)
-	taskID := service.process.AddTask(request)
-	task := service.process.Task(taskID)
-
-	resultChanGet := task.SubscribeProcessResultGet()
-	for {
-		select {
-		case <-ctx.Done():
-			return nil,nil
-		case response, ok := <-resultChanGet:
-			if !ok {
-				if task.Status().IsFailure() {
-					return nil,userdatas.MakeInternalServerError(task.Error())
-				}
-
-				return nil,nil
-			}
-
-			res := toUserSpecifiedData(response)
-			return res,nil
-		}
-	}
-}
-
-// UserdataGet will get userdata from Super Nodes to store in Metadata layer 
-func (service *Userdata) UserdataGet (ctx context.Context, pastelid string) (*userdatas.ProcessUserdataPayload, error) {
-	taskID := service.process.AddTask(nil, request)
+	taskID := service.process.AddTask(request, "")
 	task := service.process.Task(taskID)
 
 	resultChan := task.SubscribeProcessResult()
@@ -78,6 +53,34 @@ func (service *Userdata) UserdataGet (ctx context.Context, pastelid string) (*us
 			}
 
 			res := toUserdataProcessResult(response)
+			return res,nil
+		}
+	}
+	
+}
+
+// UserdataGet will get userdata from Super Nodes to store in Metadata layer 
+func (service *Userdata) UserdataGet (ctx context.Context, req *userdatas.UserdataGetPayload) (*userdatas.UserSpecifiedData, error) {
+	userpastelid := req.Pastelid
+
+	taskID := service.process.AddTask(nil, userpastelid)
+	task := service.process.Task(taskID)
+
+	resultChanGet := task.SubscribeProcessResultGet()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil,nil
+		case response, ok := <-resultChanGet:
+			if !ok {
+				if task.Status().IsFailure() {
+					return nil,userdatas.MakeInternalServerError(task.Error())
+				}
+
+				return nil,nil
+			}
+
+			res := toUserSpecifiedData(response)
 			return res,nil
 		}
 	}

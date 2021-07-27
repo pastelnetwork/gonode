@@ -86,7 +86,7 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 func UserdatasProcessUserdataDecoderFunc(ctx context.Context, service *Userdata) mdlserver.UserdatasProcessUserdataDecoderFunc {
 	return func(reader *multipart.Reader, p **userdatas.ProcessUserdataPayload) error {
 
-		var res *userdatas.ProcessUserdataPayload
+		var response *userdatas.ProcessUserdataPayload
 		formValues := make(map[string]interface{})
 
 		for {
@@ -133,9 +133,11 @@ func UserdatasProcessUserdataDecoderFunc(ctx context.Context, service *Userdata)
 			if err != nil {
 				return userdatas.MakeBadRequest(errors.Errorf("Could not convert formValues to object: %w", err))
 			}
+
+			response = &res
 		}
 
-		*p = res
+		*p = response
 		return nil
 	}
 }

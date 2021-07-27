@@ -13,7 +13,7 @@ type clientConn struct {
 	id string
 }
 
-func (conn *clientConn) UserdataProcess() node.ProcessUserdata {
+func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)
 }
 

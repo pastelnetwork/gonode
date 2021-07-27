@@ -207,17 +207,17 @@ func toUserSpecifiedData (req *userdata.UserdataProcessRequest) *userdatas.UserS
 
 	if result.AvatarImage != nil { 
 		if result.AvatarImage.Content != nil && len(result.AvatarImage.Content) > 0 {
-			req.AvatarImage.Content = make ([]byte, len(result.AvatarImage.Content))
-			copy(req.AvatarImage.Content,result.AvatarImage.Content)
+			req.AvatarImage.Content = make ([]byte, len(result.AvatarImage.Content))
+			copy(req.AvatarImage.Content,result.AvatarImage.Content)
 		}
-		req.AvatarImage.Filename = result.AvatarImage.Filename
+		req.AvatarImage.Filename = *result.AvatarImage.Filename
 	}
 	if result.CoverPhoto != nil { 
 		if result.CoverPhoto.Content != nil && len(result.CoverPhoto.Content) > 0 {
-			req.CoverPhoto.Content = make ([]byte, len(result.CoverPhoto.Content))
-			copy(req.CoverPhoto.Content,result.CoverPhoto.Content)
+			req.CoverPhoto.Content = make ([]byte, len(result.CoverPhoto.Content))
+			copy(req.CoverPhoto.Content,result.CoverPhoto.Content)
 		}
-		req.CoverPhoto.Filename = result.CoverPhoto.Filename
+		req.CoverPhoto.Filename = *result.CoverPhoto.Filename
 	}
 
 	return result

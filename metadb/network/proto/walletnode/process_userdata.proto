@@ -76,7 +76,7 @@ message UserdataRequest {
 	// Artist's PastelID
 	string artist_pastelID              		= 11;
 	// Epoch Timestamp of the request
-	int32 timestamp                    			= 12;
+	int64 timestamp                    			= 12;
 	// Previous block hash in the chain
 	string previous_block_hash           		= 13;
 	// UserdataHash represents UserdataProcessRequest's hash value, to make sure UserdataProcessRequest's integrity 
