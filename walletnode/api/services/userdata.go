@@ -2,14 +2,9 @@ package services
 
 import (
 	"context"
-	"time"
 
-	"github.com/gorilla/websocket"
-	"github.com/pastelnetwork/gonode/common/errors"
+	// "github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/common/storage"
-	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 
@@ -19,7 +14,7 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
-// Userdatas represents services for userdatas endpoints.
+// Userdata represents services for userdatas endpoints.
 type Userdata struct {
 	*Common
 	process *userdataprocess.Service
@@ -28,7 +23,7 @@ type Userdata struct {
 // Mount configures the mux to serve the artworks endpoints.
 func (service *Userdata) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := userdatas.NewEndpoints(service)
-	srv := server.New(endpoints, mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, &websocket.Upgrader{}, nil, UserdatasProcessUserdataDecoderFunc(ctx, service))
+	srv := server.New(endpoints, mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, UserdatasProcessUserdataDecoderFunc(ctx, service))
 	server.Mount(mux, srv)
 
 	for _, m := range srv.Mounts {
@@ -38,30 +33,52 @@ func (service *Userdata) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.S
 }
 
 // ProcessUserdata will send userdata to Super Nodes to store in Metadata layer 
-func (service *Userdata) ProcessUserdata(ctx context.Context, req *userdatas.UserdataProcessPayload, stream userdatas.ProcessUserdataServerStream) error {
-	defer stream.Close()
+func (service *Userdata) ProcessUserdata(ctx context.Context, req *userdatas.ProcessUserdataPayload) (*userdatas.UserSpecifiedData, error) {
 	request := fromUserdataProcessRequest(req)
 	taskID := service.process.AddTask(request)
+	task := service.process.Task(taskID)
+
+	resultChanGet := task.SubscribeProcessResultGet()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil,nil
+		case response, ok := <-resultChanGet:
+			if !ok {
+				if task.Status().IsFailure() {
+					return nil,userdatas.MakeInternalServerError(task.Error())
+				}
+
+				return nil,nil
+			}
+
+			res := toUserSpecifiedData(response)
+			return res,nil
+		}
+	}
+}
+
+// UserdataGet will get userdata from Super Nodes to store in Metadata layer 
+func (service *Userdata) UserdataGet (ctx context.Context, pastelid string) (*userdatas.ProcessUserdataPayload, error) {
+	taskID := service.process.AddTask(nil, request)
 	task := service.process.Task(taskID)
 
 	resultChan := task.SubscribeProcessResult()
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return nil,nil
 		case response, ok := <-resultChan:
 			if !ok {
 				if task.Status().IsFailure() {
-					return artworks.MakeInternalServerError(task.Error())
+					return nil,userdatas.MakeInternalServerError(task.Error())
 				}
 
-				return nil
+				return nil,nil
 			}
 
 			res := toUserdataProcessResult(response)
-			if err := stream.Send(res); err != nil {
-				return userdatas.MakeInternalServerError(err)
-			}
+			return res,nil
 		}
 	}
 }

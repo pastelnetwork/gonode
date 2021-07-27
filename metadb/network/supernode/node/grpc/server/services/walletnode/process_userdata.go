@@ -178,34 +178,76 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 			Avatar_image		: processResult.AvatarImage,
 			Cover_photo			: processResult.CoverPhoto,
 		}
-	} else {
-		// Process actual write to rqlite db happen here
-		<-task.NewAction(func(ctx context.Context) error {
-			// Send data to SN contain the leader rqlite
-			if err := task.ConnectTo(ctx, req.NodeID, req.SessID, common.NodeTypeLeader); err != nil {
-				return err
-			} else {
-				if task.connectedToLeader != nil {
-					if _, err := task.connectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
-						return errors.Errorf("failed to send userdata to leader rqlite node %s at address %s %w", task.connectedToLeader.ID, task.connectedToLeader.Address, err)
-					}
-				} else {
-					return return errors.Errorf("leader rqlite node object is empty")
+	}
+	// Process actual write to rqlite db happen here
+	<-task.NewAction(func(ctx context.Context) error {
+		// Send data to SN contain the leader rqlite
+		if err := task.ConnectTo(ctx, req.NodeID, req.SessID, common.NodeTypeLeader); err != nil {
+			return err
+		} else {
+			if task.connectedToLeader != nil {
+				if _, err := task.connectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
+					return errors.Errorf("failed to send userdata to leader rqlite node %s at address %s %w", task.connectedToLeader.ID, task.connectedToLeader.Address, err)
 				}
-				
+			} else {
+				return return errors.Errorf("leader rqlite node object is empty")
 			}
-
-			return nil
-		})
-
-		return &pb.UserdataReply {
-			Response_code		: processResult.ResponseCode
-			Detail				: processResult.Detail
+			
 		}
+
+		return nil
+	})
+
+	return &pb.UserdataReply {
+		Response_code		: processResult.ResponseCode
+		Detail				: processResult.Detail
+	}
+}
+
+// SendUserdata implements walletnode.ProcessUserdataServer.SendUserdata()
+func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, userpastelid string) (*pb.UserdataRequest, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdata request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	// Should never get here
-	return &pb.UserdataReply {}, nil
+	resutl, err:= task.retrieveUserdata(userpastelid)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Generate protobuf response respProto
+	respProto := &pb.UserdataRequest{}
+
+	respProto.Realname = result.Userdata.Realname
+	respProto.FacebookLink = result.Userdata.FacebookLink
+	respProto.TwitterLink = result.Userdata.TwitterLink
+	respProto.NativeCurrency = result.Userdata.NativeCurrency
+	respProto.Location = result.Userdata.Location
+	respProto.PrimaryLanguage = result.Userdata.PrimaryLanguage
+	respProto.Categories = result.Userdata.Categories
+	respProto.Biography = result.Userdata.Biography
+	respProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
+
+	if result.Userdata.AvatarImage.Content != nil && len(result.Userdata.AvatarImage.Content) > 0 {
+		respProto.AvatarImage.Content = make ([]byte, len(result.Userdata.AvatarImage.Content))
+		copy(respProto.AvatarImage.Content,result.Userdata.AvatarImage.Content)
+	}
+	respProto.AvatarImage.Filename = result.Userdata.AvatarImage.Filename
+
+	respProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
+	if result.Userdata.CoverPhoto.Content != nil && len(result.Userdata.CoverPhoto.Content) > 0 {
+		respProto.CoverPhoto.Content = make ([]byte, len(result.Userdata.CoverPhoto.Content))
+		copy(respProto.CoverPhoto.Content,result.Userdata.CoverPhoto.Content)
+	}
+	respProto.CoverPhoto.Filename = result.Userdata.CoverPhoto.Filename
+	
+	respProto.ArtistPastelID = result.Userdata.ArtistPastelID 
+	respProto.Timestamp = result.Userdata.Timestamp
+	respProto.PreviousBlockHash = result.Userdata.PreviousBlockHash
+
+	return respProto
 }
 
 

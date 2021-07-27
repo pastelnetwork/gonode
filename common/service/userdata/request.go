@@ -29,7 +29,7 @@ type UserdataProcessRequest struct {
 	// Passphrase of the artist's PastelID
 	ArtistPastelIDPassphrase string
 	// Epoch Timestamp of the request (generated, not sending by UI)
-	Timestamp int32
+	Timestamp int64
 	// Previous block hash in the chain (generated, not sending by UI)
 	PreviousBlockHash string
 }

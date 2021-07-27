@@ -17,7 +17,10 @@ service ProcessUserdata {
     rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
 
     // ProcessUserdata send the user info and return the operation is success or detail on error.
-    rpc SendUserdata(stream UserdataRequest) returns (UserdataReply);
+	rpc SendUserdata(stream UserdataRequest) returns (UserdataReply);
+	
+	// ProcessUserdata send the user info and return the operation is success or detail on error.
+    rpc ReceiveUserdata(RetrieveRequest) returns (UserdataRequest);
 }
 
 message SessionRequest {
@@ -107,4 +110,9 @@ message UserdataReply{
 	string avatar_image             = 11;
 	// Error detail on cover photo
 	string cover_photo              = 12;
+}
+
+message RetrieveRequest {
+	// User pastelid
+	string userpastelid              = 1;
 }

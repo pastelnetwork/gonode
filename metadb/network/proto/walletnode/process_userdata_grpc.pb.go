@@ -28,6 +28,8 @@ type ProcessUserdataClient interface {
 	ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error)
 	// ProcessUserdata send the user info and return the operation is success or detail on error.
 	SendUserdata(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SendUserdataClient, error)
+	// ProcessUserdata send the user info and return the operation is success or detail on error.
+	ReceiveUserdata(ctx context.Context, in *RetrieveRequest, opts ...grpc.CallOption) (*UserdataRequest, error)
 }
 
 type processUserdataClient struct {
@@ -121,6 +123,15 @@ func (x *processUserdataSendUserdataClient) CloseAndRecv() (*UserdataReply, erro
 	return m, nil
 }
 
+func (c *processUserdataClient) ReceiveUserdata(ctx context.Context, in *RetrieveRequest, opts ...grpc.CallOption) (*UserdataRequest, error) {
+	out := new(UserdataRequest)
+	err := c.cc.Invoke(ctx, "/walletnode.ProcessUserdata/ReceiveUserdata", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProcessUserdataServer is the server API for ProcessUserdata service.
 // All implementations must embed UnimplementedProcessUserdataServer
 // for forward compatibility
@@ -135,6 +146,8 @@ type ProcessUserdataServer interface {
 	ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error)
 	// ProcessUserdata send the user info and return the operation is success or detail on error.
 	SendUserdata(ProcessUserdata_SendUserdataServer) error
+	// ProcessUserdata send the user info and return the operation is success or detail on error.
+	ReceiveUserdata(context.Context, *RetrieveRequest) (*UserdataRequest, error)
 	mustEmbedUnimplementedProcessUserdataServer()
 }
 
@@ -153,6 +166,9 @@ func (UnimplementedProcessUserdataServer) ConnectTo(context.Context, *ConnectToR
 }
 func (UnimplementedProcessUserdataServer) SendUserdata(ProcessUserdata_SendUserdataServer) error {
 	return status.Errorf(codes.Unimplemented, "method SendUserdata not implemented")
+}
+func (UnimplementedProcessUserdataServer) ReceiveUserdata(context.Context, *RetrieveRequest) (*UserdataRequest, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReceiveUserdata not implemented")
 }
 func (UnimplementedProcessUserdataServer) mustEmbedUnimplementedProcessUserdataServer() {}
 
@@ -255,6 +271,24 @@ func (x *processUserdataSendUserdataServer) Recv() (*UserdataRequest, error) {
 	return m, nil
 }
 
+func _ProcessUserdata_ReceiveUserdata_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetrieveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProcessUserdataServer).ReceiveUserdata(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.ProcessUserdata/ReceiveUserdata",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProcessUserdataServer).ReceiveUserdata(ctx, req.(*RetrieveRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProcessUserdata_ServiceDesc is the grpc.ServiceDesc for ProcessUserdata service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -269,6 +303,10 @@ var ProcessUserdata_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConnectTo",
 			Handler:    _ProcessUserdata_ConnectTo_Handler,
+		},
+		{
+			MethodName: "ReceiveUserdata",
+			Handler:    _ProcessUserdata_ReceiveUserdata_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -185,6 +185,50 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 	return result, nil
 }
 
+// ReceiveUserdata implements node.ProcessUserdata.ReceiveUserdata()
+func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpastelid string) (result *userdata.UserdataProcessRequest, err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	reqProto := &pb.RetrieveRequest{
+		userpastelid:userpastelid
+	}
+	resp, err := service.client.ReceiveUserdata(ctx, reqProto)
+	if err != nil {
+		return nil, errors.Errorf("failed to open stream: %w", err)
+	}
+
+	// Convert protobuf request to UserdataProcessRequest
+	response := userdata.UserdataProcessRequest{}
+
+	response.Realname = resp.Realname
+	response.FacebookLink = resp.Facebook_link
+	response.TwitterLink=resp.Twitter_link
+	response.NativeCurrency= resp.Native_currency
+	response.Location= resp.Location
+	response.PrimaryLanguage= resp.Primary_language
+	response.Categories=resp.Categories
+	response.Biography= resp.Biography
+
+	if resp.AvatarImage.Content != nil && len(resp.AvatarImage.Content) > 0 {
+		resp.AvatarImage.Content = make ([]byte, len(resp.AvatarImage.Content))
+		copy(response.AvatarImage.Content,resp.AvatarImage.Content)
+	}
+	response.AvatarImage.Filename = resp.AvatarImage.Filename
+
+	if resp.CoverPhoto.Content != nil && len(resp.CoverPhoto.Content) > 0 {
+		resp.CoverPhoto.Content = make ([]byte, len(resp.CoverPhoto.Content))
+		copy(response.CoverPhoto.Content,resp.CoverPhoto.Content)
+	}
+	response.CoverPhoto.Filename := resp.CoverPhoto.Filename
+
+	response.ArtistPastelID  = resp.ArtistPastelID
+	response.Timestamp   = resp.Timestamp
+	response.PreviousBlockHash=resp.PreviousBlockHash
+
+	return response, nil
+}
+
 func (service *processUserdata) contextWithMDSessID(ctx context.Context) context.Context {
 	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)

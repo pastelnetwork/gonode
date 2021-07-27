@@ -6,6 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/metadb/network/walletnode/node"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -18,6 +19,7 @@ type Service struct {
 	*task.Worker
 	config       *Config
 	pastelClient pastel.Client
+	nodeClient   node.Client
 }
 
 // Run starts worker.
@@ -46,18 +48,19 @@ func (service *Service) Task(id string) *Task {
 }
 
 // AddTask runs a new task of the userdata process and returns its taskID.
-func (service *Service) AddTask(request *userdata.UserdataProcessRequest) string {
-	task := NewTask(service, request)
+func (service *Service) AddTask(request *userdata.UserdataProcessRequest, retrieve string ) string {
+	task := NewTask(service, request, retrieve)
 	service.Worker.AddTask(task)
 
 	return task.ID()
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client) *Service {
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
 		config:       config,
 		pastelClient: pastelClient,
+		nodeClient:   nodeClient,
 		Worker:       task.NewWorker(),
 	}
 }

@@ -135,7 +135,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// ----Userdata Services----
 	userdataNodeClient := mdlgrpc.NewClient()
-	userdataProcess := userdataprocess.NewService(pastelClient, userdataNodeClient)
+	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
 	// ----api service----
 	server := api.NewServer(config.API,

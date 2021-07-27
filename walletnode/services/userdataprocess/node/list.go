@@ -76,6 +76,20 @@ func (nodes *List) SendUserdata(ctx context.Context, req *userdata.UserdataProce
 	return group.Wait()
 }
 
+// ReceiveUserdata retrieve the userdata from Metadata layer
+func (nodes *List) ReceiveUserdata(ctx context.Context, pasteluserid string) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() (err error) {
+			res, err := node.RetrieveUserdata(ctx, pasteluserid)
+			node.ResultGet = res
+			return err
+		})
+	}
+	return group.Wait()
+}
+
 // SetPrimary promotes a supernode to primary role \
 func (node *Node) SetPrimary(primary bool) {
 	node.isPrimary = primary
