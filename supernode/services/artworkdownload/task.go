@@ -291,7 +291,7 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 			// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
 			fileHash := sha3.Sum256(decodeInfo.File)
 
-			if bytes.Compare(fileHash[:], artRegTicket.RegTicketData.ArtTicketData.AppTicketData.DataHash) != 0 {
+			if !bytes.Equal(fileHash[:], artRegTicket.RegTicketData.ArtTicketData.AppTicketData.DataHash) {
 				err = errors.New("File mismatched")
 				task.UpdateStatus(StatusFileMismatched)
 				continue
