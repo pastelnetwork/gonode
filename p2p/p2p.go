@@ -49,6 +49,8 @@ func (s *p2p) Run(ctx context.Context) error {
 	}
 	s.running = true
 
+	log.WithContext(ctx).Info("p2p service is started")
+
 	// block until context is done
 	<-ctx.Done()
 

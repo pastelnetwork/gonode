@@ -16,16 +16,17 @@ import (
 )
 
 const (
-	defaultConnDeadline = 3 * time.Second
-	defaultConnRate     = 100
+	defaultConnDeadline = 5 * time.Second
+	defaultConnRate     = 500
 )
 
 // Network for distributed hash table
 type Network struct {
-	dht    *DHT          // the distributed hash table
-	socket *utp.Socket   // the server socket for the network
-	self   *Node         // local node itself
-	done   chan struct{} // network is stopped
+	dht     *DHT              // the distributed hash table
+	socket  *utp.Socket       // the server socket for the network
+	self    *Node             // local node itself
+	limiter ratelimit.Limiter // the rate limit for accept socket
+	done    chan struct{}     // network is stopped
 }
 
 // NewNetwork returns a network service
@@ -35,6 +36,8 @@ func NewNetwork(dht *DHT, self *Node) (*Network, error) {
 		self: self,
 		done: make(chan struct{}),
 	}
+	// init the rate limiter
+	s.limiter = ratelimit.New(defaultConnRate)
 
 	addr := fmt.Sprintf("%s:%d", self.IP, self.Port)
 	// new the network socket
@@ -240,10 +243,9 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 func (s *Network) serve(ctx context.Context) {
 	var tempDelay time.Duration // how long to sleep on accept failure
 
-	limiter := ratelimit.New(defaultConnRate) // per second
 	for {
 		// rate limiter for the incomming connections
-		limiter.Take()
+		s.limiter.Take()
 
 		// accept the incomming connections
 		conn, err := s.socket.Accept()
