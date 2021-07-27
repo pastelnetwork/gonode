@@ -10,6 +10,7 @@ require (
 	github.com/fogleman/gg v1.3.0
 	github.com/go-errors/errors v1.1.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
+	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629
 	github.com/makiuchi-d/gozxing v0.0.0-20210610151345-232d6193415d
 	github.com/mattn/go-colorable v0.1.8 // indirect
