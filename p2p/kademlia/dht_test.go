@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/ratelimit"
 )
 
 func TestSuite(t *testing.T) {
@@ -78,6 +79,9 @@ func (ts *testSuite) SetupSuite() {
 	if err != nil {
 		ts.T().Fatalf("new main dht: %v", err)
 	}
+	// reset the rate limiter
+	dht.network.limiter = ratelimit.NewUnlimited()
+
 	// start the main dht
 	if err := dht.Start(ts.ctx); err != nil {
 		ts.T().Fatalf("start main dht: %v", err)
@@ -161,6 +165,7 @@ func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
+	dht.network.limiter = ratelimit.NewUnlimited()
 
 	return dht, nil
 }
@@ -479,7 +484,7 @@ func (ts *testSuite) TestHashKey() {
 }
 
 func (ts *testSuite) TestRateLimiter() {
-	start, end := 10, 50
+	start, end := 10, 20
 	// start 10 nodes
 	dhts, err := ts.startNodes(start, end)
 	if err != nil {
