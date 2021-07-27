@@ -13,13 +13,20 @@ type Node struct {
 	node.RegisterArtwork
 	node.Connection
 
-	activated   bool
-	fingerprint []byte
+	isPrimary     bool
+	activated     bool
+	fingerprint   []byte
+	rarenessScore int
+	nSFWScore     int
+	seenScore     int
 
 	// thumbnail hash
 	previewHash         []byte
 	mediumThumbnailHash []byte
 	smallThumbnailHash  []byte
+
+	registrationFee int64
+	regArtTxId      string
 
 	address  string
 	pastelID string
@@ -50,6 +57,10 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
 	node.Connection = conn
 	node.RegisterArtwork = conn.RegisterArtwork()
 	return nil
+}
+
+func (node *Node) Address() string {
+	return node.address
 }
 
 // NewNode returns a new Node instance.

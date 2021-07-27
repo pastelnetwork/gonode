@@ -3,9 +3,13 @@ package artworkregister
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
@@ -13,7 +17,11 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/pastel"
+	rq "github.com/pastelnetwork/gonode/raptorq"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
+	"golang.org/x/crypto/sha3"
 )
 
 // Task is the task of registering new artwork.
@@ -21,7 +29,43 @@ type Task struct {
 	task.Task
 	*Service
 
-	Ticket *Ticket
+	Request *Request
+
+	// information of nodes
+	nodes node.List
+
+	// task data to create RegArt ticket
+	artistBlockHeight            int
+	artistBlockHash              []byte
+	fingerprints                 []byte
+	fingerprintsHash             []byte
+	imageEncodedWithFingerprints *artwork.File
+	previewHash                  []byte
+	mediumThumbnailHash          []byte
+	smallThumbnailHash           []byte
+	datahash                     []byte
+	rqids                        []string
+
+	// TODO: call cNodeAPI to get the reall signature instead of the fake one
+	fingerprintSignature []byte
+
+	// TODO: need to update rqservice code to return the following info
+	rqSymbolIdFiles rq.SymbolIdFiles
+	rqEncodeParams  rqnode.EncoderParameters
+
+	// TODO: call cNodeAPI to get the following info
+	blockTxID       string
+	burnTxId        string
+	regArtTxid      string
+	registrationFee int64
+
+	rarenessScore int
+	nSFWScore     int
+	seenScore     int
+
+	// ticket
+	artistSignature []byte
+	ticket          *pastel.ArtTicket
 }
 
 // Run starts the task
@@ -53,150 +97,182 @@ func (task *Task) run(ctx context.Context) error {
 		return err
 	} else if !ok {
 		task.UpdateStatus(ErrorInsufficientFee)
-		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Ticket.MaximumFee)
+		return errors.Errorf("network storage fee is higher than specified in the ticket: %v", task.Request.MaximumFee)
 	}
 
 	// Retrieve supernodes with highest ranks.
-	topNodes, err := task.pastelTopNodes(ctx)
-	if err != nil {
-		return err
-	}
-	if len(topNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(ErrorInsufficientFee)
-		return errors.New("unable to find enough Supernodes with acceptable storage fee")
+	if err := task.connectToTopRankNodes(ctx); err != nil {
+		return errors.Errorf("failed to connect to top rank nodes: %w", err)
 	}
 
-	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
-	var nodes node.List
-	var errs error
-	for primaryRank := range topNodes {
-		nodes, err = task.meshNodes(ctx, topNodes, primaryRank)
-		if err != nil {
-			if errors.IsContextCanceled(err) {
-				return err
-			}
-			errs = errors.Append(errs, err)
-			log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
-			continue
-		}
-		break
-	}
-	if len(nodes) < task.config.NumberSuperNodes {
-		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
-	}
-
-	// Activate supernodes that are in the mesh.
-	nodes.Activate()
-	// Disconnect supernodes that are not involved in the process.
-	topNodes.DisconnectInactive()
-
-	// Cancel context when any connection is broken.
+	// supervise the connection to top rank nodes
+	// cancel any ongoing context if the connections are broken
+	nodesDone := make(chan struct{})
 	groupConnClose, _ := errgroup.WithContext(ctx)
 	groupConnClose.Go(func() error {
 		defer cancel()
-		return nodes.WaitConnClose(ctx)
+		return task.nodes.WaitConnClose(ctx, nodesDone)
 	})
-	task.UpdateStatus(StatusConnected)
 
-	// Create a thumbnail copy of the image.
-	log.WithContext(ctx).WithField("filename", task.Ticket.Image.Name()).Debugf("Copy image")
-	thumbnail, err := task.Ticket.Image.Copy()
+	// get block height + hash
+	if err := task.getBlock(ctx); err != nil {
+		return errors.Errorf("failed to get current block heigth %w", err)
+	}
+
+	// probe image for rareness, nsfw and seen score
+	if err := task.probeImage(ctx); err != nil {
+		return errors.Errorf("failed to probe image: %w", err)
+	}
+
+	// upload image and thumbnail coordinates to supernode(s)
+	if err := task.uploadImage(ctx); err != nil {
+		return errors.Errorf("failed to upload image: %w", err)
+	}
+
+	// connect to rq serivce to get rq symbols identifier
+	if err := task.genRQIdentifiersFiles(ctx); err != nil {
+		return errors.Errorf("gen RaptorQ symbols' identifiers failed %w", err)
+	}
+
+	if err := task.createArtTicket(ctx); err != nil {
+		return errors.Errorf("failed to create ticket %w", err)
+	}
+
+	// sign ticket with artist signature
+	if err := task.signTicket(ctx); err != nil {
+		return errors.Errorf("failed to sign art ticket %w", err)
+	}
+
+	// send signed ticket to supernodes to calculate registration fee
+	if err := task.sendSignedTicket(ctx); err != nil {
+		return errors.Errorf("failed to send signed art ticket: %w", err)
+	}
+
+	// send preburn-txid to master node(s)
+	// master node will create reg-art ticket and returns transaction id
+	if err := task.preburntRegistrationFee(ctx); err != nil {
+		return errors.Errorf("faild to pre-burnt ten percent of registration fee: %w", err)
+	}
+
+	log.WithContext(ctx).Debugf("close connection")
+	close(nodesDone)
+	for i := range task.nodes {
+		if err := task.nodes[i].Connection.Close(); err != nil {
+			log.WithContext(ctx).Debugf("failed to close connection to node %s %w", task.nodes[i].PastelID(), err)
+		}
+	}
+
+	// new context because the old context already cancelled
+	newCtx := context.Background()
+	if err := task.waitTxidValid(newCtx, task.regArtTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout); err != nil {
+		return errors.Errorf("failed to wait reg-art ticket valid %w", err)
+	}
+
+	// activate reg-art ticket at previous step
+	actTxid, err := task.registerActTicket(newCtx)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to register act ticket %w", err)
 	}
-	defer thumbnail.Remove()
+	log.Debugf("reg-act-txid: %s", actTxid)
 
-	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d pixeles", task.config.thumbnailSize, task.config.thumbnailSize)
-	if err := thumbnail.ResizeImage(thumbnailSize, thumbnailSize); err != nil {
-		return err
-	}
-
-	// Send thumbnail to supernodes for probing.
-	if err := nodes.ProbeImage(ctx, thumbnail); err != nil {
-		return err
-	}
-
-	// Match fingerprints received from supernodes.
-	if err := nodes.MatchFingerprints(); err != nil {
-		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
-		return err
-	}
-	task.UpdateStatus(StatusImageProbed)
-
-	fingerprint := nodes.Fingerprint()
-	finalImage, err := task.Ticket.Image.Copy()
+	// Wait until actTxid is valid
+	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), task.config.RegActTxTimeout)
 	if err != nil {
-		return errors.Errorf("copy image to encode failed %w", err)
+		return errors.Errorf("failed to reg-act ticket valid %w", err)
 	}
-	log.WithContext(ctx).WithField("FileName", finalImage.Name()).Debugf("final image")
-	// defer finalImage.Remove()
+	log.Debugf("reg-act-tixd is confirmed")
 
-	if err := task.encodeFingerprint(ctx, fingerprint, finalImage); err != nil {
-		return errors.Errorf("encode image with fingerprint %w", err)
-	}
+	return nil
+}
 
-	// Upload image with pqgsinganature and its thumb to supernodes
-	if err := nodes.UploadImageWithThumbnail(ctx, finalImage, task.Ticket.Thumbnail); err != nil {
-		return errors.Errorf("upload encoded image and thumbnail coordinate failed %w", err)
-	}
-	// Match thumbnail hashes receiveed from supernodes
-	if err := nodes.MatchThumbnailHashes(); err != nil {
-		task.UpdateStatus(StatusErrorThumbnailHashsesNotMatch)
-		return errors.Errorf("thumbnail hash returns by supenodes not mached %w", err)
-	}
-	task.UpdateStatus(StatusImageAndThumbnailUploaded)
+func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, timeout time.Duration) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return errors.Errorf("context done %w", ctx.Err())
+		case <-time.After(15 * time.Second):
+			checkConfirms := func() error {
+				subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+				defer cancel()
 
-	fmt.Println("OK")
-	// Wait for all connections to disconnect.
-	return groupConnClose.Wait()
+				result, err := task.pastelClient.GetRawTransactionVerbose1(subCtx, txID)
+				if err != nil {
+					errors.Errorf("failed to get transaction %w", err)
+				}
+
+				if result.Confirmations >= expectedConfirms {
+					return nil
+				}
+
+				return errors.Errorf("confirmations not meet %d", result.Confirmations)
+			}
+
+			err := checkConfirms()
+			if err != nil {
+				log.WithContext(ctx).Errorf("check confirmations failed : %v", err)
+			} else {
+				return nil
+			}
+		case <-time.After(timeout):
+			return errors.Errorf("timeout")
+		}
+	}
 }
 
 func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
 	// Sign fingerprint
-	ed448PubKey := []byte(task.Ticket.ArtistPastelID)
-	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Ticket.ArtistPastelID, task.Ticket.ArtistPastelIDPassphrase)
+	ed448PubKey := []byte(task.Request.ArtistPastelID)
+	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
 	if err != nil {
 		return errors.Errorf("sign fingerprint with pastelId and pastelPassphrase failed %w", err)
 	}
 
 	// TODO: Should be replaced with real data from the Pastel API.
-	pqPubKey := []byte("pqPubKey")
-	pqSignature := []byte("pqSignature")
+	ticket, err := task.pastelClient.FindTicketById(ctx, task.Request.ArtistPastelID)
+	if err != nil {
+		return errors.Errorf("faild to find register tick of artist pastel id:%s :%w", task.Request.ArtistPastelID, err)
+	}
+	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "legroast")
+	if err != nil {
+		return errors.Errorf("failed to sign fingerprint with legroats: %w", err)
+	}
 
 	// Encode data to the image.
 	encSig := qrsignature.New(
 		qrsignature.Fingerprint(fingerprint),
 		qrsignature.PostQuantumSignature(pqSignature),
-		qrsignature.PostQuantumPubKey(pqPubKey),
+		qrsignature.PostQuantumPubKey([]byte(ticket.Signature)),
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
 	if err := img.Encode(encSig); err != nil {
 		return err
 	}
+	task.fingerprintSignature = ed448Signature
 
+	// TODO: check with the change in legroast
 	// Decode data from the image, to make sure their integrity.
-	decSig := qrsignature.New()
-	copyImage, _ := img.Copy()
-	if err := copyImage.Decode(decSig); err != nil {
-		return err
-	}
+	// decSig := qrsignature.New()
+	// copyImage, _ := img.Copy()
+	// if err := copyImage.Decode(decSig); err != nil {
+	// 	return err
+	// }
 
-	if !bytes.Equal(fingerprint, decSig.Fingerprint()) {
-		return errors.Errorf("fingerprints do not match, original len:%d, decoded len:%d\n", len(fingerprint), len(decSig.Fingerprint()))
-	}
-	if !bytes.Equal(pqSignature, decSig.PostQuantumSignature()) {
-		return errors.Errorf("post quantum signatures do not match, original len:%d, decoded len:%d\n", len(pqSignature), len(decSig.PostQuantumSignature()))
-	}
-	if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
-		return errors.Errorf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
-	}
-	if !bytes.Equal(ed448Signature, decSig.Ed448Signature()) {
-		return errors.Errorf("ed448 signatures do not match, original len:%d, decoded len:%d\n", len(ed448Signature), len(decSig.Ed448Signature()))
-	}
-	if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
-		return errors.Errorf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
-	}
+	// if !bytes.Equal(fingerprint, decSig.Fingerprint()) {
+	// 	return errors.Errorf("fingerprints do not match, original len:%d, decoded len:%d\n", len(fingerprint), len(decSig.Fingerprint()))
+	// }
+	// if !bytes.Equal(pqSignature, decSig.PostQuantumSignature()) {
+	// 	return errors.Errorf("post quantum signatures do not match, original len:%d, decoded len:%d\n", len(pqSignature), len(decSig.PostQuantumSignature()))
+	// }
+	// if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
+	// 	return errors.Errorf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
+	// }
+	// if !bytes.Equal(ed448Signature, decSig.Ed448Signature()) {
+	// 	return errors.Errorf("ed448 signatures do not match, original len:%d, decoded len:%d\n", len(ed448Signature), len(decSig.Ed448Signature()))
+	// }
+	// if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
+	// 	return errors.Errorf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
+	// }
 	return nil
 }
 
@@ -211,6 +287,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	if err := primary.Session(ctx, true); err != nil {
 		return nil, err
 	}
+	primary.SetPrimary(true)
 
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
@@ -274,7 +351,7 @@ func (task *Task) isSuitableStorageFee(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return fee <= task.Ticket.MaximumFee, nil
+	return fee <= task.Request.MaximumFee, nil
 }
 
 func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
@@ -285,7 +362,7 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 		return nil, err
 	}
 	for _, mn := range mns {
-		if mn.Fee > task.Ticket.MaximumFee {
+		if mn.Fee > task.Request.MaximumFee {
 			continue
 		}
 		nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
@@ -294,11 +371,393 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 	return nodes, nil
 }
 
+// determine current block height & hash of it
+func (task *Task) getBlock(ctx context.Context) error {
+	// Get block num
+	blockNum, err := task.pastelClient.GetBlockCount(ctx)
+	task.artistBlockHeight = int(blockNum)
+	if err != nil {
+		return errors.Errorf("failed to get block num: %w", err)
+	}
+
+	// Get block hash string
+	blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
+	if err != nil {
+		return errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
+	}
+
+	// Decode hash string to byte
+	task.artistBlockHash, err = hex.DecodeString(blockInfo.Hash)
+	if err != nil {
+		return errors.Errorf("failed to convert hash string %s to bytes: %w", blockInfo.Hash, err)
+	}
+
+	return nil
+}
+
+func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
+	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
+	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
+	if err != nil {
+		return errors.Errorf("failed to connect to raptorQ service %w", err)
+	}
+	defer conn.Close()
+
+	content, err := task.imageEncodedWithFingerprints.Bytes()
+	if err != nil {
+		return errors.Errorf("failed to read image contents: %w", err)
+	}
+
+	rqService := conn.RaptorQ(&rqnode.Config{
+		RqFilesDir: task.Service.config.RqFilesDir,
+	})
+
+	// FIXME :
+	// - check format of artis block hash should be base58 or not
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, hex.EncodeToString(task.artistBlockHash), task.Request.ArtistPastelID)
+	if err != nil {
+		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
+	}
+
+	files := rq.SymbolIdFiles{}
+	for _, rawSymbolIdFile := range encodeInfo.SymbolIdFiles {
+
+		f, err := task.convertToSymbolIdFile(ctx, rawSymbolIdFile)
+		if err != nil {
+			return errors.Errorf("failed to create rqids file %w", err)
+		}
+
+		files = append(files, f)
+	}
+
+	if len(files) < 1 {
+		return errors.Errorf("nuber of raptorq symbol identifiers files must be greater than 1")
+	}
+	if task.rqids, err = files.FileIdentifers(); err != nil {
+		return errors.Errorf("failed to get rq symbols' identifier file's identifier %w", err)
+	}
+	if err != nil {
+		task.UpdateStatus(StatusErrorGenRaptorQSymbolsFailed)
+		return errors.Errorf("gen RaptorQ symbols' identifiers failed %w", err)
+	}
+
+	task.rqSymbolIdFiles = files
+	task.rqEncodeParams = encodeInfo.EncoderParam
+	return nil
+}
+
+func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawSymbolIdFile) (*rq.SymbolIdFile, error) {
+	symbolIdFile := rq.SymbolIdFile{
+		Id:                rawFile.Id,
+		BlockHash:         rawFile.BlockHash,
+		PastelId:          rawFile.PastelId,
+		SymbolIdentifiers: rawFile.SymbolIdentifiers,
+		Signature:         nil,
+	}
+
+	js, err := json.Marshal(&symbolIdFile)
+	if err != nil {
+		return nil, errors.Errorf("failed to marshal identifiers file %w", err)
+	}
+
+	symbolIdFile.Signature, err = task.pastelClient.Sign(ctx, js, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
+	if err != nil {
+		return nil, errors.Errorf("failed to sign identifier file %w", err)
+	}
+
+	js, err = json.Marshal(&symbolIdFile)
+	if err != nil {
+		return nil, errors.Errorf("failed to marshal identifiers file with signature %w", err)
+	}
+
+	hasher := sha3.New256()
+	src := bytes.NewReader(js)
+	if _, err := io.Copy(hasher, src); err != nil {
+		return nil, errors.Errorf("failed to hash identifiers file %w", err)
+	}
+	symbolIdFile.FileIdentifer = base58.Encode(hasher.Sum(nil))
+
+	return &symbolIdFile, nil
+}
+
+func (task *Task) createArtTicket(ctx context.Context) error {
+	if task.fingerprints == nil {
+		return errors.Errorf("empty fingerprints")
+	}
+	if task.fingerprintsHash == nil {
+		return errors.Errorf("empty fingerprints hash")
+	}
+	if task.fingerprintSignature == nil {
+		return errors.Errorf("empty fingerprint signature")
+	}
+	if task.datahash == nil {
+		return errors.Errorf("empty data hash")
+	}
+	if task.previewHash == nil {
+		return errors.Errorf("empty preview hash")
+	}
+	if task.mediumThumbnailHash == nil {
+		return errors.Errorf("empty medium thumbnail hash")
+	}
+	if task.smallThumbnailHash == nil {
+		return errors.Errorf("empty small thumbnail hash")
+	}
+	if task.rqids == nil {
+		return errors.Errorf("empty RaptorQ symbols identifiers")
+	}
+
+	pastelID := base58.Decode(task.Request.ArtistPastelID)
+	if pastelID == nil {
+		return errors.Errorf("base58 decode artist PastelID failed")
+	}
+
+	// TODO: fill all 0 and "TBD" value with real values when other API ready
+	ticket := &pastel.ArtTicket{
+		Version:   1,
+		Author:    pastelID,
+		BlockNum:  task.artistBlockHeight,
+		BlockHash: task.artistBlockHash,
+		Copies:    task.Request.IssuedCopies,
+		Royalty:   0,  // Not supported yet by cNode
+		Green:     "", // Not supported yet by cNode
+		AppTicketData: pastel.AppTicket{
+			AuthorPastelID:                 task.Request.ArtistPastelID,
+			BlockTxID:                      task.blockTxID,
+			BlockNum:                       task.artistBlockHeight,
+			ArtistName:                     task.Request.ArtistName,
+			ArtistWebsite:                  safeString(task.Request.ArtistWebsiteURL),
+			ArtistWrittenStatement:         safeString(task.Request.Description),
+			ArtworkCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
+			ArtworkKeywordSet:              safeString(task.Request.Keywords),
+			TotalCopies:                    task.Request.IssuedCopies,
+			PreviewHash:                    task.previewHash,
+			Thumbnail1Hash:                 task.mediumThumbnailHash,
+			Thumbnail2Hash:                 task.smallThumbnailHash,
+			DataHash:                       task.datahash,
+			Fingerprints:                   task.fingerprints,
+			FingerprintsHash:               task.fingerprintsHash,
+			FingerprintsSignature:          task.fingerprintSignature,
+			RarenessScore:                  task.rarenessScore,
+			NSFWScore:                      task.nSFWScore,
+			SeenScore:                      task.seenScore,
+			RQIDs:                          task.rqids,
+			RQOti:                          task.rqEncodeParams.Oti,
+		},
+	}
+
+	task.ticket = ticket
+	return nil
+}
+
+func (task *Task) signTicket(ctx context.Context) error {
+	data, err := pastel.EncodeArtTicket(task.ticket)
+	if err != nil {
+		return errors.Errorf("failed to encode ticket %w", err)
+	}
+
+	task.artistSignature, err = task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
+	if err != nil {
+		return errors.Errorf("failed to sign ticket %w", err)
+	}
+	return nil
+}
+
+func (task *Task) registerActTicket(ctx context.Context) (string, error) {
+	return task.pastelClient.RegisterActTicket(ctx, task.regArtTxid, task.artistBlockHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+}
+
 // NewTask returns a new Task instance.
-func NewTask(service *Service, Ticket *Ticket) *Task {
+func NewTask(service *Service, Ticket *Request) *Task {
 	return &Task{
 		Task:    task.New(StatusTaskStarted),
 		Service: service,
-		Ticket:  Ticket,
+		Request: Ticket,
 	}
+}
+
+func (task *Task) connectToTopRankNodes(ctx context.Context) error {
+	// Retrieve supernodes with highest ranks.
+	topNodes, err := task.pastelTopNodes(ctx)
+	if err != nil {
+		return errors.Errorf("failed to call masternode top: %w", err)
+	}
+
+	if len(topNodes) < task.config.NumberSuperNodes {
+		task.UpdateStatus(ErrorInsufficientFee)
+		return errors.New("unable to find enough Supernodes with acceptable storage fee")
+	}
+	// TODO: Remove this when releaset because in localnet there is no need to start 10 gonode
+	// and chase the log
+	pinned := []string{"127.0.0.1:4444", "127.0.0.1:4445", "127.0.0.1:4446"}
+	pinnedMn := make([]*node.Node, 0)
+	for i := range topNodes {
+		for j := range pinned {
+			if topNodes[i].Address() == pinned[j] {
+				pinnedMn = append(pinnedMn, topNodes[i])
+			}
+		}
+	}
+	log.WithContext(ctx).Debugf("%v", pinnedMn)
+
+	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
+	var nodes node.List
+	var errs error
+	for primaryRank := range pinnedMn {
+		nodes, err = task.meshNodes(ctx, pinnedMn, primaryRank)
+		if err != nil {
+			if errors.IsContextCanceled(err) {
+				return err
+			}
+			errs = errors.Append(errs, err)
+			log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
+			continue
+		}
+		break
+	}
+	if len(nodes) < task.config.NumberSuperNodes {
+		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
+	}
+
+	// Activate supernodes that are in the mesh.
+	nodes.Activate()
+	// Disconnect supernodes that are not involved in the process.
+	topNodes.DisconnectInactive()
+
+	// Cancel context when any connection is broken.
+	task.UpdateStatus(StatusConnected)
+	task.nodes = nodes
+
+	return nil
+}
+
+func (task *Task) probeImage(ctx context.Context) error {
+	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debugf("Copy image")
+	thumbnail, err := task.Request.Image.Copy()
+	if err != nil {
+		return errors.Errorf("failed to copy image: %w", err)
+	}
+	defer thumbnail.Remove()
+
+	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d pixeles", task.config.thumbnailSize, task.config.thumbnailSize)
+	if err := thumbnail.ResizeImage(thumbnailSize, thumbnailSize); err != nil {
+		return errors.Errorf("failed to resize image: %w", err)
+	}
+
+	// Send thumbnail to supernodes for probing.
+	if err := task.nodes.ProbeImage(ctx, thumbnail); err != nil {
+		return errors.Errorf("failed to probe image: %w", err)
+	}
+
+	// Match fingerprints received from supernodes.
+	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
+		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
+		return errors.Errorf("fingerprints aren't matched")
+	}
+	task.UpdateStatus(StatusImageProbed)
+	task.fingerprints = task.nodes.Fingerprint()
+	if task.fingerprintsHash, err = sha3256hash(task.fingerprints); err != nil {
+		return errors.Errorf("failed to hash fingerprints %w", err)
+	}
+
+	task.rarenessScore = task.nodes.RarenessScore()
+	task.nSFWScore = task.nodes.NSFWScore()
+	task.seenScore = task.nodes.SeenScore()
+
+	return nil
+}
+
+func (task *Task) uploadImage(ctx context.Context) error {
+	finalImage, err := task.Request.Image.Copy()
+	if err != nil {
+		return errors.Errorf("copy image to encode failed %w", err)
+	}
+
+	log.WithContext(ctx).WithField("FileName", finalImage.Name()).Debugf("final image")
+	task.Request.Image = finalImage
+
+	imgBytes, err := finalImage.Bytes()
+	if err != nil {
+		return errors.Errorf("failed to convert image to byte stream %w", err)
+	}
+	if task.datahash, err = sha3256hash(imgBytes); err != nil {
+		return errors.Errorf("failed to hash encoded image %w", err)
+	}
+	// defer finalImage.Remove()
+
+	if err := task.encodeFingerprint(ctx, task.fingerprints, finalImage); err != nil {
+		return errors.Errorf("encode image with fingerprint %w", err)
+	}
+	task.imageEncodedWithFingerprints = finalImage
+
+	// Upload image with pqgsinganature and its thumb to supernodes
+	if err := task.nodes.UploadImageWithThumbnail(ctx, finalImage, task.Request.Thumbnail); err != nil {
+		return errors.Errorf("upload encoded image and thumbnail coordinate failed %w", err)
+	}
+	// Match thumbnail hashes receiveed from supernodes
+	if err := task.nodes.MatchThumbnailHashes(); err != nil {
+		task.UpdateStatus(StatusErrorThumbnailHashsesNotMatch)
+		return errors.Errorf("thumbnail hash returns by supenodes not mached %w", err)
+	}
+	task.UpdateStatus(StatusImageAndThumbnailUploaded)
+
+	task.previewHash = task.nodes.PreviewHash()
+	task.mediumThumbnailHash = task.nodes.MediumThumbnailHash()
+	task.smallThumbnailHash = task.nodes.SmallThumbnailHash()
+
+	return nil
+}
+
+func (task *Task) sendSignedTicket(ctx context.Context) error {
+	buf, err := pastel.EncodeArtTicket(task.ticket)
+	if err != nil {
+		return errors.Errorf("failed to marshal ticket %w", err)
+	} else {
+		log.Debug(string(buf))
+	}
+
+	symbolsIdFilesMap, err := task.rqSymbolIdFiles.ToMap()
+	if err != nil {
+		return errors.Errorf("failed to create rq symbol identifiers files map %w", err)
+	}
+	if err := task.nodes.UploadSignedTicket(ctx, buf, task.artistSignature, symbolsIdFilesMap, task.rqEncodeParams); err != nil {
+		return errors.Errorf("failed to upload signed ticket %w", err)
+	}
+
+	if err := task.nodes.MatchRegistrationFee(); err != nil {
+		return errors.Errorf("registration fees don't matched %w", err)
+	}
+
+	// check if fee is over-expection
+	task.registrationFee = task.nodes.RegistrationFee()
+	if task.registrationFee > int64(task.Request.MaximumFee) {
+		errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
+	}
+
+	task.registrationFee = task.nodes.RegistrationFee()
+
+	return nil
+}
+
+func (task *Task) preburntRegistrationFee(ctx context.Context) error {
+	if task.registrationFee <= 0 {
+		return errors.Errorf("invalid registration fee")
+	}
+
+	burnedAmount := float64(task.registrationFee) / 10
+	burnTxId, err := task.pastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount)
+	if err != nil {
+		return errors.Errorf("failed to burn 10 percent of transaction fee %w", err)
+	}
+	task.burnTxId = burnTxId
+	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxId)
+
+	if err := task.nodes.SendPreBurntFeeTxId(ctx, task.burnTxId); err != nil {
+		return errors.Errorf("failed to send pre-burn-txid: %s to supernode(s): %w", err)
+	}
+	task.regArtTxid = task.nodes.RegArtTicketId()
+	if task.regArtTxid == "" {
+		return errors.Errorf("regArtTxId is empty")
+	}
+
+	return nil
 }

@@ -164,17 +164,18 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		}
 	}
 
-	fingerprint, err := task.ProbeImage(ctx, image)
+	fingerAndScores, err := task.ProbeImage(ctx, image)
 	if err != nil {
 		return err
 	}
-	if fingerprint == nil {
-		return errors.New("could not compute fingerprint data")
-	}
 
 	resp := &pb.ProbeImageReply{
-		Fingerprint: fingerprint,
+		Fingerprint:   fingerAndScores.FingerprintData,
+		RarenessScore: int32(fingerAndScores.RarenessScore),
+		NsfwScore:     int32(fingerAndScores.NSFWScore),
+		SeenScore:     int32(fingerAndScores.SeenScore),
 	}
+
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("failed to send ProbeImage response: %w", err)
 	}
@@ -306,6 +307,45 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	}
 
 	return nil
+}
+
+// SendSignedArtTicket implements walletnode.RegisterArtwork.SendSignedArtTicket
+func (service *RegisterArtwork) SendSignedArtTicket(ctx context.Context, req *pb.SendSignedArtTicketRequest) (*pb.SendSignedArtTicketReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SignTicket request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to get task from metada %w", err)
+	}
+
+	registrationFee, err := task.GetRegistrationFee(ctx, req.ArtTicket, req.ArtistSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
+	if err != nil {
+		return nil, errors.Errorf("failed to get total storage fee %w", err)
+	}
+
+	rsp := pb.SendSignedArtTicketReply{
+		RegistrationFee: registrationFee,
+	}
+
+	return &rsp, nil
+}
+
+// SendPreBurntFeeTxId implements walletnode.RegisterArtwork.SendPreBurntFeeTxId
+func (service *RegisterArtwork) SendPreBurntFeeTxId(ctx context.Context, req *pb.SendPreBurntFeeTxIdRequest) (*pb.SendPreBurntFeeTxIdReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurntFeeTxIdRequest request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to get task from meta data %w", err)
+	}
+
+	artRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
+	if err != nil {
+		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
+	}
+
+	rsp := pb.SendPreBurntFeeTxIdReply{
+		ArtRegTxid: artRegTxid,
+	}
+	return &rsp, nil
 }
 
 // Desc returns a description of the service.

@@ -9,8 +9,10 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc/codes"
@@ -119,7 +121,7 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
+func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) (*pastel.FingerAndScores, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -156,7 +158,12 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	}
 	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 
-	return resp.Fingerprint, nil
+	return &pastel.FingerAndScores{
+		FingerprintData: resp.Fingerprint,
+		RarenessScore:   int(resp.RarenessScore),
+		NSFWScore:       int(resp.NsfwScore),
+		SeenScore:       int(resp.SeenScore),
+	}, nil
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
@@ -253,6 +260,48 @@ func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context
 
 func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
+}
+
+// SendSignedTicket
+func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	req := pb.SendSignedArtTicketRequest{
+		ArtTicket:       ticket,
+		ArtistSignature: signature,
+		Key1:            key1,
+		Key2:            key2,
+		EncodeParameters: &pb.EncoderParameters{
+			Oti: encoderParams.Oti,
+		},
+		EncodeFiles: rqids,
+	}
+
+	rsp, err := service.client.SendSignedArtTicket(ctx, &req)
+	if err != nil {
+		return -1, errors.Errorf("failed to send signed ticket and its signature to node %w", err)
+	}
+
+	return rsp.RegistrationFee, nil
+}
+
+func (service *registerArtwork) SendPreBurntFeeTxId(ctx context.Context, txid string) (string, error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+
+	log.WithContext(ctx).Debug("send burned txid to super node")
+	req := pb.SendPreBurntFeeTxIdRequest{
+		Txid: txid,
+	}
+
+	rsp, err := service.client.SendPreBurntFeeTxId(ctx, &req)
+	if err != nil {
+		return "", errors.Errorf("failed to send burned txid to super node %w", err)
+	}
+
+	// TODO: response from sending preburned TxId should be the TxId of RegActTicket
+	return rsp.ArtRegTxid, nil
 }
 
 func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {

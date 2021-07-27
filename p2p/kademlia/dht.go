@@ -3,7 +3,6 @@ package kademlia
 import (
 	"bytes"
 	"context"
-	"crypto/sha1"
 	"fmt"
 	"sort"
 	"sync"
@@ -12,6 +11,7 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -133,7 +133,7 @@ func (s *DHT) Stop(ctx context.Context) {
 
 // a hash key for the data
 func (s *DHT) hashKey(data []byte) []byte {
-	sha := sha1.Sum(data)
+	sha := sha3.Sum256(data)
 	return sha[:]
 }
 
@@ -161,7 +161,7 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 // identifier of the data.
 func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	decoded := base58.Decode(key)
-	if len(decoded) != K {
+	if len(decoded) != B/8 {
 		return nil, fmt.Errorf("invalid key: %v", key)
 	}
 

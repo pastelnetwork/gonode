@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
 // List represents multiple Node.
@@ -35,7 +37,7 @@ func (nodes *List) DisconnectInactive() {
 }
 
 // WaitConnClose waits for the connection closing by any supernodes.
-func (nodes *List) WaitConnClose(ctx context.Context) error {
+func (nodes *List) WaitConnClose(ctx context.Context, done <-chan struct{}) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	for _, node := range *nodes {
@@ -46,6 +48,8 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 				return nil
 			case <-node.Connection.Done():
 				return errors.Errorf("%q unexpectedly closed the connection", node)
+			case <-done:
+				return nil
 			}
 		})
 	}
@@ -54,8 +58,8 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 }
 
 // FindByPastelID returns node by its patstelID.
-func (nodes List) FindByPastelID(id string) *Node {
-	for _, node := range nodes {
+func (nodes *List) FindByPastelID(id string) *Node {
+	for _, node := range *nodes {
 		if node.pastelID == id {
 			return node
 		}
@@ -69,20 +73,33 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			node.fingerprint, err = node.ProbeImage(ctx, file)
+			res, err := node.ProbeImage(ctx, file)
+			node.fingerprint = res.FingerprintData
+			node.rarenessScore = res.RarenessScore
+			node.nSFWScore = res.NSFWScore
+			node.seenScore = res.SeenScore
 			return err
 		})
 	}
 	return group.Wait()
 }
 
-// MatchFingerprints matches fingerprints.
-func (nodes List) MatchFingerprints() error {
+// MatchFingerprintAndScores matches fingerprints.
+func (nodes List) MatchFingerprintAndScores() error {
 	node := nodes[0]
 
 	for i := 1; i < len(nodes); i++ {
 		if !bytes.Equal(node.fingerprint, nodes[i].fingerprint) {
 			return errors.Errorf("fingerprints of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+		if node.rarenessScore != nodes[i].rarenessScore {
+			return errors.Errorf("rareness score of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+		if node.nSFWScore != nodes[i].nSFWScore {
+			return errors.Errorf("NSFWS score of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		}
+		if node.seenScore != nodes[i].seenScore {
+			return errors.Errorf("seen score of nodes %q and %q didn't match", node.String(), nodes[i].String())
 		}
 	}
 	return nil
@@ -93,32 +110,139 @@ func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.F
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
-		group.Go(func() (err error) {
-			node.previewHash, node.mediumThumbnailHash, node.smallThumbnailHash, err = node.UploadImageWithThumbnail(ctx, file, thumbnail)
-			return err
+		group.Go(func() error {
+			hash1, hash2, hash3, err := node.UploadImageWithThumbnail(ctx, file, thumbnail)
+			if err != nil {
+				return err
+			}
+			node.previewHash, node.mediumThumbnailHash, node.smallThumbnailHash = hash1, hash2, hash3
+			return nil
 		})
 	}
 	return group.Wait()
 }
 
 // MatchThumbnailHashes matches thumbnail's hashes recevied from super nodes
-func (nodes List) MatchThumbnailHashes() error {
-	node := nodes[0]
-	for i := 1; i < len(nodes); i++ {
-		if !bytes.Equal(node.previewHash, nodes[i].previewHash) {
-			return errors.Errorf("hash of preview thumbnail of nodes %q and %q didn't match", node.String(), nodes[i].String())
+func (nodes *List) MatchThumbnailHashes() error {
+	node := (*nodes)[0]
+	for i := 1; i < len(*nodes); i++ {
+		if !bytes.Equal(node.previewHash, (*nodes)[i].previewHash) {
+			return errors.Errorf("hash of preview thumbnail of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
 		}
-		if !bytes.Equal(node.mediumThumbnailHash, nodes[i].mediumThumbnailHash) {
-			return errors.Errorf("hash of medium thumbnail of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		if !bytes.Equal(node.mediumThumbnailHash, (*nodes)[i].mediumThumbnailHash) {
+			return errors.Errorf("hash of medium thumbnail of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
 		}
-		if !bytes.Equal(node.smallThumbnailHash, nodes[i].smallThumbnailHash) {
-			return errors.Errorf("hash of small thumbnail of nodes %q and %q didn't match", node.String(), nodes[i].String())
+		if !bytes.Equal(node.smallThumbnailHash, (*nodes)[i].smallThumbnailHash) {
+			return errors.Errorf("hash of small thumbnail of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
 		}
 	}
 	return nil
 }
 
+// UploadSignedTicket uploads regart ticket and its signature to super nodes
+func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		// TODO: Fix this when method to generate key1 and key2 are finalized
+		key1 := "key1-" + uuid.New().String()
+		key2 := "key2-" + uuid.New().String()
+		group.Go(func() error {
+			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, rqids, encoderParams)
+			if err != nil {
+				return err
+			}
+			node.registrationFee = fee
+			return nil
+		})
+	}
+	return group.Wait()
+}
+
+// MatchRegistrationFee matches registration fee returned by super nodes
+func (nodes *List) MatchRegistrationFee() error {
+	node := (*nodes)[0]
+	for i := 1; i < len(*nodes); i++ {
+		if node.registrationFee != (*nodes)[i].registrationFee {
+			return errors.Errorf("registration fee of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
+		}
+	}
+	return nil
+}
+
+// SendPreBurntFeeTxId send txid of transaction in which 10% of registration fee is preburnt
+func (nodes *List) SendPreBurntFeeTxId(ctx context.Context, txid string) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() error {
+			ticketTxId, err := node.SendPreBurntFeeTxId(ctx, txid)
+			if err != nil {
+				return err
+			}
+			if !node.IsPrimary() && ticketTxId != "" {
+				return errors.Errorf("receive response %s from secondary node", ticketTxId)
+			}
+
+			node.regArtTxId = ticketTxId
+			return nil
+		})
+	}
+	return group.Wait()
+}
+
+// RegistrationFee returns registration fee of the first node
+func (nodes *List) RegistrationFee() int64 {
+	return (*nodes)[0].registrationFee
+}
+
 // Fingerprint returns fingerprint of the first node.
-func (nodes List) Fingerprint() []byte {
-	return nodes[0].fingerprint
+func (nodes *List) Fingerprint() []byte {
+	return (*nodes)[0].fingerprint
+}
+
+// Returns scores
+func (nodes *List) RarenessScore() int {
+	return (*nodes)[0].rarenessScore
+}
+func (nodes *List) NSFWScore() int {
+	return (*nodes)[0].nSFWScore
+}
+func (nodes *List) SeenScore() int {
+	return (*nodes)[0].seenScore
+}
+
+// PreviewHash returns the hash of the preview thumbnail calculated by the first node
+func (nodes *List) PreviewHash() []byte {
+	return (*nodes)[0].previewHash
+}
+
+// MediumThumbnailHash returns the hash of the medium thumbnail calculated by the first node
+func (nodes *List) MediumThumbnailHash() []byte {
+	return (*nodes)[0].previewHash
+}
+
+// SmallThumbnailHash returns the hash of the small thumbnail calculated by the first node
+func (nodes *List) SmallThumbnailHash() []byte {
+	return (*nodes)[0].smallThumbnailHash
+}
+
+// SetPrimary promotes a supernode to primary role which handle the write to Kamedila
+func (node *Node) SetPrimary(primary bool) {
+	node.isPrimary = primary
+}
+
+// IsPrimary returns true if this node has been promoted to primary in meshNode session
+func (node *Node) IsPrimary() bool {
+	return node.isPrimary
+}
+
+// RegArtTicketId return txid of RegArt ticket
+func (nodes *List) RegArtTicketId() string {
+	for i := range *nodes {
+		if (*nodes)[i].isPrimary {
+			return (*nodes)[i].regArtTxId
+		}
+	}
+	return string("")
 }

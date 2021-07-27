@@ -6,19 +6,30 @@ package node
 
 import (
 	"context"
-	//"github.com/pastelnetwork/gonode/common/service/artwork"
 )
 
+type Config struct {
+	RqFilesDir string
+}
+
+type RawSymbolIdFile struct {
+	Id                string
+	BlockHash         string
+	PastelId          string
+	SymbolIdentifiers []string
+}
+
 type EncoderParameters struct {
-	TransferLength  uint64
-	SymbolSize      uint32
-	NumSourceBlocks uint32
-	NumSubBlocks    uint32
-	SymbolAlignment uint32
+	Oti []byte
 }
 
 type EncodeInfo struct {
-	SymbolIds    []string
+	SymbolIdFiles map[string]RawSymbolIdFile
+	EncoderParam  EncoderParameters
+}
+
+type Encode struct {
+	Symbols      map[string][]byte
 	EncoderParam EncoderParameters
 }
 
@@ -35,15 +46,14 @@ type Connection interface {
 	// Done returns a channel that's closed when connection is shutdown.
 	Done() <-chan struct{}
 	// RaptorQ returns a new RaptorQ stream.
-	RaptorQ() RaptorQ
+	RaptorQ(config *Config) RaptorQ
 }
 
 // RaptorQ contains methods for request services from RaptorQ service.
 type RaptorQ interface {
-	// Get list of encoded symbols
-	Encode(ctx context.Context, data []byte) ([][]byte, error)
+	// Get map of symbols
+	Encode(ctx context.Context, data []byte) (*Encode, error)
 
-	// Get encode info(include symbol ids + encode parameters)
-	// symbol id is hash of symbol
-	EncodeInfo(ctx context.Context, data []byte) (*EncodeInfo, error)
+	// Get encode info(include encode parameters + symbol id files)
+	EncodeInfo(ctx context.Context, data []byte, copies uint32, blockHash string, pastelID string) (*EncodeInfo, error)
 }

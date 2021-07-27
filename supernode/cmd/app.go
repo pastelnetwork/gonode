@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -19,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/probe/tfmodel"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
@@ -145,8 +148,15 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.MetaDB.SetWorkDir(config.WorkDir)
 	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
 
+	// raptorq client
+	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
+	config.ArtworkRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
+	config.ArtworkRegister.PreburntTxConfirmationTimeout = time.Duration(config.PreburntTxConfirmationTimeout * int(time.Minute))
+	rqClient := rqgrpc.NewClient()
+
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p, rqClient)
 
 	// server
 	grpc := server.New(config.Server,
@@ -154,6 +164,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewRegisterArtwork(artworkRegister),
 	)
 
-	// return runServices(ctx, metadb, grpc, p2p, artworkRegister)
-	return runServices(ctx, metadb, grpc, artworkRegister)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
 }

@@ -12,6 +12,7 @@ const (
 	StatusConnected
 	StatusImageProbed
 	StatusImageAndThumbnailCoordinateUploaded
+	StatusRegistrationFeeCalculated
 
 	// Final
 	StatusTaskCanceled
@@ -25,6 +26,7 @@ var statusNames = map[Status]string{
 	StatusConnected:                           "Connected",
 	StatusImageProbed:                         "Image Probed",
 	StatusImageAndThumbnailCoordinateUploaded: "Imaged And Thumbnail Coordinate Uploaded",
+	StatusRegistrationFeeCalculated:           "Registration Fee Caculated",
 	StatusTaskCanceled:                        "Task Canceled",
 	StatusTaskCompleted:                       "Task Completed",
 }

@@ -22,30 +22,47 @@ type RaptorQClient interface {
 	//
 	// Performs encoding, but doesn't return actual symbols, instead returns list of symbol's identifiers
 	//
-	// Input: data blob
+	// Input:
+	//      EncodeMetaDataRequest
+	//          path            - location of the input file
+	//          files_number    - how many ID files to create, can be 0
+	//          block_hash      - block_hash of the Registration ticket
+	//          pastel_id       - PastelID used to sign the Registration ticket
+	//
 	// Output:
-	//      Symbols
-	EncoderInfo(ctx context.Context, in *UploadDataRequest, opts ...grpc.CallOption) (*EncoderInfoReply, error)
+	//      EncodeMetaDataReply
+	//          encoder_parameters  - Object Transmission Information (12 bytes array)
+	//          path                - path to the location of ID files
+	//          symbols_count       - number of symbols
+	//
+	EncodeMetaData(ctx context.Context, in *EncodeMetaDataRequest, opts ...grpc.CallOption) (*EncodeMetaDataReply, error)
 	// Encode input data blob into symbols
 	//
 	// Performs encoding, and returns actual symbols as gRPC stream
 	//
 	// Input:
-	//      Data blob
+	//      EncodeRequest
+	//          path            - location of the input file
 	//
 	// Output:
-	//      List of symbol ids, where id = SHA3-256(symbol)
-	Encode(ctx context.Context, in *UploadDataRequest, opts ...grpc.CallOption) (RaptorQ_EncodeClient, error)
+	//      EncodeReply
+	//          path            - location of the output symbol files
+	//          symbols_count   - number of created symbol files
+	//
+	Encode(ctx context.Context, in *EncodeRequest, opts ...grpc.CallOption) (*EncodeReply, error)
 	// Decode symbols back into original data blob
 	//
 	// Performs decoding, and returns original data blob
 	//
 	// Input:
-	//      Encoder parameters and/or symbols one by one over gRPC stream
+	//      DecodeRequest
+	//          encoder_parameters  - Object Transmission Information (12 bytes array)
+	//          path                - location of the input file
 	//
 	// Output:
 	//      Data blob
-	Decode(ctx context.Context, opts ...grpc.CallOption) (RaptorQ_DecodeClient, error)
+	//
+	Decode(ctx context.Context, in *DecodeRequest, opts ...grpc.CallOption) (*DecodeReply, error)
 }
 
 type raptorQClient struct {
@@ -56,79 +73,31 @@ func NewRaptorQClient(cc grpc.ClientConnInterface) RaptorQClient {
 	return &raptorQClient{cc}
 }
 
-func (c *raptorQClient) EncoderInfo(ctx context.Context, in *UploadDataRequest, opts ...grpc.CallOption) (*EncoderInfoReply, error) {
-	out := new(EncoderInfoReply)
-	err := c.cc.Invoke(ctx, "/raptorq.RaptorQ/EncoderInfo", in, out, opts...)
+func (c *raptorQClient) EncodeMetaData(ctx context.Context, in *EncodeMetaDataRequest, opts ...grpc.CallOption) (*EncodeMetaDataReply, error) {
+	out := new(EncodeMetaDataReply)
+	err := c.cc.Invoke(ctx, "/raptorq.RaptorQ/EncodeMetaData", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *raptorQClient) Encode(ctx context.Context, in *UploadDataRequest, opts ...grpc.CallOption) (RaptorQ_EncodeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RaptorQ_ServiceDesc.Streams[0], "/raptorq.RaptorQ/Encode", opts...)
+func (c *raptorQClient) Encode(ctx context.Context, in *EncodeRequest, opts ...grpc.CallOption) (*EncodeReply, error) {
+	out := new(EncodeReply)
+	err := c.cc.Invoke(ctx, "/raptorq.RaptorQ/Encode", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &raptorQEncodeClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
+	return out, nil
 }
 
-type RaptorQ_EncodeClient interface {
-	Recv() (*SymbolReply, error)
-	grpc.ClientStream
-}
-
-type raptorQEncodeClient struct {
-	grpc.ClientStream
-}
-
-func (x *raptorQEncodeClient) Recv() (*SymbolReply, error) {
-	m := new(SymbolReply)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *raptorQClient) Decode(ctx context.Context, opts ...grpc.CallOption) (RaptorQ_DecodeClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RaptorQ_ServiceDesc.Streams[1], "/raptorq.RaptorQ/Decode", opts...)
+func (c *raptorQClient) Decode(ctx context.Context, in *DecodeRequest, opts ...grpc.CallOption) (*DecodeReply, error) {
+	out := new(DecodeReply)
+	err := c.cc.Invoke(ctx, "/raptorq.RaptorQ/Decode", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &raptorQDecodeClient{stream}
-	return x, nil
-}
-
-type RaptorQ_DecodeClient interface {
-	Send(*UploadSymbolsRequest) error
-	CloseAndRecv() (*DownloadDataReply, error)
-	grpc.ClientStream
-}
-
-type raptorQDecodeClient struct {
-	grpc.ClientStream
-}
-
-func (x *raptorQDecodeClient) Send(m *UploadSymbolsRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *raptorQDecodeClient) CloseAndRecv() (*DownloadDataReply, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(DownloadDataReply)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
+	return out, nil
 }
 
 // RaptorQServer is the server API for RaptorQ service.
@@ -139,30 +108,47 @@ type RaptorQServer interface {
 	//
 	// Performs encoding, but doesn't return actual symbols, instead returns list of symbol's identifiers
 	//
-	// Input: data blob
+	// Input:
+	//      EncodeMetaDataRequest
+	//          path            - location of the input file
+	//          files_number    - how many ID files to create, can be 0
+	//          block_hash      - block_hash of the Registration ticket
+	//          pastel_id       - PastelID used to sign the Registration ticket
+	//
 	// Output:
-	//      Symbols
-	EncoderInfo(context.Context, *UploadDataRequest) (*EncoderInfoReply, error)
+	//      EncodeMetaDataReply
+	//          encoder_parameters  - Object Transmission Information (12 bytes array)
+	//          path                - path to the location of ID files
+	//          symbols_count       - number of symbols
+	//
+	EncodeMetaData(context.Context, *EncodeMetaDataRequest) (*EncodeMetaDataReply, error)
 	// Encode input data blob into symbols
 	//
 	// Performs encoding, and returns actual symbols as gRPC stream
 	//
 	// Input:
-	//      Data blob
+	//      EncodeRequest
+	//          path            - location of the input file
 	//
 	// Output:
-	//      List of symbol ids, where id = SHA3-256(symbol)
-	Encode(*UploadDataRequest, RaptorQ_EncodeServer) error
+	//      EncodeReply
+	//          path            - location of the output symbol files
+	//          symbols_count   - number of created symbol files
+	//
+	Encode(context.Context, *EncodeRequest) (*EncodeReply, error)
 	// Decode symbols back into original data blob
 	//
 	// Performs decoding, and returns original data blob
 	//
 	// Input:
-	//      Encoder parameters and/or symbols one by one over gRPC stream
+	//      DecodeRequest
+	//          encoder_parameters  - Object Transmission Information (12 bytes array)
+	//          path                - location of the input file
 	//
 	// Output:
 	//      Data blob
-	Decode(RaptorQ_DecodeServer) error
+	//
+	Decode(context.Context, *DecodeRequest) (*DecodeReply, error)
 	mustEmbedUnimplementedRaptorQServer()
 }
 
@@ -170,14 +156,14 @@ type RaptorQServer interface {
 type UnimplementedRaptorQServer struct {
 }
 
-func (UnimplementedRaptorQServer) EncoderInfo(context.Context, *UploadDataRequest) (*EncoderInfoReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method EncoderInfo not implemented")
+func (UnimplementedRaptorQServer) EncodeMetaData(context.Context, *EncodeMetaDataRequest) (*EncodeMetaDataReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method EncodeMetaData not implemented")
 }
-func (UnimplementedRaptorQServer) Encode(*UploadDataRequest, RaptorQ_EncodeServer) error {
-	return status.Errorf(codes.Unimplemented, "method Encode not implemented")
+func (UnimplementedRaptorQServer) Encode(context.Context, *EncodeRequest) (*EncodeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Encode not implemented")
 }
-func (UnimplementedRaptorQServer) Decode(RaptorQ_DecodeServer) error {
-	return status.Errorf(codes.Unimplemented, "method Decode not implemented")
+func (UnimplementedRaptorQServer) Decode(context.Context, *DecodeRequest) (*DecodeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Decode not implemented")
 }
 func (UnimplementedRaptorQServer) mustEmbedUnimplementedRaptorQServer() {}
 
@@ -192,69 +178,58 @@ func RegisterRaptorQServer(s grpc.ServiceRegistrar, srv RaptorQServer) {
 	s.RegisterService(&RaptorQ_ServiceDesc, srv)
 }
 
-func _RaptorQ_EncoderInfo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UploadDataRequest)
+func _RaptorQ_EncodeMetaData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EncodeMetaDataRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RaptorQServer).EncoderInfo(ctx, in)
+		return srv.(RaptorQServer).EncodeMetaData(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/raptorq.RaptorQ/EncoderInfo",
+		FullMethod: "/raptorq.RaptorQ/EncodeMetaData",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RaptorQServer).EncoderInfo(ctx, req.(*UploadDataRequest))
+		return srv.(RaptorQServer).EncodeMetaData(ctx, req.(*EncodeMetaDataRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RaptorQ_Encode_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(UploadDataRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(RaptorQServer).Encode(m, &raptorQEncodeServer{stream})
-}
-
-type RaptorQ_EncodeServer interface {
-	Send(*SymbolReply) error
-	grpc.ServerStream
-}
-
-type raptorQEncodeServer struct {
-	grpc.ServerStream
-}
-
-func (x *raptorQEncodeServer) Send(m *SymbolReply) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _RaptorQ_Decode_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RaptorQServer).Decode(&raptorQDecodeServer{stream})
-}
-
-type RaptorQ_DecodeServer interface {
-	SendAndClose(*DownloadDataReply) error
-	Recv() (*UploadSymbolsRequest, error)
-	grpc.ServerStream
-}
-
-type raptorQDecodeServer struct {
-	grpc.ServerStream
-}
-
-func (x *raptorQDecodeServer) SendAndClose(m *DownloadDataReply) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *raptorQDecodeServer) Recv() (*UploadSymbolsRequest, error) {
-	m := new(UploadSymbolsRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
+func _RaptorQ_Encode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(EncodeRequest)
+	if err := dec(in); err != nil {
 		return nil, err
 	}
-	return m, nil
+	if interceptor == nil {
+		return srv.(RaptorQServer).Encode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raptorq.RaptorQ/Encode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaptorQServer).Encode(ctx, req.(*EncodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RaptorQ_Decode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DecodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RaptorQServer).Decode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/raptorq.RaptorQ/Decode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RaptorQServer).Decode(ctx, req.(*DecodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 // RaptorQ_ServiceDesc is the grpc.ServiceDesc for RaptorQ service.
@@ -265,21 +240,18 @@ var RaptorQ_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RaptorQServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "EncoderInfo",
-			Handler:    _RaptorQ_EncoderInfo_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "Encode",
-			Handler:       _RaptorQ_Encode_Handler,
-			ServerStreams: true,
+			MethodName: "EncodeMetaData",
+			Handler:    _RaptorQ_EncodeMetaData_Handler,
 		},
 		{
-			StreamName:    "Decode",
-			Handler:       _RaptorQ_Decode_Handler,
-			ClientStreams: true,
+			MethodName: "Encode",
+			Handler:    _RaptorQ_Encode_Handler,
+		},
+		{
+			MethodName: "Decode",
+			Handler:    _RaptorQ_Decode_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "raptorq.proto",
 }

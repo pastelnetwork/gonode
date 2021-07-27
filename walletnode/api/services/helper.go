@@ -14,7 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 )
 
-func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Ticket {
+func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Request {
 	thumbnail := artwork.ThumbnailCoordinate{
 		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
 		TopLeftY:     payload.ThumbnailCoordinate.TopLeftY,
@@ -22,7 +22,7 @@ func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Tic
 		BottomRightY: payload.ThumbnailCoordinate.BottomRightY,
 	}
 
-	return &artworkregister.Ticket{
+	return &artworkregister.Request{
 		Name:                     payload.Name,
 		Description:              payload.Description,
 		Keywords:                 payload.Keywords,
@@ -41,7 +41,7 @@ func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Tic
 	}
 }
 
-func toArtworkTicket(ticket *artworkregister.Ticket) *artworks.ArtworkTicket {
+func toArtworkTicket(ticket *artworkregister.Request) *artworks.ArtworkTicket {
 	thumbnail := artworks.Thumbnailcoordinate{
 		TopLeftX:     ticket.Thumbnail.TopLeftX,
 		TopLeftY:     ticket.Thumbnail.TopLeftY,
