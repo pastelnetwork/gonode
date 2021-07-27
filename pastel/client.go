@@ -77,7 +77,10 @@ func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTic
 
 // TicketOwnership implements pastel.Client.TicketOwnership
 func (client *client) TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error) {
-	ownership := OwnershipTicket{}
+	var ownership struct {
+		Art   string `json:"art"`   // txid from the request
+		Trade string `json:"trade"` // txid from trade ticket
+	}
 
 	if err := client.callFor(ctx, &ownership, "tickets", "tools", "validateownership", txID, pastelID, passphrase); err != nil {
 		return "", errors.Errorf("failed to get ticket ownership: %w", err)

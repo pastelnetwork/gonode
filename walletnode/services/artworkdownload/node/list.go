@@ -16,7 +16,7 @@ func (nodes *List) Add(node *Node) {
 	*nodes = append(*nodes, node)
 }
 
-// Activate marks all nodes as activated.
+// Active marks all nodes as activated.
 // Since any node can be present in the same time in several List and Node is a pointer, this is reflected in all lists.
 func (nodes *List) Active() List {
 	activeNodes := List{}

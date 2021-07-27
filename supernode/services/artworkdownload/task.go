@@ -54,13 +54,6 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 		return nil, err
 	}
 
-	// Create directory for storing symbols of Artwork
-	// task.RQSymbolsDir = path.Join(task.Service.config.RqFilesDir, task.ID(), rqSymbolsDirName)
-	// err = os.MkdirAll(task.RQSymbolsDir, os.ModePerm)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	var file []byte
 	var artRegTicket pastel.RegTicket
 
@@ -139,167 +132,11 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 			return nil
 		}
 
-		var rqConnection rqnode.Connection
-		rqConnection, err = task.Service.raptorQClient.Connect(ctx, task.Service.config.RaptorQServiceAddress)
-		if err != nil {
-			err = errors.Errorf("Could not connect to rqservice: %w", err)
-			task.UpdateStatus(StatusRQServiceConnectionFailed)
-			return nil
-		}
-		defer rqConnection.Done()
-		rqNodeConfig := &rqnode.Config{
-			RqFilesDir: task.Service.config.RqFilesDir,
-		}
-		rqService := rqConnection.RaptorQ(rqNodeConfig)
-
-		// Begin testing code block
-		// var artFile []byte
-		// artFile, err = ioutil.ReadFile("./examples/IMG_5830.jpeg")
-		// if err != nil {
-		// 	log.WithContext(ctx).Debugf("Could not read test file: %w", err)
-		// 	return err
-		// }
-		// artFile = []byte("hello, world")
-
-		// var einfo *rqnode.EncodeInfo
-		// blockHash := hex.EncodeToString(artRegTicket.RegTicketData.ArtTicketData.BlockHash)
-		// log.WithContext(ctx).Debugf("Block hash: len: %d, value: %s", len(blockHash), blockHash)
-		// einfo, err = rqService.EncodeInfo(ctx, artFile, 1, blockHash, pastelID)
-		// if err != nil {
-		// 	log.WithContext(ctx).Debugf("Could not get encode info from rqservice: %w", err)
-		// 	return err
-		// }
-		// var rqIDs []string
-		// for _, symbolFile := range einfo.SymbolIdFiles {
-		// 	// f, err := os.OpenFile(path.Join(task.RQSymbolsDir, id), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0777)
-		// 	// if err != nil {
-		// 	// 	log.WithContext(ctx).Debugf("Could not read test file: %w", err)
-		// 	// 	return err
-		// 	// }
-		// 	dataStr := symbolFile.Id
-		// 	dataStr += "\n" + symbolFile.BlockHash
-		// 	dataStr += "\n" + symbolFile.PastelId
-		// 	for _, symbol := range symbolFile.SymbolIdentifiers {
-		// 		dataStr += "\n" + symbol
-		// 	}
-		// 	data := []byte(dataStr)
-		// 	log.WithContext(ctx).Debugf("Store data to Kademlia: %v", string(data))
-		// 	rqid, err := task.p2pClient.Store(ctx, data)
-		// 	if err != nil {
-		// 		log.WithContext(ctx).Debugf("Could not store symbol files to Kademlia: %w", err)
-		// 		return err
-		// 	}
-		// 	// key := sha3.Sum256(data)
-		// 	// rqid := base58.Encode(key[:])
-		// 	rqIDs = append(rqIDs, rqid)
-		// }
-		// artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs = rqIDs
-
-		// var encode *rqnode.Encode
-		// encode, err = rqService.Encode(ctx, artFile)
-		// if err != nil {
-		// 	log.WithContext(ctx).Debugf("Could encode file: %w", err)
-		// 	return err
-		// }
-		// artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQOti = encode.EncoderParam.Oti
-		// var storedID string
-		// for _, data := range encode.Symbols {
-		// 	var id string
-		// 	id, err = task.p2pClient.Store(ctx, data)
-		// 	if err != nil {
-		// 		log.WithContext(ctx).Debugf("Could store symbols to Kademlia: %w", err)
-		// 		return err
-		// 	}
-		// 	storedID += "\n" + id
-		// }
-		// time.Sleep(time.Minute * 5)
-		// log.WithContext(ctx).Debugf("IDs: %s", storedID)
-		// End testing code block
-
 		// Get symbol identifiers files from Kademlia by using rq_ids - from Art Registration ticket
 		// Get the list of "symbols/chunks" from Kademlia by using symbol identifiers from file
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_oti)
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-		if len(artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs) == 0 {
-			err = errors.Errorf("Ticket has empty symbol identifier files")
-			task.UpdateStatus(StatusArtRegTicketInvalid)
-			return nil
-		}
-		for _, id := range artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs {
-			var rqIDsData []byte
-			rqIDsData, err = task.p2pClient.Retrieve(ctx, id)
-			if err != nil {
-				err = errors.Errorf("Could not retrieve symbol file from Kademlia: %w", err)
-				task.UpdateStatus(StatusSymbolFileNotFound)
-				continue
-			}
-
-			var rqIDs []string
-			rqIDs, err = task.getRQSymbolIDs(rqIDsData)
-			if err != nil {
-				task.UpdateStatus(StatusSymbolFileInvalid)
-				continue
-			}
-			log.WithContext(ctx).Debugf("rqIDs: %v", rqIDs)
-
-			symbols := make(map[string][]byte)
-			for _, id := range rqIDs {
-				var symbol []byte
-				symbol, err = task.p2pClient.Retrieve(ctx, id)
-				if err != nil {
-					log.WithContext(ctx).Debugf("Could not retrieve symbol of key: %s", id)
-					task.UpdateStatus(StatusSymbolNotFound)
-					break
-				}
-
-				// Validate that the hash of each "symbol/chunk" matches its id
-				h := sha3.Sum256(symbol)
-				storedID := base58.Encode(h[:])
-				if storedID != id {
-					err = errors.New("Symbol id mismatched")
-					log.WithContext(ctx).Debugf("Symbol id mismatched, expect %v, got %v", id, storedID)
-					task.UpdateStatus(StatusSymbolMismatched)
-					break
-				}
-				symbols[id] = symbol
-			}
-			if len(symbols) != len(rqIDs) {
-				err = errors.New("Could not retrieve all symbols from Kademlia")
-				task.UpdateStatus(StatusSymbolsNotEnough)
-				continue
-			}
-
-			// Restore artwork
-			var decodeInfo *rqnode.Decode
-			encodeInfo := rqnode.Encode{
-				Symbols: symbols,
-				EncoderParam: rqnode.EncoderParameters{
-					Oti: artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQOti,
-				},
-			}
-
-			decodeInfo, err = rqService.Decode(ctx, &encodeInfo)
-			if err != nil {
-				err = errors.Errorf("Failed to restore file: %w", err)
-				task.UpdateStatus(StatusFileDecodingFailed)
-				continue
-			}
-			task.UpdateStatus(StatusFileDecoded)
-
-			// log.WithContext(ctx).Debugf("Restored file path: %s", decodeInfo.Path)
-			// log.WithContext(ctx).Debugf("Restored file: %s", string(restoredFile))
-			// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-			fileHash := sha3.Sum256(decodeInfo.File)
-
-			if !bytes.Equal(fileHash[:], artRegTicket.RegTicketData.ArtTicketData.AppTicketData.DataHash) {
-				err = errors.New("File mismatched")
-				task.UpdateStatus(StatusFileMismatched)
-				continue
-			}
-
-			file = decodeInfo.File
-			break
-		}
+		file, err = task.restoreFile(ctx, &artRegTicket)
 
 		if len(file) == 0 {
 			task.UpdateStatus(StatusFileEmpty)
@@ -308,6 +145,108 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 		return nil
 	})
 
+	return file, err
+}
+
+func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicket) ([]byte, error) {
+	var file []byte
+	var err error
+
+	if len(artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs) == 0 {
+		task.UpdateStatus(StatusArtRegTicketInvalid)
+		return file, errors.Errorf("Ticket has empty symbol identifier files")
+	}
+
+	var rqConnection rqnode.Connection
+	rqConnection, err = task.Service.raptorQClient.Connect(ctx, task.Service.config.RaptorQServiceAddress)
+	if err != nil {
+		task.UpdateStatus(StatusRQServiceConnectionFailed)
+		return file, errors.Errorf("Could not connect to rqservice: %w", err)
+	}
+	defer rqConnection.Done()
+	rqNodeConfig := &rqnode.Config{
+		RqFilesDir: task.Service.config.RqFilesDir,
+	}
+	rqService := rqConnection.RaptorQ(rqNodeConfig)
+
+	for _, id := range artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs {
+		var rqIDsData []byte
+		rqIDsData, err = task.p2pClient.Retrieve(ctx, id)
+		if err != nil {
+			err = errors.Errorf("Could not retrieve symbol file from Kademlia: %w", err)
+			task.UpdateStatus(StatusSymbolFileNotFound)
+			continue
+		}
+
+		var rqIDs []string
+		rqIDs, err = task.getRQSymbolIDs(rqIDsData)
+		if err != nil {
+			task.UpdateStatus(StatusSymbolFileInvalid)
+			continue
+		}
+		log.WithContext(ctx).Debugf("rqIDs: %v", rqIDs)
+
+		symbols := make(map[string][]byte)
+		for _, id := range rqIDs {
+			var symbol []byte
+			symbol, err = task.p2pClient.Retrieve(ctx, id)
+			if err != nil {
+				log.WithContext(ctx).Debugf("Could not retrieve symbol of key: %s", id)
+				task.UpdateStatus(StatusSymbolNotFound)
+				break
+			}
+
+			// Validate that the hash of each "symbol/chunk" matches its id
+			h := sha3.Sum256(symbol)
+			storedID := base58.Encode(h[:])
+			if storedID != id {
+				err = errors.New("Symbol id mismatched")
+				log.WithContext(ctx).Debugf("Symbol id mismatched, expect %v, got %v", id, storedID)
+				task.UpdateStatus(StatusSymbolMismatched)
+				break
+			}
+			symbols[id] = symbol
+		}
+		if len(symbols) != len(rqIDs) {
+			err = errors.New("Could not retrieve all symbols from Kademlia")
+			task.UpdateStatus(StatusSymbolsNotEnough)
+			continue
+		}
+
+		// Restore artwork
+		var decodeInfo *rqnode.Decode
+		encodeInfo := rqnode.Encode{
+			Symbols: symbols,
+			EncoderParam: rqnode.EncoderParameters{
+				Oti: artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQOti,
+			},
+		}
+
+		decodeInfo, err = rqService.Decode(ctx, &encodeInfo)
+		if err != nil {
+			err = errors.Errorf("Failed to restore file: %w", err)
+			task.UpdateStatus(StatusFileDecodingFailed)
+			continue
+		}
+		task.UpdateStatus(StatusFileDecoded)
+
+		// log.WithContext(ctx).Debugf("Restored file path: %s", decodeInfo.Path)
+		// log.WithContext(ctx).Debugf("Restored file: %s", string(restoredFile))
+		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
+		fileHash := sha3.Sum256(decodeInfo.File)
+
+		if !bytes.Equal(fileHash[:], artRegTicket.RegTicketData.ArtTicketData.AppTicketData.DataHash) {
+			err = errors.New("File mismatched")
+			task.UpdateStatus(StatusFileMismatched)
+			continue
+		}
+
+		file = decodeInfo.File
+		break
+	}
+	if len(file) > 0 {
+		err = nil
+	}
 	return file, err
 }
 
