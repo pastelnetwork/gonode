@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode";
 
-package walletnode;
+package mdlwalletnode;
 
 service ProcessUserdata {
     // Session informs the supernode its position (primary/secondary).

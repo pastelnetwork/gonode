@@ -41,7 +41,7 @@ func NewProcessUserdataClient(cc grpc.ClientConnInterface) ProcessUserdataClient
 }
 
 func (c *processUserdataClient) Session(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SessionClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ProcessUserdata_ServiceDesc.Streams[0], "/walletnode.ProcessUserdata/Session", opts...)
+	stream, err := c.cc.NewStream(ctx, &ProcessUserdata_ServiceDesc.Streams[0], "/mdlwalletnode.ProcessUserdata/Session", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +73,7 @@ func (x *processUserdataSessionClient) Recv() (*SessionReply, error) {
 
 func (c *processUserdataClient) AcceptedNodes(ctx context.Context, in *AcceptedNodesRequest, opts ...grpc.CallOption) (*AcceptedNodesReply, error) {
 	out := new(AcceptedNodesReply)
-	err := c.cc.Invoke(ctx, "/walletnode.ProcessUserdata/AcceptedNodes", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/mdlwalletnode.ProcessUserdata/AcceptedNodes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (c *processUserdataClient) AcceptedNodes(ctx context.Context, in *AcceptedN
 
 func (c *processUserdataClient) ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error) {
 	out := new(ConnectToReply)
-	err := c.cc.Invoke(ctx, "/walletnode.ProcessUserdata/ConnectTo", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/mdlwalletnode.ProcessUserdata/ConnectTo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (c *processUserdataClient) ConnectTo(ctx context.Context, in *ConnectToRequ
 }
 
 func (c *processUserdataClient) SendUserdata(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SendUserdataClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ProcessUserdata_ServiceDesc.Streams[1], "/walletnode.ProcessUserdata/SendUserdata", opts...)
+	stream, err := c.cc.NewStream(ctx, &ProcessUserdata_ServiceDesc.Streams[1], "/mdlwalletnode.ProcessUserdata/SendUserdata", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -125,7 +125,7 @@ func (x *processUserdataSendUserdataClient) CloseAndRecv() (*UserdataReply, erro
 
 func (c *processUserdataClient) ReceiveUserdata(ctx context.Context, in *RetrieveRequest, opts ...grpc.CallOption) (*UserdataRequest, error) {
 	out := new(UserdataRequest)
-	err := c.cc.Invoke(ctx, "/walletnode.ProcessUserdata/ReceiveUserdata", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/mdlwalletnode.ProcessUserdata/ReceiveUserdata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func _ProcessUserdata_AcceptedNodes_Handler(srv interface{}, ctx context.Context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.ProcessUserdata/AcceptedNodes",
+		FullMethod: "/mdlwalletnode.ProcessUserdata/AcceptedNodes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessUserdataServer).AcceptedNodes(ctx, req.(*AcceptedNodesRequest))
@@ -237,7 +237,7 @@ func _ProcessUserdata_ConnectTo_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.ProcessUserdata/ConnectTo",
+		FullMethod: "/mdlwalletnode.ProcessUserdata/ConnectTo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessUserdataServer).ConnectTo(ctx, req.(*ConnectToRequest))
@@ -281,7 +281,7 @@ func _ProcessUserdata_ReceiveUserdata_Handler(srv interface{}, ctx context.Conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.ProcessUserdata/ReceiveUserdata",
+		FullMethod: "/mdlwalletnode.ProcessUserdata/ReceiveUserdata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessUserdataServer).ReceiveUserdata(ctx, req.(*RetrieveRequest))
@@ -293,7 +293,7 @@ func _ProcessUserdata_ReceiveUserdata_Handler(srv interface{}, ctx context.Conte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ProcessUserdata_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "walletnode.ProcessUserdata",
+	ServiceName: "mdlwalletnode.ProcessUserdata",
 	HandlerType: (*ProcessUserdataServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

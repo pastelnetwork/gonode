@@ -375,5 +375,6 @@ func NewTask(service *Service, request *userdata.UserdataProcessRequest, userpas
 		request:    request,
 		userpastelid:	userpastelid,	
 		resultChan: make(chan *userdata.UserdataProcessResult),
+		resultChanGet: make(chan *userdata.UserdataProcessRequest),
 	}
 }
