@@ -14,7 +14,7 @@ require (
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/ratelimit v0.2.0
-	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
+	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	golang.org/x/sys v0.0.0-20210525143221-35b2ab0089ea // indirect
 

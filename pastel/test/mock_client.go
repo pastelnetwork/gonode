@@ -23,6 +23,15 @@ const (
 
 	// RegTicketMethod represent RegTicket name method
 	RegTicketMethod = "RegTicket"
+
+	// GetBlockVerbose1Method represent GetBlockVerbose1 method
+	GetBlockVerbose1Method = "GetBlockVerbose1"
+
+	// ListenOnGetBlockCountMethod represent  GetBlockCount method
+	GetBlockCountMethod = "GetBlockCount"
+
+	// FindTicketById represent FindTicketById method
+	FindTicketById = "FindTicketById"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -52,8 +61,8 @@ func (client *Client) ListenOnStorageNetworkFee(fee float64, returnErr error) *C
 }
 
 // ListenOnSign listening Sign call aand returns values from args
-func (client *Client) ListenOnSign(signature string, returnErr error) *Client {
-	client.On(SignMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string(""))).Return(signature, returnErr)
+func (client *Client) ListenOnSign(signature []byte, returnErr error) *Client {
+	client.On(SignMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.IsType(string(""))).Return(signature, returnErr)
 	return client
 }
 
@@ -95,5 +104,22 @@ func (client *Client) ListenOnActTickets(tickets pastel.ActTickets, err error) *
 // ListenOnRegTicket listening RegTicket and returns ticket and error from args
 func (client *Client) ListenOnRegTicket(id string, ticket pastel.RegTicket, err error) *Client {
 	client.On(RegTicketMethod, mock.Anything, id).Return(ticket, err)
+	return client
+}
+
+// ListenOnGetBlockCount listening GetBlockCount and returns blockNum and error from args
+func (client *Client) ListenOnGetBlockCount(blockNum int32, err error) *Client {
+	client.On(GetBlockCountMethod, mock.Anything).Return(blockNum, err)
+	return client
+}
+
+// ListenOnGetBlockVerbose1 listening GetBlockVerbose1 and returns blockNum and error from args
+func (client *Client) ListenOnGetBlockVerbose1(blockInfo *pastel.GetBlockVerbose1Result, err error) *Client {
+	client.On(GetBlockVerbose1Method, mock.Anything, mock.Anything).Return(blockInfo, err)
+	return client
+}
+
+func (client *Client) ListenOnFindTicketById(idticket *pastel.IDTicket, err error) *Client {
+	client.On(FindTicketById, mock.Anything, mock.Anything).Return(idticket, err)
 	return client
 }

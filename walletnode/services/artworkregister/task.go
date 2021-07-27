@@ -158,7 +158,7 @@ func (task *Task) run(ctx context.Context) error {
 	close(nodesDone)
 	for i := range task.nodes {
 		if err := task.nodes[i].Connection.Close(); err != nil {
-			log.WithContext(ctx).Debugf("failed to close connection to node %s %w", task.nodes[i].PastelID(), err)
+			log.WithContext(ctx).Debugf("failed to close connection to node %s %s", task.nodes[i].PastelID(), err)
 		}
 	}
 
@@ -333,6 +333,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 		return nil, err
 	}
 
+	primary.SetPrimary(true)
 	meshNodes.Add(primary)
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
@@ -482,33 +483,33 @@ func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawS
 
 func (task *Task) createArtTicket(ctx context.Context) error {
 	if task.fingerprints == nil {
-		return errors.Errorf("empty fingerprints")
+		return errEmptyFingerprints
 	}
 	if task.fingerprintsHash == nil {
-		return errors.Errorf("empty fingerprints hash")
+		return errEmptyFingerprintsHash
 	}
 	if task.fingerprintSignature == nil {
-		return errors.Errorf("empty fingerprint signature")
+		return errEmptyFingerprintSignature
 	}
 	if task.datahash == nil {
-		return errors.Errorf("empty data hash")
+		return errEmptyDatahash
 	}
 	if task.previewHash == nil {
-		return errors.Errorf("empty preview hash")
+		return errEmptyPreviewHash
 	}
 	if task.mediumThumbnailHash == nil {
-		return errors.Errorf("empty medium thumbnail hash")
+		return errEmptyMediumThumbnailHash
 	}
 	if task.smallThumbnailHash == nil {
-		return errors.Errorf("empty small thumbnail hash")
+		return errEmptySmallThumbnailHash
 	}
 	if task.rqids == nil {
-		return errors.Errorf("empty RaptorQ symbols identifiers")
+		return errEmptyRaptorQSymbols
 	}
 
 	pastelID := base58.Decode(task.Request.ArtistPastelID)
 	if pastelID == nil {
-		return errors.Errorf("base58 decode artist PastelID failed")
+		return errDecodePastelID
 	}
 
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
@@ -752,7 +753,7 @@ func (task *Task) preburntRegistrationFee(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxId)
 
 	if err := task.nodes.SendPreBurntFeeTxId(ctx, task.burnTxId); err != nil {
-		return errors.Errorf("failed to send pre-burn-txid: %s to supernode(s): %w", err)
+		return errors.Errorf("failed to send pre-burn-txid: %s to supernode(s): %w", task.burnTxId, err)
 	}
 	task.regArtTxid = task.nodes.RegArtTicketId()
 	if task.regArtTxid == "" {

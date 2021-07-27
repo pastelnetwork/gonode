@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -191,21 +192,21 @@ func TestNodesSendImage(t *testing.T) {
 		nodes                []nodeAttribute
 		args                 args
 		err                  error
-		fingerprint          []byte
+		fingersAndScore      *pastel.FingerAndScores
 		numberProbeImageCall int
 	}{
 		{
 			nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
 			args:                 args{context.Background(), &artwork.File{}},
 			err:                  nil,
-			fingerprint:          []byte("test"),
+			fingersAndScore:      &pastel.FingerAndScores{},
 			numberProbeImageCall: 1,
 		},
 		{
 			nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
 			args:                 args{context.Background(), &artwork.File{}},
 			err:                  fmt.Errorf("failed to open stream"),
-			fingerprint:          nil,
+			fingersAndScore:      &pastel.FingerAndScores{},
 			numberProbeImageCall: 1,
 		},
 	}
@@ -223,7 +224,7 @@ func TestNodesSendImage(t *testing.T) {
 				//client mock
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
-				client.ListenOnProbeImage(testCase.fingerprint, testCase.err)
+				client.ListenOnProbeImage(testCase.fingersAndScore, testCase.err)
 				clients = append(clients, client)
 
 				nodes.Add(&Node{
@@ -233,6 +234,7 @@ func TestNodesSendImage(t *testing.T) {
 			}
 
 			err := nodes.ProbeImage(testCase.args.ctx, testCase.args.file)
+			fmt.Println(err)
 			assert.Equal(t, testCase.err, err)
 
 			//mock assertion each client

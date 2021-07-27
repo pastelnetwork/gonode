@@ -24,6 +24,7 @@ type File struct {
 	fmt.Stringer
 	sync.Mutex
 
+	storage.File
 	storage *Storage
 
 	// if a file was created during the process, it should be deleted at the end.
@@ -83,7 +84,7 @@ func (file *File) Open() (storage.File, error) {
 	file.Lock()
 	defer file.Unlock()
 
-	return file.storage.Open(file.name)
+	return file.storage.Open(file.Name())
 }
 
 // Create creates a file and returns file descriptor.
@@ -152,21 +153,24 @@ func (file *File) Bytes() ([]byte, error) {
 	if _, err := buf.ReadFrom(f); err != nil {
 		return nil, errors.Errorf("failed to read from file: %w", err)
 	}
+
 	return buf.Bytes(), nil
 }
 
 // Write writes data to the file.
-func (file *File) Write(data []byte) error {
+func (file *File) Write(data []byte) (n int, err error) {
 	f, err := file.Create()
 	if err != nil {
-		return err
+		return
 	}
 	defer f.Close()
 
-	if _, err := f.Write(data); err != nil {
-		return errors.Errorf("failed to write to file: %w", err)
+	n, err = f.Write(data)
+	if err != nil {
+		return n, errors.Errorf("failed to write to file: %w", err)
 	}
-	return nil
+
+	return
 }
 
 // ResizeImage resizes image.
