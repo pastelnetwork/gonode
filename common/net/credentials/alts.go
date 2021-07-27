@@ -43,30 +43,28 @@ type altsTC struct {
 	info     *credentials.ProtocolInfo
 	side     alts.Side
 	signInfo *alts.SignInfo
-	sign     alts.Sign
-	verify   alts.Verify
+	auth     alts.Authentication
 }
 
 // NewClientCreds constructs a client-side ALTS TransportCredentials object.
-func NewClientCreds(sign alts.Sign, verify alts.Verify, info *alts.SignInfo) credentials.TransportCredentials {
-	return newALTS(alts.ClientSide, sign, verify, info)
+func NewClientCreds(auth alts.Authentication, info *alts.SignInfo) credentials.TransportCredentials {
+	return newALTS(alts.ClientSide, auth, info)
 }
 
 // NewServerCreds constructs a server-side ALTS TransportCredentials object.
-func NewServerCreds(sign alts.Sign, verify alts.Verify, info *alts.SignInfo) credentials.TransportCredentials {
-	return newALTS(alts.ServerSide, sign, verify, info)
+func NewServerCreds(auth alts.Authentication, info *alts.SignInfo) credentials.TransportCredentials {
+	return newALTS(alts.ServerSide, auth, info)
 }
 
-func newALTS(side alts.Side, sign alts.Sign, verify alts.Verify, info *alts.SignInfo) credentials.TransportCredentials {
+func newALTS(side alts.Side, auth alts.Authentication, info *alts.SignInfo) credentials.TransportCredentials {
 	return &altsTC{
 		info: &credentials.ProtocolInfo{
 			SecurityProtocol: "alts",
 			SecurityVersion:  "0.1",
 		},
 		side:     side,
-		sign:     sign,
 		signInfo: info,
-		verify:   verify,
+		auth:     auth,
 	}
 }
 
@@ -83,7 +81,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, _ string, rawConn net.Conn
 		}
 	}()
 
-	secureConn, authInfo, err := chs.ClientHandshake(ctx, g.sign, g.verify, g.signInfo)
+	secureConn, authInfo, err := chs.ClientHandshake(ctx, g.auth, g.signInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -107,7 +105,7 @@ func (g *altsTC) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthIn
 		}
 	}()
 
-	secureConn, authInfo, err := shs.ServerHandshake(ctx, g.sign, g.verify, g.signInfo)
+	secureConn, authInfo, err := shs.ServerHandshake(ctx, g.auth, g.signInfo)
 	if err != nil {
 		return nil, nil, err
 	}

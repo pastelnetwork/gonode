@@ -9,7 +9,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/GoKillers/libsodium-go/cryptohash"
+	"github.com/GoKillers/libsodium-go/cryptokdf"
 	"github.com/otrv4/ed448"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
@@ -30,6 +30,8 @@ const (
 	// record protocol name
 	rekeyRecordAesProtocol    = "ALTSRP_GCM_AES128_REKEY"
 	recordxChaChaPolyProtocol = "ALTSRP_XCHACHA20_POLY1305_IETF"
+	kdfContext                = "__auth__"
+	kdfSubKeyID               = 99
 )
 
 var (
@@ -39,7 +41,7 @@ var (
 			return conn.NewAES128GCMRekey(s, key)
 		},
 		recordxChaChaPolyProtocol: func(s alts.Side, key []byte) (conn.ALTSRecordCrypto, error) {
-			return conn.NewxChaCha20Poly1305IETF(key)
+			return conn.NewxChaCha20Poly1305IETF(s, key)
 		},
 	}
 	recordKeyLen = map[string]int{
@@ -86,14 +88,14 @@ func release() {
 }
 
 // data exchange request
-type dataExchangeRequest struct {
+type kexExchangeRequest struct {
 	PubKey    []byte // the client's public key
 	PastelID  string
 	Signature []byte
 }
 
 // data exchange response
-type dataExchangeResponse struct {
+type kexExchangeResponse struct {
 	PubKey    []byte // the server's public key
 	PastelID  string
 	Signature []byte
@@ -205,8 +207,7 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 	return nil
 }
 
-func (s *altsHandshaker) doClientHandshake(ctx context.Context, sign alts.Sign,
-	verify alts.Verify, signInfo *alts.SignInfo) error {
+func (s *altsHandshaker) doClientHandshake(ctx context.Context, auth alts.Authentication, signInfo *alts.SignInfo) error {
 	curve := ed448.NewCurve()
 	// generate the private and public key for client
 	priv, pub, ok := curve.GenerateKeys()
@@ -214,12 +215,12 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, sign alts.Sign,
 		return errors.New("failed to generate keys")
 	}
 
-	signature, err := sign(ctx, pub[:], signInfo.PastelID, signInfo.PassPhrase)
+	signature, err := auth.Sign(ctx, pub[:], signInfo.PastelID, signInfo.PassPhrase)
 	if err != nil {
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
 
-	request := dataExchangeRequest{
+	request := kexExchangeRequest{
 		PubKey:    pub[:],
 		Signature: signature,
 		PastelID:  signInfo.PastelID,
@@ -230,12 +231,12 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, sign alts.Sign,
 	}
 
 	// read and decode the client's handshake record
-	var response dataExchangeResponse
+	var response kexExchangeResponse
 	if err := s.readHandshake(&response); err != nil {
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	if ok, err := verify(ctx, response.PubKey, string(response.Signature), response.PastelID); err != nil || !ok {
+	if ok, err := auth.Verify(ctx, response.PubKey, string(response.Signature), response.PastelID); err != nil || !ok {
 		return fmt.Errorf("failed to verify server public key: %w", err)
 	}
 
@@ -243,17 +244,26 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, sign alts.Sign,
 	copy(serverPubKey[:], response.PubKey)
 	// compute the secret key for connection
 	secret := curve.ComputeSecret(priv, serverPubKey)
-	hash, _ := cryptohash.CryptoHash(secret[:])
+
+	subkeyLen, ok := recordKeyLen[s.protocol]
+	if !ok {
+		return fmt.Errorf("unknown resulted record protocol: %v", s.protocol)
+	}
+
+	kdfValue, exit := cryptokdf.CryptoKdfDeriveFromKey(subkeyLen, kdfSubKeyID, kdfContext,
+		secret[:cryptokdf.CryptoKdfKeybytes()])
+	if exit != 0 {
+		return fmt.Errorf("failed to compute kdf, exit=%d", exit)
+	}
 	// update the record key
-	s.key = hash
+	s.key = kdfValue
 
 	return nil
 }
 
 // ClientHandshake starts and completes a client ALTS handshaking. Once
 // done, ClientHandshake returns a secure connection.
-func (s *altsHandshaker) ClientHandshake(ctx context.Context, sign alts.Sign,
-	verify alts.Verify, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ClientHandshake(ctx context.Context, auth alts.Authentication, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -264,19 +274,13 @@ func (s *altsHandshaker) ClientHandshake(ctx context.Context, sign alts.Sign,
 	}
 
 	// do the client handshake
-	if err := s.doClientHandshake(ctx, sign, verify, signInfo); err != nil {
+	if err := s.doClientHandshake(ctx, auth, signInfo); err != nil {
 		return nil, nil, fmt.Errorf("do client handshake: %w", err)
 	}
 	log.WithContext(ctx).Debugf("client handshake is complete")
 
-	// The handshaker returns a 128 bytes key. It should be truncated based
-	// on the returned record protocol.
-	len, ok := recordKeyLen[s.protocol]
-	if !ok {
-		return nil, nil, fmt.Errorf("unknown resulted record protocol: %v", s.protocol)
-	}
 	// new a secure connection
-	sc, err := conn.NewConn(s.side, s.conn, s.protocol, s.key[:len])
+	sc, err := conn.NewConn(s.side, s.conn, s.protocol, s.key)
 	if err != nil {
 		return nil, nil, fmt.Errorf("new secure conn: %w", err)
 	}
@@ -284,15 +288,14 @@ func (s *altsHandshaker) ClientHandshake(ctx context.Context, sign alts.Sign,
 	return sc, authinfo.New(), nil
 }
 
-func (s *altsHandshaker) doServerHandshake(ctx context.Context, sign alts.Sign,
-	verify alts.Verify, signInfo *alts.SignInfo) error {
+func (s *altsHandshaker) doServerHandshake(ctx context.Context, auth alts.Authentication, signInfo *alts.SignInfo) error {
 	// read and decode the client's handshake record
-	var request dataExchangeRequest
+	var request kexExchangeRequest
 	if err := s.readHandshake(&request); err != nil {
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	if ok, err := verify(ctx, request.PubKey, string(request.Signature), request.PastelID); err != nil || !ok {
+	if ok, err := auth.Verify(ctx, request.PubKey, string(request.Signature), request.PastelID); err != nil || !ok {
 		return fmt.Errorf("failed to verify public key: %w", err)
 	}
 
@@ -303,7 +306,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, sign alts.Sign,
 		return errors.New("failed to generate keys")
 	}
 
-	signature, err := sign(ctx, pub[:], signInfo.PastelID, signInfo.PassPhrase)
+	signature, err := auth.Sign(ctx, pub[:], signInfo.PastelID, signInfo.PassPhrase)
 	if err != nil {
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
@@ -312,10 +315,20 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, sign alts.Sign,
 	copy(clientPubKey[:], request.PubKey)
 	// compute the secret key for connection
 	secret := curve.ComputeSecret(priv, clientPubKey)
-	hash, _ := cryptohash.CryptoHash(secret[:])
+
+	subkeyLen, ok := recordKeyLen[s.protocol]
+	if !ok {
+		return fmt.Errorf("unknown resulted record protocol: %v", s.protocol)
+	}
+
+	kdfValue, exit := cryptokdf.CryptoKdfDeriveFromKey(subkeyLen, kdfSubKeyID, kdfContext,
+		secret[:cryptokdf.CryptoKdfKeybytes()])
+	if exit != 0 {
+		return fmt.Errorf("failed to compute kdf, exit=%d", exit)
+	}
 	// update the record key
-	s.key = hash
-	response := dataExchangeResponse{
+	s.key = kdfValue
+	response := kexExchangeResponse{
 		PubKey:    pub[:],
 		Signature: signature,
 		PastelID:  signInfo.PastelID,
@@ -330,8 +343,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, sign alts.Sign,
 
 // ServerHandshake starts and completes a server ALTS handshaking for GCP. Once
 // done, ServerHandshake returns a secure connection.
-func (s *altsHandshaker) ServerHandshake(ctx context.Context, sign alts.Sign,
-	verify alts.Verify, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ServerHandshake(ctx context.Context, auth alts.Authentication, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -342,19 +354,13 @@ func (s *altsHandshaker) ServerHandshake(ctx context.Context, sign alts.Sign,
 	}
 
 	// do the server handshake
-	if err := s.doServerHandshake(ctx, sign, verify, signInfo); err != nil {
+	if err := s.doServerHandshake(ctx, auth, signInfo); err != nil {
 		return nil, nil, fmt.Errorf("do server handshake: %w", err)
 	}
 	log.WithContext(ctx).Debugf("server handshake is complete")
 
-	// The handshaker returns a 128 bytes key. It should be truncated based
-	// on the returned record protocol.
-	len, ok := recordKeyLen[s.protocol]
-	if !ok {
-		return nil, nil, fmt.Errorf("unknown resulted record protocol: %v", s.protocol)
-	}
 	// new a secure connection
-	sc, err := conn.NewConn(s.side, s.conn, s.protocol, s.key[:len])
+	sc, err := conn.NewConn(s.side, s.conn, s.protocol, s.key)
 	if err != nil {
 		return nil, nil, fmt.Errorf("new secure conn: %w", err)
 	}

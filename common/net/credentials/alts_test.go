@@ -5,7 +5,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"net"
 	"sync"
 	"testing"
@@ -21,13 +20,31 @@ var (
 	address = "localhost:8080"
 )
 
+type FakePastelClient struct {
+	signatures map[string][]byte
+	data       map[string][]byte
+}
+
+func (c *FakePastelClient) Sign(ctx context.Context, data []byte, pastelID, passPhrase string) ([]byte, error) {
+	signature := make([]byte, 20)
+	rand.Read(signature)
+	c.signatures[pastelID] = signature
+	c.data[pastelID] = data
+	return signature, nil
+}
+
+func (c *FakePastelClient) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+	ret := true
+	if sig, ok := c.signatures[pastelID]; ok {
+		ret = ret && bytes.Equal([]byte(signature), sig)
+	}
+
+	if d, ok := c.data[pastelID]; ok {
+		ret = ret && bytes.Equal([]byte(data), d)
+	}
+	return ret, nil
+}
 func TestSecretConnWithGRPC(t *testing.T) {
-	cSignature := make([]byte, 20)
-	sSignature := make([]byte, 20)
-	rand.Read(cSignature)
-	rand.Read(sSignature)
-	var sPubKey []byte
-	var cPubKey []byte
 	signInfoClient := &alts.SignInfo{
 		PastelID:   "client_pastel_id",
 		PassPhrase: "client_pass_phrase",
@@ -38,33 +55,12 @@ func TestSecretConnWithGRPC(t *testing.T) {
 		PassPhrase: "server_pass_phrase",
 	}
 
-	cSign := func(ctx context.Context, data []byte, pastelID, passPhrase string) ([]byte, error) {
-		cPubKey = data
-		return cSignature, nil
+	auth := &FakePastelClient{
+		signatures: make(map[string][]byte),
+		data:       make(map[string][]byte),
 	}
 
-	cVerify := func(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
-		if bytes.Equal(data, sPubKey) && bytes.Equal([]byte(signature), sSignature) &&
-			pastelID == signInfoServer.PastelID {
-			return true, nil
-		}
-		return false, fmt.Errorf("failed to verify client side")
-	}
-
-	sSign := func(ctx context.Context, data []byte, pastelID, passPhrase string) ([]byte, error) {
-		sPubKey = data
-		return sSignature, nil
-	}
-
-	sVerify := func(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
-		if bytes.Equal(data, cPubKey) && bytes.Equal([]byte(signature), cSignature) &&
-			pastelID == signInfoClient.PastelID {
-			return true, nil
-		}
-		return false, fmt.Errorf("failed to verify server side")
-	}
-
-	altsTCServer := NewServerCreds(sSign, sVerify, signInfoServer)
+	altsTCServer := NewServerCreds(auth, signInfoServer)
 	s := &greeter.Greeter{}
 	server := grpc.NewServer(grpc.Creds(altsTCServer))
 	greeter.RegisterGreeterServiceServer(server, s)
@@ -82,7 +78,7 @@ func TestSecretConnWithGRPC(t *testing.T) {
 		server.Serve(ln)
 	}()
 
-	altsTCClient := NewClientCreds(cSign, cVerify, signInfoClient)
+	altsTCClient := NewClientCreds(auth, signInfoClient)
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 
