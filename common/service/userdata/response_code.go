@@ -33,7 +33,7 @@ const (
 // ResponseCode for Supernode reponse
 
 // Description of ResponseCode
-var Description = map[int32]string{
+var Description = map[int]string{
 	SuccessProcess:               			"User specified data set successfully",
 	ErrorNotEnoughSupernode:         		"The process verify signature in primary Supernode success",
 	ErrorNotEnoughSupernodeResponse:		"Not enough SuperNodes reply",

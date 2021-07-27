@@ -7,8 +7,9 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/proto"
+	"github.com/pastelnetwork/gonode/metadb/network/proto"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb/network/supernode/node"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -84,47 +85,47 @@ func (service *processUserdata) SendUserdataToPrimary(ctx context.Context, dataS
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 	resp, err := service.client.SendUserdataToPrimary(ctx, &pb.SuperNodeRequest{
-		Userdata_hash			: dataSigned.UserdataHash
-		Userdata_result_hash	: dataSigned.UserdataResultHash
-		Hash_signature			: dataSigned.HashSignature
-		NodeID					: dataSigned.NodeID
+		UserdataHash			: dataSigned.UserdataHash,
+		UserdataResultHash	: dataSigned.UserdataResultHash,
+		HashSignature			: dataSigned.HashSignature,
+		NodeID					: dataSigned.NodeID,
 	})
 
 	return userdata.SuperNodeReply {
-		ResponseCode	: resp.ResponseCode
-		Detail			: resp.Detail
+		ResponseCode	: resp.ResponseCode,
+		Detail			: resp.Detail,
 	}, err
 }
 
-func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalUserdata userdata.UserdataProcessRequest) (userdata.SuperNodeReply, error){
+func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalUserdata userdata.UserdataProcessRequestSigned) (userdata.SuperNodeReply, error){
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	// Generate protobuf request reqProto
 	reqProto := &pb.UserdataRequest{}
 
-	reqProto.Realname = finalUserdata.Userdata.Realname,
-	reqProto.Facebook_link = finalUserdata.Userdata.FacebookLink,
-	reqProto.Twitter_link = finalUserdata.Userdata.TwitterLink,
-	reqProto.Native_currency = finalUserdata.Userdata.NativeCurrency,
+	reqProto.Realname = finalUserdata.Userdata.Realname
+	reqProto.FacebookLink = finalUserdata.Userdata.FacebookLink
+	reqProto.TwitterLink = finalUserdata.Userdata.TwitterLink
+	reqProto.NativeCurrency = finalUserdata.Userdata.NativeCurrency
 	reqProto.Location = finalUserdata.Userdata.Location
-	reqProto.Primary_language = finalUserdata.Userdata.PrimaryLanguage
+	reqProto.PrimaryLanguage = finalUserdata.Userdata.PrimaryLanguage
 	reqProto.Categories = finalUserdata.Userdata.Categories
 	reqProto.Biography = finalUserdata.Userdata.Biography
 	reqProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
 
 	if finalUserdata.Userdata.AvatarImage.Content != nil && len(finalUserdata.Userdata.AvatarImage.Content) > 0 {
-		image.AvatarImage.Content = make ([]byte, len(finalUserdata.Userdata.AvatarImage.Content))
+		reqProto.AvatarImage.Content = make ([]byte, len(finalUserdata.Userdata.AvatarImage.Content))
 		copy(reqProto.AvatarImage.Content,finalUserdata.Userdata.AvatarImage.Content)
 	}
-	reqProto.AvatarImage.Filename := finalUserdata.Userdata.AvatarImage.Filename
+	reqProto.AvatarImage.Filename = finalUserdata.Userdata.AvatarImage.Filename
 
 	reqProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
 	if finalUserdata.Userdata.CoverPhoto.Content != nil && len(finalUserdata.Userdata.CoverPhoto.Content) > 0 {
-		image.CoverPhoto.Content = make ([]byte, len(finalUserdata.Userdata.CoverPhoto.Content))
+		reqProto.CoverPhoto.Content = make ([]byte, len(finalUserdata.Userdata.CoverPhoto.Content))
 		copy(reqProto.CoverPhoto.Content,finalUserdata.Userdata.CoverPhoto.Content)
 	}
-	reqProto.CoverPhoto.Filename := finalUserdata.Userdata.CoverPhoto.Filename
+	reqProto.CoverPhoto.Filename = finalUserdata.Userdata.CoverPhoto.Filename
 	
 	reqProto.ArtistPastelID = finalUserdata.Userdata.ArtistPastelID 
 	reqProto.Timestamp = finalUserdata.Userdata.Timestamp  
@@ -133,11 +134,11 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 	reqProto.Signature = finalUserdata.Signature
 
 	// Send the data
-	resp, err := service.client.SendUserdataToLeader(ctx, &reqProto)
+	resp, err := service.client.SendUserdataToLeader(ctx, reqProto)
 
 	return userdata.SuperNodeReply {
-		ResponseCode	: resp.ResponseCode
-		Detail			: resp.Detail
+		ResponseCode	: resp.ResponseCode,
+		Detail			: resp.Detail,
 	}, err
 }
 

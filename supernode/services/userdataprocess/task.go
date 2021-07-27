@@ -1,11 +1,10 @@
 package userdataprocess
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"strings"
 	"fmt"
-	"io"
 	"sync"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -13,9 +12,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
-	"github.com/pastelnetwork/gonode/pastel"
-
-	"golang.org/x/crypto/sha3"
 )
 
 const (
@@ -34,18 +30,18 @@ type Task struct {
 	accepted   Nodes
 
 	// userdata signed by this supernode
-	ownSNData SuperNodeRequest
+	ownSNData userdata.SuperNodeRequest
 
 	// valid only for a task run as primary
 	peersSNDataSignedMtx 		*sync.Mutex
-	peersSNDataSigned   		map[string]SuperNodeRequest
+	peersSNDataSigned   		map[string]userdata.SuperNodeRequest
 	allPeersSNDatasReceived     chan struct{}
 
 	// valid only for secondary node
 	connectedTo *Node
 
 	// valid only for primary node
-	connectToLeader *Node
+	connectedToLeader *Node
 }
 
 // Run starts the task
@@ -158,9 +154,9 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string, nodetype i
 			return err
 		}
 
-		if nodetype == NodeTypePrimary{
+		if nodetype == userdata.NodeTypePrimary{
 			task.connectedTo = node
-		} else if nodetype == NodeTypeLeader {
+		} else if nodetype == userdata.NodeTypeLeader {
 			task.connectedToLeader = node
 		} else {
 			return errors.Errorf("Invalid NodeType")
@@ -171,17 +167,21 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string, nodetype i
 	return nil
 }
 
-func (task *Task) supernodeProcessUserdata(ctx context.Context, req * userdata.UserdataProcessRequestSigned) (userdata.UserdataProcessResult, error) {
-	log.WithContext(ctx).Debugf("supernodeProcessUserdata on user PastelID: %s",req.ArtistPastelID)
+// SupernodeProcessUserdata process the userdata send from Walletnode 
+func (task *Task) SupernodeProcessUserdata(ctx context.Context, req * userdata.UserdataProcessRequestSigned) (userdata.UserdataProcessResult, error) {
+	log.WithContext(ctx).Debugf("supernodeProcessUserdata on user PastelID: %s",req.Userdata.ArtistPastelID)
 
-	validateResult := task.validateUserdata(req)
+	validateResult, err:= task.validateUserdata(req.Userdata)
+	if err != nil {
+		return userdata.UserdataProcessResult{}, errors.Errorf("failed to validateUserdata")
+	}
 	if validateResult.ResponseCode == userdata.ErrorOnContent {
 		// If the request from Walletnode fail the validation, return the response to Walletnode and stop process further
 		return validateResult, nil
 	}
 
 	// Validation the request from Walletnode successful, we continue to get acknowledgement and confirmation process from multiple SNs
-	snRequest := SuperNodeRequest{}
+	snRequest := userdata.SuperNodeRequest{}
 
 	// Marshal validateResult to byte array for signing
 	js, err := json.Marshal(validateResult)
@@ -189,7 +189,11 @@ func (task *Task) supernodeProcessUserdata(ctx context.Context, req * userdata.U
 		return userdata.UserdataProcessResult{}, errors.Errorf("failed to encode validateResult %w", err)
 	}
 	// Hash the validateResult
-	snRequest.UserdataResultHash = userdata.Sha3256hash(js)
+	hashvalue, err := userdata.Sha3256hash(js)
+	if err != nil {
+		return userdata.UserdataProcessResult{}, errors.Errorf("failed to hash userdata %w", err)
+	}
+	snRequest.UserdataResultHash = string(hashvalue)
 	snRequest.UserdataHash = req.UserdataHash
 
 	task.ownSNData = snRequest // At this step this SuperNodeRequest only contain UserdataResultHash and UserdataHash
@@ -238,7 +242,7 @@ func (task *Task) retrieveUserdata(ctx context.Context, userpastelid string) (us
 	log.WithContext(ctx).Debugf("retrieveUserdata on user PastelID: %s",userpastelid)
 	
 	// only primary node start this action
-	var userdataResult userdata.UserdataProcessResult
+	var userdataResult userdata.UserdataProcessRequest
 	
 	// TODO: get userdata from MDL
 	// @TuanTran
@@ -250,12 +254,12 @@ func (task *Task) retrieveUserdata(ctx context.Context, userpastelid string) (us
 // Sign and send SNDataSigned if not primary
 func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.SuperNodeRequest, isPrimary bool) error {
 	log.WithContext(ctx).Debugf("signAndSendSNDataSigned begin to sign SuperNodeRequest")
-	signature, err := task.pastelClient.Sign(ctx, sndata.UserdataHash + sndata.UserdataResultHash, task.config.PastelID, task.config.PassPhrase)
+	signature, err := task.pastelClient.Sign(ctx, []byte(sndata.UserdataHash + sndata.UserdataResultHash), task.config.PastelID, task.config.PassPhrase)
 	if err != nil {
 		return errors.Errorf("failed to sign sndata %w", err)
 	}
 	if !isPrimary {
-		sndata.HashSignature = signature
+		sndata.HashSignature = string(signature)
 		sndata.NodeID = task.config.PastelID
 		log.WithContext(ctx).Debug("send signed sndata to primary node")
 		if _, err := task.connectedTo.ProcessUserdata.SendUserdataToPrimary(ctx, sndata); err != nil {
@@ -265,8 +269,9 @@ func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.S
 	return nil
 }
 
-func (task *Task) AddPeerSNDataSigned(snrequest userdata.SuperNodeRequest) error {
-	log.WithContext(ctx).Debugf("AddPeerSNDataSigned begin to aggregate SuperNodeRequest")
+// AddPeerSNDataSigned gather all the Userdata with signature from other Supernodes
+func (task *Task) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.SuperNodeRequest) error {
+	log.WithContext(ctx).Debugf("addPeerSNDataSigned begin to aggregate SuperNodeRequest")
 
 	task.peersSNDataSignedMtx.Lock()
 	defer task.peersSNDataSignedMtx.Unlock()
@@ -290,16 +295,14 @@ func (task *Task) AddPeerSNDataSigned(snrequest userdata.SuperNodeRequest) error
 }
 
 
-func (task *Task) verifyPeersUserdata(ctx context.Context) (UserdataProcessResult, error) {
+func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataProcessResult, error) {
 	log.WithContext(ctx).Debugf("all supernode data signed received so start validation")
-	var reply UserdataReply
 	successCount := 0
 	dataMatchingCount := 0
-	aggregate := make(map[string][]string)
 	for _,sndata := range task.peersSNDataSigned {		
 		// Verify the data
-		if ok, err := task.pastelClient.Verify(ctx, sndata.UserdataHash + sndata.UserdataResultHash, string(sndata.Signature), sndata.NodeID); err != nil {
-			errors.Errorf("failed to verify signature %s of node %s", userdata.Signature, sndata.NodeID)
+		if ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash + sndata.UserdataResultHash), string(sndata.HashSignature), sndata.NodeID); err != nil {
+			errors.Errorf("failed to verify signature %s of node %s", string(sndata.HashSignature), sndata.NodeID)
 			continue
 		} else {
 			if !ok {
@@ -317,28 +320,28 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (UserdataProcessResul
 
 	if successCount < minimalNodeConfirmSuccess - 1  {
 		// If there is not enough userdata signed from other supernodes
-		return &UserdataProcessResult{
-			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm
-			Detail 		: userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm]
+		return userdata.UserdataProcessResult{
+			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm,
+			Detail 		: userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
 		}, nil
 	} else if dataMatchingCount < minimalNodeConfirmSuccess - 1 {
 		// If the userdata between supernodes is not matching with each other
-		return &UserdataProcessResult{
-			ResponseCode: userdata.ErrorUserdataMismatchBetweenSupernode
-			Detail 		: userdata.Description[userdata.ErrorUserdataMismatchBetweenSupernode]
+		return userdata.UserdataProcessResult{
+			ResponseCode: userdata.ErrorUserdataMismatchBetweenSupernode,
+			Detail 		: userdata.Description[userdata.ErrorUserdataMismatchBetweenSupernode],
 		}, nil
 	} else {
 		// Success 
-		return &UserdataProcessResult{
-			ResponseCode: userdata.SuccessVerifyAllSignature
-			Detail 		: userdata.Description[userdata.SuccessVerifyAllSignature]
+		return userdata.UserdataProcessResult{
+			ResponseCode: userdata.SuccessVerifyAllSignature,
+			Detail 		: userdata.Description[userdata.SuccessVerifyAllSignature],
 		}, nil
 	}
 }
 
 
 func (task *Task) validateUserdata(req * userdata.UserdataProcessRequest) (userdata.UserdataProcessResult, error) {
-	result := UserdataProcessResult{}
+	result := userdata.UserdataProcessResult{}
 
 	textLengthLimit := 1000
 
@@ -347,7 +350,7 @@ func (task *Task) validateUserdata(req * userdata.UserdataProcessRequest) (userd
 	// Biography validation
 	if len(req.Biography) > textLengthLimit {
 		result.Biography = "Biography text length is greater than the limit " + string(textLengthLimit) + " characters"
-		errorOnContent = userdata.ErrorOnContent
+		contentValidation = userdata.ErrorOnContent
 	}
 
 	// Primary Language validation
@@ -357,7 +360,7 @@ func (task *Task) validateUserdata(req * userdata.UserdataProcessRequest) (userd
 	// FacebookLink validation
 	if !(strings.Contains(strings.ToLower(req.FacebookLink), "facebook.com") || strings.Contains(strings.ToLower(req.FacebookLink), "fb.com")){
 		result.Biography = "Facebook Link is not valid"
-		errorOnContent = userdata.ErrorOnContent
+		contentValidation = userdata.ErrorOnContent
 	}
 
 	// Image validation
@@ -375,23 +378,23 @@ func (task *Task) validateUserdata(req * userdata.UserdataProcessRequest) (userd
 	}
 	if !isAvatarMatchExtention {
 		result.AvatarImage = "Avatar extension must be in the following: " + strings.Join(allowExtension,",")
-		errorOnContent = userdata.ErrorOnContent
+		contentValidation = userdata.ErrorOnContent
 	}
-	if !isCoverPhotoExtention {
+	if !isCoverPhotoMatchExtention {
 		result.CoverPhoto = "CoverPhoto extension must be in the following: " + strings.Join(allowExtension,",")
-		errorOnContent = userdata.ErrorOnContent
+		contentValidation = userdata.ErrorOnContent
 	}
 
 	// Image Size validation
-	minSizeLimit = 10 * 1024 // 10 kb
-	maxSizeLimit =  1000 * 1024 // 1000 kb
+	minSizeLimit := 10 * 1024 // 10 kb
+	maxSizeLimit :=  1000 * 1024 // 1000 kb
 	if len(req.AvatarImage.Content) < minSizeLimit || len(req.AvatarImage.Content) > maxSizeLimit {
-		result.AvatarImage = "Avatar size must be in the range: [" + minSizeLimit  + "-" + maxSizeLimit + "]"
-		errorOnContent = userdata.ErrorOnContent
+		result.AvatarImage = "Avatar size must be in the range: [" + string(minSizeLimit)  + "-" + string(maxSizeLimit) + "]"
+		contentValidation = userdata.ErrorOnContent
 	}
-	if len(req.CoverPhoto.Content) > photoSizeLimit {
-		result.CoverPhoto = "Cover Photo size must be in the range: [" + minSizeLimit  + "-" + maxSizeLimit + "]"
-		errorOnContent = userdata.ErrorOnContent
+	if len(req.CoverPhoto.Content) < minSizeLimit || len(req.CoverPhoto.Content) > maxSizeLimit {
+		result.CoverPhoto = "Cover Photo size must be in the range: [" + string(minSizeLimit)  + "-" + string(maxSizeLimit) + "]"
+		contentValidation = userdata.ErrorOnContent
 	}
 
 	// Image Resolution validation
@@ -402,9 +405,9 @@ func (task *Task) validateUserdata(req * userdata.UserdataProcessRequest) (userd
 	// TODO: Requirement not specified yet, will do later
 
 
-	result.ResponseCode = contentValidation
+	result.ResponseCode = int32(contentValidation)
 	result.Detail		= userdata.Description[contentValidation]
-	return result
+	return result, nil
 }
 
 
@@ -443,7 +446,7 @@ func NewTask(service *Service) *Task {
 		Task:                       task.New(StatusTaskStarted),
 		Service:                    service,
 		peersSNDataSignedMtx: 		&sync.Mutex{},
-		peersSNDataSigned:    		make(map[string][]byte),
+		peersSNDataSigned:    		make(map[string]userdata.SuperNodeRequest),
 		allPeersSNDatasReceived:    make(chan struct{}),
 	}
 }

@@ -11,15 +11,9 @@ import (
 
 // ProcessUserdata represents common grpc service for process userdata.
 type ProcessUserdata struct {
-	*processuserdata.Service
+	*userdataprocess.Service
 }
 
-const (
-	// NodeTypePrimary connect to Primary node
-	NodeTypePrimary				= 0
-	// NodeTypeLeader connect to Leader node
-	NodeTypeLeader				= 1
-)
 
 // SessID retrieves SessID from the metadata.
 func (service *ProcessUserdata) SessID(ctx context.Context) (string, bool) {
@@ -36,7 +30,7 @@ func (service *ProcessUserdata) SessID(ctx context.Context) (string, bool) {
 }
 
 // TaskFromMD returns task by SessID from the metadata.
-func (service *ProcessUserdata) TaskFromMD(ctx context.Context) (*processuserdata.Task, error) {
+func (service *ProcessUserdata) TaskFromMD(ctx context.Context) (*userdataprocess.Task, error) {
 	sessID, ok := service.SessID(ctx)
 	if !ok {
 		return nil, errors.New("not found sessID in metadata")
@@ -50,7 +44,7 @@ func (service *ProcessUserdata) TaskFromMD(ctx context.Context) (*processuserdat
 }
 
 // NewProcessUserdata returns a new ProcessUserdata instance.
-func NewProcessUserdata(service *processuserdata.Service) *ProcessUserdata {
+func NewProcessUserdata(service *userdataprocess.Service) *ProcessUserdata {
 	return &ProcessUserdata{
 		Service: service,
 	}

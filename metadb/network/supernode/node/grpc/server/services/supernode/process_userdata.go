@@ -9,7 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
 	"github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/common"
-	"github.com/pastelnetwork/gonode/metadb/network/supernode/services/userdataprocess"
+	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -93,45 +93,41 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 	}
 
 	snrequest := userdata.SuperNodeRequest{
-		UserdataHash		: req.Userdata_hash,
-		UserdataResultHash	: req.Userdata_result_hash,
-		HashSignature		: req.Hash_signature,
-		NodeID				: req.Supernode_pastelID,
+		UserdataHash		: req.UserdataHash,
+		UserdataResultHash	: req.UserdataResultHash,
+		HashSignature		: req.HashSignature,
+		NodeID				: req.SupernodePastelID,
 	}
 
-	if err := task.AddPeerSNDataSigned(snrequest); err != nil {
+	if err := task.AddPeerSNDataSigned(ctx, snrequest); err != nil {
 		errors.Errorf("failed to add peer signature %w", err)
 		return &pb.SuperNodeReply{
-			Response_code: userdata.ErrorPrimarySupernodeFailToProcess
-			Detail: userdata.Description[userdata.ErrorPrimarySupernodeFailToProcess]
+			ResponseCode: userdata.ErrorPrimarySupernodeFailToProcess,
+			Detail: userdata.Description[userdata.ErrorPrimarySupernodeFailToProcess],
 		}, nil
 	}
 
 	return &pb.SuperNodeReply{
-		Response_code: userdata.SuccessAddDataToPrimarySupernode
-		Detail: userdata.Description[userdata.SuccessAddDataToPrimarySupernode]
+		ResponseCode: userdata.SuccessAddDataToPrimarySupernode,
+		Detail: userdata.Description[userdata.SuccessAddDataToPrimarySupernode],
 	}, nil
 }
 
 // SendUserdataToLeader implements supernode.ProcessUserdataServer.SendUserdataToLeader()
 func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *pb.UserdataRequest) (*pb.SuperNodeReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdataToLeader request")
+
 	if req == nil {
-		return errors.Errorf("receive nil request")
+		return nil, errors.Errorf("receive nil request")
 	}
 	
 	// This code run in supernode contain leader rqlite db
-	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdataToLeader request")
-	task, err := service.TaskFromMD(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	// Process write the data to rqlite happen here
 	service.databaseOps.WriteUserData(ctx, *req)
 
 	return &pb.SuperNodeReply{
-		Response_code: userdata.SuccessWriteToRQLiteDB
-		Detail: userdata.Description[userdata.SuccessWriteToRQLiteDB]
+		ResponseCode: userdata.SuccessWriteToRQLiteDB,
+		Detail: userdata.Description[userdata.SuccessWriteToRQLiteDB],
 	}, nil
 }
 

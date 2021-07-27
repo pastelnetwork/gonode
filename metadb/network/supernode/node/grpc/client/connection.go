@@ -15,7 +15,7 @@ type clientConn struct {
 
 // ProcessUserdata implements node.Connection.ProcessUserdata()
 func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
-	return newRegisterArtwork(conn)
+	return newProcessUserdata(conn)
 }
 
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {

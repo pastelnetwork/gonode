@@ -97,7 +97,7 @@ type SuperNodeRequest struct {
 // SuperNodeReply represents the response for SuperNodeRequest
 type SuperNodeReply struct {
 	// Result of the SuperNodeRequest is success or not
-	ResponseCode int
+	ResponseCode int32
 	// The detail of why SuperNodeRequest is success/fail, depend on response_code
 	Detail string
 }

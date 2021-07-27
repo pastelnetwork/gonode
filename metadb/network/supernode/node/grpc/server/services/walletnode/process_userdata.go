@@ -1,12 +1,12 @@
 package walletnode
 
 import (
-	"bufio"
 	"context"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode"
 	"github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
@@ -114,7 +114,7 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pb.ConnectTo
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.NodeID, req.SessID, common.NodeTypePrimary); err != nil {
+	if err := task.ConnectTo(ctx, req.NodeID, req.SessID, userdata.NodeTypePrimary); err != nil {
 		return nil, err
 	}
 
@@ -132,14 +132,14 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 		return nil, err
 	}
 	// Convert protobuf request to UserdataProcessRequest
-	request := UserdataProcessRequestSigned{}
+	request := userdata.UserdataProcessRequestSigned{}
 
 	request.Userdata.Realname = req.Realname
-	request.Userdata.FacebookLink = req.Facebook_link
-	request.Userdata.TwitterLink=req.Twitter_link
-	request.Userdata.NativeCurrency= req.Native_currency
+	request.Userdata.FacebookLink = req.FacebookLink
+	request.Userdata.TwitterLink=req.TwitterLink
+	request.Userdata.NativeCurrency= req.NativeCurrency
 	request.Userdata.Location= req.Location
-	request.Userdata.PrimaryLanguage= req.Primary_language
+	request.Userdata.PrimaryLanguage= req.PrimaryLanguage
 	request.Userdata.Categories=req.Categories
 	request.Userdata.Biography= req.Biography
 
@@ -153,7 +153,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 		req.CoverPhoto.Content = make ([]byte, len(req.CoverPhoto.Content))
 		copy(request.Userdata.CoverPhoto.Content,req.CoverPhoto.Content)
 	}
-	request.Userdata.CoverPhoto.Filename := req.CoverPhoto.Filename
+	request.Userdata.CoverPhoto.Filename = req.CoverPhoto.Filename
 
 	request.Userdata.ArtistPastelID  = req.ArtistPastelID
 	request.Userdata.Timestamp   = req.Timestamp
@@ -162,35 +162,38 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 	request.Signature = req.Signature
 
 
-	processResult := task.supernodeProcessUserdata(ctx, request)
+	processResult, err := task.SupernodeProcessUserdata(ctx, &request)
+	if err != nil {
+		return nil, errors.Errorf("SupernodeProcessUserdata can not process %w", err)
+	}
 	if processResult.ResponseCode == userdata.ErrorOnContent {
 		return &pb.UserdataReply {
-			Response_code 		: processResult.ResponseCode
-			Detail				: processResult.Detail
+			ResponseCode 		: processResult.ResponseCode,
+			Detail				: processResult.Detail,
 			Realname 			: processResult.Realname,
-			Facebook_link 		: processResult.FacebookLink,
-			Twitter_link 		: processResult.TwitterLink,
-			Native_currency 	: processResult.NativeCurrency,
+			FacebookLink 		: processResult.FacebookLink,
+			TwitterLink 		: processResult.TwitterLink,
+			NativeCurrency 		: processResult.NativeCurrency,
 			Location 			: processResult.Location,
-			Primary_language 	: processResult.PrimaryLanguage,
+			PrimaryLanguage 	: processResult.PrimaryLanguage,
 			Categories 			: processResult.Categories,
 			Biography 			: processResult.Biography,
-			Avatar_image		: processResult.AvatarImage,
-			Cover_photo			: processResult.CoverPhoto,
-		}
+			AvatarImage			: processResult.AvatarImage,
+			CoverPhoto			: processResult.CoverPhoto,
+		}, nil
 	}
 	// Process actual write to rqlite db happen here
 	<-task.NewAction(func(ctx context.Context) error {
 		// Send data to SN contain the leader rqlite
-		if err := task.ConnectTo(ctx, req.NodeID, req.SessID, common.NodeTypeLeader); err != nil {
+		if err := task.ConnectTo(ctx, req.NodeID, req.SessID, userdata.NodeTypeLeader); err != nil {
 			return err
 		} else {
 			if task.connectedToLeader != nil {
 				if _, err := task.connectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
-					return errors.Errorf("failed to send userdata to leader rqlite node %s at address %s %w", task.connectedToLeader.ID, task.connectedToLeader.Address, err)
+					return errors.Errorf("failed to send userdata to leader rqlite %w", err)
 				}
 			} else {
-				return return errors.Errorf("leader rqlite node object is empty")
+				return errors.Errorf("leader rqlite node object is empty")
 			}
 			
 		}
@@ -199,8 +202,8 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 	})
 
 	return &pb.UserdataReply {
-		Response_code		: processResult.ResponseCode
-		Detail				: processResult.Detail
+		Response_code		: processResult.ResponseCode,
+		Detail				: processResult.Detail,
 	}
 }
 

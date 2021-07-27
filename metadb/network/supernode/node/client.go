@@ -34,5 +34,5 @@ type ProcessUserdata interface {
 	// Send userdata to primary supernode
 	SendUserdataToPrimary(ctx context.Context, dataSigned userdata.SuperNodeRequest) (userdata.SuperNodeReply, error)
 	// Send userdata to supernode with leader rqlite
-	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.UserdataProcessRequest) (userdata.SuperNodeReply, error)
+	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.UserdataProcessRequestSigned) (userdata.SuperNodeReply, error)
 }
