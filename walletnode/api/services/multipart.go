@@ -1,13 +1,14 @@
 package services
 
 import (
+	"io/ioutil"
 	"context"
 	"io"
 	"mime"
 	"mime/multipart"
 	"path/filepath"
 	"strings"
-	"encoding/json"
+	"bytes"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -16,7 +17,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
 
 	userdatas "github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/userdatas/server"
+	mdlserver "github.com/pastelnetwork/gonode/walletnode/api/gen/http/userdatas/server"
 )
 
 const (
@@ -82,9 +83,10 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 
 // UserdatasProcessUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/update".
 // The decoder must populate the argument p after encoding.
-func UserdatasProcessUserdataDecoderFunc(ctx context.Context, service *Userdata) server.ArtworksUploadImageDecoderFunc {
+func UserdatasProcessUserdataDecoderFunc(ctx context.Context, service *Userdata) mdlserver.UserdatasProcessUserdataDecoderFunc {
 	return func(reader *multipart.Reader, p **userdatas.ProcessUserdataPayload) error {
 
+		var res *userdatas.ProcessUserdataPayload
 		formValues := make(map[string]interface{})
 
 		for {
@@ -98,7 +100,8 @@ func UserdatasProcessUserdataDecoderFunc(ctx context.Context, service *Userdata)
 
 			if part.FormName() != imagePartName {
 				// Process for other field that's not a file
-				buffer, err := io.ioutil.ReadAll(part)
+
+				buffer, err := ioutil.ReadAll(part)
 				if err != nil {
 					return userdatas.MakeInternalServerError(errors.Errorf("could not process fields: %w", err))
 				}
@@ -122,7 +125,7 @@ func UserdatasProcessUserdataDecoderFunc(ctx context.Context, service *Userdata)
 					return userdatas.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filename, err))
 				}
 				
-				formValues[part.FormName()] = UserImageUploadPayload{filePart.Bytes(), &filename}
+				formValues[part.FormName()] = userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}
 
@@ -132,7 +135,7 @@ func UserdatasProcessUserdataDecoderFunc(ctx context.Context, service *Userdata)
 			}
 		}
 
-		*p = &res
+		*p = res
 		return nil
 	}
 }

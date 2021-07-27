@@ -233,6 +233,19 @@ func (task *Task) supernodeProcessUserdata(ctx context.Context, req * userdata.U
 	return processResult, nil
 }
 
+// retrieveUserdata get the userdata from database
+func (task *Task) retrieveUserdata(ctx context.Context, userpastelid string) (userdata.UserdataProcessRequest, error) {
+	log.WithContext(ctx).Debugf("retrieveUserdata on user PastelID: %s",userpastelid)
+	
+	// only primary node start this action
+	var userdataResult userdata.UserdataProcessResult
+	
+	// TODO: get userdata from MDL
+	// @TuanTran
+
+	return userdataResult, nil
+}
+
 
 // Sign and send SNDataSigned if not primary
 func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.SuperNodeRequest, isPrimary bool) error {

@@ -14,17 +14,20 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess/node"
 )
 
-// Task is the task of searching for artwork.
+// Task is the task of userdata processing.
 type Task struct {
 	task.Task
 	*Service
 
-	// information of nodes
+	// information of nodes process to set userdata
 	nodes node.List
-
 	resultChan chan *userdata.UserdataProcessResult
 	err        error
 	request    *userdata.UserdataProcessRequest
+
+	// information user pastelid to retrieve userdata
+	userpastelid	string // user pastelid
+	resultChanGet chan *userdata.UserdataProcessRequest
 }
 
 // Run starts the task
@@ -34,6 +37,7 @@ func (task *Task) Run(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("Start task")
 	defer log.WithContext(ctx).Debugf("End task")
 	defer close(task.resultChan)
+	defer close(task.resultChanGet)
 
 	if err := task.run(ctx); err != nil {
 		task.err = err
@@ -52,9 +56,15 @@ func (task *Task) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// TODO (1): Make this init and connect to super nodes to generic reusable function to avoid code duplication (1)
+	maxNode := task.config.NumberSuperNodes
+	if task.request == nil {
+		// This is process to retrieve userdata
+		maxNode = 1 // Get data from 1 supernode only, currently we choose the 1st ranked supernode, but this may change later
+	}
+
+	// TODO: Make this init and connect to super nodes to generic reusable function to avoid code duplication (1)
 	// Retrieve supernodes with highest ranks.
-	topNodes, err := task.pastelTopNodes(ctx)
+	topNodes, err := task.pastelTopNodes(ctx, maxNode)
 	if err != nil {
 		return err
 	}
@@ -66,18 +76,15 @@ func (task *Task) run(ctx context.Context) error {
 	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
 	var nodes node.List
 	var errs error
-	for primaryRank := range topNodes {
-		nodes, err = task.meshNodes(ctx, topNodes, primaryRank)
-		if err != nil {
-			if errors.IsContextCanceled(err) {
-				return err
-			}
-			errs = errors.Append(errs, err)
-			log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
-			continue
+	nodes, err = task.meshNodes(ctx, topNodes, 0) // Connect a mesh node with primary is 1st ranked SN
+	if err != nil {
+		if errors.IsContextCanceled(err) {
+			return err
 		}
-		break
+		errs = errors.Append(errs, err)
+		log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
 	}
+	
 	if len(nodes) < task.config.NumberSuperNodes {
 		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
 	}
@@ -96,71 +103,81 @@ func (task *Task) run(ctx context.Context) error {
 	task.UpdateStatus(StatusConnected)
 	task.nodes = nodes
 
-	// End TODO (1) ---- 
-
-	// Get the previous block hash
-	// Get block num
-	
-	// TODO: Unblock this part after merge
-	/*
-	blockNum, err := task.pastelClient.GetBlockCount(ctx)
-	if err != nil {
-		return nil, errors.Errorf("failed to get block num: %w", err)
-	}
-
-	// Get block hash string
-	blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
-	if err != nil {
-		return nil, errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
-	}*/
-
-	// Decode hash string to byte
-	task.request.PreviousBlockHash  = "" /*blockInfo.Hash*/
-	if err != nil {
-		return errors.Errorf("failed to convert hash string %s to bytes: %w", ""/*blockInfo.Hash*/, err)
-	}
-
-	// Get the value of task.request.ArtistPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
-	passphrase := task.request.ArtistPastelIDPassphrase
-	task.request.ArtistPastelIDPassphrase = ""
-	// Marshal task.request to byte array for signing
-	js, err := json.Marshal(task.request)
-	if err != nil {
-		return errors.Errorf("failed to encode request %w", err)
-	}
-
-	// Hash the request
-	hashvalue,err := userdata.Sha3256hash(js)
-	if err != nil {
-		return errors.Errorf("failed to hash request %w", err)
-	}
-
-	// Sign request with Wallet Node's pastelID and passphrase
-	signature, err := task.pastelClient.Sign(ctx, hashvalue, task.request.ArtistPastelID, passphrase)
-	if err != nil {
-		return errors.Errorf("failed to sign ticket %w", err)
-	}
-
-	userdata := &userdata.UserdataProcessRequestSigned{
-		Userdata: 		task.request,
-		UserdataHash:	string(hashvalue),
-		Signature:		string(signature),
-	}
-
-	// Send userdata to supernodes for storing in MDL's rqlite db.
-
-	if err := nodes.SendUserdata(ctx, userdata) ; err != nil {
-		return err
-	} else {
-
-		res, err :=task.AggregateResult(ctx, nodes)
-		if err != nil {
+	if task.request == nil {
+		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
+		if res, err := nodes.ReceiveUserdata(ctx, task.userpastelid) ; err != nil {
 			return err
+		} else {
+			// Post on result channel
+			task.resultChanGet <- &res
+			log.WithContext(ctx).WithField("userdata_get", res).Debug("Finished retrieve userdata")
 		}
-		// Post on result channel
-		task.resultChan <- &res
-		log.WithContext(ctx).WithField("userdata_result", res).Debug("Posted userdata result")
+	} else {
+		// PROCESS TO SET/UPDATE USERDATA TO METADATA LAYER
+		// Get the previous block hash
+		// Get block num
+		
+		// TODO: Unblock this part after merge
+		/*
+		blockNum, err := task.pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			return nil, errors.Errorf("failed to get block num: %w", err)
+		}
+
+		// Get block hash string
+		blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
+		if err != nil {
+			return nil, errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
+		}*/
+
+		// Decode hash string to byte
+		task.request.PreviousBlockHash  = "" /*blockInfo.Hash*/
+		if err != nil {
+			return errors.Errorf("failed to convert hash string %s to bytes: %w", ""/*blockInfo.Hash*/, err)
+		}
+
+		// Get the value of task.request.ArtistPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
+		passphrase := task.request.ArtistPastelIDPassphrase
+		task.request.ArtistPastelIDPassphrase = ""
+		// Marshal task.request to byte array for signing
+		js, err := json.Marshal(task.request)
+		if err != nil {
+			return errors.Errorf("failed to encode request %w", err)
+		}
+
+		// Hash the request
+		hashvalue,err := userdata.Sha3256hash(js)
+		if err != nil {
+			return errors.Errorf("failed to hash request %w", err)
+		}
+
+		// Sign request with Wallet Node's pastelID and passphrase
+		signature, err := task.pastelClient.Sign(ctx, hashvalue, task.request.ArtistPastelID, passphrase)
+		if err != nil {
+			return errors.Errorf("failed to sign ticket %w", err)
+		}
+
+		userdata := &userdata.UserdataProcessRequestSigned{
+			Userdata: 		task.request,
+			UserdataHash:	string(hashvalue),
+			Signature:		string(signature),
+		}
+
+		// Send userdata to supernodes for storing in MDL's rqlite db.
+
+		if err := nodes.SendUserdata(ctx, userdata) ; err != nil {
+			return err
+		} else {
+			res, err := task.AggregateResult(ctx, nodes)
+			if err != nil {
+				return err
+			}
+			// Post on result channel
+			task.resultChan <- &res
+			log.WithContext(ctx).WithField("userdata_result", res).Debug("Posted userdata result")
+		}
 	}
+
 
 	// close the connections
 	for i := range nodes {
@@ -242,6 +259,13 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	if err := primary.Session(ctx, true); err != nil {
 		return nil, err
 	}
+	primary.SetPrimary(true)
+
+	if len (nodes) == 1 {
+		// If the number of nodes only have 1 node, we use this primary node and return directly
+		meshNodes.Add(primary)
+		return meshNodes, nil
+	}
 
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
@@ -288,7 +312,6 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	}
 
 	meshNodes.Add(primary)
-	meshNodes.SetPrimary(primaryIndex)
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 
@@ -301,17 +324,22 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	return meshNodes, nil
 }
 
-
-// pastelTopNodes retrieve the top super nodes we want to send userdata to
-func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
+// pastelTopNodes retrieve the top super nodes we want to send userdata to, limit by maxNode
+func (task *Task) pastelTopNodes(ctx context.Context, maxNode int) (node.List, error) {
 	var nodes node.List
 
 	mns, err := task.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		return nil, err
 	}
+	count :=  0
 	for _, mn := range mns {
-		nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
+		count++;
+		if count <= maxNode {
+			nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
+		} else {
+			break
+		}
 	}
 
 	return nodes, nil
@@ -328,12 +356,18 @@ func (task *Task) SubscribeProcessResult() <-chan *userdata.UserdataProcessResul
 	return task.resultChan
 }
 
+// SubscribeProcessResultGet returns the result state of userdata process
+func (task *Task) SubscribeProcessResultGet() <-chan *userdata.UserdataProcessRequest {
+	return task.resultChanGet
+}
+
 // NewTask returns a new Task instance.
-func NewTask(service *Service, request *userdata.UserdataProcessRequest) *Task {
+func NewTask(service *Service, request *userdata.UserdataProcessRequest, retrieve string) *Task {
 	return &Task{
 		Task:       task.New(StatusTaskStarted),
 		Service:    service,
 		request:    request,
+		retrieve:	retrieve,	
 		resultChan: make(chan *userdata.UserdataProcessResult),
 	}
 }

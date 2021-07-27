@@ -37,4 +37,6 @@ type ProcessUserdata interface {
 	ConnectTo(ctx context.Context, nodeKey, sessID string) error
 	// SendUserdata send user specified data (with other generated info like signature, previous block hash, timestamp,...) to supernode.
 	SendUserdata(ctx context.Context, request *userdata.UserdataProcessRequestSigned) (result *userdata.UserdataProcessResult, err error)
+	// ReceiveUserdata get user specified data from supernode
+	ReceiveUserdata(ctx context.Context, userpastelid string) (result *userdata.UserdataProcessRequest, err error)
 }

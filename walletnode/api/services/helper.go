@@ -12,7 +12,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 )
 
@@ -143,33 +142,32 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 func fromUserdataProcessRequest(req *userdatas.ProcessUserdataPayload) *userdata.UserdataProcessRequest {
 	request := &userdata.UserdataProcessRequest{}
 
-	if req.Realname != nil 					{ request.Realname 			:= *(req.Realname) }
-	if req.FacebookLink != nil 				{ request.FacebookLink 		:= *(req.FacebookLink) }
-	if req.TwitterLink != nil 				{ request.TwitterLink 		:= *(req.TwitterLink) }
-	if req.Location != nil 					{ request.Location 			:= *(req.Location) }
-	if req.PrimaryLanguage != nil 			{ request.PrimaryLanguage 	:= *(req.PrimaryLanguage) }
-	if req.Categories != nil 				{ request.Categories 		:= *(req.Categories) }
-	if req.Biography != nil 				{ request.Biography 		:= *(req.Biography) }
+	if req.Realname != nil 					{ request.Realname 			= *(req.Realname) }
+	if req.FacebookLink != nil 				{ request.FacebookLink 		= *(req.FacebookLink) }
+	if req.TwitterLink != nil 				{ request.TwitterLink 		= *(req.TwitterLink) }
+	if req.Location != nil 					{ request.Location 			= *(req.Location) }
+	if req.PrimaryLanguage != nil 			{ request.PrimaryLanguage 	= *(req.PrimaryLanguage) }
+	if req.Categories != nil 				{ request.Categories 		= *(req.Categories) }
+	if req.Biography != nil 				{ request.Biography 		= *(req.Biography) }
 	if req.AvatarImage != nil { 
 		if req.AvatarImage.Content != nil && len(req.AvatarImage.Content) > 0 {
 			request.AvatarImage.Content = make ([]byte, len(req.AvatarImage.Content))
 			copy(request.AvatarImage.Content,req.AvatarImage.Content)
 		}
-		request.AvatarImage.Filename := *(req.AvatarImage.Filename)
+		request.AvatarImage.Filename = *(req.AvatarImage.Filename)
 	}
 	if req.CoverPhoto != nil { 
 		if req.CoverPhoto.Content != nil && len(req.CoverPhoto.Content) > 0 {
 			request.CoverPhoto.Content = make ([]byte, len(req.CoverPhoto.Content))
 			copy(request.CoverPhoto.Content,req.CoverPhoto.Content)
 		}
-		request.CoverPhoto.Filename := *(req.CoverPhoto.Filename)
+		request.CoverPhoto.Filename = *(req.CoverPhoto.Filename)
 	}
 
-	if req.ArtistPastelID != nil 			{ request.ArtistPastelID 	:= *(req.ArtistPastelID) }
-	if req.ArtistPastelIDPassphrase != nil 	{ request.ArtistPastelIDPassphrase := *(req.ArtistPastelIDPassphrase) }
+	request.ArtistPastelID 	= req.ArtistPastelID
+	request.ArtistPastelIDPassphrase = req.ArtistPastelIDPassphrase
 
 	request.Timestamp 	 					= time.Now().Unix() 	// The moment request is prepared to send to super nodes
-	request.Signature 						= "" 					// Signature will be generated later when prepare to send
 	request.PreviousBlockHash				= ""					// PreviousBlockHash will be generated later when prepare to send
 	
 	return request
@@ -178,7 +176,7 @@ func fromUserdataProcessRequest(req *userdatas.ProcessUserdataPayload) *userdata
 // toUserdataProcessResult convert the final response receive from super nodes and reponse to swagger api
 func toUserdataProcessResult(result *userdata.UserdataProcessResult) *userdatas.UserdataProcessResult {
 	res := &userdatas.UserdataProcessResult{
-			ResponseCode: 		result.ResponseCode,
+			ResponseCode: 		int(result.ResponseCode),
 			Detail:				result.Detail,
 			Realname:			&result.Realname,
 			FacebookLink:		&result.FacebookLink,
@@ -191,4 +189,36 @@ func toUserdataProcessResult(result *userdata.UserdataProcessResult) *userdatas.
 			CoverPhoto:			&result.CoverPhoto,
 		}
 	return res
+}
+
+func toUserSpecifiedData (req *userdata.UserdataProcessRequest) *userdatas.UserSpecifiedData {
+	result := &userdatas.UserSpecifiedData {}
+	
+	result.Realname = &req.Realname
+	result.FacebookLink = &req.FacebookLink
+	result.TwitterLink = &req.TwitterLink
+	result.NativeCurrency = &req.NativeCurrency
+	result.Location = &req.Location
+	result.PrimaryLanguage = &req.PrimaryLanguage
+	result.Categories = &req.Categories
+	result.Biography = &req.Biography
+	result.ArtistPastelID = req.ArtistPastelID
+	result.ArtistPastelIDPassphrase = "" // No need to reture ArtistPastelIDPassphrase
+
+	if result.AvatarImage != nil { 
+		if result.AvatarImage.Content != nil && len(result.AvatarImage.Content) > 0 {
+			req.AvatarImage.Content = make ([]byte, len(result.AvatarImage.Content))
+			copy(req.AvatarImage.Content,result.AvatarImage.Content)
+		}
+		req.AvatarImage.Filename = result.AvatarImage.Filename
+	}
+	if result.CoverPhoto != nil { 
+		if result.CoverPhoto.Content != nil && len(result.CoverPhoto.Content) > 0 {
+			req.CoverPhoto.Content = make ([]byte, len(result.CoverPhoto.Content))
+			copy(req.CoverPhoto.Content,result.CoverPhoto.Content)
+		}
+		req.CoverPhoto.Filename = result.CoverPhoto.Filename
+	}
+
+	return result
 }
