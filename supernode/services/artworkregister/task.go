@@ -308,7 +308,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 		}
 
 		// sign the ticket if not primary node
-		log.WithContext(ctx).Debugf("isPrimary: %d", task.connectedTo == nil)
+		log.WithContext(ctx).Debugf("isPrimary: %t", task.connectedTo == nil)
 		if err := task.signAndSendArtTicket(ctx, task.connectedTo == nil); err != nil {
 			return errors.Errorf("failed to signed and send art ticket")
 		}
@@ -424,7 +424,7 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 			select {
 			case <-ctx.Done():
 				// context cancelled or abort by caller so no need to return anything
-				log.WithContext(ctx).Debugf("context done: %w", ctx.Err())
+				log.WithContext(ctx).Debugf("context done: %s", ctx.Err())
 				ch <- ctx.Err()
 				return
 			case <-time.After(15 * time.Second):
@@ -727,7 +727,7 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
-	log.WithContext(ctx).Debugf("master node %s", masterNodes)
+	log.WithContext(ctx).Debugf("master node %v", masterNodes)
 
 	if err != nil {
 		return nil, err
