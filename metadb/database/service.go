@@ -12,6 +12,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb"
+	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
 )
 
 var (
@@ -25,6 +26,10 @@ type Config struct {
 	WriteTemplatePath  string `mapstructure:"write-template-path" json:"write-template-path,omitempty"`
 	QueryTemplatePath  string `mapstructure:"query-template-path" json:"query-template-path,omitempty"`
 	UpdateTemplatePath string `mapstructure:"update-template-path" json:"update-template-path,omitempty"`
+}
+
+func NewConfig() *Config {
+	return &Config{}
 }
 
 type DatabaseOps struct {
@@ -47,8 +52,8 @@ func substituteTemplate(tmpl *template.Template, data interface{}) (string, erro
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) WriteUserData(ctx context.Context, data Userdata) error {
-	command, err := substituteTemplate(db.writeTemplate, data.ToWriteCommand())
+func (db *DatabaseOps) WriteUserData(ctx context.Context, data pb.UserdataRequest) error {
+	command, err := substituteTemplate(db.writeTemplate, pbToWriteCommand(data))
 	if err != nil {
 		return err
 	}
@@ -61,8 +66,8 @@ func (db *DatabaseOps) WriteUserData(ctx context.Context, data Userdata) error {
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) UpdateUserData(ctx context.Context, data Userdata) error {
-	command, err := substituteTemplate(db.updateTemplate, data.ToWriteCommand())
+func (db *DatabaseOps) UpdateUserData(ctx context.Context, data pb.UserdataRequest) error {
+	command, err := substituteTemplate(db.updateTemplate, pbToWriteCommand(data))
 	if err != nil {
 		return err
 	}

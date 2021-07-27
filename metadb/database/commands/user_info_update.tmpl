@@ -12,6 +12,7 @@ SET
     timestamp = {{.Timestamp}},
     signature = '{{.Signature}}',
     previous_block_hash = '{{.PreviousBlockHash}}',
+    user_data_hash = '{{.UserdataHash}}',
     avatar_image = {{ if (eq .AvatarImage "")}}NULL,{{ else }}x'{{.AvatarImage}}',{{ end }}
     avatar_filename = '{{.AvatarFilename}}',
     cover_photo_image = {{ if (eq .CoverPhotoImage "")}}NULL,{{ else }}x'{{.CoverPhotoImage}}',{{ end }}

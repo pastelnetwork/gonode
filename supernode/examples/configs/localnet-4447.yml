@@ -22,3 +22,9 @@ metadb:
   http_port: 4071
   raft_port: 4072
   data_dir: "metadb-4447"
+
+userdb:
+  schema-path: ../metadb/database/commands/schema.sql
+  write-template-path: ../metadb/database/commands/user_info_write.tmpl
+  query-template-path: ../metadb/database/commands/user_info_query.tmpl
+  update-template-path: ../metadb/database/commands/user_info_update.tmpl

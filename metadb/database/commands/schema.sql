@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS user_metadata (
 	timestamp INTEGER NOT NULL,
 	signature TEXT NOT NULL,
 	previous_block_hash TEXT NOT NULL,
+	user_data_hash TEXT NOT NULL,
 	avatar_image BLOB,
 	avatar_filename TEXT,
 	cover_photo_image BLOB,

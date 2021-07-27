@@ -1,6 +1,10 @@
 package database
 
-import "fmt"
+import (
+	"fmt"
+
+	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
+)
 
 // Userdata represents userdata process payload
 type Userdata struct {
@@ -32,14 +36,44 @@ type Userdata struct {
 	Signature string
 	// Previous block hash in the chain (generated, not sending by UI)
 	PreviousBlockHash string
+	// UserdataHash represents UserdataProcessRequest's hash value, to make sure UserdataProcessRequest's integrity
+	UserdataHash string
 }
 
-// Store user's upload image
 type UserImageUpload struct {
 	// File to upload
 	Content []byte
 	// File name of the user image
 	Filename string
+}
+
+func (d *Userdata) ToWriteCommand() UserdataWriteCommand {
+	var avatarImageHex string
+	var coverPhotoHex string
+	if d.AvatarImage.Content != nil || len(d.AvatarImage.Content) == 0 {
+		avatarImageHex = fmt.Sprintf("%x", d.AvatarImage.Content)
+	}
+	if d.CoverPhoto.Content != nil || len(d.CoverPhoto.Content) == 0 {
+		coverPhotoHex = fmt.Sprintf("%x", d.CoverPhoto.Content)
+	}
+	return UserdataWriteCommand{
+		Realname:           d.Realname,
+		FacebookLink:       d.FacebookLink,
+		TwitterLink:        d.TwitterLink,
+		NativeCurrency:     d.NativeCurrency,
+		Location:           d.Location,
+		PrimaryLanguage:    d.PrimaryLanguage,
+		Categories:         d.Categories,
+		Biography:          d.Biography,
+		AvatarImage:        avatarImageHex,
+		AvatarFilename:     d.AvatarImage.Filename,
+		CoverPhotoImage:    coverPhotoHex,
+		CoverPhotoFilename: d.CoverPhoto.Filename,
+		ArtistPastelID:     d.ArtistPastelID,
+		Timestamp:          d.Timestamp,
+		Signature:          d.Signature,
+		PreviousBlockHash:  d.PreviousBlockHash,
+	}
 }
 
 // UserdataDBRecord represents userdata record in DB
@@ -76,34 +110,44 @@ type UserdataWriteCommand struct {
 	Signature string
 	// Previous block hash in the chain (generated, not sending by UI)
 	PreviousBlockHash string
+	// UserdataHash represents UserdataProcessRequest's hash value, to make sure UserdataProcessRequest's integrity
+	UserdataHash string
 }
 
-func (d *Userdata) ToWriteCommand() UserdataWriteCommand {
-	var avatarImageHex string
-	var coverPhotoHex string
-	if d.AvatarImage.Content != nil || len(d.AvatarImage.Content) == 0 {
-		avatarImageHex = fmt.Sprintf("%x", d.AvatarImage.Content)
+func extractImageInfo(img *pb.UserdataRequest_UserImageUpload) (string, string) {
+	if img == nil {
+		return "", ""
 	}
-	if d.CoverPhoto.Content != nil || len(d.CoverPhoto.Content) == 0 {
-		coverPhotoHex = fmt.Sprintf("%x", d.CoverPhoto.Content)
+
+	if img.GetContent() == nil {
+		return "", img.GetFilename()
 	}
+
+	return fmt.Sprintf("%x", img.GetContent()), img.GetFilename()
+}
+
+func pbToWriteCommand(d pb.UserdataRequest) UserdataWriteCommand {
+	avatarImageHex, avatarImageFilename := extractImageInfo(d.GetAvatarImage())
+	coverPhotoHex, coverPhotoFilename := extractImageInfo(d.GetCoverPhoto())
+
 	return UserdataWriteCommand{
-		Realname:           d.Realname,
-		FacebookLink:       d.FacebookLink,
-		TwitterLink:        d.TwitterLink,
-		NativeCurrency:     d.NativeCurrency,
-		Location:           d.Location,
-		PrimaryLanguage:    d.PrimaryLanguage,
-		Categories:         d.Categories,
-		Biography:          d.Biography,
+		Realname:           d.GetRealname(),
+		FacebookLink:       d.GetFacebookLink(),
+		TwitterLink:        d.GetTwitterLink(),
+		NativeCurrency:     d.GetNativeCurrency(),
+		Location:           d.GetLocation(),
+		PrimaryLanguage:    d.GetPrimaryLanguage(),
+		Categories:         d.GetCategories(),
+		Biography:          d.GetBiography(),
 		AvatarImage:        avatarImageHex,
-		AvatarFilename:     d.AvatarImage.Filename,
+		AvatarFilename:     avatarImageFilename,
 		CoverPhotoImage:    coverPhotoHex,
-		CoverPhotoFilename: d.CoverPhoto.Filename,
-		ArtistPastelID:     d.ArtistPastelID,
-		Timestamp:          d.Timestamp,
-		Signature:          d.Signature,
-		PreviousBlockHash:  d.PreviousBlockHash,
+		CoverPhotoFilename: coverPhotoFilename,
+		ArtistPastelID:     d.GetArtistPastelID(),
+		Timestamp:          int(d.GetTimestamp()),
+		Signature:          d.GetSignature(),
+		PreviousBlockHash:  d.GetPreviousBlockHash(),
+		UserdataHash:       d.GetUserdataHash(),
 	}
 }
 
@@ -141,6 +185,8 @@ type UserdataReadResult struct {
 	Signature string `mapstructure:"signature"`
 	// Previous block hash in the chain (generated, not sending by UI)
 	PreviousBlockHash string `mapstructure:"previous_block_hash"`
+	// UserdataHash represents UserdataProcessRequest's hash value, to make sure UserdataProcessRequest's integrity
+	UserdataHash string `mapstructure:"user_data_hash"`
 }
 
 func (d *UserdataReadResult) ToUserData() Userdata {
@@ -165,5 +211,6 @@ func (d *UserdataReadResult) ToUserData() Userdata {
 		Timestamp:         d.Timestamp,
 		Signature:         d.Signature,
 		PreviousBlockHash: d.PreviousBlockHash,
+		UserdataHash:      d.UserdataHash,
 	}
 }

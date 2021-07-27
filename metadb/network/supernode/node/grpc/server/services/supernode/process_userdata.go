@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+	"github.com/pastelnetwork/gonode/metadb/database"
 )
 
 // ProcessUserdata represents grpc service for processing userdata.
@@ -21,6 +22,7 @@ type ProcessUserdata struct {
 	pb.UnimplementedProcessUserdataServer
 
 	*common.ProcessUserdata
+	databaseOps *database.DatabaseOps
 }
 
 // Session implements supernode.ProcessUserdataServer.Session()
@@ -113,6 +115,10 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 
 // SendUserdataToLeader implements supernode.ProcessUserdataServer.SendUserdataToLeader()
 func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *pb.UserdataRequest) (*pb.SuperNodeReply, error) {
+	if req == nil {
+		return errors.Errorf("receive nil request")
+	}
+	
 	// This code run in supernode contain leader rqlite db
 	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdataToLeader request")
 	task, err := service.TaskFromMD(ctx)
@@ -120,8 +126,8 @@ func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *p
 		return nil, err
 	}
 
-	// TODO: Process write the data to rqlite happen here
-	// @TuanTran
+	// Process write the data to rqlite happen here
+	service.databaseOps.WriteUserData(ctx, *req)
 
 	return &pb.SuperNodeReply{
 		Response_code: userdata.SuccessWriteToRQLiteDB
@@ -135,8 +141,9 @@ func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
 }
 
 // NewProcessUserdata returns a new ProcessUserdata instance.
-func NewProcessUserdata(service *userdataprocess.Service) *ProcessUserdata {
+func NewProcessUserdata(service *userdataprocess.Service, databaseOps *database.DatabaseOps) *ProcessUserdata {
 	return &ProcessUserdata{
 		ProcessUserdata: common.NewProcessUserdata(service),
+		databaseOps: databaseOps,
 	}
 }

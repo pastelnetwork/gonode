@@ -15,6 +15,10 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/metadb"
+	mdlclient "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/client"
+	mdlserver "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server"
+	mdlsupernode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/supernode"
+	mdlwalletnode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
@@ -26,11 +30,6 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
-	mdlgrpc "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc"
-	mdlclient "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/client"
-	mdlserver "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server"
-	mdlsupernode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/supernode"
-	mdlwalletnode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/walletnode"
 )
 
 const (
@@ -140,9 +139,23 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.P2P.SetWorkDir(config.WorkDir)
 	p2p := p2p.New(config.P2P)
 
+	var nodeIPList []string
+	// Note: Lock the db clustering feature, run it in single node first
+	if test := sys.GetStringEnv("DB_CLUSTER", ""); test != "" {
+		nodeList, err := pastelClient.MasterNodesList(ctx)
+		if err != nil {
+			log.WithContext(ctx).Errorf("cannot get list of all nodes, err: %w", err)
+		} else {
+			for _, nodeInfo := range nodeList {
+				nodeIPList = append(nodeIPList, nodeInfo.ExtAddress)
+			}
+		}
+	}
+
 	// new metadb service
 	config.MetaDB.SetWorkDir(config.WorkDir)
-	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
+	metadb := metadb.New(config.MetaDB, config.Node.PastelID, nodeIPList)
+	database := database.NewDatabaseOps(metadb, config.UserDB)
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
@@ -160,9 +173,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// Userdata grpc server
 	mdlgrpc := mdlserver.New(config.Server,
 		mdlwalletnode.NewProcessUserdata(userdataProcess),
-		mdlsupernode.NewProcessUserdata(userdataProcess),
+		mdlsupernode.NewProcessUserdata(userdataProcess, database),
 	)
-	
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, mdlgrpc, userdataProcess )
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, mdlgrpc, database, userdataProcess)
 }

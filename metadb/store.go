@@ -42,6 +42,9 @@ func (s *service) Write(_ context.Context, statement string) (*WriteResult, erro
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
 	}
+	if !s.IsLeader() {
+		return nil, errors.New("not a leader")
+	}
 	// if len(strings.Split(statement, ";")) > AllowedSubStatement {
 	// 	return nil, errors.New("only support one sub statement")
 	// }
