@@ -45,14 +45,6 @@ type Image struct {
 	View string
 }
 
-// DownloadResult is the viewed result type that is projected based on a view.
-type DownloadResult struct {
-	// Type to project
-	Projected *DownloadResultView
-	// View to render
-	View string
-}
-
 // RegisterResultView is a type that runs validations on a projected type.
 type RegisterResultView struct {
 	// Task ID of the registration process
@@ -119,12 +111,6 @@ type ImageView struct {
 	ExpiresIn *string
 }
 
-// DownloadResultView is a type that runs validations on a projected type.
-type DownloadResultView struct {
-	// File downloaded
-	File []byte
-}
-
 var (
 	// RegisterResultMap is a map of attribute names in result type RegisterResult
 	// indexed by view name.
@@ -174,13 +160,6 @@ var (
 			"expires_in",
 		},
 	}
-	// DownloadResultMap is a map of attribute names in result type DownloadResult
-	// indexed by view name.
-	DownloadResultMap = map[string][]string{
-		"default": []string{
-			"file",
-		},
-	}
 )
 
 // ValidateRegisterResult runs the validations defined on the viewed result
@@ -227,18 +206,6 @@ func ValidateImage(result *Image) (err error) {
 	switch result.View {
 	case "default", "":
 		err = ValidateImageView(result.Projected)
-	default:
-		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
-	}
-	return
-}
-
-// ValidateDownloadResult runs the validations defined on the viewed result
-// type DownloadResult.
-func ValidateDownloadResult(result *DownloadResult) (err error) {
-	switch result.View {
-	case "default", "":
-		err = ValidateDownloadResultView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
 	}
@@ -522,15 +489,6 @@ func ValidateImageView(result *ImageView) (err error) {
 	}
 	if result.ExpiresIn != nil {
 		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))
-	}
-	return
-}
-
-// ValidateDownloadResultView runs the validations defined on
-// DownloadResultView using the "default" view.
-func ValidateDownloadResultView(result *DownloadResultView) (err error) {
-	if result.File == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("file", "result"))
 	}
 	return
 }

@@ -656,12 +656,10 @@ var APIKeyAuth = APIKeySecurity("api_key", func() {
 })
 
 // ArtworkDownloadResult is artwork download result.
-var ArtworkDownloadResult = ResultType("application/vnd.artwork.download", func() {
-	TypeName("DownloadResult")
-	Attributes(func() {
-		Attribute("file", Bytes, func() {
-			Description("File downloaded")
-		})
+var ArtworkDownloadResult = Type("DownloadResult", func() {
+	Description("Artwork download response")
+	Attribute("file", Bytes, func() {
+		Description("File downloaded")
 	})
 	Required("file")
 })

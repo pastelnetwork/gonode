@@ -672,7 +672,7 @@ func NewArtworkGetResponseBody(res *artworks.ArtworkDetail) *ArtworkGetResponseB
 
 // NewDownloadResponseBody builds the HTTP response body from the result of the
 // "download" endpoint of the "artworks" service.
-func NewDownloadResponseBody(res *artworksviews.DownloadResultView) *DownloadResponseBody {
+func NewDownloadResponseBody(res *artworks.DownloadResult) *DownloadResponseBody {
 	body := &DownloadResponseBody{
 		File: res.File,
 	}

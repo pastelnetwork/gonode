@@ -476,19 +476,6 @@ func NewViewedImage(res *Image, view string) *artworksviews.Image {
 	return &artworksviews.Image{Projected: p, View: "default"}
 }
 
-// NewDownloadResult initializes result type DownloadResult from viewed result
-// type DownloadResult.
-func NewDownloadResult(vres *artworksviews.DownloadResult) *DownloadResult {
-	return newDownloadResult(vres.Projected)
-}
-
-// NewViewedDownloadResult initializes viewed result type DownloadResult from
-// result type DownloadResult using the given view.
-func NewViewedDownloadResult(res *DownloadResult, view string) *artworksviews.DownloadResult {
-	p := newDownloadResultView(res)
-	return &artworksviews.DownloadResult{Projected: p, View: "default"}
-}
-
 // newRegisterResult converts projected type RegisterResult to service type
 // RegisterResult.
 func newRegisterResult(vres *artworksviews.RegisterResultView) *RegisterResult {
@@ -640,24 +627,6 @@ func newImageView(res *Image) *artworksviews.ImageView {
 	vres := &artworksviews.ImageView{
 		ImageID:   &res.ImageID,
 		ExpiresIn: &res.ExpiresIn,
-	}
-	return vres
-}
-
-// newDownloadResult converts projected type DownloadResult to service type
-// DownloadResult.
-func newDownloadResult(vres *artworksviews.DownloadResultView) *DownloadResult {
-	res := &DownloadResult{
-		File: vres.File,
-	}
-	return res
-}
-
-// newDownloadResultView projects result type DownloadResult to projected type
-// DownloadResultView using the "default" view.
-func newDownloadResultView(res *DownloadResult) *artworksviews.DownloadResultView {
-	vres := &artworksviews.DownloadResultView{
-		File: res.File,
 	}
 	return vres
 }

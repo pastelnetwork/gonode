@@ -197,8 +197,8 @@ func (s *DownloadServerStream) Send(v *artworks.DownloadResult) error {
 	if err != nil {
 		return err
 	}
-	res := artworks.NewViewedDownloadResult(v, "default")
-	body := NewDownloadResponseBody(res.Projected)
+	res := v
+	body := NewDownloadResponseBody(res)
 	return s.conn.WriteJSON(body)
 }
 

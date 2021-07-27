@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goahttp "goa.design/goa/v3/http"
 )
 
@@ -118,10 +117,10 @@ func (s *DownloadClientStream) Recv() (*artworks.DownloadResult, error) {
 	if err != nil {
 		return rv, err
 	}
-	res := NewDownloadResultViewOK(&body)
-	vres := &artworksviews.DownloadResult{res, "default"}
-	if err := artworksviews.ValidateDownloadResult(vres); err != nil {
-		return rv, goahttp.ErrValidationError("artworks", "download", err)
+	err = ValidateDownloadResponseBody(&body)
+	if err != nil {
+		return rv, err
 	}
-	return artworks.NewDownloadResult(vres), nil
+	res := NewDownloadResultOK(&body)
+	return res, nil
 }

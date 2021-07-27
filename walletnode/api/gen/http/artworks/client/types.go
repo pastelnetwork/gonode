@@ -921,10 +921,10 @@ func NewArtworkGetInternalServerError(body *ArtworkGetInternalServerErrorRespons
 	return v
 }
 
-// NewDownloadResultViewOK builds a "artworks" service "download" endpoint
-// result from a HTTP "OK" response.
-func NewDownloadResultViewOK(body *DownloadResponseBody) *artworksviews.DownloadResultView {
-	v := &artworksviews.DownloadResultView{
+// NewDownloadResultOK builds a "artworks" service "download" endpoint result
+// from a HTTP "OK" response.
+func NewDownloadResultOK(body *DownloadResponseBody) *artworks.DownloadResult {
+	v := &artworks.DownloadResult{
 		File: body.File,
 	}
 
@@ -1138,6 +1138,15 @@ func ValidateArtworkGetResponseBody(body *ArtworkGetResponseBody) (err error) {
 		if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
 		}
+	}
+	return
+}
+
+// ValidateDownloadResponseBody runs the validations defined on
+// DownloadResponseBody
+func ValidateDownloadResponseBody(body *DownloadResponseBody) (err error) {
+	if body.File == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
 	}
 	return
 }

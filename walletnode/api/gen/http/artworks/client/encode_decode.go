@@ -850,13 +850,11 @@ func DecodeDownloadResponse(decoder func(*http.Response) goahttp.Decoder, restor
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("artworks", "download", err)
 			}
-			p := NewDownloadResultViewOK(&body)
-			view := "default"
-			vres := &artworksviews.DownloadResult{Projected: p, View: view}
-			if err = artworksviews.ValidateDownloadResult(vres); err != nil {
+			err = ValidateDownloadResponseBody(&body)
+			if err != nil {
 				return nil, goahttp.ErrValidationError("artworks", "download", err)
 			}
-			res := artworks.NewDownloadResult(vres)
+			res := NewDownloadResultOK(&body)
 			return res, nil
 		case http.StatusNotFound:
 			var (
