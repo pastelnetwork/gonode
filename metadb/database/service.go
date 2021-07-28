@@ -11,6 +11,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
 )
@@ -51,6 +52,14 @@ func substituteTemplate(tmpl *template.Template, data interface{}) (string, erro
 	return templateBuffer.String(), nil
 }
 
+func (db *DatabaseOps) IsLeader() bool {
+	return db.metaDB.IsLeader()
+}
+
+func (db *DatabaseOps) LeaderAddress() string {
+	return db.metaDB.LeaderAddress()
+}
+
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
 func (db *DatabaseOps) WriteUserData(ctx context.Context, data pb.UserdataRequest) error {
 	command, err := substituteTemplate(db.writeTemplate, pbToWriteCommand(data))
@@ -66,48 +75,34 @@ func (db *DatabaseOps) WriteUserData(ctx context.Context, data pb.UserdataReques
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) UpdateUserData(ctx context.Context, data pb.UserdataRequest) error {
-	command, err := substituteTemplate(db.updateTemplate, pbToWriteCommand(data))
-	if err != nil {
-		return err
-	}
-
-	if _, err := db.metaDB.Write(ctx, command); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) (Userdata, error) {
+func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) (userdata.UserdataProcessRequest, error) {
 	command, err := substituteTemplate(db.queryTemplate, artistPastelID)
 	if err != nil {
-		return Userdata{}, err
+		return userdata.UserdataProcessRequest{}, err
 	}
 
 	queryResult, err := db.metaDB.Query(ctx, command, queryLevelStrong)
 	if err != nil {
-		return Userdata{}, err
+		return userdata.UserdataProcessRequest{}, err
 	}
 
 	nrows := queryResult.NumRows()
 	if nrows == 0 {
-		return Userdata{}, fmt.Errorf("no artist with pastel id = %s", artistPastelID)
+		return userdata.UserdataProcessRequest{}, fmt.Errorf("no artist with pastel id = %s", artistPastelID)
 	} else if nrows > 1 {
-		return Userdata{}, fmt.Errorf("upto %d records are returned", nrows)
+		return userdata.UserdataProcessRequest{}, fmt.Errorf("upto %d records are returned", nrows)
 	}
 
 	//right here we make sure that there is just 1 row in the result
 	queryResult.Next()
 	resultMap, err := queryResult.Map()
 	if err != nil {
-		return Userdata{}, err
+		return userdata.UserdataProcessRequest{}, err
 	}
 
 	var dbResult UserdataReadResult
 	if err := mapstructure.Decode(resultMap, &dbResult); err != nil {
-		return Userdata{}, err
+		return userdata.UserdataProcessRequest{}, err
 	}
 
 	return dbResult.ToUserData(), nil

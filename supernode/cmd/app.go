@@ -168,7 +168,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// ----Userdata Services----
 	userdataNodeClient := mdlclient.New()
-	userdataProcess := userdataprocess.NewService(pastelClient, pastelClient, userdataNodeClient)
+	userdataProcess := userdataprocess.NewService(pastelClient, pastelClient, userdataNodeClient, database)
 
 	// Userdata grpc server
 	mdlgrpc := mdlserver.New(config.Server,
