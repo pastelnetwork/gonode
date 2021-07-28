@@ -344,6 +344,7 @@ jobs:
           docker_layer_caching: true
       - create-sources-container:
           containerName: "sourcesContainer"
+      - install_tensorflow
       - build:
           buildContainerName: "pqsignatures"
           moduleSubDir: "pqsignatures"
