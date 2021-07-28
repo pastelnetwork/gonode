@@ -9,6 +9,8 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strconv"
+
+	"github.com/GoKillers/libsodium-go/crypto/aead/xchacha20poly1305ietf"
 )
 
 // rekeyAEAD holds the necessary information for an AEAD based on
@@ -75,7 +77,7 @@ func (s *rekeyAEAD) rekeyIfRequired(nonce []byte) error {
 		return nil
 	}
 	copy(s.kdfCounter, newKdfCounter)
-	a, err := aes.NewCipher(hkdfExpand(s.kdfKey, s.kdfCounter))
+	a, err := aes.NewCipher(hkdfExpand(s.kdfKey, s.kdfCounter, aeadKeyLen))
 	if err != nil {
 		return err
 	}
@@ -105,9 +107,56 @@ func (s *rekeyAEAD) Overhead() int {
 
 // hkdfExpand computes the first 16 bytes of the HKDF-expand function
 // defined in RFC5869.
-func hkdfExpand(key, info []byte) []byte {
+func hkdfExpand(key, info []byte, keyLen int) []byte {
 	mac := hmac.New(sha256.New, key)
 	mac.Write(info)
 	mac.Write([]byte{0x01}[:])
-	return mac.Sum(nil)[:aeadKeyLen]
+	return mac.Sum(nil)[:keyLen]
+}
+
+type rekeyAEADChaChaPoly struct {
+	kdfKey     [xchacha20poly1305ietf.KeyBytes]byte
+	nonceMask  [xchacha20poly1305ietf.NonceBytes]byte
+	nonceBuf   [xchacha20poly1305ietf.NonceBytes]byte
+	kdfCounter []byte
+}
+
+func newRekeyAEADChaChaPoly(key []byte) (*rekeyAEADChaChaPoly, error) {
+	k := len(key)
+	if k != xchacha20poly1305ietf.KeyBytes+xchacha20poly1305ietf.NonceBytes {
+		return nil, KeySizeError(k)
+	}
+
+	c := &rekeyAEADChaChaPoly{
+		kdfCounter: make([]byte, kdfCounterLen),
+	}
+	copy(c.kdfKey[:], key[:xchacha20poly1305ietf.KeyBytes])
+	copy(c.nonceMask[:], key[xchacha20poly1305ietf.KeyBytes:])
+	return c, nil
+}
+
+func (s *rekeyAEADChaChaPoly) Encrypt(plaintext, nonce []byte) ([]byte, error) {
+	s.rekeyIfRequired(nonce)
+	maskNonce(s.nonceBuf[:], nonce, s.nonceMask[:])
+	ec := xchacha20poly1305ietf.Encrypt(plaintext, nil, &s.nonceBuf, &s.kdfKey)
+	return ec, nil
+}
+
+func (s *rekeyAEADChaChaPoly) Decrypt(ciphertext, nonce []byte) ([]byte, error) {
+	s.rekeyIfRequired(nonce)
+	maskNonce(s.nonceBuf[:], nonce, s.nonceMask[:])
+	p, err := xchacha20poly1305ietf.Decrypt(ciphertext, nil, &s.nonceBuf, &s.kdfKey)
+	if err != nil {
+		return nil, fmt.Errorf("decryption unexpectedly succeeded for %s", err)
+	}
+	return p, nil
+}
+
+func (s *rekeyAEADChaChaPoly) rekeyIfRequired(nonce []byte) {
+	newKdfCounter := nonce[kdfCounterOffset : kdfCounterOffset+kdfCounterLen]
+	if bytes.Equal(newKdfCounter, s.kdfCounter) {
+		return
+	}
+	copy(s.kdfCounter, newKdfCounter)
+	copy(s.kdfKey[:], hkdfExpand(s.kdfKey[:], s.kdfCounter, xchacha20poly1305ietf.KeyBytes))
 }

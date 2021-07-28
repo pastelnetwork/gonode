@@ -40,31 +40,31 @@ func DefaultServerOptions() *ServerOptions {
 // altsTC is the credentials required for authenticating a connection using ALTS.
 // It implements credentials.TransportCredentials interface.
 type altsTC struct {
-	info     *credentials.ProtocolInfo
-	side     alts.Side
-	signInfo *alts.SignInfo
-	auth     alts.Authentication
+	info      *credentials.ProtocolInfo
+	side      alts.Side
+	signInfo  *alts.SignInfo
+	secClient alts.SecClient
 }
 
 // NewClientCreds constructs a client-side ALTS TransportCredentials object.
-func NewClientCreds(auth alts.Authentication, info *alts.SignInfo) credentials.TransportCredentials {
+func NewClientCreds(auth alts.SecClient, info *alts.SignInfo) credentials.TransportCredentials {
 	return newALTS(alts.ClientSide, auth, info)
 }
 
 // NewServerCreds constructs a server-side ALTS TransportCredentials object.
-func NewServerCreds(auth alts.Authentication, info *alts.SignInfo) credentials.TransportCredentials {
-	return newALTS(alts.ServerSide, auth, info)
+func NewServerCreds(secClient alts.SecClient, info *alts.SignInfo) credentials.TransportCredentials {
+	return newALTS(alts.ServerSide, secClient, info)
 }
 
-func newALTS(side alts.Side, auth alts.Authentication, info *alts.SignInfo) credentials.TransportCredentials {
+func newALTS(side alts.Side, secClient alts.SecClient, info *alts.SignInfo) credentials.TransportCredentials {
 	return &altsTC{
 		info: &credentials.ProtocolInfo{
 			SecurityProtocol: "alts",
 			SecurityVersion:  "0.1",
 		},
-		side:     side,
-		signInfo: info,
-		auth:     auth,
+		side:      side,
+		signInfo:  info,
+		secClient: secClient,
 	}
 }
 
@@ -81,7 +81,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, _ string, rawConn net.Conn
 		}
 	}()
 
-	secureConn, authInfo, err := chs.ClientHandshake(ctx, g.auth, g.signInfo)
+	secureConn, authInfo, err := chs.ClientHandshake(ctx, g.secClient, g.signInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -105,7 +105,7 @@ func (g *altsTC) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthIn
 		}
 	}()
 
-	secureConn, authInfo, err := shs.ServerHandshake(ctx, g.auth, g.signInfo)
+	secureConn, authInfo, err := shs.ServerHandshake(ctx, g.secClient, g.signInfo)
 	if err != nil {
 		return nil, nil, err
 	}

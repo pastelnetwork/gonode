@@ -21,10 +21,10 @@ type Side int
 type Handshaker interface {
 	// ClientHandshake starts and completes a client-side handshaking and
 	// returns a secure connection and corresponding auth information.
-	ClientHandshake(ctx context.Context, auth Authentication, signInfo *SignInfo) (net.Conn, credentials.AuthInfo, error)
+	ClientHandshake(ctx context.Context, secClient SecClient, signInfo *SignInfo) (net.Conn, credentials.AuthInfo, error)
 	// ServerHandshake starts and completes a server-side handshaking and
 	// returns a secure connection and corresponding auth information.
-	ServerHandshake(ctx context.Context, auth Authentication, signInfo *SignInfo) (net.Conn, credentials.AuthInfo, error)
+	ServerHandshake(ctx context.Context, secClient SecClient, signInfo *SignInfo) (net.Conn, credentials.AuthInfo, error)
 	// Close terminates the Handshaker. It should be called when the caller
 	// obtains the secure connection.
 	Close()
@@ -47,8 +47,8 @@ type ProtocolInfo struct {
 	ServerName string
 }
 
-// Authentication define a authentication interface
-type Authentication interface {
+// SecClient defines a secure client interface
+type SecClient interface {
 	// Sign signs data by the given pastelID and passphrase, if successful returns signature.
 	Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error)
 	// Verify verifies signed data by the given its signature and pastelID, if successful returns true.

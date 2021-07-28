@@ -3,6 +3,7 @@ package handshaker
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -41,7 +42,7 @@ var (
 			return conn.NewAES128GCMRekey(s, key)
 		},
 		recordxChaChaPolyProtocol: func(s alts.Side, key []byte) (conn.ALTSRecordCrypto, error) {
-			return conn.NewxChaCha20Poly1305IETF(s, key)
+			return conn.NewxChaCha20Poly1305IETFReKey(s, key)
 		},
 	}
 	recordKeyLen = map[string]int{
@@ -207,7 +208,19 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 	return nil
 }
 
-func (s *altsHandshaker) doClientHandshake(ctx context.Context, auth alts.Authentication, signInfo *alts.SignInfo) error {
+func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) error {
+	challengeA := make([]byte, 1)
+	rand.Read(challengeA)
+
+	if err := s.writeHandshake(&challengeA); err != nil {
+		return fmt.Errorf("write handshake: %w", err)
+	}
+
+	var challengeB []byte
+	if err := s.readHandshake(&challengeB); err != nil {
+		return fmt.Errorf("read handshake: %w", err)
+	}
+
 	curve := ed448.NewCurve()
 	// generate the private and public key for client
 	priv, pub, ok := curve.GenerateKeys()
@@ -215,7 +228,8 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, auth alts.Authen
 		return errors.New("failed to generate keys")
 	}
 
-	signature, err := auth.Sign(ctx, pub[:], signInfo.PastelID, signInfo.PassPhrase)
+	signature, err := secClient.Sign(ctx, append(pub[:], challengeB...),
+		signInfo.PastelID, signInfo.PassPhrase)
 	if err != nil {
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
@@ -236,7 +250,8 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, auth alts.Authen
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	if ok, err := auth.Verify(ctx, response.PubKey, string(response.Signature), response.PastelID); err != nil || !ok {
+	if ok, err := secClient.Verify(ctx, append(response.PubKey, challengeA...),
+		string(response.Signature), response.PastelID); err != nil || !ok {
 		return fmt.Errorf("failed to verify server public key: %w", err)
 	}
 
@@ -244,6 +259,9 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, auth alts.Authen
 	copy(serverPubKey[:], response.PubKey)
 	// compute the secret key for connection
 	secret := curve.ComputeSecret(priv, serverPubKey)
+	if len(secret) < cryptokdf.CryptoKdfKeybytes() {
+		return fmt.Errorf("secret key length is missmatch, len=%d", len(secret))
+	}
 
 	subkeyLen, ok := recordKeyLen[s.protocol]
 	if !ok {
@@ -263,7 +281,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, auth alts.Authen
 
 // ClientHandshake starts and completes a client ALTS handshaking. Once
 // done, ClientHandshake returns a secure connection.
-func (s *altsHandshaker) ClientHandshake(ctx context.Context, auth alts.Authentication, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ClientHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -274,7 +292,7 @@ func (s *altsHandshaker) ClientHandshake(ctx context.Context, auth alts.Authenti
 	}
 
 	// do the client handshake
-	if err := s.doClientHandshake(ctx, auth, signInfo); err != nil {
+	if err := s.doClientHandshake(ctx, secClient, signInfo); err != nil {
 		return nil, nil, fmt.Errorf("do client handshake: %w", err)
 	}
 	log.WithContext(ctx).Debugf("client handshake is complete")
@@ -288,14 +306,26 @@ func (s *altsHandshaker) ClientHandshake(ctx context.Context, auth alts.Authenti
 	return sc, authinfo.New(), nil
 }
 
-func (s *altsHandshaker) doServerHandshake(ctx context.Context, auth alts.Authentication, signInfo *alts.SignInfo) error {
+func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) error {
+	var challengeA []byte
+	if err := s.readHandshake(&challengeA); err != nil {
+		return fmt.Errorf("read handshake: %w", err)
+	}
+
+	challengeB := make([]byte, 1)
+	rand.Read(challengeB)
+	if err := s.writeHandshake(&challengeB); err != nil {
+		return fmt.Errorf("write handshake: %w", err)
+	}
+
 	// read and decode the client's handshake record
 	var request kexExchangeRequest
 	if err := s.readHandshake(&request); err != nil {
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	if ok, err := auth.Verify(ctx, request.PubKey, string(request.Signature), request.PastelID); err != nil || !ok {
+	if ok, err := secClient.Verify(ctx, append(request.PubKey, challengeB...),
+		string(request.Signature), request.PastelID); err != nil || !ok {
 		return fmt.Errorf("failed to verify public key: %w", err)
 	}
 
@@ -306,7 +336,8 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, auth alts.Authen
 		return errors.New("failed to generate keys")
 	}
 
-	signature, err := auth.Sign(ctx, pub[:], signInfo.PastelID, signInfo.PassPhrase)
+	signature, err := secClient.Sign(ctx, append(pub[:], challengeA...),
+		signInfo.PastelID, signInfo.PassPhrase)
 	if err != nil {
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
@@ -315,6 +346,9 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, auth alts.Authen
 	copy(clientPubKey[:], request.PubKey)
 	// compute the secret key for connection
 	secret := curve.ComputeSecret(priv, clientPubKey)
+	if len(secret) < cryptokdf.CryptoKdfKeybytes() {
+		return fmt.Errorf("secret key length is missmatch, len=%d", len(secret))
+	}
 
 	subkeyLen, ok := recordKeyLen[s.protocol]
 	if !ok {
@@ -343,7 +377,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, auth alts.Authen
 
 // ServerHandshake starts and completes a server ALTS handshaking for GCP. Once
 // done, ServerHandshake returns a secure connection.
-func (s *altsHandshaker) ServerHandshake(ctx context.Context, auth alts.Authentication, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ServerHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -354,7 +388,7 @@ func (s *altsHandshaker) ServerHandshake(ctx context.Context, auth alts.Authenti
 	}
 
 	// do the server handshake
-	if err := s.doServerHandshake(ctx, auth, signInfo); err != nil {
+	if err := s.doServerHandshake(ctx, secClient, signInfo); err != nil {
 		return nil, nil, fmt.Errorf("do server handshake: %w", err)
 	}
 	log.WithContext(ctx).Debugf("server handshake is complete")
