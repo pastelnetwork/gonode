@@ -15,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/metadb"
+	"github.com/pastelnetwork/gonode/metadb/database"
 	mdlclient "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/client"
 	mdlserver "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server"
 	mdlsupernode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/supernode"
@@ -168,10 +169,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// ----Userdata Services----
 	userdataNodeClient := mdlclient.New()
-	userdataProcess := userdataprocess.NewService(pastelClient, pastelClient, userdataNodeClient, database)
+	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
 
 	// Userdata grpc server
-	mdlgrpc := mdlserver.New(config.Server,
+	mdlgrpc := mdlserver.New(config.MDLServer,
 		mdlwalletnode.NewProcessUserdata(userdataProcess),
 		mdlsupernode.NewProcessUserdata(userdataProcess, database),
 	)

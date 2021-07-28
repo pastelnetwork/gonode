@@ -236,9 +236,9 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Us
 	return processResult, nil
 }
 
-// retrieveUserdata get the userdata from database
-func (task *Task) retrieveUserdata(ctx context.Context, userpastelid string) (userdata.UserdataProcessRequest, error) {
-	log.WithContext(ctx).Debugf("retrieveUserdata on user PastelID: %s", userpastelid)
+// ReceiveUserdata get the userdata from database
+func (task *Task) ReceiveUserdata(ctx context.Context, userpastelid string) (userdata.UserdataProcessRequest, error) {
+	log.WithContext(ctx).Debugf("ReceiveUserdata on user PastelID: %s", userpastelid)
 
 	// only primary node start this action
 	return task.Service.databaseOps.ReadUserData(ctx, userpastelid)

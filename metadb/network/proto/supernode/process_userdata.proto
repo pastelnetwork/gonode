@@ -2,7 +2,7 @@ syntax = "proto3";
 
 option go_package = "github.com/pastelnetwork/gonode/metadb/network/proto/supernode";
 
-package supernode;
+package mdlsupernode;
 
 service ProcessUserdata {
     // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.

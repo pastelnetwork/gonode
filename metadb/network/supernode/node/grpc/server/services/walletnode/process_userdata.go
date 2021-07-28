@@ -185,6 +185,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 	// Process actual write to rqlite db happen here
 	<-task.NewAction(func(ctx context.Context) error {
 		// Send data to SN contain the leader rqlite
+		/* NEED TO FIX!!!
 		if err := task.ConnectTo(ctx, req.NodeID, req.SessID, userdata.NodeTypeLeader); err != nil {
 			return err
 		} else {
@@ -196,26 +197,26 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 				return errors.Errorf("leader rqlite node object is empty")
 			}
 			
-		}
+		}*/
 
 		return nil
 	})
 
 	return &pb.UserdataReply {
-		Response_code		: processResult.ResponseCode,
+		ResponseCode		: processResult.ResponseCode,
 		Detail				: processResult.Detail,
-	}
+	}, nil
 }
 
-// SendUserdata implements walletnode.ProcessUserdataServer.SendUserdata()
+// ReceiveUserdata implements walletnode.ProcessUserdataServer.ReceiveUserdata()
 func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, userpastelid string) (*pb.UserdataRequest, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdata request")
+	log.WithContext(ctx).WithField("userpastelid", userpastelid).Debugf("ReceiveUserdata request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resutl, err:= task.retrieveUserdata(userpastelid)
+	result, err:= task.ReceiveUserdata(ctx, userpastelid)
 	if err != nil {
 		return nil, err
 	}
@@ -223,34 +224,34 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 	// Generate protobuf response respProto
 	respProto := &pb.UserdataRequest{}
 
-	respProto.Realname = result.Userdata.Realname
-	respProto.FacebookLink = result.Userdata.FacebookLink
-	respProto.TwitterLink = result.Userdata.TwitterLink
-	respProto.NativeCurrency = result.Userdata.NativeCurrency
-	respProto.Location = result.Userdata.Location
-	respProto.PrimaryLanguage = result.Userdata.PrimaryLanguage
-	respProto.Categories = result.Userdata.Categories
-	respProto.Biography = result.Userdata.Biography
+	respProto.Realname = result.Realname
+	respProto.FacebookLink = result.FacebookLink
+	respProto.TwitterLink = result.TwitterLink
+	respProto.NativeCurrency = result.NativeCurrency
+	respProto.Location = result.Location
+	respProto.PrimaryLanguage = result.PrimaryLanguage
+	respProto.Categories = result.Categories
+	respProto.Biography = result.Biography
 	respProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
 
-	if result.Userdata.AvatarImage.Content != nil && len(result.Userdata.AvatarImage.Content) > 0 {
-		respProto.AvatarImage.Content = make ([]byte, len(result.Userdata.AvatarImage.Content))
-		copy(respProto.AvatarImage.Content,result.Userdata.AvatarImage.Content)
+	if result.AvatarImage.Content != nil && len(result.AvatarImage.Content) > 0 {
+		respProto.AvatarImage.Content = make ([]byte, len(result.AvatarImage.Content))
+		copy(respProto.AvatarImage.Content,result.AvatarImage.Content)
 	}
-	respProto.AvatarImage.Filename = result.Userdata.AvatarImage.Filename
+	respProto.AvatarImage.Filename = result.AvatarImage.Filename
 
 	respProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
-	if result.Userdata.CoverPhoto.Content != nil && len(result.Userdata.CoverPhoto.Content) > 0 {
-		respProto.CoverPhoto.Content = make ([]byte, len(result.Userdata.CoverPhoto.Content))
-		copy(respProto.CoverPhoto.Content,result.Userdata.CoverPhoto.Content)
+	if result.CoverPhoto.Content != nil && len(result.CoverPhoto.Content) > 0 {
+		respProto.CoverPhoto.Content = make ([]byte, len(result.CoverPhoto.Content))
+		copy(respProto.CoverPhoto.Content,result.CoverPhoto.Content)
 	}
-	respProto.CoverPhoto.Filename = result.Userdata.CoverPhoto.Filename
+	respProto.CoverPhoto.Filename = result.CoverPhoto.Filename
 	
-	respProto.ArtistPastelID = result.Userdata.ArtistPastelID 
-	respProto.Timestamp = result.Userdata.Timestamp
-	respProto.PreviousBlockHash = result.Userdata.PreviousBlockHash
+	respProto.ArtistPastelID = result.ArtistPastelID 
+	respProto.Timestamp = result.Timestamp
+	respProto.PreviousBlockHash = result.PreviousBlockHash
 
-	return respProto
+	return respProto, nil
 }
 
 
