@@ -102,7 +102,7 @@ type TicketSignatures struct {
 type RegisterArtRequest struct {
 	Ticket      *ArtTicket
 	Signatures  *TicketSignatures
-	Mn1PastelId string
+	Mn1PastelID string
 	Pasphase    string
 	Key1        string
 	Key2        string
@@ -112,7 +112,7 @@ type RegisterArtRequest struct {
 type GetRegisterArtFeeRequest struct {
 	Ticket      *ArtTicket
 	Signatures  *TicketSignatures
-	Mn1PastelId string
+	Mn1PastelID string
 	Passphrase  string
 	Key1        string
 	Key2        string

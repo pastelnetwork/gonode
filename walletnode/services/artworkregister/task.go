@@ -228,7 +228,7 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	}
 
 	// TODO: Should be replaced with real data from the Pastel API.
-	ticket, err := task.pastelClient.FindTicketById(ctx, task.Request.ArtistPastelID)
+	ticket, err := task.pastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
 	if err != nil {
 		return errors.Errorf("faild to find register tick of artist pastel id:%s :%w", task.Request.ArtistPastelID, err)
 	}

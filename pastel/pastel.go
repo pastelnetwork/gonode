@@ -100,7 +100,7 @@ type Client interface {
 	// Return txid of ArtActivateTicket
 	RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error)
 
-	// FindTicketById returns the register ticket of pastelid
+	// FindTicketByID returns the register ticket of pastelid
 	// Command `tickets find id <pastelid>`
-	FindTicketById(ctx context.Context, pastelid string) (*IDTicket, error)
+	FindTicketByID(ctx context.Context, pastelid string) (*IDTicket, error)
 }

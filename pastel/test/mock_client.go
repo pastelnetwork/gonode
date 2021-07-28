@@ -30,8 +30,8 @@ const (
 	// ListenOnGetBlockCountMethod represent  GetBlockCount method
 	GetBlockCountMethod = "GetBlockCount"
 
-	// FindTicketById represent FindTicketById method
-	FindTicketById = "FindTicketById"
+	// FindTicketByID represent FindTicketByID method
+	FindTicketByID = "FindTicketByID"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -119,7 +119,7 @@ func (client *Client) ListenOnGetBlockVerbose1(blockInfo *pastel.GetBlockVerbose
 	return client
 }
 
-func (client *Client) ListenOnFindTicketById(idticket *pastel.IDTicket, err error) *Client {
-	client.On(FindTicketById, mock.Anything, mock.Anything).Return(idticket, err)
+func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err error) *Client {
+	client.On(FindTicketByID, mock.Anything, mock.Anything).Return(idticket, err)
 	return client
 }

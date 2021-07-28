@@ -18,7 +18,7 @@ type RQIDS struct {
 	Content []byte
 }
 
-// Returns a list of identifiers
+// Identifiers returns a list of identifiers
 func (rqidsList RQIDSList) Identifiers() []string {
 	var identifier []string
 	for _, rqids := range rqidsList {
@@ -28,7 +28,7 @@ func (rqidsList RQIDSList) Identifiers() []string {
 	return identifier
 }
 
-// Returns a map from symbold id file id to it's content
+// ToMap returns a map from symbold id file id to it's content
 func (rqidsList RQIDSList) ToMap() map[string][]byte {
 	m := make(map[string][]byte, len(rqidsList))
 	for _, rqids := range rqidsList {

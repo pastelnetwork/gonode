@@ -1107,7 +1107,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("test-signature"), tc.args.signErr)
-			pastelClientMock.ListenOnFindTicketById(tc.args.findTicketIDReturns, nil)
+			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			raptorQMock := rqMock.NewMockRaptorQ(t)
@@ -1184,7 +1184,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-			pastelClientMock.ListenOnFindTicketById(tc.args.findTicketIDReturns, nil)
+			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
 
 			tc.args.task.Service.pastelClient = pastelClientMock
 			fileStorageMock := storageMock.NewMockFileStorage()

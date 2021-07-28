@@ -270,7 +270,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, artistSig
 					task.Service.config.PastelID: string(artistSignature),
 				},
 			},
-			Mn1PastelId: task.Service.config.PastelID, // all ID has same lenght, so can use any id here
+			Mn1PastelID: task.Service.config.PastelID, // all ID has same lenght, so can use any id here
 			Passphrase:  task.config.PassPhrase,
 			Key1:        key1,
 			Key2:        key2,
@@ -508,7 +508,7 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 				task.accepted[1].ID: string(task.peersArtTicketSignature[task.accepted[1].ID]),
 			},
 		},
-		Mn1PastelId: task.config.PastelID,
+		Mn1PastelID: task.config.PastelID,
 		Pasphase:    task.config.PassPhrase,
 		// TODO: fix this when how to get key1 and key2 are finalized
 		Key1: task.key1,

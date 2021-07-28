@@ -95,7 +95,7 @@ type GetOperationStatusError struct {
 
 // GetOperationStatusResult describes the result of an operation identified by Id
 type GetOperationStatusResult struct {
-	Id            string                  `json:"id,omitempty"`
+	ID            string                  `json:"id,omitempty"`
 	Status        string                  `json:"status,omitemptyi"`
 	Error         GetOperationStatusError `json:"error,omitempty"`
 	Result        GetOperationStatusTxid  `json:"result"`

@@ -78,10 +78,10 @@ func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTic
 	return tickets, nil
 }
 
-func (client *client) FindTicketById(ctx context.Context, pastelId string) (*IDTicket, error) {
+func (client *client) FindTicketByID(ctx context.Context, pastelID string) (*IDTicket, error) {
 	ticket := IDTicket{}
 
-	if err := client.callFor(ctx, &ticket, "tickets", "find", "id", pastelId); err != nil {
+	if err := client.callFor(ctx, &ticket, "tickets", "find", "id", pastelID); err != nil {
 		return nil, errors.Errorf("failed to get id tickets: %w", err)
 	}
 	return &ticket, nil
@@ -317,7 +317,7 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	params = append(params, "gettotalstoragefee")
 	params = append(params, string(ticketBlob))
 	params = append(params, string(signatures))
-	params = append(params, request.Mn1PastelId)
+	params = append(params, request.Mn1PastelID)
 	params = append(params, request.Passphrase)
 	params = append(params, request.Key1)
 	params = append(params, request.Key2)
@@ -351,7 +351,7 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 	params = append(params, "art")
 	params = append(params, string(ticketBlob))
 	params = append(params, string(signatures))
-	params = append(params, request.Mn1PastelId)
+	params = append(params, request.Mn1PastelID)
 	params = append(params, request.Pasphase)
 	params = append(params, request.Key1)
 	params = append(params, request.Key2)
