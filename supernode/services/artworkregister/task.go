@@ -198,6 +198,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 	})
 
 	var fingerAndScores *pastel.FingerAndScores
+	var fingerPrints probe.Fingerprints
 
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageProbed)
@@ -207,7 +208,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 			return errors.Errorf("failed to load image %s %w", file.Name(), err)
 		}
 
-		fingerAndScores, err = task.genFingerprintsData(ctx, img)
+		fingerAndScores, fingerPrints, err = task.genFingerprintsData(ctx, img)
 		if err != nil {
 			return errors.Errorf("failed to generate fingerprints data %w", err)
 		}
@@ -226,7 +227,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 	})
 
 	task.fingerprintsData = fingerAndScores.FingerprintData
-	task.fingerprints = fingerAndScores.Fingerprints
+	task.fingerprints = fingerPrints
 	task.rarenessScore = fingerAndScores.RarenessScore
 	task.nSFWScore = fingerAndScores.NSFWScore
 	task.seenScore = fingerAndScores.SeenScore
@@ -393,7 +394,7 @@ func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 		return errors.Errorf("failed to load image from copied artwork %w", err)
 	}
 
-	fingerAndScores, err := task.genFingerprintsData(ctx, resizeImg)
+	fingerAndScores, _, err := task.genFingerprintsData(ctx, resizeImg)
 	if err != nil {
 		return errors.Errorf("failed to generate fingerprints data %w", err)
 	}
@@ -588,24 +589,23 @@ func (task *Task) storeFingerprints(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pastel.FingerAndScores, error) {
+func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pastel.FingerAndScores, probe.Fingerprints, error) {
 	fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
 	if err != nil {
-		return nil, err
+		return nil, probe.Fingerprints{}, err
 	}
 
 	fingerprintsData, err := zstd.CompressLevel(nil, fingerprints.Single().LSBTruncatedBytes(), 22)
 	if err != nil {
-		return nil, errors.Errorf("failed to compress fingerprint data: %w", err)
+		return nil, probe.Fingerprints{}, errors.Errorf("failed to compress fingerprint data: %w", err)
 	}
 
 	return &pastel.FingerAndScores{
 		FingerprintData: fingerprintsData,
-		Fingerprints:    fingerprints,
 		RarenessScore:   0, // TBD
 		NSFWScore:       0, // TBD
 		SeenScore:       0, // TBD
-	}, nil
+	}, fingerprints, nil
 }
 
 func (task *Task) compareRQSymbolID(ctx context.Context) error {
