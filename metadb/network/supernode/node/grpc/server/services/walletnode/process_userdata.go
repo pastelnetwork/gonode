@@ -209,13 +209,14 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 }
 
 // ReceiveUserdata implements walletnode.ProcessUserdataServer.ReceiveUserdata()
-func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, userpastelid string) (*pb.UserdataRequest, error) {
-	log.WithContext(ctx).WithField("userpastelid", userpastelid).Debugf("ReceiveUserdata request")
+func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pb.RetrieveRequest) (*pb.UserdataRequest, error) {
+	log.WithContext(ctx).WithField("userpastelid", req.Userpastelid).Debugf("ReceiveUserdata request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	userpastelid := req.Userpastelid
 	result, err:= task.ReceiveUserdata(ctx, userpastelid)
 	if err != nil {
 		return nil, err
@@ -264,5 +265,6 @@ func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
 func NewProcessUserdata(service *userdataprocess.Service) *ProcessUserdata {
 	return &ProcessUserdata{
 		ProcessUserdata: common.NewProcessUserdata(service),
+
 	}
 }

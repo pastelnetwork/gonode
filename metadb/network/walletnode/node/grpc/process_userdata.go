@@ -117,54 +117,41 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	stream, err := service.client.SendUserdata(ctx)
-	if err != nil {
-		return nil, errors.Errorf("failed to open stream: %w", err)
+	// Generate protobuf request reqProto
+	reqProto := &pb.UserdataRequest{}
+
+	reqProto.Realname = request.Userdata.Realname
+	reqProto.FacebookLink = request.Userdata.FacebookLink
+	reqProto.TwitterLink = request.Userdata.TwitterLink
+	reqProto.NativeCurrency = request.Userdata.NativeCurrency
+	reqProto.Location = request.Userdata.Location
+	reqProto.PrimaryLanguage = request.Userdata.PrimaryLanguage
+	reqProto.Categories = request.Userdata.Categories
+	reqProto.Biography = request.Userdata.Biography
+	reqProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
+
+	if request.Userdata.AvatarImage.Content != nil && len(request.Userdata.AvatarImage.Content) > 0 {
+		reqProto.AvatarImage.Content = make ([]byte, len(request.Userdata.AvatarImage.Content))
+		copy(reqProto.AvatarImage.Content,request.Userdata.AvatarImage.Content)
 	}
-	defer stream.CloseSend()
+	reqProto.AvatarImage.Filename = request.Userdata.AvatarImage.Filename
 
-	for {
-		// Generate protobuf request reqProto
-		reqProto := &pb.UserdataRequest{}
-
-		reqProto.Realname = request.Userdata.Realname
-		reqProto.FacebookLink = request.Userdata.FacebookLink
-		reqProto.TwitterLink = request.Userdata.TwitterLink
-		reqProto.NativeCurrency = request.Userdata.NativeCurrency
-		reqProto.Location = request.Userdata.Location
-		reqProto.PrimaryLanguage = request.Userdata.PrimaryLanguage
-		reqProto.Categories = request.Userdata.Categories
-		reqProto.Biography = request.Userdata.Biography
-		reqProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
+	reqProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
+	if request.Userdata.CoverPhoto.Content != nil && len(request.Userdata.CoverPhoto.Content) > 0 {
+		reqProto.CoverPhoto.Content = make ([]byte, len(request.Userdata.CoverPhoto.Content))
+		copy(reqProto.CoverPhoto.Content,request.Userdata.CoverPhoto.Content)
+	}
+	reqProto.CoverPhoto.Filename = request.Userdata.CoverPhoto.Filename
 	
-		if request.Userdata.AvatarImage.Content != nil && len(request.Userdata.AvatarImage.Content) > 0 {
-			reqProto.AvatarImage.Content = make ([]byte, len(request.Userdata.AvatarImage.Content))
-			copy(reqProto.AvatarImage.Content,request.Userdata.AvatarImage.Content)
-		}
-		reqProto.AvatarImage.Filename = request.Userdata.AvatarImage.Filename
+	reqProto.ArtistPastelID = request.Userdata.ArtistPastelID 
+	reqProto.Timestamp = request.Userdata.Timestamp
+	reqProto.PreviousBlockHash = request.Userdata.PreviousBlockHash
+	reqProto.UserdataHash = request.UserdataHash
+	reqProto.Signature = request.Signature
 
-		reqProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
-		if request.Userdata.CoverPhoto.Content != nil && len(request.Userdata.CoverPhoto.Content) > 0 {
-			reqProto.CoverPhoto.Content = make ([]byte, len(request.Userdata.CoverPhoto.Content))
-			copy(reqProto.CoverPhoto.Content,request.Userdata.CoverPhoto.Content)
-		}
-		reqProto.CoverPhoto.Filename = request.Userdata.CoverPhoto.Filename
-		
-		reqProto.ArtistPastelID = request.Userdata.ArtistPastelID 
-		reqProto.Timestamp = request.Userdata.Timestamp
-		reqProto.PreviousBlockHash = request.Userdata.PreviousBlockHash
-		reqProto.UserdataHash = request.UserdataHash
-		reqProto.Signature = request.Signature
-
-		// Send the request to the protobuf stream
-		if err := stream.Send(reqProto); err != nil {
-			return nil, errors.Errorf("failed to userdata to protobuf stream: %w", err).WithField("reqID", service.conn.id)
-		}
-	}
-
-	resp, err := stream.CloseAndRecv()
+	resp, err := service.client.SendUserdata(ctx, reqProto)
 	if err != nil {
-		return nil, errors.Errorf("failed to receive userdata result from SN: %w", err)
+		return nil, errors.Errorf("failed to send data: %w", err)
 	}
 	
 	// Convert protobuf response to UserdataProcessResult then return it

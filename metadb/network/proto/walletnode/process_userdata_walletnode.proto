@@ -16,10 +16,10 @@ service ProcessUserdata {
     // ConnectTo requests to connect to the primary supernode.
     rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
 
-    // ProcessUserdata send the user info and return the operation is success or detail on error.
-	rpc SendUserdata(stream UserdataRequest) returns (UserdataReply);
+    // SendUserdata send the user info and return the operation is success or detail on error.
+	rpc SendUserdata(UserdataRequest) returns (UserdataReply);
 	
-	// ProcessUserdata send the user info and return the operation is success or detail on error.
+	// ReceiveUserdata receive the user info and return the operation is success or detail on error.
     rpc ReceiveUserdata(RetrieveRequest) returns (UserdataRequest);
 }
 

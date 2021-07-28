@@ -176,6 +176,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		mdlwalletnode.NewProcessUserdata(userdataProcess),
 		mdlsupernode.NewProcessUserdata(userdataProcess, database),
 	)
-
+	
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister, mdlgrpc, database, userdataProcess)
 }

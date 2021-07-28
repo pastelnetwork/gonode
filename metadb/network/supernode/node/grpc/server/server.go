@@ -9,7 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/middleware"
+	"github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/middleware"
 	"google.golang.org/grpc"
 )
 
