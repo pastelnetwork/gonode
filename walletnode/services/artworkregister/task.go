@@ -55,7 +55,7 @@ type Task struct {
 
 	// TODO: call cNodeAPI to get the following info
 	blockTxID       string
-	burnTxId        string
+	burnTxid        string
 	regArtTxid      string
 	registrationFee int64
 
@@ -421,9 +421,9 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 	}
 
 	files := rq.SymbolIdFiles{}
-	for _, rawSymbolIdFile := range encodeInfo.SymbolIdFiles {
+	for _, rawSymbolIDFile := range encodeInfo.SymbolIdFiles {
 
-		f, err := task.convertToSymbolIdFile(ctx, rawSymbolIdFile)
+		f, err := task.convertToSymbolIDFile(ctx, rawSymbolIDFile)
 		if err != nil {
 			return errors.Errorf("failed to create rqids file %w", err)
 		}
@@ -447,8 +447,8 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawSymbolIdFile) (*rq.SymbolIdFile, error) {
-	symbolIdFile := rq.SymbolIdFile{
+func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawSymbolIdFile) (*rq.SymbolIdFile, error) {
+	symbolIDFile := rq.SymbolIdFile{
 		Id:                rawFile.Id,
 		BlockHash:         rawFile.BlockHash,
 		PastelId:          rawFile.PastelId,
@@ -456,17 +456,17 @@ func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawS
 		Signature:         nil,
 	}
 
-	js, err := json.Marshal(&symbolIdFile)
+	js, err := json.Marshal(&symbolIDFile)
 	if err != nil {
 		return nil, errors.Errorf("failed to marshal identifiers file %w", err)
 	}
 
-	symbolIdFile.Signature, err = task.pastelClient.Sign(ctx, js, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
+	symbolIDFile.Signature, err = task.pastelClient.Sign(ctx, js, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
 	if err != nil {
 		return nil, errors.Errorf("failed to sign identifier file %w", err)
 	}
 
-	js, err = json.Marshal(&symbolIdFile)
+	js, err = json.Marshal(&symbolIDFile)
 	if err != nil {
 		return nil, errors.Errorf("failed to marshal identifiers file with signature %w", err)
 	}
@@ -476,12 +476,12 @@ func (task *Task) convertToSymbolIdFile(ctx context.Context, rawFile rqnode.RawS
 	if _, err := io.Copy(hasher, src); err != nil {
 		return nil, errors.Errorf("failed to hash identifiers file %w", err)
 	}
-	symbolIdFile.FileIdentifer = base58.Encode(hasher.Sum(nil))
+	symbolIDFile.FileIdentifer = base58.Encode(hasher.Sum(nil))
 
-	return &symbolIdFile, nil
+	return &symbolIDFile, nil
 }
 
-func (task *Task) createArtTicket(ctx context.Context) error {
+func (task *Task) createArtTicket(_ context.Context) error {
 	if task.fingerprints == nil {
 		return errEmptyFingerprints
 	}
@@ -712,15 +712,14 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 	buf, err := pastel.EncodeArtTicket(task.ticket)
 	if err != nil {
 		return errors.Errorf("failed to marshal ticket %w", err)
-	} else {
-		log.Debug(string(buf))
 	}
+	log.Debug(string(buf))
 
-	symbolsIdFilesMap, err := task.rqSymbolIDFiles.ToMap()
+	symbolsIDFilesMap, err := task.rqSymbolIDFiles.ToMap()
 	if err != nil {
 		return errors.Errorf("failed to create rq symbol identifiers files map %w", err)
 	}
-	if err := task.nodes.UploadSignedTicket(ctx, buf, task.artistSignature, symbolsIdFilesMap, task.rqEncodeParams); err != nil {
+	if err := task.nodes.UploadSignedTicket(ctx, buf, task.artistSignature, symbolsIDFilesMap, task.rqEncodeParams); err != nil {
 		return errors.Errorf("failed to upload signed ticket %w", err)
 	}
 
@@ -745,19 +744,19 @@ func (task *Task) preburntRegistrationFee(ctx context.Context) error {
 	}
 
 	burnedAmount := float64(task.registrationFee) / 10
-	burnTxId, err := task.pastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount)
+	burnTxid, err := task.pastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount)
 	if err != nil {
 		return errors.Errorf("failed to burn 10 percent of transaction fee %w", err)
 	}
-	task.burnTxId = burnTxId
-	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxId)
+	task.burnTxid = burnTxid
+	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxid)
 
-	if err := task.nodes.SendPreBurntFeeTxId(ctx, task.burnTxId); err != nil {
-		return errors.Errorf("failed to send pre-burn-txid: %s to supernode(s): %w", task.burnTxId, err)
+	if err := task.nodes.SendPreBurntFeeTxid(ctx, task.burnTxid); err != nil {
+		return errors.Errorf("failed to send pre-burn-txid: %s to supernode(s): %w", task.burnTxid, err)
 	}
-	task.regArtTxid = task.nodes.RegArtTicketId()
+	task.regArtTxid = task.nodes.RegArtTicketID()
 	if task.regArtTxid == "" {
-		return errors.Errorf("regArtTxId is empty")
+		return errors.Errorf("regArtTxid is empty")
 	}
 
 	return nil

@@ -591,7 +591,7 @@ func (x *SendSignedArtTicketReply) GetRegistrationFee() int64 {
 	return 0
 }
 
-type SendPreBurntFeeTxIdRequest struct {
+type SendPreBurntFeeTxidRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -599,8 +599,8 @@ type SendPreBurntFeeTxIdRequest struct {
 	Txid string `protobuf:"bytes,1,opt,name=txid,proto3" json:"txid,omitempty"`
 }
 
-func (x *SendPreBurntFeeTxIdRequest) Reset() {
-	*x = SendPreBurntFeeTxIdRequest{}
+func (x *SendPreBurntFeeTxidRequest) Reset() {
+	*x = SendPreBurntFeeTxidRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_walletnode_register_artwork_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -608,13 +608,13 @@ func (x *SendPreBurntFeeTxIdRequest) Reset() {
 	}
 }
 
-func (x *SendPreBurntFeeTxIdRequest) String() string {
+func (x *SendPreBurntFeeTxidRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendPreBurntFeeTxIdRequest) ProtoMessage() {}
+func (*SendPreBurntFeeTxidRequest) ProtoMessage() {}
 
-func (x *SendPreBurntFeeTxIdRequest) ProtoReflect() protoreflect.Message {
+func (x *SendPreBurntFeeTxidRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_walletnode_register_artwork_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -626,19 +626,19 @@ func (x *SendPreBurntFeeTxIdRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendPreBurntFeeTxIdRequest.ProtoReflect.Descriptor instead.
-func (*SendPreBurntFeeTxIdRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendPreBurntFeeTxidRequest.ProtoReflect.Descriptor instead.
+func (*SendPreBurntFeeTxidRequest) Descriptor() ([]byte, []int) {
 	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *SendPreBurntFeeTxIdRequest) GetTxid() string {
+func (x *SendPreBurntFeeTxidRequest) GetTxid() string {
 	if x != nil {
 		return x.Txid
 	}
 	return ""
 }
 
-type SendPreBurntFeeTxIdReply struct {
+type SendPreBurntFeeTxidReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -646,8 +646,8 @@ type SendPreBurntFeeTxIdReply struct {
 	ArtRegTxid string `protobuf:"bytes,1,opt,name=art_reg_txid,json=artRegTxid,proto3" json:"art_reg_txid,omitempty"`
 }
 
-func (x *SendPreBurntFeeTxIdReply) Reset() {
-	*x = SendPreBurntFeeTxIdReply{}
+func (x *SendPreBurntFeeTxidReply) Reset() {
+	*x = SendPreBurntFeeTxidReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_walletnode_register_artwork_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -655,13 +655,13 @@ func (x *SendPreBurntFeeTxIdReply) Reset() {
 	}
 }
 
-func (x *SendPreBurntFeeTxIdReply) String() string {
+func (x *SendPreBurntFeeTxidReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendPreBurntFeeTxIdReply) ProtoMessage() {}
+func (*SendPreBurntFeeTxidReply) ProtoMessage() {}
 
-func (x *SendPreBurntFeeTxIdReply) ProtoReflect() protoreflect.Message {
+func (x *SendPreBurntFeeTxidReply) ProtoReflect() protoreflect.Message {
 	mi := &file_walletnode_register_artwork_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -673,12 +673,12 @@ func (x *SendPreBurntFeeTxIdReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendPreBurntFeeTxIdReply.ProtoReflect.Descriptor instead.
-func (*SendPreBurntFeeTxIdReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendPreBurntFeeTxidReply.ProtoReflect.Descriptor instead.
+func (*SendPreBurntFeeTxidReply) Descriptor() ([]byte, []int) {
 	return file_walletnode_register_artwork_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *SendPreBurntFeeTxIdReply) GetArtRegTxid() string {
+func (x *SendPreBurntFeeTxidReply) GetArtRegTxid() string {
 	if x != nil {
 		return x.ArtRegTxid
 	}
@@ -1360,8 +1360,8 @@ var file_walletnode_register_artwork_proto_goTypes = []interface{}{
 	(*EncoderParameters)(nil),             // 8: walletnode.EncoderParameters
 	(*SendSignedArtTicketRequest)(nil),    // 9: walletnode.SendSignedArtTicketRequest
 	(*SendSignedArtTicketReply)(nil),      // 10: walletnode.SendSignedArtTicketReply
-	(*SendPreBurntFeeTxIdRequest)(nil),    // 11: walletnode.SendPreBurntFeeTxIdRequest
-	(*SendPreBurntFeeTxIdReply)(nil),      // 12: walletnode.SendPreBurntFeeTxIdReply
+	(*SendPreBurntFeeTxidRequest)(nil),    // 11: walletnode.SendPreBurntFeeTxidRequest
+	(*SendPreBurntFeeTxidReply)(nil),      // 12: walletnode.SendPreBurntFeeTxidReply
 	(*SendTicketRequest)(nil),             // 13: walletnode.SendTicketRequest
 	(*SendTicketReply)(nil),               // 14: walletnode.SendTicketReply
 	(*UploadImageRequest)(nil),            // 15: walletnode.UploadImageRequest
@@ -1382,7 +1382,7 @@ var file_walletnode_register_artwork_proto_depIdxs = []int32{
 	4,  // 7: walletnode.RegisterArtwork.ConnectTo:input_type -> walletnode.ConnectToRequest
 	6,  // 8: walletnode.RegisterArtwork.ProbeImage:input_type -> walletnode.ProbeImageRequest
 	9,  // 9: walletnode.RegisterArtwork.SendSignedArtTicket:input_type -> walletnode.SendSignedArtTicketRequest
-	11, // 10: walletnode.RegisterArtwork.SendPreBurntFeeTxId:input_type -> walletnode.SendPreBurntFeeTxIdRequest
+	11, // 10: walletnode.RegisterArtwork.SendPreBurntFeeTxid:input_type -> walletnode.SendPreBurntFeeTxidRequest
 	13, // 11: walletnode.RegisterArtwork.SendTicket:input_type -> walletnode.SendTicketRequest
 	15, // 12: walletnode.RegisterArtwork.UploadImage:input_type -> walletnode.UploadImageRequest
 	1,  // 13: walletnode.RegisterArtwork.Session:output_type -> walletnode.SessionReply
@@ -1390,7 +1390,7 @@ var file_walletnode_register_artwork_proto_depIdxs = []int32{
 	5,  // 15: walletnode.RegisterArtwork.ConnectTo:output_type -> walletnode.ConnectToReply
 	7,  // 16: walletnode.RegisterArtwork.ProbeImage:output_type -> walletnode.ProbeImageReply
 	10, // 17: walletnode.RegisterArtwork.SendSignedArtTicket:output_type -> walletnode.SendSignedArtTicketReply
-	12, // 18: walletnode.RegisterArtwork.SendPreBurntFeeTxId:output_type -> walletnode.SendPreBurntFeeTxIdReply
+	12, // 18: walletnode.RegisterArtwork.SendPreBurntFeeTxid:output_type -> walletnode.SendPreBurntFeeTxidReply
 	14, // 19: walletnode.RegisterArtwork.SendTicket:output_type -> walletnode.SendTicketReply
 	16, // 20: walletnode.RegisterArtwork.UploadImage:output_type -> walletnode.UploadImageReply
 	13, // [13:21] is the sub-list for method output_type
@@ -1539,7 +1539,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendPreBurntFeeTxIdRequest); i {
+			switch v := v.(*SendPreBurntFeeTxidRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1551,7 +1551,7 @@ func file_walletnode_register_artwork_proto_init() {
 			}
 		}
 		file_walletnode_register_artwork_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendPreBurntFeeTxIdReply); i {
+			switch v := v.(*SendPreBurntFeeTxidReply); i {
 			case 0:
 				return &v.state
 			case 1:

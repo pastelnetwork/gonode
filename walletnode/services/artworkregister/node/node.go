@@ -26,7 +26,7 @@ type Node struct {
 	smallThumbnailHash  []byte
 
 	registrationFee int64
-	regArtTxId      string
+	regArtTxid      string
 
 	address  string
 	pastelID string
@@ -59,6 +59,7 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
 	return nil
 }
 
+// Address returns address of node
 func (node *Node) Address() string {
 	return node.address
 }

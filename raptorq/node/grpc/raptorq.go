@@ -18,7 +18,7 @@ import (
 
 const (
 	inputEncodeFileName = "input.data"
-	symbolIdFileSubDir  = "meta"
+	symbolIDFileSubDir  = "meta"
 	symbolFileSubdir    = "symbols"
 )
 
@@ -220,13 +220,13 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 		return nil, errors.Errorf("symbol id files count not match: expect %d, output %d", copies, len(filesMap))
 	}
 
-	symbolIdFiles := make(map[string]node.RawSymbolIdFile)
+	symbolIDFiles := make(map[string]node.RawSymbolIdFile)
 	for fileID, lines := range filesMap {
 		if len(lines) != int(symbolCnt+3) {
 			return nil, errors.Errorf("file length not match: file %s, expect %d, output %d", fileID, symbolCnt+3, len(lines))
 		}
 
-		symbolIdFiles[fileID] = node.RawSymbolIdFile{
+		symbolIDFiles[fileID] = node.RawSymbolIdFile{
 			Id:                lines[0],
 			BlockHash:         lines[1],
 			PastelId:          lines[2],
@@ -237,7 +237,7 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 	}
 
 	output := &node.EncodeInfo{
-		SymbolIdFiles: symbolIdFiles,
+		SymbolIdFiles: symbolIDFiles,
 		EncoderParam: node.EncoderParameters{
 			Oti: res.EncoderParameters,
 		},

@@ -170,21 +170,21 @@ func (nodes *List) MatchRegistrationFee() error {
 	return nil
 }
 
-// SendPreBurntFeeTxId send txid of transaction in which 10% of registration fee is preburnt
-func (nodes *List) SendPreBurntFeeTxId(ctx context.Context, txid string) error {
+// SendPreBurntFeeTxid send txid of transaction in which 10% of registration fee is preburnt
+func (nodes *List) SendPreBurntFeeTxid(ctx context.Context, txid string) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() error {
-			ticketTxId, err := node.SendPreBurntFeeTxId(ctx, txid)
+			ticketTxid, err := node.SendPreBurntFeeTxid(ctx, txid)
 			if err != nil {
 				return err
 			}
-			if !node.IsPrimary() && ticketTxId != "" {
-				return errors.Errorf("receive response %s from secondary node", ticketTxId)
+			if !node.IsPrimary() && ticketTxid != "" {
+				return errors.Errorf("receive response %s from secondary node", ticketTxid)
 			}
 
-			node.regArtTxId = ticketTxId
+			node.regArtTxid = ticketTxid
 			return nil
 		})
 	}
@@ -201,13 +201,17 @@ func (nodes *List) Fingerprint() []byte {
 	return (*nodes)[0].fingerprint
 }
 
-// Returns scores
+// RarenessScore returns rarenessScore score
 func (nodes *List) RarenessScore() int {
 	return (*nodes)[0].rarenessScore
 }
+
+// NSFWScore returns NSFWScore score
 func (nodes *List) NSFWScore() int {
 	return (*nodes)[0].nSFWScore
 }
+
+// SeenScore returns SeenScore score
 func (nodes *List) SeenScore() int {
 	return (*nodes)[0].seenScore
 }
@@ -237,11 +241,11 @@ func (node *Node) IsPrimary() bool {
 	return node.isPrimary
 }
 
-// RegArtTicketId return txid of RegArt ticket
-func (nodes *List) RegArtTicketId() string {
+// RegArtTicketID return txid of RegArt ticket
+func (nodes *List) RegArtTicketID() string {
 	for i := range *nodes {
 		if (*nodes)[i].isPrimary {
-			return (*nodes)[i].regArtTxId
+			return (*nodes)[i].regArtTxid
 		}
 	}
 	return string("")

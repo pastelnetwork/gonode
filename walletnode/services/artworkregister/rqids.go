@@ -1,7 +1,9 @@
 package artworkregister
 
+// RQIDSList is list of RQIDS
 type RQIDSList []*RQIDS
 
+// RQIDS define a symbol id file
 type RQIDS struct {
 	// Id = bash64(hash(file + signature))
 	Id string
@@ -16,6 +18,7 @@ type RQIDS struct {
 	Content []byte
 }
 
+// Returns a list of identifiers
 func (rqidsList RQIDSList) Identifiers() []string {
 	var identifier []string
 	for _, rqids := range rqidsList {
@@ -25,6 +28,7 @@ func (rqidsList RQIDSList) Identifiers() []string {
 	return identifier
 }
 
+// Returns a map from symbold id file id to it's content
 func (rqidsList RQIDSList) ToMap() map[string][]byte {
 	m := make(map[string][]byte, len(rqidsList))
 	for _, rqids := range rqidsList {

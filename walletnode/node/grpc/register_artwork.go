@@ -286,16 +286,16 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 	return rsp.RegistrationFee, nil
 }
 
-func (service *registerArtwork) SendPreBurntFeeTxId(ctx context.Context, txid string) (string, error) {
+func (service *registerArtwork) SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	log.WithContext(ctx).Debug("send burned txid to super node")
-	req := pb.SendPreBurntFeeTxIdRequest{
+	req := pb.SendPreBurntFeeTxidRequest{
 		Txid: txid,
 	}
 
-	rsp, err := service.client.SendPreBurntFeeTxId(ctx, &req)
+	rsp, err := service.client.SendPreBurntFeeTxid(ctx, &req)
 	if err != nil {
 		return "", errors.Errorf("failed to send burned txid to super node %w", err)
 	}

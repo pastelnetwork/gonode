@@ -943,7 +943,7 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			got, err := tc.args.task.convertToSymbolIdFile(context.Background(), tc.args.inFile)
+			got, err := tc.args.task.convertToSymbolIDFile(context.Background(), tc.args.inFile)
 
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
@@ -967,7 +967,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		connectReturns      rqnode.Connection
 		connectErr          error
 		encodeInfoReturns   *rqnode.EncodeInfo
-		findTicketIdReturns *pastel.IDTicket
+		findTicketIDReturns *pastel.IDTicket
 		encodeInfoErr       error
 		readErr             error
 		signErr             error
@@ -999,7 +999,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 						},
 					},
 				},
-				findTicketIdReturns: &pastel.IDTicket{
+				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
 				},
 				readErr: io.EOF,
@@ -1021,7 +1021,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 				encodeInfoReturns: &rqnode.EncodeInfo{
 					SymbolIdFiles: make(map[string]rqnode.RawSymbolIdFile),
 				},
-				findTicketIdReturns: &pastel.IDTicket{
+				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
 				},
 				connectErr: errors.New("test-err"),
@@ -1044,7 +1044,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 				encodeInfoReturns: &rqnode.EncodeInfo{
 					SymbolIdFiles: make(map[string]rqnode.RawSymbolIdFile),
 				},
-				findTicketIdReturns: &pastel.IDTicket{
+				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
 				},
 				encodeInfoErr: errors.New("test-err"),
@@ -1090,7 +1090,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 						},
 					},
 				},
-				findTicketIdReturns: &pastel.IDTicket{
+				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
 				},
 				readErr: io.EOF,
@@ -1107,7 +1107,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("test-signature"), tc.args.signErr)
-			pastelClientMock.ListenOnFindTicketById(tc.args.findTicketIdReturns, nil)
+			pastelClientMock.ListenOnFindTicketById(tc.args.findTicketIDReturns, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			raptorQMock := rqMock.NewMockRaptorQ(t)
@@ -1149,7 +1149,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 		fingerprint         []byte
 		img                 *artwork.File
 		signReturns         []byte
-		findTicketIdReturns *pastel.IDTicket
+		findTicketIDReturns *pastel.IDTicket
 		signErr             error
 	}
 
@@ -1169,7 +1169,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 				img:         &artwork.File{},
 				signReturns: []byte("test-signature"),
 				fingerprint: []byte("test-fingerprint"),
-				findTicketIdReturns: &pastel.IDTicket{
+				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
 				},
 			},
@@ -1184,7 +1184,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-			pastelClientMock.ListenOnFindTicketById(tc.args.findTicketIdReturns, nil)
+			pastelClientMock.ListenOnFindTicketById(tc.args.findTicketIDReturns, nil)
 
 			tc.args.task.Service.pastelClient = pastelClientMock
 			fileStorageMock := storageMock.NewMockFileStorage()
