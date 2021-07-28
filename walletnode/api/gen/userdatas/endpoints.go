@@ -15,30 +15,42 @@ import (
 
 // Endpoints wraps the "userdatas" service endpoints.
 type Endpoints struct {
-	ProcessUserdata goa.Endpoint
-	UserdataGet     goa.Endpoint
+	CreateUserdata goa.Endpoint
+	UpdateUserdata goa.Endpoint
+	UserdataGet    goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "userdatas" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		ProcessUserdata: NewProcessUserdataEndpoint(s),
-		UserdataGet:     NewUserdataGetEndpoint(s),
+		CreateUserdata: NewCreateUserdataEndpoint(s),
+		UpdateUserdata: NewUpdateUserdataEndpoint(s),
+		UserdataGet:    NewUserdataGetEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "userdatas" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
-	e.ProcessUserdata = m(e.ProcessUserdata)
+	e.CreateUserdata = m(e.CreateUserdata)
+	e.UpdateUserdata = m(e.UpdateUserdata)
 	e.UserdataGet = m(e.UserdataGet)
 }
 
-// NewProcessUserdataEndpoint returns an endpoint function that calls the
-// method "processUserdata" of service "userdatas".
-func NewProcessUserdataEndpoint(s Service) goa.Endpoint {
+// NewCreateUserdataEndpoint returns an endpoint function that calls the method
+// "createUserdata" of service "userdatas".
+func NewCreateUserdataEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*ProcessUserdataPayload)
-		return s.ProcessUserdata(ctx, p)
+		p := req.(*CreateUserdataPayload)
+		return s.CreateUserdata(ctx, p)
+	}
+}
+
+// NewUpdateUserdataEndpoint returns an endpoint function that calls the method
+// "updateUserdata" of service "userdatas".
+func NewUpdateUserdataEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*UpdateUserdataPayload)
+		return s.UpdateUserdata(ctx, p)
 	}
 }
 

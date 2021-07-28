@@ -19,13 +19,13 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
-// BuildProcessUserdataRequest instantiates a HTTP request object with method
-// and path set to call the "userdatas" service "processUserdata" endpoint
-func (c *Client) BuildProcessUserdataRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ProcessUserdataUserdatasPath()}
+// BuildCreateUserdataRequest instantiates a HTTP request object with method
+// and path set to call the "userdatas" service "createUserdata" endpoint
+func (c *Client) BuildCreateUserdataRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: CreateUserdataUserdatasPath()}
 	req, err := http.NewRequest("POST", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("userdatas", "processUserdata", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("userdatas", "createUserdata", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -34,29 +34,29 @@ func (c *Client) BuildProcessUserdataRequest(ctx context.Context, v interface{})
 	return req, nil
 }
 
-// EncodeProcessUserdataRequest returns an encoder for requests sent to the
-// userdatas processUserdata server.
-func EncodeProcessUserdataRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+// EncodeCreateUserdataRequest returns an encoder for requests sent to the
+// userdatas createUserdata server.
+func EncodeCreateUserdataRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
 	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*userdatas.ProcessUserdataPayload)
+		p, ok := v.(*userdatas.CreateUserdataPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("userdatas", "processUserdata", "*userdatas.ProcessUserdataPayload", v)
+			return goahttp.ErrInvalidType("userdatas", "createUserdata", "*userdatas.CreateUserdataPayload", v)
 		}
 		if err := encoder(req).Encode(p); err != nil {
-			return goahttp.ErrEncodingError("userdatas", "processUserdata", err)
+			return goahttp.ErrEncodingError("userdatas", "createUserdata", err)
 		}
 		return nil
 	}
 }
 
-// NewUserdatasProcessUserdataEncoder returns an encoder to encode the
-// multipart request for the "userdatas" service "processUserdata" endpoint.
-func NewUserdatasProcessUserdataEncoder(encoderFn UserdatasProcessUserdataEncoderFunc) func(r *http.Request) goahttp.Encoder {
+// NewUserdatasCreateUserdataEncoder returns an encoder to encode the multipart
+// request for the "userdatas" service "createUserdata" endpoint.
+func NewUserdatasCreateUserdataEncoder(encoderFn UserdatasCreateUserdataEncoderFunc) func(r *http.Request) goahttp.Encoder {
 	return func(r *http.Request) goahttp.Encoder {
 		body := &bytes.Buffer{}
 		mw := multipart.NewWriter(body)
 		return goahttp.EncodingFunc(func(v interface{}) error {
-			p := v.(*userdatas.ProcessUserdataPayload)
+			p := v.(*userdatas.CreateUserdataPayload)
 			if err := encoderFn(mw, p); err != nil {
 				return err
 			}
@@ -67,14 +67,14 @@ func NewUserdatasProcessUserdataEncoder(encoderFn UserdatasProcessUserdataEncode
 	}
 }
 
-// DecodeProcessUserdataResponse returns a decoder for responses returned by
-// the userdatas processUserdata endpoint. restoreBody controls whether the
-// response body should be restored after having been read.
-// DecodeProcessUserdataResponse may return the following errors:
+// DecodeCreateUserdataResponse returns a decoder for responses returned by the
+// userdatas createUserdata endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeCreateUserdataResponse may return the following errors:
 //	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeProcessUserdataResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeCreateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -91,50 +91,170 @@ func DecodeProcessUserdataResponse(decoder func(*http.Response) goahttp.Decoder,
 		switch resp.StatusCode {
 		case http.StatusCreated:
 			var (
-				body ProcessUserdataResponseBody
+				body CreateUserdataResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("userdatas", "processUserdata", err)
+				return nil, goahttp.ErrDecodingError("userdatas", "createUserdata", err)
 			}
-			err = ValidateProcessUserdataResponseBody(&body)
+			err = ValidateCreateUserdataResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("userdatas", "processUserdata", err)
+				return nil, goahttp.ErrValidationError("userdatas", "createUserdata", err)
 			}
-			res := NewProcessUserdataUserdataProcessResultCreated(&body)
+			res := NewCreateUserdataUserdataProcessResultCreated(&body)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
-				body ProcessUserdataBadRequestResponseBody
+				body CreateUserdataBadRequestResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("userdatas", "processUserdata", err)
+				return nil, goahttp.ErrDecodingError("userdatas", "createUserdata", err)
 			}
-			err = ValidateProcessUserdataBadRequestResponseBody(&body)
+			err = ValidateCreateUserdataBadRequestResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("userdatas", "processUserdata", err)
+				return nil, goahttp.ErrValidationError("userdatas", "createUserdata", err)
 			}
-			return nil, NewProcessUserdataBadRequest(&body)
+			return nil, NewCreateUserdataBadRequest(&body)
 		case http.StatusInternalServerError:
 			var (
-				body ProcessUserdataInternalServerErrorResponseBody
+				body CreateUserdataInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("userdatas", "processUserdata", err)
+				return nil, goahttp.ErrDecodingError("userdatas", "createUserdata", err)
 			}
-			err = ValidateProcessUserdataInternalServerErrorResponseBody(&body)
+			err = ValidateCreateUserdataInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("userdatas", "processUserdata", err)
+				return nil, goahttp.ErrValidationError("userdatas", "createUserdata", err)
 			}
-			return nil, NewProcessUserdataInternalServerError(&body)
+			return nil, NewCreateUserdataInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("userdatas", "processUserdata", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("userdatas", "createUserdata", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildUpdateUserdataRequest instantiates a HTTP request object with method
+// and path set to call the "userdatas" service "updateUserdata" endpoint
+func (c *Client) BuildUpdateUserdataRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UpdateUserdataUserdatasPath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userdatas", "updateUserdata", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeUpdateUserdataRequest returns an encoder for requests sent to the
+// userdatas updateUserdata server.
+func EncodeUpdateUserdataRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*userdatas.UpdateUserdataPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("userdatas", "updateUserdata", "*userdatas.UpdateUserdataPayload", v)
+		}
+		if err := encoder(req).Encode(p); err != nil {
+			return goahttp.ErrEncodingError("userdatas", "updateUserdata", err)
+		}
+		return nil
+	}
+}
+
+// NewUserdatasUpdateUserdataEncoder returns an encoder to encode the multipart
+// request for the "userdatas" service "updateUserdata" endpoint.
+func NewUserdatasUpdateUserdataEncoder(encoderFn UserdatasUpdateUserdataEncoderFunc) func(r *http.Request) goahttp.Encoder {
+	return func(r *http.Request) goahttp.Encoder {
+		body := &bytes.Buffer{}
+		mw := multipart.NewWriter(body)
+		return goahttp.EncodingFunc(func(v interface{}) error {
+			p := v.(*userdatas.UpdateUserdataPayload)
+			if err := encoderFn(mw, p); err != nil {
+				return err
+			}
+			r.Body = ioutil.NopCloser(body)
+			r.Header.Set("Content-Type", mw.FormDataContentType())
+			return mw.Close()
+		})
+	}
+}
+
+// DecodeUpdateUserdataResponse returns a decoder for responses returned by the
+// userdatas updateUserdata endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeUpdateUserdataResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeUpdateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusCreated:
+			var (
+				body UpdateUserdataResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "updateUserdata", err)
+			}
+			err = ValidateUpdateUserdataResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "updateUserdata", err)
+			}
+			res := NewUpdateUserdataUserdataProcessResultCreated(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body UpdateUserdataBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "updateUserdata", err)
+			}
+			err = ValidateUpdateUserdataBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "updateUserdata", err)
+			}
+			return nil, NewUpdateUserdataBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body UpdateUserdataInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "updateUserdata", err)
+			}
+			err = ValidateUpdateUserdataInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "updateUserdata", err)
+			}
+			return nil, NewUpdateUserdataInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userdatas", "updateUserdata", resp.StatusCode, string(body))
 		}
 	}
 }

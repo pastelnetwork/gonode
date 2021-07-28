@@ -7,8 +7,9 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/metadb/network/supernode/node"
+	"github.com/pastelnetwork/gonode/pastel"
 )
 
 const (
@@ -21,6 +22,7 @@ type Service struct {
 	config       *Config
 	pastelClient pastel.Client
 	nodeClient   node.Client
+	databaseOps  *database.DatabaseOps
 }
 
 // Run starts task
@@ -53,11 +55,12 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client, databaseOps *database.DatabaseOps) *Service {
 	return &Service{
 		config:       config,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
 		Worker:       task.NewWorker(),
+		databaseOps:  databaseOps,
 	}
 }

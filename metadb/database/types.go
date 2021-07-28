@@ -3,78 +3,9 @@ package database
 import (
 	"fmt"
 
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
 )
-
-// Userdata represents userdata process payload
-type Userdata struct {
-	// Real name of the user
-	Realname string
-	// Facebook link of the user
-	FacebookLink string
-	// Twitter link of the user
-	TwitterLink string
-	// Native currency of user in ISO 4217 Alphabetic Code
-	NativeCurrency string
-	// Location of the user
-	Location string
-	// Primary language of the user
-	PrimaryLanguage string
-	// The categories of user's work
-	Categories string
-	// Biography of the user
-	Biography string
-	// Avatar image of the user
-	AvatarImage UserImageUpload
-	// Cover photo of the user
-	CoverPhoto UserImageUpload
-	// Artist's PastelID
-	ArtistPastelID string
-	// Epoch Timestamp of the request (generated, not sending by UI)
-	Timestamp int
-	// Signature of the message (generated, not sending by UI)
-	Signature string
-	// Previous block hash in the chain (generated, not sending by UI)
-	PreviousBlockHash string
-	// UserdataHash represents UserdataProcessRequest's hash value, to make sure UserdataProcessRequest's integrity
-	UserdataHash string
-}
-
-type UserImageUpload struct {
-	// File to upload
-	Content []byte
-	// File name of the user image
-	Filename string
-}
-
-func (d *Userdata) ToWriteCommand() UserdataWriteCommand {
-	var avatarImageHex string
-	var coverPhotoHex string
-	if d.AvatarImage.Content != nil || len(d.AvatarImage.Content) == 0 {
-		avatarImageHex = fmt.Sprintf("%x", d.AvatarImage.Content)
-	}
-	if d.CoverPhoto.Content != nil || len(d.CoverPhoto.Content) == 0 {
-		coverPhotoHex = fmt.Sprintf("%x", d.CoverPhoto.Content)
-	}
-	return UserdataWriteCommand{
-		Realname:           d.Realname,
-		FacebookLink:       d.FacebookLink,
-		TwitterLink:        d.TwitterLink,
-		NativeCurrency:     d.NativeCurrency,
-		Location:           d.Location,
-		PrimaryLanguage:    d.PrimaryLanguage,
-		Categories:         d.Categories,
-		Biography:          d.Biography,
-		AvatarImage:        avatarImageHex,
-		AvatarFilename:     d.AvatarImage.Filename,
-		CoverPhotoImage:    coverPhotoHex,
-		CoverPhotoFilename: d.CoverPhoto.Filename,
-		ArtistPastelID:     d.ArtistPastelID,
-		Timestamp:          d.Timestamp,
-		Signature:          d.Signature,
-		PreviousBlockHash:  d.PreviousBlockHash,
-	}
-}
 
 // UserdataDBRecord represents userdata record in DB
 type UserdataWriteCommand struct {
@@ -189,8 +120,8 @@ type UserdataReadResult struct {
 	UserdataHash string `mapstructure:"user_data_hash"`
 }
 
-func (d *UserdataReadResult) ToUserData() Userdata {
-	return Userdata{
+func (d *UserdataReadResult) ToUserData() userdata.UserdataProcessRequest {
+	return userdata.UserdataProcessRequest{
 		Realname:        d.Realname,
 		FacebookLink:    d.FacebookLink,
 		TwitterLink:     d.TwitterLink,
@@ -199,18 +130,16 @@ func (d *UserdataReadResult) ToUserData() Userdata {
 		PrimaryLanguage: d.PrimaryLanguage,
 		Categories:      d.Categories,
 		Biography:       d.Biography,
-		AvatarImage: UserImageUpload{
+		AvatarImage: userdata.UserImageUpload{
 			Content:  d.AvatarImage,
 			Filename: d.AvatarFilename,
 		},
-		CoverPhoto: UserImageUpload{
+		CoverPhoto: userdata.UserImageUpload{
 			Content:  d.CoverPhotoImage,
 			Filename: d.CoverPhotoFilename,
 		},
 		ArtistPastelID:    d.ArtistPastelID,
-		Timestamp:         d.Timestamp,
-		Signature:         d.Signature,
+		Timestamp:         int64(d.Timestamp),
 		PreviousBlockHash: d.PreviousBlockHash,
-		UserdataHash:      d.UserdataHash,
 	}
 }

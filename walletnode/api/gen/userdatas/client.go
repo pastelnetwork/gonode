@@ -15,23 +15,36 @@ import (
 
 // Client is the "userdatas" service client.
 type Client struct {
-	ProcessUserdataEndpoint goa.Endpoint
-	UserdataGetEndpoint     goa.Endpoint
+	CreateUserdataEndpoint goa.Endpoint
+	UpdateUserdataEndpoint goa.Endpoint
+	UserdataGetEndpoint    goa.Endpoint
 }
 
 // NewClient initializes a "userdatas" service client given the endpoints.
-func NewClient(processUserdata, userdataGet goa.Endpoint) *Client {
+func NewClient(createUserdata, updateUserdata, userdataGet goa.Endpoint) *Client {
 	return &Client{
-		ProcessUserdataEndpoint: processUserdata,
-		UserdataGetEndpoint:     userdataGet,
+		CreateUserdataEndpoint: createUserdata,
+		UpdateUserdataEndpoint: updateUserdata,
+		UserdataGetEndpoint:    userdataGet,
 	}
 }
 
-// ProcessUserdata calls the "processUserdata" endpoint of the "userdatas"
+// CreateUserdata calls the "createUserdata" endpoint of the "userdatas"
 // service.
-func (c *Client) ProcessUserdata(ctx context.Context, p *ProcessUserdataPayload) (res *UserdataProcessResult, err error) {
+func (c *Client) CreateUserdata(ctx context.Context, p *CreateUserdataPayload) (res *UserdataProcessResult, err error) {
 	var ires interface{}
-	ires, err = c.ProcessUserdataEndpoint(ctx, p)
+	ires, err = c.CreateUserdataEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*UserdataProcessResult), nil
+}
+
+// UpdateUserdata calls the "updateUserdata" endpoint of the "userdatas"
+// service.
+func (c *Client) UpdateUserdata(ctx context.Context, p *UpdateUserdataPayload) (res *UserdataProcessResult, err error) {
+	var ires interface{}
+	ires, err = c.UpdateUserdataEndpoint(ctx, p)
 	if err != nil {
 		return
 	}

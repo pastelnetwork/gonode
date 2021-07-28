@@ -19,9 +19,13 @@ import (
 
 // Client lists the userdatas service endpoint HTTP clients.
 type Client struct {
-	// ProcessUserdata Doer is the HTTP client used to make requests to the
-	// processUserdata endpoint.
-	ProcessUserdataDoer goahttp.Doer
+	// CreateUserdata Doer is the HTTP client used to make requests to the
+	// createUserdata endpoint.
+	CreateUserdataDoer goahttp.Doer
+
+	// UpdateUserdata Doer is the HTTP client used to make requests to the
+	// updateUserdata endpoint.
+	UpdateUserdataDoer goahttp.Doer
 
 	// UserdataGet Doer is the HTTP client used to make requests to the userdataGet
 	// endpoint.
@@ -40,9 +44,13 @@ type Client struct {
 	decoder func(*http.Response) goahttp.Decoder
 }
 
-// UserdatasProcessUserdataEncoderFunc is the type to encode multipart request
-// for the "userdatas" service "processUserdata" endpoint.
-type UserdatasProcessUserdataEncoderFunc func(*multipart.Writer, *userdatas.ProcessUserdataPayload) error
+// UserdatasCreateUserdataEncoderFunc is the type to encode multipart request
+// for the "userdatas" service "createUserdata" endpoint.
+type UserdatasCreateUserdataEncoderFunc func(*multipart.Writer, *userdatas.CreateUserdataPayload) error
+
+// UserdatasUpdateUserdataEncoderFunc is the type to encode multipart request
+// for the "userdatas" service "updateUserdata" endpoint.
+type UserdatasUpdateUserdataEncoderFunc func(*multipart.Writer, *userdatas.UpdateUserdataPayload) error
 
 // NewClient instantiates HTTP clients for all the userdatas service servers.
 func NewClient(
@@ -54,7 +62,8 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		ProcessUserdataDoer: doer,
+		CreateUserdataDoer:  doer,
+		UpdateUserdataDoer:  doer,
 		UserdataGetDoer:     doer,
 		CORSDoer:            doer,
 		RestoreResponseBody: restoreBody,
@@ -65,15 +74,15 @@ func NewClient(
 	}
 }
 
-// ProcessUserdata returns an endpoint that makes HTTP requests to the
-// userdatas service processUserdata server.
-func (c *Client) ProcessUserdata(userdatasProcessUserdataEncoderFn UserdatasProcessUserdataEncoderFunc) goa.Endpoint {
+// CreateUserdata returns an endpoint that makes HTTP requests to the userdatas
+// service createUserdata server.
+func (c *Client) CreateUserdata(userdatasCreateUserdataEncoderFn UserdatasCreateUserdataEncoderFunc) goa.Endpoint {
 	var (
-		encodeRequest  = EncodeProcessUserdataRequest(NewUserdatasProcessUserdataEncoder(userdatasProcessUserdataEncoderFn))
-		decodeResponse = DecodeProcessUserdataResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeCreateUserdataRequest(NewUserdatasCreateUserdataEncoder(userdatasCreateUserdataEncoderFn))
+		decodeResponse = DecodeCreateUserdataResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildProcessUserdataRequest(ctx, v)
+		req, err := c.BuildCreateUserdataRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -81,9 +90,33 @@ func (c *Client) ProcessUserdata(userdatasProcessUserdataEncoderFn UserdatasProc
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.ProcessUserdataDoer.Do(req)
+		resp, err := c.CreateUserdataDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("userdatas", "processUserdata", err)
+			return nil, goahttp.ErrRequestError("userdatas", "createUserdata", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// UpdateUserdata returns an endpoint that makes HTTP requests to the userdatas
+// service updateUserdata server.
+func (c *Client) UpdateUserdata(userdatasUpdateUserdataEncoderFn UserdatasUpdateUserdataEncoderFunc) goa.Endpoint {
+	var (
+		encodeRequest  = EncodeUpdateUserdataRequest(NewUserdatasUpdateUserdataEncoder(userdatasUpdateUserdataEncoderFn))
+		decodeResponse = DecodeUpdateUserdataResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildUpdateUserdataRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.UpdateUserdataDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userdatas", "updateUserdata", err)
 		}
 		return decodeResponse(resp)
 	}

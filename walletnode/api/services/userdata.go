@@ -5,11 +5,12 @@ import (
 
 	// "github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/userdatas/server"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 
 	goahttp "goa.design/goa/v3/http"
 )
@@ -23,7 +24,16 @@ type Userdata struct {
 // Mount configures the mux to serve the artworks endpoints.
 func (service *Userdata) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := userdatas.NewEndpoints(service)
-	srv := server.New(endpoints, mux, goahttp.RequestDecoder, goahttp.ResponseEncoder, api.ErrorHandler, nil, UserdatasProcessUserdataDecoderFunc(ctx, service))
+	srv := server.New(
+		endpoints,
+		mux,
+		goahttp.RequestDecoder,
+		goahttp.ResponseEncoder,
+		api.ErrorHandler,
+		nil,
+		UserdatasCreateUserdataDecoderFunc(ctx, service),
+		UserdatasUpdateUserdataDecoderFunc(ctx, service),
+	)
 	server.Mount(mux, srv)
 
 	for _, m := range srv.Mounts {
@@ -32,9 +42,16 @@ func (service *Userdata) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.S
 	return srv
 }
 
-// ProcessUserdata will send userdata to Super Nodes to store in Metadata layer 
-func (service *Userdata) ProcessUserdata(ctx context.Context, req *userdatas.ProcessUserdataPayload) (*userdatas.UserdataProcessResult, error) {
-	request := fromUserdataProcessRequest(req)
+func (service *Userdata) CreateUserdata(ctx context.Context, req *userdatas.CreateUserdataPayload) (*userdatas.UserdataProcessResult, error) {
+	return service.processUserdata(ctx, fromUserdataCreateRequest(req))
+}
+
+func (service *Userdata) UpdateUserdata(ctx context.Context, req *userdatas.UpdateUserdataPayload) (*userdatas.UserdataProcessResult, error) {
+	return service.processUserdata(ctx, fromUserdataUpdateRequest(req))
+}
+
+// ProcessUserdata will send userdata to Super Nodes to store in Metadata layer
+func (service *Userdata) processUserdata(ctx context.Context, request *userdata.UserdataProcessRequest) (*userdatas.UserdataProcessResult, error) {
 	taskID := service.process.AddTask(request, "")
 	task := service.process.Task(taskID)
 
@@ -42,25 +59,24 @@ func (service *Userdata) ProcessUserdata(ctx context.Context, req *userdatas.Pro
 	for {
 		select {
 		case <-ctx.Done():
-			return nil,nil
+			return nil, nil
 		case response, ok := <-resultChan:
 			if !ok {
 				if task.Status().IsFailure() {
-					return nil,userdatas.MakeInternalServerError(task.Error())
+					return nil, userdatas.MakeInternalServerError(task.Error())
 				}
 
-				return nil,nil
+				return nil, nil
 			}
 
 			res := toUserdataProcessResult(response)
-			return res,nil
+			return res, nil
 		}
 	}
-	
 }
 
-// UserdataGet will get userdata from Super Nodes to store in Metadata layer 
-func (service *Userdata) UserdataGet (ctx context.Context, req *userdatas.UserdataGetPayload) (*userdatas.UserSpecifiedData, error) {
+// UserdataGet will get userdata from Super Nodes to store in Metadata layer
+func (service *Userdata) UserdataGet(ctx context.Context, req *userdatas.UserdataGetPayload) (*userdatas.UserSpecifiedData, error) {
 	userpastelid := req.Pastelid
 
 	taskID := service.process.AddTask(nil, userpastelid)
@@ -70,18 +86,18 @@ func (service *Userdata) UserdataGet (ctx context.Context, req *userdatas.Userda
 	for {
 		select {
 		case <-ctx.Done():
-			return nil,nil
+			return nil, nil
 		case response, ok := <-resultChanGet:
 			if !ok {
 				if task.Status().IsFailure() {
-					return nil,userdatas.MakeInternalServerError(task.Error())
+					return nil, userdatas.MakeInternalServerError(task.Error())
 				}
 
-				return nil,nil
+				return nil, nil
 			}
 
 			res := toUserSpecifiedData(response)
-			return res,nil
+			return res, nil
 		}
 	}
 }
@@ -89,7 +105,7 @@ func (service *Userdata) UserdataGet (ctx context.Context, req *userdatas.Userda
 // NewUserdata returns the Userdata implementation.
 func NewUserdata(process *userdataprocess.Service) *Userdata {
 	return &Userdata{
-		Common:   NewCommon(),
+		Common:  NewCommon(),
 		process: process,
 	}
 }

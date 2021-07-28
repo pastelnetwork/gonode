@@ -17,23 +17,23 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// EncodeProcessUserdataResponse returns an encoder for responses returned by
-// the userdatas processUserdata endpoint.
-func EncodeProcessUserdataResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+// EncodeCreateUserdataResponse returns an encoder for responses returned by
+// the userdatas createUserdata endpoint.
+func EncodeCreateUserdataResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
 		res := v.(*userdatas.UserdataProcessResult)
 		enc := encoder(ctx, w)
-		body := NewProcessUserdataResponseBody(res)
+		body := NewCreateUserdataResponseBody(res)
 		w.WriteHeader(http.StatusCreated)
 		return enc.Encode(body)
 	}
 }
 
-// DecodeProcessUserdataRequest returns a decoder for requests sent to the
-// userdatas processUserdata endpoint.
-func DecodeProcessUserdataRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+// DecodeCreateUserdataRequest returns a decoder for requests sent to the
+// userdatas createUserdata endpoint.
+func DecodeCreateUserdataRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
-		var payload *userdatas.ProcessUserdataPayload
+		var payload *userdatas.CreateUserdataPayload
 		if err := decoder(r).Decode(&payload); err != nil {
 			return nil, goa.DecodePayloadError(err.Error())
 		}
@@ -42,17 +42,17 @@ func DecodeProcessUserdataRequest(mux goahttp.Muxer, decoder func(*http.Request)
 	}
 }
 
-// NewUserdatasProcessUserdataDecoder returns a decoder to decode the multipart
-// request for the "userdatas" service "processUserdata" endpoint.
-func NewUserdatasProcessUserdataDecoder(mux goahttp.Muxer, userdatasProcessUserdataDecoderFn UserdatasProcessUserdataDecoderFunc) func(r *http.Request) goahttp.Decoder {
+// NewUserdatasCreateUserdataDecoder returns a decoder to decode the multipart
+// request for the "userdatas" service "createUserdata" endpoint.
+func NewUserdatasCreateUserdataDecoder(mux goahttp.Muxer, userdatasCreateUserdataDecoderFn UserdatasCreateUserdataDecoderFunc) func(r *http.Request) goahttp.Decoder {
 	return func(r *http.Request) goahttp.Decoder {
 		return goahttp.EncodingFunc(func(v interface{}) error {
 			mr, merr := r.MultipartReader()
 			if merr != nil {
 				return merr
 			}
-			p := v.(**userdatas.ProcessUserdataPayload)
-			if err := userdatasProcessUserdataDecoderFn(mr, p); err != nil {
+			p := v.(**userdatas.CreateUserdataPayload)
+			if err := userdatasCreateUserdataDecoderFn(mr, p); err != nil {
 				return err
 			}
 			return nil
@@ -60,9 +60,9 @@ func NewUserdatasProcessUserdataDecoder(mux goahttp.Muxer, userdatasProcessUserd
 	}
 }
 
-// EncodeProcessUserdataError returns an encoder for errors returned by the
-// processUserdata userdatas endpoint.
-func EncodeProcessUserdataError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeCreateUserdataError returns an encoder for errors returned by the
+// createUserdata userdatas endpoint.
+func EncodeCreateUserdataError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		en, ok := v.(ErrorNamer)
@@ -77,7 +77,7 @@ func EncodeProcessUserdataError(encoder func(context.Context, http.ResponseWrite
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewProcessUserdataBadRequestResponseBody(res)
+				body = NewCreateUserdataBadRequestResponseBody(res)
 			}
 			w.Header().Set("goa-error", "BadRequest")
 			w.WriteHeader(http.StatusBadRequest)
@@ -89,7 +89,90 @@ func EncodeProcessUserdataError(encoder func(context.Context, http.ResponseWrite
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewProcessUserdataInternalServerErrorResponseBody(res)
+				body = NewCreateUserdataInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", "InternalServerError")
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeUpdateUserdataResponse returns an encoder for responses returned by
+// the userdatas updateUserdata endpoint.
+func EncodeUpdateUserdataResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res := v.(*userdatas.UserdataProcessResult)
+		enc := encoder(ctx, w)
+		body := NewUpdateUserdataResponseBody(res)
+		w.WriteHeader(http.StatusCreated)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeUpdateUserdataRequest returns a decoder for requests sent to the
+// userdatas updateUserdata endpoint.
+func DecodeUpdateUserdataRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var payload *userdatas.UpdateUserdataPayload
+		if err := decoder(r).Decode(&payload); err != nil {
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+
+		return payload, nil
+	}
+}
+
+// NewUserdatasUpdateUserdataDecoder returns a decoder to decode the multipart
+// request for the "userdatas" service "updateUserdata" endpoint.
+func NewUserdatasUpdateUserdataDecoder(mux goahttp.Muxer, userdatasUpdateUserdataDecoderFn UserdatasUpdateUserdataDecoderFunc) func(r *http.Request) goahttp.Decoder {
+	return func(r *http.Request) goahttp.Decoder {
+		return goahttp.EncodingFunc(func(v interface{}) error {
+			mr, merr := r.MultipartReader()
+			if merr != nil {
+				return merr
+			}
+			p := v.(**userdatas.UpdateUserdataPayload)
+			if err := userdatasUpdateUserdataDecoderFn(mr, p); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+}
+
+// EncodeUpdateUserdataError returns an encoder for errors returned by the
+// updateUserdata userdatas endpoint.
+func EncodeUpdateUserdataError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewUpdateUserdataBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", "BadRequest")
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewUpdateUserdataInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", "InternalServerError")
 			w.WriteHeader(http.StatusInternalServerError)

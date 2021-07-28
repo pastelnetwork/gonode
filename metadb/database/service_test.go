@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sync"
 	"testing"
 	"text/template"
 
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
 	"github.com/stretchr/testify/assert"
@@ -188,7 +190,7 @@ var (
 		PreviousBlockHash: "hash",
 	}
 
-	data5 = pb.UserdataRequest{
+	data3ReadResult = userdata.UserdataProcessRequest{
 		Realname:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
@@ -197,21 +199,20 @@ var (
 		PrimaryLanguage: "en",
 		Categories:      "a",
 		Biography:       "b",
-		AvatarImage: &pb.UserdataRequest_UserImageUpload{
+		AvatarImage: userdata.UserImageUpload{
 			Content:  []byte{1, 2, 3, 4},
-			Filename: "data5_1.jpg",
+			Filename: "1234.jpg",
 		},
-		CoverPhoto: &pb.UserdataRequest_UserImageUpload{
+		CoverPhoto: userdata.UserImageUpload{
 			Content:  nil,
 			Filename: "",
 		},
-		ArtistPastelID:    "data5",
+		ArtistPastelID:    "qwe",
 		Timestamp:         123,
-		Signature:         "xyz",
 		PreviousBlockHash: "hash",
 	}
 
-	data6 = pb.UserdataRequest{
+	data4ReadResult = userdata.UserdataProcessRequest{
 		Realname:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
@@ -220,17 +221,16 @@ var (
 		PrimaryLanguage: "en",
 		Categories:      "a",
 		Biography:       "b",
-		AvatarImage: &pb.UserdataRequest_UserImageUpload{
+		AvatarImage: userdata.UserImageUpload{
 			Content:  []byte{1, 2, 3, 4},
-			Filename: "data6_1.jpg",
+			Filename: "1234.jpg",
 		},
-		CoverPhoto: &pb.UserdataRequest_UserImageUpload{
+		CoverPhoto: userdata.UserImageUpload{
 			Content:  []byte{4, 5, 6, 7},
-			Filename: "data6_2.jpg",
+			Filename: "4567.jpg",
 		},
-		ArtistPastelID:    "data6",
+		ArtistPastelID:    "rty",
 		Timestamp:         123,
-		Signature:         "xyz",
 		PreviousBlockHash: "hash",
 	}
 
@@ -439,8 +439,6 @@ func (ts *testSuite) SetupSuite() {
 	}
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, data3))
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, data4))
-	ts.Nil(ts.ops.WriteUserData(ts.ctx, data5))
-	ts.Nil(ts.ops.WriteUserData(ts.ctx, data6))
 }
 
 func (ts *testSuite) TearDownSuite() {
@@ -604,95 +602,46 @@ func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 	}
 }
 
-// func (ts *testSuite) TestDatabaseOps_ReadUserData() {
-// 	type args struct {
-// 		ctx            context.Context
-// 		artistPastelID string
-// 	}
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		want    Userdata
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "TestDatabaseOps_ReadUserData1",
-// 			args: args{
-// 				ctx:            ts.ctx,
-// 				artistPastelID: "qwe",
-// 			},
-// 			want:    data3,
-// 			wantErr: false,
-// 		},
-// 		{
-// 			name: "TestDatabaseOps_ReadUserData2",
-// 			args: args{
-// 				ctx:            ts.ctx,
-// 				artistPastelID: "rty",
-// 			},
-// 			want:    data4,
-// 			wantErr: false,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		ts.T().Run(tt.name, func(t *testing.T) {
-// 			got, err := ts.ops.ReadUserData(tt.args.ctx, tt.args.artistPastelID)
-// 			if (err != nil) != tt.wantErr {
-// 				ts.T().Errorf("DatabaseOps.ReadUserData() error = %v, wantErr %v", err, tt.wantErr)
-// 				return
-// 			}
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				ts.T().Errorf("DatabaseOps.ReadUserData() = %+v, want %+v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
-
-// func (ts *testSuite) TestDatabaseOps_UpdateUserData() {
-// 	type args struct {
-// 		ctx  context.Context
-// 		data pb.UserdataRequest
-// 	}
-
-// 	data5.Realname = "dog"
-// 	data5.Location = "us"
-// 	data6.Categories = "c"
-// 	data6.Biography = "d"
-
-// 	tests := []struct {
-// 		name    string
-// 		args    args
-// 		wantErr bool
-// 	}{
-// 		{
-// 			name: "TestDatabaseOps_UpdateUserData1",
-// 			args: args{
-// 				ctx:  ts.ctx,
-// 				data: data5,
-// 			},
-// 			wantErr: false,
-// 		},
-// 		{
-// 			name: "TestDatabaseOps_UpdateUserData2",
-// 			args: args{
-// 				ctx:  ts.ctx,
-// 				data: data6,
-// 			},
-// 			wantErr: false,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		ts.T().Run(tt.name, func(t *testing.T) {
-// 			if err := ts.ops.UpdateUserData(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-// 				ts.T().Errorf("DatabaseOps.WriteUserData() error = %v, wantErr %v", err, tt.wantErr)
-// 			}
-// 			data, err := ts.ops.ReadUserData(tt.args.ctx, tt.args.data.ArtistPastelID)
-// 			if (err != nil) != tt.wantErr {
-// 				ts.T().Errorf("DatabaseOps.WriteUserData() error = %v, wantErr %v", err, tt.wantErr)
-// 			}
-// 			if !reflect.DeepEqual(data, tt.args.data) {
-// 				ts.T().Errorf("DatabaseOps.ReadUserData() = %+v, want %+v", data, tt.args.data)
-// 			}
-// 		})
-// 	}
-// }
+func (ts *testSuite) TestDatabaseOps_ReadUserData() {
+	type args struct {
+		ctx            context.Context
+		artistPastelID string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    userdata.UserdataProcessRequest
+		wantErr bool
+	}{
+		{
+			name: "TestDatabaseOps_ReadUserData1",
+			args: args{
+				ctx:            ts.ctx,
+				artistPastelID: "qwe",
+			},
+			want:    data3ReadResult,
+			wantErr: false,
+		},
+		{
+			name: "TestDatabaseOps_ReadUserData2",
+			args: args{
+				ctx:            ts.ctx,
+				artistPastelID: "rty",
+			},
+			want:    data4ReadResult,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		ts.T().Run(tt.name, func(t *testing.T) {
+			got, err := ts.ops.ReadUserData(tt.args.ctx, tt.args.artistPastelID)
+			if (err != nil) != tt.wantErr {
+				ts.T().Errorf("DatabaseOps.ReadUserData() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				ts.T().Errorf("DatabaseOps.ReadUserData() = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
