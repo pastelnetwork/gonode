@@ -11,8 +11,13 @@ import (
 	"fmt"
 )
 
-// ProcessUserdataUserdatasPath returns the URL path to the userdatas service processUserdata HTTP endpoint.
-func ProcessUserdataUserdatasPath() string {
+// CreateUserdataUserdatasPath returns the URL path to the userdatas service createUserdata HTTP endpoint.
+func CreateUserdataUserdatasPath() string {
+	return "/userdatas/create"
+}
+
+// UpdateUserdataUserdatasPath returns the URL path to the userdatas service updateUserdata HTTP endpoint.
+func UpdateUserdataUserdatasPath() string {
 	return "/userdatas/update"
 }
 

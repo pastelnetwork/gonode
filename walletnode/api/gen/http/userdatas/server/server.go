@@ -20,10 +20,11 @@ import (
 
 // Server lists the userdatas service endpoint HTTP handlers.
 type Server struct {
-	Mounts          []*MountPoint
-	ProcessUserdata http.Handler
-	UserdataGet     http.Handler
-	CORS            http.Handler
+	Mounts         []*MountPoint
+	CreateUserdata http.Handler
+	UpdateUserdata http.Handler
+	UserdataGet    http.Handler
+	CORS           http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -43,9 +44,13 @@ type MountPoint struct {
 	Pattern string
 }
 
-// UserdatasProcessUserdataDecoderFunc is the type to decode multipart request
-// for the "userdatas" service "processUserdata" endpoint.
-type UserdatasProcessUserdataDecoderFunc func(*multipart.Reader, **userdatas.ProcessUserdataPayload) error
+// UserdatasCreateUserdataDecoderFunc is the type to decode multipart request
+// for the "userdatas" service "createUserdata" endpoint.
+type UserdatasCreateUserdataDecoderFunc func(*multipart.Reader, **userdatas.CreateUserdataPayload) error
+
+// UserdatasUpdateUserdataDecoderFunc is the type to decode multipart request
+// for the "userdatas" service "updateUserdata" endpoint.
+type UserdatasUpdateUserdataDecoderFunc func(*multipart.Reader, **userdatas.UpdateUserdataPayload) error
 
 // New instantiates HTTP handlers for all the userdatas service endpoints using
 // the provided encoder and decoder. The handlers are mounted on the given mux
@@ -60,18 +65,22 @@ func New(
 	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
-	userdatasProcessUserdataDecoderFn UserdatasProcessUserdataDecoderFunc,
+	userdatasCreateUserdataDecoderFn UserdatasCreateUserdataDecoderFunc,
+	userdatasUpdateUserdataDecoderFn UserdatasUpdateUserdataDecoderFunc,
 ) *Server {
 	return &Server{
 		Mounts: []*MountPoint{
-			{"ProcessUserdata", "POST", "/userdatas/update"},
+			{"CreateUserdata", "POST", "/userdatas/create"},
+			{"UpdateUserdata", "POST", "/userdatas/update"},
 			{"UserdataGet", "GET", "/userdatas/{pastelid}"},
+			{"CORS", "OPTIONS", "/userdatas/create"},
 			{"CORS", "OPTIONS", "/userdatas/update"},
 			{"CORS", "OPTIONS", "/userdatas/{pastelid}"},
 		},
-		ProcessUserdata: NewProcessUserdataHandler(e.ProcessUserdata, mux, NewUserdatasProcessUserdataDecoder(mux, userdatasProcessUserdataDecoderFn), encoder, errhandler, formatter),
-		UserdataGet:     NewUserdataGetHandler(e.UserdataGet, mux, decoder, encoder, errhandler, formatter),
-		CORS:            NewCORSHandler(),
+		CreateUserdata: NewCreateUserdataHandler(e.CreateUserdata, mux, NewUserdatasCreateUserdataDecoder(mux, userdatasCreateUserdataDecoderFn), encoder, errhandler, formatter),
+		UpdateUserdata: NewUpdateUserdataHandler(e.UpdateUserdata, mux, NewUserdatasUpdateUserdataDecoder(mux, userdatasUpdateUserdataDecoderFn), encoder, errhandler, formatter),
+		UserdataGet:    NewUserdataGetHandler(e.UserdataGet, mux, decoder, encoder, errhandler, formatter),
+		CORS:           NewCORSHandler(),
 	}
 }
 
@@ -80,21 +89,74 @@ func (s *Server) Service() string { return "userdatas" }
 
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
-	s.ProcessUserdata = m(s.ProcessUserdata)
+	s.CreateUserdata = m(s.CreateUserdata)
+	s.UpdateUserdata = m(s.UpdateUserdata)
 	s.UserdataGet = m(s.UserdataGet)
 	s.CORS = m(s.CORS)
 }
 
 // Mount configures the mux to serve the userdatas endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
-	MountProcessUserdataHandler(mux, h.ProcessUserdata)
+	MountCreateUserdataHandler(mux, h.CreateUserdata)
+	MountUpdateUserdataHandler(mux, h.UpdateUserdata)
 	MountUserdataGetHandler(mux, h.UserdataGet)
 	MountCORSHandler(mux, h.CORS)
 }
 
-// MountProcessUserdataHandler configures the mux to serve the "userdatas"
-// service "processUserdata" endpoint.
-func MountProcessUserdataHandler(mux goahttp.Muxer, h http.Handler) {
+// MountCreateUserdataHandler configures the mux to serve the "userdatas"
+// service "createUserdata" endpoint.
+func MountCreateUserdataHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/userdatas/create", f)
+}
+
+// NewCreateUserdataHandler creates a HTTP handler which loads the HTTP request
+// and calls the "userdatas" service "createUserdata" endpoint.
+func NewCreateUserdataHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeCreateUserdataRequest(mux, decoder)
+		encodeResponse = EncodeCreateUserdataResponse(encoder)
+		encodeError    = EncodeCreateUserdataError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "createUserdata")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountUpdateUserdataHandler configures the mux to serve the "userdatas"
+// service "updateUserdata" endpoint.
+func MountUpdateUserdataHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -104,9 +166,9 @@ func MountProcessUserdataHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("POST", "/userdatas/update", f)
 }
 
-// NewProcessUserdataHandler creates a HTTP handler which loads the HTTP
-// request and calls the "userdatas" service "processUserdata" endpoint.
-func NewProcessUserdataHandler(
+// NewUpdateUserdataHandler creates a HTTP handler which loads the HTTP request
+// and calls the "userdatas" service "updateUserdata" endpoint.
+func NewUpdateUserdataHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -115,13 +177,13 @@ func NewProcessUserdataHandler(
 	formatter func(err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeProcessUserdataRequest(mux, decoder)
-		encodeResponse = EncodeProcessUserdataResponse(encoder)
-		encodeError    = EncodeProcessUserdataError(encoder, formatter)
+		decodeRequest  = DecodeUpdateUserdataRequest(mux, decoder)
+		encodeResponse = EncodeUpdateUserdataResponse(encoder)
+		encodeError    = EncodeUpdateUserdataError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "processUserdata")
+		ctx = context.WithValue(ctx, goa.MethodKey, "updateUserdata")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -204,6 +266,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 			h.ServeHTTP(w, r)
 		}
 	}
+	mux.Handle("OPTIONS", "/userdatas/create", f)
 	mux.Handle("OPTIONS", "/userdatas/update", f)
 	mux.Handle("OPTIONS", "/userdatas/{pastelid}", f)
 }

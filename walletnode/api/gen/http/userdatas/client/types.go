@@ -14,9 +14,9 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// ProcessUserdataRequestBody is the type of the "userdatas" service
-// "processUserdata" endpoint HTTP request body.
-type ProcessUserdataRequestBody struct {
+// CreateUserdataRequestBody is the type of the "userdatas" service
+// "createUserdata" endpoint HTTP request body.
+type CreateUserdataRequestBody struct {
 	// Real name of the user
 	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
 	// Facebook link of the user
@@ -43,9 +43,67 @@ type ProcessUserdataRequestBody struct {
 	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
 }
 
-// ProcessUserdataResponseBody is the type of the "userdatas" service
-// "processUserdata" endpoint HTTP response body.
-type ProcessUserdataResponseBody struct {
+// UpdateUserdataRequestBody is the type of the "userdatas" service
+// "updateUserdata" endpoint HTTP request body.
+type UpdateUserdataRequestBody struct {
+	// Real name of the user
+	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	// Facebook link of the user
+	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
+	// Twitter link of the user
+	TwitterLink *string `form:"twitter_link,omitempty" json:"twitter_link,omitempty" xml:"twitter_link,omitempty"`
+	// Native currency of user in ISO 4217 Alphabetic Code
+	NativeCurrency *string `form:"native_currency,omitempty" json:"native_currency,omitempty" xml:"native_currency,omitempty"`
+	// Location of the user
+	Location *string `form:"location,omitempty" json:"location,omitempty" xml:"location,omitempty"`
+	// Primary language of the user
+	PrimaryLanguage *string `form:"primary_language,omitempty" json:"primary_language,omitempty" xml:"primary_language,omitempty"`
+	// The categories of user's work
+	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
+	// Biography of the user
+	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
+	// Avatar image of the user
+	AvatarImage *UserImageUploadPayloadRequestBody `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
+	// Cover photo of the user
+	CoverPhoto *UserImageUploadPayloadRequestBody `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
+	// Artist's PastelID
+	ArtistPastelID string `form:"artist_pastelid" json:"artist_pastelid" xml:"artist_pastelid"`
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
+}
+
+// CreateUserdataResponseBody is the type of the "userdatas" service
+// "createUserdata" endpoint HTTP response body.
+type CreateUserdataResponseBody struct {
+	// Result of the request is success or not
+	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
+	// The detail of why result is success/fail, depend on response_code
+	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
+	// Error detail on realname
+	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	// Error detail on facebook_link
+	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
+	// Error detail on twitter_link
+	TwitterLink *string `form:"twitter_link,omitempty" json:"twitter_link,omitempty" xml:"twitter_link,omitempty"`
+	// Error detail on native_currency
+	NativeCurrency *string `form:"native_currency,omitempty" json:"native_currency,omitempty" xml:"native_currency,omitempty"`
+	// Error detail on location
+	Location *string `form:"location,omitempty" json:"location,omitempty" xml:"location,omitempty"`
+	// Error detail on primary_language
+	PrimaryLanguage *string `form:"primary_language,omitempty" json:"primary_language,omitempty" xml:"primary_language,omitempty"`
+	// Error detail on categories
+	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
+	// Error detail on biography
+	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
+	// Error detail on avatar
+	AvatarImage *string `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
+	// Error detail on cover photo
+	CoverPhoto *string `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
+}
+
+// UpdateUserdataResponseBody is the type of the "userdatas" service
+// "updateUserdata" endpoint HTTP response body.
+type UpdateUserdataResponseBody struct {
 	// Result of the request is success or not
 	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
 	// The detail of why result is success/fail, depend on response_code
@@ -101,9 +159,9 @@ type UserdataGetResponseBody struct {
 	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
 }
 
-// ProcessUserdataBadRequestResponseBody is the type of the "userdatas" service
-// "processUserdata" endpoint HTTP response body for the "BadRequest" error.
-type ProcessUserdataBadRequestResponseBody struct {
+// CreateUserdataBadRequestResponseBody is the type of the "userdatas" service
+// "createUserdata" endpoint HTTP response body for the "BadRequest" error.
+type CreateUserdataBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -119,10 +177,47 @@ type ProcessUserdataBadRequestResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// ProcessUserdataInternalServerErrorResponseBody is the type of the
-// "userdatas" service "processUserdata" endpoint HTTP response body for the
+// CreateUserdataInternalServerErrorResponseBody is the type of the "userdatas"
+// service "createUserdata" endpoint HTTP response body for the
 // "InternalServerError" error.
-type ProcessUserdataInternalServerErrorResponseBody struct {
+type CreateUserdataInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// UpdateUserdataBadRequestResponseBody is the type of the "userdatas" service
+// "updateUserdata" endpoint HTTP response body for the "BadRequest" error.
+type UpdateUserdataBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// UpdateUserdataInternalServerErrorResponseBody is the type of the "userdatas"
+// service "updateUserdata" endpoint HTTP response body for the
+// "InternalServerError" error.
+type UpdateUserdataInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -211,10 +306,10 @@ type UserImageUploadPayloadResponseBody struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
-// NewProcessUserdataRequestBody builds the HTTP request body from the payload
-// of the "processUserdata" endpoint of the "userdatas" service.
-func NewProcessUserdataRequestBody(p *userdatas.ProcessUserdataPayload) *ProcessUserdataRequestBody {
-	body := &ProcessUserdataRequestBody{
+// NewCreateUserdataRequestBody builds the HTTP request body from the payload
+// of the "createUserdata" endpoint of the "userdatas" service.
+func NewCreateUserdataRequestBody(p *userdatas.CreateUserdataPayload) *CreateUserdataRequestBody {
+	body := &CreateUserdataRequestBody{
 		Realname:                 p.Realname,
 		FacebookLink:             p.FacebookLink,
 		TwitterLink:              p.TwitterLink,
@@ -235,9 +330,33 @@ func NewProcessUserdataRequestBody(p *userdatas.ProcessUserdataPayload) *Process
 	return body
 }
 
-// NewProcessUserdataUserdataProcessResultCreated builds a "userdatas" service
-// "processUserdata" endpoint result from a HTTP "Created" response.
-func NewProcessUserdataUserdataProcessResultCreated(body *ProcessUserdataResponseBody) *userdatas.UserdataProcessResult {
+// NewUpdateUserdataRequestBody builds the HTTP request body from the payload
+// of the "updateUserdata" endpoint of the "userdatas" service.
+func NewUpdateUserdataRequestBody(p *userdatas.UpdateUserdataPayload) *UpdateUserdataRequestBody {
+	body := &UpdateUserdataRequestBody{
+		Realname:                 p.Realname,
+		FacebookLink:             p.FacebookLink,
+		TwitterLink:              p.TwitterLink,
+		NativeCurrency:           p.NativeCurrency,
+		Location:                 p.Location,
+		PrimaryLanguage:          p.PrimaryLanguage,
+		Categories:               p.Categories,
+		Biography:                p.Biography,
+		ArtistPastelID:           p.ArtistPastelID,
+		ArtistPastelIDPassphrase: p.ArtistPastelIDPassphrase,
+	}
+	if p.AvatarImage != nil {
+		body.AvatarImage = marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadRequestBody(p.AvatarImage)
+	}
+	if p.CoverPhoto != nil {
+		body.CoverPhoto = marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadRequestBody(p.CoverPhoto)
+	}
+	return body
+}
+
+// NewCreateUserdataUserdataProcessResultCreated builds a "userdatas" service
+// "createUserdata" endpoint result from a HTTP "Created" response.
+func NewCreateUserdataUserdataProcessResultCreated(body *CreateUserdataResponseBody) *userdatas.UserdataProcessResult {
 	v := &userdatas.UserdataProcessResult{
 		ResponseCode:    *body.ResponseCode,
 		Detail:          *body.Detail,
@@ -256,9 +375,9 @@ func NewProcessUserdataUserdataProcessResultCreated(body *ProcessUserdataRespons
 	return v
 }
 
-// NewProcessUserdataBadRequest builds a userdatas service processUserdata
+// NewCreateUserdataBadRequest builds a userdatas service createUserdata
 // endpoint BadRequest error.
-func NewProcessUserdataBadRequest(body *ProcessUserdataBadRequestResponseBody) *goa.ServiceError {
+func NewCreateUserdataBadRequest(body *CreateUserdataBadRequestResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -271,9 +390,60 @@ func NewProcessUserdataBadRequest(body *ProcessUserdataBadRequestResponseBody) *
 	return v
 }
 
-// NewProcessUserdataInternalServerError builds a userdatas service
-// processUserdata endpoint InternalServerError error.
-func NewProcessUserdataInternalServerError(body *ProcessUserdataInternalServerErrorResponseBody) *goa.ServiceError {
+// NewCreateUserdataInternalServerError builds a userdatas service
+// createUserdata endpoint InternalServerError error.
+func NewCreateUserdataInternalServerError(body *CreateUserdataInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewUpdateUserdataUserdataProcessResultCreated builds a "userdatas" service
+// "updateUserdata" endpoint result from a HTTP "Created" response.
+func NewUpdateUserdataUserdataProcessResultCreated(body *UpdateUserdataResponseBody) *userdatas.UserdataProcessResult {
+	v := &userdatas.UserdataProcessResult{
+		ResponseCode:    *body.ResponseCode,
+		Detail:          *body.Detail,
+		Realname:        body.Realname,
+		FacebookLink:    body.FacebookLink,
+		TwitterLink:     body.TwitterLink,
+		NativeCurrency:  body.NativeCurrency,
+		Location:        body.Location,
+		PrimaryLanguage: body.PrimaryLanguage,
+		Categories:      body.Categories,
+		Biography:       body.Biography,
+		AvatarImage:     body.AvatarImage,
+		CoverPhoto:      body.CoverPhoto,
+	}
+
+	return v
+}
+
+// NewUpdateUserdataBadRequest builds a userdatas service updateUserdata
+// endpoint BadRequest error.
+func NewUpdateUserdataBadRequest(body *UpdateUserdataBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewUpdateUserdataInternalServerError builds a userdatas service
+// updateUserdata endpoint InternalServerError error.
+func NewUpdateUserdataInternalServerError(body *UpdateUserdataInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -356,9 +526,76 @@ func NewUserdataGetInternalServerError(body *UserdataGetInternalServerErrorRespo
 	return v
 }
 
-// ValidateProcessUserdataResponseBody runs the validations defined on
-// ProcessUserdataResponseBody
-func ValidateProcessUserdataResponseBody(body *ProcessUserdataResponseBody) (err error) {
+// ValidateCreateUserdataResponseBody runs the validations defined on
+// CreateUserdataResponseBody
+func ValidateCreateUserdataResponseBody(body *CreateUserdataResponseBody) (err error) {
+	if body.ResponseCode == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
+	}
+	if body.Detail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
+	}
+	if body.Detail != nil {
+		if utf8.RuneCountInString(*body.Detail) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
+		}
+	}
+	if body.Realname != nil {
+		if utf8.RuneCountInString(*body.Realname) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.Realname, utf8.RuneCountInString(*body.Realname), 256, false))
+		}
+	}
+	if body.FacebookLink != nil {
+		if utf8.RuneCountInString(*body.FacebookLink) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.facebook_link", *body.FacebookLink, utf8.RuneCountInString(*body.FacebookLink), 256, false))
+		}
+	}
+	if body.TwitterLink != nil {
+		if utf8.RuneCountInString(*body.TwitterLink) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.twitter_link", *body.TwitterLink, utf8.RuneCountInString(*body.TwitterLink), 256, false))
+		}
+	}
+	if body.NativeCurrency != nil {
+		if utf8.RuneCountInString(*body.NativeCurrency) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.native_currency", *body.NativeCurrency, utf8.RuneCountInString(*body.NativeCurrency), 256, false))
+		}
+	}
+	if body.Location != nil {
+		if utf8.RuneCountInString(*body.Location) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.location", *body.Location, utf8.RuneCountInString(*body.Location), 256, false))
+		}
+	}
+	if body.PrimaryLanguage != nil {
+		if utf8.RuneCountInString(*body.PrimaryLanguage) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.primary_language", *body.PrimaryLanguage, utf8.RuneCountInString(*body.PrimaryLanguage), 256, false))
+		}
+	}
+	if body.Categories != nil {
+		if utf8.RuneCountInString(*body.Categories) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.categories", *body.Categories, utf8.RuneCountInString(*body.Categories), 256, false))
+		}
+	}
+	if body.Biography != nil {
+		if utf8.RuneCountInString(*body.Biography) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.biography", *body.Biography, utf8.RuneCountInString(*body.Biography), 256, false))
+		}
+	}
+	if body.AvatarImage != nil {
+		if utf8.RuneCountInString(*body.AvatarImage) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.avatar_image", *body.AvatarImage, utf8.RuneCountInString(*body.AvatarImage), 256, false))
+		}
+	}
+	if body.CoverPhoto != nil {
+		if utf8.RuneCountInString(*body.CoverPhoto) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.cover_photo", *body.CoverPhoto, utf8.RuneCountInString(*body.CoverPhoto), 256, false))
+		}
+	}
+	return
+}
+
+// ValidateUpdateUserdataResponseBody runs the validations defined on
+// UpdateUserdataResponseBody
+func ValidateUpdateUserdataResponseBody(body *UpdateUserdataResponseBody) (err error) {
 	if body.ResponseCode == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
 	}
@@ -498,9 +735,9 @@ func ValidateUserdataGetResponseBody(body *UserdataGetResponseBody) (err error) 
 	return
 }
 
-// ValidateProcessUserdataBadRequestResponseBody runs the validations defined
-// on processUserdata_BadRequest_response_body
-func ValidateProcessUserdataBadRequestResponseBody(body *ProcessUserdataBadRequestResponseBody) (err error) {
+// ValidateCreateUserdataBadRequestResponseBody runs the validations defined on
+// createUserdata_BadRequest_response_body
+func ValidateCreateUserdataBadRequestResponseBody(body *CreateUserdataBadRequestResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -522,9 +759,57 @@ func ValidateProcessUserdataBadRequestResponseBody(body *ProcessUserdataBadReque
 	return
 }
 
-// ValidateProcessUserdataInternalServerErrorResponseBody runs the validations
-// defined on processUserdata_InternalServerError_response_body
-func ValidateProcessUserdataInternalServerErrorResponseBody(body *ProcessUserdataInternalServerErrorResponseBody) (err error) {
+// ValidateCreateUserdataInternalServerErrorResponseBody runs the validations
+// defined on createUserdata_InternalServerError_response_body
+func ValidateCreateUserdataInternalServerErrorResponseBody(body *CreateUserdataInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateUpdateUserdataBadRequestResponseBody runs the validations defined on
+// updateUserdata_BadRequest_response_body
+func ValidateUpdateUserdataBadRequestResponseBody(body *UpdateUserdataBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateUpdateUserdataInternalServerErrorResponseBody runs the validations
+// defined on updateUserdata_InternalServerError_response_body
+func ValidateUpdateUserdataInternalServerErrorResponseBody(body *UpdateUserdataInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

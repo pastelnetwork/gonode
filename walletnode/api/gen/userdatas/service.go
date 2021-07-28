@@ -15,8 +15,10 @@ import (
 
 // Pastel Process User Specified Data
 type Service interface {
-	// Runs a user data update process
-	ProcessUserdata(context.Context, *ProcessUserdataPayload) (res *UserdataProcessResult, err error)
+	// Create new user data
+	CreateUserdata(context.Context, *CreateUserdataPayload) (res *UserdataProcessResult, err error)
+	// Update user data for an existing user
+	UpdateUserdata(context.Context, *UpdateUserdataPayload) (res *UserdataProcessResult, err error)
 	// Gets the Userdata detail
 	UserdataGet(context.Context, *UserdataGetPayload) (res *UserSpecifiedData, err error)
 }
@@ -29,11 +31,11 @@ const ServiceName = "userdatas"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"processUserdata", "userdataGet"}
+var MethodNames = [3]string{"createUserdata", "updateUserdata", "userdataGet"}
 
-// ProcessUserdataPayload is the payload type of the userdatas service
-// processUserdata method.
-type ProcessUserdataPayload struct {
+// CreateUserdataPayload is the payload type of the userdatas service
+// createUserdata method.
+type CreateUserdataPayload struct {
 	// Real name of the user
 	Realname *string
 	// Facebook link of the user
@@ -61,7 +63,7 @@ type ProcessUserdataPayload struct {
 }
 
 // UserdataProcessResult is the result type of the userdatas service
-// processUserdata method.
+// createUserdata method.
 type UserdataProcessResult struct {
 	// Result of the request is success or not
 	ResponseCode int
@@ -87,6 +89,35 @@ type UserdataProcessResult struct {
 	AvatarImage *string
 	// Error detail on cover photo
 	CoverPhoto *string
+}
+
+// UpdateUserdataPayload is the payload type of the userdatas service
+// updateUserdata method.
+type UpdateUserdataPayload struct {
+	// Real name of the user
+	Realname *string
+	// Facebook link of the user
+	FacebookLink *string
+	// Twitter link of the user
+	TwitterLink *string
+	// Native currency of user in ISO 4217 Alphabetic Code
+	NativeCurrency *string
+	// Location of the user
+	Location *string
+	// Primary language of the user
+	PrimaryLanguage *string
+	// The categories of user's work
+	Categories *string
+	// Biography of the user
+	Biography *string
+	// Avatar image of the user
+	AvatarImage *UserImageUploadPayload
+	// Cover photo of the user
+	CoverPhoto *UserImageUploadPayload
+	// Artist's PastelID
+	ArtistPastelID string
+	// Passphrase of the artist's PastelID
+	ArtistPastelIDPassphrase string
 }
 
 // UserdataGetPayload is the payload type of the userdatas service userdataGet

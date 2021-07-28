@@ -23,9 +23,29 @@ var _ = Service("userdatas", func() {
 	Error("NotFound", ErrorResult)
 	Error("InternalServerError", ErrorResult)
 
-	Method("processUserdata", func() {
-		Description("Runs a user data update process")
-		Meta("swagger:summary", "Process user data")
+	Method("createUserdata", func() {
+		Description("Create new user data")
+		Meta("swagger:summary", "Create new user data")
+
+		Payload(func() {
+			Extend(UserSpecifiedData)
+		})
+		Result(UserdataProcessResult)
+
+		HTTP(func() {
+			POST("/create")
+			MultipartRequest()
+
+			// Define error HTTP statuses.
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusCreated)
+		})
+	})
+
+	Method("updateUserdata", func() {
+		Description("Update user data for an existing user")
+		Meta("swagger:summary", "Update user data for an existing user")
 
 		Payload(func() {
 			Extend(UserSpecifiedData)
@@ -62,6 +82,7 @@ var _ = Service("userdatas", func() {
 		})
 	})
 })
+
 // ProcessTaskPayload represents a payload for returning task.
 var ProcessTaskPayload = Type("ProcessTaskPayload", func() {
 	Attribute("taskId", String, "Task ID of the user data process", func() {
@@ -156,7 +177,6 @@ var UserSpecifiedData = Type("UserSpecifiedData", func() {
 
 	Required("artist_pastelid", "artist_pastelid_passphrase")
 })
-
 
 // UserdataProcessResult is result of process userdata
 var UserdataProcessResult = Type("UserdataProcessResult", func() {
