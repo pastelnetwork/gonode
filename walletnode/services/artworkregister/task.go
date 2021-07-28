@@ -50,7 +50,7 @@ type Task struct {
 	fingerprintSignature []byte
 
 	// TODO: need to update rqservice code to return the following info
-	rqSymbolIdFiles rq.SymbolIdFiles
+	rqSymbolIDFiles rq.SymbolIdFiles
 	rqEncodeParams  rqnode.EncoderParameters
 
 	// TODO: call cNodeAPI to get the following info
@@ -442,7 +442,7 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 		return errors.Errorf("gen RaptorQ symbols' identifiers failed %w", err)
 	}
 
-	task.rqSymbolIdFiles = files
+	task.rqSymbolIDFiles = files
 	task.rqEncodeParams = encodeInfo.EncoderParam
 	return nil
 }
@@ -716,7 +716,7 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 		log.Debug(string(buf))
 	}
 
-	symbolsIdFilesMap, err := task.rqSymbolIdFiles.ToMap()
+	symbolsIdFilesMap, err := task.rqSymbolIDFiles.ToMap()
 	if err != nil {
 		return errors.Errorf("failed to create rq symbol identifiers files map %w", err)
 	}

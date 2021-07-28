@@ -234,7 +234,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
-func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistSignature []byte, key1 string, key2 string, rqids map[string][]byte, oti []byte) (int64, error) {
+func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, artistSignature []byte, key1 string, key2 string, rqids map[string][]byte, oti []byte) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
 		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
@@ -288,6 +288,7 @@ func (task *Task) GetRegistrationFee(ctx context.Context, ticket []byte, artistS
 	return task.registrationFee, nil
 }
 
+// ValidatePreBurnTransaction will get pre-burnt transaction fee txid, wait until it's confirmations meet expectation.
 func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
 	var err error
 	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
@@ -303,7 +304,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 		}
 
 		// compare rqsymbols
-		if err := task.compareRQSymbolId(ctx); err != nil {
+		if err := task.compareRQSymbolID(ctx); err != nil {
 			return errors.Errorf("failed to generate rqids %w", err)
 		}
 
@@ -472,10 +473,8 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 	for nodeID, signature := range task.peersArtTicketSignature {
 		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID, "ed448"); err != nil {
 			return errors.Errorf("failed to verify signature %s of node %s", signature, nodeID)
-		} else {
-			if !ok {
-				return errors.Errorf("signature of node %s mistmatch", nodeID)
-			}
+		} else if !ok {
+			return errors.Errorf("signature of node %s mistmatch", nodeID)
 		}
 	}
 	return nil
@@ -609,7 +608,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pa
 	}, nil
 }
 
-func (task *Task) compareRQSymbolId(ctx context.Context) error {
+func (task *Task) compareRQSymbolID(ctx context.Context) error {
 	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
 	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
 	if err != nil {
@@ -637,29 +636,29 @@ func (task *Task) compareRQSymbolId(ctx context.Context) error {
 	}
 
 	// pick just one file from wallnode to compare rq symbols
-	var rqSymbolIdFile rq.SymbolIdFile
+	var rqSymbolIDFile rq.SymbolIdFile
 	for _, v := range task.RQIDS {
-		if err := json.Unmarshal(v, &rqSymbolIdFile); err != nil {
+		if err := json.Unmarshal(v, &rqSymbolIDFile); err != nil {
 			return errors.Errorf("failed to unmarshal raptorq symbols identifiers file %w", err)
 		}
 		break
 	}
 
 	// pick just one file generated to compare
-	var rqRawSymbolIdFile rqnode.RawSymbolIdFile
+	var rqRawSymbolIDFile rqnode.RawSymbolIdFile
 	for _, v := range encodeInfo.SymbolIdFiles {
-		rqRawSymbolIdFile = v
+		rqRawSymbolIDFile = v
 		break
 	}
-	sort.Strings(rqSymbolIdFile.SymbolIdentifiers)
-	sort.Strings(rqRawSymbolIdFile.SymbolIdentifiers)
-	if len(rqRawSymbolIdFile.SymbolIdentifiers) != len(rqSymbolIdFile.SymbolIdentifiers) {
+	sort.Strings(rqSymbolIDFile.SymbolIdentifiers)
+	sort.Strings(rqRawSymbolIDFile.SymbolIdentifiers)
+	if len(rqRawSymbolIDFile.SymbolIdentifiers) != len(rqSymbolIDFile.SymbolIdentifiers) {
 		return errors.Errorf("number of raptorq symbols doesn't matched")
 	}
 
-	for i := range rqSymbolIdFile.SymbolIdentifiers {
-		if rqSymbolIdFile.SymbolIdentifiers[i] != rqRawSymbolIdFile.SymbolIdentifiers[i] {
-			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, rqSymbolIdFile.SymbolIdentifiers[i], rqRawSymbolIdFile.SymbolIdentifiers[i])
+	for i := range rqSymbolIDFile.SymbolIdentifiers {
+		if rqSymbolIDFile.SymbolIdentifiers[i] != rqRawSymbolIDFile.SymbolIdentifiers[i] {
+			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, rqSymbolIDFile.SymbolIdentifiers[i], rqRawSymbolIDFile.SymbolIdentifiers[i])
 		}
 	}
 
@@ -699,6 +698,7 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 	return previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, nil
 }
 
+// AddPeerArticketSignature is called by supernode peers to primary first-rank supernode to send it's signature
 func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) error {
 	task.peersArtTicketSignatureMtx.Lock()
 	defer task.peersArtTicketSignatureMtx.Unlock()
