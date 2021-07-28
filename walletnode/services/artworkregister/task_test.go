@@ -964,7 +964,6 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 
 	type args struct {
 		task                *Task
-		connectReturns      rqnode.Connection
 		connectErr          error
 		encodeInfoReturns   *rqnode.EncodeInfo
 		findTicketIDReturns *pastel.IDTicket
@@ -973,10 +972,8 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		signErr             error
 	}
 	testCases := map[string]struct {
-		args              args
-		wantErr           error
-		wantSymbolIDFiles rq.SymbolIdFiles
-		wantEncoderParams *rqnode.EncoderParameters
+		args    args
+		wantErr error
 	}{
 		"success": {
 			args: args{
@@ -1154,9 +1151,8 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
-		args     args
-		wantErr  error
-		wantSign []byte
+		args    args
+		wantErr error
 	}{
 		"success": {
 			args: args{
