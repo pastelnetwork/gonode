@@ -33,6 +33,7 @@ const (
 	recordxChaChaPolyProtocol = "ALTSRP_XCHACHA20_POLY1305_IETF"
 	kdfContext                = "__auth__"
 	kdfSubKeyID               = 99
+	challengeSize             = 16
 )
 
 var (
@@ -209,7 +210,7 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 }
 
 func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) error {
-	challengeA := make([]byte, 1)
+	challengeA := make([]byte, challengeSize)
 	rand.Read(challengeA)
 
 	if err := s.writeHandshake(&challengeA); err != nil {
@@ -312,7 +313,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	challengeB := make([]byte, 1)
+	challengeB := make([]byte, challengeSize)
 	rand.Read(challengeB)
 	if err := s.writeHandshake(&challengeB); err != nil {
 		return fmt.Errorf("write handshake: %w", err)
