@@ -6,7 +6,7 @@ type RQIDSList []*RQIDS
 // RQIDS define a symbol id file
 type RQIDS struct {
 	// Id = bash64(hash(file + signature))
-	Id string
+	ID string
 
 	// Content is the byte serialization of the RaptorQ symbols file in the following format
 	// RANDOM-GUID1..X
@@ -22,7 +22,7 @@ type RQIDS struct {
 func (rqidsList RQIDSList) Identifiers() []string {
 	var identifier []string
 	for _, rqids := range rqidsList {
-		identifier = append(identifier, rqids.Id)
+		identifier = append(identifier, rqids.ID)
 	}
 
 	return identifier
@@ -32,7 +32,7 @@ func (rqidsList RQIDSList) Identifiers() []string {
 func (rqidsList RQIDSList) ToMap() map[string][]byte {
 	m := make(map[string][]byte, len(rqidsList))
 	for _, rqids := range rqidsList {
-		m[rqids.Id] = rqids.Content
+		m[rqids.ID] = rqids.Content
 	}
 	return m
 }

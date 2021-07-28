@@ -22,6 +22,7 @@ type GetInfoResult struct {
 	Errors          string  `json:"errors"`
 }
 
+// GetTransactionDetailsResult represents a transaction details
 type GetTransactionDetailsResult struct {
 	Account           string   `json:"account"`
 	Address           string   `json:"address,omitempty"`
@@ -48,7 +49,7 @@ type GetTransactionResult struct {
 	Hex             string                        `json:"hex"`
 }
 
-// GetBlockVerboseResult models the data from the getblock command when the
+// GetBlockVerbose1Result models the data from the getblock command when the
 // verbose flag is set to 1 - getblock returns an object
 // whose tx field is an array of transaction hashes
 type GetBlockVerbose1Result struct {

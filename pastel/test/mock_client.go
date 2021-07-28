@@ -27,7 +27,7 @@ const (
 	// GetBlockVerbose1Method represent GetBlockVerbose1 method
 	GetBlockVerbose1Method = "GetBlockVerbose1"
 
-	// ListenOnGetBlockCountMethod represent  GetBlockCount method
+	// GetBlockCountMethod represent  GetBlockCount method
 	GetBlockCountMethod = "GetBlockCount"
 
 	// FindTicketByID represent FindTicketByID method
@@ -119,6 +119,7 @@ func (client *Client) ListenOnGetBlockVerbose1(blockInfo *pastel.GetBlockVerbose
 	return client
 }
 
+// ListenOnFindTicketByID listening FindTicketByID
 func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err error) *Client {
 	client.On(FindTicketByID, mock.Anything, mock.Anything).Return(idticket, err)
 	return client

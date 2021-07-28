@@ -11,7 +11,7 @@ type SymbolIdFiles []*SymbolIdFile
 type SymbolIdFile struct {
 	Id                string   `json:"id;omitempty"`
 	BlockHash         string   `json:"block_hash;omitempty"`
-	PastelId          string   `json:"pastel_id;omitempty"`
+	PastelID          string   `json:"pastel_id;omitempty"`
 	SymbolIdentifiers []string `json:"symbol_identifiers;omitempty"`
 	Signature         []byte   `json:"signature;omitempty"`
 	FileIdentifer     string   `json:"-"`

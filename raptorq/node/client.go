@@ -15,7 +15,7 @@ type Config struct {
 type RawSymbolIdFile struct {
 	Id                string
 	BlockHash         string
-	PastelId          string
+	PastelID          string
 	SymbolIdentifiers []string
 }
 

@@ -48,6 +48,7 @@ type ArtTicket struct {
 	AppTicketData AppTicket `json:"-"`
 }
 
+// FingerAndScores represents structure of app ticket
 type FingerAndScores struct {
 	FingerprintData []byte
 	Fingerprints    probe.Fingerprints
@@ -90,6 +91,7 @@ type AppTicket struct {
 	RQOti []byte   `json:"rq_oti"`
 }
 
+// TicketSignatures represents signatures from parties
 type TicketSignatures struct {
 	Artist map[string]string `json:"artist,omitempty"`
 	Mn1    map[string]string `json:"mn1,omitempty"`
@@ -97,7 +99,7 @@ type TicketSignatures struct {
 	Mn3    map[string]string `json:"mn3,omitempty"`
 }
 
-// Command
+// RegisterArtRequest represents request to register an art
 // "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "key1", "key2", 100)")
 type RegisterArtRequest struct {
 	Ticket      *ArtTicket
@@ -109,6 +111,7 @@ type RegisterArtRequest struct {
 	Fee         int64
 }
 
+// GetRegisterArtFeeRequest represents a request to get registration fee
 type GetRegisterArtFeeRequest struct {
 	Ticket      *ArtTicket
 	Signatures  *TicketSignatures
@@ -131,6 +134,7 @@ type internalArtTicket struct {
 	AppTicket []byte `json:"app_ticket"`
 }
 
+// EncodeArtTicket encodes  ArtTicket into byte array
 func EncodeArtTicket(ticket *ArtTicket) ([]byte, error) {
 	appTicket, err := json.Marshal(ticket.AppTicketData)
 	if err != nil {
@@ -157,6 +161,7 @@ func EncodeArtTicket(ticket *ArtTicket) ([]byte, error) {
 	return b, nil
 }
 
+// DecodeArtTicket decoded byte array into ArtTicket
 func DecodeArtTicket(b []byte) (*ArtTicket, error) {
 	res := internalArtTicket{}
 	err := json.Unmarshal(b, &res)
@@ -185,6 +190,7 @@ func DecodeArtTicket(b []byte) (*ArtTicket, error) {
 
 }
 
+// EncodeSignatures encodes TicketSignatures into byte array
 func EncodeSignatures(signatures TicketSignatures) ([]byte, error) {
 	// reset signatures of Mn1 if any
 	signatures.Mn1 = nil

@@ -201,7 +201,7 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 		Path:        inputPath,
 		FilesNumber: copies,
 		BlockHash:   blockHash,
-		PastelId:    pastelID,
+		PastelID:    pastelID,
 	}
 
 	res, err := service.client.EncodeMetaData(ctx, &req)
@@ -229,7 +229,7 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 		symbolIDFiles[fileID] = node.RawSymbolIdFile{
 			Id:                lines[0],
 			BlockHash:         lines[1],
-			PastelId:          lines[2],
+			PastelID:          lines[2],
 			SymbolIdentifiers: lines[3:],
 		}
 
