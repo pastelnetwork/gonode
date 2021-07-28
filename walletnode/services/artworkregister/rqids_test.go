@@ -14,7 +14,7 @@ func TestIdentifiers(t *testing.T) {
 		res   []string
 	}{
 		"simple": {
-			rqIDs: RQIDSList{&RQIDS{Id: "a"}, &RQIDS{Id: "b"}},
+			rqIDs: RQIDSList{&RQIDS{ID: "a"}, &RQIDS{ID: "b"}},
 			res:   []string{"a", "b"},
 		},
 		"empty": {
@@ -42,7 +42,7 @@ func TestToMap(t *testing.T) {
 		res   map[string][]byte
 	}{
 		"simple": {
-			rqIDs: RQIDSList{&RQIDS{Id: "a", Content: []byte("abc")}, &RQIDS{Id: "b", Content: []byte("abc")}},
+			rqIDs: RQIDSList{&RQIDS{ID: "a", Content: []byte("abc")}, &RQIDS{ID: "b", Content: []byte("abc")}},
 			res:   map[string][]byte{"a": []byte("abc"), "b": []byte("abc")},
 		},
 	}
