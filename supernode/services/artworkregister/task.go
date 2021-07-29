@@ -419,6 +419,12 @@ func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 
 func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, timeout time.Duration) <-chan error {
 	ch := make(chan error)
+	timeoutCh := make(chan struct{})
+	go func() {
+		time.Sleep(timeout)
+		close(timeoutCh)
+	}()
+
 	go func(ctx context.Context, txid string) {
 		defer close(ch)
 		retry := 0
@@ -436,7 +442,7 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 					ch <- nil
 					return
 				}
-			case <-time.After(timeout):
+			case <-timeoutCh:
 				ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
 				return
 			}

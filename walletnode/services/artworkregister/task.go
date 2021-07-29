@@ -197,7 +197,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 
 				result, err := task.pastelClient.GetRawTransactionVerbose1(subCtx, txID)
 				if err != nil {
-					errors.Errorf("failed to get transaction %w", err)
+					return errors.Errorf("failed to get transaction %w", err)
 				}
 
 				if result.Confirmations >= expectedConfirms {
@@ -730,7 +730,7 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 	// check if fee is over-expection
 	task.registrationFee = task.nodes.RegistrationFee()
 	if task.registrationFee > int64(task.Request.MaximumFee) {
-		errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
+		return errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
 	}
 
 	task.registrationFee = task.nodes.RegistrationFee()

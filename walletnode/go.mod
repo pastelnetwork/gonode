@@ -10,7 +10,6 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jbenet/go-base58 v0.0.0-20150317085156-6237cf65f3a6
-	github.com/kolesa-team/go-webp v1.0.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/p2p v0.0.0-20210615205941-9aa3fc8e6fee
@@ -32,7 +31,6 @@ replace (
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/p2p => ../p2p
 	github.com/pastelnetwork/gonode/pastel => ../pastel
-	github.com/pastelnetwork/gonode/probe => ../probe
 	github.com/pastelnetwork/gonode/proto => ../proto
 	github.com/pastelnetwork/gonode/raptorq => ../raptorq
 )
