@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/pastelnetwork/gonode/metadb/network/walletnode/node"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/metadb/network/walletnode/node"
 )
 
 // Node represent supernode connection.
@@ -13,12 +13,12 @@ type Node struct {
 	node.Client
 	node.Connection
 	node.ProcessUserdata
-	activated     bool
-	address  string
-	pastelID string
-	Result *userdata.UserdataProcessResult
+	activated bool
+	address   string
+	pastelID  string
+	Result    *userdata.UserdataProcessResult
 	ResultGet *userdata.UserdataProcessRequest
-	isPrimary     bool
+	isPrimary bool
 }
 
 func (node *Node) String() string {

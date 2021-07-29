@@ -2,8 +2,8 @@ package userdataprocess
 
 import (
 	"context"
-	"fmt"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -20,13 +20,13 @@ type Task struct {
 	*Service
 
 	// information of nodes process to set userdata
-	nodes node.List
+	nodes      node.List
 	resultChan chan *userdata.UserdataProcessResult
 	err        error
 	request    *userdata.UserdataProcessRequest
 
 	// information user pastelid to retrieve userdata
-	userpastelid	string // user pastelid
+	userpastelid  string // user pastelid
 	resultChanGet chan *userdata.UserdataProcessRequest
 }
 
@@ -84,7 +84,7 @@ func (task *Task) run(ctx context.Context) error {
 		errs = errors.Append(errs, err)
 		log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
 	}
-	
+
 	if maxNode != 1 && len(nodes) < task.config.NumberSuperNodes {
 		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
 	}
@@ -105,7 +105,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	if task.request == nil {
 		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
-		if err := nodes.ReceiveUserdata(ctx, task.userpastelid) ; err != nil {
+		if err := nodes.ReceiveUserdata(ctx, task.userpastelid); err != nil {
 			return err
 		} else {
 			// Post on result channel
@@ -115,31 +115,31 @@ func (task *Task) run(ctx context.Context) error {
 			} else {
 				return errors.Errorf("failed to receive userdata")
 			}
-			
+
 			log.WithContext(ctx).Debug("Finished retrieve userdata")
 		}
 	} else {
 		// PROCESS TO SET/UPDATE USERDATA TO METADATA LAYER
 		// Get the previous block hash
 		// Get block num
-		
+
 		// TODO: Unblock this part after merge
 		/*
-		blockNum, err := task.pastelClient.GetBlockCount(ctx)
-		if err != nil {
-			return nil, errors.Errorf("failed to get block num: %w", err)
-		}
+			blockNum, err := task.pastelClient.GetBlockCount(ctx)
+			if err != nil {
+				return nil, errors.Errorf("failed to get block num: %w", err)
+			}
 
-		// Get block hash string
-		blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
-		if err != nil {
-			return nil, errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
-		}*/
+			// Get block hash string
+			blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
+			if err != nil {
+				return nil, errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
+			}*/
 
 		// Decode hash string to byte
-		task.request.PreviousBlockHash  = "" /*blockInfo.Hash*/
+		task.request.PreviousBlockHash = "" /*blockInfo.Hash*/
 		if err != nil {
-			return errors.Errorf("failed to convert hash string %s to bytes: %w", ""/*blockInfo.Hash*/, err)
+			return errors.Errorf("failed to convert hash string %s to bytes: %w", "" /*blockInfo.Hash*/, err)
 		}
 
 		// Get the value of task.request.ArtistPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
@@ -152,7 +152,7 @@ func (task *Task) run(ctx context.Context) error {
 		}
 
 		// Hash the request
-		hashvalue,err := userdata.Sha3256hash(js)
+		hashvalue, err := userdata.Sha3256hash(js)
 		if err != nil {
 			return errors.Errorf("failed to hash request %w", err)
 		}
@@ -164,14 +164,14 @@ func (task *Task) run(ctx context.Context) error {
 		}
 
 		userdata := &userdata.UserdataProcessRequestSigned{
-			Userdata: 		task.request,
-			UserdataHash:	string(hashvalue),
-			Signature:		string(signature),
+			Userdata:     task.request,
+			UserdataHash: string(hashvalue),
+			Signature:    string(signature),
 		}
 
 		// Send userdata to supernodes for storing in MDL's rqlite db.
 
-		if err := nodes.SendUserdata(ctx, userdata) ; err != nil {
+		if err := nodes.SendUserdata(ctx, userdata); err != nil {
 			return err
 		} else {
 			res, err := task.AggregateResult(ctx, nodes)
@@ -183,7 +183,6 @@ func (task *Task) run(ctx context.Context) error {
 			log.WithContext(ctx).WithField("userdata_result", res).Debug("Posted userdata result")
 		}
 	}
-
 
 	// close the connections
 	for i := range nodes {
@@ -197,7 +196,7 @@ func (task *Task) run(ctx context.Context) error {
 }
 
 // AggregateResult aggregate all results return by all supernode, and consider it valid or not
-func (task *Task) AggregateResult(ctx context.Context,nodes node.List) (userdata.UserdataProcessResult, error) {
+func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdata.UserdataProcessResult, error) {
 	aggregate := make(map[string][]int)
 	count := 0
 	for i, node := range nodes {
@@ -216,7 +215,7 @@ func (task *Task) AggregateResult(ctx context.Context,nodes node.List) (userdata
 			if err != nil {
 				errors.Errorf("failed hash the result %w", err)
 			}
-			aggregate[string(hashvalue)] = append(aggregate[string(hashvalue)],i)
+			aggregate[string(hashvalue)] = append(aggregate[string(hashvalue)], i)
 		}
 	}
 
@@ -224,7 +223,7 @@ func (task *Task) AggregateResult(ctx context.Context,nodes node.List) (userdata
 		// If there is not enough reponse from supernodes
 		return userdata.UserdataProcessResult{
 			ResponseCode: userdata.ErrorNotEnoughSupernodeResponse,
-			Detail 		: userdata.Description[userdata.ErrorNotEnoughSupernodeResponse],
+			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeResponse],
 		}, nil
 	}
 
@@ -240,19 +239,18 @@ func (task *Task) AggregateResult(ctx context.Context,nodes node.List) (userdata
 	if len(aggregate[finalHashKey]) < task.config.MinimalNodeConfirmSuccess {
 		return userdata.UserdataProcessResult{
 			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm,
-			Detail 		: userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
+			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
 		}, nil
 	}
 
 	// There is enough supernodes verified our request, so we return that response
-	if (len(aggregate[finalHashKey]) > 0 && nodes[(aggregate[finalHashKey])[0]] != nil) {
+	if len(aggregate[finalHashKey]) > 0 && nodes[(aggregate[finalHashKey])[0]] != nil {
 		result := *(nodes[(aggregate[finalHashKey])[0]].Result)
 		return result, nil
 	}
-	
+
 	return userdata.UserdataProcessResult{}, errors.Errorf("failed to Aggregate Result")
 }
-
 
 // meshNodes establishes communication between supernodes.
 func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex int) (node.List, error) {
@@ -267,7 +265,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	}
 	primary.SetPrimary(true)
 
-	if len (nodes) == 1 {
+	if len(nodes) == 1 {
 		// If the number of nodes only have 1 node, we use this primary node and return directly
 		meshNodes.Add(primary)
 		return meshNodes, nil
@@ -338,9 +336,9 @@ func (task *Task) pastelTopNodes(ctx context.Context, maxNode int) (node.List, e
 	if err != nil {
 		return nil, err
 	}
-	count :=  0
+	count := 0
 	for _, mn := range mns {
-		count++;
+		count++
 		if count <= maxNode {
 			nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
 		} else {
@@ -350,7 +348,6 @@ func (task *Task) pastelTopNodes(ctx context.Context, maxNode int) (node.List, e
 
 	return nodes, nil
 }
-
 
 // Error returns task err
 func (task *Task) Error() error {
@@ -370,11 +367,11 @@ func (task *Task) SubscribeProcessResultGet() <-chan *userdata.UserdataProcessRe
 // NewTask returns a new Task instance.
 func NewTask(service *Service, request *userdata.UserdataProcessRequest, userpastelid string) *Task {
 	return &Task{
-		Task:       task.New(StatusTaskStarted),
-		Service:    service,
-		request:    request,
-		userpastelid:	userpastelid,	
-		resultChan: make(chan *userdata.UserdataProcessResult),
+		Task:          task.New(StatusTaskStarted),
+		Service:       service,
+		request:       request,
+		userpastelid:  userpastelid,
+		resultChan:    make(chan *userdata.UserdataProcessResult),
 		resultChanGet: make(chan *userdata.UserdataProcessRequest),
 	}
 }
