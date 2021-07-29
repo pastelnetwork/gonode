@@ -25,7 +25,7 @@ type FakePastelClient struct {
 	data       map[string][]byte
 }
 
-func (c *FakePastelClient) Sign(ctx context.Context, data []byte, pastelID, passPhrase string) ([]byte, error) {
+func (c *FakePastelClient) Sign(_ context.Context, data []byte, pastelID, _ string) ([]byte, error) {
 	signature := make([]byte, 20)
 	rand.Read(signature)
 	c.signatures[pastelID] = signature
@@ -33,7 +33,7 @@ func (c *FakePastelClient) Sign(ctx context.Context, data []byte, pastelID, pass
 	return signature, nil
 }
 
-func (c *FakePastelClient) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
 	ret := true
 	if sig, ok := c.signatures[pastelID]; ok {
 		ret = ret && bytes.Equal([]byte(signature), sig)
