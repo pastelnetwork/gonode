@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -112,13 +111,6 @@ func (task *Task) run(ctx context.Context) error {
 	// Disconnect supernodes that did not return file.
 	topNodes.DisconnectInactive()
 
-	// Cancel context when any connection is broken.
-	groupConnClose, _ := errgroup.WithContext(ctx)
-	groupConnClose.Go(func() error {
-		defer cancel()
-		return nodes.WaitConnClose(ctx)
-	})
-
 	// Check files are the same
 	err = nodes.MatchFiles()
 	if err != nil {
@@ -133,7 +125,7 @@ func (task *Task) run(ctx context.Context) error {
 	nodes.Disconnect()
 
 	// Wait for all connections to disconnect.
-	return groupConnClose.Wait()
+	return nil
 }
 
 func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {

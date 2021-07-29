@@ -207,7 +207,7 @@ func TestTaskRun(t *testing.T) {
 			numConnect:         3,
 			numDownload:        3,
 			numDownLoadArtwork: 3,
-			numDone:            3,
+			numDone:            0,
 			numClose:           3,
 		},
 		{
