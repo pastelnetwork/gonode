@@ -158,13 +158,13 @@ func (task *Task) run(ctx context.Context) error {
 	close(nodesDone)
 	for i := range task.nodes {
 		if err := task.nodes[i].Connection.Close(); err != nil {
-			log.WithContext(ctx).Debugf("failed to close connection to node %s %s", task.nodes[i].PastelID(), err)
+			log.WithContext(ctx).WithError(err).Debugf("failed to close connection to node %s", task.nodes[i].PastelID())
 		}
 	}
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.waitTxidValid(newCtx, task.regArtTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout); err != nil {
+	if err := task.waitTxidValid(newCtx, task.regArtTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout, 15*time.Second); err != nil {
 		return errors.Errorf("failed to wait reg-art ticket valid %w", err)
 	}
 
@@ -176,7 +176,7 @@ func (task *Task) run(ctx context.Context) error {
 	log.Debugf("reg-act-txid: %s", actTxid)
 
 	// Wait until actTxid is valid
-	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), task.config.RegActTxTimeout)
+	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), task.config.RegActTxTimeout, 15*time.Second)
 	if err != nil {
 		return errors.Errorf("failed to reg-act ticket valid %w", err)
 	}
@@ -185,12 +185,20 @@ func (task *Task) run(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, timeout time.Duration) error {
+func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, timeout time.Duration, interval time.Duration) error {
+	checkTimeout := func(checked chan<- struct{}) {
+		time.Sleep(timeout)
+		close(checked)
+	}
+
+	timeoutCh := make(chan struct{})
+	go checkTimeout(timeoutCh)
+
 	for {
 		select {
 		case <-ctx.Done():
 			return errors.Errorf("context done %w", ctx.Err())
-		case <-time.After(15 * time.Second):
+		case <-time.After(interval):
 			checkConfirms := func() error {
 				subCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 				defer cancel()
@@ -213,7 +221,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 			} else {
 				return nil
 			}
-		case <-time.After(timeout):
+		case <-timeoutCh:
 			return errors.Errorf("timeout")
 		}
 	}
