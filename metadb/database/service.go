@@ -136,11 +136,6 @@ func (db *DatabaseOps) Run(ctx context.Context) error {
 		return err
 	}
 
-	db.updateTemplate, err = template.ParseFiles(db.config.UpdateTemplatePath)
-	if err != nil {
-		return err
-	}
-
 	log.WithContext(ctx).Info("done initialization")
 	// block until context is done
 	<-ctx.Done()
