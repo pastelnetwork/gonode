@@ -63,7 +63,7 @@ func (s *xchacha20poly1305ietfReKey) EncryptionOverhead() int {
 	return xchacha20poly1305ietf.ABytes
 }
 
-func (s *xchacha20poly1305ietfReKey) Decrypt(dst, ciphertext []byte) ([]byte, error) {
+func (s *xchacha20poly1305ietfReKey) Decrypt(_, ciphertext []byte) ([]byte, error) {
 	seq, err := s.inCounter.Value()
 	if err != nil {
 		return nil, err
