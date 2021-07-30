@@ -54,17 +54,15 @@ type Config struct {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		NumberSuperNodes: defaultNumberSuperNodes,
-
-		NumberRQIDSFiles: defaultNumberRQIDSFiles,
-
+		Config:                   *common.NewConfig(),
+		NumberSuperNodes:         defaultNumberSuperNodes,
+		NumberRQIDSFiles:         defaultNumberRQIDSFiles,
 		RegArtTxMinConfirmations: regArtTxMinConfirmations,
 		RegArtTxTimeout:          regArtTxTimeout,
 		RegActTxMinConfirmations: regActTxMinConfirmations,
 		RegActTxTimeout:          regActTxTimeout,
 		connectToNextNodeDelay:   connectToNextNodeDelay,
 		acceptNodesTimeout:       acceptNodesTimeout,
-
-		thumbnailSize: thumbnailSize,
+		thumbnailSize:            thumbnailSize,
 	}
 }
