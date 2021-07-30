@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -47,6 +49,8 @@ var (
 	defaultWorkDir          = filepath.Join(defaultPath, appName)
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
+
+	rqliteDefaultPort = 4041
 )
 
 // NewApp inits a new command line interface.
@@ -114,6 +118,27 @@ func NewApp() *cli.App {
 	return app
 }
 
+func getDatabaseNodes(ctx context.Context, pastelClient pastel.Client) ([]string, error) {
+	var nodeIPList []string
+	// Note: Lock the db clustering feature, run it in single node first
+	if test := sys.GetStringEnv("DB_CLUSTER", ""); test != "" {
+		nodeList, err := pastelClient.MasterNodesList(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, nodeInfo := range nodeList {
+			address := nodeInfo.ExtAddress
+			segments := strings.Split(address, ":")
+			if len(segments) != 2 {
+				return nil, errors.Errorf("malformed db node address: %s", address)
+			}
+			nodeAddress := fmt.Sprintf("%s:%d", segments[0], rqliteDefaultPort)
+			nodeIPList = append(nodeIPList, nodeAddress)
+		}
+	}
+	return nodeIPList, nil
+}
+
 func runApp(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
@@ -140,17 +165,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.P2P.SetWorkDir(config.WorkDir)
 	p2p := p2p.New(config.P2P)
 
-	var nodeIPList []string
-	// Note: Lock the db clustering feature, run it in single node first
-	if test := sys.GetStringEnv("DB_CLUSTER", ""); test != "" {
-		nodeList, err := pastelClient.MasterNodesList(ctx)
-		if err != nil {
-			log.WithContext(ctx).Errorf("cannot get list of all nodes, err: %w", err)
-		} else {
-			for _, nodeInfo := range nodeList {
-				nodeIPList = append(nodeIPList, nodeInfo.ExtAddress)
-			}
-		}
+	nodeIPList, err := getDatabaseNodes(ctx, pastelClient)
+	if err != nil {
+		return err
 	}
 
 	// new metadb service

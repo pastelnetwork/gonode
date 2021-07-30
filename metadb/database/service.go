@@ -119,10 +119,12 @@ func (db *DatabaseOps) Run(ctx context.Context) error {
 	}
 
 	db.metaDB.WaitForStarting()
-	listOfCommands := strings.Split(string(content), schemaDelimiter)
-	for _, cmd := range listOfCommands {
-		if _, err := db.metaDB.Write(ctx, cmd); err != nil {
-			return err
+	if db.metaDB.IsLeader() {
+		listOfCommands := strings.Split(string(content), schemaDelimiter)
+		for _, cmd := range listOfCommands {
+			if _, err := db.metaDB.Write(ctx, cmd); err != nil {
+				return err
+			}
 		}
 	}
 

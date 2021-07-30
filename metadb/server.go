@@ -110,14 +110,23 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
-	if len(s.nodeIPList) > 0 {
+	selfAddress := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.HTTPPort)
+	var joinIPAddresses []string
+	for _, ip := range s.nodeIPList {
+		if selfAddress == ip {
+			continue
+		}
+		joinIPAddresses = append(joinIPAddresses, ip)
+	}
+
+	if len(joinIPAddresses) > 0 {
 		bootstrap = false
 		log.WithContext(ctx).Info("join addresses specified, node is not bootstrap")
 	} else {
 		log.WithContext(ctx).Info("no join addresses")
 	}
 	// join address supplied, but we don't need them
-	if !isNew && len(s.nodeIPList) > 0 {
+	if !isNew && len(joinIPAddresses) > 0 {
 		log.WithContext(ctx).Info("node is already member of cluster")
 	}
 
@@ -128,15 +137,15 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 	s.db = db
 
 	// execute any requested join operation
-	if len(s.nodeIPList) > 0 && isNew {
-		log.WithContext(ctx).Infof("join addresses are: %v", s.nodeIPList)
+	if len(joinIPAddresses) > 0 && isNew {
+		log.WithContext(ctx).Infof("join addresses are: %v", joinIPAddresses)
 
 		raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
 		// join rqlite cluster
 		joinAddr, err := cluster.Join(
 			ctx,
 			"",
-			s.nodeIPList,
+			joinIPAddresses,
 			db.ID(),
 			raftAddr,
 			true,
@@ -145,7 +154,7 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 			nil,
 		)
 		if err != nil {
-			return nil, errors.Errorf("join cluster at %v: %w", s.nodeIPList, err)
+			return nil, errors.Errorf("join cluster at %v: %w", joinIPAddresses, err)
 		}
 		log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
 	}
