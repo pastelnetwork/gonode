@@ -6,6 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/probe/pkg/dupedetection"
 	"github.com/pastelnetwork/gonode/raptorq"
 )
 
@@ -24,11 +25,12 @@ type Config struct {
 	WorkDir    string `mapstructure:"work-dir" json:"work-dir"`
 	RqFilesDir string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
 
-	Node    `mapstructure:"node" json:"node,omitempty"`
-	Pastel  *pastel.Config  `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
-	P2P     *p2p.Config     `mapstructure:"p2p" json:"p2p,omitempty"`
-	RaptorQ *raptorq.Config `mapstructure:"raptorq" json:"raptorq,omitempty"`
-	MetaDB  *metadb.Config  `mapstructure:"metadb" json:"metadb,omitempty"`
+	Node          `mapstructure:"node" json:"node,omitempty"`
+	Pastel        *pastel.Config        `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
+	P2P           *p2p.Config           `mapstructure:"p2p" json:"p2p,omitempty"`
+	RaptorQ       *raptorq.Config       `mapstructure:"raptorq" json:"raptorq,omitempty"`
+	MetaDB        *metadb.Config        `mapstructure:"metadb" json:"metadb,omitempty"`
+	DupeDetection *dupedetection.Config `mapstructure:"dupe-detection" json:"dupe-detection,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -41,11 +43,12 @@ func (config *Config) String() string {
 // New returns a new Config instance
 func New() *Config {
 	return &Config{
-		LogLevel: defaultLogLevel,
-		Node:     NewNode(),
-		Pastel:   pastel.NewConfig(),
-		P2P:      p2p.NewConfig(),
-		MetaDB:   metadb.NewConfig(),
-		RaptorQ:  raptorq.NewConfig(),
+		LogLevel:      defaultLogLevel,
+		Node:          NewNode(),
+		Pastel:        pastel.NewConfig(),
+		P2P:           p2p.NewConfig(),
+		MetaDB:        metadb.NewConfig(),
+		RaptorQ:       raptorq.NewConfig(),
+		DupeDetection: dupedetection.NewConfig(),
 	}
 }
