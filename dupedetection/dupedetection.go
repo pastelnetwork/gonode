@@ -20,10 +20,10 @@ type DupeDetectionResult struct {
 
 type AlternateNSFWScores struct {
 	Drawings float64 `json:"drawings"`
-	Hentai   float32 `json:"hentai"`
-	Neutral  float32 `json:"neutral"`
-	Porn     float32 `json:"porn"`
-	Sexy     float32 `json:"sexy"`
+	Hentai   float64 `json:"hentai"`
+	Neutral  float64 `json:"neutral"`
+	Porn     float64 `json:"porn"`
+	Sexy     float64 `json:"sexy"`
 }
 
 type Client interface {
