@@ -3,6 +3,7 @@ package conn
 import (
 	"github.com/GoKillers/libsodium-go/crypto/aead/xchacha20poly1305ietf"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -28,11 +29,11 @@ func NewxChaCha20Poly1305IETFReKey(side alts.Side, key []byte) (ALTSRecordCrypto
 
 	inAEAD, err := newRekeyAEADChaChaPoly(key)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "new rekey aead in")
 	}
 	outAEAD, err := newRekeyAEADChaChaPoly(key)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "new rekey aead out")
 	}
 
 	return &xchacha20poly1305ietfReKey{
@@ -46,12 +47,12 @@ func NewxChaCha20Poly1305IETFReKey(side alts.Side, key []byte) (ALTSRecordCrypto
 func (s *xchacha20poly1305ietfReKey) Encrypt(dst, plaintext []byte) ([]byte, error) {
 	seq, err := s.outCounter.Value()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get seq")
 	}
 
 	ec, err := s.outAEAD.Encrypt(plaintext, seq)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "encrypt")
 	}
 	dst = append(dst, ec...)
 	s.outCounter.Inc()
@@ -66,12 +67,12 @@ func (s *xchacha20poly1305ietfReKey) EncryptionOverhead() int {
 func (s *xchacha20poly1305ietfReKey) Decrypt(_, ciphertext []byte) ([]byte, error) {
 	seq, err := s.inCounter.Value()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "get seq")
 	}
 
 	p, err := s.inAEAD.Decrypt(ciphertext, seq)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "decrypt")
 	}
 	s.inCounter.Inc()
 	return p, nil

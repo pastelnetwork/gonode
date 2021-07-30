@@ -91,14 +91,14 @@ func release() {
 
 // data exchange request
 type kexExchangeRequest struct {
-	PubKey    []byte // the client's public key
+	PubKey    [ED448PubKeySize]byte // the client's public key
 	PastelID  string
 	Signature []byte
 }
 
 // data exchange response
 type kexExchangeResponse struct {
-	PubKey    []byte // the server's public key
+	PubKey    [ED448PubKeySize]byte // the server's public key
 	PastelID  string
 	Signature []byte
 }
@@ -236,7 +236,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	}
 
 	request := kexExchangeRequest{
-		PubKey:    pub[:],
+		PubKey:    pub,
 		Signature: signature,
 		PastelID:  signInfo.PastelID,
 	}
@@ -251,15 +251,13 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	if ok, err := secClient.Verify(ctx, append(response.PubKey, challengeA...),
+	if ok, err := secClient.Verify(ctx, append(response.PubKey[:], challengeA...),
 		string(response.Signature), response.PastelID); err != nil || !ok {
 		return fmt.Errorf("failed to verify server public key: %w", err)
 	}
 
-	var serverPubKey [ED448PubKeySize]byte
-	copy(serverPubKey[:], response.PubKey)
 	// compute the secret key for connection
-	secret := curve.ComputeSecret(priv, serverPubKey)
+	secret := curve.ComputeSecret(priv, response.PubKey)
 	if len(secret) < cryptokdf.CryptoKdfKeybytes() {
 		return fmt.Errorf("secret key length is missmatch, len=%d", len(secret))
 	}
@@ -325,7 +323,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	if ok, err := secClient.Verify(ctx, append(request.PubKey, challengeB...),
+	if ok, err := secClient.Verify(ctx, append(request.PubKey[:], challengeB...),
 		string(request.Signature), request.PastelID); err != nil || !ok {
 		return fmt.Errorf("failed to verify public key: %w", err)
 	}
@@ -343,10 +341,8 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
 
-	var clientPubKey [ED448PubKeySize]byte
-	copy(clientPubKey[:], request.PubKey)
 	// compute the secret key for connection
-	secret := curve.ComputeSecret(priv, clientPubKey)
+	secret := curve.ComputeSecret(priv, request.PubKey)
 	if len(secret) < cryptokdf.CryptoKdfKeybytes() {
 		return fmt.Errorf("secret key length is missmatch, len=%d", len(secret))
 	}
@@ -364,7 +360,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	// update the record key
 	s.key = kdfValue
 	response := kexExchangeResponse{
-		PubKey:    pub[:],
+		PubKey:    pub,
 		Signature: signature,
 		PastelID:  signInfo.PastelID,
 	}
@@ -402,7 +398,3 @@ func (s *altsHandshaker) ServerHandshake(ctx context.Context, secClient alts.Sec
 
 	return sc, authinfo.New(), nil
 }
-
-// Close terminates the Handshaker. It should be called when the caller obtains
-// the secure connection.
-func (s *altsHandshaker) Close() {}
