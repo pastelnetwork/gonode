@@ -75,11 +75,6 @@ func (g *altsTC) ClientHandshake(ctx context.Context, _ string, rawConn net.Conn
 	if err != nil {
 		return nil, nil, err
 	}
-	defer func() {
-		if err != nil {
-			chs.Close()
-		}
-	}()
 
 	secureConn, authInfo, err := chs.ClientHandshake(ctx, g.secClient, g.signInfo)
 	if err != nil {
@@ -99,11 +94,6 @@ func (g *altsTC) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthIn
 	if err != nil {
 		return nil, nil, err
 	}
-	defer func() {
-		if err != nil {
-			shs.Close()
-		}
-	}()
 
 	secureConn, authInfo, err := shs.ServerHandshake(ctx, g.secClient, g.signInfo)
 	if err != nil {
@@ -118,9 +108,8 @@ func (g *altsTC) Info() credentials.ProtocolInfo {
 }
 
 func (g *altsTC) Clone() credentials.TransportCredentials {
-	info := *g.info
 	return &altsTC{
-		info: &info,
+		info: g.info,
 		side: g.side,
 	}
 }

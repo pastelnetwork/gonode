@@ -203,7 +203,11 @@ commands:
           command: |
             wget --secure-protocol=TLSv1_2 https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz
             sudo tar -C . -xzf ./libsodium-1.0.18.tar.gz
-            cd libsodium-1.0.18 && sudo ./configure && sudo make && sudo make check && sudo make install
+            cd libsodium-1.0.18
+            sudo ./configure
+            sudo make
+            sudo make check
+            sudo make install
             sudo /sbin/ldconfig -v
 
 jobs:

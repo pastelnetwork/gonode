@@ -25,9 +25,6 @@ type Handshaker interface {
 	// ServerHandshake starts and completes a server-side handshaking and
 	// returns a secure connection and corresponding auth information.
 	ServerHandshake(ctx context.Context, secClient SecClient, signInfo *SignInfo) (net.Conn, credentials.AuthInfo, error)
-	// Close terminates the Handshaker. It should be called when the caller
-	// obtains the secure connection.
-	Close()
 }
 
 // ProtocolInfo provides information regarding the gRPC wire protocol version,
