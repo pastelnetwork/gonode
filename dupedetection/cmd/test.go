@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/dupedetection"
 )
 
 const (
 	defaultConfigFile = "./test.yml"
-	defaultTestImage  = "./test.png"
+	defaultTestImage  = "test.png"
 )
 
 type DDConfig struct {
@@ -20,19 +19,11 @@ type DDConfig struct {
 }
 
 func main() {
-	workDir := flag.String("workDir", "", "a path to the working directory.")
-	confFile := flag.String("confFile", "", "a path to the configuration file.")
-	flag.Parse()
+	fmt.Println("Start dupe detection test...")
+	defer fmt.Println("Finished dupe detection test.")
 
-	configPath := defaultConfigFile
-	if *confFile != "" {
-		configPath = *confFile
-	}
-	config := DDConfig{}
-	if err := configurer.ParseFile(configPath, &config); err != nil {
-		fmt.Errorf("could not parse config file: %v\n", err)
-		return
-	}
+	workDir := flag.String("workDir", "", "a path to the working directory.")
+	flag.Parse()
 
 	currentDir, _ := os.Getwd()
 	if *workDir != "" {
@@ -40,7 +31,12 @@ func main() {
 	}
 	config.DupeDection.SetWorkDir(currentDir)
 
-	client := dupedetection.NewClient(config.DupeDection)
+	ddconf := dupedetection.NewConfig()
+	ddconf.SetWorkDir(currentDir)
+
+	fmt.Printf("input directory: %s\n", ddconf.InputDir)
+	fmt.Printf("output directory: %s\n", ddconf.OutputDir)
+	client := dupedetection.NewClient(ddconf)
 
 	ctx := context.Background()
 	result, err := client.Generate(ctx, defaultTestImage)

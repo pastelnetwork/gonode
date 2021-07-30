@@ -1,3 +1,0 @@
-dd-service:
-  input-dir: "dupe_detection_input_files"
-  output-dir: "dupe_detection_output_files"
