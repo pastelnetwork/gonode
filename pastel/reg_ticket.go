@@ -89,6 +89,7 @@ type AppTicket struct {
 	InternetRarenessScore   float64             `json:"internet_rareness_score"`
 	OpenNSFWScore           float64             `json:"open_nsfw_score"`
 	AlternateNSFWScores     AlternateNSFWScores `json:"alternate_nsfw_scores"`
+	ImageHashes             ImageHashes         `json:"image_hashes"`
 
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
@@ -101,6 +102,13 @@ type AlternateNSFWScores struct {
 	Neutral  float64 `json:"neutral"`
 	Porn     float64 `json:"porn"`
 	Sexy     float64 `json:"sexy"`
+}
+
+// ImageHashes represents image hashes from dupe detection service
+type ImageHashes struct {
+	PerceptualHash string `json:"perceptual_hash"`
+	AverageHash    string `json:"average_hash"`
+	DifferenceHash string `json:"difference_hash"`
 }
 
 // TicketSignatures represents signatures from parties
