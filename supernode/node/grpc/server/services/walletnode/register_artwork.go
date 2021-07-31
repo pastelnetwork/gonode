@@ -170,16 +170,28 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	}
 
 	resp := &pb.ProbeImageReply{
-		Fingerprint:   fingerAndScores.FingerprintData,
-		RarenessScore: int32(fingerAndScores.RarenessScore),
-		NsfwScore:     int32(fingerAndScores.NSFWScore),
-		SeenScore:     int32(fingerAndScores.SeenScore),
+		DupeDetectionVersion:      fingerAndScores.DupeDectectionSystemVersion,
+		HashOfCandidateImg:        fingerAndScores.HashOfCandidateImageFile,
+		IsLikelyDupe:              int32(fingerAndScores.IsLikelyDupe),
+		AverageRarenessScore:      fingerAndScores.OverallAverageRarenessScore,
+		IsRareOnInternet:          int32(fingerAndScores.IsRareOnInternet),
+		MatchesFoundOnFirstPage:   int32(fingerAndScores.MatchesFoundOnFirstPage),
+		NumberOfPagesOfResults:    int32(fingerAndScores.NumberOfPagesOfResults),
+		UrlOfFirstMatchInPage:     fingerAndScores.UrlOfFirstMatchInPage,
+		OpenNsfwScore:             fingerAndScores.OpenNSFWScore,
+		ZstdCompressedFingerprint: fingerAndScores.ZstdCompressedFingerprint,
+		AlternativeNsfwScore: &pb.ProbeImageReply_AlternativeNSFWScore{
+			Drawing: fingerAndScores.AlternativeNSFWScore.Drawing,
+			Hentai:  fingerAndScores.AlternativeNSFWScore.Hentai,
+			Neutral: fingerAndScores.AlternativeNSFWScore.Neutral,
+			Porn:    fingerAndScores.AlternativeNSFWScore.Porn,
+			Sexy:    fingerAndScores.AlternativeNSFWScore.Sexy,
+		},
 	}
 
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("failed to send ProbeImage response: %w", err)
 	}
-	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 	return nil
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
@@ -74,35 +75,29 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 		node := node
 		group.Go(func() (err error) {
 			res, err := node.ProbeImage(ctx, file)
-			node.fingerprint = res.FingerprintData
-			node.rarenessScore = res.RarenessScore
-			node.nSFWScore = res.NSFWScore
-			node.seenScore = res.SeenScore
-			return err
+			if err != nil {
+				return errors.Errorf("failed to probe image: %w", err)
+			}
+			node.fingerprintAndScores = res
+			return nil
 		})
 	}
 	return group.Wait()
 }
 
 // MatchFingerprintAndScores matches fingerprints.
-func (nodes List) MatchFingerprintAndScores() error {
-	node := nodes[0]
-
-	for i := 1; i < len(nodes); i++ {
-		if !bytes.Equal(node.fingerprint, nodes[i].fingerprint) {
-			return errors.Errorf("fingerprints of nodes %q and %q didn't match", node.String(), nodes[i].String())
-		}
-		if node.rarenessScore != nodes[i].rarenessScore {
-			return errors.Errorf("rareness score of nodes %q and %q didn't match", node.String(), nodes[i].String())
-		}
-		if node.nSFWScore != nodes[i].nSFWScore {
-			return errors.Errorf("NSFWS score of nodes %q and %q didn't match", node.String(), nodes[i].String())
-		}
-		if node.seenScore != nodes[i].seenScore {
-			return errors.Errorf("seen score of nodes %q and %q didn't match", node.String(), nodes[i].String())
+func (nodes *List) MatchFingerprintAndScores() error {
+	node := (*nodes)[0]
+	for i := 1; i < len(*nodes); i++ {
+		if err := pastel.CompareFingerPrintAndScore(node.fingerprintAndScores, (*nodes)[i].fingerprintAndScores); err != nil {
+			return errors.Errorf("fingerprint or score of node[%s] and node[%s] not matched: %w", err)
 		}
 	}
 	return nil
+}
+
+func (nodes *List) FingerAndScores() *pastel.FingerAndScores {
+	return (*nodes)[0].fingerprintAndScores
 }
 
 // UploadImageWithThumbnail uploads the image with pqsignatured appended and thumbnail's coordinate to super nodes
@@ -196,24 +191,9 @@ func (nodes *List) RegistrationFee() int64 {
 	return (*nodes)[0].registrationFee
 }
 
-// Fingerprint returns fingerprint of the first node.
-func (nodes *List) Fingerprint() []byte {
-	return (*nodes)[0].fingerprint
-}
-
-// RarenessScore returns rarenessScore score
-func (nodes *List) RarenessScore() int {
-	return (*nodes)[0].rarenessScore
-}
-
-// NSFWScore returns NSFWScore score
-func (nodes *List) NSFWScore() int {
-	return (*nodes)[0].nSFWScore
-}
-
-// SeenScore returns SeenScore score
-func (nodes *List) SeenScore() int {
-	return (*nodes)[0].seenScore
+// CompressedFingerAndScores returns compressed fingerprint and other scores
+func (nodes *List) CompressedFingerAndScores() *pastel.FingerAndScores {
+	return (*nodes)[0].fingerprintAndScores
 }
 
 // PreviewHash returns the hash of the preview thumbnail calculated by the first node

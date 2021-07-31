@@ -9,6 +9,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -37,8 +38,9 @@ type Task struct {
 	// task data to create RegArt ticket
 	artistBlockHeight            int
 	artistBlockHash              []byte
-	fingerprints                 []byte
+	fingerprintAndScores         *pastel.FingerAndScores
 	fingerprintsHash             []byte
+	fingerprint                  []byte
 	imageEncodedWithFingerprints *artwork.File
 	previewHash                  []byte
 	mediumThumbnailHash          []byte
@@ -58,10 +60,6 @@ type Task struct {
 	burnTxid        string
 	regArtTxid      string
 	registrationFee int64
-
-	rarenessScore int
-	nSFWScore     int
-	seenScore     int
 
 	// ticket
 	artistSignature []byte
@@ -490,7 +488,7 @@ func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawS
 }
 
 func (task *Task) createArtTicket(_ context.Context) error {
-	if task.fingerprints == nil {
+	if task.fingerprint == nil {
 		return errEmptyFingerprints
 	}
 	if task.fingerprintsHash == nil {
@@ -543,12 +541,8 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			Thumbnail1Hash:                 task.mediumThumbnailHash,
 			Thumbnail2Hash:                 task.smallThumbnailHash,
 			DataHash:                       task.datahash,
-			Fingerprints:                   task.fingerprints,
 			FingerprintsHash:               task.fingerprintsHash,
 			FingerprintsSignature:          task.fingerprintSignature,
-			RarenessScore:                  task.rarenessScore,
-			NSFWScore:                      task.nSFWScore,
-			SeenScore:                      task.seenScore,
 			RQIDs:                          task.rqids,
 			RQOti:                          task.rqEncodeParams.Oti,
 		},
@@ -662,44 +656,50 @@ func (task *Task) probeImage(ctx context.Context) error {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
 		return errors.Errorf("fingerprints aren't matched")
 	}
+	task.fingerprintAndScores = task.nodes.FingerAndScores()
 	task.UpdateStatus(StatusImageProbed)
-	task.fingerprints = task.nodes.Fingerprint()
-	if task.fingerprintsHash, err = sha3256hash(task.fingerprints); err != nil {
-		return errors.Errorf("failed to hash fingerprints %w", err)
+
+	// As we are going to store the the compressed figerprint to kamedila
+	// so we calculated the hash base on the compressed fingerprint print also
+	fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
+	if err != nil {
+		return errors.Errorf("failed to hash zstd commpressed fingerprints %w", err)
 	}
+	task.fingerprintsHash = []byte(base58.Encode(fingerprintsHash))
 
-	task.rarenessScore = task.nodes.RarenessScore()
-	task.nSFWScore = task.nodes.NSFWScore()
-	task.seenScore = task.nodes.SeenScore()
-
+	// Decompress the fingerprint as bytes for later use
+	task.fingerprint, err = zstd.Decompress(nil, task.fingerprintAndScores.ZstdCompressedFingerprint)
+	if err != nil {
+		return errors.Errorf("failed to decompress finger")
+	}
 	return nil
 }
 
 func (task *Task) uploadImage(ctx context.Context) error {
-	finalImage, err := task.Request.Image.Copy()
+	img1, err := task.Request.Image.Copy()
 	if err != nil {
 		return errors.Errorf("copy image to encode failed %w", err)
 	}
 
-	log.WithContext(ctx).WithField("FileName", finalImage.Name()).Debugf("final image")
-	task.Request.Image = finalImage
+	log.WithContext(ctx).WithField("FileName", img1.Name()).Debugf("final image")
+	task.Request.Image = img1
 
-	imgBytes, err := finalImage.Bytes()
+	if err := task.encodeFingerprint(ctx, task.fingerprint, img1); err != nil {
+		return errors.Errorf("encode image with fingerprint %w", err)
+	}
+	task.imageEncodedWithFingerprints = img1
+
+	imgBytes, err := img1.Bytes()
 	if err != nil {
 		return errors.Errorf("failed to convert image to byte stream %w", err)
 	}
-	if task.datahash, err = sha3256hash(imgBytes); err != nil {
-		return errors.Errorf("failed to hash encoded image %w", err)
-	}
-	// defer finalImage.Remove()
 
-	if err := task.encodeFingerprint(ctx, task.fingerprints, finalImage); err != nil {
-		return errors.Errorf("encode image with fingerprint %w", err)
+	if task.datahash, err = sha3256hash(imgBytes); err != nil {
+		return errors.Errorf("failed to hash encoded image: %w", err)
 	}
-	task.imageEncodedWithFingerprints = finalImage
 
 	// Upload image with pqgsinganature and its thumb to supernodes
-	if err := task.nodes.UploadImageWithThumbnail(ctx, finalImage, task.Request.Thumbnail); err != nil {
+	if err := task.nodes.UploadImageWithThumbnail(ctx, img1, task.Request.Thumbnail); err != nil {
 		return errors.Errorf("upload encoded image and thumbnail coordinate failed %w", err)
 	}
 	// Match thumbnail hashes receiveed from supernodes

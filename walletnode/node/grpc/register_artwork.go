@@ -156,13 +156,22 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	if err != nil {
 		return nil, errors.Errorf("failed to receive send image response: %w", err)
 	}
-	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
-
 	return &pastel.FingerAndScores{
-		FingerprintData: resp.Fingerprint,
-		RarenessScore:   int(resp.RarenessScore),
-		NSFWScore:       int(resp.NsfwScore),
-		SeenScore:       int(resp.SeenScore),
+		DupeDectectionSystemVersion: resp.DupeDetectionVersion,
+		HashOfCandidateImageFile:    resp.HashOfCandidateImg,
+		IsLikelyDupe:                int(resp.IsLikelyDupe),
+		OverallAverageRarenessScore: resp.AverageRarenessScore,
+		IsRareOnInternet:            int(resp.IsRareOnInternet),
+		MatchesFoundOnFirstPage:     int(resp.MatchesFoundOnFirstPage),
+		OpenNSFWScore:               resp.OpenNsfwScore,
+		ZstdCompressedFingerprint:   resp.ZstdCompressedFingerprint,
+		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
+			Drawing: resp.AlternativeNsfwScore.Drawing,
+			Hentai:  resp.AlternativeNsfwScore.Hentai,
+			Neutral: resp.AlternativeNsfwScore.Neutral,
+			Porn:    resp.AlternativeNsfwScore.Porn,
+			Sexy:    resp.AlternativeNsfwScore.Sexy,
+		},
 	}, nil
 }
 

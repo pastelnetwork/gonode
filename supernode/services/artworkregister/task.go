@@ -1,7 +1,6 @@
 package artworkregister
 
 import (
-	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
@@ -18,7 +17,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/probe"
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -34,10 +32,8 @@ type Task struct {
 	imageSizeBytes   int
 
 	fingerprintsData []byte
-	fingerprints     probe.Fingerprints
-	rarenessScore    int
-	nSFWScore        int
-	seenScore        int
+	fingerAndScores  *pastel.FingerAndScores
+	fingerprints     pastel.Fingerprint
 
 	PreviewThumbnail *artwork.File
 	MediumThumbnail  *artwork.File
@@ -197,9 +193,6 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 		return nil
 	})
 
-	var fingerAndScores *pastel.FingerAndScores
-	var fingerPrints probe.Fingerprints
-
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageProbed)
 
@@ -208,7 +201,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 			return errors.Errorf("failed to load image %s %w", file.Name(), err)
 		}
 
-		fingerAndScores, fingerPrints, err = task.genFingerprintsData(ctx, img)
+		task.fingerAndScores, task.fingerprints, err = task.genFingerprintsData(ctx, img)
 		if err != nil {
 			return errors.Errorf("failed to generate fingerprints data %w", err)
 		}
@@ -226,12 +219,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 		return nil
 	})
 
-	task.fingerprintsData = fingerAndScores.FingerprintData
-	task.fingerprints = fingerPrints
-	task.rarenessScore = fingerAndScores.RarenessScore
-	task.nSFWScore = fingerAndScores.NSFWScore
-	task.seenScore = fingerAndScores.SeenScore
-	return fingerAndScores, nil
+	return task.fingerAndScores, nil
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
@@ -399,20 +387,8 @@ func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 		return errors.Errorf("failed to generate fingerprints data %w", err)
 	}
 
-	if !bytes.Equal(task.fingerprintsData, fingerAndScores.FingerprintData) {
-		return errors.Errorf("fingerprints not matched")
-	}
-
-	if task.rarenessScore != fingerAndScores.RarenessScore {
-		return errors.Errorf("rareness score not matched")
-	}
-
-	if task.nSFWScore != fingerAndScores.NSFWScore {
-		return errors.Errorf("NSFW score not matched")
-	}
-
-	if task.seenScore != fingerAndScores.SeenScore {
-		return errors.Errorf("seen score not matched")
+	if err := pastel.CompareFingerPrintAndScore(task.fingerAndScores, fingerAndScores); err != nil {
+		return errors.Errorf("fingerprint or scores are not equal: %w", err)
 	}
 	return nil
 }
@@ -588,30 +564,45 @@ func (task *Task) storeThumbnails(ctx context.Context) error {
 }
 
 func (task *Task) storeFingerprints(ctx context.Context) error {
-	data := task.fingerprints.Single().Bytes()
+	data := task.fingerprints.Bytes()
 	if _, err := task.p2pClient.Store(ctx, data); err != nil {
 		return errors.Errorf("failed to store fingerprints into kamedila")
 	}
 	return nil
 }
 
-func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pastel.FingerAndScores, probe.Fingerprints, error) {
-	fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
+func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pastel.FingerAndScores, pastel.Fingerprint, error) {
+	// TODO: Fix this when implementation to dd service completed
+	// fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
+	// if err != nil {
+	// 	return nil, probe.Fingerprints{}, err
+	// }
+
+	fingerprint := pastel.Fingerprint{0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1}
+	fingerprintAndScores := pastel.FingerAndScores{
+		DupeDectectionSystemVersion: "1.0",
+		HashOfCandidateImageFile:    "HashOfCandidateImageFile",
+		IsLikelyDupe:                0,
+		OverallAverageRarenessScore: 0.5,
+		IsRareOnInternet:            0,
+		MatchesFoundOnFirstPage:     5,
+		OpenNSFWScore:               0.5,
+		ZstdCompressedFingerprint:   nil,
+		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
+			Drawing: 0.5,
+			Hentai:  0.5,
+			Neutral: 0.5,
+			Porn:    0.5,
+			Sexy:    0.5,
+		},
+	}
+	compressedFg, err := zstd.CompressLevel(nil, fingerprint.Bytes(), 22)
 	if err != nil {
-		return nil, probe.Fingerprints{}, err
+		return nil, nil, errors.Errorf("failed to compress fingerprint data: %w", err)
 	}
 
-	fingerprintsData, err := zstd.CompressLevel(nil, fingerprints.Single().LSBTruncatedBytes(), 22)
-	if err != nil {
-		return nil, probe.Fingerprints{}, errors.Errorf("failed to compress fingerprint data: %w", err)
-	}
-
-	return &pastel.FingerAndScores{
-		FingerprintData: fingerprintsData,
-		RarenessScore:   0, // TBD
-		NSFWScore:       0, // TBD
-		SeenScore:       0, // TBD
-	}, fingerprints, nil
+	fingerprintAndScores.ZstdCompressedFingerprint = compressedFg
+	return &fingerprintAndScores, fingerprint, nil
 }
 
 func (task *Task) compareRQSymbolID(ctx context.Context) error {

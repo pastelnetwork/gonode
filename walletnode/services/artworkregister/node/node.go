@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
@@ -13,12 +14,10 @@ type Node struct {
 	node.RegisterArtwork
 	node.Connection
 
-	isPrimary     bool
-	activated     bool
-	fingerprint   []byte
-	rarenessScore int
-	nSFWScore     int
-	seenScore     int
+	isPrimary            bool
+	activated            bool
+	fingerprintAndScores *pastel.FingerAndScores
+	fingerprint          []float64
 
 	// thumbnail hash
 	previewHash         []byte

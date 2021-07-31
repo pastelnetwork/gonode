@@ -59,10 +59,26 @@ message ProbeImageRequest {
     bytes payload = 1;
 }
 message ProbeImageReply {
-    bytes fingerprint = 1;
-    int32 rareness_score = 2;
-    int32 nsfw_score = 3;
-    int32 seen_score = 4;
+    message AlternativeNSFWScore {
+      double drawing = 1;
+      double hentai = 2;
+      double neutral = 3;
+      double porn = 4;
+      double sexy = 5;
+    }
+    // version of dupde detection system
+    string dupe_detection_version = 1;
+    // hexstring of hash of candidate image
+    string hash_of_candidate_img = 2;
+    int32 is_likely_dupe = 3;
+    double average_rareness_score =4;
+    int32 is_rare_on_internet = 5;
+    int32 matches_found_on_first_page = 6;
+    int32 number_of_pages_of_results = 7;
+    string url_of_first_match_in_page = 8;
+    double open_nsfw_score = 9;
+    bytes zstd_compressed_fingerprint = 10;
+    AlternativeNSFWScore alternative_nsfw_score = 11;
 }
 
 message EncoderParameters {

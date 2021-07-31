@@ -47,12 +47,28 @@ type ArtTicket struct {
 	AppTicketData AppTicket `json:"-"`
 }
 
+// AlternativeNSFWScore represents the not-safe-for-work of an image
+type AlternativeNSFWScore struct {
+	Drawing float64 `json:"drawing"`
+	Hentai  float64 `json:"hentai"`
+	Neutral float64 `json:"neutral"`
+	Porn    float64 `json:"porn"`
+	Sexy    float64 `json:"sexy"`
+}
+
 // FingerAndScores represents structure of app ticket
 type FingerAndScores struct {
-	FingerprintData []byte
-	RarenessScore   int
-	NSFWScore       int
-	SeenScore       int
+	DupeDectectionSystemVersion string               `json:"dupe_dectection_system_version"`
+	HashOfCandidateImageFile    string               `json:"hash_of_candidate_image_file"`
+	IsLikelyDupe                int                  `json:"is_likely_dupe"`
+	OverallAverageRarenessScore float64              `json:"overall_average_rareness_score"`
+	IsRareOnInternet            int                  `json:"is_rare_on_internet"`
+	NumberOfPagesOfResults      int                  `json:"number_of_pages_of_results"`
+	MatchesFoundOnFirstPage     int                  `json:"matches_found_on_first_page"`
+	UrlOfFirstMatchInPage       string               `json:"url_of_first_match_in_page"`
+	OpenNSFWScore               float64              `json:"open_nsfw_score"`
+	ZstdCompressedFingerprint   []byte               `json:"zstd_compressed_fingerprint"`
+	AlternativeNSFWScore        AlternativeNSFWScore `json:"alternative_nsfw_score"`
 }
 
 // AppTicket represents pastel App ticket.
