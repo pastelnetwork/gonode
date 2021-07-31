@@ -76,28 +76,6 @@ var (
 		'{{.CoverPhotoFilename}}'
 	)`
 
-	updateTemplate = `UPDATE
-    user_metadata
-	SET
-		real_name = '{{.Realname}}',
-		facebook_link = '{{.FacebookLink}}',
-		twitter_link = '{{.TwitterLink}}',
-		native_currency = '{{.NativeCurrency}}',
-		location = '{{.Location}}',
-		primary_language = '{{.PrimaryLanguage}}',
-		categories = '{{.Categories}}',
-		biography = '{{.Biography}}',
-		timestamp = {{.Timestamp}},
-		signature = '{{.Signature}}',
-		previous_block_hash = '{{.PreviousBlockHash}}',
-		avatar_image = {{ if (eq .AvatarImage "")}}NULL,{{ else }}x'{{.AvatarImage}}',{{ end }}
-		avatar_filename = '{{.AvatarFilename}}',
-		cover_photo_image = {{ if (eq .CoverPhotoImage "")}}NULL,{{ else }}x'{{.CoverPhotoImage}}',{{ end }}
-		cover_photo_filename = '{{.CoverPhotoFilename}}'
-	WHERE
-		artist_pastel_id = '{{.ArtistPastelID}}'
-	;`
-
 	data1 = pb.UserdataRequest{
 		Realname:        "cat",
 		FacebookLink:    "fb.com",
@@ -343,50 +321,6 @@ var (
 		x'040506ff',
 		'4567.jpg'
 	)`
-
-	updateTemplateResult1 = `UPDATE
-    user_metadata
-	SET
-		real_name = 'cat',
-		facebook_link = 'fb.com',
-		twitter_link = 'tw.com',
-		native_currency = 'usd',
-		location = 'us',
-		primary_language = 'en',
-		categories = 'a',
-		biography = 'b',
-		timestamp = 123,
-		signature = 'xyz',
-		previous_block_hash = 'hash',
-		avatar_image = NULL,
-		avatar_filename = '1234.jpg',
-		cover_photo_image = x'04050607',
-		cover_photo_filename = '4567.jpg'
-	WHERE
-		artist_pastel_id = 'abc'
-	;`
-
-	updateTemplateResult2 = `UPDATE
-    user_metadata
-	SET
-		real_name = 'cat',
-		facebook_link = 'fb.com',
-		twitter_link = 'tw.com',
-		native_currency = 'usd',
-		location = 'us',
-		primary_language = 'en',
-		categories = 'a',
-		biography = 'b',
-		timestamp = 123,
-		signature = 'xyz',
-		previous_block_hash = 'hash',
-		avatar_image = x'01020304',
-		avatar_filename = '1234.jpg',
-		cover_photo_image = x'040506ff',
-		cover_photo_filename = '4567.jpg'
-	WHERE
-		artist_pastel_id = 'xyz'
-	;`
 )
 
 func TestSuite(t *testing.T) {
@@ -407,8 +341,6 @@ func (ts *testSuite) SetupSuite() {
 	queryTmpl, err := template.New("query").Parse(queryTemplate)
 	assert.Nil(ts.T(), err)
 	writeTmpl, err := template.New("write").Parse(writeTemplate)
-	assert.Nil(ts.T(), err)
-	updateTmpl, err := template.New("update").Parse(updateTemplate)
 	assert.Nil(ts.T(), err)
 
 	workDir, err := ioutil.TempDir("", "metadb-*")
@@ -432,10 +364,9 @@ func (ts *testSuite) SetupSuite() {
 
 	ts.Nil(err)
 	ts.ops = &DatabaseOps{
-		metaDB:         db,
-		writeTemplate:  writeTmpl,
-		queryTemplate:  queryTmpl,
-		updateTemplate: updateTmpl,
+		metaDB:        db,
+		writeTemplate: writeTmpl,
+		queryTemplate: queryTmpl,
 	}
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, data3))
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, data4))
@@ -496,24 +427,6 @@ func (ts *testSuite) Test_substituteTemplate() {
 				data: userdata2,
 			},
 			want:    writeTemplateResult2,
-			wantErr: false,
-		},
-		{
-			name: "Test_substituteTemplate5",
-			args: args{
-				tmpl: ts.ops.updateTemplate,
-				data: userdata1,
-			},
-			want:    updateTemplateResult1,
-			wantErr: false,
-		},
-		{
-			name: "Test_substituteTemplate6",
-			args: args{
-				tmpl: ts.ops.updateTemplate,
-				data: userdata2,
-			},
-			want:    updateTemplateResult2,
 			wantErr: false,
 		},
 		{

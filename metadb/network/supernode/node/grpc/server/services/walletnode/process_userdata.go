@@ -82,6 +82,11 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 // AcceptedNodes implements walletnode.ProcessUserdataServer.AcceptedNodes()
 func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
+
+	if req == nil {
+		return nil, errors.Errorf("receive nil request")
+	}
+
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
@@ -109,6 +114,11 @@ func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pb.Accep
 // ConnectTo implements walletnode.ProcessUserdataServer.ConnectTo()
 func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
+
+	if req == nil {
+		return nil, errors.Errorf("receive nil request")
+	}
+
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
@@ -126,6 +136,11 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pb.ConnectTo
 // SendUserdata implements walletnode.ProcessUserdataServer.SendUserdata()
 func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.UserdataRequest) (*pb.UserdataReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdata request")
+
+	if req == nil {
+		return nil, errors.Errorf("receive nil request")
+	}
+
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
@@ -206,6 +221,11 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 // ReceiveUserdata implements walletnode.ProcessUserdataServer.ReceiveUserdata()
 func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pb.RetrieveRequest) (*pb.UserdataRequest, error) {
 	log.WithContext(ctx).WithField("userpastelid", req.Userpastelid).Debugf("ReceiveUserdata request")
+
+	if req == nil {
+		return nil, errors.Errorf("receive nil request")
+	}
+
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err

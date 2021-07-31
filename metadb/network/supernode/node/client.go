@@ -6,6 +6,7 @@ package node
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 

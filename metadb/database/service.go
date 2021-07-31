@@ -3,13 +3,13 @@ package database
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io/ioutil"
 	"strings"
 
 	"text/template"
 
 	"github.com/mitchellh/mapstructure"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb"
@@ -23,10 +23,9 @@ var (
 )
 
 type Config struct {
-	SchemaPath         string `mapstructure:"schema-path" json:"schema-path,omitempty"`
-	WriteTemplatePath  string `mapstructure:"write-template-path" json:"write-template-path,omitempty"`
-	QueryTemplatePath  string `mapstructure:"query-template-path" json:"query-template-path,omitempty"`
-	UpdateTemplatePath string `mapstructure:"update-template-path" json:"update-template-path,omitempty"`
+	SchemaPath        string `mapstructure:"schema-path" json:"schema-path,omitempty"`
+	WriteTemplatePath string `mapstructure:"write-template-path" json:"write-template-path,omitempty"`
+	QueryTemplatePath string `mapstructure:"query-template-path" json:"query-template-path,omitempty"`
 }
 
 func NewConfig() *Config {
@@ -34,17 +33,16 @@ func NewConfig() *Config {
 }
 
 type DatabaseOps struct {
-	metaDB         metadb.MetaDB
-	writeTemplate  *template.Template
-	queryTemplate  *template.Template
-	updateTemplate *template.Template
-	config         *Config
+	metaDB        metadb.MetaDB
+	writeTemplate *template.Template
+	queryTemplate *template.Template
+	config        *Config
 }
 
 func substituteTemplate(tmpl *template.Template, data interface{}) (string, error) {
 	var templateBuffer bytes.Buffer
 	if tmpl == nil || data == nil {
-		return "", fmt.Errorf("input nil template or data")
+		return "", errors.Errorf("input nil template or data")
 	}
 	if err := tmpl.Execute(&templateBuffer, data); err != nil {
 		return "", err
@@ -64,11 +62,11 @@ func (db *DatabaseOps) LeaderAddress() string {
 func (db *DatabaseOps) WriteUserData(ctx context.Context, data pb.UserdataRequest) error {
 	command, err := substituteTemplate(db.writeTemplate, pbToWriteCommand(data))
 	if err != nil {
-		return err
+		return errors.Errorf("error while subtitute template: %w", err)
 	}
 
 	if _, err := db.metaDB.Write(ctx, command); err != nil {
-		return err
+		return errors.Errorf("error while writting to db: %w", err)
 	}
 
 	return nil
@@ -78,31 +76,31 @@ func (db *DatabaseOps) WriteUserData(ctx context.Context, data pb.UserdataReques
 func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) (userdata.UserdataProcessRequest, error) {
 	command, err := substituteTemplate(db.queryTemplate, artistPastelID)
 	if err != nil {
-		return userdata.UserdataProcessRequest{}, err
+		return userdata.UserdataProcessRequest{}, errors.Errorf("error while subtitute template: %w", err)
 	}
 
 	queryResult, err := db.metaDB.Query(ctx, command, queryLevelStrong)
 	if err != nil {
-		return userdata.UserdataProcessRequest{}, err
+		return userdata.UserdataProcessRequest{}, errors.Errorf("error while querying db: %w", err)
 	}
 
 	nrows := queryResult.NumRows()
 	if nrows == 0 {
-		return userdata.UserdataProcessRequest{}, fmt.Errorf("no artist with pastel id = %s", artistPastelID)
+		return userdata.UserdataProcessRequest{}, errors.Errorf("no artist with pastel id = %s", artistPastelID)
 	} else if nrows > 1 {
-		return userdata.UserdataProcessRequest{}, fmt.Errorf("upto %d records are returned", nrows)
+		return userdata.UserdataProcessRequest{}, errors.Errorf("upto %d records are returned", nrows)
 	}
 
 	//right here we make sure that there is just 1 row in the result
 	queryResult.Next()
 	resultMap, err := queryResult.Map()
 	if err != nil {
-		return userdata.UserdataProcessRequest{}, err
+		return userdata.UserdataProcessRequest{}, errors.Errorf("error while extracting result: %w", err)
 	}
 
 	var dbResult UserdataReadResult
 	if err := mapstructure.Decode(resultMap, &dbResult); err != nil {
-		return userdata.UserdataProcessRequest{}, err
+		return userdata.UserdataProcessRequest{}, errors.Errorf("error while decoding result: %w", err)
 	}
 
 	return dbResult.ToUserData(), nil
@@ -115,7 +113,7 @@ func (db *DatabaseOps) Run(ctx context.Context) error {
 
 	content, err := ioutil.ReadFile(db.config.SchemaPath)
 	if err != nil {
-		return err
+		return errors.Errorf("error while reading schema file: %w", err)
 	}
 
 	db.metaDB.WaitForStarting()
@@ -123,19 +121,19 @@ func (db *DatabaseOps) Run(ctx context.Context) error {
 		listOfCommands := strings.Split(string(content), schemaDelimiter)
 		for _, cmd := range listOfCommands {
 			if _, err := db.metaDB.Write(ctx, cmd); err != nil {
-				return err
+				return errors.Errorf("error while creating db schema: %w", err)
 			}
 		}
 	}
 
 	db.writeTemplate, err = template.ParseFiles(db.config.WriteTemplatePath)
 	if err != nil {
-		return err
+		return errors.Errorf("error while parsing write template: %w", err)
 	}
 
 	db.queryTemplate, err = template.ParseFiles(db.config.QueryTemplatePath)
 	if err != nil {
-		return err
+		return errors.Errorf("error while parsing query template: %w", err)
 	}
 
 	log.WithContext(ctx).Info("done initialization")
