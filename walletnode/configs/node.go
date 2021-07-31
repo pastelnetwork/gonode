@@ -4,7 +4,6 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
-
 )
 
 // Node contains the SuperNode configuration itself.
@@ -14,7 +13,6 @@ type Node struct {
 	API             *api.Config            `mapstructure:"api" json:"api,omitempty"`
 
 	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
-
 }
 
 // NewNode returns a new Node instance

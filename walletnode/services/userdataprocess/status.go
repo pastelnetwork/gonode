@@ -11,10 +11,10 @@ const (
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted:   "Task Started",
-	StatusConnected:	 "Connected",
-	StatusTaskFailure:   "Task Failed",
-	StatusTaskCompleted: "Task Completed",
+	StatusTaskStarted:              "Task Started",
+	StatusConnected:                "Connected",
+	StatusTaskFailure:              "Task Failed",
+	StatusTaskCompleted:            "Task Completed",
 	StatusErrorNotEnoughMasterNode: "Error not enough Master Node to send data",
 }
 

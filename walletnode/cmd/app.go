@@ -18,13 +18,13 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	mdlgrpc "github.com/pastelnetwork/gonode/metadb/network/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
-	mdlgrpc "github.com/pastelnetwork/gonode/metadb/network/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 )
 
