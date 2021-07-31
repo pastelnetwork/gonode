@@ -162,7 +162,9 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 		IsLikelyDupe:                int(resp.IsLikelyDupe),
 		OverallAverageRarenessScore: resp.AverageRarenessScore,
 		IsRareOnInternet:            int(resp.IsRareOnInternet),
+		NumberOfPagesOfResults:      int(resp.NumberOfPagesOfResults),
 		MatchesFoundOnFirstPage:     int(resp.MatchesFoundOnFirstPage),
+		UrlOfFirstMatchInPage:       resp.UrlOfFirstMatchInPage,
 		OpenNSFWScore:               resp.OpenNsfwScore,
 		ZstdCompressedFingerprint:   resp.ZstdCompressedFingerprint,
 		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
@@ -171,6 +173,11 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 			Neutral: resp.AlternativeNsfwScore.Neutral,
 			Porn:    resp.AlternativeNsfwScore.Porn,
 			Sexy:    resp.AlternativeNsfwScore.Sexy,
+		},
+		ImageHashes: pastel.ImageHashes{
+			PerceptualHash: resp.ImageHashes.PerceptualHash,
+			AverageHash:    resp.ImageHashes.AverageHash,
+			DifferenceHash: resp.ImageHashes.DifferenceHash,
 		},
 	}, nil
 }

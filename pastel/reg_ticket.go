@@ -69,6 +69,7 @@ type FingerAndScores struct {
 	OpenNSFWScore               float64              `json:"open_nsfw_score"`
 	ZstdCompressedFingerprint   []byte               `json:"zstd_compressed_fingerprint"`
 	AlternativeNSFWScore        AlternativeNSFWScore `json:"alternative_nsfw_score"`
+	ImageHashes                 ImageHashes          `json:"image_hashes"`
 }
 
 // AppTicket represents pastel App ticket.
@@ -93,9 +94,8 @@ type AppTicket struct {
 
 	DataHash []byte `json:"data_hash"`
 
-	Fingerprints          []float64 `json:"fingerprints"`
-	FingerprintsHash      []byte    `json:"fingerprints_hash"`
-	FingerprintsSignature []byte    `json:"fingerprints_signature"`
+	FingerprintsHash      []byte `json:"fingerprints_hash"`
+	FingerprintsSignature []byte `json:"fingerprints_signature"`
 
 	DupeDetectionSystemVer  string              `json:"dupe_detection_system_version"`
 	MatchesFoundOnFirstPage int                 `json:"matches_found_on_first_page"`
@@ -113,11 +113,11 @@ type AppTicket struct {
 
 // AlternateNSFWScores represents alternate NSFW scores from dupe detection service
 type AlternateNSFWScores struct {
-	Drawings float64 `json:"drawings"`
-	Hentai   float64 `json:"hentai"`
-	Neutral  float64 `json:"neutral"`
-	Porn     float64 `json:"porn"`
-	Sexy     float64 `json:"sexy"`
+	Drawing float64 `json:"drawing"`
+	Hentai  float64 `json:"hentai"`
+	Neutral float64 `json:"neutral"`
+	Porn    float64 `json:"porn"`
+	Sexy    float64 `json:"sexy"`
 }
 
 // ImageHashes represents image hashes from dupe detection service

@@ -585,7 +585,9 @@ func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pa
 		IsLikelyDupe:                0,
 		OverallAverageRarenessScore: 0.5,
 		IsRareOnInternet:            0,
+		NumberOfPagesOfResults:      10,
 		MatchesFoundOnFirstPage:     5,
+		UrlOfFirstMatchInPage:       "",
 		OpenNSFWScore:               0.5,
 		ZstdCompressedFingerprint:   nil,
 		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
@@ -594,6 +596,11 @@ func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pa
 			Neutral: 0.5,
 			Porn:    0.5,
 			Sexy:    0.5,
+		},
+		ImageHashes: pastel.ImageHashes{
+			PerceptualHash: "perceptual_hash",
+			AverageHash:    "average_hash",
+			DifferenceHash: "difference_hash",
 		},
 	}
 	compressedFg, err := zstd.CompressLevel(nil, fingerprint.Bytes(), 22)

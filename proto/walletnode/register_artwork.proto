@@ -66,6 +66,11 @@ message ProbeImageReply {
       double porn = 4;
       double sexy = 5;
     }
+    message ImageHashes {
+      string perceptual_hash = 1; 
+      string average_hash = 2; 
+      string difference_hash = 3; 
+    }
     // version of dupde detection system
     string dupe_detection_version = 1;
     // hexstring of hash of candidate image
@@ -79,6 +84,7 @@ message ProbeImageReply {
     double open_nsfw_score = 9;
     bytes zstd_compressed_fingerprint = 10;
     AlternativeNSFWScore alternative_nsfw_score = 11;
+    ImageHashes image_hashes = 12;
 }
 
 message EncoderParameters {
