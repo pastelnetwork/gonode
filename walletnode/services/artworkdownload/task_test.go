@@ -380,7 +380,7 @@ func TestTaskRun(t *testing.T) {
 
 			nodeClient := test.NewMockClient(t)
 			if testCase.numConnect > 0 {
-				nodeClient.ListenOnConnect(testCase.args.connectErr)
+				nodeClient.ListenOnConnect("", testCase.args.connectErr)
 			}
 			if testCase.numDownLoadArtwork > 0 {
 				nodeClient.ListenOnDownloadArtwork()

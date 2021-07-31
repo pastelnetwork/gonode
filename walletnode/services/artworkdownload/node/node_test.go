@@ -116,7 +116,7 @@ func TestNodeConnect(t *testing.T) {
 			clientMock := test.NewMockClient(t)
 
 			//listen needed method
-			clientMock.ListenOnConnect(testCase.err).ListenOnDownloadArtwork()
+			clientMock.ListenOnConnect(testCase.address, testCase.err).ListenOnDownloadArtwork()
 
 			//set up node client only
 			testCase.node.Client = clientMock.Client
