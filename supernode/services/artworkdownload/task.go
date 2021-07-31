@@ -48,10 +48,11 @@ func (task *Task) Run(ctx context.Context) error {
 }
 
 // Download downloads image and return the image.
-func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
+func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
 	var err error
 	if err = task.RequiredStatus(StatusTaskStarted); err != nil {
-		return nil, err
+		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
+		return nil, errors.Errorf("wrong status: %w", err)
 	}
 
 	var file []byte
@@ -63,7 +64,7 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 		lastTenMinutes := now.Add(time.Duration(-10) * time.Minute)
 		requestTime, _ := time.Parse(time.RFC3339, timestamp)
 		if lastTenMinutes.After(requestTime) {
-			err = errors.New("Request time is older than 10 minutes")
+			err = errors.New("request time is older than 10 minutes")
 			task.UpdateStatus(StatusRequestTooLate)
 			return nil
 		}
@@ -71,7 +72,7 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 		// Get Art Registration ticket by txid
 		artRegTicket, err = task.pastelClient.RegTicket(ctx, txid)
 		if err != nil {
-			err = errors.Errorf("Could not get registered ticket: %w, Transaction id: %s", err, txid)
+			err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
 			task.UpdateStatus(StatusArtRegGettingFailed)
 			return nil
 		}
@@ -93,14 +94,14 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 			var tradeTickets []pastel.TradeTicket
 			tradeTickets, err = task.pastelClient.ListAvailableTradeTickets(ctx)
 			if err != nil {
-				err = errors.Errorf("Could not get available trade tickets: %w", err)
+				err = errors.Errorf("could not get available trade tickets: %w", err)
 				task.UpdateStatus(StatusListTradeTicketsFailed)
 				return nil
 			}
 
 			// Validate that Trade ticket with ttxid is in the list
 			if len(tradeTickets) == 0 {
-				err = errors.New("Not found any available trade tickets")
+				err = errors.New("not found any available trade tickets")
 				task.UpdateStatus(StatusTradeTicketsNotFound)
 				return nil
 			}
@@ -113,7 +114,7 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 				}
 			}
 			if !isTXIDValid {
-				err = errors.Errorf("Not found trade ticket of transaction %s", ttxid)
+				err = errors.Errorf("not found trade ticket of transaction %s", ttxid)
 				task.UpdateStatus(StatusTradeTicketMismatched)
 				return nil
 			}
@@ -127,7 +128,7 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 			return nil
 		}
 		if !isValid {
-			err = errors.New("Timestamp verification failed")
+			err = errors.New("timestamp verification failed")
 			task.UpdateStatus(StatusTimestampInvalid)
 			return nil
 		}
@@ -137,6 +138,9 @@ func (task *Task) Download(_ context.Context, txid, timestamp, signature, ttxid 
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_oti)
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
 		file, err = task.restoreFile(ctx, &artRegTicket)
+		if err != nil {
+			err = errors.Errorf("failed to restore file: %w", err)
+		}
 
 		if len(file) == 0 {
 			task.UpdateStatus(StatusFileEmpty)
@@ -154,14 +158,14 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 
 	if len(artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs) == 0 {
 		task.UpdateStatus(StatusArtRegTicketInvalid)
-		return file, errors.Errorf("Ticket has empty symbol identifier files")
+		return file, errors.Errorf("ticket has empty symbol identifier files")
 	}
 
 	var rqConnection rqnode.Connection
 	rqConnection, err = task.Service.raptorQClient.Connect(ctx, task.Service.config.RaptorQServiceAddress)
 	if err != nil {
 		task.UpdateStatus(StatusRQServiceConnectionFailed)
-		return file, errors.Errorf("Could not connect to rqservice: %w", err)
+		return file, errors.Errorf("could not connect to rqservice: %w", err)
 	}
 	defer rqConnection.Done()
 	rqNodeConfig := &rqnode.Config{
@@ -173,7 +177,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		var rqIDsData []byte
 		rqIDsData, err = task.p2pClient.Retrieve(ctx, id)
 		if err != nil {
-			err = errors.Errorf("Could not retrieve symbol file from Kademlia: %w", err)
+			err = errors.Errorf("could not retrieve symbol file from Kademlia: %w", err)
 			task.UpdateStatus(StatusSymbolFileNotFound)
 			continue
 		}
@@ -200,7 +204,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 			h := sha3.Sum256(symbol)
 			storedID := base58.Encode(h[:])
 			if storedID != id {
-				err = errors.New("Symbol id mismatched")
+				err = errors.New("symbol id mismatched")
 				log.WithContext(ctx).Debugf("Symbol id mismatched, expect %v, got %v", id, storedID)
 				task.UpdateStatus(StatusSymbolMismatched)
 				break
@@ -208,7 +212,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 			symbols[id] = symbol
 		}
 		if len(symbols) != len(rqIDs) {
-			err = errors.New("Could not retrieve all symbols from Kademlia")
+			err = errors.New("could not retrieve all symbols from Kademlia")
 			task.UpdateStatus(StatusSymbolsNotEnough)
 			continue
 		}
@@ -224,7 +228,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 
 		decodeInfo, err = rqService.Decode(ctx, &encodeInfo)
 		if err != nil {
-			err = errors.Errorf("Failed to restore file: %w", err)
+			err = errors.Errorf("failed to restore file with rqserivce: %w", err)
 			task.UpdateStatus(StatusFileDecodingFailed)
 			continue
 		}
@@ -236,7 +240,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		fileHash := sha3.Sum256(decodeInfo.File)
 
 		if !bytes.Equal(fileHash[:], artRegTicket.RegTicketData.ArtTicketData.AppTicketData.DataHash) {
-			err = errors.New("File mismatched")
+			err = errors.New("file mismatched")
 			task.UpdateStatus(StatusFileMismatched)
 			continue
 		}

@@ -44,6 +44,7 @@ func (task *Task) Run(ctx context.Context) error {
 	return nil
 }
 
+// Error returns the error after running task
 func (task *Task) Error() error {
 	return task.err
 }
@@ -54,24 +55,26 @@ func (task *Task) run(ctx context.Context) error {
 
 	ttxid, err := task.pastelClient.TicketOwnership(ctx, task.Ticket.Txid, task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
 	if err != nil {
-		return err
+		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).WithField("pastelid", task.Ticket.PastelID).Error("Could not get ticket ownership")
+		return errors.Errorf("failed to get ticket ownership: %w", err)
 	}
 
 	// Sign current-timestamp with PsstelID passed in request
 	timestamp := time.Now().Format(time.RFC3339)
 	signature, err := task.pastelClient.Sign(ctx, []byte(timestamp), task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
 	if err != nil {
-		return err
+		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Ticket.PastelID).Error("Could not sign timestamp")
+		return errors.Errorf("failed to sign timestamp: %w", err)
 	}
 
 	// Retrieve supernodes with highest ranks.
 	topNodes, err := task.pastelTopNodes(ctx)
 	if err != nil {
-		return err
+		return errors.Errorf("failed to get top rank nodes: %w", err)
 	}
 	if len(topNodes) < task.config.NumberSuperNodes {
 		task.UpdateStatus(StatusErrorNotEnoughSuperNode)
-		return errors.New("Unable to find enough Supernodes")
+		return errors.New("unable to find enough supernodes")
 	}
 
 	var connectedNodes node.List
@@ -87,7 +90,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	if len(connectedNodes) < task.config.NumberSuperNodes {
 		task.UpdateStatus(StatusErrorNotEnoughSuperNode)
-		return errors.Errorf("Could not connect enough %d supernodes: %w", task.config.NumberSuperNodes, errs)
+		return errors.Errorf("could not connect enough %d supernodes: %w", task.config.NumberSuperNodes, errs)
 	}
 	task.UpdateStatus(StatusConnected)
 
@@ -96,15 +99,16 @@ func (task *Task) run(ctx context.Context) error {
 	var downloadErrs error
 	err = connectedNodes.Download(ctx, task.Ticket.Txid, timestamp, string(signature), ttxid, downloadErrs)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).Error("Could not download files")
 		task.UpdateStatus(StatusErrorDownloadFailed)
-		return err
+		return errors.Errorf("failed to download files from supernodes: %w", err)
 	}
 
 	nodes = connectedNodes.Active()
 
 	if len(nodes) < task.config.NumberSuperNodes {
 		task.UpdateStatus(StatusErrorNotEnoughFiles)
-		return errors.Errorf("Could not download enough files from %d supernodes: %w", task.config.NumberSuperNodes, downloadErrs)
+		return errors.Errorf("could not download enough files from %d supernodes: %w", task.config.NumberSuperNodes, downloadErrs)
 	}
 	task.UpdateStatus(StatusDownloaded)
 
@@ -115,7 +119,7 @@ func (task *Task) run(ctx context.Context) error {
 	err = nodes.MatchFiles()
 	if err != nil {
 		task.UpdateStatus(StatusErrorFilesNotMatch)
-		return err
+		return errors.Errorf("files are different between supernodes: %w", err)
 	}
 
 	// Store file to send to the caller
