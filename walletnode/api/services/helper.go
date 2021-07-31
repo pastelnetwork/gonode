@@ -148,10 +148,11 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 		SeriesName:       &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkSeriesName,
 		IsGreen:          ticket.RegTicketData.IsGreen,
 		Royalty:          float64(ticket.RegTicketData.Royalty),
-		RarenessScore:    ticket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
-		NsfwScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.NSFWScore,
-		SeenScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.SeenScore,
-		Version:          &ticket.RegTicketData.ArtTicketData.Version,
-		StorageFee:       &ticket.RegTicketData.StorageFee,
+		// FIXME
+		// RarenessScore:    ticket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
+		// NsfwScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.NSFWScore,
+		// SeenScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.SeenScore,
+		Version:    &ticket.RegTicketData.ArtTicketData.Version,
+		StorageFee: &ticket.RegTicketData.StorageFee,
 	}
 }
