@@ -95,8 +95,13 @@ func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...
 }
 
 // ListenOnConnect listening Connect call and returns error from args
-func (client *Client) ListenOnConnect(returnErr error) *Client {
-	client.Client.On(ConnectMethod, mock.Anything, mock.IsType(string(""))).Return(client.Connection, returnErr)
+func (client *Client) ListenOnConnect(addr string, returnErr error) *Client {
+	if addr == "" {
+		client.Client.On(ConnectMethod, mock.Anything, mock.IsType(string(""))).Return(client.Connection, returnErr)
+	} else {
+		client.Client.On(ConnectMethod, mock.Anything, addr).Return(client.Connection, returnErr)
+	}
+
 	return client
 }
 

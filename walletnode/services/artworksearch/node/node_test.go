@@ -28,21 +28,19 @@ func TestNodeConnect(t *testing.T) {
 		assertion                 assert.ErrorAssertionFunc
 	}{
 		{
-			node:                      &Node{address: "127.0.0.1:4444"},
-			address:                   "127.0.0.1:4444",
-			args:                      args{context.Background()},
-			err:                       nil,
-			numberConnectCall:         1,
-			numberRegisterArtWorkCall: 1,
-			assertion:                 assert.NoError,
+			node:              &Node{address: "127.0.0.1:4444"},
+			address:           "127.0.0.1:4444",
+			args:              args{context.Background()},
+			err:               nil,
+			numberConnectCall: 1,
+			assertion:         assert.NoError,
 		}, {
-			node:                      &Node{address: "127.0.0.1:4445"},
-			address:                   "127.0.0.1:4445",
-			args:                      args{context.Background()},
-			err:                       fmt.Errorf("connection timeout"),
-			numberConnectCall:         1,
-			numberRegisterArtWorkCall: 0,
-			assertion:                 assert.Error,
+			node:              &Node{address: "127.0.0.1:4445"},
+			address:           "127.0.0.1:4445",
+			args:              args{context.Background()},
+			err:               fmt.Errorf("connection timeout"),
+			numberConnectCall: 1,
+			assertion:         assert.Error,
 		},
 	}
 
@@ -56,7 +54,7 @@ func TestNodeConnect(t *testing.T) {
 			clientMock := test.NewMockClient(t)
 
 			//listen needed method
-			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterArtwork()
+			clientMock.ListenOnConnect("", testCase.err)
 
 			//set up node client only
 			testCase.node.Client = clientMock.Client
@@ -66,7 +64,6 @@ func TestNodeConnect(t *testing.T) {
 			//mock assertion
 			clientMock.Client.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address)
-			clientMock.AssertRegisterArtworkCall(testCase.numberRegisterArtWorkCall)
 		})
 	}
 }
