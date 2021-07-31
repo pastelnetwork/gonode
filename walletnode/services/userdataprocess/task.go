@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-
+	
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -165,14 +165,15 @@ func (task *Task) run(ctx context.Context) error {
 		}
 
 		userdata := &userdata.UserdataProcessRequestSigned{
-			Userdata:     task.request,
-			UserdataHash: hex.EncodeToString(hashvalue),
-			Signature:    string(signature),
+			Userdata: 		task.request,
+			UserdataHash:	hex.EncodeToString(hashvalue),
+			Signature:		hex.EncodeToString(signature),
 		}
 
 		// Send userdata to supernodes for storing in MDL's rqlite db.
 
 		if err := nodes.SendUserdata(ctx, userdata); err != nil {
+			
 			return err
 		} else {
 			res, err := task.AggregateResult(ctx, nodes)
@@ -198,7 +199,28 @@ func (task *Task) run(ctx context.Context) error {
 
 // AggregateResult aggregate all results return by all supernode, and consider it valid or not
 func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdata.UserdataProcessResult, error) {
-	aggregate := make(map[string][]int)
+	// There is following common scenarios when supernodes response:
+	// 1. Secondary node and primary node both response userdata validation result error
+	// 2. Secondary node response userdata validation result success and primary node provide further processing result
+	// 3. Some node fail to response, or not in the 2 case above, then we need to aggregate result and consider what happen
+
+	// This part is for case 1 or 2 above, and we trust the primary node so we use its response
+	for _, node := range nodes {
+		node := node
+		if node.IsPrimary() {
+			result := node.Result
+			if result == nil {
+				return userdata.UserdataProcessResult{}, errors.Errorf("Primary node have empty result")
+			}
+			return *result, nil
+		}
+	}
+
+
+	// This part of aggregate the response for case 3 and for future use
+	// This is for in case we want to do descrepancy check between all result of nodes
+	// for node reputation score 
+	/* aggregate := make(map[string][]int)
 	count := 0
 	for i, node := range nodes {
 		node := node
@@ -216,7 +238,7 @@ func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdat
 			if err != nil {
 				errors.Errorf("failed hash the result %w", err)
 			}
-			aggregate[string(hashvalue)] = append(aggregate[string(hashvalue)], i)
+			aggregate[hex.EncodeToString(hashvalue)] = append(aggregate[hex.EncodeToString(hashvalue)],i)
 		}
 	}
 
@@ -248,7 +270,7 @@ func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdat
 	if len(aggregate[finalHashKey]) > 0 && nodes[(aggregate[finalHashKey])[0]] != nil {
 		result := *(nodes[(aggregate[finalHashKey])[0]].Result)
 		return result, nil
-	}
+	} */
 
 	return userdata.UserdataProcessResult{}, errors.Errorf("failed to Aggregate Result")
 }

@@ -23,9 +23,9 @@ type ProcessUserdataClient interface {
 	// The stream is used by the parties to inform each other about the cancellation of the task.
 	Session(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SessionClient, error)
 	// AcceptedNodes returns peers of the secondary supernodes connected to it.
-	AcceptedNodes(ctx context.Context, in *AcceptedNodesRequest, opts ...grpc.CallOption) (*AcceptedNodesReply, error)
+	AcceptedNodes(ctx context.Context, in *MDLAcceptedNodesRequest, opts ...grpc.CallOption) (*MDLAcceptedNodesReply, error)
 	// ConnectTo requests to connect to the primary supernode.
-	ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error)
+	ConnectTo(ctx context.Context, in *MDLConnectToRequest, opts ...grpc.CallOption) (*MDLConnectToReply, error)
 	// SendUserdata send the user info and return the operation is success or detail on error.
 	SendUserdata(ctx context.Context, in *UserdataRequest, opts ...grpc.CallOption) (*UserdataReply, error)
 	// ReceiveUserdata receive the user info and return the operation is success or detail on error.
@@ -41,7 +41,7 @@ func NewProcessUserdataClient(cc grpc.ClientConnInterface) ProcessUserdataClient
 }
 
 func (c *processUserdataClient) Session(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SessionClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ProcessUserdata_ServiceDesc.Streams[0], "/mdlwalletnode.ProcessUserdata/Session", opts...)
+	stream, err := c.cc.NewStream(ctx, &ProcessUserdata_ServiceDesc.Streams[0], "/walletnode.ProcessUserdata/Session", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,8 +50,8 @@ func (c *processUserdataClient) Session(ctx context.Context, opts ...grpc.CallOp
 }
 
 type ProcessUserdata_SessionClient interface {
-	Send(*SessionRequest) error
-	Recv() (*SessionReply, error)
+	Send(*MDLSessionRequest) error
+	Recv() (*MDLSessionReply, error)
 	grpc.ClientStream
 }
 
@@ -59,30 +59,30 @@ type processUserdataSessionClient struct {
 	grpc.ClientStream
 }
 
-func (x *processUserdataSessionClient) Send(m *SessionRequest) error {
+func (x *processUserdataSessionClient) Send(m *MDLSessionRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *processUserdataSessionClient) Recv() (*SessionReply, error) {
-	m := new(SessionReply)
+func (x *processUserdataSessionClient) Recv() (*MDLSessionReply, error) {
+	m := new(MDLSessionReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *processUserdataClient) AcceptedNodes(ctx context.Context, in *AcceptedNodesRequest, opts ...grpc.CallOption) (*AcceptedNodesReply, error) {
-	out := new(AcceptedNodesReply)
-	err := c.cc.Invoke(ctx, "/mdlwalletnode.ProcessUserdata/AcceptedNodes", in, out, opts...)
+func (c *processUserdataClient) AcceptedNodes(ctx context.Context, in *MDLAcceptedNodesRequest, opts ...grpc.CallOption) (*MDLAcceptedNodesReply, error) {
+	out := new(MDLAcceptedNodesReply)
+	err := c.cc.Invoke(ctx, "/walletnode.ProcessUserdata/AcceptedNodes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *processUserdataClient) ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error) {
-	out := new(ConnectToReply)
-	err := c.cc.Invoke(ctx, "/mdlwalletnode.ProcessUserdata/ConnectTo", in, out, opts...)
+func (c *processUserdataClient) ConnectTo(ctx context.Context, in *MDLConnectToRequest, opts ...grpc.CallOption) (*MDLConnectToReply, error) {
+	out := new(MDLConnectToReply)
+	err := c.cc.Invoke(ctx, "/walletnode.ProcessUserdata/ConnectTo", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +91,7 @@ func (c *processUserdataClient) ConnectTo(ctx context.Context, in *ConnectToRequ
 
 func (c *processUserdataClient) SendUserdata(ctx context.Context, in *UserdataRequest, opts ...grpc.CallOption) (*UserdataReply, error) {
 	out := new(UserdataReply)
-	err := c.cc.Invoke(ctx, "/mdlwalletnode.ProcessUserdata/SendUserdata", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.ProcessUserdata/SendUserdata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (c *processUserdataClient) SendUserdata(ctx context.Context, in *UserdataRe
 
 func (c *processUserdataClient) ReceiveUserdata(ctx context.Context, in *RetrieveRequest, opts ...grpc.CallOption) (*UserdataRequest, error) {
 	out := new(UserdataRequest)
-	err := c.cc.Invoke(ctx, "/mdlwalletnode.ProcessUserdata/ReceiveUserdata", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/walletnode.ProcessUserdata/ReceiveUserdata", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -116,9 +116,9 @@ type ProcessUserdataServer interface {
 	// The stream is used by the parties to inform each other about the cancellation of the task.
 	Session(ProcessUserdata_SessionServer) error
 	// AcceptedNodes returns peers of the secondary supernodes connected to it.
-	AcceptedNodes(context.Context, *AcceptedNodesRequest) (*AcceptedNodesReply, error)
+	AcceptedNodes(context.Context, *MDLAcceptedNodesRequest) (*MDLAcceptedNodesReply, error)
 	// ConnectTo requests to connect to the primary supernode.
-	ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error)
+	ConnectTo(context.Context, *MDLConnectToRequest) (*MDLConnectToReply, error)
 	// SendUserdata send the user info and return the operation is success or detail on error.
 	SendUserdata(context.Context, *UserdataRequest) (*UserdataReply, error)
 	// ReceiveUserdata receive the user info and return the operation is success or detail on error.
@@ -133,10 +133,10 @@ type UnimplementedProcessUserdataServer struct {
 func (UnimplementedProcessUserdataServer) Session(ProcessUserdata_SessionServer) error {
 	return status.Errorf(codes.Unimplemented, "method Session not implemented")
 }
-func (UnimplementedProcessUserdataServer) AcceptedNodes(context.Context, *AcceptedNodesRequest) (*AcceptedNodesReply, error) {
+func (UnimplementedProcessUserdataServer) AcceptedNodes(context.Context, *MDLAcceptedNodesRequest) (*MDLAcceptedNodesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AcceptedNodes not implemented")
 }
-func (UnimplementedProcessUserdataServer) ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error) {
+func (UnimplementedProcessUserdataServer) ConnectTo(context.Context, *MDLConnectToRequest) (*MDLConnectToReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConnectTo not implemented")
 }
 func (UnimplementedProcessUserdataServer) SendUserdata(context.Context, *UserdataRequest) (*UserdataReply, error) {
@@ -163,8 +163,8 @@ func _ProcessUserdata_Session_Handler(srv interface{}, stream grpc.ServerStream)
 }
 
 type ProcessUserdata_SessionServer interface {
-	Send(*SessionReply) error
-	Recv() (*SessionRequest, error)
+	Send(*MDLSessionReply) error
+	Recv() (*MDLSessionRequest, error)
 	grpc.ServerStream
 }
 
@@ -172,12 +172,12 @@ type processUserdataSessionServer struct {
 	grpc.ServerStream
 }
 
-func (x *processUserdataSessionServer) Send(m *SessionReply) error {
+func (x *processUserdataSessionServer) Send(m *MDLSessionReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *processUserdataSessionServer) Recv() (*SessionRequest, error) {
-	m := new(SessionRequest)
+func (x *processUserdataSessionServer) Recv() (*MDLSessionRequest, error) {
+	m := new(MDLSessionRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (x *processUserdataSessionServer) Recv() (*SessionRequest, error) {
 }
 
 func _ProcessUserdata_AcceptedNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AcceptedNodesRequest)
+	in := new(MDLAcceptedNodesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -194,16 +194,16 @@ func _ProcessUserdata_AcceptedNodes_Handler(srv interface{}, ctx context.Context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/mdlwalletnode.ProcessUserdata/AcceptedNodes",
+		FullMethod: "/walletnode.ProcessUserdata/AcceptedNodes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessUserdataServer).AcceptedNodes(ctx, req.(*AcceptedNodesRequest))
+		return srv.(ProcessUserdataServer).AcceptedNodes(ctx, req.(*MDLAcceptedNodesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _ProcessUserdata_ConnectTo_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ConnectToRequest)
+	in := new(MDLConnectToRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -212,10 +212,10 @@ func _ProcessUserdata_ConnectTo_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/mdlwalletnode.ProcessUserdata/ConnectTo",
+		FullMethod: "/walletnode.ProcessUserdata/ConnectTo",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProcessUserdataServer).ConnectTo(ctx, req.(*ConnectToRequest))
+		return srv.(ProcessUserdataServer).ConnectTo(ctx, req.(*MDLConnectToRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -230,7 +230,7 @@ func _ProcessUserdata_SendUserdata_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/mdlwalletnode.ProcessUserdata/SendUserdata",
+		FullMethod: "/walletnode.ProcessUserdata/SendUserdata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessUserdataServer).SendUserdata(ctx, req.(*UserdataRequest))
@@ -248,7 +248,7 @@ func _ProcessUserdata_ReceiveUserdata_Handler(srv interface{}, ctx context.Conte
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/mdlwalletnode.ProcessUserdata/ReceiveUserdata",
+		FullMethod: "/walletnode.ProcessUserdata/ReceiveUserdata",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessUserdataServer).ReceiveUserdata(ctx, req.(*RetrieveRequest))
@@ -260,7 +260,7 @@ func _ProcessUserdata_ReceiveUserdata_Handler(srv interface{}, ctx context.Conte
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ProcessUserdata_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "mdlwalletnode.ProcessUserdata",
+	ServiceName: "walletnode.ProcessUserdata",
 	HandlerType: (*ProcessUserdataServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

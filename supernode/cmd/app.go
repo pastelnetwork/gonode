@@ -185,7 +185,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	grpc := server.New(config.Server,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
-		mdlwalletnode.NewProcessUserdata(userdataProcess),
+		mdlwalletnode.NewProcessUserdata(userdataProcess, database),
 		mdlsupernode.NewProcessUserdata(userdataProcess, database),
 	)
 

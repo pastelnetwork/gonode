@@ -19,6 +19,11 @@ p2p:
 
 metadb:
   listen_address: "0.0.0.0"
-  http_port: 4001
-  raft_port: 4002
-  data_dir: "metadb-testnet"
+  http_port: 4041
+  raft_port: 4042
+  data_dir: "metadb-4444"
+
+userdb:
+  schema-path: ../metadb/database/commands/schema.sql
+  write-template-path: ../metadb/database/commands/user_info_write.tmpl
+  query-template-path: ../metadb/database/commands/user_info_query.tmpl

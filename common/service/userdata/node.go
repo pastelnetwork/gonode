@@ -4,8 +4,8 @@ package userdata
 
 // Common node info 
 const (
-	// NodeTypePrimary connect to Primary node
-	NodeTypePrimary				= 0
-	// NodeTypeLeader connect to Leader node
-	NodeTypeLeader				= 1
+	// DefaultNumberSuperNodes is number of supernode that we send userdata to
+	DefaultNumberSuperNodes 	= 10 
+	// MinimalNodeConfirmSuccess is number of supernode must successfully confirm for the userdata
+	MinimalNodeConfirmSuccess 	= 8 
 )

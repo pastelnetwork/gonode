@@ -26,7 +26,6 @@ type Config struct {
 	SchemaPath         string `mapstructure:"schema-path" json:"schema-path,omitempty"`
 	WriteTemplatePath  string `mapstructure:"write-template-path" json:"write-template-path,omitempty"`
 	QueryTemplatePath  string `mapstructure:"query-template-path" json:"query-template-path,omitempty"`
-	UpdateTemplatePath string `mapstructure:"update-template-path" json:"update-template-path,omitempty"`
 }
 
 func NewConfig() *Config {

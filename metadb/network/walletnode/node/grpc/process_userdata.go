@@ -36,7 +36,7 @@ func (service *processUserdata) Session(ctx context.Context, isPrimary bool) err
 		return errors.Errorf("failed to open Health stream: %w", err)
 	}
 
-	req := &pb.SessionRequest{
+	req := &pb.MDLSessionRequest{
 		IsPrimary: isPrimary,
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
@@ -76,7 +76,7 @@ func (service *processUserdata) AcceptedNodes(ctx context.Context) (pastelIDs []
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := &pb.AcceptedNodesRequest{}
+	req := &pb.MDLAcceptedNodesRequest{}
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
@@ -97,7 +97,7 @@ func (service *processUserdata) ConnectTo(ctx context.Context, nodeID, sessID st
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := &pb.ConnectToRequest{
+	req := &pb.MDLConnectToRequest{
 		NodeID: nodeID,
 		SessID: sessID,
 	}

@@ -2,19 +2,19 @@ syntax = "proto3";
 
 option go_package = "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode";
 
-package mdlwalletnode;
+package walletnode;
 
 service ProcessUserdata {
     // Session informs the supernode its position (primary/secondary).
     // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
     // The stream is used by the parties to inform each other about the cancellation of the task.
-    rpc Session(stream SessionRequest) returns (stream SessionReply);
+    rpc Session(stream MDLSessionRequest) returns (stream MDLSessionReply);
 
     // AcceptedNodes returns peers of the secondary supernodes connected to it.
-    rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
+    rpc AcceptedNodes(MDLAcceptedNodesRequest) returns (MDLAcceptedNodesReply);
 
     // ConnectTo requests to connect to the primary supernode.
-    rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
+    rpc ConnectTo(MDLConnectToRequest) returns (MDLConnectToReply);
 
     // SendUserdata send the user info and return the operation is success or detail on error.
 	rpc SendUserdata(UserdataRequest) returns (UserdataReply);
@@ -23,27 +23,27 @@ service ProcessUserdata {
     rpc ReceiveUserdata(RetrieveRequest) returns (UserdataRequest);
 }
 
-message SessionRequest {
+message MDLSessionRequest {
     bool is_primary = 1;
 }
-message SessionReply {
+message MDLSessionReply {
     string sessID = 1;
 }
 
-message AcceptedNodesRequest {
+message MDLAcceptedNodesRequest {
 }
-message AcceptedNodesReply {
+message MDLAcceptedNodesReply {
     message Peer {
         string nodeID = 1;
     }
     repeated Peer peers = 1;
 }
 
-message ConnectToRequest {
+message MDLConnectToRequest {
     string sessID = 1;
     string nodeID = 2;
 }
-message ConnectToReply {
+message MDLConnectToReply {
 }
 
 message UserdataRequest {

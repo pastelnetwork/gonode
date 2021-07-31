@@ -38,7 +38,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 		return errors.Errorf("failed to open Health stream: %w", err)
 	}
 
-	req := &pb.SessionRequest{
+	req := &pb.MDLSessionRequest{
 		NodeID: nodeID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
@@ -86,7 +86,7 @@ func (service *processUserdata) SendUserdataToPrimary(ctx context.Context, dataS
 	ctx = service.contextWithMDSessID(ctx)
 	resp, err := service.client.SendUserdataToPrimary(ctx, &pb.SuperNodeRequest{
 		UserdataHash			: dataSigned.UserdataHash,
-		UserdataResultHash	: dataSigned.UserdataResultHash,
+		UserdataResultHash		: dataSigned.UserdataResultHash,
 		HashSignature			: dataSigned.HashSignature,
 		NodeID					: dataSigned.NodeID,
 	})

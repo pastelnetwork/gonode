@@ -26,18 +26,17 @@ const (
 
 	// Status for actual write to rqlite db
 	SuccessWriteToRQLiteDB
+	ErrorRQLiteDBNotFound
 	ErrorWriteToRQLiteDBFail
 
 )
-
-// ResponseCode for Supernode reponse
 
 // Description of ResponseCode
 var Description = map[int]string{
 	SuccessProcess:               			"User specified data set successfully",
 	ErrorNotEnoughSupernode:         		"The process verify signature in primary Supernode success",
 	ErrorNotEnoughSupernodeResponse:		"Not enough SuperNodes reply",
-	ErrorNotEnoughSupernodeConfirm:			"SuperNodes response mismatch",
+	ErrorNotEnoughSupernodeConfirm:			"Not enough SuperNodes confirm",
 	
 	SuccessValidateContent:					"Content Validation successfully",
 	ErrorOnContent:            				"There is error on field(s) in user specified data",
@@ -47,9 +46,10 @@ var Description = map[int]string{
 	ErrorSignatureMismatchBetweenSupernode: "There is not enough number of valid signatures from Supernodes",
 	ErrorUserdataMismatchBetweenSupernode:  "There is mismatch of Userdata between Supernodes",
 	
-	SuccessVerifyAllSignature:				"User specified data set successfully",
+	SuccessVerifyAllSignature:				"The process verify signature in primary Supernode success",
 	ErrorPrimarySupernodeVerifyFail:		"The process verify signature in primary Supernode fail",
 
 	SuccessWriteToRQLiteDB:					"Data is written to rqlite db successfully",
+	ErrorRQLiteDBNotFound:					"RQLite Database not found",
 	ErrorWriteToRQLiteDBFail:				"Data fail to write to rqlite db",
 }

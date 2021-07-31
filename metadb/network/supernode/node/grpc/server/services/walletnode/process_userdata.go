@@ -7,24 +7,27 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	pb "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode"
+	pbwn "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode"
+	pbsn "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
 	"github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
+	"github.com/pastelnetwork/gonode/metadb/database"
 )
 
 // ProcessUserdata represents grpc service for processing userdata.
 type ProcessUserdata struct {
-	pb.UnimplementedProcessUserdataServer
+	pbwn.UnimplementedProcessUserdataServer
 
 	*common.ProcessUserdata
+	databaseOps *database.DatabaseOps
 }
 
 // Session implements walletnode.ProcessUserdataServer.Session()
-func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer) error {
+func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServer) error {
 	ctx, cancel := context.WithCancel(stream.Context())
 	defer cancel()
 
@@ -57,7 +60,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 		return err
 	}
 
-	resp := &pb.SessionReply{
+	resp := &pbwn.MDLSessionReply{
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
@@ -80,7 +83,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 }
 
 // AcceptedNodes implements walletnode.ProcessUserdataServer.AcceptedNodes()
-func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
+func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pbwn.MDLAcceptedNodesRequest) (*pbwn.MDLAcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -92,14 +95,14 @@ func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pb.Accep
 		return nil, err
 	}
 
-	var peers []*pb.AcceptedNodesReply_Peer
+	var peers []*pbwn.MDLAcceptedNodesReply_Peer
 	for _, node := range nodes {
-		peers = append(peers, &pb.AcceptedNodesReply_Peer{
+		peers = append(peers, &pbwn.MDLAcceptedNodesReply_Peer{
 			NodeID: node.ID,
 		})
 	}
 
-	resp := &pb.AcceptedNodesReply{
+	resp := &pbwn.MDLAcceptedNodesReply{
 		Peers: peers,
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
@@ -107,28 +110,37 @@ func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pb.Accep
 }
 
 // ConnectTo implements walletnode.ProcessUserdataServer.ConnectTo()
-func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
+func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConnectToRequest) (*pbwn.MDLConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := task.ConnectTo(ctx, req.NodeID, req.SessID, userdata.NodeTypePrimary); err != nil {
+	if err := task.ConnectTo(ctx, req.NodeID, req.SessID); err != nil {
 		return nil, err
 	}
 
-	resp := &pb.ConnectToReply{}
+	if !service.databaseOps.IsLeader(){
+		if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress() ,req.SessID); err != nil {
+			return nil, err
+		}
+	}
+
+	resp := &pbwn.MDLConnectToReply{}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
 	return resp, nil
 }
 
 // SendUserdata implements walletnode.ProcessUserdataServer.SendUserdata()
-func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.UserdataRequest) (*pb.UserdataReply, error) {
+func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.UserdataRequest) (*pbwn.UserdataReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdata request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if req == nil {
+		return nil, errors.Errorf("Request receive from walletnode is nil")
 	}
 	// Convert protobuf request to UserdataProcessRequest
 	request := userdata.UserdataProcessRequestSigned{
@@ -156,13 +168,20 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 		UserdataHash: req.UserdataHash,
 		Signature:    req.Signature,
 	}
+	request.Userdata.CoverPhoto.Filename = req.CoverPhoto.Filename
+
+	request.Userdata.ArtistPastelID  = req.ArtistPastelID
+	request.Userdata.Timestamp   = req.Timestamp
+	request.Userdata.PreviousBlockHash=req.PreviousBlockHash
+	request.UserdataHash = req.UserdataHash 
+	request.Signature = req.Signature
 
 	processResult, err := task.SupernodeProcessUserdata(ctx, &request)
 	if err != nil {
 		return nil, errors.Errorf("SupernodeProcessUserdata can not process %w", err)
 	}
 	if processResult.ResponseCode == userdata.ErrorOnContent {
-		return &pb.UserdataReply{
+		return &pbwn.UserdataReply{
 			ResponseCode:    processResult.ResponseCode,
 			Detail:          processResult.Detail,
 			Realname:        processResult.Realname,
@@ -179,32 +198,76 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 	}
 	// Process actual write to rqlite db happen here
 	<-task.NewAction(func(ctx context.Context) error {
-		// Send data to SN contain the leader rqlite
-		/* NEED TO FIX!!!
-		if err := task.ConnectTo(ctx, req.NodeID, req.SessID, userdata.NodeTypeLeader); err != nil {
-			return err
-		} else {
-			if task.connectedToLeader != nil {
-				if _, err := task.connectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
-					return errors.Errorf("failed to send userdata to leader rqlite %w", err)
+		if processResult.ResponseCode == userdata.SuccessVerifyAllSignature {
+			if service.databaseOps == nil {
+				processResult.ResponseCode = userdata.ErrorRQLiteDBNotFound
+				processResult.Detail = userdata.Description[userdata.ErrorRQLiteDBNotFound]
+				return errors.Errorf("databaseOps service object is empty")
+			}
+			// Send data to SN contain the leader rqlite
+			if !service.databaseOps.IsLeader() {
+				if task.ConnectedToLeader != nil {
+					if _, err := task.ConnectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
+						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
+						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
+						return errors.Errorf("failed to send or write userdata to leader rqlite %w", err)
+					}
+				} else {
+					processResult.ResponseCode = userdata.ErrorRQLiteDBNotFound
+					processResult.Detail = userdata.Description[userdata.ErrorRQLiteDBNotFound]
+					return errors.Errorf("leader rqlite node object is empty")
 				}
 			} else {
-				return errors.Errorf("leader rqlite node object is empty")
+				// This supernode contain rqlite leader, write to db here
+				// Kinda weird here but not walletnode and supernode have duplicate of UserdataRequest
+				// so we need to convert pbwn.UserdataRequest to pbsn.UserdataRequest
+				reqsn := pbsn.UserdataRequest{
+					Realname:        (*req).Realname,
+					FacebookLink:    (*req).FacebookLink,
+					TwitterLink:     (*req).TwitterLink,
+					NativeCurrency:  (*req).NativeCurrency,
+					Location:        (*req).Location,
+					PrimaryLanguage: (*req).PrimaryLanguage,
+					Categories:      (*req).Categories,
+					Biography:       (*req).Biography,
+					AvatarImage: &pbsn.UserdataRequest_UserImageUpload{
+						Content:  (*req).AvatarImage.Content,
+						Filename: (*req).AvatarImage.Filename,
+					},
+					CoverPhoto: &pbsn.UserdataRequest_UserImageUpload{
+						Content:  (*req).CoverPhoto.Content,
+						Filename: (*req).CoverPhoto.Filename,
+					},
+					ArtistPastelID:    (*req).ArtistPastelID,
+					Timestamp:         (*req).Timestamp,
+					Signature:         (*req).Signature,
+					PreviousBlockHash: (*req).PreviousBlockHash,
+				}
+				
+				err := service.databaseOps.WriteUserData(ctx, reqsn)
+				if err != nil {
+					processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
+					processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
+					return err
+				}
+
+				// If can go to here, all process of setting userdata have passed
+				// We can consider to pass userdata.SuccessProcess or userdata.SuccessWriteToRQLiteDB (both have same success meaning)
+				processResult.ResponseCode = userdata.SuccessProcess
+				processResult.Detail = userdata.Description[userdata.SuccessProcess]
 			}
-
-		}*/
-
+		}
 		return nil
 	})
 
-	return &pb.UserdataReply{
+	return &pbwn.UserdataReply{
 		ResponseCode: processResult.ResponseCode,
 		Detail:       processResult.Detail,
 	}, nil
 }
 
 // ReceiveUserdata implements walletnode.ProcessUserdataServer.ReceiveUserdata()
-func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pb.RetrieveRequest) (*pb.UserdataRequest, error) {
+func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pbwn.RetrieveRequest) (*pbwn.UserdataRequest, error) {
 	log.WithContext(ctx).WithField("userpastelid", req.Userpastelid).Debugf("ReceiveUserdata request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -218,7 +281,7 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pb.Ret
 	}
 
 	// Generate protobuf response respProto
-	respProto := &pb.UserdataRequest{
+	respProto := &pbwn.UserdataRequest{
 		Realname:        result.Realname,
 		FacebookLink:    result.FacebookLink,
 		TwitterLink:     result.TwitterLink,
@@ -227,11 +290,11 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pb.Ret
 		PrimaryLanguage: result.PrimaryLanguage,
 		Categories:      result.Categories,
 		Biography:       result.Biography,
-		AvatarImage: &pb.UserdataRequest_UserImageUpload{
+		AvatarImage: &pbwn.UserdataRequest_UserImageUpload{
 			Content:  result.AvatarImage.Content,
 			Filename: result.AvatarImage.Filename,
 		},
-		CoverPhoto: &pb.UserdataRequest_UserImageUpload{
+		CoverPhoto: &pbwn.UserdataRequest_UserImageUpload{
 			Content:  result.CoverPhoto.Content,
 			Filename: result.CoverPhoto.Filename,
 		},
@@ -245,12 +308,13 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pb.Ret
 
 // Desc returns a description of the service.
 func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
-	return &pb.ProcessUserdata_ServiceDesc
+	return &pbwn.ProcessUserdata_ServiceDesc
 }
 
 // NewProcessUserdata returns a new ProcessUserdata instance.
-func NewProcessUserdata(service *userdataprocess.Service) *ProcessUserdata {
+func NewProcessUserdata(service *userdataprocess.Service, databaseOps *database.DatabaseOps) *ProcessUserdata {
 	return &ProcessUserdata{
 		ProcessUserdata: common.NewProcessUserdata(service),
+		databaseOps: databaseOps,
 	}
 }

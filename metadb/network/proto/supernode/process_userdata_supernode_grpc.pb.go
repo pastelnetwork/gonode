@@ -36,7 +36,7 @@ func NewProcessUserdataClient(cc grpc.ClientConnInterface) ProcessUserdataClient
 }
 
 func (c *processUserdataClient) Session(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SessionClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ProcessUserdata_ServiceDesc.Streams[0], "/mdlsupernode.ProcessUserdata/Session", opts...)
+	stream, err := c.cc.NewStream(ctx, &ProcessUserdata_ServiceDesc.Streams[0], "/supernode.ProcessUserdata/Session", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,8 +45,8 @@ func (c *processUserdataClient) Session(ctx context.Context, opts ...grpc.CallOp
 }
 
 type ProcessUserdata_SessionClient interface {
-	Send(*SessionRequest) error
-	Recv() (*SessionReply, error)
+	Send(*MDLSessionRequest) error
+	Recv() (*MDLSessionReply, error)
 	grpc.ClientStream
 }
 
@@ -54,12 +54,12 @@ type processUserdataSessionClient struct {
 	grpc.ClientStream
 }
 
-func (x *processUserdataSessionClient) Send(m *SessionRequest) error {
+func (x *processUserdataSessionClient) Send(m *MDLSessionRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *processUserdataSessionClient) Recv() (*SessionReply, error) {
-	m := new(SessionReply)
+func (x *processUserdataSessionClient) Recv() (*MDLSessionReply, error) {
+	m := new(MDLSessionReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (x *processUserdataSessionClient) Recv() (*SessionReply, error) {
 
 func (c *processUserdataClient) SendUserdataToPrimary(ctx context.Context, in *SuperNodeRequest, opts ...grpc.CallOption) (*SuperNodeReply, error) {
 	out := new(SuperNodeReply)
-	err := c.cc.Invoke(ctx, "/mdlsupernode.ProcessUserdata/SendUserdataToPrimary", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/supernode.ProcessUserdata/SendUserdataToPrimary", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (c *processUserdataClient) SendUserdataToPrimary(ctx context.Context, in *S
 
 func (c *processUserdataClient) SendUserdataToLeader(ctx context.Context, in *UserdataRequest, opts ...grpc.CallOption) (*SuperNodeReply, error) {
 	out := new(SuperNodeReply)
-	err := c.cc.Invoke(ctx, "/mdlsupernode.ProcessUserdata/SendUserdataToLeader", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/supernode.ProcessUserdata/SendUserdataToLeader", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -129,8 +129,8 @@ func _ProcessUserdata_Session_Handler(srv interface{}, stream grpc.ServerStream)
 }
 
 type ProcessUserdata_SessionServer interface {
-	Send(*SessionReply) error
-	Recv() (*SessionRequest, error)
+	Send(*MDLSessionReply) error
+	Recv() (*MDLSessionRequest, error)
 	grpc.ServerStream
 }
 
@@ -138,12 +138,12 @@ type processUserdataSessionServer struct {
 	grpc.ServerStream
 }
 
-func (x *processUserdataSessionServer) Send(m *SessionReply) error {
+func (x *processUserdataSessionServer) Send(m *MDLSessionReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *processUserdataSessionServer) Recv() (*SessionRequest, error) {
-	m := new(SessionRequest)
+func (x *processUserdataSessionServer) Recv() (*MDLSessionRequest, error) {
+	m := new(MDLSessionRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func _ProcessUserdata_SendUserdataToPrimary_Handler(srv interface{}, ctx context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/mdlsupernode.ProcessUserdata/SendUserdataToPrimary",
+		FullMethod: "/supernode.ProcessUserdata/SendUserdataToPrimary",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessUserdataServer).SendUserdataToPrimary(ctx, req.(*SuperNodeRequest))
@@ -178,7 +178,7 @@ func _ProcessUserdata_SendUserdataToLeader_Handler(srv interface{}, ctx context.
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/mdlsupernode.ProcessUserdata/SendUserdataToLeader",
+		FullMethod: "/supernode.ProcessUserdata/SendUserdataToLeader",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ProcessUserdataServer).SendUserdataToLeader(ctx, req.(*UserdataRequest))
@@ -190,7 +190,7 @@ func _ProcessUserdata_SendUserdataToLeader_Handler(srv interface{}, ctx context.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ProcessUserdata_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "mdlsupernode.ProcessUserdata",
+	ServiceName: "supernode.ProcessUserdata",
 	HandlerType: (*ProcessUserdataServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

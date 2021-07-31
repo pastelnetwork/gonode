@@ -59,7 +59,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 		return err
 	}
 
-	resp := &pb.SessionReply{
+	resp := &pb.MDLSessionReply{
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
@@ -96,7 +96,7 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 		UserdataHash		: req.UserdataHash,
 		UserdataResultHash	: req.UserdataResultHash,
 		HashSignature		: req.HashSignature,
-		NodeID				: req.SupernodePastelID,
+		NodeID				: req.NodeID,
 	}
 
 	if err := task.AddPeerSNDataSigned(ctx, snrequest); err != nil {
@@ -123,7 +123,10 @@ func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *p
 	
 	// This code run in supernode contain leader rqlite db
 	// Process write the data to rqlite happen here
-	service.databaseOps.WriteUserData(ctx, *req)
+	err := service.databaseOps.WriteUserData(ctx, *req)
+	if err != nil {
+		return nil, err
+	}
 
 	return &pb.SuperNodeReply{
 		ResponseCode: userdata.SuccessWriteToRQLiteDB,
