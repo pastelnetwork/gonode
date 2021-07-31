@@ -19,7 +19,6 @@ import (
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/metadb/database"
 	mdlclient "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/client"
-	mdlserver "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server"
 	mdlsupernode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/supernode"
 	mdlwalletnode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -178,21 +177,17 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
 
-	// server
-	grpc := server.New(config.Server,
-		walletnode.NewRegisterArtwork(artworkRegister),
-		supernode.NewRegisterArtwork(artworkRegister),
-	)
-
 	// ----Userdata Services----
 	userdataNodeClient := mdlclient.New()
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
 
-	// Userdata grpc server
-	mdlgrpc := mdlserver.New(config.MDLServer,
+	// server
+	grpc := server.New(config.Server,
+		walletnode.NewRegisterArtwork(artworkRegister),
+		supernode.NewRegisterArtwork(artworkRegister),
 		mdlwalletnode.NewProcessUserdata(userdataProcess),
 		mdlsupernode.NewProcessUserdata(userdataProcess, database),
 	)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, mdlgrpc, database, userdataProcess)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, database, userdataProcess)
 }
