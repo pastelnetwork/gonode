@@ -2,6 +2,7 @@ package userdataprocess
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"time"
@@ -165,7 +166,7 @@ func (task *Task) run(ctx context.Context) error {
 
 		userdata := &userdata.UserdataProcessRequestSigned{
 			Userdata:     task.request,
-			UserdataHash: string(hashvalue),
+			UserdataHash: hex.EncodeToString(hashvalue),
 			Signature:    string(signature),
 		}
 

@@ -123,7 +123,6 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
-
 // SendUserdata implements walletnode.ProcessUserdataServer.SendUserdata()
 func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.UserdataRequest) (*pb.UserdataReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdata request")
@@ -132,54 +131,50 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 		return nil, err
 	}
 	// Convert protobuf request to UserdataProcessRequest
-	request := userdata.UserdataProcessRequestSigned{}
-
-	request.Userdata.Realname = req.Realname
-	request.Userdata.FacebookLink = req.FacebookLink
-	request.Userdata.TwitterLink=req.TwitterLink
-	request.Userdata.NativeCurrency= req.NativeCurrency
-	request.Userdata.Location= req.Location
-	request.Userdata.PrimaryLanguage= req.PrimaryLanguage
-	request.Userdata.Categories=req.Categories
-	request.Userdata.Biography= req.Biography
-
-	if req.AvatarImage.Content != nil && len(req.AvatarImage.Content) > 0 {
-		req.AvatarImage.Content = make ([]byte, len(req.AvatarImage.Content))
-		copy(request.Userdata.AvatarImage.Content,req.AvatarImage.Content)
+	request := userdata.UserdataProcessRequestSigned{
+		Userdata: &userdata.UserdataProcessRequest{
+			Realname:        req.Realname,
+			FacebookLink:    req.FacebookLink,
+			TwitterLink:     req.TwitterLink,
+			NativeCurrency:  req.NativeCurrency,
+			Location:        req.Location,
+			PrimaryLanguage: req.PrimaryLanguage,
+			Categories:      req.Categories,
+			Biography:       req.Biography,
+			AvatarImage: userdata.UserImageUpload{
+				Content:  req.AvatarImage.Content,
+				Filename: req.AvatarImage.Filename,
+			},
+			CoverPhoto: userdata.UserImageUpload{
+				Content:  req.CoverPhoto.Content,
+				Filename: req.CoverPhoto.Filename,
+			},
+			ArtistPastelID:    req.ArtistPastelID,
+			Timestamp:         req.Timestamp,
+			PreviousBlockHash: req.PreviousBlockHash,
+		},
+		UserdataHash: req.UserdataHash,
+		Signature:    req.Signature,
 	}
-	request.Userdata.AvatarImage.Filename = req.AvatarImage.Filename
-
-	if req.CoverPhoto.Content != nil && len(req.CoverPhoto.Content) > 0 {
-		req.CoverPhoto.Content = make ([]byte, len(req.CoverPhoto.Content))
-		copy(request.Userdata.CoverPhoto.Content,req.CoverPhoto.Content)
-	}
-	request.Userdata.CoverPhoto.Filename = req.CoverPhoto.Filename
-
-	request.Userdata.ArtistPastelID  = req.ArtistPastelID
-	request.Userdata.Timestamp   = req.Timestamp
-	request.Userdata.PreviousBlockHash=req.PreviousBlockHash
-	request.UserdataHash = req.UserdataHash 
-	request.Signature = req.Signature
-
 
 	processResult, err := task.SupernodeProcessUserdata(ctx, &request)
 	if err != nil {
 		return nil, errors.Errorf("SupernodeProcessUserdata can not process %w", err)
 	}
 	if processResult.ResponseCode == userdata.ErrorOnContent {
-		return &pb.UserdataReply {
-			ResponseCode 		: processResult.ResponseCode,
-			Detail				: processResult.Detail,
-			Realname 			: processResult.Realname,
-			FacebookLink 		: processResult.FacebookLink,
-			TwitterLink 		: processResult.TwitterLink,
-			NativeCurrency 		: processResult.NativeCurrency,
-			Location 			: processResult.Location,
-			PrimaryLanguage 	: processResult.PrimaryLanguage,
-			Categories 			: processResult.Categories,
-			Biography 			: processResult.Biography,
-			AvatarImage			: processResult.AvatarImage,
-			CoverPhoto			: processResult.CoverPhoto,
+		return &pb.UserdataReply{
+			ResponseCode:    processResult.ResponseCode,
+			Detail:          processResult.Detail,
+			Realname:        processResult.Realname,
+			FacebookLink:    processResult.FacebookLink,
+			TwitterLink:     processResult.TwitterLink,
+			NativeCurrency:  processResult.NativeCurrency,
+			Location:        processResult.Location,
+			PrimaryLanguage: processResult.PrimaryLanguage,
+			Categories:      processResult.Categories,
+			Biography:       processResult.Biography,
+			AvatarImage:     processResult.AvatarImage,
+			CoverPhoto:      processResult.CoverPhoto,
 		}, nil
 	}
 	// Process actual write to rqlite db happen here
@@ -196,15 +191,15 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pb.Userda
 			} else {
 				return errors.Errorf("leader rqlite node object is empty")
 			}
-			
+
 		}*/
 
 		return nil
 	})
 
-	return &pb.UserdataReply {
-		ResponseCode		: processResult.ResponseCode,
-		Detail				: processResult.Detail,
+	return &pb.UserdataReply{
+		ResponseCode: processResult.ResponseCode,
+		Detail:       processResult.Detail,
 	}, nil
 }
 
@@ -217,44 +212,36 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pb.Ret
 	}
 
 	userpastelid := req.Userpastelid
-	result, err:= task.ReceiveUserdata(ctx, userpastelid)
+	result, err := task.ReceiveUserdata(ctx, userpastelid)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Generate protobuf response respProto
-	respProto := &pb.UserdataRequest{}
-
-	respProto.Realname = result.Realname
-	respProto.FacebookLink = result.FacebookLink
-	respProto.TwitterLink = result.TwitterLink
-	respProto.NativeCurrency = result.NativeCurrency
-	respProto.Location = result.Location
-	respProto.PrimaryLanguage = result.PrimaryLanguage
-	respProto.Categories = result.Categories
-	respProto.Biography = result.Biography
-	respProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
-
-	if result.AvatarImage.Content != nil && len(result.AvatarImage.Content) > 0 {
-		respProto.AvatarImage.Content = make ([]byte, len(result.AvatarImage.Content))
-		copy(respProto.AvatarImage.Content,result.AvatarImage.Content)
+	respProto := &pb.UserdataRequest{
+		Realname:        result.Realname,
+		FacebookLink:    result.FacebookLink,
+		TwitterLink:     result.TwitterLink,
+		NativeCurrency:  result.NativeCurrency,
+		Location:        result.Location,
+		PrimaryLanguage: result.PrimaryLanguage,
+		Categories:      result.Categories,
+		Biography:       result.Biography,
+		AvatarImage: &pb.UserdataRequest_UserImageUpload{
+			Content:  result.AvatarImage.Content,
+			Filename: result.AvatarImage.Filename,
+		},
+		CoverPhoto: &pb.UserdataRequest_UserImageUpload{
+			Content:  result.CoverPhoto.Content,
+			Filename: result.CoverPhoto.Filename,
+		},
+		ArtistPastelID:    result.ArtistPastelID,
+		Timestamp:         result.Timestamp,
+		PreviousBlockHash: result.PreviousBlockHash,
 	}
-	respProto.AvatarImage.Filename = result.AvatarImage.Filename
-
-	respProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
-	if result.CoverPhoto.Content != nil && len(result.CoverPhoto.Content) > 0 {
-		respProto.CoverPhoto.Content = make ([]byte, len(result.CoverPhoto.Content))
-		copy(respProto.CoverPhoto.Content,result.CoverPhoto.Content)
-	}
-	respProto.CoverPhoto.Filename = result.CoverPhoto.Filename
-	
-	respProto.ArtistPastelID = result.ArtistPastelID 
-	respProto.Timestamp = result.Timestamp
-	respProto.PreviousBlockHash = result.PreviousBlockHash
 
 	return respProto, nil
 }
-
 
 // Desc returns a description of the service.
 func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
@@ -265,6 +252,5 @@ func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
 func NewProcessUserdata(service *userdataprocess.Service) *ProcessUserdata {
 	return &ProcessUserdata{
 		ProcessUserdata: common.NewProcessUserdata(service),
-
 	}
 }
