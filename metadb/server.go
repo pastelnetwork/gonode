@@ -110,13 +110,15 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
-	selfAddress := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.HTTPPort)
+	selfAddress := s.config.ExposedAddress
 	var joinIPAddresses []string
-	for _, ip := range s.nodeIPList {
-		if selfAddress == ip {
-			continue
+	if !s.config.IsLeader {
+		for _, ip := range s.nodeIPList {
+			if selfAddress == ip {
+				continue
+			}
+			joinIPAddresses = append(joinIPAddresses, ip)
 		}
-		joinIPAddresses = append(joinIPAddresses, ip)
 	}
 
 	if len(joinIPAddresses) > 0 {
@@ -137,7 +139,7 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 	s.db = db
 
 	// execute any requested join operation
-	if len(joinIPAddresses) > 0 && isNew {
+	if len(joinIPAddresses) > 0 {
 		log.WithContext(ctx).Infof("join addresses are: %v", joinIPAddresses)
 
 		raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
@@ -148,7 +150,7 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 			joinIPAddresses,
 			db.ID(),
 			raftAddr,
-			true,
+			!s.config.NoneVoter,
 			defaultJoinAttempts,
 			defaultJoinInterval,
 			nil,

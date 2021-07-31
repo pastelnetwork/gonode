@@ -18,6 +18,9 @@ p2p:
   bootstrap_port: 6000
 
 metadb:
+  is_leader: false
+  none_voter: false
+  exposed_address: "0.0.0.0:4051"
   listen_address: "0.0.0.0"
   http_port: 4051
   raft_port: 4052

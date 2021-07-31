@@ -50,7 +50,7 @@ var (
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 
-	rqliteDefaultPort = 4041
+	rqliteDefaultPort = 4446
 )
 
 // NewApp inits a new command line interface.

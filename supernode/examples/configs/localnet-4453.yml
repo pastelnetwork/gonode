@@ -1,28 +1,30 @@
 pastel-api:
   hostname: "127.0.0.1"
   port: 29932
-  username: "4444"
+  username: "4453"
   password: ""
 
 node:
-  pastel_id: jXa5335zYgxydGXsN6MA8r7BLbYzMTnKoV63sWBVmTrmhPgPutxa534KuvxB24fxwpH3jXr3wvHJUUzNQWGHPK
+  pastel_id: jXY8geimEDQJZifVX1W4Vwd4N2x1zp92Eknd2dFtVW3Q1EJB3v3F8cMed6D641F1Zp5X7LtrTSx6Kc1HSv7VPQ
   server:
     listen_addresses: "0.0.0.0"
-    port: 4444
+    port: 4453
 
 p2p:
   listen_address: "0.0.0.0"
-  port: 6000
-  data_dir: "p2p-localnet-6000"
+  port: 6009
+  data_dir: "p2p-localnet-6009"
+  bootstrap_ip: "localhost"
+  bootstrap_port: 6000
 
 metadb:
-  is_leader: true
-  none_voter: false
-  exposed_address: "0.0.0.0:4041"
+  is_leader: false
+  none_voter: true
+  exposed_address: "0.0.0.0:4131"
   listen_address: "0.0.0.0"
-  http_port: 4041
-  raft_port: 4042
-  data_dir: "metadb-4444"
+  http_port: 4131
+  raft_port: 4132
+  data_dir: "metadb-4453"
 
 userdb:
   schema-path: ../metadb/database/commands/schema.sql
