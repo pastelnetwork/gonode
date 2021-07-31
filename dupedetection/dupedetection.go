@@ -4,20 +4,21 @@ package dupedetection
 
 import "context"
 
-type DupeDetectionResult struct {
-	DupeDetectionSystemVer  string              `json:"dupe_detection_system_version"`
-	ImageHash               string              `json:"hash_of_candidate_image_file,omitempty"`
-	IsLikelyDupe            float64             `json:"is_likely_dupe,omitempty"`
-	PastelRarenessScore     float64             `json:"overall_average_rareness_score"`
-	InternetRarenessScore   float64             `json:"is_rare_on_internet"`
-	MatchesFoundOnFirstPage int                 `json:"matches_found_on_first_page"`
-	NumberOfResultPages     int                 `json:"number_of_pages_of_results"`
-	FirstMatchURL           string              `json:"url_of_first_match_in_page"`
-	OpenNSFWScore           float64             `json:"open_nsfw_score"`
-	AlternateNSFWScores     AlternateNSFWScores `json:"alternative_nsfw_scores"`
-	FingerPrints            string              `json:"image_fingerprint_of_candidate_image_file"`
+// DupeDetection is the dupe detection result which will be sent to the caller
+type DupeDetection struct {
+	DupeDetectionSystemVer  string
+	PastelRarenessScore     float64
+	InternetRarenessScore   float64
+	MatchesFoundOnFirstPage int
+	NumberOfResultPages     int
+	FirstMatchURL           string
+	OpenNSFWScore           float64
+	AlternateNSFWScores     AlternateNSFWScores
+	ImageHashes             ImageHashes
+	FingerPrints            []float64
 }
 
+// AlternateNSFWScores represents alternate NSFW scores in the output of dupe detection service
 type AlternateNSFWScores struct {
 	Drawings float64 `json:"drawings"`
 	Hentai   float64 `json:"hentai"`
@@ -26,7 +27,14 @@ type AlternateNSFWScores struct {
 	Sexy     float64 `json:"sexy"`
 }
 
+// ImageHashes represents image hashes in the output of dupe detection service
+type ImageHashes struct {
+	PerceptualHash string `json:"perceptual_hash"`
+	AverageHash    string `json:"average_hash"`
+	DifferenceHash string `json:"difference_hash"`
+}
+
 type Client interface {
 	// Generate returns fingerprints and ranks for a given image
-	Generate(ctx context.Context, path string) (*DupeDetectionResult, error)
+	Generate(ctx context.Context, path string) (*DupeDetection, error)
 }

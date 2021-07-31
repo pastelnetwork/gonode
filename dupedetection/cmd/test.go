@@ -10,13 +10,8 @@ import (
 )
 
 const (
-	defaultConfigFile = "./test.yml"
-	defaultTestImage  = "test.png"
+	defaultTestImage = "test.png"
 )
-
-type DDConfig struct {
-	DupeDection *dupedetection.Config `mapstructure:"dd-service" json:"dd-service,omitempty"`
-}
 
 func main() {
 	fmt.Println("Start dupe detection test...")
@@ -44,9 +39,14 @@ func main() {
 		fmt.Errorf("could not get fringerprints from dupe detection service: %v\n", err)
 		return
 	}
+	fmt.Printf("Dupe detection system version: %s\n", result.DupeDetectionSystemVer)
 	fmt.Printf("Pastel Rareness Score: %v\n", result.PastelRarenessScore)
 	fmt.Printf("Internet Rareness Score: %v\n", result.InternetRarenessScore)
 	fmt.Printf("Open NSFW Score: %v\n", result.OpenNSFWScore)
+	fmt.Printf("Matches found on first page: %v\n", result.MatchesFoundOnFirstPage)
+	fmt.Printf("Number of result pages: %v\n", result.NumberOfResultPages)
+	fmt.Printf("First match URL: %s\n", result.FirstMatchURL)
 	fmt.Printf("Alternate NSFW Scores: %v\n", result.AlternateNSFWScores)
+	fmt.Printf("Image Hashes: %v\n", result.ImageHashes)
 	fmt.Printf("Fingerprints: %v\n", result.FingerPrints)
 }

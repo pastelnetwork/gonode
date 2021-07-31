@@ -2,6 +2,7 @@ package dupedetection
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -107,6 +108,177 @@ func TestCopyImageToInputDir(t *testing.T) {
 	}
 }
 
+func TestCollectOutput(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		ctx        context.Context
+		config     *Config
+		outputBase string
+		outputPath string
+	}
+
+	pwd, err := os.Getwd()
+	assert.Equal(t, nil, err)
+
+	inputDir := path.Join(pwd, "input")
+	outputDir := path.Join(pwd, "output")
+	outputDir2 := path.Join(pwd, "output2")
+	err = os.Mkdir(outputDir, os.ModePerm)
+	assert.Equal(t, nil, err)
+	defer os.RemoveAll(outputDir)
+
+	baseName := "test.json"
+	outputPath := path.Join(outputDir, baseName)
+	baseName1 := "test1.json"
+	outputPath1 := path.Join(outputDir, baseName1)
+	baseName2 := "test2.json"
+	outputPath2 := path.Join(outputDir, baseName2)
+	baseName3 := "test3.json"
+	outputPath3 := path.Join(outputDir, baseName3)
+
+	ddResult := dupeDetectionResult{
+		DupeDetectionSystemVer:  "1.0",
+		ImageHash:               "02bcagagaeagdae",
+		IsLikelyDupe:            0,
+		PastelRarenessScore:     0.9,
+		InternetRarenessScore:   0.8,
+		MatchesFoundOnFirstPage: 1,
+		NumberOfResultPages:     10,
+		FirstMatchURL:           "https://example.com",
+		OpenNSFWScore:           0.6,
+		AlternateNSFWScores: AlternateNSFWScores{
+			Drawings: 0.1,
+			Hentai:   0.2,
+			Neutral:  0.3,
+			Porn:     0.4,
+			Sexy:     0.5,
+		},
+		ImageHashes: ImageHashes{
+			PerceptualHash: "c999d3d3230724fc",
+			AverageHash:    "ffff990999181800",
+			DifferenceHash: "7333237333337331",
+		},
+		FingerPrints: "[0.1, 0.2, 0.3]",
+	}
+
+	result := &DupeDetection{
+		DupeDetectionSystemVer:  ddResult.DupeDetectionSystemVer,
+		PastelRarenessScore:     ddResult.PastelRarenessScore,
+		InternetRarenessScore:   ddResult.InternetRarenessScore,
+		MatchesFoundOnFirstPage: ddResult.MatchesFoundOnFirstPage,
+		NumberOfResultPages:     ddResult.NumberOfResultPages,
+		FirstMatchURL:           ddResult.FirstMatchURL,
+		OpenNSFWScore:           ddResult.OpenNSFWScore,
+		AlternateNSFWScores:     ddResult.AlternateNSFWScores,
+		ImageHashes:             ddResult.ImageHashes,
+	}
+	err = json.Unmarshal([]byte(ddResult.FingerPrints), &result.FingerPrints)
+	assert.Equal(t, nil, err)
+
+	data, err := json.Marshal(&ddResult)
+	assert.Equal(t, nil, err)
+
+	err = ioutil.WriteFile(outputPath, data, os.ModePerm)
+	assert.Equal(t, nil, err)
+
+	err = ioutil.WriteFile(outputPath2, []byte("test"), os.ModePerm)
+	assert.Equal(t, nil, err)
+
+	ddResult.FingerPrints = "[0.1, 0.2, 0.3"
+	data, err = json.Marshal(&ddResult)
+	assert.Equal(t, nil, err)
+
+	err = ioutil.WriteFile(outputPath3, data, os.ModePerm)
+	assert.Equal(t, nil, err)
+
+	testCases := []struct {
+		args      args
+		result    *DupeDetection
+		assertion assert.ErrorAssertionFunc
+	}{
+		{
+			args: args{
+				ctx: context.Background(),
+				config: &Config{
+					InputDir:  inputDir,
+					OutputDir: outputDir,
+				},
+				outputBase: baseName,
+				outputPath: outputPath,
+			},
+			result:    result,
+			assertion: assert.NoError,
+		},
+		{
+			args: args{
+				ctx: context.Background(),
+				config: &Config{
+					InputDir:  inputDir,
+					OutputDir: outputDir2,
+				},
+				outputBase: baseName,
+				outputPath: outputPath,
+			},
+			result:    nil,
+			assertion: assert.Error,
+		},
+		{
+			args: args{
+				ctx: context.Background(),
+				config: &Config{
+					InputDir:  inputDir,
+					OutputDir: outputDir,
+				},
+				outputBase: baseName1,
+				outputPath: outputPath1,
+			},
+			result:    nil,
+			assertion: assert.Error,
+		},
+		{
+			args: args{
+				ctx: context.Background(),
+				config: &Config{
+					InputDir:  inputDir,
+					OutputDir: outputDir,
+				},
+				outputBase: baseName2,
+				outputPath: outputPath2,
+			},
+			result:    nil,
+			assertion: assert.Error,
+		},
+		{
+			args: args{
+				ctx: context.Background(),
+				config: &Config{
+					InputDir:  inputDir,
+					OutputDir: outputDir,
+				},
+				outputBase: baseName3,
+				outputPath: outputPath3,
+			},
+			result:    nil,
+			assertion: assert.Error,
+		},
+	}
+
+	for i, testCase := range testCases {
+
+		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+
+			client := NewClient(testCase.args.config).(*client)
+
+			ctx, _ := context.WithTimeout(testCase.args.ctx, time.Second)
+
+			result, err := client.collectOutput(ctx, testCase.args.outputBase, testCase.args.outputPath)
+			testCase.assertion(t, err)
+			assert.Equal(t, testCase.result, result)
+		})
+	}
+}
+
 func TestGenerate(t *testing.T) {
 	t.Parallel()
 
@@ -128,16 +300,16 @@ func TestGenerate(t *testing.T) {
 	defer os.RemoveAll(outputDir)
 
 	testFile := path.Join(pwd, "test.jpg")
+	testFile2 := path.Join(pwd, "test2.jpg")
 	testData := []byte("test")
 	err = ioutil.WriteFile(testFile, testData, os.ModePerm)
 	assert.Equal(t, nil, err)
 	defer os.Remove(testFile)
 
 	testCases := []struct {
-		args             args
-		outputBaseExt    string
-		outputPathPrefix string
-		assertion        assert.ErrorAssertionFunc
+		args      args
+		result    *DupeDetection
+		assertion assert.ErrorAssertionFunc
 	}{
 		{
 			args: args{
@@ -148,9 +320,20 @@ func TestGenerate(t *testing.T) {
 					OutputDir: outputDir,
 				},
 			},
-			outputBaseExt:    ".json",
-			outputPathPrefix: outputDir,
-			assertion:        assert.Error,
+			result:    nil,
+			assertion: assert.Error,
+		},
+		{
+			args: args{
+				ctx:      context.Background(),
+				testFile: testFile2,
+				config: &Config{
+					InputDir:  inputDir,
+					OutputDir: outputDir,
+				},
+			},
+			result:    nil,
+			assertion: assert.Error,
 		},
 	}
 
@@ -165,7 +348,7 @@ func TestGenerate(t *testing.T) {
 
 			result, err := client.Generate(ctx, testCase.args.testFile)
 			testCase.assertion(t, err)
-			assert.Equal(t, (*DupeDetectionResult)(nil), result)
+			assert.Equal(t, testCase.result, result)
 		})
 	}
 }
