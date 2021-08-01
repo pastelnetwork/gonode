@@ -65,7 +65,7 @@ type FingerAndScores struct {
 	IsRareOnInternet            int                  `json:"is_rare_on_internet"`
 	NumberOfPagesOfResults      int                  `json:"number_of_pages_of_results"`
 	MatchesFoundOnFirstPage     int                  `json:"matches_found_on_first_page"`
-	UrlOfFirstMatchInPage       string               `json:"url_of_first_match_in_page"`
+	URLOfFirstMatchInPage       string               `json:"url_of_first_match_in_page"`
 	OpenNSFWScore               float64              `json:"open_nsfw_score"`
 	ZstdCompressedFingerprint   []byte               `json:"zstd_compressed_fingerprint"`
 	AlternativeNSFWScore        AlternativeNSFWScore `json:"alternative_nsfw_score"`

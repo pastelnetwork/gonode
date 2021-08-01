@@ -587,7 +587,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pa
 		IsRareOnInternet:            0,
 		NumberOfPagesOfResults:      10,
 		MatchesFoundOnFirstPage:     5,
-		UrlOfFirstMatchInPage:       "",
+		URLOfFirstMatchInPage:       "",
 		OpenNSFWScore:               0.5,
 		ZstdCompressedFingerprint:   nil,
 		AlternativeNSFWScore: pastel.AlternativeNSFWScore{

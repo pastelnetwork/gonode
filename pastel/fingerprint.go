@@ -10,12 +10,14 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
+// Fingerprint uniquely identify an image
 type Fingerprint []float64
 
 func fingerprintBaseTypeSize() int {
 	return int(unsafe.Sizeof(float64(0)))
 }
 
+// FingerprintFromBytes deserialize a slice of bytes into Fingerprint
 func FingerprintFromBytes(data []byte) (Fingerprint, error) {
 	typeSize := fingerprintBaseTypeSize()
 	if len(data)%typeSize != 0 {
@@ -30,6 +32,7 @@ func FingerprintFromBytes(data []byte) (Fingerprint, error) {
 	return fg, nil
 }
 
+// Bytes serialize a Fingerprint into slice of byte
 func (fg Fingerprint) Bytes() []byte {
 	output := new(bytes.Buffer)
 	_ = binary.Write(output, binary.LittleEndian, fg)
@@ -57,7 +60,7 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 	}
 
 	if lhs.OverallAverageRarenessScore != rhs.OverallAverageRarenessScore {
-		return errors.Errorf("overall average rareness score not matched: lhs(%f) != rhs(%f)", lhs.IsLikelyDupe, rhs.IsLikelyDupe)
+		return errors.Errorf("overall average rareness score not matched: lhs(%d) != rhs(%d)", lhs.IsLikelyDupe, rhs.IsLikelyDupe)
 	}
 
 	if lhs.IsRareOnInternet != rhs.IsRareOnInternet {

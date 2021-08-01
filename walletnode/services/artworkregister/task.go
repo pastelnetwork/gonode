@@ -548,7 +548,7 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			DupeDetectionSystemVer:         task.fingerprintAndScores.DupeDectectionSystemVersion,
 			MatchesFoundOnFirstPage:        task.fingerprintAndScores.MatchesFoundOnFirstPage,
 			NumberOfResultPages:            task.fingerprintAndScores.NumberOfPagesOfResults,
-			FirstMatchURL:                  task.fingerprintAndScores.UrlOfFirstMatchInPage,
+			FirstMatchURL:                  task.fingerprintAndScores.URLOfFirstMatchInPage,
 			PastelRarenessScore:            task.fingerprintAndScores.OverallAverageRarenessScore,
 			InternetRarenessScore:          float64(task.fingerprintAndScores.IsRareOnInternet),
 			OpenNSFWScore:                  task.fingerprintAndScores.OpenNSFWScore,

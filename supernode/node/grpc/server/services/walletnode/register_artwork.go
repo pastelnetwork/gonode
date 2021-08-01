@@ -177,7 +177,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		IsRareOnInternet:          int32(fingerAndScores.IsRareOnInternet),
 		MatchesFoundOnFirstPage:   int32(fingerAndScores.MatchesFoundOnFirstPage),
 		NumberOfPagesOfResults:    int32(fingerAndScores.NumberOfPagesOfResults),
-		UrlOfFirstMatchInPage:     fingerAndScores.UrlOfFirstMatchInPage,
+		UrlOfFirstMatchInPage:     fingerAndScores.URLOfFirstMatchInPage,
 		OpenNsfwScore:             fingerAndScores.OpenNSFWScore,
 		ZstdCompressedFingerprint: fingerAndScores.ZstdCompressedFingerprint,
 		AlternativeNsfwScore: &pb.ProbeImageReply_AlternativeNSFWScore{

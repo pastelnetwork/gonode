@@ -164,7 +164,7 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 		IsRareOnInternet:            int(resp.IsRareOnInternet),
 		NumberOfPagesOfResults:      int(resp.NumberOfPagesOfResults),
 		MatchesFoundOnFirstPage:     int(resp.MatchesFoundOnFirstPage),
-		UrlOfFirstMatchInPage:       resp.UrlOfFirstMatchInPage,
+		URLOfFirstMatchInPage:       resp.UrlOfFirstMatchInPage,
 		OpenNSFWScore:               resp.OpenNsfwScore,
 		ZstdCompressedFingerprint:   resp.ZstdCompressedFingerprint,
 		AlternativeNSFWScore: pastel.AlternativeNSFWScore{

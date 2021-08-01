@@ -14,7 +14,6 @@ func TestEncodeArtTicket(t *testing.T) {
 		Thumbnail1Hash:        []byte{2},
 		Thumbnail2Hash:        []byte{3},
 		DataHash:              []byte{4},
-		Fingerprints:          []byte{5},
 		FingerprintsHash:      []byte{6},
 		FingerprintsSignature: []byte{7},
 
@@ -50,5 +49,4 @@ func TestEncodeArtTicket(t *testing.T) {
 	assert.Equal(t, inputAppData.PreviewHash, outputAppData.PreviewHash)
 	assert.Equal(t, inputAppData.Thumbnail1Hash, outputAppData.Thumbnail1Hash)
 	assert.Equal(t, inputAppData.DataHash, outputAppData.DataHash)
-	assert.Equal(t, inputAppData.Fingerprints, outputAppData.Fingerprints)
 }
