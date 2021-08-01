@@ -5,6 +5,7 @@ import (
 	"net"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts/handshaker"
 	"google.golang.org/grpc/credentials"
@@ -70,6 +71,7 @@ func newALTS(side alts.Side, secClient alts.SecClient, info *alts.SignInfo) cred
 
 // ClientHandshake implements the client side handshake protocol.
 func (g *altsTC) ClientHandshake(ctx context.Context, _ string, rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
+	ctx = log.ContextWithPrefix(ctx, "alts-handshake")
 	opts := handshaker.DefaultClientHandshakerOptions()
 	chs, err := handshaker.NewClientHandshaker(ctx, rawConn, opts)
 	if err != nil {
@@ -87,6 +89,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, _ string, rawConn net.Conn
 // ServerHandshake implements the server side ALTS handshaker.
 func (g *altsTC) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthInfo, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), defaultTimeout)
+	ctx = log.ContextWithPrefix(ctx, "alts-handshake")
 	defer cancel()
 
 	opts := handshaker.DefaultServerHandshakerOptions()
