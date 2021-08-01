@@ -187,6 +187,11 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 			Porn:    fingerAndScores.AlternativeNSFWScore.Porn,
 			Sexy:    fingerAndScores.AlternativeNSFWScore.Sexy,
 		},
+		ImageHashes: &pb.ProbeImageReply_ImageHashes{
+			PerceptualHash: fingerAndScores.ImageHashes.PerceptualHash,
+			AverageHash:    fingerAndScores.ImageHashes.AverageHash,
+			DifferenceHash: fingerAndScores.ImageHashes.DifferenceHash,
+		},
 	}
 
 	if err := stream.SendAndClose(resp); err != nil {
