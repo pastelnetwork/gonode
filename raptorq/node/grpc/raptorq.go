@@ -53,9 +53,8 @@ func readFileLines(path string) ([]string, error) {
 func createTaskFolder(base string, subDirs ...string) (string, error) {
 	taskId := randId()
 	taskPath := filepath.Join(base, taskId)
-	for _, subDir := range subDirs {
-		taskPath = filepath.Join(taskPath, subDir)
-	}
+	taskPath = filepath.Join(taskPath, filepath.Join(subDirs...))
+
 	err := os.MkdirAll(taskPath, 0777)
 
 	if err != nil {
