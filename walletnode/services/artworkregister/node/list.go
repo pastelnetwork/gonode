@@ -96,6 +96,7 @@ func (nodes *List) MatchFingerprintAndScores() error {
 	return nil
 }
 
+// FingerAndScores returns fingerprint of the image and dupedetection scores
 func (nodes *List) FingerAndScores() *pastel.FingerAndScores {
 	return (*nodes)[0].fingerprintAndScores
 }

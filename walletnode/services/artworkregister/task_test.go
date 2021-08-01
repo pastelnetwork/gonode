@@ -1385,7 +1385,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 		task                  *Task
 		sendFromAddressRetErr error
 		burnTxnIDRet          string
-		preBurntFeeRetTxId    string
+		preBurntFeeRetTxID    string
 		preBurntFeeRetErr     error
 		nodes                 []nodeArg
 	}
@@ -1448,7 +1448,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 		},
 		"regArtTxId-empty-err": {
 			args: args{
-				preBurntFeeRetTxId: "test-id",
+				preBurntFeeRetTxID: "test-id",
 				preBurntFeeRetErr:  nil,
 				task: &Task{
 					Request: &Request{
@@ -1467,7 +1467,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 		},
 		"success": {
 			args: args{
-				preBurntFeeRetTxId: "test-id",
+				preBurntFeeRetTxID: "test-id",
 				preBurntFeeRetErr:  nil,
 				task: &Task{
 					Request: &Request{
@@ -1507,7 +1507,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 				ListenOnConnectTo(nil).
 				ListenOnSessID("").
 				ListenOnAcceptedNodes([]string{}, nil).
-				ListenOnSendPreBurntFeeTxId(tc.args.preBurntFeeRetTxId, tc.args.preBurntFeeRetErr)
+				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
@@ -1757,7 +1757,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 		sendFromAddressRetErr  error
 		sendSignedTicketRet    int64
 		sendSignedTicketRetErr error
-		preBurntFeeRetTxId     string
+		preBurntFeeRetTxID     string
 		preBurntFeeRetErr      error
 		nodes                  []nodeArg
 	}
@@ -1842,7 +1842,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 				ListenOnSessID("").
 				ListenOnAcceptedNodes([]string{}, nil).
 				ListenOnSendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
-				ListenOnSendPreBurntFeeTxId(tc.args.preBurntFeeRetTxId, tc.args.preBurntFeeRetErr)
+				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {

@@ -71,8 +71,8 @@ func (client *Client) ListenOnRegisterArtwork() *Client {
 	return client
 }
 
-// SendPreBurntFeeTxIdMethod listening SendPreBurntFeeTxIdMethod call
-func (client *Client) ListenOnSendPreBurntFeeTxId(txid string, err error) *Client {
+// ListenOnSendPreBurntFeeTxID listening SendPreBurntFeeTxIdMethod call
+func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Client {
 	client.RegisterArtwork.On(SendPreBurntFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
 	return client
 }
@@ -84,6 +84,7 @@ func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
 	return client
 }
 
+// ListenOnUploadImageWithThumbnail listening UploadImageWithThumbnail call
 func (client *Client) ListenOnUploadImageWithThumbnail(retPreviewHash []byte,
 	retMediumThumbnailHash []byte, retsmallThumbnailHash []byte, retErr error) *Client {
 
