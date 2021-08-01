@@ -1539,7 +1539,6 @@ func TestTaskUploadImage(t *testing.T) {
 		task                    *Task
 		nodes                   []nodeArg
 		findTicketIDReturns     *pastel.IDTicket
-		probeImgErr             error
 		previewHash             []byte
 		mediumHash              []byte
 		smallHash               []byte
@@ -1754,7 +1753,6 @@ func TestTaskSendSignedTicket(t *testing.T) {
 	}
 	type args struct {
 		task                   *Task
-		sendFromAddressRetErr  error
 		sendSignedTicketRet    int64
 		sendSignedTicketRetErr error
 		preBurntFeeRetTxID     string

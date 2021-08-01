@@ -17,7 +17,6 @@ type Node struct {
 	isPrimary            bool
 	activated            bool
 	fingerprintAndScores *pastel.FingerAndScores
-	fingerprint          []float64
 
 	// thumbnail hash
 	previewHash         []byte
