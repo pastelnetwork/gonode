@@ -232,6 +232,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	signature, err := secClient.Sign(ctx, append(pub[:], challengeB...),
 		signInfo.PastelID, signInfo.PassPhrase)
 	if err != nil {
+		log.WithContext(ctx).Errorf("failed to generate signature: %v", err)
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
 
@@ -253,6 +254,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 
 	if ok, err := secClient.Verify(ctx, append(response.PubKey[:], challengeA...),
 		string(response.Signature), response.PastelID); err != nil || !ok {
+		log.WithContext(ctx).Errorf("failed to verify server public key: %v", err)
 		return fmt.Errorf("failed to verify server public key: %w", err)
 	}
 
@@ -325,7 +327,8 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 
 	if ok, err := secClient.Verify(ctx, append(request.PubKey[:], challengeB...),
 		string(request.Signature), request.PastelID); err != nil || !ok {
-		return fmt.Errorf("failed to verify public key: %w", err)
+		log.WithContext(ctx).Errorf("failed to verify client public key: %v", err)
+		return fmt.Errorf("failed to verify client public key: %w", err)
 	}
 
 	curve := ed448.NewCurve()
@@ -338,6 +341,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	signature, err := secClient.Sign(ctx, append(pub[:], challengeA...),
 		signInfo.PastelID, signInfo.PassPhrase)
 	if err != nil {
+		log.WithContext(ctx).Errorf("failed to generate signature: %v", err)
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
 
