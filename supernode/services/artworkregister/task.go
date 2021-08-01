@@ -31,9 +31,8 @@ type Task struct {
 	Artwork          *artwork.File
 	imageSizeBytes   int
 
-	fingerprintsData []byte
-	fingerAndScores  *pastel.FingerAndScores
-	fingerprints     pastel.Fingerprint
+	fingerAndScores *pastel.FingerAndScores
+	fingerprints    pastel.Fingerprint
 
 	PreviewThumbnail *artwork.File
 	MediumThumbnail  *artwork.File

@@ -1871,7 +1871,6 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 	type args struct {
 		task              *Task
 		nodes             []nodeArg
-		probeImgErr       error
 		masterNodesTopErr error
 		masterNodes       pastel.MasterNodes
 	}
