@@ -4,11 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	b58 "github.com/jbenet/go-base58"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/node"
+	thumbnail "github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
 )
 
 const (
@@ -20,6 +21,8 @@ type Service struct {
 	*task.Worker
 	p2pClient    p2p.Client
 	pastelClient pastel.Client
+	nodeClient   node.Client
+	config       *Config
 }
 
 // Run starts worker.
@@ -56,20 +59,14 @@ func (service *Service) AddTask(request *ArtSearchRequest) string {
 }
 
 // NewService returns a new Service instance.
-func NewService(pastelClient pastel.Client, p2pClient p2p.Client) *Service {
+func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, nodeClient node.Client) *Service {
 	return &Service{
+		config:       config,
 		pastelClient: pastelClient,
 		p2pClient:    p2pClient,
 		Worker:       task.NewWorker(),
+		nodeClient:   nodeClient,
 	}
-}
-
-// FetchThumbnail gets artwork thumbnail
-func (service *Service) FetchThumbnail(ctx context.Context, res *pastel.RegTicket) (data []byte, err error) {
-	hash := res.RegTicketData.ArtTicketData.AppTicketData.ThumbnailHash
-	key := b58.Encode(hash)
-
-	return service.p2pClient.Retrieve(ctx, key)
 }
 
 // RegTicket pull art registration ticket from cNode & decodes base64 encoded fields
@@ -90,4 +87,16 @@ func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.
 	}
 
 	return &regTicket, nil
+}
+
+// GetThumbnail gets thumbnail
+func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket) (data []byte, err error) {
+	thumbnailHelper := thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectTimeout)
+
+	if err := thumbnailHelper.Connect(ctx, 1); err != nil {
+		return data, fmt.Errorf("connect Thumbnail helper : %s", err)
+	}
+	defer thumbnailHelper.Close()
+
+	return thumbnailHelper.Fetch(ctx, string(regTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash))
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
 )
 
 // Task is the task of searching for artwork.
@@ -21,9 +22,10 @@ type Task struct {
 	searchResult   []*RegTicketSearch
 	searchResMutex sync.Mutex
 
-	resultChan chan *RegTicketSearch
-	err        error
-	request    *ArtSearchRequest
+	resultChan      chan *RegTicketSearch
+	err             error
+	request         *ArtSearchRequest
+	thumbnailHelper thumbnail.Helper
 }
 
 // Run starts the task
@@ -33,6 +35,7 @@ func (task *Task) Run(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("Start task")
 	defer log.WithContext(ctx).Debugf("End task")
 	defer close(task.resultChan)
+	defer task.thumbnailHelper.Close()
 
 	if err := task.run(ctx); err != nil {
 		task.err = err
@@ -48,15 +51,12 @@ func (task *Task) Run(ctx context.Context) error {
 }
 
 func (task *Task) run(ctx context.Context) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	actTickets, err := task.pastelClient.ActTickets(ctx, pastel.ActTicketAll, task.request.MinBlock)
 	if err != nil {
 		return fmt.Errorf("act ticket: %s", err)
 	}
 
-	group, ctx := errgroup.WithContext(ctx)
+	group, gctx := errgroup.WithContext(ctx)
 
 	for _, ticket := range actTickets {
 		ticket := ticket
@@ -70,7 +70,7 @@ func (task *Task) run(ctx context.Context) error {
 		}
 
 		group.Go(func() error {
-			regTicket, err := task.RegTicket(ctx, ticket.ActTicketData.RegTXID)
+			regTicket, err := task.RegTicket(gctx, ticket.ActTicketData.RegTXID)
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", ticket.TXID).WithError(err).Error("Reg Ticket")
 
@@ -97,20 +97,27 @@ func (task *Task) run(ctx context.Context) error {
 		task.searchResult = task.searchResult[:task.request.Limit]
 	}
 
-	group, ctx = errgroup.WithContext(ctx)
+	pastelConnections := 10
+	if len(task.searchResult) < pastelConnections {
+		pastelConnections = len(task.searchResult)
+	}
+
+	if err := task.thumbnailHelper.Connect(ctx, uint(pastelConnections)); err != nil {
+		return fmt.Errorf("connect Thumbnail helper : %s", err)
+	}
+
+	group, gctx = errgroup.WithContext(ctx)
 	for i, res := range task.searchResult {
 		res := res
 		res.MatchIndex = i
 
 		group.Go(func() error {
-
-			data, err := task.FetchThumbnail(ctx, res.RegTicket)
+			data, err := task.thumbnailHelper.Fetch(gctx, string(res.RegTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash))
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("Fetch Thumbnail")
 
-				return fmt.Errorf("txid: %s - err: %s", res.TXID, err)
+				return fmt.Errorf("fetch thumbnail: txid: %s - err: %s", res.TXID, err)
 			}
-
 			res.Thumbnail = data
 
 			// Post on result channel
@@ -127,15 +134,16 @@ func (task *Task) run(ctx context.Context) error {
 
 // filterRegTicket filters ticket against request params & checks if its a match
 func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
-	if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
-		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
-		return srch, false
-	}
+	// FIXME
+	// if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
+	// 	task.request.MinRarenessScore, task.request.MaxRarenessScore) {
+	// 	return srch, false
+	// }
 
-	if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.NSFWScore,
-		task.request.MinNsfwScore, task.request.MaxNsfwScore) {
-		return srch, false
-	}
+	// if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.NSFWScore,
+	// 	task.request.MinNsfwScore, task.request.MaxNsfwScore) {
+	// 	return srch, false
+	// }
 
 	if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.TotalCopies,
 		task.request.MinCopies, task.request.MaxCopies) {
@@ -171,9 +179,10 @@ func (task *Task) SubscribeSearchResult() <-chan *RegTicketSearch {
 // NewTask returns a new Task instance.
 func NewTask(service *Service, request *ArtSearchRequest) *Task {
 	return &Task{
-		Task:       task.New(StatusTaskStarted),
-		Service:    service,
-		request:    request,
-		resultChan: make(chan *RegTicketSearch),
+		Task:            task.New(StatusTaskStarted),
+		Service:         service,
+		request:         request,
+		resultChan:      make(chan *RegTicketSearch),
+		thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectTimeout),
 	}
 }

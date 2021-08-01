@@ -25,7 +25,6 @@ type Config struct {
 	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration
-	connectTimeout         time.Duration
 
 	thumbnailSize int
 }
@@ -33,12 +32,10 @@ type Config struct {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		NumberSuperNodes: defaultNumberSuperNodes,
-
+		Config:                 *common.NewConfig(),
+		NumberSuperNodes:       defaultNumberSuperNodes,
 		connectToNextNodeDelay: connectToNextNodeDelay,
 		acceptNodesTimeout:     acceptNodesTimeout,
-		connectTimeout:         connectTimeout,
-
-		thumbnailSize: thumbnailSize,
+		thumbnailSize:          thumbnailSize,
 	}
 }
