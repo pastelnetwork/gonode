@@ -675,7 +675,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 	// Match fingerprints received from supernodes.
 	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
-		return errors.Errorf("fingerprints aren't matched")
+		return errors.Errorf("fingerprints aren't matched :%w", err)
 	}
 	task.fingerprintAndScores = task.nodes.FingerAndScores()
 	task.UpdateStatus(StatusImageProbed)
@@ -758,10 +758,10 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 
 	// check if fee is over-expection
 	task.registrationFee = task.nodes.RegistrationFee()
+
 	if task.registrationFee > int64(task.Request.MaximumFee) {
 		return errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
 	}
-
 	task.registrationFee = task.nodes.RegistrationFee()
 
 	return nil

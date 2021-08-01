@@ -58,6 +58,16 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
 	return nil
 }
 
+// SetPrimary promotes a supernode to primary role which handle the write to Kamedila
+func (node *Node) SetPrimary(primary bool) {
+	node.isPrimary = primary
+}
+
+// IsPrimary returns true if this node has been promoted to primary in meshNode session
+func (node *Node) IsPrimary() bool {
+	return node.isPrimary
+}
+
 // Address returns address of node
 func (node *Node) Address() string {
 	return node.address

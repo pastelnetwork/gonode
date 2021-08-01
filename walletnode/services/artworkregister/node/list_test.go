@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -234,8 +235,11 @@ func TestNodesSendImage(t *testing.T) {
 			}
 
 			err := nodes.ProbeImage(testCase.args.ctx, testCase.args.file)
-			fmt.Println(err)
-			assert.Equal(t, testCase.err, err)
+			if err != nil {
+				assert.Equal(t, errors.Errorf("failed to probe image: %w", testCase.err).Error(), err.Error())
+			} else {
+				assert.Equal(t, err, testCase.err)
+			}
 
 			//mock assertion each client
 			for _, client := range clients {

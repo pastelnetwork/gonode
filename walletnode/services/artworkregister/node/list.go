@@ -90,7 +90,7 @@ func (nodes *List) MatchFingerprintAndScores() error {
 	node := (*nodes)[0]
 	for i := 1; i < len(*nodes); i++ {
 		if err := pastel.CompareFingerPrintAndScore(node.fingerprintAndScores, (*nodes)[i].fingerprintAndScores); err != nil {
-			return errors.Errorf("fingerprint or score of node[%s] and node[%s] not matched: %w", err)
+			return errors.Errorf("fingerprint or score of node[%s] and node[%s] not matched: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
 		}
 	}
 	return nil
@@ -209,16 +209,6 @@ func (nodes *List) MediumThumbnailHash() []byte {
 // SmallThumbnailHash returns the hash of the small thumbnail calculated by the first node
 func (nodes *List) SmallThumbnailHash() []byte {
 	return (*nodes)[0].smallThumbnailHash
-}
-
-// SetPrimary promotes a supernode to primary role which handle the write to Kamedila
-func (node *Node) SetPrimary(primary bool) {
-	node.isPrimary = primary
-}
-
-// IsPrimary returns true if this node has been promoted to primary in meshNode session
-func (node *Node) IsPrimary() bool {
-	return node.isPrimary
 }
 
 // RegArtTicketID return txid of RegArt ticket
