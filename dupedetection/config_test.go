@@ -17,8 +17,9 @@ func TestNewConfig(t *testing.T) {
 	}{
 		{
 			config: &Config{
-				InputDir:  DefaultInputDir,
-				OutputDir: DefaultOutputDir,
+				InputDir:             DefaultInputDir,
+				OutputDir:            DefaultOutputDir,
+				WaitForOutputTimeout: DefaultTimeout,
 			},
 		},
 	}

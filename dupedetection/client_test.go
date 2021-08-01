@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -100,9 +99,9 @@ func TestCopyImageToInputDir(t *testing.T) {
 
 			client := NewClient(testCase.args.config).(*client)
 
-			outputBase, outputPath, err := client.copyImageToInputDir(testCase.args.testFile)
+			outputPath, err := client.copyImageToInputDir(testCase.args.testFile)
 			testCase.assertion(t, err)
-			assert.True(t, filepath.Ext(outputBase) == testCase.outputBaseExt)
+			assert.True(t, filepath.Ext(outputPath) == testCase.outputBaseExt)
 			assert.True(t, strings.HasPrefix(outputPath, testCase.outputPathPrefix))
 		})
 	}
@@ -114,7 +113,6 @@ func TestCollectOutput(t *testing.T) {
 	type args struct {
 		ctx        context.Context
 		config     *Config
-		outputBase string
 		outputPath string
 	}
 
@@ -123,7 +121,6 @@ func TestCollectOutput(t *testing.T) {
 
 	inputDir := path.Join(pwd, "input")
 	outputDir := path.Join(pwd, "output")
-	outputDir2 := path.Join(pwd, "output2")
 	err = os.Mkdir(outputDir, os.ModePerm)
 	assert.Equal(t, nil, err)
 	defer os.RemoveAll(outputDir)
@@ -188,10 +185,10 @@ func TestCollectOutput(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				config: &Config{
-					InputDir:  inputDir,
-					OutputDir: outputDir,
+					InputDir:             inputDir,
+					OutputDir:            outputDir,
+					WaitForOutputTimeout: 1,
 				},
-				outputBase: baseName,
 				outputPath: outputPath,
 			},
 			result:    &result,
@@ -201,23 +198,10 @@ func TestCollectOutput(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				config: &Config{
-					InputDir:  inputDir,
-					OutputDir: outputDir2,
+					InputDir:             inputDir,
+					OutputDir:            outputDir,
+					WaitForOutputTimeout: 1,
 				},
-				outputBase: baseName,
-				outputPath: outputPath,
-			},
-			result:    nil,
-			assertion: assert.Error,
-		},
-		{
-			args: args{
-				ctx: context.Background(),
-				config: &Config{
-					InputDir:  inputDir,
-					OutputDir: outputDir,
-				},
-				outputBase: baseName1,
 				outputPath: outputPath1,
 			},
 			result:    nil,
@@ -227,10 +211,10 @@ func TestCollectOutput(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				config: &Config{
-					InputDir:  inputDir,
-					OutputDir: outputDir,
+					InputDir:             inputDir,
+					OutputDir:            outputDir,
+					WaitForOutputTimeout: 1,
 				},
-				outputBase: baseName2,
 				outputPath: outputPath2,
 			},
 			result:    nil,
@@ -240,10 +224,10 @@ func TestCollectOutput(t *testing.T) {
 			args: args{
 				ctx: context.Background(),
 				config: &Config{
-					InputDir:  inputDir,
-					OutputDir: outputDir,
+					InputDir:             inputDir,
+					OutputDir:            outputDir,
+					WaitForOutputTimeout: 1,
 				},
-				outputBase: baseName3,
 				outputPath: outputPath3,
 			},
 			result:    nil,
@@ -257,9 +241,9 @@ func TestCollectOutput(t *testing.T) {
 
 			client := NewClient(testCase.args.config).(*client)
 
-			ctx, _ := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx := context.Background()
 
-			result, err := client.collectOutput(ctx, testCase.args.outputBase, testCase.args.outputPath)
+			result, err := client.collectOutput(ctx, testCase.args.outputPath)
 			testCase.assertion(t, err)
 			assert.Equal(t, testCase.result, result)
 		})
@@ -303,8 +287,9 @@ func TestGenerate(t *testing.T) {
 				ctx:      context.Background(),
 				testFile: testFile,
 				config: &Config{
-					InputDir:  inputDir,
-					OutputDir: outputDir,
+					InputDir:             inputDir,
+					OutputDir:            outputDir,
+					WaitForOutputTimeout: 1,
 				},
 			},
 			result:    nil,
@@ -315,8 +300,9 @@ func TestGenerate(t *testing.T) {
 				ctx:      context.Background(),
 				testFile: testFile2,
 				config: &Config{
-					InputDir:  inputDir,
-					OutputDir: outputDir,
+					InputDir:             inputDir,
+					OutputDir:            outputDir,
+					WaitForOutputTimeout: 1,
 				},
 			},
 			result:    nil,
@@ -330,8 +316,7 @@ func TestGenerate(t *testing.T) {
 
 			client := NewClient(testCase.args.config).(*client)
 
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
-			defer cancel()
+			ctx := context.Background()
 
 			result, err := client.Generate(ctx, testCase.args.testFile)
 			testCase.assertion(t, err)

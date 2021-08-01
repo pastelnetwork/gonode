@@ -21,13 +21,13 @@ type client struct {
 func (client *client) Generate(ctx context.Context, path string) (*DupeDetection, error) {
 
 	// Copy image file to dupe detection service input directory
-	outputBase, outputPath, err := client.copyImageToInputDir(path)
+	outputPath, err := client.copyImageToInputDir(path)
 	if err != nil {
 		return nil, errors.Errorf("failed to copy image to dupe detection input directory: %w", err)
 	}
 
 	// Collect result from dupe detection output directory
-	result, err := client.collectOutput(ctx, outputBase, outputPath)
+	result, err := client.collectOutput(ctx, outputPath)
 	if err != nil {
 		err = errors.Errorf("failed to collect output from dupe detection service: %w", err)
 	}
@@ -35,10 +35,10 @@ func (client *client) Generate(ctx context.Context, path string) (*DupeDetection
 	return result, err
 }
 
-func (client *client) copyImageToInputDir(inputPath string) (string, string, error) {
+func (client *client) copyImageToInputDir(inputPath string) (string, error) {
 	input, err := ioutil.ReadFile(inputPath)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	ext := filepath.Ext(inputPath)
@@ -46,46 +46,39 @@ func (client *client) copyImageToInputDir(inputPath string) (string, string, err
 	// Generate random name
 	inputName, err := random.String(10, random.Base62Chars)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	inputPath = filepath.Join(client.config.InputDir, inputName+ext)
 
 	err = ioutil.WriteFile(inputPath, input, os.ModePerm)
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	outputBase := inputName + ".json"
 	outputPath := filepath.Join(client.config.OutputDir, outputBase)
-	return outputBase, outputPath, nil
+	return outputPath, nil
 }
 
-func (client *client) collectOutput(ctx context.Context, baseName, path string) (*DupeDetection, error) {
+func (client *client) collectOutput(ctx context.Context, path string) (*DupeDetection, error) {
 	// Waiting for JSON output from dupe detection service
-	ticker := time.NewTicker(1 * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(client.config.WaitForOutputTimeout)*time.Second)
+	defer cancel()
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
-			ticker.Stop()
-			return nil, errors.New("Timeout")
+			return nil, errors.Errorf("timeout: %w", ctx.Err())
 		case <-ticker.C:
-			files, err := ioutil.ReadDir(client.config.OutputDir)
+			result, err := parseOutput(path)
+
 			if err != nil {
-				return nil, errors.Errorf("failed to scan dupe detection output directory: %v", err)
+				log.WithContext(ctx).WithError(err).Debug("Failed to collect output from dupe detection service")
+				continue
 			}
-			for _, file := range files {
-				if file.Name() == baseName {
-					result, err := parseOutput(path)
-
-					if err != nil {
-						log.WithContext(ctx).WithError(err).Debug("Failed to collect output from dupe detection service")
-						continue
-					}
-
-					return result, nil
-				}
-			}
+			return result, nil
 		}
 	}
 }
