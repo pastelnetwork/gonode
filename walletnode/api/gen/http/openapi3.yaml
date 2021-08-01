@@ -39,13 +39,19 @@ paths:
                 description: The Mona Lisa is an oil painting by Italian artist, inventor,
                   and writer Leonardo da Vinci. Likely completed in 1506, the piece
                   features a portrait of a seated woman set against an imaginary landscape.
+                drawing_nsfw_score: 1000
+                hentai_nsfw_score: 1000
+                internet_rareness_score: 1
                 is_green: true
                 keywords: Renaissance, sfumato, portrait
+                neutral_nsfw_score: 1000
                 nsfw_score: 1000
+                porn_nsfw_score: 1000
                 rareness_score: 1
-                royalty: 0.8422043798623209
+                royalty: 7767964326538747577
                 seen_score: 1
                 series_name: Famous artist
+                sexy_nsfw_score: 1000
                 storage_fee: 100
                 thumbnail:
                 - 73
@@ -723,22 +729,22 @@ paths:
         example: 4453244333956176108
       - name: min_rareness_score
         in: query
-        description: Minimum rareness score
+        description: Minimum pastel rareness score
         allowEmptyValue: true
         schema:
-          type: integer
-          description: Minimum rareness score
+          type: number
+          description: Minimum pastel rareness score
           example: 1
           minimum: 1
           maximum: 1000
         example: 1
       - name: max_rareness_score
         in: query
-        description: Maximum rareness score
+        description: Maximum pastel rareness score
         allowEmptyValue: true
         schema:
-          type: integer
-          description: Maximum rareness score
+          type: number
+          description: Maximum pastel rareness score
           example: 1000
           minimum: 1
           maximum: 1000
@@ -748,7 +754,7 @@ paths:
         description: Minimum nsfw score
         allowEmptyValue: true
         schema:
-          type: integer
+          type: number
           description: Minimum nsfw score
           example: 1
           minimum: 1
@@ -759,8 +765,30 @@ paths:
         description: Maximum nsfw score
         allowEmptyValue: true
         schema:
-          type: integer
+          type: number
           description: Maximum nsfw score
+          example: 1000
+          minimum: 1
+          maximum: 1000
+        example: 1000
+      - name: min_internet_rareness_score
+        in: query
+        description: Minimum internet rareness score
+        allowEmptyValue: true
+        schema:
+          type: number
+          description: Minimum internet rareness score
+          example: 1
+          minimum: 1
+          maximum: 1000
+        example: 1
+      - name: max_internet_rareness_score
+        in: query
+        description: Maximum internet rareness score
+        allowEmptyValue: true
+        schema:
+          type: number
+          description: Maximum internet rareness score
           example: 1000
           minimum: 1
           maximum: 1000
@@ -898,6 +926,24 @@ components:
             writer Leonardo da Vinci. Likely completed in 1506, the piece features
             a portrait of a seated woman set against an imaginary landscape.
           maxLength: 1024
+        drawing_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1000
+          minimum: 0
+          maximum: 1000
+        hentai_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1000
+          minimum: 0
+          maximum: 1000
+        internet_rareness_score:
+          type: number
+          description: internet rareness score
+          example: 1
+          minimum: 0
+          maximum: 1000
         is_green:
           type: boolean
           description: Green flag
@@ -907,23 +953,35 @@ components:
           description: Keywords
           example: Renaissance, sfumato, portrait
           maxLength: 256
+        neutral_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1000
+          minimum: 0
+          maximum: 1000
         nsfw_score:
-          type: integer
+          type: number
+          description: nsfw score
+          example: 1000
+          minimum: 0
+          maximum: 1000
+        porn_nsfw_score:
+          type: number
           description: nsfw score
           example: 1000
           minimum: 0
           maximum: 1000
         rareness_score:
-          type: integer
-          description: rareness score
+          type: number
+          description: pastel rareness score
           example: 1
           minimum: 0
           maximum: 1000
         royalty:
-          type: number
+          type: integer
           description: how much artist should get on all future resales
-          example: 0.4685763941072239
-          format: double
+          example: 4321854410538811785
+          format: int64
         seen_score:
           type: integer
           description: seen score
@@ -935,6 +993,12 @@ components:
           description: Series name
           example: Famous artist
           maxLength: 256
+        sexy_nsfw_score:
+          type: number
+          description: nsfw score
+          example: 1000
+          minimum: 0
+          maximum: 1000
         storage_fee:
           type: integer
           description: Storage fee
@@ -987,13 +1051,19 @@ components:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
+        drawing_nsfw_score: 1000
+        hentai_nsfw_score: 1000
+        internet_rareness_score: 1
         is_green: true
         keywords: Renaissance, sfumato, portrait
+        neutral_nsfw_score: 1000
         nsfw_score: 1000
+        porn_nsfw_score: 1000
         rareness_score: 1
-        royalty: 0.4911423558713323
+        royalty: 4529988671258623533
         seen_score: 1
         series_name: Famous artist
+        sexy_nsfw_score: 1000
         storage_fee: 100
         thumbnail:
         - 86
@@ -1033,7 +1103,6 @@ components:
       required:
       - is_green
       - royalty
-      - seen_score
       - rareness_score
       - nsfw_score
       - title

@@ -125,15 +125,27 @@ type ArtworkGetResponseBody struct {
 	// Green flag
 	IsGreen *bool `form:"is_green,omitempty" json:"is_green,omitempty" xml:"is_green,omitempty"`
 	// how much artist should get on all future resales
-	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	Royalty *int `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// Storage fee
 	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
 	// nsfw score
-	NsfwScore *int `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
-	// rareness score
-	RarenessScore *int `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
+	NsfwScore *float64 `form:"nsfw_score,omitempty" json:"nsfw_score,omitempty" xml:"nsfw_score,omitempty"`
+	// pastel rareness score
+	RarenessScore *float64 `form:"rareness_score,omitempty" json:"rareness_score,omitempty" xml:"rareness_score,omitempty"`
+	// internet rareness score
+	InternetRarenessScore *float64 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
 	// seen score
 	SeenScore *int `form:"seen_score,omitempty" json:"seen_score,omitempty" xml:"seen_score,omitempty"`
+	// nsfw score
+	DrawingNsfwScore *float64 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
+	// nsfw score
+	NeutralNsfwScore *float64 `form:"neutral_nsfw_score,omitempty" json:"neutral_nsfw_score,omitempty" xml:"neutral_nsfw_score,omitempty"`
+	// nsfw score
+	SexyNsfwScore *float64 `form:"sexy_nsfw_score,omitempty" json:"sexy_nsfw_score,omitempty" xml:"sexy_nsfw_score,omitempty"`
+	// nsfw score
+	PornNsfwScore *float64 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
+	// nsfw score
+	HentaiNsfwScore *float64 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
 	// Thumbnail image
 	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
 	// txid
@@ -930,24 +942,30 @@ func NewArtSearchInternalServerError(body *ArtSearchInternalServerErrorResponseB
 // endpoint result from a HTTP "OK" response.
 func NewArtworkGetArtworkDetailOK(body *ArtworkGetResponseBody) *artworks.ArtworkDetail {
 	v := &artworks.ArtworkDetail{
-		Version:          body.Version,
-		IsGreen:          *body.IsGreen,
-		Royalty:          *body.Royalty,
-		StorageFee:       body.StorageFee,
-		NsfwScore:        *body.NsfwScore,
-		RarenessScore:    *body.RarenessScore,
-		SeenScore:        *body.SeenScore,
-		Thumbnail:        body.Thumbnail,
-		Txid:             *body.Txid,
-		Title:            *body.Title,
-		Description:      *body.Description,
-		Keywords:         body.Keywords,
-		SeriesName:       body.SeriesName,
-		Copies:           *body.Copies,
-		YoutubeURL:       body.YoutubeURL,
-		ArtistPastelID:   *body.ArtistPastelID,
-		ArtistName:       *body.ArtistName,
-		ArtistWebsiteURL: body.ArtistWebsiteURL,
+		Version:               body.Version,
+		IsGreen:               *body.IsGreen,
+		Royalty:               *body.Royalty,
+		StorageFee:            body.StorageFee,
+		NsfwScore:             *body.NsfwScore,
+		RarenessScore:         *body.RarenessScore,
+		InternetRarenessScore: body.InternetRarenessScore,
+		SeenScore:             body.SeenScore,
+		DrawingNsfwScore:      body.DrawingNsfwScore,
+		NeutralNsfwScore:      body.NeutralNsfwScore,
+		SexyNsfwScore:         body.SexyNsfwScore,
+		PornNsfwScore:         body.PornNsfwScore,
+		HentaiNsfwScore:       body.HentaiNsfwScore,
+		Thumbnail:             body.Thumbnail,
+		Txid:                  *body.Txid,
+		Title:                 *body.Title,
+		Description:           *body.Description,
+		Keywords:              body.Keywords,
+		SeriesName:            body.SeriesName,
+		Copies:                *body.Copies,
+		YoutubeURL:            body.YoutubeURL,
+		ArtistPastelID:        *body.ArtistPastelID,
+		ArtistName:            *body.ArtistName,
+		ArtistWebsiteURL:      body.ArtistWebsiteURL,
 	}
 
 	return v
@@ -1091,9 +1109,6 @@ func ValidateArtworkGetResponseBody(body *ArtworkGetResponseBody) (err error) {
 	if body.Royalty == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("royalty", "body"))
 	}
-	if body.SeenScore == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("seen_score", "body"))
-	}
 	if body.RarenessScore == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("rareness_score", "body"))
 	}
@@ -1138,6 +1153,16 @@ func ValidateArtworkGetResponseBody(body *ArtworkGetResponseBody) (err error) {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.rareness_score", *body.RarenessScore, 1000, false))
 		}
 	}
+	if body.InternetRarenessScore != nil {
+		if *body.InternetRarenessScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.internet_rareness_score", *body.InternetRarenessScore, 0, true))
+		}
+	}
+	if body.InternetRarenessScore != nil {
+		if *body.InternetRarenessScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.internet_rareness_score", *body.InternetRarenessScore, 1000, false))
+		}
+	}
 	if body.SeenScore != nil {
 		if *body.SeenScore < 0 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.seen_score", *body.SeenScore, 0, true))
@@ -1146,6 +1171,56 @@ func ValidateArtworkGetResponseBody(body *ArtworkGetResponseBody) (err error) {
 	if body.SeenScore != nil {
 		if *body.SeenScore > 1000 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("body.seen_score", *body.SeenScore, 1000, false))
+		}
+	}
+	if body.DrawingNsfwScore != nil {
+		if *body.DrawingNsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.drawing_nsfw_score", *body.DrawingNsfwScore, 0, true))
+		}
+	}
+	if body.DrawingNsfwScore != nil {
+		if *body.DrawingNsfwScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.drawing_nsfw_score", *body.DrawingNsfwScore, 1000, false))
+		}
+	}
+	if body.NeutralNsfwScore != nil {
+		if *body.NeutralNsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.neutral_nsfw_score", *body.NeutralNsfwScore, 0, true))
+		}
+	}
+	if body.NeutralNsfwScore != nil {
+		if *body.NeutralNsfwScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.neutral_nsfw_score", *body.NeutralNsfwScore, 1000, false))
+		}
+	}
+	if body.SexyNsfwScore != nil {
+		if *body.SexyNsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.sexy_nsfw_score", *body.SexyNsfwScore, 0, true))
+		}
+	}
+	if body.SexyNsfwScore != nil {
+		if *body.SexyNsfwScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.sexy_nsfw_score", *body.SexyNsfwScore, 1000, false))
+		}
+	}
+	if body.PornNsfwScore != nil {
+		if *body.PornNsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.porn_nsfw_score", *body.PornNsfwScore, 0, true))
+		}
+	}
+	if body.PornNsfwScore != nil {
+		if *body.PornNsfwScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.porn_nsfw_score", *body.PornNsfwScore, 1000, false))
+		}
+	}
+	if body.HentaiNsfwScore != nil {
+		if *body.HentaiNsfwScore < 0 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.hentai_nsfw_score", *body.HentaiNsfwScore, 0, true))
+		}
+	}
+	if body.HentaiNsfwScore != nil {
+		if *body.HentaiNsfwScore > 1000 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("body.hentai_nsfw_score", *body.HentaiNsfwScore, 1000, false))
 		}
 	}
 	if body.Txid != nil {

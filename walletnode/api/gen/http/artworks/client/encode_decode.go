@@ -588,6 +588,12 @@ func EncodeArtSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 		if p.MaxNsfwScore != nil {
 			values.Add("max_nsfw_score", fmt.Sprintf("%v", *p.MaxNsfwScore))
 		}
+		if p.MinInternetRarenessScore != nil {
+			values.Add("min_internet_rareness_score", fmt.Sprintf("%v", *p.MinInternetRarenessScore))
+		}
+		if p.MaxInternetRarenessScore != nil {
+			values.Add("max_internet_rareness_score", fmt.Sprintf("%v", *p.MaxInternetRarenessScore))
+		}
 		req.URL.RawQuery = values.Encode()
 		return nil
 	}
