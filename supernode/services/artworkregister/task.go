@@ -571,7 +571,7 @@ func (task *Task) storeFingerprints(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) genFingerprintsData(ctx context.Context, img image.Image) (*pastel.FingerAndScores, pastel.Fingerprint, error) {
+func (task *Task) genFingerprintsData(_ context.Context, _ image.Image) (*pastel.FingerAndScores, pastel.Fingerprint, error) {
 	// TODO: Fix this when implementation to dd service completed
 	// fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
 	// if err != nil {

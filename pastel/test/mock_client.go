@@ -72,7 +72,7 @@ func (client *Client) ListenOnSign(signature []byte, returnErr error) *Client {
 	return client
 }
 
-// ListenOnSendFromAddressMethod listening Send From Address Method & return txn id & err from args
+// ListenOnSendFromAddress listening Send From Address Method & return txn id & err from args
 func (client *Client) ListenOnSendFromAddress(burnTxnID string, returnErr error) *Client {
 	client.On(SendFromAddressMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(burnTxnID, returnErr)
 	return client

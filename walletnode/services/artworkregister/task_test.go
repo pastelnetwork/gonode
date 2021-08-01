@@ -1884,9 +1884,9 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			args: args{
 				masterNodes: pastel.MasterNodes{
 					pastel.MasterNode{Fee: 0.1, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4446", ExtKey: "2"},
-					pastel.MasterNode{Fee: 0.3, ExtAddress: "127.0.0.1:4447", ExtKey: "3"},
-					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4448", ExtKey: "4"},
+					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
+					pastel.MasterNode{Fee: 0.3, ExtAddress: "127.0.0.1:4446", ExtKey: "3"},
+					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4447", ExtKey: "4"},
 				},
 				task: &Task{
 					Request: &Request{
@@ -1963,10 +1963,6 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			//need to remove generate thumbnail file
-			customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.FingerAndScores {
-				file.Remove()
-				return &pastel.FingerAndScores{}
-			}
 			tc.args.task.Task = task.New(&state.Status{})
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
@@ -1976,7 +1972,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 				ListenOnConnectTo(nil).
 				ListenOnSessID("").
 				ListenOnAcceptedNodes([]string{}, nil).
-				ListenOnProbeImage(customProbeImageFunc, tc.args.probeImgErr)
+				ListenOnClose(tc.wantErr)
 			tc.args.task.Service.nodeClient = nodeClient
 
 			tc.args.task.Request.Image = artworkFile

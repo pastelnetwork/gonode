@@ -2,6 +2,7 @@ package node
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/pastel"
@@ -10,6 +11,8 @@ import (
 
 // Node represent supernode connection.
 type Node struct {
+	mtx *sync.RWMutex
+
 	node.Client
 	node.RegisterArtwork
 	node.Connection
@@ -41,6 +44,9 @@ func (node *Node) PastelID() string {
 
 // Connect connects to supernode.
 func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
+	node.mtx.Lock()
+	defer node.mtx.Unlock()
+
 	if node.Connection != nil {
 		return nil
 	}
@@ -78,5 +84,6 @@ func NewNode(client node.Client, address, pastelID string) *Node {
 		Client:   client,
 		address:  address,
 		pastelID: pastelID,
+		mtx:      &sync.RWMutex{},
 	}
 }

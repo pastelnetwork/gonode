@@ -31,6 +31,9 @@ func (nodes *List) Activate() {
 // DisconnectInactive disconnects nodes which were not marked as activated.
 func (nodes *List) DisconnectInactive() {
 	for _, node := range *nodes {
+		node.mtx.RLock()
+		defer node.mtx.RUnlock()
+
 		if node.Connection != nil && !node.activated {
 			node.Connection.Close()
 		}

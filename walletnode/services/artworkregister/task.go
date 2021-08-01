@@ -293,7 +293,6 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	if err := primary.Session(ctx, true); err != nil {
 		return nil, err
 	}
-	primary.SetPrimary(true)
 
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
