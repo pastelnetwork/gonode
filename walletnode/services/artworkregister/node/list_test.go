@@ -3,6 +3,7 @@ package node
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -116,6 +117,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 				node := &Node{
 					Connection: c.client.Connection,
 					activated:  c.activated,
+					mtx:        &sync.RWMutex{},
 				}
 
 				testCase.nodes = append(testCase.nodes, node)
