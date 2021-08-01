@@ -137,7 +137,7 @@ func TestCollectOutput(t *testing.T) {
 	baseName3 := "test3.json"
 	outputPath3 := path.Join(outputDir, baseName3)
 
-	ddResult := dupeDetectionResult{
+	result := DupeDetection{
 		DupeDetectionSystemVer:  "1.0",
 		ImageHash:               "02bcagagaeagdae",
 		IsLikelyDupe:            0,
@@ -162,21 +162,7 @@ func TestCollectOutput(t *testing.T) {
 		FingerPrints: "[0.1, 0.2, 0.3]",
 	}
 
-	result := &DupeDetection{
-		DupeDetectionSystemVer:  ddResult.DupeDetectionSystemVer,
-		PastelRarenessScore:     ddResult.PastelRarenessScore,
-		InternetRarenessScore:   ddResult.InternetRarenessScore,
-		MatchesFoundOnFirstPage: ddResult.MatchesFoundOnFirstPage,
-		NumberOfResultPages:     ddResult.NumberOfResultPages,
-		FirstMatchURL:           ddResult.FirstMatchURL,
-		OpenNSFWScore:           ddResult.OpenNSFWScore,
-		AlternateNSFWScores:     ddResult.AlternateNSFWScores,
-		ImageHashes:             ddResult.ImageHashes,
-	}
-	err = json.Unmarshal([]byte(ddResult.FingerPrints), &result.FingerPrints)
-	assert.Equal(t, nil, err)
-
-	data, err := json.Marshal(&ddResult)
+	data, err := json.Marshal(&result)
 	assert.Equal(t, nil, err)
 
 	err = ioutil.WriteFile(outputPath, data, os.ModePerm)
@@ -185,8 +171,9 @@ func TestCollectOutput(t *testing.T) {
 	err = ioutil.WriteFile(outputPath2, []byte("test"), os.ModePerm)
 	assert.Equal(t, nil, err)
 
-	ddResult.FingerPrints = "[0.1, 0.2, 0.3"
-	data, err = json.Marshal(&ddResult)
+	result1 := result
+	result1.FingerPrints = "[0.1, 0.2, 0.3"
+	data, err = json.Marshal(&result1)
 	assert.Equal(t, nil, err)
 
 	err = ioutil.WriteFile(outputPath3, data, os.ModePerm)
@@ -207,7 +194,7 @@ func TestCollectOutput(t *testing.T) {
 				outputBase: baseName,
 				outputPath: outputPath,
 			},
-			result:    result,
+			result:    &result,
 			assertion: assert.NoError,
 		},
 		{

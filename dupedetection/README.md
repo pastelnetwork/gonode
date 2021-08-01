@@ -21,7 +21,7 @@ The API will:
 
 First install required libraries:    
 ```
-pip install xgboost hyppo zstandard tensorflow pandas scipy scikit-learn matplotlib watchdog chromedriver_autoinstaller selenium Pillow opennsfw-standalone tensorflow_hub
+pip install xgboost hyppo zstandard tensorflow pandas scipy scikit-learn matplotlib watchdog chromedriver_autoinstaller selenium Pillow opennsfw-standalone tensorflow_hub imagehash
 ```
 Then install Google Chrome (needed for "rare on the internet" code)
 ```
@@ -61,7 +61,7 @@ nsfw_model_path = /home/$USER/pastel_dupe_detection_service/mobilenet_v2_140_224
 Then, in the "mobilenet_v2_140_224" directory, put the following file:
 saved model (download and extract from: https://download.pastel.network/machine-learning/nsfw_mobilenet_v2_140_224.zip)
 
-Then creat the following environmental variable to store the config.ini path:
+Then create the following environmental variable to store the config.ini path:
 ```
 export DUPEDETECTIONCONFIGPATH=/home/$USER/pastel_dupe_detection_service/dupe_detection_support_files/config.ini
 ```
