@@ -15,6 +15,19 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
+var imageAllowExtension = []string{".png", ".jpeg", ".jpg"}
+
+const (
+	// TODO: Move this to config pass from app.go later.
+	defaultNumberSuperNodes   = 10
+	minimalNodeConfirmSuccess = 8
+	imageMinSizeLimit         = 10 * 1024   //10kB
+	imageMaxSizeLimit         = 1000 * 1024 //1000kB
+	biographyTextLengthLimit  = 1000
+	facebookLongURL           = "facebook.com"
+	facebookShortURL          = "fb.com"
+)
+
 // Task is the task of registering new artwork.
 type Task struct {
 	task.Task
@@ -314,25 +327,22 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataPro
 			ResponseCode: userdata.ErrorUserdataMismatchBetweenSupernode,
 			Detail:       userdata.Description[userdata.ErrorUserdataMismatchBetweenSupernode],
 		}, nil
-	} else {
-		// Success
-		return userdata.UserdataProcessResult{
-			ResponseCode: userdata.SuccessVerifyAllSignature,
-			Detail:       userdata.Description[userdata.SuccessVerifyAllSignature],
-		}, nil
 	}
+	// Success
+	return userdata.UserdataProcessResult{
+		ResponseCode: userdata.SuccessVerifyAllSignature,
+		Detail:       userdata.Description[userdata.SuccessVerifyAllSignature],
+	}, nil
 }
 
 func (task *Task) validateUserdata(req *userdata.UserdataProcessRequest) (userdata.UserdataProcessResult, error) {
 	result := userdata.UserdataProcessResult{}
 
-	textLengthLimit := 1000
-
 	contentValidation := userdata.SuccessValidateContent
 
 	// Biography validation
-	if len(req.Biography) > textLengthLimit {
-		result.Biography = "Biography text length is greater than the limit " + fmt.Sprint(textLengthLimit) + " characters"
+	if len(req.Biography) > biographyTextLengthLimit {
+		result.Biography = fmt.Sprintf("Biography text length is greater than the limit %d characters", biographyTextLengthLimit)
 		contentValidation = userdata.ErrorOnContent
 	}
 
@@ -341,17 +351,16 @@ func (task *Task) validateUserdata(req *userdata.UserdataProcessRequest) (userda
 	// (this way we can avoid the problem of users writing in “Russian” and “русский” which creates confusion and data fragmentation).
 
 	// FacebookLink validation
-	if len(req.FacebookLink) > 0 && !(strings.Contains(strings.ToLower(req.FacebookLink), "facebook.com") || strings.Contains(strings.ToLower(req.FacebookLink), "fb.com")) {
-		result.FacebookLink = "Facebook Link is not valid"
+	if len(req.FacebookLink) > 0 && !(strings.Contains(strings.ToLower(req.FacebookLink), facebookLongURL) || strings.Contains(strings.ToLower(req.FacebookLink), facebookShortURL)) {
+		result.Biography = "Facebook Link is not valid"
 		contentValidation = userdata.ErrorOnContent
 	}
 
 	// Image validation
 	// Image Extension validation
-	allowExtension := []string{".png", ".jpeg", ".jpg"}
 	isAvatarMatchExtention := false
 	isCoverPhotoMatchExtention := false
-	for _, extension := range allowExtension {
+	for _, extension := range imageAllowExtension {
 		if strings.Contains(strings.ToLower(req.AvatarImage.Filename), extension) {
 			isAvatarMatchExtention = true
 		}
@@ -360,23 +369,21 @@ func (task *Task) validateUserdata(req *userdata.UserdataProcessRequest) (userda
 		}
 	}
 	if len(req.AvatarImage.Filename) > 0 && !isAvatarMatchExtention {
-		result.AvatarImage = "Avatar extension must be in the following: " + strings.Join(allowExtension, ",")
+		result.AvatarImage = fmt.Sprintf("Avatar extension must be in the following: %s", strings.Join(imageAllowExtension, ","))
 		contentValidation = userdata.ErrorOnContent
 	}
 	if len(req.CoverPhoto.Filename) > 0 && !isCoverPhotoMatchExtention {
-		result.CoverPhoto = "CoverPhoto extension must be in the following: " + strings.Join(allowExtension, ",")
+		result.CoverPhoto = fmt.Sprintf("CoverPhoto extension must be in the following: %s", strings.Join(imageAllowExtension, ","))
 		contentValidation = userdata.ErrorOnContent
 	}
 
 	// Image Size validation
-	minSizeLimit := 10 * 1024   // 10 kb
-	maxSizeLimit := 1000 * 1024 // 1000 kb
-	if len(req.AvatarImage.Filename) > 0 && (len(req.AvatarImage.Content) < minSizeLimit || len(req.AvatarImage.Content) > maxSizeLimit) {
-		result.AvatarImage = "Avatar size must be in the range: [" + fmt.Sprint(minSizeLimit) + "-" + fmt.Sprint(maxSizeLimit) + "]"
+	if len(req.AvatarImage.Filename) > 0 && (len(req.AvatarImage.Content) < imageMinSizeLimit || len(req.AvatarImage.Content) > imageMaxSizeLimit) {
+		result.AvatarImage = fmt.Sprintf("Avatar Image size must be in the range: [%d-%d]", imageMinSizeLimit, imageMaxSizeLimit)
 		contentValidation = userdata.ErrorOnContent
 	}
-	if len(req.CoverPhoto.Filename) > 0 && (len(req.CoverPhoto.Content) < minSizeLimit || len(req.CoverPhoto.Content) > maxSizeLimit) {
-		result.CoverPhoto = "Cover Photo size must be in the range: [" + fmt.Sprint(minSizeLimit) + "-" + fmt.Sprint(maxSizeLimit) + "]"
+	if len(req.CoverPhoto.Filename) > 0 && (len(req.CoverPhoto.Content) < imageMinSizeLimit || len(req.CoverPhoto.Content) > imageMaxSizeLimit) {
+		result.CoverPhoto = fmt.Sprintf("Cover Photo size must be in the range: [%d-%d]", imageMinSizeLimit, imageMaxSizeLimit)
 		contentValidation = userdata.ErrorOnContent
 	}
 

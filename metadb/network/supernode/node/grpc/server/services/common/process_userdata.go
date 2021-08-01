@@ -14,7 +14,6 @@ type ProcessUserdata struct {
 	*userdataprocess.Service
 }
 
-
 // SessID retrieves SessID from the metadata.
 func (service *ProcessUserdata) SessID(ctx context.Context) (string, bool) {
 	md, ok := metadata.FromIncomingContext(ctx)

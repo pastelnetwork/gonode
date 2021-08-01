@@ -1,5 +1,3 @@
-
-
 package userdata
 
 import (

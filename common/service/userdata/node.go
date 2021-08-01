@@ -1,8 +1,6 @@
-
-
 package userdata
 
-// Common node info 
+// Common node info
 const (
 	// DefaultNumberSuperNodes is number of supernode that we send userdata to
 	DefaultNumberSuperNodes 	= 10 

@@ -7,10 +7,10 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb/network/proto"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode"
 	"github.com/pastelnetwork/gonode/metadb/network/walletnode/node"
-	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -117,58 +117,59 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
+	if request == nil {
+		return nil, errors.Errorf("input nil request")
+	}
+
+	if request.Userdata == nil {
+		return nil, errors.Errorf("input nil userdata")
+	}
+
 	// Generate protobuf request reqProto
-	reqProto := &pb.UserdataRequest{}
-
-	reqProto.Realname = request.Userdata.Realname
-	reqProto.FacebookLink = request.Userdata.FacebookLink
-	reqProto.TwitterLink = request.Userdata.TwitterLink
-	reqProto.NativeCurrency = request.Userdata.NativeCurrency
-	reqProto.Location = request.Userdata.Location
-	reqProto.PrimaryLanguage = request.Userdata.PrimaryLanguage
-	reqProto.Categories = request.Userdata.Categories
-	reqProto.Biography = request.Userdata.Biography
-	reqProto.AvatarImage = &pb.UserdataRequest_UserImageUpload {}
-
-	if request.Userdata.AvatarImage.Content != nil && len(request.Userdata.AvatarImage.Content) > 0 {
-		reqProto.AvatarImage.Content = make ([]byte, len(request.Userdata.AvatarImage.Content))
-		copy(reqProto.AvatarImage.Content,request.Userdata.AvatarImage.Content)
+	reqProto := &pb.UserdataRequest{
+		Realname:        request.Userdata.Realname,
+		FacebookLink:    request.Userdata.FacebookLink,
+		TwitterLink:     request.Userdata.TwitterLink,
+		NativeCurrency:  request.Userdata.NativeCurrency,
+		Location:        request.Userdata.Location,
+		PrimaryLanguage: request.Userdata.PrimaryLanguage,
+		Categories:      request.Userdata.Categories,
+		Biography:       request.Userdata.Biography,
+		AvatarImage: &pb.UserdataRequest_UserImageUpload{
+			Content:  request.Userdata.AvatarImage.Content,
+			Filename: request.Userdata.AvatarImage.Filename,
+		},
+		CoverPhoto: &pb.UserdataRequest_UserImageUpload{
+			Content:  request.Userdata.CoverPhoto.Content,
+			Filename: request.Userdata.CoverPhoto.Filename,
+		},
+		ArtistPastelID:    request.Userdata.ArtistPastelID,
+		Timestamp:         request.Userdata.Timestamp,
+		PreviousBlockHash: request.Userdata.PreviousBlockHash,
+		UserdataHash:      request.UserdataHash,
+		Signature:         request.Signature,
 	}
-	reqProto.AvatarImage.Filename = request.Userdata.AvatarImage.Filename
-
-	reqProto.CoverPhoto = &pb.UserdataRequest_UserImageUpload {}
-	if request.Userdata.CoverPhoto.Content != nil && len(request.Userdata.CoverPhoto.Content) > 0 {
-		reqProto.CoverPhoto.Content = make ([]byte, len(request.Userdata.CoverPhoto.Content))
-		copy(reqProto.CoverPhoto.Content,request.Userdata.CoverPhoto.Content)
-	}
-	reqProto.CoverPhoto.Filename = request.Userdata.CoverPhoto.Filename
-	
-	reqProto.ArtistPastelID = request.Userdata.ArtistPastelID 
-	reqProto.Timestamp = request.Userdata.Timestamp
-	reqProto.PreviousBlockHash = request.Userdata.PreviousBlockHash
-	reqProto.UserdataHash = request.UserdataHash
-	reqProto.Signature = request.Signature
 
 	resp, err := service.client.SendUserdata(ctx, reqProto)
 	if err != nil {
 		return nil, errors.Errorf("failed to send data: %w", err)
 	}
-	
+
 	// Convert protobuf response to UserdataProcessResult then return it
-	result = &userdata.UserdataProcessResult {
-		ResponseCode: 		resp.ResponseCode,
-		Detail:				resp.Detail,
-		Realname:			resp.Realname,
-		FacebookLink:		resp.FacebookLink,
-		TwitterLink:		resp.TwitterLink,
-		NativeCurrency:		resp.NativeCurrency,
-		Location:			resp.Location,
-		PrimaryLanguage:	resp.PrimaryLanguage,
-		Categories:			resp.Categories,
-		AvatarImage:		resp.AvatarImage,
-		CoverPhoto:			resp.CoverPhoto,
+	result = &userdata.UserdataProcessResult{
+		ResponseCode:    resp.ResponseCode,
+		Detail:          resp.Detail,
+		Realname:        resp.Realname,
+		FacebookLink:    resp.FacebookLink,
+		TwitterLink:     resp.TwitterLink,
+		NativeCurrency:  resp.NativeCurrency,
+		Location:        resp.Location,
+		PrimaryLanguage: resp.PrimaryLanguage,
+		Categories:      resp.Categories,
+		AvatarImage:     resp.AvatarImage,
+		CoverPhoto:      resp.CoverPhoto,
 	}
-	
+
 	return result, nil
 }
 
@@ -178,40 +179,44 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 	ctx = service.contextWithMDSessID(ctx)
 
 	reqProto := &pb.RetrieveRequest{
-		Userpastelid : userpastelid,
+		Userpastelid: userpastelid,
 	}
 	resp, err := service.client.ReceiveUserdata(ctx, reqProto)
 	if err != nil {
-		return nil, errors.Errorf("failed to open stream: %w", err)
+		return nil, errors.Errorf("failed to receive data: %w", err)
+	}
+
+	var avatarImage userdata.UserImageUpload
+	var coverPhoto userdata.UserImageUpload
+	if resp.AvatarImage != nil {
+		avatarImage = userdata.UserImageUpload{
+			Content:  resp.AvatarImage.Content,
+			Filename: resp.AvatarImage.Filename,
+		}
+	}
+	if resp.CoverPhoto != nil {
+		coverPhoto = userdata.UserImageUpload{
+			Content:  resp.CoverPhoto.Content,
+			Filename: resp.CoverPhoto.Filename,
+		}
 	}
 
 	// Convert protobuf request to UserdataProcessRequest
-	response := userdata.UserdataProcessRequest{}
-
-	response.Realname = resp.Realname
-	response.FacebookLink = resp.FacebookLink
-	response.TwitterLink=resp.TwitterLink
-	response.NativeCurrency= resp.NativeCurrency
-	response.Location= resp.Location
-	response.PrimaryLanguage= resp.PrimaryLanguage
-	response.Categories=resp.Categories
-	response.Biography= resp.Biography
-
-	if resp.AvatarImage.Content != nil && len(resp.AvatarImage.Content) > 0 {
-		resp.AvatarImage.Content = make ([]byte, len(resp.AvatarImage.Content))
-		copy(response.AvatarImage.Content,resp.AvatarImage.Content)
+	response := userdata.UserdataProcessRequest{
+		Realname:          resp.Realname,
+		FacebookLink:      resp.FacebookLink,
+		TwitterLink:       resp.TwitterLink,
+		NativeCurrency:    resp.NativeCurrency,
+		Location:          resp.Location,
+		PrimaryLanguage:   resp.PrimaryLanguage,
+		Categories:        resp.Categories,
+		Biography:         resp.Biography,
+		AvatarImage:       avatarImage,
+		CoverPhoto:        coverPhoto,
+		ArtistPastelID:    resp.ArtistPastelID,
+		Timestamp:         resp.Timestamp,
+		PreviousBlockHash: resp.PreviousBlockHash,
 	}
-	response.AvatarImage.Filename = resp.AvatarImage.Filename
-
-	if resp.CoverPhoto.Content != nil && len(resp.CoverPhoto.Content) > 0 {
-		resp.CoverPhoto.Content = make ([]byte, len(resp.CoverPhoto.Content))
-		copy(response.CoverPhoto.Content,resp.CoverPhoto.Content)
-	}
-	response.CoverPhoto.Filename = resp.CoverPhoto.Filename
-
-	response.ArtistPastelID  = resp.ArtistPastelID
-	response.Timestamp   = resp.Timestamp
-	response.PreviousBlockHash=resp.PreviousBlockHash
 
 	return &response, nil
 }
