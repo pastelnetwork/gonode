@@ -137,7 +137,6 @@ func TestCollectOutput(t *testing.T) {
 	result := DupeDetection{
 		DupeDetectionSystemVer:  "1.0",
 		ImageHash:               "02bcagagaeagdae",
-		IsLikelyDupe:            0,
 		PastelRarenessScore:     0.9,
 		InternetRarenessScore:   0.8,
 		MatchesFoundOnFirstPage: 1,

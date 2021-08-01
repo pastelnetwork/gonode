@@ -40,7 +40,6 @@ func main() {
 	}
 	fmt.Printf("Dupe detection system version: %s\n", result.DupeDetectionSystemVer)
 	fmt.Printf("Image hash: %s\n", result.ImageHash)
-	fmt.Printf("Is likely dupe: %v\n", result.IsLikelyDupe)
 	fmt.Printf("Pastel Rareness Score: %v\n", result.PastelRarenessScore)
 	fmt.Printf("Internet Rareness Score: %v\n", result.InternetRarenessScore)
 	fmt.Printf("Open NSFW Score: %v\n", result.OpenNSFWScore)

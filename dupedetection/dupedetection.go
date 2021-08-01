@@ -8,7 +8,6 @@ import "context"
 type DupeDetection struct {
 	DupeDetectionSystemVer  string              `json:"dupe_detection_system_version"`
 	ImageHash               string              `json:"hash_of_candidate_image_file"`
-	IsLikelyDupe            float64             `json:"is_likely_dupe"`
 	PastelRarenessScore     float64             `json:"overall_average_rareness_score"`
 	InternetRarenessScore   float64             `json:"is_rare_on_internet"`
 	MatchesFoundOnFirstPage int                 `json:"matches_found_on_first_page"`
