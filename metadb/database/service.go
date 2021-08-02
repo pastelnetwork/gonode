@@ -68,8 +68,12 @@ func (db *DatabaseOps) WriteUserData(ctx context.Context, data pb.UserdataReques
 		return errors.Errorf("error while subtitute template: %w", err)
 	}
 
-	if _, err := db.metaDB.Write(ctx, command); err != nil {
+	result, err := db.metaDB.Write(ctx, command)
+	if err != nil {
 		return errors.Errorf("error while writting to db: %w", err)
+	}
+	if result.Error != "" {
+		return errors.Errorf("error while writting to db: %s", result.Error)
 	}
 
 	return nil
