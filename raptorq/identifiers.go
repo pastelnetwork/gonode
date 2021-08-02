@@ -6,18 +6,21 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
-type SymbolIdFiles []*SymbolIdFile
+// SymbolIDFiles is a list of raptorq symbolid file
+type SymbolIDFiles []*SymbolIDFile
 
-type SymbolIdFile struct {
-	Id                string   `json:"id;omitempty"`
-	BlockHash         string   `json:"block_hash;omitempty"`
-	PastelID          string   `json:"pastel_id;omitempty"`
-	SymbolIdentifiers []string `json:"symbol_identifiers;omitempty"`
-	Signature         []byte   `json:"signature;omitempty"`
+// SymbolIDFile represents structure of a raptorq symbolid file
+type SymbolIDFile struct {
+	ID                string   `json:"id,omitempty"`
+	BlockHash         string   `json:"block_hash,omitempty"`
+	PastelID          string   `json:"pastel_id,omitempty"`
+	SymbolIdentifiers []string `json:"symbol_identifiers,omitempty"`
+	Signature         []byte   `json:"signature,omitempty"`
 	FileIdentifer     string   `json:"-"`
 }
 
-func (files SymbolIdFiles) ToMap() (map[string][]byte, error) {
+// ToMap translate SymbolIDFile struct to generic map[string]
+func (files SymbolIDFiles) ToMap() (map[string][]byte, error) {
 	m := make(map[string][]byte, len(files))
 	for _, file := range files {
 		js, err := json.Marshal(file)
@@ -29,7 +32,8 @@ func (files SymbolIdFiles) ToMap() (map[string][]byte, error) {
 	return m, nil
 }
 
-func (files SymbolIdFiles) FileIdentifers() ([]string, error) {
+// FileIdentifers return name of files in FileIdentifers
+func (files SymbolIDFiles) FileIdentifers() ([]string, error) {
 	var identifiers []string
 	for _, file := range files {
 		if file.FileIdentifer == "" {

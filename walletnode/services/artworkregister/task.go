@@ -52,7 +52,7 @@ type Task struct {
 	fingerprintSignature []byte
 
 	// TODO: need to update rqservice code to return the following info
-	rqSymbolIDFiles rq.SymbolIdFiles
+	rqSymbolIDFiles rq.SymbolIDFiles
 	rqEncodeParams  rqnode.EncoderParameters
 
 	// TODO: call cNodeAPI to get the following info
@@ -425,8 +425,8 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
 
-	files := rq.SymbolIdFiles{}
-	for _, rawSymbolIDFile := range encodeInfo.SymbolIdFiles {
+	files := rq.SymbolIDFiles{}
+	for _, rawSymbolIDFile := range encodeInfo.SymbolIDFiles {
 
 		f, err := task.convertToSymbolIDFile(ctx, rawSymbolIDFile)
 		if err != nil {
@@ -452,9 +452,9 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawSymbolIdFile) (*rq.SymbolIdFile, error) {
-	symbolIDFile := rq.SymbolIdFile{
-		Id:                rawFile.Id,
+func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawSymbolIDFile) (*rq.SymbolIDFile, error) {
+	symbolIDFile := rq.SymbolIDFile{
+		ID:                rawFile.ID,
 		BlockHash:         rawFile.BlockHash,
 		PastelID:          rawFile.PastelID,
 		SymbolIdentifiers: rawFile.SymbolIdentifiers,

@@ -891,12 +891,12 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 	type args struct {
 		task    *Task
 		signErr error
-		inFile  rqnode.RawSymbolIdFile
+		inFile  rqnode.RawSymbolIDFile
 	}
 
 	testCases := map[string]struct {
 		args     args
-		want     *rq.SymbolIdFile
+		want     *rq.SymbolIDFile
 		wantErr  error
 		wantSign []byte
 	}{
@@ -908,16 +908,16 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 					},
 					Service: &Service{},
 				},
-				inFile: rqnode.RawSymbolIdFile{
-					Id:                uuid.New().String(),
+				inFile: rqnode.RawSymbolIDFile{
+					ID:                uuid.New().String(),
 					SymbolIdentifiers: []string{"test-s1, test-s2"},
 					BlockHash:         "test-block-hash",
 					PastelID:          "test-pastel-id",
 				},
 			},
 			wantErr: nil,
-			want: &rq.SymbolIdFile{
-				Id:                uuid.New().String(),
+			want: &rq.SymbolIDFile{
+				ID:                uuid.New().String(),
 				BlockHash:         "test-block-hash",
 				SymbolIdentifiers: []string{"test-s1, test-s2"},
 				Signature:         []byte("test-signature"),
@@ -993,9 +993,9 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 					imageEncodedWithFingerprints: artworkFile,
 				},
 				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIdFiles: map[string]rqnode.RawSymbolIdFile{
-						"test-file": rqnode.RawSymbolIdFile{
-							Id:                uuid.New().String(),
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": rqnode.RawSymbolIDFile{
+							ID:                uuid.New().String(),
 							SymbolIdentifiers: []string{"test-s1, test-s2"},
 							BlockHash:         "test-block-hash",
 							PastelID:          "test-pastel-id",
@@ -1022,7 +1022,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 				},
 				readErr: io.EOF,
 				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIdFiles: make(map[string]rqnode.RawSymbolIdFile),
+					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
 				},
 				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
@@ -1045,7 +1045,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 				},
 				readErr: io.EOF,
 				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIdFiles: make(map[string]rqnode.RawSymbolIdFile),
+					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
 				},
 				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
@@ -1067,7 +1067,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 				},
 				readErr: errors.New("test-err"),
 				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIdFiles: make(map[string]rqnode.RawSymbolIdFile),
+					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
 				},
 			},
 			wantErr: errors.New("read image"),
@@ -1084,9 +1084,9 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 					imageEncodedWithFingerprints: artworkFile,
 				},
 				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIdFiles: map[string]rqnode.RawSymbolIdFile{
-						"test-file": rqnode.RawSymbolIdFile{
-							Id:                uuid.New().String(),
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": rqnode.RawSymbolIDFile{
+							ID:                uuid.New().String(),
 							SymbolIdentifiers: []string{"test-s1, test-s2"},
 							BlockHash:         "test-block-hash",
 							PastelID:          "test-pastel-id",
@@ -1113,14 +1113,11 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			raptorQMock := rqMock.NewMockRaptorQ(t)
-			raptorQMock.ListenOnEncodeInfo(tc.args.encodeInfoReturns, tc.args.encodeInfoErr)
-
-			connMock := rqMock.NewMockConnection(t)
-			connMock.ListenOnRaptorQ(raptorQMock, nil).ListenOnClose(nil)
-
 			rqClientMock := rqMock.NewMockClient(t)
-			rqClientMock.ListenOnConnect(connMock, tc.args.connectErr)
+			rqClientMock.ListenOnEncodeInfo(tc.args.encodeInfoReturns, tc.args.encodeInfoErr)
+			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
+			rqClientMock.ListenOnConnect(tc.args.connectErr)
+
 			tc.args.task.Service.rqClient = rqClientMock
 
 			fsMock := storageMock.NewMockFileStorage()
@@ -1559,7 +1556,7 @@ func TestTaskUploadImage(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1581,7 +1578,7 @@ func TestTaskUploadImage(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1666,7 +1663,7 @@ func TestTaskProbeImage(t *testing.T) {
 						ArtistPastelID: "testid",
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1687,7 +1684,7 @@ func TestTaskProbeImage(t *testing.T) {
 						ArtistPastelID: "testid",
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1775,7 +1772,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1794,7 +1791,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1814,7 +1811,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1896,7 +1893,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1916,7 +1913,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1936,7 +1933,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 						config: &Config{NumberSuperNodes: 1},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIdFiles{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},

@@ -52,7 +52,6 @@ func fakeRegiterTicket() pastel.RegTicket {
 		Thumbnail1Hash:                 []byte("thumbnail1_hash"),
 		Thumbnail2Hash:                 []byte("thumbnail2_hash"),
 		DataHash:                       []byte("data_hash"),
-		Fingerprints:                   []float64{0.01, 0.02, 0.03},
 		FingerprintsHash:               []byte("fingerprints_hash"),
 		FingerprintsSignature:          []byte("fingerprints_signature"),
 		PastelRarenessScore:            0.8,
