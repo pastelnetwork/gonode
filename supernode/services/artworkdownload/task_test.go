@@ -420,7 +420,7 @@ func TestTaskDownload(t *testing.T) {
 				}
 			}
 			pastelClient.AssertVerifyCall(testCase.numberVerify, mock.Anything, []byte(testCase.args.timestamp),
-				testCase.args.signature, pastelID)
+				testCase.args.signature, pastelID, "ed448")
 
 			// p2pClient mock assertion
 			p2pClient.AssertExpectations(t)

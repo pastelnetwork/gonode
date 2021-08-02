@@ -193,7 +193,7 @@ func (client *Client) AssertListAvailableTradeTicketsCall(expectedCalls int, arg
 
 // ListenOnVerify listening Verify call and returns values from args
 func (client *Client) ListenOnVerify(isValid bool, returnErr error) *Client {
-	client.On(VerifyMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string(""))).Return(isValid, returnErr)
+	client.On(VerifyMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(isValid, returnErr)
 	return client
 }
 
