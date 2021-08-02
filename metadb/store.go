@@ -97,9 +97,6 @@ func (s *service) Query(_ context.Context, statement string, level string) (*Que
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
 	}
-	if len(strings.Split(statement, ";")) > AllowedSubStatement {
-		return nil, errors.New("only support one sub statement")
-	}
 
 	// prepare the query command request
 	request := &command.QueryRequest{

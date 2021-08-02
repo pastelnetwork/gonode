@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
+	"regexp"
 	"strings"
 
 	"text/template"
@@ -17,9 +18,9 @@ import (
 )
 
 var (
-	logPrefix        = "database"
-	queryLevelStrong = "strong"
-	schemaDelimiter  = "---"
+	logPrefix       = "database"
+	queryLevelNone  = "none"
+	schemaDelimiter = "---"
 )
 
 type Config struct {
@@ -55,7 +56,9 @@ func (db *DatabaseOps) IsLeader() bool {
 }
 
 func (db *DatabaseOps) LeaderAddress() string {
-	return db.metaDB.LeaderAddress()
+	re := regexp.MustCompile(":[0-9]+$")
+	address := re.Split(db.metaDB.LeaderAddress(), -1)[0]
+	return address
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
@@ -79,7 +82,7 @@ func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) 
 		return userdata.UserdataProcessRequest{}, errors.Errorf("error while subtitute template: %w", err)
 	}
 
-	queryResult, err := db.metaDB.Query(ctx, command, queryLevelStrong)
+	queryResult, err := db.metaDB.Query(ctx, command, queryLevelNone)
 	if err != nil {
 		return userdata.UserdataProcessRequest{}, errors.Errorf("error while querying db: %w", err)
 	}
