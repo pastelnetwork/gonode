@@ -2,6 +2,7 @@ package database
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
@@ -57,19 +58,24 @@ func extractImageInfo(img *pb.UserdataRequest_UserImageUpload) (string, string) 
 	return fmt.Sprintf("%x", img.GetContent()), img.GetFilename()
 }
 
+func processEscapeString(s string) string {
+	s = strings.Replace(s, `'`, `''`, -1)
+	return s
+}
+
 func pbToWriteCommand(d pb.UserdataRequest) UserdataWriteCommand {
 	avatarImageHex, avatarImageFilename := extractImageInfo(d.GetAvatarImage())
 	coverPhotoHex, coverPhotoFilename := extractImageInfo(d.GetCoverPhoto())
 
 	return UserdataWriteCommand{
-		Realname:           d.GetRealname(),
-		FacebookLink:       d.GetFacebookLink(),
-		TwitterLink:        d.GetTwitterLink(),
-		NativeCurrency:     d.GetNativeCurrency(),
-		Location:           d.GetLocation(),
-		PrimaryLanguage:    d.GetPrimaryLanguage(),
-		Categories:         d.GetCategories(),
-		Biography:          d.GetBiography(),
+		Realname:           processEscapeString(d.GetRealname()),
+		FacebookLink:       processEscapeString(d.GetFacebookLink()),
+		TwitterLink:        processEscapeString(d.GetTwitterLink()),
+		NativeCurrency:     processEscapeString(d.GetNativeCurrency()),
+		Location:           processEscapeString(d.GetLocation()),
+		PrimaryLanguage:    processEscapeString(d.GetPrimaryLanguage()),
+		Categories:         processEscapeString(d.GetCategories()),
+		Biography:          processEscapeString(d.GetBiography()),
 		AvatarImage:        avatarImageHex,
 		AvatarFilename:     avatarImageFilename,
 		CoverPhotoImage:    coverPhotoHex,
