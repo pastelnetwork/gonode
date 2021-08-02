@@ -41,7 +41,7 @@ func (s *Store) Store(ctx context.Context, key []byte, value []byte, replication
 	s.replications[string(key)] = replication
 	s.data[string(key)] = value
 
-	log.WithContext(ctx).Debugf("store key: %s, data: %v", base58.Encode(key), base58.Encode(value))
+	log.WithContext(ctx).Debugf("store key: %s", base58.Encode(key))
 	return nil
 }
 
@@ -55,7 +55,7 @@ func (s *Store) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 		return nil, nil
 	}
 
-	log.WithContext(ctx).Debugf("retrieve key: %s, data: %v", base58.Encode(key), base58.Encode(value))
+	log.WithContext(ctx).Debugf("retrieve key: %s", base58.Encode(key))
 	return value, nil
 }
 
