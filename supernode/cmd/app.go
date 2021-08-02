@@ -25,11 +25,13 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/probe/tfmodel"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
@@ -39,6 +41,7 @@ const (
 	appUsage = "SuperNode" // TODO: Write a clear description.
 
 	tfmodelDir = "./tfmodels" // relatively from work-dir
+	rqFilesDir = "rqfiles"
 )
 
 var (
@@ -50,6 +53,7 @@ var (
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 
 	rqliteDefaultPort = 4446
+	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
 )
 
 // NewApp inits a new command line interface.
@@ -69,6 +73,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
 		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
+		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -109,6 +114,10 @@ func NewApp() *cli.App {
 
 		if err := os.MkdirAll(config.WorkDir, os.ModePerm); err != nil {
 			return errors.Errorf("could not create work-dir %q, %w", config.WorkDir, err)
+		}
+
+		if err := os.MkdirAll(config.RqFilesDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create rq-files-dir %q, %w", config.RqFilesDir, err)
 		}
 
 		return runApp(ctx, config)
@@ -174,8 +183,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	metadb := metadb.New(config.MetaDB, config.Node.PastelID, nodeIPList)
 	database := database.NewDatabaseOps(metadb, config.UserDB)
 
+	config.ArtworkDownload.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.ArtworkDownload.RqFilesDir = config.RqFilesDir
+	rqClient := rqgrpc.NewClient()
+
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
+	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
 
 	// ----Userdata Services----
 	userdataNodeClient := mdlclient.New()
@@ -185,9 +199,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	grpc := server.New(config.Server,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
+		walletnode.NewDownloadArtwork(artworkDownload),
 		mdlwalletnode.NewProcessUserdata(userdataProcess, database),
 		mdlsupernode.NewProcessUserdata(userdataProcess, database),
 	)
-
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, database, userdataProcess)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, database, userdataProcess)
 }

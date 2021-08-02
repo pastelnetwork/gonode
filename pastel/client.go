@@ -87,6 +87,28 @@ func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTic
 	return tickets, nil
 }
 
+// TicketOwnership implements pastel.Client.TicketOwnership
+func (client *client) TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error) {
+	var ownership struct {
+		Art   string `json:"art"`   // txid from the request
+		Trade string `json:"trade"` // txid from trade ticket
+	}
+
+	if err := client.callFor(ctx, &ownership, "tickets", "tools", "validateownership", txID, pastelID, passphrase); err != nil {
+		return "", errors.Errorf("failed to get ticket ownership: %w", err)
+	}
+	return ownership.Trade, nil
+}
+
+// ListAvailableTradeTickets implements pastel.Client.ListAvailableTradeTickets
+func (client *client) ListAvailableTradeTickets(ctx context.Context) ([]TradeTicket, error) {
+	tradeTicket := []TradeTicket{}
+	if err := client.callFor(ctx, &tradeTicket, "tickets", "list", "trade", "available"); err != nil {
+		return nil, errors.Errorf("failed to get available trade tickets: %w", err)
+	}
+	return tradeTicket, nil
+}
+
 // Sign implements pastel.Client.Sign
 func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error) {
 	var sign struct {
@@ -102,15 +124,19 @@ func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphras
 
 // Verify implements pastel.Client.Verify
 func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+	ok = false
 	var verify struct {
-		Verification bool `json:"verification"`
+		Verification string `json:"verification"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
 	if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID); err != nil {
 		return false, errors.Errorf("failed to verify data: %w", err)
 	}
-	return verify.Verification, nil
+	if verify.Verification == "OK" {
+		ok = true
+	}
+	return ok, nil
 }
 
 // ActTickets implements pastel.Client.ActTickets

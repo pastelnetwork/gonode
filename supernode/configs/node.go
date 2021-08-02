@@ -2,6 +2,7 @@ package configs
 
 import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
@@ -11,6 +12,7 @@ type Node struct {
 	// `squash` field cannot be pointer
 	ArtworkRegister artworkregister.Config `mapstructure:",squash" json:"artwork_register,omitempty"`
 	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
+	ArtworkDownload artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
 	Server          *server.Config         `mapstructure:"server" json:"server,omitempty"`
 	PastelID        string                 `mapstructure:"pastel_id" json:"pastel_id,omitempty"`
 }

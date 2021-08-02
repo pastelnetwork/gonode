@@ -20,11 +20,17 @@ const (
 	// RunActionMethod represent RunAction name method
 	RunActionMethod = "RunAction"
 
+	// NewActionMethod represents NewAction name method
+	NewActionMethod = "NewAction"
+
 	// UpdateStatusMethod represent UpdateStatus name method
 	UpdateStatusMethod = "UpdateStatus"
 
 	// SetStatusNotifyFuncMethod represent SetStatusNotifyFunc name method
 	SetStatusNotifyFuncMethod = "SetStatusNotifyFunc"
+
+	// RequiredStatusMethod represents RequiredStatus name method
+	RequiredStatusMethod = "RequiredStatus"
 )
 
 //Task implementing task.Task mock for testing purpose
@@ -128,5 +134,35 @@ func (task *Task) AssertSetStatusNotifyFuncCall(expectedCalls int, arguments ...
 		task.AssertCalled(task.t, SetStatusNotifyFuncMethod, arguments...)
 	}
 	task.AssertNumberOfCalls(task.t, SetStatusNotifyFuncMethod, expectedCalls)
+	return task
+}
+
+// ListenOnRequiredStatus listening RequiredStatus call
+func (task *Task) ListenOnRequiredStatus(returnErr error) *Task {
+	task.On(RequiredStatusMethod, mock.Anything).Return(returnErr)
+	return task
+}
+
+// AssertRequiredStatusCall RequiredStatus call assertion
+func (task *Task) AssertRequiredStatusCall(expectedCalls int, arguments ...interface{}) *Task {
+	if expectedCalls > 0 {
+		task.AssertCalled(task.t, RequiredStatusMethod, arguments...)
+	}
+	task.AssertNumberOfCalls(task.t, RequiredStatusMethod, expectedCalls)
+	return task
+}
+
+// ListenOnNewAction listening NewAction call
+func (task *Task) ListenOnNewAction(returnChan <-chan struct{}) *Task {
+	task.On(NewActionMethod, mock.Anything).Return(returnChan)
+	return task
+}
+
+// AssertNewActionCall NewAction call assertion
+func (task *Task) AssertNewActionCall(expectedCalls int, arguments ...interface{}) *Task {
+	if expectedCalls > 0 {
+		task.AssertCalled(task.t, NewActionMethod, arguments...)
+	}
+	task.AssertNumberOfCalls(task.t, NewActionMethod, expectedCalls)
 	return task
 }

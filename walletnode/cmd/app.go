@@ -24,13 +24,15 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 )
 
 const (
-	appName  = "walletnode"
-	appUsage = "WalletNode" // TODO: Write a clear description.
+	appName    = "walletnode"
+	appUsage   = "WalletNode" // TODO: Write a clear description.
+	rqFilesDir = "rqfiles"
 )
 
 var (
@@ -39,6 +41,7 @@ var (
 	defaultTempDir          = filepath.Join(os.TempDir(), appName)
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
+	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
 )
 
 // NewApp inits a new command line interface.
@@ -57,6 +60,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
+		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -97,6 +101,10 @@ func NewApp() *cli.App {
 			return errors.Errorf("could not create temp-dir %q, %w", config.TempDir, err)
 		}
 
+		if err := os.MkdirAll(config.RqFilesDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create rq-files-dir %q, %w", config.RqFilesDir, err)
+		}
+
 		return runApp(ctx, config)
 	})
 
@@ -131,18 +139,19 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
-	artworkSearch := artworksearch.NewService(pastelClient, p2p)
+	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, p2p, nodeClient)
+	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
 
 	// ----Userdata Services----
 	userdataNodeClient := mdlgrpc.NewClient()
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
-	// ----api service----
+	// api service
 	server := api.NewServer(config.API,
-		services.NewArtwork(artworkRegister, artworkSearch),
+		services.NewArtwork(artworkRegister, artworkSearch, artworkDownload),
 		services.NewUserdata(userdataProcess),
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, server, artworkRegister, artworkSearch, userdataProcess)
+	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload, userdataProcess)
 }

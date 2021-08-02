@@ -11,6 +11,7 @@ import (
 	"context"
 
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/goa/v3/security"
 )
 
 // Endpoints wraps the "artworks" service endpoints.
@@ -22,6 +23,7 @@ type Endpoints struct {
 	UploadImage       goa.Endpoint
 	ArtSearch         goa.Endpoint
 	ArtworkGet        goa.Endpoint
+	Download          goa.Endpoint
 }
 
 // RegisterTaskStateEndpointInput holds both the payload and the server stream
@@ -43,8 +45,19 @@ type ArtSearchEndpointInput struct {
 	Stream ArtSearchServerStream
 }
 
+// DownloadEndpointInput holds both the payload and the server stream of the
+// "download" method.
+type DownloadEndpointInput struct {
+	// Payload is the method payload.
+	Payload *DownloadPayload
+	// Stream is the server stream used by the "download" method to send data.
+	Stream DownloadServerStream
+}
+
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
+	// Casting service to Auther interface
+	a := s.(Auther)
 	return &Endpoints{
 		Register:          NewRegisterEndpoint(s),
 		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
@@ -53,6 +66,7 @@ func NewEndpoints(s Service) *Endpoints {
 		UploadImage:       NewUploadImageEndpoint(s),
 		ArtSearch:         NewArtSearchEndpoint(s),
 		ArtworkGet:        NewArtworkGetEndpoint(s),
+		Download:          NewDownloadEndpoint(s, a.APIKeyAuth),
 	}
 }
 
@@ -65,6 +79,7 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UploadImage = m(e.UploadImage)
 	e.ArtSearch = m(e.ArtSearch)
 	e.ArtworkGet = m(e.ArtworkGet)
+	e.Download = m(e.Download)
 }
 
 // NewRegisterEndpoint returns an endpoint function that calls the method
@@ -146,5 +161,24 @@ func NewArtworkGetEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*ArtworkGetPayload)
 		return s.ArtworkGet(ctx, p)
+	}
+}
+
+// NewDownloadEndpoint returns an endpoint function that calls the method
+// "download" of service "artworks".
+func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		ep := req.(*DownloadEndpointInput)
+		var err error
+		sc := security.APIKeyScheme{
+			Name:           "api_key",
+			Scopes:         []string{},
+			RequiredScopes: []string{},
+		}
+		ctx, err = authAPIKeyFn(ctx, ep.Payload.Key, &sc)
+		if err != nil {
+			return nil, err
+		}
+		return nil, s.Download(ctx, ep.Payload, ep.Stream)
 	}
 }

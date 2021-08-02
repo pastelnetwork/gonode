@@ -9,6 +9,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
@@ -130,11 +131,20 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 		SeriesName:       &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkSeriesName,
 		IsGreen:          ticket.RegTicketData.IsGreen,
 		Royalty:          float64(ticket.RegTicketData.Royalty),
-		RarenessScore:    ticket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
-		NsfwScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.NSFWScore,
-		SeenScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.SeenScore,
-		Version:          &ticket.RegTicketData.ArtTicketData.Version,
-		StorageFee:       &ticket.RegTicketData.StorageFee,
+		// FIXME
+		// RarenessScore:    ticket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
+		// NsfwScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.NSFWScore,
+		// SeenScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.SeenScore,
+		Version:    &ticket.RegTicketData.ArtTicketData.Version,
+		StorageFee: &ticket.RegTicketData.StorageFee,
+	}
+}
+
+func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Ticket {
+	return &artworkdownload.Ticket{
+		Txid:               payload.Txid,
+		PastelID:           payload.Pid,
+		PastelIDPassphrase: payload.Key,
 	}
 }
 

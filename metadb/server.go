@@ -204,10 +204,10 @@ func (s *service) startServer(ctx context.Context) error {
 	if err := s.startHTTPServer(ctx, db, cs); err != nil {
 		return errors.Errorf("start http server: %w", err)
 	}
-	log.WithContext(ctx).Info("node is ready, block until context is done")
-
 	// mark the rqlite node is ready
 	s.ready <- struct{}{}
+
+	log.WithContext(ctx).Info("metadb service is started")
 
 	// block until context is done
 	<-ctx.Done()
@@ -222,6 +222,6 @@ func (s *service) startServer(ctx context.Context) error {
 		log.WithContext(ctx).Errorf("close mux listener: %v", err)
 	}
 
-	log.WithContext(ctx).Info("rqlite server is stopped")
+	log.WithContext(ctx).Info("metadb service is stopped")
 	return nil
 }

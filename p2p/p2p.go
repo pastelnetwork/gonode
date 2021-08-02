@@ -49,6 +49,8 @@ func (s *p2p) Run(ctx context.Context) error {
 	}
 	s.running = true
 
+	log.WithContext(ctx).Info("p2p service is started")
+
 	// block until context is done
 	<-ctx.Done()
 
@@ -84,7 +86,7 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return s.dht.Retrieve(ctx, key)
 }
 
-// configure the distrubuted hash table for p2p service
+// configure the distributed hash table for p2p service
 func (s *p2p) configure(ctx context.Context) error {
 	var bootstrapNodes []*kademlia.Node
 	if s.config.BootstrapIP != "" || s.config.BootstrapPort > 0 {

@@ -67,7 +67,7 @@ func (ts *testSuite) TearDownSuite() {
 	}
 	ts.wg.Wait()
 
-	// remove the data directy
+	// remove the data directly
 	os.RemoveAll(filepath.Join(ts.s.config.DataDir))
 }
 

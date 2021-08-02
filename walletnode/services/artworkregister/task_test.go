@@ -64,7 +64,7 @@ func TestTaskRun(t *testing.T) {
 		primarySessID string
 		pastelIDS     []string
 		fingerPrint   []byte
-		signature     string
+		signature     []byte
 		returnErr     error
 	}
 
@@ -94,7 +94,7 @@ func TestTaskRun(t *testing.T) {
 				primarySessID: "sesid1",
 				pastelIDS:     []string{"2", "3", "4"},
 				fingerPrint:   []byte("match"),
-				signature:     "sign",
+				signature:     []byte("sign"),
 				returnErr:     nil,
 			},
 			assertion:         assert.NoError,
@@ -126,7 +126,7 @@ func TestTaskRun(t *testing.T) {
 			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 				nodeClient := test.NewMockClient(t)
 				nodeClient.
-					ListenOnConnect(testCase.args.returnErr).
+					ListenOnConnect("", testCase.args.returnErr).
 					ListenOnRegisterArtwork().
 					ListenOnSession(testCase.args.returnErr).
 					ListenOnConnectTo(testCase.args.returnErr).
@@ -285,7 +285,7 @@ func TestTaskMeshNodes(t *testing.T) {
 			//create new client mock
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
-				ListenOnConnect(testCase.args.returnErr).
+				ListenOnConnect("", testCase.args.returnErr).
 				ListenOnRegisterArtwork().
 				ListenOnSession(testCase.args.returnErr).
 				ListenOnConnectTo(testCase.args.returnErr).

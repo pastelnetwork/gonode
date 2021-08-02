@@ -76,7 +76,7 @@ func (s *Badger) Store(ctx context.Context, key []byte, value []byte, replicatio
 		return errors.Errorf("badger update: %v, %w", base58.Encode(key), err)
 	}
 
-	log.WithContext(ctx).Infof("store key: %s, data: %v", base58.Encode(key), base58.Encode(value))
+	log.WithContext(ctx).Infof("store key: %s", base58.Encode(key))
 	return nil
 }
 
@@ -103,7 +103,7 @@ func (s *Badger) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 		return nil, errors.Errorf("badger view: %w", err)
 	}
 
-	log.WithContext(ctx).Infof("retrieve key: %s, value: %v", base58.Encode(key), base58.Encode(value))
+	log.WithContext(ctx).Infof("retrieve key: %s", base58.Encode(key))
 	return value, nil
 }
 

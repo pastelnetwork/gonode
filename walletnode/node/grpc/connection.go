@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// clientConn represents grpc client conneciton.
+// clientConn represents grpc client connection.
 type clientConn struct {
 	*commongrpc.ClientConn
 
@@ -16,6 +16,11 @@ type clientConn struct {
 // RegisterArtwork implements node.Connection.RegisterArtwork()
 func (conn *clientConn) RegisterArtwork() node.RegisterArtwork {
 	return newRegisterArtwork(conn)
+}
+
+// DownloadArtwork implements node.Connection.DownloadArtwork()
+func (conn *clientConn) DownloadArtwork() node.DownloadArtwork {
+	return newDownloadArtwork(conn)
 }
 
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
