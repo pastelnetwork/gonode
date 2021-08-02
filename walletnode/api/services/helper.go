@@ -11,6 +11,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 )
 
@@ -154,5 +155,13 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 		// SeenScore:        ticket.RegTicketData.ArtTicketData.AppTicketData.SeenScore,
 		Version:    &ticket.RegTicketData.ArtTicketData.Version,
 		StorageFee: &ticket.RegTicketData.StorageFee,
+	}
+}
+
+func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Ticket {
+	return &artworkdownload.Ticket{
+		Txid:               payload.Txid,
+		PastelID:           payload.Pid,
+		PastelIDPassphrase: payload.Key,
 	}
 }

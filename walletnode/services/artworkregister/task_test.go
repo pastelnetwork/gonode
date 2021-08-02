@@ -81,7 +81,7 @@ func TestTaskRun(t *testing.T) {
 		primarySessID string
 		pastelIDS     []string
 		fingerPrint   []byte
-		signature     string
+		signature     []byte
 		returnErr     error
 	}
 
@@ -111,7 +111,7 @@ func TestTaskRun(t *testing.T) {
 				primarySessID: "sesid1",
 				pastelIDS:     []string{"2", "3", "4"},
 				fingerPrint:   []byte("match"),
-				signature:     "sign",
+				signature:     []byte("sign"),
 				returnErr:     nil,
 			},
 			assertion:         assert.NoError,

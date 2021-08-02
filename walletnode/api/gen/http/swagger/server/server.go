@@ -85,13 +85,13 @@ func Mount(mux goahttp.Muxer, h *Server) {
 // MountHTTPOpenapi3JSON configures the mux to serve GET request made to
 // "/swagger/swagger.json".
 func MountHTTPOpenapi3JSON(mux goahttp.Muxer, h http.Handler) {
-	mux.Handle("GET", "/swagger/swagger.json", handleSwaggerOrigin(h).ServeHTTP)
+	mux.Handle("GET", "/swagger/swagger.json", HandleSwaggerOrigin(h).ServeHTTP)
 }
 
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service swagger.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
-	h = handleSwaggerOrigin(h)
+	h = HandleSwaggerOrigin(h)
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -108,9 +108,9 @@ func NewCORSHandler() http.Handler {
 	})
 }
 
-// handleSwaggerOrigin applies the CORS response headers corresponding to the
+// HandleSwaggerOrigin applies the CORS response headers corresponding to the
 // origin for the service swagger.
-func handleSwaggerOrigin(h http.Handler) http.Handler {
+func HandleSwaggerOrigin(h http.Handler) http.Handler {
 	origHndlr := h.(http.HandlerFunc)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")

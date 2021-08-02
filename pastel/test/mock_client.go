@@ -38,6 +38,15 @@ const (
 
 	// GetRawTransactionVerbose1Method  represent GetRawTransactionVerbose1 method
 	GetRawTransactionVerbose1Method = "GetRawTransactionVerbose1"
+
+	// TicketOwnershipMethod represents TicketOwnership method name
+	TicketOwnershipMethod = "TicketOwnership"
+
+	// ListAvailableTradeTicketsMethod represents ListAvailableTradeTickets method name
+	ListAvailableTradeTicketsMethod = "ListAvailableTradeTickets"
+
+	// VerifyMethod represents Verify method name
+	VerifyMethod = "Verify"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -140,5 +149,59 @@ func (client *Client) ListenOnGetBlockVerbose1(blockInfo *pastel.GetBlockVerbose
 // ListenOnFindTicketByID listening FindTicketByID
 func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err error) *Client {
 	client.On(FindTicketByIDMethod, mock.Anything, mock.Anything).Return(idticket, err)
+	return client
+}
+
+// AssertRegTicketCall RegTicket call assertion
+func (client *Client) AssertRegTicketCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.AssertCalled(client.t, RegTicketMethod, arguments...)
+	}
+	client.AssertNumberOfCalls(client.t, RegTicketMethod, expectedCalls)
+	return client
+}
+
+// ListenOnTicketOwnership listening TicketOwnership call and returns values from args
+func (client *Client) ListenOnTicketOwnership(ttxID string, returnErr error) *Client {
+	client.On(TicketOwnershipMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string("")), mock.IsType(string(""))).Return(ttxID, returnErr)
+	return client
+}
+
+// AssertTicketOwnershipCall TicketOwnership call assertion
+func (client *Client) AssertTicketOwnershipCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.AssertCalled(client.t, TicketOwnershipMethod, arguments...)
+	}
+	client.AssertNumberOfCalls(client.t, TicketOwnershipMethod, expectedCalls)
+	return client
+}
+
+// ListenOnListAvailableTradeTickets listening ListAvailableTradeTickets call and returns values from args
+func (client *Client) ListenOnListAvailableTradeTickets(tradeTickets []pastel.TradeTicket, returnErr error) *Client {
+	client.On(ListAvailableTradeTicketsMethod, mock.Anything).Return(tradeTickets, returnErr)
+	return client
+}
+
+// AssertListAvailableTradeTicketsCall ListAvailableTradeTickets call assertion
+func (client *Client) AssertListAvailableTradeTicketsCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.AssertCalled(client.t, ListAvailableTradeTicketsMethod, arguments...)
+	}
+	client.AssertNumberOfCalls(client.t, ListAvailableTradeTicketsMethod, expectedCalls)
+	return client
+}
+
+// ListenOnVerify listening Verify call and returns values from args
+func (client *Client) ListenOnVerify(isValid bool, returnErr error) *Client {
+	client.On(VerifyMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string(""))).Return(isValid, returnErr)
+	return client
+}
+
+// AssertVerifyCall Verify call assertion
+func (client *Client) AssertVerifyCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.AssertCalled(client.t, VerifyMethod, arguments...)
+	}
+	client.AssertNumberOfCalls(client.t, VerifyMethod, expectedCalls)
 	return client
 }

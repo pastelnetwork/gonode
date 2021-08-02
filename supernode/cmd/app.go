@@ -19,14 +19,13 @@ import (
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/probe"
-	"github.com/pastelnetwork/gonode/probe/tfmodel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 
@@ -138,7 +137,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// analysis tools
-	probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
+	// probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
 
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
@@ -156,13 +155,19 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	rqClient := rqgrpc.NewClient()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p, rqClient)
+	config.ArtworkDownload.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.ArtworkDownload.RqFilesDir = config.RqFilesDir
+
+	// business logic services
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
+	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
 
 	// server
 	grpc := server.New(config.Server,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
+		walletnode.NewDownloadArtwork(artworkDownload),
 	)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload)
 }

@@ -122,6 +122,111 @@ paths:
                 id: 3F1FKVRR
                 message: Value of ID must be an integer
                 name: bad_request
+  /artworks/download:
+    get:
+      tags:
+      - artworks
+      summary: Downloads artwork
+      description: Download registered artwork.
+      operationId: artworks#download
+      parameters:
+      - name: txid
+        in: query
+        description: Art Registration Ticket transaction ID
+        allowEmptyValue: true
+        required: true
+        schema:
+          type: string
+          description: Art Registration Ticket transaction ID
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
+        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      - name: pid
+        in: query
+        description: Owner's PastelID
+        allowEmptyValue: true
+        required: true
+        schema:
+          type: string
+          description: Owner's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      responses:
+        "101":
+          description: Switching Protocols response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DownloadResult'
+              example:
+                file:
+                - 84
+                - 101
+                - 109
+                - 112
+                - 111
+                - 114
+                - 97
+                - 32
+                - 110
+                - 111
+                - 110
+                - 32
+                - 99
+                - 117
+                - 108
+                - 112
+                - 97
+                - 32
+                - 118
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
+                - 97
+                - 116
+                - 105
+                - 98
+                - 117
+                - 115
+                - 32
+                - 114
+                - 101
+                - 114
+                - 117
+                - 109
+                - 32
+                - 101
+                - 115
+                - 116
+                - 46
+        "404":
+          description: Not Found response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+      security:
+      - api_key_header_Authorization: []
   /artworks/register:
     get:
       tags:
@@ -435,33 +540,23 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 79
-              - 100
-              - 105
-              - 111
-              - 32
-              - 113
-              - 117
-              - 105
-              - 32
-              - 117
+              - 69
               - 116
               - 32
-              - 118
               - 101
-              - 108
-              - 32
-              - 101
-              - 116
-              - 32
-              - 113
               - 117
+              - 109
+              - 32
               - 97
-              - 115
-              - 105
-              - 32
-              - 101
+              - 117
               - 116
+              - 32
+              - 105
+              - 116
+              - 97
+              - 113
+              - 117
+              - 101
               - 46
       responses:
         "201":
@@ -508,9 +603,9 @@ paths:
         schema:
           type: string
           description: Artist PastelID or special value; mine
-          example: 30n
+          example: qus
           maxLength: 256
-        example: ahk
+        example: lwn
       - name: limit
         in: query
         description: Number of results to be return
@@ -531,8 +626,8 @@ paths:
         schema:
           type: string
           description: Query is search query entered by user
-          example: Aut accusamus vitae.
-        example: Ut rem.
+          example: Veritatis vitae eum.
+        example: Aliquam mollitia fugiat id.
       - name: artist_name
         in: query
         description: Name of the artist
@@ -551,7 +646,7 @@ paths:
           type: boolean
           description: Title of artwork
           default: true
-          example: false
+          example: true
         example: true
       - name: series
         in: query
@@ -582,7 +677,7 @@ paths:
           description: Keyword that Artist assigns to Artwork
           default: true
           example: true
-        example: true
+        example: false
       - name: min_copies
         in: query
         description: Minimum number of created copies
@@ -613,9 +708,9 @@ paths:
           type: integer
           description: Minimum blocknum
           default: 1
-          example: 1511893224281522261
+          example: 2389346081964013199
           minimum: 1
-        example: 5873759525328106105
+        example: 7696725125093462269
       - name: max_block
         in: query
         description: Maximum blocknum
@@ -623,9 +718,9 @@ paths:
         schema:
           type: integer
           description: Maximum blocknum
-          example: 5669552886429406270
+          example: 7080598742486221417
           minimum: 1
-        example: 291355563625856709
+        example: 4453244333956176108
       - name: min_rareness_score
         in: query
         description: Minimum rareness score
@@ -690,17 +785,7 @@ paths:
                   keywords: Renaissance, sfumato, portrait
                   series_name: Famous artist
                   thumbnail:
-                  - 77
-                  - 111
-                  - 100
-                  - 105
-                  - 32
-                  - 110
-                  - 105
-                  - 115
-                  - 105
-                  - 32
-                  - 101
+                  - 69
                   - 111
                   - 115
                   - 32
@@ -816,7 +901,7 @@ components:
         is_green:
           type: boolean
           description: Green flag
-          example: true
+          example: false
         keywords:
           type: string
           description: Keywords
@@ -837,7 +922,7 @@ components:
         royalty:
           type: number
           description: how much artist should get on all future resales
-          example: 0.8424837448419771
+          example: 0.4685763941072239
           format: double
         seen_score:
           type: integer
@@ -859,34 +944,18 @@ components:
           type: string
           description: Thumbnail image
           example:
-          - 73
-          - 108
-          - 108
-          - 117
-          - 109
-          - 32
-          - 113
-          - 117
+          - 83
           - 105
+          - 110
+          - 116
           - 32
           - 99
           - 111
-          - 110
-          - 115
-          - 101
-          - 113
-          - 117
-          - 97
-          - 116
-          - 117
-          - 114
-          - 32
-          - 108
-          - 97
-          - 98
+          - 109
+          - 109
           - 111
-          - 114
-          - 101
+          - 100
+          - 105
           - 46
           format: binary
         title:
@@ -918,62 +987,44 @@ components:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
-        is_green: false
+        is_green: true
         keywords: Renaissance, sfumato, portrait
         nsfw_score: 1000
         rareness_score: 1
-        royalty: 0.8321273362139942
+        royalty: 0.4911423558713323
         seen_score: 1
         series_name: Famous artist
         storage_fee: 100
         thumbnail:
-        - 82
-        - 101
-        - 112
-        - 117
-        - 100
+        - 86
         - 105
-        - 97
-        - 110
-        - 100
+        - 116
         - 97
         - 101
         - 32
-        - 117
-        - 116
-        - 32
-        - 110
-        - 97
-        - 116
-        - 117
-        - 115
-        - 32
-        - 111
         - 100
-        - 105
-        - 116
-        - 32
+        - 117
         - 99
-        - 111
-        - 110
-        - 115
-        - 101
-        - 113
-        - 117
-        - 97
-        - 116
-        - 117
-        - 114
-        - 32
-        - 97
-        - 115
-        - 115
-        - 117
+        - 105
         - 109
+        - 117
+        - 115
+        - 32
+        - 117
+        - 116
+        - 32
+        - 114
         - 101
-        - 110
-        - 100
-        - 97
+        - 109
+        - 32
+        - 115
+        - 117
+        - 115
+        - 99
+        - 105
+        - 112
+        - 105
+        - 116
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1000,7 +1051,7 @@ components:
           type: integer
           description: Sort index of the match based on score.This must be used to
             sort results on UI.
-          example: 7176939958327417183
+          example: 2719893809578817626
           format: int64
         matches:
           type: array
@@ -1008,6 +1059,22 @@ components:
             $ref: '#/components/schemas/FuzzyMatch'
           description: Match result details
           example:
+          - field_type: art_title
+            matched_indexes:
+            - 8830161846526020474
+            - 6577107819799959969
+            - 7129840891655550567
+            - 2035670134737008339
+            score: 7525781640486193864
+            str: Aut ut voluptates rerum.
+          - field_type: art_title
+            matched_indexes:
+            - 8830161846526020474
+            - 6577107819799959969
+            - 7129840891655550567
+            - 2035670134737008339
+            score: 7525781640486193864
+            str: Aut ut voluptates rerum.
           - field_type: art_title
             matched_indexes:
             - 8830161846526020474
@@ -1036,17 +1103,7 @@ components:
           keywords: Renaissance, sfumato, portrait
           series_name: Famous artist
           thumbnail:
-          - 77
-          - 111
-          - 100
-          - 105
-          - 32
-          - 110
-          - 105
-          - 115
-          - 105
-          - 32
-          - 101
+          - 69
           - 111
           - 115
           - 32
@@ -1069,7 +1126,7 @@ components:
           title: Mona Lisa
           txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        match_index: 5830240738293704132
+        match_index: 8894608049569488915
         matches:
         - field_type: art_title
           matched_indexes:
@@ -1139,44 +1196,22 @@ components:
           type: string
           description: Thumbnail image
           example:
-          - 73
-          - 109
-          - 112
-          - 101
-          - 100
-          - 105
-          - 116
-          - 32
-          - 116
-          - 101
-          - 110
-          - 101
-          - 116
-          - 117
-          - 114
-          - 32
-          - 104
-          - 97
-          - 114
-          - 117
-          - 109
-          - 32
-          - 109
+          - 86
           - 111
           - 108
-          - 101
-          - 115
+          - 117
+          - 112
           - 116
-          - 105
           - 97
           - 115
           - 32
+          - 117
           - 116
+          - 32
           - 101
-          - 109
-          - 112
-          - 111
-          - 114
+          - 97
+          - 113
+          - 117
           - 101
           - 46
           format: binary
@@ -1208,41 +1243,42 @@ components:
         keywords: Renaissance, sfumato, portrait
         series_name: Famous artist
         thumbnail:
-        - 69
-        - 118
-        - 101
-        - 110
-        - 105
-        - 101
-        - 116
-        - 32
+        - 81
         - 117
-        - 116
-        - 32
-        - 101
-        - 120
-        - 112
-        - 101
-        - 100
         - 105
-        - 116
+        - 115
+        - 113
+        - 117
         - 97
+        - 109
         - 32
+        - 97
+        - 99
         - 99
         - 117
-        - 109
-        - 113
-        - 117
-        - 101
-        - 32
-        - 113
-        - 117
+        - 115
         - 97
         - 109
+        - 117
+        - 115
         - 32
+        - 113
+        - 117
+        - 105
+        - 97
+        - 32
+        - 100
         - 101
         - 115
+        - 101
+        - 114
+        - 117
+        - 110
         - 116
+        - 32
+        - 113
+        - 117
+        - 105
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1372,13 +1408,53 @@ components:
       - artist_pastelid_passphrase
       - spendable_address
       - maximum_fee
+    DownloadResult:
+      type: object
+      properties:
+        file:
+          type: string
+          description: File downloaded
+          example:
+          - 68
+          - 111
+          - 108
+          - 111
+          - 114
+          - 117
+          - 109
+          - 32
+          - 113
+          - 117
+          - 97
+          - 101
+          - 114
+          - 97
+          - 116
+          - 46
+          format: binary
+      example:
+        file:
+        - 69
+        - 116
+        - 32
+        - 110
+        - 101
+        - 115
+        - 99
+        - 105
+        - 117
+        - 110
+        - 116
+        - 46
+      required:
+      - file
     Error:
       type: object
       properties:
         fault:
           type: boolean
           description: Is the error a server-side fault?
-          example: false
+          example: true
         id:
           type: string
           description: ID is a unique identifier for this particular occurrence of
@@ -1396,11 +1472,11 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: true
+          example: false
         timeout:
           type: boolean
           description: Is the error a timeout?
-          example: true
+          example: false
       example:
         id: 3F1FKVRR
         message: Value of ID must be an integer
@@ -1418,7 +1494,7 @@ components:
         field_type:
           type: string
           description: Field that is matched
-          example: keyword
+          example: artist_name
           enum:
           - artist_name
           - art_title
@@ -1429,30 +1505,33 @@ components:
           type: array
           items:
             type: integer
-            example: 1946374781819911321
+            example: 2892400560414084447
             format: int64
           description: The indexes of matched characters. Useful for highlighting
             matches
           example:
-          - 2028159279987918541
-          - 2540007978423873352
+          - 3119711454428967273
+          - 7048554425654543302
+          - 7770541013680185711
+          - 3764981434829585555
         score:
           type: integer
           description: Score used to rank matches
-          example: 9141729413788179486
+          example: 6003265943332284492
           format: int64
         str:
           type: string
           description: String that is matched
-          example: Ipsam maxime eveniet culpa non.
+          example: Perspiciatis et iste accusantium a eius.
       example:
         field_type: art_title
         matched_indexes:
-        - 6954202271319323789
-        - 6370536602402971815
-        - 3088022687354144964
-        score: 1590348683561026850
-        str: Accusamus quia deserunt qui deserunt ipsa perspiciatis.
+        - 98123784667781457
+        - 2657304399778336004
+        - 5017706806402279834
+        - 8329223609931755077
+        score: 1978061490934160507
+        str: Consequatur labore quo saepe.
     Image:
       type: object
       properties:
@@ -1630,8 +1709,6 @@ components:
             status: Task Started
           - date: 2006-01-02T15:04:05Z07:00
             status: Task Started
-          - date: 2006-01-02T15:04:05Z07:00
-            status: Task Started
         status:
           type: string
           description: Status of the registration process
@@ -1641,12 +1718,14 @@ components:
           - Connected
           - Image Probed
           - Image And Thumbnail Uploaded
+          - Status Gen ReptorQ Symbols
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
           - Error Fingerprints Dont Match
           - Error ThumbnailHashes Dont Match
+          - Error GenRaptorQ Symbols Failed
           - Task Rejected
           - Task Completed
         ticket:
@@ -1661,8 +1740,6 @@ components:
       example:
         id: n6Qn6TFM
         states:
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -1713,12 +1790,14 @@ components:
           - Connected
           - Image Probed
           - Image And Thumbnail Uploaded
+          - Status Gen ReptorQ Symbols
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
           - Error Fingerprints Dont Match
           - Error ThumbnailHashes Dont Match
+          - Error GenRaptorQ Symbols Failed
           - Task Rejected
           - Task Completed
         ticket:
@@ -1883,12 +1962,14 @@ components:
           - Connected
           - Image Probed
           - Image And Thumbnail Uploaded
+          - Status Gen ReptorQ Symbols
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
           - Error Insufficient Fee
           - Error Fingerprints Dont Match
           - Error ThumbnailHashes Dont Match
+          - Error GenRaptorQ Symbols Failed
           - Task Rejected
           - Task Completed
       example:
@@ -1980,28 +2061,32 @@ components:
           type: string
           description: File to upload
           example:
-          - 82
-          - 101
-          - 114
+          - 81
           - 117
+          - 97
           - 109
           - 32
-          - 105
-          - 109
-          - 112
           - 101
-          - 100
-          - 105
+          - 115
           - 116
           - 32
-          - 118
-          - 101
-          - 114
+          - 112
           - 111
+          - 115
+          - 115
+          - 105
+          - 109
+          - 117
+          - 115
           - 32
           - 101
-          - 110
+          - 115
+          - 116
+          - 32
           - 105
+          - 112
+          - 115
+          - 97
           - 109
           - 46
           format: binary
@@ -2010,56 +2095,35 @@ components:
           description: For internal use
       example:
         file:
-        - 86
-        - 111
-        - 108
-        - 117
-        - 112
-        - 116
-        - 97
-        - 116
+        - 69
+        - 118
         - 101
-        - 32
-        - 112
-        - 101
-        - 114
-        - 115
-        - 112
+        - 110
         - 105
+        - 101
+        - 116
+        - 32
         - 99
-        - 105
-        - 97
-        - 116
-        - 105
-        - 115
-        - 32
-        - 105
+        - 117
+        - 108
         - 112
-        - 115
         - 97
         - 32
-        - 116
+        - 110
         - 111
-        - 116
-        - 97
-        - 109
+        - 110
         - 32
         - 101
-        - 97
-        - 113
-        - 117
-        - 101
-        - 32
-        - 105
-        - 100
-        - 32
-        - 113
-        - 117
-        - 105
         - 97
         - 46
       required:
       - file
+  securitySchemes:
+    api_key_header_Authorization:
+      type: apiKey
+      description: Art Owner's passphrase to authenticate
+      name: Authorization
+      in: header
 tags:
 - name: artworks
   description: Pastel Artwork

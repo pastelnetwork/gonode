@@ -2,6 +2,7 @@ package configs
 
 import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 
@@ -14,7 +15,8 @@ type Node struct {
 	PassPhrase                 string                 `mapstructure:"pass_phrase" json:"pass_phrase,omitempty"`
 	PreburntTxMinConfirmations int                    `mapstructure:"preburnt_tx_min_confirmation" json:"preburnt_tx_min_confirmation,omitempty"`
 	// timeout in minute
-	PreburntTxConfirmationTimeout int `mapstructure:"preburnt_tx_confirmation_timeout" json:"preburnt_tx_confirmation_timeout,omitempty"`
+	PreburntTxConfirmationTimeout int                    `mapstructure:"preburnt_tx_confirmation_timeout" json:"preburnt_tx_confirmation_timeout,omitempty"`
+	ArtworkDownload               artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
 }
 
 // NewNode returns a new Node instance

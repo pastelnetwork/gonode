@@ -1,0 +1,63 @@
+package artworkdownload
+
+import (
+	"context"
+
+	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/p2p"
+	"github.com/pastelnetwork/gonode/pastel"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+)
+
+const (
+	logPrefix = "artwork"
+)
+
+// Service represent artwork service.
+type Service struct {
+	*task.Worker
+	*artwork.Storage
+
+	config        *Config
+	pastelClient  pastel.Client
+	p2pClient     p2p.Client
+	raptorQClient rqnode.Client
+}
+
+// Run starts task
+func (service *Service) Run(ctx context.Context) error {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if service.config.PastelID == "" {
+		return errors.New("PastelID is not specified in the config file")
+	}
+
+	group, ctx := errgroup.WithContext(ctx)
+	group.Go(func() error {
+		return service.Worker.Run(ctx)
+	})
+	return group.Wait()
+}
+
+// NewTask runs a new task of the downloading artwork and returns its taskID.
+func (service *Service) NewTask() *Task {
+	task := NewTask(service)
+	service.Worker.AddTask(task)
+
+	return task
+}
+
+// NewService returns a new Service instance.
+func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, raptorQClient rqnode.Client) *Service {
+	return &Service{
+		config:        config,
+		pastelClient:  pastelClient,
+		p2pClient:     p2pClient,
+		raptorQClient: raptorQClient,
+		Worker:        task.NewWorker(),
+	}
+}

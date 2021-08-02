@@ -283,8 +283,8 @@ func ValidateTaskViewTiny(result *TaskView) (err error) {
 		}
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Image And Thumbnail Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error ThumbnailHashes Dont Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Image And Thumbnail Uploaded" || *result.Status == "Status Gen ReptorQ Symbols" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error ThumbnailHashes Dont Match" || *result.Status == "Error GenRaptorQ Symbols Failed" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	if result.Txid != nil {
@@ -328,8 +328,8 @@ func ValidateTaskView(result *TaskView) (err error) {
 		}
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Image And Thumbnail Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error ThumbnailHashes Dont Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Image And Thumbnail Uploaded" || *result.Status == "Status Gen ReptorQ Symbols" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error ThumbnailHashes Dont Match" || *result.Status == "Error GenRaptorQ Symbols Failed" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range result.States {
@@ -366,8 +366,8 @@ func ValidateTaskStateView(result *TaskStateView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "result"))
 	}
 	if result.Status != nil {
-		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Image And Thumbnail Uploaded" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error ThumbnailHashes Dont Match" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*result.Status == "Task Started" || *result.Status == "Connected" || *result.Status == "Image Probed" || *result.Status == "Image And Thumbnail Uploaded" || *result.Status == "Status Gen ReptorQ Symbols" || *result.Status == "Ticket Accepted" || *result.Status == "Ticket Registered" || *result.Status == "Ticket Activated" || *result.Status == "Error Insufficient Fee" || *result.Status == "Error Fingerprints Dont Match" || *result.Status == "Error ThumbnailHashes Dont Match" || *result.Status == "Error GenRaptorQ Symbols Failed" || *result.Status == "Task Rejected" || *result.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("result.status", *result.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return

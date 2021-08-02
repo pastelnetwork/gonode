@@ -158,6 +158,13 @@ type ArtworkGetResponseBody struct {
 	ArtistWebsiteURL *string `form:"artist_website_url,omitempty" json:"artist_website_url,omitempty" xml:"artist_website_url,omitempty"`
 }
 
+// DownloadResponseBody is the type of the "artworks" service "download"
+// endpoint HTTP response body.
+type DownloadResponseBody struct {
+	// File downloaded
+	File []byte `form:"file,omitempty" json:"file,omitempty" xml:"file,omitempty"`
+}
+
 // RegisterBadRequestResponseBody is the type of the "artworks" service
 // "register" endpoint HTTP response body for the "BadRequest" error.
 type RegisterBadRequestResponseBody struct {
@@ -402,6 +409,43 @@ type ArtworkGetNotFoundResponseBody struct {
 // service "artworkGet" endpoint HTTP response body for the
 // "InternalServerError" error.
 type ArtworkGetInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DownloadNotFoundResponseBody is the type of the "artworks" service
+// "download" endpoint HTTP response body for the "NotFound" error.
+type DownloadNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// DownloadInternalServerErrorResponseBody is the type of the "artworks"
+// service "download" endpoint HTTP response body for the "InternalServerError"
+// error.
+type DownloadInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -954,6 +998,46 @@ func NewArtworkGetInternalServerError(body *ArtworkGetInternalServerErrorRespons
 	return v
 }
 
+// NewDownloadResultOK builds a "artworks" service "download" endpoint result
+// from a HTTP "OK" response.
+func NewDownloadResultOK(body *DownloadResponseBody) *artworks.DownloadResult {
+	v := &artworks.DownloadResult{
+		File: body.File,
+	}
+
+	return v
+}
+
+// NewDownloadNotFound builds a artworks service download endpoint NotFound
+// error.
+func NewDownloadNotFound(body *DownloadNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewDownloadInternalServerError builds a artworks service download endpoint
+// InternalServerError error.
+func NewDownloadInternalServerError(body *DownloadInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
 // ValidateRegisterTaskStateResponseBody runs the validations defined on
 // RegisterTaskStateResponseBody
 func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) (err error) {
@@ -964,8 +1048,8 @@ func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1131,6 +1215,15 @@ func ValidateArtworkGetResponseBody(body *ArtworkGetResponseBody) (err error) {
 		if utf8.RuneCountInString(*body.ArtistWebsiteURL) > 256 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.artist_website_url", *body.ArtistWebsiteURL, utf8.RuneCountInString(*body.ArtistWebsiteURL), 256, false))
 		}
+	}
+	return
+}
+
+// ValidateDownloadResponseBody runs the validations defined on
+// DownloadResponseBody
+func ValidateDownloadResponseBody(body *DownloadResponseBody) (err error) {
+	if body.File == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
 	}
 	return
 }
@@ -1471,6 +1564,54 @@ func ValidateArtworkGetInternalServerErrorResponseBody(body *ArtworkGetInternalS
 	return
 }
 
+// ValidateDownloadNotFoundResponseBody runs the validations defined on
+// download_NotFound_response_body
+func ValidateDownloadNotFoundResponseBody(body *DownloadNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateDownloadInternalServerErrorResponseBody runs the validations defined
+// on download_InternalServerError_response_body
+func ValidateDownloadInternalServerErrorResponseBody(body *DownloadInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
 // ValidateTaskStateResponseBody runs the validations defined on
 // TaskStateResponseBody
 func ValidateTaskStateResponseBody(body *TaskStateResponseBody) (err error) {
@@ -1481,8 +1622,8 @@ func ValidateTaskStateResponseBody(body *TaskStateResponseBody) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return
@@ -1646,8 +1787,8 @@ func ValidateTaskResponse(body *TaskResponse) (err error) {
 		}
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	for _, e := range body.States {
@@ -1684,8 +1825,8 @@ func ValidateTaskStateResponse(body *TaskStateResponse) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
 	}
 	if body.Status != nil {
-		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
-			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Task Rejected", "Task Completed"}))
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Task Rejected", "Task Completed"}))
 		}
 	}
 	return

@@ -187,7 +187,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 	{
 		err = json.Unmarshal([]byte(artworksUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"T2RpbyBxdWkgdXQgdmVsIGV0IHF1YXNpIGV0Lg==\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"RXQgZXVtIGF1dCBpdGFxdWUu\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -518,6 +518,49 @@ func BuildArtworkGetPayload(artworksArtworkGetTxid string) (*artworks.ArtworkGet
 	}
 	v := &artworks.ArtworkGetPayload{}
 	v.Txid = txid
+
+	return v, nil
+}
+
+// BuildDownloadPayload builds the payload for the artworks download endpoint
+// from CLI flags.
+func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid string, artworksDownloadKey string) (*artworks.DownloadPayload, error) {
+	var err error
+	var txid string
+	{
+		txid = artworksDownloadTxid
+		if utf8.RuneCountInString(txid) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, true))
+		}
+		if utf8.RuneCountInString(txid) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("txid", txid, utf8.RuneCountInString(txid), 64, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var pid string
+	{
+		pid = artworksDownloadPid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pid", pid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, true))
+		}
+		if utf8.RuneCountInString(pid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pid", pid, utf8.RuneCountInString(pid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var key string
+	{
+		key = artworksDownloadKey
+	}
+	v := &artworks.DownloadPayload{}
+	v.Txid = txid
+	v.Pid = pid
+	v.Key = key
 
 	return v, nil
 }

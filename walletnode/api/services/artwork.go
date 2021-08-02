@@ -11,6 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
 
 	goahttp "goa.design/goa/v3/http"
+	"goa.design/goa/v3/security"
 )
 
 const (
@@ -29,6 +31,7 @@ type Artwork struct {
 	*Common
 	register *artworkregister.Service
 	search   *artworksearch.Service
+	download *artworkdownload.Service
 	db       storage.KeyValue
 	imageTTL time.Duration
 }
@@ -139,6 +142,43 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 	return res, nil
 }
 
+// Download registered artwork.
+func (service *Artwork) Download(ctx context.Context, p *artworks.DownloadPayload, stream artworks.DownloadServerStream) (err error) {
+	log.WithContext(ctx).Info("Start downloading")
+	defer log.WithContext(ctx).Info("Finished downloading")
+	ticket := fromDownloadPayload(p)
+	taskID := service.download.AddTask(ticket)
+	task := service.download.Task(taskID)
+
+	sub := task.SubscribeStatus()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case status := <-sub():
+			if status.IsFailure() {
+				return artworks.MakeInternalServerError(task.Error())
+			}
+
+			if status.IsFinal() {
+				res := &artworks.DownloadResult{
+					File: task.File,
+				}
+				if err := stream.Send(res); err != nil {
+					return artworks.MakeInternalServerError(err)
+				}
+				return nil
+			}
+		}
+	}
+}
+
+// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+func (service *Artwork) APIKeyAuth(ctx context.Context, _ string, _ *security.APIKeyScheme) (context.Context, error) {
+	return ctx, nil
+}
+
 // Mount configures the mux to serve the artworks endpoints.
 func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
 	endpoints := artworks.NewEndpoints(service)
@@ -198,11 +238,12 @@ func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPa
 }
 
 // NewArtwork returns the artworks Artwork implementation.
-func NewArtwork(register *artworkregister.Service, search *artworksearch.Service) *Artwork {
+func NewArtwork(register *artworkregister.Service, search *artworksearch.Service, download *artworkdownload.Service) *Artwork {
 	return &Artwork{
 		Common:   NewCommon(),
 		register: register,
 		search:   search,
+		download: download,
 		db:       memory.NewKeyValue(),
 		imageTTL: defaultImageTTL,
 	}

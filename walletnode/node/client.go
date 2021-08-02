@@ -1,6 +1,7 @@
 //go:generate mockery --name=Client
 //go:generate mockery --name=Connection
 //go:generate mockery --name=RegisterArtwork
+//go:generate mockery --name=DownloadArtwork
 
 package node
 
@@ -26,6 +27,8 @@ type Connection interface {
 	Done() <-chan struct{}
 	// RegisterArtwork returns a new RegisterArtwork stream.
 	RegisterArtwork() RegisterArtwork
+	// DownloadArtwork returns a new DownloadArtwork stream.
+	DownloadArtwork() DownloadArtwork
 }
 
 // RegisterArtwork contains methods for registering artwork.
@@ -46,4 +49,10 @@ type RegisterArtwork interface {
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
 	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
 	SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error)
+}
+
+// DownloadArtwork contains methods for downloading artwork.
+type DownloadArtwork interface {
+	// Download sends image downloading request to supernode.
+	Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error)
 }

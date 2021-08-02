@@ -45,3 +45,8 @@ func ArtSearchArtworksPath() string {
 func ArtworkGetArtworksPath(txid string) string {
 	return fmt.Sprintf("/artworks/%v", txid)
 }
+
+// DownloadArtworksPath returns the URL path to the artworks service download HTTP endpoint.
+func DownloadArtworksPath() string {
+	return "/artworks/download"
+}
