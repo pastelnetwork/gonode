@@ -53,5 +53,6 @@ func New() *Config {
 		MetaDB:        metadb.NewConfig(),
 		UserDB:        database.NewConfig(),
 		DupeDetection: dupedetection.NewConfig(),
+		RaptorQ:       raptorq.NewConfig(),
 	}
 }
