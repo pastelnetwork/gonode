@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/DataDog/zstd"
@@ -52,7 +53,7 @@ type Task struct {
 	fingerprintSignature []byte
 
 	// TODO: need to update rqservice code to return the following info
-	rqSymbolIDFiles rq.SymbolIdFiles
+	rqSymbolIDFiles rq.SymbolIDFiles
 	rqEncodeParams  rqnode.EncoderParameters
 
 	// TODO: call cNodeAPI to get the following info
@@ -297,6 +298,8 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
 
+	// FIXME: ugly hack here. Need to make the Node and List to be safer
+	secondariesMtx := &sync.Mutex{}
 	var secondaries node.List
 	go func() {
 		for i, node := range nodes {
@@ -319,7 +322,11 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 					if err := node.Session(ctx, false); err != nil {
 						return
 					}
-					secondaries.Add(node)
+					go func() {
+						secondariesMtx.Lock()
+						defer secondariesMtx.Unlock()
+						secondaries.Add(node)
+					}()
 
 					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
 						return
@@ -340,6 +347,9 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 
 	primary.SetPrimary(true)
 	meshNodes.Add(primary)
+
+	secondariesMtx.Lock()
+	defer secondariesMtx.Unlock()
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 
@@ -425,8 +435,8 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
 
-	files := rq.SymbolIdFiles{}
-	for _, rawSymbolIDFile := range encodeInfo.SymbolIdFiles {
+	files := rq.SymbolIDFiles{}
+	for _, rawSymbolIDFile := range encodeInfo.SymbolIDFiles {
 
 		f, err := task.convertToSymbolIDFile(ctx, rawSymbolIDFile)
 		if err != nil {
@@ -452,9 +462,9 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawSymbolIdFile) (*rq.SymbolIdFile, error) {
-	symbolIDFile := rq.SymbolIdFile{
-		Id:                rawFile.Id,
+func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawSymbolIDFile) (*rq.SymbolIDFile, error) {
+	symbolIDFile := rq.SymbolIDFile{
+		ID:                rawFile.ID,
 		BlockHash:         rawFile.BlockHash,
 		PastelID:          rawFile.PastelID,
 		SymbolIdentifiers: rawFile.SymbolIdentifiers,

@@ -28,7 +28,7 @@ type raptorQ struct {
 	config *node.Config
 }
 
-func randId() string {
+func randID() string {
 	id := uuid.NewString()
 	return id[0:8]
 }
@@ -51,8 +51,8 @@ func readFileLines(path string) ([]string, error) {
 }
 
 func createTaskFolder(base string, subDirs ...string) (string, error) {
-	taskId := randId()
-	taskPath := filepath.Join(base, taskId)
+	taskID := randID()
+	taskPath := filepath.Join(base, taskID)
 	taskPath = filepath.Join(taskPath, filepath.Join(subDirs...))
 
 	err := os.MkdirAll(taskPath, 0777)
@@ -101,7 +101,7 @@ func createInputDecodeSymbols(base string, symbols map[string][]byte) (path stri
 }
 
 // scan symbol id files in "meta" folder, return map of file Ids & contents of file (as list of line)
-func scanSymbolIdFiles(dirPath string) (map[string][]string, error) {
+func scanSymbolIDFiles(dirPath string) (map[string][]string, error) {
 	filesMap := make(map[string][]string)
 
 	err := filepath.Walk(dirPath, func(path string, info fs.FileInfo, err error) error {
@@ -114,14 +114,14 @@ func scanSymbolIdFiles(dirPath string) (map[string][]string, error) {
 			return nil
 		}
 
-		fileId := filepath.Base(path)
+		fileID := filepath.Base(path)
 
 		lines, err := readFileLines(path)
 		if err != nil {
 			return errors.Errorf("failed to read file %s: %w", path, err)
 		}
 
-		filesMap[fileId] = lines
+		filesMap[fileID] = lines
 
 		return nil
 	})
@@ -147,14 +147,14 @@ func scanSymbolFiles(dirPath string) (map[string][]byte, error) {
 			return nil
 		}
 
-		fileId := filepath.Base(path)
+		fileID := filepath.Base(path)
 
 		data, err := readFile(path)
 		if err != nil {
 			return errors.Errorf("failed to read file %s: %w", path, err)
 		}
 
-		filesMap[fileId] = data
+		filesMap[fileID] = data
 
 		return nil
 	})
@@ -232,7 +232,7 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 
 	// scan return symbol Id files
 	symbolCnt := res.SymbolsCount
-	filesMap, err := scanSymbolIdFiles(res.Path)
+	filesMap, err := scanSymbolIDFiles(res.Path)
 	if err != nil {
 		return nil, errors.Errorf("failed to scan symbol id files folder %s: %w", res.Path, err)
 	}
@@ -241,14 +241,14 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 		return nil, errors.Errorf("symbol id files count not match: expect %d, output %d", copies, len(filesMap))
 	}
 
-	symbolIDFiles := make(map[string]node.RawSymbolIdFile)
+	symbolIDFiles := make(map[string]node.RawSymbolIDFile)
 	for fileID, lines := range filesMap {
 		if len(lines) != int(symbolCnt+3) {
 			return nil, errors.Errorf("file length not match: file %s, expect %d, output %d", fileID, symbolCnt+3, len(lines))
 		}
 
-		symbolIDFiles[fileID] = node.RawSymbolIdFile{
-			Id:                lines[0],
+		symbolIDFiles[fileID] = node.RawSymbolIDFile{
+			ID:                lines[0],
 			BlockHash:         lines[1],
 			PastelID:          lines[2],
 			SymbolIdentifiers: lines[3:],
@@ -258,7 +258,7 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 	}
 
 	output := &node.EncodeInfo{
-		SymbolIdFiles: symbolIDFiles,
+		SymbolIDFiles: symbolIDFiles,
 		EncoderParam: node.EncoderParameters{
 			Oti: res.EncoderParameters,
 		},

@@ -637,7 +637,7 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 	}
 
 	// pick just one file from wallnode to compare rq symbols
-	var rqSymbolIDFile rq.SymbolIdFile
+	var rqSymbolIDFile rq.SymbolIDFile
 	for _, v := range task.RQIDS {
 		if err := json.Unmarshal(v, &rqSymbolIDFile); err != nil {
 			return errors.Errorf("failed to unmarshal raptorq symbols identifiers file %w", err)
@@ -646,8 +646,8 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 	}
 
 	// pick just one file generated to compare
-	var rqRawSymbolIDFile rqnode.RawSymbolIdFile
-	for _, v := range encodeInfo.SymbolIdFiles {
+	var rqRawSymbolIDFile rqnode.RawSymbolIDFile
+	for _, v := range encodeInfo.SymbolIDFiles {
 		rqRawSymbolIDFile = v
 		break
 	}
