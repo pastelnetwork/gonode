@@ -172,7 +172,6 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	resp := &pb.ProbeImageReply{
 		DupeDetectionVersion:      fingerAndScores.DupeDectectionSystemVersion,
 		HashOfCandidateImg:        fingerAndScores.HashOfCandidateImageFile,
-		IsLikelyDupe:              int32(fingerAndScores.IsLikelyDupe),
 		AverageRarenessScore:      fingerAndScores.OverallAverageRarenessScore,
 		IsRareOnInternet:          int32(fingerAndScores.IsRareOnInternet),
 		MatchesFoundOnFirstPage:   int32(fingerAndScores.MatchesFoundOnFirstPage),

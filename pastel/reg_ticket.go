@@ -60,7 +60,6 @@ type AlternativeNSFWScore struct {
 type FingerAndScores struct {
 	DupeDectectionSystemVersion string               `json:"dupe_dectection_system_version"`
 	HashOfCandidateImageFile    string               `json:"hash_of_candidate_image_file"`
-	IsLikelyDupe                int                  `json:"is_likely_dupe"`
 	OverallAverageRarenessScore float64              `json:"overall_average_rareness_score"`
 	IsRareOnInternet            int                  `json:"is_rare_on_internet"`
 	NumberOfPagesOfResults      int                  `json:"number_of_pages_of_results"`

@@ -159,7 +159,6 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	return &pastel.FingerAndScores{
 		DupeDectectionSystemVersion: resp.DupeDetectionVersion,
 		HashOfCandidateImageFile:    resp.HashOfCandidateImg,
-		IsLikelyDupe:                int(resp.IsLikelyDupe),
 		OverallAverageRarenessScore: resp.AverageRarenessScore,
 		IsRareOnInternet:            int(resp.IsRareOnInternet),
 		NumberOfPagesOfResults:      int(resp.NumberOfPagesOfResults),

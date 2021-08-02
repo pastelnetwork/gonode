@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"image"
 	"sort"
 	"sync"
 	"time"
@@ -195,12 +194,9 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageProbed)
 
-		img, err := file.LoadImage()
-		if err != nil {
-			return errors.Errorf("failed to load image %s %w", file.Name(), err)
-		}
+		var err error
 
-		task.fingerAndScores, task.fingerprints, err = task.genFingerprintsData(ctx, img)
+		task.fingerAndScores, task.fingerprints, err = task.genFingerprintsData(ctx, file)
 		if err != nil {
 			return errors.Errorf("failed to generate fingerprints data %w", err)
 		}
@@ -376,12 +372,7 @@ func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 		return errors.Errorf("failed to resize copy of artwork %w", err)
 	}
 
-	resizeImg, err := copyArtwork.LoadImage()
-	if err != nil {
-		return errors.Errorf("failed to load image from copied artwork %w", err)
-	}
-
-	fingerAndScores, _, err := task.genFingerprintsData(ctx, resizeImg)
+	fingerAndScores, _, err := task.genFingerprintsData(ctx, copyArtwork)
 	if err != nil {
 		return errors.Errorf("failed to generate fingerprints data %w", err)
 	}
@@ -570,39 +561,46 @@ func (task *Task) storeFingerprints(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) genFingerprintsData(_ context.Context, _ image.Image) (*pastel.FingerAndScores, pastel.Fingerprint, error) {
-	// TODO: Fix this when implementation to dd service completed
-	// fingerprints, err := task.probeTensor.Fingerprints(ctx, img)
-	// if err != nil {
-	// 	return nil, probe.Fingerprints{}, err
-	// }
+func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (*pastel.FingerAndScores, pastel.Fingerprint, error) {
+	img, err := file.Bytes()
+	if err != nil {
+		return nil, nil, errors.Errorf("failed to get content of image %s %w", file.Name(), err)
+	}
 
-	fingerprint := pastel.Fingerprint{0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1}
+	ddResult, err := task.ddClient.Generate(ctx, img, file.Format().String())
+	if err != nil {
+		return nil, nil, errors.Errorf("failed to get dupe detection result from dd-service %w", err)
+	}
+
+	var fingerprint []float64
+	err = json.Unmarshal([]byte(ddResult.Fingerprints), &fingerprint)
+	if err != nil {
+		return nil, nil, errors.Errorf("failed to parse fingerprints from dd-service result %w", err)
+	}
 	fingerprintAndScores := pastel.FingerAndScores{
-		DupeDectectionSystemVersion: "1.0",
-		HashOfCandidateImageFile:    "HashOfCandidateImageFile",
-		IsLikelyDupe:                0,
-		OverallAverageRarenessScore: 0.5,
-		IsRareOnInternet:            0,
-		NumberOfPagesOfResults:      10,
-		MatchesFoundOnFirstPage:     5,
-		URLOfFirstMatchInPage:       "",
-		OpenNSFWScore:               0.5,
+		DupeDectectionSystemVersion: ddResult.DupeDetectionSystemVer,
+		HashOfCandidateImageFile:    ddResult.ImageHash,
+		OverallAverageRarenessScore: ddResult.PastelRarenessScore,
+		IsRareOnInternet:            int(ddResult.InternetRarenessScore),
+		MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
+		NumberOfPagesOfResults:      ddResult.NumberOfResultPages,
+		URLOfFirstMatchInPage:       ddResult.FirstMatchURL,
+		OpenNSFWScore:               ddResult.OpenNSFWScore,
 		ZstdCompressedFingerprint:   nil,
 		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
-			Drawing: 0.5,
-			Hentai:  0.5,
-			Neutral: 0.5,
-			Porn:    0.5,
-			Sexy:    0.5,
+			Drawing: ddResult.AlternateNSFWScores.Drawings,
+			Hentai:  ddResult.AlternateNSFWScores.Hentai,
+			Neutral: ddResult.AlternateNSFWScores.Neutral,
+			Porn:    ddResult.AlternateNSFWScores.Porn,
+			Sexy:    ddResult.AlternateNSFWScores.Sexy,
 		},
 		ImageHashes: pastel.ImageHashes{
-			PerceptualHash: "perceptual_hash",
-			AverageHash:    "average_hash",
-			DifferenceHash: "difference_hash",
+			PerceptualHash: ddResult.ImageHashes.PerceptualHash,
+			AverageHash:    ddResult.ImageHashes.AverageHash,
+			DifferenceHash: ddResult.ImageHashes.DifferenceHash,
 		},
 	}
-	compressedFg, err := zstd.CompressLevel(nil, fingerprint.Bytes(), 22)
+	compressedFg, err := zstd.CompressLevel(nil, pastel.Fingerprint(fingerprint).Bytes(), 22)
 	if err != nil {
 		return nil, nil, errors.Errorf("failed to compress fingerprint data: %w", err)
 	}
