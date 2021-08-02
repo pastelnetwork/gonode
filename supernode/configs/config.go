@@ -7,6 +7,7 @@ import (
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe/pkg/dupedetection"
+	"github.com/pastelnetwork/gonode/raptorq"
 )
 
 const (
@@ -29,6 +30,7 @@ type Config struct {
 	P2P           *p2p.Config           `mapstructure:"p2p" json:"p2p,omitempty"`
 	MetaDB        *metadb.Config        `mapstructure:"metadb" json:"metadb,omitempty"`
 	DupeDetection *dupedetection.Config `mapstructure:"dupe-detection" json:"dupe-detection,omitempty"`
+	RaptorQ       *raptorq.Config       `mapstructure:"raptorq" json:"raptorq,omitempty"`
 }
 
 func (config *Config) String() string {

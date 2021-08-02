@@ -35,6 +35,15 @@ func (client *Client) ListenOnRetrieve(data []byte, err error) *Client {
 	return client
 }
 
+// AssertRetrieveCall is Retrieve call assertion
+func (client *Client) AssertRetrieveCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.AssertCalled(client.t, RetrieveMethod, arguments...)
+	}
+	client.AssertNumberOfCalls(client.t, RetrieveMethod, expectedCalls)
+	return client
+}
+
 //  ListenOnStore listening  Store and returns id and error from args
 func (client *Client) ListenOnStore(id string, err error) *Client {
 	client.On(StoreMethod, mock.Anything, mock.Anything).Return(id, err)

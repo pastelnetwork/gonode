@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,11 +20,13 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/probe"
 	"github.com/pastelnetwork/gonode/probe/tfmodel"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
+	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 )
 
@@ -145,14 +148,20 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.MetaDB.SetWorkDir(config.WorkDir)
 	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
 
+	config.ArtworkDownload.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.ArtworkDownload.RqFilesDir = config.RqFilesDir
+	rqClient := rqgrpc.NewClient()
+
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
+	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
 
 	// server
 	grpc := server.New(config.Server,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
+		walletnode.NewDownloadArtwork(artworkDownload),
 	)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload)
 }

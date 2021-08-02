@@ -49,6 +49,10 @@ type Client struct {
 	// endpoint.
 	ArtworkGetDoer goahttp.Doer
 
+	// Download Doer is the HTTP client used to make requests to the download
+	// endpoint.
+	DownloadDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -90,6 +94,7 @@ func NewClient(
 		UploadImageDoer:       doer,
 		ArtSearchDoer:         doer,
 		ArtworkGetDoer:        doer,
+		DownloadDoer:          doer,
 		CORSDoer:              doer,
 		RestoreResponseBody:   restoreBody,
 		scheme:                scheme,
@@ -139,7 +144,6 @@ func (c *Client) RegisterTaskState() goa.Endpoint {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
 		defer cancel()
-
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
@@ -245,7 +249,6 @@ func (c *Client) ArtSearch() goa.Endpoint {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
 		defer cancel()
-
 		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
 		if err != nil {
 			if resp != nil {
@@ -286,5 +289,48 @@ func (c *Client) ArtworkGet() goa.Endpoint {
 			return nil, goahttp.ErrRequestError("artworks", "artworkGet", err)
 		}
 		return decodeResponse(resp)
+	}
+}
+
+// Download returns an endpoint that makes HTTP requests to the artworks
+// service download server.
+func (c *Client) Download() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeDownloadRequest(c.encoder)
+		decodeResponse = DecodeDownloadResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildDownloadRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		defer cancel()
+		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
+		if err != nil {
+			if resp != nil {
+				return decodeResponse(resp)
+			}
+			return nil, goahttp.ErrRequestError("artworks", "download", err)
+		}
+		if c.configurer.DownloadFn != nil {
+			conn = c.configurer.DownloadFn(conn, cancel)
+		}
+		go func() {
+			<-ctx.Done()
+			conn.WriteControl(
+				websocket.CloseMessage,
+				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "client closing connection"),
+				time.Now().Add(time.Second),
+			)
+			conn.Close()
+		}()
+		stream := &DownloadClientStream{conn: conn}
+		return stream, nil
 	}
 }

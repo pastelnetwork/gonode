@@ -23,6 +23,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 )
 
@@ -135,11 +136,13 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
 	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, p2p, nodeClient)
+	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
+
 	// api service
 	server := api.NewServer(config.API,
-		services.NewArtwork(artworkRegister, artworkSearch),
+		services.NewArtwork(artworkRegister, artworkSearch, artworkDownload),
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, server, artworkRegister, artworkSearch)
+	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload)
 }

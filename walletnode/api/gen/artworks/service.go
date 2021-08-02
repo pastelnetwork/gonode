@@ -12,6 +12,7 @@ import (
 
 	artworksviews "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks/views"
 	goa "goa.design/goa/v3/pkg"
+	"goa.design/goa/v3/security"
 )
 
 // Pastel Artwork
@@ -30,6 +31,14 @@ type Service interface {
 	ArtSearch(context.Context, *ArtSearchPayload, ArtSearchServerStream) (err error)
 	// Gets the Artwork detail
 	ArtworkGet(context.Context, *ArtworkGetPayload) (res *ArtworkDetail, err error)
+	// Download registered artwork.
+	Download(context.Context, *DownloadPayload, DownloadServerStream) (err error)
+}
+
+// Auther defines the authorization functions to be implemented by the service.
+type Auther interface {
+	// APIKeyAuth implements the authorization logic for the APIKey security scheme.
+	APIKeyAuth(ctx context.Context, key string, schema *security.APIKeyScheme) (context.Context, error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -40,7 +49,7 @@ const ServiceName = "artworks"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [7]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "artSearch", "artworkGet"}
+var MethodNames = [8]string{"register", "registerTaskState", "registerTask", "registerTasks", "uploadImage", "artSearch", "artworkGet", "download"}
 
 // RegisterTaskStateServerStream is the interface a "registerTaskState"
 // endpoint server stream must satisfy.
@@ -72,6 +81,22 @@ type ArtSearchServerStream interface {
 type ArtSearchClientStream interface {
 	// Recv reads instances of "ArtworkSearchResult" from the stream.
 	Recv() (*ArtworkSearchResult, error)
+}
+
+// DownloadServerStream is the interface a "download" endpoint server stream
+// must satisfy.
+type DownloadServerStream interface {
+	// Send streams instances of "DownloadResult".
+	Send(*DownloadResult) error
+	// Close closes the stream.
+	Close() error
+}
+
+// DownloadClientStream is the interface a "download" endpoint client stream
+// must satisfy.
+type DownloadClientStream interface {
+	// Recv reads instances of "DownloadResult" from the stream.
+	Recv() (*DownloadResult, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -261,6 +286,22 @@ type ArtworkDetail struct {
 	ArtistName string
 	// Artist website URL
 	ArtistWebsiteURL *string
+}
+
+// DownloadPayload is the payload type of the artworks service download method.
+type DownloadPayload struct {
+	// Art Registration Ticket transaction ID
+	Txid string
+	// Owner's PastelID
+	Pid string
+	// Passphrase of the owner's PastelID
+	Key string
+}
+
+// DownloadResult is the result type of the artworks service download method.
+type DownloadResult struct {
+	// File downloaded
+	File []byte
 }
 
 // Ticket of the registration artwork
