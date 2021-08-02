@@ -1,9 +1,11 @@
 package handshaker
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"crypto/rand"
+	"encoding/binary"
 	"encoding/gob"
 	"errors"
 	"fmt"
@@ -162,17 +164,18 @@ func NewServerHandshaker(_ context.Context, conn net.Conn, opts *ServerHandshake
 // read and decode the handshake record
 func (s *altsHandshaker) readHandshake(value interface{}) error {
 	hdr := make([]byte, handshakeHeader)
+	reader := bufio.NewReader(s.conn)
 	// read handshake header from connection
-	if _, err := s.conn.Read(hdr); err != nil {
+	if _, err := reader.Read(hdr); err != nil {
 		return fmt.Errorf("read handshake header: %w", err)
 	}
 
 	// the handshake body length
-	n := int(hdr[0])<<8 | int(hdr[1])
+	n := binary.LittleEndian.Uint16(hdr[0:])
 
 	body := make([]byte, n)
 	// read handshake body from connection
-	if _, err := s.conn.Read(body); err != nil {
+	if _, err := reader.Read(body); err != nil {
 		return fmt.Errorf("read handshake body: %w", err)
 	}
 
@@ -197,14 +200,19 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 	}
 
 	m := buf.Len()
+
 	d := make([]byte, handshakeHeader+m)
-	d[0] = byte(m >> 8)
-	d[1] = byte(m)
+	binary.BigEndian.PutUint16(d[0:], uint16(m))
 	copy(d[handshakeHeader:], buf.Bytes())
 
 	// write the handshake record
-	if _, err := s.conn.Write(d); err != nil {
+	writer := bufio.NewWriter(s.conn)
+	if _, err := writer.Write(d); err != nil {
 		return fmt.Errorf("write handshake record: %w", err)
+	}
+
+	if err := writer.Flush(); err != nil {
+		return fmt.Errorf("failed to flush, err: %s", err)
 	}
 	return nil
 }
@@ -229,8 +237,10 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 		return errors.New("failed to generate keys")
 	}
 
-	signature, err := secClient.Sign(ctx, append(pub[:], challengeB...),
-		signInfo.PastelID, signInfo.PassPhrase)
+	dataSign := make([]byte, challengeSize+ED448PubKeySize)
+	dataSign = append(dataSign, pub[:]...)
+	dataSign = append(dataSign, challengeB...)
+	signature, err := secClient.Sign(ctx, dataSign, signInfo.PastelID, signInfo.PassPhrase)
 	if err != nil {
 		log.WithContext(ctx).Errorf("failed to generate signature: %v", err)
 		return fmt.Errorf("failed to generate signature: %w", err)
@@ -252,8 +262,10 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	if ok, err := secClient.Verify(ctx, append(response.PubKey[:], challengeA...),
-		string(response.Signature), response.PastelID); err != nil || !ok {
+	dataVerify := make([]byte, challengeSize+ED448PubKeySize)
+	dataVerify = append(dataVerify, response.PubKey[:]...)
+	dataVerify = append(dataVerify, challengeA...)
+	if ok, err := secClient.Verify(ctx, dataVerify, string(response.Signature), response.PastelID); err != nil || !ok {
 		log.WithContext(ctx).Errorf("failed to verify server public key: %v", err)
 		return fmt.Errorf("failed to verify server public key: %w", err)
 	}
@@ -325,8 +337,10 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 		return fmt.Errorf("read handshake: %w", err)
 	}
 
-	if ok, err := secClient.Verify(ctx, append(request.PubKey[:], challengeB...),
-		string(request.Signature), request.PastelID); err != nil || !ok {
+	dataVerify := make([]byte, challengeSize+ED448PubKeySize)
+	dataVerify = append(dataVerify, request.PubKey[:]...)
+	dataVerify = append(dataVerify, challengeB...)
+	if ok, err := secClient.Verify(ctx, dataVerify, string(request.Signature), request.PastelID); err != nil || !ok {
 		log.WithContext(ctx).Errorf("failed to verify client public key: %v", err)
 		return fmt.Errorf("failed to verify client public key: %w", err)
 	}
@@ -338,8 +352,10 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 		return errors.New("failed to generate keys")
 	}
 
-	signature, err := secClient.Sign(ctx, append(pub[:], challengeA...),
-		signInfo.PastelID, signInfo.PassPhrase)
+	dataSign := make([]byte, challengeSize+ED448PubKeySize)
+	dataSign = append(dataSign, pub[:]...)
+	dataSign = append(dataSign, challengeA...)
+	signature, err := secClient.Sign(ctx, dataSign, signInfo.PastelID, signInfo.PassPhrase)
 	if err != nil {
 		log.WithContext(ctx).Errorf("failed to generate signature: %v", err)
 		return fmt.Errorf("failed to generate signature: %w", err)
