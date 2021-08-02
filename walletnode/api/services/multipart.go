@@ -100,7 +100,7 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 				return userdatas.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
 			}
 
-			if part.FormName() != "avatar_image" && part.FormName() != "cover_photo"  {
+			if part.FormName() != "avatar_image" && part.FormName() != "cover_photo" {
 				// Process for other field that's not a file
 
 				buffer, err := ioutil.ReadAll(part)
@@ -168,7 +168,7 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}
 		}
-		
+
 		response = &res
 
 		*p = response
@@ -193,7 +193,7 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 				return userdatas.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
 			}
 
-			if part.FormName() != "avatar_image" && part.FormName() != "cover_photo"  {
+			if part.FormName() != "avatar_image" && part.FormName() != "cover_photo" {
 				// Process for other field that's not a file
 
 				buffer, err := ioutil.ReadAll(part)
@@ -262,7 +262,7 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}
 		}
-		
+
 		response = &res
 
 		*p = response

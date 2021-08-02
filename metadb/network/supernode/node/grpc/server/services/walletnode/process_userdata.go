@@ -184,7 +184,6 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 		Signature:    req.Signature,
 	}
 
-
 	processResult, err := task.SupernodeProcessUserdata(ctx, &request)
 	if err != nil {
 		return nil, errors.Errorf("SupernodeProcessUserdata can not process %w", err)

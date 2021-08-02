@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
-	
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -165,14 +165,14 @@ func (task *Task) run(ctx context.Context) error {
 		}
 
 		userdata := &userdata.UserdataProcessRequestSigned{
-			Userdata: 		task.request,
-			UserdataHash:	hex.EncodeToString(hashvalue),
-			Signature:		hex.EncodeToString(signature),
+			Userdata:     task.request,
+			UserdataHash: hex.EncodeToString(hashvalue),
+			Signature:    hex.EncodeToString(signature),
 		}
 
 		// Send userdata to supernodes for storing in MDL's rqlite db.
 		if err := nodes.SendUserdata(ctx, userdata); err != nil {
-			
+
 			return err
 		} else {
 			res, err := task.AggregateResult(ctx, nodes)
@@ -215,10 +215,9 @@ func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdat
 		}
 	}
 
-
 	// This part of aggregate the response for case 3 and for future use
 	// This is for in case we want to do descrepancy check between all result of nodes
-	// for node reputation score 
+	// for node reputation score
 	/* aggregate := make(map[string][]int)
 	count := 0
 	for i, node := range nodes {
