@@ -144,6 +144,12 @@ func getDatabaseNodes(ctx context.Context, pastelClient pastel.Client) ([]string
 			nodeIPList = append(nodeIPList, nodeAddress)
 		}
 	}
+
+	// Important notice !!!
+	// Enable this line below to run rqlite with 1 leader and multiple replicas, if want to test the real rqlite cluster behavior
+	// Otherwise, this will run rqlite cluster with every node as a rqlite leader, and data to highest rank SN can write directly to its local rqlite 
+	// return []string{"0.0.0.0:4041"}, nil
+
 	return nodeIPList, nil
 }
 

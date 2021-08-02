@@ -17,8 +17,8 @@ const (
 type Config struct {
 	common.Config `mapstructure:",squash" json:"-"`
 
-	NumberSuperNodes          int `mapstructure:"number_supernodes" json:"number_supernodes,omitempty"`
-	MinimalNodeConfirmSuccess int `mapstructure:"number_confirm_success" json:"number_confirm_success,omitempty"`
+	NumberSuperNodes          int `mapstructure:"number_super_nodes" json:"number_super_nodes,omitempty"`
+	MinimalNodeConfirmSuccess int `mapstructure:"minimal_node_confirm_success" json:"minimal_node_confirm_success,omitempty"`
 	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration

@@ -183,13 +183,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 		UserdataHash: req.UserdataHash,
 		Signature:    req.Signature,
 	}
-	request.Userdata.CoverPhoto.Filename = req.CoverPhoto.Filename
 
-	request.Userdata.ArtistPastelID = req.ArtistPastelID
-	request.Userdata.Timestamp = req.Timestamp
-	request.Userdata.PreviousBlockHash = req.PreviousBlockHash
-	request.UserdataHash = req.UserdataHash
-	request.Signature = req.Signature
 
 	processResult, err := task.SupernodeProcessUserdata(ctx, &request)
 	if err != nil {

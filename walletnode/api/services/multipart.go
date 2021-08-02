@@ -10,8 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
@@ -91,7 +89,7 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 	return func(reader *multipart.Reader, p **userdatas.CreateUserdataPayload) error {
 
 		var response *userdatas.CreateUserdataPayload
-		formValues := make(map[string]interface{})
+		var res userdatas.CreateUserdataPayload
 
 		for {
 			part, err := reader.NextPart()
@@ -102,44 +100,76 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 				return userdatas.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
 			}
 
-			if part.FormName() != imagePartName {
+			if part.FormName() != "avatar_image" && part.FormName() != "cover_photo"  {
 				// Process for other field that's not a file
 
 				buffer, err := ioutil.ReadAll(part)
 				if err != nil {
 					return userdatas.MakeInternalServerError(errors.Errorf("could not process fields: %w", err))
 				}
-				formValues[part.FormName()] = string(buffer)
-				log.WithContext(ctx).Debugf("Multipart process field: %q", formValues[part.FormName()])
+				log.WithContext(ctx).Debugf("Multipart process field: %q", part.FormName())
 
+				switch part.FormName() {
+				case "artist_pastelid":
+					res.ArtistPastelID = string(buffer)
+					break
+				case "artist_pastelid_passphrase":
+					res.ArtistPastelIDPassphrase = string(buffer)
+					break
+				case "biography":
+					value := string(buffer)
+					res.Biography = &value
+					break
+				case "categories":
+					value := string(buffer)
+					res.Categories = &value
+					break
+				case "facebook_link":
+					value := string(buffer)
+					res.FacebookLink = &value
+					break
+				case "location":
+					value := string(buffer)
+					res.Location = &value
+					break
+				case "primary_language":
+					value := string(buffer)
+					res.PrimaryLanguage = &value
+					break
+				case "native_currency":
+					value := string(buffer)
+					res.NativeCurrency = &value
+					break
+				case "realname":
+					value := string(buffer)
+					res.Realname = &value
+					break
+				case "twitter_link":
+					value := string(buffer)
+					res.TwitterLink = &value
+					break
+				}
 			} else {
 				// Process for the field that have a files
-				contentType, _, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
-				if err != nil {
-					return userdatas.MakeBadRequest(errors.Errorf("could not parse Content-Type: %w", err))
-				}
-
-				if !strings.HasPrefix(contentType, contentTypePrefix) {
-					return userdatas.MakeBadRequest(errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix))
-				}
-
 				filename := part.FileName()
 				filePart := new(bytes.Buffer)
 				if _, err := io.Copy(filePart, part); err != nil {
 					return userdatas.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filename, err))
 				}
 
-				formValues[part.FormName()] = userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+				switch part.FormName() {
+				case "avatar_image":
+					res.AvatarImage = &userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+					break
+				case "cover_photo":
+					res.CoverPhoto = &userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+					break
+				}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}
-
-			var res userdatas.CreateUserdataPayload
-			if err := mapstructure.Decode(formValues, &res); err != nil {
-				return userdatas.MakeBadRequest(errors.Errorf("Could not convert formValues to object: %w", err))
-			}
-
-			response = &res
 		}
+		
+		response = &res
 
 		*p = response
 		return nil
@@ -152,7 +182,7 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 	return func(reader *multipart.Reader, p **userdatas.UpdateUserdataPayload) error {
 
 		var response *userdatas.UpdateUserdataPayload
-		formValues := make(map[string]interface{})
+		var res userdatas.UpdateUserdataPayload
 
 		for {
 			part, err := reader.NextPart()
@@ -163,26 +193,57 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 				return userdatas.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
 			}
 
-			if part.FormName() != imagePartName {
+			if part.FormName() != "avatar_image" && part.FormName() != "cover_photo"  {
 				// Process for other field that's not a file
 
 				buffer, err := ioutil.ReadAll(part)
 				if err != nil {
 					return userdatas.MakeInternalServerError(errors.Errorf("could not process fields: %w", err))
 				}
-				formValues[part.FormName()] = string(buffer)
-				log.WithContext(ctx).Debugf("Multipart process field: %q", formValues[part.FormName()])
+				log.WithContext(ctx).Debugf("Multipart process field: %q", part.FormName())
 
+				switch part.FormName() {
+				case "artist_pastelid":
+					res.ArtistPastelID = string(buffer)
+					break
+				case "artist_pastelid_passphrase":
+					res.ArtistPastelIDPassphrase = string(buffer)
+					break
+				case "biography":
+					value := string(buffer)
+					res.Biography = &value
+					break
+				case "categories":
+					value := string(buffer)
+					res.Categories = &value
+					break
+				case "facebook_link":
+					value := string(buffer)
+					res.FacebookLink = &value
+					break
+				case "location":
+					value := string(buffer)
+					res.Location = &value
+					break
+				case "primary_language":
+					value := string(buffer)
+					res.PrimaryLanguage = &value
+					break
+				case "native_currency":
+					value := string(buffer)
+					res.NativeCurrency = &value
+					break
+				case "realname":
+					value := string(buffer)
+					res.Realname = &value
+					break
+				case "twitter_link":
+					value := string(buffer)
+					res.TwitterLink = &value
+					break
+				}
 			} else {
 				// Process for the field that have a files
-				contentType, _, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
-				if err != nil {
-					return userdatas.MakeBadRequest(errors.Errorf("could not parse Content-Type: %w", err))
-				}
-
-				if !strings.HasPrefix(contentType, contentTypePrefix) {
-					return userdatas.MakeBadRequest(errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix))
-				}
 
 				filename := part.FileName()
 				filePart := new(bytes.Buffer)
@@ -190,17 +251,19 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 					return userdatas.MakeInternalServerError(errors.Errorf("failed to write data to %q: %w", filename, err))
 				}
 
-				formValues[part.FormName()] = userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+				switch part.FormName() {
+				case "avatar_image":
+					res.AvatarImage = &userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+					break
+				case "cover_photo":
+					res.CoverPhoto = &userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+					break
+				}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}
-
-			var res userdatas.UpdateUserdataPayload
-			if err := mapstructure.Decode(formValues, &res); err != nil {
-				return userdatas.MakeBadRequest(errors.Errorf("Could not convert formValues to object: %w", err))
-			}
-
-			response = &res
 		}
+		
+		response = &res
 
 		*p = response
 		return nil

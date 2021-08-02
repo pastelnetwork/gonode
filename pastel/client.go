@@ -126,14 +126,14 @@ func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphras
 func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
 	ok = false
 	var verify struct {
-		Verification string `json:"verification"`
+		Verification bool `json:"verification"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
 	if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID); err != nil {
 		return false, errors.Errorf("failed to verify data: %w", err)
 	}
-	if verify.Verification == "OK" {
+	if verify.Verification == true {
 		ok = true
 	}
 	return ok, nil

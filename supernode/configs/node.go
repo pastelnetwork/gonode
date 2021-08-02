@@ -21,6 +21,7 @@ type Node struct {
 func NewNode() Node {
 	return Node{
 		ArtworkRegister: *artworkregister.NewConfig(),
+		ArtworkDownload: *artworkdownload.NewConfig(),
 		UserdataProcess: *userdataprocess.NewConfig(),
 		Server:          server.NewConfig(),
 	}

@@ -131,7 +131,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 
 		log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
 
-		if len(task.accepted) >= task.config.NumberConnectedNodes {
+		if len(task.accepted) >= task.config.NumberSuperNodes - 1 {
 			task.UpdateStatus(StatusConnected)
 		}
 		return nil
@@ -294,7 +294,12 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataPro
 	dataMatchingCount := 0
 	for _, sndata := range task.peersSNDataSigned {
 		// Verify the data
-		if ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), sndata.HashSignature, sndata.NodeID); err != nil {
+		signature, err := hex.DecodeString(sndata.HashSignature)
+		if err != nil {
+			errors.Errorf("failed to decode signature %s of node %s", sndata.HashSignature, sndata.NodeID)
+			continue
+		}
+		if ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID); err != nil {
 			errors.Errorf("failed to verify signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
 		} else {

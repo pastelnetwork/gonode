@@ -6,17 +6,17 @@ import (
 )
 
 
-// Config contains settings of the registering artwork.
+// Config contains settings of the process userdata.
 type Config struct {
 	common.Config        `mapstructure:",squash" json:"-"`
-	NumberConnectedNodes int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
+	NumberSuperNodes int `mapstructure:"number_super_nodes" json:"number_super_nodes,omitempty"`
 	MinimalNodeConfirmSuccess int  `mapstructure:"minimal_node_confirm_success" json:"minimal_node_confirm_success,omitempty"`
 }
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		NumberConnectedNodes: userdata.DefaultNumberSuperNodes - 1, // NumberConnectedNodes won't count the primary node
+		NumberSuperNodes: userdata.DefaultNumberSuperNodes,
 		MinimalNodeConfirmSuccess: userdata.MinimalNodeConfirmSuccess,
 	}
 }

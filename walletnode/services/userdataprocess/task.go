@@ -69,7 +69,7 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if len(topNodes) < task.config.NumberSuperNodes {
+	if len(topNodes) < maxNode {
 		task.UpdateStatus(StatusErrorNotEnoughMasterNode)
 		return errors.New("unable to find enough Supernodes to send userdata to")
 	}
@@ -86,7 +86,7 @@ func (task *Task) run(ctx context.Context) error {
 		log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
 	}
 
-	if maxNode != 1 && len(nodes) < task.config.NumberSuperNodes {
+	if len(nodes) < maxNode {
 		return errors.Errorf("Could not create a mesh of %d nodes: %w", task.config.NumberSuperNodes, errs)
 	}
 
@@ -124,7 +124,7 @@ func (task *Task) run(ctx context.Context) error {
 		// Get the previous block hash
 		// Get block num
 
-		// TODO: Unblock this part after merge
+		// TODO: Unblock this part after pastelClient support it
 		/*
 			blockNum, err := task.pastelClient.GetBlockCount(ctx)
 			if err != nil {
@@ -171,7 +171,6 @@ func (task *Task) run(ctx context.Context) error {
 		}
 
 		// Send userdata to supernodes for storing in MDL's rqlite db.
-
 		if err := nodes.SendUserdata(ctx, userdata); err != nil {
 			
 			return err
