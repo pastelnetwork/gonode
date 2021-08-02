@@ -7,15 +7,15 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	pbwn "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode"
+	"github.com/pastelnetwork/gonode/metadb/database"
 	pbsn "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
+	pbwn "github.com/pastelnetwork/gonode/metadb/network/proto/walletnode"
 	"github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
-	"github.com/pastelnetwork/gonode/metadb/database"
 )
 
 // ProcessUserdata represents grpc service for processing userdata.
@@ -131,8 +131,8 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConn
 		return nil, err
 	}
 
-	if !service.databaseOps.IsLeader(){
-		if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress() ,req.SessID); err != nil {
+	if !service.databaseOps.IsLeader() {
+		if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), req.SessID); err != nil {
 			return nil, err
 		}
 	}
@@ -185,10 +185,10 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 	}
 	request.Userdata.CoverPhoto.Filename = req.CoverPhoto.Filename
 
-	request.Userdata.ArtistPastelID  = req.ArtistPastelID
-	request.Userdata.Timestamp   = req.Timestamp
-	request.Userdata.PreviousBlockHash=req.PreviousBlockHash
-	request.UserdataHash = req.UserdataHash 
+	request.Userdata.ArtistPastelID = req.ArtistPastelID
+	request.Userdata.Timestamp = req.Timestamp
+	request.Userdata.PreviousBlockHash = req.PreviousBlockHash
+	request.UserdataHash = req.UserdataHash
 	request.Signature = req.Signature
 
 	processResult, err := task.SupernodeProcessUserdata(ctx, &request)
@@ -258,7 +258,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					Signature:         (*req).Signature,
 					PreviousBlockHash: (*req).PreviousBlockHash,
 				}
-				
+
 				err := service.databaseOps.WriteUserData(ctx, reqsn)
 				if err != nil {
 					processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
@@ -335,6 +335,6 @@ func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
 func NewProcessUserdata(service *userdataprocess.Service, databaseOps *database.DatabaseOps) *ProcessUserdata {
 	return &ProcessUserdata{
 		ProcessUserdata: common.NewProcessUserdata(service),
-		databaseOps: databaseOps,
+		databaseOps:     databaseOps,
 	}
 }
