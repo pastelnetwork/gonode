@@ -123,7 +123,7 @@ type UpdateUserdataPayload struct {
 // UserdataGetPayload is the payload type of the userdatas service userdataGet
 // method.
 type UserdataGetPayload struct {
-	// pastelid
+	// Artist's PastelID
 	Pastelid string
 }
 

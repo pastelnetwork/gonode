@@ -262,10 +262,11 @@ var UserImageUploadPayload = Type("UserImageUploadPayload", func() {
 // UserdataGet are request params to UserdataGet Params
 var UserdataGetParams = func() {
 	Attribute("pastelid", String, func() {
-		Description("pastelid")
-		MinLength(64)
-		MaxLength(64)
-		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+		Description("Artist's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
 
 	Required("pastelid")

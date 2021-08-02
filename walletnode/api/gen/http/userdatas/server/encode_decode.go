@@ -206,11 +206,12 @@ func DecodeUserdataGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 			params = mux.Vars(r)
 		)
 		pastelid = params["pastelid"]
-		if utf8.RuneCountInString(pastelid) < 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 64, true))
+		err = goa.MergeErrors(err, goa.ValidatePattern("pastelid", pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, true))
 		}
-		if utf8.RuneCountInString(pastelid) > 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 64, false))
+		if utf8.RuneCountInString(pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, false))
 		}
 		if err != nil {
 			return nil, err

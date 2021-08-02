@@ -348,11 +348,12 @@ paths:
       parameters:
       - name: pastelid
         in: path
-        description: pastelid
+        description: Artist's PastelID
         required: true
         type: string
-        maxLength: 64
-        minLength: 64
+        maxLength: 86
+        minLength: 86
+        pattern: ^[a-zA-Z0-9]+$
       responses:
         "200":
           description: OK response.

@@ -211,6 +211,14 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 			CoverPhoto:      processResult.CoverPhoto,
 		}, nil
 	}
+
+	if task.ConnectedTo != nil {
+		// This is secondary node, we just response to walletnode here
+		return &pbwn.UserdataReply{
+			ResponseCode: processResult.ResponseCode,
+			Detail:       processResult.Detail,
+		}, nil
+	}
 	// Process actual write to rqlite db happen here
 	<-task.NewAction(func(ctx context.Context) error {
 		if processResult.ResponseCode == userdata.SuccessVerifyAllSignature {

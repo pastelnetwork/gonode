@@ -19,8 +19,6 @@ var imageAllowExtension = []string{".png", ".jpeg", ".jpg"}
 
 const (
 	// TODO: Move this to config pass from app.go later.
-	defaultNumberSuperNodes   = 10
-	minimalNodeConfirmSuccess = 8
 	imageMinSizeLimit         = 10 * 1024   //10kB
 	imageMaxSizeLimit         = 1000 * 1024 //1000kB
 	biographyTextLengthLimit  = 1000
@@ -45,7 +43,7 @@ type Task struct {
 	allPeersSNDatasReceived chan struct{}
 
 	// valid only for secondary node
-	connectedTo *Node
+	ConnectedTo *Node
 
 	// valid only for primary node
 	ConnectedToLeader *Node
@@ -54,7 +52,7 @@ type Task struct {
 // Run starts the task
 func (task *Task) Run(ctx context.Context) error {
 	ctx = task.context(ctx)
-	defer log.WithContext(ctx).Debug("Task canceled")
+	defer log.WithContext(ctx).Debug("Task Done")
 	defer task.Cancel()
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
@@ -161,7 +159,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 			return err
 		}
 
-		task.connectedTo = node
+		task.ConnectedTo = node
 
 		task.UpdateStatus(StatusConnected)
 		return nil
@@ -202,8 +200,8 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Us
 
 	<-task.NewAction(func(ctx context.Context) error {
 		// sign the data if not primary node
-		log.WithContext(ctx).Debugf("isPrimary: %d", task.connectedTo == nil)
-		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, task.connectedTo == nil); err != nil {
+		log.WithContext(ctx).Debugf("isPrimary: %d", task.ConnectedTo == nil)
+		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, task.ConnectedTo == nil); err != nil {
 			return errors.Errorf("failed to signed and send SuperNodeRequest")
 		}
 		return nil
@@ -211,7 +209,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Us
 
 	// only primary node start this action
 	var processResult userdata.UserdataProcessResult
-	if task.connectedTo == nil {
+	if task.ConnectedTo == nil {
 		<-task.NewAction(func(ctx context.Context) error {
 			log.WithContext(ctx).Debug("waiting for signature from peers")
 			for {
@@ -258,8 +256,8 @@ func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.S
 		sndata.HashSignature = hex.EncodeToString(signature)
 		sndata.NodeID = task.config.PastelID
 		log.WithContext(ctx).Debug("send signed sndata to primary node")
-		if _, err := task.connectedTo.ProcessUserdata.SendUserdataToPrimary(ctx, sndata); err != nil {
-			return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.connectedTo.ID, task.connectedTo.Address, err)
+		if _, err := task.ConnectedTo.ProcessUserdata.SendUserdataToPrimary(ctx, sndata); err != nil {
+			return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.ConnectedTo.ID, task.ConnectedTo.Address, err)
 		}
 	}
 	return nil
@@ -313,7 +311,7 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataPro
 		}
 	}
 
-	if successCount < task.config.MinimalNodeConfirmSuccess-1 {
+	if successCount < task.config.MinimalNodeConfirmSuccess - 1 {
 		// If there is not enough signed data from other supernodes
 		// or signed data cannot be verify
 		// or signed data have signature mismatch
@@ -321,7 +319,7 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataPro
 			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm,
 			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
 		}, nil
-	} else if dataMatchingCount < task.config.MinimalNodeConfirmSuccess-1 {
+	} else if dataMatchingCount < task.config.MinimalNodeConfirmSuccess - 1 {
 		// If the userdata between supernodes is not matching with each other
 		return userdata.UserdataProcessResult{
 			ResponseCode: userdata.ErrorUserdataMismatchBetweenSupernode,
@@ -347,7 +345,7 @@ func (task *Task) validateUserdata(req *userdata.UserdataProcessRequest) (userda
 	}
 
 	// Primary Language validation
-	// TODO: Or the “Primary Language” field might be limited to a list of language names that we can validate against
+	// TODO: The “Primary Language” field might be limited to a list of language names that we can validate against
 	// (this way we can avoid the problem of users writing in “Russian” and “русский” which creates confusion and data fragmentation).
 
 	// FacebookLink validation
