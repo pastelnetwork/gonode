@@ -3,14 +3,14 @@ package userdataprocess
 import (
 	"time"
 
-	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 )
 
 const (
-	connectToNextNodeDelay 		= time.Millisecond * 200
-	acceptNodesTimeout     		= connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
-	connectTimeout        		= time.Second * 2
+	connectToNextNodeDelay = time.Millisecond * 200
+	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
+	connectTimeout         = time.Second * 2
 )
 
 // Config contains settings of the registering artwork.
@@ -28,10 +28,10 @@ type Config struct {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		NumberSuperNodes: 			userdata.DefaultNumberSuperNodes,
-		MinimalNodeConfirmSuccess:	userdata.MinimalNodeConfirmSuccess,
-		connectToNextNodeDelay: 	connectToNextNodeDelay,
-		acceptNodesTimeout:     	acceptNodesTimeout,
-		connectTimeout:         	connectTimeout,
+		NumberSuperNodes:          userdata.DefaultNumberSuperNodes,
+		MinimalNodeConfirmSuccess: userdata.MinimalNodeConfirmSuccess,
+		connectToNextNodeDelay:    connectToNextNodeDelay,
+		acceptNodesTimeout:        acceptNodesTimeout,
+		connectTimeout:            connectTimeout,
 	}
 }
