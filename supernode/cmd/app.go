@@ -16,6 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	"github.com/pastelnetwork/gonode/dupedetection"
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -35,16 +36,19 @@ const (
 
 	tfmodelDir = "./tfmodels" // relatively from work-dir
 	rqFilesDir = "rqfiles"
+	ddWorkDir  = "pastel_dupe_detection_service"
 )
 
 var (
 	defaultPath = configurer.DefaultPath()
+	homePath, _ = os.UserHomeDir()
 
 	defaultTempDir          = filepath.Join(os.TempDir(), appName)
 	defaultWorkDir          = filepath.Join(defaultPath, appName)
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
+	defaultDdWorkDir        = filepath.Join(homePath, ddWorkDir)
 )
 
 // NewApp inits a new command line interface.
@@ -65,6 +69,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
+		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the work directory of dupe detection service.").SetValue(defaultDdWorkDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -111,6 +116,10 @@ func NewApp() *cli.App {
 			return errors.Errorf("could not create rq-files-dir %q, %w", config.RqFilesDir, err)
 		}
 
+		if err := os.MkdirAll(config.DdWorkDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create dd-service-dir %q, %w", config.DdWorkDir, err)
+		}
+
 		return runApp(ctx, config)
 	})
 
@@ -137,7 +146,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// analysis tools
-	// probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
+	config.DupeDetection.SetWorkDir(config.DdWorkDir)
+	ddClient := dupedetection.NewClient(config.DupeDetection)
 
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
@@ -159,7 +169,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.ArtworkDownload.RqFilesDir = config.RqFilesDir
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
 
 	// server
