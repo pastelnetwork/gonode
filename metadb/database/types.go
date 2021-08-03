@@ -55,7 +55,7 @@ func extractImageInfo(img *pb.UserdataRequest_UserImageUpload) (string, string) 
 		return "", img.GetFilename()
 	}
 
-	return fmt.Sprintf("%x", img.GetContent()), img.GetFilename()
+	return fmt.Sprintf("%x", img.GetContent()), processInputString(img.GetFilename())
 }
 
 func processEscapeString(s string) string {
@@ -63,19 +63,26 @@ func processEscapeString(s string) string {
 	return s
 }
 
+func processInputString(s string) string {
+	if s == "" {
+		return "NULL"
+	}
+	return processEscapeString(s)
+}
+
 func pbToWriteCommand(d pb.UserdataRequest) UserdataWriteCommand {
 	avatarImageHex, avatarImageFilename := extractImageInfo(d.GetAvatarImage())
 	coverPhotoHex, coverPhotoFilename := extractImageInfo(d.GetCoverPhoto())
 
 	return UserdataWriteCommand{
-		Realname:           processEscapeString(d.GetRealname()),
-		FacebookLink:       processEscapeString(d.GetFacebookLink()),
-		TwitterLink:        processEscapeString(d.GetTwitterLink()),
-		NativeCurrency:     processEscapeString(d.GetNativeCurrency()),
-		Location:           processEscapeString(d.GetLocation()),
-		PrimaryLanguage:    processEscapeString(d.GetPrimaryLanguage()),
-		Categories:         processEscapeString(d.GetCategories()),
-		Biography:          processEscapeString(d.GetBiography()),
+		Realname:           processInputString(d.GetRealname()),
+		FacebookLink:       processInputString(d.GetFacebookLink()),
+		TwitterLink:        processInputString(d.GetTwitterLink()),
+		NativeCurrency:     processInputString(d.GetNativeCurrency()),
+		Location:           processInputString(d.GetLocation()),
+		PrimaryLanguage:    processInputString(d.GetPrimaryLanguage()),
+		Categories:         processInputString(d.GetCategories()),
+		Biography:          processInputString(d.GetBiography()),
 		AvatarImage:        avatarImageHex,
 		AvatarFilename:     avatarImageFilename,
 		CoverPhotoImage:    coverPhotoHex,
