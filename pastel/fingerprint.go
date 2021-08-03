@@ -60,7 +60,7 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 	}
 
 	if lhs.IsRareOnInternet != rhs.IsRareOnInternet {
-		return errors.Errorf("is rare on internet score not matched: lhs(%f) != rhs(%f)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
+		return errors.Errorf("is rare on internet score not matched: lhs(%d) != rhs(%d)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
 	}
 
 	if lhs.OpenNSFWScore != rhs.OpenNSFWScore {
