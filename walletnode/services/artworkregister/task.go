@@ -619,24 +619,26 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 		task.UpdateStatus(ErrorInsufficientFee)
 		return errors.New("unable to find enough Supernodes with acceptable storage fee")
 	}
-	// TODO: Remove this when releaset because in localnet there is no need to start 10 gonode
-	// and chase the log
-	pinned := []string{"127.0.0.1:4444", "127.0.0.1:4445", "127.0.0.1:4446"}
-	pinnedMn := make([]*node.Node, 0)
-	for i := range topNodes {
-		for j := range pinned {
-			if topNodes[i].Address() == pinned[j] {
-				pinnedMn = append(pinnedMn, topNodes[i])
-			}
-		}
-	}
-	log.WithContext(ctx).Debugf("%v", pinnedMn)
+
+	// For testing
+	// // TODO: Remove this when releaset because in localnet there is no need to start 10 gonode
+	// // and chase the log
+	// pinned := []string{"127.0.0.1:4444", "127.0.0.1:4445", "127.0.0.1:4446"}
+	// pinnedMn := make([]*node.Node, 0)
+	// for i := range topNodes {
+	// 	for j := range pinned {
+	// 		if topNodes[i].Address() == pinned[j] {
+	// 			pinnedMn = append(pinnedMn, topNodes[i])
+	// 		}
+	// 	}
+	// }
+	// log.WithContext(ctx).Debugf("%v", pinnedMn)
 
 	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
 	var nodes node.List
 	var errs error
-	for primaryRank := range pinnedMn {
-		nodes, err = task.meshNodes(ctx, pinnedMn, primaryRank)
+	for primaryRank := range topNodes {
+		nodes, err = task.meshNodes(ctx, topNodes, primaryRank)
 		if err != nil {
 			if errors.IsContextCanceled(err) {
 				return err
