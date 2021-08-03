@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/pastel"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
@@ -29,6 +30,7 @@ type Service struct {
 	db           storage.KeyValue
 	pastelClient pastel.Client
 	nodeClient   node.Client
+	rqClient     rqnode.Client
 }
 
 // Run starts worker.
@@ -38,7 +40,7 @@ func (service *Service) Run(ctx context.Context) error {
 	// NOTE: Before releasing, should be reomved (for testing). Used to bypass REST API.
 	if test := sys.GetStringEnv("TICKET", ""); test != "" {
 		ticket := struct {
-			Ticket
+			Request
 			ImagePath *string `json:"image_path"`
 		}{}
 		if err := json.Unmarshal([]byte(test), &ticket); err != nil {
@@ -58,7 +60,7 @@ func (service *Service) Run(ctx context.Context) error {
 		}
 
 		group.Go(func() error {
-			service.AddTask(&ticket.Ticket)
+			service.AddTask(&ticket.Request)
 			return nil
 		})
 	}
@@ -90,7 +92,7 @@ func (service *Service) Task(id string) *Task {
 }
 
 // AddTask runs a new task of the registration artwork and returns its taskID.
-func (service *Service) AddTask(ticket *Ticket) string {
+func (service *Service) AddTask(ticket *Request) string {
 	task := NewTask(service, ticket)
 	service.Worker.AddTask(task)
 
@@ -98,12 +100,13 @@ func (service *Service) AddTask(ticket *Ticket) string {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, db storage.KeyValue, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client, raptorqClient rqnode.Client) *Service {
 	return &Service{
 		config:       config,
 		db:           db,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
+		rqClient:     raptorqClient,
 		Worker:       task.NewWorker(),
 		Storage:      artwork.NewStorage(fileStorage),
 	}

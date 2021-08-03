@@ -61,7 +61,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// Sign current-timestamp with PsstelID passed in request
 	timestamp := time.Now().Format(time.RFC3339)
-	signature, err := task.pastelClient.Sign(ctx, []byte(timestamp), task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
+	signature, err := task.pastelClient.Sign(ctx, []byte(timestamp), task.Ticket.PastelID, task.Ticket.PastelIDPassphrase, "ed448")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Ticket.PastelID).Error("Could not sign timestamp")
 		return errors.Errorf("failed to sign timestamp: %w", err)

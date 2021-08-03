@@ -32,7 +32,7 @@ type EncodeMetaDataRequest struct {
 	Path        string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	FilesNumber uint32 `protobuf:"varint,2,opt,name=files_number,json=filesNumber,proto3" json:"files_number,omitempty"`
 	BlockHash   string `protobuf:"bytes,3,opt,name=block_hash,json=blockHash,proto3" json:"block_hash,omitempty"`
-	PastelId    string `protobuf:"bytes,4,opt,name=pastel_id,json=pastelId,proto3" json:"pastel_id,omitempty"`
+	PastelID    string `protobuf:"bytes,4,opt,name=pastel_id,json=pastelId,proto3" json:"pastel_id,omitempty"`
 }
 
 func (x *EncodeMetaDataRequest) Reset() {
@@ -88,9 +88,9 @@ func (x *EncodeMetaDataRequest) GetBlockHash() string {
 	return ""
 }
 
-func (x *EncodeMetaDataRequest) GetPastelId() string {
+func (x *EncodeMetaDataRequest) GetPastelID() string {
 	if x != nil {
-		return x.PastelId
+		return x.PastelID
 	}
 	return ""
 }

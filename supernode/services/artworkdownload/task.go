@@ -122,7 +122,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 		// Validate timestamp signature with PastelID from Trade ticket
 		// by calling command `pastelid verify timestamp-string signature PastelID`
 		var isValid bool
-		isValid, err = task.pastelClient.Verify(ctx, []byte(timestamp), signature, pastelID)
+		isValid, err = task.pastelClient.Verify(ctx, []byte(timestamp), signature, pastelID, "ed448")
 		if err != nil {
 			task.UpdateStatus(StatusTimestampVerificationFailed)
 			return nil

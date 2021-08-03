@@ -43,12 +43,12 @@ func (config *Config) String() string {
 // New returns a new Config instance
 func New() *Config {
 	return &Config{
-		LogLevel: defaultLogLevel,
-
+		LogLevel:      defaultLogLevel,
 		Node:          NewNode(),
 		Pastel:        pastel.NewConfig(),
 		P2P:           p2p.NewConfig(),
 		MetaDB:        metadb.NewConfig(),
+		RaptorQ:       raptorq.NewConfig(),
 		DupeDetection: dupedetection.NewConfig(),
 	}
 }

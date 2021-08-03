@@ -15,6 +15,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 )
 
@@ -23,6 +24,7 @@ type File struct {
 	fmt.Stringer
 	sync.Mutex
 
+	storage.File
 	storage *Storage
 
 	// if a file was created during the process, it should be deleted at the end.
@@ -68,7 +70,7 @@ func (file *File) SetFormat(format Format) error {
 	if !file.isCreated {
 		return nil
 	}
-	return file.storage.Rename(file.name, newname)
+	return file.storage.Rename(oldname, newname)
 }
 
 // Format returns file extension.
@@ -82,7 +84,7 @@ func (file *File) Open() (storage.File, error) {
 	file.Lock()
 	defer file.Unlock()
 
-	return file.storage.Open(file.name)
+	return file.storage.Open(file.Name())
 }
 
 // Create creates a file and returns file descriptor.
@@ -151,21 +153,24 @@ func (file *File) Bytes() ([]byte, error) {
 	if _, err := buf.ReadFrom(f); err != nil {
 		return nil, errors.Errorf("failed to read from file: %w", err)
 	}
+
 	return buf.Bytes(), nil
 }
 
 // Write writes data to the file.
-func (file *File) Write(data []byte) error {
+func (file *File) Write(data []byte) (n int, err error) {
 	f, err := file.Create()
 	if err != nil {
-		return err
+		return
 	}
 	defer f.Close()
 
-	if _, err := f.Write(data); err != nil {
-		return errors.Errorf("failed to write to file: %w", err)
+	n, err = f.Write(data)
+	if err != nil {
+		return n, errors.Errorf("failed to write to file: %w", err)
 	}
-	return nil
+
+	return
 }
 
 // ResizeImage resizes image.
@@ -191,6 +196,7 @@ func (file *File) RemoveAfter(d time.Duration) {
 func (file *File) LoadImage() (image.Image, error) {
 	f, err := file.Open()
 	if err != nil {
+		log.Debug("Failed to open")
 		return nil, err
 	}
 	defer f.Close()
@@ -242,6 +248,32 @@ func (file *File) SaveImage(img image.Image) error {
 		return nil
 	}
 	return ErrUnsupportedFormat
+}
+
+// Thumbnail creates a thumbnail file from the artwork file and store in to starage layer
+func (file *File) Thumbnail(coordinate ThumbnailCoordinate) (*File, error) {
+	f := NewFile(file.storage, "thumbnail-of-"+file.name)
+	if f == nil {
+		return nil, errors.Errorf("failed to create new file for thumbnail-of-%q", file.Name())
+	}
+	f.SetFormat(file.Format())
+
+	img, err := file.LoadImage()
+	if err != nil {
+		return nil, errors.Errorf("failed to load image from file %w", err).WithField("Filename", file.Name())
+	}
+
+	rect := image.Rect(int(coordinate.TopLeftX), int(coordinate.TopLeftY), int(coordinate.BottomRightX), int(coordinate.BottomRightY))
+	thumbnail := imaging.Crop(img, rect)
+	if thumbnail == nil {
+		return nil, errors.Errorf("failed to generate thumbnail %w", err).WithField("filename", f.Name())
+	}
+
+	if err := f.SaveImage(thumbnail); err != nil {
+		return nil, errors.Errorf("failed to save thumbnail to file %w", err).WithField("filename", f.Name())
+	}
+
+	return f, nil
 }
 
 // Encoder represents an image encoder.

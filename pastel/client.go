@@ -3,11 +3,14 @@ package pastel
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 )
 
@@ -75,6 +78,15 @@ func (client *client) IDTickets(ctx context.Context, idType IDTicketType) (IDTic
 	return tickets, nil
 }
 
+func (client *client) FindTicketByID(ctx context.Context, pastelID string) (*IDTicket, error) {
+	ticket := IDTicket{}
+
+	if err := client.callFor(ctx, &ticket, "tickets", "find", "id", pastelID); err != nil {
+		return nil, errors.Errorf("failed to get id tickets: %w", err)
+	}
+	return &ticket, nil
+}
+
 // TicketOwnership implements pastel.Client.TicketOwnership
 func (client *client) TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error) {
 	var ownership struct {
@@ -98,33 +110,98 @@ func (client *client) ListAvailableTradeTickets(ctx context.Context) ([]TradeTic
 }
 
 // Sign implements pastel.Client.Sign
-func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error) {
+func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string, algorithm string) (signature []byte, err error) {
 	var sign struct {
 		Signature string `json:"signature"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
-	if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase); err != nil {
-		return nil, errors.Errorf("failed to sign data: %w", err)
+	switch algorithm {
+	case "ed448", "legroast":
+		if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase, algorithm); err != nil {
+			return nil, errors.Errorf("failed to sign data: %w", err)
+		}
+	default:
+		return nil, errors.Errorf("unsupported algorithm %s", algorithm)
 	}
 	return []byte(sign.Signature), nil
 }
 
 // Verify implements pastel.Client.Verify
-func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
-	ok = false
+func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string, algorithm string) (ok bool, err error) {
 	var verify struct {
 		Verification string `json:"verification"`
 	}
 	text := base64.StdEncoding.EncodeToString(data)
 
-	if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID); err != nil {
-		return false, errors.Errorf("failed to verify data: %w", err)
+	switch algorithm {
+	case "ed448", "legroast":
+		if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID, algorithm); err != nil {
+			return false, errors.Errorf("failed to verify data: %w", err)
+		}
+	default:
+		return false, errors.Errorf("unsupported algoritm %s", algorithm)
 	}
-	if verify.Verification == "OK" {
-		ok = true
+
+	return verify.Verification == "OK", nil
+}
+
+// StorageFee implements pastel.Client.StorageFee
+func (client *client) SendToAddress(ctx context.Context, burnAddress string, amount int64) (txID string, error error) {
+	res, err := client.CallWithContext(ctx, "sendtoaddress", burnAddress, fmt.Sprint(amount))
+	if err != nil {
+		return "", errors.Errorf("failed to call sendtoaddress: %w", err)
 	}
-	return ok, nil
+
+	if res.Error != nil {
+		return "", errors.Errorf("failed to send to address %s: %w", burnAddress, res.Error)
+	}
+
+	return res.GetString()
+}
+
+func (client *client) SendFromAddress(ctx context.Context, fromAddr string, toAddr string, amount float64) (txID string, error error) {
+	amounts := []Amount{{toAddr, amount}}
+
+	res, err := client.CallWithContext(ctx, "z_sendmanywithchangetosender", fromAddr, amounts)
+	if err != nil {
+		return "", errors.Errorf("failed to call z_sendmany: %w", err)
+	}
+
+	if res.Error != nil {
+		return "", errors.Errorf("failed to sendmany: %w", res.Error)
+	}
+
+	opid, err := res.GetString()
+	if err != nil {
+		return "", errors.Errorf("failed to get operationid: %w", err)
+	}
+
+	opstatus := []GetOperationStatusResult{}
+	for i := 0; i < 10; i++ {
+		if err := client.callFor(ctx, &opstatus, "z_getoperationstatus", []string{opid}); err != nil {
+			return "", errors.Errorf("failed to call z_getoperationstatus: %w", err)
+		}
+
+		if len(opstatus) == 0 {
+			return "", errors.Errorf("operationstatus is empty")
+		}
+
+		if opstatus[0].Error.Code != 0 {
+			return "", errors.Errorf("operation failed code: %d, msg: %s", opstatus[0].Error.Code, opstatus[0].Error.Msg)
+		}
+
+		if opstatus[0].Status == "executing" {
+			log.WithContext(ctx).Debugf("operation is executing - wait: %d", i)
+			time.Sleep(5 * time.Second)
+		}
+	}
+
+	if opstatus[0].Result.Txid == "" {
+		return "", errors.Errorf("empty txid")
+	}
+
+	return opstatus[0].Result.Txid, nil
 }
 
 // ActTickets implements pastel.Client.ActTickets
@@ -147,6 +224,188 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	}
 
 	return ticket, nil
+}
+
+func (client *client) GetBlockVerbose1(ctx context.Context, blkHeight int32) (*GetBlockVerbose1Result, error) {
+	result := &GetBlockVerbose1Result{}
+
+	if err := client.callFor(ctx, result, "getblock", fmt.Sprint(blkHeight), 1); err != nil {
+		return result, errors.Errorf("failed to get block: %w", err)
+	}
+
+	return result, nil
+}
+
+func (client *client) GetBlockCount(ctx context.Context) (int32, error) {
+	res, err := client.CallWithContext(ctx, "getblockcount")
+	if err != nil {
+		return 0, errors.Errorf("failed to call getblockcount: %w", err)
+	}
+
+	if res.Error != nil {
+		return 0, errors.Errorf("failed to get block count: %w", res.Error)
+	}
+
+	cnt, err := res.GetInt()
+
+	return int32(cnt), err
+}
+
+func (client *client) GetBlockHash(ctx context.Context, blkIndex int32) (string, error) {
+	res, err := client.CallWithContext(ctx, "getblockhash", fmt.Sprint(blkIndex))
+	if err != nil {
+		return "", errors.Errorf("failed to call getblockhash: %w", err)
+	}
+
+	if res.Error != nil {
+		return "", errors.Errorf("failed to get block hash: %w", res.Error)
+	}
+
+	return res.GetString()
+}
+
+func (client *client) GetInfo(ctx context.Context) (*GetInfoResult, error) {
+	result := &GetInfoResult{}
+
+	if err := client.callFor(ctx, result, "getinfo", ""); err != nil {
+		return result, errors.Errorf("failed to get info: %w", err)
+	}
+
+	return result, nil
+}
+
+func (client *client) GetTransaction(ctx context.Context, txID string) (*GetTransactionResult, error) {
+	result := &GetTransactionResult{}
+
+	if err := client.callFor(ctx, result, "gettransaction", txID); err != nil {
+		return result, errors.Errorf("failed to get transaction: %w", err)
+	}
+
+	return result, nil
+}
+
+func (client *client) GetRawTransactionVerbose1(ctx context.Context, txID string) (*GetRawTransactionVerbose1Result, error) {
+	result := &GetRawTransactionVerbose1Result{}
+
+	if err := client.callFor(ctx, result, "getrawtransaction", txID, 1); err != nil {
+		return result, errors.Errorf("failed to get transaction: %w", err)
+	}
+
+	return result, nil
+}
+
+func (client *client) GetNetworkFeePerMB(ctx context.Context) (int64, error) {
+	var networkFee struct {
+		NetworkFee int64 `json:"networkfee"`
+	}
+
+	if err := client.callFor(ctx, &networkFee, "storagefee", "getnetworkfee"); err != nil {
+		return 0, errors.Errorf("failed to call storagefee: %w", err)
+	}
+	return networkFee.NetworkFee, nil
+}
+
+func (client *client) GetArtTicketFeePerKB(ctx context.Context) (int64, error) {
+	var artticketFee struct {
+		ArtticketFee int64 `json:"artticketfee"`
+	}
+
+	if err := client.callFor(ctx, &artticketFee, "storagefee", "getartticketfee"); err != nil {
+		return 0, errors.Errorf("failed to call storagefee: %w", err)
+	}
+	return artticketFee.ArtticketFee, nil
+}
+
+func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegisterArtFeeRequest) (int64, error) {
+	var totalStorageFee struct {
+		TotalStorageFee int64 `json:"totalstoragefee"`
+	}
+
+	// command : tickets tools gettotalstoragefee "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee" "imagesize"
+	ticket, err := EncodeArtTicket(request.Ticket)
+	if err != nil {
+		return 0, errors.Errorf("failed to encode ticket: %w", err)
+	}
+
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+
+	signatures, err := EncodeSignatures(*request.Signatures)
+	if err != nil {
+		return 0, errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "tools")
+	params = append(params, "gettotalstoragefee")
+	params = append(params, string(ticketBlob))
+	params = append(params, string(signatures))
+	params = append(params, request.Mn1PastelID)
+	params = append(params, request.Passphrase)
+	params = append(params, request.Key1)
+	params = append(params, request.Key2)
+	params = append(params, request.Fee)
+	params = append(params, request.ImgSizeInMb)
+
+	if err := client.callFor(ctx, &totalStorageFee, "tickets", params...); err != nil {
+		return 0, errors.Errorf("failed to call gettotalstoragefee: %w", err)
+	}
+	return totalStorageFee.TotalStorageFee, nil
+}
+
+func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	ticket, err := EncodeArtTicket(request.Ticket)
+	if err != nil {
+		return "", errors.Errorf("failed to encode ticket: %w", err)
+	}
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+
+	signatures, err := EncodeSignatures(*request.Signatures)
+	if err != nil {
+		return "", errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "register")
+	params = append(params, "art")
+	params = append(params, string(ticketBlob))
+	params = append(params, string(signatures))
+	params = append(params, request.Mn1PastelID)
+	params = append(params, request.Pasphase)
+	params = append(params, request.Key1)
+	params = append(params, request.Key2)
+	params = append(params, fmt.Sprint(request.Fee))
+
+	// command : tickets register art "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee"
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call register art ticket: %w", err)
+	}
+	return txID.TxID, nil
+}
+
+func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	params := []interface{}{}
+	params = append(params, "register")
+	params = append(params, "act")
+	params = append(params, regTicketTxid)
+	params = append(params, fmt.Sprint(artistHeight))
+	params = append(params, fee)
+	params = append(params, pastelID)
+	params = append(params, passphrase)
+
+	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call register act ticket: %w", err)
+	}
+
+	return txID.TxID, nil
 }
 
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {

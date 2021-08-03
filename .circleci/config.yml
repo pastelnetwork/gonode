@@ -189,6 +189,13 @@ commands:
             wget https://storage.googleapis.com/tensorflow/libtensorflow/libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
             sudo tar -C /usr/local -xzf ./libtensorflow-cpu-linux-x86_64-2.4.0.tar.gz
             sudo /sbin/ldconfig -v
+      - run:
+          name: Install libwebp
+          command: |
+            sudo apt-get install libjpeg-dev libpng-dev libtiff-dev libgif-dev
+            wget https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-1.2.0-linux-x86-64.tar.gz
+            sudo tar -C /usr/local -xzf ./libwebp-1.2.0-linux-x86-64.tar.gz
+            sudo /sbin/ldconfig -v
 
 jobs:
   prepare_workspace:
@@ -248,6 +255,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - install_tensorflow
       - test:
           package: "pastel"
 
@@ -313,6 +321,7 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - install_tensorflow
       - test:
           package: "walletnode"
 
@@ -335,6 +344,7 @@ jobs:
           docker_layer_caching: true
       - create-sources-container:
           containerName: "sourcesContainer"
+      - install_tensorflow
       - build:
           buildContainerName: "pqsignatures"
           moduleSubDir: "pqsignatures"

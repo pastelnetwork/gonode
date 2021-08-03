@@ -40,6 +40,14 @@ const (
 	// SessIDMethod represent SessID name method
 	SessIDMethod = "SessID"
 
+	// SendPreBurntFeeTxidMethod represent SendPreBurntFeeTxId method
+	SendPreBurntFeeTxidMethod = "SendPreBurntFeeTxid"
+
+	// SendSignedTicketMethod represent SendSignedTicket method
+	SendSignedTicketMethod = "SendSignedTicket"
+
+	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method
+	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
 	// DownloadMethod represent Download name method
 	DownloadMethod = "Download"
 )
@@ -67,6 +75,30 @@ func NewMockClient(t *testing.T) *Client {
 // ListenOnRegisterArtwork listening RegisterArtwork call
 func (client *Client) ListenOnRegisterArtwork() *Client {
 	client.Connection.On(RegisterArtworkMethod).Return(client.RegisterArtwork)
+	return client
+}
+
+// ListenOnSendPreBurntFeeTxID listening SendPreBurntFeeTxIdMethod call
+func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Client {
+	client.RegisterArtwork.On(SendPreBurntFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
+	return client
+}
+
+// ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
+func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
+	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
+	return client
+}
+
+// ListenOnUploadImageWithThumbnail listening UploadImageWithThumbnail call
+func (client *Client) ListenOnUploadImageWithThumbnail(retPreviewHash []byte,
+	retMediumThumbnailHash []byte, retsmallThumbnailHash []byte, retErr error) *Client {
+
+	client.RegisterArtwork.On(UploadImageWithThumbnailMethod, mock.Anything,
+		mock.Anything, mock.Anything).Return(retPreviewHash,
+		retMediumThumbnailHash, retsmallThumbnailHash, retErr)
+
 	return client
 }
 

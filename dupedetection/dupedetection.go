@@ -35,6 +35,7 @@ type ImageHashes struct {
 	DifferenceHash string `json:"difference_hash"`
 }
 
+// Client is the interface to talk with dupdedetection service
 type Client interface {
 	// Generate returns fingerprints and ranks for a given image
 	Generate(ctx context.Context, path string) (*DupeDetection, error)

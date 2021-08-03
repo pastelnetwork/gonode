@@ -47,12 +47,29 @@ type ArtTicket struct {
 	AppTicketData AppTicket `json:"-"`
 }
 
+// AlternativeNSFWScore represents the not-safe-for-work of an image
+type AlternativeNSFWScore struct {
+	Drawing float64 `json:"drawing"`
+	Hentai  float64 `json:"hentai"`
+	Neutral float64 `json:"neutral"`
+	Porn    float64 `json:"porn"`
+	Sexy    float64 `json:"sexy"`
+}
+
 // FingerAndScores represents structure of app ticket
 type FingerAndScores struct {
-	FingerprintData []byte
-	RarenessScore   int
-	NSFWScore       int
-	SeenScore       int
+	DupeDectectionSystemVersion string               `json:"dupe_dectection_system_version"`
+	HashOfCandidateImageFile    string               `json:"hash_of_candidate_image_file"`
+	IsLikelyDupe                int                  `json:"is_likely_dupe"`
+	OverallAverageRarenessScore float64              `json:"overall_average_rareness_score"`
+	IsRareOnInternet            int                  `json:"is_rare_on_internet"`
+	NumberOfPagesOfResults      int                  `json:"number_of_pages_of_results"`
+	MatchesFoundOnFirstPage     int                  `json:"matches_found_on_first_page"`
+	URLOfFirstMatchInPage       string               `json:"url_of_first_match_in_page"`
+	OpenNSFWScore               float64              `json:"open_nsfw_score"`
+	ZstdCompressedFingerprint   []byte               `json:"zstd_compressed_fingerprint"`
+	AlternativeNSFWScore        AlternativeNSFWScore `json:"alternative_nsfw_score"`
+	ImageHashes                 ImageHashes          `json:"image_hashes"`
 }
 
 // AppTicket represents pastel App ticket.
@@ -77,9 +94,8 @@ type AppTicket struct {
 
 	DataHash []byte `json:"data_hash"`
 
-	Fingerprints          []float64 `json:"fingerprints"`
-	FingerprintsHash      []byte    `json:"fingerprints_hash"`
-	FingerprintsSignature []byte    `json:"fingerprints_signature"`
+	FingerprintsHash      []byte `json:"fingerprints_hash"`
+	FingerprintsSignature []byte `json:"fingerprints_signature"`
 
 	DupeDetectionSystemVer  string              `json:"dupe_detection_system_version"`
 	MatchesFoundOnFirstPage int                 `json:"matches_found_on_first_page"`
@@ -97,11 +113,11 @@ type AppTicket struct {
 
 // AlternateNSFWScores represents alternate NSFW scores from dupe detection service
 type AlternateNSFWScores struct {
-	Drawings float64 `json:"drawings"`
-	Hentai   float64 `json:"hentai"`
-	Neutral  float64 `json:"neutral"`
-	Porn     float64 `json:"porn"`
-	Sexy     float64 `json:"sexy"`
+	Drawing float64 `json:"drawing"`
+	Hentai  float64 `json:"hentai"`
+	Neutral float64 `json:"neutral"`
+	Porn    float64 `json:"porn"`
+	Sexy    float64 `json:"sexy"`
 }
 
 // ImageHashes represents image hashes from dupe detection service
@@ -109,26 +125,6 @@ type ImageHashes struct {
 	PerceptualHash string `json:"perceptual_hash"`
 	AverageHash    string `json:"average_hash"`
 	DifferenceHash string `json:"difference_hash"`
-}
-
-// TicketSignatures represents signatures from parties
-type TicketSignatures struct {
-	Artist map[string]string `json:"artist,omitempty"`
-	Mn1    map[string]string `json:"mn1,omitempty"`
-	Mn2    map[string]string `json:"mn2,omitempty"`
-	Mn3    map[string]string `json:"mn3,omitempty"`
-}
-
-// RegisterArtRequest represents request to register an art
-// "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "key1", "key2", 100)")
-type RegisterArtRequest struct {
-	Ticket      *ArtTicket
-	Signatures  *TicketSignatures
-	Mn1PastelID string
-	Pasphase    string
-	Key1        string
-	Key2        string
-	Fee         int64
 }
 
 // GetRegisterArtFeeRequest represents a request to get registration fee
@@ -207,7 +203,26 @@ func DecodeArtTicket(b []byte) (*ArtTicket, error) {
 		Green:         res.Green,
 		AppTicketData: appTicket,
 	}, nil
+}
 
+// TicketSignatures represents signatures from parties
+type TicketSignatures struct {
+	Artist map[string]string `json:"artist,omitempty"`
+	Mn1    map[string]string `json:"mn1,omitempty"`
+	Mn2    map[string]string `json:"mn2,omitempty"`
+	Mn3    map[string]string `json:"mn3,omitempty"`
+}
+
+// RegisterArtRequest represents request to register an art
+// "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "key1", "key2", 100)")
+type RegisterArtRequest struct {
+	Ticket      *ArtTicket
+	Signatures  *TicketSignatures
+	Mn1PastelID string
+	Pasphase    string
+	Key1        string
+	Key2        string
+	Fee         int64
 }
 
 // EncodeSignatures encodes TicketSignatures into byte array

@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/pastel"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
 // List represents multiple Node.
@@ -28,6 +31,9 @@ func (nodes *List) Activate() {
 // DisconnectInactive disconnects nodes which were not marked as activated.
 func (nodes *List) DisconnectInactive() {
 	for _, node := range *nodes {
+		node.mtx.RLock()
+		defer node.mtx.RUnlock()
+
 		if node.Connection != nil && !node.activated {
 			node.Connection.Close()
 		}
@@ -35,7 +41,7 @@ func (nodes *List) DisconnectInactive() {
 }
 
 // WaitConnClose waits for the connection closing by any supernodes.
-func (nodes *List) WaitConnClose(ctx context.Context) error {
+func (nodes *List) WaitConnClose(ctx context.Context, done <-chan struct{}) error {
 	group, ctx := errgroup.WithContext(ctx)
 
 	for _, node := range *nodes {
@@ -46,6 +52,8 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 				return nil
 			case <-node.Connection.Done():
 				return errors.Errorf("%q unexpectedly closed the connection", node)
+			case <-done:
+				return nil
 			}
 		})
 	}
@@ -54,8 +62,8 @@ func (nodes *List) WaitConnClose(ctx context.Context) error {
 }
 
 // FindByPastelID returns node by its patstelID.
-func (nodes List) FindByPastelID(id string) *Node {
-	for _, node := range nodes {
+func (nodes *List) FindByPastelID(id string) *Node {
+	for _, node := range *nodes {
 		if node.pastelID == id {
 			return node
 		}
@@ -69,26 +77,150 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			node.fingerprint, err = node.ProbeImage(ctx, file)
-			return err
+			res, err := node.ProbeImage(ctx, file)
+			if err != nil {
+				return errors.Errorf("failed to probe image: %w", err)
+			}
+			node.fingerprintAndScores = res
+			return nil
 		})
 	}
 	return group.Wait()
 }
 
-// MatchFingerprints matches fingerprints.
-func (nodes List) MatchFingerprints() error {
-	node := nodes[0]
-
-	for i := 1; i < len(nodes); i++ {
-		if !bytes.Equal(node.fingerprint, nodes[i].fingerprint) {
-			return errors.Errorf("fingerprints of nodes %q and %q didn't match", node.String(), nodes[i].String())
+// MatchFingerprintAndScores matches fingerprints.
+func (nodes *List) MatchFingerprintAndScores() error {
+	node := (*nodes)[0]
+	for i := 1; i < len(*nodes); i++ {
+		if err := pastel.CompareFingerPrintAndScore(node.fingerprintAndScores, (*nodes)[i].fingerprintAndScores); err != nil {
+			return errors.Errorf("fingerprint or score of node[%s] and node[%s] not matched: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
 		}
 	}
 	return nil
 }
 
-// Fingerprint returns fingerprint of the first node.
-func (nodes List) Fingerprint() []byte {
-	return nodes[0].fingerprint
+// FingerAndScores returns fingerprint of the image and dupedetection scores
+func (nodes *List) FingerAndScores() *pastel.FingerAndScores {
+	return (*nodes)[0].fingerprintAndScores
+}
+
+// UploadImageWithThumbnail uploads the image with pqsignatured appended and thumbnail's coordinate to super nodes
+func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.File, thumbnail artwork.ThumbnailCoordinate) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() error {
+			hash1, hash2, hash3, err := node.UploadImageWithThumbnail(ctx, file, thumbnail)
+			if err != nil {
+				return err
+			}
+			node.previewHash, node.mediumThumbnailHash, node.smallThumbnailHash = hash1, hash2, hash3
+			return nil
+		})
+	}
+	return group.Wait()
+}
+
+// MatchThumbnailHashes matches thumbnail's hashes recevied from super nodes
+func (nodes *List) MatchThumbnailHashes() error {
+	node := (*nodes)[0]
+	for i := 1; i < len(*nodes); i++ {
+		if !bytes.Equal(node.previewHash, (*nodes)[i].previewHash) {
+			return errors.Errorf("hash of preview thumbnail of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
+		}
+		if !bytes.Equal(node.mediumThumbnailHash, (*nodes)[i].mediumThumbnailHash) {
+			return errors.Errorf("hash of medium thumbnail of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
+		}
+		if !bytes.Equal(node.smallThumbnailHash, (*nodes)[i].smallThumbnailHash) {
+			return errors.Errorf("hash of small thumbnail of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
+		}
+	}
+	return nil
+}
+
+// UploadSignedTicket uploads regart ticket and its signature to super nodes
+func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		// TODO: Fix this when method to generate key1 and key2 are finalized
+		key1 := "key1-" + uuid.New().String()
+		key2 := "key2-" + uuid.New().String()
+		group.Go(func() error {
+			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, rqids, encoderParams)
+			if err != nil {
+				return err
+			}
+			node.registrationFee = fee
+			return nil
+		})
+	}
+	return group.Wait()
+}
+
+// MatchRegistrationFee matches registration fee returned by super nodes
+func (nodes *List) MatchRegistrationFee() error {
+	node := (*nodes)[0]
+	for i := 1; i < len(*nodes); i++ {
+		if node.registrationFee != (*nodes)[i].registrationFee {
+			return errors.Errorf("registration fee of nodes %q and %q didn't match", node.String(), (*nodes)[i].String())
+		}
+	}
+	return nil
+}
+
+// SendPreBurntFeeTxid send txid of transaction in which 10% of registration fee is preburnt
+func (nodes *List) SendPreBurntFeeTxid(ctx context.Context, txid string) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() error {
+			ticketTxid, err := node.SendPreBurntFeeTxid(ctx, txid)
+			if err != nil {
+				return err
+			}
+			if !node.IsPrimary() && ticketTxid != "" {
+				return errors.Errorf("receive response %s from secondary node", ticketTxid)
+			}
+
+			node.regArtTxid = ticketTxid
+			return nil
+		})
+	}
+	return group.Wait()
+}
+
+// RegistrationFee returns registration fee of the first node
+func (nodes *List) RegistrationFee() int64 {
+	return (*nodes)[0].registrationFee
+}
+
+// CompressedFingerAndScores returns compressed fingerprint and other scores
+func (nodes *List) CompressedFingerAndScores() *pastel.FingerAndScores {
+	return (*nodes)[0].fingerprintAndScores
+}
+
+// PreviewHash returns the hash of the preview thumbnail calculated by the first node
+func (nodes *List) PreviewHash() []byte {
+	return (*nodes)[0].previewHash
+}
+
+// MediumThumbnailHash returns the hash of the medium thumbnail calculated by the first node
+func (nodes *List) MediumThumbnailHash() []byte {
+	return (*nodes)[0].previewHash
+}
+
+// SmallThumbnailHash returns the hash of the small thumbnail calculated by the first node
+func (nodes *List) SmallThumbnailHash() []byte {
+	return (*nodes)[0].smallThumbnailHash
+}
+
+// RegArtTicketID return txid of RegArt ticket
+func (nodes *List) RegArtTicketID() string {
+	for i := range *nodes {
+		if (*nodes)[i].isPrimary {
+			return (*nodes)[i].regArtTxid
+		}
+	}
+	return string("")
 }
