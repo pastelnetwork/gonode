@@ -3,9 +3,12 @@ package node
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/stretchr/testify/assert"
 )
@@ -114,6 +117,7 @@ func TestNodesDisconnectInactive(t *testing.T) {
 				node := &Node{
 					Connection: c.client.Connection,
 					activated:  c.activated,
+					mtx:        &sync.RWMutex{},
 				}
 
 				testCase.nodes = append(testCase.nodes, node)
@@ -191,21 +195,21 @@ func TestNodesSendImage(t *testing.T) {
 		nodes                []nodeAttribute
 		args                 args
 		err                  error
-		fingerprint          []byte
+		fingersAndScore      *pastel.FingerAndScores
 		numberProbeImageCall int
 	}{
 		{
 			nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
 			args:                 args{context.Background(), &artwork.File{}},
 			err:                  nil,
-			fingerprint:          []byte("test"),
+			fingersAndScore:      &pastel.FingerAndScores{},
 			numberProbeImageCall: 1,
 		},
 		{
 			nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
 			args:                 args{context.Background(), &artwork.File{}},
 			err:                  fmt.Errorf("failed to open stream"),
-			fingerprint:          nil,
+			fingersAndScore:      &pastel.FingerAndScores{},
 			numberProbeImageCall: 1,
 		},
 	}
@@ -223,7 +227,7 @@ func TestNodesSendImage(t *testing.T) {
 				//client mock
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
-				client.ListenOnProbeImage(testCase.fingerprint, testCase.err)
+				client.ListenOnProbeImage(testCase.fingersAndScore, testCase.err)
 				clients = append(clients, client)
 
 				nodes.Add(&Node{
@@ -233,7 +237,11 @@ func TestNodesSendImage(t *testing.T) {
 			}
 
 			err := nodes.ProbeImage(testCase.args.ctx, testCase.args.file)
-			assert.Equal(t, testCase.err, err)
+			if err != nil {
+				assert.Equal(t, errors.Errorf("failed to probe image: %w", testCase.err).Error(), err.Error())
+			} else {
+				assert.Equal(t, err, testCase.err)
+			}
 
 			//mock assertion each client
 			for _, client := range clients {

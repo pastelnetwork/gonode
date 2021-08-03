@@ -77,7 +77,7 @@ func (service *Artwork) RegisterTask(_ context.Context, p *artworks.RegisterTask
 	res = &artworks.Task{
 		ID:     p.TaskID,
 		Status: task.Status().String(),
-		Ticket: toArtworkTicket(task.Ticket),
+		Ticket: toArtworkTicket(task.Request),
 		States: toArtworkStates(task.StatusHistory()),
 	}
 	return res, nil
@@ -90,7 +90,7 @@ func (service *Artwork) RegisterTasks(_ context.Context) (res artworks.TaskColle
 		res = append(res, &artworks.Task{
 			ID:     task.ID(),
 			Status: task.Status().String(),
-			Ticket: toArtworkTicket(task.Ticket),
+			Ticket: toArtworkTicket(task.Request),
 		})
 	}
 	return res, nil

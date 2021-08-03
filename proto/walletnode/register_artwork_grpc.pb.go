@@ -28,8 +28,14 @@ type RegisterArtworkClient interface {
 	ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error)
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
+	// SendArtTicket sends a signed art-ticket to the supernode.
+	SendSignedArtTicket(ctx context.Context, in *SendSignedArtTicketRequest, opts ...grpc.CallOption) (*SendSignedArtTicketReply, error)
+	// SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
+	SendPreBurntFeeTxid(ctx context.Context, in *SendPreBurntFeeTxidRequest, opts ...grpc.CallOption) (*SendPreBurntFeeTxidReply, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
+	// Upload the image after pq signature is appended along with its thumbnail coordinates
+	UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_UploadImageClient, error)
 }
 
 type registerArtworkClient struct {
@@ -123,6 +129,24 @@ func (x *registerArtworkProbeImageClient) CloseAndRecv() (*ProbeImageReply, erro
 	return m, nil
 }
 
+func (c *registerArtworkClient) SendSignedArtTicket(ctx context.Context, in *SendSignedArtTicketRequest, opts ...grpc.CallOption) (*SendSignedArtTicketReply, error) {
+	out := new(SendSignedArtTicketReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendSignedArtTicket", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registerArtworkClient) SendPreBurntFeeTxid(ctx context.Context, in *SendPreBurntFeeTxidRequest, opts ...grpc.CallOption) (*SendPreBurntFeeTxidReply, error) {
+	out := new(SendPreBurntFeeTxidReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendPreBurntFeeTxid", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *registerArtworkClient) SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error) {
 	out := new(SendTicketReply)
 	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendTicket", in, out, opts...)
@@ -130,6 +154,40 @@ func (c *registerArtworkClient) SendTicket(ctx context.Context, in *SendTicketRe
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *registerArtworkClient) UploadImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_UploadImageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterArtwork_ServiceDesc.Streams[2], "/walletnode.RegisterArtwork/UploadImage", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &registerArtworkUploadImageClient{stream}
+	return x, nil
+}
+
+type RegisterArtwork_UploadImageClient interface {
+	Send(*UploadImageRequest) error
+	CloseAndRecv() (*UploadImageReply, error)
+	grpc.ClientStream
+}
+
+type registerArtworkUploadImageClient struct {
+	grpc.ClientStream
+}
+
+func (x *registerArtworkUploadImageClient) Send(m *UploadImageRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *registerArtworkUploadImageClient) CloseAndRecv() (*UploadImageReply, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UploadImageReply)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // RegisterArtworkServer is the server API for RegisterArtwork service.
@@ -146,8 +204,14 @@ type RegisterArtworkServer interface {
 	ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error)
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
 	ProbeImage(RegisterArtwork_ProbeImageServer) error
+	// SendArtTicket sends a signed art-ticket to the supernode.
+	SendSignedArtTicket(context.Context, *SendSignedArtTicketRequest) (*SendSignedArtTicketReply, error)
+	// SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
+	SendPreBurntFeeTxid(context.Context, *SendPreBurntFeeTxidRequest) (*SendPreBurntFeeTxidReply, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
+	// Upload the image after pq signature is appended along with its thumbnail coordinates
+	UploadImage(RegisterArtwork_UploadImageServer) error
 	mustEmbedUnimplementedRegisterArtworkServer()
 }
 
@@ -167,8 +231,17 @@ func (UnimplementedRegisterArtworkServer) ConnectTo(context.Context, *ConnectToR
 func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageServer) error {
 	return status.Errorf(codes.Unimplemented, "method ProbeImage not implemented")
 }
+func (UnimplementedRegisterArtworkServer) SendSignedArtTicket(context.Context, *SendSignedArtTicketRequest) (*SendSignedArtTicketReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendSignedArtTicket not implemented")
+}
+func (UnimplementedRegisterArtworkServer) SendPreBurntFeeTxid(context.Context, *SendPreBurntFeeTxidRequest) (*SendPreBurntFeeTxidReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendPreBurntFeeTxid not implemented")
+}
 func (UnimplementedRegisterArtworkServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
+}
+func (UnimplementedRegisterArtworkServer) UploadImage(RegisterArtwork_UploadImageServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadImage not implemented")
 }
 func (UnimplementedRegisterArtworkServer) mustEmbedUnimplementedRegisterArtworkServer() {}
 
@@ -271,6 +344,42 @@ func (x *registerArtworkProbeImageServer) Recv() (*ProbeImageRequest, error) {
 	return m, nil
 }
 
+func _RegisterArtwork_SendSignedArtTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendSignedArtTicketRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).SendSignedArtTicket(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterArtwork/SendSignedArtTicket",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).SendSignedArtTicket(ctx, req.(*SendSignedArtTicketRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegisterArtwork_SendPreBurntFeeTxid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendPreBurntFeeTxidRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).SendPreBurntFeeTxid(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterArtwork/SendPreBurntFeeTxid",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).SendPreBurntFeeTxid(ctx, req.(*SendPreBurntFeeTxidRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _RegisterArtwork_SendTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendTicketRequest)
 	if err := dec(in); err != nil {
@@ -289,6 +398,32 @@ func _RegisterArtwork_SendTicket_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterArtwork_UploadImage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterArtworkServer).UploadImage(&registerArtworkUploadImageServer{stream})
+}
+
+type RegisterArtwork_UploadImageServer interface {
+	SendAndClose(*UploadImageReply) error
+	Recv() (*UploadImageRequest, error)
+	grpc.ServerStream
+}
+
+type registerArtworkUploadImageServer struct {
+	grpc.ServerStream
+}
+
+func (x *registerArtworkUploadImageServer) SendAndClose(m *UploadImageReply) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *registerArtworkUploadImageServer) Recv() (*UploadImageRequest, error) {
+	m := new(UploadImageRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // RegisterArtwork_ServiceDesc is the grpc.ServiceDesc for RegisterArtwork service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -305,6 +440,14 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RegisterArtwork_ConnectTo_Handler,
 		},
 		{
+			MethodName: "SendSignedArtTicket",
+			Handler:    _RegisterArtwork_SendSignedArtTicket_Handler,
+		},
+		{
+			MethodName: "SendPreBurntFeeTxid",
+			Handler:    _RegisterArtwork_SendPreBurntFeeTxid_Handler,
+		},
+		{
 			MethodName: "SendTicket",
 			Handler:    _RegisterArtwork_SendTicket_Handler,
 		},
@@ -319,6 +462,11 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "ProbeImage",
 			Handler:       _RegisterArtwork_ProbeImage_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "UploadImage",
+			Handler:       _RegisterArtwork_UploadImage_Handler,
 			ClientStreams: true,
 		},
 	},

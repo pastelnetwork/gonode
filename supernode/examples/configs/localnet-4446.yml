@@ -1,11 +1,15 @@
 pastel-api:
   hostname: "127.0.0.1"
-  port: 29932
-  username: "4446"
-  password: ""
+  port: 12158
+  username: "rt"
+  password: "rt"
 
 node:
-  pastel_id: jXa9V7SpRAvyJx53Jh3ffrEXxutuAeXUToePpzCsg8ucwB4rRf2zfuhQsdfKB8SEV4dTbE1HFGCdmWk4P9TENZ
+  pastel_id: jXaMnqwbdCFhNJFDhTPGryxxB8brGkAZ14qVzywRB9jahNEZDKQZwquUzaQt7gFKPppi7rXYKxWobhbFvL2R2M 
+  pass_phrase: "passphrase"
+  preburnt_tx_min_confirmation: 3
+  # Timeout in minutes
+  preburnt_tx_confirmation_timeout: 8 
   server:
     listen_addresses: "0.0.0.0"
     port: 4446
@@ -22,3 +26,12 @@ metadb:
   http_port: 4061
   raft_port: 4062
   data_dir: "metadb-4446"
+
+raptorq:
+  hostname: "localhost"
+  port: 50053
+
+dupe-detection:
+  input_dir: "input"
+  output_dir: "output"
+  data_file: "dupe_detection_image_fingerprint_database.sqlite"

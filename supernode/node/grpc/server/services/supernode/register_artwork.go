@@ -78,6 +78,21 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 }
 
+// SendArtTicketSignature implements supernode.RegisterArtworkServer.SendArtTicketSignature()
+func (service *RegisterArtwork) SendArtTicketSignature(ctx context.Context, req *pb.SendArtTicketSignatureRequest) (*pb.SendArtTicketSignatureReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendArtTicketSignature request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := task.AddPeerArticketSignature(req.NodeID, req.Signature); err != nil {
+		return nil, errors.Errorf("failed to add peer signature %w", err)
+	}
+
+	return &pb.SendArtTicketSignatureReply{}, nil
+}
+
 // Desc returns a description of the service.
 func (service *RegisterArtwork) Desc() *grpc.ServiceDesc {
 	return &pb.RegisterArtwork_ServiceDesc

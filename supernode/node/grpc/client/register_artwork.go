@@ -71,6 +71,17 @@ func (service *registerArtwork) Session(ctx context.Context, nodeID, sessID stri
 	return nil
 }
 
+func (service *registerArtwork) SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+	_, err := service.client.SendArtTicketSignature(ctx, &pb.SendArtTicketSignatureRequest{
+		NodeID:    nodeID,
+		Signature: signature,
+	})
+
+	return err
+}
+
 func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {
 	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)

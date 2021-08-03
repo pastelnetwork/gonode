@@ -446,7 +446,7 @@ func TestTaskRun(t *testing.T) {
 			)
 			pastelClient.AssertMasterNodesTopCall(testCase.numMasterNodesTop, mock.Anything)
 			pastelClient.AssertSignCall(testCase.numSign, mock.Anything, mock.Anything,
-				testCase.fields.Ticket.PastelID, testCase.fields.Ticket.PastelIDPassphrase)
+				testCase.fields.Ticket.PastelID, testCase.fields.Ticket.PastelIDPassphrase, "ed448")
 
 			// nodeClient mock assertion
 			nodeClient.Connection.AssertExpectations(t)

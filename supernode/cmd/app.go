@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -18,8 +19,6 @@ import (
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/probe"
-	"github.com/pastelnetwork/gonode/probe/tfmodel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
@@ -138,7 +137,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// analysis tools
-	probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
+	// probeTensor := probe.NewTensor(filepath.Join(config.WorkDir, tfmodelDir), tfmodel.AllConfigs)
 
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
@@ -148,12 +147,19 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.MetaDB.SetWorkDir(config.WorkDir)
 	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
 
-	config.ArtworkDownload.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
-	config.ArtworkDownload.RqFilesDir = config.RqFilesDir
+	// raptorq client
+	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
+	config.ArtworkRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
+	config.ArtworkRegister.PreburntTxConfirmationTimeout = time.Duration(config.PreburntTxConfirmationTimeout * int(time.Minute))
 	rqClient := rqgrpc.NewClient()
 
 	// business logic services
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, probeTensor, pastelClient, nodeClient, p2p)
+	config.ArtworkDownload.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.ArtworkDownload.RqFilesDir = config.RqFilesDir
+
+	// business logic services
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
 
 	// server
