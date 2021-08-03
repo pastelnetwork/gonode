@@ -77,6 +77,10 @@ func encode(message *Message) ([]byte, error) {
 		return nil, err
 	}
 
+	if buf.Len() > defaultMaxPayloadSize {
+		return nil, errors.New("payload too big")
+	}
+
 	var header [8]byte
 	// prepare the header
 	binary.PutUvarint(header[:], uint64(buf.Len()))
