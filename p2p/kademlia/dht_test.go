@@ -2,6 +2,7 @@ package kademlia
 
 import (
 	"context"
+	"crypto/rand"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -89,7 +90,8 @@ func (ts *testSuite) SetupSuite() {
 	ts.main = dht
 
 	// init key and value for one data
-	ts.Value = []byte("hello world")
+	ts.Value = make([]byte, 50*1024)
+	rand.Read(ts.Value)
 	ts.Key = base58.Encode(dht.hashKey(ts.Value))
 }
 

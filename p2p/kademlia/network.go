@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	defaultConnDeadline = 5 * time.Second
-	defaultConnRate     = 500
+	defaultConnDeadline   = 5 * time.Second
+	defaultConnRate       = 500
+	defaultMaxPayloadSize = 16 * 1024 * 1024 // 16MB
 )
 
 // Network for distributed hash table
