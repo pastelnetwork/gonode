@@ -16,7 +16,7 @@ type DupeDetection struct {
 	OpenNSFWScore           float64             `json:"open_nsfw_score"`
 	AlternateNSFWScores     AlternateNSFWScores `json:"alternative_nsfw_scores"`
 	ImageHashes             ImageHashes         `json:"image_hashes"`
-	FingerPrints            string              `json:"image_fingerprint_of_candidate_image_file"`
+	Fingerprints            string              `json:"image_fingerprint_of_candidate_image_file"`
 }
 
 // AlternateNSFWScores represents alternate NSFW scores in the output of dupe detection service
@@ -35,8 +35,7 @@ type ImageHashes struct {
 	DifferenceHash string `json:"difference_hash"`
 }
 
-// Client is the interface to talk with dupdedetection service
 type Client interface {
 	// Generate returns fingerprints and ranks for a given image
-	Generate(ctx context.Context, path string) (*DupeDetection, error)
+	Generate(ctx context.Context, img []byte, format string) (*DupeDetection, error)
 }

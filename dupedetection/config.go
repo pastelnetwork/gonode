@@ -7,7 +7,7 @@ const (
 	DefaultInputDir = "dupe_detection_input_files"
 	// DefaultOutputDir that dd-service uses to put new fingerprints
 	DefaultOutputDir = "dupe_detection_output_files"
-	// DefaultTimeout that dd-service uses to put new fingerprints(5 minutes)
+	// DefaultOutputDir that dd-service uses to put new fingerprints(5 minutes)
 	DefaultTimeout = 300
 )
 
