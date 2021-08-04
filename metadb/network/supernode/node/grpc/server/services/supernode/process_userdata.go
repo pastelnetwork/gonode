@@ -34,7 +34,8 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 	var task *userdataprocess.Task
 
 	if sessID, ok := service.SessID(ctx); ok {
-		if task = service.Task(sessID); task == nil {
+		task = service.Task(sessID)
+		if task == nil {
 			return errors.Errorf("not found %q task", sessID)
 		}
 	} else {
@@ -71,13 +72,8 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 	for {
 		if _, err := stream.Recv(); err != nil {
 			if err == io.EOF {
-				return nil
+				return errors.Errorf("handshake stream closed: %w", err)
 			}
-			switch status.Code(err) {
-			case codes.Canceled, codes.Unavailable:
-				return nil
-			}
-			return errors.Errorf("handshake stream closed: %w", err)
 		}
 	}
 }
@@ -104,7 +100,6 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 	}
 
 	if err := task.AddPeerSNDataSigned(ctx, snrequest); err != nil {
-		errors.Errorf("failed to add peer signature %w", err)
 		return &pb.SuperNodeReply{
 			ResponseCode: userdata.ErrorPrimarySupernodeFailToProcess,
 			Detail:       userdata.Description[userdata.ErrorPrimarySupernodeFailToProcess],

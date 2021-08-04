@@ -107,7 +107,7 @@ func (task *Task) run(ctx context.Context) error {
 	if task.request == nil {
 		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
 		if err := nodes.ReceiveUserdata(ctx, task.userpastelid); err != nil {
-			return err
+			return errors.Errorf("failed to receive userdata: %w", err)
 		} else {
 			// Post on result channel
 			node := nodes[0]
@@ -172,7 +172,6 @@ func (task *Task) run(ctx context.Context) error {
 
 		// Send userdata to supernodes for storing in MDL's rqlite db.
 		if err := nodes.SendUserdata(ctx, userdata); err != nil {
-
 			return err
 		} else {
 			res, err := task.AggregateResult(ctx, nodes)
@@ -192,8 +191,7 @@ func (task *Task) run(ctx context.Context) error {
 		}
 	}
 
-	// Wait for all connections to disconnect.
-	return groupConnClose.Wait()
+	return nil
 }
 
 // AggregateResult aggregate all results return by all supernode, and consider it valid or not

@@ -296,15 +296,15 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataPro
 		// Verify the data
 		signature, err := hex.DecodeString(sndata.HashSignature)
 		if err != nil {
-			errors.Errorf("failed to decode signature %s of node %s", sndata.HashSignature, sndata.NodeID)
+			log.WithContext(ctx).Debugf("failed to decode signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
 		}
 		if ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID, "ed448"); err != nil {
-			errors.Errorf("failed to verify signature %s of node %s", sndata.HashSignature, sndata.NodeID)
+			log.WithContext(ctx).Debugf("failed to verify signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
 		} else {
 			if !ok {
-				errors.Errorf("signature of node %s mistmatch", sndata.NodeID)
+				log.WithContext(ctx).Debugf("signature of node %s mistmatch", sndata.NodeID)
 				continue
 			} else {
 				successCount++
