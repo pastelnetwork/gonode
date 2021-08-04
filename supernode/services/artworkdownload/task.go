@@ -257,9 +257,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		file = decodeInfo.File
 		break
 	}
-	if len(file) > 0 {
-		err = nil
-	}
+
 	return file, err
 }
 
@@ -304,7 +302,8 @@ func (task Task) getRQSymbolIDs(rqIDsData []byte) (rqIDs []string, err error) {
 		return
 	}
 
-	rqIDs = lines[3:]
+	l := len(lines)
+	rqIDs = lines[3 : l-1]
 
 	return
 }
