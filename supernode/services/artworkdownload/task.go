@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 	"golang.org/x/crypto/sha3"
 
@@ -177,13 +178,21 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		var rqIDsData []byte
 		rqIDsData, err = task.p2pClient.Retrieve(ctx, id)
 		if err != nil {
-			err = errors.Errorf("could not retrieve symbol file from Kademlia: %w", err)
+			err = errors.Errorf("could not retrieve compressed symbol file from Kademlia: %w", err)
 			task.UpdateStatus(StatusSymbolFileNotFound)
 			continue
 		}
 
+		fileContent, err := zstd.Decompress(nil, rqIDsData)
+		if err != nil {
+			err = errors.Errorf("could not decompress symbol file: %w", err)
+			task.UpdateStatus(StatusSymbolFileInvalid)
+			continue
+		}
+
+		log.WithContext(ctx).Debugf("symbolFile: %s", string(fileContent))
 		var rqIDs []string
-		rqIDs, err = task.getRQSymbolIDs(rqIDsData)
+		rqIDs, err = task.getRQSymbolIDs(fileContent)
 		if err != nil {
 			task.UpdateStatus(StatusSymbolFileInvalid)
 			continue
