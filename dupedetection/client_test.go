@@ -56,7 +56,8 @@ func TestCopyImageToInputDir(t *testing.T) {
 
 	type args struct {
 		config   *Config
-		testFile string
+		testFile []byte
+		format   string
 	}
 
 	pwd, err := os.Getwd()
@@ -67,11 +68,7 @@ func TestCopyImageToInputDir(t *testing.T) {
 	assert.Equal(t, nil, err)
 	defer os.RemoveAll(inputDir)
 
-	testFile := path.Join(pwd, "test.jpg")
-	testData := []byte("test")
-	err = ioutil.WriteFile(testFile, testData, os.ModePerm)
-	assert.Equal(t, nil, err)
-	defer os.Remove(testFile)
+	testFile := []byte("test")
 
 	testCases := []struct {
 		args             args
@@ -82,6 +79,7 @@ func TestCopyImageToInputDir(t *testing.T) {
 		{
 			args: args{
 				testFile: testFile,
+				format:   "png",
 				config: &Config{
 					InputDir:  inputDir,
 					OutputDir: outputDir,
@@ -99,7 +97,7 @@ func TestCopyImageToInputDir(t *testing.T) {
 
 			client := NewClient(testCase.args.config).(*client)
 
-			outputPath, err := client.copyImageToInputDir(testCase.args.testFile)
+			outputPath, err := client.copyImageToInputDir(testCase.args.testFile, testCase.args.format)
 			testCase.assertion(t, err)
 			assert.True(t, filepath.Ext(outputPath) == testCase.outputBaseExt)
 			assert.True(t, strings.HasPrefix(outputPath, testCase.outputPathPrefix))
@@ -155,7 +153,7 @@ func TestCollectOutput(t *testing.T) {
 			AverageHash:    "ffff990999181800",
 			DifferenceHash: "7333237333337331",
 		},
-		FingerPrints: "[0.1, 0.2, 0.3]",
+		Fingerprints: "[0.1, 0.2, 0.3]",
 	}
 
 	data, err := json.Marshal(&result)
@@ -168,7 +166,7 @@ func TestCollectOutput(t *testing.T) {
 	assert.Equal(t, nil, err)
 
 	result1 := result
-	result1.FingerPrints = "[0.1, 0.2, 0.3"
+	result1.Fingerprints = "[0.1, 0.2, 0.3"
 	data, err = json.Marshal(&result1)
 	assert.Equal(t, nil, err)
 
@@ -255,12 +253,14 @@ func TestGenerate(t *testing.T) {
 	type args struct {
 		ctx      context.Context
 		config   *Config
-		testFile string
+		testFile []byte
+		format   string
 	}
 
 	pwd, err := os.Getwd()
 	assert.Equal(t, nil, err)
 	inputDir := path.Join(pwd, "geninput")
+	inputDir1 := path.Join(pwd, "geninput1")
 	outputDir := path.Join(pwd, "genoutput")
 	err = os.Mkdir(inputDir, os.ModePerm)
 	assert.Equal(t, nil, err)
@@ -269,12 +269,8 @@ func TestGenerate(t *testing.T) {
 	assert.Equal(t, nil, err)
 	defer os.RemoveAll(outputDir)
 
-	testFile := path.Join(pwd, "test.jpg")
-	testFile2 := path.Join(pwd, "test2.jpg")
-	testData := []byte("test")
-	err = ioutil.WriteFile(testFile, testData, os.ModePerm)
-	assert.Equal(t, nil, err)
-	defer os.Remove(testFile)
+	testFile := []byte("test")
+	testFile2 := []byte("test2")
 
 	testCases := []struct {
 		args      args
@@ -285,6 +281,7 @@ func TestGenerate(t *testing.T) {
 			args: args{
 				ctx:      context.Background(),
 				testFile: testFile,
+				format:   "png",
 				config: &Config{
 					InputDir:             inputDir,
 					OutputDir:            outputDir,
@@ -298,6 +295,20 @@ func TestGenerate(t *testing.T) {
 			args: args{
 				ctx:      context.Background(),
 				testFile: testFile2,
+				format:   "png",
+				config: &Config{
+					InputDir:             inputDir1,
+					OutputDir:            outputDir,
+					WaitForOutputTimeout: 1,
+				},
+			},
+			result:    nil,
+			assertion: assert.Error,
+		},
+		{
+			args: args{
+				ctx:      context.Background(),
+				testFile: []byte(""),
 				config: &Config{
 					InputDir:             inputDir,
 					OutputDir:            outputDir,
@@ -317,7 +328,7 @@ func TestGenerate(t *testing.T) {
 
 			ctx := context.Background()
 
-			result, err := client.Generate(ctx, testCase.args.testFile)
+			result, err := client.Generate(ctx, testCase.args.testFile, testCase.args.format)
 			testCase.assertion(t, err)
 			assert.Equal(t, testCase.result, result)
 		})

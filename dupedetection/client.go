@@ -18,10 +18,13 @@ type client struct {
 }
 
 // Generate implements dupedection.Client.Generate
-func (client *client) Generate(ctx context.Context, path string) (*DupeDetection, error) {
+func (client *client) Generate(ctx context.Context, img []byte, format string) (*DupeDetection, error) {
+	if img == nil || len(img) == 0 || format == "" {
+		return nil, errors.Errorf("invalid image content or format(data=%v, format=%s", img, format)
+	}
 
 	// Copy image file to dupe detection service input directory
-	outputPath, err := client.copyImageToInputDir(path)
+	outputPath, err := client.copyImageToInputDir(img, format)
 	if err != nil {
 		return nil, errors.Errorf("failed to copy image to dupe detection input directory: %w", err)
 	}
@@ -35,13 +38,7 @@ func (client *client) Generate(ctx context.Context, path string) (*DupeDetection
 	return result, err
 }
 
-func (client *client) copyImageToInputDir(inputPath string) (string, error) {
-	input, err := ioutil.ReadFile(inputPath)
-	if err != nil {
-		return "", err
-	}
-
-	ext := filepath.Ext(inputPath)
+func (client *client) copyImageToInputDir(img []byte, format string) (string, error) {
 
 	// Generate random name
 	inputName, err := random.String(10, random.Base62Chars)
@@ -49,9 +46,9 @@ func (client *client) copyImageToInputDir(inputPath string) (string, error) {
 		return "", err
 	}
 
-	inputPath = filepath.Join(client.config.InputDir, inputName+ext)
+	inputPath := filepath.Join(client.config.InputDir, inputName+"."+format)
 
-	err = ioutil.WriteFile(inputPath, input, os.ModePerm)
+	err = ioutil.WriteFile(inputPath, img, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +101,7 @@ func parseOutput(path string) (*DupeDetection, error) {
 	var fingerprints []float64
 
 	// Check fingerprints json string is right format
-	err = json.Unmarshal([]byte(result.FingerPrints), &fingerprints)
+	err = json.Unmarshal([]byte(result.Fingerprints), &fingerprints)
 	if err != nil {
 		return nil, errors.Errorf("failed to parse fingerprints from dupe detection service JSON output: %v", err)
 	}

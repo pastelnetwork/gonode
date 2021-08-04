@@ -4,7 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/pastelnetwork/gonode/dupedetection"
 )
@@ -32,10 +35,19 @@ func main() {
 	fmt.Printf("output directory: %s\n", ddconf.OutputDir)
 	client := dupedetection.NewClient(ddconf)
 
-	ctx := context.Background()
-	result, err := client.Generate(ctx, defaultTestImage)
+	// read image content
+	img, err := ioutil.ReadFile(defaultTestImage)
 	if err != nil {
-		fmt.Printf("could not get fringerprints from dupe detection service: %v\n", err)
+		fmt.Printf("Could not read image content: %v\n", err)
+		return
+	}
+
+	format := filepath.Ext(defaultTestImage)
+
+	ctx := context.Background()
+	result, err := client.Generate(ctx, img, strings.TrimPrefix(format, "."))
+	if err != nil {
+		fmt.Printf("Could not get fringerprints from dupe detection service: %v\n", err)
 		return
 	}
 	fmt.Printf("Dupe detection system version: %s\n", result.DupeDetectionSystemVer)
@@ -48,5 +60,5 @@ func main() {
 	fmt.Printf("First match URL: %s\n", result.FirstMatchURL)
 	fmt.Printf("Alternate NSFW Scores: %v\n", result.AlternateNSFWScores)
 	fmt.Printf("Image Hashes: %v\n", result.ImageHashes)
-	fmt.Printf("Fingerprints: %v\n", result.FingerPrints)
+	fmt.Printf("Fingerprints: %v\n", result.Fingerprints)
 }

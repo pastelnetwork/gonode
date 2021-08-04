@@ -6,6 +6,8 @@ import (
 	"encoding/gob"
 	"fmt"
 	"io"
+
+	"github.com/pastelnetwork/gonode/common/errors"
 )
 
 const (
@@ -75,6 +77,10 @@ func encode(message *Message) ([]byte, error) {
 		return nil, err
 	}
 
+	if buf.Len() > defaultMaxPayloadSize {
+		return nil, errors.New("payload too big")
+	}
+
 	var header [8]byte
 	// prepare the header
 	binary.PutUvarint(header[:], uint64(buf.Len()))
@@ -90,7 +96,7 @@ func encode(message *Message) ([]byte, error) {
 func decode(conn io.Reader) (*Message, error) {
 	// read the header
 	header := make([]byte, 8)
-	if _, err := conn.Read(header); err != nil {
+	if _, err := io.ReadFull(conn, header); err != nil {
 		return nil, err
 	}
 
@@ -100,9 +106,13 @@ func decode(conn io.Reader) (*Message, error) {
 		return nil, err
 	}
 
+	if length > defaultMaxPayloadSize {
+		return nil, errors.New("payload too big")
+	}
+
 	// read the message body
 	data := make([]byte, length)
-	if _, err := conn.Read(data); err != nil {
+	if _, err := io.ReadFull(conn, data); err != nil {
 		return nil, err
 	}
 
