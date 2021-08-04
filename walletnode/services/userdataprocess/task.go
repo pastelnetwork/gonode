@@ -126,19 +126,19 @@ func (task *Task) run(ctx context.Context) error {
 
 		// TODO: Unblock this part after pastelClient support it
 		/*
-			blockNum, err := task.pastelClient.GetBlockCount(ctx)
-			if err != nil {
-				return nil, errors.Errorf("failed to get block num: %w", err)
-			}
+		blockNum, err := task.pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			return errors.Errorf("failed to get block num: %w", err)
+		}
 
-			// Get block hash string
-			blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
-			if err != nil {
-				return nil, errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
-			}*/
+		// Get block hash string
+		blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
+		if err != nil {
+			return errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
+		} */
 
 		// Decode hash string to byte
-		task.request.PreviousBlockHash = "" /*blockInfo.Hash*/
+		task.request.PreviousBlockHash = "" /* blockInfo.Hash */
 		if err != nil {
 			return errors.Errorf("failed to convert hash string %s to bytes: %w", "" /*blockInfo.Hash*/, err)
 		}
@@ -159,7 +159,7 @@ func (task *Task) run(ctx context.Context) error {
 		}
 
 		// Sign request with Wallet Node's pastelID and passphrase
-		signature, err := task.pastelClient.Sign(ctx, hashvalue, task.request.ArtistPastelID, passphrase)
+		signature, err := task.pastelClient.Sign(ctx, hashvalue, task.request.ArtistPastelID, passphrase, "ed448")
 		if err != nil {
 			return errors.Errorf("failed to sign ticket %w", err)
 		}

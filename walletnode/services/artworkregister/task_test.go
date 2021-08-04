@@ -2,20 +2,32 @@ package artworkregister
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
-	"io/ioutil"
+	"image"
+	"image/png"
+	"io"
 	"os"
-	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/DataDog/zstd"
+	"github.com/btcsuite/btcutil/base58"
+	"github.com/google/uuid"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/service/task/state"
 	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
+	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	rq "github.com/pastelnetwork/gonode/raptorq"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
 	"github.com/stretchr/testify/assert"
@@ -36,15 +48,20 @@ func pullPastelAddressIDNodes(nodes node.List) []string {
 	return v
 }
 
-func newTestImageFile(tmpDir, fileName string) (*artwork.File, error) {
-	err := test.CreateBlankImage(fmt.Sprintf("%s/%s", tmpDir, fileName), 400, 400)
-	if err != nil {
-		return nil, err
-	}
+func newTestImageFile() (*artwork.File, error) {
+	imageStorage := artwork.NewStorage(fs.NewFileStorage(os.TempDir()))
+	imgFile := imageStorage.NewFile()
 
-	imageStorage := artwork.NewStorage(fs.NewFileStorage(tmpDir))
-	imageFile := artwork.NewFile(imageStorage, fileName)
-	return imageFile, nil
+	f, err := imgFile.Create()
+	if err != nil {
+		return nil, errors.Errorf("failed to create storage file: %w", err)
+	}
+	defer f.Close()
+
+	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
+	png.Encode(f, img)
+
+	return imgFile, nil
 }
 
 func TestTaskRun(t *testing.T) {
@@ -53,7 +70,7 @@ func TestTaskRun(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Ticket *Ticket
+		Request *Request
 	}
 
 	type args struct {
@@ -80,7 +97,7 @@ func TestTaskRun(t *testing.T) {
 		numProbeImageCall int
 	}{
 		{
-			fields: fields{&Ticket{MaximumFee: 0.5, ArtistPastelID: "1", ArtistPastelIDPassphrase: "2"}},
+			fields: fields{&Request{MaximumFee: 0.5, ArtistPastelID: "1", ArtistPastelIDPassphrase: "2"}},
 			args: args{
 				taskID:     "1",
 				ctx:        context.Background(),
@@ -108,16 +125,7 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	t.Run("group", func(t *testing.T) {
-		//create tmp file to store fake image file
-		tmpFile, err := ioutil.TempFile("", "*.png")
-		assert.NoError(t, err)
-
-		err = tmpFile.Close()
-		assert.NoError(t, err)
-
-		defer os.Remove(tmpFile.Name())
-
-		artworkFile, err := newTestImageFile(filepath.Dir(tmpFile.Name()), filepath.Base(tmpFile.Name()))
+		artworkFile, err := newTestImageFile()
 		assert.NoError(t, err)
 
 		for i, testCase := range testCases {
@@ -145,7 +153,7 @@ func TestTaskRun(t *testing.T) {
 				pastelClientMock.
 					ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr).
 					ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr).
-					ListenOnSign(testCase.args.signature, testCase.args.returnErr)
+					ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr)
 
 				service := &Service{
 					pastelClient: pastelClientMock.Client,
@@ -159,12 +167,12 @@ func TestTaskRun(t *testing.T) {
 					ListenOnUpdateStatus().
 					ListenOnSetStatusNotifyFunc()
 
-				ticket := testCase.fields.Ticket
-				ticket.Image = artworkFile
+				Request := testCase.fields.Request
+				Request.Image = artworkFile
 				task := &Task{
 					Task:    taskClient.Task,
 					Service: service,
-					Ticket:  ticket,
+					Request: Request,
 				}
 
 				//create context with timeout to automatically end process after 1 sec
@@ -183,8 +191,8 @@ func TestTaskRun(t *testing.T) {
 				pastelClientMock.AssertSignCall(testCase.numSignCall,
 					mock.Anything,
 					testCase.args.fingerPrint,
-					ticket.ArtistPastelID,
-					ticket.ArtistPastelIDPassphrase,
+					Request.ArtistPastelID,
+					Request.ArtistPastelIDPassphrase,
 				)
 
 				// //nodeClient mock assertion
@@ -322,7 +330,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Ticket *Ticket
+		Request *Request
 	}
 
 	type args struct {
@@ -339,7 +347,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 	}{
 		{
 			fields: fields{
-				Ticket: &Ticket{MaximumFee: 0.5},
+				Request: &Request{MaximumFee: 0.5},
 			},
 			args: args{
 				ctx:        context.Background(),
@@ -350,7 +358,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 		},
 		{
 			fields: fields{
-				Ticket: &Ticket{MaximumFee: 0.5},
+				Request: &Request{MaximumFee: 0.5},
 			},
 			args: args{
 				ctx:        context.Background(),
@@ -384,7 +392,7 @@ func TestTaskIsSuitableStorageNetworkFee(t *testing.T) {
 
 			task := &Task{
 				Service: service,
-				Ticket:  testCase.fields.Ticket,
+				Request: testCase.fields.Request,
 			}
 
 			got, err := task.isSuitableStorageFee(testCase.args.ctx)
@@ -402,8 +410,8 @@ func TestTaskPastelTopNodes(t *testing.T) {
 	t.Parallel()
 
 	type fields struct {
-		Task   task.Task
-		Ticket *Ticket
+		Task    task.Task
+		Request *Request
 	}
 
 	type args struct {
@@ -420,7 +428,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 	}{
 		{
 			fields: fields{
-				Ticket: &Ticket{
+				Request: &Request{
 					MaximumFee: 0.30,
 				},
 			},
@@ -439,7 +447,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			assertion: assert.NoError,
 		}, {
 			fields: fields{
-				Ticket: &Ticket{
+				Request: &Request{
 					MaximumFee: 0.3,
 				},
 			},
@@ -482,7 +490,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 			task := &Task{
 				Task:    testCase.fields.Task,
 				Service: service,
-				Ticket:  testCase.fields.Ticket,
+				Request: testCase.fields.Request,
 			}
 			got, err := task.pastelTopNodes(testCase.args.ctx)
 			testCase.assertion(t, err)
@@ -501,11 +509,11 @@ func TestNewTask(t *testing.T) {
 
 	type args struct {
 		service *Service
-		Ticket  *Ticket
+		Request *Request
 	}
 
 	service := &Service{}
-	ticket := &Ticket{}
+	Request := &Request{}
 
 	testCases := []struct {
 		args args
@@ -514,12 +522,12 @@ func TestNewTask(t *testing.T) {
 		{
 			args: args{
 				service: service,
-				Ticket:  ticket,
+				Request: Request,
 			},
 			want: &Task{
 				Task:    task.New(StatusTaskStarted),
 				Service: service,
-				Ticket:  ticket,
+				Request: Request,
 			},
 		},
 	}
@@ -529,10 +537,1458 @@ func TestNewTask(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 			t.Parallel()
 
-			task := NewTask(testCase.args.service, testCase.args.Ticket)
+			task := NewTask(testCase.args.service, testCase.args.Request)
 			assert.Equal(t, testCase.want.Service, task.Service)
-			assert.Equal(t, testCase.want.Ticket, task.Ticket)
+			assert.Equal(t, testCase.want.Request, task.Request)
 			assert.Equal(t, testCase.want.Status().SubStatus, task.Status().SubStatus)
+		})
+	}
+}
+
+func TestTaskCreateTicket(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		task *Task
+	}
+
+	testCases := map[string]struct {
+		args    args
+		want    *pastel.ArtTicket
+		wantErr error
+	}{
+		"fingerprint-error": {
+			args: args{
+				task: &Task{
+					fingerprintSignature: []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					rqids:                []string{},
+					datahash:             []byte{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyFingerprints,
+			want:    nil,
+		},
+		"fingerprint-hash-error": {
+			args: args{
+				task: &Task{
+					fingerprint:          []byte{},
+					fingerprintSignature: []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					rqids:                []string{},
+					datahash:             []byte{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyFingerprintsHash,
+			want:    nil,
+		},
+		"fingerprint-signature-error": {
+			args: args{
+				task: &Task{
+					fingerprint:         []byte{},
+					fingerprintsHash:    []byte{},
+					previewHash:         []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					rqids:               []string{},
+					datahash:            []byte{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyFingerprintSignature,
+			want:    nil,
+		},
+		"data-hash-error": {
+			args: args{
+				task: &Task{
+					fingerprint:          []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					previewHash:          []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyDatahash,
+			want:    nil,
+		},
+		"preview-hash-error": {
+			args: args{
+				task: &Task{
+					fingerprint:          []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					datahash:             []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyPreviewHash,
+			want:    nil,
+		},
+		"medium-thumbnail-error": {
+			args: args{
+				task: &Task{
+					fingerprint:          []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					previewHash:          []byte{},
+					datahash:             []byte{},
+					smallThumbnailHash:   []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptyMediumThumbnailHash,
+			want:    nil,
+		},
+		"small-thumbnail-error": {
+			args: args{
+				task: &Task{
+					fingerprint:          []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					datahash:             []byte{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: errEmptySmallThumbnailHash,
+			want:    nil,
+		},
+		"raptorQ-symbols-error": {
+			args: args{
+				task: &Task{
+					fingerprint:          []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					datahash:             []byte{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service:              &Service{},
+					fingerprintAndScores: &pastel.FingerAndScores{},
+				},
+			},
+			wantErr: errEmptyRaptorQSymbols,
+			want:    nil,
+		},
+		"success": {
+			args: args{
+				task: &Task{
+					fingerprint:          []byte{},
+					fingerprintsHash:     []byte{},
+					fingerprintSignature: []byte{},
+					smallThumbnailHash:   []byte{},
+					mediumThumbnailHash:  []byte{},
+					previewHash:          []byte{},
+					datahash:             []byte{},
+					fingerprintAndScores: &pastel.FingerAndScores{},
+					rqids:                []string{},
+					Request: &Request{
+						ArtistPastelID: "test-id",
+						ArtistName:     "test-name",
+						IssuedCopies:   10,
+					},
+					Service: &Service{},
+				},
+			},
+			wantErr: nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			blockNum := 1
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetBlockCount(int32(blockNum), nil).
+				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			pastelID := base58.Decode(tc.args.task.Request.ArtistPastelID)
+
+			tc.want = &pastel.ArtTicket{
+				Version:  1,
+				Author:   pastelID,
+				BlockNum: tc.args.task.artistBlockHeight,
+				Copies:   tc.args.task.Request.IssuedCopies,
+				AppTicketData: pastel.AppTicket{
+					AuthorPastelID:                 tc.args.task.Request.ArtistPastelID,
+					BlockTxID:                      tc.args.task.blockTxID,
+					BlockNum:                       0,
+					ArtistName:                     tc.args.task.Request.ArtistName,
+					ArtistWebsite:                  safeString(tc.args.task.Request.ArtistWebsiteURL),
+					ArtistWrittenStatement:         safeString(tc.args.task.Request.Description),
+					ArtworkCreationVideoYoutubeURL: safeString(tc.args.task.Request.YoutubeURL),
+					ArtworkKeywordSet:              safeString(tc.args.task.Request.Keywords),
+					TotalCopies:                    tc.args.task.Request.IssuedCopies,
+					PreviewHash:                    tc.args.task.previewHash,
+					Thumbnail1Hash:                 tc.args.task.mediumThumbnailHash,
+					Thumbnail2Hash:                 tc.args.task.smallThumbnailHash,
+					DataHash:                       tc.args.task.datahash,
+					FingerprintsHash:               tc.args.task.fingerprintsHash,
+					FingerprintsSignature:          tc.args.task.fingerprintSignature,
+					RQIDs:                          tc.args.task.rqids,
+					RQOti:                          tc.args.task.rqEncodeParams.Oti,
+				},
+			}
+
+			err := tc.args.task.createArtTicket(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.Equal(t, tc.wantErr.Error(), err.Error())
+			} else {
+				assert.Nil(t, err)
+				assert.NotNil(t, tc.args.task.ticket)
+				assert.Equal(t, *tc.want, *tc.args.task.ticket)
+			}
+
+		})
+	}
+}
+
+func TestTaskGetBlock(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		task            *Task
+		blockCountErr   error
+		blockVerboseErr error
+		blockNum        int32
+		blockInfo       *pastel.GetBlockVerbose1Result
+	}
+
+	testCases := map[string]struct {
+		args                  args
+		wantArtistblockHash   []byte
+		wantArtistBlockHeight int
+		wantErr               error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				blockNum: int32(10),
+				blockInfo: &pastel.GetBlockVerbose1Result{
+					Hash: "000000007465737468617368",
+				},
+			},
+			wantArtistBlockHeight: 10,
+			wantErr:               nil,
+		},
+		"block-count-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				blockNum: int32(10),
+				blockInfo: &pastel.GetBlockVerbose1Result{
+					Hash: "000000007465737468617368",
+				},
+				blockCountErr: errors.New("block-count-err"),
+			},
+			wantArtistBlockHeight: 10,
+			wantErr:               errors.New("block-count-err"),
+		},
+		"block-verbose-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				blockNum: int32(10),
+				blockInfo: &pastel.GetBlockVerbose1Result{
+					Hash: "000000007465737468617368",
+				},
+				blockVerboseErr: errors.New("verbose-err"),
+			},
+			wantArtistBlockHeight: 10,
+			wantErr:               errors.New("verbose-err"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetBlockCount(tc.args.blockNum, tc.args.blockCountErr).
+				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			blockhash, err := hex.DecodeString(tc.args.blockInfo.Hash)
+			assert.Nil(t, err)
+			tc.wantArtistblockHash = blockhash
+
+			err = tc.args.task.getBlock(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.wantArtistblockHash, tc.args.task.artistBlockHash)
+				assert.Equal(t, tc.wantArtistBlockHeight, tc.args.task.artistBlockHeight)
+			}
+		})
+	}
+}
+
+func TestTaskConvertToSymbolIdFile(t *testing.T) {
+	t.Parallel()
+
+	testErrStr := "test-err"
+	type args struct {
+		task    *Task
+		signErr error
+		inFile  rqnode.RawSymbolIDFile
+	}
+
+	testCases := map[string]struct {
+		args     args
+		want     *rq.SymbolIDFile
+		wantErr  error
+		wantSign []byte
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				inFile: rqnode.RawSymbolIDFile{
+					ID:                uuid.New().String(),
+					SymbolIdentifiers: []string{"test-s1, test-s2"},
+					BlockHash:         "test-block-hash",
+					PastelID:          "test-pastel-id",
+				},
+			},
+			wantErr: nil,
+			want: &rq.SymbolIDFile{
+				ID:                uuid.New().String(),
+				BlockHash:         "test-block-hash",
+				SymbolIdentifiers: []string{"test-s1, test-s2"},
+				Signature:         []byte("test-signature"),
+			},
+			wantSign: []byte("test-signature"),
+		},
+		"error": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{},
+				},
+				signErr: errors.New(testErrStr),
+			},
+			wantErr: errors.New(testErrStr),
+			want:    nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			got, err := tc.args.task.convertToSymbolIDFile(context.Background(), tc.args.inFile)
+
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), testErrStr))
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.want.SymbolIdentifiers, got.SymbolIdentifiers)
+				assert.Equal(t, tc.want.BlockHash, got.BlockHash)
+				assert.Equal(t, tc.want.Signature, got.Signature)
+			}
+		})
+	}
+}
+
+func TestTaskGenRQIdentifiersFiles(t *testing.T) {
+	artworkFile, err := newTestImageFile()
+	assert.NoError(t, err)
+
+	type args struct {
+		task                *Task
+		connectErr          error
+		encodeInfoReturns   *rqnode.EncodeInfo
+		findTicketIDReturns *pastel.IDTicket
+		encodeInfoErr       error
+		readErr             error
+		signErr             error
+	}
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					imageEncodedWithFingerprints: artworkFile,
+				},
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": rqnode.RawSymbolIDFile{
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+				},
+				findTicketIDReturns: &pastel.IDTicket{
+					TXID: "test-txid",
+				},
+				readErr: io.EOF,
+			},
+			wantErr: nil,
+		},
+		"connect-error": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					imageEncodedWithFingerprints: artworkFile,
+				},
+				readErr: io.EOF,
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
+				},
+				findTicketIDReturns: &pastel.IDTicket{
+					TXID: "test-txid",
+				},
+				connectErr: errors.New("test-err"),
+			},
+			wantErr: errors.New("test-err"),
+		},
+
+		"encode-info-error": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					imageEncodedWithFingerprints: artworkFile,
+				},
+				readErr: io.EOF,
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
+				},
+				findTicketIDReturns: &pastel.IDTicket{
+					TXID: "test-txid",
+				},
+				encodeInfoErr: errors.New("test-err"),
+			},
+			wantErr: errors.New("test-err"),
+		},
+		"read-error": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					imageEncodedWithFingerprints: artworkFile,
+				},
+				readErr: errors.New("test-err"),
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
+				},
+			},
+			wantErr: errors.New("read image"),
+		},
+		"sign-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					imageEncodedWithFingerprints: artworkFile,
+				},
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": rqnode.RawSymbolIDFile{
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+				},
+				findTicketIDReturns: &pastel.IDTicket{
+					TXID: "test-txid",
+				},
+				readErr: io.EOF,
+				signErr: errors.New("tes-err"),
+			},
+			wantErr: errors.New("rqids file"),
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign([]byte("test-signature"), tc.args.signErr)
+			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			rqClientMock := rqMock.NewMockClient(t)
+			rqClientMock.ListenOnEncodeInfo(tc.args.encodeInfoReturns, tc.args.encodeInfoErr)
+			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
+			rqClientMock.ListenOnConnect(tc.args.connectErr)
+
+			tc.args.task.Service.rqClient = rqClientMock
+
+			fsMock := storageMock.NewMockFileStorage()
+			fileMock := storageMock.NewMockFile()
+			fileMock.ListenOnClose(nil).ListenOnRead(0, tc.args.readErr)
+
+			storage := artwork.NewStorage(fsMock)
+			tc.args.task.imageEncodedWithFingerprints = artwork.NewFile(storage, "test")
+			fsMock.ListenOnOpen(fileMock, nil)
+
+			tc.args.task.Request.Image = artwork.NewFile(storage, "test")
+
+			err := tc.args.task.genRQIdentifiersFiles(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				// TODO: fix this when the return error is define correctly
+				// assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				fmt.Printf("%s", err)
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskEncodeFingerprint(t *testing.T) {
+	type args struct {
+		task                *Task
+		fingerprint         []byte
+		img                 *artwork.File
+		signReturns         []byte
+		findTicketIDReturns *pastel.IDTicket
+		signErr             error
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{},
+				},
+				img:         &artwork.File{},
+				signReturns: []byte("test-signature"),
+				fingerprint: []byte("test-fingerprint"),
+				findTicketIDReturns: &pastel.IDTicket{
+					TXID: "test-txid",
+				},
+			},
+			wantErr: errors.New("failed to decode image"),
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
+			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
+
+			tc.args.task.Service.pastelClient = pastelClientMock
+			fileStorageMock := storageMock.NewMockFileStorage()
+			storage := artwork.NewStorage(fileStorageMock)
+
+			fileMock := storageMock.NewMockFile()
+			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF).ListenOnName("test")
+
+			file := artwork.NewFile(storage, "test-file")
+			fileStorageMock.ListenOnOpen(fileMock, nil)
+
+			err := tc.args.task.encodeFingerprint(context.Background(), tc.args.fingerprint, file)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				fmt.Println(err.Error())
+				assert.Nil(t, err)
+			}
+		})
+	}
+
+}
+
+func TestTaskSignTicket(t *testing.T) {
+	type args struct {
+		task        *Task
+		signErr     error
+		signReturns []byte
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket: &pastel.ArtTicket{},
+				},
+			},
+			wantErr: nil,
+		},
+		"err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket: &pastel.ArtTicket{},
+				},
+				signErr: errors.New("test"),
+			},
+			wantErr: errors.New("test"),
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			err := tc.args.task.signTicket(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tc.args.signReturns, tc.args.task.artistSignature)
+			}
+		})
+	}
+}
+
+func TestWaitTxnValid(t *testing.T) {
+	type args struct {
+		task                            *Task
+		getRawTransactionVerbose1RetErr error
+		getRawTransactionVerbose1Ret    *pastel.GetRawTransactionVerbose1Result
+		ctxDone                         bool
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"ctx-done-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				ctxDone: true,
+			},
+			wantErr: errors.New("context done"),
+		},
+		"get-raw-transaction-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				getRawTransactionVerbose1Ret:    &pastel.GetRawTransactionVerbose1Result{},
+				getRawTransactionVerbose1RetErr: errors.New("test"),
+			},
+			wantErr: errors.New("timeout"),
+		},
+		"insufficient-confirmations": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				getRawTransactionVerbose1Ret:    &pastel.GetRawTransactionVerbose1Result{Confirmations: 4},
+				getRawTransactionVerbose1RetErr: nil,
+			},
+			wantErr: errors.New("timeout"),
+		},
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+				},
+				getRawTransactionVerbose1Ret:    &pastel.GetRawTransactionVerbose1Result{Confirmations: 5},
+				getRawTransactionVerbose1RetErr: nil,
+			},
+			wantErr: nil,
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.args.getRawTransactionVerbose1Ret,
+				tc.args.getRawTransactionVerbose1RetErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			ctx, cancel := context.WithCancel(context.Background())
+			if tc.args.ctxDone {
+				cancel()
+			}
+
+			err := tc.args.task.waitTxidValid(ctx, "txid", 5, time.Second, 500*time.Millisecond)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+			cancel()
+		})
+	}
+
+}
+
+func TestTaskPreburntRegistrationFee(t *testing.T) {
+	type nodeArg struct {
+		address  string
+		pastelID string
+	}
+
+	type args struct {
+		task                  *Task
+		sendFromAddressRetErr error
+		burnTxnIDRet          string
+		preBurntFeeRetTxID    string
+		preBurntFeeRetErr     error
+		nodes                 []nodeArg
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"reg-fee-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket: &pastel.ArtTicket{},
+				},
+			},
+			wantErr: errors.New("registration fee"),
+		},
+		"send-from-address-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					registrationFee: 40,
+				},
+				sendFromAddressRetErr: errors.New("test"),
+			},
+			wantErr: errors.New("failed to burn"),
+		},
+		"send-preburnt-fee-err": {
+			args: args{
+				preBurntFeeRetErr: errors.New("test"),
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					registrationFee: 40,
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+				sendFromAddressRetErr: nil,
+				burnTxnIDRet:          "test-id",
+			},
+			wantErr: errors.New("failed to send pre-burn-txid"),
+		},
+		"regArtTxId-empty-err": {
+			args: args{
+				preBurntFeeRetTxID: "test-id",
+				preBurntFeeRetErr:  nil,
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					registrationFee: 40,
+				},
+				sendFromAddressRetErr: nil,
+				burnTxnIDRet:          "test-id",
+			},
+			wantErr: errors.New("regArtTxid is empty"),
+		},
+		"success": {
+			args: args{
+				preBurntFeeRetTxID: "test-id",
+				preBurntFeeRetErr:  nil,
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					registrationFee: 40,
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+				sendFromAddressRetErr: nil,
+				burnTxnIDRet:          "test-id",
+			},
+			wantErr: nil,
+		},
+	}
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSendFromAddress(tc.args.burnTxnIDRet, tc.args.sendFromAddressRetErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			nodeClient := test.NewMockClient(t)
+			nodeClient.
+				ListenOnConnect("", nil).
+				ListenOnRegisterArtwork().
+				ListenOnSession(nil).
+				ListenOnConnectTo(nil).
+				ListenOnSessID("").
+				ListenOnAcceptedNodes([]string{}, nil).
+				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
+
+			nodes := node.List{}
+			for _, n := range tc.args.nodes {
+				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
+				newNode.SetPrimary(true)
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+
+				nodes.Add(newNode)
+			}
+			tc.args.task.nodes = nodes
+
+			err := tc.args.task.preburntRegistrationFee(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskUploadImage(t *testing.T) {
+	type nodeArg struct {
+		address  string
+		pastelID string
+	}
+	type args struct {
+		task                    *Task
+		nodes                   []nodeArg
+		findTicketIDReturns     *pastel.IDTicket
+		previewHash             []byte
+		mediumHash              []byte
+		smallHash               []byte
+		uploadImageThumbnailErr error
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+				findTicketIDReturns: &pastel.IDTicket{
+					TXID: "test-txid",
+				},
+			},
+			wantErr: nil,
+		},
+		"upload-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+				findTicketIDReturns: &pastel.IDTicket{
+					TXID: "test-txid",
+				},
+				uploadImageThumbnailErr: errors.New("test"),
+			},
+			wantErr: errors.New("upload encoded image "),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+			artworkFile, err := newTestImageFile()
+			assert.NoError(t, err)
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign([]byte("test-signature"), nil)
+			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			tc.args.task.Task = task.New(&state.Status{})
+			nodeClient := test.NewMockClient(t)
+			nodeClient.
+				ListenOnConnect("", nil).
+				ListenOnRegisterArtwork().
+				ListenOnUploadImageWithThumbnail(tc.args.previewHash, tc.args.mediumHash,
+					tc.args.smallHash, tc.args.uploadImageThumbnailErr)
+
+			tc.args.task.Request.Image = artworkFile
+			nodes := node.List{}
+			for _, n := range tc.args.nodes {
+				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
+				newNode.SetPrimary(true)
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+
+				nodes.Add(newNode)
+			}
+			tc.args.task.nodes = nodes
+
+			err = tc.args.task.uploadImage(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskProbeImage(t *testing.T) {
+	type nodeArg struct {
+		address  string
+		pastelID string
+	}
+	type args struct {
+		task        *Task
+		nodes       []nodeArg
+		probeImgErr error
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{
+							thumbnailSize: 224,
+						},
+					},
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+			},
+			wantErr: nil,
+		},
+		"probe-img-err": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{
+							thumbnailSize: 224,
+						},
+					},
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+				probeImgErr: errors.New("test"),
+			},
+			wantErr: errors.New("failed to probe image"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+			artworkFile, err := newTestImageFile()
+			assert.NoError(t, err)
+
+			//need to remove generate thumbnail file
+			customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.FingerAndScores {
+				file.Remove()
+				finger := pastel.Fingerprint{0.1}
+				compressedFinger, _ := zstd.Compress(nil, finger.Bytes())
+				fingerAndScore := pastel.FingerAndScores{
+					ZstdCompressedFingerprint: compressedFinger,
+				}
+				return &fingerAndScore
+			}
+			tc.args.task.Task = task.New(&state.Status{})
+			nodeClient := test.NewMockClient(t)
+			nodeClient.
+				ListenOnConnect("", nil).
+				ListenOnRegisterArtwork().
+				ListenOnProbeImage(customProbeImageFunc, tc.args.probeImgErr)
+
+			tc.args.task.Request.Image = artworkFile
+			nodes := node.List{}
+			for _, n := range tc.args.nodes {
+				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
+				newNode.SetPrimary(true)
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+				nodes.Add(newNode)
+			}
+			tc.args.task.nodes = nodes
+
+			err = tc.args.task.probeImage(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				fmt.Printf("%v", err)
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskSendSignedTicket(t *testing.T) {
+	type nodeArg struct {
+		address  string
+		pastelID string
+	}
+	type args struct {
+		task                   *Task
+		sendSignedTicketRet    int64
+		sendSignedTicketRetErr error
+		preBurntFeeRetTxID     string
+		preBurntFeeRetErr      error
+		nodes                  []nodeArg
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"upload-err": {
+			args: args{
+				sendSignedTicketRetErr: errors.New("test"),
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+			},
+			wantErr: errors.New("upload signed ticket"),
+		},
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+			},
+			wantErr: nil,
+		},
+		"reg-fee-err": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+						MaximumFee:     -1,
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+			},
+			wantErr: errors.New("registration fee"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			nodeClient := test.NewMockClient(t)
+			nodeClient.
+				ListenOnConnect("", nil).
+				ListenOnRegisterArtwork().
+				ListenOnSession(nil).
+				ListenOnConnectTo(nil).
+				ListenOnSessID("").
+				ListenOnAcceptedNodes([]string{}, nil).
+				ListenOnSendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
+				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
+
+			nodes := node.List{}
+			for _, n := range tc.args.nodes {
+				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
+				newNode.SetPrimary(true)
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+
+				nodes.Add(newNode)
+			}
+			tc.args.task.nodes = nodes
+
+			err := tc.args.task.sendSignedTicket(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskConnectToTopRankNodes(t *testing.T) {
+	type nodeArg struct {
+		address  string
+		pastelID string
+	}
+	type args struct {
+		task              *Task
+		nodes             []nodeArg
+		masterNodesTopErr error
+		masterNodes       pastel.MasterNodes
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				masterNodes: pastel.MasterNodes{
+					pastel.MasterNode{Fee: 0.1, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
+					pastel.MasterNode{Fee: 0.3, ExtAddress: "127.0.0.1:4446", ExtKey: "3"},
+					pastel.MasterNode{Fee: 0.4, ExtAddress: "127.0.0.1:4447", ExtKey: "4"},
+				},
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+						MaximumFee:     1,
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+			},
+			wantErr: nil,
+		},
+		"master-nodes-err": {
+			args: args{
+				masterNodesTopErr: errors.New("test"),
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{},
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+			},
+			wantErr: errors.New("masternode top"),
+		},
+		"insufficient-sns-err": {
+			args: args{
+				masterNodesTopErr: nil,
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "testid",
+					},
+					Service: &Service{
+						config: &Config{NumberSuperNodes: 1},
+					},
+					ticket:          &pastel.ArtTicket{},
+					rqSymbolIDFiles: rq.SymbolIDFiles{},
+				},
+				nodes: []nodeArg{
+					{"127.0.0.1", "1"},
+					{"127.0.0.2", "2"},
+				},
+			},
+			wantErr: errors.New("unable to find enough Supernodes"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+			artworkFile, err := newTestImageFile()
+			assert.NoError(t, err)
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnSign([]byte("test-signature"), nil).
+				ListenOnMasterNodesTop(tc.args.masterNodes, tc.args.masterNodesTopErr)
+
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			//need to remove generate thumbnail file
+			tc.args.task.Task = task.New(&state.Status{})
+			nodeClient := test.NewMockClient(t)
+			nodeClient.
+				ListenOnConnect("", nil).
+				ListenOnRegisterArtwork().
+				ListenOnSession(nil).
+				ListenOnConnectTo(nil).
+				ListenOnSessID("").
+				ListenOnAcceptedNodes([]string{}, nil).
+				ListenOnClose(tc.wantErr)
+			tc.args.task.Service.nodeClient = nodeClient
+
+			tc.args.task.Request.Image = artworkFile
+			nodes := node.List{}
+			for _, n := range tc.args.nodes {
+				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
+				newNode.SetPrimary(true)
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+
+				nodes.Add(newNode)
+			}
+			tc.args.task.nodes = nodes
+
+			err = tc.args.task.connectToTopRankNodes(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
 		})
 	}
 }

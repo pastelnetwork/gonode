@@ -11,7 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/probe"
+	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
@@ -25,10 +25,10 @@ type Service struct {
 	*artwork.Storage
 
 	config       *Config
-	probeTensor  probe.Tensor
 	pastelClient pastel.Client
 	nodeClient   node.Client
 	p2pClient    p2p.Client
+	rqClient     rqnode.Client
 }
 
 // Run starts task
@@ -37,10 +37,6 @@ func (service *Service) Run(ctx context.Context) error {
 
 	if service.config.PastelID == "" {
 		return errors.New("PastelID is not specified in the config file")
-	}
-
-	if err := service.probeTensor.LoadModels(ctx); err != nil {
-		return err
 	}
 
 	group, ctx := errgroup.WithContext(ctx)
@@ -67,13 +63,13 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, fileStorage storage.FileStorage, probeTensor probe.Tensor, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client) *Service {
+func NewService(config *Config, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client, rqClient rqnode.Client) *Service {
 	return &Service{
 		config:       config,
-		probeTensor:  probeTensor,
 		pastelClient: pastelClient,
 		nodeClient:   nodeClient,
 		p2pClient:    p2pClient,
+		rqClient:     rqClient,
 		Worker:       task.NewWorker(),
 		Storage:      artwork.NewStorage(fileStorage),
 	}

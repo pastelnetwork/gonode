@@ -2,9 +2,11 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
@@ -20,6 +22,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	mdlgrpc "github.com/pastelnetwork/gonode/metadb/network/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/pastel"
+	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/services"
 	"github.com/pastelnetwork/gonode/walletnode/configs"
@@ -138,7 +141,21 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
-	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient)
+	// raptorq client
+	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
+	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
+	rqClient := rqgrpc.NewClient()
+
+	// burn address
+	// TODO: this should be hardcoded with format like Ptxxxxxxx
+	config.ArtworkRegister.BurnAddress = config.BurnAddress
+	config.ArtworkRegister.RegArtTxMinConfirmations = config.RegArtTxMinConfirmations
+	config.ArtworkRegister.RegArtTxTimeout = time.Duration(config.RegArtTxTimeout * int(time.Minute))
+	config.ArtworkRegister.RegActTxMinConfirmations = config.RegActTxMinConfirmations
+	config.ArtworkRegister.RegActTxTimeout = time.Duration(config.RegActTxTimeout * int(time.Minute))
+
+	// business logic services
+	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient, rqClient)
 	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, p2p, nodeClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
 

@@ -202,7 +202,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Us
 		// sign the data if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %d", task.ConnectedTo == nil)
 		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, task.ConnectedTo == nil); err != nil {
-			return errors.Errorf("failed to signed and send SuperNodeRequest")
+			return errors.Errorf("failed to signed and send SuperNodeRequest:%w", err)
 		}
 		return nil
 	})
@@ -248,7 +248,7 @@ func (task *Task) ReceiveUserdata(ctx context.Context, userpastelid string) (use
 // Sign and send SNDataSigned if not primary
 func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.SuperNodeRequest, isPrimary bool) error {
 	log.WithContext(ctx).Debugf("signAndSendSNDataSigned begin to sign SuperNodeRequest")
-	signature, err := task.pastelClient.Sign(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), task.config.PastelID, task.config.PassPhrase)
+	signature, err := task.pastelClient.Sign(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), task.config.PastelID, task.config.PassPhrase, "ed448")
 	if err != nil {
 		return errors.Errorf("failed to sign sndata %w", err)
 	}
@@ -299,7 +299,7 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataPro
 			errors.Errorf("failed to decode signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
 		}
-		if ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID); err != nil {
+		if ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID, "ed448"); err != nil {
 			errors.Errorf("failed to verify signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
 		} else {

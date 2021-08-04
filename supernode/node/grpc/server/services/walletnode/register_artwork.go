@@ -2,14 +2,18 @@ package walletnode
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/base64"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/service/artwork"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"golang.org/x/crypto/sha3"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
@@ -160,22 +164,205 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		}
 	}
 
-	fingerprint, err := task.ProbeImage(ctx, image)
+	fingerAndScores, err := task.ProbeImage(ctx, image)
 	if err != nil {
 		return err
 	}
-	if fingerprint == nil {
-		return errors.New("could not compute fingerprint data")
-	}
 
 	resp := &pb.ProbeImageReply{
-		Fingerprint: fingerprint,
+		DupeDetectionVersion:      fingerAndScores.DupeDectectionSystemVersion,
+		HashOfCandidateImg:        fingerAndScores.HashOfCandidateImageFile,
+		IsLikelyDupe:              int32(fingerAndScores.IsLikelyDupe),
+		AverageRarenessScore:      fingerAndScores.OverallAverageRarenessScore,
+		IsRareOnInternet:          int32(fingerAndScores.IsRareOnInternet),
+		MatchesFoundOnFirstPage:   int32(fingerAndScores.MatchesFoundOnFirstPage),
+		NumberOfPagesOfResults:    int32(fingerAndScores.NumberOfPagesOfResults),
+		UrlOfFirstMatchInPage:     fingerAndScores.URLOfFirstMatchInPage,
+		OpenNsfwScore:             fingerAndScores.OpenNSFWScore,
+		ZstdCompressedFingerprint: fingerAndScores.ZstdCompressedFingerprint,
+		AlternativeNsfwScore: &pb.ProbeImageReply_AlternativeNSFWScore{
+			Drawing: fingerAndScores.AlternativeNSFWScore.Drawing,
+			Hentai:  fingerAndScores.AlternativeNSFWScore.Hentai,
+			Neutral: fingerAndScores.AlternativeNSFWScore.Neutral,
+			Porn:    fingerAndScores.AlternativeNSFWScore.Porn,
+			Sexy:    fingerAndScores.AlternativeNSFWScore.Sexy,
+		},
+		ImageHashes: &pb.ProbeImageReply_ImageHashes{
+			PerceptualHash: fingerAndScores.ImageHashes.PerceptualHash,
+			AverageHash:    fingerAndScores.ImageHashes.AverageHash,
+			DifferenceHash: fingerAndScores.ImageHashes.DifferenceHash,
+		},
 	}
+
 	if err := stream.SendAndClose(resp); err != nil {
 		return errors.Errorf("failed to send ProbeImage response: %w", err)
 	}
-	log.WithContext(ctx).WithField("fingerprintLenght", len(resp.Fingerprint)).Debugf("ProbeImage response")
 	return nil
+}
+
+// UploadImage implements walletnode.RegisterArtwork.UploadImageWithThumbnail
+func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
+	ctx := stream.Context()
+
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return errors.Errorf("task not found %w", err)
+	}
+
+	image := service.Storage.NewFile()
+	imageFile, err := image.Create()
+	if err != nil {
+		return errors.Errorf("failed to open image file %q: %w", imageFile.Name(), err)
+	}
+	log.WithContext(ctx).WithField("filename", imageFile.Name()).Debugf("UploadImageWithThumbnail request")
+
+	imageWriter := bufio.NewWriter(imageFile)
+
+	imageSize := int64(0)
+	thumbnail := artwork.ThumbnailCoordinate{}
+	hash := make([]byte, 0)
+
+	err = func() error {
+		defer imageFile.Close()
+		defer imageWriter.Flush()
+
+		for {
+			req, err := stream.Recv()
+			if err != nil {
+				if err == io.EOF {
+					break
+				}
+				if status.Code(err) == codes.Canceled {
+					return errors.New("connection closed")
+				}
+				return errors.Errorf("failed to receive UploadImageWithThumbnail: %w", err)
+			}
+
+			if imagePiece := req.GetImagePiece(); imagePiece != nil {
+				n, err := imageWriter.Write(imagePiece)
+				imageSize += int64(n)
+				if err != nil {
+					return errors.Errorf("failed to write to file %q: %w", imageFile.Name(), err)
+				}
+			} else {
+				if metaData := req.GetMetaData(); metaData != nil {
+					if metaData.Size != imageSize {
+						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size, imageSize)
+					}
+
+					cordinates := metaData.GetThumbnail()
+					if cordinates == nil {
+						return errors.Errorf("no thumbnail coordinates")
+					}
+					thumbnail.TopLeftX = cordinates.TopLeftX
+					thumbnail.TopLeftY = cordinates.TopLeftY
+					thumbnail.BottomRightX = cordinates.BottomRightX
+					thumbnail.BottomRightY = cordinates.BottomRightY
+
+					if metaData.Hash == nil {
+						return errors.Errorf("empty hash")
+					}
+					hash = metaData.Hash
+
+					if metaData.Format != "" {
+						if err := image.SetFormatFromExtension(metaData.Format); err != nil {
+							return errors.Errorf("failed to set format %s for file %s", metaData.Format, image.Name())
+						}
+					}
+				}
+			}
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	err = func() error {
+		hasher := sha3.New256()
+		f, fileErr := image.Open()
+		if fileErr != nil {
+			return errors.Errorf("failed to open file %w", fileErr)
+		}
+		defer f.Close()
+
+		if _, err := io.Copy(hasher, f); err != nil {
+			return errors.Errorf("hash file failed %w", err)
+		}
+		hashFromPayload := hasher.Sum(nil)
+		if !bytes.Equal(hashFromPayload, hash) {
+			log.WithField("Filename", imageFile.Name()).Debugf("caculated from payload %s", base64.URLEncoding.EncodeToString(hashFromPayload))
+			log.WithField("Filename", imageFile.Name()).Debugf("sent by client %s", base64.URLEncoding.EncodeToString(hash))
+			return errors.Errorf("wrong hash")
+		}
+
+		return nil
+	}()
+
+	if err != nil {
+		return err
+	}
+
+	previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, err := task.UploadImageWithThumbnail(ctx, image, thumbnail)
+	if err != nil {
+		return err
+	}
+
+	resp := &pb.UploadImageReply{
+		PreviewThumbnailHash: previewThumbnailHash[:],
+		MediumThumbnailHash:  mediumThumbnailHash[:],
+		SmallThumbnailHash:   smallThumbnailHash[:],
+	}
+	log.WithContext(ctx).Debugf("preview thumbnail hash: %x\n", previewThumbnailHash)
+	log.WithContext(ctx).Debugf("medium thumbnail hash: %x\n", mediumThumbnailHash)
+	log.WithContext(ctx).Debugf("small thumbnail hash: %x\n", smallThumbnailHash)
+
+	if err := stream.SendAndClose(resp); err != nil {
+		return errors.Errorf("failed to send UploadImageAndThumbnail response: %w", err)
+	}
+
+	return nil
+}
+
+// SendSignedArtTicket implements walletnode.RegisterArtwork.SendSignedArtTicket
+func (service *RegisterArtwork) SendSignedArtTicket(ctx context.Context, req *pb.SendSignedArtTicketRequest) (*pb.SendSignedArtTicketReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SignTicket request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to get task from metada %w", err)
+	}
+
+	registrationFee, err := task.GetRegistrationFee(ctx, req.ArtTicket, req.ArtistSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
+	if err != nil {
+		return nil, errors.Errorf("failed to get total storage fee %w", err)
+	}
+
+	rsp := pb.SendSignedArtTicketReply{
+		RegistrationFee: registrationFee,
+	}
+
+	return &rsp, nil
+}
+
+// SendPreBurntFeeTxid implements walletnode.RegisterArtwork.SendPreBurntFeeTxid
+func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (*pb.SendPreBurntFeeTxidReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurntFeeTxidRequest request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to get task from meta data %w", err)
+	}
+
+	artRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
+	if err != nil {
+		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
+	}
+
+	rsp := pb.SendPreBurntFeeTxidReply{
+		ArtRegTxid: artRegTxid,
+	}
+	return &rsp, nil
 }
 
 // Desc returns a description of the service.

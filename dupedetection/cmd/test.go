@@ -35,7 +35,7 @@ func main() {
 	ctx := context.Background()
 	result, err := client.Generate(ctx, defaultTestImage)
 	if err != nil {
-		fmt.Errorf("could not get fringerprints from dupe detection service: %v\n", err)
+		fmt.Printf("could not get fringerprints from dupe detection service: %v\n", err)
 		return
 	}
 	fmt.Printf("Dupe detection system version: %s\n", result.DupeDetectionSystemVer)

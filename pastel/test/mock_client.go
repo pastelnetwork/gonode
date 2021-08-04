@@ -24,6 +24,21 @@ const (
 	// RegTicketMethod represent RegTicket name method
 	RegTicketMethod = "RegTicket"
 
+	// GetBlockVerbose1Method represent GetBlockVerbose1 method
+	GetBlockVerbose1Method = "GetBlockVerbose1"
+
+	// GetBlockCountMethod represent  GetBlockCount method
+	GetBlockCountMethod = "GetBlockCount"
+
+	// FindTicketByIDMethod represent find ticket by ID method
+	FindTicketByIDMethod = "FindTicketByID"
+
+	// SendFromAddressMethod represent send from address method
+	SendFromAddressMethod = "SendFromAddress"
+
+	// GetRawTransactionVerbose1Method  represent GetRawTransactionVerbose1 method
+	GetRawTransactionVerbose1Method = "GetRawTransactionVerbose1"
+
 	// TicketOwnershipMethod represents TicketOwnership method name
 	TicketOwnershipMethod = "TicketOwnership"
 
@@ -62,7 +77,19 @@ func (client *Client) ListenOnStorageNetworkFee(fee float64, returnErr error) *C
 
 // ListenOnSign listening Sign call aand returns values from args
 func (client *Client) ListenOnSign(signature []byte, returnErr error) *Client {
-	client.On(SignMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string(""))).Return(signature, returnErr)
+	client.On(SignMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(signature, returnErr)
+	return client
+}
+
+// ListenOnSendFromAddress listening Send From Address Method & return txn id & err from args
+func (client *Client) ListenOnSendFromAddress(burnTxnID string, returnErr error) *Client {
+	client.On(SendFromAddressMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(burnTxnID, returnErr)
+	return client
+}
+
+// ListenOnGetRawTransactionVerbose1 listens on GetRawTransactionVerbose1 & return result & err
+func (client *Client) ListenOnGetRawTransactionVerbose1(res *pastel.GetRawTransactionVerbose1Result, returnErr error) *Client {
+	client.On(GetRawTransactionVerbose1Method, mock.Anything, mock.IsType(string(""))).Return(res, returnErr)
 	return client
 }
 
@@ -107,6 +134,24 @@ func (client *Client) ListenOnRegTicket(id string, ticket pastel.RegTicket, err 
 	return client
 }
 
+// ListenOnGetBlockCount listening GetBlockCount and returns blockNum and error from args
+func (client *Client) ListenOnGetBlockCount(blockNum int32, err error) *Client {
+	client.On(GetBlockCountMethod, mock.Anything).Return(blockNum, err)
+	return client
+}
+
+// ListenOnGetBlockVerbose1 listening GetBlockVerbose1 and returns blockNum and error from args
+func (client *Client) ListenOnGetBlockVerbose1(blockInfo *pastel.GetBlockVerbose1Result, err error) *Client {
+	client.On(GetBlockVerbose1Method, mock.Anything, mock.Anything).Return(blockInfo, err)
+	return client
+}
+
+// ListenOnFindTicketByID listening FindTicketByID
+func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err error) *Client {
+	client.On(FindTicketByIDMethod, mock.Anything, mock.Anything).Return(idticket, err)
+	return client
+}
+
 // AssertRegTicketCall RegTicket call assertion
 func (client *Client) AssertRegTicketCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
@@ -148,7 +193,7 @@ func (client *Client) AssertListAvailableTradeTicketsCall(expectedCalls int, arg
 
 // ListenOnVerify listening Verify call and returns values from args
 func (client *Client) ListenOnVerify(isValid bool, returnErr error) *Client {
-	client.On(VerifyMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string(""))).Return(isValid, returnErr)
+	client.On(VerifyMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(isValid, returnErr)
 	return client
 }
 

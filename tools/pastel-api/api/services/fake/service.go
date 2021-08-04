@@ -44,9 +44,9 @@ func (service *service) Handle(_ context.Context, r *http.Request, method string
 		return newMasterNodeStatusByNode(node), nil
 	default:
 		switch {
-		case strings.HasPrefix(routePath, "pastelid_sign_") && len(params) == 4:
+		case strings.HasPrefix(routePath, "pastelid_sign_") && len(params) == 5:
 			return newPastelID(params[2]).sign(params[1]), nil
-		case strings.HasPrefix(routePath, "pastelid_verify_") && len(params) == 4:
+		case strings.HasPrefix(routePath, "pastelid_verify_") && len(params) == 5:
 			return newPastelID(params[3]).verify(params[1], params[2]), nil
 		}
 	}

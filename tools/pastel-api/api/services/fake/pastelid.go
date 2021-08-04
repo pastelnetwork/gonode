@@ -19,9 +19,13 @@ func (pastel PastelID) sign(text string) *models.PastelIDSign {
 }
 
 func (pastel PastelID) verify(text, signature string) *models.PastelIDVerify {
+	var verification string
+	if pastel.signature(text) == signature {
+		verification = "OK"
 
+	}
 	return &models.PastelIDVerify{
-		Verification: pastel.signature(text) == signature,
+		Verification: verification,
 	}
 }
 

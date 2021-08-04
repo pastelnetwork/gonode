@@ -33,3 +33,7 @@ userdb:
   schema-path: ../metadb/database/commands/schema.sql
   write-template-path: ../metadb/database/commands/user_info_write.tmpl
   query-template-path: ../metadb/database/commands/user_info_query.tmpl
+dupe-detection:
+  input_dir: "input"
+  output_dir: "output"
+  data_file: "dupe_detection_image_fingerprint_database.sqlite"
