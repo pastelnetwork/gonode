@@ -86,7 +86,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			return nil
 		}
 
-		pastelID := string(artRegTicket.RegTicketData.ArtTicketData.Author)
+		pastelID := base58.Encode(artRegTicket.RegTicketData.ArtTicketData.Author)
 
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
@@ -280,7 +280,6 @@ func (task *Task) decodeRegTicket(artRegTicket *pastel.RegTicket) error {
 	if err != nil {
 		return errors.Errorf("Could not parse app ticket. %w", err)
 	}
-
 	return nil
 }
 
