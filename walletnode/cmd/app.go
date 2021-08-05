@@ -128,7 +128,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// entities
 	pastelClient := pastel.NewClient(config.Pastel)
-	nodeClient := grpc.NewClient()
+	nodeClient := grpc.NewClient(pastelClient)
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
 	p2p := p2p.New(config.P2P)

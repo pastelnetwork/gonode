@@ -8,6 +8,7 @@ package node
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -16,7 +17,7 @@ import (
 // Client represents a base connection interface.
 type Client interface {
 	// Connect connects to the server at the given address.
-	Connect(ctx context.Context, address string) (Connection, error)
+	Connect(ctx context.Context, address string, secInfo *alts.SecInfo) (Connection, error)
 }
 
 // Connection represents a client connection

@@ -7,6 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload/node"
@@ -79,9 +80,14 @@ func (task *Task) run(ctx context.Context) error {
 
 	var connectedNodes node.List
 	var errs error
+	secInfo := &alts.SecInfo{
+		PastelID:   task.Ticket.PastelID,
+		PassPhrase: task.Ticket.PastelIDPassphrase,
+		Algorithm:  "ed448",
+	}
 	// Connect to top supernodes
 	for _, node := range topNodes {
-		if err := node.Connect(ctx, task.config.connectTimeout); err == nil {
+		if err := node.Connect(ctx, task.config.connectTimeout, secInfo); err == nil {
 			log.WithContext(ctx).WithError(err).WithField("address", node.String()).WithField("pastelid", node.PastelID()).Debug("Connected to supernode")
 			connectedNodes.Add(node)
 		} else {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -93,7 +94,11 @@ func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.
 func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket) (data []byte, err error) {
 	thumbnailHelper := thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectTimeout)
 
-	if err := thumbnailHelper.Connect(ctx, 1); err != nil {
+	if err := thumbnailHelper.Connect(ctx, 1, &alts.SecInfo{
+		PastelID:   "",
+		PassPhrase: "",
+		Algorithm:  "ed448",
+	}); err != nil {
 		return data, fmt.Errorf("connect Thumbnail helper : %s", err)
 	}
 	defer thumbnailHelper.Close()

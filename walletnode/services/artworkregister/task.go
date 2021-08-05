@@ -16,6 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
@@ -286,9 +287,14 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 // meshNodes establishes communication between supernodes.
 func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex int) (node.List, error) {
 	var meshNodes node.List
+	secInfo := &alts.SecInfo{
+		PastelID:   task.Request.ArtistPastelID,
+		PassPhrase: task.Request.ArtistPastelIDPassphrase,
+		Algorithm:  "ed448",
+	}
 
 	primary := nodes[primaryIndex]
-	if err := primary.Connect(ctx, task.config.ConnectTimeout); err != nil {
+	if err := primary.Connect(ctx, task.config.ConnectTimeout, secInfo); err != nil {
 		return nil, err
 	}
 	if err := primary.Session(ctx, true); err != nil {
@@ -316,7 +322,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 				go func() {
 					defer errors.Recover(log.Fatal)
 
-					if err := node.Connect(ctx, task.config.ConnectTimeout); err != nil {
+					if err := node.Connect(ctx, task.config.ConnectTimeout, secInfo); err != nil {
 						return
 					}
 					if err := node.Session(ctx, false); err != nil {

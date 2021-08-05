@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
@@ -142,7 +143,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// entities
 	pastelClient := pastel.NewClient(config.Pastel)
-	nodeClient := client.New()
+	secInfo := &alts.SecInfo{
+		PastelID:   config.PastelID,
+		PassPhrase: "passphare",
+	}
+	nodeClient := client.New(pastelClient, secInfo)
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// analysis tools
@@ -174,6 +179,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// server
 	grpc := server.New(config.Server,
+		pastelClient,
+		secInfo,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),
