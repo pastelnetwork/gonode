@@ -6,12 +6,12 @@ package system
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
+	// "os"
+	// "path/filepath"
 	"testing"
 	"time"
 
-	"golang.org/x/sync/errgroup"
+	// "golang.org/x/sync/errgroup"
 )
 
 func Test_SingleNode(t *testing.T) {
@@ -137,7 +137,7 @@ func Test_SingleNodeMulti(t *testing.T) {
 		t.Fatalf("test received wrong result got %s", r)
 	}
 }
-
+/*
 func Test_SingleNodeConcurrentRequests(t *testing.T) {
 	var err error
 	node := mustNewLeaderNode(context.TODO())
@@ -170,8 +170,8 @@ func Test_SingleNodeConcurrentRequests(t *testing.T) {
 	if r != `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[200]]}]}` {
 		t.Fatalf("test received wrong result got %s", r)
 	}
-}
-
+}*/
+/*
 func Test_SingleNodeConcurrentRequestsCompressed(t *testing.T) {
 	var err error
 	node := mustNewLeaderNode(context.TODO())
@@ -204,7 +204,7 @@ func Test_SingleNodeConcurrentRequestsCompressed(t *testing.T) {
 	if r != `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[200]]}]}` {
 		t.Fatalf("test received wrong result got %s", r)
 	}
-}
+}*/
 
 func Test_SingleParameterizedNode(t *testing.T) {
 	node := mustNewLeaderNode(context.TODO())
@@ -348,7 +348,7 @@ func Test_SingleNodeNoSQLInjection(t *testing.T) {
 		}
 	}
 }
-
+/*
 func Test_SingleNodeRestart(t *testing.T) {
 	// Deprovision of a node deletes the node's dir, so make a copy first.
 	srcdir := filepath.Join("testdata", "v6.0.0-data")
@@ -389,7 +389,7 @@ func Test_SingleNodeRestart(t *testing.T) {
 
 		n++
 	}
-}
+}*/
 
 func Test_SingleNodeNodes(t *testing.T) {
 	node := mustNewLeaderNode(context.TODO())
