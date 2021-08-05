@@ -23,6 +23,7 @@ func main() {
 	app := cmd.NewApp()
 	err := app.Run(os.Args)
 
+	log.Info("Test CI")
 	log.FatalAndExit(err)
 }
 
