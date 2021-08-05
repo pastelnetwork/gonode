@@ -51,7 +51,7 @@ func (service *Userdata) UpdateUserdata(ctx context.Context, req *userdatas.Upda
 }
 
 // ProcessUserdata will send userdata to Super Nodes to store in Metadata layer
-func (service *Userdata) processUserdata(ctx context.Context, request *userdata.UserdataProcessRequest) (*userdatas.UserdataProcessResult, error) {
+func (service *Userdata) processUserdata(ctx context.Context, request *userdata.ProcessRequest) (*userdatas.UserdataProcessResult, error) {
 	taskID := service.process.AddTask(request, "")
 	task := service.process.Task(taskID)
 

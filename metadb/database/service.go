@@ -80,34 +80,34 @@ func (db *DatabaseOps) WriteUserData(ctx context.Context, data pb.UserdataReques
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) (userdata.UserdataProcessRequest, error) {
+func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) (userdata.ProcessRequest, error) {
 	command, err := substituteTemplate(db.queryTemplate, artistPastelID)
 	if err != nil {
-		return userdata.UserdataProcessRequest{}, errors.Errorf("error while subtitute template: %w", err)
+		return userdata.ProcessRequest{}, errors.Errorf("error while subtitute template: %w", err)
 	}
 
 	queryResult, err := db.metaDB.Query(ctx, command, queryLevelNone)
 	if err != nil {
-		return userdata.UserdataProcessRequest{}, errors.Errorf("error while querying db: %w", err)
+		return userdata.ProcessRequest{}, errors.Errorf("error while querying db: %w", err)
 	}
 
 	nrows := queryResult.NumRows()
 	if nrows == 0 {
-		return userdata.UserdataProcessRequest{}, errors.Errorf("no artist with pastel id = %s", artistPastelID)
+		return userdata.ProcessRequest{}, errors.Errorf("no artist with pastel id = %s", artistPastelID)
 	} else if nrows > 1 {
-		return userdata.UserdataProcessRequest{}, errors.Errorf("upto %d records are returned", nrows)
+		return userdata.ProcessRequest{}, errors.Errorf("upto %d records are returned", nrows)
 	}
 
 	//right here we make sure that there is just 1 row in the result
 	queryResult.Next()
 	resultMap, err := queryResult.Map()
 	if err != nil {
-		return userdata.UserdataProcessRequest{}, errors.Errorf("error while extracting result: %w", err)
+		return userdata.ProcessRequest{}, errors.Errorf("error while extracting result: %w", err)
 	}
 
 	var dbResult UserdataReadResult
 	if err := mapstructure.Decode(resultMap, &dbResult); err != nil {
-		return userdata.UserdataProcessRequest{}, errors.Errorf("error while decoding result: %w", err)
+		return userdata.ProcessRequest{}, errors.Errorf("error while decoding result: %w", err)
 	}
 
 	return dbResult.ToUserData(), nil

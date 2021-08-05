@@ -168,12 +168,12 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 }
 
 // SupernodeProcessUserdata process the userdata send from Walletnode
-func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.UserdataProcessRequestSigned) (userdata.UserdataProcessResult, error) {
+func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.ProcessRequestSigned) (userdata.ProcessResult, error) {
 	log.WithContext(ctx).Debugf("supernodeProcessUserdata on user PastelID: %s", req.Userdata.ArtistPastelID)
 
 	validateResult, err := task.validateUserdata(req.Userdata)
 	if err != nil {
-		return userdata.UserdataProcessResult{}, errors.Errorf("failed to validateUserdata")
+		return userdata.ProcessResult{}, errors.Errorf("failed to validateUserdata")
 	}
 	if validateResult.ResponseCode == userdata.ErrorOnContent {
 		// If the request from Walletnode fail the validation, return the response to Walletnode and stop process further
@@ -186,12 +186,12 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Us
 	// Marshal validateResult to byte array for signing
 	js, err := json.Marshal(validateResult)
 	if err != nil {
-		return userdata.UserdataProcessResult{}, errors.Errorf("failed to encode validateResult %w", err)
+		return userdata.ProcessResult{}, errors.Errorf("failed to encode validateResult %w", err)
 	}
 	// Hash the validateResult
 	hashvalue, err := userdata.Sha3256hash(js)
 	if err != nil {
-		return userdata.UserdataProcessResult{}, errors.Errorf("failed to hash userdata %w", err)
+		return userdata.ProcessResult{}, errors.Errorf("failed to hash userdata %w", err)
 	}
 	snRequest.UserdataResultHash = hex.EncodeToString(hashvalue)
 	snRequest.UserdataHash = req.UserdataHash
@@ -208,7 +208,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Us
 	})
 
 	// only primary node start this action
-	var processResult userdata.UserdataProcessResult
+	var processResult userdata.ProcessResult
 	if task.ConnectedTo == nil {
 		<-task.NewAction(func(ctx context.Context) error {
 			log.WithContext(ctx).Debug("waiting for signature from peers")
@@ -238,7 +238,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Us
 }
 
 // ReceiveUserdata get the userdata from database
-func (task *Task) ReceiveUserdata(ctx context.Context, userpastelid string) (userdata.UserdataProcessRequest, error) {
+func (task *Task) ReceiveUserdata(ctx context.Context, userpastelid string) (userdata.ProcessRequest, error) {
 	log.WithContext(ctx).Debugf("ReceiveUserdata on user PastelID: %s", userpastelid)
 
 	// only primary node start this action
@@ -288,7 +288,7 @@ func (task *Task) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.Su
 	return nil
 }
 
-func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataProcessResult, error) {
+func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResult, error) {
 	log.WithContext(ctx).Debugf("all supernode data signed received so start validation")
 	successCount := 0
 	dataMatchingCount := 0
@@ -320,26 +320,26 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.UserdataPro
 		// If there is not enough signed data from other supernodes
 		// or signed data cannot be verify
 		// or signed data have signature mismatch
-		return userdata.UserdataProcessResult{
+		return userdata.ProcessResult{
 			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm,
 			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
 		}, nil
 	} else if dataMatchingCount < task.config.MinimalNodeConfirmSuccess - 1 {
 		// If the userdata between supernodes is not matching with each other
-		return userdata.UserdataProcessResult{
+		return userdata.ProcessResult{
 			ResponseCode: userdata.ErrorUserdataMismatchBetweenSupernode,
 			Detail:       userdata.Description[userdata.ErrorUserdataMismatchBetweenSupernode],
 		}, nil
 	}
 	// Success
-	return userdata.UserdataProcessResult{
+	return userdata.ProcessResult{
 		ResponseCode: userdata.SuccessVerifyAllSignature,
 		Detail:       userdata.Description[userdata.SuccessVerifyAllSignature],
 	}, nil
 }
 
-func (task *Task) validateUserdata(req *userdata.UserdataProcessRequest) (userdata.UserdataProcessResult, error) {
-	result := userdata.UserdataProcessResult{}
+func (task *Task) validateUserdata(req *userdata.ProcessRequest) (userdata.ProcessResult, error) {
+	result := userdata.ProcessResult{}
 
 	contentValidation := userdata.SuccessValidateContent
 

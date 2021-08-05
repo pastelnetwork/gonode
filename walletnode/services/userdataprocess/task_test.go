@@ -36,11 +36,11 @@ func TestTask_Run(t *testing.T) {
 		Task          task.Task
 		Service       *Service
 		nodes         node.List
-		resultChan    chan *userdata.UserdataProcessResult
+		resultChan    chan *userdata.ProcessResult
 		err           error
-		request       *userdata.UserdataProcessRequest
+		request       *userdata.ProcessRequest
 		userpastelid  string
-		resultChanGet chan *userdata.UserdataProcessRequest
+		resultChanGet chan *userdata.ProcessRequest
 	}
 	type args struct {
 		ctx context.Context
@@ -77,11 +77,11 @@ func TestTask_run(t *testing.T) {
 		Task          task.Task
 		Service       *Service
 		nodes         node.List
-		resultChan    chan *userdata.UserdataProcessResult
+		resultChan    chan *userdata.ProcessResult
 		err           error
-		request       *userdata.UserdataProcessRequest
+		request       *userdata.ProcessRequest
 		userpastelid  string
-		resultChanGet chan *userdata.UserdataProcessRequest
+		resultChanGet chan *userdata.ProcessRequest
 	}
 	type args struct {
 		ctx context.Context
@@ -118,11 +118,11 @@ func TestTask_AggregateResult(t *testing.T) {
 		Task          task.Task
 		Service       *Service
 		nodes         node.List
-		resultChan    chan *userdata.UserdataProcessResult
+		resultChan    chan *userdata.ProcessResult
 		err           error
-		request       *userdata.UserdataProcessRequest
+		request       *userdata.ProcessRequest
 		userpastelid  string
-		resultChanGet chan *userdata.UserdataProcessRequest
+		resultChanGet chan *userdata.ProcessRequest
 	}
 	type args struct {
 		ctx   context.Context
@@ -132,7 +132,7 @@ func TestTask_AggregateResult(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    userdata.UserdataProcessResult
+		want    userdata.ProcessResult
 		wantErr bool
 	}{
 		// TODO: Add test cases.
@@ -427,14 +427,14 @@ func TestTask_Error(t *testing.T) {
 
 func TestTask_SubscribeProcessResult(t *testing.T) {
 	type fields struct {
-		resultChan chan *userdata.UserdataProcessResult
+		resultChan chan *userdata.ProcessResult
 	}
 
-	resultChan := make(chan *userdata.UserdataProcessResult)
+	resultChan := make(chan *userdata.ProcessResult)
 
 	tests := []struct {
 		fields fields
-		want   <-chan *userdata.UserdataProcessResult
+		want   <-chan *userdata.ProcessResult
 	}{
 		{
 			fields: fields{
@@ -458,14 +458,14 @@ func TestTask_SubscribeProcessResult(t *testing.T) {
 func TestTask_SubscribeProcessResultGet(t *testing.T) {
 	t.Parallel()
 	type fields struct {
-		resultChanGet chan *userdata.UserdataProcessRequest
+		resultChanGet chan *userdata.ProcessRequest
 	}
 
-	chanGet := make(chan *userdata.UserdataProcessRequest)
+	chanGet := make(chan *userdata.ProcessRequest)
 
 	tests := []struct {
 		fields fields
-		want   <-chan *userdata.UserdataProcessRequest
+		want   <-chan *userdata.ProcessRequest
 	}{
 		{
 			fields: fields{
@@ -491,12 +491,12 @@ func TestNewTask(t *testing.T) {
 
 	type args struct {
 		service      *Service
-		request      *userdata.UserdataProcessRequest
+		request      *userdata.ProcessRequest
 		userpastelid string
 	}
 
 	service := &Service{}
-	request := &userdata.UserdataProcessRequest{}
+	request := &userdata.ProcessRequest{}
 
 	tests := []struct {
 		args args

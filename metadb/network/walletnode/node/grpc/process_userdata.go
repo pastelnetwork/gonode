@@ -113,7 +113,7 @@ func (service *processUserdata) ConnectTo(ctx context.Context, nodeID, sessID st
 }
 
 // SendUserdata implements node.ProcessUserdata.SendUserdata()
-func (service *processUserdata) SendUserdata(ctx context.Context, request *userdata.UserdataProcessRequestSigned) (result *userdata.UserdataProcessResult, err error) {
+func (service *processUserdata) SendUserdata(ctx context.Context, request *userdata.ProcessRequestSigned) (result *userdata.ProcessResult, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -156,7 +156,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 	}
 
 	// Convert protobuf response to UserdataProcessResult then return it
-	result = &userdata.UserdataProcessResult{
+	result = &userdata.ProcessResult{
 		ResponseCode:    resp.ResponseCode,
 		Detail:          resp.Detail,
 		Realname:        resp.Realname,
@@ -174,7 +174,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 }
 
 // ReceiveUserdata implements node.ProcessUserdata.ReceiveUserdata()
-func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpastelid string) (result *userdata.UserdataProcessRequest, err error) {
+func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpastelid string) (result *userdata.ProcessRequest, err error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -202,7 +202,7 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 	}
 
 	// Convert protobuf request to UserdataProcessRequest
-	response := userdata.UserdataProcessRequest{
+	response := userdata.ProcessRequest{
 		Realname:          resp.Realname,
 		FacebookLink:      resp.FacebookLink,
 		TwitterLink:       resp.TwitterLink,

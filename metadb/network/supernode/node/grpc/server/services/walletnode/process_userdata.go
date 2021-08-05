@@ -158,8 +158,8 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 		return nil, errors.Errorf("Request receive from walletnode is nil")
 	}
 	// Convert protobuf request to UserdataProcessRequest
-	request := userdata.UserdataProcessRequestSigned{
-		Userdata: &userdata.UserdataProcessRequest{
+	request := userdata.ProcessRequestSigned{
+		Userdata: &userdata.ProcessRequest{
 			Realname:        req.Realname,
 			FacebookLink:    req.FacebookLink,
 			TwitterLink:     req.TwitterLink,

@@ -13,9 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
-	"google.golang.org/grpc/status"
 )
 
 // ProcessUserdata represents grpc service for processing userdata.

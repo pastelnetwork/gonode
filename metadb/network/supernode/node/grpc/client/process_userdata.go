@@ -97,7 +97,7 @@ func (service *processUserdata) SendUserdataToPrimary(ctx context.Context, dataS
 	}, err
 }
 
-func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalUserdata userdata.UserdataProcessRequestSigned) (userdata.SuperNodeReply, error) {
+func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalUserdata userdata.ProcessRequestSigned) (userdata.SuperNodeReply, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 

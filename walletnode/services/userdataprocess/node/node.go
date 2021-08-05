@@ -16,8 +16,8 @@ type Node struct {
 	activated bool
 	address   string
 	pastelID  string
-	Result    *userdata.UserdataProcessResult
-	ResultGet *userdata.UserdataProcessRequest
+	Result    *userdata.ProcessResult
+	ResultGet *userdata.ProcessRequest
 	isPrimary bool
 }
 

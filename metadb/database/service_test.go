@@ -168,7 +168,7 @@ var (
 		PreviousBlockHash: "hash",
 	}
 
-	data3ReadResult = userdata.UserdataProcessRequest{
+	data3ReadResult = userdata.ProcessRequest{
 		Realname:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
@@ -190,7 +190,7 @@ var (
 		PreviousBlockHash: "hash",
 	}
 
-	data4ReadResult = userdata.UserdataProcessRequest{
+	data4ReadResult = userdata.ProcessRequest{
 		Realname:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
@@ -523,7 +523,7 @@ func (ts *testSuite) TestDatabaseOps_ReadUserData() {
 	tests := []struct {
 		name    string
 		args    args
-		want    userdata.UserdataProcessRequest
+		want    userdata.ProcessRequest
 		wantErr bool
 	}{
 		{

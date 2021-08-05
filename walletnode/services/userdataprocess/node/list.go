@@ -63,7 +63,7 @@ func (nodes *List) FindByPastelID(id string) *Node {
 }
 
 // SendUserdata sends the userdata to supernodes for verification and store in MDL
-func (nodes *List) SendUserdata(ctx context.Context, req *userdata.UserdataProcessRequestSigned) error {
+func (nodes *List) SendUserdata(ctx context.Context, req *userdata.ProcessRequestSigned) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node

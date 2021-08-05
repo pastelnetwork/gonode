@@ -133,8 +133,8 @@ type UserdataReadResult struct {
 	UserdataHash string `mapstructure:"user_data_hash"`
 }
 
-func (d *UserdataReadResult) ToUserData() userdata.UserdataProcessRequest {
-	return userdata.UserdataProcessRequest{
+func (d *UserdataReadResult) ToUserData() userdata.ProcessRequest {
+	return userdata.ProcessRequest{
 		Realname:        d.Realname,
 		FacebookLink:    d.FacebookLink,
 		TwitterLink:     d.TwitterLink,

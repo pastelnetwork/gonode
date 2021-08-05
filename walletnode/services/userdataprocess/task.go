@@ -22,13 +22,13 @@ type Task struct {
 
 	// information of nodes process to set userdata
 	nodes      node.List
-	resultChan chan *userdata.UserdataProcessResult
+	resultChan chan *userdata.ProcessResult
 	err        error
-	request    *userdata.UserdataProcessRequest
+	request    *userdata.ProcessRequest
 
 	// information user pastelid to retrieve userdata
 	userpastelid  string // user pastelid
-	resultChanGet chan *userdata.UserdataProcessRequest
+	resultChanGet chan *userdata.ProcessRequest
 }
 
 // Run starts the task
@@ -164,7 +164,7 @@ func (task *Task) run(ctx context.Context) error {
 			return errors.Errorf("failed to sign ticket %w", err)
 		}
 
-		userdata := &userdata.UserdataProcessRequestSigned{
+		userdata := &userdata.ProcessRequestSigned{
 			Userdata:     task.request,
 			UserdataHash: hex.EncodeToString(hashvalue),
 			Signature:    hex.EncodeToString(signature),
@@ -195,7 +195,7 @@ func (task *Task) run(ctx context.Context) error {
 }
 
 // AggregateResult aggregate all results return by all supernode, and consider it valid or not
-func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdata.UserdataProcessResult, error) {
+func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdata.ProcessResult, error) {
 	// There is following common scenarios when supernodes response:
 	// 1. Secondary node and primary node both response userdata validation result error
 	// 2. Secondary node response userdata validation result success and primary node provide further processing result
@@ -207,7 +207,7 @@ func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdat
 		if node.IsPrimary() {
 			result := node.Result
 			if result == nil {
-				return userdata.UserdataProcessResult{}, errors.Errorf("Primary node have empty result")
+				return userdata.ProcessResult{}, errors.Errorf("Primary node have empty result")
 			}
 			return *result, nil
 		}
@@ -240,7 +240,7 @@ func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdat
 
 	if count < task.config.MinimalNodeConfirmSuccess {
 		// If there is not enough reponse from supernodes
-		return userdata.UserdataProcessResult{
+		return userdata.ProcessResult{
 			ResponseCode: userdata.ErrorNotEnoughSupernodeResponse,
 			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeResponse],
 		}, nil
@@ -256,7 +256,7 @@ func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdat
 	}
 
 	if len(aggregate[finalHashKey]) < task.config.MinimalNodeConfirmSuccess {
-		return userdata.UserdataProcessResult{
+		return userdata.ProcessResult{
 			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm,
 			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
 		}, nil
@@ -268,7 +268,7 @@ func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdat
 		return result, nil
 	} */
 
-	return userdata.UserdataProcessResult{}, errors.Errorf("failed to Aggregate Result")
+	return userdata.ProcessResult{}, errors.Errorf("failed to Aggregate Result")
 }
 
 // meshNodes establishes communication between supernodes.
@@ -374,23 +374,23 @@ func (task *Task) Error() error {
 }
 
 // SubscribeProcessResult returns the result state of userdata process
-func (task *Task) SubscribeProcessResult() <-chan *userdata.UserdataProcessResult {
+func (task *Task) SubscribeProcessResult() <-chan *userdata.ProcessResult {
 	return task.resultChan
 }
 
 // SubscribeProcessResultGet returns the result state of userdata process
-func (task *Task) SubscribeProcessResultGet() <-chan *userdata.UserdataProcessRequest {
+func (task *Task) SubscribeProcessResultGet() <-chan *userdata.ProcessRequest {
 	return task.resultChanGet
 }
 
 // NewTask returns a new Task instance.
-func NewTask(service *Service, request *userdata.UserdataProcessRequest, userpastelid string) *Task {
+func NewTask(service *Service, request *userdata.ProcessRequest, userpastelid string) *Task {
 	return &Task{
 		Task:          task.New(StatusTaskStarted),
 		Service:       service,
 		request:       request,
 		userpastelid:  userpastelid,
-		resultChan:    make(chan *userdata.UserdataProcessResult),
-		resultChanGet: make(chan *userdata.UserdataProcessRequest),
+		resultChan:    make(chan *userdata.ProcessResult),
+		resultChanGet: make(chan *userdata.ProcessRequest),
 	}
 }

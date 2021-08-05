@@ -48,7 +48,7 @@ func (service *Service) Task(id string) *Task {
 }
 
 // AddTask runs a new task of the userdata process and returns its taskID.
-func (service *Service) AddTask(request *userdata.UserdataProcessRequest, retrieve string) string {
+func (service *Service) AddTask(request *userdata.ProcessRequest, retrieve string) string {
 	task := NewTask(service, request, retrieve)
 	service.Worker.AddTask(task)
 

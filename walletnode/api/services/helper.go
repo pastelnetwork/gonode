@@ -170,8 +170,8 @@ func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Tic
 }
 
 // fromUserdataCreateRequest convert the request receive from swagger api to request object that will send to super nodes
-func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.UserdataProcessRequest {
-	request := &userdata.UserdataProcessRequest{}
+func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.ProcessRequest {
+	request := &userdata.ProcessRequest{}
 
 	if req.Realname != nil {
 		request.Realname = *(req.Realname)
@@ -219,8 +219,8 @@ func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.U
 }
 
 // fromUserdataUpdateRequest convert the request receive from swagger api to request object that will send to super nodes
-func fromUserdataUpdateRequest(req *userdatas.UpdateUserdataPayload) *userdata.UserdataProcessRequest {
-	request := &userdata.UserdataProcessRequest{}
+func fromUserdataUpdateRequest(req *userdatas.UpdateUserdataPayload) *userdata.ProcessRequest {
+	request := &userdata.ProcessRequest{}
 
 	if req.Realname != nil {
 		request.Realname = *(req.Realname)
@@ -268,7 +268,7 @@ func fromUserdataUpdateRequest(req *userdatas.UpdateUserdataPayload) *userdata.U
 }
 
 // toUserdataProcessResult convert the final response receive from super nodes and reponse to swagger api
-func toUserdataProcessResult(result *userdata.UserdataProcessResult) *userdatas.UserdataProcessResult {
+func toUserdataProcessResult(result *userdata.ProcessResult) *userdatas.UserdataProcessResult {
 	res := &userdatas.UserdataProcessResult{
 		ResponseCode:    int(result.ResponseCode),
 		Detail:          result.Detail,
@@ -285,7 +285,7 @@ func toUserdataProcessResult(result *userdata.UserdataProcessResult) *userdatas.
 	return res
 }
 
-func toUserSpecifiedData(req *userdata.UserdataProcessRequest) *userdatas.UserSpecifiedData {
+func toUserSpecifiedData(req *userdata.ProcessRequest) *userdatas.UserSpecifiedData {
 	result := &userdatas.UserSpecifiedData{}
 
 	result.Realname = &req.Realname
