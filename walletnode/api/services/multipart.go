@@ -159,10 +159,16 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 
 				switch part.FormName() {
 				case "avatar_image":
-					res.AvatarImage = &userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+					res.AvatarImage = &userdatas.UserImageUploadPayload{
+						Content:  filePart.Bytes(),
+						Filename: &filename,
+					}
 					break
 				case "cover_photo":
-					res.CoverPhoto = &userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+					res.CoverPhoto = &userdatas.UserImageUploadPayload{
+						Content:  filePart.Bytes(),
+						Filename: &filename,
+					}
 					break
 				}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
@@ -253,10 +259,16 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 
 				switch part.FormName() {
 				case "avatar_image":
-					res.AvatarImage = &userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+					res.AvatarImage = &userdatas.UserImageUploadPayload{
+						Content:  filePart.Bytes(),
+						Filename: &filename,
+					}
 					break
 				case "cover_photo":
-					res.CoverPhoto = &userdatas.UserImageUploadPayload{filePart.Bytes(), &filename}
+					res.CoverPhoto = &userdatas.UserImageUploadPayload{
+						Content:  filePart.Bytes(),
+						Filename: &filename,
+					}
 					break
 				}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)

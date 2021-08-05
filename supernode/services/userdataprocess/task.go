@@ -200,8 +200,12 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 
 	<-task.NewAction(func(ctx context.Context) error {
 		// sign the data if not primary node
-		log.WithContext(ctx).Debugf("isPrimary: %d", task.ConnectedTo == nil)
-		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, task.ConnectedTo == nil); err != nil {
+		isPrimary := false
+		if task.ConnectedTo == nil {
+			isPrimary = true
+		}
+		log.WithContext(ctx).Debugf("isPrimary: %t", isPrimary)
+		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, isPrimary); err != nil {
 			return errors.Errorf("failed to signed and send SuperNodeRequest:%w", err)
 		}
 		return nil
@@ -403,7 +407,7 @@ func (task *Task) validateUserdata(req *userdata.ProcessRequest) (userdata.Proce
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
-	log.WithContext(ctx).Debugf("master node %s", masterNodes)
+	// log.WithContext(ctx).Debugf("master node %s", masterNodes)
 
 	if err != nil {
 		return nil, err

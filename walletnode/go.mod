@@ -18,7 +18,9 @@ require (
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0
 	github.com/sahilm/fuzzy v0.1.0
+	github.com/spf13/viper v1.7.1 // indirect
 	github.com/stretchr/testify v1.7.0
+	github.com/urfave/cli/v2 v2.3.0 // indirect
 	go.uber.org/atomic v1.8.0 // indirect
 	goa.design/goa/v3 v3.4.3
 	goa.design/plugins/v3 v3.4.3
