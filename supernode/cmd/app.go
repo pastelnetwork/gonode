@@ -55,8 +55,8 @@ var (
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 
 	rqliteDefaultPort = 4446
-	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
-	defaultDdWorkDir        = filepath.Join(homePath, ddWorkDir)
+	defaultRqFilesDir = filepath.Join(defaultPath, rqFilesDir)
+	defaultDdWorkDir  = filepath.Join(homePath, ddWorkDir)
 )
 
 // NewApp inits a new command line interface.
@@ -155,7 +155,7 @@ func getDatabaseNodes(ctx context.Context, pastelClient pastel.Client) ([]string
 
 	// Important notice !!!
 	// Enable this line below to run rqlite with 1 leader and multiple replicas, if want to test the real rqlite cluster behavior
-	// Otherwise, this will run rqlite cluster with every node as a rqlite leader, and data to highest rank SN can write directly to its local rqlite 
+	// Otherwise, this will run rqlite cluster with every node as a rqlite leader, and data to highest rank SN can write directly to its local rqlite
 	// return []string{"0.0.0.0:4041"}, nil
 
 	return nodeIPList, nil

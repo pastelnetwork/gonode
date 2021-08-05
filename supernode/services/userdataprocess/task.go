@@ -2,11 +2,11 @@ package userdataprocess
 
 import (
 	"context"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
-	"encoding/hex"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -19,11 +19,11 @@ var imageAllowExtension = []string{".png", ".jpeg", ".jpg"}
 
 const (
 	// TODO: Move this to config pass from app.go later.
-	imageMinSizeLimit         = 10 * 1024   //10kB
-	imageMaxSizeLimit         = 1000 * 1024 //1000kB
-	biographyTextLengthLimit  = 1000
-	facebookLongURL           = "facebook.com"
-	facebookShortURL          = "fb.com"
+	imageMinSizeLimit        = 10 * 1024   //10kB
+	imageMaxSizeLimit        = 1000 * 1024 //1000kB
+	biographyTextLengthLimit = 1000
+	facebookLongURL          = "facebook.com"
+	facebookShortURL         = "fb.com"
 )
 
 // Task is the task of registering new artwork.
@@ -131,7 +131,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 
 		log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
 
-		if len(task.accepted) >= task.config.NumberSuperNodes - 1 {
+		if len(task.accepted) >= task.config.NumberSuperNodes-1 {
 			task.UpdateStatus(StatusConnected)
 		}
 		return nil
@@ -316,7 +316,7 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResu
 		}
 	}
 
-	if successCount < task.config.MinimalNodeConfirmSuccess - 1 {
+	if successCount < task.config.MinimalNodeConfirmSuccess-1 {
 		// If there is not enough signed data from other supernodes
 		// or signed data cannot be verify
 		// or signed data have signature mismatch
@@ -324,7 +324,7 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResu
 			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm,
 			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
 		}, nil
-	} else if dataMatchingCount < task.config.MinimalNodeConfirmSuccess - 1 {
+	} else if dataMatchingCount < task.config.MinimalNodeConfirmSuccess-1 {
 		// If the userdata between supernodes is not matching with each other
 		return userdata.ProcessResult{
 			ResponseCode: userdata.ErrorUserdataMismatchBetweenSupernode,
@@ -431,7 +431,7 @@ func (task *Task) getRQliteLeaderNode(ctx context.Context, extAddress string) (*
 
 	node := &Node{
 		client:  task.Service.nodeClient,
-		ID:      "", // We don't need to care about ID of the leader node. 
+		ID:      "", // We don't need to care about ID of the leader node.
 		Address: extAddress,
 	}
 	return node, nil
