@@ -25,6 +25,7 @@ require (
 )
 
 replace (
+	github.com/kolesa-team/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/common => ../common
 	github.com/pastelnetwork/gonode/dupedetection => ../dupedetection
 	github.com/pastelnetwork/gonode/metadb => ../metadb
