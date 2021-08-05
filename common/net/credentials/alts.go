@@ -43,28 +43,28 @@ func DefaultServerOptions() *ServerOptions {
 type altsTC struct {
 	info      *credentials.ProtocolInfo
 	side      alts.Side
-	signInfo  *alts.SignInfo
+	secInfo   *alts.SecInfo
 	secClient alts.SecClient
 }
 
 // NewClientCreds constructs a client-side ALTS TransportCredentials object.
-func NewClientCreds(auth alts.SecClient, info *alts.SignInfo) credentials.TransportCredentials {
+func NewClientCreds(auth alts.SecClient, info *alts.SecInfo) credentials.TransportCredentials {
 	return newALTS(alts.ClientSide, auth, info)
 }
 
 // NewServerCreds constructs a server-side ALTS TransportCredentials object.
-func NewServerCreds(secClient alts.SecClient, info *alts.SignInfo) credentials.TransportCredentials {
+func NewServerCreds(secClient alts.SecClient, info *alts.SecInfo) credentials.TransportCredentials {
 	return newALTS(alts.ServerSide, secClient, info)
 }
 
-func newALTS(side alts.Side, secClient alts.SecClient, info *alts.SignInfo) credentials.TransportCredentials {
+func newALTS(side alts.Side, secClient alts.SecClient, info *alts.SecInfo) credentials.TransportCredentials {
 	return &altsTC{
 		info: &credentials.ProtocolInfo{
 			SecurityProtocol: "alts",
 			SecurityVersion:  "0.1",
 		},
 		side:      side,
-		signInfo:  info,
+		secInfo:   info,
 		secClient: secClient,
 	}
 }
@@ -78,7 +78,7 @@ func (g *altsTC) ClientHandshake(ctx context.Context, _ string, rawConn net.Conn
 		return nil, nil, err
 	}
 
-	secureConn, authInfo, err := chs.ClientHandshake(ctx, g.secClient, g.signInfo)
+	secureConn, authInfo, err := chs.ClientHandshake(ctx, g.secClient, g.secInfo)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -98,7 +98,7 @@ func (g *altsTC) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthIn
 		return nil, nil, err
 	}
 
-	secureConn, authInfo, err := shs.ServerHandshake(ctx, g.secClient, g.signInfo)
+	secureConn, authInfo, err := shs.ServerHandshake(ctx, g.secClient, g.secInfo)
 	if err != nil {
 		return nil, nil, err
 	}

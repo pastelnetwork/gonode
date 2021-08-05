@@ -36,7 +36,7 @@ func (c *FakePastelClient) SetErrorVerify() {
 	c.errorVerify = true
 }
 
-func (c *FakePastelClient) Sign(_ context.Context, data []byte, pastelID, _ string) ([]byte, error) {
+func (c *FakePastelClient) Sign(_ context.Context, data []byte, pastelID, _ string, _ string) ([]byte, error) {
 	signature := make([]byte, 20)
 	rand.Read(signature)
 	c.signatures[pastelID] = signature
@@ -47,7 +47,7 @@ func (c *FakePastelClient) Sign(_ context.Context, data []byte, pastelID, _ stri
 	return signature, nil
 }
 
-func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, pastelID string) (ok bool, err error) {
+func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, pastelID string, _ string) (ok bool, err error) {
 	ret := true
 	if sig, ok := c.signatures[pastelID]; ok {
 		ret = ret && bytes.Equal([]byte(signature), sig)
@@ -63,12 +63,12 @@ func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, pas
 	return ret, nil
 }
 func TestSecretConnWithGRPC(t *testing.T) {
-	signInfoClient := &alts.SignInfo{
+	secInfoClient := &alts.SecInfo{
 		PastelID:   "client_pastel_id",
 		PassPhrase: "client_pass_phrase",
 	}
 
-	signInfoServer := &alts.SignInfo{
+	secInfoServer := &alts.SecInfo{
 		PastelID:   "server_pastel_id",
 		PassPhrase: "server_pass_phrase",
 	}
@@ -78,7 +78,7 @@ func TestSecretConnWithGRPC(t *testing.T) {
 		data:       make(map[string][]byte),
 	}
 
-	altsTCServer := NewServerCreds(secClient, signInfoServer)
+	altsTCServer := NewServerCreds(secClient, secInfoServer)
 	s := &greeter.Greeter{}
 	server := grpc.NewServer(grpc.Creds(altsTCServer))
 	greeter.RegisterGreeterServiceServer(server, s)
@@ -96,7 +96,7 @@ func TestSecretConnWithGRPC(t *testing.T) {
 		server.Serve(ln)
 	}()
 
-	altsTCClient := NewClientCreds(secClient, signInfoClient)
+	altsTCClient := NewClientCreds(secClient, secInfoClient)
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
 	defer cancel()
 
@@ -126,12 +126,12 @@ func TestSecretConnWithGRPC(t *testing.T) {
 }
 
 func TestErrorSignInHandshake(t *testing.T) {
-	signInfoClient := &alts.SignInfo{
+	secInfoClient := &alts.SecInfo{
 		PastelID:   "client_pastel_id",
 		PassPhrase: "client_pass_phrase",
 	}
 
-	signInfoServer := &alts.SignInfo{
+	secInfoServer := &alts.SecInfo{
 		PastelID:   "server_pastel_id",
 		PassPhrase: "server_pass_phrase",
 	}
@@ -142,7 +142,7 @@ func TestErrorSignInHandshake(t *testing.T) {
 	}
 	secClient.SetErrorSign()
 
-	altsTCServer := NewServerCreds(secClient, signInfoServer)
+	altsTCServer := NewServerCreds(secClient, secInfoServer)
 	s := &greeter.Greeter{}
 	server := grpc.NewServer(grpc.Creds(altsTCServer))
 	greeter.RegisterGreeterServiceServer(server, s)
@@ -160,7 +160,7 @@ func TestErrorSignInHandshake(t *testing.T) {
 		server.Serve(ln)
 	}()
 
-	altsTCClient := NewClientCreds(secClient, signInfoClient)
+	altsTCClient := NewClientCreds(secClient, secInfoClient)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -179,12 +179,12 @@ func TestErrorSignInHandshake(t *testing.T) {
 }
 
 func TestErrorVerifyInHandshake(t *testing.T) {
-	signInfoClient := &alts.SignInfo{
+	secInfoClient := &alts.SecInfo{
 		PastelID:   "client_pastel_id",
 		PassPhrase: "client_pass_phrase",
 	}
 
-	signInfoServer := &alts.SignInfo{
+	secInfoServer := &alts.SecInfo{
 		PastelID:   "server_pastel_id",
 		PassPhrase: "server_pass_phrase",
 	}
@@ -195,7 +195,7 @@ func TestErrorVerifyInHandshake(t *testing.T) {
 	}
 	secClient.SetErrorVerify()
 
-	altsTCServer := NewServerCreds(secClient, signInfoServer)
+	altsTCServer := NewServerCreds(secClient, secInfoServer)
 	s := &greeter.Greeter{}
 	server := grpc.NewServer(grpc.Creds(altsTCServer))
 	greeter.RegisterGreeterServiceServer(server, s)
@@ -213,7 +213,7 @@ func TestErrorVerifyInHandshake(t *testing.T) {
 		server.Serve(ln)
 	}()
 
-	altsTCClient := NewClientCreds(secClient, signInfoClient)
+	altsTCClient := NewClientCreds(secClient, secInfoClient)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -232,7 +232,7 @@ func TestErrorVerifyInHandshake(t *testing.T) {
 }
 
 func TestMismatchTypeGrpcServer(t *testing.T) {
-	signInfoClient := &alts.SignInfo{
+	secInfoClient := &alts.SecInfo{
 		PastelID:   "client_pastel_id",
 		PassPhrase: "client_pass_phrase",
 	}
@@ -259,7 +259,7 @@ func TestMismatchTypeGrpcServer(t *testing.T) {
 		server.Serve(ln)
 	}()
 
-	altsTCClient := NewClientCreds(client, signInfoClient)
+	altsTCClient := NewClientCreds(client, secInfoClient)
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
@@ -276,7 +276,7 @@ func TestMismatchTypeGrpcServer(t *testing.T) {
 }
 
 func TestMismatchTypeGrpcClient(t *testing.T) {
-	signInfoServer := &alts.SignInfo{
+	secInfoServer := &alts.SecInfo{
 		PastelID:   "server_pastel_id",
 		PassPhrase: "server_pass_phrase",
 	}
@@ -286,7 +286,7 @@ func TestMismatchTypeGrpcClient(t *testing.T) {
 		data:       make(map[string][]byte),
 	}
 
-	altsTCServer := NewServerCreds(secClient, signInfoServer)
+	altsTCServer := NewServerCreds(secClient, secInfoServer)
 	s := &greeter.Greeter{}
 	server := grpc.NewServer(grpc.Creds(altsTCServer))
 	greeter.RegisterGreeterServiceServer(server, s)

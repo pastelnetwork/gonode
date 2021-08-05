@@ -21,10 +21,10 @@ type Side int
 type Handshaker interface {
 	// ClientHandshake starts and completes a client-side handshaking and
 	// returns a secure connection and corresponding auth information.
-	ClientHandshake(ctx context.Context, secClient SecClient, signInfo *SignInfo) (net.Conn, credentials.AuthInfo, error)
+	ClientHandshake(ctx context.Context, secClient SecClient, secInfo *SecInfo) (net.Conn, credentials.AuthInfo, error)
 	// ServerHandshake starts and completes a server-side handshaking and
 	// returns a secure connection and corresponding auth information.
-	ServerHandshake(ctx context.Context, secClient SecClient, signInfo *SignInfo) (net.Conn, credentials.AuthInfo, error)
+	ServerHandshake(ctx context.Context, secClient SecClient, secInfo *SecInfo) (net.Conn, credentials.AuthInfo, error)
 }
 
 // ProtocolInfo provides information regarding the gRPC wire protocol version,
@@ -47,13 +47,14 @@ type ProtocolInfo struct {
 // SecClient defines a secure client interface
 type SecClient interface {
 	// Sign signs data by the given pastelID and passphrase, if successful returns signature.
-	Sign(ctx context.Context, data []byte, pastelID, passphrase string) (signature []byte, err error)
+	Sign(ctx context.Context, data []byte, pastelID, passphrase string, algorithm string) (signature []byte, err error)
 	// Verify verifies signed data by the given its signature and pastelID, if successful returns true.
-	Verify(ctx context.Context, data []byte, signature, pastelID string) (ok bool, err error)
+	Verify(ctx context.Context, data []byte, signature, pastelID string, algorithm string) (ok bool, err error)
 }
 
-// SignInfo is information for signing
-type SignInfo struct {
+// SecInfo is information for signing
+type SecInfo struct {
 	PastelID   string
 	PassPhrase string
+	Algorithm  string
 }
