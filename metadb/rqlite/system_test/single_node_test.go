@@ -10,7 +10,6 @@ import (
 	// "path/filepath"
 	"testing"
 	"time"
-
 	// "golang.org/x/sync/errgroup"
 )
 
@@ -137,6 +136,7 @@ func Test_SingleNodeMulti(t *testing.T) {
 		t.Fatalf("test received wrong result got %s", r)
 	}
 }
+
 /*
 func Test_SingleNodeConcurrentRequests(t *testing.T) {
 	var err error
@@ -348,6 +348,7 @@ func Test_SingleNodeNoSQLInjection(t *testing.T) {
 		}
 	}
 }
+
 /*
 func Test_SingleNodeRestart(t *testing.T) {
 	// Deprovision of a node deletes the node's dir, so make a copy first.
