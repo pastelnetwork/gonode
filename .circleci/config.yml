@@ -169,7 +169,7 @@ commands:
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Check existence of linux/amd64 build and upload to GitHub"
               test -f $LINUX_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-linux-amd64 --file << parameters.binaryName >>-linux-amd64
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-ubuntu20.04-amd64 --file << parameters.binaryName >>-linux-amd64
             fi
             if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
               echo "Check existence of darwin-10.14/amd64 build and upload to GitHub"
@@ -179,7 +179,7 @@ commands:
             if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
               echo "Check existence of windows/amd64 build and upload to GitHub"
               test -f $WINDOWS_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-windows-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-win-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
             fi
   install_tensorflow:
     steps:
