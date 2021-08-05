@@ -217,7 +217,7 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 	return nil
 }
 
-func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) error {
+func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.SecClient, secInfo *alts.SecInfo) error {
 	challengeA := make([]byte, challengeSize)
 	rand.Read(challengeA)
 
@@ -240,7 +240,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	dataSign := make([]byte, challengeSize+ED448PubKeySize)
 	dataSign = append(dataSign, pub[:]...)
 	dataSign = append(dataSign, challengeB...)
-	signature, err := secClient.Sign(ctx, dataSign, signInfo.PastelID, signInfo.PassPhrase)
+	signature, err := secClient.Sign(ctx, dataSign, secInfo.PastelID, secInfo.PassPhrase, secInfo.Algorithm)
 	if err != nil {
 		log.WithContext(ctx).Errorf("failed to generate signature: %v", err)
 		return fmt.Errorf("failed to generate signature: %w", err)
@@ -249,7 +249,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	request := kexExchangeRequest{
 		PubKey:    pub,
 		Signature: signature,
-		PastelID:  signInfo.PastelID,
+		PastelID:  secInfo.PastelID,
 	}
 	// encode and write the client's handshake record
 	if err := s.writeHandshake(&request); err != nil {
@@ -265,7 +265,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	dataVerify := make([]byte, challengeSize+ED448PubKeySize)
 	dataVerify = append(dataVerify, response.PubKey[:]...)
 	dataVerify = append(dataVerify, challengeA...)
-	if ok, err := secClient.Verify(ctx, dataVerify, string(response.Signature), response.PastelID); err != nil || !ok {
+	if ok, err := secClient.Verify(ctx, dataVerify, string(response.Signature), response.PastelID, secInfo.Algorithm); err != nil || !ok {
 		log.WithContext(ctx).Errorf("failed to verify server public key: %v", err)
 		return fmt.Errorf("failed to verify server public key: %w", err)
 	}
@@ -294,7 +294,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 
 // ClientHandshake starts and completes a client ALTS handshaking. Once
 // done, ClientHandshake returns a secure connection.
-func (s *altsHandshaker) ClientHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ClientHandshake(ctx context.Context, secClient alts.SecClient, secInfo *alts.SecInfo) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -305,7 +305,7 @@ func (s *altsHandshaker) ClientHandshake(ctx context.Context, secClient alts.Sec
 	}
 
 	// do the client handshake
-	if err := s.doClientHandshake(ctx, secClient, signInfo); err != nil {
+	if err := s.doClientHandshake(ctx, secClient, secInfo); err != nil {
 		return nil, nil, fmt.Errorf("do client handshake: %w", err)
 	}
 	log.WithContext(ctx).Debugf("client handshake is complete")
@@ -319,7 +319,7 @@ func (s *altsHandshaker) ClientHandshake(ctx context.Context, secClient alts.Sec
 	return sc, authinfo.New(), nil
 }
 
-func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) error {
+func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.SecClient, secInfo *alts.SecInfo) error {
 	var challengeA []byte
 	if err := s.readHandshake(&challengeA); err != nil {
 		return fmt.Errorf("read handshake: %w", err)
@@ -340,7 +340,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	dataVerify := make([]byte, challengeSize+ED448PubKeySize)
 	dataVerify = append(dataVerify, request.PubKey[:]...)
 	dataVerify = append(dataVerify, challengeB...)
-	if ok, err := secClient.Verify(ctx, dataVerify, string(request.Signature), request.PastelID); err != nil || !ok {
+	if ok, err := secClient.Verify(ctx, dataVerify, string(request.Signature), request.PastelID, secInfo.Algorithm); err != nil || !ok {
 		log.WithContext(ctx).Errorf("failed to verify client public key: %v", err)
 		return fmt.Errorf("failed to verify client public key: %w", err)
 	}
@@ -355,7 +355,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	dataSign := make([]byte, challengeSize+ED448PubKeySize)
 	dataSign = append(dataSign, pub[:]...)
 	dataSign = append(dataSign, challengeA...)
-	signature, err := secClient.Sign(ctx, dataSign, signInfo.PastelID, signInfo.PassPhrase)
+	signature, err := secClient.Sign(ctx, dataSign, secInfo.PastelID, secInfo.PassPhrase, secInfo.Algorithm)
 	if err != nil {
 		log.WithContext(ctx).Errorf("failed to generate signature: %v", err)
 		return fmt.Errorf("failed to generate signature: %w", err)
@@ -382,7 +382,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	response := kexExchangeResponse{
 		PubKey:    pub,
 		Signature: signature,
-		PastelID:  signInfo.PastelID,
+		PastelID:  secInfo.PastelID,
 	}
 	// encode and write the server's handshake record
 	if err := s.writeHandshake(&response); err != nil {
@@ -394,7 +394,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 
 // ServerHandshake starts and completes a server ALTS handshaking for GCP. Once
 // done, ServerHandshake returns a secure connection.
-func (s *altsHandshaker) ServerHandshake(ctx context.Context, secClient alts.SecClient, signInfo *alts.SignInfo) (net.Conn, credentials.AuthInfo, error) {
+func (s *altsHandshaker) ServerHandshake(ctx context.Context, secClient alts.SecClient, secInfo *alts.SecInfo) (net.Conn, credentials.AuthInfo, error) {
 	if !acquire() {
 		return nil, nil, errDropped
 	}
@@ -405,7 +405,7 @@ func (s *altsHandshaker) ServerHandshake(ctx context.Context, secClient alts.Sec
 	}
 
 	// do the server handshake
-	if err := s.doServerHandshake(ctx, secClient, signInfo); err != nil {
+	if err := s.doServerHandshake(ctx, secClient, secInfo); err != nil {
 		return nil, nil, fmt.Errorf("do server handshake: %w", err)
 	}
 	log.WithContext(ctx).Debugf("server handshake is complete")
