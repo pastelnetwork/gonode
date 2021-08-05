@@ -62,7 +62,10 @@ func (db *DatabaseOps) LeaderAddress() string {
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) WriteUserData(ctx context.Context, data pb.UserdataRequest) error {
+func (db *DatabaseOps) WriteUserData(ctx context.Context, data *pb.UserdataRequest) error {
+	if data == nil {
+		return errors.Errorf("input nil data")
+	}
 	command, err := substituteTemplate(db.writeTemplate, pbToWriteCommand(data))
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)

@@ -260,7 +260,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					PreviousBlockHash: (*req).PreviousBlockHash,
 				}
 
-				err := service.databaseOps.WriteUserData(ctx, reqsn)
+				err := service.databaseOps.WriteUserData(ctx, &reqsn)
 				if err != nil {
 					processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 					processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]

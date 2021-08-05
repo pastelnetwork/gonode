@@ -70,7 +70,7 @@ func processInputString(s string) string {
 	return processEscapeString(s)
 }
 
-func pbToWriteCommand(d pb.UserdataRequest) UserdataWriteCommand {
+func pbToWriteCommand(d *pb.UserdataRequest) UserdataWriteCommand {
 	avatarImageHex, avatarImageFilename := extractImageInfo(d.GetAvatarImage())
 	coverPhotoHex, coverPhotoFilename := extractImageInfo(d.GetCoverPhoto())
 

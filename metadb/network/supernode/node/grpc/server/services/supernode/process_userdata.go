@@ -120,7 +120,7 @@ func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *p
 
 	// This code run in supernode contain leader rqlite db
 	// Process write the data to rqlite happen here
-	if err := service.databaseOps.WriteUserData(ctx, *req); err != nil {
+	if err := service.databaseOps.WriteUserData(ctx, req); err != nil {
 		return nil, errors.Errorf("error occurs while writting to database: %w", err)
 	}
 

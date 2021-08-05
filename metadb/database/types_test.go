@@ -10,12 +10,12 @@ import (
 func Test_pbToWriteCommand(t *testing.T) {
 	tests := []struct {
 		name string
-		req  pb.UserdataRequest
+		req  *pb.UserdataRequest
 		want UserdataWriteCommand
 	}{
 		{
 			name: "TestUserdata_ToWriteCommand1",
-			req: pb.UserdataRequest{
+			req: &pb.UserdataRequest{
 				Realname:        "cat",
 				FacebookLink:    "fb.com",
 				TwitterLink:     "tw.com",

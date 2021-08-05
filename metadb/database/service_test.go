@@ -368,8 +368,8 @@ func (ts *testSuite) SetupSuite() {
 		writeTemplate: writeTmpl,
 		queryTemplate: queryTmpl,
 	}
-	ts.Nil(ts.ops.WriteUserData(ts.ctx, data3))
-	ts.Nil(ts.ops.WriteUserData(ts.ctx, data4))
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data3))
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data4))
 }
 
 func (ts *testSuite) TearDownSuite() {
@@ -458,7 +458,7 @@ func (ts *testSuite) Test_substituteTemplate() {
 func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 	type args struct {
 		ctx  context.Context
-		data pb.UserdataRequest
+		data *pb.UserdataRequest
 	}
 	tests := []struct {
 		name    string
@@ -469,7 +469,7 @@ func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 			name: "TestDatabaseOps_WriteUserData1",
 			args: args{
 				ctx:  ts.ctx,
-				data: data1,
+				data: &data1,
 			},
 			wantErr: false,
 		},
@@ -477,7 +477,7 @@ func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 			name: "TestDatabaseOps_WriteUserData2",
 			args: args{
 				ctx:  ts.ctx,
-				data: data2,
+				data: &data2,
 			},
 			wantErr: false,
 		},
@@ -485,7 +485,7 @@ func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 			name: "TestDatabaseOps_WriteUserData3",
 			args: args{
 				ctx:  ts.ctx,
-				data: pb.UserdataRequest{},
+				data: &pb.UserdataRequest{},
 			},
 			wantErr: false,
 		},
@@ -493,7 +493,7 @@ func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 			name: "TestDatabaseOps_WriteUserData4",
 			args: args{
 				ctx:  ts.ctx,
-				data: data1,
+				data: &data1,
 			},
 			wantErr: false,
 		},
@@ -501,7 +501,7 @@ func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 			name: "TestDatabaseOps_WriteUserData5",
 			args: args{
 				ctx:  ts.ctx,
-				data: data2,
+				data: &data2,
 			},
 			wantErr: false,
 		},
