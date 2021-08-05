@@ -42,10 +42,12 @@ func (service *Userdata) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.S
 	return srv
 }
 
+// CreateUserdata create the userdata in rqlite db
 func (service *Userdata) CreateUserdata(ctx context.Context, req *userdatas.CreateUserdataPayload) (*userdatas.UserdataProcessResult, error) {
 	return service.processUserdata(ctx, fromUserdataCreateRequest(req))
 }
 
+// UpdateUserdata update the userdata in rqlite db
 func (service *Userdata) UpdateUserdata(ctx context.Context, req *userdatas.UpdateUserdataPayload) (*userdatas.UserdataProcessResult, error) {
 	return service.processUserdata(ctx, fromUserdataUpdateRequest(req))
 }

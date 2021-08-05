@@ -85,7 +85,7 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 
 // UserdatasCreateUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/create".
 // The decoder must populate the argument p after encoding.
-func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) mdlserver.UserdatasCreateUserdataDecoderFunc {
+func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *Userdata) mdlserver.UserdatasCreateUserdataDecoderFunc {
 	return func(reader *multipart.Reader, p **userdatas.CreateUserdataPayload) error {
 
 		var response *userdatas.CreateUserdataPayload
@@ -112,42 +112,32 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 				switch part.FormName() {
 				case "artist_pastelid":
 					res.ArtistPastelID = string(buffer)
-					break
 				case "artist_pastelid_passphrase":
 					res.ArtistPastelIDPassphrase = string(buffer)
-					break
 				case "biography":
 					value := string(buffer)
 					res.Biography = &value
-					break
 				case "categories":
 					value := string(buffer)
 					res.Categories = &value
-					break
 				case "facebook_link":
 					value := string(buffer)
 					res.FacebookLink = &value
-					break
 				case "location":
 					value := string(buffer)
 					res.Location = &value
-					break
 				case "primary_language":
 					value := string(buffer)
 					res.PrimaryLanguage = &value
-					break
 				case "native_currency":
 					value := string(buffer)
 					res.NativeCurrency = &value
-					break
 				case "realname":
 					value := string(buffer)
 					res.Realname = &value
-					break
 				case "twitter_link":
 					value := string(buffer)
 					res.TwitterLink = &value
-					break
 				}
 			} else {
 				// Process for the field that have a files
@@ -163,13 +153,11 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 						Content:  filePart.Bytes(),
 						Filename: &filename,
 					}
-					break
 				case "cover_photo":
 					res.CoverPhoto = &userdatas.UserImageUploadPayload{
 						Content:  filePart.Bytes(),
 						Filename: &filename,
 					}
-					break
 				}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}
@@ -184,7 +172,7 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 
 // UserdatasUpdateUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/update".
 // The decoder must populate the argument p after encoding.
-func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) mdlserver.UserdatasUpdateUserdataDecoderFunc {
+func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *Userdata) mdlserver.UserdatasUpdateUserdataDecoderFunc {
 	return func(reader *multipart.Reader, p **userdatas.UpdateUserdataPayload) error {
 
 		var response *userdatas.UpdateUserdataPayload
@@ -211,42 +199,32 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 				switch part.FormName() {
 				case "artist_pastelid":
 					res.ArtistPastelID = string(buffer)
-					break
 				case "artist_pastelid_passphrase":
 					res.ArtistPastelIDPassphrase = string(buffer)
-					break
 				case "biography":
 					value := string(buffer)
 					res.Biography = &value
-					break
 				case "categories":
 					value := string(buffer)
 					res.Categories = &value
-					break
 				case "facebook_link":
 					value := string(buffer)
 					res.FacebookLink = &value
-					break
 				case "location":
 					value := string(buffer)
 					res.Location = &value
-					break
 				case "primary_language":
 					value := string(buffer)
 					res.PrimaryLanguage = &value
-					break
 				case "native_currency":
 					value := string(buffer)
 					res.NativeCurrency = &value
-					break
 				case "realname":
 					value := string(buffer)
 					res.Realname = &value
-					break
 				case "twitter_link":
 					value := string(buffer)
 					res.TwitterLink = &value
-					break
 				}
 			} else {
 				// Process for the field that have a files
@@ -263,13 +241,11 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, service *Userdata) 
 						Content:  filePart.Bytes(),
 						Filename: &filename,
 					}
-					break
 				case "cover_photo":
 					res.CoverPhoto = &userdatas.UserImageUploadPayload{
 						Content:  filePart.Bytes(),
 						Filename: &filename,
 					}
-					break
 				}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}

@@ -8,7 +8,7 @@ import (
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
 )
 
-// UserdataDBRecord represents userdata record in DB
+// UserdataWriteCommand represents userdata record in DB
 type UserdataWriteCommand struct {
 	// Real name of the user
 	Realname string
@@ -133,6 +133,7 @@ type UserdataReadResult struct {
 	UserdataHash string `mapstructure:"user_data_hash"`
 }
 
+// ToUserData return the ProcessRequest
 func (d *UserdataReadResult) ToUserData() userdata.ProcessRequest {
 	return userdata.ProcessRequest{
 		Realname:        d.Realname,

@@ -21,7 +21,7 @@ type ProcessUserdata struct {
 	pb.UnimplementedProcessUserdataServer
 
 	*common.ProcessUserdata
-	databaseOps *database.DatabaseOps
+	databaseOps *database.Ops
 }
 
 // Session implements supernode.ProcessUserdataServer.Session()
@@ -136,7 +136,7 @@ func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
 }
 
 // NewProcessUserdata returns a new ProcessUserdata instance.
-func NewProcessUserdata(service *userdataprocess.Service, databaseOps *database.DatabaseOps) *ProcessUserdata {
+func NewProcessUserdata(service *userdataprocess.Service, databaseOps *database.Ops) *ProcessUserdata {
 	return &ProcessUserdata{
 		ProcessUserdata: common.NewProcessUserdata(service),
 		databaseOps:     databaseOps,

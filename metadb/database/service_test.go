@@ -334,7 +334,7 @@ type testSuite struct {
 	cancel  context.CancelFunc
 	wg      sync.WaitGroup
 	workDir string
-	ops     *DatabaseOps
+	ops     *Ops
 }
 
 func (ts *testSuite) SetupSuite() {
@@ -363,7 +363,7 @@ func (ts *testSuite) SetupSuite() {
 	_, err = db.Write(ts.ctx, schema)
 
 	ts.Nil(err)
-	ts.ops = &DatabaseOps{
+	ts.ops = &Ops{
 		metaDB:        db,
 		writeTemplate: writeTmpl,
 		queryTemplate: queryTmpl,

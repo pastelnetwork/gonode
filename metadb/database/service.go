@@ -23,17 +23,20 @@ var (
 	schemaDelimiter = "---"
 )
 
+// Config is rqlite database config
 type Config struct {
 	SchemaPath        string `mapstructure:"schema-path" json:"schema-path,omitempty"`
 	WriteTemplatePath string `mapstructure:"write-template-path" json:"write-template-path,omitempty"`
 	QueryTemplatePath string `mapstructure:"query-template-path" json:"query-template-path,omitempty"`
 }
 
+// NewConfig return the new Config
 func NewConfig() *Config {
 	return &Config{}
 }
 
-type DatabaseOps struct {
+// Ops contain template for database operation
+type Ops struct {
 	metaDB        metadb.MetaDB
 	writeTemplate *template.Template
 	queryTemplate *template.Template
@@ -51,18 +54,20 @@ func substituteTemplate(tmpl *template.Template, data interface{}) (string, erro
 	return templateBuffer.String(), nil
 }
 
-func (db *DatabaseOps) IsLeader() bool {
+// IsLeader check if current supernode is having rqlite cluster leader
+func (db *Ops) IsLeader() bool {
 	return db.metaDB.IsLeader()
 }
 
-func (db *DatabaseOps) LeaderAddress() string {
+// LeaderAddress return the ipaddress of the supernode contain the leader
+func (db *Ops) LeaderAddress() string {
 	re := regexp.MustCompile(":[0-9]+$")
 	address := re.Split(db.metaDB.LeaderAddress(), -1)[0]
 	return address
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) WriteUserData(ctx context.Context, data *pb.UserdataRequest) error {
+func (db *Ops) WriteUserData(ctx context.Context, data *pb.UserdataRequest) error {
 	if data == nil {
 		return errors.Errorf("input nil data")
 	}
@@ -82,8 +87,8 @@ func (db *DatabaseOps) WriteUserData(ctx context.Context, data *pb.UserdataReque
 	return nil
 }
 
-// WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) (userdata.ProcessRequest, error) {
+// ReadUserData read metadata in the struct UserdataProcessRequest to metadb
+func (db *Ops) ReadUserData(ctx context.Context, artistPastelID string) (userdata.ProcessRequest, error) {
 	command, err := substituteTemplate(db.queryTemplate, artistPastelID)
 	if err != nil {
 		return userdata.ProcessRequest{}, errors.Errorf("error while subtitute template: %w", err)
@@ -116,7 +121,8 @@ func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) 
 	return dbResult.ToUserData(), nil
 }
 
-func (db *DatabaseOps) Run(ctx context.Context) error {
+// Run run the rqlite database service
+func (db *Ops) Run(ctx context.Context) error {
 
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	log.WithContext(ctx).Info("start initialization")
@@ -153,8 +159,9 @@ func (db *DatabaseOps) Run(ctx context.Context) error {
 	return nil
 }
 
-func NewDatabaseOps(metaDB metadb.MetaDB, config *Config) *DatabaseOps {
-	return &DatabaseOps{
+// NewDatabaseOps return the Ops
+func NewDatabaseOps(metaDB metadb.MetaDB, config *Config) *Ops {
+	return &Ops{
 		metaDB: metaDB,
 		config: config,
 	}

@@ -226,13 +226,12 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 					return err
 				case <-task.allPeersSNDatasReceived:
 					log.WithContext(ctx).Debugf("all SuperNodeRequest received so start validation")
-
-					if resp, err := task.verifyPeersUserdata(ctx); err != nil {
+					resp, err := task.verifyPeersUserdata(ctx)
+					if err != nil {
 						return errors.Errorf("fail to verifyPeersUserdata: %w", err)
-					} else {
-						processResult = resp
-						return nil
 					}
+					processResult = resp
+					return nil
 				}
 			}
 		})
@@ -303,20 +302,22 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResu
 			log.WithContext(ctx).Debugf("failed to decode signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
 		}
-		if ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID, "ed448"); err != nil {
+
+		ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID, "ed448")
+		if err != nil {
 			log.WithContext(ctx).Debugf("failed to verify signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
-		} else {
-			if !ok {
-				log.WithContext(ctx).Debugf("signature of node %s mistmatch", sndata.NodeID)
-				continue
-			} else {
-				successCount++
-				if task.ownSNData.UserdataHash == sndata.UserdataHash &&
-					task.ownSNData.UserdataResultHash == sndata.UserdataResultHash {
-					dataMatchingCount++
-				}
-			}
+		}
+
+		if !ok {
+			log.WithContext(ctx).Debugf("signature of node %s mistmatch", sndata.NodeID)
+			continue
+		}
+
+		successCount++
+		if task.ownSNData.UserdataHash == sndata.UserdataHash &&
+			task.ownSNData.UserdataResultHash == sndata.UserdataResultHash {
+			dataMatchingCount++
 		}
 	}
 
