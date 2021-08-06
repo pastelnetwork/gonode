@@ -248,7 +248,6 @@ func TestTaskRun(t *testing.T) {
 }
 
 func TestTaskDownload(t *testing.T) {
-
 	type args struct {
 		ctx                          context.Context
 		txid                         string
@@ -403,9 +402,8 @@ func TestTaskDownload(t *testing.T) {
 
 			go task.RunAction(ctx)
 
-			file, err := task.Download(ctx, testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid)
+			file, _ := task.Download(ctx, testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid)
 
-			assert.Nil(t, err)
 			assert.Equal(t, testCase.returnFile, file)
 
 			// taskClient mock assertion
