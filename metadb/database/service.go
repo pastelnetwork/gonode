@@ -40,32 +40,37 @@ const (
 	usersLikeNftTemplate             = "users_like_nft"
 )
 
+// Config is rqlite database config
 type Config struct {
 	SchemaPath   string `mapstructure:"schema-path" json:"schema-path,omitempty"`
 	TemplatePath string `mapstructure:"template-path" json:"write-template-path,omitempty"`
 }
 
+// NewConfig return the new Config
 func NewConfig() *Config {
 	return &Config{}
 }
 
-type DatabaseOps struct {
+type Ops struct {
 	metaDB    metadb.MetaDB
 	templates *templateKeeper
 	config    *Config
 }
 
-func (db *DatabaseOps) IsLeader() bool {
+// IsLeader check if current supernode is having rqlite cluster leader
+func (db *Ops) IsLeader() bool {
 	return db.metaDB.IsLeader()
 }
 
-func (db *DatabaseOps) LeaderAddress() string {
+// LeaderAddress return the ipaddress of the supernode contain the leader
+func (db *Ops) LeaderAddress() string {
 	re := regexp.MustCompile(":[0-9]+$")
 	address := re.Split(db.metaDB.LeaderAddress(), -1)[0]
 	return address
 }
 
-func (db *DatabaseOps) writeData(ctx context.Context, command string) error {
+// writeData writes to metadb
+func (db *Ops) writeData(ctx context.Context, command string) error {
 	if len(command) == 0 {
 		return errors.Errorf("invalid command")
 	}
@@ -80,7 +85,7 @@ func (db *DatabaseOps) writeData(ctx context.Context, command string) error {
 	return nil
 }
 
-func (db *DatabaseOps) WriteArtInfo(ctx context.Context, data ArtInfo) error {
+func (db *Ops) WriteArtInfo(ctx context.Context, data ArtInfo) error {
 	command, err := db.templates.GetCommand(artInfoWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -88,7 +93,7 @@ func (db *DatabaseOps) WriteArtInfo(ctx context.Context, data ArtInfo) error {
 	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
 }
 
-func (db *DatabaseOps) WriteArtInstanceInfo(ctx context.Context, data ArtInstanceInfo) error {
+func (db *Ops) WriteArtInstanceInfo(ctx context.Context, data ArtInstanceInfo) error {
 	command, err := db.templates.GetCommand(artInstanceInfoWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -96,7 +101,7 @@ func (db *DatabaseOps) WriteArtInstanceInfo(ctx context.Context, data ArtInstanc
 	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
 }
 
-func (db *DatabaseOps) WriteArtLike(ctx context.Context, data ArtLike) error {
+func (db *Ops) WriteArtLike(ctx context.Context, data ArtLike) error {
 	command, err := db.templates.GetCommand(artLikeWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -104,7 +109,7 @@ func (db *DatabaseOps) WriteArtLike(ctx context.Context, data ArtLike) error {
 	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
 }
 
-func (db *DatabaseOps) WriteTransaction(ctx context.Context, data ArtTransaction) error {
+func (db *Ops) WriteTransaction(ctx context.Context, data ArtTransaction) error {
 	command, err := db.templates.GetCommand(artLikeWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -112,7 +117,7 @@ func (db *DatabaseOps) WriteTransaction(ctx context.Context, data ArtTransaction
 	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
 }
 
-func (db *DatabaseOps) WriteUserFollow(ctx context.Context, data UserFollow) error {
+func (db *Ops) WriteUserFollow(ctx context.Context, data UserFollow) error {
 	command, err := db.templates.GetCommand(userFollowWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -121,7 +126,7 @@ func (db *DatabaseOps) WriteUserFollow(ctx context.Context, data UserFollow) err
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) WriteUserData(ctx context.Context, data *pb.UserdataRequest) error {
+func (db *Ops) WriteUserData(ctx context.Context, data *pb.UserdataRequest) error {
 	if data == nil {
 		return errors.Errorf("input nil data")
 	}
@@ -133,8 +138,8 @@ func (db *DatabaseOps) WriteUserData(ctx context.Context, data *pb.UserdataReque
 	return db.writeData(ctx, command)
 }
 
-// WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
-func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) (userdata.ProcessRequest, error) {
+// ReadUserData read metadata in the struct UserdataProcessRequest to metadb
+func (db *Ops) ReadUserData(ctx context.Context, artistPastelID string) (userdata.ProcessRequest, error) {
 	command, err := db.templates.GetCommand(userInfoQueryTemplate, artistPastelID)
 	if err != nil {
 		return userdata.ProcessRequest{}, errors.Errorf("error while subtitute template: %w", err)
@@ -167,7 +172,7 @@ func (db *DatabaseOps) ReadUserData(ctx context.Context, artistPastelID string) 
 	return dbResult.ToUserData(), nil
 }
 
-func (db *DatabaseOps) salePriceByUserQuery(ctx context.Context, command string) (float64, error) {
+func (db *Ops) salePriceByUserQuery(ctx context.Context, command string) (float64, error) {
 	queryResult, err := db.metaDB.Query(ctx, command, queryLevelNone)
 	if err != nil {
 		return 0.0, errors.Errorf("error while querying db: %w", err)
@@ -190,7 +195,7 @@ func (db *DatabaseOps) salePriceByUserQuery(ctx context.Context, command string)
 	return price, nil
 }
 
-func (db *DatabaseOps) GetCumulatedSalePriceByUser(ctx context.Context, pastelID string) (float64, error) {
+func (db *Ops) GetCumulatedSalePriceByUser(ctx context.Context, pastelID string) (float64, error) {
 	if pastelID == "" {
 		return 0.0, errors.Errorf("invalid pastel ID")
 	}
@@ -203,7 +208,7 @@ func (db *DatabaseOps) GetCumulatedSalePriceByUser(ctx context.Context, pastelID
 	return db.salePriceByUserQuery(ctx, command)
 }
 
-func (db *DatabaseOps) queryPastelID(ctx context.Context, command string) ([]string, error) {
+func (db *Ops) queryPastelID(ctx context.Context, command string) ([]string, error) {
 	if len(command) == 0 {
 		return nil, errors.Errorf("invalid command")
 	}
@@ -225,7 +230,7 @@ func (db *DatabaseOps) queryPastelID(ctx context.Context, command string) ([]str
 	return result, nil
 }
 
-func (db *DatabaseOps) GetFollowees(ctx context.Context, pastelID string) ([]string, error) {
+func (db *Ops) GetFollowees(ctx context.Context, pastelID string) ([]string, error) {
 	if pastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
 	}
@@ -238,7 +243,7 @@ func (db *DatabaseOps) GetFollowees(ctx context.Context, pastelID string) ([]str
 	return db.queryPastelID(ctx, command)
 }
 
-func (db *DatabaseOps) GetFollowers(ctx context.Context, pastelID string) ([]string, error) {
+func (db *Ops) GetFollowers(ctx context.Context, pastelID string) ([]string, error) {
 	if pastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
 	}
@@ -251,7 +256,7 @@ func (db *DatabaseOps) GetFollowers(ctx context.Context, pastelID string) ([]str
 	return db.queryPastelID(ctx, command)
 }
 
-func (db *DatabaseOps) GetFriends(ctx context.Context, pastelID string) ([]string, error) {
+func (db *Ops) GetFriends(ctx context.Context, pastelID string) ([]string, error) {
 	if pastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
 	}
@@ -264,7 +269,7 @@ func (db *DatabaseOps) GetFriends(ctx context.Context, pastelID string) ([]strin
 	return db.queryPastelID(ctx, command)
 }
 
-func (db *DatabaseOps) GetHighestSalePriceByUser(ctx context.Context, pastelID string) (float64, error) {
+func (db *Ops) GetHighestSalePriceByUser(ctx context.Context, pastelID string) (float64, error) {
 	if pastelID == "" {
 		return 0.0, errors.Errorf("invalid pastel ID")
 	}
@@ -277,7 +282,7 @@ func (db *DatabaseOps) GetHighestSalePriceByUser(ctx context.Context, pastelID s
 	return db.salePriceByUserQuery(ctx, command)
 }
 
-func (db *DatabaseOps) GetExistingNftCopies(ctx context.Context, artID string) (int, error) {
+func (db *Ops) GetExistingNftCopies(ctx context.Context, artID string) (int, error) {
 	if artID == "" {
 		return 0, errors.Errorf("invalid art ID")
 	}
@@ -309,7 +314,7 @@ func (db *DatabaseOps) GetExistingNftCopies(ctx context.Context, artID string) (
 	return copies, nil
 }
 
-func (db *DatabaseOps) queryToInterface(ctx context.Context, command string) ([]map[string]interface{}, error) {
+func (db *Ops) queryToInterface(ctx context.Context, command string) ([]map[string]interface{}, error) {
 	if len(command) == 0 {
 		return nil, errors.Errorf("invalid command")
 	}
@@ -331,7 +336,7 @@ func (db *DatabaseOps) queryToInterface(ctx context.Context, command string) ([]
 	return result, nil
 }
 
-func (db *DatabaseOps) GetNftCreatedByArtist(ctx context.Context, artistPastelID string) ([]NftCreatedByArtistQueryResult, error) {
+func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string) ([]NftCreatedByArtistQueryResult, error) {
 	command, err := db.templates.GetCommand(nftCopiesExistTemplate, artistPastelID)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -354,7 +359,7 @@ func (db *DatabaseOps) GetNftCreatedByArtist(ctx context.Context, artistPastelID
 	return result, nil
 }
 
-func (db *DatabaseOps) GetNftForSaleByArtist(ctx context.Context, artistPastelID string) ([]NftForSaleByArtistQueryResult, error) {
+func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string) ([]NftForSaleByArtistQueryResult, error) {
 	command, err := db.templates.GetCommand(nftForSaleByArtistTemplate, artistPastelID)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -377,7 +382,7 @@ func (db *DatabaseOps) GetNftForSaleByArtist(ctx context.Context, artistPastelID
 	return result, nil
 }
 
-func (db *DatabaseOps) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]NftOwnedByUserQueryResult, error) {
+func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]NftOwnedByUserQueryResult, error) {
 	command, err := db.templates.GetCommand(nftOwnedByUserTemplate, pastelID)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -400,7 +405,7 @@ func (db *DatabaseOps) GetNftOwnedByUser(ctx context.Context, pastelID string) (
 	return result, nil
 }
 
-func (db *DatabaseOps) GetNftSoldByUser(ctx context.Context, pastelID string) ([]NftSoldByUserQueryResult, error) {
+func (db *Ops) GetNftSoldByUser(ctx context.Context, pastelID string) ([]NftSoldByUserQueryResult, error) {
 	command, err := db.templates.GetCommand(nftSoldByUserTemplate, pastelID)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -423,7 +428,7 @@ func (db *DatabaseOps) GetNftSoldByUser(ctx context.Context, pastelID string) ([
 	return result, nil
 }
 
-func (db *DatabaseOps) GetUniqueNftByUser(ctx context.Context, query UniqueNftByUserQuery) ([]ArtInfo, error) {
+func (db *Ops) GetUniqueNftByUser(ctx context.Context, query UniqueNftByUserQuery) ([]ArtInfo, error) {
 	command, err := db.templates.GetCommand(uniqueNftByUserTemplate, query)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -446,7 +451,7 @@ func (db *DatabaseOps) GetUniqueNftByUser(ctx context.Context, query UniqueNftBy
 	return result, nil
 }
 
-func (db *DatabaseOps) GetUsersLikeNft(ctx context.Context, artID string) ([]string, error) {
+func (db *Ops) GetUsersLikeNft(ctx context.Context, artID string) ([]string, error) {
 	if artID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
 	}
@@ -459,8 +464,8 @@ func (db *DatabaseOps) GetUsersLikeNft(ctx context.Context, artID string) ([]str
 	return db.queryPastelID(ctx, command)
 }
 
-func (db *DatabaseOps) Run(ctx context.Context) error {
-
+// Run run the rqlite database service
+func (db *Ops) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	log.WithContext(ctx).Info("start initialization")
 
@@ -491,8 +496,9 @@ func (db *DatabaseOps) Run(ctx context.Context) error {
 	return nil
 }
 
-func NewDatabaseOps(metaDB metadb.MetaDB, config *Config) *DatabaseOps {
-	return &DatabaseOps{
+// NewDatabaseOps return the Ops
+func NewDatabaseOps(metaDB metadb.MetaDB, config *Config) *Ops {
+	return &Ops{
 		metaDB: metaDB,
 		config: config,
 	}

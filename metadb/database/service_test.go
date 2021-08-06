@@ -223,15 +223,17 @@ type testSuite struct {
 	cancel  context.CancelFunc
 	wg      sync.WaitGroup
 	workDir string
-	ops     *DatabaseOps
+	ops     *Ops
 }
 
 func (ts *testSuite) SetupSuite() {
-	workDir, err := ioutil.TempDir("", "metadb-*")
+	workDir, err := ioutil.TempDir("", "servicetest-metadb-*")
 	assert.NoError(ts.T(), err)
 
 	config := metadb.NewConfig()
 	config.SetWorkDir(workDir)
+	config.HTTPPort = 4003
+	config.RaftPort = 4004
 	ts.workDir = workDir
 
 	db := metadb.New(config, "uuid", []string{})
@@ -249,7 +251,7 @@ func (ts *testSuite) SetupSuite() {
 
 	tmpls, err := NewTemplateKeeper("./commands")
 	ts.Nil(err)
-	ts.ops = &DatabaseOps{
+	ts.ops = &Ops{
 		metaDB:    db,
 		templates: tmpls,
 	}
@@ -322,7 +324,7 @@ func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 	for _, tt := range tests {
 		ts.T().Run(tt.name, func(t *testing.T) {
 			if err := ts.ops.WriteUserData(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-				ts.T().Errorf("DatabaseOps.WriteUserData() error = %v, wantErr %v", err, tt.wantErr)
+				ts.T().Errorf("Ops.WriteUserData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -362,11 +364,11 @@ func (ts *testSuite) TestDatabaseOps_ReadUserData() {
 		ts.T().Run(tt.name, func(t *testing.T) {
 			got, err := ts.ops.ReadUserData(tt.args.ctx, tt.args.artistPastelID)
 			if (err != nil) != tt.wantErr {
-				ts.T().Errorf("DatabaseOps.ReadUserData() error = %v, wantErr %v", err, tt.wantErr)
+				ts.T().Errorf("Ops.ReadUserData() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				ts.T().Errorf("DatabaseOps.ReadUserData() = %+v, want %+v", got, tt.want)
+				ts.T().Errorf("Ops.ReadUserData() = %+v, want %+v", got, tt.want)
 			}
 		})
 	}
@@ -403,13 +405,13 @@ func TestDatabaseOps_IsLeader(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if got := db.IsLeader(); got != tt.want {
-				t.Errorf("DatabaseOps.IsLeader() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.IsLeader() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -430,13 +432,13 @@ func TestDatabaseOps_LeaderAddress(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if got := db.LeaderAddress(); got != tt.want {
-				t.Errorf("DatabaseOps.LeaderAddress() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.LeaderAddress() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -462,13 +464,13 @@ func TestDatabaseOps_writeData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if err := db.writeData(tt.args.ctx, tt.args.command); (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.writeData() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.writeData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -494,13 +496,13 @@ func TestDatabaseOps_WriteArtInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if err := db.WriteArtInfo(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.WriteArtInfo() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.WriteArtInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -526,13 +528,13 @@ func TestDatabaseOps_WriteArtInstanceInfo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if err := db.WriteArtInstanceInfo(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.WriteArtInstanceInfo() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.WriteArtInstanceInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -558,13 +560,13 @@ func TestDatabaseOps_WriteArtLike(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if err := db.WriteArtLike(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.WriteArtLike() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.WriteArtLike() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -590,13 +592,13 @@ func TestDatabaseOps_WriteTransaction(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if err := db.WriteTransaction(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.WriteTransaction() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.WriteTransaction() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -622,13 +624,13 @@ func TestDatabaseOps_WriteUserFollow(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if err := db.WriteUserFollow(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.WriteUserFollow() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.WriteUserFollow() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -655,18 +657,18 @@ func TestDatabaseOps_salePriceByUserQuery(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.salePriceByUserQuery(tt.args.ctx, tt.args.command)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.salePriceByUserQuery() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.salePriceByUserQuery() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("DatabaseOps.salePriceByUserQuery() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.salePriceByUserQuery() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -693,18 +695,18 @@ func TestDatabaseOps_GetCumulatedSalePriceByUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetCumulatedSalePriceByUser(tt.args.ctx, tt.args.pastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetCumulatedSalePriceByUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetCumulatedSalePriceByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("DatabaseOps.GetCumulatedSalePriceByUser() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetCumulatedSalePriceByUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -731,18 +733,18 @@ func TestDatabaseOps_queryPastelID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.queryPastelID(tt.args.ctx, tt.args.command)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.queryPastelID() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.queryPastelID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.queryPastelID() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.queryPastelID() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -769,18 +771,18 @@ func TestDatabaseOps_GetFollowees(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetFollowees(tt.args.ctx, tt.args.pastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetFollowees() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetFollowees() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetFollowees() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetFollowees() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -807,18 +809,18 @@ func TestDatabaseOps_GetFollowers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetFollowers(tt.args.ctx, tt.args.pastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetFollowers() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetFollowers() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetFollowers() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetFollowers() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -845,18 +847,18 @@ func TestDatabaseOps_GetFriends(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetFriends(tt.args.ctx, tt.args.pastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetFriends() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetFriends() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetFriends() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetFriends() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -883,18 +885,18 @@ func TestDatabaseOps_GetHighestSalePriceByUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetHighestSalePriceByUser(tt.args.ctx, tt.args.pastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetHighestSalePriceByUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetHighestSalePriceByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("DatabaseOps.GetHighestSalePriceByUser() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetHighestSalePriceByUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -921,18 +923,18 @@ func TestDatabaseOps_GetExistingNftCopies(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetExistingNftCopies(tt.args.ctx, tt.args.artID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetExistingNftCopies() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetExistingNftCopies() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if got != tt.want {
-				t.Errorf("DatabaseOps.GetExistingNftCopies() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetExistingNftCopies() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -959,18 +961,18 @@ func TestDatabaseOps_queryToInterface(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.queryToInterface(tt.args.ctx, tt.args.command)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.queryToInterface() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.queryToInterface() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.queryToInterface() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.queryToInterface() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -997,18 +999,18 @@ func TestDatabaseOps_GetNftCreatedByArtist(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetNftCreatedByArtist(tt.args.ctx, tt.args.artistPastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetNftCreatedByArtist() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetNftCreatedByArtist() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetNftCreatedByArtist() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetNftCreatedByArtist() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1035,18 +1037,18 @@ func TestDatabaseOps_GetNftForSaleByArtist(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetNftForSaleByArtist(tt.args.ctx, tt.args.artistPastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetNftForSaleByArtist() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetNftForSaleByArtist() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetNftForSaleByArtist() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetNftForSaleByArtist() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1073,18 +1075,18 @@ func TestDatabaseOps_GetNftOwnedByUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetNftOwnedByUser(tt.args.ctx, tt.args.pastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetNftOwnedByUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetNftOwnedByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetNftOwnedByUser() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetNftOwnedByUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1111,18 +1113,18 @@ func TestDatabaseOps_GetNftSoldByUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetNftSoldByUser(tt.args.ctx, tt.args.pastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetNftSoldByUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetNftSoldByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetNftSoldByUser() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetNftSoldByUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1149,18 +1151,18 @@ func TestDatabaseOps_GetUniqueNftByUser(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetUniqueNftByUser(tt.args.ctx, tt.args.query)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetUniqueNftByUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetUniqueNftByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetUniqueNftByUser() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetUniqueNftByUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1187,18 +1189,18 @@ func TestDatabaseOps_GetUsersLikeNft(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			got, err := db.GetUsersLikeNft(tt.args.ctx, tt.args.artID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.GetUsersLikeNft() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetUsersLikeNft() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("DatabaseOps.GetUsersLikeNft() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetUsersLikeNft() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1223,13 +1225,13 @@ func TestDatabaseOps_Run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			db := &DatabaseOps{
+			db := &Ops{
 				metaDB:    tt.fields.metaDB,
 				templates: tt.fields.templates,
 				config:    tt.fields.config,
 			}
 			if err := db.Run(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("DatabaseOps.Run() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.Run() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -1243,7 +1245,7 @@ func TestNewDatabaseOps(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want *DatabaseOps
+		want *Ops
 	}{
 		// TODO: Add test cases.
 	}

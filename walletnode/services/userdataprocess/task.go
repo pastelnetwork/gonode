@@ -108,17 +108,17 @@ func (task *Task) run(ctx context.Context) error {
 		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
 		if err := nodes.ReceiveUserdata(ctx, task.userpastelid); err != nil {
 			return errors.Errorf("failed to receive userdata: %w", err)
-		} else {
-			// Post on result channel
-			node := nodes[0]
-			if node.ResultGet != nil {
-				task.resultChanGet <- node.ResultGet
-			} else {
-				return errors.Errorf("failed to receive userdata")
-			}
-
-			log.WithContext(ctx).Debug("Finished retrieve userdata")
 		}
+		// Post on result channel
+		node := nodes[0]
+		if node.ResultGet != nil {
+			task.resultChanGet <- node.ResultGet
+		} else {
+			return errors.Errorf("failed to receive userdata")
+		}
+
+		log.WithContext(ctx).Debug("Finished retrieve userdata")
+
 	} else {
 		// PROCESS TO SET/UPDATE USERDATA TO METADATA LAYER
 		// Get the previous block hash
@@ -173,15 +173,14 @@ func (task *Task) run(ctx context.Context) error {
 		// Send userdata to supernodes for storing in MDL's rqlite db.
 		if err := nodes.SendUserdata(ctx, userdata); err != nil {
 			return err
-		} else {
-			res, err := task.AggregateResult(ctx, nodes)
-			if err != nil {
-				return err
-			}
-			// Post on result channel
-			task.resultChan <- &res
-			log.WithContext(ctx).WithField("userdata_result", res).Debug("Posted userdata result")
 		}
+		res, err := task.AggregateResult(ctx, nodes)
+		if err != nil {
+			return err
+		}
+		// Post on result channel
+		task.resultChan <- &res
+		log.WithContext(ctx).WithField("userdata_result", res).Debug("Posted userdata result")
 	}
 
 	// close the connections
@@ -195,7 +194,7 @@ func (task *Task) run(ctx context.Context) error {
 }
 
 // AggregateResult aggregate all results return by all supernode, and consider it valid or not
-func (task *Task) AggregateResult(ctx context.Context, nodes node.List) (userdata.ProcessResult, error) {
+func (task *Task) AggregateResult(_ context.Context, nodes node.List) (userdata.ProcessResult, error) {
 	// There is following common scenarios when supernodes response:
 	// 1. Secondary node and primary node both response userdata validation result error
 	// 2. Secondary node response userdata validation result success and primary node provide further processing result

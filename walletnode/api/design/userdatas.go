@@ -259,7 +259,7 @@ var UserImageUploadPayload = Type("UserImageUploadPayload", func() {
 	Required("content")
 })
 
-// UserdataGet are request params to UserdataGet Params
+// UserdataGetParams are request params to UserdataGet Params
 var UserdataGetParams = func() {
 	Attribute("pastelid", String, func() {
 		Description("Artist's PastelID")

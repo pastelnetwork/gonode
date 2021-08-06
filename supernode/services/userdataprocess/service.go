@@ -22,7 +22,7 @@ type Service struct {
 	config       *Config
 	pastelClient pastel.Client
 	nodeClient   node.Client
-	databaseOps  *database.DatabaseOps
+	databaseOps  *database.Ops
 }
 
 // Run starts task
@@ -55,7 +55,7 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client, databaseOps *database.DatabaseOps) *Service {
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client, databaseOps *database.Ops) *Service {
 	return &Service{
 		config:       config,
 		pastelClient: pastelClient,

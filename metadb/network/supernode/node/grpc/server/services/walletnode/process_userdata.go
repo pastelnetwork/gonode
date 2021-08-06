@@ -23,7 +23,7 @@ type ProcessUserdata struct {
 	pbwn.UnimplementedProcessUserdataServer
 
 	*common.ProcessUserdata
-	databaseOps *database.DatabaseOps
+	databaseOps *database.Ops
 }
 
 // Session implements walletnode.ProcessUserdataServer.Session()
@@ -284,11 +284,10 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 
 // ReceiveUserdata implements walletnode.ProcessUserdataServer.ReceiveUserdata()
 func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pbwn.RetrieveRequest) (*pbwn.UserdataRequest, error) {
-	log.WithContext(ctx).WithField("userpastelid", req.Userpastelid).Debugf("ReceiveUserdata request")
-
 	if req == nil {
 		return nil, errors.Errorf("receive nil request")
 	}
+	log.WithContext(ctx).WithField("userpastelid", req.Userpastelid).Debugf("ReceiveUserdata request")
 
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -333,7 +332,7 @@ func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
 }
 
 // NewProcessUserdata returns a new ProcessUserdata instance.
-func NewProcessUserdata(service *userdataprocess.Service, databaseOps *database.DatabaseOps) *ProcessUserdata {
+func NewProcessUserdata(service *userdataprocess.Service, databaseOps *database.Ops) *ProcessUserdata {
 	return &ProcessUserdata{
 		ProcessUserdata: common.NewProcessUserdata(service),
 		databaseOps:     databaseOps,

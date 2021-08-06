@@ -52,7 +52,7 @@ func NewMockClient(t *testing.T) *Client {
 	}
 }
 
-// ListenOnRegisterArtwork listening RegisterArtwork call
+// ListenOnProcessUserdata listening ProcessUserdata call
 func (client *Client) ListenOnProcessUserdata() *Client {
 	client.Connection.On(ProcessUserdataMethod).Return(client.ProcessUserdata)
 	return client

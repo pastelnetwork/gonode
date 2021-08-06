@@ -180,6 +180,34 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 		return validateResult, nil
 	}
 
+	// Validate user signature
+	signature, err := hex.DecodeString(req.Signature)
+	if err != nil {
+		log.WithContext(ctx).Debugf("failed to decode signature %s of user %s", req.Signature, req.Userdata.ArtistPastelID)
+		return userdata.ProcessResult{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, nil
+	}
+
+	userdatahash, err := hex.DecodeString(req.UserdataHash)
+	if err != nil {
+		log.WithContext(ctx).Debugf("failed to decode userdata hash %s of user %s", req.UserdataHash, req.Userdata.ArtistPastelID)
+		return userdata.ProcessResult{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, nil
+	}
+
+	ok, err := task.pastelClient.Verify(ctx, userdatahash, string(signature), req.Userdata.ArtistPastelID, "ed448")
+	if err != nil || !ok {
+		log.WithContext(ctx).Debugf("failed to verify signature %s of user %s", req.Userdata.ArtistPastelID, req.Userdata.ArtistPastelID)
+		return userdata.ProcessResult{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, nil
+	}
+
 	// Validation the request from Walletnode successful, we continue to get acknowledgement and confirmation process from multiple SNs
 	snRequest := userdata.SuperNodeRequest{}
 
@@ -200,8 +228,12 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 
 	<-task.NewAction(func(ctx context.Context) error {
 		// sign the data if not primary node
-		log.WithContext(ctx).Debugf("isPrimary: %d", task.ConnectedTo == nil)
-		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, task.ConnectedTo == nil); err != nil {
+		isPrimary := false
+		if task.ConnectedTo == nil {
+			isPrimary = true
+		}
+		log.WithContext(ctx).Debugf("isPrimary: %t", isPrimary)
+		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, isPrimary); err != nil {
 			return errors.Errorf("failed to signed and send SuperNodeRequest:%w", err)
 		}
 		return nil
@@ -222,13 +254,12 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 					return err
 				case <-task.allPeersSNDatasReceived:
 					log.WithContext(ctx).Debugf("all SuperNodeRequest received so start validation")
-
-					if resp, err := task.verifyPeersUserdata(ctx); err != nil {
+					resp, err := task.verifyPeersUserdata(ctx)
+					if err != nil {
 						return errors.Errorf("fail to verifyPeersUserdata: %w", err)
-					} else {
-						processResult = resp
-						return nil
 					}
+					processResult = resp
+					return nil
 				}
 			}
 		})
@@ -299,20 +330,22 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResu
 			log.WithContext(ctx).Debugf("failed to decode signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
 		}
-		if ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID, "ed448"); err != nil {
+
+		ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID, "ed448")
+		if err != nil {
 			log.WithContext(ctx).Debugf("failed to verify signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
-		} else {
-			if !ok {
-				log.WithContext(ctx).Debugf("signature of node %s mistmatch", sndata.NodeID)
-				continue
-			} else {
-				successCount++
-				if task.ownSNData.UserdataHash == sndata.UserdataHash &&
-					task.ownSNData.UserdataResultHash == sndata.UserdataResultHash {
-					dataMatchingCount++
-				}
-			}
+		}
+
+		if !ok {
+			log.WithContext(ctx).Debugf("signature of node %s mistmatch", sndata.NodeID)
+			continue
+		}
+
+		successCount++
+		if task.ownSNData.UserdataHash == sndata.UserdataHash &&
+			task.ownSNData.UserdataResultHash == sndata.UserdataResultHash {
+			dataMatchingCount++
 		}
 	}
 
@@ -403,7 +436,7 @@ func (task *Task) validateUserdata(req *userdata.ProcessRequest) (userdata.Proce
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
-	log.WithContext(ctx).Debugf("master node %s", masterNodes)
+	// log.WithContext(ctx).Debugf("master node %s", masterNodes)
 
 	if err != nil {
 		return nil, err
