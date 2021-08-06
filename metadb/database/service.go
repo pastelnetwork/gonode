@@ -90,7 +90,7 @@ func (db *Ops) WriteArtInfo(ctx context.Context, data ArtInfo) error {
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
 	}
-	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
+	return db.writeData(ctx, command)
 }
 
 func (db *Ops) WriteArtInstanceInfo(ctx context.Context, data ArtInstanceInfo) error {
@@ -98,7 +98,7 @@ func (db *Ops) WriteArtInstanceInfo(ctx context.Context, data ArtInstanceInfo) e
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
 	}
-	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
+	return db.writeData(ctx, command)
 }
 
 func (db *Ops) WriteArtLike(ctx context.Context, data ArtLike) error {
@@ -106,15 +106,15 @@ func (db *Ops) WriteArtLike(ctx context.Context, data ArtLike) error {
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
 	}
-	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
+	return db.writeData(ctx, command)
 }
 
 func (db *Ops) WriteTransaction(ctx context.Context, data ArtTransaction) error {
-	command, err := db.templates.GetCommand(artLikeWriteTemplate, data)
+	command, err := db.templates.GetCommand(transactionWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
 	}
-	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
+	return db.writeData(ctx, command)
 }
 
 func (db *Ops) WriteUserFollow(ctx context.Context, data UserFollow) error {
@@ -122,7 +122,7 @@ func (db *Ops) WriteUserFollow(ctx context.Context, data UserFollow) error {
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
 	}
-	return errors.Errorf("error while writing art info %w", db.writeData(ctx, command))
+	return db.writeData(ctx, command)
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb

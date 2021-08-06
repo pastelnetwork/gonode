@@ -2,10 +2,12 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 
@@ -210,6 +212,29 @@ var (
 		Timestamp:         123,
 		PreviousBlockHash: "hash",
 	}
+
+	userDataFrame = pb.UserdataRequest{
+		Realname:        "cat",
+		FacebookLink:    "fb.com",
+		TwitterLink:     "tw.com",
+		NativeCurrency:  "usd",
+		Location:        "us",
+		PrimaryLanguage: "en",
+		Categories:      "a",
+		Biography:       "b",
+		AvatarImage: &pb.UserdataRequest_UserImageUpload{
+			Content:  []byte{1, 2, 3, 4},
+			Filename: "1234.jpg",
+		},
+		CoverPhoto: &pb.UserdataRequest_UserImageUpload{
+			Content:  []byte{4, 5, 6, 7},
+			Filename: "4567.jpg",
+		},
+		ArtistPastelID:    "rty",
+		Timestamp:         123,
+		Signature:         "xyz",
+		PreviousBlockHash: "hash",
+	}
 )
 
 func TestSuite(t *testing.T) {
@@ -224,6 +249,54 @@ type testSuite struct {
 	wg      sync.WaitGroup
 	workDir string
 	ops     *Ops
+}
+
+func (ts *testSuite) setupTableTest() {
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data3))
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data4))
+
+	for i := 1; i <= 10; i++ {
+		userDataFrame.ArtistPastelID = fmt.Sprintf("id%d", i)
+		ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
+	}
+
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 1}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 2}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 2}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 3}))
+
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id1", ArtID: "art1_id1", Price: 1}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art1_id1", ArtID: "art1_id1", Price: 2}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art2_id1", ArtID: "art2_id1", Price: 3}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art2_id1", ArtID: "art2_id1", Price: 4}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id2", ArtID: "art1_id2", Price: 5}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art2_id2", ArtID: "art2_id2", Price: 6}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art2_id2", ArtID: "art2_id2", Price: 7}))
+
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t1", InstanceID: "ins1_art1_id1", Timestamp: 20, SellerPastelID: "id1", BuyerPastelID: "id5", Price: 20}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t2", InstanceID: "ins1_art1_id1", Timestamp: 21, SellerPastelID: "id5", BuyerPastelID: "id6", Price: 40}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t3", InstanceID: "ins2_art2_id2", Timestamp: 23, SellerPastelID: "id2", BuyerPastelID: "id6", Price: 40}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t4", InstanceID: "ins2_art2_id2", Timestamp: 25, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t5", InstanceID: "ins1_art1_id1", Timestamp: 26, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t6", InstanceID: "ins1_art1_id2", Timestamp: 30, SellerPastelID: "id2", BuyerPastelID: "id4", Price: 20}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t7", InstanceID: "ins1_art1_id2", Timestamp: 31, SellerPastelID: "id4", BuyerPastelID: "id1", Price: 20}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t8", InstanceID: "ins1_art1_id1", Timestamp: 32, SellerPastelID: "id7", BuyerPastelID: "id1", Price: 20}))
+
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id2"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id3"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id4"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id5"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id6"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id1"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id3"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id4"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id5"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id6"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id1"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id2"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id4"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id5"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id6"}))
 }
 
 func (ts *testSuite) SetupSuite() {
@@ -246,8 +319,15 @@ func (ts *testSuite) SetupSuite() {
 		ts.Nil(db.Run(ts.ctx), "run service")
 	}()
 	db.WaitForStarting()
-	_, err = db.Write(ts.ctx, schema)
+	content, err := ioutil.ReadFile("./commands/schema.sql")
 	ts.Nil(err)
+
+	listOfCommands := strings.Split(string(content), schemaDelimiter)
+	for _, cmd := range listOfCommands {
+		if _, err := db.Write(ts.ctx, cmd); err != nil {
+			ts.Nil(err)
+		}
+	}
 
 	tmpls, err := NewTemplateKeeper("./commands")
 	ts.Nil(err)
@@ -256,8 +336,7 @@ func (ts *testSuite) SetupSuite() {
 		templates: tmpls,
 	}
 
-	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data3))
-	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data4))
+	ts.setupTableTest()
 }
 
 func (ts *testSuite) TearDownSuite() {
@@ -369,108 +448,6 @@ func (ts *testSuite) TestDatabaseOps_ReadUserData() {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				ts.T().Errorf("Ops.ReadUserData() = %+v, want %+v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNewConfig(t *testing.T) {
-	tests := []struct {
-		name string
-		want *Config
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewConfig(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewConfig() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestDatabaseOps_IsLeader(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if got := db.IsLeader(); got != tt.want {
-				t.Errorf("Ops.IsLeader() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestDatabaseOps_LeaderAddress(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   string
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if got := db.LeaderAddress(); got != tt.want {
-				t.Errorf("Ops.LeaderAddress() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestDatabaseOps_writeData(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx     context.Context
-		command string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if err := db.writeData(tt.args.ctx, tt.args.command); (err != nil) != tt.wantErr {
-				t.Errorf("Ops.writeData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
