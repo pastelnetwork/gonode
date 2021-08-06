@@ -1,6 +1,7 @@
 package artworkregister
 
 import (
+	"bytes"
 	"context"
 	"encoding/hex"
 	"fmt"
@@ -25,7 +26,6 @@ import (
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -33,6 +33,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func appendStr(b []byte, s string) []byte {
+	b = append(b, []byte(s)...)
+	b = append(b, '\n')
+	return b
+}
 
 func newTestNode(address, pastelID string) *node.Node {
 	return node.NewNode(nil, address, pastelID)
@@ -895,10 +901,10 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
-		args     args
-		want     *rq.SymbolIDFile
-		wantErr  error
-		wantSign []byte
+		args        args
+		wantContent []byte
+		wantErr     error
+		wantSign    []byte
 	}{
 		"success": {
 			args: args{
@@ -910,19 +916,13 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 				},
 				inFile: rqnode.RawSymbolIDFile{
 					ID:                uuid.New().String(),
-					SymbolIdentifiers: []string{"test-s1, test-s2"},
+					SymbolIdentifiers: []string{"test-s1", "test-s2"},
 					BlockHash:         "test-block-hash",
 					PastelID:          "test-pastel-id",
 				},
 			},
-			wantErr: nil,
-			want: &rq.SymbolIDFile{
-				ID:                uuid.New().String(),
-				BlockHash:         "test-block-hash",
-				SymbolIdentifiers: []string{"test-s1, test-s2"},
-				Signature:         []byte("test-signature"),
-			},
 			wantSign: []byte("test-signature"),
+			wantErr:  nil,
 		},
 		"error": {
 			args: args{
@@ -935,7 +935,6 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 				signErr: errors.New(testErrStr),
 			},
 			wantErr: errors.New(testErrStr),
-			want:    nil,
 		},
 	}
 
@@ -945,20 +944,32 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 			t.Parallel()
 
+			var rawContent []byte
+			rawContent = appendStr(rawContent, tc.args.inFile.ID)
+			rawContent = appendStr(rawContent, tc.args.inFile.BlockHash)
+			rawContent = appendStr(rawContent, tc.args.inFile.PastelID)
+			for _, id := range tc.args.inFile.SymbolIdentifiers {
+				rawContent = appendStr(rawContent, id)
+			}
+			rawContent = append(rawContent, tc.wantSign...)
+			fmt.Printf("%s\n", string(rawContent))
+
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			got, err := tc.args.task.convertToSymbolIDFile(context.Background(), tc.args.inFile)
+			_, content, err := tc.args.task.convertToSymbolIDFile(context.Background(), tc.args.inFile)
+			fmt.Printf("%x\n", content)
 
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), testErrStr))
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, tc.want.SymbolIdentifiers, got.SymbolIdentifiers)
-				assert.Equal(t, tc.want.BlockHash, got.BlockHash)
-				assert.Equal(t, tc.want.Signature, got.Signature)
+				compressContent, zstdErr := zstd.CompressLevel(nil, rawContent, 22)
+				fmt.Printf("%x\n", compressContent)
+				assert.Nil(t, zstdErr)
+				assert.True(t, bytes.Equal(content, compressContent))
 			}
 		})
 	}
@@ -984,6 +995,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"success": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1012,6 +1024,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"connect-error": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1035,6 +1048,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"encode-info-error": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1057,6 +1071,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"read-error": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1075,6 +1090,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"sign-err": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1556,7 +1572,7 @@ func TestTaskUploadImage(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1578,7 +1594,7 @@ func TestTaskUploadImage(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1663,7 +1679,7 @@ func TestTaskProbeImage(t *testing.T) {
 						ArtistPastelID: "testid",
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1684,7 +1700,7 @@ func TestTaskProbeImage(t *testing.T) {
 						ArtistPastelID: "testid",
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1772,7 +1788,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1791,7 +1807,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1811,7 +1827,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1893,7 +1909,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1913,7 +1929,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 						config: &Config{},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1933,7 +1949,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 						config: &Config{NumberSuperNodes: 1},
 					},
 					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},

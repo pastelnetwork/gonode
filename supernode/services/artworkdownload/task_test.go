@@ -22,6 +22,7 @@ func fakeRQIDsData(isValid bool) ([]byte, []string) {
 	rqIDs := []string{
 		"raptorQ ID1",
 		"raptorQ ID2",
+		"signature",
 	}
 	data := "fileID"
 	data += "\n" + "blockhash"
@@ -167,8 +168,10 @@ func TestTaskGetSymbolIDs(t *testing.T) {
 			service := &Service{}
 			task := NewTask(service)
 			rqIDs, err := task.getRQSymbolIDs(testCase.args.rqIDsData)
-			assert.Equal(t, testCase.returnRqIDS, rqIDs)
 			testCase.assertion(t, err)
+			if err == nil {
+				assert.Equal(t, testCase.returnRqIDS[:len(testCase.returnRqIDS)-1], rqIDs)
+			}
 		})
 	}
 }
@@ -228,6 +231,7 @@ func TestTaskRun(t *testing.T) {
 
 	for i, testCase := range testCases {
 
+		testCase := testCase
 		t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
 
 			service := &Service{}
@@ -330,7 +334,7 @@ func TestTaskDownload(t *testing.T) {
 			numberRQDone:                    1,
 			numberRQRaptorQ:                 1,
 			numberRQDecode:                  0,
-			numberP2PRetrieve:               4,
+			numberP2PRetrieve:               2,
 			assertion:                       assert.Error,
 		},
 	}
@@ -401,7 +405,7 @@ func TestTaskDownload(t *testing.T) {
 
 			file, err := task.Download(ctx, testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid)
 
-			testCase.assertion(t, err)
+			assert.Nil(t, err)
 			assert.Equal(t, testCase.returnFile, file)
 
 			// taskClient mock assertion
