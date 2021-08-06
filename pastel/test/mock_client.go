@@ -12,6 +12,9 @@ const (
 	// MasterNodesTopMethod represent MasterNodesTop name method
 	MasterNodesTopMethod = "MasterNodesTop"
 
+	// MasterNodesTopMethod represent MasterNodesTop name method
+	MasterNodeStatusMethod = "MasterNodeStatus"
+
 	// StorageNetWorkFeeMethod represent StorageNetworkFee name method
 	StorageNetWorkFeeMethod = "StorageNetworkFee"
 
@@ -23,6 +26,9 @@ const (
 
 	// RegTicketMethod represent RegTicket name method
 	RegTicketMethod = "RegTicket"
+
+	// RegTicketsMethod represent RegTickets name method
+	RegTicketsMethod = "RegTickets"
 
 	// GetBlockVerbose1Method represent GetBlockVerbose1 method
 	GetBlockVerbose1Method = "GetBlockVerbose1"
@@ -69,6 +75,12 @@ func NewMockClient(t *testing.T) *Client {
 // ListenOnMasterNodesTop listening MasterNodesTop and returns Mn's and error from args
 func (client *Client) ListenOnMasterNodesTop(nodes pastel.MasterNodes, err error) *Client {
 	client.On(MasterNodesTopMethod, mock.Anything).Return(nodes, err)
+	return client
+}
+
+// ListenOnMasterNodesTop listening MasterNodeStatus and returns master node status and error from args
+func (client *Client) ListenOnMasterNodeStatus(status *pastel.MasterNodeStatus, err error) *Client {
+	client.On(MasterNodeStatusMethod, mock.Anything).Return(status, err)
 	return client
 }
 
@@ -134,6 +146,12 @@ func (client *Client) ListenOnActTickets(tickets pastel.ActTickets, err error) *
 // ListenOnRegTicket listening RegTicket and returns ticket and error from args
 func (client *Client) ListenOnRegTicket(id string, ticket pastel.RegTicket, err error) *Client {
 	client.On(RegTicketMethod, mock.Anything, id).Return(ticket, err)
+	return client
+}
+
+// ListenOnRegTickets listening RegTickets and returns ticket and error from args
+func (client *Client) ListenOnRegTickets(ticket pastel.RegTickets, err error) *Client {
+	client.On(RegTicketsMethod, mock.Anything).Return(ticket, err)
 	return client
 }
 
