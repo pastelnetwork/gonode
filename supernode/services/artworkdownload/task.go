@@ -144,6 +144,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 		}
 
 		if len(file) == 0 {
+			err = errors.Errorf("empty file")
 			task.UpdateStatus(StatusFileEmpty)
 		}
 

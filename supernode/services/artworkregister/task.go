@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -515,9 +516,7 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 		return errors.Errorf("failed to create raptorq symbol from image %s %w", task.Artwork.Name(), err)
 	}
 
-	// var compressedFile []byte
 	for name, data := range task.RQIDS {
-		// compressedFile = data
 		if _, err := task.p2pClient.Store(ctx, data); err != nil {
 			return errors.Errorf("failed to store raptorq symbols id files %s %w", name, err)
 		}
@@ -563,67 +562,42 @@ func (task *Task) storeFingerprints(ctx context.Context) error {
 }
 
 func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (*pastel.FingerAndScores, pastel.Fingerprint, error) {
-	// img, err := file.Bytes()
-	// if err != nil {
-	// 	return nil, nil, errors.Errorf("failed to get content of image %s %w", file.Name(), err)
-	// }
+	img, err := file.Bytes()
+	if err != nil {
+		return nil, nil, errors.Errorf("failed to get content of image %s %w", file.Name(), err)
+	}
 
-	// ddResult, err := task.ddClient.Generate(ctx, img, file.Format().String())
-	// if err != nil {
-	// 	return nil, nil, errors.Errorf("failed to get dupe detection result from dd-service %w", err)
-	// }
+	ddResult, err := task.ddClient.Generate(ctx, img, file.Format().String())
+	if err != nil {
+		return nil, nil, errors.Errorf("failed to get dupe detection result from dd-service %w", err)
+	}
 
-	// var fingerprint []float64
-	// err = json.Unmarshal([]byte(ddResult.Fingerprints), &fingerprint)
-	// if err != nil {
-	// 	return nil, nil, errors.Errorf("failed to parse fingerprints from dd-service result %w", err)
-	// }
-	// fingerprintAndScores := pastel.FingerAndScores{
-	// 	DupeDectectionSystemVersion: ddResult.DupeDetectionSystemVer,
-	// 	HashOfCandidateImageFile:    ddResult.ImageHash,
-	// 	OverallAverageRarenessScore: ddResult.PastelRarenessScore,
-	// 	IsRareOnInternet:            int(ddResult.InternetRarenessScore),
-	// 	MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
-	// 	NumberOfPagesOfResults:      ddResult.NumberOfResultPages,
-	// 	URLOfFirstMatchInPage:       ddResult.FirstMatchURL,
-	// 	OpenNSFWScore:               ddResult.OpenNSFWScore,
-	// 	ZstdCompressedFingerprint:   nil,
-	// 	AlternativeNSFWScore: pastel.AlternativeNSFWScore{
-	// 		Drawing: ddResult.AlternateNSFWScores.Drawings,
-	// 		Hentai:  ddResult.AlternateNSFWScores.Hentai,
-	// 		Neutral: ddResult.AlternateNSFWScores.Neutral,
-	// 		Porn:    ddResult.AlternateNSFWScores.Porn,
-	// 		Sexy:    ddResult.AlternateNSFWScores.Sexy,
-	// 	},
-	// 	ImageHashes: pastel.ImageHashes{
-	// 		PerceptualHash: ddResult.ImageHashes.PerceptualHash,
-	// 		AverageHash:    ddResult.ImageHashes.AverageHash,
-	// 		DifferenceHash: ddResult.ImageHashes.DifferenceHash,
-	// 	},
-	// }
-
-	fingerprint := []float64{0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1}
+	var fingerprint []float64
+	err = json.Unmarshal([]byte(ddResult.Fingerprints), &fingerprint)
+	if err != nil {
+		return nil, nil, errors.Errorf("failed to parse fingerprints from dd-service result %w", err)
+	}
 	fingerprintAndScores := pastel.FingerAndScores{
-		DupeDectectionSystemVersion: "1.0",
-		HashOfCandidateImageFile:    "hash_of_candidate_image_file",
-		OverallAverageRarenessScore: 0.5,
-		IsRareOnInternet:            0,
-		NumberOfPagesOfResults:      5,
-		MatchesFoundOnFirstPage:     5,
-		URLOfFirstMatchInPage:       "http://url_of_first_match_in_page",
-		OpenNSFWScore:               0.5,
-		ZstdCompressedFingerprint:   []byte{},
+		DupeDectectionSystemVersion: ddResult.DupeDetectionSystemVer,
+		HashOfCandidateImageFile:    ddResult.ImageHash,
+		OverallAverageRarenessScore: ddResult.PastelRarenessScore,
+		IsRareOnInternet:            int(ddResult.InternetRarenessScore),
+		MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
+		NumberOfPagesOfResults:      ddResult.NumberOfResultPages,
+		URLOfFirstMatchInPage:       ddResult.FirstMatchURL,
+		OpenNSFWScore:               ddResult.OpenNSFWScore,
+		ZstdCompressedFingerprint:   nil,
 		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
-			Drawing: 0.7,
-			Hentai:  0.7,
-			Neutral: 0.7,
-			Porn:    0.7,
-			Sexy:    0.7,
+			Drawing: ddResult.AlternateNSFWScores.Drawings,
+			Hentai:  ddResult.AlternateNSFWScores.Hentai,
+			Neutral: ddResult.AlternateNSFWScores.Neutral,
+			Porn:    ddResult.AlternateNSFWScores.Porn,
+			Sexy:    ddResult.AlternateNSFWScores.Sexy,
 		},
 		ImageHashes: pastel.ImageHashes{
-			PerceptualHash: "perceptual_hash",
-			AverageHash:    "average_hash",
-			DifferenceHash: "difference_hash",
+			PerceptualHash: ddResult.ImageHashes.PerceptualHash,
+			AverageHash:    ddResult.ImageHashes.AverageHash,
+			DifferenceHash: ddResult.ImageHashes.DifferenceHash,
 		},
 	}
 	compressedFg, err := zstd.CompressLevel(nil, pastel.Fingerprint(fingerprint).Bytes(), 22)
