@@ -180,6 +180,34 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 		return validateResult, nil
 	}
 
+	// Validate user signature
+	signature, err := hex.DecodeString(req.Signature)
+	if err != nil {
+		log.WithContext(ctx).Debugf("failed to decode signature %s of user %s", req.Signature, req.Userdata.ArtistPastelID)
+		return userdata.ProcessResult{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, nil
+	}
+
+	userdatahash, err := hex.DecodeString(req.UserdataHash)
+	if err != nil {
+		log.WithContext(ctx).Debugf("failed to decode userdata hash %s of user %s", req.UserdataHash, req.Userdata.ArtistPastelID)
+		return userdata.ProcessResult{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, nil
+	}
+
+	ok, err := task.pastelClient.Verify(ctx, userdatahash, string(signature), req.Userdata.ArtistPastelID, "ed448")
+	if err != nil || !ok {
+		log.WithContext(ctx).Debugf("failed to verify signature %s of user %s", req.Userdata.ArtistPastelID, req.Userdata.ArtistPastelID)
+		return userdata.ProcessResult{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, nil
+	}
+
 	// Validation the request from Walletnode successful, we continue to get acknowledgement and confirmation process from multiple SNs
 	snRequest := userdata.SuperNodeRequest{}
 

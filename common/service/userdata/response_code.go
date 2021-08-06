@@ -13,6 +13,7 @@ const (
 	// Validation userdata
 	SuccessValidateContent
 	ErrorOnContent
+	ErrorVerifyUserdataFail
 
 	// Status for Primary Supernode verify process
 	SuccessAddDataToPrimarySupernode
@@ -35,8 +36,9 @@ var Description = map[int]string{
 	ErrorNotEnoughSupernodeResponse: "Not enough SuperNodes reply",
 	ErrorNotEnoughSupernodeConfirm:  "Not enough SuperNodes confirm",
 
-	SuccessValidateContent: "Content Validation successfully",
-	ErrorOnContent:         "There is error on field(s) in user specified data",
+	SuccessValidateContent:  "Content Validation successfully",
+	ErrorOnContent:          "There is error on field(s) in user specified data",
+	ErrorVerifyUserdataFail: "Supernode fail to verify Walletnode's signature",
 
 	SuccessAddDataToPrimarySupernode:       "Primary Supernode success to process data signed send by current supernode",
 	ErrorPrimarySupernodeFailToProcess:     "Don't have response from Primary SuperNode or response content is empty",
