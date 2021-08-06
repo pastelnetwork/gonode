@@ -156,3 +156,65 @@ func (d *UserdataReadResult) ToUserData() userdata.ProcessRequest {
 		PreviousBlockHash: d.PreviousBlockHash,
 	}
 }
+
+type ArtInfo struct {
+	ArtID            string `mapstructure:"art_id"`
+	ArtistPastelID   string `mapstructure:"artist_pastel_id"`
+	Copies           int64  `mapstructure:"copies"`
+	CreatedTimestamp int64  `mapstructure:"created_timestamp"`
+}
+
+type ArtInstanceInfo struct {
+	InstanceID    string
+	ArtID         string
+	OwnerPastelID string
+	Price         float64
+}
+
+type ArtLike struct {
+	ArtID    string
+	PastelID string
+}
+
+type ArtTransaction struct {
+	TransactionID  string
+	InstanceID     string
+	Timestamp      int64
+	SellerPastelID string
+	BuyerPastelID  string
+	Price          float64
+}
+
+type UserFollow struct {
+	FollowerPastelID string
+	FolloweePastelID string
+}
+
+type NftCreatedByArtistQueryResult struct {
+	InstanceID       string `mapstructure:"instance_id"`
+	ArtID            string `mapstructure:"art_id"`
+	Copies           int64  `mapstructure:"copies"`
+	CreatedTimestamp int64  `mapstructure:"created_timestamp"`
+}
+
+type NftForSaleByArtistQueryResult struct {
+	InstanceID string  `mapstructure:"instance_id"`
+	ArtID      string  `mapstructure:"art_id"`
+	Price      float64 `mapstructure:"price"`
+}
+
+type NftOwnedByUserQueryResult struct {
+	ArtID string `mapstructure:"art_id"`
+	Count int    `mapstructure:"cnt"`
+}
+
+type NftSoldByUserQueryResult struct {
+	ArtID       string `mapstructure:"art_id"`
+	TotalCopies int    `mapstructure:"total_copies"`
+	SoldCopies  int    `mapstructure:"sold_copies"`
+}
+
+type UniqueNftByUserQuery struct {
+	ArtistPastelID string
+	LimitTimestamp int64
+}

@@ -32,8 +32,8 @@ metadb:
 
 userdb:
   schema-path: ../metadb/database/commands/schema.sql
-  write-template-path: ../metadb/database/commands/user_info_write.tmpl
-  query-template-path: ../metadb/database/commands/user_info_query.tmpl
+  template-path: ../metadb/database/commands
+
 raptorq:
   hostname: "localhost"
   port: 50053

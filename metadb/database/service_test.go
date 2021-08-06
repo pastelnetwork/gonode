@@ -2,14 +2,12 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sync"
 	"testing"
-	"text/template"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb"
@@ -32,11 +30,12 @@ var (
 		timestamp INTEGER NOT NULL,
 		signature TEXT NOT NULL,
 		previous_block_hash TEXT NOT NULL,
+		user_data_hash TEXT NOT NULL,
 		avatar_image BLOB,
 		avatar_filename TEXT,
 		cover_photo_image BLOB,
 		cover_photo_filename TEXT
-	)`
+	);`
 
 	queryTemplate = `SELECT * FROM user_metadata WHERE artist_pastel_id = '{{.}}'`
 
@@ -211,116 +210,6 @@ var (
 		Timestamp:         123,
 		PreviousBlockHash: "hash",
 	}
-
-	userdata1 = UserdataWriteCommand{
-		Realname:           "cat",
-		FacebookLink:       "fb.com",
-		TwitterLink:        "tw.com",
-		NativeCurrency:     "usd",
-		Location:           "us",
-		PrimaryLanguage:    "en",
-		Categories:         "a",
-		Biography:          "b",
-		AvatarImage:        "",
-		AvatarFilename:     "1234.jpg",
-		CoverPhotoImage:    fmt.Sprintf("%x", []byte{4, 5, 6, 7}),
-		CoverPhotoFilename: "4567.jpg",
-		ArtistPastelID:     "abc",
-		Timestamp:          123,
-		Signature:          "xyz",
-		PreviousBlockHash:  "hash",
-	}
-
-	userdata2 = UserdataWriteCommand{
-		Realname:           "cat",
-		FacebookLink:       "fb.com",
-		TwitterLink:        "tw.com",
-		NativeCurrency:     "usd",
-		Location:           "us",
-		PrimaryLanguage:    "en",
-		Categories:         "a",
-		Biography:          "b",
-		AvatarImage:        fmt.Sprintf("%x", []byte{1, 2, 3, 4}),
-		AvatarFilename:     "1234.jpg",
-		CoverPhotoImage:    fmt.Sprintf("%x", []byte{4, 5, 6, 255}),
-		CoverPhotoFilename: "4567.jpg",
-		ArtistPastelID:     "xyz",
-		Timestamp:          123,
-		Signature:          "xyz",
-		PreviousBlockHash:  "hash",
-	}
-
-	writeTemplateResult1 = `INSERT OR REPLACE INTO user_metadata (
-		artist_pastel_id,
-		real_name,
-		facebook_link,
-		twitter_link,
-		native_currency,
-		location,
-		primary_language,
-		categories,
-		biography,
-		timestamp,
-		signature,
-		previous_block_hash,
-		avatar_image,
-		avatar_filename,
-		cover_photo_image,
-		cover_photo_filename
-	) VALUES (
-		'abc',
-		'cat',
-		'fb.com',
-		'tw.com',
-		'usd',
-		'us',
-		'en',
-		'a',
-		'b',
-		123,
-		'xyz',
-		'hash',
-		NULL,
-		'1234.jpg',
-		x'04050607',
-		'4567.jpg'
-	)`
-
-	writeTemplateResult2 = `INSERT OR REPLACE INTO user_metadata (
-		artist_pastel_id,
-		real_name,
-		facebook_link,
-		twitter_link,
-		native_currency,
-		location,
-		primary_language,
-		categories,
-		biography,
-		timestamp,
-		signature,
-		previous_block_hash,
-		avatar_image,
-		avatar_filename,
-		cover_photo_image,
-		cover_photo_filename
-	) VALUES (
-		'xyz',
-		'cat',
-		'fb.com',
-		'tw.com',
-		'usd',
-		'us',
-		'en',
-		'a',
-		'b',
-		123,
-		'xyz',
-		'hash',
-		x'01020304',
-		'1234.jpg',
-		x'040506ff',
-		'4567.jpg'
-	)`
 )
 
 func TestSuite(t *testing.T) {
@@ -338,11 +227,6 @@ type testSuite struct {
 }
 
 func (ts *testSuite) SetupSuite() {
-	queryTmpl, err := template.New("query").Parse(queryTemplate)
-	assert.Nil(ts.T(), err)
-	writeTmpl, err := template.New("write").Parse(writeTemplate)
-	assert.Nil(ts.T(), err)
-
 	workDir, err := ioutil.TempDir("", "metadb-*")
 	assert.NoError(ts.T(), err)
 
@@ -361,13 +245,15 @@ func (ts *testSuite) SetupSuite() {
 	}()
 	db.WaitForStarting()
 	_, err = db.Write(ts.ctx, schema)
+	ts.Nil(err)
 
+	tmpls, err := NewTemplateKeeper("./commands")
 	ts.Nil(err)
 	ts.ops = &DatabaseOps{
-		metaDB:        db,
-		writeTemplate: writeTmpl,
-		queryTemplate: queryTmpl,
+		metaDB:    db,
+		templates: tmpls,
 	}
+
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data3))
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data4))
 }
@@ -380,79 +266,6 @@ func (ts *testSuite) TearDownSuite() {
 
 	// remove the data directly
 	os.RemoveAll(filepath.Join(ts.workDir))
-}
-
-func (ts *testSuite) Test_substituteTemplate() {
-	type args struct {
-		tmpl *template.Template
-		data interface{}
-	}
-	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
-	}{
-		{
-			name: "Test_substituteTemplate1",
-			args: args{
-				tmpl: ts.ops.queryTemplate,
-				data: "123123",
-			},
-			want:    `SELECT * FROM user_metadata WHERE artist_pastel_id = '123123'`,
-			wantErr: false,
-		},
-		{
-			name: "Test_substituteTemplate2",
-			args: args{
-				tmpl: ts.ops.queryTemplate,
-				data: "abc123xyz",
-			},
-			want:    `SELECT * FROM user_metadata WHERE artist_pastel_id = 'abc123xyz'`,
-			wantErr: false,
-		},
-		{
-			name: "Test_substituteTemplate3",
-			args: args{
-				tmpl: ts.ops.writeTemplate,
-				data: userdata1,
-			},
-			want:    writeTemplateResult1,
-			wantErr: false,
-		},
-		{
-			name: "Test_substituteTemplate4",
-			args: args{
-				tmpl: ts.ops.writeTemplate,
-				data: userdata2,
-			},
-			want:    writeTemplateResult2,
-			wantErr: false,
-		},
-		{
-			name: "Test_substituteTemplateError",
-			args: args{
-				tmpl: nil,
-				data: map[string]string{
-					"ArtistPastelID": "abc123xyz",
-				},
-			},
-			want:    ``,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		ts.T().Run(tt.name, func(t *testing.T) {
-			got, err := substituteTemplate(tt.args.tmpl, tt.args.data)
-			if (err != nil) != tt.wantErr {
-				ts.T().Errorf("substituteTemplate() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				ts.T().Errorf("substituteTemplate() = %v, want %v", got, tt.want)
-			}
-		})
-	}
 }
 
 func (ts *testSuite) TestDatabaseOps_WriteUserData() {
@@ -554,6 +367,890 @@ func (ts *testSuite) TestDatabaseOps_ReadUserData() {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				ts.T().Errorf("DatabaseOps.ReadUserData() = %+v, want %+v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewConfig(t *testing.T) {
+	tests := []struct {
+		name string
+		want *Config
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewConfig(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewConfig() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_IsLeader(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if got := db.IsLeader(); got != tt.want {
+				t.Errorf("DatabaseOps.IsLeader() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_LeaderAddress(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	tests := []struct {
+		name   string
+		fields fields
+		want   string
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if got := db.LeaderAddress(); got != tt.want {
+				t.Errorf("DatabaseOps.LeaderAddress() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_writeData(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx     context.Context
+		command string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if err := db.writeData(tt.args.ctx, tt.args.command); (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.writeData() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_WriteArtInfo(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx  context.Context
+		data ArtInfo
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if err := db.WriteArtInfo(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.WriteArtInfo() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_WriteArtInstanceInfo(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx  context.Context
+		data ArtInstanceInfo
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if err := db.WriteArtInstanceInfo(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.WriteArtInstanceInfo() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_WriteArtLike(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx  context.Context
+		data ArtLike
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if err := db.WriteArtLike(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.WriteArtLike() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_WriteTransaction(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx  context.Context
+		data ArtTransaction
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if err := db.WriteTransaction(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.WriteTransaction() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_WriteUserFollow(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx  context.Context
+		data UserFollow
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if err := db.WriteUserFollow(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.WriteUserFollow() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_salePriceByUserQuery(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx     context.Context
+		command string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    float64
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.salePriceByUserQuery(tt.args.ctx, tt.args.command)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.salePriceByUserQuery() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("DatabaseOps.salePriceByUserQuery() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetCumulatedSalePriceByUser(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx      context.Context
+		pastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    float64
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetCumulatedSalePriceByUser(tt.args.ctx, tt.args.pastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetCumulatedSalePriceByUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("DatabaseOps.GetCumulatedSalePriceByUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_queryPastelID(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx     context.Context
+		command string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.queryPastelID(tt.args.ctx, tt.args.command)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.queryPastelID() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.queryPastelID() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetFollowees(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx      context.Context
+		pastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetFollowees(tt.args.ctx, tt.args.pastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetFollowees() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetFollowees() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetFollowers(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx      context.Context
+		pastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetFollowers(tt.args.ctx, tt.args.pastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetFollowers() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetFollowers() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetFriends(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx      context.Context
+		pastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetFriends(tt.args.ctx, tt.args.pastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetFriends() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetFriends() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetHighestSalePriceByUser(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx      context.Context
+		pastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    float64
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetHighestSalePriceByUser(tt.args.ctx, tt.args.pastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetHighestSalePriceByUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("DatabaseOps.GetHighestSalePriceByUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetExistingNftCopies(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx   context.Context
+		artID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    int
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetExistingNftCopies(tt.args.ctx, tt.args.artID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetExistingNftCopies() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("DatabaseOps.GetExistingNftCopies() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_queryToInterface(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx     context.Context
+		command string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []map[string]interface{}
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.queryToInterface(tt.args.ctx, tt.args.command)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.queryToInterface() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.queryToInterface() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetNftCreatedByArtist(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx            context.Context
+		artistPastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []NftCreatedByArtistQueryResult
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetNftCreatedByArtist(tt.args.ctx, tt.args.artistPastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetNftCreatedByArtist() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetNftCreatedByArtist() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetNftForSaleByArtist(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx            context.Context
+		artistPastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []NftForSaleByArtistQueryResult
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetNftForSaleByArtist(tt.args.ctx, tt.args.artistPastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetNftForSaleByArtist() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetNftForSaleByArtist() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetNftOwnedByUser(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx      context.Context
+		pastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []NftOwnedByUserQueryResult
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetNftOwnedByUser(tt.args.ctx, tt.args.pastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetNftOwnedByUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetNftOwnedByUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetNftSoldByUser(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx      context.Context
+		pastelID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []NftSoldByUserQueryResult
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetNftSoldByUser(tt.args.ctx, tt.args.pastelID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetNftSoldByUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetNftSoldByUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetUniqueNftByUser(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx   context.Context
+		query UniqueNftByUserQuery
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []ArtInfo
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetUniqueNftByUser(tt.args.ctx, tt.args.query)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetUniqueNftByUser() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetUniqueNftByUser() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_GetUsersLikeNft(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx   context.Context
+		artID string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    []string
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			got, err := db.GetUsersLikeNft(tt.args.ctx, tt.args.artID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.GetUsersLikeNft() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DatabaseOps.GetUsersLikeNft() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestDatabaseOps_Run(t *testing.T) {
+	type fields struct {
+		metaDB    metadb.MetaDB
+		templates *templateKeeper
+		config    *Config
+	}
+	type args struct {
+		ctx context.Context
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			db := &DatabaseOps{
+				metaDB:    tt.fields.metaDB,
+				templates: tt.fields.templates,
+				config:    tt.fields.config,
+			}
+			if err := db.Run(tt.args.ctx); (err != nil) != tt.wantErr {
+				t.Errorf("DatabaseOps.Run() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestNewDatabaseOps(t *testing.T) {
+	type args struct {
+		metaDB metadb.MetaDB
+		config *Config
+	}
+	tests := []struct {
+		name string
+		args args
+		want *DatabaseOps
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewDatabaseOps(tt.args.metaDB, tt.args.config); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewDatabaseOps() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -1,0 +1,8 @@
+{{/* The total number of copies of that NFT which exist. */}}
+
+SELECT
+    copies
+FROM
+    art_metadata
+WHERE
+    art_id = '{{.}}';

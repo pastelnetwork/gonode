@@ -106,3 +106,10 @@ WHEN (
 BEGIN
 	SELECT RAISE(FAIL, "user cannot follow him/her self");
 END;
+---
+CREATE TABLE IF NOT EXISTS art_like (
+	art_id TEXT PRIMARY KEY,
+	pastel_id TEXT NOT NULL,
+	FOREIGN KEY(art_id) REFERENCES art_metadata(art_id),
+	FOREIGN KEY(pastel_id) REFERENCES user_metadata(artist_pastel_id)
+);

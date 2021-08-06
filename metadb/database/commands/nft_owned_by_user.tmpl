@@ -1,7 +1,7 @@
 {{/* The list of NFTs currently owned by that user, as well as the number of copies of each of these the user owns. */}}
 
 SELECT
-    art_id, COUNT(ALL instance_id)
+    art_id, COUNT(ALL instance_id) AS cnt
 FROM
     art_instance_metadata
 WHERE

@@ -1,0 +1,69 @@
+package database
+
+import (
+	"bytes"
+	"io/ioutil"
+	"path"
+	"strings"
+	"text/template"
+
+	"github.com/pastelnetwork/gonode/common/errors"
+)
+
+type templateKeeper struct {
+	mp map[string]*template.Template
+}
+
+func substituteTemplate(tmpl *template.Template, data interface{}) (string, error) {
+	var templateBuffer bytes.Buffer
+	if tmpl == nil || data == nil {
+		return "", errors.Errorf("input nil template or data")
+	}
+	if err := tmpl.Execute(&templateBuffer, data); err != nil {
+		return "", err
+	}
+	return templateBuffer.String(), nil
+}
+
+func (k *templateKeeper) GetCommand(key string, data interface{}) (string, error) {
+	template := k.GetTemplate(key)
+	if template == nil {
+		return "", errors.Errorf("no template for key: %s", key)
+	}
+	return substituteTemplate(template, data)
+}
+
+func (k *templateKeeper) GetTemplate(key string) *template.Template {
+	if tmpl, found := k.mp[key]; found {
+		return tmpl
+	}
+	return nil
+}
+
+func NewTemplateKeeper(templateDir string) (*templateKeeper, error) {
+	files, err := ioutil.ReadDir(templateDir)
+	if err != nil {
+		return nil, err
+	}
+
+	mp := make(map[string]*template.Template)
+	for _, file := range files {
+		filename := file.Name()
+		if path.Ext(filename) != ".tmpl" {
+			continue
+		}
+		filepath := path.Join(templateDir, filename)
+		parts := strings.Split(filename, ".")
+		key := parts[0]
+
+		tmpl, err := template.ParseFiles(filepath)
+		if err != nil {
+			return nil, err
+		}
+		mp[key] = tmpl
+	}
+
+	return &templateKeeper{
+		mp: mp,
+	}, nil
+}
