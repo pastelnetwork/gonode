@@ -343,11 +343,13 @@ func (ts *testSuite) SetupSuite() {
 	writeTmpl, err := template.New("write").Parse(writeTemplate)
 	assert.Nil(ts.T(), err)
 
-	workDir, err := ioutil.TempDir("", "metadb-*")
+	workDir, err := ioutil.TempDir("", "servicetest-metadb-*")
 	assert.NoError(ts.T(), err)
 
 	config := metadb.NewConfig()
 	config.SetWorkDir(workDir)
+	config.HTTPPort = 4003
+	config.RaftPort = 4004
 	ts.workDir = workDir
 
 	db := metadb.New(config, "uuid", []string{})
