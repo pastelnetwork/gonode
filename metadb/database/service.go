@@ -33,7 +33,7 @@ const (
 	nftCreatedByArtistTemplate       = "nft_created_by_artist"
 	nftForSaleByArtistTemplate       = "nft_for_sale_by_artist"
 	nftOwnedByUserTemplate           = "nft_owned_by_user"
-	nftSoldByUserTemplate            = "nft_sold_by_user"
+	nftSoldByArtIDTemplate           = "nft_sold_by_art_id"
 	transactionWriteTemplate         = "transaction_write"
 	uniqueNftByUserTemplate          = "unique_nft_by_user"
 	userFollowWriteTemplate          = "user_follow_write"
@@ -180,7 +180,7 @@ func (db *Ops) salePriceByUserQuery(ctx context.Context, command string) (float6
 
 	nrows := queryResult.NumRows()
 	if nrows == 0 {
-		return 0.0, errors.Errorf("pastel id does not exist or no transaction have been made, query: %s", command)
+		return 0.0, nil
 	} else if nrows > 1 {
 		return 0.0, errors.Errorf("upto %d records are returned", nrows)
 	}
@@ -337,7 +337,11 @@ func (db *Ops) queryToInterface(ctx context.Context, command string) ([]map[stri
 }
 
 func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string) ([]NftCreatedByArtistQueryResult, error) {
-	command, err := db.templates.GetCommand(nftCopiesExistTemplate, artistPastelID)
+	if artistPastelID == "" {
+		return nil, errors.Errorf("invalid pastel ID")
+	}
+
+	command, err := db.templates.GetCommand(nftCreatedByArtistTemplate, artistPastelID)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
 	}
@@ -360,6 +364,10 @@ func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string)
 }
 
 func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string) ([]NftForSaleByArtistQueryResult, error) {
+	if artistPastelID == "" {
+		return nil, errors.Errorf("invalid pastel ID")
+	}
+
 	command, err := db.templates.GetCommand(nftForSaleByArtistTemplate, artistPastelID)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -383,6 +391,10 @@ func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string)
 }
 
 func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]NftOwnedByUserQueryResult, error) {
+	if pastelID == "" {
+		return nil, errors.Errorf("invalid pastel ID")
+	}
+
 	command, err := db.templates.GetCommand(nftOwnedByUserTemplate, pastelID)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -405,27 +417,38 @@ func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]NftOwn
 	return result, nil
 }
 
-func (db *Ops) GetNftSoldByUser(ctx context.Context, pastelID string) ([]NftSoldByUserQueryResult, error) {
-	command, err := db.templates.GetCommand(nftSoldByUserTemplate, pastelID)
+func (db *Ops) GetNftSoldByArtID(ctx context.Context, artID string) (NftSoldByArtIDQueryResult, error) {
+	if artID == "" {
+		return NftSoldByArtIDQueryResult{}, errors.Errorf("invalid pastel ID")
+	}
+
+	command, err := db.templates.GetCommand(nftSoldByArtIDTemplate, artID)
 	if err != nil {
-		return nil, errors.Errorf("error while subtitute template: %w", err)
+		return NftSoldByArtIDQueryResult{}, errors.Errorf("error while subtitute template: %w", err)
 	}
 
 	allResults, err := db.queryToInterface(ctx, command)
 	if err != nil {
-		return nil, errors.Errorf("error while query db: %w", err)
+		return NftSoldByArtIDQueryResult{}, errors.Errorf("error while query db: %w", err)
 	}
 
-	result := make([]NftSoldByUserQueryResult, 0)
+	result := make([]NftSoldByArtIDQueryResult, 0)
 	for _, mp := range allResults {
-		var record NftSoldByUserQueryResult
+		var record NftSoldByArtIDQueryResult
 		if err := mapstructure.Decode(mp, &record); err != nil {
-			return nil, errors.Errorf("error while decoding result: %w", err)
+			return NftSoldByArtIDQueryResult{}, errors.Errorf("error while decoding result: %w", err)
 		}
 		result = append(result, record)
 	}
 
-	return result, nil
+	nrows := len(result)
+	if nrows == 0 {
+		return NftSoldByArtIDQueryResult{}, errors.Errorf("no id match with input art ID")
+	} else if nrows > 1 {
+		return NftSoldByArtIDQueryResult{}, errors.Errorf("upto %d records returned", nrows)
+	}
+
+	return result[0], nil
 }
 
 func (db *Ops) GetUniqueNftByUser(ctx context.Context, query UniqueNftByUserQuery) ([]ArtInfo, error) {

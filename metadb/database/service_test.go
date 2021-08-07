@@ -260,10 +260,10 @@ func (ts *testSuite) setupTableTest() {
 		ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 	}
 
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 1}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 2}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 2}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 3}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20}))
 
 	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id1", ArtID: "art1_id1", Price: 10.0}))
 	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art1_id1", ArtID: "art1_id1", Price: 20.0}))
@@ -280,7 +280,6 @@ func (ts *testSuite) setupTableTest() {
 	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t5", InstanceID: "ins1_art1_id1", Timestamp: 26, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45.0}))
 	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t6", InstanceID: "ins1_art1_id2", Timestamp: 30, SellerPastelID: "id2", BuyerPastelID: "id4", Price: 20.0}))
 	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t7", InstanceID: "ins1_art1_id2", Timestamp: 31, SellerPastelID: "id4", BuyerPastelID: "id1", Price: 20.0}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t8", InstanceID: "ins1_art1_id1", Timestamp: 32, SellerPastelID: "id7", BuyerPastelID: "id1", Price: 20.0}))
 
 	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id2"}))
 	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id3"}))
@@ -297,6 +296,16 @@ func (ts *testSuite) setupTableTest() {
 	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id4"}))
 	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id5"}))
 	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id6"}))
+
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id1", PastelID: "id2"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id1", PastelID: "id3"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id1", PastelID: "id4"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id1", PastelID: "id5"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art2_id1", PastelID: "id6"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art2_id1", PastelID: "id7"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id2", PastelID: "id7"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art2_id2", PastelID: "id8"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art2_id2", PastelID: "id9"}))
 }
 
 func (ts *testSuite) SetupSuite() {
@@ -739,33 +748,41 @@ func (ts *testSuite) TestDatabaseOps_WriteUserFollow() {
 	}
 }
 
-func TestDatabaseOps_GetCumulatedSalePriceByUser(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx      context.Context
-		pastelID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetCumulatedSalePriceByUser() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    float64
-		wantErr bool
+		pastelID string
+		want     float64
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{
+			pastelID: "",
+			want:     0,
+			wantErr:  true,
+		},
+		{
+			pastelID: "id8",
+			want:     0,
+			wantErr:  false,
+		},
+		{
+			pastelID: "id1",
+			want:     20.0,
+			wantErr:  false,
+		},
+		{
+			pastelID: "id6",
+			want:     90.0,
+			wantErr:  false,
+		},
+		{
+			pastelID: "id2",
+			want:     60.0,
+			wantErr:  false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetCumulatedSalePriceByUser(tt.args.ctx, tt.args.pastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetCumulatedSalePriceByUser-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetCumulatedSalePriceByUser(ts.ctx, tt.pastelID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetCumulatedSalePriceByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -777,71 +794,41 @@ func TestDatabaseOps_GetCumulatedSalePriceByUser(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_queryPastelID(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx     context.Context
-		command string
-	}
+func (ts *testSuite) TestDatabaseOps_GetFollowees() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []string
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.queryPastelID(tt.args.ctx, tt.args.command)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Ops.queryPastelID() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Ops.queryPastelID() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestDatabaseOps_GetFollowees(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx      context.Context
 		pastelID string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []string
-		wantErr bool
+		want     []string
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{
+			pastelID: "id1",
+			want:     []string{"id2", "id3", "id4", "id5", "id6"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id2",
+			want:     []string{"id1", "id3", "id4", "id5", "id6"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id3",
+			want:     []string{"id1", "id2", "id4", "id5", "id6"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id4",
+			want:     []string{},
+			wantErr:  false,
+		},
+		{
+			pastelID: "",
+			want:     nil,
+			wantErr:  true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetFollowees(tt.args.ctx, tt.args.pastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetFollowees-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetFollowees(ts.ctx, tt.pastelID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetFollowees() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -853,33 +840,56 @@ func TestDatabaseOps_GetFollowees(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_GetFollowers(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx      context.Context
-		pastelID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetFollowers() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []string
-		wantErr bool
+		pastelID string
+		want     []string
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{
+			pastelID: "id1",
+			want:     []string{"id2", "id3"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id2",
+			want:     []string{"id1", "id3"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id3",
+			want:     []string{"id1", "id2"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id4",
+			want:     []string{"id1", "id2", "id3"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id5",
+			want:     []string{"id1", "id2", "id3"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id6",
+			want:     []string{"id1", "id2", "id3"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id7",
+			want:     []string{},
+			wantErr:  false,
+		},
+		{
+			pastelID: "",
+			want:     nil,
+			wantErr:  true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetFollowers(tt.args.ctx, tt.args.pastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetFollowers-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetFollowers(ts.ctx, tt.pastelID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetFollowers() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -891,33 +901,36 @@ func TestDatabaseOps_GetFollowers(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_GetFriends(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx      context.Context
-		pastelID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetFriends() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []string
-		wantErr bool
+		pastelID string
+		want     []string
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{
+			pastelID: "id1",
+			want:     []string{"id2", "id3"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id2",
+			want:     []string{"id1", "id3"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "id3",
+			want:     []string{"id1", "id2"},
+			wantErr:  false,
+		},
+		{
+			pastelID: "",
+			want:     nil,
+			wantErr:  true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetFriends(tt.args.ctx, tt.args.pastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetFriends-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetFriends(ts.ctx, tt.pastelID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetFriends() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -929,33 +942,36 @@ func TestDatabaseOps_GetFriends(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_GetHighestSalePriceByUser(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx      context.Context
-		pastelID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetHighestSalePriceByUser() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    float64
-		wantErr bool
+		pastelID string
+		want     float64
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{
+			pastelID: "id2",
+			want:     40.0,
+			wantErr:  false,
+		},
+		{
+			pastelID: "id6",
+			want:     45.0,
+			wantErr:  false,
+		},
+		{
+			pastelID: "id10",
+			want:     0.0,
+			wantErr:  false,
+		},
+		{
+			pastelID: "",
+			want:     0.0,
+			wantErr:  true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetHighestSalePriceByUser(tt.args.ctx, tt.args.pastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetHighestSalePriceByUser-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetHighestSalePriceByUser(ts.ctx, tt.pastelID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetHighestSalePriceByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -967,33 +983,41 @@ func TestDatabaseOps_GetHighestSalePriceByUser(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_GetExistingNftCopies(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx   context.Context
-		artID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetExistingNftCopies() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
+		artID   string
 		want    int
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			artID:   "art1_id1",
+			want:    2,
+			wantErr: false,
+		},
+		{
+			artID:   "art2_id1",
+			want:    2,
+			wantErr: false,
+		},
+		{
+			artID:   "art1_id2",
+			want:    1,
+			wantErr: false,
+		},
+		{
+			artID:   "art2_id2",
+			want:    2,
+			wantErr: false,
+		},
+		{
+			artID:   "s2123",
+			want:    0,
+			wantErr: true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetExistingNftCopies(tt.args.ctx, tt.args.artID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetExistingNftCopies-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetExistingNftCopies(ts.ctx, tt.artID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetExistingNftCopies() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1005,71 +1029,80 @@ func TestDatabaseOps_GetExistingNftCopies(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_queryToInterface(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx     context.Context
-		command string
-	}
+func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []map[string]interface{}
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.queryToInterface(tt.args.ctx, tt.args.command)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Ops.queryToInterface() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Ops.queryToInterface() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestDatabaseOps_GetNftCreatedByArtist(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx            context.Context
 		artistPastelID string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []NftCreatedByArtistQueryResult
-		wantErr bool
+		want           []NftCreatedByArtistQueryResult
+		wantErr        bool
 	}{
-		// TODO: Add test cases.
+		{
+			artistPastelID: "id1",
+			want: []NftCreatedByArtistQueryResult{
+				NftCreatedByArtistQueryResult{
+					InstanceID:       "ins1_art1_id1",
+					ArtID:            "art1_id1",
+					Copies:           2,
+					CreatedTimestamp: 5,
+				},
+				NftCreatedByArtistQueryResult{
+					InstanceID:       "ins1_art2_id1",
+					ArtID:            "art2_id1",
+					Copies:           2,
+					CreatedTimestamp: 10,
+				},
+				NftCreatedByArtistQueryResult{
+					InstanceID:       "ins2_art1_id1",
+					ArtID:            "art1_id1",
+					Copies:           2,
+					CreatedTimestamp: 5,
+				},
+				NftCreatedByArtistQueryResult{
+					InstanceID:       "ins2_art2_id1",
+					ArtID:            "art2_id1",
+					Copies:           2,
+					CreatedTimestamp: 10,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			artistPastelID: "id2",
+			want: []NftCreatedByArtistQueryResult{
+				NftCreatedByArtistQueryResult{
+					InstanceID:       "ins1_art1_id2",
+					ArtID:            "art1_id2",
+					Copies:           1,
+					CreatedTimestamp: 15,
+				},
+				NftCreatedByArtistQueryResult{
+					InstanceID:       "ins1_art2_id2",
+					ArtID:            "art2_id2",
+					Copies:           2,
+					CreatedTimestamp: 20,
+				},
+				NftCreatedByArtistQueryResult{
+					InstanceID:       "ins2_art2_id2",
+					ArtID:            "art2_id2",
+					Copies:           2,
+					CreatedTimestamp: 20,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			artistPastelID: "id3",
+			want:           []NftCreatedByArtistQueryResult{},
+			wantErr:        false,
+		},
+		{
+			artistPastelID: "",
+			want:           nil,
+			wantErr:        true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetNftCreatedByArtist(tt.args.ctx, tt.args.artistPastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetNftCreatedByArtist-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetNftCreatedByArtist(ts.ctx, tt.artistPastelID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetNftCreatedByArtist() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1081,33 +1114,58 @@ func TestDatabaseOps_GetNftCreatedByArtist(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_GetNftForSaleByArtist(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx            context.Context
-		artistPastelID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetNftForSaleByArtist() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []NftForSaleByArtistQueryResult
-		wantErr bool
+		artistPastelID string
+		want           []NftForSaleByArtistQueryResult
+		wantErr        bool
 	}{
-		// TODO: Add test cases.
+		{
+			artistPastelID: "id1",
+			want: []NftForSaleByArtistQueryResult{
+				NftForSaleByArtistQueryResult{
+					InstanceID: "ins1_art2_id1",
+					ArtID:      "art2_id1",
+					Price:      30.0,
+				},
+				NftForSaleByArtistQueryResult{
+					InstanceID: "ins2_art1_id1",
+					ArtID:      "art1_id1",
+					Price:      20.0,
+				},
+				NftForSaleByArtistQueryResult{
+					InstanceID: "ins2_art2_id1",
+					ArtID:      "art2_id1",
+					Price:      40.0,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			artistPastelID: "id2",
+			want: []NftForSaleByArtistQueryResult{
+				NftForSaleByArtistQueryResult{
+					InstanceID: "ins1_art2_id2",
+					ArtID:      "art2_id2",
+					Price:      60.0,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			artistPastelID: "",
+			want:           nil,
+			wantErr:        true,
+		},
+		{
+			artistPastelID: "id10",
+			want:           []NftForSaleByArtistQueryResult{},
+			wantErr:        false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetNftForSaleByArtist(tt.args.ctx, tt.args.artistPastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetNftForSaleByArtist-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetNftForSaleByArtist(ts.ctx, tt.artistPastelID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetNftForSaleByArtist() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1119,33 +1177,68 @@ func TestDatabaseOps_GetNftForSaleByArtist(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_GetNftOwnedByUser(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx      context.Context
-		pastelID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetNftOwnedByUser() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []NftOwnedByUserQueryResult
-		wantErr bool
+		pastelID string
+		want     []NftOwnedByUserQueryResult
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{
+			pastelID: "id10",
+			want:     []NftOwnedByUserQueryResult{},
+			wantErr:  false,
+		},
+		{
+			pastelID: "",
+			want:     nil,
+			wantErr:  true,
+		},
+		{
+			pastelID: "id7",
+			want: []NftOwnedByUserQueryResult{
+				NftOwnedByUserQueryResult{
+					ArtID: "art1_id1",
+					Count: 1,
+				},
+				NftOwnedByUserQueryResult{
+					ArtID: "art2_id2",
+					Count: 1,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			pastelID: "id1",
+			want: []NftOwnedByUserQueryResult{
+				NftOwnedByUserQueryResult{
+					ArtID: "art1_id1",
+					Count: 1,
+				},
+				NftOwnedByUserQueryResult{
+					ArtID: "art1_id2",
+					Count: 1,
+				},
+				NftOwnedByUserQueryResult{
+					ArtID: "art2_id1",
+					Count: 2,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			pastelID: "id2",
+			want: []NftOwnedByUserQueryResult{
+				NftOwnedByUserQueryResult{
+					ArtID: "art2_id2",
+					Count: 1,
+				},
+			},
+			wantErr: false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetNftOwnedByUser(tt.args.ctx, tt.args.pastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetNftOwnedByUser-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetNftOwnedByUser(ts.ctx, tt.pastelID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetNftOwnedByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1157,71 +1250,137 @@ func TestDatabaseOps_GetNftOwnedByUser(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_GetNftSoldByUser(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx      context.Context
-		pastelID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetNftSoldByArtID() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    []NftSoldByUserQueryResult
-		wantErr bool
+		pastelID string
+		want     NftSoldByArtIDQueryResult
+		wantErr  bool
 	}{
-		// TODO: Add test cases.
+		{
+			pastelID: "dadsa",
+			want:     NftSoldByArtIDQueryResult{},
+			wantErr:  false,
+		},
+		{
+			pastelID: "",
+			want:     NftSoldByArtIDQueryResult{},
+			wantErr:  true,
+		},
+		{
+			pastelID: "art1_id1",
+			want: NftSoldByArtIDQueryResult{
+				TotalCopies: 2,
+				SoldCopies:  1,
+			},
+			wantErr: false,
+		},
+		{
+			pastelID: "art2_id1",
+			want: NftSoldByArtIDQueryResult{
+				TotalCopies: 2,
+				SoldCopies:  0,
+			},
+			wantErr: false,
+		},
+		{
+			pastelID: "art1_id2",
+			want: NftSoldByArtIDQueryResult{
+				TotalCopies: 1,
+				SoldCopies:  1,
+			},
+			wantErr: false,
+		},
+		{
+			pastelID: "art2_id2",
+			want: NftSoldByArtIDQueryResult{
+				TotalCopies: 2,
+				SoldCopies:  1,
+			},
+			wantErr: false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetNftSoldByUser(tt.args.ctx, tt.args.pastelID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetNftSoldByArtID-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetNftSoldByArtID(ts.ctx, tt.pastelID)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("Ops.GetNftSoldByUser() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Ops.GetNftSoldByArtID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Ops.GetNftSoldByUser() = %v, want %v", got, tt.want)
+				t.Errorf("Ops.GetNftSoldByArtID() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestDatabaseOps_GetUniqueNftByUser(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx   context.Context
-		query UniqueNftByUserQuery
-	}
+func (ts *testSuite) TestDatabaseOps_GetUniqueNftByUser() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
+		query   UniqueNftByUserQuery
 		want    []ArtInfo
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			query: UniqueNftByUserQuery{
+				ArtistPastelID: "id1",
+				LimitTimestamp: 7,
+			},
+			want: []ArtInfo{
+				ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10},
+			},
+			wantErr: false,
+		},
+		{
+			query: UniqueNftByUserQuery{
+				ArtistPastelID: "id1",
+				LimitTimestamp: 1,
+			},
+			want: []ArtInfo{
+				ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10},
+				ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5},
+			},
+			wantErr: false,
+		},
+		{
+			query: UniqueNftByUserQuery{
+				ArtistPastelID: "id1",
+				LimitTimestamp: 11,
+			},
+			want:    []ArtInfo{},
+			wantErr: false,
+		},
+		{
+			query: UniqueNftByUserQuery{
+				ArtistPastelID: "id2",
+				LimitTimestamp: 11,
+			},
+			want: []ArtInfo{
+				ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20},
+				ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15},
+			},
+			wantErr: false,
+		},
+		{
+			query: UniqueNftByUserQuery{
+				ArtistPastelID: "id2",
+				LimitTimestamp: 17,
+			},
+			want: []ArtInfo{
+				ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20},
+			},
+			wantErr: false,
+		},
+		{
+			query: UniqueNftByUserQuery{
+				ArtistPastelID: "id2",
+				LimitTimestamp: 30,
+			},
+			want:    []ArtInfo{},
+			wantErr: false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetUniqueNftByUser(tt.args.ctx, tt.args.query)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetUniqueNftByUser-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetUniqueNftByUser(ts.ctx, tt.query)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetUniqueNftByUser() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -1233,91 +1392,52 @@ func TestDatabaseOps_GetUniqueNftByUser(t *testing.T) {
 	}
 }
 
-func TestDatabaseOps_GetUsersLikeNft(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx   context.Context
-		artID string
-	}
+func (ts *testSuite) TestDatabaseOps_GetUsersLikeNft() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
+		artID   string
 		want    []string
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			artID:   "id10",
+			want:    []string{},
+			wantErr: false,
+		},
+		{
+			artID:   "",
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			artID:   "art1_id1",
+			want:    []string{"id2", "id3", "id4", "id5"},
+			wantErr: false,
+		},
+		{
+			artID:   "art2_id1",
+			want:    []string{"id6", "id7"},
+			wantErr: false,
+		},
+		{
+			artID:   "art1_id2",
+			want:    []string{"id7"},
+			wantErr: false,
+		},
+		{
+			artID:   "art2_id2",
+			want:    []string{"id8", "id9"},
+			wantErr: false,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.GetUsersLikeNft(tt.args.ctx, tt.args.artID)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetUsersLikeNft-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetUsersLikeNft(ts.ctx, tt.artID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetUsersLikeNft() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Ops.GetUsersLikeNft() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestDatabaseOps_Run(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if err := db.Run(tt.args.ctx); (err != nil) != tt.wantErr {
-				t.Errorf("Ops.Run() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestNewDatabaseOps(t *testing.T) {
-	type args struct {
-		metaDB metadb.MetaDB
-		config *Config
-	}
-	tests := []struct {
-		name string
-		args args
-		want *Ops
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewDatabaseOps(tt.args.metaDB, tt.args.config); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewDatabaseOps() = %v, want %v", got, tt.want)
 			}
 		})
 	}

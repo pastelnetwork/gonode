@@ -5,4 +5,6 @@ SELECT
 FROM
     follow_relations
 WHERE
-    follower_pastel_id = '{{.}}';
+    follower_pastel_id = '{{.}}'
+ORDER BY
+    followee_pastel_id;

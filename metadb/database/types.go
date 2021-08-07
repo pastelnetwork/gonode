@@ -209,10 +209,9 @@ type NftOwnedByUserQueryResult struct {
 	Count int    `mapstructure:"cnt"`
 }
 
-type NftSoldByUserQueryResult struct {
-	ArtID       string `mapstructure:"art_id"`
-	TotalCopies int    `mapstructure:"total_copies"`
-	SoldCopies  int    `mapstructure:"sold_copies"`
+type NftSoldByArtIDQueryResult struct {
+	TotalCopies int `mapstructure:"total_copies"`
+	SoldCopies  int `mapstructure:"sold_copies"`
 }
 
 type UniqueNftByUserQuery struct {

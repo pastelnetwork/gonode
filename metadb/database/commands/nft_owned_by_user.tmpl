@@ -7,4 +7,6 @@ FROM
 WHERE
     owner_pastel_id = '{{.}}'
 GROUP BY
+    art_id
+ORDER BY
     art_id;
