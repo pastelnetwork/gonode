@@ -429,7 +429,7 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 		RqFilesDir: task.Service.config.RqFilesDir,
 	})
 
-	log.WithContext(ctx).Debugf("NAM-DEBUG Image hash %x", sha3.Sum256(content))
+	log.WithContext(ctx).Debugf("Image hash %x", sha3.Sum256(content))
 	// FIXME :
 	// - check format of artis block hash should be base58 or not
 	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, hex.EncodeToString(task.artistBlockHash), task.Request.ArtistPastelID)
