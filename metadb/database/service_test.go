@@ -260,10 +260,10 @@ func (ts *testSuite) setupTableTest() {
 		ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 	}
 
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5, GreenNft: true, RarenessScore: 0.9, RoyaltyRatePercentage: 10.0}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15, GreenNft: true, RarenessScore: 0.7, RoyaltyRatePercentage: 8.0}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0}))
 
 	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id1", ArtID: "art1_id1", Price: 10.0}))
 	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art1_id1", ArtID: "art1_id1", Price: 20.0}))
@@ -1039,28 +1039,40 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 			artistPastelID: "id1",
 			want: []NftCreatedByArtistQueryResult{
 				NftCreatedByArtistQueryResult{
-					InstanceID:       "ins1_art1_id1",
-					ArtID:            "art1_id1",
-					Copies:           2,
-					CreatedTimestamp: 5,
+					InstanceID:            "ins1_art1_id1",
+					ArtID:                 "art1_id1",
+					Copies:                2,
+					CreatedTimestamp:      5,
+					GreenNft:              true,
+					RarenessScore:         0.9,
+					RoyaltyRatePercentage: 10.0,
 				},
 				NftCreatedByArtistQueryResult{
-					InstanceID:       "ins1_art2_id1",
-					ArtID:            "art2_id1",
-					Copies:           2,
-					CreatedTimestamp: 10,
+					InstanceID:            "ins1_art2_id1",
+					ArtID:                 "art2_id1",
+					Copies:                2,
+					CreatedTimestamp:      10,
+					GreenNft:              false,
+					RarenessScore:         0.8,
+					RoyaltyRatePercentage: 9.0,
 				},
 				NftCreatedByArtistQueryResult{
-					InstanceID:       "ins2_art1_id1",
-					ArtID:            "art1_id1",
-					Copies:           2,
-					CreatedTimestamp: 5,
+					InstanceID:            "ins2_art1_id1",
+					ArtID:                 "art1_id1",
+					Copies:                2,
+					CreatedTimestamp:      5,
+					GreenNft:              true,
+					RarenessScore:         0.9,
+					RoyaltyRatePercentage: 10.0,
 				},
 				NftCreatedByArtistQueryResult{
-					InstanceID:       "ins2_art2_id1",
-					ArtID:            "art2_id1",
-					Copies:           2,
-					CreatedTimestamp: 10,
+					InstanceID:            "ins2_art2_id1",
+					ArtID:                 "art2_id1",
+					Copies:                2,
+					CreatedTimestamp:      10,
+					GreenNft:              false,
+					RarenessScore:         0.8,
+					RoyaltyRatePercentage: 9.0,
 				},
 			},
 			wantErr: false,
@@ -1069,22 +1081,31 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 			artistPastelID: "id2",
 			want: []NftCreatedByArtistQueryResult{
 				NftCreatedByArtistQueryResult{
-					InstanceID:       "ins1_art1_id2",
-					ArtID:            "art1_id2",
-					Copies:           1,
-					CreatedTimestamp: 15,
+					InstanceID:            "ins1_art1_id2",
+					ArtID:                 "art1_id2",
+					Copies:                1,
+					CreatedTimestamp:      15,
+					GreenNft:              true,
+					RarenessScore:         0.7,
+					RoyaltyRatePercentage: 8.0,
 				},
 				NftCreatedByArtistQueryResult{
-					InstanceID:       "ins1_art2_id2",
-					ArtID:            "art2_id2",
-					Copies:           2,
-					CreatedTimestamp: 20,
+					InstanceID:            "ins1_art2_id2",
+					ArtID:                 "art2_id2",
+					Copies:                2,
+					CreatedTimestamp:      20,
+					GreenNft:              false,
+					RarenessScore:         0.6,
+					RoyaltyRatePercentage: 7.0,
 				},
 				NftCreatedByArtistQueryResult{
-					InstanceID:       "ins2_art2_id2",
-					ArtID:            "art2_id2",
-					Copies:           2,
-					CreatedTimestamp: 20,
+					InstanceID:            "ins2_art2_id2",
+					ArtID:                 "art2_id2",
+					Copies:                2,
+					CreatedTimestamp:      20,
+					GreenNft:              false,
+					RarenessScore:         0.6,
+					RoyaltyRatePercentage: 7.0,
 				},
 			},
 			wantErr: false,
@@ -1325,7 +1346,7 @@ func (ts *testSuite) TestDatabaseOps_GetUniqueNftByUser() {
 				LimitTimestamp: 7,
 			},
 			want: []ArtInfo{
-				ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10},
+				ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0},
 			},
 			wantErr: false,
 		},
@@ -1335,8 +1356,8 @@ func (ts *testSuite) TestDatabaseOps_GetUniqueNftByUser() {
 				LimitTimestamp: 1,
 			},
 			want: []ArtInfo{
-				ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10},
-				ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5},
+				ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0},
+				ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5, GreenNft: true, RarenessScore: 0.9, RoyaltyRatePercentage: 10.0},
 			},
 			wantErr: false,
 		},
@@ -1354,8 +1375,8 @@ func (ts *testSuite) TestDatabaseOps_GetUniqueNftByUser() {
 				LimitTimestamp: 11,
 			},
 			want: []ArtInfo{
-				ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20},
-				ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15},
+				ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0},
+				ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15, GreenNft: true, RarenessScore: 0.7, RoyaltyRatePercentage: 8.0},
 			},
 			wantErr: false,
 		},
@@ -1365,7 +1386,7 @@ func (ts *testSuite) TestDatabaseOps_GetUniqueNftByUser() {
 				LimitTimestamp: 17,
 			},
 			want: []ArtInfo{
-				ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20},
+				ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0},
 			},
 			wantErr: false,
 		},

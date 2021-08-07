@@ -4,10 +4,16 @@ INSERT INTO art_metadata (
     art_id,
     artist_pastel_id,
     copies,
-    created_timestamp
+    created_timestamp,
+    green_nft,
+    rareness_score,
+    royalty_rate_percentage
 ) VALUES (
     '{{.ArtID}}',
     '{{.ArtistPastelID}}',
     {{.Copies}},
-    {{.CreatedTimestamp}}
+    {{.CreatedTimestamp}},
+    {{.GreenNft}},
+    {{.RarenessScore}},
+    {{.RoyaltyRatePercentage}}
 );

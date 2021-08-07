@@ -4,7 +4,10 @@ SELECT
     art_instance_metadata.instance_id,
     art_instance_metadata.art_id,
     art_metadata.copies,
-    art_metadata.created_timestamp
+    art_metadata.created_timestamp,
+    art_metadata.green_nft,
+    art_metadata.rareness_score,
+    art_metadata.royalty_rate_percentage
 FROM
     art_instance_metadata LEFT JOIN art_metadata USING(art_id)
 WHERE

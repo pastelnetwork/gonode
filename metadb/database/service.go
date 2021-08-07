@@ -149,6 +149,9 @@ func (db *Ops) ReadUserData(ctx context.Context, artistPastelID string) (userdat
 	if err != nil {
 		return userdata.ProcessRequest{}, errors.Errorf("error while querying db: %w", err)
 	}
+	if queryResult.Err != nil {
+		return userdata.ProcessRequest{}, errors.Errorf("error while querying db: %w", queryResult.Err)
+	}
 
 	nrows := queryResult.NumRows()
 	if nrows == 0 {
@@ -176,6 +179,9 @@ func (db *Ops) salePriceByUserQuery(ctx context.Context, command string) (float6
 	queryResult, err := db.metaDB.Query(ctx, command, queryLevelNone)
 	if err != nil {
 		return 0.0, errors.Errorf("error while querying db: %w", err)
+	}
+	if queryResult.Err != nil {
+		return 0.0, errors.Errorf("error while querying db: %w", queryResult.Err)
 	}
 
 	nrows := queryResult.NumRows()
@@ -216,6 +222,9 @@ func (db *Ops) queryPastelID(ctx context.Context, command string) ([]string, err
 	queryResult, err := db.metaDB.Query(ctx, command, queryLevelNone)
 	if err != nil {
 		return nil, errors.Errorf("error while querying db: %w", err)
+	}
+	if queryResult.Err != nil {
+		return nil, errors.Errorf("error while querying db: %w", queryResult.Err)
 	}
 
 	result := make([]string, 0)
@@ -296,6 +305,9 @@ func (db *Ops) GetExistingNftCopies(ctx context.Context, artID string) (int, err
 	if err != nil {
 		return 0, errors.Errorf("error while querying db: %w", err)
 	}
+	if queryResult.Err != nil {
+		return 0, errors.Errorf("error while querying db: %w", queryResult.Err)
+	}
 
 	nrows := queryResult.NumRows()
 	if nrows == 0 {
@@ -322,6 +334,9 @@ func (db *Ops) queryToInterface(ctx context.Context, command string) ([]map[stri
 	queryResult, err := db.metaDB.Query(ctx, command, queryLevelNone)
 	if err != nil {
 		return nil, errors.Errorf("error while querying db: %w", err)
+	}
+	if queryResult.Err != nil {
+		return nil, errors.Errorf("error while querying db: %w", queryResult.Err)
 	}
 
 	result := make([]map[string]interface{}, 0)

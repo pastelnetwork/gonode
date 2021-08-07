@@ -159,10 +159,13 @@ func (d *UserdataReadResult) ToUserData() userdata.ProcessRequest {
 }
 
 type ArtInfo struct {
-	ArtID            string `mapstructure:"art_id"`
-	ArtistPastelID   string `mapstructure:"artist_pastel_id"`
-	Copies           int64  `mapstructure:"copies"`
-	CreatedTimestamp int64  `mapstructure:"created_timestamp"`
+	ArtID                 string  `mapstructure:"art_id"`
+	ArtistPastelID        string  `mapstructure:"artist_pastel_id"`
+	Copies                int64   `mapstructure:"copies"`
+	CreatedTimestamp      int64   `mapstructure:"created_timestamp"`
+	GreenNft              bool    `mapstructure:"green_nft"`
+	RarenessScore         float64 `mapstructure:"rareness_score"`
+	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage"`
 }
 
 type ArtInstanceInfo struct {
@@ -192,10 +195,13 @@ type UserFollow struct {
 }
 
 type NftCreatedByArtistQueryResult struct {
-	InstanceID       string `mapstructure:"instance_id"`
-	ArtID            string `mapstructure:"art_id"`
-	Copies           int64  `mapstructure:"copies"`
-	CreatedTimestamp int64  `mapstructure:"created_timestamp"`
+	InstanceID            string  `mapstructure:"instance_id"`
+	ArtID                 string  `mapstructure:"art_id"`
+	Copies                int64   `mapstructure:"copies"`
+	CreatedTimestamp      int64   `mapstructure:"created_timestamp"`
+	GreenNft              bool    `mapstructure:"green_nft"`
+	RarenessScore         float64 `mapstructure:"rareness_score"`
+	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage"`
 }
 
 type NftForSaleByArtistQueryResult struct {

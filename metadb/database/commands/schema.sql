@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS art_metadata (
 	artist_pastel_id TEXT NOT NULL,
 	copies INTEGER NOT NULL,
 	created_timestamp INTEGER NOT NULL,
+	green_nft BOOLEAN NOT NULL,
+	rareness_score FLOAT NOT NULL,
+	royalty_rate_percentage FLOAT NOT NULL,
 	FOREIGN KEY(artist_pastel_id) REFERENCES user_metadata(artist_pastel_id)
 );
 ---
