@@ -254,7 +254,6 @@ type testSuite struct {
 func (ts *testSuite) setupTableTest() {
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data3))
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data4))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art10_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 1}))
 
 	for i := 1; i <= 10; i++ {
 		userDataFrame.ArtistPastelID = fmt.Sprintf("id%d", i)
@@ -481,174 +480,260 @@ func (ts *testSuite) TestDatabaseOps_WriteArtInfo() {
 	for i, tt := range tests {
 		ts.T().Run(fmt.Sprintf("TestDatabaseOps_WriteArtInfo-%d", i), func(t *testing.T) {
 			if err := ts.ops.WriteArtInfo(ts.ctx, tt.data); (err != nil) != tt.wantErr {
-				fmt.Printf("%s/%s\n", fmt.Sprintf("TestDatabaseOps_WriteArtInfo-%d", i), err)
 				ts.T().Errorf("Ops.WriteArtInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestDatabaseOps_WriteArtInstanceInfo(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx  context.Context
-		data ArtInstanceInfo
-	}
+func (ts *testSuite) TestDatabaseOps_WriteArtInstanceInfo() {
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art10_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 1}))
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
+		data    ArtInstanceInfo
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			data:    ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
+			wantErr: false,
+		},
+		{
+			data:    ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
+			wantErr: true,
+		},
+		{
+			data:    ArtInstanceInfo{InstanceID: "ins2_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
+			wantErr: false,
+		},
+		{
+			data:    ArtInstanceInfo{InstanceID: "ins3_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
+			wantErr: true,
+		},
+		{
+			data:    ArtInstanceInfo{InstanceID: "ins4_art10_qwe", ArtID: "art10_qwe_fff", Price: 10.0},
+			wantErr: true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if err := db.WriteArtInstanceInfo(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_WriteArtInstanceInfo-%d", i), func(t *testing.T) {
+			err := ts.ops.WriteArtInstanceInfo(ts.ctx, tt.data)
+			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.WriteArtInstanceInfo() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if err == nil {
+				command := fmt.Sprintf(`select owner_pastel_id from art_instance_metadata where instance_id = '%s'`, tt.data.InstanceID)
+				queryResult, err := ts.ops.metaDB.Query(ts.ctx, command, queryLevelNone)
+				ts.Nil(err)
+				ts.Equal(int64(1), queryResult.NumRows())
+				var owner string
+				queryResult.Next()
+				queryResult.Scan(&owner)
+				ts.Equal("qwe", owner)
 			}
 		})
 	}
 }
 
-func TestDatabaseOps_WriteArtLike(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx  context.Context
-		data ArtLike
-	}
+func (ts *testSuite) TestDatabaseOps_WriteArtLike() {
+	userDataFrame.ArtistPastelID = "like"
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_like", ArtistPastelID: "like", Copies: 2, CreatedTimestamp: 12}))
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
+		data    ArtLike
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			data:    ArtLike{ArtID: "art1_like", PastelID: "id1"},
+			wantErr: false,
+		},
+		{
+			data:    ArtLike{ArtID: "art1_like", PastelID: "id2"},
+			wantErr: false,
+		},
+		{
+			data:    ArtLike{ArtID: "art1_like", PastelID: "id3"},
+			wantErr: false,
+		},
+		{
+			data:    ArtLike{ArtID: "art1_like", PastelID: "id3"},
+			wantErr: true,
+		},
+		{
+			data:    ArtLike{ArtID: "art1_like_213", PastelID: "id3"},
+			wantErr: true,
+		},
+		{
+			data:    ArtLike{ArtID: "art1_like", PastelID: "id3231"},
+			wantErr: true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if err := db.WriteArtLike(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_WriteArtLike-%d", i), func(t *testing.T) {
+			if err := ts.ops.WriteArtLike(ts.ctx, tt.data); (err != nil) != tt.wantErr {
 				t.Errorf("Ops.WriteArtLike() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestDatabaseOps_WriteTransaction(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
+func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
+	for i := 0; i < 3; i++ {
+		userDataFrame.ArtistPastelID = fmt.Sprintf("id_transaction_%d", i)
+		ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 	}
-	type args struct {
-		ctx  context.Context
-		data ArtTransaction
-	}
+
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_transaction_0", ArtistPastelID: "id_transaction_0", Copies: 1, CreatedTimestamp: 15}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_transaction_1", ArtistPastelID: "id_transaction_1", Copies: 2, CreatedTimestamp: 15}))
+
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_transaction_0", ArtID: "art0_id_transaction_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_transaction_1", ArtID: "art0_id_transaction_1", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_transaction_1", ArtID: "art0_id_transaction_1", Price: 10.0}))
+
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
+		data    ArtTransaction
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_0",
+				InstanceID:     "ins0_art0_id_transaction_0",
+				Timestamp:      100,
+				SellerPastelID: "id_transaction_0",
+				BuyerPastelID:  "id_transaction_2",
+				Price:          10.0,
+			},
+			wantErr: false,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_1",
+				InstanceID:     "ins0_art0_id_transaction_1",
+				Timestamp:      101,
+				SellerPastelID: "id_transaction_1",
+				BuyerPastelID:  "id_transaction_2",
+				Price:          10.0,
+			},
+			wantErr: false,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_2",
+				InstanceID:     "ins1_art0_id_transaction_1",
+				Timestamp:      102,
+				SellerPastelID: "id_transaction_1",
+				BuyerPastelID:  "id_transaction_2",
+				Price:          10.0,
+			},
+			wantErr: false,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_0",
+				InstanceID:     "ins1_art0_id_transaction_1",
+				Timestamp:      103,
+				SellerPastelID: "id_transaction_2",
+				BuyerPastelID:  "id_transaction_1",
+				Price:          10.0,
+			},
+			wantErr: true,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_3",
+				InstanceID:     "ins1_art0_id_transaction_1",
+				Timestamp:      104,
+				SellerPastelID: "id_transaction_1",
+				BuyerPastelID:  "id_transaction_2",
+				Price:          10.0,
+			},
+			wantErr: true,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_4",
+				InstanceID:     "sdasd",
+				Timestamp:      105,
+				SellerPastelID: "id_transaction_2",
+				BuyerPastelID:  "id_transaction_1",
+				Price:          10.0,
+			},
+			wantErr: true,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_4",
+				InstanceID:     "ins1_art0_id_transaction_1",
+				Timestamp:      106,
+				SellerPastelID: "adsd",
+				BuyerPastelID:  "id_transaction_1",
+				Price:          10.0,
+			},
+			wantErr: true,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_4",
+				InstanceID:     "ins1_art0_id_transaction_1",
+				Timestamp:      105,
+				SellerPastelID: "id_transaction_2",
+				BuyerPastelID:  "1231",
+				Price:          10.0,
+			},
+			wantErr: true,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_4",
+				InstanceID:     "ins1_art0_id_transaction_1",
+				Timestamp:      105,
+				SellerPastelID: "id_transaction_2",
+				BuyerPastelID:  "id_transaction_1",
+				Price:          10.0,
+			},
+			wantErr: false,
+		},
+		{
+			data: ArtTransaction{
+				TransactionID:  "test_trans_5",
+				InstanceID:     "ins1_art0_id_transaction_1",
+				Timestamp:      106,
+				SellerPastelID: "id_transaction_2",
+				BuyerPastelID:  "id_transaction_1",
+				Price:          20.0,
+			},
+			wantErr: true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if err := db.WriteTransaction(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_WriteTransaction-%d", i), func(t *testing.T) {
+			if err := ts.ops.WriteTransaction(ts.ctx, tt.data); (err != nil) != tt.wantErr {
 				t.Errorf("Ops.WriteTransaction() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestDatabaseOps_WriteUserFollow(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
+func (ts *testSuite) TestDatabaseOps_WriteUserFollow() {
+	for i := 0; i < 3; i++ {
+		userDataFrame.ArtistPastelID = fmt.Sprintf("id_write_follow_%d", i)
+		ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 	}
-	type args struct {
-		ctx  context.Context
-		data UserFollow
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if err := db.WriteUserFollow(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("Ops.WriteUserFollow() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
 
-func TestDatabaseOps_salePriceByUserQuery(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx     context.Context
-		command string
-	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    float64
+		data    UserFollow
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{data: UserFollow{FollowerPastelID: "id_write_follow_0", FolloweePastelID: "id_write_follow_1"}, wantErr: false},
+		{data: UserFollow{FollowerPastelID: "id_write_follow_0", FolloweePastelID: "id_write_follow_1"}, wantErr: true},
+		{data: UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_1"}, wantErr: true},
+		{data: UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_0"}, wantErr: false},
+		{data: UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_2"}, wantErr: false},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			got, err := db.salePriceByUserQuery(tt.args.ctx, tt.args.command)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Ops.salePriceByUserQuery() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("Ops.salePriceByUserQuery() = %v, want %v", got, tt.want)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_WriteUserFollow-%d", i), func(t *testing.T) {
+			if err := ts.ops.WriteUserFollow(ts.ctx, tt.data); (err != nil) != tt.wantErr {
+				t.Errorf("Ops.WriteUserFollow() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

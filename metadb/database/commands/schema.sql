@@ -106,8 +106,9 @@ BEGIN
 END;
 ---
 CREATE TABLE IF NOT EXISTS art_like (
-	art_id TEXT PRIMARY KEY,
+	art_id TEXT NOT NULL,
 	pastel_id TEXT NOT NULL,
+	PRIMARY KEY (art_id, pastel_id),
 	FOREIGN KEY(art_id) REFERENCES art_metadata(art_id),
 	FOREIGN KEY(pastel_id) REFERENCES user_metadata(artist_pastel_id)
 );
