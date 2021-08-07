@@ -478,7 +478,7 @@ func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawS
 	// log.WithContext(ctx).Debugf("%s", content)
 	signature, err := task.pastelClient.Sign(ctx, content, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
 	if err != nil {
-		return "", nil, errors.Errorf("failed to sign identifier file: %w", err)
+		return "", nil, errors.Errorf("failed to sign identifiers file: %w", err)
 	}
 	content = append(content, signature...)
 
