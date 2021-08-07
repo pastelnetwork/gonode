@@ -19,7 +19,7 @@ type client struct {
 
 // Generate implements dupedection.Client.Generate
 func (client *client) Generate(ctx context.Context, img []byte, format string) (*DupeDetection, error) {
-	if img == nil || len(img) == 0 || format == "" {
+	if img == nil || format == "" {
 		return nil, errors.Errorf("invalid image content or format(data=%v, format=%s", img, format)
 	}
 
