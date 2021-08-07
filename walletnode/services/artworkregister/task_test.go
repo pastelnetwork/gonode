@@ -71,8 +71,6 @@ func newTestImageFile() (*artwork.File, error) {
 }
 
 func TestTaskRun(t *testing.T) {
-	t.Skip()
-
 	t.Parallel()
 
 	type fields struct {

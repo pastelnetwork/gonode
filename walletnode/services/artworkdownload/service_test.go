@@ -15,9 +15,6 @@ import (
 )
 
 func TestNewService(t *testing.T) {
-	// FIXME: Restore this test when the interface of Task changed
-	t.Skip()
-
 	type args struct {
 		config       *Config
 		pastelClient pastel.Client
@@ -60,9 +57,6 @@ func TestNewService(t *testing.T) {
 }
 
 func TestServiceRun(t *testing.T) {
-	// FIXME: restore this test when the interface of Task changed
-	t.Skip()
-
 	type args struct {
 		ctx context.Context
 	}
@@ -94,18 +88,16 @@ func TestServiceRun(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			err := service.Run(ctx)
 			assert.Equal(t, testCase.want, err)
+			time.Sleep(time.Second)
 		})
 	}
 }
 
 func TestServiceAddTask(t *testing.T) {
-	// FIXME: restore this test when all the race is fixed
-	t.Skip()
-
 	type args struct {
 		ctx    context.Context
 		ticket *Ticket
@@ -144,20 +136,18 @@ func TestServiceAddTask(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
 			taskID := service.AddTask(testCase.args.ticket)
 			task := service.Task(taskID)
 			assert.Equal(t, testCase.want, task.Ticket)
+			time.Sleep(time.Second)
 		})
 	}
 }
 
 func TestServiceGetTask(t *testing.T) {
-	// FIXME: restore this test when the race is fixed
-	t.Skip()
-
 	type args struct {
 		ctx    context.Context
 		ticket *Ticket
@@ -196,7 +186,7 @@ func TestServiceGetTask(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
 			task := NewTask(service, testCase.args.ticket)
@@ -204,14 +194,12 @@ func TestServiceGetTask(t *testing.T) {
 			taskID := task.ID()
 			addedTask := service.Task(taskID)
 			assert.Equal(t, testCase.want, addedTask.Ticket)
+			time.Sleep(time.Second)
 		})
 	}
 }
 
 func TestServiceListTasks(t *testing.T) {
-	// FIXME: restore this test when the race is fixed
-	t.Skip()
-
 	type args struct {
 		ctx     context.Context
 		tickets []*Ticket
@@ -252,7 +240,7 @@ func TestServiceListTasks(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
 			var listTaskID []string
@@ -264,6 +252,7 @@ func TestServiceListTasks(t *testing.T) {
 				task := service.Task(listTaskID[i])
 				assert.Equal(t, testCase.want[i], task.Ticket)
 			}
+			time.Sleep(time.Second)
 		})
 	}
 }
