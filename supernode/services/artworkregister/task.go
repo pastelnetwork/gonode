@@ -1,11 +1,12 @@
 package artworkregister
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"sort"
 	"sync"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
-	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
@@ -619,7 +619,7 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 
 	content, err := task.Artwork.Bytes()
 	if err != nil {
-		return errors.Errorf("failed to read image contents")
+		return errors.Errorf("failed to read image contents: %w", err)
 	}
 
 	rqService := conn.RaptorQ(&rqnode.Config{
@@ -637,29 +637,41 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 	}
 
 	// pick just one file from wallnode to compare rq symbols
-	var rqSymbolIDFile rq.SymbolIDFile
+	// the one send from walletnode is compressed so need to decompress first
+	var fromWalletNode []byte
 	for _, v := range task.RQIDS {
-		if err := json.Unmarshal(v, &rqSymbolIDFile); err != nil {
-			return errors.Errorf("failed to unmarshal raptorq symbols identifiers file %w", err)
-		}
+		fromWalletNode = v
 		break
 	}
+	rawData, err := zstd.Decompress(nil, fromWalletNode)
+	if err != nil {
+		return errors.Errorf("failed to decompress symbols id file: %w", err)
+	}
+	scaner := bufio.NewScanner(bytes.NewReader(rawData))
+	scaner.Split(bufio.ScanLines)
+	for i := 0; i < 3; i++ {
+		scaner.Scan()
+		if scaner.Err() != nil {
+			return errors.Errorf("failed when bypass headers: %w", err)
+		}
+	}
+	scaner.Text()
 
 	// pick just one file generated to compare
-	var rqRawSymbolIDFile rqnode.RawSymbolIDFile
+	var rawEncodeFile rqnode.RawSymbolIDFile
 	for _, v := range encodeInfo.SymbolIDFiles {
-		rqRawSymbolIDFile = v
+		rawEncodeFile = v
 		break
 	}
-	sort.Strings(rqSymbolIDFile.SymbolIdentifiers)
-	sort.Strings(rqRawSymbolIDFile.SymbolIdentifiers)
-	if len(rqRawSymbolIDFile.SymbolIdentifiers) != len(rqSymbolIDFile.SymbolIdentifiers) {
-		return errors.Errorf("number of raptorq symbols doesn't matched")
-	}
 
-	for i := range rqSymbolIDFile.SymbolIdentifiers {
-		if rqSymbolIDFile.SymbolIdentifiers[i] != rqRawSymbolIDFile.SymbolIdentifiers[i] {
-			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, rqSymbolIDFile.SymbolIdentifiers[i], rqRawSymbolIDFile.SymbolIdentifiers[i])
+	for i := range rawEncodeFile.SymbolIdentifiers {
+		scaner.Scan()
+		if scaner.Err() != nil {
+			return errors.Errorf("failed to scan next symbol identifiers: %w", err)
+		}
+		symbolFromWalletNode := scaner.Text()
+		if rawEncodeFile.SymbolIdentifiers[i] != symbolFromWalletNode {
+			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, symbolFromWalletNode, rawEncodeFile.SymbolIdentifiers[i])
 		}
 	}
 
