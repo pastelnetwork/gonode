@@ -475,11 +475,18 @@ func (db *Ops) Run(ctx context.Context) error {
 	}
 
 	db.metaDB.WaitForStarting()
+	if err := db.metaDB.EnableFKConstraints(true); err != nil {
+		return errors.Errorf("error while enabling db fk constraint: %w", err)
+	}
 	if db.metaDB.IsLeader() {
 		listOfCommands := strings.Split(string(content), schemaDelimiter)
 		for _, cmd := range listOfCommands {
-			if _, err := db.metaDB.Write(ctx, cmd); err != nil {
+			result, err := db.metaDB.Write(ctx, cmd)
+			if err != nil {
 				return errors.Errorf("error while creating db schema: %w", err)
+			}
+			if result.Error != "" {
+				return errors.Errorf("error while creating db schema: %s", result.Error)
 			}
 		}
 	}

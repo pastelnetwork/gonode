@@ -254,6 +254,7 @@ type testSuite struct {
 func (ts *testSuite) setupTableTest() {
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data3))
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &data4))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art10_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 1}))
 
 	for i := 1; i <= 10; i++ {
 		userDataFrame.ArtistPastelID = fmt.Sprintf("id%d", i)
@@ -265,22 +266,22 @@ func (ts *testSuite) setupTableTest() {
 	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 2}))
 	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 3}))
 
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id1", ArtID: "art1_id1", Price: 1}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art1_id1", ArtID: "art1_id1", Price: 2}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art2_id1", ArtID: "art2_id1", Price: 3}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art2_id1", ArtID: "art2_id1", Price: 4}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id2", ArtID: "art1_id2", Price: 5}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art2_id2", ArtID: "art2_id2", Price: 6}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art2_id2", ArtID: "art2_id2", Price: 7}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id1", ArtID: "art1_id1", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art1_id1", ArtID: "art1_id1", Price: 20.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art2_id1", ArtID: "art2_id1", Price: 30.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art2_id1", ArtID: "art2_id1", Price: 40.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id2", ArtID: "art1_id2", Price: 50.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art2_id2", ArtID: "art2_id2", Price: 60.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art2_id2", ArtID: "art2_id2", Price: 70.0}))
 
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t1", InstanceID: "ins1_art1_id1", Timestamp: 20, SellerPastelID: "id1", BuyerPastelID: "id5", Price: 20}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t2", InstanceID: "ins1_art1_id1", Timestamp: 21, SellerPastelID: "id5", BuyerPastelID: "id6", Price: 40}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t3", InstanceID: "ins2_art2_id2", Timestamp: 23, SellerPastelID: "id2", BuyerPastelID: "id6", Price: 40}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t4", InstanceID: "ins2_art2_id2", Timestamp: 25, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t5", InstanceID: "ins1_art1_id1", Timestamp: 26, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t6", InstanceID: "ins1_art1_id2", Timestamp: 30, SellerPastelID: "id2", BuyerPastelID: "id4", Price: 20}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t7", InstanceID: "ins1_art1_id2", Timestamp: 31, SellerPastelID: "id4", BuyerPastelID: "id1", Price: 20}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t8", InstanceID: "ins1_art1_id1", Timestamp: 32, SellerPastelID: "id7", BuyerPastelID: "id1", Price: 20}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t1", InstanceID: "ins1_art1_id1", Timestamp: 20, SellerPastelID: "id1", BuyerPastelID: "id5", Price: 20.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t2", InstanceID: "ins1_art1_id1", Timestamp: 21, SellerPastelID: "id5", BuyerPastelID: "id6", Price: 40.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t3", InstanceID: "ins2_art2_id2", Timestamp: 23, SellerPastelID: "id2", BuyerPastelID: "id6", Price: 40.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t4", InstanceID: "ins2_art2_id2", Timestamp: 25, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t5", InstanceID: "ins1_art1_id1", Timestamp: 26, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t6", InstanceID: "ins1_art1_id2", Timestamp: 30, SellerPastelID: "id2", BuyerPastelID: "id4", Price: 20.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t7", InstanceID: "ins1_art1_id2", Timestamp: 31, SellerPastelID: "id4", BuyerPastelID: "id1", Price: 20.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t8", InstanceID: "ins1_art1_id1", Timestamp: 32, SellerPastelID: "id7", BuyerPastelID: "id1", Price: 20.0}))
 
 	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id2"}))
 	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id3"}))
@@ -319,14 +320,16 @@ func (ts *testSuite) SetupSuite() {
 		ts.Nil(db.Run(ts.ctx), "run service")
 	}()
 	db.WaitForStarting()
+
+	ts.Nil(db.EnableFKConstraints(true))
+
 	content, err := ioutil.ReadFile("./commands/schema.sql")
 	ts.Nil(err)
-
 	listOfCommands := strings.Split(string(content), schemaDelimiter)
 	for _, cmd := range listOfCommands {
-		if _, err := db.Write(ts.ctx, cmd); err != nil {
-			ts.Nil(err)
-		}
+		result, err := db.Write(ts.ctx, cmd)
+		ts.Nil(err)
+		assert.Equal(ts.T(), result.Error, "")
 	}
 
 	tmpls, err := NewTemplateKeeper("./commands")
@@ -453,33 +456,33 @@ func (ts *testSuite) TestDatabaseOps_ReadUserData() {
 	}
 }
 
-func TestDatabaseOps_WriteArtInfo(t *testing.T) {
-	type fields struct {
-		metaDB    metadb.MetaDB
-		templates *templateKeeper
-		config    *Config
-	}
-	type args struct {
-		ctx  context.Context
-		data ArtInfo
-	}
+func (ts *testSuite) TestDatabaseOps_WriteArtInfo() {
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
+		data    ArtInfo
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			data:    ArtInfo{ArtID: "art1_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 5},
+			wantErr: false,
+		},
+		{
+			data:    ArtInfo{ArtID: "art1_rty", ArtistPastelID: "rty", Copies: 2, CreatedTimestamp: 7},
+			wantErr: false,
+		},
+		{
+			data:    ArtInfo{ArtID: "art1_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 10},
+			wantErr: true,
+		},
+		{
+			data:    ArtInfo{ArtID: "art2_rty", ArtistPastelID: "dfkd-skfjsdk", Copies: 2, CreatedTimestamp: 11},
+			wantErr: true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			db := &Ops{
-				metaDB:    tt.fields.metaDB,
-				templates: tt.fields.templates,
-				config:    tt.fields.config,
-			}
-			if err := db.WriteArtInfo(tt.args.ctx, tt.args.data); (err != nil) != tt.wantErr {
-				t.Errorf("Ops.WriteArtInfo() error = %v, wantErr %v", err, tt.wantErr)
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestDatabaseOps_WriteArtInfo-%d", i), func(t *testing.T) {
+			if err := ts.ops.WriteArtInfo(ts.ctx, tt.data); (err != nil) != tt.wantErr {
+				fmt.Printf("%s/%s\n", fmt.Sprintf("TestDatabaseOps_WriteArtInfo-%d", i), err)
+				ts.T().Errorf("Ops.WriteArtInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

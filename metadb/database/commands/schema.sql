@@ -1,5 +1,3 @@
-PRAGMA foreign_keys = ON;
----
 CREATE TABLE IF NOT EXISTS user_metadata (
 	artist_pastel_id TEXT PRIMARY KEY UNIQUE,
 	real_name TEXT,
