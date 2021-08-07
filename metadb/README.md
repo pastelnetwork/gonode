@@ -112,3 +112,24 @@ curl -X 'GET' \
 - supernode shutdown grpc server after serving the 1st request but not raising error
 
 >Try to delete folder "supernode" in the path in step 2
+
+## To use SNs as a cluster of rqlite
+- Just need to remove if condition in gonode/supernode/cmd/app.go in function getDatabaseNodes()
+```
+	if test := sys.GetStringEnv("DB_CLUSTER", ""); test != "" {
+		nodeList, err := pastelClient.MasterNodesList(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, nodeInfo := range nodeList {
+			address := nodeInfo.ExtAddress
+			segments := strings.Split(address, ":")
+			if len(segments) != 2 {
+				return nil, errors.Errorf("malformed db node address: %s", address)
+			}
+			nodeAddress := fmt.Sprintf("%s:%d", segments[0], rqliteDefaultPort)
+			nodeIPList = append(nodeIPList, nodeAddress)
+		}
+	}
+```
+- Or just need to make env DB_CLUSTER so that it has a value
