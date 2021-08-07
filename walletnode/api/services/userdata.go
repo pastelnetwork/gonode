@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 
-	// "github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/walletnode/api"
