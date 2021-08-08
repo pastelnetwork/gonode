@@ -370,23 +370,25 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			artist           *string
-			limit            int
-			query            string
-			artistName       bool
-			artTitle         bool
-			series           bool
-			descr            bool
-			keyword          bool
-			minCopies        *int
-			maxCopies        *int
-			minBlock         int
-			maxBlock         *int
-			minRarenessScore *int
-			maxRarenessScore *int
-			minNsfwScore     *int
-			maxNsfwScore     *int
-			err              error
+			artist                   *string
+			limit                    int
+			query                    string
+			artistName               bool
+			artTitle                 bool
+			series                   bool
+			descr                    bool
+			keyword                  bool
+			minCopies                *int
+			maxCopies                *int
+			minBlock                 int
+			maxBlock                 *int
+			minRarenessScore         *float64
+			maxRarenessScore         *float64
+			minNsfwScore             *float64
+			maxNsfwScore             *float64
+			minInternetRarenessScore *float64
+			maxInternetRarenessScore *float64
+			err                      error
 		)
 		artistRaw := r.URL.Query().Get("artist")
 		if artistRaw != "" {
@@ -555,12 +557,11 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		{
 			minRarenessScoreRaw := r.URL.Query().Get("min_rareness_score")
 			if minRarenessScoreRaw != "" {
-				v, err2 := strconv.ParseInt(minRarenessScoreRaw, 10, strconv.IntSize)
+				v, err2 := strconv.ParseFloat(minRarenessScoreRaw, 64)
 				if err2 != nil {
-					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minRarenessScore", minRarenessScoreRaw, "integer"))
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minRarenessScore", minRarenessScoreRaw, "float"))
 				}
-				pv := int(v)
-				minRarenessScore = &pv
+				minRarenessScore = &v
 			}
 		}
 		if minRarenessScore != nil {
@@ -576,12 +577,11 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		{
 			maxRarenessScoreRaw := r.URL.Query().Get("max_rareness_score")
 			if maxRarenessScoreRaw != "" {
-				v, err2 := strconv.ParseInt(maxRarenessScoreRaw, 10, strconv.IntSize)
+				v, err2 := strconv.ParseFloat(maxRarenessScoreRaw, 64)
 				if err2 != nil {
-					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxRarenessScore", maxRarenessScoreRaw, "integer"))
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxRarenessScore", maxRarenessScoreRaw, "float"))
 				}
-				pv := int(v)
-				maxRarenessScore = &pv
+				maxRarenessScore = &v
 			}
 		}
 		if maxRarenessScore != nil {
@@ -597,12 +597,11 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		{
 			minNsfwScoreRaw := r.URL.Query().Get("min_nsfw_score")
 			if minNsfwScoreRaw != "" {
-				v, err2 := strconv.ParseInt(minNsfwScoreRaw, 10, strconv.IntSize)
+				v, err2 := strconv.ParseFloat(minNsfwScoreRaw, 64)
 				if err2 != nil {
-					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minNsfwScore", minNsfwScoreRaw, "integer"))
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minNsfwScore", minNsfwScoreRaw, "float"))
 				}
-				pv := int(v)
-				minNsfwScore = &pv
+				minNsfwScore = &v
 			}
 		}
 		if minNsfwScore != nil {
@@ -618,12 +617,11 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 		{
 			maxNsfwScoreRaw := r.URL.Query().Get("max_nsfw_score")
 			if maxNsfwScoreRaw != "" {
-				v, err2 := strconv.ParseInt(maxNsfwScoreRaw, 10, strconv.IntSize)
+				v, err2 := strconv.ParseFloat(maxNsfwScoreRaw, 64)
 				if err2 != nil {
-					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxNsfwScore", maxNsfwScoreRaw, "integer"))
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxNsfwScore", maxNsfwScoreRaw, "float"))
 				}
-				pv := int(v)
-				maxNsfwScore = &pv
+				maxNsfwScore = &v
 			}
 		}
 		if maxNsfwScore != nil {
@@ -636,10 +634,50 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 				err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1000, false))
 			}
 		}
+		{
+			minInternetRarenessScoreRaw := r.URL.Query().Get("min_internet_rareness_score")
+			if minInternetRarenessScoreRaw != "" {
+				v, err2 := strconv.ParseFloat(minInternetRarenessScoreRaw, 64)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("minInternetRarenessScore", minInternetRarenessScoreRaw, "float"))
+				}
+				minInternetRarenessScore = &v
+			}
+		}
+		if minInternetRarenessScore != nil {
+			if *minInternetRarenessScore < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1, true))
+			}
+		}
+		if minInternetRarenessScore != nil {
+			if *minInternetRarenessScore > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1000, false))
+			}
+		}
+		{
+			maxInternetRarenessScoreRaw := r.URL.Query().Get("max_internet_rareness_score")
+			if maxInternetRarenessScoreRaw != "" {
+				v, err2 := strconv.ParseFloat(maxInternetRarenessScoreRaw, 64)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("maxInternetRarenessScore", maxInternetRarenessScoreRaw, "float"))
+				}
+				maxInternetRarenessScore = &v
+			}
+		}
+		if maxInternetRarenessScore != nil {
+			if *maxInternetRarenessScore < 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1, true))
+			}
+		}
+		if maxInternetRarenessScore != nil {
+			if *maxInternetRarenessScore > 1000 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1000, false))
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewArtSearchPayload(artist, limit, query, artistName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore)
+		payload := NewArtSearchPayload(artist, limit, query, artistName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore, minInternetRarenessScore, maxInternetRarenessScore)
 
 		return payload, nil
 	}

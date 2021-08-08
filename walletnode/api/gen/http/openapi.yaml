@@ -35,7 +35,6 @@ paths:
             required:
             - is_green
             - royalty
-            - seen_score
             - rareness_score
             - nsfw_score
             - title
@@ -340,30 +339,44 @@ paths:
         minimum: 1
       - name: min_rareness_score
         in: query
-        description: Minimum rareness score
+        description: Minimum pastel rareness score
         required: false
-        type: integer
+        type: number
         maximum: 1000
         minimum: 1
       - name: max_rareness_score
         in: query
-        description: Maximum rareness score
+        description: Maximum pastel rareness score
         required: false
-        type: integer
+        type: number
         maximum: 1000
         minimum: 1
       - name: min_nsfw_score
         in: query
         description: Minimum nsfw score
         required: false
-        type: integer
+        type: number
         maximum: 1000
         minimum: 1
       - name: max_nsfw_score
         in: query
         description: Maximum nsfw score
         required: false
-        type: integer
+        type: number
+        maximum: 1000
+        minimum: 1
+      - name: min_internet_rareness_score
+        in: query
+        description: Minimum internet rareness score
+        required: false
+        type: number
+        maximum: 1000
+        minimum: 1
+      - name: max_internet_rareness_score
+        in: query
+        description: Maximum internet rareness score
+        required: false
+        type: number
         maximum: 1000
         minimum: 1
       responses:
@@ -1156,6 +1169,24 @@ definitions:
           writer Leonardo da Vinci. Likely completed in 1506, the piece features a
           portrait of a seated woman set against an imaginary landscape.
         maxLength: 1024
+      drawing_nsfw_score:
+        type: number
+        description: nsfw score
+        example: 1000
+        minimum: 0
+        maximum: 1000
+      hentai_nsfw_score:
+        type: number
+        description: nsfw score
+        example: 1000
+        minimum: 0
+        maximum: 1000
+      internet_rareness_score:
+        type: number
+        description: internet rareness score
+        example: 1
+        minimum: 0
+        maximum: 1000
       is_green:
         type: boolean
         description: Green flag
@@ -1165,23 +1196,35 @@ definitions:
         description: Keywords
         example: Renaissance, sfumato, portrait
         maxLength: 256
+      neutral_nsfw_score:
+        type: number
+        description: nsfw score
+        example: 1000
+        minimum: 0
+        maximum: 1000
       nsfw_score:
-        type: integer
+        type: number
+        description: nsfw score
+        example: 1000
+        minimum: 0
+        maximum: 1000
+      porn_nsfw_score:
+        type: number
         description: nsfw score
         example: 1000
         minimum: 0
         maximum: 1000
       rareness_score:
-        type: integer
-        description: rareness score
+        type: number
+        description: pastel rareness score
         example: 1
         minimum: 0
         maximum: 1000
       royalty:
-        type: number
+        type: integer
         description: how much artist should get on all future resales
-        example: 0.41574607503644323
-        format: double
+        example: 3834580722923257634
+        format: int64
       seen_score:
         type: integer
         description: seen score
@@ -1193,6 +1236,12 @@ definitions:
         description: Series name
         example: Famous artist
         maxLength: 256
+      sexy_nsfw_score:
+        type: number
+        description: nsfw score
+        example: 1000
+        minimum: 0
+        maximum: 1000
       storage_fee:
         type: integer
         description: Storage fee
@@ -1259,13 +1308,19 @@ definitions:
       description: The Mona Lisa is an oil painting by Italian artist, inventor, and
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
+      drawing_nsfw_score: 1000
+      hentai_nsfw_score: 1000
+      internet_rareness_score: 1
       is_green: true
       keywords: Renaissance, sfumato, portrait
+      neutral_nsfw_score: 1000
       nsfw_score: 1000
+      porn_nsfw_score: 1000
       rareness_score: 1
-      royalty: 0.577962360554173
+      royalty: 5330761874689937150
       seen_score: 1
       series_name: Famous artist
+      sexy_nsfw_score: 1000
       storage_fee: 100
       thumbnail:
       - 67
@@ -1302,7 +1357,6 @@ definitions:
     required:
     - is_green
     - royalty
-    - seen_score
     - rareness_score
     - nsfw_score
     - title
