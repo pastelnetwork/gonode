@@ -98,5 +98,5 @@ func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegT
 	}
 	defer thumbnailHelper.Close()
 
-	return thumbnailHelper.Fetch(ctx, string(regTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash))
+	return thumbnailHelper.Fetch(ctx, regTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash)
 }

@@ -64,6 +64,13 @@ func (service *DownloadArtwork) Download(m *pb.DownloadRequest, stream pb.Downlo
 	return nil
 }
 
+//DownloadThumbnail returns thumbnail of given hash
+func (service *DownloadArtwork) DownloadThumbnail(_ context.Context, _ *pb.DownloadThumbnailRequest) (*pb.DownloadThumbnailReply, error) {
+	return &pb.DownloadThumbnailReply{
+		Thumbnail: nil,
+	}, nil
+}
+
 // Desc returns a description of the service.
 func (service *DownloadArtwork) Desc() *grpc.ServiceDesc {
 	return &pb.DownloadArtwork_ServiceDesc

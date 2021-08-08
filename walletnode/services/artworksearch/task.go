@@ -112,7 +112,7 @@ func (task *Task) run(ctx context.Context) error {
 		res.MatchIndex = i
 
 		group.Go(func() error {
-			data, err := task.thumbnailHelper.Fetch(gctx, string(res.RegTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash))
+			data, err := task.thumbnailHelper.Fetch(gctx, res.RegTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash)
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("Fetch Thumbnail")
 

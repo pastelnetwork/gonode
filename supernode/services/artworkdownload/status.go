@@ -27,6 +27,7 @@ const (
 	StatusFileReadingFailed
 	StatusFileMismatched
 	StatusFileEmpty
+	StatusKeyNotFound
 
 	// Final
 	StatusTaskCanceled
@@ -55,6 +56,7 @@ var statusNames = map[Status]string{
 	StatusFileReadingFailed:           "File reading failed",
 	StatusFileEmpty:                   "File empty",
 	StatusFileMismatched:              "File mismatched",
+	StatusKeyNotFound:                 "Key not found",
 	StatusTaskCanceled:                "Task Canceled",
 	StatusTaskCompleted:               "Task Completed",
 }

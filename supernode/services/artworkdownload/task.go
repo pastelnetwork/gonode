@@ -48,6 +48,27 @@ func (task *Task) Run(ctx context.Context) error {
 	return task.RunAction(ctx)
 }
 
+func (task *Task) DownloadThumbnail(ctx context.Context, key []byte) ([]byte, error) {
+	var err error
+	if err = task.RequiredStatus(StatusTaskStarted); err != nil {
+		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
+		return nil, errors.Errorf("wrong status: %w", err)
+	}
+
+	var file []byte
+	<-task.NewAction(func(ctx context.Context) error {
+		base58Key := base58.Encode(key)
+		file, err = task.p2pClient.Retrieve(ctx, base58Key)
+		if err != nil {
+			err = errors.Errorf("failed to fetch p2p key : %s, error: %w", string(base58Key), err)
+			task.UpdateStatus(StatusKeyNotFound)
+		}
+		return nil
+	})
+
+	return file, err
+}
+
 // Download downloads image and return the image.
 func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
 	var err error

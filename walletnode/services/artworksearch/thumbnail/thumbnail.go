@@ -21,7 +21,7 @@ const (
 // Helper is interface contract for Thumbnail Getter
 type Helper interface {
 	Connect(ctx context.Context, connections uint) error
-	Fetch(ctx context.Context, key string) ([]byte, error)
+	Fetch(ctx context.Context, key []byte) ([]byte, error)
 	Close()
 }
 
@@ -51,7 +51,7 @@ type response struct {
 }
 
 type request struct {
-	key    string
+	key    []byte
 	respCh chan *response
 }
 
@@ -96,18 +96,22 @@ func (t *thumbnailHelper) listen(ctx context.Context, n *node.Node) {
 				return
 			}
 
-			// TODO: get thumbnail from supernode using Node
-			// hard-coding fetched thumbnail for dev purposes
 			fmt.Println("thumb-key:", req.key, n.PastelID())
-			thumb := []byte{}
-			resp := &response{data: thumb}
+			data, err := n.DownloadThumbnail(ctx, req.key)
+			var resp *response
+			if err != nil {
+				resp = &response{err: err, data: nil}
+			} else {
+				resp = &response{err: nil, data: data}
+			}
 			req.respCh <- resp
 		}
 	}
 }
 
 // Fetch gets thumbnail
-func (t *thumbnailHelper) Fetch(ctx context.Context, key string) (data []byte, err error) {
+func (t *thumbnailHelper) Fetch(ctx context.Context, key []byte) (data []byte, err error) {
+	// FIXME : verify hash of returned data
 	if t.IsClosed() {
 		return data, errors.New("connection is closed")
 	}
