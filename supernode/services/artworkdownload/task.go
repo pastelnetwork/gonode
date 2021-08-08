@@ -48,6 +48,7 @@ func (task *Task) Run(ctx context.Context) error {
 	return task.RunAction(ctx)
 }
 
+// DownloadThumbnail downloads thumbnail of given hash.
 func (task *Task) DownloadThumbnail(ctx context.Context, key []byte) ([]byte, error) {
 	var err error
 	if err = task.RequiredStatus(StatusTaskStarted); err != nil {

@@ -64,10 +64,26 @@ func (service *DownloadArtwork) Download(m *pb.DownloadRequest, stream pb.Downlo
 	return nil
 }
 
-//DownloadThumbnail returns thumbnail of given hash
-func (service *DownloadArtwork) DownloadThumbnail(_ context.Context, _ *pb.DownloadThumbnailRequest) (*pb.DownloadThumbnailReply, error) {
+// DownloadThumbnail returns thumbnail of given hash
+func (service *DownloadArtwork) DownloadThumbnail(ctx context.Context, req *pb.DownloadThumbnailRequest) (*pb.DownloadThumbnailReply, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	// Create new task
+	task := service.NewTask()
+	go func() {
+		<-task.Done()
+		cancel()
+	}()
+	defer task.Cancel()
+
+	// Call task download thumbnail
+	data, err := task.DownloadThumbnail(ctx, req.Key)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.DownloadThumbnailReply{
-		Thumbnail: nil,
+		Thumbnail: data,
 	}, nil
 }
 
