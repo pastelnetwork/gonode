@@ -47,6 +47,9 @@ const (
 
 	// VerifyMethod represents Verify method name
 	VerifyMethod = "Verify"
+
+	// RegisterActTicket represents RegisterArtTicket method name
+	RegisterActTicket = "RegisterActTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -149,6 +152,13 @@ func (client *Client) ListenOnGetBlockVerbose1(blockInfo *pastel.GetBlockVerbose
 // ListenOnFindTicketByID listening FindTicketByID
 func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err error) *Client {
 	client.On(FindTicketByIDMethod, mock.Anything, mock.Anything).Return(idticket, err)
+	return client
+}
+
+// ListenOnRegisterActTicket listening on RegisterActTicket
+func (client *Client) ListenOnRegisterActTicket(txid string, err error) *Client {
+	client.On(RegisterActTicket, mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int"),
+		mock.AnythingOfType("int64"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(txid, err)
 	return client
 }
 
