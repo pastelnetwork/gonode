@@ -88,11 +88,10 @@ func TestServiceRun(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithCancel(testCase.args.ctx)
+			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
 			defer cancel()
 			err := service.Run(ctx)
 			assert.Equal(t, testCase.want, err)
-			time.Sleep(time.Second)
 		})
 	}
 }
@@ -142,7 +141,6 @@ func TestServiceAddTask(t *testing.T) {
 			taskID := service.AddTask(testCase.args.ticket)
 			task := service.Task(taskID)
 			assert.Equal(t, testCase.want, task.Ticket)
-			time.Sleep(time.Second)
 		})
 	}
 }
@@ -252,7 +250,6 @@ func TestServiceListTasks(t *testing.T) {
 				task := service.Task(listTaskID[i])
 				assert.Equal(t, testCase.want[i], task.Ticket)
 			}
-			time.Sleep(time.Second)
 		})
 	}
 }

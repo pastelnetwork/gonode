@@ -11,6 +11,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -78,15 +79,17 @@ func TestTaskRun(t *testing.T) {
 	}
 
 	type args struct {
-		taskID        string
-		ctx           context.Context
-		networkFee    float64
-		masterNodes   pastel.MasterNodes
-		primarySessID string
-		pastelIDS     []string
-		fingerPrint   []byte
-		signature     []byte
-		returnErr     error
+		taskID            string
+		ctx               context.Context
+		networkFee        float64
+		masterNodes       pastel.MasterNodes
+		primarySessID     string
+		pastelIDS         []string
+		fingerPrint       []byte
+		signature         []byte
+		returnErr         error
+		connectErr        error
+		encodeInfoReturns *rqnode.EncodeInfo
 	}
 
 	testCases := []struct {
@@ -117,11 +120,21 @@ func TestTaskRun(t *testing.T) {
 				fingerPrint:   []byte("match"),
 				signature:     []byte("sign"),
 				returnErr:     nil,
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": rqnode.RawSymbolIDFile{
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+				},
 			},
 			assertion:         assert.NoError,
 			numSessIDCall:     3,
-			numUpdateStatus:   3,
-			numSignCall:       1,
+			numUpdateStatus:   4,
+			numSignCall:       4,
 			numSessionCall:    4,
 			numConnectToCall:  3,
 			numProbeImageCall: 4,
@@ -135,7 +148,15 @@ func TestTaskRun(t *testing.T) {
 		for i, testCase := range testCases {
 			testCase := testCase
 
+			// prepare task
+			fg := pastel.Fingerprint{0.1, 0, 2}
+			compressedFg, err := zstd.CompressLevel(nil, fg.Bytes(), 22)
+			assert.Nil(t, err)
+			testCase.args.fingerPrint = compressedFg
+
 			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+				var task *Task
+
 				nodeClient := test.NewMockClient(t)
 				nodeClient.
 					ListenOnConnect("", testCase.args.returnErr).
@@ -144,12 +165,33 @@ func TestTaskRun(t *testing.T) {
 					ListenOnConnectTo(testCase.args.returnErr).
 					ListenOnSessID(testCase.args.primarySessID).
 					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
-					ListenOnDone()
+					ListenOnDone().
+					ListenOnUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
+					ListenOnSendSignedTicket(1, nil).
+					ListenOnClose(nil)
+
+				counter := &struct {
+					sync.Mutex
+					val int
+				}{}
+				preburnCustomHandler := func() (string, error) {
+					counter.Lock()
+					defer counter.Unlock()
+					counter.val++
+					if counter.val == 1 {
+						return "reg-art-txid", nil
+					}
+					return "", nil
+				}
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
 
 				//need to remove generate thumbnail file
-				customProbeImageFunc := func(ctx context.Context, file *artwork.File) []byte {
+				customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.FingerAndScores {
 					file.Remove()
-					return testCase.args.fingerPrint
+					return &pastel.FingerAndScores{ZstdCompressedFingerprint: testCase.args.fingerPrint}
 				}
 				nodeClient.ListenOnProbeImage(customProbeImageFunc, testCase.args.returnErr)
 
@@ -157,11 +199,23 @@ func TestTaskRun(t *testing.T) {
 				pastelClientMock.
 					ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr).
 					ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr).
-					ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr)
+					ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr).
+					ListenOnGetBlockCount(100, nil).
+					ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil).
+					ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
+					ListenOnSendFromAddress("pre-burnt-txid", nil).
+					ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 10}, nil).
+					ListenOnRegisterActTicket("art-act-txid", nil)
+
+				rqClientMock := rqMock.NewMockClient(t)
+				rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)
+				rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
+				rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
 				service := &Service{
 					pastelClient: pastelClientMock.Client,
 					nodeClient:   nodeClient.Client,
+					rqClient:     rqClientMock,
 					config:       NewConfig(),
 				}
 
@@ -173,7 +227,8 @@ func TestTaskRun(t *testing.T) {
 
 				Request := testCase.fields.Request
 				Request.Image = artworkFile
-				task := &Task{
+				Request.MaximumFee = 100
+				task = &Task{
 					Task:    taskClient.Task,
 					Service: service,
 					Request: Request,
@@ -194,9 +249,10 @@ func TestTaskRun(t *testing.T) {
 				pastelClientMock.AssertStorageNetworkFeeCall(1, mock.Anything)
 				pastelClientMock.AssertSignCall(testCase.numSignCall,
 					mock.Anything,
-					testCase.args.fingerPrint,
+					mock.Anything,
 					Request.ArtistPastelID,
 					Request.ArtistPastelIDPassphrase,
+					mock.Anything,
 				)
 
 				// //nodeClient mock assertion
@@ -209,7 +265,6 @@ func TestTaskRun(t *testing.T) {
 				nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
 				nodeClient.AssertProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
 			})
-
 		}
 	})
 
