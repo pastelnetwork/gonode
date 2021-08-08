@@ -19,64 +19,6 @@ import (
 )
 
 var (
-	schema = `CREATE TABLE IF NOT EXISTS user_metadata (
-		artist_pastel_id TEXT PRIMARY KEY UNIQUE,
-		real_name TEXT,
-		facebook_link TEXT,
-		twitter_link TEXT,
-		native_currency TEXT,
-		location TEXT,
-		primary_language TEXT,
-		categories TEXT,
-		biography TEXT,
-		timestamp INTEGER NOT NULL,
-		signature TEXT NOT NULL,
-		previous_block_hash TEXT NOT NULL,
-		user_data_hash TEXT NOT NULL,
-		avatar_image BLOB,
-		avatar_filename TEXT,
-		cover_photo_image BLOB,
-		cover_photo_filename TEXT
-	);`
-
-	queryTemplate = `SELECT * FROM user_metadata WHERE artist_pastel_id = '{{.}}'`
-
-	writeTemplate = `INSERT OR REPLACE INTO user_metadata (
-		artist_pastel_id,
-		real_name,
-		facebook_link,
-		twitter_link,
-		native_currency,
-		location,
-		primary_language,
-		categories,
-		biography,
-		timestamp,
-		signature,
-		previous_block_hash,
-		avatar_image,
-		avatar_filename,
-		cover_photo_image,
-		cover_photo_filename
-	) VALUES (
-		'{{.ArtistPastelID}}',
-		'{{.Realname}}',
-		'{{.FacebookLink}}',
-		'{{.TwitterLink}}',
-		'{{.NativeCurrency}}',
-		'{{.Location}}',
-		'{{.PrimaryLanguage}}',
-		'{{.Categories}}',
-		'{{.Biography}}',
-		{{.Timestamp}},
-		'{{.Signature}}',
-		'{{.PreviousBlockHash}}',
-		{{ if (eq .AvatarImage "")}}NULL,{{ else }}x'{{.AvatarImage}}',{{ end }}
-		'{{.AvatarFilename}}',
-		{{ if (eq .CoverPhotoImage "")}}NULL,{{ else }}x'{{.CoverPhotoImage}}',{{ end }}
-		'{{.CoverPhotoFilename}}'
-	)`
-
 	data1 = pb.UserdataRequest{
 		Realname:        "cat",
 		FacebookLink:    "fb.com",

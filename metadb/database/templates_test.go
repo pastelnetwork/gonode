@@ -27,6 +27,7 @@ var (
 		Timestamp:          123,
 		Signature:          "xyz",
 		PreviousBlockHash:  "hash",
+		UserdataHash:       "uhash",
 	}
 
 	userdata2 = UserdataWriteCommand{
@@ -46,80 +47,91 @@ var (
 		Timestamp:          123,
 		Signature:          "xyz",
 		PreviousBlockHash:  "hash",
+		UserdataHash:       "uhash",
 	}
 
 	writeTemplateResult1 = `INSERT OR REPLACE INTO user_metadata (
-		artist_pastel_id,
-		real_name,
-		facebook_link,
-		twitter_link,
-		native_currency,
-		location,
-		primary_language,
-		categories,
-		biography,
-		timestamp,
-		signature,
-		previous_block_hash,
-		avatar_image,
-		avatar_filename,
-		cover_photo_image,
-		cover_photo_filename
-	) VALUES (
-		'abc',
-		'cat',
-		'fb.com',
-		'tw.com',
-		'usd',
-		'us',
-		'en',
-		'a',
-		'b',
-		123,
-		'xyz',
-		'hash',
-		NULL,
-		'1234.jpg',
-		x'04050607',
-		'4567.jpg'
-	);`
+    artist_pastel_id,
+    real_name,
+    facebook_link,
+    twitter_link,
+    native_currency,
+    location,
+    primary_language,
+    categories,
+    biography,
+    timestamp,
+    signature,
+    previous_block_hash,
+    user_data_hash,
+    avatar_image,
+    avatar_filename,
+    cover_photo_image,
+    cover_photo_filename
+) VALUES (
+    'abc',
+    'cat',
+    'fb.com',
+    'tw.com',
+    'usd',
+    'us',
+    'en',
+    'a',
+    'b',
+    123,
+    'xyz',
+    'hash',
+    'uhash',
+    NULL,
+    '1234.jpg',
+    x'04050607',
+    '4567.jpg'
+);
+`
 
 	writeTemplateResult2 = `INSERT OR REPLACE INTO user_metadata (
-		artist_pastel_id,
-		real_name,
-		facebook_link,
-		twitter_link,
-		native_currency,
-		location,
-		primary_language,
-		categories,
-		biography,
-		timestamp,
-		signature,
-		previous_block_hash,
-		avatar_image,
-		avatar_filename,
-		cover_photo_image,
-		cover_photo_filename
-	) VALUES (
-		'xyz',
-		'cat',
-		'fb.com',
-		'tw.com',
-		'usd',
-		'us',
-		'en',
-		'a',
-		'b',
-		123,
-		'xyz',
-		'hash',
-		x'01020304',
-		'1234.jpg',
-		x'040506ff',
-		'4567.jpg'
-	);`
+    artist_pastel_id,
+    real_name,
+    facebook_link,
+    twitter_link,
+    native_currency,
+    location,
+    primary_language,
+    categories,
+    biography,
+    timestamp,
+    signature,
+    previous_block_hash,
+    user_data_hash,
+    avatar_image,
+    avatar_filename,
+    cover_photo_image,
+    cover_photo_filename
+) VALUES (
+    'xyz',
+    'cat',
+    'fb.com',
+    'tw.com',
+    'usd',
+    'us',
+    'en',
+    'a',
+    'b',
+    123,
+    'xyz',
+    'hash',
+    'uhash',
+    x'01020304',
+    '1234.jpg',
+    x'040506ff',
+    '4567.jpg'
+);
+`
 )
+
+func TestSuiteTemplate(t *testing.T) {
+	suite.Run(t, new(testSuiteTemplate))
+}
 
 type testSuiteTemplate struct {
 	suite.Suite
@@ -259,7 +271,7 @@ func (ts *testSuiteTemplate) Test_substituteTemplate() {
 	}
 }
 
-func (ts *testSuiteTemplate) Test_templateKeeper_GetCommand(t *testing.T) {
+func (ts *testSuiteTemplate) Test_templateKeeper_GetCommand() {
 	tests := []struct {
 		key     string
 		data    interface{}
