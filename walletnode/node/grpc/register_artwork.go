@@ -177,6 +177,7 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 			PerceptualHash: resp.ImageHashes.PerceptualHash,
 			AverageHash:    resp.ImageHashes.AverageHash,
 			DifferenceHash: resp.ImageHashes.DifferenceHash,
+			PDQHash:        resp.ImageHashes.PdqHash,
 		},
 	}, nil
 }

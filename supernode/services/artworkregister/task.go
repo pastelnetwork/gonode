@@ -598,6 +598,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 			PerceptualHash: ddResult.ImageHashes.PerceptualHash,
 			AverageHash:    ddResult.ImageHashes.AverageHash,
 			DifferenceHash: ddResult.ImageHashes.DifferenceHash,
+			PDQHash:        ddResult.ImageHashes.PDQHash,
 		},
 	}
 	compressedFg, err := zstd.CompressLevel(nil, pastel.Fingerprint(fingerprint).Bytes(), 22)
