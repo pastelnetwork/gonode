@@ -53,11 +53,15 @@ type ArtSearchRequest struct {
 	// Maximum number of created copies
 	MaxCopies *int
 	// Minimum nsfw score
-	MinNsfwScore *int
+	MinNsfwScore *float64
 	// Maximum nsfw score
-	MaxNsfwScore *int
+	MaxNsfwScore *float64
 	// Minimum rareness score
-	MinRarenessScore *int
+	MinRarenessScore *float64
 	// Maximum rareness score
-	MaxRarenessScore *int
+	MaxRarenessScore *float64
+	// MinInternetRarenessScore
+	MinInternetRarenessScore *float64
+	// MaxInternetRarenessScore
+	MaxInternetRarenessScore *float64
 }

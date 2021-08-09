@@ -227,13 +227,17 @@ type ArtSearchPayload struct {
 	// Maximum number of created copies
 	MaxCopies *int
 	// Minimum nsfw score
-	MinNsfwScore *int
+	MinNsfwScore *float64
 	// Maximum nsfw score
-	MaxNsfwScore *int
-	// Minimum rareness score
-	MinRarenessScore *int
-	// Maximum rareness score
-	MaxRarenessScore *int
+	MaxNsfwScore *float64
+	// Minimum pastel rareness score
+	MinRarenessScore *float64
+	// Maximum pastel rareness score
+	MaxRarenessScore *float64
+	// Minimum internet rareness score
+	MinInternetRarenessScore *float64
+	// Maximum internet rareness score
+	MaxInternetRarenessScore *float64
 }
 
 // ArtworkSearchResult is the result type of the artworks service artSearch
@@ -262,15 +266,27 @@ type ArtworkDetail struct {
 	// Green flag
 	IsGreen bool
 	// how much artist should get on all future resales
-	Royalty float64
+	Royalty int
 	// Storage fee
 	StorageFee *int
 	// nsfw score
-	NsfwScore int
-	// rareness score
-	RarenessScore int
+	NsfwScore float64
+	// pastel rareness score
+	RarenessScore float64
+	// internet rareness score
+	InternetRarenessScore *float64
 	// seen score
-	SeenScore int
+	SeenScore *int
+	// nsfw score
+	DrawingNsfwScore *float64
+	// nsfw score
+	NeutralNsfwScore *float64
+	// nsfw score
+	SexyNsfwScore *float64
+	// nsfw score
+	PornNsfwScore *float64
+	// nsfw score
+	HentaiNsfwScore *float64
 	// Thumbnail image
 	Thumbnail []byte
 	// txid

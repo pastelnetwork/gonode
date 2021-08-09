@@ -106,7 +106,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 // MountCreateUserdataHandler configures the mux to serve the "userdatas"
 // service "createUserdata" endpoint.
 func MountCreateUserdataHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleUserdatasOrigin(h).(http.HandlerFunc)
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -157,7 +157,7 @@ func NewCreateUserdataHandler(
 // MountUpdateUserdataHandler configures the mux to serve the "userdatas"
 // service "updateUserdata" endpoint.
 func MountUpdateUserdataHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleUserdatasOrigin(h).(http.HandlerFunc)
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -208,7 +208,7 @@ func NewUpdateUserdataHandler(
 // MountUserdataGetHandler configures the mux to serve the "userdatas" service
 // "userdataGet" endpoint.
 func MountUserdataGetHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleUserdatasOrigin(h).(http.HandlerFunc)
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -259,7 +259,7 @@ func NewUserdataGetHandler(
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service userdatas.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
-	h = HandleUserdatasOrigin(h)
+	h = handleUserdatasOrigin(h)
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -278,9 +278,9 @@ func NewCORSHandler() http.Handler {
 	})
 }
 
-// HandleUserdatasOrigin applies the CORS response headers corresponding to the
+// handleUserdatasOrigin applies the CORS response headers corresponding to the
 // origin for the service userdatas.
-func HandleUserdatasOrigin(h http.Handler) http.Handler {
+func handleUserdatasOrigin(h http.Handler) http.Handler {
 	origHndlr := h.(http.HandlerFunc)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")
