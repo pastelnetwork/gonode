@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )
+
 // ProcessUserdata represents grpc service for processing userdata.
 type ProcessUserdata struct {
 	pb.UnimplementedProcessUserdataServer
