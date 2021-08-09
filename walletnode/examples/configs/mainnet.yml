@@ -2,3 +2,4 @@ node:
   api:
     hostname: "localhost"
     port: 8080
+  burn_address: "PtpasteLBurnAddressXXXXXXXXXXbJ5ndd"
