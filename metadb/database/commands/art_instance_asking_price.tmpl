@@ -1,0 +1,7 @@
+UPDATE
+    art_instance_metadata
+SET
+    asking_price = {{.AskingPrice}}
+WHERE
+    instance_id = '{{.InstanceID}}'
+;

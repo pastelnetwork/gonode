@@ -1,0 +1,8 @@
+UPDATE
+    art_auction
+SET
+    is_open = 0,
+    end_time = strftime('%s', 'now')
+WHERE
+    auction_id = {{.}}
+;

@@ -20,15 +20,21 @@ const (
 	schemaDelimiter = "---"
 
 	userInfoWriteTemplate            = "user_info_write"
+	artInstanceAskingPriceTemplate   = "art_instance_asking_price"
 	userInfoQueryTemplate            = "user_info_query"
 	artInfoWriteTemplate             = "art_info_write"
 	artInstanceInfoWriteTemplate     = "art_instance_info_write"
 	artLikeWriteTemplate             = "art_like_write"
+	artPlaceBidTemplate              = "art_place_bid"
 	cumulatedSalePriceByUserTemplate = "cumulated_sale_price_by_user"
+	endArtAuctionTemplate            = "end_art_auction"
+	getAuctionInfoTemplate           = "get_auction_info"
 	getFolloweesTemplate             = "get_followees"
 	getFollowersTemplate             = "get_followers"
 	getFriendTemplate                = "get_friend"
+	getInstanceInfoTemplate          = "get_instance_info"
 	highestSalePriceByUserTemplate   = "highest_sale_price_by_user"
+	newArtAuctionTemplate            = "new_art_auction"
 	nftCopiesExistTemplate           = "nft_copies_exist"
 	nftCreatedByArtistTemplate       = "nft_created_by_artist"
 	nftForSaleByArtistTemplate       = "nft_for_sale_by_artist"
@@ -85,6 +91,21 @@ func (db *Ops) writeData(ctx context.Context, command string) error {
 	return nil
 }
 
+func (db *Ops) writeDataReturning(ctx context.Context, command string) (*metadb.WriteResult, error) {
+	if len(command) == 0 {
+		return nil, errors.Errorf("invalid command")
+	}
+	result, err := db.metaDB.Write(ctx, command)
+	if err != nil {
+		return nil, errors.Errorf("error while writting to db: %w", err)
+	}
+	if result.Error != "" {
+		return nil, errors.Errorf("error while writting to db: %s", result.Error)
+	}
+
+	return result, nil
+}
+
 func (db *Ops) WriteArtInfo(ctx context.Context, data ArtInfo) error {
 	command, err := db.templates.GetCommand(artInfoWriteTemplate, data)
 	if err != nil {
@@ -131,6 +152,46 @@ func (db *Ops) WriteUserData(ctx context.Context, data *pb.UserdataRequest) erro
 		return errors.Errorf("input nil data")
 	}
 	command, err := db.templates.GetCommand(userInfoWriteTemplate, pbToWriteCommand(data))
+	if err != nil {
+		return errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	return db.writeData(ctx, command)
+}
+
+func (db *Ops) UpdateAskingPrice(ctx context.Context, data AskingPriceUpdateRequest) error {
+	command, err := db.templates.GetCommand(artInstanceAskingPriceTemplate, data)
+	if err != nil {
+		return errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	return db.writeData(ctx, command)
+}
+
+func (db *Ops) NewArtAuction(ctx context.Context, data NewArtAuctionRequest) (int64, error) {
+	command, err := db.templates.GetCommand(newArtAuctionTemplate, data)
+	if err != nil {
+		return 0, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	result, err := db.writeDataReturning(ctx, command)
+	if err != nil {
+		return 0, errors.Errorf("error while writing to db: %w", err)
+	}
+	return result.LastInsertID, nil
+}
+
+func (db *Ops) EndArtAuction(ctx context.Context, auctionID int64) error {
+	command, err := db.templates.GetCommand(endArtAuctionTemplate, auctionID)
+	if err != nil {
+		return errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	return db.writeData(ctx, command)
+}
+
+func (db *Ops) ArtPlaceBid(ctx context.Context, data ArtPlaceBidRequest) error {
+	command, err := db.templates.GetCommand(artPlaceBidTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
 	}
@@ -433,37 +494,33 @@ func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]NftOwn
 }
 
 func (db *Ops) GetNftSoldByArtID(ctx context.Context, artID string) (NftSoldByArtIDQueryResult, error) {
+	var result NftSoldByArtIDQueryResult
 	if artID == "" {
-		return NftSoldByArtIDQueryResult{}, errors.Errorf("invalid pastel ID")
+		return result, errors.Errorf("invalid pastel ID")
 	}
 
 	command, err := db.templates.GetCommand(nftSoldByArtIDTemplate, artID)
 	if err != nil {
-		return NftSoldByArtIDQueryResult{}, errors.Errorf("error while subtitute template: %w", err)
+		return result, errors.Errorf("error while subtitute template: %w", err)
 	}
 
 	allResults, err := db.queryToInterface(ctx, command)
 	if err != nil {
-		return NftSoldByArtIDQueryResult{}, errors.Errorf("error while query db: %w", err)
+		return result, errors.Errorf("error while query db: %w", err)
 	}
 
-	result := make([]NftSoldByArtIDQueryResult, 0)
-	for _, mp := range allResults {
-		var record NftSoldByArtIDQueryResult
-		if err := mapstructure.Decode(mp, &record); err != nil {
-			return NftSoldByArtIDQueryResult{}, errors.Errorf("error while decoding result: %w", err)
-		}
-		result = append(result, record)
-	}
-
-	nrows := len(result)
+	nrows := len(allResults)
 	if nrows == 0 {
-		return NftSoldByArtIDQueryResult{}, errors.Errorf("no id match with input art ID")
+		return result, errors.Errorf("no instance found for id: %s", artID)
 	} else if nrows > 1 {
-		return NftSoldByArtIDQueryResult{}, errors.Errorf("upto %d records returned", nrows)
+		return result, errors.Errorf("upto %d records returned for id: %s", nrows, artID)
 	}
 
-	return result[0], nil
+	if err := mapstructure.Decode(allResults[0], &result); err != nil {
+		return result, errors.Errorf("error while decoding result: %w", err)
+	}
+
+	return result, nil
 }
 
 func (db *Ops) GetUniqueNftByUser(ctx context.Context, query UniqueNftByUserQuery) ([]ArtInfo, error) {
@@ -500,6 +557,62 @@ func (db *Ops) GetUsersLikeNft(ctx context.Context, artID string) ([]string, err
 	}
 
 	return db.queryPastelID(ctx, command)
+}
+
+func (db *Ops) GetArtInstanceInfo(ctx context.Context, instanceID string) (ArtInstanceInfo, error) {
+	var result ArtInstanceInfo
+	if instanceID == "" {
+		return result, errors.Errorf("invalid instance ID")
+	}
+
+	command, err := db.templates.GetCommand(getInstanceInfoTemplate, instanceID)
+	if err != nil {
+		return result, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	allResults, err := db.queryToInterface(ctx, command)
+	if err != nil {
+		return result, errors.Errorf("error while query db: %w", err)
+	}
+
+	nrows := len(allResults)
+	if nrows == 0 {
+		return result, errors.Errorf("no instance found for id: %s", instanceID)
+	} else if nrows > 1 {
+		return result, errors.Errorf("upto %d records returned for id: %s", nrows, instanceID)
+	}
+
+	if err := mapstructure.Decode(allResults[0], &result); err != nil {
+		return result, errors.Errorf("error while decoding result: %w", err)
+	}
+
+	return result, nil
+}
+
+func (db *Ops) GetAuctionInfo(ctx context.Context, auctionID int64) (ArtAuctionInfo, error) {
+	var result ArtAuctionInfo
+	command, err := db.templates.GetCommand(getAuctionInfoTemplate, auctionID)
+	if err != nil {
+		return result, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	allResults, err := db.queryToInterface(ctx, command)
+	if err != nil {
+		return result, errors.Errorf("error while query db: %w", err)
+	}
+
+	nrows := len(allResults)
+	if nrows == 0 {
+		return result, errors.Errorf("no instance found for id: %d", auctionID)
+	} else if nrows > 1 {
+		return result, errors.Errorf("upto %d records returned for id: %d", nrows, auctionID)
+	}
+
+	if err := mapstructure.Decode(allResults[0], &result); err != nil {
+		return result, errors.Errorf("error while decoding result: %w", err)
+	}
+
+	return result, nil
 }
 
 // Run run the rqlite database service

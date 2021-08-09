@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
@@ -169,10 +170,11 @@ type ArtInfo struct {
 }
 
 type ArtInstanceInfo struct {
-	InstanceID    string
-	ArtID         string
-	OwnerPastelID string
-	Price         float64
+	InstanceID    string   `mapstructure:"instance_id"`
+	ArtID         string   `mapstructure:"art_id"`
+	OwnerPastelID string   `mapstructure:"owner_pastel_id"`
+	Price         float64  `mapstructure:"price"`
+	AskingPrice   *float64 `mapstructure:"asking_price,omitempty"`
 }
 
 type ArtLike struct {
@@ -223,4 +225,30 @@ type NftSoldByArtIDQueryResult struct {
 type UniqueNftByUserQuery struct {
 	ArtistPastelID string
 	LimitTimestamp int64
+}
+
+type AskingPriceUpdateRequest struct {
+	InstanceID  string
+	AskingPrice float64
+}
+
+type ArtPlaceBidRequest struct {
+	AuctionID int64
+	PastelID  string
+	BidPrice  float64
+}
+
+type NewArtAuctionRequest struct {
+	InstanceID  string
+	LowestPrice float64
+}
+
+type ArtAuctionInfo struct {
+	AuctionID   int64     `mapstructure:"auction_id"`
+	InstanceID  string    `mapstructure:"auction_id"`
+	IsOpen      bool      `mapstructure:"is_open"`
+	StartTime   time.Time `mapstructure:"start_time"`
+	EndTime     time.Time `mapstructure:"end_time"`
+	FirstPrice  *float64  `mapstructure:"first_price"`
+	SecondPrice *float64  `mapstructure:"second_price"`
 }

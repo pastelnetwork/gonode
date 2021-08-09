@@ -332,20 +332,12 @@ func (ts *testSuite) TestDatabaseOps_WriteUserData() {
 			name: "TestDatabaseOps_WriteUserData3",
 			args: args{
 				ctx:  ts.ctx,
-				data: &pb.UserdataRequest{},
-			},
-			wantErr: false,
-		},
-		{
-			name: "TestDatabaseOps_WriteUserData4",
-			args: args{
-				ctx:  ts.ctx,
 				data: &data1,
 			},
 			wantErr: false,
 		},
 		{
-			name: "TestDatabaseOps_WriteUserData5",
+			name: "TestDatabaseOps_WriteUserData4",
 			args: args{
 				ctx:  ts.ctx,
 				data: &data2,
@@ -440,16 +432,17 @@ func (ts *testSuite) TestDatabaseOps_WriteArtInfo() {
 func (ts *testSuite) TestDatabaseOps_WriteArtInstanceInfo() {
 	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art10_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 1}))
 
+	askingPrice := 20.0
 	tests := []struct {
 		data    ArtInstanceInfo
 		wantErr bool
 	}{
 		{
-			data:    ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
+			data:    ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0, AskingPrice: &askingPrice},
 			wantErr: false,
 		},
 		{
-			data:    ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
+			data:    ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0, AskingPrice: &askingPrice},
 			wantErr: true,
 		},
 		{
@@ -472,13 +465,14 @@ func (ts *testSuite) TestDatabaseOps_WriteArtInstanceInfo() {
 				t.Errorf("Ops.WriteArtInstanceInfo() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if err == nil {
-				command := fmt.Sprintf(`select owner_pastel_id from art_instance_metadata where instance_id = '%s'`, tt.data.InstanceID)
+				command := fmt.Sprintf(`select owner_pastel_id, asking_price from art_instance_metadata where instance_id = '%s'`, tt.data.InstanceID)
 				queryResult, err := ts.ops.metaDB.Query(ts.ctx, command, queryLevelNone)
 				ts.Nil(err)
 				ts.Equal(int64(1), queryResult.NumRows())
 				var owner string
+				var askingPrice *float64
 				queryResult.Next()
-				queryResult.Scan(&owner)
+				queryResult.Scan(&owner, askingPrice)
 				ts.Equal("qwe", owner)
 			}
 		})
@@ -1401,6 +1395,179 @@ func (ts *testSuite) TestDatabaseOps_GetUsersLikeNft() {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Ops.GetUsersLikeNft() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func (ts *testSuite) TestOps_UpdateAskingPrice() {
+	userDataFrame.ArtistPastelID = "id_ap_0"
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
+
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_ap_0", ArtistPastelID: "id_ap_0", Copies: 2, CreatedTimestamp: 15}))
+
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_ap_0", ArtID: "art0_id_ap_0", OwnerPastelID: "ble", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_ap_0", ArtID: "art0_id_ap_0", OwnerPastelID: "ble", Price: 10.0}))
+
+	tests := []struct {
+		data          AskingPriceUpdateRequest
+		ownerPastelID string
+		wantErr       bool
+	}{
+		{
+			data: AskingPriceUpdateRequest{
+				InstanceID:  "ins0_art0_id_ap_0",
+				AskingPrice: 10.0,
+			},
+			ownerPastelID: "id_ap_0",
+			wantErr:       false,
+		},
+		{
+			data: AskingPriceUpdateRequest{
+				InstanceID:  "ins1_art0_id_ap_0",
+				AskingPrice: 20.0,
+			},
+			ownerPastelID: "id_ap_0",
+			wantErr:       false,
+		},
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_UpdateAskingPrice-%d", i), func(t *testing.T) {
+			if err := ts.ops.UpdateAskingPrice(ts.ctx, tt.data); (err != nil) != tt.wantErr {
+				t.Errorf("Ops.UpdateAskingPrice() error = %v, wantErr %v", err, tt.wantErr)
+			} else if err == nil {
+				info, err := ts.ops.GetArtInstanceInfo(ts.ctx, tt.data.InstanceID)
+				ts.Nil(err)
+				ts.Equal(*info.AskingPrice, tt.data.AskingPrice)
+				ts.Equal(info.OwnerPastelID, "id_ap_0")
+			}
+		})
+	}
+}
+
+func (ts *testSuite) TestOps_GetArtInstanceInfo() {
+	userDataFrame.ArtistPastelID = "id_ai_0"
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
+
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_ai_0", ArtistPastelID: "id_ai_0", Copies: 2, CreatedTimestamp: 150}))
+
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_ai_0", ArtID: "art0_id_ai_0", Price: 10.0}))
+	ts.Nil(ts.ops.UpdateAskingPrice(ts.ctx, AskingPriceUpdateRequest{InstanceID: "ins0_art0_id_ai_0", AskingPrice: 20.0}))
+
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_ai_0", ArtID: "art0_id_ai_0", Price: 10.0}))
+
+	price20 := 20.0
+	tests := []struct {
+		instanceID string
+		want       ArtInstanceInfo
+		wantErr    bool
+	}{
+		{
+			instanceID: "231dsq",
+			want:       ArtInstanceInfo{},
+			wantErr:    true,
+		},
+		{
+			instanceID: "",
+			want:       ArtInstanceInfo{},
+			wantErr:    true,
+		},
+		{
+			instanceID: "ins0_art0_id_ai_0",
+			want:       ArtInstanceInfo{InstanceID: "ins0_art0_id_ai_0", ArtID: "art0_id_ai_0", OwnerPastelID: "id_ai_0", Price: 10.0, AskingPrice: &price20},
+			wantErr:    false,
+		},
+		{
+			instanceID: "ins1_art0_id_ai_0",
+			want:       ArtInstanceInfo{InstanceID: "ins1_art0_id_ai_0", ArtID: "art0_id_ai_0", OwnerPastelID: "id_ai_0", Price: 10.0, AskingPrice: nil},
+			wantErr:    false,
+		},
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_GetArtInstanceInfo-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetArtInstanceInfo(ts.ctx, tt.instanceID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ops.GetArtInstanceInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Ops.GetArtInstanceInfo() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func (ts *testSuite) TestOps_EndArtAuction() {
+	tests := []struct {
+		auctionID int64
+		wantErr   bool
+	}{
+		// TODO: Add test cases.
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_EndArtAuction-%d", i), func(t *testing.T) {
+			if err := ts.ops.EndArtAuction(ts.ctx, tt.auctionID); (err != nil) != tt.wantErr {
+				t.Errorf("Ops.EndArtAuction() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func (ts *testSuite) TestOps_ArtPlaceBid() {
+	tests := []struct {
+		data    ArtPlaceBidRequest
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_ArtPlaceBid-%d", i), func(t *testing.T) {
+			if err := ts.ops.ArtPlaceBid(ts.ctx, tt.data); (err != nil) != tt.wantErr {
+				t.Errorf("Ops.ArtPlaceBid() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func (ts *testSuite) TestOps_GetAuctionInfo() {
+	tests := []struct {
+		auctionID int64
+		want      ArtAuctionInfo
+		wantErr   bool
+	}{
+		// TODO: Add test cases.
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_GetAuctionInfo-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetAuctionInfo(ts.ctx, tt.auctionID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ops.GetAuctionInfo() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Ops.GetAuctionInfo() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func (ts *testSuite) TestOps_NewArtAuction() {
+	tests := []struct {
+		data    NewArtAuctionRequest
+		want    int64
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_NewArtAuction-%d", i), func(t *testing.T) {
+			got, err := ts.ops.NewArtAuction(ts.ctx, tt.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ops.NewArtAuction() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("Ops.NewArtAuction() = %v, want %v", got, tt.want)
 			}
 		})
 	}
