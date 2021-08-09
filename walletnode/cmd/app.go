@@ -20,7 +20,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	mdlgrpc "github.com/pastelnetwork/gonode/metadb/network/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/api"
@@ -160,7 +159,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
 
 	// ----Userdata Services----
-	userdataNodeClient := mdlgrpc.NewClient()
+	userdataNodeClient := grpc.NewClient()
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
 	// api service

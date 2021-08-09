@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	"github.com/pastelnetwork/gonode/metadb/network/walletnode/node"
+	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
 // Node represent supernode connection.

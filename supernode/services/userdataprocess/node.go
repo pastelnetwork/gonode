@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/pastelnetwork/gonode/metadb/network/supernode/node"
+	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
 const (

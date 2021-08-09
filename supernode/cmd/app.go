@@ -20,9 +20,6 @@ import (
 	"github.com/pastelnetwork/gonode/dupedetection"
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/metadb/database"
-	mdlclient "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/client"
-	mdlsupernode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/supernode"
-	mdlwalletnode "github.com/pastelnetwork/gonode/metadb/network/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
@@ -214,7 +211,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
 
 	// ----Userdata Services----
-	userdataNodeClient := mdlclient.New()
+	userdataNodeClient := client.New()
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
 
 	// server
@@ -222,8 +219,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),
-		mdlwalletnode.NewProcessUserdata(userdataProcess, database),
-		mdlsupernode.NewProcessUserdata(userdataProcess, database),
+		walletnode.NewProcessUserdata(userdataProcess, database),
+		supernode.NewProcessUserdata(userdataProcess, database),
 	)
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, database, userdataProcess)
 }

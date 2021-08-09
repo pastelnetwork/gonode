@@ -23,6 +23,11 @@ func (conn *clientConn) DownloadArtwork() node.DownloadArtwork {
 	return newDownloadArtwork(conn)
 }
 
+// ProcessUserdata implements node.Connection.ProcessUserdata()
+func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
+	return newProcessUserdata(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

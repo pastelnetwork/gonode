@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
 // UserdataWriteCommand represents userdata record in DB

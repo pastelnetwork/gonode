@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/metadb/network/proto"
+	"github.com/pastelnetwork/gonode/proto"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 	"google.golang.org/grpc/metadata"
 )

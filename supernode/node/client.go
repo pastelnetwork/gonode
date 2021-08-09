@@ -6,6 +6,7 @@ package node
 
 import (
 	"context"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
 // Client represents a base connection interface.
@@ -22,6 +23,8 @@ type Connection interface {
 	Done() <-chan struct{}
 	// RegisterArtwork returns a new RegisterArtwork stream.
 	RegisterArtwork() RegisterArtwork
+	// ProcessUserdata returns a new ProcessUserdata stream.
+	ProcessUserdata() ProcessUserdata
 }
 
 // RegisterArtwork represents an interaction stream with supernodes for registering artwork.
@@ -32,4 +35,16 @@ type RegisterArtwork interface {
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 	// Send signature of ticket to primary supernode
 	SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error
+}
+
+// ProcessUserdata represents an interaction stream with supernodes for sending userdata.
+type ProcessUserdata interface {
+	// SessID returns the taskID received from the server during the handshake.
+	SessID() (taskID string)
+	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
+	Session(ctx context.Context, nodeID, sessID string) (err error)
+	// Send userdata to primary supernode
+	SendUserdataToPrimary(ctx context.Context, dataSigned userdata.SuperNodeRequest) (userdata.SuperNodeReply, error)
+	// Send userdata to supernode with leader rqlite
+	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.ProcessRequestSigned) (userdata.SuperNodeReply, error)
 }

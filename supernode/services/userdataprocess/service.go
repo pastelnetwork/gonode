@@ -8,8 +8,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/metadb/database"
-	"github.com/pastelnetwork/gonode/metadb/network/supernode/node"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
 const (

@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -29,6 +30,8 @@ type Connection interface {
 	RegisterArtwork() RegisterArtwork
 	// DownloadArtwork returns a new DownloadArtwork stream.
 	DownloadArtwork() DownloadArtwork
+	// ProcessUserdata returns a new ProcessUserdata stream.
+	ProcessUserdata() ProcessUserdata
 }
 
 // RegisterArtwork contains methods for registering artwork.
@@ -55,4 +58,20 @@ type RegisterArtwork interface {
 type DownloadArtwork interface {
 	// Download sends image downloading request to supernode.
 	Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error)
+}
+
+// ProcessUserdata contains methods for processing userdata.
+type ProcessUserdata interface {
+	// SessID returns the sessID received from the server during the handshake.
+	SessID() (sessID string)
+	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.
+	Session(ctx context.Context, IsPrimary bool) (err error)
+	// AcceptedNodes requests information about connected secondary nodes.
+	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
+	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
+	ConnectTo(ctx context.Context, nodeKey, sessID string) error
+	// SendUserdata send user specified data (with other generated info like signature, previous block hash, timestamp,...) to supernode.
+	SendUserdata(ctx context.Context, request *userdata.ProcessRequestSigned) (result *userdata.ProcessResult, err error)
+	// ReceiveUserdata get user specified data from supernode
+	ReceiveUserdata(ctx context.Context, userpastelid string) (result *userdata.ProcessRequest, err error)
 }

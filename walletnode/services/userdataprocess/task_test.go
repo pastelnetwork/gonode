@@ -9,9 +9,9 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	nodeTest "github.com/pastelnetwork/gonode/metadb/network/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
+	nodeTest "github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -256,12 +256,12 @@ func TestTask_meshNodes(t *testing.T) {
 		t.Run(fmt.Sprintf("TestTask_meshNodes-%d", i), func(t *testing.T) {
 			nodeClient := nodeTest.NewMockClient(t)
 			nodeClient.
-				ListenOnConnect(tt.args.returnErr).
+				ListenOnConnect("", tt.args.returnErr).
 				ListenOnProcessUserdata().
-				ListenOnSession(tt.args.returnErr).
-				ListenOnConnectTo(tt.args.returnErr).
-				ListenOnSessID(tt.args.primarySessID).
-				ListenOnAcceptedNodes(tt.args.pastelIDS, tt.args.acceptNodeErr)
+				ListenOnSessionUserdata(tt.args.returnErr).
+				ListenOnConnectToUserdata(tt.args.returnErr).
+				ListenOnSessIDUserdata(tt.args.primarySessID).
+				ListenOnAcceptedNodesUserdata(tt.args.pastelIDS, tt.args.acceptNodeErr)
 
 			nodes := node.List{}
 			for _, n := range tt.args.nodes {
@@ -277,10 +277,10 @@ func TestTask_meshNodes(t *testing.T) {
 			tt.assertion(t, err)
 			assert.Equal(t, tt.want, pullPastelAddressIDNodes(got))
 
-			nodeClient.AssertAcceptedNodesCall(1, mock.Anything)
-			nodeClient.AssertSessIDCall(tt.numSessIDCall)
-			nodeClient.AssertSessionCall(tt.numSessionCall, mock.Anything, false)
-			nodeClient.AssertConnectToCall(tt.numConnectToCall, mock.Anything, tt.args.primaryPastelID, tt.args.primarySessID)
+			nodeClient.AssertAcceptedNodesCallUserdata(1, mock.Anything)
+			nodeClient.AssertSessIDCallUserdata(tt.numSessIDCall)
+			nodeClient.AssertSessionCallUserdata(tt.numSessionCall, mock.Anything, false)
+			nodeClient.AssertConnectToCallUserdata(tt.numConnectToCall, mock.Anything, tt.args.primaryPastelID, tt.args.primarySessID)
 			nodeClient.Client.AssertExpectations(t)
 			nodeClient.Connection.AssertExpectations(t)
 		})

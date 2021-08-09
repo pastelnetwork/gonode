@@ -14,7 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb"
-	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
 var (
