@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb"
@@ -293,6 +294,7 @@ func (ts *testSuite) SetupSuite() {
 }
 
 func (ts *testSuite) TearDownSuite() {
+	// time.Sleep(300 * time.Second)
 	if ts.cancel != nil {
 		ts.cancel()
 	}
@@ -1497,77 +1499,186 @@ func (ts *testSuite) TestOps_GetArtInstanceInfo() {
 	}
 }
 
-func (ts *testSuite) TestOps_EndArtAuction() {
-	tests := []struct {
-		auctionID int64
-		wantErr   bool
-	}{
-		// TODO: Add test cases.
-	}
-	for i, tt := range tests {
-		ts.T().Run(fmt.Sprintf("TestOps_EndArtAuction-%d", i), func(t *testing.T) {
-			if err := ts.ops.EndArtAuction(ts.ctx, tt.auctionID); (err != nil) != tt.wantErr {
-				t.Errorf("Ops.EndArtAuction() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func (ts *testSuite) TestOps_ArtPlaceBid() {
-	tests := []struct {
-		data    ArtPlaceBidRequest
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for i, tt := range tests {
-		ts.T().Run(fmt.Sprintf("TestOps_ArtPlaceBid-%d", i), func(t *testing.T) {
-			if err := ts.ops.ArtPlaceBid(ts.ctx, tt.data); (err != nil) != tt.wantErr {
-				t.Errorf("Ops.ArtPlaceBid() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func (ts *testSuite) TestOps_GetAuctionInfo() {
+	userDataFrame.ArtistPastelID = "id_gai_0"
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
+
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_gai_0", ArtistPastelID: "id_gai_0", Copies: 2, CreatedTimestamp: 150}))
+
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_gai_0", ArtID: "art0_id_gai_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_gai_0", ArtID: "art0_id_gai_0", Price: 10.0}))
+
+	price14 := float64(14.0)
+	price15 := float64(15.0)
+
 	tests := []struct {
-		auctionID int64
-		want      ArtAuctionInfo
-		wantErr   bool
+		newreq     NewArtAuctionRequest
+		bidreqs    []ArtPlaceBidRequest
+		endAuction bool
+		want       ArtAuctionInfo
+		wantErr    bool
 	}{
-		// TODO: Add test cases.
+		{
+			newreq: NewArtAuctionRequest{
+				InstanceID:  "ins0_art0_id_gai_0",
+				LowestPrice: 10.0,
+			},
+			bidreqs: []ArtPlaceBidRequest{
+				ArtPlaceBidRequest{
+					PastelID: "id3",
+					BidPrice: 14.0,
+				},
+				ArtPlaceBidRequest{
+					PastelID: "id1",
+					BidPrice: 12.0,
+				},
+				ArtPlaceBidRequest{
+					PastelID: "id2",
+					BidPrice: 13.0,
+				},
+				ArtPlaceBidRequest{
+					PastelID: "id4",
+					BidPrice: 15.0,
+				},
+			},
+			endAuction: true,
+			want: ArtAuctionInfo{
+				InstanceID:  "ins0_art0_id_gai_0",
+				LowestPrice: 10.0,
+				FirstPrice:  &price15,
+				SecondPrice: &price14,
+			},
+			wantErr: false,
+		},
+		{
+			newreq: NewArtAuctionRequest{
+				InstanceID:  "ins1_art0_id_gai_0",
+				LowestPrice: 10.0,
+			},
+			bidreqs: []ArtPlaceBidRequest{
+				ArtPlaceBidRequest{
+					PastelID: "id3",
+					BidPrice: 14.0,
+				},
+			},
+			endAuction: false,
+			want: ArtAuctionInfo{
+				InstanceID:  "ins1_art0_id_gai_0",
+				LowestPrice: 10.0,
+				FirstPrice:  &price14,
+				SecondPrice: nil,
+			},
+			wantErr: false,
+		},
 	}
 	for i, tt := range tests {
 		ts.T().Run(fmt.Sprintf("TestOps_GetAuctionInfo-%d", i), func(t *testing.T) {
-			got, err := ts.ops.GetAuctionInfo(ts.ctx, tt.auctionID)
+			auctionID, err := ts.ops.NewArtAuction(ts.ctx, tt.newreq)
+			ts.Nil(err)
+			for _, bidreq := range tt.bidreqs {
+				bidreq.AuctionID = auctionID
+				err = ts.ops.ArtPlaceBid(ts.ctx, bidreq)
+				ts.Nil(err)
+			}
+			if tt.endAuction {
+				err = ts.ops.EndArtAuction(ts.ctx, auctionID)
+				ts.Nil(err)
+			}
+			got, err := ts.ops.GetAuctionInfo(ts.ctx, auctionID)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetAuctionInfo() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Ops.GetAuctionInfo() = %v, want %v", got, tt.want)
+			if err == nil {
+				ts.Equal(auctionID, got.AuctionID)
+				ts.Equal(tt.want.InstanceID, got.InstanceID)
+				ts.Equal(tt.want.LowestPrice, got.LowestPrice)
+				ts.NotNil(got.StartTime)
+				ts.True(got.StartTime.Unix() > time.Now().Add(-1*time.Second).Unix())
+				if tt.endAuction {
+					ts.NotNil(got.EndTime)
+					ts.False(got.IsOpen)
+				} else {
+					ts.Nil(got.EndTime)
+					ts.True(got.IsOpen)
+				}
+				ts.True(reflect.DeepEqual(got.FirstPrice, tt.want.FirstPrice))
+				ts.True(reflect.DeepEqual(got.SecondPrice, tt.want.SecondPrice))
 			}
 		})
 	}
 }
 
 func (ts *testSuite) TestOps_NewArtAuction() {
+	userDataFrame.ArtistPastelID = "id_naa_0"
+	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
+
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_naa_0", ArtistPastelID: "id_naa_0", Copies: 2, CreatedTimestamp: 150}))
+
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_naa_0", ArtID: "art0_id_naa_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_naa_0", ArtID: "art0_id_naa_0", Price: 10.0}))
+
 	tests := []struct {
 		data    NewArtAuctionRequest
-		want    int64
+		info    ArtAuctionInfo
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			data: NewArtAuctionRequest{
+				InstanceID:  "ins0_art0_id_naa_0",
+				LowestPrice: 10.0,
+			},
+			info: ArtAuctionInfo{
+				InstanceID:  "ins0_art0_id_naa_0",
+				LowestPrice: 10.0,
+				IsOpen:      true,
+			},
+			wantErr: false,
+		},
+		{
+			data: NewArtAuctionRequest{
+				InstanceID:  "ins1_art0_id_naa_0",
+				LowestPrice: 10.0,
+			},
+			info: ArtAuctionInfo{
+				InstanceID:  "ins1_art0_id_naa_0",
+				LowestPrice: 10.0,
+				IsOpen:      true,
+			},
+			wantErr: false,
+		},
+		{
+			data: NewArtAuctionRequest{
+				InstanceID:  "12312",
+				LowestPrice: 10.0,
+			},
+			info:    ArtAuctionInfo{},
+			wantErr: true,
+		},
 	}
 	for i, tt := range tests {
 		ts.T().Run(fmt.Sprintf("TestOps_NewArtAuction-%d", i), func(t *testing.T) {
-			got, err := ts.ops.NewArtAuction(ts.ctx, tt.data)
+			auctionID, err := ts.ops.NewArtAuction(ts.ctx, tt.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.NewArtAuction() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if got != tt.want {
-				t.Errorf("Ops.NewArtAuction() = %v, want %v", got, tt.want)
+			if err == nil {
+				if auctionID == 0 {
+					t.Errorf("Ops.NewArtAuction() = %v, want > 0", auctionID)
+					return
+				}
+				auctionInfo, err := ts.ops.GetAuctionInfo(ts.ctx, auctionID)
+				ts.Nil(err)
+				ts.Equal(auctionID, auctionInfo.AuctionID)
+				ts.Equal(tt.info.InstanceID, auctionInfo.InstanceID)
+				ts.Equal(tt.info.LowestPrice, auctionInfo.LowestPrice)
+				ts.NotNil(auctionInfo.StartTime)
+				ts.True(auctionInfo.StartTime.Unix() > time.Now().Add(-1*time.Second).Unix())
+				ts.Nil(auctionInfo.EndTime)
+				ts.True(auctionInfo.IsOpen)
+				ts.Nil(auctionInfo.FirstPrice)
+				ts.Nil(auctionInfo.SecondPrice)
 			}
 		})
 	}

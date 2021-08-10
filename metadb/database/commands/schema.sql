@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS art_like (
 );
 ---
 CREATE TABLE IF NOT EXISTS art_auction (
-	auction_id SERIAL PRIMARY KEY,
+	auction_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	instance_id TEXT NOT NULL,
 	lowest_price FLOAT NOT NULL,
 	is_open BOOLEAN NOT NULL,
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS art_auction (
 CREATE INDEX IF NOT EXISTS idx_auction_instance_id ON art_auction(instance_id);
 ---
 CREATE TABLE IF NOT EXISTS art_bidding (
-	bid_id SERIAL PRIMARY KEY,
+	bid_id INTEGER PRIMARY KEY AUTOINCREMENT,
 	auction_id INTEGER NOT NULL,
 	pastel_id TEXT NOT NULL,
 	bid_price FLOAT NOT NULL,

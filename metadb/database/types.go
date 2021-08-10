@@ -244,11 +244,12 @@ type NewArtAuctionRequest struct {
 }
 
 type ArtAuctionInfo struct {
-	AuctionID   int64     `mapstructure:"auction_id"`
-	InstanceID  string    `mapstructure:"auction_id"`
-	IsOpen      bool      `mapstructure:"is_open"`
-	StartTime   time.Time `mapstructure:"start_time"`
-	EndTime     time.Time `mapstructure:"end_time"`
-	FirstPrice  *float64  `mapstructure:"first_price"`
-	SecondPrice *float64  `mapstructure:"second_price"`
+	AuctionID   int64      `mapstructure:"auction_id"`
+	InstanceID  string     `mapstructure:"instance_id"`
+	LowestPrice float64    `mapstructure:"lowest_price"`
+	IsOpen      bool       `mapstructure:"is_open"`
+	StartTime   *time.Time `mapstructure:"start_time"`
+	EndTime     *time.Time `mapstructure:"end_time"`
+	FirstPrice  *float64   `mapstructure:"first_price"`
+	SecondPrice *float64   `mapstructure:"second_price"`
 }
