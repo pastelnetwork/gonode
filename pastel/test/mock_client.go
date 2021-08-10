@@ -12,7 +12,7 @@ const (
 	// MasterNodesTopMethod represent MasterNodesTop name method
 	MasterNodesTopMethod = "MasterNodesTop"
 
-	// MasterNodesTopMethod represent MasterNodesTop name method
+	// MasterNodeStatusMethod represent MasterNodesTop name method
 	MasterNodeStatusMethod = "MasterNodeStatus"
 
 	// StorageNetWorkFeeMethod represent StorageNetworkFee name method
@@ -78,7 +78,7 @@ func (client *Client) ListenOnMasterNodesTop(nodes pastel.MasterNodes, err error
 	return client
 }
 
-// ListenOnMasterNodesTop listening MasterNodeStatus and returns master node status and error from args
+// ListenOnMasterNodeStatus listening MasterNodeStatus and returns master node status and error from args
 func (client *Client) ListenOnMasterNodeStatus(status *pastel.MasterNodeStatus, err error) *Client {
 	client.On(MasterNodeStatusMethod, mock.Anything).Return(status, err)
 	return client
