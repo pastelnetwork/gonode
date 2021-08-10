@@ -180,3 +180,14 @@ BEGIN
 		second_price = (SELECT bid_price FROM art_bidding WHERE auction_id = NEW.auction_id ORDER BY bid_price DESC LIMIT 1 OFFSET 1)
 	WHERE auction_id = NEW.auction_id;
 END;
+---
+CREATE TABLE IF NOT EXISTS sn_activities (
+	id INTEGER PRIMARY KEY AUTOINCREMENT,
+	query TEXT NOT NULL,
+	activity_type TEXT NOT NULL,
+	cnt INTEGER NOT NULL
+);
+---
+CREATE UNIQUE INDEX IF NOT EXISTS idx_query_activity_type ON sn_activities(query, activity_type);
+---
+CREATE INDEX IF NOT EXISTS idx_acitivities_cnt ON sn_activities(cnt);

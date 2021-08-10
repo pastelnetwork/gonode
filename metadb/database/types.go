@@ -9,6 +9,14 @@ import (
 	pb "github.com/pastelnetwork/gonode/metadb/network/proto/supernode"
 )
 
+const (
+	SNActivityThumbnailRequest = "thumbnail_request"
+	SNActivityNftSearch        = "nft_search"
+	SNActivityCreatorSearch    = "creator_search"
+	SNActivityUserSearch       = "user_search"
+	SNActivityKeywordSearch    = "keyword_search"
+)
+
 // UserdataWriteCommand represents userdata record in DB
 type UserdataWriteCommand struct {
 	// Real name of the user
@@ -252,4 +260,23 @@ type ArtAuctionInfo struct {
 	EndTime     *time.Time `mapstructure:"end_time"`
 	FirstPrice  *float64   `mapstructure:"first_price"`
 	SecondPrice *float64   `mapstructure:"second_price"`
+}
+
+type SNActivityInfo struct {
+	Query string `mapstructure:"query"`
+
+	// SNActivityThumbnailRequest = "thumbnail_request"
+	// SNActivityNftSearch        = "nft_search"
+	// SNActivityCreatorSearch    = "creator_search"
+	// SNActivityUserSearch       = "user_search"
+	// SNActivityKeywordSearch    = "keyword_search"
+	ActivityType string `mapstructure:"activity_type"`
+
+	// Cnt is the number of query activities, ignored on write request
+	Cnt int `mapstructure:"cnt"`
+}
+
+type SNTopActivityRequest struct {
+	ActivityType string
+	NRecords     int
 }

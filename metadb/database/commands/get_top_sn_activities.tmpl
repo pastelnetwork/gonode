@@ -1,0 +1,10 @@
+SELECT
+    *
+FROM
+    sn_activities
+WHERE
+    activity_type = '{{.ActivityType}}'
+ORDER BY
+    cnt
+DESC
+LIMIT {{.NRecords}};

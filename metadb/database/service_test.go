@@ -1683,3 +1683,169 @@ func (ts *testSuite) TestOps_NewArtAuction() {
 		})
 	}
 }
+
+func (ts *testSuite) TestOps_WriteSNActivity() {
+	prefix := "TestOps_WriteSNActivity"
+	tests := []struct {
+		data    SNActivityInfo
+		wantErr bool
+	}{
+		{
+			data: SNActivityInfo{
+				Query:        fmt.Sprintf("%s-1", prefix),
+				ActivityType: SNActivityThumbnailRequest,
+			},
+			wantErr: false,
+		},
+		{
+			data: SNActivityInfo{
+				Query:        fmt.Sprintf("%s-2", prefix),
+				ActivityType: SNActivityThumbnailRequest,
+			},
+			wantErr: false,
+		},
+		{
+			data: SNActivityInfo{
+				Query:        fmt.Sprintf("%s-2", prefix),
+				ActivityType: SNActivityThumbnailRequest,
+			},
+			wantErr: false,
+		},
+		{
+			data:    SNActivityInfo{},
+			wantErr: true,
+		},
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_WriteSNActivity-%d", i), func(t *testing.T) {
+			if err := ts.ops.WriteSNActivity(ts.ctx, tt.data); (err != nil) != tt.wantErr {
+				t.Errorf("Ops.WriteSNActivity() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func (ts *testSuite) TestOps_GetTopSNActivities() {
+	prefix := "TestOps_GetTopSNActivities"
+
+	for i := 0; i < 10; i++ {
+		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+			Query:        fmt.Sprintf("%s-1", prefix),
+			ActivityType: SNActivityThumbnailRequest,
+		})
+		ts.Nil(err)
+	}
+
+	for i := 0; i < 11; i++ {
+		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+			Query:        fmt.Sprintf("%s-2", prefix),
+			ActivityType: SNActivityThumbnailRequest,
+		})
+		ts.Nil(err)
+	}
+
+	for i := 0; i < 9; i++ {
+		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+			Query:        fmt.Sprintf("%s-3", prefix),
+			ActivityType: SNActivityThumbnailRequest,
+		})
+		ts.Nil(err)
+	}
+
+	for i := 0; i < 10; i++ {
+		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+			Query:        fmt.Sprintf("%s-1", prefix),
+			ActivityType: SNActivityNftSearch,
+		})
+		ts.Nil(err)
+	}
+
+	for i := 0; i < 11; i++ {
+		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+			Query:        fmt.Sprintf("%s-2", prefix),
+			ActivityType: SNActivityNftSearch,
+		})
+		ts.Nil(err)
+	}
+
+	tests := []struct {
+		query   SNTopActivityRequest
+		want    []SNActivityInfo
+		wantErr bool
+	}{
+		{
+			query: SNTopActivityRequest{
+				ActivityType: SNActivityThumbnailRequest,
+				NRecords:     2,
+			},
+			want: []SNActivityInfo{
+				SNActivityInfo{
+					Query:        fmt.Sprintf("%s-2", prefix),
+					ActivityType: SNActivityThumbnailRequest,
+					Cnt:          11,
+				},
+				SNActivityInfo{
+					Query:        fmt.Sprintf("%s-1", prefix),
+					ActivityType: SNActivityThumbnailRequest,
+					Cnt:          10,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			query: SNTopActivityRequest{
+				ActivityType: SNActivityThumbnailRequest,
+				NRecords:     3,
+			},
+			want: []SNActivityInfo{
+				SNActivityInfo{
+					Query:        fmt.Sprintf("%s-2", prefix),
+					ActivityType: SNActivityThumbnailRequest,
+					Cnt:          11,
+				},
+				SNActivityInfo{
+					Query:        fmt.Sprintf("%s-1", prefix),
+					ActivityType: SNActivityThumbnailRequest,
+					Cnt:          10,
+				},
+				SNActivityInfo{
+					Query:        fmt.Sprintf("%s-3", prefix),
+					ActivityType: SNActivityThumbnailRequest,
+					Cnt:          9,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			query: SNTopActivityRequest{
+				ActivityType: SNActivityNftSearch,
+				NRecords:     2,
+			},
+			want: []SNActivityInfo{
+				SNActivityInfo{
+					Query:        fmt.Sprintf("%s-2", prefix),
+					ActivityType: SNActivityNftSearch,
+					Cnt:          11,
+				},
+				SNActivityInfo{
+					Query:        fmt.Sprintf("%s-1", prefix),
+					ActivityType: SNActivityNftSearch,
+					Cnt:          10,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_GetTopSNActivities-%d", i), func(t *testing.T) {
+			got, err := ts.ops.GetTopSNActivities(ts.ctx, tt.query)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ops.GetTopSNActivities() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Ops.GetTopSNActivities() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

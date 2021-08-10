@@ -33,6 +33,7 @@ const (
 	getFollowersTemplate             = "get_followers"
 	getFriendTemplate                = "get_friend"
 	getInstanceInfoTemplate          = "get_instance_info"
+	getTopSNActivitiesTemplate       = "get_top_sn_activities"
 	highestSalePriceByUserTemplate   = "highest_sale_price_by_user"
 	newArtAuctionTemplate            = "new_art_auction"
 	nftCopiesExistTemplate           = "nft_copies_exist"
@@ -40,6 +41,7 @@ const (
 	nftForSaleByArtistTemplate       = "nft_for_sale_by_artist"
 	nftOwnedByUserTemplate           = "nft_owned_by_user"
 	nftSoldByArtIDTemplate           = "nft_sold_by_art_id"
+	snActivityWriteTemplate          = "sn_activity_write"
 	transactionWriteTemplate         = "transaction_write"
 	uniqueNftByUserTemplate          = "unique_nft_by_user"
 	userFollowWriteTemplate          = "user_follow_write"
@@ -140,6 +142,17 @@ func (db *Ops) WriteTransaction(ctx context.Context, data ArtTransaction) error 
 
 func (db *Ops) WriteUserFollow(ctx context.Context, data UserFollow) error {
 	command, err := db.templates.GetCommand(userFollowWriteTemplate, data)
+	if err != nil {
+		return errors.Errorf("error while subtitute template: %w", err)
+	}
+	return db.writeData(ctx, command)
+}
+
+func (db *Ops) WriteSNActivity(ctx context.Context, data SNActivityInfo) error {
+	if data.Query == "" {
+		return errors.Errorf("invalid query")
+	}
+	command, err := db.templates.GetCommand(snActivityWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
 	}
@@ -610,6 +623,29 @@ func (db *Ops) GetAuctionInfo(ctx context.Context, auctionID int64) (ArtAuctionI
 
 	if err := mapstructure.Decode(allResults[0], &result); err != nil {
 		return result, errors.Errorf("error while decoding result: %w", err)
+	}
+
+	return result, nil
+}
+
+func (db *Ops) GetTopSNActivities(ctx context.Context, query SNTopActivityRequest) ([]SNActivityInfo, error) {
+	command, err := db.templates.GetCommand(getTopSNActivitiesTemplate, query)
+	if err != nil {
+		return nil, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	allResults, err := db.queryToInterface(ctx, command)
+	if err != nil {
+		return nil, errors.Errorf("error while query db: %w", err)
+	}
+
+	result := make([]SNActivityInfo, 0)
+	for _, mp := range allResults {
+		var record SNActivityInfo
+		if err := mapstructure.Decode(mp, &record); err != nil {
+			return nil, errors.Errorf("error while decoding result: %w", err)
+		}
+		result = append(result, record)
 	}
 
 	return result, nil
