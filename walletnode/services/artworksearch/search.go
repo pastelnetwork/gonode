@@ -56,7 +56,7 @@ func (rs *RegTicketSearch) getSearchableFields(req *ArtSearchRequest) (data []st
 		fieldIdxMapper[idx] = ArtSearchSeries
 	}
 
-	return data, mapper
+	return data, fieldIdxMapper
 }
 
 // Search does fuzzy search  on the reg ticket data for the query
@@ -64,6 +64,10 @@ func (rs *RegTicketSearch) Search(req *ArtSearchRequest) (srch *RegTicketSearch,
 	data, mapper := rs.getSearchableFields(req)
 	matches := fuzzy.Find(req.Query, data)
 	for _, match := range matches {
+		if match.Score <= 0 {
+			continue
+		}
+
 		if match.Score > rs.MaxScore {
 			rs.MaxScore = match.Score
 		}
@@ -75,5 +79,5 @@ func (rs *RegTicketSearch) Search(req *ArtSearchRequest) (srch *RegTicketSearch,
 		})
 	}
 
-	return rs, len(matches) > 0
+	return rs, len(rs.Matches) > 0
 }
