@@ -62,13 +62,12 @@ func fakeRegiterTicket() pastel.RegTicket {
 		RQOti:                          []byte("rq_oti"),
 	}
 	appTicket, _ := json.Marshal(&appTicketData)
-	// appTicket := base64.StdEncoding.EncodeToString(data)
-	// fmt.Println(string(appTicket))
+
 	artTicketData := pastel.ArtTicket{
 		Version:       1,
-		Author:        []byte("pastelID"),
+		Author:        "pastelID",
 		BlockNum:      10,
-		BlockHash:     []byte("block_hash"),
+		BlockHash:     "block_hash",
 		Copies:        10,
 		Royalty:       99,
 		Green:         "green_address",

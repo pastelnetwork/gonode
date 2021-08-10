@@ -22,9 +22,9 @@ func TestEncodeArtTicket(t *testing.T) {
 
 	inputTicket := ArtTicket{
 		Version:       1,
-		Author:        []byte{2, 3, 4},
+		Author:        string([]byte{2, 3, 4}),
 		BlockNum:      5,
-		BlockHash:     []byte{6, 7, 8},
+		BlockHash:     string([]byte{6, 7, 8}),
 		Copies:        9,
 		Royalty:       10,
 		Green:         "11",

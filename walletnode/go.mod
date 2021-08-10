@@ -6,7 +6,6 @@ require (
 	github.com/DataDog/zstd v1.4.8
 	github.com/anacrolix/sync v0.3.0 // indirect
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
 	github.com/go-errors/errors v1.4.0 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.4.2
@@ -18,7 +17,6 @@ require (
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-20210731175226-8a39b3090588
 	github.com/sahilm/fuzzy v0.1.0
-	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0

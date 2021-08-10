@@ -119,7 +119,6 @@ func (task *Task) run(ctx context.Context) error {
 				return fmt.Errorf("fetch thumbnail: txid: %s - err: %s", res.TXID, err)
 			}
 			res.Thumbnail = data
-
 			// Post on result channel
 			task.resultChan <- res
 

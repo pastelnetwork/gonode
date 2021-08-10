@@ -66,6 +66,10 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 		return fmt.Errorf("pastelTopNodes: %v", err)
 	}
 
+	if len(nodes) == 0 {
+		return errors.New("no nodes available")
+	}
+
 	for _, node := range nodes {
 		node := node
 		if err := node.Connect(ctx, t.timeOut); err != nil {
