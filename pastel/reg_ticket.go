@@ -106,7 +106,7 @@ type AppTicket struct {
 	AlternateNSFWScores     AlternateNSFWScores `json:"alternate_nsfw_scores"`
 	ImageHashes             ImageHashes         `json:"image_hashes"`
 
-	RQIDs []string `json:"rqids"`
+	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
 }
 
