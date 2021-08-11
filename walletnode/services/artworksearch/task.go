@@ -39,7 +39,6 @@ func (task *Task) Run(ctx context.Context) error {
 
 	if err := task.run(ctx); err != nil {
 		task.err = err
-		fmt.Println("in failure")
 		task.UpdateStatus(StatusTaskFailure)
 		log.WithContext(ctx).WithError(err).Warnf("Task failed")
 
@@ -97,7 +96,12 @@ func (task *Task) run(ctx context.Context) error {
 	if len(task.searchResult) > task.request.Limit {
 		task.searchResult = task.searchResult[:task.request.Limit]
 	}
-
+	for _, obj := range task.searchResult {
+		fmt.Println("got res: ", *obj)
+		fmt.Println("got reg tx: ", obj.RegTicket.TXID)
+		fmt.Println("match index: ", obj.MatchIndex)
+		fmt.Println("match score: ", obj.MaxScore)
+	}
 	if len(task.searchResult) == 0 {
 		return nil
 	}
@@ -107,10 +111,10 @@ func (task *Task) run(ctx context.Context) error {
 		pastelConnections = len(task.searchResult)
 	}
 
-	if err := task.thumbnailHelper.Connect(ctx, uint(pastelConnections)); err != nil {
+	/*if err := task.thumbnailHelper.Connect(ctx, uint(pastelConnections)); err != nil {
 		return fmt.Errorf("connect Thumbnail helper : %s", err)
 	}
-
+	*/
 	group, gctx = errgroup.WithContext(ctx)
 	for i, res := range task.searchResult {
 		res := res
