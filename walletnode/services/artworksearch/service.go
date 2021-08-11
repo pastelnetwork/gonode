@@ -2,6 +2,7 @@ package artworksearch
 
 import (
 	"context"
+	b64 "encoding/base64"
 	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -77,7 +78,12 @@ func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.
 		return nil, fmt.Errorf("fetch: %s", err)
 	}
 
-	articketData, err := pastel.DecodeArtTicket(regTicket.RegTicketData.ArtTicket)
+	artTicketbytes, err := b64.StdEncoding.DecodeString(string(regTicket.RegTicketData.ArtTicket))
+	if err != nil {
+		return nil, fmt.Errorf("decode: %s", err)
+	}
+
+	articketData, err := pastel.DecodeArtTicket(artTicketbytes)
 	if err != nil {
 		return nil, errors.Errorf("failed to convert art ticket: %w", err)
 	}

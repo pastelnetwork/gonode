@@ -96,6 +96,7 @@ func TestRegTicket(t *testing.T) {
 			service := NewService(NewConfig(), pastelClientMock, nil, nodeClientMock)
 
 			result, err := service.RegTicket(ctx, testCase.args.regTicketID)
+
 			assert.Equal(t, testCase.err, err)
 			assert.Equal(t, testCase.want.TXID, result.TXID)
 			assert.Equal(t, testCase.want.RegTicketData.ArtTicketData.Author,
@@ -173,16 +174,16 @@ func TestGetThumbnail(t *testing.T) {
 }
 
 func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
-	toBase64 := func(from interface{}) ([]byte, error) {
+	toBytes := func(from interface{}) ([]byte, error) {
 		testBytes, err := json.Marshal(from)
-		return []byte(b64.StdEncoding.EncodeToString([]byte(testBytes))), err
+		return testBytes, err
 	}
 
-	base64Bytes, err := toBase64(ticket.RegTicketData.ArtTicketData.AppTicketData)
+	bytes, err := toBytes(ticket.RegTicketData.ArtTicketData.AppTicketData)
 	assert.Nil(t, err)
-	ticket.RegTicketData.ArtTicketData.AppTicket = base64Bytes
+	ticket.RegTicketData.ArtTicketData.AppTicket = bytes
 
-	base64Bytes, err = toBase64(ticket.RegTicketData.ArtTicketData)
+	bytes, err = toBytes(ticket.RegTicketData.ArtTicketData)
 	assert.Nil(t, err)
-	ticket.RegTicketData.ArtTicket = base64Bytes
+	ticket.RegTicketData.ArtTicket = []byte(b64.StdEncoding.EncodeToString([]byte(bytes)))
 }

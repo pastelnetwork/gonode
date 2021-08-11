@@ -39,6 +39,7 @@ func (task *Task) Run(ctx context.Context) error {
 
 	if err := task.run(ctx); err != nil {
 		task.err = err
+		fmt.Println("in failure")
 		task.UpdateStatus(StatusTaskFailure)
 		log.WithContext(ctx).WithError(err).Warnf("Task failed")
 
@@ -95,6 +96,10 @@ func (task *Task) run(ctx context.Context) error {
 
 	if len(task.searchResult) > task.request.Limit {
 		task.searchResult = task.searchResult[:task.request.Limit]
+	}
+
+	if len(task.searchResult) == 0 {
+		return nil
 	}
 
 	pastelConnections := 10
