@@ -26,6 +26,8 @@ type MetaDB interface {
 	LeaderAddress() string
 	// IsLeader let us know if this instance is leader or not
 	IsLeader() bool
+	// EnableFKConstraints is used to enable foreign key constraint
+	EnableFKConstraints(bool) error
 }
 
 type service struct {

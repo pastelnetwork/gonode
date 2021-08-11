@@ -285,6 +285,11 @@ func (s *Store) WaitForApplied(ctx context.Context, timeout time.Duration) error
 	return nil
 }
 
+// EnableFKConstraints is used to enable foreign key constraint
+func (s *Store) EnableFKConstraints(e bool) error {
+	return s.db.EnableFKConstraints(e)
+}
+
 // IsLeader is used to determine if the current node is cluster leader
 func (s *Store) IsLeader() bool {
 	return s.raft.State() == raft.Leader

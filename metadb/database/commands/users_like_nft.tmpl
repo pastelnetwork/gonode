@@ -1,0 +1,10 @@
+{{/* Which users have “liked” the NFT and the total number of them. */}}
+
+SELECT
+    pastel_id
+FROM
+    art_like
+WHERE
+    art_id = '{{.}}'
+ORDER BY
+    pastel_id;

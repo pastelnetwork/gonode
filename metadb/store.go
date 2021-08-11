@@ -37,6 +37,11 @@ func (s *service) IsLeader() bool {
 	return address == s.db.Addr()
 }
 
+// EnableFKConstraints is used to enable foreign key constraint
+func (s *service) EnableFKConstraints(e bool) error {
+	return s.db.EnableFKConstraints(e)
+}
+
 // Write execute a statement, not support multple statements
 func (s *service) Write(_ context.Context, statement string) (*WriteResult, error) {
 	if len(statement) == 0 {

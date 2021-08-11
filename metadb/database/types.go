@@ -3,9 +3,18 @@ package database
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
+)
+
+const (
+	SNActivityThumbnailRequest = "thumbnail_request"
+	SNActivityNftSearch        = "nft_search"
+	SNActivityCreatorSearch    = "creator_search"
+	SNActivityUserSearch       = "user_search"
+	SNActivityKeywordSearch    = "keyword_search"
 )
 
 // UserdataWriteCommand represents userdata record in DB
@@ -156,4 +165,121 @@ func (d *UserdataReadResult) ToUserData() userdata.ProcessRequest {
 		Timestamp:         int64(d.Timestamp),
 		PreviousBlockHash: d.PreviousBlockHash,
 	}
+}
+
+type ArtInfo struct {
+	ArtID                 string  `mapstructure:"art_id"`
+	ArtistPastelID        string  `mapstructure:"artist_pastel_id"`
+	Copies                int64   `mapstructure:"copies"`
+	CreatedTimestamp      int64   `mapstructure:"created_timestamp"`
+	GreenNft              bool    `mapstructure:"green_nft"`
+	RarenessScore         float64 `mapstructure:"rareness_score"`
+	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage"`
+}
+
+type ArtInstanceInfo struct {
+	InstanceID    string   `mapstructure:"instance_id"`
+	ArtID         string   `mapstructure:"art_id"`
+	OwnerPastelID string   `mapstructure:"owner_pastel_id"`
+	Price         float64  `mapstructure:"price"`
+	AskingPrice   *float64 `mapstructure:"asking_price,omitempty"`
+}
+
+type ArtLike struct {
+	ArtID    string
+	PastelID string
+}
+
+type ArtTransaction struct {
+	TransactionID  string
+	InstanceID     string
+	Timestamp      int64
+	SellerPastelID string
+	BuyerPastelID  string
+	Price          float64
+}
+
+type UserFollow struct {
+	FollowerPastelID string
+	FolloweePastelID string
+}
+
+type NftCreatedByArtistQueryResult struct {
+	InstanceID            string  `mapstructure:"instance_id"`
+	ArtID                 string  `mapstructure:"art_id"`
+	Copies                int64   `mapstructure:"copies"`
+	CreatedTimestamp      int64   `mapstructure:"created_timestamp"`
+	GreenNft              bool    `mapstructure:"green_nft"`
+	RarenessScore         float64 `mapstructure:"rareness_score"`
+	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage"`
+}
+
+type NftForSaleByArtistQueryResult struct {
+	InstanceID string  `mapstructure:"instance_id"`
+	ArtID      string  `mapstructure:"art_id"`
+	Price      float64 `mapstructure:"price"`
+}
+
+type NftOwnedByUserQueryResult struct {
+	ArtID string `mapstructure:"art_id"`
+	Count int    `mapstructure:"cnt"`
+}
+
+type NftSoldByArtIDQueryResult struct {
+	TotalCopies int `mapstructure:"total_copies"`
+	SoldCopies  int `mapstructure:"sold_copies"`
+}
+
+type UniqueNftByUserQuery struct {
+	ArtistPastelID string
+	LimitTimestamp int64
+}
+
+type AskingPriceUpdateRequest struct {
+	InstanceID  string
+	AskingPrice float64
+}
+
+type ArtPlaceBidRequest struct {
+	AuctionID int64
+	PastelID  string
+	BidPrice  float64
+}
+
+type NewArtAuctionRequest struct {
+	InstanceID  string
+	LowestPrice float64
+}
+
+type ArtAuctionInfo struct {
+	AuctionID   int64      `mapstructure:"auction_id"`
+	InstanceID  string     `mapstructure:"instance_id"`
+	LowestPrice float64    `mapstructure:"lowest_price"`
+	IsOpen      bool       `mapstructure:"is_open"`
+	StartTime   *time.Time `mapstructure:"start_time"`
+	EndTime     *time.Time `mapstructure:"end_time"`
+	FirstPrice  *float64   `mapstructure:"first_price"`
+	SecondPrice *float64   `mapstructure:"second_price"`
+}
+
+type SNActivityInfo struct {
+	Query string `mapstructure:"query"`
+
+	// SNActivityThumbnailRequest = "thumbnail_request"
+	// SNActivityNftSearch        = "nft_search"
+	// SNActivityCreatorSearch    = "creator_search"
+	// SNActivityUserSearch       = "user_search"
+	// SNActivityKeywordSearch    = "keyword_search"
+	ActivityType string `mapstructure:"activity_type"`
+
+	SNPastelID string `mapstructure:"sn_pastel_id"`
+
+	// Cnt is the number of query activities, ignored on write request
+	Cnt int `mapstructure:"cnt"`
+}
+
+type SNTopActivityRequest struct {
+	ActivityType string
+	SNPastelID   string
+	NRecords     int
 }

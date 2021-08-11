@@ -1,0 +1,14 @@
+INSERT OR REPLACE INTO sn_activities (
+    query,
+    activity_type,
+    sn_pastel_id,
+    cnt
+) VALUES (
+    '{{.Query}}',
+    '{{.ActivityType}}',
+    '{{.SNPastelID}}',
+    COALESCE(
+        (SELECT cnt FROM sn_activities WHERE query = '{{.Query}}' AND activity_type = '{{.ActivityType}}' AND sn_pastel_id = '{{.SNPastelID}}'),
+        0
+    ) + 1
+);
