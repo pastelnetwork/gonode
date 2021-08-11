@@ -67,24 +67,24 @@ message ProbeImageReply {
       double sexy = 5;
     }
     message ImageHashes {
-      string perceptual_hash = 1; 
-      string average_hash = 2; 
-      string difference_hash = 3; 
+      string perceptual_hash = 1;
+      string average_hash = 2;
+      string difference_hash = 3;
+      string pdq_hash = 4;
     }
     // version of dupde detection system
     string dupe_detection_version = 1;
     // hexstring of hash of candidate image
     string hash_of_candidate_img = 2;
-    int32 is_likely_dupe = 3;
-    double average_rareness_score =4;
-    int32 is_rare_on_internet = 5;
-    int32 matches_found_on_first_page = 6;
-    int32 number_of_pages_of_results = 7;
-    string url_of_first_match_in_page = 8;
-    double open_nsfw_score = 9;
-    bytes zstd_compressed_fingerprint = 10;
-    AlternativeNSFWScore alternative_nsfw_score = 11;
-    ImageHashes image_hashes = 12;
+    double average_rareness_score = 3;
+    int32 is_rare_on_internet = 4;
+    int32 matches_found_on_first_page = 5;
+    int32 number_of_pages_of_results = 6;
+    string url_of_first_match_in_page = 7;
+    double open_nsfw_score = 8;
+    bytes zstd_compressed_fingerprint = 9;
+    AlternativeNSFWScore alternative_nsfw_score = 10;
+    ImageHashes image_hashes = 11;
 }
 
 message EncoderParameters {

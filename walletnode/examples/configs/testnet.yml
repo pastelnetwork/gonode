@@ -5,3 +5,4 @@ node:
   api:
     hostname: "localhost"
     port: 8080
+  burn_address: "tPpasteLBurnAddressXXXXXXXXXXX3wy7u"
