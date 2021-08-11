@@ -97,3 +97,11 @@ type SuperNodeReply struct {
 	// The detail of why SuperNodeRequest is success/fail, depend on response_code
 	Detail string
 }
+
+// Metric represents the metric need to be stored
+type Metric struct {
+	// Command the the predefine database operation name
+	Command string
+	// Data is the general structure accept many kind of metric, but it need to be match with Command
+	Data interface{}
+}

@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-
+	"encoding/json"
+	
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
@@ -132,6 +133,33 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 
 	// Send the data
 	resp, err := service.client.SendUserdataToLeader(ctx, reqProto)
+
+	return userdata.SuperNodeReply{
+		ResponseCode: resp.ResponseCode,
+		Detail:       resp.Detail,
+	}, err
+}
+
+func (service *processUserdata) StoreMetric(ctx context.Context, metric userdata.Metric) (userdata.SuperNodeReply, error) {
+	ctx = service.contextWithLogPrefix(ctx)
+
+	if metric.Data == nil {
+		return userdata.SuperNodeReply{}, errors.Errorf("input nil metric")
+	}
+
+	byteData, err := json.Marshal(metric.Data)
+	if err != nil {
+		return userdata.SuperNodeReply{}, errors.Errorf("failed to marshal data: %w", err)
+	}
+
+	// Generate protobuf request reqProto
+	reqProto := &pb.Metric{
+		Command: metric.Command,
+		Data:    byteData,
+	}
+
+	// Send the data
+	resp, err := service.client.StoreMetric(ctx, reqProto)
 
 	return userdata.SuperNodeReply{
 		ResponseCode: resp.ResponseCode,

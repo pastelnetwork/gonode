@@ -48,4 +48,6 @@ type ProcessUserdata interface {
 	SendUserdataToPrimary(ctx context.Context, dataSigned userdata.SuperNodeRequest) (userdata.SuperNodeReply, error)
 	// Send userdata to supernode with leader rqlite
 	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.ProcessRequestSigned) (userdata.SuperNodeReply, error)
+	// StoreMetric store the metric that follow database scheme into rqlite db
+	StoreMetric(ctx context.Context, metric userdata.Metric) (userdata.SuperNodeReply, error)
 }

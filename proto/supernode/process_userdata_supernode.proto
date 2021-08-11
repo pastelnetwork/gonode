@@ -17,6 +17,9 @@ service ProcessUserdata {
 
   // SendUserdataToLeader send final userdata to supernode contain rqlite leader
   rpc SendUserdataToLeader(UserdataRequest) returns(SuperNodeReply);
+
+  // StoreMetric store the metric that follow database scheme into rqlite db
+  rpc StoreMetric(Metric) returns(SuperNodeReply);
 }
 
 message MDLSessionRequest { string nodeID = 1; }
@@ -82,4 +85,11 @@ message UserdataRequest {
   string userdata_hash = 14;
   // Signature of the userdata_hash
   string signature = 15;
+}
+
+message Metric {
+  // Command the the predefine database operation name 
+  string command = 1;
+  // Data is the general structure accept many kind of metric, send as byte stream in protobuf and will be marshal at receiver
+  bytes data = 2;
 }

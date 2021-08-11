@@ -130,6 +130,50 @@ func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *p
 	}, nil
 }
 
+// StoreMetric implements supernode.ProcessUserdataServer.StoreMetric()
+func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric) (*pb.SuperNodeReply, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	log.WithContext(ctx).WithField("req", req).Debugf("StoreMetric request")
+
+
+	if req == nil {
+		return nil, errors.Errorf("receive nil request")
+	}
+	var task *userdataprocess.Task
+
+	task = service.NewTask()
+	go func() {
+		<-task.Done()
+		cancel()
+	}()
+	defer task.Cancel()
+
+	if service.databaseOps.IsLeader() {
+		if err := service.databaseOps.ProcessCommand(ctx, req); err != nil {
+			return nil, errors.Errorf("error occurs while writting to database: %w", err)
+		}
+	} else {		
+		/* if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), ""); err != nil {
+			return nil, err
+		}
+
+		if task.ConnectedToLeader != nil {
+			if _, err := task.ConnectedToLeader.ProcessUserdata.StoreMetric(ctx, req); err != nil {
+				return &pb.SuperNodeReply{
+					ResponseCode: userdata.ErrorWriteToRQLiteDBFail,
+					Detail:       userdata.Description[userdata.ErrorWriteToRQLiteDBFail],
+				}, nil 
+			}
+		} */
+	}
+
+	return &pb.SuperNodeReply{
+		ResponseCode: userdata.SuccessWriteToRQLiteDB,
+		Detail:       userdata.Description[userdata.SuccessWriteToRQLiteDB],
+	}, nil
+}
+
 // Desc returns a description of the service.
 func (service *ProcessUserdata) Desc() *grpc.ServiceDesc {
 	return &pb.ProcessUserdata_ServiceDesc

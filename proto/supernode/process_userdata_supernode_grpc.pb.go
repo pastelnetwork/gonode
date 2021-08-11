@@ -18,13 +18,17 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProcessUserdataClient interface {
-	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
-	// The stream is used by the parties to inform each other about the cancellation of the task.
+	// Session informs primary supernode about its `nodeID` and `sessID` it wants
+	// to connect to. The stream is used by the parties to inform each other about
+	// the cancellation of the task.
 	Session(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SessionClient, error)
-	// SendUserdataToPrimary send signed userdata from other supernodes to primary supernode
+	// SendUserdataToPrimary send signed userdata from other supernodes to primary
+	// supernode
 	SendUserdataToPrimary(ctx context.Context, in *SuperNodeRequest, opts ...grpc.CallOption) (*SuperNodeReply, error)
 	// SendUserdataToLeader send final userdata to supernode contain rqlite leader
 	SendUserdataToLeader(ctx context.Context, in *UserdataRequest, opts ...grpc.CallOption) (*SuperNodeReply, error)
+	// StoreMetric store the metric that follow database scheme into rqlite db
+	StoreMetric(ctx context.Context, in *Metric, opts ...grpc.CallOption) (*SuperNodeReply, error)
 }
 
 type processUserdataClient struct {
@@ -84,17 +88,30 @@ func (c *processUserdataClient) SendUserdataToLeader(ctx context.Context, in *Us
 	return out, nil
 }
 
+func (c *processUserdataClient) StoreMetric(ctx context.Context, in *Metric, opts ...grpc.CallOption) (*SuperNodeReply, error) {
+	out := new(SuperNodeReply)
+	err := c.cc.Invoke(ctx, "/supernode.ProcessUserdata/StoreMetric", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProcessUserdataServer is the server API for ProcessUserdata service.
 // All implementations must embed UnimplementedProcessUserdataServer
 // for forward compatibility
 type ProcessUserdataServer interface {
-	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
-	// The stream is used by the parties to inform each other about the cancellation of the task.
+	// Session informs primary supernode about its `nodeID` and `sessID` it wants
+	// to connect to. The stream is used by the parties to inform each other about
+	// the cancellation of the task.
 	Session(ProcessUserdata_SessionServer) error
-	// SendUserdataToPrimary send signed userdata from other supernodes to primary supernode
+	// SendUserdataToPrimary send signed userdata from other supernodes to primary
+	// supernode
 	SendUserdataToPrimary(context.Context, *SuperNodeRequest) (*SuperNodeReply, error)
 	// SendUserdataToLeader send final userdata to supernode contain rqlite leader
 	SendUserdataToLeader(context.Context, *UserdataRequest) (*SuperNodeReply, error)
+	// StoreMetric store the metric that follow database scheme into rqlite db
+	StoreMetric(context.Context, *Metric) (*SuperNodeReply, error)
 	mustEmbedUnimplementedProcessUserdataServer()
 }
 
@@ -110,6 +127,9 @@ func (UnimplementedProcessUserdataServer) SendUserdataToPrimary(context.Context,
 }
 func (UnimplementedProcessUserdataServer) SendUserdataToLeader(context.Context, *UserdataRequest) (*SuperNodeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendUserdataToLeader not implemented")
+}
+func (UnimplementedProcessUserdataServer) StoreMetric(context.Context, *Metric) (*SuperNodeReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method StoreMetric not implemented")
 }
 func (UnimplementedProcessUserdataServer) mustEmbedUnimplementedProcessUserdataServer() {}
 
@@ -186,6 +206,24 @@ func _ProcessUserdata_SendUserdataToLeader_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ProcessUserdata_StoreMetric_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Metric)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProcessUserdataServer).StoreMetric(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/supernode.ProcessUserdata/StoreMetric",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProcessUserdataServer).StoreMetric(ctx, req.(*Metric))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ProcessUserdata_ServiceDesc is the grpc.ServiceDesc for ProcessUserdata service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -200,6 +238,10 @@ var ProcessUserdata_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendUserdataToLeader",
 			Handler:    _ProcessUserdata_SendUserdataToLeader_Handler,
+		},
+		{
+			MethodName: "StoreMetric",
+			Handler:    _ProcessUserdata_StoreMetric_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

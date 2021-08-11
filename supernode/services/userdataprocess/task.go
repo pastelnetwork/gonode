@@ -38,6 +38,7 @@ type Task struct {
 	ownSNData userdata.SuperNodeRequest
 
 	// valid only for a task run as primary
+	// For User specified data
 	peersSNDataSignedMtx    *sync.Mutex
 	peersSNDataSigned       map[string]userdata.SuperNodeRequest
 	allPeersSNDatasReceived chan struct{}
@@ -469,6 +470,7 @@ func (task *Task) getRQliteLeaderNode(ctx context.Context, extAddress string) (*
 	}
 	return node, nil
 }
+
 
 // ConnectToLeader connects to RQLite Leader node
 func (task *Task) ConnectToLeader(ctx context.Context, extAddress string, sessID string) error {

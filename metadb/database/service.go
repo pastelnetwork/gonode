@@ -212,6 +212,57 @@ func (db *Ops) ArtPlaceBid(ctx context.Context, data ArtPlaceBidRequest) error {
 	return db.writeData(ctx, command)
 }
 
+// ProcessCommand handle different type of metric to be store
+func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) error {
+	switch req.Command {
+	case artInfoWriteTemplate:
+		var data ArtInfo
+		if err := mapstructure.Decode(req.Data, &data); err != nil {
+			return errors.Errorf("error while decoding result: %w", err)
+		}
+		return db.WriteArtInfo(ctx, data)
+
+	case artInstanceInfoWriteTemplate:
+		var data ArtInstanceInfo
+		if err := mapstructure.Decode(req.Data, &data); err != nil {
+			return errors.Errorf("error while decoding result: %w", err)
+		}
+		return db.WriteArtInstanceInfo(ctx, data)
+
+	case artLikeWriteTemplate:
+		var data ArtLike
+		if err := mapstructure.Decode(req.Data, &data); err != nil {
+			return errors.Errorf("error while decoding result: %w", err)
+		}
+		return db.WriteArtLike(ctx, data)
+
+	case snActivityWriteTemplate:
+		var data SNActivityInfo
+		if err := mapstructure.Decode(req.Data, &data); err != nil {
+			return errors.Errorf("error while decoding result: %w", err)
+		}
+		return db.WriteSNActivity(ctx, data)
+
+	case transactionWriteTemplate:
+		var data ArtTransaction
+		if err := mapstructure.Decode(req.Data, &data); err != nil {
+			return errors.Errorf("error while decoding result: %w", err)
+		}
+		return db.WriteTransaction(ctx, data)
+
+	case userFollowWriteTemplate:
+		var data UserFollow
+		if err := mapstructure.Decode(req.Data, &data); err != nil {
+			return errors.Errorf("error while decoding result: %w", err)
+		}
+		return db.WriteUserFollow(ctx, data)
+
+	default:
+		return errors.Errorf("Unsupported command: %s", req.Command)
+	}
+}
+
+
 // ReadUserData read metadata in the struct UserdataProcessRequest to metadb
 func (db *Ops) ReadUserData(ctx context.Context, artistPastelID string) (userdata.ProcessRequest, error) {
 	command, err := db.templates.GetCommand(userInfoQueryTemplate, artistPastelID)
