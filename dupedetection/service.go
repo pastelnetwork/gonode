@@ -184,7 +184,7 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 	statement := fmt.Sprintf(insertFingerprintStatement, input.Sha256HashOfArtImageFile, fp1, fp2, fp3, fp4)
 	_, err = s.db.ExecuteStringStmt(statement)
 	if err != nil {
-		fmt.Printf("failed to insert fingerprint record: %s", err.Error())
+		log.WithContext(ctx).Errorf("failed to insert fingerprint record: %s", err.Error())
 	}
 	return nil
 }
@@ -207,23 +207,27 @@ func (s *service) runTask(ctx context.Context) error {
 
 		artTicketData, err := pastel.DecodeArtTicket(artRegTickets[i].RegTicketData.ArtTicket)
 		if err != nil {
-			return errors.Errorf("failed to decode reg ticket: err %w", err)
+			log.WithContext(ctx).Errorf("failed to decode reg ticket: err %s", err)
+			continue
 		}
 
 		fingerprintsHash := artTicketData.AppTicketData.FingerprintsHash
 		fingerprintByte, err := s.p2pClient.Retrieve(ctx, base58.Encode(fingerprintsHash))
 		if err != nil {
-			return errors.Errorf("failed to retrieve fingerprint, err: %w", err)
+			log.WithContext(ctx).Errorf("failed to retrieve fingerprint, err: %s", err)
+			continue
 		}
 
 		fingerprint, err := pastel.FingerprintFromBytes(fingerprintByte)
 		if err != nil {
-			return errors.Errorf("failed to convert fingerprint, err: %w", err)
+			log.WithContext(ctx).Errorf("failed to convert fingerprint, err: %s", err)
+			continue
 		}
 
 		size := len(fingerprint)
 		if size != fingerprintSizeModel {
-			return errors.Errorf("invaild size fingerprint, size: %d", size)
+			log.WithContext(ctx).Errorf("invaild size fingerprint, size: %d", size)
+			continue
 		}
 
 		model1ImageFingerprintVector := make([]float64, fingerprintSizeModel1)
@@ -252,7 +256,7 @@ func (s *service) runTask(ctx context.Context) error {
 			NumberOfBlock:                      artRegTickets[i].Height,
 			DatetimeFingerprintAddedToDatabase: time.Now(),
 		}); err != nil {
-			return errors.Errorf("failed to store fingerprint, err: %w", err)
+			log.WithContext(ctx).Errorf("failed to store fingerprint, err: %s", err)
 		}
 	}
 
