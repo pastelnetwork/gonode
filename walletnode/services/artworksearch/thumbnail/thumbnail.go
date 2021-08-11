@@ -66,14 +66,16 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 		return fmt.Errorf("pastelTopNodes: %v", err)
 	}
 
+	cnt := 0
 	for _, node := range nodes {
 		node := node
 		if err := node.Connect(ctx, t.timeOut); err != nil {
-			t.Close()
+			//t.Close()
 
-			return err
+			continue
 		}
 
+		cnt = cnt + 1
 		go func() {
 			t.listen(ctx, node)
 			t.Close()
@@ -83,7 +85,11 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 		}()
 	}
 
-	return nil
+	if cnt == 0 {
+		return errors.New("could not connect to any master nodes")
+	} else {
+		return nil
+	}
 }
 
 func (t *thumbnailHelper) listen(ctx context.Context, n *node.Node) {
