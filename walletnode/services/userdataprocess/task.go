@@ -123,25 +123,21 @@ func (task *Task) run(ctx context.Context) error {
 		// PROCESS TO SET/UPDATE USERDATA TO METADATA LAYER
 		// Get the previous block hash
 		// Get block num
-
-		// TODO: Unblock this part after pastelClient support it
-		/*
-			blockNum, err := task.pastelClient.GetBlockCount(ctx)
-			if err != nil {
-				return errors.Errorf("failed to get block num: %w", err)
-			}
-
+		blockHash := ""
+		blockNum, err := task.pastelClient.GetBlockCount(ctx)
+		if err != nil {
+			log.WithContext(ctx).Debug("failed to get block num: %w", err)
+		} else {
 			// Get block hash string
 			blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
 			if err != nil {
-				return errors.Errorf("failed to get block info with given block num %d: %w", blockNum, err)
-			} */
-
-		// Decode hash string to byte
-		task.request.PreviousBlockHash = "" /* blockInfo.Hash */
-		if err != nil {
-			return errors.Errorf("failed to convert hash string %s to bytes: %w", "" /*blockInfo.Hash*/, err)
+				log.WithContext(ctx).Debug("failed to get block info with error: %w", err)
+			} else {
+				blockHash = blockInfo.Hash
+			}
 		}
+
+		task.request.PreviousBlockHash = blockHash
 
 		// Get the value of task.request.ArtistPastelIDPassphrase for sign data, then empty it in the request to make sure it not sent to supernodes
 		passphrase := task.request.ArtistPastelIDPassphrase

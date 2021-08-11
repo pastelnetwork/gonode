@@ -107,7 +107,7 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 
 	// Generate protobuf request reqProto
 	reqProto := &pb.UserdataRequest{
-		Realname:        finalUserdata.Userdata.Realname,
+		RealName:        finalUserdata.Userdata.RealName,
 		FacebookLink:    finalUserdata.Userdata.FacebookLink,
 		TwitterLink:     finalUserdata.Userdata.TwitterLink,
 		NativeCurrency:  finalUserdata.Userdata.NativeCurrency,

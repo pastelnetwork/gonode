@@ -29,5 +29,4 @@ replace (
 	github.com/pastelnetwork/gonode/probe => ../probe
 	github.com/pastelnetwork/gonode/proto => ../proto
 	github.com/pastelnetwork/gonode/raptorq => ../raptorq
-	github.com/pastelnetwork/gonode/supernode => ../supernode
 )

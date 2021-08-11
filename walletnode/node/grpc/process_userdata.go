@@ -127,7 +127,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 
 	// Generate protobuf request reqProto
 	reqProto := &pb.UserdataRequest{
-		Realname:        request.Userdata.Realname,
+		RealName:        request.Userdata.RealName,
 		FacebookLink:    request.Userdata.FacebookLink,
 		TwitterLink:     request.Userdata.TwitterLink,
 		NativeCurrency:  request.Userdata.NativeCurrency,
@@ -159,7 +159,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 	result = &userdata.ProcessResult{
 		ResponseCode:    resp.ResponseCode,
 		Detail:          resp.Detail,
-		Realname:        resp.Realname,
+		RealName:        resp.RealName,
 		FacebookLink:    resp.FacebookLink,
 		TwitterLink:     resp.TwitterLink,
 		NativeCurrency:  resp.NativeCurrency,
@@ -203,7 +203,7 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 
 	// Convert protobuf request to UserdataProcessRequest
 	response := userdata.ProcessRequest{
-		Realname:          resp.Realname,
+		RealName:          resp.RealName,
 		FacebookLink:      resp.FacebookLink,
 		TwitterLink:       resp.TwitterLink,
 		NativeCurrency:    resp.NativeCurrency,

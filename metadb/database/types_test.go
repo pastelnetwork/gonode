@@ -16,7 +16,7 @@ func Test_pbToWriteCommand(t *testing.T) {
 		{
 			name: "TestUserdata_ToWriteCommand1",
 			req: &pb.UserdataRequest{
-				Realname:        "cat",
+				RealName:        "cat",
 				FacebookLink:    "fb.com",
 				TwitterLink:     "tw.com",
 				NativeCurrency:  "usd",
@@ -38,7 +38,7 @@ func Test_pbToWriteCommand(t *testing.T) {
 				PreviousBlockHash: "hash",
 			},
 			want: UserdataWriteCommand{
-				Realname:           "cat",
+				RealName:           "cat",
 				FacebookLink:       "fb.com",
 				TwitterLink:        "tw.com",
 				NativeCurrency:     "usd",

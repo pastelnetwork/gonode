@@ -259,23 +259,23 @@ func DecodeUpdateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, 
 	}
 }
 
-// BuildUserdataGetRequest instantiates a HTTP request object with method and
-// path set to call the "userdatas" service "userdataGet" endpoint
-func (c *Client) BuildUserdataGetRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+// BuildGetUserdataRequest instantiates a HTTP request object with method and
+// path set to call the "userdatas" service "getUserdata" endpoint
+func (c *Client) BuildGetUserdataRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
 		pastelid string
 	)
 	{
-		p, ok := v.(*userdatas.UserdataGetPayload)
+		p, ok := v.(*userdatas.GetUserdataPayload)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("userdatas", "userdataGet", "*userdatas.UserdataGetPayload", v)
+			return nil, goahttp.ErrInvalidType("userdatas", "getUserdata", "*userdatas.GetUserdataPayload", v)
 		}
 		pastelid = p.Pastelid
 	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: UserdataGetUserdatasPath(pastelid)}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetUserdataUserdatasPath(pastelid)}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("userdatas", "userdataGet", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("userdatas", "getUserdata", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -284,15 +284,15 @@ func (c *Client) BuildUserdataGetRequest(ctx context.Context, v interface{}) (*h
 	return req, nil
 }
 
-// DecodeUserdataGetResponse returns a decoder for responses returned by the
-// userdatas userdataGet endpoint. restoreBody controls whether the response
+// DecodeGetUserdataResponse returns a decoder for responses returned by the
+// userdatas getUserdata endpoint. restoreBody controls whether the response
 // body should be restored after having been read.
-// DecodeUserdataGetResponse may return the following errors:
+// DecodeGetUserdataResponse may return the following errors:
 //	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeUserdataGetResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeGetUserdataResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -309,64 +309,64 @@ func DecodeUserdataGetResponse(decoder func(*http.Response) goahttp.Decoder, res
 		switch resp.StatusCode {
 		case http.StatusOK:
 			var (
-				body UserdataGetResponseBody
+				body GetUserdataResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("userdatas", "userdataGet", err)
+				return nil, goahttp.ErrDecodingError("userdatas", "getUserdata", err)
 			}
-			err = ValidateUserdataGetResponseBody(&body)
+			err = ValidateGetUserdataResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("userdatas", "userdataGet", err)
+				return nil, goahttp.ErrValidationError("userdatas", "getUserdata", err)
 			}
-			res := NewUserdataGetUserSpecifiedDataOK(&body)
+			res := NewGetUserdataUserSpecifiedDataOK(&body)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
-				body UserdataGetBadRequestResponseBody
+				body GetUserdataBadRequestResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("userdatas", "userdataGet", err)
+				return nil, goahttp.ErrDecodingError("userdatas", "getUserdata", err)
 			}
-			err = ValidateUserdataGetBadRequestResponseBody(&body)
+			err = ValidateGetUserdataBadRequestResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("userdatas", "userdataGet", err)
+				return nil, goahttp.ErrValidationError("userdatas", "getUserdata", err)
 			}
-			return nil, NewUserdataGetBadRequest(&body)
+			return nil, NewGetUserdataBadRequest(&body)
 		case http.StatusNotFound:
 			var (
-				body UserdataGetNotFoundResponseBody
+				body GetUserdataNotFoundResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("userdatas", "userdataGet", err)
+				return nil, goahttp.ErrDecodingError("userdatas", "getUserdata", err)
 			}
-			err = ValidateUserdataGetNotFoundResponseBody(&body)
+			err = ValidateGetUserdataNotFoundResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("userdatas", "userdataGet", err)
+				return nil, goahttp.ErrValidationError("userdatas", "getUserdata", err)
 			}
-			return nil, NewUserdataGetNotFound(&body)
+			return nil, NewGetUserdataNotFound(&body)
 		case http.StatusInternalServerError:
 			var (
-				body UserdataGetInternalServerErrorResponseBody
+				body GetUserdataInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("userdatas", "userdataGet", err)
+				return nil, goahttp.ErrDecodingError("userdatas", "getUserdata", err)
 			}
-			err = ValidateUserdataGetInternalServerErrorResponseBody(&body)
+			err = ValidateGetUserdataInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("userdatas", "userdataGet", err)
+				return nil, goahttp.ErrValidationError("userdatas", "getUserdata", err)
 			}
-			return nil, NewUserdataGetInternalServerError(&body)
+			return nil, NewGetUserdataInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("userdatas", "userdataGet", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("userdatas", "getUserdata", resp.StatusCode, string(body))
 		}
 	}
 }

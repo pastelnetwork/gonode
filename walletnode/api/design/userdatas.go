@@ -63,11 +63,11 @@ var _ = Service("userdatas", func() {
 		})
 	})
 
-	Method("userdataGet", func() {
+	Method("getUserdata", func() {
 		Description("Gets the Userdata detail")
 		Meta("swagger:summary", "Returns the detail of Userdata")
 
-		Payload(UserdataGetParams)
+		Payload(GetUserdataParams)
 		Result(UserSpecifiedData)
 
 		HTTP(func() {
@@ -99,7 +99,7 @@ var UserSpecifiedData = Type("UserSpecifiedData", func() {
 	Description("User Specified Data storing")
 
 	Attribute("realname", String, func() {
-		Meta("struct:field:name", "Realname")
+		Meta("struct:field:name", "RealName")
 		Description("Real name of the user")
 		MaxLength(256)
 		Example("Williams Scottish")
@@ -194,6 +194,7 @@ var UserdataProcessResult = Type("UserdataProcessResult", func() {
 	})
 
 	Attribute("realname", String, func() {
+		Meta("struct:field:name", "RealName")
 		Description("Error detail on realname")
 		MaxLength(256)
 	})
@@ -259,8 +260,8 @@ var UserImageUploadPayload = Type("UserImageUploadPayload", func() {
 	Required("content")
 })
 
-// UserdataGetParams are request params to UserdataGet Params
-var UserdataGetParams = func() {
+// GetUserdataParams are request params to GetUserdata Params
+var GetUserdataParams = func() {
 	Attribute("pastelid", String, func() {
 		Description("Artist's PastelID")
 		MinLength(86)

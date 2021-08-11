@@ -20,7 +20,7 @@ type Service interface {
 	// Update user data for an existing user
 	UpdateUserdata(context.Context, *UpdateUserdataPayload) (res *UserdataProcessResult, err error)
 	// Gets the Userdata detail
-	UserdataGet(context.Context, *UserdataGetPayload) (res *UserSpecifiedData, err error)
+	GetUserdata(context.Context, *GetUserdataPayload) (res *UserSpecifiedData, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -31,13 +31,13 @@ const ServiceName = "userdatas"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"createUserdata", "updateUserdata", "userdataGet"}
+var MethodNames = [3]string{"createUserdata", "updateUserdata", "getUserdata"}
 
 // CreateUserdataPayload is the payload type of the userdatas service
 // createUserdata method.
 type CreateUserdataPayload struct {
 	// Real name of the user
-	Realname *string
+	RealName *string
 	// Facebook link of the user
 	FacebookLink *string
 	// Twitter link of the user
@@ -70,7 +70,7 @@ type UserdataProcessResult struct {
 	// The detail of why result is success/fail, depend on response_code
 	Detail string
 	// Error detail on realname
-	Realname *string
+	RealName *string
 	// Error detail on facebook_link
 	FacebookLink *string
 	// Error detail on twitter_link
@@ -95,7 +95,7 @@ type UserdataProcessResult struct {
 // updateUserdata method.
 type UpdateUserdataPayload struct {
 	// Real name of the user
-	Realname *string
+	RealName *string
 	// Facebook link of the user
 	FacebookLink *string
 	// Twitter link of the user
@@ -120,18 +120,18 @@ type UpdateUserdataPayload struct {
 	ArtistPastelIDPassphrase string
 }
 
-// UserdataGetPayload is the payload type of the userdatas service userdataGet
+// GetUserdataPayload is the payload type of the userdatas service getUserdata
 // method.
-type UserdataGetPayload struct {
+type GetUserdataPayload struct {
 	// Artist's PastelID
 	Pastelid string
 }
 
-// UserSpecifiedData is the result type of the userdatas service userdataGet
+// UserSpecifiedData is the result type of the userdatas service getUserdata
 // method.
 type UserSpecifiedData struct {
 	// Real name of the user
-	Realname *string
+	RealName *string
 	// Facebook link of the user
 	FacebookLink *string
 	// Twitter link of the user

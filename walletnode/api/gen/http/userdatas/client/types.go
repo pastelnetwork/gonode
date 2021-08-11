@@ -18,7 +18,7 @@ import (
 // "createUserdata" endpoint HTTP request body.
 type CreateUserdataRequestBody struct {
 	// Real name of the user
-	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	RealName *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
 	// Facebook link of the user
 	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
 	// Twitter link of the user
@@ -47,7 +47,7 @@ type CreateUserdataRequestBody struct {
 // "updateUserdata" endpoint HTTP request body.
 type UpdateUserdataRequestBody struct {
 	// Real name of the user
-	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	RealName *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
 	// Facebook link of the user
 	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
 	// Twitter link of the user
@@ -80,7 +80,7 @@ type CreateUserdataResponseBody struct {
 	// The detail of why result is success/fail, depend on response_code
 	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
 	// Error detail on realname
-	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	RealName *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
 	// Error detail on facebook_link
 	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
 	// Error detail on twitter_link
@@ -109,7 +109,7 @@ type UpdateUserdataResponseBody struct {
 	// The detail of why result is success/fail, depend on response_code
 	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
 	// Error detail on realname
-	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	RealName *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
 	// Error detail on facebook_link
 	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
 	// Error detail on twitter_link
@@ -130,11 +130,11 @@ type UpdateUserdataResponseBody struct {
 	CoverPhoto *string `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
 }
 
-// UserdataGetResponseBody is the type of the "userdatas" service "userdataGet"
+// GetUserdataResponseBody is the type of the "userdatas" service "getUserdata"
 // endpoint HTTP response body.
-type UserdataGetResponseBody struct {
+type GetUserdataResponseBody struct {
 	// Real name of the user
-	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	RealName *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
 	// Facebook link of the user
 	FacebookLink *string `form:"facebook_link,omitempty" json:"facebook_link,omitempty" xml:"facebook_link,omitempty"`
 	// Twitter link of the user
@@ -233,9 +233,9 @@ type UpdateUserdataInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// UserdataGetBadRequestResponseBody is the type of the "userdatas" service
-// "userdataGet" endpoint HTTP response body for the "BadRequest" error.
-type UserdataGetBadRequestResponseBody struct {
+// GetUserdataBadRequestResponseBody is the type of the "userdatas" service
+// "getUserdata" endpoint HTTP response body for the "BadRequest" error.
+type GetUserdataBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -251,9 +251,9 @@ type UserdataGetBadRequestResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// UserdataGetNotFoundResponseBody is the type of the "userdatas" service
-// "userdataGet" endpoint HTTP response body for the "NotFound" error.
-type UserdataGetNotFoundResponseBody struct {
+// GetUserdataNotFoundResponseBody is the type of the "userdatas" service
+// "getUserdata" endpoint HTTP response body for the "NotFound" error.
+type GetUserdataNotFoundResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -269,10 +269,10 @@ type UserdataGetNotFoundResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// UserdataGetInternalServerErrorResponseBody is the type of the "userdatas"
-// service "userdataGet" endpoint HTTP response body for the
+// GetUserdataInternalServerErrorResponseBody is the type of the "userdatas"
+// service "getUserdata" endpoint HTTP response body for the
 // "InternalServerError" error.
-type UserdataGetInternalServerErrorResponseBody struct {
+type GetUserdataInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -310,7 +310,7 @@ type UserImageUploadPayloadResponseBody struct {
 // of the "createUserdata" endpoint of the "userdatas" service.
 func NewCreateUserdataRequestBody(p *userdatas.CreateUserdataPayload) *CreateUserdataRequestBody {
 	body := &CreateUserdataRequestBody{
-		Realname:                 p.Realname,
+		RealName:                 p.RealName,
 		FacebookLink:             p.FacebookLink,
 		TwitterLink:              p.TwitterLink,
 		NativeCurrency:           p.NativeCurrency,
@@ -334,7 +334,7 @@ func NewCreateUserdataRequestBody(p *userdatas.CreateUserdataPayload) *CreateUse
 // of the "updateUserdata" endpoint of the "userdatas" service.
 func NewUpdateUserdataRequestBody(p *userdatas.UpdateUserdataPayload) *UpdateUserdataRequestBody {
 	body := &UpdateUserdataRequestBody{
-		Realname:                 p.Realname,
+		RealName:                 p.RealName,
 		FacebookLink:             p.FacebookLink,
 		TwitterLink:              p.TwitterLink,
 		NativeCurrency:           p.NativeCurrency,
@@ -360,7 +360,7 @@ func NewCreateUserdataUserdataProcessResultCreated(body *CreateUserdataResponseB
 	v := &userdatas.UserdataProcessResult{
 		ResponseCode:    *body.ResponseCode,
 		Detail:          *body.Detail,
-		Realname:        body.Realname,
+		RealName:        body.RealName,
 		FacebookLink:    body.FacebookLink,
 		TwitterLink:     body.TwitterLink,
 		NativeCurrency:  body.NativeCurrency,
@@ -411,7 +411,7 @@ func NewUpdateUserdataUserdataProcessResultCreated(body *UpdateUserdataResponseB
 	v := &userdatas.UserdataProcessResult{
 		ResponseCode:    *body.ResponseCode,
 		Detail:          *body.Detail,
-		Realname:        body.Realname,
+		RealName:        body.RealName,
 		FacebookLink:    body.FacebookLink,
 		TwitterLink:     body.TwitterLink,
 		NativeCurrency:  body.NativeCurrency,
@@ -456,11 +456,11 @@ func NewUpdateUserdataInternalServerError(body *UpdateUserdataInternalServerErro
 	return v
 }
 
-// NewUserdataGetUserSpecifiedDataOK builds a "userdatas" service "userdataGet"
+// NewGetUserdataUserSpecifiedDataOK builds a "userdatas" service "getUserdata"
 // endpoint result from a HTTP "OK" response.
-func NewUserdataGetUserSpecifiedDataOK(body *UserdataGetResponseBody) *userdatas.UserSpecifiedData {
+func NewGetUserdataUserSpecifiedDataOK(body *GetUserdataResponseBody) *userdatas.UserSpecifiedData {
 	v := &userdatas.UserSpecifiedData{
-		Realname:                 body.Realname,
+		RealName:                 body.RealName,
 		FacebookLink:             body.FacebookLink,
 		TwitterLink:              body.TwitterLink,
 		NativeCurrency:           body.NativeCurrency,
@@ -481,9 +481,9 @@ func NewUserdataGetUserSpecifiedDataOK(body *UserdataGetResponseBody) *userdatas
 	return v
 }
 
-// NewUserdataGetBadRequest builds a userdatas service userdataGet endpoint
+// NewGetUserdataBadRequest builds a userdatas service getUserdata endpoint
 // BadRequest error.
-func NewUserdataGetBadRequest(body *UserdataGetBadRequestResponseBody) *goa.ServiceError {
+func NewGetUserdataBadRequest(body *GetUserdataBadRequestResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -496,9 +496,9 @@ func NewUserdataGetBadRequest(body *UserdataGetBadRequestResponseBody) *goa.Serv
 	return v
 }
 
-// NewUserdataGetNotFound builds a userdatas service userdataGet endpoint
+// NewGetUserdataNotFound builds a userdatas service getUserdata endpoint
 // NotFound error.
-func NewUserdataGetNotFound(body *UserdataGetNotFoundResponseBody) *goa.ServiceError {
+func NewGetUserdataNotFound(body *GetUserdataNotFoundResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -511,9 +511,9 @@ func NewUserdataGetNotFound(body *UserdataGetNotFoundResponseBody) *goa.ServiceE
 	return v
 }
 
-// NewUserdataGetInternalServerError builds a userdatas service userdataGet
+// NewGetUserdataInternalServerError builds a userdatas service getUserdata
 // endpoint InternalServerError error.
-func NewUserdataGetInternalServerError(body *UserdataGetInternalServerErrorResponseBody) *goa.ServiceError {
+func NewGetUserdataInternalServerError(body *GetUserdataInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -540,9 +540,9 @@ func ValidateCreateUserdataResponseBody(body *CreateUserdataResponseBody) (err e
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
 		}
 	}
-	if body.Realname != nil {
-		if utf8.RuneCountInString(*body.Realname) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.Realname, utf8.RuneCountInString(*body.Realname), 256, false))
+	if body.RealName != nil {
+		if utf8.RuneCountInString(*body.RealName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.RealName, utf8.RuneCountInString(*body.RealName), 256, false))
 		}
 	}
 	if body.FacebookLink != nil {
@@ -607,9 +607,9 @@ func ValidateUpdateUserdataResponseBody(body *UpdateUserdataResponseBody) (err e
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
 		}
 	}
-	if body.Realname != nil {
-		if utf8.RuneCountInString(*body.Realname) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.Realname, utf8.RuneCountInString(*body.Realname), 256, false))
+	if body.RealName != nil {
+		if utf8.RuneCountInString(*body.RealName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.RealName, utf8.RuneCountInString(*body.RealName), 256, false))
 		}
 	}
 	if body.FacebookLink != nil {
@@ -660,18 +660,18 @@ func ValidateUpdateUserdataResponseBody(body *UpdateUserdataResponseBody) (err e
 	return
 }
 
-// ValidateUserdataGetResponseBody runs the validations defined on
-// UserdataGetResponseBody
-func ValidateUserdataGetResponseBody(body *UserdataGetResponseBody) (err error) {
+// ValidateGetUserdataResponseBody runs the validations defined on
+// GetUserdataResponseBody
+func ValidateGetUserdataResponseBody(body *GetUserdataResponseBody) (err error) {
 	if body.ArtistPastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid", "body"))
 	}
 	if body.ArtistPastelIDPassphrase == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("artist_pastelid_passphrase", "body"))
 	}
-	if body.Realname != nil {
-		if utf8.RuneCountInString(*body.Realname) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.Realname, utf8.RuneCountInString(*body.Realname), 256, false))
+	if body.RealName != nil {
+		if utf8.RuneCountInString(*body.RealName) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.RealName, utf8.RuneCountInString(*body.RealName), 256, false))
 		}
 	}
 	if body.FacebookLink != nil {
@@ -831,9 +831,9 @@ func ValidateUpdateUserdataInternalServerErrorResponseBody(body *UpdateUserdataI
 	return
 }
 
-// ValidateUserdataGetBadRequestResponseBody runs the validations defined on
-// userdataGet_BadRequest_response_body
-func ValidateUserdataGetBadRequestResponseBody(body *UserdataGetBadRequestResponseBody) (err error) {
+// ValidateGetUserdataBadRequestResponseBody runs the validations defined on
+// getUserdata_BadRequest_response_body
+func ValidateGetUserdataBadRequestResponseBody(body *GetUserdataBadRequestResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -855,9 +855,9 @@ func ValidateUserdataGetBadRequestResponseBody(body *UserdataGetBadRequestRespon
 	return
 }
 
-// ValidateUserdataGetNotFoundResponseBody runs the validations defined on
-// userdataGet_NotFound_response_body
-func ValidateUserdataGetNotFoundResponseBody(body *UserdataGetNotFoundResponseBody) (err error) {
+// ValidateGetUserdataNotFoundResponseBody runs the validations defined on
+// getUserdata_NotFound_response_body
+func ValidateGetUserdataNotFoundResponseBody(body *GetUserdataNotFoundResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -879,9 +879,9 @@ func ValidateUserdataGetNotFoundResponseBody(body *UserdataGetNotFoundResponseBo
 	return
 }
 
-// ValidateUserdataGetInternalServerErrorResponseBody runs the validations
-// defined on userdataGet_InternalServerError_response_body
-func ValidateUserdataGetInternalServerErrorResponseBody(body *UserdataGetInternalServerErrorResponseBody) (err error) {
+// ValidateGetUserdataInternalServerErrorResponseBody runs the validations
+// defined on getUserdata_InternalServerError_response_body
+func ValidateGetUserdataInternalServerErrorResponseBody(body *GetUserdataInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

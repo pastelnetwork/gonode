@@ -160,7 +160,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 	// Convert protobuf request to UserdataProcessRequest
 	request := userdata.ProcessRequestSigned{
 		Userdata: &userdata.ProcessRequest{
-			Realname:        req.Realname,
+			RealName:        req.RealName,
 			FacebookLink:    req.FacebookLink,
 			TwitterLink:     req.TwitterLink,
 			NativeCurrency:  req.NativeCurrency,
@@ -192,7 +192,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 		return &pbwn.UserdataReply{
 			ResponseCode:    processResult.ResponseCode,
 			Detail:          processResult.Detail,
-			Realname:        processResult.Realname,
+			RealName:        processResult.RealName,
 			FacebookLink:    processResult.FacebookLink,
 			TwitterLink:     processResult.TwitterLink,
 			NativeCurrency:  processResult.NativeCurrency,
@@ -238,7 +238,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 				// Kinda weird here but not walletnode and supernode have duplicate of UserdataRequest
 				// so we need to convert pbwn.UserdataRequest to pbsn.UserdataRequest
 				reqsn := pbsn.UserdataRequest{
-					Realname:        (*req).Realname,
+					RealName:        (*req).RealName,
 					FacebookLink:    (*req).FacebookLink,
 					TwitterLink:     (*req).TwitterLink,
 					NativeCurrency:  (*req).NativeCurrency,
@@ -302,7 +302,7 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pbwn.R
 
 	// Generate protobuf response respProto
 	respProto := &pbwn.UserdataRequest{
-		Realname:        result.Realname,
+		RealName:        result.RealName,
 		FacebookLink:    result.FacebookLink,
 		TwitterLink:     result.TwitterLink,
 		NativeCurrency:  result.NativeCurrency,

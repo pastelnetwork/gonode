@@ -404,7 +404,7 @@ paths:
       - userdatas
       summary: Returns the detail of Userdata
       description: Gets the Userdata detail
-      operationId: userdatas#userdataGet
+      operationId: userdatas#getUserdata
       parameters:
       - name: pastelid
         in: path
@@ -418,22 +418,22 @@ paths:
         "200":
           description: OK response.
           schema:
-            $ref: '#/definitions/UserdatasUserdataGetResponseBody'
+            $ref: '#/definitions/UserdatasGetUserdataResponseBody'
             required:
             - artist_pastelid
             - artist_pastelid_passphrase
         "400":
           description: Bad Request response.
           schema:
-            $ref: '#/definitions/UserdatasUserdataGetBadRequestResponseBody'
+            $ref: '#/definitions/UserdatasGetUserdataBadRequestResponseBody'
         "404":
           description: Not Found response.
           schema:
-            $ref: '#/definitions/UserdatasUserdataGetNotFoundResponseBody'
+            $ref: '#/definitions/UserdatasGetUserdataNotFoundResponseBody'
         "500":
           description: Internal Server Error response.
           schema:
-            $ref: '#/definitions/UserdatasUserdataGetInternalServerErrorResponseBody'
+            $ref: '#/definitions/UserdatasGetUserdataInternalServerErrorResponseBody'
       schemes:
       - http
   /userdatas/create:
@@ -3220,6 +3220,235 @@ definitions:
     required:
     - response_code
     - detail
+  UserdatasGetUserdataBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: getUserdata_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetUserdataInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: getUserdata_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetUserdataNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: getUserdata_NotFound_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetUserdataResponseBody:
+    title: UserdatasGetUserdataResponseBody
+    type: object
+    properties:
+      artist_pastelid:
+        type: string
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+      artist_pastelid_passphrase:
+        type: string
+        description: Passphrase of the artist's PastelID
+        example: qwerasdf1234
+      avatar_image:
+        $ref: '#/definitions/UserImageUploadPayloadResponseBody'
+      biography:
+        type: string
+        description: Biography of the user
+        example: I'm a digital artist based in Paris, France. ...
+        maxLength: 1024
+      categories:
+        type: string
+        description: The categories of user's work
+        example: Nemo non quia dolores ut autem.
+      cover_photo:
+        $ref: '#/definitions/UserImageUploadPayloadResponseBody'
+      facebook_link:
+        type: string
+        description: Facebook link of the user
+        example: https://www.facebook.com/Williams_Scottish
+        maxLength: 128
+      location:
+        type: string
+        description: Location of the user
+        example: New York, US
+        maxLength: 256
+      native_currency:
+        type: string
+        description: Native currency of user in ISO 4217 Alphabetic Code
+        example: USD
+        minLength: 3
+        maxLength: 3
+      primary_language:
+        type: string
+        description: Primary language of the user
+        example: English
+        maxLength: 30
+      realname:
+        type: string
+        description: Real name of the user
+        example: Williams Scottish
+        maxLength: 256
+      twitter_link:
+        type: string
+        description: Twitter link of the user
+        example: https://www.twitter.com/@Williams_Scottish
+        maxLength: 128
+    example:
+      artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      artist_pastelid_passphrase: qwerasdf1234
+      avatar_image:
+        content:
+        - 73
+        - 100
+        - 32
+        - 113
+        - 117
+        - 105
+        - 97
+        - 46
+      biography: I'm a digital artist based in Paris, France. ...
+      categories: Voluptatem qui non quia.
+      cover_photo:
+        content:
+        - 73
+        - 100
+        - 32
+        - 113
+        - 117
+        - 105
+        - 97
+        - 46
+      facebook_link: https://www.facebook.com/Williams_Scottish
+      location: New York, US
+      native_currency: USD
+      primary_language: English
+      realname: Williams Scottish
+      twitter_link: https://www.twitter.com/@Williams_Scottish
+    required:
+    - artist_pastelid
+    - artist_pastelid_passphrase
   UserdatasUpdateUserdataBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -3586,235 +3815,6 @@ definitions:
     required:
     - response_code
     - detail
-  UserdatasUserdataGetBadRequestResponseBody:
-    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
-    type: object
-    properties:
-      fault:
-        type: boolean
-        description: Is the error a server-side fault?
-        example: false
-      id:
-        type: string
-        description: ID is a unique identifier for this particular occurrence of the
-          problem.
-        example: 123abc
-      message:
-        type: string
-        description: Message is a human-readable explanation specific to this occurrence
-          of the problem.
-        example: parameter 'p' must be an integer
-      name:
-        type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
-      temporary:
-        type: boolean
-        description: Is the error temporary?
-        example: true
-      timeout:
-        type: boolean
-        description: Is the error a timeout?
-        example: true
-    description: userdataGet_BadRequest_response_body result type (default view)
-    example:
-      fault: false
-      id: 123abc
-      message: parameter 'p' must be an integer
-      name: bad_request
-      temporary: false
-      timeout: true
-    required:
-    - name
-    - id
-    - message
-    - temporary
-    - timeout
-    - fault
-  UserdatasUserdataGetInternalServerErrorResponseBody:
-    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
-    type: object
-    properties:
-      fault:
-        type: boolean
-        description: Is the error a server-side fault?
-        example: false
-      id:
-        type: string
-        description: ID is a unique identifier for this particular occurrence of the
-          problem.
-        example: 123abc
-      message:
-        type: string
-        description: Message is a human-readable explanation specific to this occurrence
-          of the problem.
-        example: parameter 'p' must be an integer
-      name:
-        type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
-      temporary:
-        type: boolean
-        description: Is the error temporary?
-        example: false
-      timeout:
-        type: boolean
-        description: Is the error a timeout?
-        example: false
-    description: userdataGet_InternalServerError_response_body result type (default
-      view)
-    example:
-      fault: true
-      id: 123abc
-      message: parameter 'p' must be an integer
-      name: bad_request
-      temporary: false
-      timeout: false
-    required:
-    - name
-    - id
-    - message
-    - temporary
-    - timeout
-    - fault
-  UserdatasUserdataGetNotFoundResponseBody:
-    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
-    type: object
-    properties:
-      fault:
-        type: boolean
-        description: Is the error a server-side fault?
-        example: true
-      id:
-        type: string
-        description: ID is a unique identifier for this particular occurrence of the
-          problem.
-        example: 123abc
-      message:
-        type: string
-        description: Message is a human-readable explanation specific to this occurrence
-          of the problem.
-        example: parameter 'p' must be an integer
-      name:
-        type: string
-        description: Name is the name of this class of errors.
-        example: bad_request
-      temporary:
-        type: boolean
-        description: Is the error temporary?
-        example: true
-      timeout:
-        type: boolean
-        description: Is the error a timeout?
-        example: false
-    description: userdataGet_NotFound_response_body result type (default view)
-    example:
-      fault: false
-      id: 123abc
-      message: parameter 'p' must be an integer
-      name: bad_request
-      temporary: true
-      timeout: true
-    required:
-    - name
-    - id
-    - message
-    - temporary
-    - timeout
-    - fault
-  UserdatasUserdataGetResponseBody:
-    title: UserdatasUserdataGetResponseBody
-    type: object
-    properties:
-      artist_pastelid:
-        type: string
-        description: Artist's PastelID
-        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-        pattern: ^[a-zA-Z0-9]+$
-        minLength: 86
-        maxLength: 86
-      artist_pastelid_passphrase:
-        type: string
-        description: Passphrase of the artist's PastelID
-        example: qwerasdf1234
-      avatar_image:
-        $ref: '#/definitions/UserImageUploadPayloadResponseBody'
-      biography:
-        type: string
-        description: Biography of the user
-        example: I'm a digital artist based in Paris, France. ...
-        maxLength: 1024
-      categories:
-        type: string
-        description: The categories of user's work
-        example: Nemo non quia dolores ut autem.
-      cover_photo:
-        $ref: '#/definitions/UserImageUploadPayloadResponseBody'
-      facebook_link:
-        type: string
-        description: Facebook link of the user
-        example: https://www.facebook.com/Williams_Scottish
-        maxLength: 128
-      location:
-        type: string
-        description: Location of the user
-        example: New York, US
-        maxLength: 256
-      native_currency:
-        type: string
-        description: Native currency of user in ISO 4217 Alphabetic Code
-        example: USD
-        minLength: 3
-        maxLength: 3
-      primary_language:
-        type: string
-        description: Primary language of the user
-        example: English
-        maxLength: 30
-      realname:
-        type: string
-        description: Real name of the user
-        example: Williams Scottish
-        maxLength: 256
-      twitter_link:
-        type: string
-        description: Twitter link of the user
-        example: https://www.twitter.com/@Williams_Scottish
-        maxLength: 128
-    example:
-      artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-      artist_pastelid_passphrase: qwerasdf1234
-      avatar_image:
-        content:
-        - 73
-        - 100
-        - 32
-        - 113
-        - 117
-        - 105
-        - 97
-        - 46
-      biography: I'm a digital artist based in Paris, France. ...
-      categories: Voluptatem qui non quia.
-      cover_photo:
-        content:
-        - 73
-        - 100
-        - 32
-        - 113
-        - 117
-        - 105
-        - 97
-        - 46
-      facebook_link: https://www.facebook.com/Williams_Scottish
-      location: New York, US
-      native_currency: USD
-      primary_language: English
-      realname: Williams Scottish
-      twitter_link: https://www.twitter.com/@Williams_Scottish
-    required:
-    - artist_pastelid
-    - artist_pastelid_passphrase
 securityDefinitions:
   api_key_header_Authorization:
     type: apiKey

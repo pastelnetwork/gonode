@@ -134,7 +134,7 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *Userdata) mdlser
 					res.NativeCurrency = &value
 				case "realname":
 					value := string(buffer)
-					res.Realname = &value
+					res.RealName = &value
 				case "twitter_link":
 					value := string(buffer)
 					res.TwitterLink = &value
@@ -221,7 +221,7 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *Userdata) mdlser
 					res.NativeCurrency = &value
 				case "realname":
 					value := string(buffer)
-					res.Realname = &value
+					res.RealName = &value
 				case "twitter_link":
 					value := string(buffer)
 					res.TwitterLink = &value

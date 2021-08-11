@@ -177,8 +177,8 @@ func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Tic
 func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.ProcessRequest {
 	request := &userdata.ProcessRequest{}
 
-	if req.Realname != nil {
-		request.Realname = *(req.Realname)
+	if req.RealName != nil {
+		request.RealName = *(req.RealName)
 	}
 	if req.FacebookLink != nil {
 		request.FacebookLink = *(req.FacebookLink)
@@ -226,8 +226,8 @@ func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.P
 func fromUserdataUpdateRequest(req *userdatas.UpdateUserdataPayload) *userdata.ProcessRequest {
 	request := &userdata.ProcessRequest{}
 
-	if req.Realname != nil {
-		request.Realname = *(req.Realname)
+	if req.RealName != nil {
+		request.RealName = *(req.RealName)
 	}
 	if req.FacebookLink != nil {
 		request.FacebookLink = *(req.FacebookLink)
@@ -276,7 +276,7 @@ func toUserdataProcessResult(result *userdata.ProcessResult) *userdatas.Userdata
 	res := &userdatas.UserdataProcessResult{
 		ResponseCode:    int(result.ResponseCode),
 		Detail:          result.Detail,
-		Realname:        &result.Realname,
+		RealName:        &result.RealName,
 		FacebookLink:    &result.FacebookLink,
 		TwitterLink:     &result.TwitterLink,
 		NativeCurrency:  &result.NativeCurrency,
@@ -292,7 +292,7 @@ func toUserdataProcessResult(result *userdata.ProcessResult) *userdatas.Userdata
 func toUserSpecifiedData(req *userdata.ProcessRequest) *userdatas.UserSpecifiedData {
 	result := &userdatas.UserSpecifiedData{}
 
-	result.Realname = &req.Realname
+	result.RealName = &req.RealName
 	result.FacebookLink = &req.FacebookLink
 	result.TwitterLink = &req.TwitterLink
 	result.NativeCurrency = &req.NativeCurrency

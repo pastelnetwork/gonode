@@ -26,9 +26,9 @@ func BuildCreateUserdataPayload(userdatasCreateUserdataBody string) (*userdatas.
 		if err != nil {
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"avatar_image\": {\n         \"content\": \"QXNwZXJpb3JlcyBhbWV0IGxhYm9yaW9zYW0gbGliZXJvIHRlbmV0dXIgdml0YWUgYmxhbmRpdGlpcy4=\"\n      },\n      \"biography\": \"I\\'m a digital artist based in Paris, France. ...\",\n      \"categories\": \"Quia dolore fugit aliquam totam.\",\n      \"cover_photo\": {\n         \"content\": \"QXNwZXJpb3JlcyBhbWV0IGxhYm9yaW9zYW0gbGliZXJvIHRlbmV0dXIgdml0YWUgYmxhbmRpdGlpcy4=\"\n      },\n      \"facebook_link\": \"https://www.facebook.com/Williams_Scottish\",\n      \"location\": \"New York, US\",\n      \"native_currency\": \"USD\",\n      \"primary_language\": \"English\",\n      \"realname\": \"Williams Scottish\",\n      \"twitter_link\": \"https://www.twitter.com/@Williams_Scottish\"\n   }'")
 		}
-		if body.Realname != nil {
-			if utf8.RuneCountInString(*body.Realname) > 256 {
-				err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.Realname, utf8.RuneCountInString(*body.Realname), 256, false))
+		if body.RealName != nil {
+			if utf8.RuneCountInString(*body.RealName) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.RealName, utf8.RuneCountInString(*body.RealName), 256, false))
 			}
 		}
 		if body.FacebookLink != nil {
@@ -78,7 +78,7 @@ func BuildCreateUserdataPayload(userdatasCreateUserdataBody string) (*userdatas.
 		}
 	}
 	v := &userdatas.CreateUserdataPayload{
-		Realname:                 body.Realname,
+		RealName:                 body.RealName,
 		FacebookLink:             body.FacebookLink,
 		TwitterLink:              body.TwitterLink,
 		NativeCurrency:           body.NativeCurrency,
@@ -109,9 +109,9 @@ func BuildUpdateUserdataPayload(userdatasUpdateUserdataBody string) (*userdatas.
 		if err != nil {
 			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"avatar_image\": {\n         \"content\": \"QXNwZXJpb3JlcyBhbWV0IGxhYm9yaW9zYW0gbGliZXJvIHRlbmV0dXIgdml0YWUgYmxhbmRpdGlpcy4=\"\n      },\n      \"biography\": \"I\\'m a digital artist based in Paris, France. ...\",\n      \"categories\": \"Sint rerum nisi molestiae quidem doloribus quod.\",\n      \"cover_photo\": {\n         \"content\": \"QXNwZXJpb3JlcyBhbWV0IGxhYm9yaW9zYW0gbGliZXJvIHRlbmV0dXIgdml0YWUgYmxhbmRpdGlpcy4=\"\n      },\n      \"facebook_link\": \"https://www.facebook.com/Williams_Scottish\",\n      \"location\": \"New York, US\",\n      \"native_currency\": \"USD\",\n      \"primary_language\": \"English\",\n      \"realname\": \"Williams Scottish\",\n      \"twitter_link\": \"https://www.twitter.com/@Williams_Scottish\"\n   }'")
 		}
-		if body.Realname != nil {
-			if utf8.RuneCountInString(*body.Realname) > 256 {
-				err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.Realname, utf8.RuneCountInString(*body.Realname), 256, false))
+		if body.RealName != nil {
+			if utf8.RuneCountInString(*body.RealName) > 256 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.RealName, utf8.RuneCountInString(*body.RealName), 256, false))
 			}
 		}
 		if body.FacebookLink != nil {
@@ -161,7 +161,7 @@ func BuildUpdateUserdataPayload(userdatasUpdateUserdataBody string) (*userdatas.
 		}
 	}
 	v := &userdatas.UpdateUserdataPayload{
-		Realname:                 body.Realname,
+		RealName:                 body.RealName,
 		FacebookLink:             body.FacebookLink,
 		TwitterLink:              body.TwitterLink,
 		NativeCurrency:           body.NativeCurrency,
@@ -182,13 +182,13 @@ func BuildUpdateUserdataPayload(userdatasUpdateUserdataBody string) (*userdatas.
 	return v, nil
 }
 
-// BuildUserdataGetPayload builds the payload for the userdatas userdataGet
+// BuildGetUserdataPayload builds the payload for the userdatas getUserdata
 // endpoint from CLI flags.
-func BuildUserdataGetPayload(userdatasUserdataGetPastelid string) (*userdatas.UserdataGetPayload, error) {
+func BuildGetUserdataPayload(userdatasGetUserdataPastelid string) (*userdatas.GetUserdataPayload, error) {
 	var err error
 	var pastelid string
 	{
-		pastelid = userdatasUserdataGetPastelid
+		pastelid = userdatasGetUserdataPastelid
 		err = goa.MergeErrors(err, goa.ValidatePattern("pastelid", pastelid, "^[a-zA-Z0-9]+$"))
 		if utf8.RuneCountInString(pastelid) < 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, true))
@@ -200,7 +200,7 @@ func BuildUserdataGetPayload(userdatasUserdataGetPastelid string) (*userdatas.Us
 			return nil, err
 		}
 	}
-	v := &userdatas.UserdataGetPayload{}
+	v := &userdatas.GetUserdataPayload{}
 	v.Pastelid = pastelid
 
 	return v, nil

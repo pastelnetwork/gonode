@@ -47,7 +47,7 @@ message SuperNodeReply {
 
 message UserdataRequest {
   // Real name of the user
-  string realname = 1;
+  string real_name = 1;
   // Facebook link of the user
   string facebook_link = 2;
   // Twitter link of the user

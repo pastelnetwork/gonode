@@ -18,10 +18,12 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProcessUserdataClient interface {
-	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
-	// The stream is used by the parties to inform each other about the cancellation of the task.
+	// Session informs primary supernode about its `nodeID` and `sessID` it wants
+	// to connect to. The stream is used by the parties to inform each other about
+	// the cancellation of the task.
 	Session(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SessionClient, error)
-	// SendUserdataToPrimary send signed userdata from other supernodes to primary supernode
+	// SendUserdataToPrimary send signed userdata from other supernodes to primary
+	// supernode
 	SendUserdataToPrimary(ctx context.Context, in *SuperNodeRequest, opts ...grpc.CallOption) (*SuperNodeReply, error)
 	// SendUserdataToLeader send final userdata to supernode contain rqlite leader
 	SendUserdataToLeader(ctx context.Context, in *UserdataRequest, opts ...grpc.CallOption) (*SuperNodeReply, error)
@@ -88,10 +90,12 @@ func (c *processUserdataClient) SendUserdataToLeader(ctx context.Context, in *Us
 // All implementations must embed UnimplementedProcessUserdataServer
 // for forward compatibility
 type ProcessUserdataServer interface {
-	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
-	// The stream is used by the parties to inform each other about the cancellation of the task.
+	// Session informs primary supernode about its `nodeID` and `sessID` it wants
+	// to connect to. The stream is used by the parties to inform each other about
+	// the cancellation of the task.
 	Session(ProcessUserdata_SessionServer) error
-	// SendUserdataToPrimary send signed userdata from other supernodes to primary supernode
+	// SendUserdataToPrimary send signed userdata from other supernodes to primary
+	// supernode
 	SendUserdataToPrimary(context.Context, *SuperNodeRequest) (*SuperNodeReply, error)
 	// SendUserdataToLeader send final userdata to supernode contain rqlite leader
 	SendUserdataToLeader(context.Context, *UserdataRequest) (*SuperNodeReply, error)

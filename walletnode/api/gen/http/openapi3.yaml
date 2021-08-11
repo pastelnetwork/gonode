@@ -817,7 +817,7 @@ paths:
       - userdatas
       summary: Returns the detail of Userdata
       description: Gets the Userdata detail
-      operationId: userdatas#userdataGet
+      operationId: userdatas#getUserdata
       parameters:
       - name: pastelid
         in: path

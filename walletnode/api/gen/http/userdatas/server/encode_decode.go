@@ -183,21 +183,21 @@ func EncodeUpdateUserdataError(encoder func(context.Context, http.ResponseWriter
 	}
 }
 
-// EncodeUserdataGetResponse returns an encoder for responses returned by the
-// userdatas userdataGet endpoint.
-func EncodeUserdataGetResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+// EncodeGetUserdataResponse returns an encoder for responses returned by the
+// userdatas getUserdata endpoint.
+func EncodeGetUserdataResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
 		res, _ := v.(*userdatas.UserSpecifiedData)
 		enc := encoder(ctx, w)
-		body := NewUserdataGetResponseBody(res)
+		body := NewGetUserdataResponseBody(res)
 		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
 }
 
-// DecodeUserdataGetRequest returns a decoder for requests sent to the
-// userdatas userdataGet endpoint.
-func DecodeUserdataGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+// DecodeGetUserdataRequest returns a decoder for requests sent to the
+// userdatas getUserdata endpoint.
+func DecodeGetUserdataRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
 			pastelid string
@@ -216,15 +216,15 @@ func DecodeUserdataGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goa
 		if err != nil {
 			return nil, err
 		}
-		payload := NewUserdataGetPayload(pastelid)
+		payload := NewGetUserdataPayload(pastelid)
 
 		return payload, nil
 	}
 }
 
-// EncodeUserdataGetError returns an encoder for errors returned by the
-// userdataGet userdatas endpoint.
-func EncodeUserdataGetError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeGetUserdataError returns an encoder for errors returned by the
+// getUserdata userdatas endpoint.
+func EncodeGetUserdataError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		en, ok := v.(ErrorNamer)
@@ -239,7 +239,7 @@ func EncodeUserdataGetError(encoder func(context.Context, http.ResponseWriter) g
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewUserdataGetBadRequestResponseBody(res)
+				body = NewGetUserdataBadRequestResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusBadRequest)
@@ -251,7 +251,7 @@ func EncodeUserdataGetError(encoder func(context.Context, http.ResponseWriter) g
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewUserdataGetNotFoundResponseBody(res)
+				body = NewGetUserdataNotFoundResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusNotFound)
@@ -263,7 +263,7 @@ func EncodeUserdataGetError(encoder func(context.Context, http.ResponseWriter) g
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewUserdataGetInternalServerErrorResponseBody(res)
+				body = NewGetUserdataInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusInternalServerError)

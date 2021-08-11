@@ -59,7 +59,7 @@ var (
 		cover_photo_filename
 	) VALUES (
 		'{{.ArtistPastelID}}',
-		'{{.Realname}}',
+		'{{.RealName}}',
 		'{{.FacebookLink}}',
 		'{{.TwitterLink}}',
 		'{{.NativeCurrency}}',
@@ -77,7 +77,7 @@ var (
 	)`
 
 	data1 = pb.UserdataRequest{
-		Realname:        "cat",
+		RealName:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
 		NativeCurrency:  "usd",
@@ -100,7 +100,7 @@ var (
 	}
 
 	data2 = pb.UserdataRequest{
-		Realname:        "cat",
+		RealName:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
 		NativeCurrency:  "usd",
@@ -123,7 +123,7 @@ var (
 	}
 
 	data3 = pb.UserdataRequest{
-		Realname:        "cat",
+		RealName:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
 		NativeCurrency:  "usd",
@@ -146,7 +146,7 @@ var (
 	}
 
 	data4 = pb.UserdataRequest{
-		Realname:        "cat",
+		RealName:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
 		NativeCurrency:  "usd",
@@ -169,7 +169,7 @@ var (
 	}
 
 	data3ReadResult = userdata.ProcessRequest{
-		Realname:        "cat",
+		RealName:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
 		NativeCurrency:  "usd",
@@ -191,7 +191,7 @@ var (
 	}
 
 	data4ReadResult = userdata.ProcessRequest{
-		Realname:        "cat",
+		RealName:        "cat",
 		FacebookLink:    "fb.com",
 		TwitterLink:     "tw.com",
 		NativeCurrency:  "usd",
@@ -213,7 +213,7 @@ var (
 	}
 
 	userdata1 = UserdataWriteCommand{
-		Realname:           "cat",
+		RealName:           "cat",
 		FacebookLink:       "fb.com",
 		TwitterLink:        "tw.com",
 		NativeCurrency:     "usd",
@@ -232,7 +232,7 @@ var (
 	}
 
 	userdata2 = UserdataWriteCommand{
-		Realname:           "cat",
+		RealName:           "cat",
 		FacebookLink:       "fb.com",
 		TwitterLink:        "tw.com",
 		NativeCurrency:     "usd",

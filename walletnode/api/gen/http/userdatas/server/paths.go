@@ -21,7 +21,7 @@ func UpdateUserdataUserdatasPath() string {
 	return "/userdatas/update"
 }
 
-// UserdataGetUserdatasPath returns the URL path to the userdatas service userdataGet HTTP endpoint.
-func UserdataGetUserdatasPath(pastelid string) string {
+// GetUserdataUserdatasPath returns the URL path to the userdatas service getUserdata HTTP endpoint.
+func GetUserdataUserdatasPath(pastelid string) string {
 	return fmt.Sprintf("/userdatas/%v", pastelid)
 }

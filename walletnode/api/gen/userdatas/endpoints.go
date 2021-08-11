@@ -17,7 +17,7 @@ import (
 type Endpoints struct {
 	CreateUserdata goa.Endpoint
 	UpdateUserdata goa.Endpoint
-	UserdataGet    goa.Endpoint
+	GetUserdata    goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "userdatas" service with endpoints.
@@ -25,7 +25,7 @@ func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
 		CreateUserdata: NewCreateUserdataEndpoint(s),
 		UpdateUserdata: NewUpdateUserdataEndpoint(s),
-		UserdataGet:    NewUserdataGetEndpoint(s),
+		GetUserdata:    NewGetUserdataEndpoint(s),
 	}
 }
 
@@ -33,7 +33,7 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CreateUserdata = m(e.CreateUserdata)
 	e.UpdateUserdata = m(e.UpdateUserdata)
-	e.UserdataGet = m(e.UserdataGet)
+	e.GetUserdata = m(e.GetUserdata)
 }
 
 // NewCreateUserdataEndpoint returns an endpoint function that calls the method
@@ -54,11 +54,11 @@ func NewUpdateUserdataEndpoint(s Service) goa.Endpoint {
 	}
 }
 
-// NewUserdataGetEndpoint returns an endpoint function that calls the method
-// "userdataGet" of service "userdatas".
-func NewUserdataGetEndpoint(s Service) goa.Endpoint {
+// NewGetUserdataEndpoint returns an endpoint function that calls the method
+// "getUserdata" of service "userdatas".
+func NewGetUserdataEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*UserdataGetPayload)
-		return s.UserdataGet(ctx, p)
+		p := req.(*GetUserdataPayload)
+		return s.GetUserdata(ctx, p)
 	}
 }

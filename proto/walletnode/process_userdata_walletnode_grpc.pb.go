@@ -19,16 +19,20 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProcessUserdataClient interface {
 	// Session informs the supernode its position (primary/secondary).
-	// Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
-	// The stream is used by the parties to inform each other about the cancellation of the task.
+	// Returns `SessID` that are used by all other rpc methods to identify the
+	// task on the supernode. By sending `sessID` in the Metadata. The stream is
+	// used by the parties to inform each other about the cancellation of the
+	// task.
 	Session(ctx context.Context, opts ...grpc.CallOption) (ProcessUserdata_SessionClient, error)
 	// AcceptedNodes returns peers of the secondary supernodes connected to it.
 	AcceptedNodes(ctx context.Context, in *MDLAcceptedNodesRequest, opts ...grpc.CallOption) (*MDLAcceptedNodesReply, error)
 	// ConnectTo requests to connect to the primary supernode.
 	ConnectTo(ctx context.Context, in *MDLConnectToRequest, opts ...grpc.CallOption) (*MDLConnectToReply, error)
-	// SendUserdata send the user info and return the operation is success or detail on error.
+	// SendUserdata send the user info and return the operation is success or
+	// detail on error.
 	SendUserdata(ctx context.Context, in *UserdataRequest, opts ...grpc.CallOption) (*UserdataReply, error)
-	// ReceiveUserdata receive the user info and return the operation is success or detail on error.
+	// ReceiveUserdata receive the user info and return the operation is success
+	// or detail on error.
 	ReceiveUserdata(ctx context.Context, in *RetrieveRequest, opts ...grpc.CallOption) (*UserdataRequest, error)
 }
 
@@ -112,16 +116,20 @@ func (c *processUserdataClient) ReceiveUserdata(ctx context.Context, in *Retriev
 // for forward compatibility
 type ProcessUserdataServer interface {
 	// Session informs the supernode its position (primary/secondary).
-	// Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
-	// The stream is used by the parties to inform each other about the cancellation of the task.
+	// Returns `SessID` that are used by all other rpc methods to identify the
+	// task on the supernode. By sending `sessID` in the Metadata. The stream is
+	// used by the parties to inform each other about the cancellation of the
+	// task.
 	Session(ProcessUserdata_SessionServer) error
 	// AcceptedNodes returns peers of the secondary supernodes connected to it.
 	AcceptedNodes(context.Context, *MDLAcceptedNodesRequest) (*MDLAcceptedNodesReply, error)
 	// ConnectTo requests to connect to the primary supernode.
 	ConnectTo(context.Context, *MDLConnectToRequest) (*MDLConnectToReply, error)
-	// SendUserdata send the user info and return the operation is success or detail on error.
+	// SendUserdata send the user info and return the operation is success or
+	// detail on error.
 	SendUserdata(context.Context, *UserdataRequest) (*UserdataReply, error)
-	// ReceiveUserdata receive the user info and return the operation is success or detail on error.
+	// ReceiveUserdata receive the user info and return the operation is success
+	// or detail on error.
 	ReceiveUserdata(context.Context, *RetrieveRequest) (*UserdataRequest, error)
 	mustEmbedUnimplementedProcessUserdataServer()
 }
