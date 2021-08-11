@@ -3,7 +3,7 @@ SELECT
 FROM
     sn_activities
 WHERE
-    activity_type = '{{.ActivityType}}'
+    activity_type = '{{.ActivityType}}' AND sn_pastel_id = '{{.SNPastelID}}'
 ORDER BY
     cnt
 DESC

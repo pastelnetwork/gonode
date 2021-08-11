@@ -272,11 +272,14 @@ type SNActivityInfo struct {
 	// SNActivityKeywordSearch    = "keyword_search"
 	ActivityType string `mapstructure:"activity_type"`
 
+	SNPastelID string `mapstructure:"sn_pastel_id"`
+
 	// Cnt is the number of query activities, ignored on write request
 	Cnt int `mapstructure:"cnt"`
 }
 
 type SNTopActivityRequest struct {
 	ActivityType string
+	SNPastelID   string
 	NRecords     int
 }

@@ -185,9 +185,10 @@ CREATE TABLE IF NOT EXISTS sn_activities (
 	id INTEGER PRIMARY KEY AUTOINCREMENT,
 	query TEXT NOT NULL,
 	activity_type TEXT NOT NULL,
+	sn_pastel_id TEXT NOT NULL,
 	cnt INTEGER NOT NULL
 );
 ---
-CREATE UNIQUE INDEX IF NOT EXISTS idx_query_activity_type ON sn_activities(query, activity_type);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_query_activity_type ON sn_activities(query, activity_type, sn_pastel_id);
 ---
 CREATE INDEX IF NOT EXISTS idx_acitivities_cnt ON sn_activities(cnt);

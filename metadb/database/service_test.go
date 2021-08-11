@@ -1594,7 +1594,7 @@ func (ts *testSuite) TestOps_GetAuctionInfo() {
 				ts.Equal(tt.want.InstanceID, got.InstanceID)
 				ts.Equal(tt.want.LowestPrice, got.LowestPrice)
 				ts.NotNil(got.StartTime)
-				ts.True(got.StartTime.Unix() > time.Now().Add(-1*time.Second).Unix())
+				ts.True(got.StartTime.Unix() > time.Now().Add(-10*time.Second).Unix())
 				if tt.endAuction {
 					ts.NotNil(got.EndTime)
 					ts.False(got.IsOpen)
@@ -1674,7 +1674,7 @@ func (ts *testSuite) TestOps_NewArtAuction() {
 				ts.Equal(tt.info.InstanceID, auctionInfo.InstanceID)
 				ts.Equal(tt.info.LowestPrice, auctionInfo.LowestPrice)
 				ts.NotNil(auctionInfo.StartTime)
-				ts.True(auctionInfo.StartTime.Unix() > time.Now().Add(-1*time.Second).Unix())
+				ts.True(auctionInfo.StartTime.Unix() > time.Now().Add(-10*time.Second).Unix())
 				ts.Nil(auctionInfo.EndTime)
 				ts.True(auctionInfo.IsOpen)
 				ts.Nil(auctionInfo.FirstPrice)
@@ -1694,6 +1694,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 			data: SNActivityInfo{
 				Query:        fmt.Sprintf("%s-1", prefix),
 				ActivityType: SNActivityThumbnailRequest,
+				SNPastelID:   "sn_id1",
 			},
 			wantErr: false,
 		},
@@ -1701,6 +1702,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 			data: SNActivityInfo{
 				Query:        fmt.Sprintf("%s-2", prefix),
 				ActivityType: SNActivityThumbnailRequest,
+				SNPastelID:   "sn_id1",
 			},
 			wantErr: false,
 		},
@@ -1708,6 +1710,15 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 			data: SNActivityInfo{
 				Query:        fmt.Sprintf("%s-2", prefix),
 				ActivityType: SNActivityThumbnailRequest,
+				SNPastelID:   "sn_id2",
+			},
+			wantErr: false,
+		},
+		{
+			data: SNActivityInfo{
+				Query:        fmt.Sprintf("%s-2", prefix),
+				ActivityType: SNActivityThumbnailRequest,
+				SNPastelID:   "sn_id2",
 			},
 			wantErr: false,
 		},
@@ -1728,42 +1739,74 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 func (ts *testSuite) TestOps_GetTopSNActivities() {
 	prefix := "TestOps_GetTopSNActivities"
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 5; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
 			Query:        fmt.Sprintf("%s-1", prefix),
 			ActivityType: SNActivityThumbnailRequest,
+			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
 	}
 
-	for i := 0; i < 11; i++ {
+	for i := 0; i < 5; i++ {
+		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+			Query:        fmt.Sprintf("%s-1", prefix),
+			ActivityType: SNActivityThumbnailRequest,
+			SNPastelID:   "sn_id2",
+		})
+		ts.Nil(err)
+	}
+
+	for i := 0; i < 6; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
 			Query:        fmt.Sprintf("%s-2", prefix),
 			ActivityType: SNActivityThumbnailRequest,
+			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
 	}
 
-	for i := 0; i < 9; i++ {
+	for i := 0; i < 6; i++ {
+		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+			Query:        fmt.Sprintf("%s-2", prefix),
+			ActivityType: SNActivityThumbnailRequest,
+			SNPastelID:   "sn_id2",
+		})
+		ts.Nil(err)
+	}
+
+	for i := 0; i < 4; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
 			Query:        fmt.Sprintf("%s-3", prefix),
 			ActivityType: SNActivityThumbnailRequest,
+			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
 	}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 4; i++ {
+		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+			Query:        fmt.Sprintf("%s-3", prefix),
+			ActivityType: SNActivityThumbnailRequest,
+			SNPastelID:   "sn_id2",
+		})
+		ts.Nil(err)
+	}
+
+	for i := 0; i < 5; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
 			Query:        fmt.Sprintf("%s-1", prefix),
 			ActivityType: SNActivityNftSearch,
+			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
 	}
 
-	for i := 0; i < 11; i++ {
+	for i := 0; i < 6; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
 			Query:        fmt.Sprintf("%s-2", prefix),
 			ActivityType: SNActivityNftSearch,
+			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
 	}
@@ -1776,18 +1819,21 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 		{
 			query: SNTopActivityRequest{
 				ActivityType: SNActivityThumbnailRequest,
+				SNPastelID:   "sn_id1",
 				NRecords:     2,
 			},
 			want: []SNActivityInfo{
 				SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
 					ActivityType: SNActivityThumbnailRequest,
-					Cnt:          11,
+					SNPastelID:   "sn_id1",
+					Cnt:          6,
 				},
 				SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
 					ActivityType: SNActivityThumbnailRequest,
-					Cnt:          10,
+					SNPastelID:   "sn_id1",
+					Cnt:          5,
 				},
 			},
 			wantErr: false,
@@ -1795,23 +1841,27 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 		{
 			query: SNTopActivityRequest{
 				ActivityType: SNActivityThumbnailRequest,
+				SNPastelID:   "sn_id2",
 				NRecords:     3,
 			},
 			want: []SNActivityInfo{
 				SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
 					ActivityType: SNActivityThumbnailRequest,
-					Cnt:          11,
+					SNPastelID:   "sn_id2",
+					Cnt:          6,
 				},
 				SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
 					ActivityType: SNActivityThumbnailRequest,
-					Cnt:          10,
+					SNPastelID:   "sn_id2",
+					Cnt:          5,
 				},
 				SNActivityInfo{
 					Query:        fmt.Sprintf("%s-3", prefix),
 					ActivityType: SNActivityThumbnailRequest,
-					Cnt:          9,
+					SNPastelID:   "sn_id2",
+					Cnt:          4,
 				},
 			},
 			wantErr: false,
@@ -1819,18 +1869,21 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 		{
 			query: SNTopActivityRequest{
 				ActivityType: SNActivityNftSearch,
+				SNPastelID:   "sn_id1",
 				NRecords:     2,
 			},
 			want: []SNActivityInfo{
 				SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
 					ActivityType: SNActivityNftSearch,
-					Cnt:          11,
+					SNPastelID:   "sn_id1",
+					Cnt:          6,
 				},
 				SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
 					ActivityType: SNActivityNftSearch,
-					Cnt:          10,
+					SNPastelID:   "sn_id1",
+					Cnt:          5,
 				},
 			},
 			wantErr: false,
