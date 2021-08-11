@@ -97,12 +97,14 @@ func (task *Task) run(ctx context.Context) error {
 		task.searchResult = task.searchResult[:task.request.Limit]
 	}
 
-	pastelConnections := 10
+	/* FIXME: improve laters
+	pastelConnections := 3
 	if len(task.searchResult) < pastelConnections {
 		pastelConnections = len(task.searchResult)
 	}
+	*/
 
-	if err := task.thumbnailHelper.Connect(ctx, uint(pastelConnections)); err != nil {
+	if err := task.thumbnailHelper.Connect(ctx, 3); err != nil {
 		return fmt.Errorf("connect Thumbnail helper : %s", err)
 	}
 

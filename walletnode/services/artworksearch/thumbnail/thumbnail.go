@@ -33,6 +33,7 @@ type thumbnailHelper struct {
 	timeOut    time.Duration
 	isClosed   bool
 	closeMutex sync.Mutex
+	cancel     context.CancelFunc
 }
 
 // New returns a new instance of thumbnailHelper as Helper
@@ -61,21 +62,31 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 		return errors.New(maxConnectionsErr)
 	}
 
-	nodes, err := t.pastelTopNodes(ctx, connections)
+	nodes, err := t.pastelTopNodes(ctx)
 	if err != nil {
 		return fmt.Errorf("pastelTopNodes: %v", err)
 	}
 
-	cnt := 0
+	if len(nodes) < int(connections) {
+		return errors.New("not enough masternodes")
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	t.cancel = cancel
+	connCnt := 0
+
 	for _, node := range nodes {
 		node := node
-		if err := node.Connect(ctx, t.timeOut); err != nil {
-			//t.Close()
+		if connCnt == int(connections) {
+			break
+		}
 
+		if err := node.Connect(ctx, t.timeOut); err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to connect to master node")
 			continue
 		}
 
-		cnt = cnt + 1
+		connCnt = connCnt + 1
 		go func() {
 			t.listen(ctx, node)
 			t.Close()
@@ -85,8 +96,9 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 		}()
 	}
 
-	if cnt == 0 {
-		return errors.New("could not connect to any master nodes")
+	if connCnt != int(connections) {
+		t.Close()
+		return errors.New("could not connect to enough nodes")
 	} else {
 		return nil
 	}
@@ -137,16 +149,12 @@ func (t *thumbnailHelper) Fetch(ctx context.Context, key []byte) (data []byte, e
 	}
 }
 
-func (t *thumbnailHelper) pastelTopNodes(ctx context.Context, connections uint) (nodes node.List, err error) {
+func (t *thumbnailHelper) pastelTopNodes(ctx context.Context) (nodes node.List, err error) {
 	mns, err := t.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for i, mn := range mns {
-		if uint(i) == connections {
-			break
-		}
-
+	for _, mn := range mns {
 		nodes = append(nodes, node.NewNode(t.nodeClient, mn.ExtAddress, mn.ExtKey))
 	}
 
@@ -163,6 +171,10 @@ func (t *thumbnailHelper) Close() {
 	}
 
 	t.isClosed = true
+	if t.cancel != nil {
+		t.cancel()
+		t.cancel = nil
+	}
 	close(t.reqCh)
 }
 

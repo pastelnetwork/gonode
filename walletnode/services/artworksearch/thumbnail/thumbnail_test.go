@@ -96,7 +96,7 @@ func TestFetch(t *testing.T) {
 			err := tc.helper.Connect(ctx, tc.connections)
 			assert.Nil(t, err)
 
-			_, err = tc.helper.Fetch(ctx, "key")
+			_, err = tc.helper.Fetch(ctx, []byte("key"))
 			assert.Nil(t, err)
 		})
 	}

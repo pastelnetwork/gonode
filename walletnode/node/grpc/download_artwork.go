@@ -59,7 +59,15 @@ func (service *downloadArtwork) DownloadThumbnail(ctx context.Context, key []byt
 
 	res, err := service.client.DownloadThumbnail(ctx, in)
 
-	return res.Thumbnail, err
+	if err != nil {
+		return nil, err
+	}
+
+	if res.Thumbnail == nil {
+		return nil, errors.New("nil thumbnail")
+	}
+
+	return res.Thumbnail, nil
 }
 
 func (service *downloadArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
