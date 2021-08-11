@@ -30,6 +30,7 @@ type AlternateNSFWScores struct {
 
 // ImageHashes represents image hashes in the output of dupe detection service
 type ImageHashes struct {
+	PDQHash        string `json:"pdq_hash"`
 	PerceptualHash string `json:"perceptual_hash"`
 	AverageHash    string `json:"average_hash"`
 	DifferenceHash string `json:"difference_hash"`
