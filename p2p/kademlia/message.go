@@ -8,6 +8,7 @@ import (
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 const (
@@ -103,8 +104,9 @@ func decode(conn io.Reader) (*Message, error) {
 	// parse the length of message
 	length, err := binary.ReadUvarint(bytes.NewBuffer(header))
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("parse header length failed: %w", err)
 	}
+	log.Debugf("message length %d", length)
 
 	if length > defaultMaxPayloadSize {
 		return nil, errors.New("payload too big")

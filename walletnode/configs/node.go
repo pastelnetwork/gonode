@@ -23,7 +23,7 @@ type Node struct {
 	// Timeout in minutes
 	RegArtTxTimeout int `mapstructure:"reg_art_tx_timeout" json:"reg_art_tx_timeout,omitempty"`
 
-	RegActTxMinConfirmations int `mapstructure:"reg_act_tx_min_confirmation" json:"reg_act_tx_min_confirmation,omitempty"`
+	RegActTxMinConfirmations int `mapstructure:"reg_act_tx_min_confirmations" json:"reg_act_tx_min_confirmations,omitempty"`
 	// Timeout in minutes
 	RegActTxTimeout int `mapstructure:"reg_act_tx_timeout" json:"reg_act_tx_timeout,omitempty"`
 }

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 	"golang.org/x/crypto/sha3"
 
@@ -86,7 +87,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			return nil
 		}
 
-		pastelID := string(artRegTicket.RegTicketData.ArtTicketData.Author)
+		pastelID := base58.Encode(artRegTicket.RegTicketData.ArtTicketData.Author)
 
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
@@ -143,6 +144,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 		}
 
 		if len(file) == 0 {
+			err = errors.Errorf("empty file")
 			task.UpdateStatus(StatusFileEmpty)
 		}
 
@@ -177,13 +179,21 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		var rqIDsData []byte
 		rqIDsData, err = task.p2pClient.Retrieve(ctx, id)
 		if err != nil {
-			err = errors.Errorf("could not retrieve symbol file from Kademlia: %w", err)
+			err = errors.Errorf("could not retrieve compressed symbol file from Kademlia: %w", err)
 			task.UpdateStatus(StatusSymbolFileNotFound)
 			continue
 		}
 
+		fileContent, err := zstd.Decompress(nil, rqIDsData)
+		if err != nil {
+			err = errors.Errorf("could not decompress symbol file: %w", err)
+			task.UpdateStatus(StatusSymbolFileInvalid)
+			continue
+		}
+
+		log.WithContext(ctx).Debugf("symbolFile: %s", string(fileContent))
 		var rqIDs []string
-		rqIDs, err = task.getRQSymbolIDs(rqIDsData)
+		rqIDs, err = task.getRQSymbolIDs(fileContent)
 		if err != nil {
 			task.UpdateStatus(StatusSymbolFileInvalid)
 			continue
@@ -248,9 +258,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		file = decodeInfo.File
 		break
 	}
-	if len(file) > 0 {
-		err = nil
-	}
+
 	return file, err
 }
 
@@ -280,7 +288,6 @@ func (task *Task) decodeRegTicket(artRegTicket *pastel.RegTicket) error {
 	if err != nil {
 		return errors.Errorf("Could not parse app ticket. %w", err)
 	}
-
 	return nil
 }
 
@@ -296,7 +303,8 @@ func (task Task) getRQSymbolIDs(rqIDsData []byte) (rqIDs []string, err error) {
 		return
 	}
 
-	rqIDs = lines[3:]
+	l := len(lines)
+	rqIDs = lines[3 : l-1]
 
 	return
 }
