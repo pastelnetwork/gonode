@@ -41,3 +41,8 @@ type Client interface {
 	// Generate returns fingerprints and ranks for a given image
 	Generate(ctx context.Context, img []byte, format string) (*DupeDetection, error)
 }
+
+type Service interface {
+	// Run starts task
+	Run(ctx context.Context) error
+}
