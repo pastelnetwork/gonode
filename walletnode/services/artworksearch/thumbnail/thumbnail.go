@@ -99,9 +99,9 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 	if connCnt != int(connections) {
 		t.Close()
 		return errors.New("could not connect to enough nodes")
-	} else {
-		return nil
 	}
+
+	return nil
 }
 
 func (t *thumbnailHelper) listen(ctx context.Context, n *node.Node) {
