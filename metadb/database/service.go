@@ -108,7 +108,7 @@ func (db *Ops) writeDataReturning(ctx context.Context, command string) (*metadb.
 	return result, nil
 }
 
-func (db *Ops) WriteArtInfo(ctx context.Context, data ArtInfo) error {
+func (db *Ops) WriteArtInfo(ctx context.Context, data userdata.ArtInfo) error {
 	command, err := db.templates.GetCommand(artInfoWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -116,7 +116,7 @@ func (db *Ops) WriteArtInfo(ctx context.Context, data ArtInfo) error {
 	return db.writeData(ctx, command)
 }
 
-func (db *Ops) WriteArtInstanceInfo(ctx context.Context, data ArtInstanceInfo) error {
+func (db *Ops) WriteArtInstanceInfo(ctx context.Context, data userdata.ArtInstanceInfo) error {
 	command, err := db.templates.GetCommand(artInstanceInfoWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -124,7 +124,7 @@ func (db *Ops) WriteArtInstanceInfo(ctx context.Context, data ArtInstanceInfo) e
 	return db.writeData(ctx, command)
 }
 
-func (db *Ops) WriteArtLike(ctx context.Context, data ArtLike) error {
+func (db *Ops) WriteArtLike(ctx context.Context, data userdata.ArtLike) error {
 	command, err := db.templates.GetCommand(artLikeWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -132,7 +132,7 @@ func (db *Ops) WriteArtLike(ctx context.Context, data ArtLike) error {
 	return db.writeData(ctx, command)
 }
 
-func (db *Ops) WriteTransaction(ctx context.Context, data ArtTransaction) error {
+func (db *Ops) WriteTransaction(ctx context.Context, data userdata.ArtTransaction) error {
 	command, err := db.templates.GetCommand(transactionWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -140,7 +140,7 @@ func (db *Ops) WriteTransaction(ctx context.Context, data ArtTransaction) error 
 	return db.writeData(ctx, command)
 }
 
-func (db *Ops) WriteUserFollow(ctx context.Context, data UserFollow) error {
+func (db *Ops) WriteUserFollow(ctx context.Context, data userdata.UserFollow) error {
 	command, err := db.templates.GetCommand(userFollowWriteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -148,7 +148,7 @@ func (db *Ops) WriteUserFollow(ctx context.Context, data UserFollow) error {
 	return db.writeData(ctx, command)
 }
 
-func (db *Ops) WriteSNActivity(ctx context.Context, data SNActivityInfo) error {
+func (db *Ops) WriteSNActivity(ctx context.Context, data userdata.SNActivityInfo) error {
 	if data.Query == "" {
 		return errors.Errorf("invalid query")
 	}
@@ -172,7 +172,7 @@ func (db *Ops) WriteUserData(ctx context.Context, data *pb.UserdataRequest) erro
 	return db.writeData(ctx, command)
 }
 
-func (db *Ops) UpdateAskingPrice(ctx context.Context, data AskingPriceUpdateRequest) error {
+func (db *Ops) UpdateAskingPrice(ctx context.Context, data userdata.AskingPriceUpdateRequest) error {
 	command, err := db.templates.GetCommand(artInstanceAskingPriceTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -181,7 +181,7 @@ func (db *Ops) UpdateAskingPrice(ctx context.Context, data AskingPriceUpdateRequ
 	return db.writeData(ctx, command)
 }
 
-func (db *Ops) NewArtAuction(ctx context.Context, data NewArtAuctionRequest) (int64, error) {
+func (db *Ops) NewArtAuction(ctx context.Context, data userdata.NewArtAuctionRequest) (int64, error) {
 	command, err := db.templates.GetCommand(newArtAuctionTemplate, data)
 	if err != nil {
 		return 0, errors.Errorf("error while subtitute template: %w", err)
@@ -203,7 +203,7 @@ func (db *Ops) EndArtAuction(ctx context.Context, auctionID int64) error {
 	return db.writeData(ctx, command)
 }
 
-func (db *Ops) ArtPlaceBid(ctx context.Context, data ArtPlaceBidRequest) error {
+func (db *Ops) ArtPlaceBid(ctx context.Context, data userdata.ArtPlaceBidRequest) error {
 	command, err := db.templates.GetCommand(artPlaceBidTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
@@ -216,42 +216,42 @@ func (db *Ops) ArtPlaceBid(ctx context.Context, data ArtPlaceBidRequest) error {
 func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) error {
 	switch req.Command {
 	case artInfoWriteTemplate:
-		var data ArtInfo
+		var data userdata.ArtInfo
 		if err := mapstructure.Decode(req.Data, &data); err != nil {
 			return errors.Errorf("error while decoding result: %w", err)
 		}
 		return db.WriteArtInfo(ctx, data)
 
 	case artInstanceInfoWriteTemplate:
-		var data ArtInstanceInfo
+		var data userdata.ArtInstanceInfo
 		if err := mapstructure.Decode(req.Data, &data); err != nil {
 			return errors.Errorf("error while decoding result: %w", err)
 		}
 		return db.WriteArtInstanceInfo(ctx, data)
 
 	case artLikeWriteTemplate:
-		var data ArtLike
+		var data userdata.ArtLike
 		if err := mapstructure.Decode(req.Data, &data); err != nil {
 			return errors.Errorf("error while decoding result: %w", err)
 		}
 		return db.WriteArtLike(ctx, data)
 
 	case snActivityWriteTemplate:
-		var data SNActivityInfo
+		var data userdata.SNActivityInfo
 		if err := mapstructure.Decode(req.Data, &data); err != nil {
 			return errors.Errorf("error while decoding result: %w", err)
 		}
 		return db.WriteSNActivity(ctx, data)
 
 	case transactionWriteTemplate:
-		var data ArtTransaction
+		var data userdata.ArtTransaction
 		if err := mapstructure.Decode(req.Data, &data); err != nil {
 			return errors.Errorf("error while decoding result: %w", err)
 		}
 		return db.WriteTransaction(ctx, data)
 
 	case userFollowWriteTemplate:
-		var data UserFollow
+		var data userdata.UserFollow
 		if err := mapstructure.Decode(req.Data, &data); err != nil {
 			return errors.Errorf("error while decoding result: %w", err)
 		}
@@ -261,7 +261,6 @@ func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) error {
 		return errors.Errorf("Unsupported command: %s", req.Command)
 	}
 }
-
 
 // ReadUserData read metadata in the struct UserdataProcessRequest to metadb
 func (db *Ops) ReadUserData(ctx context.Context, artistPastelID string) (userdata.ProcessRequest, error) {
@@ -476,7 +475,7 @@ func (db *Ops) queryToInterface(ctx context.Context, command string) ([]map[stri
 	return result, nil
 }
 
-func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string) ([]NftCreatedByArtistQueryResult, error) {
+func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string) ([]userdata.NftCreatedByArtistQueryResult, error) {
 	if artistPastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
 	}
@@ -491,9 +490,9 @@ func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string)
 		return nil, errors.Errorf("error while query db: %w", err)
 	}
 
-	result := make([]NftCreatedByArtistQueryResult, 0)
+	result := make([]userdata.NftCreatedByArtistQueryResult, 0)
 	for _, mp := range allResults {
-		var record NftCreatedByArtistQueryResult
+		var record userdata.NftCreatedByArtistQueryResult
 		if err := mapstructure.Decode(mp, &record); err != nil {
 			return nil, errors.Errorf("error while decoding result: %w", err)
 		}
@@ -503,7 +502,7 @@ func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string)
 	return result, nil
 }
 
-func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string) ([]NftForSaleByArtistQueryResult, error) {
+func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string) ([]userdata.NftForSaleByArtistQueryResult, error) {
 	if artistPastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
 	}
@@ -518,9 +517,9 @@ func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string)
 		return nil, errors.Errorf("error while query db: %w", err)
 	}
 
-	result := make([]NftForSaleByArtistQueryResult, 0)
+	result := make([]userdata.NftForSaleByArtistQueryResult, 0)
 	for _, mp := range allResults {
-		var record NftForSaleByArtistQueryResult
+		var record userdata.NftForSaleByArtistQueryResult
 		if err := mapstructure.Decode(mp, &record); err != nil {
 			return nil, errors.Errorf("error while decoding result: %w", err)
 		}
@@ -530,7 +529,7 @@ func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string)
 	return result, nil
 }
 
-func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]NftOwnedByUserQueryResult, error) {
+func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]userdata.NftOwnedByUserQueryResult, error) {
 	if pastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
 	}
@@ -545,9 +544,9 @@ func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]NftOwn
 		return nil, errors.Errorf("error while query db: %w", err)
 	}
 
-	result := make([]NftOwnedByUserQueryResult, 0)
+	result := make([]userdata.NftOwnedByUserQueryResult, 0)
 	for _, mp := range allResults {
-		var record NftOwnedByUserQueryResult
+		var record userdata.NftOwnedByUserQueryResult
 		if err := mapstructure.Decode(mp, &record); err != nil {
 			return nil, errors.Errorf("error while decoding result: %w", err)
 		}
@@ -557,8 +556,8 @@ func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]NftOwn
 	return result, nil
 }
 
-func (db *Ops) GetNftSoldByArtID(ctx context.Context, artID string) (NftSoldByArtIDQueryResult, error) {
-	var result NftSoldByArtIDQueryResult
+func (db *Ops) GetNftSoldByArtID(ctx context.Context, artID string) (userdata.NftSoldByArtIDQueryResult, error) {
+	var result userdata.NftSoldByArtIDQueryResult
 	if artID == "" {
 		return result, errors.Errorf("invalid pastel ID")
 	}
@@ -587,7 +586,7 @@ func (db *Ops) GetNftSoldByArtID(ctx context.Context, artID string) (NftSoldByAr
 	return result, nil
 }
 
-func (db *Ops) GetUniqueNftByUser(ctx context.Context, query UniqueNftByUserQuery) ([]ArtInfo, error) {
+func (db *Ops) GetUniqueNftByUser(ctx context.Context, query userdata.UniqueNftByUserQuery) ([]userdata.ArtInfo, error) {
 	command, err := db.templates.GetCommand(uniqueNftByUserTemplate, query)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -598,9 +597,9 @@ func (db *Ops) GetUniqueNftByUser(ctx context.Context, query UniqueNftByUserQuer
 		return nil, errors.Errorf("error while query db: %w", err)
 	}
 
-	result := make([]ArtInfo, 0)
+	result := make([]userdata.ArtInfo, 0)
 	for _, mp := range allResults {
-		var record ArtInfo
+		var record userdata.ArtInfo
 		if err := mapstructure.Decode(mp, &record); err != nil {
 			return nil, errors.Errorf("error while decoding result: %w", err)
 		}
@@ -623,8 +622,8 @@ func (db *Ops) GetUsersLikeNft(ctx context.Context, artID string) ([]string, err
 	return db.queryPastelID(ctx, command)
 }
 
-func (db *Ops) GetArtInstanceInfo(ctx context.Context, instanceID string) (ArtInstanceInfo, error) {
-	var result ArtInstanceInfo
+func (db *Ops) GetArtInstanceInfo(ctx context.Context, instanceID string) (userdata.ArtInstanceInfo, error) {
+	var result userdata.ArtInstanceInfo
 	if instanceID == "" {
 		return result, errors.Errorf("invalid instance ID")
 	}
@@ -653,8 +652,8 @@ func (db *Ops) GetArtInstanceInfo(ctx context.Context, instanceID string) (ArtIn
 	return result, nil
 }
 
-func (db *Ops) GetAuctionInfo(ctx context.Context, auctionID int64) (ArtAuctionInfo, error) {
-	var result ArtAuctionInfo
+func (db *Ops) GetAuctionInfo(ctx context.Context, auctionID int64) (userdata.ArtAuctionInfo, error) {
+	var result userdata.ArtAuctionInfo
 	command, err := db.templates.GetCommand(getAuctionInfoTemplate, auctionID)
 	if err != nil {
 		return result, errors.Errorf("error while subtitute template: %w", err)
@@ -679,7 +678,7 @@ func (db *Ops) GetAuctionInfo(ctx context.Context, auctionID int64) (ArtAuctionI
 	return result, nil
 }
 
-func (db *Ops) GetTopSNActivities(ctx context.Context, query SNTopActivityRequest) ([]SNActivityInfo, error) {
+func (db *Ops) GetTopSNActivities(ctx context.Context, query userdata.SNTopActivityRequest) ([]userdata.SNActivityInfo, error) {
 	command, err := db.templates.GetCommand(getTopSNActivitiesTemplate, query)
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
@@ -690,9 +689,9 @@ func (db *Ops) GetTopSNActivities(ctx context.Context, query SNTopActivityReques
 		return nil, errors.Errorf("error while query db: %w", err)
 	}
 
-	result := make([]SNActivityInfo, 0)
+	result := make([]userdata.SNActivityInfo, 0)
 	for _, mp := range allResults {
-		var record SNActivityInfo
+		var record userdata.SNActivityInfo
 		if err := mapstructure.Decode(mp, &record); err != nil {
 			return nil, errors.Errorf("error while decoding result: %w", err)
 		}

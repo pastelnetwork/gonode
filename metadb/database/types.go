@@ -3,7 +3,6 @@ package database
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
@@ -167,119 +166,119 @@ func (d *UserdataReadResult) ToUserData() userdata.ProcessRequest {
 	}
 }
 
-type ArtInfo struct {
-	ArtID                 string  `mapstructure:"art_id"`
-	ArtistPastelID        string  `mapstructure:"artist_pastel_id"`
-	Copies                int64   `mapstructure:"copies"`
-	CreatedTimestamp      int64   `mapstructure:"created_timestamp"`
-	GreenNft              bool    `mapstructure:"green_nft"`
-	RarenessScore         float64 `mapstructure:"rareness_score"`
-	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage"`
-}
+// type ArtInfo struct {
+// 	ArtID                 string  `mapstructure:"art_id",json:"art_id"`
+// 	ArtistPastelID        string  `mapstructure:"artist_pastel_id",json:"artist_pastel_id"`
+// 	Copies                int64   `mapstructure:"copies",json:"copies"`
+// 	CreatedTimestamp      int64   `mapstructure:"created_timestamp",json:"created_timestamp"`
+// 	GreenNft              bool    `mapstructure:"green_nft",json:"green_nft"`
+// 	RarenessScore         float64 `mapstructure:"rareness_score",json:"rareness_score"`
+// 	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage",json:"royalty_rate_percentage"`
+// }
 
-type ArtInstanceInfo struct {
-	InstanceID    string   `mapstructure:"instance_id"`
-	ArtID         string   `mapstructure:"art_id"`
-	OwnerPastelID string   `mapstructure:"owner_pastel_id"`
-	Price         float64  `mapstructure:"price"`
-	AskingPrice   *float64 `mapstructure:"asking_price,omitempty"`
-}
+// type ArtInstanceInfo struct {
+// 	InstanceID    string   `mapstructure:"instance_id",json:"instance_id"`
+// 	ArtID         string   `mapstructure:"art_id",json:"art_id"`
+// 	OwnerPastelID string   `mapstructure:"owner_pastel_id",json:"owner_pastel_id"`
+// 	Price         float64  `mapstructure:"price",json:"price"`
+// 	AskingPrice   *float64 `mapstructure:"asking_price,omitempty",json:"asking_price,omitempty"`
+// }
 
-type ArtLike struct {
-	ArtID    string
-	PastelID string
-}
+// type ArtLike struct {
+// 	ArtID    string `mapstructure:"art_id",json:"art_id"`
+// 	PastelID string `mapstructure:"pastel_id",json:"pastel_id"`
+// }
 
-type ArtTransaction struct {
-	TransactionID  string
-	InstanceID     string
-	Timestamp      int64
-	SellerPastelID string
-	BuyerPastelID  string
-	Price          float64
-}
+// type ArtTransaction struct {
+// 	TransactionID  string  `mapstructure:"transaction_id",json:"transaction_id"`
+// 	InstanceID     string  `mapstructure:"instance_id",json:"instance_id"`
+// 	Timestamp      int64   `mapstructure:"timestamp",json:"timestamp"`
+// 	SellerPastelID string  `mapstructure:"seller_pastel_id",json:"seller_pastel_id"`
+// 	BuyerPastelID  string  `mapstructure:"buyer_pastel_id",json:"buyer_pastel_id"`
+// 	Price          float64 `mapstructure:"price",json:"price"`
+// }
 
-type UserFollow struct {
-	FollowerPastelID string
-	FolloweePastelID string
-}
+// type UserFollow struct {
+// 	FollowerPastelID string `mapstructure:"follower_pastel_id",json:"follower_pastel_id"`
+// 	FolloweePastelID string `mapstructure:"followee_pastel_id",json:"followee_pastel_id"`
+// }
 
-type NftCreatedByArtistQueryResult struct {
-	InstanceID            string  `mapstructure:"instance_id"`
-	ArtID                 string  `mapstructure:"art_id"`
-	Copies                int64   `mapstructure:"copies"`
-	CreatedTimestamp      int64   `mapstructure:"created_timestamp"`
-	GreenNft              bool    `mapstructure:"green_nft"`
-	RarenessScore         float64 `mapstructure:"rareness_score"`
-	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage"`
-}
+// type NftCreatedByArtistQueryResult struct {
+// 	InstanceID            string  `mapstructure:"instance_id",json:"instance_id"`
+// 	ArtID                 string  `mapstructure:"art_id",json:"art_id"`
+// 	Copies                int64   `mapstructure:"copies",json:"copies"`
+// 	CreatedTimestamp      int64   `mapstructure:"created_timestamp",json:"created_timestamp"`
+// 	GreenNft              bool    `mapstructure:"green_nft",json:"green_nft"`
+// 	RarenessScore         float64 `mapstructure:"rareness_score",json:"rareness_score"`
+// 	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage",json:"royalty_rate_percentage"`
+// }
 
-type NftForSaleByArtistQueryResult struct {
-	InstanceID string  `mapstructure:"instance_id"`
-	ArtID      string  `mapstructure:"art_id"`
-	Price      float64 `mapstructure:"price"`
-}
+// type NftForSaleByArtistQueryResult struct {
+// 	InstanceID string  `mapstructure:"instance_id",json:"instance_id"`
+// 	ArtID      string  `mapstructure:"art_id",json:"art_id"`
+// 	Price      float64 `mapstructure:"price",json:"price"`
+// }
 
-type NftOwnedByUserQueryResult struct {
-	ArtID string `mapstructure:"art_id"`
-	Count int    `mapstructure:"cnt"`
-}
+// type NftOwnedByUserQueryResult struct {
+// 	ArtID string `mapstructure:"art_id",json:"art_id"`
+// 	Count int    `mapstructure:"cnt",json:"cnt"`
+// }
 
-type NftSoldByArtIDQueryResult struct {
-	TotalCopies int `mapstructure:"total_copies"`
-	SoldCopies  int `mapstructure:"sold_copies"`
-}
+// type NftSoldByArtIDQueryResult struct {
+// 	TotalCopies int `mapstructure:"total_copies",json:"total_copies"`
+// 	SoldCopies  int `mapstructure:"sold_copies",json:"sold_copies"`
+// }
 
-type UniqueNftByUserQuery struct {
-	ArtistPastelID string
-	LimitTimestamp int64
-}
+// type UniqueNftByUserQuery struct {
+// 	ArtistPastelID string `mapstructure:"artist_pastel_id",json:"artist_pastel_id"`
+// 	LimitTimestamp int64  `mapstructure:"limit_timestamp",json:"limit_timestamp"`
+// }
 
-type AskingPriceUpdateRequest struct {
-	InstanceID  string
-	AskingPrice float64
-}
+// type AskingPriceUpdateRequest struct {
+// 	InstanceID  string  `mapstructure:"instance_id",json:"instance_id"`
+// 	AskingPrice float64 `mapstructure:"asking_price",json:"asking_price"`
+// }
 
-type ArtPlaceBidRequest struct {
-	AuctionID int64
-	PastelID  string
-	BidPrice  float64
-}
+// type ArtPlaceBidRequest struct {
+// 	AuctionID int64   `mapstructure:"auction_id",json:"auction_id"`
+// 	PastelID  string  `mapstructure:"pastel_id",json:"pastel_id"`
+// 	BidPrice  float64 `mapstructure:"bid_price",json:"bid_price"`
+// }
 
-type NewArtAuctionRequest struct {
-	InstanceID  string
-	LowestPrice float64
-}
+// type NewArtAuctionRequest struct {
+// 	InstanceID  string  `mapstructure:"instance_id",json:"instance_id"`
+// 	LowestPrice float64 `mapstructure:"lowest_price",json:"lowest_price"`
+// }
 
-type ArtAuctionInfo struct {
-	AuctionID   int64      `mapstructure:"auction_id"`
-	InstanceID  string     `mapstructure:"instance_id"`
-	LowestPrice float64    `mapstructure:"lowest_price"`
-	IsOpen      bool       `mapstructure:"is_open"`
-	StartTime   *time.Time `mapstructure:"start_time"`
-	EndTime     *time.Time `mapstructure:"end_time"`
-	FirstPrice  *float64   `mapstructure:"first_price"`
-	SecondPrice *float64   `mapstructure:"second_price"`
-}
+// type ArtAuctionInfo struct {
+// 	AuctionID   int64      `mapstructure:"auction_id",json:"auction_id"`
+// 	InstanceID  string     `mapstructure:"instance_id",json:"instance_id"`
+// 	LowestPrice float64    `mapstructure:"lowest_price",json:"lowest_price"`
+// 	IsOpen      bool       `mapstructure:"is_open",json:"is_open"`
+// 	StartTime   *time.Time `mapstructure:"start_time",json:"start_time"`
+// 	EndTime     *time.Time `mapstructure:"end_time",json:"end_time"`
+// 	FirstPrice  *float64   `mapstructure:"first_price",json:"first_price"`
+// 	SecondPrice *float64   `mapstructure:"second_price",json:"second_price"`
+// }
 
-type SNActivityInfo struct {
-	Query string `mapstructure:"query"`
+// type SNActivityInfo struct {
+// 	Query string `mapstructure:"query",json:"query"`
 
-	// SNActivityThumbnailRequest = "thumbnail_request"
-	// SNActivityNftSearch        = "nft_search"
-	// SNActivityCreatorSearch    = "creator_search"
-	// SNActivityUserSearch       = "user_search"
-	// SNActivityKeywordSearch    = "keyword_search"
-	ActivityType string `mapstructure:"activity_type"`
+// 	// SNActivityThumbnailRequest = "thumbnail_request"
+// 	// SNActivityNftSearch        = "nft_search"
+// 	// SNActivityCreatorSearch    = "creator_search"
+// 	// SNActivityUserSearch       = "user_search"
+// 	// SNActivityKeywordSearch    = "keyword_search"
+// 	ActivityType string `mapstructure:"activity_type",json:"activity_type"`
 
-	SNPastelID string `mapstructure:"sn_pastel_id"`
+// 	SNPastelID string `mapstructure:"sn_pastel_id",json:"sn_pastel_id"`
 
-	// Cnt is the number of query activities, ignored on write request
-	Cnt int `mapstructure:"cnt"`
-}
+// 	// Cnt is the number of query activities, ignored on write request
+// 	Cnt int `mapstructure:"cnt",json:"cnt"`
+// }
 
-type SNTopActivityRequest struct {
-	ActivityType string
-	SNPastelID   string
-	NRecords     int
-}
+// type SNTopActivityRequest struct {
+// 	ActivityType string `mapstructure:"activity_type",json:"activity_type"`
+// 	SNPastelID   string `mapstructure:"sn_pastel_id",json:"sn_pastel_id"`
+// 	NRecords     int    `mapstructure:"n_records",json:"n_records"`
+// }

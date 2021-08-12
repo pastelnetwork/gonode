@@ -203,52 +203,52 @@ func (ts *testSuite) setupTableTest() {
 		ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 	}
 
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5, GreenNft: true, RarenessScore: 0.9, RoyaltyRatePercentage: 10.0}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15, GreenNft: true, RarenessScore: 0.7, RoyaltyRatePercentage: 8.0}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5, GreenNft: true, RarenessScore: 0.9, RoyaltyRatePercentage: 10.0}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15, GreenNft: true, RarenessScore: 0.7, RoyaltyRatePercentage: 8.0}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0}))
 
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id1", ArtID: "art1_id1", Price: 10.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art1_id1", ArtID: "art1_id1", Price: 20.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art2_id1", ArtID: "art2_id1", Price: 30.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art2_id1", ArtID: "art2_id1", Price: 40.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art1_id2", ArtID: "art1_id2", Price: 50.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art2_id2", ArtID: "art2_id2", Price: 60.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins2_art2_id2", ArtID: "art2_id2", Price: 70.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art1_id1", ArtID: "art1_id1", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins2_art1_id1", ArtID: "art1_id1", Price: 20.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art2_id1", ArtID: "art2_id1", Price: 30.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins2_art2_id1", ArtID: "art2_id1", Price: 40.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art1_id2", ArtID: "art1_id2", Price: 50.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art2_id2", ArtID: "art2_id2", Price: 60.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins2_art2_id2", ArtID: "art2_id2", Price: 70.0}))
 
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t1", InstanceID: "ins1_art1_id1", Timestamp: 20, SellerPastelID: "id1", BuyerPastelID: "id5", Price: 20.0}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t2", InstanceID: "ins1_art1_id1", Timestamp: 21, SellerPastelID: "id5", BuyerPastelID: "id6", Price: 40.0}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t3", InstanceID: "ins2_art2_id2", Timestamp: 23, SellerPastelID: "id2", BuyerPastelID: "id6", Price: 40.0}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t4", InstanceID: "ins2_art2_id2", Timestamp: 25, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45.0}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t5", InstanceID: "ins1_art1_id1", Timestamp: 26, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45.0}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t6", InstanceID: "ins1_art1_id2", Timestamp: 30, SellerPastelID: "id2", BuyerPastelID: "id4", Price: 20.0}))
-	ts.Nil(ts.ops.WriteTransaction(ts.ctx, ArtTransaction{TransactionID: "t7", InstanceID: "ins1_art1_id2", Timestamp: 31, SellerPastelID: "id4", BuyerPastelID: "id1", Price: 20.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, userdata.ArtTransaction{TransactionID: "t1", InstanceID: "ins1_art1_id1", Timestamp: 20, SellerPastelID: "id1", BuyerPastelID: "id5", Price: 20.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, userdata.ArtTransaction{TransactionID: "t2", InstanceID: "ins1_art1_id1", Timestamp: 21, SellerPastelID: "id5", BuyerPastelID: "id6", Price: 40.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, userdata.ArtTransaction{TransactionID: "t3", InstanceID: "ins2_art2_id2", Timestamp: 23, SellerPastelID: "id2", BuyerPastelID: "id6", Price: 40.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, userdata.ArtTransaction{TransactionID: "t4", InstanceID: "ins2_art2_id2", Timestamp: 25, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, userdata.ArtTransaction{TransactionID: "t5", InstanceID: "ins1_art1_id1", Timestamp: 26, SellerPastelID: "id6", BuyerPastelID: "id7", Price: 45.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, userdata.ArtTransaction{TransactionID: "t6", InstanceID: "ins1_art1_id2", Timestamp: 30, SellerPastelID: "id2", BuyerPastelID: "id4", Price: 20.0}))
+	ts.Nil(ts.ops.WriteTransaction(ts.ctx, userdata.ArtTransaction{TransactionID: "t7", InstanceID: "ins1_art1_id2", Timestamp: 31, SellerPastelID: "id4", BuyerPastelID: "id1", Price: 20.0}))
 
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id2"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id3"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id4"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id5"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id6"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id1"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id3"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id4"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id5"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id6"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id1"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id2"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id4"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id5"}))
-	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id6"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id2"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id3"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id4"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id5"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id1", FolloweePastelID: "id6"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id1"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id3"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id4"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id5"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id2", FolloweePastelID: "id6"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id1"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id2"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id4"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id5"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id3", FolloweePastelID: "id6"}))
 
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id1", PastelID: "id2"}))
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id1", PastelID: "id3"}))
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id1", PastelID: "id4"}))
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id1", PastelID: "id5"}))
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art2_id1", PastelID: "id6"}))
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art2_id1", PastelID: "id7"}))
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art1_id2", PastelID: "id7"}))
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art2_id2", PastelID: "id8"}))
-	ts.Nil(ts.ops.WriteArtLike(ts.ctx, ArtLike{ArtID: "art2_id2", PastelID: "id9"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art1_id1", PastelID: "id2"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art1_id1", PastelID: "id3"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art1_id1", PastelID: "id4"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art1_id1", PastelID: "id5"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art2_id1", PastelID: "id6"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art2_id1", PastelID: "id7"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art1_id2", PastelID: "id7"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art2_id2", PastelID: "id8"}))
+	ts.Nil(ts.ops.WriteArtLike(ts.ctx, userdata.ArtLike{ArtID: "art2_id2", PastelID: "id9"}))
 }
 
 func (ts *testSuite) SetupSuite() {
@@ -402,23 +402,23 @@ func (ts *testSuite) TestDatabaseOps_ReadUserData() {
 
 func (ts *testSuite) TestDatabaseOps_WriteArtInfo() {
 	tests := []struct {
-		data    ArtInfo
+		data    userdata.ArtInfo
 		wantErr bool
 	}{
 		{
-			data:    ArtInfo{ArtID: "art1_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 5},
+			data:    userdata.ArtInfo{ArtID: "art1_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 5},
 			wantErr: false,
 		},
 		{
-			data:    ArtInfo{ArtID: "art1_rty", ArtistPastelID: "rty", Copies: 2, CreatedTimestamp: 7},
+			data:    userdata.ArtInfo{ArtID: "art1_rty", ArtistPastelID: "rty", Copies: 2, CreatedTimestamp: 7},
 			wantErr: false,
 		},
 		{
-			data:    ArtInfo{ArtID: "art1_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 10},
+			data:    userdata.ArtInfo{ArtID: "art1_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 10},
 			wantErr: true,
 		},
 		{
-			data:    ArtInfo{ArtID: "art2_rty", ArtistPastelID: "dfkd-skfjsdk", Copies: 2, CreatedTimestamp: 11},
+			data:    userdata.ArtInfo{ArtID: "art2_rty", ArtistPastelID: "dfkd-skfjsdk", Copies: 2, CreatedTimestamp: 11},
 			wantErr: true,
 		},
 	}
@@ -432,31 +432,31 @@ func (ts *testSuite) TestDatabaseOps_WriteArtInfo() {
 }
 
 func (ts *testSuite) TestDatabaseOps_WriteArtInstanceInfo() {
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art10_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 1}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art10_qwe", ArtistPastelID: "qwe", Copies: 2, CreatedTimestamp: 1}))
 
 	askingPrice := 20.0
 	tests := []struct {
-		data    ArtInstanceInfo
+		data    userdata.ArtInstanceInfo
 		wantErr bool
 	}{
 		{
-			data:    ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0, AskingPrice: &askingPrice},
+			data:    userdata.ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0, AskingPrice: &askingPrice},
 			wantErr: false,
 		},
 		{
-			data:    ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0, AskingPrice: &askingPrice},
+			data:    userdata.ArtInstanceInfo{InstanceID: "ins1_art10_qwe", ArtID: "art10_qwe", Price: 10.0, AskingPrice: &askingPrice},
 			wantErr: true,
 		},
 		{
-			data:    ArtInstanceInfo{InstanceID: "ins2_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
+			data:    userdata.ArtInstanceInfo{InstanceID: "ins2_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
 			wantErr: false,
 		},
 		{
-			data:    ArtInstanceInfo{InstanceID: "ins3_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
+			data:    userdata.ArtInstanceInfo{InstanceID: "ins3_art10_qwe", ArtID: "art10_qwe", Price: 10.0},
 			wantErr: true,
 		},
 		{
-			data:    ArtInstanceInfo{InstanceID: "ins4_art10_qwe", ArtID: "art10_qwe_fff", Price: 10.0},
+			data:    userdata.ArtInstanceInfo{InstanceID: "ins4_art10_qwe", ArtID: "art10_qwe_fff", Price: 10.0},
 			wantErr: true,
 		},
 	}
@@ -484,34 +484,34 @@ func (ts *testSuite) TestDatabaseOps_WriteArtInstanceInfo() {
 func (ts *testSuite) TestDatabaseOps_WriteArtLike() {
 	userDataFrame.ArtistPastelID = "like"
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art1_like", ArtistPastelID: "like", Copies: 2, CreatedTimestamp: 12}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art1_like", ArtistPastelID: "like", Copies: 2, CreatedTimestamp: 12}))
 
 	tests := []struct {
-		data    ArtLike
+		data    userdata.ArtLike
 		wantErr bool
 	}{
 		{
-			data:    ArtLike{ArtID: "art1_like", PastelID: "id1"},
+			data:    userdata.ArtLike{ArtID: "art1_like", PastelID: "id1"},
 			wantErr: false,
 		},
 		{
-			data:    ArtLike{ArtID: "art1_like", PastelID: "id2"},
+			data:    userdata.ArtLike{ArtID: "art1_like", PastelID: "id2"},
 			wantErr: false,
 		},
 		{
-			data:    ArtLike{ArtID: "art1_like", PastelID: "id3"},
+			data:    userdata.ArtLike{ArtID: "art1_like", PastelID: "id3"},
 			wantErr: false,
 		},
 		{
-			data:    ArtLike{ArtID: "art1_like", PastelID: "id3"},
+			data:    userdata.ArtLike{ArtID: "art1_like", PastelID: "id3"},
 			wantErr: true,
 		},
 		{
-			data:    ArtLike{ArtID: "art1_like_213", PastelID: "id3"},
+			data:    userdata.ArtLike{ArtID: "art1_like_213", PastelID: "id3"},
 			wantErr: true,
 		},
 		{
-			data:    ArtLike{ArtID: "art1_like", PastelID: "id3231"},
+			data:    userdata.ArtLike{ArtID: "art1_like", PastelID: "id3231"},
 			wantErr: true,
 		},
 	}
@@ -530,19 +530,19 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 		ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 	}
 
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_transaction_0", ArtistPastelID: "id_transaction_0", Copies: 1, CreatedTimestamp: 15}))
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_transaction_1", ArtistPastelID: "id_transaction_1", Copies: 2, CreatedTimestamp: 15}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art0_id_transaction_0", ArtistPastelID: "id_transaction_0", Copies: 1, CreatedTimestamp: 15}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art0_id_transaction_1", ArtistPastelID: "id_transaction_1", Copies: 2, CreatedTimestamp: 15}))
 
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_transaction_0", ArtID: "art0_id_transaction_0", Price: 10.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_transaction_1", ArtID: "art0_id_transaction_1", Price: 10.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_transaction_1", ArtID: "art0_id_transaction_1", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_transaction_0", ArtID: "art0_id_transaction_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_transaction_1", ArtID: "art0_id_transaction_1", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art0_id_transaction_1", ArtID: "art0_id_transaction_1", Price: 10.0}))
 
 	tests := []struct {
-		data    ArtTransaction
+		data    userdata.ArtTransaction
 		wantErr bool
 	}{
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_0",
 				InstanceID:     "ins0_art0_id_transaction_0",
 				Timestamp:      100,
@@ -553,7 +553,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: false,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_1",
 				InstanceID:     "ins0_art0_id_transaction_1",
 				Timestamp:      101,
@@ -564,7 +564,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: false,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_2",
 				InstanceID:     "ins1_art0_id_transaction_1",
 				Timestamp:      102,
@@ -575,7 +575,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: false,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_0",
 				InstanceID:     "ins1_art0_id_transaction_1",
 				Timestamp:      103,
@@ -586,7 +586,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: true,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_3",
 				InstanceID:     "ins1_art0_id_transaction_1",
 				Timestamp:      104,
@@ -597,7 +597,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: true,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_4",
 				InstanceID:     "sdasd",
 				Timestamp:      105,
@@ -608,7 +608,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: true,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_4",
 				InstanceID:     "ins1_art0_id_transaction_1",
 				Timestamp:      106,
@@ -619,7 +619,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: true,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_4",
 				InstanceID:     "ins1_art0_id_transaction_1",
 				Timestamp:      105,
@@ -630,7 +630,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: true,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_4",
 				InstanceID:     "ins1_art0_id_transaction_1",
 				Timestamp:      105,
@@ -641,7 +641,7 @@ func (ts *testSuite) TestDatabaseOps_WriteTransaction() {
 			wantErr: false,
 		},
 		{
-			data: ArtTransaction{
+			data: userdata.ArtTransaction{
 				TransactionID:  "test_trans_5",
 				InstanceID:     "ins1_art0_id_transaction_1",
 				Timestamp:      106,
@@ -668,14 +668,14 @@ func (ts *testSuite) TestDatabaseOps_WriteUserFollow() {
 	}
 
 	tests := []struct {
-		data    UserFollow
+		data    userdata.UserFollow
 		wantErr bool
 	}{
-		{data: UserFollow{FollowerPastelID: "id_write_follow_0", FolloweePastelID: "id_write_follow_1"}, wantErr: false},
-		{data: UserFollow{FollowerPastelID: "id_write_follow_0", FolloweePastelID: "id_write_follow_1"}, wantErr: true},
-		{data: UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_1"}, wantErr: true},
-		{data: UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_0"}, wantErr: false},
-		{data: UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_2"}, wantErr: false},
+		{data: userdata.UserFollow{FollowerPastelID: "id_write_follow_0", FolloweePastelID: "id_write_follow_1"}, wantErr: false},
+		{data: userdata.UserFollow{FollowerPastelID: "id_write_follow_0", FolloweePastelID: "id_write_follow_1"}, wantErr: true},
+		{data: userdata.UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_1"}, wantErr: true},
+		{data: userdata.UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_0"}, wantErr: false},
+		{data: userdata.UserFollow{FollowerPastelID: "id_write_follow_1", FolloweePastelID: "id_write_follow_2"}, wantErr: false},
 	}
 	for i, tt := range tests {
 		ts.T().Run(fmt.Sprintf("TestDatabaseOps_WriteUserFollow-%d", i), func(t *testing.T) {
@@ -970,13 +970,13 @@ func (ts *testSuite) TestDatabaseOps_GetExistingNftCopies() {
 func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 	tests := []struct {
 		artistPastelID string
-		want           []NftCreatedByArtistQueryResult
+		want           []userdata.NftCreatedByArtistQueryResult
 		wantErr        bool
 	}{
 		{
 			artistPastelID: "id1",
-			want: []NftCreatedByArtistQueryResult{
-				NftCreatedByArtistQueryResult{
+			want: []userdata.NftCreatedByArtistQueryResult{
+				userdata.NftCreatedByArtistQueryResult{
 					InstanceID:            "ins1_art1_id1",
 					ArtID:                 "art1_id1",
 					Copies:                2,
@@ -985,7 +985,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 					RarenessScore:         0.9,
 					RoyaltyRatePercentage: 10.0,
 				},
-				NftCreatedByArtistQueryResult{
+				userdata.NftCreatedByArtistQueryResult{
 					InstanceID:            "ins1_art2_id1",
 					ArtID:                 "art2_id1",
 					Copies:                2,
@@ -994,7 +994,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 					RarenessScore:         0.8,
 					RoyaltyRatePercentage: 9.0,
 				},
-				NftCreatedByArtistQueryResult{
+				userdata.NftCreatedByArtistQueryResult{
 					InstanceID:            "ins2_art1_id1",
 					ArtID:                 "art1_id1",
 					Copies:                2,
@@ -1003,7 +1003,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 					RarenessScore:         0.9,
 					RoyaltyRatePercentage: 10.0,
 				},
-				NftCreatedByArtistQueryResult{
+				userdata.NftCreatedByArtistQueryResult{
 					InstanceID:            "ins2_art2_id1",
 					ArtID:                 "art2_id1",
 					Copies:                2,
@@ -1017,8 +1017,8 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 		},
 		{
 			artistPastelID: "id2",
-			want: []NftCreatedByArtistQueryResult{
-				NftCreatedByArtistQueryResult{
+			want: []userdata.NftCreatedByArtistQueryResult{
+				userdata.NftCreatedByArtistQueryResult{
 					InstanceID:            "ins1_art1_id2",
 					ArtID:                 "art1_id2",
 					Copies:                1,
@@ -1027,7 +1027,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 					RarenessScore:         0.7,
 					RoyaltyRatePercentage: 8.0,
 				},
-				NftCreatedByArtistQueryResult{
+				userdata.NftCreatedByArtistQueryResult{
 					InstanceID:            "ins1_art2_id2",
 					ArtID:                 "art2_id2",
 					Copies:                2,
@@ -1036,7 +1036,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 					RarenessScore:         0.6,
 					RoyaltyRatePercentage: 7.0,
 				},
-				NftCreatedByArtistQueryResult{
+				userdata.NftCreatedByArtistQueryResult{
 					InstanceID:            "ins2_art2_id2",
 					ArtID:                 "art2_id2",
 					Copies:                2,
@@ -1050,7 +1050,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 		},
 		{
 			artistPastelID: "id3",
-			want:           []NftCreatedByArtistQueryResult{},
+			want:           []userdata.NftCreatedByArtistQueryResult{},
 			wantErr:        false,
 		},
 		{
@@ -1076,23 +1076,23 @@ func (ts *testSuite) TestDatabaseOps_GetNftCreatedByArtist() {
 func (ts *testSuite) TestDatabaseOps_GetNftForSaleByArtist() {
 	tests := []struct {
 		artistPastelID string
-		want           []NftForSaleByArtistQueryResult
+		want           []userdata.NftForSaleByArtistQueryResult
 		wantErr        bool
 	}{
 		{
 			artistPastelID: "id1",
-			want: []NftForSaleByArtistQueryResult{
-				NftForSaleByArtistQueryResult{
+			want: []userdata.NftForSaleByArtistQueryResult{
+				userdata.NftForSaleByArtistQueryResult{
 					InstanceID: "ins1_art2_id1",
 					ArtID:      "art2_id1",
 					Price:      30.0,
 				},
-				NftForSaleByArtistQueryResult{
+				userdata.NftForSaleByArtistQueryResult{
 					InstanceID: "ins2_art1_id1",
 					ArtID:      "art1_id1",
 					Price:      20.0,
 				},
-				NftForSaleByArtistQueryResult{
+				userdata.NftForSaleByArtistQueryResult{
 					InstanceID: "ins2_art2_id1",
 					ArtID:      "art2_id1",
 					Price:      40.0,
@@ -1102,8 +1102,8 @@ func (ts *testSuite) TestDatabaseOps_GetNftForSaleByArtist() {
 		},
 		{
 			artistPastelID: "id2",
-			want: []NftForSaleByArtistQueryResult{
-				NftForSaleByArtistQueryResult{
+			want: []userdata.NftForSaleByArtistQueryResult{
+				userdata.NftForSaleByArtistQueryResult{
 					InstanceID: "ins1_art2_id2",
 					ArtID:      "art2_id2",
 					Price:      60.0,
@@ -1118,7 +1118,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftForSaleByArtist() {
 		},
 		{
 			artistPastelID: "id10",
-			want:           []NftForSaleByArtistQueryResult{},
+			want:           []userdata.NftForSaleByArtistQueryResult{},
 			wantErr:        false,
 		},
 	}
@@ -1139,12 +1139,12 @@ func (ts *testSuite) TestDatabaseOps_GetNftForSaleByArtist() {
 func (ts *testSuite) TestDatabaseOps_GetNftOwnedByUser() {
 	tests := []struct {
 		pastelID string
-		want     []NftOwnedByUserQueryResult
+		want     []userdata.NftOwnedByUserQueryResult
 		wantErr  bool
 	}{
 		{
 			pastelID: "id10",
-			want:     []NftOwnedByUserQueryResult{},
+			want:     []userdata.NftOwnedByUserQueryResult{},
 			wantErr:  false,
 		},
 		{
@@ -1154,12 +1154,12 @@ func (ts *testSuite) TestDatabaseOps_GetNftOwnedByUser() {
 		},
 		{
 			pastelID: "id7",
-			want: []NftOwnedByUserQueryResult{
-				NftOwnedByUserQueryResult{
+			want: []userdata.NftOwnedByUserQueryResult{
+				userdata.NftOwnedByUserQueryResult{
 					ArtID: "art1_id1",
 					Count: 1,
 				},
-				NftOwnedByUserQueryResult{
+				userdata.NftOwnedByUserQueryResult{
 					ArtID: "art2_id2",
 					Count: 1,
 				},
@@ -1168,16 +1168,16 @@ func (ts *testSuite) TestDatabaseOps_GetNftOwnedByUser() {
 		},
 		{
 			pastelID: "id1",
-			want: []NftOwnedByUserQueryResult{
-				NftOwnedByUserQueryResult{
+			want: []userdata.NftOwnedByUserQueryResult{
+				userdata.NftOwnedByUserQueryResult{
 					ArtID: "art1_id1",
 					Count: 1,
 				},
-				NftOwnedByUserQueryResult{
+				userdata.NftOwnedByUserQueryResult{
 					ArtID: "art1_id2",
 					Count: 1,
 				},
-				NftOwnedByUserQueryResult{
+				userdata.NftOwnedByUserQueryResult{
 					ArtID: "art2_id1",
 					Count: 2,
 				},
@@ -1186,8 +1186,8 @@ func (ts *testSuite) TestDatabaseOps_GetNftOwnedByUser() {
 		},
 		{
 			pastelID: "id2",
-			want: []NftOwnedByUserQueryResult{
-				NftOwnedByUserQueryResult{
+			want: []userdata.NftOwnedByUserQueryResult{
+				userdata.NftOwnedByUserQueryResult{
 					ArtID: "art2_id2",
 					Count: 1,
 				},
@@ -1212,22 +1212,22 @@ func (ts *testSuite) TestDatabaseOps_GetNftOwnedByUser() {
 func (ts *testSuite) TestDatabaseOps_GetNftSoldByArtID() {
 	tests := []struct {
 		pastelID string
-		want     NftSoldByArtIDQueryResult
+		want     userdata.NftSoldByArtIDQueryResult
 		wantErr  bool
 	}{
 		{
 			pastelID: "dadsa",
-			want:     NftSoldByArtIDQueryResult{},
+			want:     userdata.NftSoldByArtIDQueryResult{},
 			wantErr:  false,
 		},
 		{
 			pastelID: "",
-			want:     NftSoldByArtIDQueryResult{},
+			want:     userdata.NftSoldByArtIDQueryResult{},
 			wantErr:  true,
 		},
 		{
 			pastelID: "art1_id1",
-			want: NftSoldByArtIDQueryResult{
+			want: userdata.NftSoldByArtIDQueryResult{
 				TotalCopies: 2,
 				SoldCopies:  1,
 			},
@@ -1235,7 +1235,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftSoldByArtID() {
 		},
 		{
 			pastelID: "art2_id1",
-			want: NftSoldByArtIDQueryResult{
+			want: userdata.NftSoldByArtIDQueryResult{
 				TotalCopies: 2,
 				SoldCopies:  0,
 			},
@@ -1243,7 +1243,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftSoldByArtID() {
 		},
 		{
 			pastelID: "art1_id2",
-			want: NftSoldByArtIDQueryResult{
+			want: userdata.NftSoldByArtIDQueryResult{
 				TotalCopies: 1,
 				SoldCopies:  1,
 			},
@@ -1251,7 +1251,7 @@ func (ts *testSuite) TestDatabaseOps_GetNftSoldByArtID() {
 		},
 		{
 			pastelID: "art2_id2",
-			want: NftSoldByArtIDQueryResult{
+			want: userdata.NftSoldByArtIDQueryResult{
 				TotalCopies: 2,
 				SoldCopies:  1,
 			},
@@ -1274,66 +1274,66 @@ func (ts *testSuite) TestDatabaseOps_GetNftSoldByArtID() {
 
 func (ts *testSuite) TestDatabaseOps_GetUniqueNftByUser() {
 	tests := []struct {
-		query   UniqueNftByUserQuery
-		want    []ArtInfo
+		query   userdata.UniqueNftByUserQuery
+		want    []userdata.ArtInfo
 		wantErr bool
 	}{
 		{
-			query: UniqueNftByUserQuery{
+			query: userdata.UniqueNftByUserQuery{
 				ArtistPastelID: "id1",
 				LimitTimestamp: 7,
 			},
-			want: []ArtInfo{
-				ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0},
+			want: []userdata.ArtInfo{
+				userdata.ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0},
 			},
 			wantErr: false,
 		},
 		{
-			query: UniqueNftByUserQuery{
+			query: userdata.UniqueNftByUserQuery{
 				ArtistPastelID: "id1",
 				LimitTimestamp: 1,
 			},
-			want: []ArtInfo{
-				ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0},
-				ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5, GreenNft: true, RarenessScore: 0.9, RoyaltyRatePercentage: 10.0},
+			want: []userdata.ArtInfo{
+				userdata.ArtInfo{ArtID: "art2_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 10, GreenNft: false, RarenessScore: 0.8, RoyaltyRatePercentage: 9.0},
+				userdata.ArtInfo{ArtID: "art1_id1", ArtistPastelID: "id1", Copies: 2, CreatedTimestamp: 5, GreenNft: true, RarenessScore: 0.9, RoyaltyRatePercentage: 10.0},
 			},
 			wantErr: false,
 		},
 		{
-			query: UniqueNftByUserQuery{
+			query: userdata.UniqueNftByUserQuery{
 				ArtistPastelID: "id1",
 				LimitTimestamp: 11,
 			},
-			want:    []ArtInfo{},
+			want:    []userdata.ArtInfo{},
 			wantErr: false,
 		},
 		{
-			query: UniqueNftByUserQuery{
+			query: userdata.UniqueNftByUserQuery{
 				ArtistPastelID: "id2",
 				LimitTimestamp: 11,
 			},
-			want: []ArtInfo{
-				ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0},
-				ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15, GreenNft: true, RarenessScore: 0.7, RoyaltyRatePercentage: 8.0},
+			want: []userdata.ArtInfo{
+				userdata.ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0},
+				userdata.ArtInfo{ArtID: "art1_id2", ArtistPastelID: "id2", Copies: 1, CreatedTimestamp: 15, GreenNft: true, RarenessScore: 0.7, RoyaltyRatePercentage: 8.0},
 			},
 			wantErr: false,
 		},
 		{
-			query: UniqueNftByUserQuery{
+			query: userdata.UniqueNftByUserQuery{
 				ArtistPastelID: "id2",
 				LimitTimestamp: 17,
 			},
-			want: []ArtInfo{
-				ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0},
+			want: []userdata.ArtInfo{
+				userdata.ArtInfo{ArtID: "art2_id2", ArtistPastelID: "id2", Copies: 2, CreatedTimestamp: 20, GreenNft: false, RarenessScore: 0.6, RoyaltyRatePercentage: 7.0},
 			},
 			wantErr: false,
 		},
 		{
-			query: UniqueNftByUserQuery{
+			query: userdata.UniqueNftByUserQuery{
 				ArtistPastelID: "id2",
 				LimitTimestamp: 30,
 			},
-			want:    []ArtInfo{},
+			want:    []userdata.ArtInfo{},
 			wantErr: false,
 		},
 	}
@@ -1406,18 +1406,18 @@ func (ts *testSuite) TestOps_UpdateAskingPrice() {
 	userDataFrame.ArtistPastelID = "id_ap_0"
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_ap_0", ArtistPastelID: "id_ap_0", Copies: 2, CreatedTimestamp: 15}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art0_id_ap_0", ArtistPastelID: "id_ap_0", Copies: 2, CreatedTimestamp: 15}))
 
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_ap_0", ArtID: "art0_id_ap_0", OwnerPastelID: "ble", Price: 10.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_ap_0", ArtID: "art0_id_ap_0", OwnerPastelID: "ble", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_ap_0", ArtID: "art0_id_ap_0", OwnerPastelID: "ble", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art0_id_ap_0", ArtID: "art0_id_ap_0", OwnerPastelID: "ble", Price: 10.0}))
 
 	tests := []struct {
-		data          AskingPriceUpdateRequest
+		data          userdata.AskingPriceUpdateRequest
 		ownerPastelID string
 		wantErr       bool
 	}{
 		{
-			data: AskingPriceUpdateRequest{
+			data: userdata.AskingPriceUpdateRequest{
 				InstanceID:  "ins0_art0_id_ap_0",
 				AskingPrice: 10.0,
 			},
@@ -1425,7 +1425,7 @@ func (ts *testSuite) TestOps_UpdateAskingPrice() {
 			wantErr:       false,
 		},
 		{
-			data: AskingPriceUpdateRequest{
+			data: userdata.AskingPriceUpdateRequest{
 				InstanceID:  "ins1_art0_id_ap_0",
 				AskingPrice: 20.0,
 			},
@@ -1451,37 +1451,37 @@ func (ts *testSuite) TestOps_GetArtInstanceInfo() {
 	userDataFrame.ArtistPastelID = "id_ai_0"
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_ai_0", ArtistPastelID: "id_ai_0", Copies: 2, CreatedTimestamp: 150}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art0_id_ai_0", ArtistPastelID: "id_ai_0", Copies: 2, CreatedTimestamp: 150}))
 
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_ai_0", ArtID: "art0_id_ai_0", Price: 10.0}))
-	ts.Nil(ts.ops.UpdateAskingPrice(ts.ctx, AskingPriceUpdateRequest{InstanceID: "ins0_art0_id_ai_0", AskingPrice: 20.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_ai_0", ArtID: "art0_id_ai_0", Price: 10.0}))
+	ts.Nil(ts.ops.UpdateAskingPrice(ts.ctx, userdata.AskingPriceUpdateRequest{InstanceID: "ins0_art0_id_ai_0", AskingPrice: 20.0}))
 
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_ai_0", ArtID: "art0_id_ai_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art0_id_ai_0", ArtID: "art0_id_ai_0", Price: 10.0}))
 
 	price20 := 20.0
 	tests := []struct {
 		instanceID string
-		want       ArtInstanceInfo
+		want       userdata.ArtInstanceInfo
 		wantErr    bool
 	}{
 		{
 			instanceID: "231dsq",
-			want:       ArtInstanceInfo{},
+			want:       userdata.ArtInstanceInfo{},
 			wantErr:    true,
 		},
 		{
 			instanceID: "",
-			want:       ArtInstanceInfo{},
+			want:       userdata.ArtInstanceInfo{},
 			wantErr:    true,
 		},
 		{
 			instanceID: "ins0_art0_id_ai_0",
-			want:       ArtInstanceInfo{InstanceID: "ins0_art0_id_ai_0", ArtID: "art0_id_ai_0", OwnerPastelID: "id_ai_0", Price: 10.0, AskingPrice: &price20},
+			want:       userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_ai_0", ArtID: "art0_id_ai_0", OwnerPastelID: "id_ai_0", Price: 10.0, AskingPrice: &price20},
 			wantErr:    false,
 		},
 		{
 			instanceID: "ins1_art0_id_ai_0",
-			want:       ArtInstanceInfo{InstanceID: "ins1_art0_id_ai_0", ArtID: "art0_id_ai_0", OwnerPastelID: "id_ai_0", Price: 10.0, AskingPrice: nil},
+			want:       userdata.ArtInstanceInfo{InstanceID: "ins1_art0_id_ai_0", ArtID: "art0_id_ai_0", OwnerPastelID: "id_ai_0", Price: 10.0, AskingPrice: nil},
 			wantErr:    false,
 		},
 	}
@@ -1503,46 +1503,46 @@ func (ts *testSuite) TestOps_GetAuctionInfo() {
 	userDataFrame.ArtistPastelID = "id_gai_0"
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_gai_0", ArtistPastelID: "id_gai_0", Copies: 2, CreatedTimestamp: 150}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art0_id_gai_0", ArtistPastelID: "id_gai_0", Copies: 2, CreatedTimestamp: 150}))
 
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_gai_0", ArtID: "art0_id_gai_0", Price: 10.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_gai_0", ArtID: "art0_id_gai_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_gai_0", ArtID: "art0_id_gai_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art0_id_gai_0", ArtID: "art0_id_gai_0", Price: 10.0}))
 
 	price14 := float64(14.0)
 	price15 := float64(15.0)
 
 	tests := []struct {
-		newreq     NewArtAuctionRequest
-		bidreqs    []ArtPlaceBidRequest
+		newreq     userdata.NewArtAuctionRequest
+		bidreqs    []userdata.ArtPlaceBidRequest
 		endAuction bool
-		want       ArtAuctionInfo
+		want       userdata.ArtAuctionInfo
 		wantErr    bool
 	}{
 		{
-			newreq: NewArtAuctionRequest{
+			newreq: userdata.NewArtAuctionRequest{
 				InstanceID:  "ins0_art0_id_gai_0",
 				LowestPrice: 10.0,
 			},
-			bidreqs: []ArtPlaceBidRequest{
-				ArtPlaceBidRequest{
+			bidreqs: []userdata.ArtPlaceBidRequest{
+				userdata.ArtPlaceBidRequest{
 					PastelID: "id3",
 					BidPrice: 14.0,
 				},
-				ArtPlaceBidRequest{
+				userdata.ArtPlaceBidRequest{
 					PastelID: "id1",
 					BidPrice: 12.0,
 				},
-				ArtPlaceBidRequest{
+				userdata.ArtPlaceBidRequest{
 					PastelID: "id2",
 					BidPrice: 13.0,
 				},
-				ArtPlaceBidRequest{
+				userdata.ArtPlaceBidRequest{
 					PastelID: "id4",
 					BidPrice: 15.0,
 				},
 			},
 			endAuction: true,
-			want: ArtAuctionInfo{
+			want: userdata.ArtAuctionInfo{
 				InstanceID:  "ins0_art0_id_gai_0",
 				LowestPrice: 10.0,
 				FirstPrice:  &price15,
@@ -1551,18 +1551,18 @@ func (ts *testSuite) TestOps_GetAuctionInfo() {
 			wantErr: false,
 		},
 		{
-			newreq: NewArtAuctionRequest{
+			newreq: userdata.NewArtAuctionRequest{
 				InstanceID:  "ins1_art0_id_gai_0",
 				LowestPrice: 10.0,
 			},
-			bidreqs: []ArtPlaceBidRequest{
-				ArtPlaceBidRequest{
+			bidreqs: []userdata.ArtPlaceBidRequest{
+				userdata.ArtPlaceBidRequest{
 					PastelID: "id3",
 					BidPrice: 14.0,
 				},
 			},
 			endAuction: false,
-			want: ArtAuctionInfo{
+			want: userdata.ArtAuctionInfo{
 				InstanceID:  "ins1_art0_id_gai_0",
 				LowestPrice: 10.0,
 				FirstPrice:  &price14,
@@ -1613,22 +1613,22 @@ func (ts *testSuite) TestOps_NewArtAuction() {
 	userDataFrame.ArtistPastelID = "id_naa_0"
 	ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
 
-	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, ArtInfo{ArtID: "art0_id_naa_0", ArtistPastelID: "id_naa_0", Copies: 2, CreatedTimestamp: 150}))
+	ts.Nil(ts.ops.WriteArtInfo(ts.ctx, userdata.ArtInfo{ArtID: "art0_id_naa_0", ArtistPastelID: "id_naa_0", Copies: 2, CreatedTimestamp: 150}))
 
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins0_art0_id_naa_0", ArtID: "art0_id_naa_0", Price: 10.0}))
-	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, ArtInstanceInfo{InstanceID: "ins1_art0_id_naa_0", ArtID: "art0_id_naa_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_naa_0", ArtID: "art0_id_naa_0", Price: 10.0}))
+	ts.Nil(ts.ops.WriteArtInstanceInfo(ts.ctx, userdata.ArtInstanceInfo{InstanceID: "ins1_art0_id_naa_0", ArtID: "art0_id_naa_0", Price: 10.0}))
 
 	tests := []struct {
-		data    NewArtAuctionRequest
-		info    ArtAuctionInfo
+		data    userdata.NewArtAuctionRequest
+		info    userdata.ArtAuctionInfo
 		wantErr bool
 	}{
 		{
-			data: NewArtAuctionRequest{
+			data: userdata.NewArtAuctionRequest{
 				InstanceID:  "ins0_art0_id_naa_0",
 				LowestPrice: 10.0,
 			},
-			info: ArtAuctionInfo{
+			info: userdata.ArtAuctionInfo{
 				InstanceID:  "ins0_art0_id_naa_0",
 				LowestPrice: 10.0,
 				IsOpen:      true,
@@ -1636,11 +1636,11 @@ func (ts *testSuite) TestOps_NewArtAuction() {
 			wantErr: false,
 		},
 		{
-			data: NewArtAuctionRequest{
+			data: userdata.NewArtAuctionRequest{
 				InstanceID:  "ins1_art0_id_naa_0",
 				LowestPrice: 10.0,
 			},
-			info: ArtAuctionInfo{
+			info: userdata.ArtAuctionInfo{
 				InstanceID:  "ins1_art0_id_naa_0",
 				LowestPrice: 10.0,
 				IsOpen:      true,
@@ -1648,11 +1648,11 @@ func (ts *testSuite) TestOps_NewArtAuction() {
 			wantErr: false,
 		},
 		{
-			data: NewArtAuctionRequest{
+			data: userdata.NewArtAuctionRequest{
 				InstanceID:  "12312",
 				LowestPrice: 10.0,
 			},
-			info:    ArtAuctionInfo{},
+			info:    userdata.ArtAuctionInfo{},
 			wantErr: true,
 		},
 	}
@@ -1687,11 +1687,11 @@ func (ts *testSuite) TestOps_NewArtAuction() {
 func (ts *testSuite) TestOps_WriteSNActivity() {
 	prefix := "TestOps_WriteSNActivity"
 	tests := []struct {
-		data    SNActivityInfo
+		data    userdata.SNActivityInfo
 		wantErr bool
 	}{
 		{
-			data: SNActivityInfo{
+			data: userdata.SNActivityInfo{
 				Query:        fmt.Sprintf("%s-1", prefix),
 				ActivityType: SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id1",
@@ -1699,7 +1699,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 			wantErr: false,
 		},
 		{
-			data: SNActivityInfo{
+			data: userdata.SNActivityInfo{
 				Query:        fmt.Sprintf("%s-2", prefix),
 				ActivityType: SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id1",
@@ -1707,7 +1707,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 			wantErr: false,
 		},
 		{
-			data: SNActivityInfo{
+			data: userdata.SNActivityInfo{
 				Query:        fmt.Sprintf("%s-2", prefix),
 				ActivityType: SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id2",
@@ -1715,7 +1715,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 			wantErr: false,
 		},
 		{
-			data: SNActivityInfo{
+			data: userdata.SNActivityInfo{
 				Query:        fmt.Sprintf("%s-2", prefix),
 				ActivityType: SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id2",
@@ -1723,7 +1723,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 			wantErr: false,
 		},
 		{
-			data:    SNActivityInfo{},
+			data:    userdata.SNActivityInfo{},
 			wantErr: true,
 		},
 	}
@@ -1740,7 +1740,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	prefix := "TestOps_GetTopSNActivities"
 
 	for i := 0; i < 5; i++ {
-		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-1", prefix),
 			ActivityType: SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id1",
@@ -1749,7 +1749,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}
 
 	for i := 0; i < 5; i++ {
-		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-1", prefix),
 			ActivityType: SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id2",
@@ -1758,7 +1758,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}
 
 	for i := 0; i < 6; i++ {
-		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-2", prefix),
 			ActivityType: SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id1",
@@ -1767,7 +1767,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}
 
 	for i := 0; i < 6; i++ {
-		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-2", prefix),
 			ActivityType: SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id2",
@@ -1776,7 +1776,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}
 
 	for i := 0; i < 4; i++ {
-		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-3", prefix),
 			ActivityType: SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id1",
@@ -1785,7 +1785,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}
 
 	for i := 0; i < 4; i++ {
-		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-3", prefix),
 			ActivityType: SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id2",
@@ -1794,7 +1794,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}
 
 	for i := 0; i < 5; i++ {
-		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-1", prefix),
 			ActivityType: SNActivityNftSearch,
 			SNPastelID:   "sn_id1",
@@ -1803,7 +1803,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}
 
 	for i := 0; i < 6; i++ {
-		err := ts.ops.WriteSNActivity(ts.ctx, SNActivityInfo{
+		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-2", prefix),
 			ActivityType: SNActivityNftSearch,
 			SNPastelID:   "sn_id1",
@@ -1812,24 +1812,24 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}
 
 	tests := []struct {
-		query   SNTopActivityRequest
-		want    []SNActivityInfo
+		query   userdata.SNTopActivityRequest
+		want    []userdata.SNActivityInfo
 		wantErr bool
 	}{
 		{
-			query: SNTopActivityRequest{
+			query: userdata.SNTopActivityRequest{
 				ActivityType: SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id1",
 				NRecords:     2,
 			},
-			want: []SNActivityInfo{
-				SNActivityInfo{
+			want: []userdata.SNActivityInfo{
+				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
 					ActivityType: SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id1",
 					Cnt:          6,
 				},
-				SNActivityInfo{
+				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
 					ActivityType: SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id1",
@@ -1839,25 +1839,25 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 			wantErr: false,
 		},
 		{
-			query: SNTopActivityRequest{
+			query: userdata.SNTopActivityRequest{
 				ActivityType: SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id2",
 				NRecords:     3,
 			},
-			want: []SNActivityInfo{
-				SNActivityInfo{
+			want: []userdata.SNActivityInfo{
+				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
 					ActivityType: SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id2",
 					Cnt:          6,
 				},
-				SNActivityInfo{
+				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
 					ActivityType: SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id2",
 					Cnt:          5,
 				},
-				SNActivityInfo{
+				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-3", prefix),
 					ActivityType: SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id2",
@@ -1867,19 +1867,19 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 			wantErr: false,
 		},
 		{
-			query: SNTopActivityRequest{
+			query: userdata.SNTopActivityRequest{
 				ActivityType: SNActivityNftSearch,
 				SNPastelID:   "sn_id1",
 				NRecords:     2,
 			},
-			want: []SNActivityInfo{
-				SNActivityInfo{
+			want: []userdata.SNActivityInfo{
+				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
 					ActivityType: SNActivityNftSearch,
 					SNPastelID:   "sn_id1",
 					Cnt:          6,
 				},
-				SNActivityInfo{
+				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
 					ActivityType: SNActivityNftSearch,
 					SNPastelID:   "sn_id1",
