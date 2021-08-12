@@ -162,7 +162,7 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 	}
 }
 
-func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Ticket {
+func fromDownloadPayload(payload *artworks.ArtworkDownloadPayload) *artworkdownload.Ticket {
 	return &artworkdownload.Ticket{
 		Txid:               payload.Txid,
 		PastelID:           payload.Pid,

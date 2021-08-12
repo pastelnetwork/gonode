@@ -164,6 +164,11 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		}
 	}
 
+	err = image.UpdateFormat()
+	if err != nil {
+		return errors.Errorf("failed to add image format: %w", err)
+	}
+
 	fingerAndScores, err := task.ProbeImage(ctx, image)
 	if err != nil {
 		return err

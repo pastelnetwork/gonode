@@ -99,7 +99,7 @@ func New(
 		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
 		ArtSearch:         NewArtSearchHandler(e.ArtSearch, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.ArtSearchFn),
 		ArtworkGet:        NewArtworkGetHandler(e.ArtworkGet, mux, decoder, encoder, errhandler, formatter),
-		Download:          NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.DownloadFn),
+		Download:          NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter),
 		CORS:              NewCORSHandler(),
 	}
 }
@@ -530,12 +530,11 @@ func NewDownloadHandler(
 	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
-	upgrader goahttp.Upgrader,
-	configurer goahttp.ConnConfigureFunc,
 ) http.Handler {
 	var (
-		decodeRequest = DecodeDownloadRequest(mux, decoder)
-		encodeError   = EncodeDownloadError(encoder, formatter)
+		decodeRequest  = DecodeDownloadRequest(mux, decoder)
+		encodeResponse = EncodeDownloadResponse(encoder)
+		encodeError    = EncodeDownloadError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
@@ -548,27 +547,15 @@ func NewDownloadHandler(
 			}
 			return
 		}
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(ctx)
-		v := &artworks.DownloadEndpointInput{
-			Stream: &DownloadServerStream{
-				upgrader:   upgrader,
-				configurer: configurer,
-				cancel:     cancel,
-				w:          w,
-				r:          r,
-			},
-			Payload: payload.(*artworks.DownloadPayload),
-		}
-		_, err = endpoint(ctx, v)
+		res, err := endpoint(ctx, payload)
 		if err != nil {
-			if _, ok := err.(websocket.HandshakeError); ok {
-				return
-			}
 			if err := encodeError(ctx, w, err); err != nil {
 				errhandler(ctx, w, err)
 			}
 			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
 		}
 	})
 }

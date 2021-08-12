@@ -108,13 +108,14 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			}
 			isTXIDValid := false
 			for _, t := range tradeTickets {
-				if t.ArtTXID == ttxid {
+				if t.TXID == ttxid {
 					isTXIDValid = true
-					pastelID = t.PastelID
+					pastelID = t.Ticket.PastelID
 					break
 				}
 			}
 			if !isTXIDValid {
+				log.WithContext(ctx).WithField("ttxid", ttxid).Errorf("not found trade ticket of transaction")
 				err = errors.Errorf("not found trade ticket of transaction %s", ttxid)
 				task.UpdateStatus(StatusTradeTicketMismatched)
 				return nil

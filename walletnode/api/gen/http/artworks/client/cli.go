@@ -564,7 +564,7 @@ func BuildArtworkGetPayload(artworksArtworkGetTxid string) (*artworks.ArtworkGet
 
 // BuildDownloadPayload builds the payload for the artworks download endpoint
 // from CLI flags.
-func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid string, artworksDownloadKey string) (*artworks.DownloadPayload, error) {
+func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid string, artworksDownloadKey string) (*artworks.ArtworkDownloadPayload, error) {
 	var err error
 	var txid string
 	{
@@ -597,7 +597,7 @@ func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid strin
 	{
 		key = artworksDownloadKey
 	}
-	v := &artworks.DownloadPayload{}
+	v := &artworks.ArtworkDownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key
