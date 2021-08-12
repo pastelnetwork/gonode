@@ -45,15 +45,6 @@ type ArtSearchEndpointInput struct {
 	Stream ArtSearchServerStream
 }
 
-// DownloadEndpointInput holds both the payload and the server stream of the
-// "download" method.
-type DownloadEndpointInput struct {
-	// Payload is the method payload.
-	Payload *DownloadPayload
-	// Stream is the server stream used by the "download" method to send data.
-	Stream DownloadServerStream
-}
-
 // NewEndpoints wraps the methods of the "artworks" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	// Casting service to Auther interface
@@ -168,17 +159,17 @@ func NewArtworkGetEndpoint(s Service) goa.Endpoint {
 // "download" of service "artworks".
 func NewDownloadEndpoint(s Service, authAPIKeyFn security.AuthAPIKeyFunc) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		ep := req.(*DownloadEndpointInput)
+		p := req.(*ArtworkDownloadPayload)
 		var err error
 		sc := security.APIKeyScheme{
 			Name:           "api_key",
 			Scopes:         []string{},
 			RequiredScopes: []string{},
 		}
-		ctx, err = authAPIKeyFn(ctx, ep.Payload.Key, &sc)
+		ctx, err = authAPIKeyFn(ctx, p.Key, &sc)
 		if err != nil {
 			return nil, err
 		}
-		return nil, s.Download(ctx, ep.Payload, ep.Stream)
+		return s.Download(ctx, p)
 	}
 }

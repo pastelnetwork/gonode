@@ -32,7 +32,7 @@ type Service interface {
 	// Gets the Artwork detail
 	ArtworkGet(context.Context, *ArtworkGetPayload) (res *ArtworkDetail, err error)
 	// Download registered artwork.
-	Download(context.Context, *DownloadPayload, DownloadServerStream) (err error)
+	Download(context.Context, *ArtworkDownloadPayload) (res *DownloadResult, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -81,22 +81,6 @@ type ArtSearchServerStream interface {
 type ArtSearchClientStream interface {
 	// Recv reads instances of "ArtworkSearchResult" from the stream.
 	Recv() (*ArtworkSearchResult, error)
-}
-
-// DownloadServerStream is the interface a "download" endpoint server stream
-// must satisfy.
-type DownloadServerStream interface {
-	// Send streams instances of "DownloadResult".
-	Send(*DownloadResult) error
-	// Close closes the stream.
-	Close() error
-}
-
-// DownloadClientStream is the interface a "download" endpoint client stream
-// must satisfy.
-type DownloadClientStream interface {
-	// Recv reads instances of "DownloadResult" from the stream.
-	Recv() (*DownloadResult, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -311,8 +295,9 @@ type ArtworkDetail struct {
 	ArtistWebsiteURL *string
 }
 
-// DownloadPayload is the payload type of the artworks service download method.
-type DownloadPayload struct {
+// ArtworkDownloadPayload is the payload type of the artworks service download
+// method.
+type ArtworkDownloadPayload struct {
 	// Art Registration Ticket transaction ID
 	Txid string
 	// Owner's PastelID

@@ -813,6 +813,18 @@ func EncodeArtworkGetError(encoder func(context.Context, http.ResponseWriter) go
 	}
 }
 
+// EncodeDownloadResponse returns an encoder for responses returned by the
+// artworks download endpoint.
+func EncodeDownloadResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.(*artworks.DownloadResult)
+		enc := encoder(ctx, w)
+		body := NewDownloadResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
 // DecodeDownloadRequest returns a decoder for requests sent to the artworks
 // download endpoint.
 func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
@@ -851,7 +863,7 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDownloadPayload(txid, pid, key)
+		payload := NewDownloadArtworkDownloadPayload(txid, pid, key)
 		if strings.Contains(payload.Key, " ") {
 			// Remove authorization scheme prefix (e.g. "Bearer")
 			cred := strings.SplitN(payload.Key, " ", 2)[1]

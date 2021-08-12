@@ -181,10 +181,8 @@ var _ = Service("artworks", func() {
 
 		Security(APIKeyAuth)
 
-		Payload(func() {
-			Extend(ArtworkDownloadPayload)
-		})
-		StreamingResult(ArtworkDownloadResult)
+		Payload(ArtworkDownloadPayload)
+		Result(ArtworkDownloadResult)
 
 		HTTP(func() {
 			GET("/download")

@@ -1079,9 +1079,10 @@ func NewArtworkGetPayload(txid string) *artworks.ArtworkGetPayload {
 	return v
 }
 
-// NewDownloadPayload builds a artworks service download endpoint payload.
-func NewDownloadPayload(txid string, pid string, key string) *artworks.DownloadPayload {
-	v := &artworks.DownloadPayload{}
+// NewDownloadArtworkDownloadPayload builds a artworks service download
+// endpoint payload.
+func NewDownloadArtworkDownloadPayload(txid string, pid string, key string) *artworks.ArtworkDownloadPayload {
+	v := &artworks.ArtworkDownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key
