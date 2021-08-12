@@ -1693,7 +1693,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 		{
 			data: userdata.SNActivityInfo{
 				Query:        fmt.Sprintf("%s-1", prefix),
-				ActivityType: SNActivityThumbnailRequest,
+				ActivityType: userdata.SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id1",
 			},
 			wantErr: false,
@@ -1701,7 +1701,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 		{
 			data: userdata.SNActivityInfo{
 				Query:        fmt.Sprintf("%s-2", prefix),
-				ActivityType: SNActivityThumbnailRequest,
+				ActivityType: userdata.SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id1",
 			},
 			wantErr: false,
@@ -1709,7 +1709,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 		{
 			data: userdata.SNActivityInfo{
 				Query:        fmt.Sprintf("%s-2", prefix),
-				ActivityType: SNActivityThumbnailRequest,
+				ActivityType: userdata.SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id2",
 			},
 			wantErr: false,
@@ -1717,7 +1717,7 @@ func (ts *testSuite) TestOps_WriteSNActivity() {
 		{
 			data: userdata.SNActivityInfo{
 				Query:        fmt.Sprintf("%s-2", prefix),
-				ActivityType: SNActivityThumbnailRequest,
+				ActivityType: userdata.SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id2",
 			},
 			wantErr: false,
@@ -1742,7 +1742,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	for i := 0; i < 5; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-1", prefix),
-			ActivityType: SNActivityThumbnailRequest,
+			ActivityType: userdata.SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
@@ -1751,7 +1751,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	for i := 0; i < 5; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-1", prefix),
-			ActivityType: SNActivityThumbnailRequest,
+			ActivityType: userdata.SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id2",
 		})
 		ts.Nil(err)
@@ -1760,7 +1760,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	for i := 0; i < 6; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-2", prefix),
-			ActivityType: SNActivityThumbnailRequest,
+			ActivityType: userdata.SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
@@ -1769,7 +1769,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	for i := 0; i < 6; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-2", prefix),
-			ActivityType: SNActivityThumbnailRequest,
+			ActivityType: userdata.SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id2",
 		})
 		ts.Nil(err)
@@ -1778,7 +1778,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	for i := 0; i < 4; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-3", prefix),
-			ActivityType: SNActivityThumbnailRequest,
+			ActivityType: userdata.SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
@@ -1787,7 +1787,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	for i := 0; i < 4; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-3", prefix),
-			ActivityType: SNActivityThumbnailRequest,
+			ActivityType: userdata.SNActivityThumbnailRequest,
 			SNPastelID:   "sn_id2",
 		})
 		ts.Nil(err)
@@ -1796,7 +1796,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	for i := 0; i < 5; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-1", prefix),
-			ActivityType: SNActivityNftSearch,
+			ActivityType: userdata.SNActivityNftSearch,
 			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
@@ -1805,7 +1805,7 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	for i := 0; i < 6; i++ {
 		err := ts.ops.WriteSNActivity(ts.ctx, userdata.SNActivityInfo{
 			Query:        fmt.Sprintf("%s-2", prefix),
-			ActivityType: SNActivityNftSearch,
+			ActivityType: userdata.SNActivityNftSearch,
 			SNPastelID:   "sn_id1",
 		})
 		ts.Nil(err)
@@ -1818,20 +1818,20 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 	}{
 		{
 			query: userdata.SNTopActivityRequest{
-				ActivityType: SNActivityThumbnailRequest,
+				ActivityType: userdata.SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id1",
 				NRecords:     2,
 			},
 			want: []userdata.SNActivityInfo{
 				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
-					ActivityType: SNActivityThumbnailRequest,
+					ActivityType: userdata.SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id1",
 					Cnt:          6,
 				},
 				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
-					ActivityType: SNActivityThumbnailRequest,
+					ActivityType: userdata.SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id1",
 					Cnt:          5,
 				},
@@ -1840,26 +1840,26 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 		},
 		{
 			query: userdata.SNTopActivityRequest{
-				ActivityType: SNActivityThumbnailRequest,
+				ActivityType: userdata.SNActivityThumbnailRequest,
 				SNPastelID:   "sn_id2",
 				NRecords:     3,
 			},
 			want: []userdata.SNActivityInfo{
 				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
-					ActivityType: SNActivityThumbnailRequest,
+					ActivityType: userdata.SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id2",
 					Cnt:          6,
 				},
 				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
-					ActivityType: SNActivityThumbnailRequest,
+					ActivityType: userdata.SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id2",
 					Cnt:          5,
 				},
 				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-3", prefix),
-					ActivityType: SNActivityThumbnailRequest,
+					ActivityType: userdata.SNActivityThumbnailRequest,
 					SNPastelID:   "sn_id2",
 					Cnt:          4,
 				},
@@ -1868,20 +1868,20 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 		},
 		{
 			query: userdata.SNTopActivityRequest{
-				ActivityType: SNActivityNftSearch,
+				ActivityType: userdata.SNActivityNftSearch,
 				SNPastelID:   "sn_id1",
 				NRecords:     2,
 			},
 			want: []userdata.SNActivityInfo{
 				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-2", prefix),
-					ActivityType: SNActivityNftSearch,
+					ActivityType: userdata.SNActivityNftSearch,
 					SNPastelID:   "sn_id1",
 					Cnt:          6,
 				},
 				userdata.SNActivityInfo{
 					Query:        fmt.Sprintf("%s-1", prefix),
-					ActivityType: SNActivityNftSearch,
+					ActivityType: userdata.SNActivityNftSearch,
 					SNPastelID:   "sn_id1",
 					Cnt:          5,
 				},
