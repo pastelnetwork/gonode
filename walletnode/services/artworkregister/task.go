@@ -3,6 +3,7 @@ package artworkregister
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -530,9 +531,9 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.ArtTicket{
 		Version:   1,
-		Author:    string(pastelID),
+		Author:    base64.StdEncoding.EncodeToString(pastelID),
 		BlockNum:  task.artistBlockHeight,
-		BlockHash: string(task.artistBlockHash),
+		BlockHash: base64.StdEncoding.EncodeToString(task.artistBlockHash),
 		Copies:    task.Request.IssuedCopies,
 		Royalty:   0,  // Not supported yet by cNode
 		Green:     "", // Not supported yet by cNode
