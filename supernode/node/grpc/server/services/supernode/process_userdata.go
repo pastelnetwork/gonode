@@ -136,7 +136,6 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 	defer cancel()
 	log.WithContext(ctx).WithField("req", req).Debugf("StoreMetric request")
 
-
 	if req == nil {
 		return nil, errors.Errorf("receive nil request")
 	}
@@ -150,10 +149,10 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 	defer task.Cancel()
 
 	if service.databaseOps.IsLeader() {
-		if err := service.databaseOps.ProcessCommand(ctx, req); err != nil {
+		if _, err := service.databaseOps.ProcessCommand(ctx, req); err != nil {
 			return nil, errors.Errorf("error occurs while writting to database: %w", err)
 		}
-	} else {		
+	} else {
 		/* if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), ""); err != nil {
 			return nil, err
 		}
@@ -163,7 +162,7 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 				return &pb.SuperNodeReply{
 					ResponseCode: userdata.ErrorWriteToRQLiteDBFail,
 					Detail:       userdata.Description[userdata.ErrorWriteToRQLiteDBFail],
-				}, nil 
+				}, nil
 			}
 		} */
 	}
