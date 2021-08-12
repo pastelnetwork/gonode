@@ -7,9 +7,10 @@ type TradeTicket struct {
 	Ticket TradeTicketData `json:"ticket"`
 }
 
+// TradeTicketData represents pastel Trade ticket data
 type TradeTicketData struct {
-	Type             string `json:"type"` // "art-trade",
-	Version          int    `json:"version"`
+	Type             string `json:"type"`              // "trade"
+	Version          int    `json:"version"`           // version
 	PastelID         string `json:"pastelID"`          // PastelID of the buyer
 	SellTXID         string `json:"sell_txid"`         // txid with sale ticket
 	BuyTXID          string `json:"buy_txid"`          // txid with buy ticket
