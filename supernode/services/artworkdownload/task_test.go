@@ -62,13 +62,12 @@ func fakeRegiterTicket() pastel.RegTicket {
 		RQOti:                          []byte("rq_oti"),
 	}
 	appTicket, _ := json.Marshal(&appTicketData)
-	// appTicket := base64.StdEncoding.EncodeToString(data)
-	// fmt.Println(string(appTicket))
+
 	artTicketData := pastel.ArtTicket{
 		Version:       1,
-		Author:        []byte("pastelID"),
+		Author:        "pastelID",
 		BlockNum:      10,
-		BlockHash:     []byte("block_hash"),
+		BlockHash:     "block_hash",
 		Copies:        10,
 		Royalty:       99,
 		Green:         "green_address",
@@ -272,11 +271,15 @@ func TestTaskDownload(t *testing.T) {
 	regTicket := fakeRegiterTicket()
 	tradeTickets := []pastel.TradeTicket{
 		{
-			Type:     "trade",
-			PastelID: "buyerPastelID", // PastelID of the buyer
-			SellTXID: "sell_txid",     // txid with sale ticket
-			BueTXID:  "buy_txid",      // txid with buy ticket
-			ArtTXID:  "ttxid",         // txid with either 1) art activation ticket or 2) trade ticket in it
+			Height: 238,
+			TXID:   "ttxid",
+			Ticket: pastel.TradeTicketData{
+				Type:     "trade",
+				PastelID: "buyerPastelID", // PastelID of the buyer
+				SellTXID: "sell_txid",     // txid with sale ticket
+				BuyTXID:  "buy_txid",      // txid with buy ticket
+				ArtTXID:  "art_txid",      // txid with either 1) art activation ticket or 2) trade ticket in it
+			},
 		},
 	}
 	file := []byte("test file")
@@ -417,8 +420,8 @@ func TestTaskDownload(t *testing.T) {
 			pastelClient.AssertListAvailableTradeTicketsCall(testCase.numberListAvailableTradeTickets, mock.Anything)
 			pastelID := testCase.args.regTicket.RegTicketData.ArtTicketData.AppTicketData.AuthorPastelID
 			for _, trade := range testCase.args.tradeTickets {
-				if trade.ArtTXID == testCase.args.ttxid {
-					pastelID = trade.PastelID
+				if trade.TXID == testCase.args.ttxid {
+					pastelID = trade.Ticket.PastelID
 				}
 			}
 			pastelClient.AssertVerifyCall(testCase.numberVerify, mock.Anything, []byte(testCase.args.timestamp),

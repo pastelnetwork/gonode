@@ -565,13 +565,13 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			}
 		}
 		if minRarenessScore != nil {
-			if *minRarenessScore < 1 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1, true))
+			if *minRarenessScore < 0 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 0, true))
 			}
 		}
 		if minRarenessScore != nil {
-			if *minRarenessScore > 1000 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1000, false))
+			if *minRarenessScore > 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1, false))
 			}
 		}
 		{
@@ -585,13 +585,13 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			}
 		}
 		if maxRarenessScore != nil {
-			if *maxRarenessScore < 1 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1, true))
+			if *maxRarenessScore < 0 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 0, true))
 			}
 		}
 		if maxRarenessScore != nil {
-			if *maxRarenessScore > 1000 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1000, false))
+			if *maxRarenessScore > 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1, false))
 			}
 		}
 		{
@@ -605,13 +605,13 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			}
 		}
 		if minNsfwScore != nil {
-			if *minNsfwScore < 1 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1, true))
+			if *minNsfwScore < 0 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 0, true))
 			}
 		}
 		if minNsfwScore != nil {
-			if *minNsfwScore > 1000 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1000, false))
+			if *minNsfwScore > 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1, false))
 			}
 		}
 		{
@@ -625,13 +625,13 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			}
 		}
 		if maxNsfwScore != nil {
-			if *maxNsfwScore < 1 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1, true))
+			if *maxNsfwScore < 0 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 0, true))
 			}
 		}
 		if maxNsfwScore != nil {
-			if *maxNsfwScore > 1000 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1000, false))
+			if *maxNsfwScore > 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1, false))
 			}
 		}
 		{
@@ -645,13 +645,13 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			}
 		}
 		if minInternetRarenessScore != nil {
-			if *minInternetRarenessScore < 1 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1, true))
+			if *minInternetRarenessScore < 0 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 0, true))
 			}
 		}
 		if minInternetRarenessScore != nil {
-			if *minInternetRarenessScore > 1000 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1000, false))
+			if *minInternetRarenessScore > 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1, false))
 			}
 		}
 		{
@@ -665,13 +665,13 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			}
 		}
 		if maxInternetRarenessScore != nil {
-			if *maxInternetRarenessScore < 1 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1, true))
+			if *maxInternetRarenessScore < 0 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 0, true))
 			}
 		}
 		if maxInternetRarenessScore != nil {
-			if *maxInternetRarenessScore > 1000 {
-				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1000, false))
+			if *maxInternetRarenessScore > 1 {
+				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1, false))
 			}
 		}
 		if err != nil {
@@ -813,6 +813,18 @@ func EncodeArtworkGetError(encoder func(context.Context, http.ResponseWriter) go
 	}
 }
 
+// EncodeDownloadResponse returns an encoder for responses returned by the
+// artworks download endpoint.
+func EncodeDownloadResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.(*artworks.DownloadResult)
+		enc := encoder(ctx, w)
+		body := NewDownloadResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
 // DecodeDownloadRequest returns a decoder for requests sent to the artworks
 // download endpoint.
 func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
@@ -851,7 +863,7 @@ func DecodeDownloadRequest(mux goahttp.Muxer, decoder func(*http.Request) goahtt
 		if err != nil {
 			return nil, err
 		}
-		payload := NewDownloadPayload(txid, pid, key)
+		payload := NewDownloadArtworkDownloadPayload(txid, pid, key)
 		if strings.Contains(payload.Key, " ") {
 			// Remove authorization scheme prefix (e.g. "Bearer")
 			cred := strings.SplitN(payload.Key, " ", 2)[1]

@@ -147,8 +147,7 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 		Description:           ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistWrittenStatement,
 		Keywords:              &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkKeywordSet,
 		SeriesName:            &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkSeriesName,
-		IsGreen:               ticket.RegTicketData.IsGreen,
-		Royalty:               ticket.RegTicketData.Royalty,
+		Royalty:               &ticket.RegTicketData.Royalty,
 		RarenessScore:         ticket.RegTicketData.ArtTicketData.AppTicketData.PastelRarenessScore,
 		NsfwScore:             ticket.RegTicketData.ArtTicketData.AppTicketData.OpenNSFWScore,
 		InternetRarenessScore: &ticket.RegTicketData.ArtTicketData.AppTicketData.InternetRarenessScore,
@@ -162,7 +161,7 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 	}
 }
 
-func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Ticket {
+func fromDownloadPayload(payload *artworks.ArtworkDownloadPayload) *artworkdownload.Ticket {
 	return &artworkdownload.Ticket{
 		Txid:               payload.Txid,
 		PastelID:           payload.Pid,

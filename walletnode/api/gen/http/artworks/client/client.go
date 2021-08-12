@@ -310,30 +310,10 @@ func (c *Client) Download() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(ctx)
-		defer cancel()
-
-		conn, resp, err := c.dialer.DialContext(ctx, req.URL.String(), req.Header)
+		resp, err := c.DownloadDoer.Do(req)
 		if err != nil {
-			if resp != nil {
-				return decodeResponse(resp)
-			}
 			return nil, goahttp.ErrRequestError("artworks", "download", err)
 		}
-		if c.configurer.DownloadFn != nil {
-			conn = c.configurer.DownloadFn(conn, cancel)
-		}
-		go func() {
-			<-ctx.Done()
-			conn.WriteControl(
-				websocket.CloseMessage,
-				websocket.FormatCloseMessage(websocket.CloseNormalClosure, "client closing connection"),
-				time.Now().Add(time.Second),
-			)
-			conn.Close()
-		}()
-		stream := &DownloadClientStream{conn: conn}
-		return stream, nil
+		return decodeResponse(resp)
 	}
 }

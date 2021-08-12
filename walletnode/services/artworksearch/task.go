@@ -97,6 +97,11 @@ func (task *Task) run(ctx context.Context) error {
 		task.searchResult = task.searchResult[:task.request.Limit]
 	}
 
+	if len(task.searchResult) == 0 {
+		log.WithContext(ctx).WithField("request", task.request).Debug("No matching results")
+		return nil
+	}
+
 	pastelConnections := 10
 	if len(task.searchResult) < pastelConnections {
 		pastelConnections = len(task.searchResult)
@@ -119,7 +124,6 @@ func (task *Task) run(ctx context.Context) error {
 				return fmt.Errorf("fetch thumbnail: txid: %s - err: %s", res.TXID, err)
 			}
 			res.Thumbnail = data
-
 			// Post on result channel
 			task.resultChan <- res
 

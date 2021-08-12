@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	thumbnail "github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
 )
 
 const (

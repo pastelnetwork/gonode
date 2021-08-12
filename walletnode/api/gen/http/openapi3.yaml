@@ -39,19 +39,18 @@ paths:
                 description: The Mona Lisa is an oil painting by Italian artist, inventor,
                   and writer Leonardo da Vinci. Likely completed in 1506, the piece
                   features a portrait of a seated woman set against an imaginary landscape.
-                drawing_nsfw_score: 1000
-                hentai_nsfw_score: 1000
+                drawing_nsfw_score: 1
+                green_address: true
+                hentai_nsfw_score: 1
                 internet_rareness_score: 1
-                is_green: true
                 keywords: Renaissance, sfumato, portrait
-                neutral_nsfw_score: 1000
-                nsfw_score: 1000
-                porn_nsfw_score: 1000
+                neutral_nsfw_score: 1
+                nsfw_score: 1
+                porn_nsfw_score: 1
                 rareness_score: 1
                 royalty: 7767964326538747577
-                seen_score: 1
                 series_name: Famous artist
-                sexy_nsfw_score: 1000
+                sexy_nsfw_score: 1
                 storage_fee: 100
                 thumbnail:
                 - 73
@@ -162,8 +161,8 @@ paths:
           maxLength: 86
         example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
       responses:
-        "101":
-          description: Switching Protocols response.
+        "200":
+          description: OK response.
           content:
             application/json:
               schema:
@@ -735,8 +734,8 @@ paths:
           type: number
           description: Minimum pastel rareness score
           example: 1
-          minimum: 1
-          maximum: 1000
+          minimum: 0
+          maximum: 1
         example: 1
       - name: max_rareness_score
         in: query
@@ -745,10 +744,10 @@ paths:
         schema:
           type: number
           description: Maximum pastel rareness score
-          example: 1000
-          minimum: 1
-          maximum: 1000
-        example: 1000
+          example: 1
+          minimum: 0
+          maximum: 1
+        example: 1
       - name: min_nsfw_score
         in: query
         description: Minimum nsfw score
@@ -757,8 +756,8 @@ paths:
           type: number
           description: Minimum nsfw score
           example: 1
-          minimum: 1
-          maximum: 1000
+          minimum: 0
+          maximum: 1
         example: 1
       - name: max_nsfw_score
         in: query
@@ -767,10 +766,10 @@ paths:
         schema:
           type: number
           description: Maximum nsfw score
-          example: 1000
-          minimum: 1
-          maximum: 1000
-        example: 1000
+          example: 1
+          minimum: 0
+          maximum: 1
+        example: 1
       - name: min_internet_rareness_score
         in: query
         description: Minimum internet rareness score
@@ -779,8 +778,8 @@ paths:
           type: number
           description: Minimum internet rareness score
           example: 1
-          minimum: 1
-          maximum: 1000
+          minimum: 0
+          maximum: 1
         example: 1
       - name: max_internet_rareness_score
         in: query
@@ -789,10 +788,10 @@ paths:
         schema:
           type: number
           description: Maximum internet rareness score
-          example: 1000
-          minimum: 1
-          maximum: 1000
-        example: 1000
+          example: 1
+          minimum: 0
+          maximum: 1
+        example: 1
       responses:
         "101":
           description: Switching Protocols response.
@@ -929,25 +928,25 @@ components:
         drawing_nsfw_score:
           type: number
           description: nsfw score
-          example: 1000
+          example: 1
           minimum: 0
-          maximum: 1000
+          maximum: 1
+        green_address:
+          type: boolean
+          description: Green address
+          example: false
         hentai_nsfw_score:
           type: number
           description: nsfw score
-          example: 1000
+          example: 1
           minimum: 0
-          maximum: 1000
+          maximum: 1
         internet_rareness_score:
           type: number
           description: internet rareness score
           example: 1
           minimum: 0
-          maximum: 1000
-        is_green:
-          type: boolean
-          description: Green flag
-          example: false
+          maximum: 1
         keywords:
           type: string
           description: Keywords
@@ -956,38 +955,32 @@ components:
         neutral_nsfw_score:
           type: number
           description: nsfw score
-          example: 1000
+          example: 1
           minimum: 0
-          maximum: 1000
+          maximum: 1
         nsfw_score:
           type: number
           description: nsfw score
-          example: 1000
+          example: 1
           minimum: 0
-          maximum: 1000
+          maximum: 1
         porn_nsfw_score:
           type: number
           description: nsfw score
-          example: 1000
+          example: 1
           minimum: 0
-          maximum: 1000
+          maximum: 1
         rareness_score:
           type: number
           description: pastel rareness score
           example: 1
           minimum: 0
-          maximum: 1000
+          maximum: 1
         royalty:
           type: integer
           description: how much artist should get on all future resales
           example: 4321854410538811785
           format: int64
-        seen_score:
-          type: integer
-          description: seen score
-          example: 1
-          minimum: 0
-          maximum: 1000
         series_name:
           type: string
           description: Series name
@@ -996,12 +989,12 @@ components:
         sexy_nsfw_score:
           type: number
           description: nsfw score
-          example: 1000
+          example: 1
           minimum: 0
-          maximum: 1000
+          maximum: 1
         storage_fee:
           type: integer
-          description: Storage fee
+          description: Storage fee %
           example: 100
           format: int64
         thumbnail:
@@ -1051,19 +1044,18 @@ components:
         description: The Mona Lisa is an oil painting by Italian artist, inventor,
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
-        drawing_nsfw_score: 1000
-        hentai_nsfw_score: 1000
+        drawing_nsfw_score: 1
+        green_address: true
+        hentai_nsfw_score: 1
         internet_rareness_score: 1
-        is_green: true
         keywords: Renaissance, sfumato, portrait
-        neutral_nsfw_score: 1000
-        nsfw_score: 1000
-        porn_nsfw_score: 1000
+        neutral_nsfw_score: 1
+        nsfw_score: 1
+        porn_nsfw_score: 1
         rareness_score: 1
         royalty: 4529988671258623533
-        seen_score: 1
         series_name: Famous artist
-        sexy_nsfw_score: 1000
+        sexy_nsfw_score: 1
         storage_fee: 100
         thumbnail:
         - 86
@@ -1101,8 +1093,6 @@ components:
         version: 1
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
       required:
-      - is_green
-      - royalty
       - rareness_score
       - nsfw_score
       - title

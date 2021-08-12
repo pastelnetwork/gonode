@@ -109,7 +109,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			return nil
 		}
 
-		pastelID := base58.Encode(artRegTicket.RegTicketData.ArtTicketData.Author)
+		pastelID := base58.Encode([]byte(artRegTicket.RegTicketData.ArtTicketData.Author))
 
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
@@ -130,13 +130,14 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			}
 			isTXIDValid := false
 			for _, t := range tradeTickets {
-				if t.ArtTXID == ttxid {
+				if t.TXID == ttxid {
 					isTXIDValid = true
-					pastelID = t.PastelID
+					pastelID = t.Ticket.PastelID
 					break
 				}
 			}
 			if !isTXIDValid {
+				log.WithContext(ctx).WithField("ttxid", ttxid).Errorf("not found trade ticket of transaction")
 				err = errors.Errorf("not found trade ticket of transaction %s", ttxid)
 				task.UpdateStatus(StatusTradeTicketMismatched)
 				return nil

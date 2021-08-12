@@ -111,11 +111,11 @@ func (c *Client) ArtworkGet(ctx context.Context, p *ArtworkGetPayload) (res *Art
 }
 
 // Download calls the "download" endpoint of the "artworks" service.
-func (c *Client) Download(ctx context.Context, p *DownloadPayload) (res DownloadClientStream, err error) {
+func (c *Client) Download(ctx context.Context, p *ArtworkDownloadPayload) (res *DownloadResult, err error) {
 	var ires interface{}
 	ires, err = c.DownloadEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(DownloadClientStream), nil
+	return ires.(*DownloadResult), nil
 }
