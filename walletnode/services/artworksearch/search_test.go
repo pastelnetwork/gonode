@@ -20,8 +20,8 @@ func TestGetSearchableFields(t *testing.T) {
 					ArtistName:     "Alan Majchrowicz",
 					ArtworkTitle:   "Lake Superior Sky III",
 					TotalCopies:    10,
-					ArtistWrittenStatement: `Why settle for blank walls, when you can
-					 transform them into stunning vista points. Explore from imaginative
+					ArtistWrittenStatement: `Lakes Why settle for blank walls, when you can
+					 transform them into stunning vista points. Explore Lake Superiorfrom imaginative
 					  scenic abstracts to sublime beach landscapes captured on camera.`,
 					ArtworkKeywordSet: "Michigan,Midwest,Peninsula,Great Lakes,Lakeview",
 					ArtworkSeriesName: "Science Art Lake",
@@ -68,7 +68,7 @@ func TestGetSearchableFields(t *testing.T) {
 		"descr-match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
 			req: &ArtSearchRequest{
-				Query: "beach",
+				Query: "Explore Lake Superiorfrom ",
 				Descr: true,
 			},
 			matching: true,
@@ -86,7 +86,7 @@ func TestGetSearchableFields(t *testing.T) {
 		"title,descr match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
 			req: &ArtSearchRequest{
-				Query:    "Lakes",
+				Query:    "Lakes ",
 				ArtTitle: true,
 				Descr:    true,
 			},

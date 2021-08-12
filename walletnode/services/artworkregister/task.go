@@ -530,9 +530,9 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.ArtTicket{
 		Version:   1,
-		Author:    pastelID,
+		Author:    string(pastelID),
 		BlockNum:  task.artistBlockHeight,
-		BlockHash: task.artistBlockHash,
+		BlockHash: string(task.artistBlockHash),
 		Copies:    task.Request.IssuedCopies,
 		Royalty:   0,  // Not supported yet by cNode
 		Green:     "", // Not supported yet by cNode

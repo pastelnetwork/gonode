@@ -37,9 +37,9 @@ type RegTicketData struct {
 // ArtTicket is Pastel Art Ticket
 type ArtTicket struct {
 	Version       int       `json:"version"`
-	Author        []byte    `json:"author"`
+	Author        string    `json:"author"`
 	BlockNum      int       `json:"blocknum"`
-	BlockHash     []byte    `json:"block_hash"`
+	BlockHash     string    `json:"block_hash"`
 	Copies        int       `json:"copies"`
 	Royalty       int       `json:"royalty"`
 	Green         string    `json:"green_address"`
@@ -141,9 +141,9 @@ type GetRegisterArtFeeRequest struct {
 
 type internalArtTicket struct {
 	Version   int    `json:"version"`
-	Author    []byte `json:"author"`
+	Author    string `json:"author"`
 	BlockNum  int    `json:"blocknum"`
-	BlockHash []byte `json:"block_hash"`
+	BlockHash string `json:"block_hash"`
 	Copies    int    `json:"copies"`
 	Royalty   int    `json:"royalty"`
 	Green     string `json:"green_address"`

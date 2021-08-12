@@ -247,11 +247,11 @@ type ArtworkGetPayload struct {
 type ArtworkDetail struct {
 	// version
 	Version *int
-	// Green flag
-	IsGreen bool
+	// Green address
+	GreenAddress *bool
 	// how much artist should get on all future resales
-	Royalty int
-	// Storage fee
+	Royalty *int
+	// Storage fee %
 	StorageFee *int
 	// nsfw score
 	NsfwScore float64
@@ -259,8 +259,6 @@ type ArtworkDetail struct {
 	RarenessScore float64
 	// internet rareness score
 	InternetRarenessScore *float64
-	// seen score
-	SeenScore *int
 	// nsfw score
 	DrawingNsfwScore *float64
 	// nsfw score
