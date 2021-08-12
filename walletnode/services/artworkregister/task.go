@@ -212,7 +212,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 					return nil
 				}
 
-				return errors.Errorf("confirmations not meet %d", result.Confirmations)
+				return errors.Errorf("confirmations not meet: expected %d, got %d", expectedConfirms, result.Confirmations)
 			}
 
 			err := checkConfirms()
@@ -238,7 +238,7 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	// TODO: Should be replaced with real data from the Pastel API.
 	ticket, err := task.pastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
 	if err != nil {
-		return errors.Errorf("faild to find register tick of artist pastel id:%s :%w", task.Request.ArtistPastelID, err)
+		return errors.Errorf("failed to find register ticket of artist pastel id:%s :%w", task.Request.ArtistPastelID, err)
 	}
 	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "legroast")
 	if err != nil {
@@ -530,9 +530,9 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.ArtTicket{
 		Version:   1,
-		Author:    pastelID,
+		Author:    string(pastelID),
 		BlockNum:  task.artistBlockHeight,
-		BlockHash: task.artistBlockHash,
+		BlockHash: string(task.artistBlockHash),
 		Copies:    task.Request.IssuedCopies,
 		Royalty:   0,  // Not supported yet by cNode
 		Green:     "", // Not supported yet by cNode

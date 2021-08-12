@@ -51,6 +51,25 @@ func (service *downloadArtwork) Download(ctx context.Context, txid, timestamp, s
 	return
 }
 
+func (service *downloadArtwork) DownloadThumbnail(ctx context.Context, key []byte) (file []byte, err error) {
+	ctx = service.contextWithLogPrefix(ctx)
+	in := &pb.DownloadThumbnailRequest{
+		Key: key,
+	}
+
+	res, err := service.client.DownloadThumbnail(ctx, in)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if res.Thumbnail == nil {
+		return nil, errors.New("nil thumbnail")
+	}
+
+	return res.Thumbnail, nil
+}
+
 func (service *downloadArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }

@@ -2,8 +2,6 @@ package artworksearch
 
 import (
 	"context"
-	b64 "encoding/base64"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -89,7 +87,7 @@ func TestRegTicket(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 			nodeClientMock := nodeMock.NewMockClient(t)
-			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().ListenOnClose(nil)
+			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
 
 			pastelClientMock.ListenOnRegTicket(testCase.args.regTicketID, testCase.want, testCase.args.regTicketErr)
 
@@ -157,7 +155,7 @@ func TestGetThumbnail(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 			nodeClientMock := nodeMock.NewMockClient(t)
-			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().ListenOnClose(nil)
+			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
 
 			service := &Service{
 				pastelClient: pastelClientMock.Client,
@@ -173,16 +171,7 @@ func TestGetThumbnail(t *testing.T) {
 }
 
 func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
-	toBase64 := func(from interface{}) ([]byte, error) {
-		testBytes, err := json.Marshal(from)
-		return []byte(b64.StdEncoding.EncodeToString([]byte(testBytes))), err
-	}
-
-	base64Bytes, err := toBase64(ticket.RegTicketData.ArtTicketData.AppTicketData)
+	artTicketBytes, err := pastel.EncodeArtTicket(&ticket.RegTicketData.ArtTicketData)
 	assert.Nil(t, err)
-	ticket.RegTicketData.ArtTicketData.AppTicket = base64Bytes
-
-	base64Bytes, err = toBase64(ticket.RegTicketData.ArtTicketData)
-	assert.Nil(t, err)
-	ticket.RegTicketData.ArtTicket = base64Bytes
+	ticket.RegTicketData.ArtTicket = artTicketBytes
 }

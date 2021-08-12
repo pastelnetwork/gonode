@@ -786,14 +786,7 @@ func DecodeArtworkGetResponse(decoder func(*http.Response) goahttp.Decoder, rest
 // BuildDownloadRequest instantiates a HTTP request object with method and path
 // set to call the "artworks" service "download" endpoint
 func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http.Request, error) {
-	scheme := c.scheme
-	switch c.scheme {
-	case "http":
-		scheme = "ws"
-	case "https":
-		scheme = "wss"
-	}
-	u := &url.URL{Scheme: scheme, Host: c.host, Path: DownloadArtworksPath()}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: DownloadArtworksPath()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, goahttp.ErrInvalidURL("artworks", "download", u.String(), err)
@@ -809,9 +802,9 @@ func (c *Client) BuildDownloadRequest(ctx context.Context, v interface{}) (*http
 // download server.
 func EncodeDownloadRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
 	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*artworks.DownloadPayload)
+		p, ok := v.(*artworks.ArtworkDownloadPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("artworks", "download", "*artworks.DownloadPayload", v)
+			return goahttp.ErrInvalidType("artworks", "download", "*artworks.ArtworkDownloadPayload", v)
 		}
 		{
 			head := p.Key

@@ -129,14 +129,21 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		return err
 	}
 
+	var err error
+
 	<-task.NewAction(func(ctx context.Context) error {
 		if node := task.accepted.ByID(nodeID); node != nil {
-			return errors.Errorf("node %q is already registered", nodeID)
+			log.WithContext(ctx).WithField("nodeID", nodeID).Errorf("node is already registered")
+			err = errors.Errorf("node %q is already registered", nodeID)
+			return nil
 		}
 
-		node, err := task.pastelNodeByExtKey(ctx, nodeID)
+		var node *Node
+		node, err = task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
-			return errors.Errorf("failed to get node by extID %s %w", nodeID, err)
+			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("failed to get node by extID")
+			err = errors.Errorf("failed to get node by extID %s %w", nodeID, err)
+			return nil
 		}
 		task.accepted.Add(node)
 
@@ -147,7 +154,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		}
 		return nil
 	})
-	return nil
+	return err
 }
 
 // ConnectTo connects to primary node
@@ -156,25 +163,31 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 		return err
 	}
 
+	var err error
+
 	task.NewAction(func(ctx context.Context) error {
-		node, err := task.pastelNodeByExtKey(ctx, nodeID)
+		var node *Node
+		node, err = task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
-			return err
+			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("failed to get node by extID")
+			return nil
 		}
 
-		if err := node.connect(ctx); err != nil {
-			return err
+		if err = node.connect(ctx); err != nil {
+			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("failed to connect to node")
+			return nil
 		}
 
-		if err := node.Session(ctx, task.config.PastelID, sessID); err != nil {
-			return err
+		if err = node.Session(ctx, task.config.PastelID, sessID); err != nil {
+			log.WithContext(ctx).WithField("sessID", sessID).WithField("pastelID", task.config.PastelID).WithError(err).Errorf("failed to handsake with peer")
+			return nil
 		}
 
 		task.connectedTo = node
 		task.UpdateStatus(StatusConnected)
 		return nil
 	})
-	return nil
+	return err
 }
 
 // ProbeImage uploads the resampled image compute and return a fingerpirnt.
@@ -191,14 +204,16 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 		return nil
 	})
 
+	var err error
+
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageProbed)
 
-		var err error
-
 		task.fingerAndScores, task.fingerprints, err = task.genFingerprintsData(ctx, file)
 		if err != nil {
-			return errors.Errorf("failed to generate fingerprints data %w", err)
+			log.WithContext(ctx).WithError(err).Errorf("failed to generate fingerprints data")
+			err = errors.Errorf("failed to generate fingerprints data %w", err)
+			return nil
 		}
 		// NOTE: for testing Kademlia and should be removed before releasing.
 		// data, err := file.Bytes()
@@ -214,7 +229,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 		return nil
 	})
 
-	return task.fingerAndScores, nil
+	return task.fingerAndScores, err
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
@@ -236,7 +251,9 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, artistSig
 		// TODO: fix this like how can we get the signature before calling cNode
 		task.Ticket, err = pastel.DecodeArtTicket(ticket)
 		if err != nil {
-			return errors.Errorf("failed to decode art ticket %w", err)
+			log.WithContext(ctx).WithError(err).Errorf("failed to decode art ticket")
+			err = errors.Errorf("failed to decode art ticket %w", err)
+			return nil
 		}
 
 		// Assume passphase is 16-bytes length
@@ -264,12 +281,13 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, artistSig
 
 		task.registrationFee, err = task.pastelClient.GetRegisterArtFee(ctx, getFeeRequest)
 		if err != nil {
-			return errors.Errorf("failed to get register art fee %w", err)
+			log.WithContext(ctx).WithError(err).Errorf("failed to get register art fee")
+			err = errors.Errorf("failed to get register art fee %w", err)
 		}
 		return nil
 	})
 
-	return task.registrationFee, nil
+	return task.registrationFee, err
 }
 
 // ValidatePreBurnTransaction will get pre-burnt transaction fee txid, wait until it's confirmations meet expectation.
@@ -283,29 +301,41 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	<-task.NewAction(func(ctx context.Context) error {
 		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), task.config.PreburntTxConfirmationTimeout)
 
-		if err := task.matchFingersPrintAndScores(ctx); err != nil {
-			return errors.Errorf("fingerprints or scores don't matched")
+		if err = task.matchFingersPrintAndScores(ctx); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("fingerprints or scores don't matched")
+			err = errors.Errorf("fingerprints or scores don't matched")
+			return nil
 		}
 
 		// compare rqsymbols
-		if err := task.compareRQSymbolID(ctx); err != nil {
-			return errors.Errorf("failed to generate rqids %w", err)
+		if err = task.compareRQSymbolID(ctx); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("failed to generate rqids")
+			err = errors.Errorf("failed to generate rqids %w", err)
+			return nil
 		}
 
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.connectedTo == nil)
-		if err := task.signAndSendArtTicket(ctx, task.connectedTo == nil); err != nil {
-			return errors.Errorf("failed to signed and send art ticket")
+		if err = task.signAndSendArtTicket(ctx, task.connectedTo == nil); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("failed to signed and send art ticket")
+			err = errors.Errorf("failed to signed and send art ticket")
+			return nil
 		}
 
 		log.WithContext(ctx).Debugf("waiting for confimation")
-		if err := <-confirmationChn; err != nil {
-			return errors.Errorf("failed to validate preburn transaction validation %w", err)
+		if err = <-confirmationChn; err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("failed to validate preburn transaction validation")
+			err = errors.Errorf("failed to validate preburn transaction validation %w", err)
+			return nil
 		}
 		log.WithContext(ctx).Debugf("confirmation done")
 
 		return nil
 	})
+
+	if err != nil {
+		return "", err
+	}
 
 	// only primary node start this action
 	var artRegTxid string
@@ -315,21 +345,25 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 			for {
 				select {
 				case <-ctx.Done():
-					err := ctx.Err()
+					err = ctx.Err()
 					if err != nil {
 						log.WithContext(ctx).Debug("waiting for signature from peers cancelled or timeout")
 					}
-					return err
+					return nil
 				case <-task.allSignaturesReceived:
 					log.WithContext(ctx).Debugf("all signature received so start validation")
 
-					if err := task.verifyPeersSingature(ctx); err != nil {
-						return errors.Errorf("peers' singature mismatched %w", err)
+					if err = task.verifyPeersSingature(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
+						err = errors.Errorf("peers' singature mismatched %w", err)
+						return nil
 					}
 
 					artRegTxid, err = task.registerArt(ctx)
 					if err != nil {
-						return errors.Errorf("failed to register art %w", err)
+						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
+						err = errors.Errorf("failed to register art %w", err)
+						return nil
 					}
 
 					// confirmations := task.waitConfirmation(ctx, artRegTxid, 10, 30*time.Second, 55)
@@ -338,16 +372,22 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 					// 	return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
 					// }
 
-					if err := task.storeRaptorQSymbols(ctx); err != nil {
-						return errors.Errorf("failed to store raptor symbols %w", err)
+					if err = task.storeRaptorQSymbols(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("failed to store raptor symbols")
+						err = errors.Errorf("failed to store raptor symbols %w", err)
+						return nil
 					}
 
-					if err := task.storeThumbnails(ctx); err != nil {
-						return errors.Errorf("failed to store thumbnails %w", err)
+					if err = task.storeThumbnails(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("failed to store thumbnails")
+						err = errors.Errorf("failed to store thumbnails %w", err)
+						return nil
 					}
 
-					if err := task.storeFingerprints(ctx); err != nil {
-						return errors.Errorf("failed to store fingerprints %w", err)
+					if err = task.storeFingerprints(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("failed to store fingerprints")
+						err = errors.Errorf("failed to store fingerprints %w", err)
+						return nil
 					}
 
 					return nil
@@ -356,7 +396,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 		})
 	}
 
-	return artRegTxid, nil
+	return artRegTxid, err
 }
 
 func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
@@ -403,8 +443,10 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 				return
 			case <-time.After(15 * time.Second):
 				log.WithContext(ctx).Debugf("retry: %d", retry)
+				retry++
 				txResult, _ := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
 				if txResult.Confirmations >= minConfirmation {
+					log.WithContext(ctx).Debugf("transaction confirmed")
 					ch <- nil
 					return
 				}
@@ -631,7 +673,7 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 		return errors.Errorf("no symbols identifiers file")
 	}
 
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.RQIDS)), hex.EncodeToString(task.Ticket.BlockHash), task.Ticket.AppTicketData.AuthorPastelID)
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.RQIDS)), hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.AppTicketData.AuthorPastelID)
 
 	if err != nil {
 		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
@@ -698,18 +740,25 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 
 		// Determine file size
 		// TODO: improve it by call stats on file
-		fileBytes, err := file.Bytes()
+		var fileBytes []byte
+		fileBytes, err = file.Bytes()
 		if err != nil {
-			return errors.Errorf("failed to read image file %w", err)
+			log.WithContext(ctx).WithError(err).Errorf("failed to read image file")
+			err = errors.Errorf("failed to read image file %w", err)
+			return nil
 		}
 		task.imageSizeBytes = len(fileBytes)
 
 		previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, err = task.createAndHashThumbnails(coordinate)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("failed to create and hash thumbnail")
+			return nil
+		}
 
-		return err
+		return nil
 	})
 
-	return previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, nil
+	return previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, err
 }
 
 // AddPeerArticketSignature is called by supernode peers to primary first-rank supernode to send it's signature
@@ -721,10 +770,14 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 		return err
 	}
 
+	var err error
+
 	<-task.NewAction(func(ctx context.Context) error {
 		log.WithContext(ctx).Debugf("receive art ticket signature from node %s", nodeID)
 		if node := task.accepted.ByID(nodeID); node == nil {
-			return errors.Errorf("node %s not in accepted list", nodeID)
+			log.WithContext(ctx).WithField("node", nodeID).Errorf("node is not in accepted list")
+			err = errors.Errorf("node %s not in accepted list", nodeID)
+			return nil
 		}
 
 		task.peersArtTicketSignature[nodeID] = signature
@@ -736,7 +789,7 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 		}
 		return nil
 	})
-	return nil
+	return err
 }
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {

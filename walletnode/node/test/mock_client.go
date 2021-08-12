@@ -53,6 +53,8 @@ const (
 	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
 	// DownloadMethod represent Download name method
 	DownloadMethod = "Download"
+	// DownloadThumbnailMethod represent DownloadThumbnail name method
+	DownloadThumbnailMethod = "DownloadThumbnail"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -269,6 +271,13 @@ func (client *Client) ListenOnDownload(arguments ...interface{}) *Client {
 		mock.IsType(string("")),
 		mock.IsType(string("")),
 		mock.IsType(string(""))).Return(arguments...)
+	return client
+}
+
+// ListenOnDownloadThumbnail listening DownloadThumbnail call and returns args value
+func (client *Client) ListenOnDownloadThumbnail(arguments ...interface{}) *Client {
+	client.DownloadArtwork.On(DownloadThumbnailMethod, mock.Anything,
+		mock.Anything).Return(arguments...)
 	return client
 }
 

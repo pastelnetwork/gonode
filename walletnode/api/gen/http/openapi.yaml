@@ -33,8 +33,6 @@ paths:
           schema:
             $ref: '#/definitions/ArtworksArtworkGetResponseBody'
             required:
-            - is_green
-            - royalty
             - rareness_score
             - nsfw_score
             - title
@@ -86,8 +84,8 @@ paths:
         required: true
         type: string
       responses:
-        "101":
-          description: Switching Protocols response.
+        "200":
+          description: OK response.
           schema:
             $ref: '#/definitions/ArtworksDownloadResponseBody'
             required:
@@ -101,7 +99,7 @@ paths:
           schema:
             $ref: '#/definitions/ArtworksDownloadInternalServerErrorResponseBody'
       schemes:
-      - ws
+      - http
       security:
       - api_key_header_Authorization: []
   /artworks/register:
@@ -342,43 +340,43 @@ paths:
         description: Minimum pastel rareness score
         required: false
         type: number
-        maximum: 1000
-        minimum: 1
+        maximum: 1
+        minimum: 0
       - name: max_rareness_score
         in: query
         description: Maximum pastel rareness score
         required: false
         type: number
-        maximum: 1000
-        minimum: 1
+        maximum: 1
+        minimum: 0
       - name: min_nsfw_score
         in: query
         description: Minimum nsfw score
         required: false
         type: number
-        maximum: 1000
-        minimum: 1
+        maximum: 1
+        minimum: 0
       - name: max_nsfw_score
         in: query
         description: Maximum nsfw score
         required: false
         type: number
-        maximum: 1000
-        minimum: 1
+        maximum: 1
+        minimum: 0
       - name: min_internet_rareness_score
         in: query
         description: Minimum internet rareness score
         required: false
         type: number
-        maximum: 1000
-        minimum: 1
+        maximum: 1
+        minimum: 0
       - name: max_internet_rareness_score
         in: query
         description: Maximum internet rareness score
         required: false
         type: number
-        maximum: 1000
-        minimum: 1
+        maximum: 1
+        minimum: 0
       responses:
         "101":
           description: Switching Protocols response.
@@ -1232,25 +1230,25 @@ definitions:
       drawing_nsfw_score:
         type: number
         description: nsfw score
-        example: 1000
+        example: 1
         minimum: 0
-        maximum: 1000
+        maximum: 1
+      green_address:
+        type: boolean
+        description: Green address
+        example: true
       hentai_nsfw_score:
         type: number
         description: nsfw score
-        example: 1000
+        example: 1
         minimum: 0
-        maximum: 1000
+        maximum: 1
       internet_rareness_score:
         type: number
         description: internet rareness score
         example: 1
         minimum: 0
-        maximum: 1000
-      is_green:
-        type: boolean
-        description: Green flag
-        example: true
+        maximum: 1
       keywords:
         type: string
         description: Keywords
@@ -1259,38 +1257,32 @@ definitions:
       neutral_nsfw_score:
         type: number
         description: nsfw score
-        example: 1000
+        example: 1
         minimum: 0
-        maximum: 1000
+        maximum: 1
       nsfw_score:
         type: number
         description: nsfw score
-        example: 1000
+        example: 1
         minimum: 0
-        maximum: 1000
+        maximum: 1
       porn_nsfw_score:
         type: number
         description: nsfw score
-        example: 1000
+        example: 1
         minimum: 0
-        maximum: 1000
+        maximum: 1
       rareness_score:
         type: number
         description: pastel rareness score
         example: 1
         minimum: 0
-        maximum: 1000
+        maximum: 1
       royalty:
         type: integer
         description: how much artist should get on all future resales
         example: 8800332683294949451
         format: int64
-      seen_score:
-        type: integer
-        description: seen score
-        example: 1
-        minimum: 0
-        maximum: 1000
       series_name:
         type: string
         description: Series name
@@ -1299,12 +1291,12 @@ definitions:
       sexy_nsfw_score:
         type: number
         description: nsfw score
-        example: 1000
+        example: 1
         minimum: 0
-        maximum: 1000
+        maximum: 1
       storage_fee:
         type: integer
-        description: Storage fee
+        description: Storage fee %
         example: 100
         format: int64
       thumbnail:
@@ -1381,19 +1373,18 @@ definitions:
       description: The Mona Lisa is an oil painting by Italian artist, inventor, and
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
-      drawing_nsfw_score: 1000
-      hentai_nsfw_score: 1000
+      drawing_nsfw_score: 1
+      green_address: true
+      hentai_nsfw_score: 1
       internet_rareness_score: 1
-      is_green: true
       keywords: Renaissance, sfumato, portrait
-      neutral_nsfw_score: 1000
-      nsfw_score: 1000
-      porn_nsfw_score: 1000
+      neutral_nsfw_score: 1
+      nsfw_score: 1
+      porn_nsfw_score: 1
       rareness_score: 1
       royalty: 9166802302218846019
-      seen_score: 1
       series_name: Famous artist
-      sexy_nsfw_score: 1000
+      sexy_nsfw_score: 1
       storage_fee: 100
       thumbnail:
       - 69
@@ -1423,8 +1414,6 @@ definitions:
       version: 1
       youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
     required:
-    - is_green
-    - royalty
     - rareness_score
     - nsfw_score
     - title
