@@ -114,15 +114,9 @@ func (t *thumbnailHelper) listen(ctx context.Context, n *node.Node) {
 				return
 			}
 
-			fmt.Println("thumb-key:", req.key, n.PastelID())
+			log.WithContext(ctx).Debugf("thumb-key: %v-%v", req.key, n.PastelID())
 			data, err := n.DownloadThumbnail(ctx, req.key)
-			var resp *response
-			if err != nil {
-				resp = &response{err: err, data: nil}
-			} else {
-				resp = &response{err: nil, data: data}
-			}
-			req.respCh <- resp
+			req.respCh <- &response{err: err, data: data}
 		}
 	}
 }
