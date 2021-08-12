@@ -138,7 +138,8 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 			return nil
 		}
 
-		node, err := task.pastelNodeByExtKey(ctx, nodeID)
+		var node *Node
+		node, err = task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
 			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("failed to get node by extID")
 			err = errors.Errorf("failed to get node by extID %s %w", nodeID, err)
@@ -165,7 +166,8 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 	var err error
 
 	task.NewAction(func(ctx context.Context) error {
-		node, err := task.pastelNodeByExtKey(ctx, nodeID)
+		var node *Node
+		node, err = task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
 			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("failed to get node by extID")
 			return nil
@@ -370,19 +372,19 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 					// 	return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
 					// }
 
-					if err := task.storeRaptorQSymbols(ctx); err != nil {
+					if err = task.storeRaptorQSymbols(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("failed to store raptor symbols")
 						err = errors.Errorf("failed to store raptor symbols %w", err)
 						return nil
 					}
 
-					if err := task.storeThumbnails(ctx); err != nil {
+					if err = task.storeThumbnails(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("failed to store thumbnails")
 						err = errors.Errorf("failed to store thumbnails %w", err)
 						return nil
 					}
 
-					if err := task.storeFingerprints(ctx); err != nil {
+					if err = task.storeFingerprints(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("failed to store fingerprints")
 						err = errors.Errorf("failed to store fingerprints %w", err)
 						return nil
@@ -738,7 +740,8 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 
 		// Determine file size
 		// TODO: improve it by call stats on file
-		fileBytes, err := file.Bytes()
+		var fileBytes []byte
+		fileBytes, err = file.Bytes()
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("failed to read image file")
 			err = errors.Errorf("failed to read image file %w", err)
