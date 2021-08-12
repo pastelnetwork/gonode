@@ -531,7 +531,7 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.ArtTicket{
 		Version:   1,
-		Author:    base64.StdEncoding.EncodeToString(pastelID),
+		Author:    task.Request.ArtistPastelID,
 		BlockNum:  task.artistBlockHeight,
 		BlockHash: base64.StdEncoding.EncodeToString(task.artistBlockHash),
 		Copies:    task.Request.IssuedCopies,
