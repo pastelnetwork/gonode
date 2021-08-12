@@ -260,3 +260,11 @@ type SNTopActivityRequest struct {
 	SNPastelID   string `mapstructure:"sn_pastel_id",json:"sn_pastel_id"`
 	NRecords     int    `mapstructure:"n_records",json:"n_records"`
 }
+
+type IDStringQuery struct {
+	ID string `mapstructure:"id",json:"id"`
+}
+
+type IDIntQuery struct {
+	ID int64 `mapstructure:"id",json:"id"`
+}
