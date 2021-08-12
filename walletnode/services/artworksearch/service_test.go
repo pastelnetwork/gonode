@@ -87,7 +87,7 @@ func TestRegTicket(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 			nodeClientMock := nodeMock.NewMockClient(t)
-			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().ListenOnClose(nil)
+			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
 
 			pastelClientMock.ListenOnRegTicket(testCase.args.regTicketID, testCase.want, testCase.args.regTicketErr)
 
@@ -155,7 +155,7 @@ func TestGetThumbnail(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 			nodeClientMock := nodeMock.NewMockClient(t)
-			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().ListenOnClose(nil)
+			nodeClientMock.ListenOnConnect("", nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil).ListenOnClose(nil)
 
 			service := &Service{
 				pastelClient: pastelClientMock.Client,

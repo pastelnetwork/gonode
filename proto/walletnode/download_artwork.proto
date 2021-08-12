@@ -7,6 +7,7 @@ package walletnode;
 service DownloadArtwork {
     // Download downloads artwork by given txid, timestamp and signature.
     rpc Download(DownloadRequest) returns (stream DownloadReply);
+    rpc DownloadThumbnail(DownloadThumbnailRequest) returns (DownloadThumbnailReply);
 }
 
 message DownloadRequest {
@@ -17,4 +18,11 @@ message DownloadRequest {
 }
 message DownloadReply {
     bytes file = 1;
+}
+
+message DownloadThumbnailRequest {
+    bytes key = 1;
+}
+message DownloadThumbnailReply {
+    bytes thumbnail = 1;
 }
