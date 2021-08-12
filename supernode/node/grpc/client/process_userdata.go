@@ -147,24 +147,32 @@ func (service *processUserdata) StoreMetric(ctx context.Context, metric userdata
 		return userdata.SuperNodeReply{}, errors.Errorf("input nil metric")
 	}
 
-	byteData, err := json.Marshal(metric.Data)
-	if err != nil {
-		return userdata.SuperNodeReply{}, errors.Errorf("failed to marshal data: %w", err)
-	}
-
-	// Generate protobuf request reqProto
-	reqProto := &pb.Metric{
-		Command: metric.Command,
-		Data:    byteData,
+	reqProto := &pb.Metric{}
+	reqProto.Command = metric.Command
+	switch metric.Data.(type) {
+	case []byte:
+		// Already been Marshal before
+		test := "khoa test data is sent"
+		reqProto.Data = []byte(test)// []byte(metric.Data.(string))
+	default:
+		byteData, err := json.Marshal(metric.Data)
+		if err != nil {
+			return userdata.SuperNodeReply{}, errors.Errorf("failed to marshal data: %w", err)
+		}
+		reqProto.Data = byteData
 	}
 
 	// Send the data
-	resp, err := service.client.StoreMetric(ctx, reqProto)
+	_, err := service.client.StoreMetric(ctx, reqProto)
+	if err != nil {
+		log.WithContext(ctx).Debugf("StoreMetric error %s", err.Error())
+		return userdata.SuperNodeReply{
+			ResponseCode: userdata.ErrorStoreMetric,
+			Detail:       userdata.Description[userdata.ErrorStoreMetric],
+		}, nil
+	}
 
-	return userdata.SuperNodeReply{
-		ResponseCode: resp.ResponseCode,
-		Detail:       resp.Detail,
-	}, err
+	return userdata.SuperNodeReply{}, err
 }
 
 func newProcessUserdata(conn *clientConn) node.ProcessUserdata {

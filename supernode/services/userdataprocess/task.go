@@ -495,6 +495,41 @@ func (task *Task) ConnectToLeader(ctx context.Context, extAddress string, sessID
 	return nil
 }
 
+
+// pastelTopNodes retrieve the top super nodes we want to send metric to, limit by maxNode
+func (task *Task) SendMetricToPrimary(ctx context.Context, metric userdata.Metric) error {
+	log.WithContext(ctx).Debugf("SendMetricToPrimary with metric %s", metric.Command)
+
+	// Get the top 10 supernode
+	mns, err := task.pastelClient.MasterNodesTop(ctx)
+	if err != nil {
+		return err
+	}
+
+	// Find the highest ranked SN which we can connect to
+	for _, mn := range mns {
+		node := &Node{
+			client:  task.Service.nodeClient,
+			ID:      mn.ExtKey,
+			Address: mn.ExtAddress,
+		}
+		if err := node.connect(ctx); err != nil {
+			log.WithContext(ctx).Debugf("Fail to connect to node %s with error: %s", mn.ExtAddress, err.Error())
+			continue
+		}
+		// Send data to the highest ranked SN that we just connect
+		_, err = node.StoreMetric(ctx, metric)
+		if err != nil {
+			// If there is issue then we return 
+			return err
+		}
+		log.WithContext(ctx).Debugf("SendMetricToPrimary StoreMetric successfully to node %s", mn.ExtAddress)
+		break
+	}
+
+	return nil
+}
+
 func (task *Task) context(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
 }
