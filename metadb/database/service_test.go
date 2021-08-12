@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -1898,6 +1899,139 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Ops.GetTopSNActivities() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func (ts *testSuite) TestOps_ProcessCommand() {
+	userdatastruct := userDataFrame
+	userdatastruct.ArtistPastelID = "id_pc_0"
+	userdataJson, err := json.Marshal(userdatastruct)
+	ts.Nil(err)
+
+	userdataQuery := userdata.IDStringQuery{
+		ID: "qwe",
+	}
+	userdataQueryJson, err := json.Marshal(userdataQuery)
+	ts.Nil(err)
+
+	artInfo := userdata.ArtInfo{ArtID: "art0_id_pc_0", ArtistPastelID: "id_pc_0", Copies: 2, CreatedTimestamp: 150}
+	artInfoJson, err := json.Marshal(artInfo)
+	ts.Nil(err)
+
+	artInstance0 := userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_pc_0", ArtID: "art0_id_pc_0", Price: 10.0}
+	artInstanceJson0, err := json.Marshal(artInstance0)
+	ts.Nil(err)
+	artInstance0.OwnerPastelID = "id_pc_0"
+
+	artInstance1 := userdata.ArtInstanceInfo{InstanceID: "ins1_art0_id_pc_0", ArtID: "art0_id_pc_0", Price: 10.0}
+	artInstanceJson1, err := json.Marshal(artInstance1)
+	ts.Nil(err)
+	artInstance1.OwnerPastelID = "id_pc_0"
+
+	instanceQuery0 := userdata.IDStringQuery{
+		ID: "ins0_art0_id_pc_0",
+	}
+	instanceQueryJson0, err := json.Marshal(instanceQuery0)
+	ts.Nil(err)
+
+	instanceQuery1 := userdata.IDStringQuery{
+		ID: "ins1_art0_id_pc_0",
+	}
+	instanceQueryJson1, err := json.Marshal(instanceQuery1)
+	ts.Nil(err)
+
+	tests := []struct {
+		req     *pb.Metric
+		want    interface{}
+		wantErr bool
+	}{
+		{
+			req:     nil,
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			req: &pb.Metric{
+				Command: userdata.CommandUserInfoWrite,
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			req: &pb.Metric{
+				Command: "abc",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			req: &pb.Metric{
+				Command: userdata.CommandUserInfoWrite,
+				Data:    userdataJson,
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			req: &pb.Metric{
+				Command: userdata.CommandUserInfoQuery,
+				Data:    userdataQueryJson,
+			},
+			want:    data3ReadResult,
+			wantErr: false,
+		},
+		{
+			req: &pb.Metric{
+				Command: userdata.CommandArtInfoWrite,
+				Data:    artInfoJson,
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			req: &pb.Metric{
+				Command: userdata.CommandArtInstanceInfoWrite,
+				Data:    artInstanceJson0,
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			req: &pb.Metric{
+				Command: userdata.CommandArtInstanceInfoWrite,
+				Data:    artInstanceJson1,
+			},
+			want:    nil,
+			wantErr: false,
+		},
+		{
+			req: &pb.Metric{
+				Command: userdata.CommandGetInstanceInfo,
+				Data:    instanceQueryJson0,
+			},
+			want:    artInstance0,
+			wantErr: false,
+		},
+		{
+			req: &pb.Metric{
+				Command: userdata.CommandGetInstanceInfo,
+				Data:    instanceQueryJson1,
+			},
+			want:    artInstance1,
+			wantErr: false,
+		},
+	}
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_ProcessCommand-%d", i), func(t *testing.T) {
+			got, err := ts.ops.ProcessCommand(ts.ctx, tt.req)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ops.ProcessCommand() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Ops.ProcessCommand() = %v, want %v", got, tt.want)
 			}
 		})
 	}
