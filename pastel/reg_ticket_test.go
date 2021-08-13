@@ -20,14 +20,14 @@ func TestEncodeNFTTicket(t *testing.T) {
 		RQIDs: []string{"9", "10"},
 	}
 
-	inputTicket := ArtTicket{
+	inputTicket := NFTTicket{
 		Version:       1,
 		Author:        string([]byte{2, 3, 4}),
 		BlockNum:      5,
 		BlockHash:     string([]byte{6, 7, 8}),
 		Copies:        9,
 		Royalty:       10,
-		Green:         "11",
+		GreenAddress:  "11",
 		AppTicketData: inputAppData,
 	}
 
@@ -43,7 +43,7 @@ func TestEncodeNFTTicket(t *testing.T) {
 	assert.Equal(t, inputTicket.BlockHash, outputTicket.BlockHash)
 	assert.Equal(t, inputTicket.Copies, outputTicket.Copies)
 	assert.Equal(t, inputTicket.Royalty, outputTicket.Royalty)
-	assert.Equal(t, inputTicket.Green, outputTicket.Green)
+	assert.Equal(t, inputTicket.GreenAddress, outputTicket.GreenAddress)
 
 	assert.Equal(t, inputAppData.BlockNum, outputAppData.BlockNum)
 	assert.Equal(t, inputAppData.PreviewHash, outputAppData.PreviewHash)
