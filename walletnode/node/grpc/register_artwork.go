@@ -283,18 +283,18 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := pb.SendSignedArtTicketRequest{
-		ArtTicket:       ticket,
-		ArtistSignature: signature,
-		Key1:            key1,
-		Key2:            key2,
+	req := pb.SendSignedNFTTicketRequest{
+		NFTTicket:        ticket,
+		CreatorSignature: signature,
+		Key1:             key1,
+		Key2:             key2,
 		EncodeParameters: &pb.EncoderParameters{
 			Oti: encoderParams.Oti,
 		},
 		EncodeFiles: rqids,
 	}
 
-	rsp, err := service.client.SendSignedArtTicket(ctx, &req)
+	rsp, err := service.client.SendSignedNFTTicket(ctx, &req)
 	if err != nil {
 		return -1, errors.Errorf("failed to send signed ticket and its signature to node %w", err)
 	}
@@ -317,7 +317,7 @@ func (service *registerArtwork) SendPreBurntFeeTxid(ctx context.Context, txid st
 	}
 
 	// TODO: response from sending preburned TxId should be the TxId of RegActTicket
-	return rsp.ArtRegTxid, nil
+	return rsp.NFTRegTxid, nil
 }
 
 func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {

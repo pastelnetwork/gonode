@@ -54,12 +54,12 @@ func printError(err error) {
 func main() {
 
 	var (
-		regArtTxid = flag.String("regarttxid", "", "reg art txid")
+		regNFTTxid = flag.String("regarttxid", "", "reg NFT txid")
 	)
 	//flag.Usage = usage
 	flag.Parse()
 
-	if len(*regArtTxid) == 0 {
+	if len(*regNFTTxid) == 0 {
 		usage()
 		return
 	}
@@ -68,7 +68,7 @@ func main() {
 
 	endpoint := client.ArtworkGet()
 	// create payload
-	payload, err := cli.BuildArtworkGetPayload(*regArtTxid)
+	payload, err := cli.BuildArtworkGetPayload(*regNFTTxid)
 	if err != nil {
 		printError(errors.Wrap(err, "error creating payload"))
 		return
@@ -103,9 +103,9 @@ func usage() {
 	fmt.Fprintf(os.Stderr, `%s is a command line client to simulate ui
 
  Usage:
-     %s [-regarttxid REGARTTXID]
+     %s [-regnfttxid REGARTTXID]
 
-     -regarttxid    string:  reg art tx id
+     -regnfttxid    string:  reg NFT tx id
 
  Commands:
  %s
@@ -113,6 +113,6 @@ func usage() {
     None
 
  Example:
- %s -regarttxid 7602bf7c95487521c8a8c56a0a45a03438fcfd607a0089942382afd5fd3867c5
+ %s -regnfttxid 7602bf7c95487521c8a8c56a0a45a03438fcfd607a0089942382afd5fd3867c5
  `, os.Args[0], os.Args[0], os.Args[0], os.Args[0])
 }

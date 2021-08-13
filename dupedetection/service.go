@@ -195,23 +195,23 @@ func (s *service) runTask(ctx context.Context) error {
 		return errors.Errorf("failed to get lastest fingerprint, err: %w", err)
 	}
 
-	artRegTickets, err := s.pastelClient.RegTickets(ctx)
+	nftRegTickets, err := s.pastelClient.RegTickets(ctx)
 	if err != nil {
 		return errors.Errorf("failed to get registered ticket, err: %w", err)
 	}
 
-	for i := 0; i < len(artRegTickets); i++ {
-		if artRegTickets[i].Height <= lastestFp.NumberOfBlock {
+	for i := 0; i < len(nftRegTickets); i++ {
+		if nftRegTickets[i].Height <= lastestFp.NumberOfBlock {
 			continue
 		}
 
-		artTicketData, err := pastel.DecodeArtTicket(artRegTickets[i].RegTicketData.ArtTicket)
+		nftTicketData, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
 		if err != nil {
 			log.WithContext(ctx).Errorf("failed to decode reg ticket: err %s", err)
 			continue
 		}
 
-		fingerprintsHash := artTicketData.AppTicketData.FingerprintsHash
+		fingerprintsHash := nftTicketData.AppTicketData.FingerprintsHash
 		fingerprintByte, err := s.p2pClient.Retrieve(ctx, base58.Encode(fingerprintsHash))
 		if err != nil {
 			log.WithContext(ctx).Errorf("failed to retrieve fingerprint, err: %s", err)
@@ -253,7 +253,7 @@ func (s *service) runTask(ctx context.Context) error {
 			Model2ImageFingerprintVector:       model2ImageFingerprintVector,
 			Model3ImageFingerprintVector:       model3ImageFingerprintVector,
 			Model4ImageFingerprintVector:       model4ImageFingerprintVector,
-			NumberOfBlock:                      artRegTickets[i].Height,
+			NumberOfBlock:                      nftRegTickets[i].Height,
 			DatetimeFingerprintAddedToDatabase: time.Now(),
 		}); err != nil {
 			log.WithContext(ctx).Errorf("failed to store fingerprint, err: %s", err)

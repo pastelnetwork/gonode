@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestEncodeArtTicket(t *testing.T) {
+func TestEncodeNFTTicket(t *testing.T) {
 	inputAppData := AppTicket{
 		BlockNum:              10,
 		PreviewHash:           []byte{1},
@@ -31,9 +31,9 @@ func TestEncodeArtTicket(t *testing.T) {
 		AppTicketData: inputAppData,
 	}
 
-	encoded, err := EncodeArtTicket(&inputTicket)
+	encoded, err := EncodeNFTTicket(&inputTicket)
 	assert.Nil(t, err)
-	outputTicket, err := DecodeArtTicket(encoded)
+	outputTicket, err := DecodeNFTTicket(encoded)
 	outputAppData := outputTicket.AppTicketData
 	assert.Nil(t, err)
 	fmt.Println(string(encoded))

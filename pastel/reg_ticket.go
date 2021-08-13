@@ -20,29 +20,31 @@ type RegTicket struct {
 
 // RegTicketData is Pastel Registration ticket structure
 type RegTicketData struct {
-	Type          string           `json:"type"`
-	ArtistHeight  int              `json:"artist_height"`
-	Signatures    TicketSignatures `json:"signatures"`
-	Key1          string           `json:"key1"`
-	Key2          string           `json:"key2"`
-	IsGreen       bool             `json:"is_green"`
-	StorageFee    int              `json:"storage_fee"`
-	TotalCopies   int              `json:"total_copies"`
-	Royalty       int              `json:"royalty"`
-	Version       int              `json:"version"`
-	ArtTicket     []byte           `json:"art_ticket"`
-	ArtTicketData ArtTicket        `json:"-"`
+	Type           string           `json:"type"`
+	Version        int              `json:"version"`
+	Signatures     TicketSignatures `json:"signatures"`
+	Key1           string           `json:"key1"`
+	Key2           string           `json:"key2"`
+	CreatorHeight  int              `json:"creator_height"`
+	TotalCopies    int              `json:"total_copies"`
+	Royalty        int              `json:"royalty"`
+	RoyaltyAddress string           `json:"royalty_address"`
+	Green          int              `json:"green"`
+	GreenAddress   int              `json:"green_address"`
+	StorageFee     int              `json:"storage_fee"`
+	NFTTicket      []byte           `json:"NFT_ticket"`
+	NFTTicketData  NFTTicket        `json:"-"`
 }
 
-// ArtTicket is Pastel Art Ticket
-type ArtTicket struct {
+// NFTTicket is Pastel NFT Ticket
+type NFTTicket struct {
 	Version       int       `json:"version"`
 	Author        string    `json:"author"`
 	BlockNum      int       `json:"blocknum"`
 	BlockHash     string    `json:"block_hash"`
 	Copies        int       `json:"copies"`
-	Royalty       int       `json:"royalty"`
-	Green         string    `json:"green_address"`
+	Royalty       float32   `json:"royalty"`
+	GreenAddress  string    `json:"green_address"`
 	AppTicket     []byte    `json:"app_ticket"`
 	AppTicketData AppTicket `json:"-"`
 }
@@ -77,15 +79,15 @@ type AppTicket struct {
 	BlockTxID      string `json:"block_tx_id"`
 	BlockNum       int    `json:"block_num"`
 
-	ArtistName             string `json:"artist_name"`
-	ArtistWebsite          string `json:"artist_website"`
-	ArtistWrittenStatement string `json:"artist_written_statement"`
+	CreatorName             string `json:"creator_name"`
+	CreatorWebsite          string `json:"creator_website"`
+	CreatorWrittenStatement string `json:"creator_written_statement"`
 
-	ArtworkTitle                   string `json:"artwork_title"`
-	ArtworkSeriesName              string `json:"artwork_series_name"`
-	ArtworkCreationVideoYoutubeURL string `json:"artwork_creation_video_youtube_url"`
-	ArtworkKeywordSet              string `json:"artwork_keyword_set"`
-	TotalCopies                    int    `json:"total_copies"`
+	NFTTitle                   string `json:"nft_title"`
+	NFTSeriesName              string `json:"nft_series_name"`
+	NFTCreationVideoYoutubeURL string `json:"nft_creation_video_youtube_url"`
+	NFTKeywordSet              string `json:"nft_keyword_set"`
+	TotalCopies                int    `json:"total_copies"`
 
 	PreviewHash    []byte `json:"preview_hash"`
 	Thumbnail1Hash []byte `json:"thumbnail1_hash"`
@@ -127,9 +129,9 @@ type ImageHashes struct {
 	DifferenceHash string `json:"difference_hash"`
 }
 
-// GetRegisterArtFeeRequest represents a request to get registration fee
-type GetRegisterArtFeeRequest struct {
-	Ticket      *ArtTicket
+// GetRegisterNFTFeeRequest represents a request to get registration fee
+type GetRegisterNFTFeeRequest struct {
+	Ticket      *NFTTicket
 	Signatures  *TicketSignatures
 	Mn1PastelID string
 	Passphrase  string
@@ -140,50 +142,50 @@ type GetRegisterArtFeeRequest struct {
 }
 
 type internalArtTicket struct {
-	Version   int    `json:"version"`
-	Author    string `json:"author"`
-	BlockNum  int    `json:"blocknum"`
-	BlockHash string `json:"block_hash"`
-	Copies    int    `json:"copies"`
-	Royalty   int    `json:"royalty"`
-	Green     string `json:"green_address"`
-	AppTicket []byte `json:"app_ticket"`
+	Version      int     `json:"version"`
+	Author       string  `json:"author"`
+	BlockNum     int     `json:"blocknum"`
+	BlockHash    string  `json:"block_hash"`
+	Copies       int     `json:"copies"`
+	Royalty      float32 `json:"royalty"`
+	GreenAddress string  `json:"green_address"`
+	AppTicket    []byte  `json:"app_ticket"`
 }
 
-// EncodeArtTicket encodes  ArtTicket into byte array
-func EncodeArtTicket(ticket *ArtTicket) ([]byte, error) {
+// EncodeNFTTicket encodes  NFTTicket into byte array
+func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 	appTicket, err := json.Marshal(ticket.AppTicketData)
 	if err != nil {
 		return nil, errors.Errorf("failed to marshal app ticket data: %w", err)
 	}
 
-	// ArtTicket is Pastel Art Ticket
-	artTicket := internalArtTicket{
-		Version:   ticket.Version,
-		Author:    ticket.Author,
-		BlockNum:  ticket.BlockNum,
-		BlockHash: ticket.BlockHash,
-		Copies:    ticket.Copies,
-		Royalty:   ticket.Royalty,
-		Green:     ticket.Green,
-		AppTicket: appTicket,
+	// NFTTicket is Pastel Art Ticket
+	nftTicket := internalArtTicket{
+		Version:      ticket.Version,
+		Author:       ticket.Author,
+		BlockNum:     ticket.BlockNum,
+		BlockHash:    ticket.BlockHash,
+		Copies:       ticket.Copies,
+		Royalty:      ticket.Royalty,
+		GreenAddress: ticket.GreenAddress,
+		AppTicket:    appTicket,
 	}
 
-	b, err := json.Marshal(artTicket)
+	b, err := json.Marshal(nftTicket)
 	if err != nil {
-		return nil, errors.Errorf("failed to marshal art ticket: %w", err)
+		return nil, errors.Errorf("failed to marshal nft ticket: %w", err)
 	}
 
 	return b, nil
 }
 
-// DecodeArtTicket decoded byte array into ArtTicket
-func DecodeArtTicket(b []byte) (*ArtTicket, error) {
+// DecodeNFTTicket decoded byte array into ArtTicket
+func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 	res := internalArtTicket{}
 	err := json.Unmarshal(b, &res)
 
 	if err != nil {
-		return nil, errors.Errorf("failed to unmarshal art ticket: %w", err)
+		return nil, errors.Errorf("failed to unmarshal nft ticket: %w", err)
 	}
 
 	appTicket := AppTicket{}
@@ -193,30 +195,30 @@ func DecodeArtTicket(b []byte) (*ArtTicket, error) {
 		return nil, errors.Errorf("failed to unmarshal app ticket data: %w", err)
 	}
 
-	return &ArtTicket{
+	return &NFTTicket{
 		Version:       res.Version,
 		Author:        res.Author,
 		BlockNum:      res.BlockNum,
 		BlockHash:     res.BlockHash,
 		Copies:        res.Copies,
 		Royalty:       res.Royalty,
-		Green:         res.Green,
+		GreenAddress:  res.GreenAddress,
 		AppTicketData: appTicket,
 	}, nil
 }
 
 // TicketSignatures represents signatures from parties
 type TicketSignatures struct {
-	Artist map[string]string `json:"artist,omitempty"`
-	Mn1    map[string]string `json:"mn1,omitempty"`
-	Mn2    map[string]string `json:"mn2,omitempty"`
-	Mn3    map[string]string `json:"mn3,omitempty"`
+	Creator map[string]string `json:"creator,omitempty"`
+	Mn1     map[string]string `json:"mn1,omitempty"`
+	Mn2     map[string]string `json:"mn2,omitempty"`
+	Mn3     map[string]string `json:"mn3,omitempty"`
 }
 
-// RegisterArtRequest represents request to register an art
+// RegisterNFTRequest represents request to register an art
 // "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "key1", "key2", 100)")
-type RegisterArtRequest struct {
-	Ticket      *ArtTicket
+type RegisterNFTRequest struct {
+	Ticket      *NFTTicket
 	Signatures  *TicketSignatures
 	Mn1PastelID string
 	Pasphase    string
