@@ -27,9 +27,9 @@ type CreateUserdataRequestBody struct {
 	NativeCurrency *string `form:"native_currency,omitempty" json:"native_currency,omitempty" xml:"native_currency,omitempty"`
 	// Location of the user
 	Location *string `form:"location,omitempty" json:"location,omitempty" xml:"location,omitempty"`
-	// Primary language of the user
+	// Primary language of the user, follow ISO 639-2 standard
 	PrimaryLanguage *string `form:"primary_language,omitempty" json:"primary_language,omitempty" xml:"primary_language,omitempty"`
-	// The categories of user's work
+	// The categories of user's work, separate by ,
 	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
 	// Biography of the user
 	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
@@ -56,9 +56,9 @@ type UpdateUserdataRequestBody struct {
 	NativeCurrency *string `form:"native_currency,omitempty" json:"native_currency,omitempty" xml:"native_currency,omitempty"`
 	// Location of the user
 	Location *string `form:"location,omitempty" json:"location,omitempty" xml:"location,omitempty"`
-	// Primary language of the user
+	// Primary language of the user, follow ISO 639-2 standard
 	PrimaryLanguage *string `form:"primary_language,omitempty" json:"primary_language,omitempty" xml:"primary_language,omitempty"`
-	// The categories of user's work
+	// The categories of user's work, separate by ,
 	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
 	// Biography of the user
 	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
@@ -143,9 +143,9 @@ type GetUserdataResponseBody struct {
 	NativeCurrency *string `form:"native_currency,omitempty" json:"native_currency,omitempty" xml:"native_currency,omitempty"`
 	// Location of the user
 	Location *string `form:"location,omitempty" json:"location,omitempty" xml:"location,omitempty"`
-	// Primary language of the user
+	// Primary language of the user, follow ISO 639-2 standard
 	PrimaryLanguage *string `form:"primary_language,omitempty" json:"primary_language,omitempty" xml:"primary_language,omitempty"`
-	// The categories of user's work
+	// The categories of user's work, separate by ,
 	Categories *string `form:"categories,omitempty" json:"categories,omitempty" xml:"categories,omitempty"`
 	// Biography of the user
 	Biography *string `form:"biography,omitempty" json:"biography,omitempty" xml:"biography,omitempty"`
@@ -291,7 +291,7 @@ type GetUserdataInternalServerErrorResponseBody struct {
 // UserImageUploadPayloadRequestBody is used to define fields on request body
 // types.
 type UserImageUploadPayloadRequestBody struct {
-	// File to upload
+	// File to upload (byte array of the file content)
 	Content []byte `form:"content" json:"content" xml:"content"`
 	// File name of the user image
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
@@ -300,7 +300,7 @@ type UserImageUploadPayloadRequestBody struct {
 // UserImageUploadPayloadResponseBody is used to define fields on response body
 // types.
 type UserImageUploadPayloadResponseBody struct {
-	// File to upload
+	// File to upload (byte array of the file content)
 	Content []byte `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
 	// File name of the user image
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
@@ -354,9 +354,9 @@ func NewUpdateUserdataRequestBody(p *userdatas.UpdateUserdataPayload) *UpdateUse
 	return body
 }
 
-// NewCreateUserdataUserdataProcessResultCreated builds a "userdatas" service
-// "createUserdata" endpoint result from a HTTP "Created" response.
-func NewCreateUserdataUserdataProcessResultCreated(body *CreateUserdataResponseBody) *userdatas.UserdataProcessResult {
+// NewCreateUserdataUserdataProcessResultOK builds a "userdatas" service
+// "createUserdata" endpoint result from a HTTP "OK" response.
+func NewCreateUserdataUserdataProcessResultOK(body *CreateUserdataResponseBody) *userdatas.UserdataProcessResult {
 	v := &userdatas.UserdataProcessResult{
 		ResponseCode:    *body.ResponseCode,
 		Detail:          *body.Detail,
@@ -405,9 +405,9 @@ func NewCreateUserdataInternalServerError(body *CreateUserdataInternalServerErro
 	return v
 }
 
-// NewUpdateUserdataUserdataProcessResultCreated builds a "userdatas" service
-// "updateUserdata" endpoint result from a HTTP "Created" response.
-func NewUpdateUserdataUserdataProcessResultCreated(body *UpdateUserdataResponseBody) *userdatas.UserdataProcessResult {
+// NewUpdateUserdataUserdataProcessResultOK builds a "userdatas" service
+// "updateUserdata" endpoint result from a HTTP "OK" response.
+func NewUpdateUserdataUserdataProcessResultOK(body *UpdateUserdataResponseBody) *userdatas.UserdataProcessResult {
 	v := &userdatas.UserdataProcessResult{
 		ResponseCode:    *body.ResponseCode,
 		Detail:          *body.Detail,
@@ -909,6 +909,9 @@ func ValidateUserImageUploadPayloadRequestBody(body *UserImageUploadPayloadReque
 	if body.Content == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("content", "body"))
 	}
+	if body.Filename != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.filename", *body.Filename, "^.*\\.(png|PNG|jpeg|JPEG|jpg|JPG)$"))
+	}
 	return
 }
 
@@ -917,6 +920,9 @@ func ValidateUserImageUploadPayloadRequestBody(body *UserImageUploadPayloadReque
 func ValidateUserImageUploadPayloadResponseBody(body *UserImageUploadPayloadResponseBody) (err error) {
 	if body.Content == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("content", "body"))
+	}
+	if body.Filename != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.filename", *body.Filename, "^.*\\.(png|PNG|jpeg|JPEG|jpg|JPG)$"))
 	}
 	return
 }

@@ -46,9 +46,9 @@ type CreateUserdataPayload struct {
 	NativeCurrency *string
 	// Location of the user
 	Location *string
-	// Primary language of the user
+	// Primary language of the user, follow ISO 639-2 standard
 	PrimaryLanguage *string
-	// The categories of user's work
+	// The categories of user's work, separate by ,
 	Categories *string
 	// Biography of the user
 	Biography *string
@@ -104,9 +104,9 @@ type UpdateUserdataPayload struct {
 	NativeCurrency *string
 	// Location of the user
 	Location *string
-	// Primary language of the user
+	// Primary language of the user, follow ISO 639-2 standard
 	PrimaryLanguage *string
-	// The categories of user's work
+	// The categories of user's work, separate by ,
 	Categories *string
 	// Biography of the user
 	Biography *string
@@ -140,9 +140,9 @@ type UserSpecifiedData struct {
 	NativeCurrency *string
 	// Location of the user
 	Location *string
-	// Primary language of the user
+	// Primary language of the user, follow ISO 639-2 standard
 	PrimaryLanguage *string
-	// The categories of user's work
+	// The categories of user's work, separate by ,
 	Categories *string
 	// Biography of the user
 	Biography *string
@@ -158,7 +158,7 @@ type UserSpecifiedData struct {
 
 // User image upload payload
 type UserImageUploadPayload struct {
-	// File to upload
+	// File to upload (byte array of the file content)
 	Content []byte
 	// File name of the user image
 	Filename *string

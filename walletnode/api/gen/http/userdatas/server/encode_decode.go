@@ -24,7 +24,7 @@ func EncodeCreateUserdataResponse(encoder func(context.Context, http.ResponseWri
 		res, _ := v.(*userdatas.UserdataProcessResult)
 		enc := encoder(ctx, w)
 		body := NewCreateUserdataResponseBody(res)
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
 }
@@ -107,7 +107,7 @@ func EncodeUpdateUserdataResponse(encoder func(context.Context, http.ResponseWri
 		res, _ := v.(*userdatas.UserdataProcessResult)
 		enc := encoder(ctx, w)
 		body := NewUpdateUserdataResponseBody(res)
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		return enc.Encode(body)
 	}
 }

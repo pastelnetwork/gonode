@@ -89,7 +89,7 @@ func DecodeCreateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, 
 			defer resp.Body.Close()
 		}
 		switch resp.StatusCode {
-		case http.StatusCreated:
+		case http.StatusOK:
 			var (
 				body CreateUserdataResponseBody
 				err  error
@@ -102,7 +102,7 @@ func DecodeCreateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, 
 			if err != nil {
 				return nil, goahttp.ErrValidationError("userdatas", "createUserdata", err)
 			}
-			res := NewCreateUserdataUserdataProcessResultCreated(&body)
+			res := NewCreateUserdataUserdataProcessResultOK(&body)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
@@ -209,7 +209,7 @@ func DecodeUpdateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, 
 			defer resp.Body.Close()
 		}
 		switch resp.StatusCode {
-		case http.StatusCreated:
+		case http.StatusOK:
 			var (
 				body UpdateUserdataResponseBody
 				err  error
@@ -222,7 +222,7 @@ func DecodeUpdateUserdataResponse(decoder func(*http.Response) goahttp.Decoder, 
 			if err != nil {
 				return nil, goahttp.ErrValidationError("userdatas", "updateUserdata", err)
 			}
-			res := NewUpdateUserdataUserdataProcessResultCreated(&body)
+			res := NewUpdateUserdataUserdataProcessResultOK(&body)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
