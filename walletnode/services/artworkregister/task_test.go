@@ -3,7 +3,6 @@ package artworkregister
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"image"
 	"image/png"
@@ -853,7 +852,7 @@ func TestTaskGetBlock(t *testing.T) {
 
 	testCases := map[string]struct {
 		args                  args
-		wantArtistblockHash   []byte
+		wantArtistblockHash   string
 		wantArtistBlockHeight int
 		wantErr               error
 	}{
@@ -920,11 +919,9 @@ func TestTaskGetBlock(t *testing.T) {
 				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			blockhash, err := hex.DecodeString(tc.args.blockInfo.Hash)
-			assert.Nil(t, err)
-			tc.wantArtistblockHash = blockhash
+			tc.wantArtistblockHash = tc.args.blockInfo.Hash
 
-			err = tc.args.task.getBlock(context.Background())
+			err := tc.args.task.getBlock(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
