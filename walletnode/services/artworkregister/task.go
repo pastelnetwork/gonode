@@ -75,6 +75,7 @@ func (task *Task) Run(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("Start task")
 	defer log.WithContext(ctx).Debugf("End task")
 
+	defer task.removeArtifacts()
 	if err := task.run(ctx); err != nil {
 		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithErrorStack(err).Warnf("Task is rejected")
@@ -795,4 +796,18 @@ func (task *Task) preburntRegistrationFee(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (task *Task) removeArtifacts() {
+	removeFn := func(file *artwork.File) {
+		if file != nil {
+			log.Debugf("remove file: %s", file.Name())
+			if err := file.Remove(); err != nil {
+				log.Debugf("failed to remove filed: %s", err.Error())
+			}
+		}
+	}
+	if task.Request != nil {
+		removeFn(task.Request.Image)
+	}
 }
