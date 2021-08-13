@@ -338,7 +338,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	}
 
 	// only primary node start this action
-	var NFTRegTxid string
+	var nftRegTxid string
 	if task.connectedTo == nil {
 		<-task.NewAction(func(ctx context.Context) error {
 			log.WithContext(ctx).Debug("waiting for signature from peers")
@@ -359,14 +359,14 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 						return nil
 					}
 
-					NFTRegTxid, err = task.registerArt(ctx)
+					nftRegTxid, err = task.registerArt(ctx)
 					if err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
 						err = errors.Errorf("failed to register NFT %w", err)
 						return nil
 					}
 
-					// confirmations := task.waitConfirmation(ctx, NFTRegTxid, 10, 30*time.Second, 55)
+					// confirmations := task.waitConfirmation(ctx, nftRegTxid, 10, 30*time.Second, 55)
 					// err = <-confirmations
 					// if err != nil {
 					// 	return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
@@ -396,7 +396,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 		})
 	}
 
-	return NFTRegTxid, err
+	return nftRegTxid, err
 }
 
 func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
@@ -531,11 +531,11 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 		Fee:  task.registrationFee,
 	}
 
-	NFTRegTxid, err := task.pastelClient.RegisterNFTTicket(ctx, req)
+	nftRegTxid, err := task.pastelClient.RegisterNFTTicket(ctx, req)
 	if err != nil {
 		return "", errors.Errorf("failed to register NFT work %s", err)
 	}
-	return NFTRegTxid, nil
+	return nftRegTxid, nil
 }
 
 func (task *Task) storeRaptorQSymbols(ctx context.Context) error {

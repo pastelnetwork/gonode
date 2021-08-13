@@ -359,13 +359,13 @@ func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb
 		return nil, errors.Errorf("failed to get task from meta data %w", err)
 	}
 
-	NFTRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
+	nftRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
 	if err != nil {
 		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
 	}
 
 	rsp := pb.SendPreBurntFeeTxidReply{
-		NFTRegTxid: NFTRegTxid,
+		NFTRegTxid: nftRegTxid,
 	}
 	return &rsp, nil
 }
