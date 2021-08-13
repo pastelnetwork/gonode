@@ -16,7 +16,6 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -801,11 +800,9 @@ func TestTaskCreateTicket(t *testing.T) {
 				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			pastelID := base58.Decode(tc.args.task.Request.ArtistPastelID)
-
 			tc.want = &pastel.ArtTicket{
 				Version:  1,
-				Author:   string(pastelID),
+				Author:   tc.args.task.Request.ArtistPastelID,
 				BlockNum: tc.args.task.artistBlockHeight,
 				Copies:   tc.args.task.Request.IssuedCopies,
 				AppTicketData: pastel.AppTicket{
