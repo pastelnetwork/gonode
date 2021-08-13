@@ -92,7 +92,7 @@ message EncoderParameters {
 }
 
 message SendSignedNFTTicketRequest {
-    bytes NFT_ticket = 1;
+    bytes nft_ticket = 1;
     bytes creator_signature = 2;
     string key1 = 3;
     string key2 = 4;

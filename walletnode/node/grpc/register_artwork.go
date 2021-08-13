@@ -284,7 +284,7 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := pb.SendSignedNFTTicketRequest{
-		NFTTicket:        ticket,
+		NftTicket:        ticket,
 		CreatorSignature: signature,
 		Key1:             key1,
 		Key2:             key2,
