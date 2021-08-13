@@ -109,7 +109,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			return nil
 		}
 
-		pastelID := base58.Encode([]byte(nftRegTicket.RegTicketData.NFTTicketData.Author))
+		pastelID := nftRegTicket.RegTicketData.NFTTicketData.Author
 
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request

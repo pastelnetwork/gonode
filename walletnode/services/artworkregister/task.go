@@ -3,7 +3,6 @@ package artworkregister
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"sync"
@@ -36,7 +35,7 @@ type Task struct {
 
 	// task data to create RegArt ticket
 	creatorBlockHeight           int
-	creatorBlockHash             []byte
+	creatorBlockHash             string
 	fingerprintAndScores         *pastel.FingerAndScores
 	fingerprintsHash             []byte
 	fingerprint                  []byte
@@ -404,7 +403,7 @@ func (task *Task) getBlock(ctx context.Context) error {
 	}
 
 	// Decode hash string to byte
-	task.creatorBlockHash, err = hex.DecodeString(blockInfo.Hash)
+	task.creatorBlockHash = blockInfo.Hash
 	if err != nil {
 		return errors.Errorf("failed to convert hash string %s to bytes: %w", blockInfo.Hash, err)
 	}
@@ -432,7 +431,7 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("Image hash %x", sha3.Sum256(content))
 	// FIXME :
 	// - check format of artis block hash should be base58 or not
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, hex.EncodeToString(task.creatorBlockHash), task.Request.ArtistPastelID)
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, task.creatorBlockHash, task.Request.ArtistPastelID)
 	if err != nil {
 		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
@@ -530,9 +529,9 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.NFTTicket{
 		Version:      1,
-		Author:       string(pastelID),
+		Author:       task.Request.ArtistPastelID,
 		BlockNum:     task.creatorBlockHeight,
-		BlockHash:    string(task.creatorBlockHash),
+		BlockHash:    task.creatorBlockHash,
 		Copies:       task.Request.IssuedCopies,
 		Royalty:      0,  // Not supported yet by cNode
 		GreenAddress: "", // Not supported yet by cNode
