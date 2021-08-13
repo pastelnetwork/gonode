@@ -3,7 +3,6 @@ package artworkregister
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"image"
 	"image/png"
@@ -16,7 +15,6 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -801,11 +799,9 @@ func TestTaskCreateTicket(t *testing.T) {
 				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			pastelID := base58.Decode(tc.args.task.Request.ArtistPastelID)
-
 			tc.want = &pastel.ArtTicket{
 				Version:  1,
-				Author:   string(pastelID),
+				Author:   tc.args.task.Request.ArtistPastelID,
 				BlockNum: tc.args.task.artistBlockHeight,
 				Copies:   tc.args.task.Request.IssuedCopies,
 				AppTicketData: pastel.AppTicket{
@@ -856,7 +852,7 @@ func TestTaskGetBlock(t *testing.T) {
 
 	testCases := map[string]struct {
 		args                  args
-		wantArtistblockHash   []byte
+		wantArtistblockHash   string
 		wantArtistBlockHeight int
 		wantErr               error
 	}{
@@ -923,11 +919,9 @@ func TestTaskGetBlock(t *testing.T) {
 				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			blockhash, err := hex.DecodeString(tc.args.blockInfo.Hash)
-			assert.Nil(t, err)
-			tc.wantArtistblockHash = blockhash
+			tc.wantArtistblockHash = tc.args.blockInfo.Hash
 
-			err = tc.args.task.getBlock(context.Background())
+			err := tc.args.task.getBlock(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
