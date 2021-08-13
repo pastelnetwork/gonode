@@ -90,6 +90,13 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 		return nil, err
 	}
 
+	// Primary node will connect to leader node here. 
+	if !service.databaseOps.IsLeader() {
+		if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), task.ID()); err != nil {
+			return nil, err
+		}
+	}
+
 	snrequest := userdata.SuperNodeRequest{
 		UserdataHash:       req.UserdataHash,
 		UserdataResultHash: req.UserdataResultHash,

@@ -131,12 +131,6 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConn
 		return nil, err
 	}
 
-	if !service.databaseOps.IsLeader() {
-		if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), req.SessID); err != nil {
-			return nil, err
-		}
-	}
-
 	resp := &pbwn.MDLConnectToReply{}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
 	return resp, nil
