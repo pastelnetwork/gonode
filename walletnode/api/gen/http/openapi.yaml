@@ -1219,10 +1219,10 @@ definitions:
         minimum: 0
         maximum: 1
       royalty:
-        type: integer
+        type: number
         description: how much artist should get on all future resales
-        example: 3834580722923257634
-        format: int64
+        example: 0.41574607503644323
+        format: double
       series_name:
         type: string
         description: Series name
@@ -1309,7 +1309,7 @@ definitions:
       nsfw_score: 1
       porn_nsfw_score: 1
       rareness_score: 1
-      royalty: 5330761874689937150
+      royalty: 0.577962360554173
       series_name: Famous artist
       sexy_nsfw_score: 1
       storage_fee: 100

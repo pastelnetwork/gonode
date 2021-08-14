@@ -176,17 +176,17 @@ func TestRunTaskSuccessful(t *testing.T) {
 	f.Fuzz(&ticket)
 	ticket.Height = 2
 
-	b, err := json.Marshal(ticket.RegTicketData.ArtTicketData.AppTicketData)
+	b, err := json.Marshal(ticket.RegTicketData.NFTTicketData.AppTicketData)
 	if err != nil {
 		t.Fatalf("faied to marshal, err: %s", err)
 	}
-	ticket.RegTicketData.ArtTicketData.AppTicket = b
+	ticket.RegTicketData.NFTTicketData.AppTicket = b
 
-	b, err = json.Marshal(ticket.RegTicketData.ArtTicketData)
+	b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
 	if err != nil {
 		t.Fatalf("faied to marshal, err: %s", err)
 	}
-	ticket.RegTicketData.ArtTicket = b
+	ticket.RegTicketData.NFTTicket = b
 
 	pMock := pastelMock.NewMockClient(t)
 	pMock.ListenOnRegTickets(pastel.RegTickets{
@@ -214,7 +214,7 @@ func TestRunTaskSuccessful(t *testing.T) {
 	assert.True(t, err == nil)
 
 	getFp, err := s.getLatestFingerprint(ctx)
-	fingerprintsHash := ticket.RegTicketData.ArtTicketData.AppTicketData.FingerprintsHash
+	fingerprintsHash := ticket.RegTicketData.NFTTicketData.AppTicketData.FingerprintsHash
 
 	assert.True(t, err == nil)
 	assert.True(t, getFp != nil)

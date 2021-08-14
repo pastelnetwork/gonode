@@ -5,7 +5,7 @@ pastel-api:
   password: "rt"
 
 node:
-  pastel_id: jXXzhJJnfEk4cfJWeyX3t6o6EGBaCKsp6Qn38BUX62gHbBB325t1JqrkisKJGLopZ6QjzfeAmE623oK7GqS3sw 
+  pastel_id: jXXsFY5CMSFy5T1cHFiqTsK2B5kMv93zP48G2FdfPWuPP6p2jH6c1JrNGL3VJHDxFvq6eZSsWppC3191sbG3oD
   pass_phrase: "passphrase"
   preburnt_tx_min_confirmation: 3
   # Timeout in minutes

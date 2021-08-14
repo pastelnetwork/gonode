@@ -250,7 +250,7 @@ type ArtworkDetail struct {
 	// Green address
 	GreenAddress *bool
 	// how much artist should get on all future resales
-	Royalty *int
+	Royalty *float64
 	// Storage fee %
 	StorageFee *int
 	// nsfw score

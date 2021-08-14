@@ -48,7 +48,7 @@ paths:
                 nsfw_score: 1
                 porn_nsfw_score: 1
                 rareness_score: 1
-                royalty: 7767964326538747577
+                royalty: 0.8422043798623209
                 series_name: Famous artist
                 sexy_nsfw_score: 1
                 storage_fee: 100
@@ -977,10 +977,10 @@ components:
           minimum: 0
           maximum: 1
         royalty:
-          type: integer
+          type: number
           description: how much artist should get on all future resales
-          example: 4321854410538811785
-          format: int64
+          example: 0.4685763941072239
+          format: double
         series_name:
           type: string
           description: Series name
@@ -1053,7 +1053,7 @@ components:
         nsfw_score: 1
         porn_nsfw_score: 1
         rareness_score: 1
-        royalty: 4529988671258623533
+        royalty: 0.4911423558713323
         series_name: Famous artist
         sexy_nsfw_score: 1
         storage_fee: 100

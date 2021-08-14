@@ -61,7 +61,7 @@ MAXIMUM_NR_OF_TRANSFORMATIONS = 5
 MIN_NR_OF_TRANFORMATIONS = 2
 
 #Web scraped categories
-CATEGORIES = ['input'] # art already OK
+CATEGORIES = ['input'] # NFT already OK
 
 class JsonLogger:
     """Logger class for JSON export"""

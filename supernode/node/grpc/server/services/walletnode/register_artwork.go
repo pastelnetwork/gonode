@@ -331,20 +331,20 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	return nil
 }
 
-// SendSignedArtTicket implements walletnode.RegisterArtwork.SendSignedArtTicket
-func (service *RegisterArtwork) SendSignedArtTicket(ctx context.Context, req *pb.SendSignedArtTicketRequest) (*pb.SendSignedArtTicketReply, error) {
+// SendSignedNFTTicket implements walletnode.RegisterArtwork.SendSignedNFTTicket
+func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (*pb.SendSignedNFTTicketReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SignTicket request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to get task from metada %w", err)
 	}
 
-	registrationFee, err := task.GetRegistrationFee(ctx, req.ArtTicket, req.ArtistSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
+	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
 	if err != nil {
 		return nil, errors.Errorf("failed to get total storage fee %w", err)
 	}
 
-	rsp := pb.SendSignedArtTicketReply{
+	rsp := pb.SendSignedNFTTicketReply{
 		RegistrationFee: registrationFee,
 	}
 
@@ -359,13 +359,13 @@ func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb
 		return nil, errors.Errorf("failed to get task from meta data %w", err)
 	}
 
-	artRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
+	nftRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
 	if err != nil {
 		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
 	}
 
 	rsp := pb.SendPreBurntFeeTxidReply{
-		ArtRegTxid: artRegTxid,
+		NFTRegTxid: nftRegTxid,
 	}
 	return &rsp, nil
 }

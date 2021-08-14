@@ -628,7 +628,7 @@ var ArtworkDetail = Type("ArtworkDetail", func() {
 	Attribute("green_address", Boolean, func() {
 		Description("Green address")
 	})
-	Attribute("royalty", Int, func() {
+	Attribute("royalty", Float64, func() {
 		Description("how much artist should get on all future resales")
 	})
 	Attribute("storage_fee", Int, func() {
