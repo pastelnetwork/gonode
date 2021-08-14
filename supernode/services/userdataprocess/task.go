@@ -490,7 +490,7 @@ func (task *Task) getRQliteLeaderNode(ctx context.Context, extAddress string) (*
 }
 
 // ConnectToLeader connects to RQLite Leader node
-func (task *Task) ConnectToLeader(ctx context.Context, extAddress string, sessID string) error {
+func (task *Task) ConnectToLeader(ctx context.Context, extAddress string) error {
 	log.WithContext(ctx).Debugf("ConnectToLeader on address %s", extAddress)
 	var actionErr error
 	task.NewAction(func(ctx context.Context) error {

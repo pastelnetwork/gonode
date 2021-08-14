@@ -221,11 +221,11 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
 						return errors.Errorf("failed to send or write userdata to leader rqlite %w", err)
-					} else {
-						// Write success:
-						processResult.ResponseCode = userdata.SuccessProcess
-						processResult.Detail = userdata.Description[userdata.SuccessProcess]
 					}
+					// Write success:
+					processResult.ResponseCode = userdata.SuccessProcess
+					processResult.Detail = userdata.Description[userdata.SuccessProcess]
+
 				} else {
 					processResult.ResponseCode = userdata.ErrorRQLiteDBNotFound
 					processResult.Detail = userdata.Description[userdata.ErrorRQLiteDBNotFound]

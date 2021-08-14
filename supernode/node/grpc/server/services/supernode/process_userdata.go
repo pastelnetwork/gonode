@@ -117,7 +117,7 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 			extAddress = fmt.Sprintf("%s:%d", ipAddress, defaultGRPCPort)
 		}
 
-		if err := task.ConnectToLeader(ctx, extAddress, task.ID()); err != nil {
+		if err := task.ConnectToLeader(ctx, extAddress); err != nil {
 			return nil, err
 		}
 	}
