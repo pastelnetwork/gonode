@@ -70,7 +70,7 @@ func fakeRegiterTicket() pastel.RegTicket {
 		BlockHash:     "block_hash",
 		Copies:        10,
 		Royalty:       99,
-		GreenAddress:  "green_address",
+		Green:         false,
 		AppTicket:     appTicket,
 		AppTicketData: appTicketData,
 	}
