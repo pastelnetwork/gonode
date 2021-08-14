@@ -1,0 +1,3 @@
+{{/* Delete a record from follow_relations table */}}
+
+DELETE FROM follow_relations WHERE follower_pastel_id = '{{.FollowerPastelID}}' AND followee_pastel_id = '{{.FolloweePastelID}}';

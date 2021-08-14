@@ -45,6 +45,7 @@ const (
 	snActivityWriteTemplate          = "sn_activity_write"
 	transactionWriteTemplate         = "transaction_write"
 	uniqueNftByUserTemplate          = "unique_nft_by_user"
+	userFollowDeleteTemplate         = "user_follow_delete"
 	userFollowWriteTemplate          = "user_follow_write"
 	usersLikeNftTemplate             = "users_like_nft"
 )
@@ -264,6 +265,13 @@ func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) (interface{},
 		}
 		return db.GetUniqueNftByUser(ctx, data)
 
+	case userdata.CommandUserFollowDelete:
+		var data userdata.UserFollow
+		if err := json.Unmarshal(rawData, &data); err != nil {
+			return nil, errors.Errorf("error while unmarshaling json: %w", err)
+		}
+		return nil, db.DeleteUserFollow(ctx, data)
+
 	case userdata.CommandUserFollowWrite:
 		var data userdata.UserFollow
 		if err := json.Unmarshal(rawData, &data); err != nil {
@@ -348,6 +356,14 @@ func (db *Ops) WriteTransaction(ctx context.Context, data userdata.ArtTransactio
 
 func (db *Ops) WriteUserFollow(ctx context.Context, data userdata.UserFollow) error {
 	command, err := db.templates.GetCommand(userFollowWriteTemplate, data)
+	if err != nil {
+		return errors.Errorf("error while subtitute template: %w", err)
+	}
+	return db.writeData(ctx, command)
+}
+
+func (db *Ops) DeleteUserFollow(ctx context.Context, data userdata.UserFollow) error {
+	command, err := db.templates.GetCommand(userFollowDeleteTemplate, data)
 	if err != nil {
 		return errors.Errorf("error while subtitute template: %w", err)
 	}

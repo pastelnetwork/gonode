@@ -2036,3 +2036,32 @@ func (ts *testSuite) TestOps_ProcessCommand() {
 		})
 	}
 }
+
+func (ts *testSuite) TestOps_DeleteUserFollow() {
+	for i := 0; i < 3; i++ {
+		userDataFrame.ArtistPastelID = fmt.Sprintf("id_delete_follow_%d", i)
+		ts.Nil(ts.ops.WriteUserData(ts.ctx, &userDataFrame))
+	}
+
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id_delete_follow_0", FolloweePastelID: "id_delete_follow_1"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id_delete_follow_1", FolloweePastelID: "id_delete_follow_0"}))
+	ts.Nil(ts.ops.WriteUserFollow(ts.ctx, userdata.UserFollow{FollowerPastelID: "id_delete_follow_1", FolloweePastelID: "id_delete_follow_2"}))
+
+	tests := []struct {
+		data    userdata.UserFollow
+		wantErr bool
+	}{
+		{data: userdata.UserFollow{FollowerPastelID: "id_delete_follow_0", FolloweePastelID: "id_delete_follow_1"}, wantErr: false},
+		{data: userdata.UserFollow{FollowerPastelID: "id_delete_follow_1", FolloweePastelID: "id_delete_follow_0"}, wantErr: false},
+		{data: userdata.UserFollow{FollowerPastelID: "id_delete_follow_1", FolloweePastelID: "id_delete_follow_2"}, wantErr: false},
+	}
+
+	for i, tt := range tests {
+		ts.T().Run(fmt.Sprintf("TestOps_DeleteUserFollow-%d", i), func(t *testing.T) {
+			err := ts.ops.DeleteUserFollow(ts.ctx, tt.data)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Ops.DeleteUserFollow() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
