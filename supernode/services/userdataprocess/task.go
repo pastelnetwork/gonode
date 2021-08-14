@@ -114,18 +114,22 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 	task.acceptedMu.Lock()
 	defer task.acceptedMu.Unlock()
 
-	if err := task.RequiredStatus(StatusPrimaryMode); err != nil {
+	err := task.RequiredStatus(StatusPrimaryMode)
+	if err != nil {
 		return err
 	}
 
+	var actionErr error
 	<-task.NewAction(func(ctx context.Context) error {
 		if node := task.accepted.ByID(nodeID); node != nil {
-			return errors.Errorf("node %q is already registered", nodeID)
+			actionErr = errors.Errorf("node %q is already registered", nodeID)
+			return nil
 		}
 
 		node, err := task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
-			return errors.Errorf("failed to get node by extID %s %w", nodeID, err)
+			actionErr = errors.Errorf("failed to get node by extID %s %w", nodeID, err)
+			return nil
 		}
 		task.accepted.Add(node)
 
@@ -136,27 +140,32 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		}
 		return nil
 	})
-	return nil
+	return actionErr
 }
 
 // ConnectTo connects to primary node
 func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
-	if err := task.RequiredStatus(StatusSecondaryMode); err != nil {
+	err := task.RequiredStatus(StatusSecondaryMode)
+	if err != nil {
 		return err
 	}
 
+	var actionErr error
 	task.NewAction(func(ctx context.Context) error {
 		node, err := task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
-			return err
+			actionErr = err
+			return nil
 		}
 
 		if err := node.connect(ctx); err != nil {
-			return err
+			actionErr = err
+			return nil
 		}
 
 		if err := node.Session(ctx, task.config.PastelID, sessID); err != nil {
-			return err
+			actionErr = err
+			return nil
 		}
 
 		task.ConnectedTo = node
@@ -164,7 +173,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 		task.UpdateStatus(StatusConnected)
 		return nil
 	})
-	return nil
+	return actionErr
 }
 
 // SupernodeProcessUserdata process the userdata send from Walletnode
@@ -226,6 +235,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 
 	task.ownSNData = snRequest // At this step this SuperNodeRequest only contain UserdataResultHash and UserdataHash
 
+	var actionErr error
 	<-task.NewAction(func(ctx context.Context) error {
 		// sign the data if not primary node
 		isPrimary := false
@@ -234,10 +244,17 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 		}
 		log.WithContext(ctx).Debugf("isPrimary: %t", isPrimary)
 		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, isPrimary); err != nil {
-			return errors.Errorf("failed to signed and send SuperNodeRequest:%w", err)
+			actionErr = errors.Errorf("failed to signed and send SuperNodeRequest:%w", err)
+			return nil
 		}
 		return nil
 	})
+	if actionErr != nil {
+		return userdata.ProcessResult{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, errors.Errorf("error on action: %w", actionErr)
+	}
 
 	// only primary node start this action
 	var processResult userdata.ProcessResult
@@ -249,14 +266,14 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 				case <-ctx.Done():
 					err := ctx.Err()
 					if err != nil {
-						log.WithContext(ctx).Debug("waiting for SuperNodeRequest from peers cancelled or timeout")
+						actionErr = errors.Errorf("waiting for SuperNodeRequest from peers cancelled or timeout: %w", err)
 					}
-					return err
+					return nil
 				case <-task.allPeersSNDatasReceived:
 					log.WithContext(ctx).Debugf("all SuperNodeRequest received so start validation")
 					resp, err := task.verifyPeersUserdata(ctx)
 					if err != nil {
-						return errors.Errorf("fail to verifyPeersUserdata: %w", err)
+						actionErr = errors.Errorf("fail to verifyPeersUserdata: %w", err)
 					}
 					processResult = resp
 					return nil
@@ -265,7 +282,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 		})
 	}
 
-	return processResult, nil
+	return processResult, actionErr
 }
 
 // ReceiveUserdata get the userdata from database
@@ -301,10 +318,12 @@ func (task *Task) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.Su
 	task.peersSNDataSignedMtx.Lock()
 	defer task.peersSNDataSignedMtx.Unlock()
 
+	var actionErr error
 	<-task.NewAction(func(ctx context.Context) error {
 		log.WithContext(ctx).Debugf("receive supernode userdata result signed from node %s", snrequest.NodeID)
 		if node := task.accepted.ByID(snrequest.NodeID); node == nil {
-			return errors.Errorf("node %s not in accepted list", snrequest.NodeID)
+			actionErr = errors.Errorf("node %s not in accepted list", snrequest.NodeID)
+			return nil
 		}
 
 		task.peersSNDataSigned[snrequest.NodeID] = snrequest
@@ -316,7 +335,7 @@ func (task *Task) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.Su
 		}
 		return nil
 	})
-	return nil
+	return actionErr
 }
 
 func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResult, error) {
@@ -473,24 +492,28 @@ func (task *Task) getRQliteLeaderNode(ctx context.Context, extAddress string) (*
 // ConnectToLeader connects to RQLite Leader node
 func (task *Task) ConnectToLeader(ctx context.Context, extAddress string, sessID string) error {
 	log.WithContext(ctx).Debugf("ConnectToLeader on address %s", extAddress)
+	var actionErr error
 	task.NewAction(func(ctx context.Context) error {
 		node, err := task.getRQliteLeaderNode(ctx, extAddress)
 		if err != nil {
-			return err
+			actionErr = errors.Errorf("error while acquiring rqlite leader node: %w", err)
+			return nil
 		}
 
 		if err := node.connect(ctx); err != nil {
-			return err
+			actionErr = errors.Errorf("error while connecting to rqlite leader node: %w", err)
+			return nil
 		}
 
 		if err := node.Session(ctx, task.config.PastelID, sessID); err != nil {
-			return err
+			actionErr = errors.Errorf("error while creating session to rqlite leader node: %w", err)
+			return nil
 		}
 		task.ConnectedToLeader = node
 
 		return nil
 	})
-	return nil
+	return actionErr
 }
 
 func (task *Task) context(ctx context.Context) context.Context {
