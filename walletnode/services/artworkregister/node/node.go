@@ -27,7 +27,7 @@ type Node struct {
 	smallThumbnailHash  []byte
 
 	registrationFee int64
-	regArtTxid      string
+	regNFTTxid      string
 
 	address  string
 	pastelID string

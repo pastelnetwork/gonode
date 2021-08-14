@@ -13,18 +13,18 @@ func TestGetSearchableFields(t *testing.T) {
 		Height: 0,
 		TXID:   "id",
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id",
 					BlockTxID:      "block-txid",
-					ArtistName:     "Alan Majchrowicz",
-					ArtworkTitle:   "Lake Superior Sky III",
+					CreatorName:    "Alan Majchrowicz",
+					NFTTitle:       "Lake Superior Sky III",
 					TotalCopies:    10,
-					ArtistWrittenStatement: `Lakes Why settle for blank walls, when you can
+					CreatorWrittenStatement: `Lakes Why settle for blank walls, when you can
 					 transform them into stunning vista points. Explore Lake Superiorfrom imaginative
 					  scenic abstracts to sublime beach landscapes captured on camera.`,
-					ArtworkKeywordSet: "Michigan,Midwest,Peninsula,Great Lakes,Lakeview",
-					ArtworkSeriesName: "Science Art Lake",
+					NFTKeywordSet: "Michigan,Midwest,Peninsula,Great Lakes,Lakeview",
+					NFTSeriesName: "Science Art Lake",
 				},
 			},
 			TotalCopies: 10,

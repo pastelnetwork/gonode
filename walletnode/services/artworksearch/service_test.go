@@ -20,10 +20,10 @@ func TestRegTicket(t *testing.T) {
 	regTicketA := pastel.RegTicket{
 		TXID: testIDA,
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id",
-					ArtistName:     "Alan Majchrowicz",
+					CreatorName:    "Alan Majchrowicz",
 				},
 			},
 		},
@@ -32,11 +32,11 @@ func TestRegTicket(t *testing.T) {
 	regTicketB := pastel.RegTicket{
 		TXID: testIDB,
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id-b",
-					ArtistName:     "Andy",
-					ArtworkTitle:   "alantic",
+					CreatorName:    "Andy",
+					NFTTitle:       "alantic",
 				},
 			},
 		},
@@ -96,8 +96,8 @@ func TestRegTicket(t *testing.T) {
 			result, err := service.RegTicket(ctx, testCase.args.regTicketID)
 			assert.Equal(t, testCase.err, err)
 			assert.Equal(t, testCase.want.TXID, result.TXID)
-			assert.Equal(t, testCase.want.RegTicketData.ArtTicketData.Author,
-				result.RegTicketData.ArtTicketData.Author)
+			assert.Equal(t, testCase.want.RegTicketData.NFTTicketData.Author,
+				result.RegTicketData.NFTTicketData.Author)
 		})
 	}
 }
@@ -108,10 +108,10 @@ func TestGetThumbnail(t *testing.T) {
 	regTicketA := pastel.RegTicket{
 		TXID: "test-id-a",
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id",
-					ArtistName:     "Alan Majchrowicz",
+					CreatorName:    "Alan Majchrowicz",
 				},
 			},
 		},
@@ -171,7 +171,7 @@ func TestGetThumbnail(t *testing.T) {
 }
 
 func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
-	artTicketBytes, err := pastel.EncodeArtTicket(&ticket.RegTicketData.ArtTicketData)
+	artTicketBytes, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
 	assert.Nil(t, err)
-	ticket.RegTicketData.ArtTicket = artTicketBytes
+	ticket.RegTicketData.NFTTicket = artTicketBytes
 }

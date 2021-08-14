@@ -54,8 +54,8 @@ const (
 	// VerifyMethod represents Verify method name
 	VerifyMethod = "Verify"
 
-	// RegisterActTicket represents RegisterArtTicket method name
-	RegisterActTicket = "RegisterActTicket"
+	// RegisterNFTTicket represents RegisterNFTTicket method name
+	RegisterNFTTicket = "RegisterNFTTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -173,9 +173,9 @@ func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err erro
 	return client
 }
 
-// ListenOnRegisterActTicket listening on RegisterActTicket
-func (client *Client) ListenOnRegisterActTicket(txid string, err error) *Client {
-	client.On(RegisterActTicket, mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int"),
+// ListenOnRegisterNFTTicket listening on RegisterNFTTicket
+func (client *Client) ListenOnRegisterNFTTicket(txid string, err error) *Client {
+	client.On(RegisterNFTTicket, mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int"),
 		mock.AnythingOfType("int64"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(txid, err)
 	return client
 }

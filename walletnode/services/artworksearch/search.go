@@ -32,27 +32,27 @@ func (rs *RegTicketSearch) getSearchableFields(req *ArtSearchRequest) (data []st
 	fieldIdxMapper := make(map[int]ArtSearchQueryField)
 	idx := 0
 	if req.ArtistName {
-		data = append(data, rs.RegTicketData.ArtTicketData.AppTicketData.ArtistName)
+		data = append(data, rs.RegTicketData.NFTTicketData.AppTicketData.CreatorName)
 		fieldIdxMapper[idx] = ArtSearchArtistName
 		idx++
 	}
 	if req.ArtTitle {
-		data = append(data, rs.RegTicketData.ArtTicketData.AppTicketData.ArtworkTitle)
+		data = append(data, rs.RegTicketData.NFTTicketData.AppTicketData.NFTTitle)
 		fieldIdxMapper[idx] = ArtSearchArtTitle
 		idx++
 	}
 	if req.Descr {
-		data = append(data, rs.RegTicketData.ArtTicketData.AppTicketData.ArtistWrittenStatement)
+		data = append(data, rs.RegTicketData.NFTTicketData.AppTicketData.CreatorWrittenStatement)
 		fieldIdxMapper[idx] = ArtSearchDescr
 		idx++
 	}
 	if req.Keyword {
-		data = append(data, rs.RegTicketData.ArtTicketData.AppTicketData.ArtworkKeywordSet)
+		data = append(data, rs.RegTicketData.NFTTicketData.AppTicketData.NFTKeywordSet)
 		fieldIdxMapper[idx] = ArtSearchKeyword
 		idx++
 	}
 	if req.Series {
-		data = append(data, rs.RegTicketData.ArtTicketData.AppTicketData.ArtworkSeriesName)
+		data = append(data, rs.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName)
 		fieldIdxMapper[idx] = ArtSearchSeries
 	}
 

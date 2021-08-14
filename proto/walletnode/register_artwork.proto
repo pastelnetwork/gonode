@@ -20,7 +20,7 @@ service RegisterArtwork {
     rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
     // SendArtTicket sends a signed art-ticket to the supernode.
-    rpc SendSignedArtTicket(SendSignedArtTicketRequest) returns (SendSignedArtTicketReply);
+    rpc SendSignedNFTTicket(SendSignedNFTTicketRequest) returns (SendSignedNFTTicketReply);
 
     // SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
     rpc SendPreBurntFeeTxid(SendPreBurntFeeTxidRequest) returns (SendPreBurntFeeTxidReply);
@@ -91,15 +91,15 @@ message EncoderParameters {
   bytes oti = 1;   //12 bytes
 }
 
-message SendSignedArtTicketRequest {
-    bytes art_ticket = 1;
-    bytes artist_signature = 2;
+message SendSignedNFTTicketRequest {
+    bytes nft_ticket = 1;
+    bytes creator_signature = 2;
     string key1 = 3;
     string key2 = 4;
     EncoderParameters encode_parameters = 5;
     map<string, bytes> encode_files = 6;
 }
-message SendSignedArtTicketReply {
+message SendSignedNFTTicketReply {
     int64 registration_fee = 1;
 }
 
@@ -107,7 +107,7 @@ message SendPreBurntFeeTxidRequest {
     string txid = 1;
 }
 message SendPreBurntFeeTxidReply {
-    string art_reg_txid = 1;
+    string NFT_reg_txid = 1;
 }
 
 message SendTicketRequest {

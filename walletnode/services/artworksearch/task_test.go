@@ -26,10 +26,10 @@ func TestRunTask(t *testing.T) {
 	regTicketA := pastel.RegTicket{
 		TXID: testIDA,
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id",
-					ArtistName:     "Alan Majchrowicz",
+					CreatorName:    "Alan Majchrowicz",
 				},
 			},
 		},
@@ -38,11 +38,11 @@ func TestRunTask(t *testing.T) {
 	regTicketB := pastel.RegTicket{
 		TXID: testIDB,
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id-b",
-					ArtistName:     "Andy",
-					ArtworkTitle:   "alantic",
+					CreatorName:    "Andy",
+					NFTTitle:       "alantic",
 				},
 			},
 		},
@@ -206,8 +206,8 @@ func TestRunTask(t *testing.T) {
 
 			for i, result := range results {
 				assert.Equal(t, testCase.want[i].TXID, result.TXID)
-				assert.Equal(t, testCase.want[i].RegTicketData.ArtTicketData.Author,
-					result.RegTicketData.ArtTicketData.Author)
+				assert.Equal(t, testCase.want[i].RegTicketData.NFTTicketData.Author,
+					result.RegTicketData.NFTTicketData.Author)
 
 				assert.Equal(t, testCase.want[i].MatchIndex, result.MatchIndex)
 			}

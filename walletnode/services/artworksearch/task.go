@@ -117,7 +117,7 @@ func (task *Task) run(ctx context.Context) error {
 		res.MatchIndex = i
 
 		group.Go(func() error {
-			data, err := task.thumbnailHelper.Fetch(gctx, res.RegTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash)
+			data, err := task.thumbnailHelper.Fetch(gctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
 			if err != nil {
 				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("Fetch Thumbnail")
 
@@ -139,22 +139,22 @@ func (task *Task) run(ctx context.Context) error {
 // filterRegTicket filters ticket against request params & checks if its a match
 func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
 
-	if !inFloatRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.PastelRarenessScore,
+	if !inFloatRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore,
 		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
 		return srch, false
 	}
 
-	if !inFloatRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.OpenNSFWScore,
+	if !inFloatRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore,
 		task.request.MinNsfwScore, task.request.MaxNsfwScore) {
 		return srch, false
 	}
 
-	if !inFloatRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.InternetRarenessScore,
+	if !inFloatRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore,
 		task.request.MinInternetRarenessScore, task.request.MaxInternetRarenessScore) {
 		return srch, false
 	}
 
-	if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.TotalCopies,
+	if !inIntRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.TotalCopies,
 		task.request.MinCopies, task.request.MaxCopies) {
 		return srch, false
 	}

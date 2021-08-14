@@ -34,8 +34,8 @@ type Task struct {
 	nodes node.List
 
 	// task data to create RegArt ticket
-	artistBlockHeight            int
-	artistBlockHash              string
+	creatorBlockHeight           int
+	creatorBlockHash             string
 	fingerprintAndScores         *pastel.FingerAndScores
 	fingerprintsHash             []byte
 	fingerprint                  []byte
@@ -56,12 +56,12 @@ type Task struct {
 	// TODO: call cNodeAPI to get the following info
 	blockTxID       string
 	burnTxid        string
-	regArtTxid      string
+	regNFTTxid      string
 	registrationFee int64
 
 	// ticket
-	artistSignature []byte
-	ticket          *pastel.ArtTicket
+	creatorSignature []byte
+	ticket           *pastel.NFTTicket
 }
 
 // Run starts the task
@@ -137,12 +137,12 @@ func (task *Task) run(ctx context.Context) error {
 
 	// sign ticket with artist signature
 	if err := task.signTicket(ctx); err != nil {
-		return errors.Errorf("failed to sign art ticket %w", err)
+		return errors.Errorf("failed to sign NFT ticket %w", err)
 	}
 
 	// send signed ticket to supernodes to calculate registration fee
 	if err := task.sendSignedTicket(ctx); err != nil {
-		return errors.Errorf("failed to send signed art ticket: %w", err)
+		return errors.Errorf("failed to send signed NFT ticket: %w", err)
 	}
 
 	// send preburn-txid to master node(s)
@@ -161,8 +161,8 @@ func (task *Task) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.waitTxidValid(newCtx, task.regArtTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout, 15*time.Second); err != nil {
-		return errors.Errorf("failed to wait reg-art ticket valid %w", err)
+	if err := task.waitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout, 15*time.Second); err != nil {
+		return errors.Errorf("failed to wait reg-nft ticket valid %w", err)
 	}
 
 	// activate reg-art ticket at previous step
@@ -392,7 +392,7 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 func (task *Task) getBlock(ctx context.Context) error {
 	// Get block num
 	blockNum, err := task.pastelClient.GetBlockCount(ctx)
-	task.artistBlockHeight = int(blockNum)
+	task.creatorBlockHeight = int(blockNum)
 	if err != nil {
 		return errors.Errorf("failed to get block num: %w", err)
 	}
@@ -404,7 +404,7 @@ func (task *Task) getBlock(ctx context.Context) error {
 	}
 
 	// Decode hash string to byte
-	task.artistBlockHash = blockInfo.Hash
+	task.creatorBlockHash = blockInfo.Hash
 	if err != nil {
 		return errors.Errorf("failed to convert hash string %s to bytes: %w", blockInfo.Hash, err)
 	}
@@ -432,7 +432,7 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("Image hash %x", sha3.Sum256(content))
 	// FIXME :
 	// - check format of artis block hash should be base58 or not
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, task.artistBlockHash, task.Request.ArtistPastelID)
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, task.creatorBlockHash, task.Request.ArtistPastelID)
 	if err != nil {
 		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
 	}
@@ -523,39 +523,39 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	}
 
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
-	ticket := &pastel.ArtTicket{
+	ticket := &pastel.NFTTicket{
 		Version:   1,
 		Author:    task.Request.ArtistPastelID,
-		BlockNum:  task.artistBlockHeight,
-		BlockHash: task.artistBlockHash,
+		BlockNum:  task.creatorBlockHeight,
+		BlockHash: task.creatorBlockHash,
 		Copies:    task.Request.IssuedCopies,
-		Royalty:   0,  // Not supported yet by cNode
-		Green:     "", // Not supported yet by cNode
+		Royalty:   0,     // Not supported yet by cNode
+		Green:     false, // Not supported yet by cNode
 		AppTicketData: pastel.AppTicket{
-			AuthorPastelID:                 task.Request.ArtistPastelID,
-			BlockTxID:                      task.blockTxID,
-			BlockNum:                       task.artistBlockHeight,
-			ArtistName:                     task.Request.ArtistName,
-			ArtistWebsite:                  safeString(task.Request.ArtistWebsiteURL),
-			ArtistWrittenStatement:         safeString(task.Request.Description),
-			ArtworkTitle:                   safeString(&task.Request.Name),
-			ArtworkSeriesName:              safeString(task.Request.SeriesName),
-			ArtworkCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
-			ArtworkKeywordSet:              safeString(task.Request.Keywords),
-			TotalCopies:                    task.Request.IssuedCopies,
-			PreviewHash:                    task.previewHash,
-			Thumbnail1Hash:                 task.mediumThumbnailHash,
-			Thumbnail2Hash:                 task.smallThumbnailHash,
-			DataHash:                       task.datahash,
-			FingerprintsHash:               task.fingerprintsHash,
-			FingerprintsSignature:          task.fingerprintSignature,
-			DupeDetectionSystemVer:         task.fingerprintAndScores.DupeDectectionSystemVersion,
-			MatchesFoundOnFirstPage:        task.fingerprintAndScores.MatchesFoundOnFirstPage,
-			NumberOfResultPages:            task.fingerprintAndScores.NumberOfPagesOfResults,
-			FirstMatchURL:                  task.fingerprintAndScores.URLOfFirstMatchInPage,
-			PastelRarenessScore:            task.fingerprintAndScores.OverallAverageRarenessScore,
-			InternetRarenessScore:          float64(task.fingerprintAndScores.IsRareOnInternet),
-			OpenNSFWScore:                  task.fingerprintAndScores.OpenNSFWScore,
+			AuthorPastelID:             task.Request.ArtistPastelID,
+			BlockTxID:                  task.blockTxID,
+			BlockNum:                   task.creatorBlockHeight,
+			CreatorName:                task.Request.ArtistName,
+			CreatorWebsite:             safeString(task.Request.ArtistWebsiteURL),
+			CreatorWrittenStatement:    safeString(task.Request.Description),
+			NFTTitle:                   safeString(&task.Request.Name),
+			NFTSeriesName:              safeString(task.Request.SeriesName),
+			NFTCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
+			NFTKeywordSet:              safeString(task.Request.Keywords),
+			TotalCopies:                task.Request.IssuedCopies,
+			PreviewHash:                task.previewHash,
+			Thumbnail1Hash:             task.mediumThumbnailHash,
+			Thumbnail2Hash:             task.smallThumbnailHash,
+			DataHash:                   task.datahash,
+			FingerprintsHash:           task.fingerprintsHash,
+			FingerprintsSignature:      task.fingerprintSignature,
+			DupeDetectionSystemVer:     task.fingerprintAndScores.DupeDectectionSystemVersion,
+			MatchesFoundOnFirstPage:    task.fingerprintAndScores.MatchesFoundOnFirstPage,
+			NumberOfResultPages:        task.fingerprintAndScores.NumberOfPagesOfResults,
+			FirstMatchURL:              task.fingerprintAndScores.URLOfFirstMatchInPage,
+			PastelRarenessScore:        task.fingerprintAndScores.OverallAverageRarenessScore,
+			InternetRarenessScore:      float64(task.fingerprintAndScores.IsRareOnInternet),
+			OpenNSFWScore:              task.fingerprintAndScores.OpenNSFWScore,
 			AlternateNSFWScores: pastel.AlternateNSFWScores{
 				Drawing: task.fingerprintAndScores.AlternativeNSFWScore.Drawing,
 				Hentai:  task.fingerprintAndScores.AlternativeNSFWScore.Hentai,
@@ -578,12 +578,12 @@ func (task *Task) createArtTicket(_ context.Context) error {
 }
 
 func (task *Task) signTicket(ctx context.Context) error {
-	data, err := pastel.EncodeArtTicket(task.ticket)
+	data, err := pastel.EncodeNFTTicket(task.ticket)
 	if err != nil {
 		return errors.Errorf("failed to encode ticket %w", err)
 	}
 
-	task.artistSignature, err = task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
+	task.creatorSignature, err = task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
@@ -591,7 +591,7 @@ func (task *Task) signTicket(ctx context.Context) error {
 }
 
 func (task *Task) registerActTicket(ctx context.Context) (string, error) {
-	return task.pastelClient.RegisterActTicket(ctx, task.regArtTxid, task.artistBlockHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
+	return task.pastelClient.RegisterActTicket(ctx, task.regNFTTxid, task.creatorBlockHeight, task.registrationFee, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase)
 }
 
 // NewTask returns a new Task instance.
@@ -742,13 +742,13 @@ func (task *Task) uploadImage(ctx context.Context) error {
 }
 
 func (task *Task) sendSignedTicket(ctx context.Context) error {
-	buf, err := pastel.EncodeArtTicket(task.ticket)
+	buf, err := pastel.EncodeNFTTicket(task.ticket)
 	if err != nil {
 		return errors.Errorf("failed to marshal ticket %w", err)
 	}
 	log.Debug(string(buf))
 
-	if err := task.nodes.UploadSignedTicket(ctx, buf, task.artistSignature, task.rqSymbolIDFiles, task.rqEncodeParams); err != nil {
+	if err := task.nodes.UploadSignedTicket(ctx, buf, task.creatorSignature, task.rqSymbolIDFiles, task.rqEncodeParams); err != nil {
 		return errors.Errorf("failed to upload signed ticket %w", err)
 	}
 
@@ -783,9 +783,9 @@ func (task *Task) preburntRegistrationFee(ctx context.Context) error {
 	if err := task.nodes.SendPreBurntFeeTxid(ctx, task.burnTxid); err != nil {
 		return errors.Errorf("failed to send pre-burn-txid: %s to supernode(s): %w", task.burnTxid, err)
 	}
-	task.regArtTxid = task.nodes.RegArtTicketID()
-	if task.regArtTxid == "" {
-		return errors.Errorf("regArtTxid is empty")
+	task.regNFTTxid = task.nodes.RegArtTicketID()
+	if task.regNFTTxid == "" {
+		return errors.Errorf("regNFTTxid is empty")
 	}
 
 	return nil

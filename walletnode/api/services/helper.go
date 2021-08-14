@@ -84,21 +84,21 @@ func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 }
 
 func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSearchResult {
-	ticketData := srch.RegTicketData.ArtTicketData.AppTicketData
+	ticketData := srch.RegTicketData.NFTTicketData.AppTicketData
 	res := &artworks.ArtworkSearchResult{
 		Artwork: &artworks.ArtworkSummary{
 			Txid:      srch.TXID,
 			Thumbnail: srch.Thumbnail,
-			Title:     ticketData.ArtworkTitle,
+			Title:     ticketData.NFTTitle,
 
-			Copies:           srch.RegTicketData.ArtTicketData.Copies,
-			ArtistName:       ticketData.ArtistName,
-			YoutubeURL:       &ticketData.ArtworkCreationVideoYoutubeURL,
+			Copies:           srch.RegTicketData.NFTTicketData.Copies,
+			ArtistName:       ticketData.CreatorName,
+			YoutubeURL:       &ticketData.NFTCreationVideoYoutubeURL,
 			ArtistPastelID:   ticketData.AuthorPastelID,
-			ArtistWebsiteURL: &ticketData.ArtistWebsite,
-			Description:      ticketData.ArtistWrittenStatement,
-			Keywords:         &ticketData.ArtworkKeywordSet,
-			SeriesName:       &ticketData.ArtworkSeriesName,
+			ArtistWebsiteURL: &ticketData.CreatorWebsite,
+			Description:      ticketData.CreatorWrittenStatement,
+			Keywords:         &ticketData.NFTKeywordSet,
+			SeriesName:       &ticketData.NFTSeriesName,
 		},
 
 		MatchIndex: srch.MatchIndex,
@@ -141,26 +141,26 @@ func fromArtSearchRequest(req *artworks.ArtSearchPayload) *artworksearch.ArtSear
 func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 	return &artworks.ArtworkDetail{
 		Txid:                  ticket.TXID,
-		Title:                 ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkTitle,
-		Copies:                ticket.RegTicketData.ArtTicketData.Copies,
-		ArtistName:            ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistName,
-		YoutubeURL:            &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkCreationVideoYoutubeURL,
-		ArtistPastelID:        ticket.RegTicketData.ArtTicketData.AppTicketData.AuthorPastelID,
-		ArtistWebsiteURL:      &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistWebsite,
-		Description:           ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistWrittenStatement,
-		Keywords:              &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkKeywordSet,
-		SeriesName:            &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkSeriesName,
+		Title:                 ticket.RegTicketData.NFTTicketData.AppTicketData.NFTTitle,
+		Copies:                ticket.RegTicketData.NFTTicketData.Copies,
+		ArtistName:            ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorName,
+		YoutubeURL:            &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTCreationVideoYoutubeURL,
+		ArtistPastelID:        ticket.RegTicketData.NFTTicketData.AppTicketData.AuthorPastelID,
+		ArtistWebsiteURL:      &ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWebsite,
+		Description:           ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWrittenStatement,
+		Keywords:              &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTKeywordSet,
+		SeriesName:            &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName,
 		Royalty:               &ticket.RegTicketData.Royalty,
-		RarenessScore:         ticket.RegTicketData.ArtTicketData.AppTicketData.PastelRarenessScore,
-		NsfwScore:             ticket.RegTicketData.ArtTicketData.AppTicketData.OpenNSFWScore,
-		InternetRarenessScore: &ticket.RegTicketData.ArtTicketData.AppTicketData.InternetRarenessScore,
-		Version:               &ticket.RegTicketData.ArtTicketData.Version,
+		RarenessScore:         ticket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore,
+		NsfwScore:             ticket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore,
+		InternetRarenessScore: &ticket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore,
+		Version:               &ticket.RegTicketData.NFTTicketData.Version,
 		StorageFee:            &ticket.RegTicketData.StorageFee,
-		HentaiNsfwScore:       &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Hentai,
-		DrawingNsfwScore:      &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Drawing,
-		NeutralNsfwScore:      &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Neutral,
-		PornNsfwScore:         &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Porn,
-		SexyNsfwScore:         &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Sexy,
+		HentaiNsfwScore:       &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Hentai,
+		DrawingNsfwScore:      &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Drawing,
+		NeutralNsfwScore:      &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Neutral,
+		PornNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Porn,
+		SexyNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Sexy,
 	}
 }
 
