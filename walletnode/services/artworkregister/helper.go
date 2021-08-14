@@ -17,7 +17,6 @@ var (
 	errEmptyMediumThumbnailHash  = errors.Errorf("empty medium thumbnail hash")
 	errEmptySmallThumbnailHash   = errors.Errorf("empty small thumbnail hash")
 	errEmptyRaptorQSymbols       = errors.Errorf("empty RaptorQ symbols identifiers")
-	errDecodePastelID            = errors.Errorf("base58 decode artist PastelID failed")
 )
 
 func sha3256hash(msg []byte) ([]byte, error) {
