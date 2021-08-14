@@ -70,6 +70,7 @@ func (task *Task) Run(ctx context.Context) error {
 		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
 	})
 
+	defer task.removeArtifacts()
 	return task.RunAction(ctx)
 }
 
@@ -196,20 +197,13 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 		return nil, err
 	}
 
-	task.NewAction(func(ctx context.Context) error {
-		task.ResampledArtwork = file
-		defer task.ResampledArtwork.Remove()
-
-		<-ctx.Done()
-		return nil
-	})
-
 	var err error
 
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusImageProbed)
 
-		task.fingerAndScores, task.fingerprints, err = task.genFingerprintsData(ctx, file)
+		task.ResampledArtwork = file
+		task.fingerAndScores, task.fingerprints, err = task.genFingerprintsData(ctx, task.ResampledArtwork)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("failed to generate fingerprints data")
 			err = errors.Errorf("failed to generate fingerprints data %w", err)
@@ -817,6 +811,23 @@ func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node,
 
 func (task *Task) context(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
+}
+
+func (task *Task) removeArtifacts() {
+	removeFn := func(file *artwork.File) {
+		if file != nil {
+			log.Debugf("remove file: %s", file.Name())
+			if err := file.Remove(); err != nil {
+				log.Errorf("faile to remove file: %s", err.Error())
+			}
+		}
+	}
+
+	removeFn(task.ResampledArtwork)
+	removeFn(task.Artwork)
+	removeFn(task.PreviewThumbnail)
+	removeFn(task.MediumThumbnail)
+	removeFn(task.SmallThumbnail)
 }
 
 // NewTask returns a new Task instance.
