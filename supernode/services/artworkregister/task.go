@@ -396,17 +396,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
 	log.WithContext(ctx).Debug("match fingerprints and scores")
 
-	copyArtwork, err := task.Artwork.Copy()
-	if err != nil {
-		return errors.Errorf("failed to create copy of artwork %s %w", task.Artwork.Name(), err)
-	}
-	defer copyArtwork.Remove()
-
-	if err := copyArtwork.ResizeImage(224, 224); err != nil {
-		return errors.Errorf("failed to resize copy of artwork %w", err)
-	}
-
-	fingerAndScores, _, err := task.genFingerprintsData(ctx, copyArtwork)
+	fingerAndScores, _, err := task.genFingerprintsData(ctx, task.Artwork)
 	if err != nil {
 		return errors.Errorf("failed to generate fingerprints data %w", err)
 	}
