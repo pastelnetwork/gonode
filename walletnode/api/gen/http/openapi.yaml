@@ -472,6 +472,209 @@ paths:
             $ref: '#/definitions/UserdatasCreateUserdataInternalServerErrorResponseBody'
       schemes:
       - http
+  /userdatas/follow:
+    post:
+      tags:
+      - userdatas
+      summary: Set a follower, followee relationship
+      description: Set a follower, followee relationship to metadb
+      operationId: userdatas#setUserFollowRelation
+      parameters:
+      - name: SetUserFollowRelationRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserdatasSetUserFollowRelationRequestBody'
+          required:
+          - follower_pastel_id
+          - followee_pastel_id
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/UserdatasSetUserFollowRelationResponseBody'
+            required:
+            - response_code
+            - detail
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/UserdatasSetUserFollowRelationBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/UserdatasSetUserFollowRelationInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /userdatas/follow/followees:
+    get:
+      tags:
+      - userdatas
+      summary: Get followers of a user
+      description: Get followees of a user
+      operationId: userdatas#getFollowees
+      parameters:
+      - name: GetFolloweesRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserdatasGetFolloweesRequestBody'
+          required:
+          - pastelid
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFolloweesResponseBody'
+            required:
+            - response_code
+            - detail
+            - total_count
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFolloweesBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFolloweesInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /userdatas/follow/followers:
+    get:
+      tags:
+      - userdatas
+      summary: Get followers of a user
+      description: Get followers of a user
+      operationId: userdatas#getFollowers
+      parameters:
+      - name: GetFollowersRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserdatasGetFollowersRequestBody'
+          required:
+          - pastelid
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFollowersResponseBody'
+            required:
+            - response_code
+            - detail
+            - total_count
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFollowersBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFollowersInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /userdatas/follow/friends:
+    get:
+      tags:
+      - userdatas
+      summary: Get followers of a user
+      description: Get friends of a user
+      operationId: userdatas#getFriends
+      parameters:
+      - name: GetFriendsRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserdatasGetFriendsRequestBody'
+          required:
+          - pastelid
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFriendsResponseBody'
+            required:
+            - response_code
+            - detail
+            - total_count
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFriendsBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/UserdatasGetFriendsInternalServerErrorResponseBody'
+      schemes:
+      - http
+  /userdatas/like/art:
+    get:
+      tags:
+      - userdatas
+      summary: Get users that liked an art
+      description: Get users that liked an art
+      operationId: userdatas#getUsersLikeArt
+      parameters:
+      - name: GetUsersLikeArtRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserdatasGetUsersLikeArtRequestBody'
+          required:
+          - art_id
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/UserdatasGetUsersLikeArtResponseBody'
+            required:
+            - response_code
+            - detail
+            - total_count
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/UserdatasGetUsersLikeArtBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/UserdatasGetUsersLikeArtInternalServerErrorResponseBody'
+      schemes:
+      - http
+    post:
+      tags:
+      - userdatas
+      summary: Notify a new like event of an user to an art
+      description: Notify a new like event of an user to an art
+      operationId: userdatas#setUserLikeArt
+      parameters:
+      - name: SetUserLikeArtRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UserdatasSetUserLikeArtRequestBody'
+          required:
+          - user_pastel_id
+          - art_pastel_id
+      responses:
+        "200":
+          description: OK response.
+          schema:
+            $ref: '#/definitions/UserdatasSetUserLikeArtResponseBody'
+            required:
+            - response_code
+            - detail
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/UserdatasSetUserLikeArtBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/UserdatasSetUserLikeArtInternalServerErrorResponseBody'
+      schemes:
+      - http
   /userdatas/update:
     post:
       tags:
@@ -558,18 +761,40 @@ definitions:
         type: string
         description: Thumbnail image
         example:
-        - 82
+        - 69
+        - 120
+        - 101
+        - 114
+        - 99
+        - 105
+        - 116
+        - 97
+        - 116
+        - 105
+        - 111
+        - 110
         - 101
         - 109
         - 32
-        - 115
+        - 118
+        - 111
+        - 108
         - 117
-        - 115
-        - 99
-        - 105
         - 112
-        - 105
         - 116
+        - 97
+        - 116
+        - 101
+        - 32
+        - 99
+        - 117
+        - 109
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
+        - 109
         - 46
         format: byte
       title:
@@ -600,21 +825,46 @@ definitions:
       keywords: Renaissance, sfumato, portrait
       series_name: Famous artist
       thumbnail:
-      - 68
+      - 79
+      - 99
+      - 99
+      - 97
+      - 101
+      - 99
+      - 97
+      - 116
+      - 105
+      - 32
+      - 97
+      - 117
+      - 116
+      - 32
+      - 114
+      - 101
+      - 112
+      - 101
+      - 108
+      - 108
+      - 101
+      - 110
+      - 100
+      - 117
+      - 115
+      - 32
+      - 100
       - 111
       - 108
       - 111
       - 114
-      - 117
+      - 101
       - 109
       - 32
+      - 99
+      - 117
+      - 109
       - 113
       - 117
-      - 97
       - 101
-      - 114
-      - 97
-      - 116
       - 46
       title: Mona Lisa
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -893,14 +1143,14 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: artSearch_BadRequest_response_body result type (default view)
     example:
       fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: false
     required:
     - name
@@ -938,7 +1188,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: artSearch_InternalServerError_response_body result type (default
       view)
     example:
@@ -947,7 +1197,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -965,7 +1215,7 @@ definitions:
         type: integer
         description: Sort index of the match based on score.This must be used to sort
           results on UI.
-        example: 8915675909751447436
+        example: 7696725125093462268
         format: int64
       matches:
         type: array
@@ -973,18 +1223,38 @@ definitions:
           $ref: '#/definitions/FuzzyMatchResponseBody'
         description: Match result details
         example:
-        - field_type: keyword
+        - field_type: artist_name
           matched_indexes:
-          - 5079483862560419611
-          - 383435025649165662
-          score: 1913188029159934354
-          str: Qui quo et odio voluptatem voluptas voluptates.
-        - field_type: keyword
+          - 7380319872106704681
+          - 7456758987449087545
+          - 6691974645807088378
+          - 787606581070214255
+          score: 6280315198310502525
+          str: Consequatur libero nihil.
+        - field_type: artist_name
           matched_indexes:
-          - 5079483862560419611
-          - 383435025649165662
-          score: 1913188029159934354
-          str: Qui quo et odio voluptatem voluptas voluptates.
+          - 7380319872106704681
+          - 7456758987449087545
+          - 6691974645807088378
+          - 787606581070214255
+          score: 6280315198310502525
+          str: Consequatur libero nihil.
+        - field_type: artist_name
+          matched_indexes:
+          - 7380319872106704681
+          - 7456758987449087545
+          - 6691974645807088378
+          - 787606581070214255
+          score: 6280315198310502525
+          str: Consequatur libero nihil.
+        - field_type: artist_name
+          matched_indexes:
+          - 7380319872106704681
+          - 7456758987449087545
+          - 6691974645807088378
+          - 787606581070214255
+          score: 6280315198310502525
+          str: Consequatur libero nihil.
     example:
       artwork:
         artist_name: Leonardo da Vinci
@@ -997,63 +1267,57 @@ definitions:
         keywords: Renaissance, sfumato, portrait
         series_name: Famous artist
         thumbnail:
-        - 69
-        - 105
-        - 117
-        - 115
-        - 32
-        - 105
-        - 108
-        - 108
+        - 84
         - 111
-        - 32
-        - 105
-        - 117
-        - 115
         - 116
-        - 111
-        - 32
-        - 101
-        - 116
-        - 32
-        - 112
         - 97
-        - 114
-        - 105
-        - 97
-        - 116
-        - 117
-        - 114
-        - 32
-        - 114
-        - 101
-        - 114
-        - 117
         - 109
+        - 32
+        - 97
+        - 117
+        - 116
+        - 32
+        - 115
+        - 101
+        - 100
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-      match_index: 4220410847214103227
+      match_index: 3694745269056858042
       matches:
-      - field_type: keyword
+      - field_type: artist_name
         matched_indexes:
-        - 5079483862560419611
-        - 383435025649165662
-        score: 1913188029159934354
-        str: Qui quo et odio voluptatem voluptas voluptates.
-      - field_type: keyword
+        - 7380319872106704681
+        - 7456758987449087545
+        - 6691974645807088378
+        - 787606581070214255
+        score: 6280315198310502525
+        str: Consequatur libero nihil.
+      - field_type: artist_name
         matched_indexes:
-        - 5079483862560419611
-        - 383435025649165662
-        score: 1913188029159934354
-        str: Qui quo et odio voluptatem voluptas voluptates.
-      - field_type: keyword
+        - 7380319872106704681
+        - 7456758987449087545
+        - 6691974645807088378
+        - 787606581070214255
+        score: 6280315198310502525
+        str: Consequatur libero nihil.
+      - field_type: artist_name
         matched_indexes:
-        - 5079483862560419611
-        - 383435025649165662
-        score: 1913188029159934354
-        str: Qui quo et odio voluptatem voluptas voluptates.
+        - 7380319872106704681
+        - 7456758987449087545
+        - 6691974645807088378
+        - 787606581070214255
+        score: 6280315198310502525
+        str: Consequatur libero nihil.
+      - field_type: artist_name
+        matched_indexes:
+        - 7380319872106704681
+        - 7456758987449087545
+        - 6691974645807088378
+        - 787606581070214255
+        score: 6280315198310502525
+        str: Consequatur libero nihil.
     required:
     - artwork
     - matches
@@ -1065,7 +1329,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1095,7 +1359,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -1110,7 +1374,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1128,7 +1392,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -1156,7 +1420,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1178,14 +1442,14 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: artworkGet_NotFound_response_body result type (default view)
     example:
       fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: false
     required:
     - name
@@ -1283,7 +1547,7 @@ definitions:
       royalty:
         type: integer
         description: how much artist should get on all future resales
-        example: 8800332683294949451
+        example: 5502400939879410490
         format: int64
       seen_score:
         type: integer
@@ -1312,44 +1576,32 @@ definitions:
         description: Thumbnail image
         example:
         - 69
-        - 115
-        - 116
+        - 120
         - 32
-        - 118
-        - 101
-        - 108
+        - 115
         - 105
         - 116
-        - 32
-        - 109
-        - 105
-        - 110
-        - 117
-        - 115
-        - 32
-        - 113
-        - 117
-        - 105
         - 32
         - 111
-        - 99
-        - 99
-        - 97
-        - 101
-        - 99
-        - 97
-        - 116
-        - 105
-        - 32
-        - 118
-        - 101
-        - 114
-        - 105
-        - 116
-        - 97
-        - 116
+        - 109
+        - 110
         - 105
         - 115
+        - 32
+        - 101
+        - 97
+        - 32
+        - 109
+        - 97
+        - 103
+        - 110
+        - 105
+        - 32
+        - 97
+        - 117
+        - 116
+        - 101
+        - 109
         - 46
         format: byte
       title:
@@ -1384,39 +1636,45 @@ definitions:
       drawing_nsfw_score: 1000
       hentai_nsfw_score: 1000
       internet_rareness_score: 1
-      is_green: true
+      is_green: false
       keywords: Renaissance, sfumato, portrait
       neutral_nsfw_score: 1000
       nsfw_score: 1000
       porn_nsfw_score: 1000
       rareness_score: 1
-      royalty: 9166802302218846019
+      royalty: 8515133444153185358
       seen_score: 1
       series_name: Famous artist
       sexy_nsfw_score: 1000
       storage_fee: 100
       thumbnail:
-      - 69
-      - 105
+      - 86
+      - 111
+      - 108
       - 117
-      - 115
-      - 32
-      - 101
-      - 120
-      - 99
-      - 101
       - 112
       - 116
-      - 117
-      - 114
-      - 105
-      - 32
-      - 101
+      - 97
       - 116
-      - 32
-      - 115
       - 101
+      - 109
+      - 32
+      - 101
+      - 114
+      - 114
+      - 111
+      - 114
+      - 32
+      - 114
+      - 101
+      - 105
+      - 99
+      - 105
+      - 101
+      - 110
       - 100
+      - 105
+      - 115
       - 46
       title: Mona Lisa
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1458,7 +1716,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -1469,8 +1727,8 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -1485,7 +1743,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1503,7 +1761,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -1531,49 +1789,79 @@ definitions:
         type: string
         description: File downloaded
         example:
-        - 81
-        - 117
-        - 105
-        - 32
+        - 72
         - 97
+        - 114
         - 117
-        - 116
+        - 109
         - 32
         - 101
-        - 97
-        - 32
-        - 115
-        - 117
-        - 110
         - 116
         - 32
         - 99
         - 111
-        - 114
-        - 114
-        - 117
-        - 112
-        - 116
-        - 105
-        - 32
-        - 101
-        - 120
-        - 32
+        - 110
         - 115
-        - 105
+        - 101
+        - 99
         - 116
+        - 101
+        - 116
+        - 117
+        - 114
+        - 32
+        - 97
+        - 108
+        - 105
+        - 113
+        - 117
+        - 105
+        - 100
         - 46
         format: byte
     example:
       file:
-      - 69
-      - 97
+      - 82
+      - 101
+      - 114
+      - 117
+      - 109
+      - 32
+      - 105
+      - 109
+      - 112
+      - 101
+      - 100
+      - 105
+      - 116
+      - 32
+      - 101
+      - 116
+      - 32
+      - 101
+      - 116
+      - 32
+      - 115
+      - 105
+      - 116
       - 32
       - 109
       - 97
-      - 103
-      - 110
+      - 120
       - 105
+      - 109
+      - 101
+      - 32
+      - 118
+      - 111
+      - 108
+      - 117
+      - 112
+      - 116
+      - 97
+      - 116
+      - 117
+      - 109
       - 46
     required:
     - file
@@ -1584,7 +1872,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1609,12 +1897,12 @@ definitions:
         example: false
     description: register_BadRequest_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -1651,14 +1939,14 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: register_InternalServerError_response_body result type (default view)
     example:
       fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: false
     required:
     - name
@@ -1815,7 +2103,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1837,7 +2125,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: registerTask_InternalServerError_response_body result type (default
       view)
     example:
@@ -1861,7 +2149,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -1879,11 +2167,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: registerTask_NotFound_response_body result type (default view)
     example:
       fault: false
@@ -1915,6 +2203,8 @@ definitions:
           $ref: '#/definitions/TaskStateResponseBody'
         description: List of states from the very beginning of the process
         example:
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -2009,20 +2299,20 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -2059,15 +2349,15 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: registerTaskState_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: false
+      temporary: true
+      timeout: true
     required:
     - name
     - id
@@ -2137,7 +2427,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: registerTasks_InternalServerError_response_body result type (default
       view)
     example:
@@ -2146,7 +2436,7 @@ definitions:
       message: parameter 'p' must be an integer
       name: bad_request
       temporary: true
-      timeout: true
+      timeout: false
     required:
     - name
     - id
@@ -2165,6 +2455,8 @@ definitions:
     example:
     - id: n6Qn6TFM
       states:
+      - date: 2006-01-02T15:04:05Z07:00
+        status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
@@ -2195,6 +2487,8 @@ definitions:
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     - id: n6Qn6TFM
       states:
+      - date: 2006-01-02T15:04:05Z07:00
+        status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
@@ -2248,19 +2542,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: uploadImage_BadRequest_response_body result type (default view)
     example:
       fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -2293,11 +2587,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
@@ -2322,14 +2616,25 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 78
-        - 111
-        - 110
-        - 32
-        - 115
+        - 86
+        - 101
+        - 114
         - 105
-        - 110
         - 116
+        - 97
+        - 116
+        - 105
+        - 115
+        - 32
+        - 118
+        - 105
+        - 116
+        - 97
+        - 101
+        - 32
+        - 101
+        - 117
+        - 109
         - 46
         format: byte
       filename:
@@ -2337,41 +2642,32 @@ definitions:
         description: For internal use
     example:
       file:
-      - 69
-      - 118
-      - 101
-      - 110
+      - 65
+      - 108
       - 105
-      - 101
-      - 116
-      - 32
-      - 97
+      - 113
       - 117
-      - 116
-      - 32
-      - 97
-      - 99
-      - 99
-      - 117
-      - 115
       - 97
       - 109
-      - 117
-      - 115
       - 32
-      - 118
+      - 109
+      - 111
+      - 108
+      - 108
       - 105
       - 116
+      - 105
       - 97
-      - 101
       - 32
+      - 102
+      - 117
+      - 103
+      - 105
+      - 97
+      - 116
+      - 32
+      - 105
       - 100
-      - 117
-      - 99
-      - 105
-      - 109
-      - 117
-      - 115
       - 46
     required:
     - file
@@ -2404,7 +2700,7 @@ definitions:
       field_type:
         type: string
         description: Field that is matched
-        example: keyword
+        example: descr
         enum:
         - artist_name
         - art_title
@@ -2415,29 +2711,28 @@ definitions:
         type: array
         items:
           type: integer
-          example: 9026164415411249610
+          example: 5243996013922451098
           format: int64
         description: The indexes of matched characters. Useful for highlighting matches
         example:
-        - 5873759525328106104
-        - 5669552886429406269
-        - 291355563625856708
+        - 8613166192612406691
+        - 2985991940805079387
       score:
         type: integer
         description: Score used to rank matches
-        example: 7913729025747748859
+        example: 5414968530641951024
         format: int64
       str:
         type: string
         description: String that is matched
-        example: Nesciunt sit.
+        example: Incidunt similique odit hic modi est.
     example:
       field_type: descr
       matched_indexes:
-      - 4741039288036524955
-      - 4642919933004192550
-      score: 4024804003976990846
-      str: Veritatis vitae eum.
+      - 6552888216030047668
+      - 3638091827023434426
+      score: 4162307885406478504
+      str: Error eius excepturi et sed ut.
   TaskResponseTiny:
     title: 'Mediatype identifier: application/vnd.artwork.register.task; view=default'
     type: object
@@ -2664,53 +2959,21 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 83
-        - 97
-        - 101
-        - 112
-        - 101
-        - 32
-        - 102
-        - 97
-        - 99
-        - 105
-        - 108
-        - 105
-        - 115
-        - 32
-        - 114
-        - 101
-        - 112
-        - 101
-        - 108
-        - 108
-        - 101
-        - 110
-        - 100
-        - 117
-        - 115
-        - 32
-        - 113
-        - 117
-        - 105
-        - 98
-        - 117
-        - 115
-        - 100
-        - 97
-        - 109
-        - 32
-        - 109
-        - 97
-        - 103
-        - 110
-        - 105
-        - 32
-        - 101
+        - 69
         - 116
         - 32
-        - 118
+        - 97
+        - 117
+        - 116
         - 101
+        - 109
+        - 32
+        - 97
+        - 32
+        - 110
+        - 105
+        - 104
+        - 105
         - 108
         - 46
         format: byte
@@ -2720,56 +2983,31 @@ definitions:
     description: User image upload payload
     example:
       content:
-      - 69
-      - 108
-      - 105
-      - 103
+      - 80
+      - 114
+      - 97
+      - 101
+      - 115
       - 101
       - 110
-      - 100
-      - 105
-      - 32
-      - 115
-      - 97
-      - 101
-      - 112
-      - 101
-      - 32
-      - 118
-      - 101
-      - 114
-      - 105
-      - 116
-      - 97
       - 116
       - 105
-      - 115
+      - 117
+      - 109
       - 32
-      - 101
-      - 97
-      - 32
-      - 105
-      - 116
-      - 97
       - 113
       - 117
-      - 101
+      - 97
+      - 115
+      - 105
       - 32
-      - 100
-      - 111
-      - 108
+      - 109
+      - 97
+      - 105
       - 111
       - 114
       - 101
       - 115
-      - 32
-      - 97
-      - 108
-      - 105
-      - 113
-      - 117
-      - 105
-      - 100
       - 46
     required:
     - content
@@ -2781,27 +3019,21 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 69
-        - 116
-        - 32
-        - 113
-        - 117
+        - 79
+        - 109
+        - 110
         - 105
-        - 100
+        - 115
+        - 32
         - 101
+        - 110
+        - 105
         - 109
         - 32
-        - 105
+        - 115
         - 117
-        - 115
+        - 110
         - 116
-        - 111
-        - 32
-        - 105
-        - 112
-        - 115
-        - 97
-        - 109
         - 46
         format: byte
       filename:
@@ -2810,32 +3042,7 @@ definitions:
     description: User image upload payload
     example:
       content:
-      - 81
-      - 117
-      - 111
-      - 115
-      - 32
-      - 97
-      - 114
-      - 99
-      - 104
-      - 105
-      - 116
-      - 101
-      - 99
-      - 116
-      - 111
-      - 32
-      - 99
-      - 111
-      - 114
-      - 112
-      - 111
-      - 114
-      - 105
-      - 115
-      - 32
-      - 118
+      - 86
       - 111
       - 108
       - 117
@@ -2843,17 +3050,152 @@ definitions:
       - 116
       - 97
       - 116
-      - 117
-      - 109
+      - 101
+      - 32
+      - 100
+      - 105
+      - 115
+      - 116
+      - 105
+      - 110
+      - 99
+      - 116
+      - 105
+      - 111
       - 32
       - 114
       - 101
-      - 114
-      - 117
       - 109
+      - 32
+      - 105
+      - 117
+      - 115
+      - 116
+      - 111
       - 46
     required:
     - content
+  UserRelationshipInfoResponseBody:
+    title: UserRelationshipInfoResponseBody
+    type: object
+    properties:
+      avatar_thumbnail:
+        type: string
+        description: 40x40 avatar thumbnail
+        example:
+        - 78
+        - 97
+        - 109
+        - 32
+        - 100
+        - 111
+        - 108
+        - 111
+        - 114
+        - 101
+        - 109
+        - 113
+        - 117
+        - 101
+        - 32
+        - 97
+        - 117
+        - 116
+        - 32
+        - 97
+        - 109
+        - 101
+        - 116
+        - 32
+        - 101
+        - 97
+        - 32
+        - 113
+        - 117
+        - 105
+        - 97
+        - 32
+        - 115
+        - 105
+        - 109
+        - 105
+        - 108
+        - 105
+        - 113
+        - 117
+        - 101
+        - 46
+        format: byte
+      followers_count:
+        type: integer
+        description: number of users follow this user
+        example: 10
+        format: int64
+      pastelid:
+        type: string
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+      realname:
+        type: string
+        description: Real name of the user
+        example: Williams Scottish
+        maxLength: 256
+      username:
+        type: string
+        description: Username of the user
+        example: w_scottish
+        maxLength: 256
+    example:
+      avatar_thumbnail:
+      - 65
+      - 108
+      - 105
+      - 113
+      - 117
+      - 97
+      - 109
+      - 32
+      - 110
+      - 101
+      - 113
+      - 117
+      - 101
+      - 32
+      - 101
+      - 116
+      - 32
+      - 116
+      - 101
+      - 109
+      - 112
+      - 111
+      - 114
+      - 101
+      - 32
+      - 114
+      - 101
+      - 109
+      - 32
+      - 101
+      - 97
+      - 113
+      - 117
+      - 101
+      - 32
+      - 101
+      - 116
+      - 46
+      followers_count: 10
+      pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      realname: Williams Scottish
+      username: w_scottish
+    required:
+    - pastelid
+    - username
+    - followers_count
   UserdatasCreateUserdataBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -2861,7 +3203,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: true
+        example: false
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2883,15 +3225,15 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
+        example: false
     description: createUserdata_BadRequest_response_body result type (default view)
     example:
       fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
-      timeout: false
+      temporary: false
+      timeout: true
     required:
     - name
     - id
@@ -2906,7 +3248,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -2932,12 +3274,12 @@ definitions:
     description: createUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: true
-      timeout: true
+      temporary: false
+      timeout: false
     required:
     - name
     - id
@@ -2970,7 +3312,7 @@ definitions:
       categories:
         type: string
         description: The categories of user's work
-        example: Dolores itaque.
+        example: Nemo nemo labore est laborum eaque nemo.
       cover_photo:
         $ref: '#/definitions/UserImageUploadPayloadRequestBody'
       facebook_link:
@@ -3009,127 +3351,91 @@ definitions:
       artist_pastelid_passphrase: qwerasdf1234
       avatar_image:
         content:
-        - 65
-        - 115
-        - 112
-        - 101
-        - 114
-        - 105
-        - 111
-        - 114
-        - 101
-        - 115
-        - 32
+        - 69
         - 97
-        - 109
+        - 32
         - 101
         - 116
         - 32
-        - 108
-        - 97
-        - 98
-        - 111
-        - 114
+        - 113
+        - 117
         - 105
-        - 111
-        - 115
-        - 97
+        - 32
         - 109
-        - 32
-        - 108
         - 105
-        - 98
-        - 101
-        - 114
-        - 111
-        - 32
-        - 116
-        - 101
         - 110
+        - 105
+        - 109
+        - 97
+        - 32
         - 101
+        - 120
+        - 99
+        - 101
+        - 112
         - 116
         - 117
         - 114
-        - 32
-        - 118
         - 105
-        - 116
-        - 97
-        - 101
         - 32
-        - 98
-        - 108
+        - 113
+        - 117
+        - 105
+        - 32
         - 97
+        - 115
+        - 115
+        - 117
+        - 109
+        - 101
         - 110
         - 100
-        - 105
-        - 116
-        - 105
-        - 105
-        - 115
+        - 97
         - 46
       biography: I'm a digital artist based in Paris, France. ...
-      categories: Placeat incidunt laboriosam iste a.
+      categories: Ut quisquam cumque fugit quia quia.
       cover_photo:
         content:
-        - 65
-        - 115
-        - 112
-        - 101
-        - 114
-        - 105
-        - 111
-        - 114
-        - 101
-        - 115
-        - 32
+        - 69
         - 97
-        - 109
+        - 32
         - 101
         - 116
         - 32
-        - 108
-        - 97
-        - 98
-        - 111
-        - 114
+        - 113
+        - 117
         - 105
-        - 111
-        - 115
-        - 97
+        - 32
         - 109
-        - 32
-        - 108
         - 105
-        - 98
-        - 101
-        - 114
-        - 111
-        - 32
-        - 116
-        - 101
         - 110
+        - 105
+        - 109
+        - 97
+        - 32
         - 101
+        - 120
+        - 99
+        - 101
+        - 112
         - 116
         - 117
         - 114
-        - 32
-        - 118
         - 105
-        - 116
-        - 97
-        - 101
         - 32
-        - 98
-        - 108
+        - 113
+        - 117
+        - 105
+        - 32
         - 97
+        - 115
+        - 115
+        - 117
+        - 109
+        - 101
         - 110
         - 100
-        - 105
-        - 116
-        - 105
-        - 105
-        - 115
+        - 97
         - 46
       facebook_link: https://www.facebook.com/Williams_Scottish
       location: New York, US
@@ -3147,22 +3453,22 @@ definitions:
       avatar_image:
         type: string
         description: Error detail on avatar
-        example: 3na
+        example: 1gx
         maxLength: 256
       biography:
         type: string
         description: Error detail on biography
-        example: 78z
+        example: fdo
         maxLength: 256
       categories:
         type: string
         description: Error detail on categories
-        example: upl
+        example: l9r
         maxLength: 256
       cover_photo:
         type: string
         description: Error detail on cover photo
-        example: rbw
+        example: h6h
         maxLength: 256
       detail:
         type: string
@@ -3172,27 +3478,27 @@ definitions:
       facebook_link:
         type: string
         description: Error detail on facebook_link
-        example: 36i
+        example: 65m
         maxLength: 256
       location:
         type: string
         description: Error detail on location
-        example: e7k
+        example: "609"
         maxLength: 256
       native_currency:
         type: string
         description: Error detail on native_currency
-        example: 4de
+        example: ekk
         maxLength: 256
       primary_language:
         type: string
         description: Error detail on primary_language
-        example: mb7
+        example: pwc
         maxLength: 256
       realname:
         type: string
         description: Error detail on realname
-        example: 8pd
+        example: w3m
         maxLength: 256
       response_code:
         type: integer
@@ -3202,25 +3508,70 @@ definitions:
       twitter_link:
         type: string
         description: Error detail on twitter_link
-        example: ptt
+        example: ian
         maxLength: 256
     example:
-      avatar_image: xth
-      biography: oj1
-      categories: rjf
-      cover_photo: ht7
+      avatar_image: on5
+      biography: j8m
+      categories: sz4
+      cover_photo: yca
       detail: All userdata is processed
-      facebook_link: m0i
-      location: 9ap
-      native_currency: kh6
-      primary_language: csl
-      realname: mw6
+      facebook_link: oh2
+      location: myp
+      native_currency: hfi
+      primary_language: 5al
+      realname: 7ui
       response_code: 0
-      twitter_link: n5e
+      twitter_link: btk
     required:
     - response_code
     - detail
-  UserdatasUpdateUserdataBadRequestResponseBody:
+  UserdatasGetFolloweesBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: getFollowees_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetFolloweesInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -3249,8 +3600,9 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: true
-    description: updateUserdata_BadRequest_response_body result type (default view)
+        example: false
+    description: getFollowees_InternalServerError_response_body result type (default
+      view)
     example:
       fault: false
       id: 123abc
@@ -3265,7 +3617,1595 @@ definitions:
     - temporary
     - timeout
     - fault
-  UserdatasUpdateUserdataInternalServerErrorResponseBody:
+  UserdatasGetFolloweesRequestBody:
+    title: UserdatasGetFolloweesRequestBody
+    type: object
+    properties:
+      limit:
+        type: integer
+        description: limit for paginated list
+        example: 10
+        format: int64
+      offset:
+        type: integer
+        description: offset for paginated list
+        example: 0
+        format: int64
+      pastelid:
+        type: string
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+    example:
+      limit: 10
+      offset: 0
+      pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+    required:
+    - pastelid
+  UserdatasGetFolloweesResponseBody:
+    title: UserdatasGetFolloweesResponseBody
+    type: object
+    properties:
+      detail:
+        type: string
+        description: The detail of why result is success/fail, depend on response_code
+        example: All userdata is processed
+        maxLength: 256
+      response_code:
+        type: integer
+        description: Result of the request is success or not
+        example: 0
+        format: int64
+      result:
+        type: array
+        items:
+          $ref: '#/definitions/UserRelationshipInfoResponseBody'
+        description: Artist's PastelID
+        example:
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+      total_count:
+        type: integer
+        description: total number of users in relationship with this user
+        example: 10
+        format: int64
+    example:
+      detail: All userdata is processed
+      response_code: 0
+      result:
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      total_count: 10
+    required:
+    - response_code
+    - detail
+    - total_count
+  UserdatasGetFollowersBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: getFollowers_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetFollowersInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: getFollowers_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetFollowersRequestBody:
+    title: UserdatasGetFollowersRequestBody
+    type: object
+    properties:
+      limit:
+        type: integer
+        description: limit for paginated list
+        example: 10
+        format: int64
+      offset:
+        type: integer
+        description: offset for paginated list
+        example: 0
+        format: int64
+      pastelid:
+        type: string
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+    example:
+      limit: 10
+      offset: 0
+      pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+    required:
+    - pastelid
+  UserdatasGetFollowersResponseBody:
+    title: UserdatasGetFollowersResponseBody
+    type: object
+    properties:
+      detail:
+        type: string
+        description: The detail of why result is success/fail, depend on response_code
+        example: All userdata is processed
+        maxLength: 256
+      response_code:
+        type: integer
+        description: Result of the request is success or not
+        example: 0
+        format: int64
+      result:
+        type: array
+        items:
+          $ref: '#/definitions/UserRelationshipInfoResponseBody'
+        description: Artist's PastelID
+        example:
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+      total_count:
+        type: integer
+        description: total number of users in relationship with this user
+        example: 10
+        format: int64
+    example:
+      detail: All userdata is processed
+      response_code: 0
+      result:
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      total_count: 10
+    required:
+    - response_code
+    - detail
+    - total_count
+  UserdatasGetFriendsBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: getFriends_BadRequest_response_body result type (default view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetFriendsInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: getFriends_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetFriendsRequestBody:
+    title: UserdatasGetFriendsRequestBody
+    type: object
+    properties:
+      limit:
+        type: integer
+        description: limit for paginated list
+        example: 10
+        format: int64
+      offset:
+        type: integer
+        description: offset for paginated list
+        example: 0
+        format: int64
+      pastelid:
+        type: string
+        description: Artist's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+    example:
+      limit: 10
+      offset: 0
+      pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+    required:
+    - pastelid
+  UserdatasGetFriendsResponseBody:
+    title: UserdatasGetFriendsResponseBody
+    type: object
+    properties:
+      detail:
+        type: string
+        description: The detail of why result is success/fail, depend on response_code
+        example: All userdata is processed
+        maxLength: 256
+      response_code:
+        type: integer
+        description: Result of the request is success or not
+        example: 0
+        format: int64
+      result:
+        type: array
+        items:
+          $ref: '#/definitions/UserRelationshipInfoResponseBody'
+        description: Artist's PastelID
+        example:
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+      total_count:
+        type: integer
+        description: total number of users in relationship with this user
+        example: 10
+        format: int64
+    example:
+      detail: All userdata is processed
+      response_code: 0
+      result:
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      total_count: 10
+    required:
+    - response_code
+    - detail
+    - total_count
+  UserdatasGetUsersLikeArtBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: getUsersLikeArt_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetUsersLikeArtInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: true
+    description: getUsersLikeArt_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasGetUsersLikeArtRequestBody:
+    title: UserdatasGetUsersLikeArtRequestBody
+    type: object
+    properties:
+      art_id:
+        type: string
+        description: art id that we want to get like data
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+      limit:
+        type: integer
+        description: limit for paginated list
+        example: 10
+        format: int64
+      offset:
+        type: integer
+        description: offset for paginated list
+        example: 0
+        format: int64
+    example:
+      art_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      limit: 10
+      offset: 0
+    required:
+    - art_id
+  UserdatasGetUsersLikeArtResponseBody:
+    title: UserdatasGetUsersLikeArtResponseBody
+    type: object
+    properties:
+      detail:
+        type: string
+        description: The detail of why result is success/fail, depend on response_code
+        example: All userdata is processed
+        maxLength: 256
+      response_code:
+        type: integer
+        description: Result of the request is success or not
+        example: 0
+        format: int64
+      result:
+        type: array
+        items:
+          $ref: '#/definitions/UserRelationshipInfoResponseBody'
+        description: Artist's PastelID
+        example:
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+      total_count:
+        type: integer
+        description: total number of users in relationship with this user
+        example: 10
+        format: int64
+    example:
+      detail: All userdata is processed
+      response_code: 0
+      result:
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      - avatar_thumbnail:
+        - 69
+        - 97
+        - 113
+        - 117
+        - 101
+        - 32
+        - 108
+        - 97
+        - 98
+        - 111
+        - 114
+        - 105
+        - 111
+        - 115
+        - 97
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
+        - 115
+        - 113
+        - 117
+        - 97
+        - 109
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 109
+        - 117
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      total_count: 10
+    required:
+    - response_code
+    - detail
+    - total_count
+  UserdatasSetUserFollowRelationBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: setUserFollowRelation_BadRequest_response_body result type (default
+      view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasSetUserFollowRelationInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -3295,6 +5235,276 @@ definitions:
         type: boolean
         description: Is the error a timeout?
         example: true
+    description: setUserFollowRelation_InternalServerError_response_body result type
+      (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: false
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasSetUserFollowRelationRequestBody:
+    title: UserdatasSetUserFollowRelationRequestBody
+    type: object
+    properties:
+      followee_pastel_id:
+        type: string
+        description: Followee's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+      follower_pastel_id:
+        type: string
+        description: Follower's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+    example:
+      followee_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+      follower_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+    required:
+    - follower_pastel_id
+    - followee_pastel_id
+  UserdatasSetUserFollowRelationResponseBody:
+    title: UserdatasSetUserFollowRelationResponseBody
+    type: object
+    properties:
+      detail:
+        type: string
+        description: The detail of why result is success/fail, depend on response_code
+        example: All userdata is processed
+        maxLength: 256
+      response_code:
+        type: integer
+        description: Result of the request is success or not
+        example: 0
+        format: int64
+    example:
+      detail: All userdata is processed
+      response_code: 0
+    required:
+    - response_code
+    - detail
+  UserdatasSetUserLikeArtBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: setUserLikeArt_BadRequest_response_body result type (default view)
+    example:
+      fault: true
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasSetUserLikeArtInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: setUserLikeArt_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasSetUserLikeArtRequestBody:
+    title: UserdatasSetUserLikeArtRequestBody
+    type: object
+    properties:
+      art_pastel_id:
+        type: string
+        description: Art's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+      user_pastel_id:
+        type: string
+        description: User's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+    example:
+      art_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+      user_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+    required:
+    - user_pastel_id
+    - art_pastel_id
+  UserdatasSetUserLikeArtResponseBody:
+    title: UserdatasSetUserLikeArtResponseBody
+    type: object
+    properties:
+      detail:
+        type: string
+        description: The detail of why result is success/fail, depend on response_code
+        example: All userdata is processed
+        maxLength: 256
+      response_code:
+        type: integer
+        description: Result of the request is success or not
+        example: 0
+        format: int64
+    example:
+      detail: All userdata is processed
+      response_code: 0
+    required:
+    - response_code
+    - detail
+  UserdatasUpdateUserdataBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: false
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
+    description: updateUserdata_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: 123abc
+      message: parameter 'p' must be an integer
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  UserdatasUpdateUserdataInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error a server-side fault?
+        example: true
+      id:
+        type: string
+        description: ID is a unique identifier for this particular occurrence of the
+          problem.
+        example: 123abc
+      message:
+        type: string
+        description: Message is a human-readable explanation specific to this occurrence
+          of the problem.
+        example: parameter 'p' must be an integer
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error a timeout?
+        example: false
     description: updateUserdata_InternalServerError_response_body result type (default
       view)
     example:
@@ -3302,7 +5512,7 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -3336,7 +5546,7 @@ definitions:
       categories:
         type: string
         description: The categories of user's work
-        example: Tempora et exercitationem velit.
+        example: Dolorem veritatis et aut dolores.
       cover_photo:
         $ref: '#/definitions/UserImageUploadPayloadRequestBody'
       facebook_link:
@@ -3375,127 +5585,91 @@ definitions:
       artist_pastelid_passphrase: qwerasdf1234
       avatar_image:
         content:
-        - 65
-        - 115
-        - 112
-        - 101
-        - 114
-        - 105
-        - 111
-        - 114
-        - 101
-        - 115
-        - 32
+        - 69
         - 97
-        - 109
+        - 32
         - 101
         - 116
         - 32
-        - 108
-        - 97
-        - 98
-        - 111
-        - 114
+        - 113
+        - 117
         - 105
-        - 111
-        - 115
-        - 97
+        - 32
         - 109
-        - 32
-        - 108
         - 105
-        - 98
-        - 101
-        - 114
-        - 111
-        - 32
-        - 116
-        - 101
         - 110
+        - 105
+        - 109
+        - 97
+        - 32
         - 101
+        - 120
+        - 99
+        - 101
+        - 112
         - 116
         - 117
         - 114
-        - 32
-        - 118
         - 105
-        - 116
-        - 97
-        - 101
         - 32
-        - 98
-        - 108
+        - 113
+        - 117
+        - 105
+        - 32
         - 97
+        - 115
+        - 115
+        - 117
+        - 109
+        - 101
         - 110
         - 100
-        - 105
-        - 116
-        - 105
-        - 105
-        - 115
+        - 97
         - 46
       biography: I'm a digital artist based in Paris, France. ...
-      categories: Aliquam ipsa rerum sint non recusandae.
+      categories: Eius est assumenda aut.
       cover_photo:
         content:
-        - 65
-        - 115
-        - 112
-        - 101
-        - 114
-        - 105
-        - 111
-        - 114
-        - 101
-        - 115
-        - 32
+        - 69
         - 97
-        - 109
+        - 32
         - 101
         - 116
         - 32
-        - 108
-        - 97
-        - 98
-        - 111
-        - 114
+        - 113
+        - 117
         - 105
-        - 111
-        - 115
-        - 97
+        - 32
         - 109
-        - 32
-        - 108
         - 105
-        - 98
-        - 101
-        - 114
-        - 111
-        - 32
-        - 116
-        - 101
         - 110
+        - 105
+        - 109
+        - 97
+        - 32
         - 101
+        - 120
+        - 99
+        - 101
+        - 112
         - 116
         - 117
         - 114
-        - 32
-        - 118
         - 105
-        - 116
-        - 97
-        - 101
         - 32
-        - 98
-        - 108
+        - 113
+        - 117
+        - 105
+        - 32
         - 97
+        - 115
+        - 115
+        - 117
+        - 109
+        - 101
         - 110
         - 100
-        - 105
-        - 116
-        - 105
-        - 105
-        - 115
+        - 97
         - 46
       facebook_link: https://www.facebook.com/Williams_Scottish
       location: New York, US
@@ -3513,22 +5687,22 @@ definitions:
       avatar_image:
         type: string
         description: Error detail on avatar
-        example: vre
+        example: az2
         maxLength: 256
       biography:
         type: string
         description: Error detail on biography
-        example: oyr
+        example: c6w
         maxLength: 256
       categories:
         type: string
         description: Error detail on categories
-        example: 5fx
+        example: e56
         maxLength: 256
       cover_photo:
         type: string
         description: Error detail on cover photo
-        example: 66x
+        example: 0z2
         maxLength: 256
       detail:
         type: string
@@ -3538,27 +5712,27 @@ definitions:
       facebook_link:
         type: string
         description: Error detail on facebook_link
-        example: 2ec
+        example: 56u
         maxLength: 256
       location:
         type: string
         description: Error detail on location
-        example: 9b1
+        example: y3n
         maxLength: 256
       native_currency:
         type: string
         description: Error detail on native_currency
-        example: f0c
+        example: fbg
         maxLength: 256
       primary_language:
         type: string
         description: Error detail on primary_language
-        example: ktv
+        example: tm9
         maxLength: 256
       realname:
         type: string
         description: Error detail on realname
-        example: ezb
+        example: 6xh
         maxLength: 256
       response_code:
         type: integer
@@ -3568,21 +5742,21 @@ definitions:
       twitter_link:
         type: string
         description: Error detail on twitter_link
-        example: c5x
+        example: 82l
         maxLength: 256
     example:
-      avatar_image: w0z
-      biography: faz
-      categories: ac6
-      cover_photo: 58s
+      avatar_image: qij
+      biography: m0g
+      categories: w0u
+      cover_photo: qkr
       detail: All userdata is processed
-      facebook_link: "482"
-      location: utm
-      native_currency: sy3
-      primary_language: pe5
-      realname: s56
+      facebook_link: q7f
+      location: wt1
+      native_currency: o49
+      primary_language: tvp
+      realname: 8sg
       response_code: 0
-      twitter_link: 6fb
+      twitter_link: 1of
     required:
     - response_code
     - detail
@@ -3593,7 +5767,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3611,7 +5785,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error a timeout?
@@ -3622,8 +5796,8 @@ definitions:
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -3638,7 +5812,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error a server-side fault?
-        example: false
+        example: true
       id:
         type: string
         description: ID is a unique identifier for this particular occurrence of the
@@ -3660,16 +5834,16 @@ definitions:
       timeout:
         type: boolean
         description: Is the error a timeout?
-        example: false
+        example: true
     description: userdataGet_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
-      temporary: false
-      timeout: false
+      temporary: true
+      timeout: true
     required:
     - name
     - id
@@ -3709,7 +5883,7 @@ definitions:
         example: false
     description: userdataGet_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: 123abc
       message: parameter 'p' must be an integer
       name: bad_request
@@ -3747,7 +5921,7 @@ definitions:
       categories:
         type: string
         description: The categories of user's work
-        example: Nemo non quia dolores ut autem.
+        example: Iste rem ex qui consequatur.
       cover_photo:
         $ref: '#/definitions/UserImageUploadPayloadResponseBody'
       facebook_link:
@@ -3786,24 +5960,96 @@ definitions:
       artist_pastelid_passphrase: qwerasdf1234
       avatar_image:
         content:
-        - 73
-        - 100
+        - 69
+        - 115
+        - 116
         - 32
-        - 113
-        - 117
+        - 112
+        - 111
+        - 115
+        - 115
         - 105
+        - 109
+        - 117
+        - 115
+        - 32
+        - 101
+        - 115
+        - 116
+        - 32
+        - 105
+        - 112
+        - 115
+        - 97
+        - 109
+        - 32
+        - 109
+        - 97
+        - 120
+        - 105
+        - 109
+        - 101
+        - 32
+        - 101
+        - 118
+        - 101
+        - 110
+        - 105
+        - 101
+        - 116
+        - 32
+        - 99
+        - 117
+        - 108
+        - 112
         - 97
         - 46
       biography: I'm a digital artist based in Paris, France. ...
-      categories: Voluptatem qui non quia.
+      categories: Aut aut aut deleniti atque accusamus cupiditate.
       cover_photo:
         content:
-        - 73
-        - 100
+        - 69
+        - 115
+        - 116
         - 32
-        - 113
-        - 117
+        - 112
+        - 111
+        - 115
+        - 115
         - 105
+        - 109
+        - 117
+        - 115
+        - 32
+        - 101
+        - 115
+        - 116
+        - 32
+        - 105
+        - 112
+        - 115
+        - 97
+        - 109
+        - 32
+        - 109
+        - 97
+        - 120
+        - 105
+        - 109
+        - 101
+        - 32
+        - 101
+        - 118
+        - 101
+        - 110
+        - 105
+        - 101
+        - 116
+        - 32
+        - 99
+        - 117
+        - 108
+        - 112
         - 97
         - 46
       facebook_link: https://www.facebook.com/Williams_Scottish

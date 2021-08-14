@@ -20,11 +20,17 @@ import (
 
 // Server lists the userdatas service endpoint HTTP handlers.
 type Server struct {
-	Mounts         []*MountPoint
-	CreateUserdata http.Handler
-	UpdateUserdata http.Handler
-	UserdataGet    http.Handler
-	CORS           http.Handler
+	Mounts                []*MountPoint
+	CreateUserdata        http.Handler
+	UpdateUserdata        http.Handler
+	UserdataGet           http.Handler
+	SetUserFollowRelation http.Handler
+	GetFollowers          http.Handler
+	GetFollowees          http.Handler
+	GetFriends            http.Handler
+	SetUserLikeArt        http.Handler
+	GetUsersLikeArt       http.Handler
+	CORS                  http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -73,14 +79,31 @@ func New(
 			{"CreateUserdata", "POST", "/userdatas/create"},
 			{"UpdateUserdata", "POST", "/userdatas/update"},
 			{"UserdataGet", "GET", "/userdatas/{pastelid}"},
+			{"SetUserFollowRelation", "POST", "/userdatas/follow"},
+			{"GetFollowers", "GET", "/userdatas/follow/followers"},
+			{"GetFollowees", "GET", "/userdatas/follow/followees"},
+			{"GetFriends", "GET", "/userdatas/follow/friends"},
+			{"SetUserLikeArt", "POST", "/userdatas/like/art"},
+			{"GetUsersLikeArt", "GET", "/userdatas/like/art"},
 			{"CORS", "OPTIONS", "/userdatas/create"},
 			{"CORS", "OPTIONS", "/userdatas/update"},
 			{"CORS", "OPTIONS", "/userdatas/{pastelid}"},
+			{"CORS", "OPTIONS", "/userdatas/follow"},
+			{"CORS", "OPTIONS", "/userdatas/follow/followers"},
+			{"CORS", "OPTIONS", "/userdatas/follow/followees"},
+			{"CORS", "OPTIONS", "/userdatas/follow/friends"},
+			{"CORS", "OPTIONS", "/userdatas/like/art"},
 		},
-		CreateUserdata: NewCreateUserdataHandler(e.CreateUserdata, mux, NewUserdatasCreateUserdataDecoder(mux, userdatasCreateUserdataDecoderFn), encoder, errhandler, formatter),
-		UpdateUserdata: NewUpdateUserdataHandler(e.UpdateUserdata, mux, NewUserdatasUpdateUserdataDecoder(mux, userdatasUpdateUserdataDecoderFn), encoder, errhandler, formatter),
-		UserdataGet:    NewUserdataGetHandler(e.UserdataGet, mux, decoder, encoder, errhandler, formatter),
-		CORS:           NewCORSHandler(),
+		CreateUserdata:        NewCreateUserdataHandler(e.CreateUserdata, mux, NewUserdatasCreateUserdataDecoder(mux, userdatasCreateUserdataDecoderFn), encoder, errhandler, formatter),
+		UpdateUserdata:        NewUpdateUserdataHandler(e.UpdateUserdata, mux, NewUserdatasUpdateUserdataDecoder(mux, userdatasUpdateUserdataDecoderFn), encoder, errhandler, formatter),
+		UserdataGet:           NewUserdataGetHandler(e.UserdataGet, mux, decoder, encoder, errhandler, formatter),
+		SetUserFollowRelation: NewSetUserFollowRelationHandler(e.SetUserFollowRelation, mux, decoder, encoder, errhandler, formatter),
+		GetFollowers:          NewGetFollowersHandler(e.GetFollowers, mux, decoder, encoder, errhandler, formatter),
+		GetFollowees:          NewGetFolloweesHandler(e.GetFollowees, mux, decoder, encoder, errhandler, formatter),
+		GetFriends:            NewGetFriendsHandler(e.GetFriends, mux, decoder, encoder, errhandler, formatter),
+		SetUserLikeArt:        NewSetUserLikeArtHandler(e.SetUserLikeArt, mux, decoder, encoder, errhandler, formatter),
+		GetUsersLikeArt:       NewGetUsersLikeArtHandler(e.GetUsersLikeArt, mux, decoder, encoder, errhandler, formatter),
+		CORS:                  NewCORSHandler(),
 	}
 }
 
@@ -92,6 +115,12 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.CreateUserdata = m(s.CreateUserdata)
 	s.UpdateUserdata = m(s.UpdateUserdata)
 	s.UserdataGet = m(s.UserdataGet)
+	s.SetUserFollowRelation = m(s.SetUserFollowRelation)
+	s.GetFollowers = m(s.GetFollowers)
+	s.GetFollowees = m(s.GetFollowees)
+	s.GetFriends = m(s.GetFriends)
+	s.SetUserLikeArt = m(s.SetUserLikeArt)
+	s.GetUsersLikeArt = m(s.GetUsersLikeArt)
 	s.CORS = m(s.CORS)
 }
 
@@ -100,6 +129,12 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountCreateUserdataHandler(mux, h.CreateUserdata)
 	MountUpdateUserdataHandler(mux, h.UpdateUserdata)
 	MountUserdataGetHandler(mux, h.UserdataGet)
+	MountSetUserFollowRelationHandler(mux, h.SetUserFollowRelation)
+	MountGetFollowersHandler(mux, h.GetFollowers)
+	MountGetFolloweesHandler(mux, h.GetFollowees)
+	MountGetFriendsHandler(mux, h.GetFriends)
+	MountSetUserLikeArtHandler(mux, h.SetUserLikeArt)
+	MountGetUsersLikeArtHandler(mux, h.GetUsersLikeArt)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -256,6 +291,312 @@ func NewUserdataGetHandler(
 	})
 }
 
+// MountSetUserFollowRelationHandler configures the mux to serve the
+// "userdatas" service "setUserFollowRelation" endpoint.
+func MountSetUserFollowRelationHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/userdatas/follow", f)
+}
+
+// NewSetUserFollowRelationHandler creates a HTTP handler which loads the HTTP
+// request and calls the "userdatas" service "setUserFollowRelation" endpoint.
+func NewSetUserFollowRelationHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeSetUserFollowRelationRequest(mux, decoder)
+		encodeResponse = EncodeSetUserFollowRelationResponse(encoder)
+		encodeError    = EncodeSetUserFollowRelationError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "setUserFollowRelation")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountGetFollowersHandler configures the mux to serve the "userdatas" service
+// "getFollowers" endpoint.
+func MountGetFollowersHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/userdatas/follow/followers", f)
+}
+
+// NewGetFollowersHandler creates a HTTP handler which loads the HTTP request
+// and calls the "userdatas" service "getFollowers" endpoint.
+func NewGetFollowersHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetFollowersRequest(mux, decoder)
+		encodeResponse = EncodeGetFollowersResponse(encoder)
+		encodeError    = EncodeGetFollowersError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "getFollowers")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountGetFolloweesHandler configures the mux to serve the "userdatas" service
+// "getFollowees" endpoint.
+func MountGetFolloweesHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/userdatas/follow/followees", f)
+}
+
+// NewGetFolloweesHandler creates a HTTP handler which loads the HTTP request
+// and calls the "userdatas" service "getFollowees" endpoint.
+func NewGetFolloweesHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetFolloweesRequest(mux, decoder)
+		encodeResponse = EncodeGetFolloweesResponse(encoder)
+		encodeError    = EncodeGetFolloweesError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "getFollowees")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountGetFriendsHandler configures the mux to serve the "userdatas" service
+// "getFriends" endpoint.
+func MountGetFriendsHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/userdatas/follow/friends", f)
+}
+
+// NewGetFriendsHandler creates a HTTP handler which loads the HTTP request and
+// calls the "userdatas" service "getFriends" endpoint.
+func NewGetFriendsHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetFriendsRequest(mux, decoder)
+		encodeResponse = EncodeGetFriendsResponse(encoder)
+		encodeError    = EncodeGetFriendsError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "getFriends")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountSetUserLikeArtHandler configures the mux to serve the "userdatas"
+// service "setUserLikeArt" endpoint.
+func MountSetUserLikeArtHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("POST", "/userdatas/like/art", f)
+}
+
+// NewSetUserLikeArtHandler creates a HTTP handler which loads the HTTP request
+// and calls the "userdatas" service "setUserLikeArt" endpoint.
+func NewSetUserLikeArtHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeSetUserLikeArtRequest(mux, decoder)
+		encodeResponse = EncodeSetUserLikeArtResponse(encoder)
+		encodeError    = EncodeSetUserLikeArtError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "setUserLikeArt")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
+// MountGetUsersLikeArtHandler configures the mux to serve the "userdatas"
+// service "getUsersLikeArt" endpoint.
+func MountGetUsersLikeArtHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/userdatas/like/art", f)
+}
+
+// NewGetUsersLikeArtHandler creates a HTTP handler which loads the HTTP
+// request and calls the "userdatas" service "getUsersLikeArt" endpoint.
+func NewGetUsersLikeArtHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+) http.Handler {
+	var (
+		decodeRequest  = DecodeGetUsersLikeArtRequest(mux, decoder)
+		encodeResponse = EncodeGetUsersLikeArtResponse(encoder)
+		encodeError    = EncodeGetUsersLikeArtError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "getUsersLikeArt")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		res, err := endpoint(ctx, payload)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
+		}
+	})
+}
+
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service userdatas.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
@@ -269,6 +610,11 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/userdatas/create", f)
 	mux.Handle("OPTIONS", "/userdatas/update", f)
 	mux.Handle("OPTIONS", "/userdatas/{pastelid}", f)
+	mux.Handle("OPTIONS", "/userdatas/follow", f)
+	mux.Handle("OPTIONS", "/userdatas/follow/followers", f)
+	mux.Handle("OPTIONS", "/userdatas/follow/followees", f)
+	mux.Handle("OPTIONS", "/userdatas/follow/friends", f)
+	mux.Handle("OPTIONS", "/userdatas/like/art", f)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

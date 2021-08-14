@@ -24,7 +24,7 @@ func BuildCreateUserdataPayload(userdatasCreateUserdataBody string) (*userdatas.
 	{
 		err = json.Unmarshal([]byte(userdatasCreateUserdataBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"avatar_image\": {\n         \"content\": \"QXNwZXJpb3JlcyBhbWV0IGxhYm9yaW9zYW0gbGliZXJvIHRlbmV0dXIgdml0YWUgYmxhbmRpdGlpcy4=\"\n      },\n      \"biography\": \"I\\'m a digital artist based in Paris, France. ...\",\n      \"categories\": \"Quia dolore fugit aliquam totam.\",\n      \"cover_photo\": {\n         \"content\": \"QXNwZXJpb3JlcyBhbWV0IGxhYm9yaW9zYW0gbGliZXJvIHRlbmV0dXIgdml0YWUgYmxhbmRpdGlpcy4=\"\n      },\n      \"facebook_link\": \"https://www.facebook.com/Williams_Scottish\",\n      \"location\": \"New York, US\",\n      \"native_currency\": \"USD\",\n      \"primary_language\": \"English\",\n      \"realname\": \"Williams Scottish\",\n      \"twitter_link\": \"https://www.twitter.com/@Williams_Scottish\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"avatar_image\": {\n         \"content\": \"RWEgZXQgcXVpIG1pbmltYSBleGNlcHR1cmkgcXVpIGFzc3VtZW5kYS4=\"\n      },\n      \"biography\": \"I\\'m a digital artist based in Paris, France. ...\",\n      \"categories\": \"Magnam ut eum eligendi velit sequi.\",\n      \"cover_photo\": {\n         \"content\": \"RWEgZXQgcXVpIG1pbmltYSBleGNlcHR1cmkgcXVpIGFzc3VtZW5kYS4=\"\n      },\n      \"facebook_link\": \"https://www.facebook.com/Williams_Scottish\",\n      \"location\": \"New York, US\",\n      \"native_currency\": \"USD\",\n      \"primary_language\": \"English\",\n      \"realname\": \"Williams Scottish\",\n      \"twitter_link\": \"https://www.twitter.com/@Williams_Scottish\"\n   }'")
 		}
 		if body.Realname != nil {
 			if utf8.RuneCountInString(*body.Realname) > 256 {
@@ -107,7 +107,7 @@ func BuildUpdateUserdataPayload(userdatasUpdateUserdataBody string) (*userdatas.
 	{
 		err = json.Unmarshal([]byte(userdatasUpdateUserdataBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"avatar_image\": {\n         \"content\": \"QXNwZXJpb3JlcyBhbWV0IGxhYm9yaW9zYW0gbGliZXJvIHRlbmV0dXIgdml0YWUgYmxhbmRpdGlpcy4=\"\n      },\n      \"biography\": \"I\\'m a digital artist based in Paris, France. ...\",\n      \"categories\": \"Sint rerum nisi molestiae quidem doloribus quod.\",\n      \"cover_photo\": {\n         \"content\": \"QXNwZXJpb3JlcyBhbWV0IGxhYm9yaW9zYW0gbGliZXJvIHRlbmV0dXIgdml0YWUgYmxhbmRpdGlpcy4=\"\n      },\n      \"facebook_link\": \"https://www.facebook.com/Williams_Scottish\",\n      \"location\": \"New York, US\",\n      \"native_currency\": \"USD\",\n      \"primary_language\": \"English\",\n      \"realname\": \"Williams Scottish\",\n      \"twitter_link\": \"https://www.twitter.com/@Williams_Scottish\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"artist_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"artist_pastelid_passphrase\": \"qwerasdf1234\",\n      \"avatar_image\": {\n         \"content\": \"RWEgZXQgcXVpIG1pbmltYSBleGNlcHR1cmkgcXVpIGFzc3VtZW5kYS4=\"\n      },\n      \"biography\": \"I\\'m a digital artist based in Paris, France. ...\",\n      \"categories\": \"Aut quae illum et nisi provident.\",\n      \"cover_photo\": {\n         \"content\": \"RWEgZXQgcXVpIG1pbmltYSBleGNlcHR1cmkgcXVpIGFzc3VtZW5kYS4=\"\n      },\n      \"facebook_link\": \"https://www.facebook.com/Williams_Scottish\",\n      \"location\": \"New York, US\",\n      \"native_currency\": \"USD\",\n      \"primary_language\": \"English\",\n      \"realname\": \"Williams Scottish\",\n      \"twitter_link\": \"https://www.twitter.com/@Williams_Scottish\"\n   }'")
 		}
 		if body.Realname != nil {
 			if utf8.RuneCountInString(*body.Realname) > 256 {
@@ -202,6 +202,198 @@ func BuildUserdataGetPayload(userdatasUserdataGetPastelid string) (*userdatas.Us
 	}
 	v := &userdatas.UserdataGetPayload{}
 	v.Pastelid = pastelid
+
+	return v, nil
+}
+
+// BuildSetUserFollowRelationPayload builds the payload for the userdatas
+// setUserFollowRelation endpoint from CLI flags.
+func BuildSetUserFollowRelationPayload(userdatasSetUserFollowRelationBody string) (*userdatas.SetUserFollowRelationPayload, error) {
+	var err error
+	var body SetUserFollowRelationRequestBody
+	{
+		err = json.Unmarshal([]byte(userdatasSetUserFollowRelationBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"followee_pastel_id\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"follower_pastel_id\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.follower_pastel_id", body.FollowerPastelID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.FollowerPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.follower_pastel_id", body.FollowerPastelID, utf8.RuneCountInString(body.FollowerPastelID), 86, true))
+		}
+		if utf8.RuneCountInString(body.FollowerPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.follower_pastel_id", body.FollowerPastelID, utf8.RuneCountInString(body.FollowerPastelID), 86, false))
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.followee_pastel_id", body.FolloweePastelID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.FolloweePastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.followee_pastel_id", body.FolloweePastelID, utf8.RuneCountInString(body.FolloweePastelID), 86, true))
+		}
+		if utf8.RuneCountInString(body.FolloweePastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.followee_pastel_id", body.FolloweePastelID, utf8.RuneCountInString(body.FolloweePastelID), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &userdatas.SetUserFollowRelationPayload{
+		FollowerPastelID: body.FollowerPastelID,
+		FolloweePastelID: body.FolloweePastelID,
+	}
+
+	return v, nil
+}
+
+// BuildGetFollowersPayload builds the payload for the userdatas getFollowers
+// endpoint from CLI flags.
+func BuildGetFollowersPayload(userdatasGetFollowersBody string) (*userdatas.GetFollowersPayload, error) {
+	var err error
+	var body GetFollowersRequestBody
+	{
+		err = json.Unmarshal([]byte(userdatasGetFollowersBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"limit\": 10,\n      \"offset\": 0,\n      \"pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", body.Pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.Pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, true))
+		}
+		if utf8.RuneCountInString(body.Pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &userdatas.GetFollowersPayload{
+		Pastelid: body.Pastelid,
+		Limit:    body.Limit,
+		Offset:   body.Offset,
+	}
+
+	return v, nil
+}
+
+// BuildGetFolloweesPayload builds the payload for the userdatas getFollowees
+// endpoint from CLI flags.
+func BuildGetFolloweesPayload(userdatasGetFolloweesBody string) (*userdatas.GetFolloweesPayload, error) {
+	var err error
+	var body GetFolloweesRequestBody
+	{
+		err = json.Unmarshal([]byte(userdatasGetFolloweesBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"limit\": 10,\n      \"offset\": 0,\n      \"pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", body.Pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.Pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, true))
+		}
+		if utf8.RuneCountInString(body.Pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &userdatas.GetFolloweesPayload{
+		Pastelid: body.Pastelid,
+		Limit:    body.Limit,
+		Offset:   body.Offset,
+	}
+
+	return v, nil
+}
+
+// BuildGetFriendsPayload builds the payload for the userdatas getFriends
+// endpoint from CLI flags.
+func BuildGetFriendsPayload(userdatasGetFriendsBody string) (*userdatas.GetFriendsPayload, error) {
+	var err error
+	var body GetFriendsRequestBody
+	{
+		err = json.Unmarshal([]byte(userdatasGetFriendsBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"limit\": 10,\n      \"offset\": 0,\n      \"pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", body.Pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.Pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, true))
+		}
+		if utf8.RuneCountInString(body.Pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &userdatas.GetFriendsPayload{
+		Pastelid: body.Pastelid,
+		Limit:    body.Limit,
+		Offset:   body.Offset,
+	}
+
+	return v, nil
+}
+
+// BuildSetUserLikeArtPayload builds the payload for the userdatas
+// setUserLikeArt endpoint from CLI flags.
+func BuildSetUserLikeArtPayload(userdatasSetUserLikeArtBody string) (*userdatas.SetUserLikeArtPayload, error) {
+	var err error
+	var body SetUserLikeArtRequestBody
+	{
+		err = json.Unmarshal([]byte(userdatasSetUserLikeArtBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"art_pastel_id\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"user_pastel_id\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.user_pastel_id", body.UserPastelID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.UserPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastel_id", body.UserPastelID, utf8.RuneCountInString(body.UserPastelID), 86, true))
+		}
+		if utf8.RuneCountInString(body.UserPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastel_id", body.UserPastelID, utf8.RuneCountInString(body.UserPastelID), 86, false))
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.art_pastel_id", body.ArtPastelID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.ArtPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.art_pastel_id", body.ArtPastelID, utf8.RuneCountInString(body.ArtPastelID), 86, true))
+		}
+		if utf8.RuneCountInString(body.ArtPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.art_pastel_id", body.ArtPastelID, utf8.RuneCountInString(body.ArtPastelID), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &userdatas.SetUserLikeArtPayload{
+		UserPastelID: body.UserPastelID,
+		ArtPastelID:  body.ArtPastelID,
+	}
+
+	return v, nil
+}
+
+// BuildGetUsersLikeArtPayload builds the payload for the userdatas
+// getUsersLikeArt endpoint from CLI flags.
+func BuildGetUsersLikeArtPayload(userdatasGetUsersLikeArtBody string) (*userdatas.GetUsersLikeArtPayload, error) {
+	var err error
+	var body GetUsersLikeArtRequestBody
+	{
+		err = json.Unmarshal([]byte(userdatasGetUsersLikeArtBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"art_id\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\",\n      \"limit\": 10,\n      \"offset\": 0\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.art_id", body.ArtID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.ArtID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.art_id", body.ArtID, utf8.RuneCountInString(body.ArtID), 86, true))
+		}
+		if utf8.RuneCountInString(body.ArtID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.art_id", body.ArtID, utf8.RuneCountInString(body.ArtID), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	v := &userdatas.GetUsersLikeArtPayload{
+		ArtID:  body.ArtID,
+		Limit:  body.Limit,
+		Offset: body.Offset,
+	}
 
 	return v, nil
 }

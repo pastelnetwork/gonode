@@ -371,6 +371,625 @@ func DecodeUserdataGetResponse(decoder func(*http.Response) goahttp.Decoder, res
 	}
 }
 
+// BuildSetUserFollowRelationRequest instantiates a HTTP request object with
+// method and path set to call the "userdatas" service "setUserFollowRelation"
+// endpoint
+func (c *Client) BuildSetUserFollowRelationRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: SetUserFollowRelationUserdatasPath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userdatas", "setUserFollowRelation", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeSetUserFollowRelationRequest returns an encoder for requests sent to
+// the userdatas setUserFollowRelation server.
+func EncodeSetUserFollowRelationRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*userdatas.SetUserFollowRelationPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("userdatas", "setUserFollowRelation", "*userdatas.SetUserFollowRelationPayload", v)
+		}
+		body := NewSetUserFollowRelationRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("userdatas", "setUserFollowRelation", err)
+		}
+		return nil
+	}
+}
+
+// DecodeSetUserFollowRelationResponse returns a decoder for responses returned
+// by the userdatas setUserFollowRelation endpoint. restoreBody controls
+// whether the response body should be restored after having been read.
+// DecodeSetUserFollowRelationResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeSetUserFollowRelationResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body SetUserFollowRelationResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "setUserFollowRelation", err)
+			}
+			err = ValidateSetUserFollowRelationResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "setUserFollowRelation", err)
+			}
+			res := NewSetUserFollowRelationResultOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body SetUserFollowRelationBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "setUserFollowRelation", err)
+			}
+			err = ValidateSetUserFollowRelationBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "setUserFollowRelation", err)
+			}
+			return nil, NewSetUserFollowRelationBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body SetUserFollowRelationInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "setUserFollowRelation", err)
+			}
+			err = ValidateSetUserFollowRelationInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "setUserFollowRelation", err)
+			}
+			return nil, NewSetUserFollowRelationInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userdatas", "setUserFollowRelation", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetFollowersRequest instantiates a HTTP request object with method and
+// path set to call the "userdatas" service "getFollowers" endpoint
+func (c *Client) BuildGetFollowersRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetFollowersUserdatasPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userdatas", "getFollowers", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetFollowersRequest returns an encoder for requests sent to the
+// userdatas getFollowers server.
+func EncodeGetFollowersRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*userdatas.GetFollowersPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("userdatas", "getFollowers", "*userdatas.GetFollowersPayload", v)
+		}
+		body := NewGetFollowersRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("userdatas", "getFollowers", err)
+		}
+		return nil
+	}
+}
+
+// DecodeGetFollowersResponse returns a decoder for responses returned by the
+// userdatas getFollowers endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeGetFollowersResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeGetFollowersResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetFollowersResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFollowers", err)
+			}
+			err = ValidateGetFollowersResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFollowers", err)
+			}
+			res := NewGetFollowersResultOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetFollowersBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFollowers", err)
+			}
+			err = ValidateGetFollowersBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFollowers", err)
+			}
+			return nil, NewGetFollowersBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetFollowersInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFollowers", err)
+			}
+			err = ValidateGetFollowersInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFollowers", err)
+			}
+			return nil, NewGetFollowersInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userdatas", "getFollowers", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetFolloweesRequest instantiates a HTTP request object with method and
+// path set to call the "userdatas" service "getFollowees" endpoint
+func (c *Client) BuildGetFolloweesRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetFolloweesUserdatasPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userdatas", "getFollowees", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetFolloweesRequest returns an encoder for requests sent to the
+// userdatas getFollowees server.
+func EncodeGetFolloweesRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*userdatas.GetFolloweesPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("userdatas", "getFollowees", "*userdatas.GetFolloweesPayload", v)
+		}
+		body := NewGetFolloweesRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("userdatas", "getFollowees", err)
+		}
+		return nil
+	}
+}
+
+// DecodeGetFolloweesResponse returns a decoder for responses returned by the
+// userdatas getFollowees endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeGetFolloweesResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeGetFolloweesResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetFolloweesResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFollowees", err)
+			}
+			err = ValidateGetFolloweesResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFollowees", err)
+			}
+			res := NewGetFolloweesResultOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetFolloweesBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFollowees", err)
+			}
+			err = ValidateGetFolloweesBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFollowees", err)
+			}
+			return nil, NewGetFolloweesBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetFolloweesInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFollowees", err)
+			}
+			err = ValidateGetFolloweesInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFollowees", err)
+			}
+			return nil, NewGetFolloweesInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userdatas", "getFollowees", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetFriendsRequest instantiates a HTTP request object with method and
+// path set to call the "userdatas" service "getFriends" endpoint
+func (c *Client) BuildGetFriendsRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetFriendsUserdatasPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userdatas", "getFriends", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetFriendsRequest returns an encoder for requests sent to the
+// userdatas getFriends server.
+func EncodeGetFriendsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*userdatas.GetFriendsPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("userdatas", "getFriends", "*userdatas.GetFriendsPayload", v)
+		}
+		body := NewGetFriendsRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("userdatas", "getFriends", err)
+		}
+		return nil
+	}
+}
+
+// DecodeGetFriendsResponse returns a decoder for responses returned by the
+// userdatas getFriends endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeGetFriendsResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeGetFriendsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetFriendsResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFriends", err)
+			}
+			err = ValidateGetFriendsResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFriends", err)
+			}
+			res := NewGetFriendsResultOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetFriendsBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFriends", err)
+			}
+			err = ValidateGetFriendsBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFriends", err)
+			}
+			return nil, NewGetFriendsBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetFriendsInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getFriends", err)
+			}
+			err = ValidateGetFriendsInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getFriends", err)
+			}
+			return nil, NewGetFriendsInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userdatas", "getFriends", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildSetUserLikeArtRequest instantiates a HTTP request object with method
+// and path set to call the "userdatas" service "setUserLikeArt" endpoint
+func (c *Client) BuildSetUserLikeArtRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: SetUserLikeArtUserdatasPath()}
+	req, err := http.NewRequest("POST", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userdatas", "setUserLikeArt", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeSetUserLikeArtRequest returns an encoder for requests sent to the
+// userdatas setUserLikeArt server.
+func EncodeSetUserLikeArtRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*userdatas.SetUserLikeArtPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("userdatas", "setUserLikeArt", "*userdatas.SetUserLikeArtPayload", v)
+		}
+		body := NewSetUserLikeArtRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("userdatas", "setUserLikeArt", err)
+		}
+		return nil
+	}
+}
+
+// DecodeSetUserLikeArtResponse returns a decoder for responses returned by the
+// userdatas setUserLikeArt endpoint. restoreBody controls whether the response
+// body should be restored after having been read.
+// DecodeSetUserLikeArtResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeSetUserLikeArtResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body SetUserLikeArtResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "setUserLikeArt", err)
+			}
+			err = ValidateSetUserLikeArtResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "setUserLikeArt", err)
+			}
+			res := NewSetUserLikeArtResultOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body SetUserLikeArtBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "setUserLikeArt", err)
+			}
+			err = ValidateSetUserLikeArtBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "setUserLikeArt", err)
+			}
+			return nil, NewSetUserLikeArtBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body SetUserLikeArtInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "setUserLikeArt", err)
+			}
+			err = ValidateSetUserLikeArtInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "setUserLikeArt", err)
+			}
+			return nil, NewSetUserLikeArtInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userdatas", "setUserLikeArt", resp.StatusCode, string(body))
+		}
+	}
+}
+
+// BuildGetUsersLikeArtRequest instantiates a HTTP request object with method
+// and path set to call the "userdatas" service "getUsersLikeArt" endpoint
+func (c *Client) BuildGetUsersLikeArtRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: GetUsersLikeArtUserdatasPath()}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("userdatas", "getUsersLikeArt", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// EncodeGetUsersLikeArtRequest returns an encoder for requests sent to the
+// userdatas getUsersLikeArt server.
+func EncodeGetUsersLikeArtRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*userdatas.GetUsersLikeArtPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("userdatas", "getUsersLikeArt", "*userdatas.GetUsersLikeArtPayload", v)
+		}
+		body := NewGetUsersLikeArtRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("userdatas", "getUsersLikeArt", err)
+		}
+		return nil
+	}
+}
+
+// DecodeGetUsersLikeArtResponse returns a decoder for responses returned by
+// the userdatas getUsersLikeArt endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+// DecodeGetUsersLikeArtResponse may return the following errors:
+//	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeGetUsersLikeArtResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body GetUsersLikeArtResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getUsersLikeArt", err)
+			}
+			err = ValidateGetUsersLikeArtResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getUsersLikeArt", err)
+			}
+			res := NewGetUsersLikeArtResultOK(&body)
+			return res, nil
+		case http.StatusBadRequest:
+			var (
+				body GetUsersLikeArtBadRequestResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getUsersLikeArt", err)
+			}
+			err = ValidateGetUsersLikeArtBadRequestResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getUsersLikeArt", err)
+			}
+			return nil, NewGetUsersLikeArtBadRequest(&body)
+		case http.StatusInternalServerError:
+			var (
+				body GetUsersLikeArtInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("userdatas", "getUsersLikeArt", err)
+			}
+			err = ValidateGetUsersLikeArtInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("userdatas", "getUsersLikeArt", err)
+			}
+			return nil, NewGetUsersLikeArtInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("userdatas", "getUsersLikeArt", resp.StatusCode, string(body))
+		}
+	}
+}
+
 // marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadRequestBody
 // builds a value of type *UserImageUploadPayloadRequestBody from a value of
 // type *userdatas.UserImageUploadPayload.
@@ -411,6 +1030,24 @@ func unmarshalUserImageUploadPayloadResponseBodyToUserdatasUserImageUploadPayloa
 	res := &userdatas.UserImageUploadPayload{
 		Content:  v.Content,
 		Filename: v.Filename,
+	}
+
+	return res
+}
+
+// unmarshalUserRelationshipInfoResponseBodyToUserdatasUserRelationshipInfo
+// builds a value of type *userdatas.UserRelationshipInfo from a value of type
+// *UserRelationshipInfoResponseBody.
+func unmarshalUserRelationshipInfoResponseBodyToUserdatasUserRelationshipInfo(v *UserRelationshipInfoResponseBody) *userdatas.UserRelationshipInfo {
+	if v == nil {
+		return nil
+	}
+	res := &userdatas.UserRelationshipInfo{
+		Pastelid:        *v.Pastelid,
+		Username:        *v.Username,
+		Realname:        v.Realname,
+		FollowersCount:  *v.FollowersCount,
+		AvatarThumbnail: v.AvatarThumbnail,
 	}
 
 	return res

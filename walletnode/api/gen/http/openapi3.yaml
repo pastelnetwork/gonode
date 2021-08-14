@@ -48,31 +48,43 @@ paths:
                 nsfw_score: 1000
                 porn_nsfw_score: 1000
                 rareness_score: 1
-                royalty: 1471524570153364271
+                royalty: 2863226068842474850
                 seen_score: 1
                 series_name: Famous artist
                 sexy_nsfw_score: 1000
                 storage_fee: 100
                 thumbnail:
-                - 77
-                - 97
-                - 103
-                - 110
-                - 105
-                - 32
-                - 101
-                - 115
-                - 116
-                - 32
-                - 113
+                - 81
                 - 117
                 - 105
+                - 97
+                - 32
                 - 100
+                - 111
+                - 108
+                - 111
+                - 114
                 - 101
-                - 109
+                - 32
+                - 102
+                - 117
+                - 103
+                - 105
+                - 116
                 - 32
                 - 97
-                - 100
+                - 108
+                - 105
+                - 113
+                - 117
+                - 97
+                - 109
+                - 32
+                - 116
+                - 111
+                - 116
+                - 97
+                - 109
                 - 46
                 title: Mona Lisa
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -150,15 +162,47 @@ paths:
                 $ref: '#/components/schemas/DownloadResult'
               example:
                 file:
-                - 81
-                - 117
-                - 105
-                - 98
-                - 117
+                - 65
                 - 115
-                - 100
+                - 112
+                - 101
+                - 114
+                - 105
+                - 111
+                - 114
+                - 101
+                - 115
+                - 32
                 - 97
                 - 109
+                - 101
+                - 116
+                - 32
+                - 108
+                - 97
+                - 98
+                - 111
+                - 114
+                - 105
+                - 111
+                - 115
+                - 97
+                - 109
+                - 32
+                - 108
+                - 105
+                - 98
+                - 101
+                - 114
+                - 111
+                - 32
+                - 116
+                - 101
+                - 110
+                - 101
+                - 116
+                - 117
+                - 114
                 - 32
                 - 118
                 - 105
@@ -166,13 +210,16 @@ paths:
                 - 97
                 - 101
                 - 32
-                - 113
-                - 117
+                - 98
+                - 108
                 - 97
-                - 101
-                - 114
-                - 97
+                - 110
+                - 100
+                - 105
                 - 116
+                - 105
+                - 105
+                - 115
                 - 46
         "404":
           description: Not Found response.
@@ -370,6 +417,8 @@ paths:
                   status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
                   status: Task Started
+                - date: 2006-01-02T15:04:05Z07:00
+                  status: Task Started
                 status: Task Started
                 ticket:
                   artist_name: Leonardo da Vinci
@@ -479,17 +528,46 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 65
+              - 81
               - 117
+              - 97
+              - 115
+              - 32
+              - 115
+              - 97
+              - 112
+              - 105
+              - 101
+              - 110
               - 116
               - 101
-              - 109
               - 32
               - 101
-              - 97
-              - 113
+              - 116
+              - 32
               - 117
+              - 110
+              - 100
               - 101
+              - 32
+              - 118
+              - 111
+              - 108
+              - 117
+              - 112
+              - 116
+              - 97
+              - 116
+              - 101
+              - 115
+              - 32
+              - 112
+              - 108
+              - 97
+              - 99
+              - 101
+              - 97
+              - 116
               - 46
       responses:
         "201":
@@ -536,9 +614,9 @@ paths:
         schema:
           type: string
           description: Artist PastelID or special value; mine
-          example: oze
+          example: od0
           maxLength: 256
-        example: aso
+        example: obd
       - name: limit
         in: query
         description: Number of results to be return
@@ -559,8 +637,8 @@ paths:
         schema:
           type: string
           description: Query is search query entered by user
-          example: Nobis error et inventore nostrum atque.
-        example: Maxime ab numquam quo minima est voluptatem.
+          example: Cupiditate nihil quae sit praesentium et.
+        example: Neque eveniet doloribus.
       - name: artist_name
         in: query
         description: Name of the artist
@@ -570,7 +648,7 @@ paths:
           description: Name of the artist
           default: true
           example: false
-        example: true
+        example: false
       - name: art_title
         in: query
         description: Title of artwork
@@ -580,7 +658,7 @@ paths:
           description: Title of artwork
           default: true
           example: true
-        example: false
+        example: true
       - name: series
         in: query
         description: Artwork series name
@@ -599,8 +677,8 @@ paths:
           type: boolean
           description: Artist written statement
           default: true
-          example: true
-        example: true
+          example: false
+        example: false
       - name: keyword
         in: query
         description: Keyword that Artist assigns to Artwork
@@ -609,7 +687,7 @@ paths:
           type: boolean
           description: Keyword that Artist assigns to Artwork
           default: true
-          example: false
+          example: true
         example: false
       - name: min_copies
         in: query
@@ -641,9 +719,9 @@ paths:
           type: integer
           description: Minimum blocknum
           default: 1
-          example: 2567079128263685768
+          example: 2702846823020679703
           minimum: 1
-        example: 6518502191988907296
+        example: 4361441127564409241
       - name: max_block
         in: query
         description: Maximum blocknum
@@ -651,9 +729,9 @@ paths:
         schema:
           type: integer
           description: Maximum blocknum
-          example: 1333723044759527451
+          example: 4553163751436229209
           minimum: 1
-        example: 3645993019022976639
+        example: 901295744388932296
       - name: min_rareness_score
         in: query
         description: Minimum pastel rareness score
@@ -740,57 +818,41 @@ paths:
                   keywords: Renaissance, sfumato, portrait
                   series_name: Famous artist
                   thumbnail:
-                  - 69
-                  - 105
-                  - 117
-                  - 115
-                  - 32
-                  - 105
-                  - 108
-                  - 108
+                  - 84
                   - 111
-                  - 32
-                  - 105
-                  - 117
-                  - 115
                   - 116
-                  - 111
-                  - 32
-                  - 101
-                  - 116
-                  - 32
-                  - 112
                   - 97
-                  - 114
-                  - 105
-                  - 97
-                  - 116
-                  - 117
-                  - 114
-                  - 32
-                  - 114
-                  - 101
-                  - 114
-                  - 117
                   - 109
+                  - 32
+                  - 97
+                  - 117
+                  - 116
+                  - 32
+                  - 115
+                  - 101
+                  - 100
                   - 46
                   title: Mona Lisa
                   txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-                match_index: 5122141033206213632
+                match_index: 786207136603597138
                 matches:
-                - field_type: keyword
+                - field_type: artist_name
                   matched_indexes:
-                  - 5079483862560419611
-                  - 383435025649165662
-                  score: 1913188029159934354
-                  str: Qui quo et odio voluptatem voluptas voluptates.
-                - field_type: keyword
+                  - 7380319872106704681
+                  - 7456758987449087545
+                  - 6691974645807088378
+                  - 787606581070214255
+                  score: 6280315198310502525
+                  str: Consequatur libero nihil.
+                - field_type: artist_name
                   matched_indexes:
-                  - 5079483862560419611
-                  - 383435025649165662
-                  score: 1913188029159934354
-                  str: Qui quo et odio voluptatem voluptas voluptates.
+                  - 7380319872106704681
+                  - 7456758987449087545
+                  - 6691974645807088378
+                  - 787606581070214255
+                  score: 6280315198310502525
+                  str: Consequatur libero nihil.
         "400":
           description: Bad Request response.
           content:
@@ -843,24 +905,96 @@ paths:
                 artist_pastelid_passphrase: qwerasdf1234
                 avatar_image:
                   content:
-                  - 73
-                  - 100
+                  - 69
+                  - 115
+                  - 116
                   - 32
-                  - 113
-                  - 117
+                  - 112
+                  - 111
+                  - 115
+                  - 115
                   - 105
+                  - 109
+                  - 117
+                  - 115
+                  - 32
+                  - 101
+                  - 115
+                  - 116
+                  - 32
+                  - 105
+                  - 112
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 109
+                  - 97
+                  - 120
+                  - 105
+                  - 109
+                  - 101
+                  - 32
+                  - 101
+                  - 118
+                  - 101
+                  - 110
+                  - 105
+                  - 101
+                  - 116
+                  - 32
+                  - 99
+                  - 117
+                  - 108
+                  - 112
                   - 97
                   - 46
                 biography: I'm a digital artist based in Paris, France. ...
-                categories: Impedit tenetur harum molestias tempore.
+                categories: Ea nihil voluptas.
                 cover_photo:
                   content:
-                  - 73
-                  - 100
+                  - 69
+                  - 115
+                  - 116
                   - 32
-                  - 113
-                  - 117
+                  - 112
+                  - 111
+                  - 115
+                  - 115
                   - 105
+                  - 109
+                  - 117
+                  - 115
+                  - 32
+                  - 101
+                  - 115
+                  - 116
+                  - 32
+                  - 105
+                  - 112
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 109
+                  - 97
+                  - 120
+                  - 105
+                  - 109
+                  - 101
+                  - 32
+                  - 101
+                  - 118
+                  - 101
+                  - 110
+                  - 105
+                  - 101
+                  - 116
+                  - 32
+                  - 99
+                  - 117
+                  - 108
+                  - 112
                   - 97
                   - 46
                 facebook_link: https://www.facebook.com/Williams_Scottish
@@ -917,127 +1051,91 @@ paths:
               artist_pastelid_passphrase: qwerasdf1234
               avatar_image:
                 content:
-                - 65
-                - 115
-                - 112
-                - 101
-                - 114
-                - 105
-                - 111
-                - 114
-                - 101
-                - 115
-                - 32
+                - 69
                 - 97
-                - 109
+                - 32
                 - 101
                 - 116
                 - 32
-                - 108
-                - 97
-                - 98
-                - 111
-                - 114
+                - 113
+                - 117
                 - 105
-                - 111
-                - 115
-                - 97
+                - 32
                 - 109
-                - 32
-                - 108
                 - 105
-                - 98
-                - 101
-                - 114
-                - 111
-                - 32
-                - 116
-                - 101
                 - 110
+                - 105
+                - 109
+                - 97
+                - 32
                 - 101
+                - 120
+                - 99
+                - 101
+                - 112
                 - 116
                 - 117
                 - 114
-                - 32
-                - 118
                 - 105
-                - 116
-                - 97
-                - 101
                 - 32
-                - 98
-                - 108
+                - 113
+                - 117
+                - 105
+                - 32
                 - 97
+                - 115
+                - 115
+                - 117
+                - 109
+                - 101
                 - 110
                 - 100
-                - 105
-                - 116
-                - 105
-                - 105
-                - 115
+                - 97
                 - 46
               biography: I'm a digital artist based in Paris, France. ...
-              categories: Quia dolore fugit aliquam totam.
+              categories: Magnam ut eum eligendi velit sequi.
               cover_photo:
                 content:
-                - 65
-                - 115
-                - 112
-                - 101
-                - 114
-                - 105
-                - 111
-                - 114
-                - 101
-                - 115
-                - 32
+                - 69
                 - 97
-                - 109
+                - 32
                 - 101
                 - 116
                 - 32
-                - 108
-                - 97
-                - 98
-                - 111
-                - 114
+                - 113
+                - 117
                 - 105
-                - 111
-                - 115
-                - 97
+                - 32
                 - 109
-                - 32
-                - 108
                 - 105
-                - 98
-                - 101
-                - 114
-                - 111
-                - 32
-                - 116
-                - 101
                 - 110
+                - 105
+                - 109
+                - 97
+                - 32
                 - 101
+                - 120
+                - 99
+                - 101
+                - 112
                 - 116
                 - 117
                 - 114
-                - 32
-                - 118
                 - 105
-                - 116
-                - 97
-                - 101
                 - 32
-                - 98
-                - 108
+                - 113
+                - 117
+                - 105
+                - 32
                 - 97
+                - 115
+                - 115
+                - 117
+                - 109
+                - 101
                 - 110
                 - 100
-                - 105
-                - 116
-                - 105
-                - 105
-                - 115
+                - 97
                 - 46
               facebook_link: https://www.facebook.com/Williams_Scottish
               location: New York, US
@@ -1053,18 +1151,797 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserdataProcessResult'
               example:
-                avatar_image: 9vk
-                biography: 3ul
-                categories: woe
-                cover_photo: hjm
+                avatar_image: "250"
+                biography: 0w7
+                categories: c22
+                cover_photo: r4o
                 detail: All userdata is processed
-                facebook_link: k0v
-                location: p88
-                native_currency: qzj
-                primary_language: 4ij
-                realname: 25x
+                facebook_link: k4i
+                location: d9v
+                native_currency: 63u
+                primary_language: chj
+                realname: ip8
                 response_code: 0
-                twitter_link: xwi
+                twitter_link: ywo
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /userdatas/follow:
+    post:
+      tags:
+      - userdatas
+      summary: Set a follower, followee relationship
+      description: Set a follower, followee relationship to metadb
+      operationId: userdatas#setUserFollowRelation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetUserFollowRelationRequestBody'
+            example:
+              followee_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+              follower_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetUserFollowRelationResponseBody'
+              example:
+                detail: All userdata is processed
+                response_code: 0
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /userdatas/follow/followees:
+    get:
+      tags:
+      - userdatas
+      summary: Get followers of a user
+      description: Get followees of a user
+      operationId: userdatas#getFollowees
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetFollowersRequestBody'
+            example:
+              limit: 10
+              offset: 0
+              pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFollowersResponseBody'
+              example:
+                detail: All userdata is processed
+                response_code: 0
+                result:
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                total_count: 10
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /userdatas/follow/followers:
+    get:
+      tags:
+      - userdatas
+      summary: Get followers of a user
+      description: Get followers of a user
+      operationId: userdatas#getFollowers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetFollowersRequestBody'
+            example:
+              limit: 10
+              offset: 0
+              pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFollowersResponseBody'
+              example:
+                detail: All userdata is processed
+                response_code: 0
+                result:
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                total_count: 10
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /userdatas/follow/friends:
+    get:
+      tags:
+      - userdatas
+      summary: Get followers of a user
+      description: Get friends of a user
+      operationId: userdatas#getFriends
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetFollowersRequestBody'
+            example:
+              limit: 10
+              offset: 0
+              pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFollowersResponseBody'
+              example:
+                detail: All userdata is processed
+                response_code: 0
+                result:
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                total_count: 10
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /userdatas/like/art:
+    get:
+      tags:
+      - userdatas
+      summary: Get users that liked an art
+      description: Get users that liked an art
+      operationId: userdatas#getUsersLikeArt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetUsersLikeArtRequestBody'
+            example:
+              art_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+              limit: 10
+              offset: 0
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFollowersResponseBody'
+              example:
+                detail: All userdata is processed
+                response_code: 0
+                result:
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 69
+                  - 97
+                  - 113
+                  - 117
+                  - 101
+                  - 32
+                  - 108
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
+                  - 111
+                  - 115
+                  - 97
+                  - 109
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 115
+                  - 113
+                  - 117
+                  - 97
+                  - 109
+                  - 32
+                  - 97
+                  - 99
+                  - 99
+                  - 117
+                  - 115
+                  - 97
+                  - 109
+                  - 117
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                total_count: 10
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+    post:
+      tags:
+      - userdatas
+      summary: Notify a new like event of an user to an art
+      description: Notify a new like event of an user to an art
+      operationId: userdatas#setUserLikeArt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetUserLikeArtRequestBody'
+            example:
+              art_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+              user_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      responses:
+        "200":
+          description: OK response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SetUserFollowRelationResponseBody'
+              example:
+                detail: All userdata is processed
+                response_code: 0
         "400":
           description: Bad Request response.
           content:
@@ -1103,127 +1980,91 @@ paths:
               artist_pastelid_passphrase: qwerasdf1234
               avatar_image:
                 content:
-                - 65
-                - 115
-                - 112
-                - 101
-                - 114
-                - 105
-                - 111
-                - 114
-                - 101
-                - 115
-                - 32
+                - 69
                 - 97
-                - 109
+                - 32
                 - 101
                 - 116
                 - 32
-                - 108
-                - 97
-                - 98
-                - 111
-                - 114
+                - 113
+                - 117
                 - 105
-                - 111
-                - 115
-                - 97
+                - 32
                 - 109
-                - 32
-                - 108
                 - 105
-                - 98
-                - 101
-                - 114
-                - 111
-                - 32
-                - 116
-                - 101
                 - 110
+                - 105
+                - 109
+                - 97
+                - 32
                 - 101
+                - 120
+                - 99
+                - 101
+                - 112
                 - 116
                 - 117
                 - 114
-                - 32
-                - 118
                 - 105
-                - 116
-                - 97
-                - 101
                 - 32
-                - 98
-                - 108
+                - 113
+                - 117
+                - 105
+                - 32
                 - 97
+                - 115
+                - 115
+                - 117
+                - 109
+                - 101
                 - 110
                 - 100
-                - 105
-                - 116
-                - 105
-                - 105
-                - 115
+                - 97
                 - 46
               biography: I'm a digital artist based in Paris, France. ...
-              categories: Sint rerum nisi molestiae quidem doloribus quod.
+              categories: Aut quae illum et nisi provident.
               cover_photo:
                 content:
-                - 65
-                - 115
-                - 112
-                - 101
-                - 114
-                - 105
-                - 111
-                - 114
-                - 101
-                - 115
-                - 32
+                - 69
                 - 97
-                - 109
+                - 32
                 - 101
                 - 116
                 - 32
-                - 108
-                - 97
-                - 98
-                - 111
-                - 114
+                - 113
+                - 117
                 - 105
-                - 111
-                - 115
-                - 97
+                - 32
                 - 109
-                - 32
-                - 108
                 - 105
-                - 98
-                - 101
-                - 114
-                - 111
-                - 32
-                - 116
-                - 101
                 - 110
+                - 105
+                - 109
+                - 97
+                - 32
                 - 101
+                - 120
+                - 99
+                - 101
+                - 112
                 - 116
                 - 117
                 - 114
-                - 32
-                - 118
                 - 105
-                - 116
-                - 97
-                - 101
                 - 32
-                - 98
-                - 108
+                - 113
+                - 117
+                - 105
+                - 32
                 - 97
+                - 115
+                - 115
+                - 117
+                - 109
+                - 101
                 - 110
                 - 100
-                - 105
-                - 116
-                - 105
-                - 105
-                - 115
+                - 97
                 - 46
               facebook_link: https://www.facebook.com/Williams_Scottish
               location: New York, US
@@ -1239,18 +2080,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserdataProcessResult'
               example:
-                avatar_image: gd2
-                biography: wbi
-                categories: "494"
-                cover_photo: pqh
+                avatar_image: 3xy
+                biography: tg4
+                categories: h0d
+                cover_photo: lks
                 detail: All userdata is processed
-                facebook_link: 4o0
-                location: y68
-                native_currency: s1r
-                primary_language: u0h
-                realname: "508"
+                facebook_link: 8uu
+                location: idg
+                native_currency: 4dw
+                primary_language: 2ap
+                realname: r0y
                 response_code: 0
-                twitter_link: 5vt
+                twitter_link: hq4
         "400":
           description: Bad Request response.
           content:
@@ -1361,7 +2202,7 @@ components:
         royalty:
           type: integer
           description: how much artist should get on all future resales
-          example: 3619723162133869967
+          example: 835622049909476862
           format: int64
         seen_score:
           type: integer
@@ -1389,43 +2230,30 @@ components:
           type: string
           description: Thumbnail image
           example:
-          - 65
+          - 80
           - 108
-          - 105
-          - 113
-          - 117
           - 97
-          - 109
-          - 32
-          - 110
+          - 99
           - 101
-          - 113
-          - 117
-          - 101
+          - 97
+          - 116
           - 32
           - 101
           - 116
           - 32
-          - 116
-          - 101
-          - 109
-          - 112
+          - 100
+          - 111
+          - 108
           - 111
           - 114
           - 101
+          - 115
           - 32
-          - 114
-          - 101
-          - 109
-          - 32
-          - 101
-          - 97
-          - 113
-          - 117
-          - 101
-          - 32
-          - 101
+          - 100
+          - 105
+          - 99
           - 116
+          - 97
           - 46
           format: binary
         title:
@@ -1460,40 +2288,51 @@ components:
         drawing_nsfw_score: 1000
         hentai_nsfw_score: 1000
         internet_rareness_score: 1
-        is_green: false
+        is_green: true
         keywords: Renaissance, sfumato, portrait
         neutral_nsfw_score: 1000
         nsfw_score: 1000
         porn_nsfw_score: 1000
         rareness_score: 1
-        royalty: 230415102917906646
+        royalty: 8035891178329452880
         seen_score: 1
         series_name: Famous artist
         sexy_nsfw_score: 1000
         storage_fee: 100
         thumbnail:
-        - 83
+        - 69
+        - 108
+        - 105
+        - 103
         - 101
-        - 113
-        - 117
-        - 105
-        - 32
-        - 99
-        - 111
-        - 114
-        - 114
-        - 117
-        - 112
-        - 116
-        - 105
-        - 32
-        - 99
-        - 111
-        - 109
-        - 109
-        - 111
+        - 110
         - 100
         - 105
+        - 32
+        - 110
+        - 111
+        - 98
+        - 105
+        - 115
+        - 32
+        - 101
+        - 114
+        - 114
+        - 111
+        - 114
+        - 32
+        - 101
+        - 116
+        - 32
+        - 105
+        - 110
+        - 118
+        - 101
+        - 110
+        - 116
+        - 111
+        - 114
+        - 101
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1519,7 +2358,7 @@ components:
           type: integer
           description: Sort index of the match based on score.This must be used to
             sort results on UI.
-          example: 5414719433758340360
+          example: 7335301940955756338
           format: int64
         matches:
           type: array
@@ -1527,30 +2366,38 @@ components:
             $ref: '#/components/schemas/FuzzyMatch'
           description: Match result details
           example:
-          - field_type: keyword
+          - field_type: artist_name
             matched_indexes:
-            - 5079483862560419611
-            - 383435025649165662
-            score: 1913188029159934354
-            str: Qui quo et odio voluptatem voluptas voluptates.
-          - field_type: keyword
+            - 7380319872106704681
+            - 7456758987449087545
+            - 6691974645807088378
+            - 787606581070214255
+            score: 6280315198310502525
+            str: Consequatur libero nihil.
+          - field_type: artist_name
             matched_indexes:
-            - 5079483862560419611
-            - 383435025649165662
-            score: 1913188029159934354
-            str: Qui quo et odio voluptatem voluptas voluptates.
-          - field_type: keyword
+            - 7380319872106704681
+            - 7456758987449087545
+            - 6691974645807088378
+            - 787606581070214255
+            score: 6280315198310502525
+            str: Consequatur libero nihil.
+          - field_type: artist_name
             matched_indexes:
-            - 5079483862560419611
-            - 383435025649165662
-            score: 1913188029159934354
-            str: Qui quo et odio voluptatem voluptas voluptates.
-          - field_type: keyword
+            - 7380319872106704681
+            - 7456758987449087545
+            - 6691974645807088378
+            - 787606581070214255
+            score: 6280315198310502525
+            str: Consequatur libero nihil.
+          - field_type: artist_name
             matched_indexes:
-            - 5079483862560419611
-            - 383435025649165662
-            score: 1913188029159934354
-            str: Qui quo et odio voluptatem voluptas voluptates.
+            - 7380319872106704681
+            - 7456758987449087545
+            - 6691974645807088378
+            - 787606581070214255
+            score: 6280315198310502525
+            str: Consequatur libero nihil.
       example:
         artwork:
           artist_name: Leonardo da Vinci
@@ -1563,69 +2410,41 @@ components:
           keywords: Renaissance, sfumato, portrait
           series_name: Famous artist
           thumbnail:
-          - 69
-          - 105
-          - 117
-          - 115
-          - 32
-          - 105
-          - 108
-          - 108
+          - 84
           - 111
-          - 32
-          - 105
-          - 117
-          - 115
           - 116
-          - 111
-          - 32
-          - 101
-          - 116
-          - 32
-          - 112
           - 97
-          - 114
-          - 105
-          - 97
-          - 116
-          - 117
-          - 114
-          - 32
-          - 114
-          - 101
-          - 114
-          - 117
           - 109
+          - 32
+          - 97
+          - 117
+          - 116
+          - 32
+          - 115
+          - 101
+          - 100
           - 46
           title: Mona Lisa
           txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        match_index: 6325242562689933544
+        match_index: 7306944698651271173
         matches:
-        - field_type: keyword
+        - field_type: artist_name
           matched_indexes:
-          - 5079483862560419611
-          - 383435025649165662
-          score: 1913188029159934354
-          str: Qui quo et odio voluptatem voluptas voluptates.
-        - field_type: keyword
+          - 7380319872106704681
+          - 7456758987449087545
+          - 6691974645807088378
+          - 787606581070214255
+          score: 6280315198310502525
+          str: Consequatur libero nihil.
+        - field_type: artist_name
           matched_indexes:
-          - 5079483862560419611
-          - 383435025649165662
-          score: 1913188029159934354
-          str: Qui quo et odio voluptatem voluptas voluptates.
-        - field_type: keyword
-          matched_indexes:
-          - 5079483862560419611
-          - 383435025649165662
-          score: 1913188029159934354
-          str: Qui quo et odio voluptatem voluptas voluptates.
-        - field_type: keyword
-          matched_indexes:
-          - 5079483862560419611
-          - 383435025649165662
-          score: 1913188029159934354
-          str: Qui quo et odio voluptatem voluptas voluptates.
+          - 7380319872106704681
+          - 7456758987449087545
+          - 6691974645807088378
+          - 787606581070214255
+          score: 6280315198310502525
+          str: Consequatur libero nihil.
       required:
       - artwork
       - matches
@@ -1678,41 +2497,35 @@ components:
           type: string
           description: Thumbnail image
           example:
-          - 85
-          - 116
-          - 32
-          - 118
-          - 111
-          - 108
-          - 117
-          - 112
-          - 116
-          - 97
-          - 115
-          - 32
-          - 112
-          - 111
-          - 114
-          - 114
-          - 111
-          - 32
-          - 105
-          - 112
-          - 115
-          - 97
-          - 109
-          - 32
+          - 86
           - 101
-          - 110
-          - 105
-          - 109
+          - 108
           - 32
-          - 99
-          - 117
-          - 109
           - 113
           - 117
+          - 105
+          - 97
+          - 32
+          - 97
+          - 117
+          - 116
           - 101
+          - 109
+          - 32
+          - 101
+          - 120
+          - 101
+          - 114
+          - 99
+          - 105
+          - 116
+          - 97
+          - 116
+          - 105
+          - 111
+          - 110
+          - 101
+          - 109
           - 46
           format: binary
         title:
@@ -1743,15 +2556,16 @@ components:
         keywords: Renaissance, sfumato, portrait
         series_name: Famous artist
         thumbnail:
-        - 85
-        - 116
-        - 32
-        - 105
-        - 110
+        - 83
+        - 97
+        - 101
+        - 112
+        - 101
         - 32
         - 113
         - 117
         - 105
+        - 97
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1905,7 +2719,7 @@ components:
         categories:
           type: string
           description: The categories of user's work
-          example: Quos dignissimos ut corrupti eos aut.
+          example: Nulla quia eum.
         cover_photo:
           $ref: '#/components/schemas/UserImageUploadPayload'
         facebook_link:
@@ -1944,127 +2758,91 @@ components:
         artist_pastelid_passphrase: qwerasdf1234
         avatar_image:
           content:
-          - 65
-          - 115
-          - 112
-          - 101
-          - 114
-          - 105
-          - 111
-          - 114
-          - 101
-          - 115
-          - 32
+          - 69
           - 97
-          - 109
+          - 32
           - 101
           - 116
           - 32
-          - 108
-          - 97
-          - 98
-          - 111
-          - 114
+          - 113
+          - 117
           - 105
-          - 111
-          - 115
-          - 97
+          - 32
           - 109
-          - 32
-          - 108
           - 105
-          - 98
-          - 101
-          - 114
-          - 111
-          - 32
-          - 116
-          - 101
           - 110
+          - 105
+          - 109
+          - 97
+          - 32
           - 101
+          - 120
+          - 99
+          - 101
+          - 112
           - 116
           - 117
           - 114
-          - 32
-          - 118
           - 105
-          - 116
-          - 97
-          - 101
           - 32
-          - 98
-          - 108
+          - 113
+          - 117
+          - 105
+          - 32
           - 97
+          - 115
+          - 115
+          - 117
+          - 109
+          - 101
           - 110
           - 100
-          - 105
-          - 116
-          - 105
-          - 105
-          - 115
+          - 97
           - 46
         biography: I'm a digital artist based in Paris, France. ...
-        categories: Eveniet autem excepturi soluta omnis qui quia.
+        categories: Sit culpa eum sunt quibusdam quam ipsum.
         cover_photo:
           content:
-          - 65
-          - 115
-          - 112
-          - 101
-          - 114
-          - 105
-          - 111
-          - 114
-          - 101
-          - 115
-          - 32
+          - 69
           - 97
-          - 109
+          - 32
           - 101
           - 116
           - 32
-          - 108
-          - 97
-          - 98
-          - 111
-          - 114
+          - 113
+          - 117
           - 105
-          - 111
-          - 115
-          - 97
+          - 32
           - 109
-          - 32
-          - 108
           - 105
-          - 98
-          - 101
-          - 114
-          - 111
-          - 32
-          - 116
-          - 101
           - 110
+          - 105
+          - 109
+          - 97
+          - 32
           - 101
+          - 120
+          - 99
+          - 101
+          - 112
           - 116
           - 117
           - 114
-          - 32
-          - 118
           - 105
-          - 116
-          - 97
-          - 101
           - 32
-          - 98
-          - 108
+          - 113
+          - 117
+          - 105
+          - 32
           - 97
+          - 115
+          - 115
+          - 117
+          - 109
+          - 101
           - 110
           - 100
-          - 105
-          - 116
-          - 105
-          - 105
-          - 115
+          - 97
           - 46
         facebook_link: https://www.facebook.com/Williams_Scottish
         location: New York, US
@@ -2082,20 +2860,54 @@ components:
           type: string
           description: File downloaded
           example:
-          - 82
-          - 101
-          - 114
+          - 65
+          - 116
+          - 113
           - 117
-          - 109
+          - 101
           - 32
           - 115
+          - 117
+          - 115
+          - 99
+          - 105
+          - 112
           - 105
           - 116
+          - 32
+          - 109
+          - 97
+          - 120
+          - 105
+          - 109
+          - 101
+          - 32
+          - 97
+          - 98
+          - 32
+          - 110
+          - 117
+          - 109
+          - 113
+          - 117
+          - 97
+          - 109
           - 46
           format: binary
       example:
         file:
-        - 86
+        - 77
+        - 105
+        - 110
+        - 105
+        - 109
+        - 97
+        - 32
+        - 101
+        - 115
+        - 116
+        - 32
+        - 118
         - 111
         - 108
         - 117
@@ -2105,9 +2917,6 @@ components:
         - 116
         - 101
         - 109
-        - 32
-        - 117
-        - 116
         - 46
       required:
       - file
@@ -2117,7 +2926,7 @@ components:
         fault:
           type: boolean
           description: Is the error a server-side fault?
-          example: false
+          example: true
         id:
           type: string
           description: ID is a unique identifier for this particular occurrence of
@@ -2135,7 +2944,7 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: true
+          example: false
         timeout:
           type: boolean
           description: Is the error a timeout?
@@ -2157,7 +2966,7 @@ components:
         field_type:
           type: string
           description: Field that is matched
-          example: series
+          example: artist_name
           enum:
           - artist_name
           - art_title
@@ -2168,32 +2977,360 @@ components:
           type: array
           items:
             type: integer
-            example: 2822541399489506455
+            example: 1952330488600555315
             format: int64
           description: The indexes of matched characters. Useful for highlighting
             matches
           example:
-          - 1198630462170886337
-          - 544564807209037489
-          - 7630715100890552560
-          - 5413437053194753347
+          - 7652299471164286656
+          - 6205466999640365265
         score:
           type: integer
           description: Score used to rank matches
-          example: 1029517279764804414
+          example: 4799818539570126910
           format: int64
         str:
           type: string
           description: String that is matched
-          example: Rem recusandae reiciendis inventore.
+          example: Vel impedit iusto.
       example:
-        field_type: descr
+        field_type: keyword
         matched_indexes:
-        - 1774223401324845181
-        - 6503593048960818614
-        - 4234802788668811903
-        score: 7523991796012727234
-        str: Nihil et.
+        - 3653516008863643564
+        - 8658558806554774039
+        score: 3997279316230547581
+        str: Id illo sapiente numquam qui.
+    GetFollowersRequestBody:
+      type: object
+      properties:
+        limit:
+          type: integer
+          description: limit for paginated list
+          example: 10
+          format: int64
+        offset:
+          type: integer
+          description: offset for paginated list
+          example: 0
+          format: int64
+        pastelid:
+          type: string
+          description: Artist's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+      example:
+        limit: 10
+        offset: 0
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      required:
+      - pastelid
+    GetFollowersResponseBody:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: The detail of why result is success/fail, depend on response_code
+          example: All userdata is processed
+          maxLength: 256
+        response_code:
+          type: integer
+          description: Result of the request is success or not
+          example: 0
+          format: int64
+        result:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRelationshipInfo'
+          description: Artist's PastelID
+          example:
+          - avatar_thumbnail:
+            - 69
+            - 97
+            - 113
+            - 117
+            - 101
+            - 32
+            - 108
+            - 97
+            - 98
+            - 111
+            - 114
+            - 105
+            - 111
+            - 115
+            - 97
+            - 109
+            - 32
+            - 113
+            - 117
+            - 105
+            - 115
+            - 113
+            - 117
+            - 97
+            - 109
+            - 32
+            - 97
+            - 99
+            - 99
+            - 117
+            - 115
+            - 97
+            - 109
+            - 117
+            - 115
+            - 46
+            followers_count: 10
+            pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+            realname: Williams Scottish
+            username: w_scottish
+          - avatar_thumbnail:
+            - 69
+            - 97
+            - 113
+            - 117
+            - 101
+            - 32
+            - 108
+            - 97
+            - 98
+            - 111
+            - 114
+            - 105
+            - 111
+            - 115
+            - 97
+            - 109
+            - 32
+            - 113
+            - 117
+            - 105
+            - 115
+            - 113
+            - 117
+            - 97
+            - 109
+            - 32
+            - 97
+            - 99
+            - 99
+            - 117
+            - 115
+            - 97
+            - 109
+            - 117
+            - 115
+            - 46
+            followers_count: 10
+            pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+            realname: Williams Scottish
+            username: w_scottish
+          - avatar_thumbnail:
+            - 69
+            - 97
+            - 113
+            - 117
+            - 101
+            - 32
+            - 108
+            - 97
+            - 98
+            - 111
+            - 114
+            - 105
+            - 111
+            - 115
+            - 97
+            - 109
+            - 32
+            - 113
+            - 117
+            - 105
+            - 115
+            - 113
+            - 117
+            - 97
+            - 109
+            - 32
+            - 97
+            - 99
+            - 99
+            - 117
+            - 115
+            - 97
+            - 109
+            - 117
+            - 115
+            - 46
+            followers_count: 10
+            pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+            realname: Williams Scottish
+            username: w_scottish
+        total_count:
+          type: integer
+          description: total number of users in relationship with this user
+          example: 10
+          format: int64
+      example:
+        detail: All userdata is processed
+        response_code: 0
+        result:
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        - avatar_thumbnail:
+          - 69
+          - 97
+          - 113
+          - 117
+          - 101
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
+          - 114
+          - 105
+          - 111
+          - 115
+          - 97
+          - 109
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
+          - 113
+          - 117
+          - 97
+          - 109
+          - 32
+          - 97
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 109
+          - 117
+          - 115
+          - 46
+          followers_count: 10
+          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          realname: Williams Scottish
+          username: w_scottish
+        total_count: 10
+      required:
+      - response_code
+      - detail
+      - total_count
+    GetUsersLikeArtRequestBody:
+      type: object
+      properties:
+        art_id:
+          type: string
+          description: art id that we want to get like data
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        limit:
+          type: integer
+          description: limit for paginated list
+          example: 10
+          format: int64
+        offset:
+          type: integer
+          description: offset for paginated list
+          example: 0
+          format: int64
+      example:
+        art_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        limit: 10
+        offset: 0
+      required:
+      - art_id
     Image:
       type: object
       properties:
@@ -2410,6 +3547,8 @@ components:
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
         status: Task Started
         ticket:
           artist_name: Leonardo da Vinci
@@ -2438,6 +3577,71 @@ components:
       - id
       - status
       - ticket
+    SetUserFollowRelationRequestBody:
+      type: object
+      properties:
+        followee_pastel_id:
+          type: string
+          description: Followee's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        follower_pastel_id:
+          type: string
+          description: Follower's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+      example:
+        followee_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+        follower_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      required:
+      - follower_pastel_id
+      - followee_pastel_id
+    SetUserFollowRelationResponseBody:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: The detail of why result is success/fail, depend on response_code
+          example: All userdata is processed
+          maxLength: 256
+        response_code:
+          type: integer
+          description: Result of the request is success or not
+          example: 0
+          format: int64
+      example:
+        detail: All userdata is processed
+        response_code: 0
+      required:
+      - response_code
+      - detail
+    SetUserLikeArtRequestBody:
+      type: object
+      properties:
+        art_pastel_id:
+          type: string
+          description: Art's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        user_pastel_id:
+          type: string
+          description: User's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+      example:
+        art_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS
+        user_pastel_id: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      required:
+      - user_pastel_id
+      - art_pastel_id
     TaskResponseTiny:
       type: object
       properties:
@@ -2727,35 +3931,28 @@ components:
           type: string
           description: File to upload
           example:
-          - 68
-          - 105
-          - 115
-          - 116
-          - 105
-          - 110
-          - 99
-          - 116
-          - 105
-          - 111
-          - 32
-          - 114
+          - 78
           - 101
           - 109
-          - 32
-          - 105
-          - 117
-          - 115
-          - 116
           - 111
           - 32
-          - 115
+          - 113
+          - 117
           - 97
-          - 112
-          - 105
           - 101
-          - 110
+          - 114
+          - 97
           - 116
-          - 101
+          - 32
+          - 117
+          - 108
+          - 108
+          - 97
+          - 109
+          - 32
+          - 97
+          - 117
+          - 116
           - 46
           format: binary
         filename:
@@ -2763,38 +3960,33 @@ components:
           description: For internal use
       example:
         file:
-        - 65
+        - 81
         - 117
+        - 97
+        - 101
+        - 114
+        - 97
         - 116
         - 32
         - 97
-        - 117
-        - 116
-        - 32
-        - 100
-        - 101
         - 108
-        - 101
-        - 110
         - 105
-        - 116
-        - 105
-        - 32
-        - 97
-        - 116
         - 113
         - 117
-        - 101
-        - 32
-        - 97
-        - 99
-        - 99
-        - 117
-        - 115
         - 97
         - 109
-        - 117
+        - 32
+        - 99
+        - 111
+        - 110
         - 115
+        - 101
+        - 113
+        - 117
+        - 97
+        - 116
+        - 117
+        - 114
         - 46
       required:
       - file
@@ -2805,22 +3997,42 @@ components:
           type: string
           description: File to upload
           example:
-          - 70
-          - 117
-          - 103
-          - 97
-          - 32
-          - 117
-          - 116
-          - 32
+          - 73
+          - 109
+          - 112
           - 101
+          - 100
+          - 105
           - 116
           - 32
           - 110
+          - 105
+          - 115
+          - 105
+          - 32
+          - 114
           - 101
+          - 112
+          - 117
+          - 100
+          - 105
+          - 97
+          - 110
+          - 100
+          - 97
+          - 101
+          - 32
+          - 116
+          - 101
+          - 110
+          - 101
+          - 116
+          - 117
+          - 114
+          - 32
           - 113
           - 117
-          - 101
+          - 105
           - 46
           format: binary
         filename:
@@ -2830,60 +4042,156 @@ components:
       example:
         content:
         - 86
-        - 101
-        - 108
-        - 32
-        - 97
-        - 114
-        - 99
-        - 104
         - 105
         - 116
+        - 97
         - 101
-        - 99
-        - 116
-        - 111
         - 32
         - 113
         - 117
-        - 105
-        - 97
+        - 111
+        - 32
+        - 115
+        - 101
+        - 100
         - 32
         - 101
+        - 110
+        - 105
+        - 109
+        - 32
+        - 115
+        - 105
         - 116
         - 32
-        - 100
-        - 111
-        - 108
-        - 111
-        - 114
         - 101
         - 115
+        - 116
+        - 32
+        - 105
+        - 110
         - 46
       required:
       - content
+    UserRelationshipInfo:
+      type: object
+      properties:
+        avatar_thumbnail:
+          type: string
+          description: 40x40 avatar thumbnail
+          example:
+          - 65
+          - 99
+          - 99
+          - 117
+          - 115
+          - 97
+          - 110
+          - 116
+          - 105
+          - 117
+          - 109
+          - 32
+          - 105
+          - 110
+          - 118
+          - 101
+          - 110
+          - 116
+          - 111
+          - 114
+          - 101
+          - 32
+          - 100
+          - 111
+          - 108
+          - 111
+          - 114
+          - 101
+          - 109
+          - 46
+          format: binary
+        followers_count:
+          type: integer
+          description: number of users follow this user
+          example: 10
+          format: int64
+        pastelid:
+          type: string
+          description: Artist's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        realname:
+          type: string
+          description: Real name of the user
+          example: Williams Scottish
+          maxLength: 256
+        username:
+          type: string
+          description: Username of the user
+          example: w_scottish
+          maxLength: 256
+      example:
+        avatar_thumbnail:
+        - 83
+        - 105
+        - 110
+        - 116
+        - 32
+        - 98
+        - 101
+        - 97
+        - 116
+        - 97
+        - 101
+        - 32
+        - 115
+        - 97
+        - 112
+        - 105
+        - 101
+        - 110
+        - 116
+        - 101
+        - 32
+        - 110
+        - 111
+        - 98
+        - 105
+        - 115
+        - 46
+        followers_count: 10
+        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        realname: Williams Scottish
+        username: w_scottish
+      required:
+      - pastelid
+      - username
+      - followers_count
     UserdataProcessResult:
       type: object
       properties:
         avatar_image:
           type: string
           description: Error detail on avatar
-          example: k48
+          example: 20i
           maxLength: 256
         biography:
           type: string
           description: Error detail on biography
-          example: tzz
+          example: 71z
           maxLength: 256
         categories:
           type: string
           description: Error detail on categories
-          example: q22
+          example: 9rf
           maxLength: 256
         cover_photo:
           type: string
           description: Error detail on cover photo
-          example: psk
+          example: d1k
           maxLength: 256
         detail:
           type: string
@@ -2893,27 +4201,27 @@ components:
         facebook_link:
           type: string
           description: Error detail on facebook_link
-          example: hf8
+          example: 8kn
           maxLength: 256
         location:
           type: string
           description: Error detail on location
-          example: kq2
+          example: 42w
           maxLength: 256
         native_currency:
           type: string
           description: Error detail on native_currency
-          example: c99
+          example: j1g
           maxLength: 256
         primary_language:
           type: string
           description: Error detail on primary_language
-          example: "993"
+          example: las
           maxLength: 256
         realname:
           type: string
           description: Error detail on realname
-          example: f2w
+          example: j8a
           maxLength: 256
         response_code:
           type: integer
@@ -2923,21 +4231,21 @@ components:
         twitter_link:
           type: string
           description: Error detail on twitter_link
-          example: gr5
+          example: 01q
           maxLength: 256
       example:
-        avatar_image: v12
-        biography: nu9
-        categories: rr9
-        cover_photo: 65i
+        avatar_image: flk
+        biography: ajs
+        categories: 0ke
+        cover_photo: dud
         detail: All userdata is processed
-        facebook_link: kya
-        location: ntj
-        native_currency: ehk
-        primary_language: olm
-        realname: "571"
+        facebook_link: 9ag
+        location: xk8
+        native_currency: kcm
+        primary_language: sss
+        realname: cgm
         response_code: 0
-        twitter_link: voz
+        twitter_link: kn8
       required:
       - response_code
       - detail

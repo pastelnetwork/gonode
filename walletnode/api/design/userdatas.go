@@ -81,6 +81,102 @@ var _ = Service("userdatas", func() {
 			Response(StatusOK)
 		})
 	})
+
+	Method("setUserFollowRelation", func() {
+		Description("Set a follower, followee relationship to metadb")
+		Meta("swagger:summary", "Set a follower, followee relationship")
+
+		Payload(UserdataSetFollowRelationPayload)
+		Result(UserdataSetRelationResult)
+
+		HTTP(func() {
+			POST("/follow")
+
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("getFollowers", func() {
+		Description("Get followers of a user")
+		Meta("swagger:summary", "Get followers of a user")
+
+		Payload(GetUserRelationshipPayload)
+		Result(GetUserRelationshipResult)
+
+		HTTP(func() {
+			GET("/follow/followers")
+
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("getFollowees", func() {
+		Description("Get followees of a user")
+		Meta("swagger:summary", "Get followers of a user")
+
+		Payload(GetUserRelationshipPayload)
+		Result(GetUserRelationshipResult)
+
+		HTTP(func() {
+			GET("/follow/followees")
+
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("getFriends", func() {
+		Description("Get friends of a user")
+		Meta("swagger:summary", "Get followers of a user")
+
+		Payload(GetUserRelationshipPayload)
+		Result(GetUserRelationshipResult)
+
+		HTTP(func() {
+			GET("/follow/friends")
+
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("setUserLikeArt", func() {
+		Description("Notify a new like event of an user to an art")
+		Meta("swagger:summary", "Notify a new like event of an user to an art")
+
+		Payload(UserdataSetLikeArtPayload)
+		Result(UserdataSetRelationResult)
+
+		HTTP(func() {
+			POST("/like/art")
+
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
+
+	Method("getUsersLikeArt", func() {
+		Description("Get users that liked an art")
+		Meta("swagger:summary", "Get users that liked an art")
+
+		Payload(GetUserLikeArtPayload)
+		Result(GetUserRelationshipResult)
+
+		HTTP(func() {
+			GET("/like/art")
+
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
 })
 
 // ProcessTaskPayload represents a payload for returning task.
@@ -271,3 +367,168 @@ var UserdataGetParams = func() {
 
 	Required("pastelid")
 }
+
+// UserdataSetFollowRelationPayload are request params set follow relationship
+var UserdataSetFollowRelationPayload = func() {
+	Attribute("follower_pastel_id", String, func() {
+		Description("Follower's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+
+	Attribute("followee_pastel_id", String, func() {
+		Description("Followee's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+
+	Required("follower_pastel_id", "followee_pastel_id")
+}
+
+// UserdataSetLikeArtPayload are request params to notify like event to an art
+var UserdataSetLikeArtPayload = func() {
+	Attribute("user_pastel_id", String, func() {
+		Description("User's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+
+	Attribute("art_pastel_id", String, func() {
+		Description("Art's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+
+	Required("user_pastel_id", "art_pastel_id")
+}
+
+var UserdataSetRelationResult = func() {
+	Attribute("response_code", Int, func() {
+		Description("Result of the request is success or not")
+		Example(0) // Success
+	})
+
+	Attribute("detail", String, func() {
+		Description("The detail of why result is success/fail, depend on response_code")
+		MaxLength(256)
+		Example("All userdata is processed") // In case of Success
+	})
+
+	Required("response_code", "detail")
+}
+
+// GetUserRelationshipPayload is request param to get user relationship
+var GetUserRelationshipPayload = func() {
+	Attribute("pastelid", String, func() {
+		Description("Artist's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+
+	Attribute("limit", Int, func() {
+		Description("limit for paginated list")
+		Example(10)
+	})
+
+	Attribute("offset", Int, func() {
+		Description("offset for paginated list")
+		Example(0)
+	})
+
+	Required("pastelid")
+}
+
+// GetUserRelationshipPayload is request param to get user relationship
+var GetUserLikeArtPayload = func() {
+	Attribute("art_id", String, func() {
+		Description("art id that we want to get like data")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+
+	Attribute("limit", Int, func() {
+		Description("limit for paginated list")
+		Example(10)
+	})
+
+	Attribute("offset", Int, func() {
+		Description("offset for paginated list")
+		Example(0)
+	})
+
+	Required("art_id")
+}
+
+// GetUserRelationshipResult is result of getting user relationship
+var GetUserRelationshipResult = func() {
+	Attribute("response_code", Int, func() {
+		Description("Result of the request is success or not")
+		Example(0) // Success
+	})
+
+	Attribute("detail", String, func() {
+		Description("The detail of why result is success/fail, depend on response_code")
+		MaxLength(256)
+		Example("All userdata is processed") // In case of Success
+	})
+
+	Attribute("total_count", Int, func() {
+		Description("total number of users in relationship with this user")
+		Example(10)
+	})
+
+	Attribute("result", ArrayOf(UserRelationshipInfo), func() {
+		Description("Artist's PastelID")
+	})
+
+	Required("response_code", "detail", "total_count")
+}
+
+// UserRelationshipInfo is detail of the person in relationship with a user
+var UserRelationshipInfo = Type("UserRelationshipInfo", func() {
+	Attribute("pastelid", String, func() {
+		Description("Artist's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+
+	Attribute("username", String, func() {
+		Meta("struct:field:name", "Username")
+		Description("Username of the user")
+		MaxLength(256)
+		Example("w_scottish")
+	})
+
+	Attribute("realname", String, func() {
+		Meta("struct:field:name", "Realname")
+		Description("Real name of the user")
+		MaxLength(256)
+		Example("Williams Scottish")
+	})
+
+	Attribute("followers_count", Int, func() {
+		Description("number of users follow this user")
+		Example(10)
+	})
+
+	Attribute("avatar_thumbnail", Bytes, func() {
+		Meta("struct:field:name", "AvatarThumbnail")
+		Description("40x40 avatar thumbnail")
+	})
+
+	Required("pastelid", "username", "followers_count")
+})

@@ -21,6 +21,18 @@ type Service interface {
 	UpdateUserdata(context.Context, *UpdateUserdataPayload) (res *UserdataProcessResult, err error)
 	// Gets the Userdata detail
 	UserdataGet(context.Context, *UserdataGetPayload) (res *UserSpecifiedData, err error)
+	// Set a follower, followee relationship to metadb
+	SetUserFollowRelation(context.Context, *SetUserFollowRelationPayload) (res *SetUserFollowRelationResult, err error)
+	// Get followers of a user
+	GetFollowers(context.Context, *GetFollowersPayload) (res *GetFollowersResult, err error)
+	// Get followees of a user
+	GetFollowees(context.Context, *GetFolloweesPayload) (res *GetFolloweesResult, err error)
+	// Get friends of a user
+	GetFriends(context.Context, *GetFriendsPayload) (res *GetFriendsResult, err error)
+	// Notify a new like event of an user to an art
+	SetUserLikeArt(context.Context, *SetUserLikeArtPayload) (res *SetUserLikeArtResult, err error)
+	// Get users that liked an art
+	GetUsersLikeArt(context.Context, *GetUsersLikeArtPayload) (res *GetUsersLikeArtResult, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -31,7 +43,7 @@ const ServiceName = "userdatas"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"createUserdata", "updateUserdata", "userdataGet"}
+var MethodNames = [9]string{"createUserdata", "updateUserdata", "userdataGet", "setUserFollowRelation", "getFollowers", "getFollowees", "getFriends", "setUserLikeArt", "getUsersLikeArt"}
 
 // CreateUserdataPayload is the payload type of the userdatas service
 // createUserdata method.
@@ -156,12 +168,157 @@ type UserSpecifiedData struct {
 	ArtistPastelIDPassphrase string
 }
 
+// SetUserFollowRelationPayload is the payload type of the userdatas service
+// setUserFollowRelation method.
+type SetUserFollowRelationPayload struct {
+	// Follower's PastelID
+	FollowerPastelID string
+	// Followee's PastelID
+	FolloweePastelID string
+}
+
+// SetUserFollowRelationResult is the result type of the userdatas service
+// setUserFollowRelation method.
+type SetUserFollowRelationResult struct {
+	// Result of the request is success or not
+	ResponseCode int
+	// The detail of why result is success/fail, depend on response_code
+	Detail string
+}
+
+// GetFollowersPayload is the payload type of the userdatas service
+// getFollowers method.
+type GetFollowersPayload struct {
+	// Artist's PastelID
+	Pastelid string
+	// limit for paginated list
+	Limit *int
+	// offset for paginated list
+	Offset *int
+}
+
+// GetFollowersResult is the result type of the userdatas service getFollowers
+// method.
+type GetFollowersResult struct {
+	// Result of the request is success or not
+	ResponseCode int
+	// The detail of why result is success/fail, depend on response_code
+	Detail string
+	// total number of users in relationship with this user
+	TotalCount int
+	// Artist's PastelID
+	Result []*UserRelationshipInfo
+}
+
+// GetFolloweesPayload is the payload type of the userdatas service
+// getFollowees method.
+type GetFolloweesPayload struct {
+	// Artist's PastelID
+	Pastelid string
+	// limit for paginated list
+	Limit *int
+	// offset for paginated list
+	Offset *int
+}
+
+// GetFolloweesResult is the result type of the userdatas service getFollowees
+// method.
+type GetFolloweesResult struct {
+	// Result of the request is success or not
+	ResponseCode int
+	// The detail of why result is success/fail, depend on response_code
+	Detail string
+	// total number of users in relationship with this user
+	TotalCount int
+	// Artist's PastelID
+	Result []*UserRelationshipInfo
+}
+
+// GetFriendsPayload is the payload type of the userdatas service getFriends
+// method.
+type GetFriendsPayload struct {
+	// Artist's PastelID
+	Pastelid string
+	// limit for paginated list
+	Limit *int
+	// offset for paginated list
+	Offset *int
+}
+
+// GetFriendsResult is the result type of the userdatas service getFriends
+// method.
+type GetFriendsResult struct {
+	// Result of the request is success or not
+	ResponseCode int
+	// The detail of why result is success/fail, depend on response_code
+	Detail string
+	// total number of users in relationship with this user
+	TotalCount int
+	// Artist's PastelID
+	Result []*UserRelationshipInfo
+}
+
+// SetUserLikeArtPayload is the payload type of the userdatas service
+// setUserLikeArt method.
+type SetUserLikeArtPayload struct {
+	// User's PastelID
+	UserPastelID string
+	// Art's PastelID
+	ArtPastelID string
+}
+
+// SetUserLikeArtResult is the result type of the userdatas service
+// setUserLikeArt method.
+type SetUserLikeArtResult struct {
+	// Result of the request is success or not
+	ResponseCode int
+	// The detail of why result is success/fail, depend on response_code
+	Detail string
+}
+
+// GetUsersLikeArtPayload is the payload type of the userdatas service
+// getUsersLikeArt method.
+type GetUsersLikeArtPayload struct {
+	// art id that we want to get like data
+	ArtID string
+	// limit for paginated list
+	Limit *int
+	// offset for paginated list
+	Offset *int
+}
+
+// GetUsersLikeArtResult is the result type of the userdatas service
+// getUsersLikeArt method.
+type GetUsersLikeArtResult struct {
+	// Result of the request is success or not
+	ResponseCode int
+	// The detail of why result is success/fail, depend on response_code
+	Detail string
+	// total number of users in relationship with this user
+	TotalCount int
+	// Artist's PastelID
+	Result []*UserRelationshipInfo
+}
+
 // User image upload payload
 type UserImageUploadPayload struct {
 	// File to upload
 	Content []byte
 	// File name of the user image
 	Filename *string
+}
+
+type UserRelationshipInfo struct {
+	// Artist's PastelID
+	Pastelid string
+	// Username of the user
+	Username string
+	// Real name of the user
+	Realname *string
+	// number of users follow this user
+	FollowersCount int
+	// 40x40 avatar thumbnail
+	AvatarThumbnail []byte
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.

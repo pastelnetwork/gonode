@@ -31,6 +31,30 @@ type Client struct {
 	// endpoint.
 	UserdataGetDoer goahttp.Doer
 
+	// SetUserFollowRelation Doer is the HTTP client used to make requests to the
+	// setUserFollowRelation endpoint.
+	SetUserFollowRelationDoer goahttp.Doer
+
+	// GetFollowers Doer is the HTTP client used to make requests to the
+	// getFollowers endpoint.
+	GetFollowersDoer goahttp.Doer
+
+	// GetFollowees Doer is the HTTP client used to make requests to the
+	// getFollowees endpoint.
+	GetFolloweesDoer goahttp.Doer
+
+	// GetFriends Doer is the HTTP client used to make requests to the getFriends
+	// endpoint.
+	GetFriendsDoer goahttp.Doer
+
+	// SetUserLikeArt Doer is the HTTP client used to make requests to the
+	// setUserLikeArt endpoint.
+	SetUserLikeArtDoer goahttp.Doer
+
+	// GetUsersLikeArt Doer is the HTTP client used to make requests to the
+	// getUsersLikeArt endpoint.
+	GetUsersLikeArtDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -62,15 +86,21 @@ func NewClient(
 	restoreBody bool,
 ) *Client {
 	return &Client{
-		CreateUserdataDoer:  doer,
-		UpdateUserdataDoer:  doer,
-		UserdataGetDoer:     doer,
-		CORSDoer:            doer,
-		RestoreResponseBody: restoreBody,
-		scheme:              scheme,
-		host:                host,
-		decoder:             dec,
-		encoder:             enc,
+		CreateUserdataDoer:        doer,
+		UpdateUserdataDoer:        doer,
+		UserdataGetDoer:           doer,
+		SetUserFollowRelationDoer: doer,
+		GetFollowersDoer:          doer,
+		GetFolloweesDoer:          doer,
+		GetFriendsDoer:            doer,
+		SetUserLikeArtDoer:        doer,
+		GetUsersLikeArtDoer:       doer,
+		CORSDoer:                  doer,
+		RestoreResponseBody:       restoreBody,
+		scheme:                    scheme,
+		host:                      host,
+		decoder:                   dec,
+		encoder:                   enc,
 	}
 }
 
@@ -136,6 +166,150 @@ func (c *Client) UserdataGet() goa.Endpoint {
 		resp, err := c.UserdataGetDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("userdatas", "userdataGet", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// SetUserFollowRelation returns an endpoint that makes HTTP requests to the
+// userdatas service setUserFollowRelation server.
+func (c *Client) SetUserFollowRelation() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeSetUserFollowRelationRequest(c.encoder)
+		decodeResponse = DecodeSetUserFollowRelationResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildSetUserFollowRelationRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.SetUserFollowRelationDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userdatas", "setUserFollowRelation", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetFollowers returns an endpoint that makes HTTP requests to the userdatas
+// service getFollowers server.
+func (c *Client) GetFollowers() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetFollowersRequest(c.encoder)
+		decodeResponse = DecodeGetFollowersResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildGetFollowersRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetFollowersDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userdatas", "getFollowers", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetFollowees returns an endpoint that makes HTTP requests to the userdatas
+// service getFollowees server.
+func (c *Client) GetFollowees() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetFolloweesRequest(c.encoder)
+		decodeResponse = DecodeGetFolloweesResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildGetFolloweesRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetFolloweesDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userdatas", "getFollowees", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetFriends returns an endpoint that makes HTTP requests to the userdatas
+// service getFriends server.
+func (c *Client) GetFriends() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetFriendsRequest(c.encoder)
+		decodeResponse = DecodeGetFriendsResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildGetFriendsRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetFriendsDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userdatas", "getFriends", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// SetUserLikeArt returns an endpoint that makes HTTP requests to the userdatas
+// service setUserLikeArt server.
+func (c *Client) SetUserLikeArt() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeSetUserLikeArtRequest(c.encoder)
+		decodeResponse = DecodeSetUserLikeArtResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildSetUserLikeArtRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.SetUserLikeArtDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userdatas", "setUserLikeArt", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// GetUsersLikeArt returns an endpoint that makes HTTP requests to the
+// userdatas service getUsersLikeArt server.
+func (c *Client) GetUsersLikeArt() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeGetUsersLikeArtRequest(c.encoder)
+		decodeResponse = DecodeGetUsersLikeArtResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildGetUsersLikeArtRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.GetUsersLikeArtDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("userdatas", "getUsersLikeArt", err)
 		}
 		return decodeResponse(resp)
 	}

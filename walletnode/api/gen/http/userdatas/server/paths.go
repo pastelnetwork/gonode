@@ -25,3 +25,33 @@ func UpdateUserdataUserdatasPath() string {
 func UserdataGetUserdatasPath(pastelid string) string {
 	return fmt.Sprintf("/userdatas/%v", pastelid)
 }
+
+// SetUserFollowRelationUserdatasPath returns the URL path to the userdatas service setUserFollowRelation HTTP endpoint.
+func SetUserFollowRelationUserdatasPath() string {
+	return "/userdatas/follow"
+}
+
+// GetFollowersUserdatasPath returns the URL path to the userdatas service getFollowers HTTP endpoint.
+func GetFollowersUserdatasPath() string {
+	return "/userdatas/follow/followers"
+}
+
+// GetFolloweesUserdatasPath returns the URL path to the userdatas service getFollowees HTTP endpoint.
+func GetFolloweesUserdatasPath() string {
+	return "/userdatas/follow/followees"
+}
+
+// GetFriendsUserdatasPath returns the URL path to the userdatas service getFriends HTTP endpoint.
+func GetFriendsUserdatasPath() string {
+	return "/userdatas/follow/friends"
+}
+
+// SetUserLikeArtUserdatasPath returns the URL path to the userdatas service setUserLikeArt HTTP endpoint.
+func SetUserLikeArtUserdatasPath() string {
+	return "/userdatas/like/art"
+}
+
+// GetUsersLikeArtUserdatasPath returns the URL path to the userdatas service getUsersLikeArt HTTP endpoint.
+func GetUsersLikeArtUserdatasPath() string {
+	return "/userdatas/like/art"
+}

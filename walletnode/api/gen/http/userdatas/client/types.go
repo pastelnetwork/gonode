@@ -72,6 +72,68 @@ type UpdateUserdataRequestBody struct {
 	ArtistPastelIDPassphrase string `form:"artist_pastelid_passphrase" json:"artist_pastelid_passphrase" xml:"artist_pastelid_passphrase"`
 }
 
+// SetUserFollowRelationRequestBody is the type of the "userdatas" service
+// "setUserFollowRelation" endpoint HTTP request body.
+type SetUserFollowRelationRequestBody struct {
+	// Follower's PastelID
+	FollowerPastelID string `form:"follower_pastel_id" json:"follower_pastel_id" xml:"follower_pastel_id"`
+	// Followee's PastelID
+	FolloweePastelID string `form:"followee_pastel_id" json:"followee_pastel_id" xml:"followee_pastel_id"`
+}
+
+// GetFollowersRequestBody is the type of the "userdatas" service
+// "getFollowers" endpoint HTTP request body.
+type GetFollowersRequestBody struct {
+	// Artist's PastelID
+	Pastelid string `form:"pastelid" json:"pastelid" xml:"pastelid"`
+	// limit for paginated list
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
+	// offset for paginated list
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
+}
+
+// GetFolloweesRequestBody is the type of the "userdatas" service
+// "getFollowees" endpoint HTTP request body.
+type GetFolloweesRequestBody struct {
+	// Artist's PastelID
+	Pastelid string `form:"pastelid" json:"pastelid" xml:"pastelid"`
+	// limit for paginated list
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
+	// offset for paginated list
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
+}
+
+// GetFriendsRequestBody is the type of the "userdatas" service "getFriends"
+// endpoint HTTP request body.
+type GetFriendsRequestBody struct {
+	// Artist's PastelID
+	Pastelid string `form:"pastelid" json:"pastelid" xml:"pastelid"`
+	// limit for paginated list
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
+	// offset for paginated list
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
+}
+
+// SetUserLikeArtRequestBody is the type of the "userdatas" service
+// "setUserLikeArt" endpoint HTTP request body.
+type SetUserLikeArtRequestBody struct {
+	// User's PastelID
+	UserPastelID string `form:"user_pastel_id" json:"user_pastel_id" xml:"user_pastel_id"`
+	// Art's PastelID
+	ArtPastelID string `form:"art_pastel_id" json:"art_pastel_id" xml:"art_pastel_id"`
+}
+
+// GetUsersLikeArtRequestBody is the type of the "userdatas" service
+// "getUsersLikeArt" endpoint HTTP request body.
+type GetUsersLikeArtRequestBody struct {
+	// art id that we want to get like data
+	ArtID string `form:"art_id" json:"art_id" xml:"art_id"`
+	// limit for paginated list
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
+	// offset for paginated list
+	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
+}
+
 // CreateUserdataResponseBody is the type of the "userdatas" service
 // "createUserdata" endpoint HTTP response body.
 type CreateUserdataResponseBody struct {
@@ -157,6 +219,76 @@ type UserdataGetResponseBody struct {
 	ArtistPastelID *string `form:"artist_pastelid,omitempty" json:"artist_pastelid,omitempty" xml:"artist_pastelid,omitempty"`
 	// Passphrase of the artist's PastelID
 	ArtistPastelIDPassphrase *string `form:"artist_pastelid_passphrase,omitempty" json:"artist_pastelid_passphrase,omitempty" xml:"artist_pastelid_passphrase,omitempty"`
+}
+
+// SetUserFollowRelationResponseBody is the type of the "userdatas" service
+// "setUserFollowRelation" endpoint HTTP response body.
+type SetUserFollowRelationResponseBody struct {
+	// Result of the request is success or not
+	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
+	// The detail of why result is success/fail, depend on response_code
+	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
+}
+
+// GetFollowersResponseBody is the type of the "userdatas" service
+// "getFollowers" endpoint HTTP response body.
+type GetFollowersResponseBody struct {
+	// Result of the request is success or not
+	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
+	// The detail of why result is success/fail, depend on response_code
+	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
+	// total number of users in relationship with this user
+	TotalCount *int `form:"total_count,omitempty" json:"total_count,omitempty" xml:"total_count,omitempty"`
+	// Artist's PastelID
+	Result []*UserRelationshipInfoResponseBody `form:"result,omitempty" json:"result,omitempty" xml:"result,omitempty"`
+}
+
+// GetFolloweesResponseBody is the type of the "userdatas" service
+// "getFollowees" endpoint HTTP response body.
+type GetFolloweesResponseBody struct {
+	// Result of the request is success or not
+	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
+	// The detail of why result is success/fail, depend on response_code
+	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
+	// total number of users in relationship with this user
+	TotalCount *int `form:"total_count,omitempty" json:"total_count,omitempty" xml:"total_count,omitempty"`
+	// Artist's PastelID
+	Result []*UserRelationshipInfoResponseBody `form:"result,omitempty" json:"result,omitempty" xml:"result,omitempty"`
+}
+
+// GetFriendsResponseBody is the type of the "userdatas" service "getFriends"
+// endpoint HTTP response body.
+type GetFriendsResponseBody struct {
+	// Result of the request is success or not
+	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
+	// The detail of why result is success/fail, depend on response_code
+	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
+	// total number of users in relationship with this user
+	TotalCount *int `form:"total_count,omitempty" json:"total_count,omitempty" xml:"total_count,omitempty"`
+	// Artist's PastelID
+	Result []*UserRelationshipInfoResponseBody `form:"result,omitempty" json:"result,omitempty" xml:"result,omitempty"`
+}
+
+// SetUserLikeArtResponseBody is the type of the "userdatas" service
+// "setUserLikeArt" endpoint HTTP response body.
+type SetUserLikeArtResponseBody struct {
+	// Result of the request is success or not
+	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
+	// The detail of why result is success/fail, depend on response_code
+	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
+}
+
+// GetUsersLikeArtResponseBody is the type of the "userdatas" service
+// "getUsersLikeArt" endpoint HTTP response body.
+type GetUsersLikeArtResponseBody struct {
+	// Result of the request is success or not
+	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
+	// The detail of why result is success/fail, depend on response_code
+	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
+	// total number of users in relationship with this user
+	TotalCount *int `form:"total_count,omitempty" json:"total_count,omitempty" xml:"total_count,omitempty"`
+	// Artist's PastelID
+	Result []*UserRelationshipInfoResponseBody `form:"result,omitempty" json:"result,omitempty" xml:"result,omitempty"`
 }
 
 // CreateUserdataBadRequestResponseBody is the type of the "userdatas" service
@@ -288,6 +420,229 @@ type UserdataGetInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// SetUserFollowRelationBadRequestResponseBody is the type of the "userdatas"
+// service "setUserFollowRelation" endpoint HTTP response body for the
+// "BadRequest" error.
+type SetUserFollowRelationBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// SetUserFollowRelationInternalServerErrorResponseBody is the type of the
+// "userdatas" service "setUserFollowRelation" endpoint HTTP response body for
+// the "InternalServerError" error.
+type SetUserFollowRelationInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetFollowersBadRequestResponseBody is the type of the "userdatas" service
+// "getFollowers" endpoint HTTP response body for the "BadRequest" error.
+type GetFollowersBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetFollowersInternalServerErrorResponseBody is the type of the "userdatas"
+// service "getFollowers" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetFollowersInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetFolloweesBadRequestResponseBody is the type of the "userdatas" service
+// "getFollowees" endpoint HTTP response body for the "BadRequest" error.
+type GetFolloweesBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetFolloweesInternalServerErrorResponseBody is the type of the "userdatas"
+// service "getFollowees" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetFolloweesInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetFriendsBadRequestResponseBody is the type of the "userdatas" service
+// "getFriends" endpoint HTTP response body for the "BadRequest" error.
+type GetFriendsBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetFriendsInternalServerErrorResponseBody is the type of the "userdatas"
+// service "getFriends" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetFriendsInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// SetUserLikeArtBadRequestResponseBody is the type of the "userdatas" service
+// "setUserLikeArt" endpoint HTTP response body for the "BadRequest" error.
+type SetUserLikeArtBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// SetUserLikeArtInternalServerErrorResponseBody is the type of the "userdatas"
+// service "setUserLikeArt" endpoint HTTP response body for the
+// "InternalServerError" error.
+type SetUserLikeArtInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetUsersLikeArtBadRequestResponseBody is the type of the "userdatas" service
+// "getUsersLikeArt" endpoint HTTP response body for the "BadRequest" error.
+type GetUsersLikeArtBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// GetUsersLikeArtInternalServerErrorResponseBody is the type of the
+// "userdatas" service "getUsersLikeArt" endpoint HTTP response body for the
+// "InternalServerError" error.
+type GetUsersLikeArtInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
 // UserImageUploadPayloadRequestBody is used to define fields on request body
 // types.
 type UserImageUploadPayloadRequestBody struct {
@@ -304,6 +659,21 @@ type UserImageUploadPayloadResponseBody struct {
 	Content []byte `form:"content,omitempty" json:"content,omitempty" xml:"content,omitempty"`
 	// File name of the user image
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
+}
+
+// UserRelationshipInfoResponseBody is used to define fields on response body
+// types.
+type UserRelationshipInfoResponseBody struct {
+	// Artist's PastelID
+	Pastelid *string `form:"pastelid,omitempty" json:"pastelid,omitempty" xml:"pastelid,omitempty"`
+	// Username of the user
+	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
+	// Real name of the user
+	Realname *string `form:"realname,omitempty" json:"realname,omitempty" xml:"realname,omitempty"`
+	// number of users follow this user
+	FollowersCount *int `form:"followers_count,omitempty" json:"followers_count,omitempty" xml:"followers_count,omitempty"`
+	// 40x40 avatar thumbnail
+	AvatarThumbnail []byte `form:"avatar_thumbnail,omitempty" json:"avatar_thumbnail,omitempty" xml:"avatar_thumbnail,omitempty"`
 }
 
 // NewCreateUserdataRequestBody builds the HTTP request body from the payload
@@ -350,6 +720,70 @@ func NewUpdateUserdataRequestBody(p *userdatas.UpdateUserdataPayload) *UpdateUse
 	}
 	if p.CoverPhoto != nil {
 		body.CoverPhoto = marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadRequestBody(p.CoverPhoto)
+	}
+	return body
+}
+
+// NewSetUserFollowRelationRequestBody builds the HTTP request body from the
+// payload of the "setUserFollowRelation" endpoint of the "userdatas" service.
+func NewSetUserFollowRelationRequestBody(p *userdatas.SetUserFollowRelationPayload) *SetUserFollowRelationRequestBody {
+	body := &SetUserFollowRelationRequestBody{
+		FollowerPastelID: p.FollowerPastelID,
+		FolloweePastelID: p.FolloweePastelID,
+	}
+	return body
+}
+
+// NewGetFollowersRequestBody builds the HTTP request body from the payload of
+// the "getFollowers" endpoint of the "userdatas" service.
+func NewGetFollowersRequestBody(p *userdatas.GetFollowersPayload) *GetFollowersRequestBody {
+	body := &GetFollowersRequestBody{
+		Pastelid: p.Pastelid,
+		Limit:    p.Limit,
+		Offset:   p.Offset,
+	}
+	return body
+}
+
+// NewGetFolloweesRequestBody builds the HTTP request body from the payload of
+// the "getFollowees" endpoint of the "userdatas" service.
+func NewGetFolloweesRequestBody(p *userdatas.GetFolloweesPayload) *GetFolloweesRequestBody {
+	body := &GetFolloweesRequestBody{
+		Pastelid: p.Pastelid,
+		Limit:    p.Limit,
+		Offset:   p.Offset,
+	}
+	return body
+}
+
+// NewGetFriendsRequestBody builds the HTTP request body from the payload of
+// the "getFriends" endpoint of the "userdatas" service.
+func NewGetFriendsRequestBody(p *userdatas.GetFriendsPayload) *GetFriendsRequestBody {
+	body := &GetFriendsRequestBody{
+		Pastelid: p.Pastelid,
+		Limit:    p.Limit,
+		Offset:   p.Offset,
+	}
+	return body
+}
+
+// NewSetUserLikeArtRequestBody builds the HTTP request body from the payload
+// of the "setUserLikeArt" endpoint of the "userdatas" service.
+func NewSetUserLikeArtRequestBody(p *userdatas.SetUserLikeArtPayload) *SetUserLikeArtRequestBody {
+	body := &SetUserLikeArtRequestBody{
+		UserPastelID: p.UserPastelID,
+		ArtPastelID:  p.ArtPastelID,
+	}
+	return body
+}
+
+// NewGetUsersLikeArtRequestBody builds the HTTP request body from the payload
+// of the "getUsersLikeArt" endpoint of the "userdatas" service.
+func NewGetUsersLikeArtRequestBody(p *userdatas.GetUsersLikeArtPayload) *GetUsersLikeArtRequestBody {
+	body := &GetUsersLikeArtRequestBody{
+		ArtID:  p.ArtID,
+		Limit:  p.Limit,
+		Offset: p.Offset,
 	}
 	return body
 }
@@ -514,6 +948,280 @@ func NewUserdataGetNotFound(body *UserdataGetNotFoundResponseBody) *goa.ServiceE
 // NewUserdataGetInternalServerError builds a userdatas service userdataGet
 // endpoint InternalServerError error.
 func NewUserdataGetInternalServerError(body *UserdataGetInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewSetUserFollowRelationResultOK builds a "userdatas" service
+// "setUserFollowRelation" endpoint result from a HTTP "OK" response.
+func NewSetUserFollowRelationResultOK(body *SetUserFollowRelationResponseBody) *userdatas.SetUserFollowRelationResult {
+	v := &userdatas.SetUserFollowRelationResult{
+		ResponseCode: *body.ResponseCode,
+		Detail:       *body.Detail,
+	}
+
+	return v
+}
+
+// NewSetUserFollowRelationBadRequest builds a userdatas service
+// setUserFollowRelation endpoint BadRequest error.
+func NewSetUserFollowRelationBadRequest(body *SetUserFollowRelationBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewSetUserFollowRelationInternalServerError builds a userdatas service
+// setUserFollowRelation endpoint InternalServerError error.
+func NewSetUserFollowRelationInternalServerError(body *SetUserFollowRelationInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetFollowersResultOK builds a "userdatas" service "getFollowers" endpoint
+// result from a HTTP "OK" response.
+func NewGetFollowersResultOK(body *GetFollowersResponseBody) *userdatas.GetFollowersResult {
+	v := &userdatas.GetFollowersResult{
+		ResponseCode: *body.ResponseCode,
+		Detail:       *body.Detail,
+		TotalCount:   *body.TotalCount,
+	}
+	if body.Result != nil {
+		v.Result = make([]*userdatas.UserRelationshipInfo, len(body.Result))
+		for i, val := range body.Result {
+			v.Result[i] = unmarshalUserRelationshipInfoResponseBodyToUserdatasUserRelationshipInfo(val)
+		}
+	}
+
+	return v
+}
+
+// NewGetFollowersBadRequest builds a userdatas service getFollowers endpoint
+// BadRequest error.
+func NewGetFollowersBadRequest(body *GetFollowersBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetFollowersInternalServerError builds a userdatas service getFollowers
+// endpoint InternalServerError error.
+func NewGetFollowersInternalServerError(body *GetFollowersInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetFolloweesResultOK builds a "userdatas" service "getFollowees" endpoint
+// result from a HTTP "OK" response.
+func NewGetFolloweesResultOK(body *GetFolloweesResponseBody) *userdatas.GetFolloweesResult {
+	v := &userdatas.GetFolloweesResult{
+		ResponseCode: *body.ResponseCode,
+		Detail:       *body.Detail,
+		TotalCount:   *body.TotalCount,
+	}
+	if body.Result != nil {
+		v.Result = make([]*userdatas.UserRelationshipInfo, len(body.Result))
+		for i, val := range body.Result {
+			v.Result[i] = unmarshalUserRelationshipInfoResponseBodyToUserdatasUserRelationshipInfo(val)
+		}
+	}
+
+	return v
+}
+
+// NewGetFolloweesBadRequest builds a userdatas service getFollowees endpoint
+// BadRequest error.
+func NewGetFolloweesBadRequest(body *GetFolloweesBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetFolloweesInternalServerError builds a userdatas service getFollowees
+// endpoint InternalServerError error.
+func NewGetFolloweesInternalServerError(body *GetFolloweesInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetFriendsResultOK builds a "userdatas" service "getFriends" endpoint
+// result from a HTTP "OK" response.
+func NewGetFriendsResultOK(body *GetFriendsResponseBody) *userdatas.GetFriendsResult {
+	v := &userdatas.GetFriendsResult{
+		ResponseCode: *body.ResponseCode,
+		Detail:       *body.Detail,
+		TotalCount:   *body.TotalCount,
+	}
+	if body.Result != nil {
+		v.Result = make([]*userdatas.UserRelationshipInfo, len(body.Result))
+		for i, val := range body.Result {
+			v.Result[i] = unmarshalUserRelationshipInfoResponseBodyToUserdatasUserRelationshipInfo(val)
+		}
+	}
+
+	return v
+}
+
+// NewGetFriendsBadRequest builds a userdatas service getFriends endpoint
+// BadRequest error.
+func NewGetFriendsBadRequest(body *GetFriendsBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetFriendsInternalServerError builds a userdatas service getFriends
+// endpoint InternalServerError error.
+func NewGetFriendsInternalServerError(body *GetFriendsInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewSetUserLikeArtResultOK builds a "userdatas" service "setUserLikeArt"
+// endpoint result from a HTTP "OK" response.
+func NewSetUserLikeArtResultOK(body *SetUserLikeArtResponseBody) *userdatas.SetUserLikeArtResult {
+	v := &userdatas.SetUserLikeArtResult{
+		ResponseCode: *body.ResponseCode,
+		Detail:       *body.Detail,
+	}
+
+	return v
+}
+
+// NewSetUserLikeArtBadRequest builds a userdatas service setUserLikeArt
+// endpoint BadRequest error.
+func NewSetUserLikeArtBadRequest(body *SetUserLikeArtBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewSetUserLikeArtInternalServerError builds a userdatas service
+// setUserLikeArt endpoint InternalServerError error.
+func NewSetUserLikeArtInternalServerError(body *SetUserLikeArtInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetUsersLikeArtResultOK builds a "userdatas" service "getUsersLikeArt"
+// endpoint result from a HTTP "OK" response.
+func NewGetUsersLikeArtResultOK(body *GetUsersLikeArtResponseBody) *userdatas.GetUsersLikeArtResult {
+	v := &userdatas.GetUsersLikeArtResult{
+		ResponseCode: *body.ResponseCode,
+		Detail:       *body.Detail,
+		TotalCount:   *body.TotalCount,
+	}
+	if body.Result != nil {
+		v.Result = make([]*userdatas.UserRelationshipInfo, len(body.Result))
+		for i, val := range body.Result {
+			v.Result[i] = unmarshalUserRelationshipInfoResponseBodyToUserdatasUserRelationshipInfo(val)
+		}
+	}
+
+	return v
+}
+
+// NewGetUsersLikeArtBadRequest builds a userdatas service getUsersLikeArt
+// endpoint BadRequest error.
+func NewGetUsersLikeArtBadRequest(body *GetUsersLikeArtBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewGetUsersLikeArtInternalServerError builds a userdatas service
+// getUsersLikeArt endpoint InternalServerError error.
+func NewGetUsersLikeArtInternalServerError(body *GetUsersLikeArtInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -735,6 +1443,148 @@ func ValidateUserdataGetResponseBody(body *UserdataGetResponseBody) (err error) 
 	return
 }
 
+// ValidateSetUserFollowRelationResponseBody runs the validations defined on
+// SetUserFollowRelationResponseBody
+func ValidateSetUserFollowRelationResponseBody(body *SetUserFollowRelationResponseBody) (err error) {
+	if body.ResponseCode == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
+	}
+	if body.Detail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
+	}
+	if body.Detail != nil {
+		if utf8.RuneCountInString(*body.Detail) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
+		}
+	}
+	return
+}
+
+// ValidateGetFollowersResponseBody runs the validations defined on
+// GetFollowersResponseBody
+func ValidateGetFollowersResponseBody(body *GetFollowersResponseBody) (err error) {
+	if body.ResponseCode == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
+	}
+	if body.Detail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
+	}
+	if body.TotalCount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_count", "body"))
+	}
+	if body.Detail != nil {
+		if utf8.RuneCountInString(*body.Detail) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
+		}
+	}
+	for _, e := range body.Result {
+		if e != nil {
+			if err2 := ValidateUserRelationshipInfoResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateGetFolloweesResponseBody runs the validations defined on
+// GetFolloweesResponseBody
+func ValidateGetFolloweesResponseBody(body *GetFolloweesResponseBody) (err error) {
+	if body.ResponseCode == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
+	}
+	if body.Detail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
+	}
+	if body.TotalCount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_count", "body"))
+	}
+	if body.Detail != nil {
+		if utf8.RuneCountInString(*body.Detail) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
+		}
+	}
+	for _, e := range body.Result {
+		if e != nil {
+			if err2 := ValidateUserRelationshipInfoResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateGetFriendsResponseBody runs the validations defined on
+// GetFriendsResponseBody
+func ValidateGetFriendsResponseBody(body *GetFriendsResponseBody) (err error) {
+	if body.ResponseCode == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
+	}
+	if body.Detail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
+	}
+	if body.TotalCount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_count", "body"))
+	}
+	if body.Detail != nil {
+		if utf8.RuneCountInString(*body.Detail) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
+		}
+	}
+	for _, e := range body.Result {
+		if e != nil {
+			if err2 := ValidateUserRelationshipInfoResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
+// ValidateSetUserLikeArtResponseBody runs the validations defined on
+// SetUserLikeArtResponseBody
+func ValidateSetUserLikeArtResponseBody(body *SetUserLikeArtResponseBody) (err error) {
+	if body.ResponseCode == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
+	}
+	if body.Detail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
+	}
+	if body.Detail != nil {
+		if utf8.RuneCountInString(*body.Detail) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
+		}
+	}
+	return
+}
+
+// ValidateGetUsersLikeArtResponseBody runs the validations defined on
+// GetUsersLikeArtResponseBody
+func ValidateGetUsersLikeArtResponseBody(body *GetUsersLikeArtResponseBody) (err error) {
+	if body.ResponseCode == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
+	}
+	if body.Detail == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
+	}
+	if body.TotalCount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("total_count", "body"))
+	}
+	if body.Detail != nil {
+		if utf8.RuneCountInString(*body.Detail) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
+		}
+	}
+	for _, e := range body.Result {
+		if e != nil {
+			if err2 := ValidateUserRelationshipInfoResponseBody(e); err2 != nil {
+				err = goa.MergeErrors(err, err2)
+			}
+		}
+	}
+	return
+}
+
 // ValidateCreateUserdataBadRequestResponseBody runs the validations defined on
 // createUserdata_BadRequest_response_body
 func ValidateCreateUserdataBadRequestResponseBody(body *CreateUserdataBadRequestResponseBody) (err error) {
@@ -903,6 +1753,295 @@ func ValidateUserdataGetInternalServerErrorResponseBody(body *UserdataGetInterna
 	return
 }
 
+// ValidateSetUserFollowRelationBadRequestResponseBody runs the validations
+// defined on setUserFollowRelation_BadRequest_response_body
+func ValidateSetUserFollowRelationBadRequestResponseBody(body *SetUserFollowRelationBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateSetUserFollowRelationInternalServerErrorResponseBody runs the
+// validations defined on
+// setUserFollowRelation_InternalServerError_response_body
+func ValidateSetUserFollowRelationInternalServerErrorResponseBody(body *SetUserFollowRelationInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetFollowersBadRequestResponseBody runs the validations defined on
+// getFollowers_BadRequest_response_body
+func ValidateGetFollowersBadRequestResponseBody(body *GetFollowersBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetFollowersInternalServerErrorResponseBody runs the validations
+// defined on getFollowers_InternalServerError_response_body
+func ValidateGetFollowersInternalServerErrorResponseBody(body *GetFollowersInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetFolloweesBadRequestResponseBody runs the validations defined on
+// getFollowees_BadRequest_response_body
+func ValidateGetFolloweesBadRequestResponseBody(body *GetFolloweesBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetFolloweesInternalServerErrorResponseBody runs the validations
+// defined on getFollowees_InternalServerError_response_body
+func ValidateGetFolloweesInternalServerErrorResponseBody(body *GetFolloweesInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetFriendsBadRequestResponseBody runs the validations defined on
+// getFriends_BadRequest_response_body
+func ValidateGetFriendsBadRequestResponseBody(body *GetFriendsBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetFriendsInternalServerErrorResponseBody runs the validations
+// defined on getFriends_InternalServerError_response_body
+func ValidateGetFriendsInternalServerErrorResponseBody(body *GetFriendsInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateSetUserLikeArtBadRequestResponseBody runs the validations defined on
+// setUserLikeArt_BadRequest_response_body
+func ValidateSetUserLikeArtBadRequestResponseBody(body *SetUserLikeArtBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateSetUserLikeArtInternalServerErrorResponseBody runs the validations
+// defined on setUserLikeArt_InternalServerError_response_body
+func ValidateSetUserLikeArtInternalServerErrorResponseBody(body *SetUserLikeArtInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetUsersLikeArtBadRequestResponseBody runs the validations defined
+// on getUsersLikeArt_BadRequest_response_body
+func ValidateGetUsersLikeArtBadRequestResponseBody(body *GetUsersLikeArtBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateGetUsersLikeArtInternalServerErrorResponseBody runs the validations
+// defined on getUsersLikeArt_InternalServerError_response_body
+func ValidateGetUsersLikeArtInternalServerErrorResponseBody(body *GetUsersLikeArtInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
 // ValidateUserImageUploadPayloadRequestBody runs the validations defined on
 // UserImageUploadPayloadRequestBody
 func ValidateUserImageUploadPayloadRequestBody(body *UserImageUploadPayloadRequestBody) (err error) {
@@ -917,6 +2056,44 @@ func ValidateUserImageUploadPayloadRequestBody(body *UserImageUploadPayloadReque
 func ValidateUserImageUploadPayloadResponseBody(body *UserImageUploadPayloadResponseBody) (err error) {
 	if body.Content == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("content", "body"))
+	}
+	return
+}
+
+// ValidateUserRelationshipInfoResponseBody runs the validations defined on
+// UserRelationshipInfoResponseBody
+func ValidateUserRelationshipInfoResponseBody(body *UserRelationshipInfoResponseBody) (err error) {
+	if body.Pastelid == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("pastelid", "body"))
+	}
+	if body.Username == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("username", "body"))
+	}
+	if body.FollowersCount == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("followers_count", "body"))
+	}
+	if body.Pastelid != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", *body.Pastelid, "^[a-zA-Z0-9]+$"))
+	}
+	if body.Pastelid != nil {
+		if utf8.RuneCountInString(*body.Pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, true))
+		}
+	}
+	if body.Pastelid != nil {
+		if utf8.RuneCountInString(*body.Pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, false))
+		}
+	}
+	if body.Username != nil {
+		if utf8.RuneCountInString(*body.Username) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.username", *body.Username, utf8.RuneCountInString(*body.Username), 256, false))
+		}
+	}
+	if body.Realname != nil {
+		if utf8.RuneCountInString(*body.Realname) > 256 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.realname", *body.Realname, utf8.RuneCountInString(*body.Realname), 256, false))
+		}
 	}
 	return
 }

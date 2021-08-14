@@ -15,17 +15,29 @@ import (
 
 // Endpoints wraps the "userdatas" service endpoints.
 type Endpoints struct {
-	CreateUserdata goa.Endpoint
-	UpdateUserdata goa.Endpoint
-	UserdataGet    goa.Endpoint
+	CreateUserdata        goa.Endpoint
+	UpdateUserdata        goa.Endpoint
+	UserdataGet           goa.Endpoint
+	SetUserFollowRelation goa.Endpoint
+	GetFollowers          goa.Endpoint
+	GetFollowees          goa.Endpoint
+	GetFriends            goa.Endpoint
+	SetUserLikeArt        goa.Endpoint
+	GetUsersLikeArt       goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "userdatas" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		CreateUserdata: NewCreateUserdataEndpoint(s),
-		UpdateUserdata: NewUpdateUserdataEndpoint(s),
-		UserdataGet:    NewUserdataGetEndpoint(s),
+		CreateUserdata:        NewCreateUserdataEndpoint(s),
+		UpdateUserdata:        NewUpdateUserdataEndpoint(s),
+		UserdataGet:           NewUserdataGetEndpoint(s),
+		SetUserFollowRelation: NewSetUserFollowRelationEndpoint(s),
+		GetFollowers:          NewGetFollowersEndpoint(s),
+		GetFollowees:          NewGetFolloweesEndpoint(s),
+		GetFriends:            NewGetFriendsEndpoint(s),
+		SetUserLikeArt:        NewSetUserLikeArtEndpoint(s),
+		GetUsersLikeArt:       NewGetUsersLikeArtEndpoint(s),
 	}
 }
 
@@ -34,6 +46,12 @@ func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.CreateUserdata = m(e.CreateUserdata)
 	e.UpdateUserdata = m(e.UpdateUserdata)
 	e.UserdataGet = m(e.UserdataGet)
+	e.SetUserFollowRelation = m(e.SetUserFollowRelation)
+	e.GetFollowers = m(e.GetFollowers)
+	e.GetFollowees = m(e.GetFollowees)
+	e.GetFriends = m(e.GetFriends)
+	e.SetUserLikeArt = m(e.SetUserLikeArt)
+	e.GetUsersLikeArt = m(e.GetUsersLikeArt)
 }
 
 // NewCreateUserdataEndpoint returns an endpoint function that calls the method
@@ -60,5 +78,59 @@ func NewUserdataGetEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
 		p := req.(*UserdataGetPayload)
 		return s.UserdataGet(ctx, p)
+	}
+}
+
+// NewSetUserFollowRelationEndpoint returns an endpoint function that calls the
+// method "setUserFollowRelation" of service "userdatas".
+func NewSetUserFollowRelationEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*SetUserFollowRelationPayload)
+		return s.SetUserFollowRelation(ctx, p)
+	}
+}
+
+// NewGetFollowersEndpoint returns an endpoint function that calls the method
+// "getFollowers" of service "userdatas".
+func NewGetFollowersEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*GetFollowersPayload)
+		return s.GetFollowers(ctx, p)
+	}
+}
+
+// NewGetFolloweesEndpoint returns an endpoint function that calls the method
+// "getFollowees" of service "userdatas".
+func NewGetFolloweesEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*GetFolloweesPayload)
+		return s.GetFollowees(ctx, p)
+	}
+}
+
+// NewGetFriendsEndpoint returns an endpoint function that calls the method
+// "getFriends" of service "userdatas".
+func NewGetFriendsEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*GetFriendsPayload)
+		return s.GetFriends(ctx, p)
+	}
+}
+
+// NewSetUserLikeArtEndpoint returns an endpoint function that calls the method
+// "setUserLikeArt" of service "userdatas".
+func NewSetUserLikeArtEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*SetUserLikeArtPayload)
+		return s.SetUserLikeArt(ctx, p)
+	}
+}
+
+// NewGetUsersLikeArtEndpoint returns an endpoint function that calls the
+// method "getUsersLikeArt" of service "userdatas".
+func NewGetUsersLikeArtEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*GetUsersLikeArtPayload)
+		return s.GetUsersLikeArt(ctx, p)
 	}
 }

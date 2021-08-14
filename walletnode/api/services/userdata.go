@@ -103,6 +103,36 @@ func (service *Userdata) UserdataGet(ctx context.Context, req *userdatas.Userdat
 	}
 }
 
+// Set a follower, followee relationship to metadb
+func (service *Userdata) SetUserFollowRelation(ctx context.Context, req *userdatas.SetUserFollowRelationPayload) (*userdatas.SetUserFollowRelationResult, error) {
+	return nil, nil
+}
+
+// Get followers of a user
+func (service *Userdata) GetFollowers(ctx context.Context, req *userdatas.GetFollowersPayload) (*userdatas.GetFollowersResult, error) {
+	return nil, nil
+}
+
+// Get followers of a user
+func (service *Userdata) GetFollowees(ctx context.Context, req *userdatas.GetFolloweesPayload) (*userdatas.GetFolloweesResult, error) {
+	return nil, nil
+}
+
+// Get followers of a user
+func (service *Userdata) GetFriends(ctx context.Context, req *userdatas.GetFriendsPayload) (*userdatas.GetFriendsResult, error) {
+	return nil, nil
+}
+
+// Notify a new like event of an user to an art
+func (service *Userdata) SetUserLikeArt(ctx context.Context, req *userdatas.SetUserLikeArtPayload) (*userdatas.SetUserLikeArtResult, error) {
+	return nil, nil
+}
+
+// Get users that liked an art
+func (service *Userdata) GetUsersLikeArt(ctx context.Context, req *userdatas.GetUsersLikeArtPayload) (*userdatas.GetUsersLikeArtResult, error) {
+	return nil, nil
+}
+
 // NewUserdata returns the Userdata implementation.
 func NewUserdata(process *userdataprocess.Service) *Userdata {
 	return &Userdata{

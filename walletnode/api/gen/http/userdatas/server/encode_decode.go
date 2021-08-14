@@ -9,6 +9,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"unicode/utf8"
 
@@ -274,6 +275,468 @@ func EncodeUserdataGetError(encoder func(context.Context, http.ResponseWriter) g
 	}
 }
 
+// EncodeSetUserFollowRelationResponse returns an encoder for responses
+// returned by the userdatas setUserFollowRelation endpoint.
+func EncodeSetUserFollowRelationResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.(*userdatas.SetUserFollowRelationResult)
+		enc := encoder(ctx, w)
+		body := NewSetUserFollowRelationResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeSetUserFollowRelationRequest returns a decoder for requests sent to
+// the userdatas setUserFollowRelation endpoint.
+func DecodeSetUserFollowRelationRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			body SetUserFollowRelationRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateSetUserFollowRelationRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+		payload := NewSetUserFollowRelationPayload(&body)
+
+		return payload, nil
+	}
+}
+
+// EncodeSetUserFollowRelationError returns an encoder for errors returned by
+// the setUserFollowRelation userdatas endpoint.
+func EncodeSetUserFollowRelationError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewSetUserFollowRelationBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewSetUserFollowRelationInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeGetFollowersResponse returns an encoder for responses returned by the
+// userdatas getFollowers endpoint.
+func EncodeGetFollowersResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.(*userdatas.GetFollowersResult)
+		enc := encoder(ctx, w)
+		body := NewGetFollowersResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetFollowersRequest returns a decoder for requests sent to the
+// userdatas getFollowers endpoint.
+func DecodeGetFollowersRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			body GetFollowersRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateGetFollowersRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetFollowersPayload(&body)
+
+		return payload, nil
+	}
+}
+
+// EncodeGetFollowersError returns an encoder for errors returned by the
+// getFollowers userdatas endpoint.
+func EncodeGetFollowersError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetFollowersBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetFollowersInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeGetFolloweesResponse returns an encoder for responses returned by the
+// userdatas getFollowees endpoint.
+func EncodeGetFolloweesResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.(*userdatas.GetFolloweesResult)
+		enc := encoder(ctx, w)
+		body := NewGetFolloweesResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetFolloweesRequest returns a decoder for requests sent to the
+// userdatas getFollowees endpoint.
+func DecodeGetFolloweesRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			body GetFolloweesRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateGetFolloweesRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetFolloweesPayload(&body)
+
+		return payload, nil
+	}
+}
+
+// EncodeGetFolloweesError returns an encoder for errors returned by the
+// getFollowees userdatas endpoint.
+func EncodeGetFolloweesError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetFolloweesBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetFolloweesInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeGetFriendsResponse returns an encoder for responses returned by the
+// userdatas getFriends endpoint.
+func EncodeGetFriendsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.(*userdatas.GetFriendsResult)
+		enc := encoder(ctx, w)
+		body := NewGetFriendsResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetFriendsRequest returns a decoder for requests sent to the userdatas
+// getFriends endpoint.
+func DecodeGetFriendsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			body GetFriendsRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateGetFriendsRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetFriendsPayload(&body)
+
+		return payload, nil
+	}
+}
+
+// EncodeGetFriendsError returns an encoder for errors returned by the
+// getFriends userdatas endpoint.
+func EncodeGetFriendsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetFriendsBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetFriendsInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeSetUserLikeArtResponse returns an encoder for responses returned by
+// the userdatas setUserLikeArt endpoint.
+func EncodeSetUserLikeArtResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.(*userdatas.SetUserLikeArtResult)
+		enc := encoder(ctx, w)
+		body := NewSetUserLikeArtResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeSetUserLikeArtRequest returns a decoder for requests sent to the
+// userdatas setUserLikeArt endpoint.
+func DecodeSetUserLikeArtRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			body SetUserLikeArtRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateSetUserLikeArtRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+		payload := NewSetUserLikeArtPayload(&body)
+
+		return payload, nil
+	}
+}
+
+// EncodeSetUserLikeArtError returns an encoder for errors returned by the
+// setUserLikeArt userdatas endpoint.
+func EncodeSetUserLikeArtError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewSetUserLikeArtBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewSetUserLikeArtInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
+// EncodeGetUsersLikeArtResponse returns an encoder for responses returned by
+// the userdatas getUsersLikeArt endpoint.
+func EncodeGetUsersLikeArtResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
+		res, _ := v.(*userdatas.GetUsersLikeArtResult)
+		enc := encoder(ctx, w)
+		body := NewGetUsersLikeArtResponseBody(res)
+		w.WriteHeader(http.StatusOK)
+		return enc.Encode(body)
+	}
+}
+
+// DecodeGetUsersLikeArtRequest returns a decoder for requests sent to the
+// userdatas getUsersLikeArt endpoint.
+func DecodeGetUsersLikeArtRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+	return func(r *http.Request) (interface{}, error) {
+		var (
+			body GetUsersLikeArtRequestBody
+			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateGetUsersLikeArtRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+		payload := NewGetUsersLikeArtPayload(&body)
+
+		return payload, nil
+	}
+}
+
+// EncodeGetUsersLikeArtError returns an encoder for errors returned by the
+// getUsersLikeArt userdatas endpoint.
+func EncodeGetUsersLikeArtError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+	encodeError := goahttp.ErrorEncoder(encoder, formatter)
+	return func(ctx context.Context, w http.ResponseWriter, v error) error {
+		en, ok := v.(ErrorNamer)
+		if !ok {
+			return encodeError(ctx, w, v)
+		}
+		switch en.ErrorName() {
+		case "BadRequest":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetUsersLikeArtBadRequestResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusBadRequest)
+			return enc.Encode(body)
+		case "InternalServerError":
+			res := v.(*goa.ServiceError)
+			enc := encoder(ctx, w)
+			var body interface{}
+			if formatter != nil {
+				body = formatter(res)
+			} else {
+				body = NewGetUsersLikeArtInternalServerErrorResponseBody(res)
+			}
+			w.Header().Set("goa-error", res.ErrorName())
+			w.WriteHeader(http.StatusInternalServerError)
+			return enc.Encode(body)
+		default:
+			return encodeError(ctx, w, v)
+		}
+	}
+}
+
 // unmarshalUserImageUploadPayloadRequestBodyToUserdatasUserImageUploadPayload
 // builds a value of type *userdatas.UserImageUploadPayload from a value of
 // type *UserImageUploadPayloadRequestBody.
@@ -299,6 +762,24 @@ func marshalUserdatasUserImageUploadPayloadToUserImageUploadPayloadResponseBody(
 	res := &UserImageUploadPayloadResponseBody{
 		Content:  v.Content,
 		Filename: v.Filename,
+	}
+
+	return res
+}
+
+// marshalUserdatasUserRelationshipInfoToUserRelationshipInfoResponseBody
+// builds a value of type *UserRelationshipInfoResponseBody from a value of
+// type *userdatas.UserRelationshipInfo.
+func marshalUserdatasUserRelationshipInfoToUserRelationshipInfoResponseBody(v *userdatas.UserRelationshipInfo) *UserRelationshipInfoResponseBody {
+	if v == nil {
+		return nil
+	}
+	res := &UserRelationshipInfoResponseBody{
+		Pastelid:        v.Pastelid,
+		Username:        v.Username,
+		Realname:        v.Realname,
+		FollowersCount:  v.FollowersCount,
+		AvatarThumbnail: v.AvatarThumbnail,
 	}
 
 	return res
