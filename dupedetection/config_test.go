@@ -20,6 +20,7 @@ func TestNewConfig(t *testing.T) {
 				InputDir:             DefaultInputDir,
 				OutputDir:            DefaultOutputDir,
 				WaitForOutputTimeout: DefaultTimeout,
+				DataFile:             DefaultDataFile,
 			},
 		},
 	}
@@ -48,6 +49,7 @@ func TestSetWorkDir(t *testing.T) {
 
 	absoluteInputDir := path.Join(workDir, DefaultInputDir)
 	absoluteOutputDir := path.Join(workDir, DefaultOutputDir)
+	absoluteDataFile := path.Join(workDir, DefaultDataFile)
 
 	testCases := []struct {
 		args args
@@ -58,12 +60,14 @@ func TestSetWorkDir(t *testing.T) {
 				config: &Config{
 					InputDir:  DefaultInputDir,
 					OutputDir: DefaultOutputDir,
+					DataFile:  DefaultDataFile,
 				},
 				workDir: workDir,
 			},
 			want: &Config{
 				InputDir:  absoluteInputDir,
 				OutputDir: absoluteOutputDir,
+				DataFile:  absoluteDataFile,
 			},
 		},
 		{
@@ -71,12 +75,14 @@ func TestSetWorkDir(t *testing.T) {
 				config: &Config{
 					InputDir:  absoluteInputDir,
 					OutputDir: absoluteOutputDir,
+					DataFile:  absoluteDataFile,
 				},
 				workDir: workDir,
 			},
 			want: &Config{
 				InputDir:  absoluteInputDir,
 				OutputDir: absoluteOutputDir,
+				DataFile:  absoluteDataFile,
 			},
 		},
 	}

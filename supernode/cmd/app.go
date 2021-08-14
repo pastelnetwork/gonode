@@ -209,6 +209,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
+	dupeDetection, err := dupedetection.NewService(config.DupeDetection, pastelClient, p2p)
+	if err != nil {
+		return errors.Errorf("can not start dupe detection service, err: %w", err)
+	}
 
 	// ----Userdata Services----
 	userdataNodeClient := client.New()
@@ -222,5 +226,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
 	)
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, database, userdataProcess)
+
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess)
 }

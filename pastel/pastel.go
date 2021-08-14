@@ -64,6 +64,10 @@ type Client interface {
 	// Command `tickets get <txid>`.
 	RegTicket(ctx context.Context, regTxid string) (RegTicket, error)
 
+	// GetRegTicket returns all art registration tickets.
+	// Command `tickets list art`.
+	RegTickets(ctx context.Context) (RegTickets, error)
+
 	// GetBlockVerbose1 Return block info with verbose is 1
 	// Command `getblock height 1`
 	GetBlockVerbose1(ctx context.Context, blkHeight int32) (*GetBlockVerbose1Result, error)
