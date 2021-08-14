@@ -505,10 +505,6 @@ func (task *Task) ConnectToLeader(ctx context.Context, extAddress string, sessID
 			return nil
 		}
 
-		if err := node.Session(ctx, task.config.PastelID, sessID); err != nil {
-			actionErr = errors.Errorf("error while creating session to rqlite leader node: %w", err)
-			return nil
-		}
 		task.ConnectedToLeader = node
 
 		return nil
