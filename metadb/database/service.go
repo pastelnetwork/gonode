@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io/ioutil"
-	"regexp"
 	"strings"
 
 	"text/template"
@@ -61,9 +60,7 @@ func (db *Ops) IsLeader() bool {
 
 // LeaderAddress return the ipaddress of the supernode contain the leader
 func (db *Ops) LeaderAddress() string {
-	re := regexp.MustCompile(":[0-9]+$")
-	address := re.Split(db.metaDB.LeaderAddress(), -1)[0]
-	return address
+	return db.metaDB.LeaderAddress()
 }
 
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
