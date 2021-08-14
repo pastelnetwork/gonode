@@ -34,6 +34,7 @@ const (
 	CommandSnActivityWrite          = "sn_activity_write"
 	CommandTransactionWrite         = "transaction_write"
 	CommandUniqueNftByUser          = "unique_nft_by_user"
+	CommandUserFollowDelete         = "user_follow_delete"
 	CommandUserFollowWrite          = "user_follow_write"
 	CommandUsersLikeNft             = "users_like_nft"
 )
