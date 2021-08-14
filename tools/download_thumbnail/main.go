@@ -54,7 +54,7 @@ func printError(err error) {
 func main() {
 
 	var (
-		regNFTTxid = flag.String("regarttxid", "", "reg NFT txid")
+		regNFTTxid = flag.String("regnfttxid", "", "reg NFT txid")
 	)
 	//flag.Usage = usage
 	flag.Parse()

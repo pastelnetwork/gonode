@@ -29,7 +29,7 @@ type RegTicketData struct {
 	TotalCopies    int              `json:"total_copies"`
 	Royalty        float64          `json:"royalty"`
 	RoyaltyAddress string           `json:"royalty_address"`
-	Green          int              `json:"green"`
+	Green          bool             `json:"green"`
 	GreenAddress   string           `json:"green_address"`
 	StorageFee     int              `json:"storage_fee"`
 	NFTTicket      []byte           `json:"nft_ticket"`

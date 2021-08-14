@@ -83,7 +83,7 @@ func fakeRegiterTicket() pastel.RegTicket {
 		Signatures:    ticketSignature,
 		Key1:          "key1",
 		Key2:          "key2",
-		Green:         0,
+		Green:         false,
 		StorageFee:    1,
 		TotalCopies:   10,
 		Royalty:       99,
