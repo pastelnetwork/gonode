@@ -125,13 +125,15 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 		case "array":
 			b, ok := values[i].([]byte)
 			if !ok {
-				return nil, errors.New("failed to get byte from npy")
+				log.WithContext(ctx).Errorf("failed to get byte from npy, columns: %s", row[0].Columns[i])
+				continue
 			}
 			f := bytes.NewBuffer(b)
 
 			var fp []float64
 			if err := npyio.Read(f, &fp); err != nil {
-				return nil, errors.Errorf("failed to convert npy to float64, err: %s", err)
+				log.WithContext(ctx).Errorf("failed to convert npy to float64, err: %s", err)
+				continue
 			}
 			resultStr[row[0].Columns[i]] = fp
 		default:

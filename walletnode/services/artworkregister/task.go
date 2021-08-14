@@ -75,6 +75,7 @@ func (task *Task) Run(ctx context.Context) error {
 	log.WithContext(ctx).Debugf("Start task")
 	defer log.WithContext(ctx).Debugf("End task")
 
+	defer task.removeArtifacts()
 	if err := task.run(ctx); err != nil {
 		task.UpdateStatus(StatusTaskRejected)
 		log.WithContext(ctx).WithErrorStack(err).Warnf("Task is rejected")
@@ -521,11 +522,6 @@ func (task *Task) createArtTicket(_ context.Context) error {
 		return errEmptyRaptorQSymbols
 	}
 
-	pastelID := base58.Decode(task.Request.ArtistPastelID)
-	if pastelID == nil {
-		return errDecodePastelID
-	}
-
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.NFTTicket{
 		Version:   1,
@@ -713,8 +709,6 @@ func (task *Task) uploadImage(ctx context.Context) error {
 	}
 
 	log.WithContext(ctx).WithField("FileName", img1.Name()).Debugf("final image")
-	task.Request.Image = img1
-
 	if err := task.encodeFingerprint(ctx, task.fingerprint, img1); err != nil {
 		return errors.Errorf("encode image with fingerprint %w", err)
 	}
@@ -795,4 +789,19 @@ func (task *Task) preburntRegistrationFee(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (task *Task) removeArtifacts() {
+	removeFn := func(file *artwork.File) {
+		if file != nil {
+			log.Debugf("remove file: %s", file.Name())
+			if err := file.Remove(); err != nil {
+				log.Debugf("failed to remove filed: %s", err.Error())
+			}
+		}
+	}
+	if task.Request != nil {
+		removeFn(task.Request.Image)
+		removeFn(task.imageEncodedWithFingerprints)
+	}
 }
