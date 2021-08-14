@@ -318,10 +318,10 @@ func (client *client) GetNetworkFeePerMB(ctx context.Context) (int64, error) {
 
 func (client *client) GetNFTTicketFeePerKB(ctx context.Context) (int64, error) {
 	var NFTticketFee struct {
-		NFTticketFee int64 `json:"NFTticketfee"`
+		NFTticketFee int64 `json:"nftticketfee"`
 	}
 
-	if err := client.callFor(ctx, &NFTticketFee, "storagefee", "getNFTticketfee"); err != nil {
+	if err := client.callFor(ctx, &NFTticketFee, "storagefee", "getnftticketfee"); err != nil {
 		return 0, errors.Errorf("failed to call storagefee: %w", err)
 	}
 	return NFTticketFee.NFTticketFee, nil
@@ -381,7 +381,7 @@ func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFT
 
 	params := []interface{}{}
 	params = append(params, "register")
-	params = append(params, "NFT")
+	params = append(params, "nft")
 	params = append(params, string(ticketBlob))
 	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelID)

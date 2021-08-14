@@ -125,7 +125,7 @@ type ArtworkGetResponseBody struct {
 	// Green address
 	GreenAddress *bool `form:"green_address,omitempty" json:"green_address,omitempty" xml:"green_address,omitempty"`
 	// how much artist should get on all future resales
-	Royalty *int `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
 	// Storage fee %
 	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
 	// nsfw score

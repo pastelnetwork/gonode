@@ -506,7 +506,7 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 			BlockHash:     task.Ticket.BlockHash,
 			Copies:        task.Ticket.Copies,
 			Royalty:       task.Ticket.Royalty,
-			GreenAddress:  task.Ticket.GreenAddress,
+			Green:         task.Ticket.Green,
 			AppTicketData: task.Ticket.AppTicketData,
 		},
 		Signatures: &pastel.TicketSignatures{

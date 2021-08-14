@@ -528,13 +528,13 @@ func (task *Task) createArtTicket(_ context.Context) error {
 
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.NFTTicket{
-		Version:      1,
-		Author:       task.Request.ArtistPastelID,
-		BlockNum:     task.creatorBlockHeight,
-		BlockHash:    task.creatorBlockHash,
-		Copies:       task.Request.IssuedCopies,
-		Royalty:      0,  // Not supported yet by cNode
-		GreenAddress: "", // Not supported yet by cNode
+		Version:   1,
+		Author:    task.Request.ArtistPastelID,
+		BlockNum:  task.creatorBlockHeight,
+		BlockHash: task.creatorBlockHash,
+		Copies:    task.Request.IssuedCopies,
+		Royalty:   0,     // Not supported yet by cNode
+		Green:     false, // Not supported yet by cNode
 		AppTicketData: pastel.AppTicket{
 			AuthorPastelID:             task.Request.ArtistPastelID,
 			BlockTxID:                  task.blockTxID,

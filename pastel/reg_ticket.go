@@ -27,24 +27,24 @@ type RegTicketData struct {
 	Key2           string           `json:"key2"`
 	CreatorHeight  int              `json:"creator_height"`
 	TotalCopies    int              `json:"total_copies"`
-	Royalty        int              `json:"royalty"`
+	Royalty        float64          `json:"royalty"`
 	RoyaltyAddress string           `json:"royalty_address"`
 	Green          int              `json:"green"`
 	GreenAddress   string           `json:"green_address"`
 	StorageFee     int              `json:"storage_fee"`
-	NFTTicket      []byte           `json:"NFT_ticket"`
+	NFTTicket      []byte           `json:"nft_ticket"`
 	NFTTicketData  NFTTicket        `json:"-"`
 }
 
 // NFTTicket is Pastel NFT Ticket
 type NFTTicket struct {
-	Version       int       `json:"version"`
+	Version       int       `json:"nft_ticket_version"`
 	Author        string    `json:"author"`
 	BlockNum      int       `json:"blocknum"`
 	BlockHash     string    `json:"block_hash"`
 	Copies        int       `json:"copies"`
-	Royalty       float32   `json:"royalty"`
-	GreenAddress  string    `json:"green_address"`
+	Royalty       float64   `json:"royalty"`
+	Green         bool      `json:"green"`
 	AppTicket     []byte    `json:"app_ticket"`
 	AppTicketData AppTicket `json:"-"`
 }
@@ -141,15 +141,15 @@ type GetRegisterNFTFeeRequest struct {
 	ImgSizeInMb int64
 }
 
-type internalArtTicket struct {
-	Version      int     `json:"version"`
-	Author       string  `json:"author"`
-	BlockNum     int     `json:"blocknum"`
-	BlockHash    string  `json:"block_hash"`
-	Copies       int     `json:"copies"`
-	Royalty      float32 `json:"royalty"`
-	GreenAddress string  `json:"green_address"`
-	AppTicket    []byte  `json:"app_ticket"`
+type internalNFTTicket struct {
+	Version   int     `json:"nft_ticket_version"`
+	Author    string  `json:"author"`
+	BlockNum  int     `json:"blocknum"`
+	BlockHash string  `json:"block_hash"`
+	Copies    int     `json:"copies"`
+	Royalty   float64 `json:"royalty"`
+	Green     bool    `json:"green"`
+	AppTicket []byte  `json:"app_ticket"`
 }
 
 // EncodeNFTTicket encodes  NFTTicket into byte array
@@ -160,15 +160,15 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 	}
 
 	// NFTTicket is Pastel Art Ticket
-	nftTicket := internalArtTicket{
-		Version:      ticket.Version,
-		Author:       ticket.Author,
-		BlockNum:     ticket.BlockNum,
-		BlockHash:    ticket.BlockHash,
-		Copies:       ticket.Copies,
-		Royalty:      ticket.Royalty,
-		GreenAddress: ticket.GreenAddress,
-		AppTicket:    appTicket,
+	nftTicket := internalNFTTicket{
+		Version:   ticket.Version,
+		Author:    ticket.Author,
+		BlockNum:  ticket.BlockNum,
+		BlockHash: ticket.BlockHash,
+		Copies:    ticket.Copies,
+		Royalty:   ticket.Royalty,
+		Green:     ticket.Green,
+		AppTicket: appTicket,
 	}
 
 	b, err := json.Marshal(nftTicket)
@@ -181,7 +181,7 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 
 // DecodeNFTTicket decoded byte array into ArtTicket
 func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
-	res := internalArtTicket{}
+	res := internalNFTTicket{}
 	err := json.Unmarshal(b, &res)
 
 	if err != nil {
@@ -202,7 +202,7 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 		BlockHash:     res.BlockHash,
 		Copies:        res.Copies,
 		Royalty:       res.Royalty,
-		GreenAddress:  res.GreenAddress,
+		Green:         res.Green,
 		AppTicketData: appTicket,
 	}, nil
 }
