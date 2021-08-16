@@ -421,7 +421,7 @@ func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid strin
 
 func (client *client) GetBalance(ctx context.Context, address string) (float64, error) {
 	var balance float64
-	if err := client.callFor(ctx, &balance, "z_getbalance"); err != nil {
+	if err := client.callFor(ctx, &balance, "z_getbalance", address); err != nil {
 		return 0.0, errors.Errorf("failed to call z_getbalance: %w", err)
 	}
 	return balance, nil
