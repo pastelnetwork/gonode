@@ -145,6 +145,11 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("failed to send signed NFT ticket: %w", err)
 	}
 
+	// validate if address has enough psl
+	if err := task.checkCurrentBalance(ctx, float64(task.registrationFee)); err != nil {
+		return errors.Errorf("failed to check current balance: %w", err)
+	}
+
 	// send preburn-txid to master node(s)
 	// master node will create reg-art ticket and returns transaction id
 	if err := task.preburntRegistrationFee(ctx); err != nil {
@@ -178,6 +183,27 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("failed to reg-act ticket valid %w", err)
 	}
 	log.Debugf("reg-act-tixd is confirmed")
+
+	return nil
+}
+
+func (task *Task) checkCurrentBalance(ctx context.Context, registrationFee float64) error {
+	if registrationFee == 0 {
+		return errors.Errorf("registration fee cannot be 0.0")
+	}
+
+	if registrationFee > task.Request.MaximumFee {
+		return errors.Errorf("registration fee is to expensive - maximum-fee (%f) < registration-fee(%f)", task.Request.MaximumFee, registrationFee)
+	}
+
+	balance, err := task.pastelClient.GetBalance(ctx, task.Request.SpendableAddress)
+	if err != nil {
+		return errors.Errorf("failed to get current balance of address(%s): %w", task.Request.SpendableAddress, err)
+	}
+
+	if balance < registrationFee {
+		return errors.Errorf("not enough PSL - balance(%f) < registration-fee(%f)", balance, registrationFee)
+	}
 
 	return nil
 }
