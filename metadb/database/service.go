@@ -18,7 +18,7 @@ import (
 
 var (
 	logPrefix       = "database"
-	queryLevelNone  = "none"
+	queryLevelNone  = "nono"
 	schemaDelimiter = "---"
 )
 
