@@ -419,6 +419,14 @@ func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid strin
 	return txID.TxID, nil
 }
 
+func (client *client) GetBalance(ctx context.Context, address string) (float64, error) {
+	var balance float64
+	if err := client.callFor(ctx, &balance, "z_getbalance", address); err != nil {
+		return 0.0, errors.Errorf("failed to call z_getbalance: %w", err)
+	}
+	return balance, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }
