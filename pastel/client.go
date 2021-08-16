@@ -90,7 +90,7 @@ func (client *client) FindTicketByID(ctx context.Context, pastelID string) (*IDT
 // TicketOwnership implements pastel.Client.TicketOwnership
 func (client *client) TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error) {
 	var ownership struct {
-		Art   string `json:"art"`   // txid from the request
+		NFT   string `json:"NFT"`   // txid from the request
 		Trade string `json:"trade"` // txid from trade ticket
 	}
 
@@ -230,7 +230,7 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 func (client *client) RegTickets(ctx context.Context) (RegTickets, error) {
 	tickets := RegTickets{}
 
-	if err := client.callFor(ctx, &tickets, "tickets", "list", "art"); err != nil {
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft"); err != nil {
 		return nil, errors.Errorf("failed to get registration tickets: %w", err)
 	}
 
