@@ -1606,45 +1606,119 @@ func (ts *testSuite) TestDatabaseOps_GetUniqueNftByUser() {
 }
 
 func (ts *testSuite) TestDatabaseOps_GetUsersLikeNft() {
+	realname := "cat"
+	arr := []byte{1, 2, 3, 4}
 	tests := []struct {
-		artID   string
-		want    []string
+		data    userdata.PaginationIDStringQuery
+		want    userdata.UserRelationshipQueryResult
 		wantErr bool
 	}{
 		{
-			artID:   "id10",
-			want:    []string{},
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id10",
+				Limit:  0,
+				Offset: 0,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				Items: make([]userdata.UserRelationshipItem, 0),
+			},
 			wantErr: false,
 		},
 		{
-			artID:   "",
-			want:    nil,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "",
+				Limit:  0,
+				Offset: 0,
+			},
+			want:    userdata.UserRelationshipQueryResult{},
 			wantErr: true,
 		},
 		{
-			artID:   "art1_id1",
-			want:    []string{"id2", "id3", "id4", "id5"},
+			data: userdata.PaginationIDStringQuery{
+				ID:     "art1_id1",
+				Limit:  2,
+				Offset: 1,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 4,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 3,
+						AvatarImage:    arr,
+					},
+				},
+			},
 			wantErr: false,
 		},
 		{
-			artID:   "art2_id1",
-			want:    []string{"id6", "id7"},
+			data: userdata.PaginationIDStringQuery{
+				ID:     "art2_id1",
+				Limit:  0,
+				Offset: 0,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 2,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 3,
+						AvatarImage:    arr,
+					},
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 0,
+						AvatarImage:    arr,
+					},
+				},
+			},
 			wantErr: false,
 		},
 		{
-			artID:   "art1_id2",
-			want:    []string{"id7"},
+			data: userdata.PaginationIDStringQuery{
+				ID:     "art1_id2",
+				Limit:  1,
+				Offset: 0,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 1,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 0,
+						AvatarImage:    arr,
+					},
+				},
+			},
 			wantErr: false,
 		},
 		{
-			artID:   "art2_id2",
-			want:    []string{"id8", "id9"},
+			data: userdata.PaginationIDStringQuery{
+				ID:     "art2_id2",
+				Limit:  10,
+				Offset: 1,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 2,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 0,
+						AvatarImage:    arr,
+					},
+				},
+			},
 			wantErr: false,
 		},
 	}
 	for i, tt := range tests {
 		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetUsersLikeNft-%d", i), func(t *testing.T) {
-			got, err := ts.ops.GetUsersLikeNft(ts.ctx, tt.artID)
+			got, err := ts.ops.GetUsersLikeNft(ts.ctx, tt.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetUsersLikeNft() error = %v, wantErr %v", err, tt.wantErr)
 				return

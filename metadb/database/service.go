@@ -282,11 +282,11 @@ func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) (interface{},
 		return nil, db.WriteUserFollow(ctx, data)
 
 	case userdata.CommandUsersLikeNft:
-		var data userdata.IDStringQuery
+		var data userdata.PaginationIDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetUsersLikeNft(ctx, data.ID)
+		return db.GetUsersLikeNft(ctx, data)
 
 	default:
 		return nil, errors.Errorf("Unsupported command: %s", req.Command)
@@ -896,17 +896,34 @@ func (db *Ops) GetUniqueNftByUser(ctx context.Context, query userdata.UniqueNftB
 	return result, nil
 }
 
-func (db *Ops) GetUsersLikeNft(ctx context.Context, artID string) ([]string, error) {
-	if artID == "" {
-		return nil, errors.Errorf("invalid pastel ID")
+func (db *Ops) GetUsersLikeNft(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
+	var result userdata.UserRelationshipQueryResult
+	if data.ID == "" {
+		return result, errors.Errorf("invalid pastel ID")
 	}
 
-	command, err := db.templates.GetCommand(usersLikeNftTemplate, artID)
+	if data.Limit == 0 && data.Offset == 0 {
+		data.Limit = 1000000000
+	}
+
+	command, err := db.templates.GetCommand(usersLikeNftTemplate, data)
 	if err != nil {
-		return nil, errors.Errorf("error while subtitute template: %w", err)
+		return result, errors.Errorf("error while subtitute template: %w", err)
 	}
 
-	return db.queryPastelID(ctx, command)
+	ids, totalCount, err := db.queryPastelIDPagination(ctx, command)
+	if err != nil {
+		return result, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	items, err := db.queryUserRelationshipItems(ctx, ids)
+	if err != nil {
+		return result, errors.Errorf("error while querying user relationship items: %w", err)
+	}
+
+	result.TotalCount = totalCount
+	result.Items = items
+	return result, nil
 }
 
 func (db *Ops) GetArtInstanceInfo(ctx context.Context, instanceID string) (userdata.ArtInstanceInfo, error) {

@@ -1,10 +1,14 @@
 {{/* Which users have “liked” the NFT and the total number of them. */}}
 
 SELECT
-    pastel_id
+    pastel_id, COUNT(*) OVER () AS total_count
 FROM
     art_like
 WHERE
-    art_id = '{{.}}'
+    art_id = '{{.ID}}'
 ORDER BY
-    pastel_id;
+    pastel_id
+LIMIT
+    {{.Limit}}
+OFFSET
+    {{.Offset}};
