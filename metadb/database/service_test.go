@@ -1044,35 +1044,85 @@ func (ts *testSuite) TestDatabaseOps_GetFollowers() {
 }
 
 func (ts *testSuite) TestDatabaseOps_GetFriends() {
+	realname := "cat"
+	arr := []byte{1, 2, 3, 4}
 	tests := []struct {
-		pastelID string
-		want     []string
-		wantErr  bool
+		data    userdata.PaginationIDStringQuery
+		want    userdata.UserRelationshipQueryResult
+		wantErr bool
 	}{
 		{
-			pastelID: "id1",
-			want:     []string{"id2", "id3"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id1",
+				Limit:  1,
+				Offset: 0,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 2,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "id2",
-			want:     []string{"id1", "id3"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id2",
+				Limit:  0,
+				Offset: 0,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 2,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "id3",
-			want:     []string{"id1", "id2"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id3",
+				Limit:  1,
+				Offset: 1,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 2,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "",
-			want:     nil,
-			wantErr:  true,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "",
+				Limit:  0,
+				Offset: 0,
+			},
+			want:    userdata.UserRelationshipQueryResult{},
+			wantErr: true,
 		},
 	}
 	for i, tt := range tests {
 		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetFriends-%d", i), func(t *testing.T) {
-			got, err := ts.ops.GetFriends(ts.ctx, tt.pastelID)
+			got, err := ts.ops.GetFriends(ts.ctx, tt.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetFriends() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -1,10 +1,14 @@
 {{/* Get friends of a user */}}
 
 SELECT
-    follow_relations.follower_pastel_id
+    follow_relations.follower_pastel_id, COUNT(*) OVER () AS total_count
 FROM
     follow_relations INNER JOIN (
-        SELECT followee_pastel_id AS fid FROM follow_relations WHERE follower_pastel_id = '{{.}}'
+        SELECT followee_pastel_id AS fid FROM follow_relations WHERE follower_pastel_id = '{{.ID}}'
     ) AS followee_list ON (followee_list.fid = follow_relations.follower_pastel_id)
 WHERE
-    follow_relations.followee_pastel_id = '{{.}}';
+    follow_relations.followee_pastel_id = '{{.ID}}'
+LIMIT
+    {{.Limit}}
+OFFSET
+    {{.Offset}};

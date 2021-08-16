@@ -177,11 +177,11 @@ func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) (interface{},
 		return db.GetFollowers(ctx, data)
 
 	case userdata.CommandGetFriend:
-		var data userdata.IDStringQuery
+		var data userdata.PaginationIDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetFriends(ctx, data.ID)
+		return db.GetFriends(ctx, data)
 
 	case userdata.CommandGetInstanceInfo:
 		var data userdata.IDStringQuery
@@ -659,17 +659,34 @@ func (db *Ops) GetFollowers(ctx context.Context, data userdata.PaginationIDStrin
 	return result, nil
 }
 
-func (db *Ops) GetFriends(ctx context.Context, pastelID string) ([]string, error) {
-	if pastelID == "" {
-		return nil, errors.Errorf("invalid pastel ID")
+func (db *Ops) GetFriends(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
+	var result userdata.UserRelationshipQueryResult
+	if data.ID == "" {
+		return result, errors.Errorf("invalid pastel ID")
 	}
 
-	command, err := db.templates.GetCommand(getFriendTemplate, pastelID)
+	if data.Limit == 0 && data.Offset == 0 {
+		data.Limit = 1000000000
+	}
+
+	command, err := db.templates.GetCommand(getFriendTemplate, data)
 	if err != nil {
-		return nil, errors.Errorf("error while subtitute template: %w", err)
+		return result, errors.Errorf("error while subtitute template: %w", err)
 	}
 
-	return db.queryPastelID(ctx, command)
+	ids, totalCount, err := db.queryPastelIDPagination(ctx, command)
+	if err != nil {
+		return result, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	items, err := db.queryUserRelationshipItems(ctx, ids)
+	if err != nil {
+		return result, errors.Errorf("error while querying user relationship items: %w", err)
+	}
+
+	result.TotalCount = totalCount
+	result.Items = items
+	return result, nil
 }
 
 func (db *Ops) GetHighestSalePriceByUser(ctx context.Context, pastelID string) (float64, error) {
