@@ -873,55 +873,165 @@ func (ts *testSuite) TestDatabaseOps_GetFollowees() {
 }
 
 func (ts *testSuite) TestDatabaseOps_GetFollowers() {
+	realname := "cat"
+	arr := []byte{1, 2, 3, 4}
 	tests := []struct {
-		pastelID string
-		want     []string
-		wantErr  bool
+		data    userdata.PaginationIDStringQuery
+		want    userdata.UserRelationshipQueryResult
+		wantErr bool
 	}{
 		{
-			pastelID: "id1",
-			want:     []string{"id2", "id3"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id1",
+				Limit:  1,
+				Offset: 0,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 2,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "id2",
-			want:     []string{"id1", "id3"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id2",
+				Limit:  1,
+				Offset: 1,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 2,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "id3",
-			want:     []string{"id1", "id2"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id3",
+				Limit:  1,
+				Offset: 1,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 2,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "id4",
-			want:     []string{"id1", "id2", "id3"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id4",
+				Limit:  2,
+				Offset: 1,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 3,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "id5",
-			want:     []string{"id1", "id2", "id3"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id5",
+				Limit:  2,
+				Offset: 1,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 3,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "id6",
-			want:     []string{"id1", "id2", "id3"},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id6",
+				Limit:  0,
+				Offset: 0,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				TotalCount: 3,
+				Items: []userdata.UserRelationshipItem{
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+					userdata.UserRelationshipItem{
+						Realname:       realname,
+						FollowersCount: 2,
+						AvatarImage:    arr,
+					},
+				},
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "id7",
-			want:     []string{},
-			wantErr:  false,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "id7",
+				Limit:  0,
+				Offset: 0,
+			},
+			want: userdata.UserRelationshipQueryResult{
+				Items: make([]userdata.UserRelationshipItem, 0),
+			},
+			wantErr: false,
 		},
 		{
-			pastelID: "",
-			want:     nil,
-			wantErr:  true,
+			data: userdata.PaginationIDStringQuery{
+				ID:     "",
+				Limit:  0,
+				Offset: 0,
+			},
+			want:    userdata.UserRelationshipQueryResult{},
+			wantErr: true,
 		},
 	}
 	for i, tt := range tests {
 		ts.T().Run(fmt.Sprintf("TestDatabaseOps_GetFollowers-%d", i), func(t *testing.T) {
-			got, err := ts.ops.GetFollowers(ts.ctx, tt.pastelID)
+			got, err := ts.ops.GetFollowers(ts.ctx, tt.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Ops.GetFollowers() error = %v, wantErr %v", err, tt.wantErr)
 				return
