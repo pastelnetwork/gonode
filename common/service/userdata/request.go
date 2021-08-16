@@ -256,6 +256,18 @@ type SNActivityInfo struct {
 	Cnt int `mapstructure:"cnt",json:"cnt"`
 }
 
+type UserRelationshipItem struct {
+	Username       string `mapstructure:"username",json:"username"`
+	Realname       string `mapstructure:"real_name",json:"real_name"`
+	FollowersCount int    `mapstructure:"followers_count",json:"followers_count"`
+	AvatarImage    []byte `mapstructure:"avatar_image",json:"avatar_image"`
+}
+
+type UserRelationshipQueryResult struct {
+	TotalCount int                    `mapstructure:"total_count",json:"total_count"`
+	Items      []UserRelationshipItem `mapstructure:"items",json:"items"`
+}
+
 type SNTopActivityRequest struct {
 	ActivityType string `mapstructure:"activity_type",json:"activity_type"`
 	SNPastelID   string `mapstructure:"sn_pastel_id",json:"sn_pastel_id"`
@@ -264,6 +276,12 @@ type SNTopActivityRequest struct {
 
 type IDStringQuery struct {
 	ID string `mapstructure:"id",json:"id"`
+}
+
+type PaginationIDStringQuery struct {
+	ID     string `mapstructure:"id",json:"id"`
+	Limit  int    `mapstructure:"limit",json:"limit"`
+	Offset int    `mapstructure:"offset",json:"offset"`
 }
 
 type IDIntQuery struct {

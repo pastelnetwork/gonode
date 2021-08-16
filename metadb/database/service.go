@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"regexp"
 	"strings"
@@ -17,7 +18,7 @@ import (
 
 const (
 	logPrefix       = "database"
-	queryLevelNone  = "none"
+	queryLevelNone  = "nono"
 	schemaDelimiter = "---"
 
 	userInfoWriteTemplate            = "user_info_write"
@@ -35,6 +36,7 @@ const (
 	getFriendTemplate                = "get_friend"
 	getInstanceInfoTemplate          = "get_instance_info"
 	getTopSNActivitiesTemplate       = "get_top_sn_activities"
+	getUserBriefInfoTemplate         = "get_user_brief_info"
 	highestSalePriceByUserTemplate   = "highest_sale_price_by_user"
 	newArtAuctionTemplate            = "new_art_auction"
 	nftCopiesExistTemplate           = "nft_copies_exist"
@@ -161,11 +163,11 @@ func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) (interface{},
 		return db.GetAuctionInfo(ctx, data.ID)
 
 	case userdata.CommandGetFollowees:
-		var data userdata.IDStringQuery
+		var data userdata.PaginationIDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetFollowees(ctx, data.ID)
+		return db.GetFollowees(ctx, data)
 
 	case userdata.CommandGetFollowers:
 		var data userdata.IDStringQuery
@@ -535,17 +537,113 @@ func (db *Ops) queryPastelID(ctx context.Context, command string) ([]string, err
 	return result, nil
 }
 
-func (db *Ops) GetFollowees(ctx context.Context, pastelID string) ([]string, error) {
-	if pastelID == "" {
-		return nil, errors.Errorf("invalid pastel ID")
+func (db *Ops) queryPastelIDPagination(ctx context.Context, command string) ([]string, int, error) {
+	if len(command) == 0 {
+		return nil, 0, errors.Errorf("invalid command")
 	}
 
-	command, err := db.templates.GetCommand(getFolloweesTemplate, pastelID)
+	queryResult, err := db.metaDB.Query(ctx, command, queryLevelNone)
+	if err != nil {
+		return nil, 0, errors.Errorf("error while querying db: %w", err)
+	}
+	if queryResult.Err != nil {
+		return nil, 0, errors.Errorf("error while querying db: %w", queryResult.Err)
+	}
+
+	result := make([]string, 0)
+	var totalCount int
+	for queryResult.Next() {
+		var id string
+		if err := queryResult.Scan(&id, &totalCount); err != nil {
+			return nil, 0, errors.Errorf("error while scaning db result: %w", err)
+		}
+		result = append(result, id)
+	}
+
+	return result, totalCount, nil
+}
+
+func (db *Ops) queryUserRelationshipItems(ctx context.Context, ids []string) ([]userdata.UserRelationshipItem, error) {
+	if ids == nil {
+		return nil, errors.Errorf("recieve nil ids")
+	}
+	if len(ids) == 0 {
+		return make([]userdata.UserRelationshipItem, 0), nil
+	}
+
+	processedIds := make([]string, 0)
+	for _, id := range ids {
+		id = fmt.Sprintf("'%s'", id)
+		processedIds = append(processedIds, id)
+	}
+
+	command, err := db.templates.GetCommand(getUserBriefInfoTemplate, strings.Join(processedIds, ","))
 	if err != nil {
 		return nil, errors.Errorf("error while subtitute template: %w", err)
 	}
 
-	return db.queryPastelID(ctx, command)
+	allResults, err := db.queryToInterface(ctx, command)
+	if err != nil {
+		return nil, errors.Errorf("error while query db: %w", err)
+	}
+
+	result := make([]userdata.UserRelationshipItem, 0)
+	for _, mp := range allResults {
+		var record userdata.UserRelationshipItem
+		if err := mapstructure.Decode(mp, &record); err != nil {
+			return nil, errors.Errorf("error while decoding result: %w", err)
+		}
+		result = append(result, record)
+	}
+
+	return result, nil
+}
+
+func (db *Ops) GetFollowees(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
+	var result userdata.UserRelationshipQueryResult
+	if data.ID == "" {
+		return result, errors.Errorf("invalid pastel ID")
+	}
+
+	if data.Limit == 0 {
+		data.Limit = 1000000000
+	}
+
+	command, err := db.templates.GetCommand(getFolloweesTemplate, data)
+	if err != nil {
+		return result, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	ids, totalCount, err := db.queryPastelIDPagination(ctx, command)
+	if err != nil {
+		return result, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	items, err := db.queryUserRelationshipItems(ctx, ids)
+	if err != nil {
+		return result, errors.Errorf("error while querying user relationship items: %w", err)
+	}
+
+	result.TotalCount = totalCount
+	result.Items = items
+	return result, nil
+}
+
+func (db *Ops) countFollowers(ctx context.Context, pastelID string) (int, error) {
+	if pastelID == "" {
+		return 0, errors.Errorf("invalid pastel ID")
+	}
+
+	command, err := db.templates.GetCommand(getFollowersTemplate, pastelID)
+	if err != nil {
+		return 0, errors.Errorf("error while subtitute template: %w", err)
+	}
+
+	ids, err := db.queryPastelID(ctx, command)
+	if err != nil {
+		return 0, errors.Errorf("error querying database: %w", err)
+	}
+	return len(ids), nil
 }
 
 func (db *Ops) GetFollowers(ctx context.Context, pastelID string) ([]string, error) {

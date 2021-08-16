@@ -1,0 +1,18 @@
+
+SELECT
+    real_name,
+    avatar_image,
+    followers_count
+FROM
+    user_metadata LEFT JOIN (
+        SELECT
+            followee_pastel_id, COUNT(follower_pastel_id) AS followers_count
+        FROM
+            follow_relations
+        WHERE
+            followee_pastel_id IN ({{.}})
+        GROUP BY
+            followee_pastel_id
+    ) ON (followee_pastel_id = artist_pastel_id)
+WHERE
+    artist_pastel_id IN ({{.}});

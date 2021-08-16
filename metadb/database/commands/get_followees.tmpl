@@ -1,10 +1,14 @@
 {{/* Get followees of a user */}}
 
 SELECT
-    followee_pastel_id
+    followee_pastel_id, COUNT(*) OVER () AS total_count
 FROM
     follow_relations
 WHERE
-    follower_pastel_id = '{{.}}'
+    follower_pastel_id = '{{.ID}}'
 ORDER BY
-    followee_pastel_id;
+    followee_pastel_id
+LIMIT
+    {{.Limit}}
+OFFSET
+    {{.Offset}};
