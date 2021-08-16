@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/walletnode/api"
@@ -67,7 +68,7 @@ func (service *Userdata) processUserdata(ctx context.Context, request *userdata.
 					return nil, userdatas.MakeInternalServerError(task.Error())
 				}
 
-				return nil, nil
+				return nil, userdatas.MakeInternalServerError(errors.New("no info retrieve"))
 			}
 
 			res := toUserdataProcessResult(response)

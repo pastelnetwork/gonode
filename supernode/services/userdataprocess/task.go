@@ -245,7 +245,6 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 		log.WithContext(ctx).Debugf("isPrimary: %t", isPrimary)
 		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, isPrimary); err != nil {
 			actionErr = errors.Errorf("failed to signed and send SuperNodeRequest:%w", err)
-			return nil
 		}
 		return nil
 	})

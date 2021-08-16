@@ -171,19 +171,21 @@ func (task *Task) run(ctx context.Context) error {
 		if err := nodes.SendUserdata(ctx, userdata); err != nil {
 			return err
 		}
+
 		res, err := task.AggregateResult(ctx, nodes)
+		// Post on result channel
+		task.resultChan <- &res
 		if err != nil {
 			return err
 		}
-		// Post on result channel
-		task.resultChan <- &res
+
 		log.WithContext(ctx).WithField("userdata_result", res).Debug("Posted userdata result")
 	}
 
 	// close the connections
 	for i := range nodes {
 		if err := nodes[i].Connection.Close(); err != nil {
-			return errors.Errorf("failed to close connection to node %s %w", nodes[i].PastelID(), err)
+			log.WithContext(ctx).WithError(err).Debugf("failed to close connection to node %s", task.nodes[i].PastelID())
 		}
 	}
 
@@ -208,61 +210,6 @@ func (task *Task) AggregateResult(_ context.Context, nodes node.List) (userdata.
 			return *result, nil
 		}
 	}
-
-	// This part of aggregate the response for case 3 and for future use
-	// This is for in case we want to do descrepancy check between all result of nodes
-	// for node reputation score
-	/* aggregate := make(map[string][]int)
-	count := 0
-	for i, node := range nodes {
-		node := node
-		if node.Result != nil {
-			count++
-			// Marshal result to get the hash value
-			js, err := json.Marshal(*(node.Result))
-			if err != nil {
-				errors.Errorf("failed marshal the result %w", err)
-			}
-			log.WithContext(ctx).Debugf("Node result print:%s", string(js))
-
-			// Hash the result
-			hashvalue, err := userdata.Sha3256hash(js)
-			if err != nil {
-				errors.Errorf("failed hash the result %w", err)
-			}
-			aggregate[hex.EncodeToString(hashvalue)] = append(aggregate[hex.EncodeToString(hashvalue)],i)
-		}
-	}
-
-	if count < task.config.MinimalNodeConfirmSuccess {
-		// If there is not enough reponse from supernodes
-		return userdata.ProcessResult{
-			ResponseCode: userdata.ErrorNotEnoughSupernodeResponse,
-			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeResponse],
-		}, nil
-	}
-
-	max := 0
-	var finalHashKey string
-	for key, element := range aggregate {
-		if max < len(element) {
-			max = len(element)
-			finalHashKey = key
-		}
-	}
-
-	if len(aggregate[finalHashKey]) < task.config.MinimalNodeConfirmSuccess {
-		return userdata.ProcessResult{
-			ResponseCode: userdata.ErrorNotEnoughSupernodeConfirm,
-			Detail:       userdata.Description[userdata.ErrorNotEnoughSupernodeConfirm],
-		}, nil
-	}
-
-	// There is enough supernodes verified our request, so we return that response
-	if len(aggregate[finalHashKey]) > 0 && nodes[(aggregate[finalHashKey])[0]] != nil {
-		result := *(nodes[(aggregate[finalHashKey])[0]].Result)
-		return result, nil
-	} */
 
 	return userdata.ProcessResult{}, errors.Errorf("failed to Aggregate Result")
 }

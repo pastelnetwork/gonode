@@ -18,6 +18,13 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 )
 
+func safeStr(p *string) string {
+	if p != nil {
+		return *p
+	}
+	return ""
+}
+
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Request {
 	thumbnail := artwork.ThumbnailCoordinate{
 		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
@@ -176,40 +183,27 @@ func fromDownloadPayload(payload *artworks.ArtworkDownloadPayload) *artworkdownl
 func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.ProcessRequest {
 	request := &userdata.ProcessRequest{}
 
-	if req.RealName != nil {
-		request.RealName = *(req.RealName)
-	}
-	if req.FacebookLink != nil {
-		request.FacebookLink = *(req.FacebookLink)
-	}
-	if req.TwitterLink != nil {
-		request.TwitterLink = *(req.TwitterLink)
-	}
-	if req.Location != nil {
-		request.Location = *(req.Location)
-	}
-	if req.PrimaryLanguage != nil {
-		request.PrimaryLanguage = *(req.PrimaryLanguage)
-	}
-	if req.Categories != nil {
-		request.Categories = *(req.Categories)
-	}
-	if req.Biography != nil {
-		request.Biography = *(req.Biography)
-	}
+	request.RealName = safeStr(req.RealName)
+	request.FacebookLink = safeStr(req.FacebookLink)
+	request.TwitterLink = safeStr(req.TwitterLink)
+	request.Location = safeStr(req.Location)
+	request.PrimaryLanguage = safeStr(req.PrimaryLanguage)
+	request.Categories = safeStr(req.Categories)
+	request.Biography = safeStr(req.Biography)
+
 	if req.AvatarImage != nil {
 		if req.AvatarImage.Content != nil && len(req.AvatarImage.Content) > 0 {
 			request.AvatarImage.Content = make([]byte, len(req.AvatarImage.Content))
 			copy(request.AvatarImage.Content, req.AvatarImage.Content)
 		}
-		request.AvatarImage.Filename = *(req.AvatarImage.Filename)
+		request.AvatarImage.Filename = safeStr(req.AvatarImage.Filename)
 	}
 	if req.CoverPhoto != nil {
 		if req.CoverPhoto.Content != nil && len(req.CoverPhoto.Content) > 0 {
 			request.CoverPhoto.Content = make([]byte, len(req.CoverPhoto.Content))
 			copy(request.CoverPhoto.Content, req.CoverPhoto.Content)
 		}
-		request.CoverPhoto.Filename = *(req.CoverPhoto.Filename)
+		request.CoverPhoto.Filename = safeStr(req.CoverPhoto.Filename)
 	}
 
 	request.ArtistPastelID = req.ArtistPastelID
@@ -225,40 +219,27 @@ func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.P
 func fromUserdataUpdateRequest(req *userdatas.UpdateUserdataPayload) *userdata.ProcessRequest {
 	request := &userdata.ProcessRequest{}
 
-	if req.RealName != nil {
-		request.RealName = *(req.RealName)
-	}
-	if req.FacebookLink != nil {
-		request.FacebookLink = *(req.FacebookLink)
-	}
-	if req.TwitterLink != nil {
-		request.TwitterLink = *(req.TwitterLink)
-	}
-	if req.Location != nil {
-		request.Location = *(req.Location)
-	}
-	if req.PrimaryLanguage != nil {
-		request.PrimaryLanguage = *(req.PrimaryLanguage)
-	}
-	if req.Categories != nil {
-		request.Categories = *(req.Categories)
-	}
-	if req.Biography != nil {
-		request.Biography = *(req.Biography)
-	}
+	request.RealName = safeStr(req.RealName)
+	request.FacebookLink = safeStr(req.FacebookLink)
+	request.TwitterLink = safeStr(req.TwitterLink)
+	request.Location = safeStr(req.Location)
+	request.PrimaryLanguage = safeStr(req.PrimaryLanguage)
+	request.Categories = safeStr(req.Categories)
+	request.Biography = safeStr(req.Biography)
+
 	if req.AvatarImage != nil {
 		if req.AvatarImage.Content != nil && len(req.AvatarImage.Content) > 0 {
 			request.AvatarImage.Content = make([]byte, len(req.AvatarImage.Content))
 			copy(request.AvatarImage.Content, req.AvatarImage.Content)
 		}
-		request.AvatarImage.Filename = *(req.AvatarImage.Filename)
+		request.AvatarImage.Filename = safeStr(req.AvatarImage.Filename)
 	}
 	if req.CoverPhoto != nil {
 		if req.CoverPhoto.Content != nil && len(req.CoverPhoto.Content) > 0 {
 			request.CoverPhoto.Content = make([]byte, len(req.CoverPhoto.Content))
 			copy(request.CoverPhoto.Content, req.CoverPhoto.Content)
 		}
-		request.CoverPhoto.Filename = *(req.CoverPhoto.Filename)
+		request.CoverPhoto.Filename = safeStr(req.CoverPhoto.Filename)
 	}
 
 	request.ArtistPastelID = req.ArtistPastelID
@@ -307,14 +288,14 @@ func toUserSpecifiedData(req *userdata.ProcessRequest) *userdatas.UserSpecifiedD
 			req.AvatarImage.Content = make([]byte, len(result.AvatarImage.Content))
 			copy(req.AvatarImage.Content, result.AvatarImage.Content)
 		}
-		req.AvatarImage.Filename = *result.AvatarImage.Filename
+		req.AvatarImage.Filename = safeStr(result.AvatarImage.Filename)
 	}
 	if result.CoverPhoto != nil {
 		if result.CoverPhoto.Content != nil && len(result.CoverPhoto.Content) > 0 {
 			req.CoverPhoto.Content = make([]byte, len(result.CoverPhoto.Content))
 			copy(req.CoverPhoto.Content, result.CoverPhoto.Content)
 		}
-		req.CoverPhoto.Filename = *result.CoverPhoto.Filename
+		req.CoverPhoto.Filename = safeStr(result.CoverPhoto.Filename)
 	}
 
 	return result

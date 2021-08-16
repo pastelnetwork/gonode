@@ -138,6 +138,8 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *Userdata) mdlser
 				case "twitter_link":
 					value := string(buffer)
 					res.TwitterLink = &value
+				default:
+					log.WithContext(ctx).Errorf("unknown form name: %s", part.FormName())
 				}
 			} else {
 				// Process for the field that have a files
@@ -158,6 +160,8 @@ func UserdatasCreateUserdataDecoderFunc(ctx context.Context, _ *Userdata) mdlser
 						Content:  filePart.Bytes(),
 						Filename: &filename,
 					}
+				default:
+					log.WithContext(ctx).Errorf("unknown form name: %s", part.FormName())
 				}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}
@@ -225,6 +229,8 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *Userdata) mdlser
 				case "twitter_link":
 					value := string(buffer)
 					res.TwitterLink = &value
+				default:
+					log.WithContext(ctx).Errorf("unknown form name: %s", part.FormName())
 				}
 			} else {
 				// Process for the field that have a files
@@ -246,6 +252,8 @@ func UserdatasUpdateUserdataDecoderFunc(ctx context.Context, _ *Userdata) mdlser
 						Content:  filePart.Bytes(),
 						Filename: &filename,
 					}
+				default:
+					log.WithContext(ctx).Errorf("unknown form name: %s", part.FormName())
 				}
 				log.WithContext(ctx).Debugf("Multipart process image: %q", filename)
 			}
