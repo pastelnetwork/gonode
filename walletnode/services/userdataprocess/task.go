@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
@@ -288,6 +289,8 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	nextConnCtx, nextConnCancel := context.WithCancel(ctx)
 	defer nextConnCancel()
 
+	// FIXME: ugly hack here. Need to make the Node and List to be safer
+	secondariesMtx := &sync.Mutex{}
 	var secondaries node.List
 	go func() {
 		for i, node := range nodes {
@@ -310,7 +313,11 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 					if err := node.Session(ctx, false); err != nil {
 						return
 					}
-					secondaries.Add(node)
+					go func() {
+						secondariesMtx.Lock()
+						defer secondariesMtx.Unlock()
+						secondaries.Add(node)
+					}()
 
 					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
 						return
@@ -330,6 +337,9 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	}
 
 	meshNodes.Add(primary)
+
+	secondariesMtx.Lock()
+	defer secondariesMtx.Unlock()
 	for _, pastelID := range accepted {
 		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
 
