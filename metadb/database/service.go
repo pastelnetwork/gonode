@@ -599,7 +599,7 @@ func (db *Ops) queryUserRelationshipItems(ctx context.Context, ids []string) ([]
 	return result, nil
 }
 
-func (db *Ops) GetFollowees(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
+func (db *Ops) getPaginationUsersWithTemplate(ctx context.Context, data userdata.PaginationIDStringQuery, template string) (userdata.UserRelationshipQueryResult, error) {
 	var result userdata.UserRelationshipQueryResult
 	if data.ID == "" {
 		return result, errors.Errorf("invalid pastel ID")
@@ -609,7 +609,7 @@ func (db *Ops) GetFollowees(ctx context.Context, data userdata.PaginationIDStrin
 		data.Limit = 1000000000
 	}
 
-	command, err := db.templates.GetCommand(getFolloweesTemplate, data)
+	command, err := db.templates.GetCommand(template, data)
 	if err != nil {
 		return result, errors.Errorf("error while subtitute template: %w", err)
 	}
@@ -627,66 +627,18 @@ func (db *Ops) GetFollowees(ctx context.Context, data userdata.PaginationIDStrin
 	result.TotalCount = totalCount
 	result.Items = items
 	return result, nil
+}
+
+func (db *Ops) GetFollowees(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
+	return db.getPaginationUsersWithTemplate(ctx, data, getFolloweesTemplate)
 }
 
 func (db *Ops) GetFollowers(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
-	var result userdata.UserRelationshipQueryResult
-	if data.ID == "" {
-		return result, errors.Errorf("invalid pastel ID")
-	}
-
-	if data.Limit == 0 && data.Offset == 0 {
-		data.Limit = 1000000000
-	}
-
-	command, err := db.templates.GetCommand(getFollowersTemplate, data)
-	if err != nil {
-		return result, errors.Errorf("error while subtitute template: %w", err)
-	}
-
-	ids, totalCount, err := db.queryPastelIDPagination(ctx, command)
-	if err != nil {
-		return result, errors.Errorf("error while subtitute template: %w", err)
-	}
-
-	items, err := db.queryUserRelationshipItems(ctx, ids)
-	if err != nil {
-		return result, errors.Errorf("error while querying user relationship items: %w", err)
-	}
-
-	result.TotalCount = totalCount
-	result.Items = items
-	return result, nil
+	return db.getPaginationUsersWithTemplate(ctx, data, getFollowersTemplate)
 }
 
 func (db *Ops) GetFriends(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
-	var result userdata.UserRelationshipQueryResult
-	if data.ID == "" {
-		return result, errors.Errorf("invalid pastel ID")
-	}
-
-	if data.Limit == 0 && data.Offset == 0 {
-		data.Limit = 1000000000
-	}
-
-	command, err := db.templates.GetCommand(getFriendTemplate, data)
-	if err != nil {
-		return result, errors.Errorf("error while subtitute template: %w", err)
-	}
-
-	ids, totalCount, err := db.queryPastelIDPagination(ctx, command)
-	if err != nil {
-		return result, errors.Errorf("error while subtitute template: %w", err)
-	}
-
-	items, err := db.queryUserRelationshipItems(ctx, ids)
-	if err != nil {
-		return result, errors.Errorf("error while querying user relationship items: %w", err)
-	}
-
-	result.TotalCount = totalCount
-	result.Items = items
-	return result, nil
+	return db.getPaginationUsersWithTemplate(ctx, data, getFriendTemplate)
 }
 
 func (db *Ops) GetHighestSalePriceByUser(ctx context.Context, pastelID string) (float64, error) {
@@ -897,33 +849,7 @@ func (db *Ops) GetUniqueNftByUser(ctx context.Context, query userdata.UniqueNftB
 }
 
 func (db *Ops) GetUsersLikeNft(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
-	var result userdata.UserRelationshipQueryResult
-	if data.ID == "" {
-		return result, errors.Errorf("invalid pastel ID")
-	}
-
-	if data.Limit == 0 && data.Offset == 0 {
-		data.Limit = 1000000000
-	}
-
-	command, err := db.templates.GetCommand(usersLikeNftTemplate, data)
-	if err != nil {
-		return result, errors.Errorf("error while subtitute template: %w", err)
-	}
-
-	ids, totalCount, err := db.queryPastelIDPagination(ctx, command)
-	if err != nil {
-		return result, errors.Errorf("error while subtitute template: %w", err)
-	}
-
-	items, err := db.queryUserRelationshipItems(ctx, ids)
-	if err != nil {
-		return result, errors.Errorf("error while querying user relationship items: %w", err)
-	}
-
-	result.TotalCount = totalCount
-	result.Items = items
-	return result, nil
+	return db.getPaginationUsersWithTemplate(ctx, data, usersLikeNftTemplate)
 }
 
 func (db *Ops) GetArtInstanceInfo(ctx context.Context, instanceID string) (userdata.ArtInstanceInfo, error) {
