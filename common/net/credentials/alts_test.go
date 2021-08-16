@@ -87,17 +87,18 @@ func TestSecretConnWithGRPC(t *testing.T) {
 	if err != nil {
 		t.Fatalf("net listen: %v", err)
 	}
+	defer ln.Close()
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
-		wg.Done()
+		defer wg.Done()
 		// serve the incoming connections
 		server.Serve(ln)
 	}()
 
 	altsTCClient := NewClientCreds(secClient, secInfoClient)
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	conn, err := grpc.DialContext(
@@ -151,11 +152,12 @@ func TestErrorSignInHandshake(t *testing.T) {
 	if err != nil {
 		t.Fatalf("net listen: %v", err)
 	}
+	defer ln.Close()
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
-		wg.Done()
+		defer wg.Done()
 		// serve the incoming connections
 		server.Serve(ln)
 	}()
@@ -204,11 +206,12 @@ func TestErrorVerifyInHandshake(t *testing.T) {
 	if err != nil {
 		t.Fatalf("net listen: %v", err)
 	}
+	defer ln.Close()
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
-		wg.Done()
+		defer wg.Done()
 		// serve the incoming connections
 		server.Serve(ln)
 	}()
@@ -250,11 +253,12 @@ func TestMismatchTypeGrpcServer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("net listen: %v", err)
 	}
+	defer ln.Close()
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
-		wg.Done()
+		defer wg.Done()
 		// serve the incoming connections
 		server.Serve(ln)
 	}()
@@ -295,11 +299,12 @@ func TestMismatchTypeGrpcClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("net listen: %v", err)
 	}
+	defer ln.Close()
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
-		wg.Done()
+		defer wg.Done()
 		// serve the incoming connections
 		server.Serve(ln)
 	}()

@@ -661,20 +661,10 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 }
 
 func (task *Task) probeImage(ctx context.Context) error {
-	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debugf("Copy image")
-	thumbnail, err := task.Request.Image.Copy()
-	if err != nil {
-		return errors.Errorf("failed to copy image: %w", err)
-	}
-	defer thumbnail.Remove()
-
-	log.WithContext(ctx).WithField("filename", thumbnail.Name()).Debugf("Resize image to %dx%d pixeles", task.config.thumbnailSize, task.config.thumbnailSize)
-	if err := thumbnail.ResizeImage(thumbnailSize, thumbnailSize); err != nil {
-		return errors.Errorf("failed to resize image: %w", err)
-	}
+	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debugf("probe image")
 
 	// Send thumbnail to supernodes for probing.
-	if err := task.nodes.ProbeImage(ctx, thumbnail); err != nil {
+	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
 		return errors.Errorf("failed to probe image: %w", err)
 	}
 
