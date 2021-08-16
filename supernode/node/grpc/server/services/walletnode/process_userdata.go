@@ -206,13 +206,16 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 			Detail:       processResult.Detail,
 		}, nil
 	}
+
 	// Process actual write to rqlite db happen here
+	var actionErr error
 	<-task.NewAction(func(ctx context.Context) error {
 		if processResult.ResponseCode == userdata.SuccessVerifyAllSignature {
 			if service.databaseOps == nil {
 				processResult.ResponseCode = userdata.ErrorRQLiteDBNotFound
 				processResult.Detail = userdata.Description[userdata.ErrorRQLiteDBNotFound]
-				return errors.Errorf("databaseOps service object is empty")
+				actionErr = errors.Errorf("databaseOps service object is empty")
+				return nil
 			}
 			// Send data to SN contain the leader rqlite
 			if !service.databaseOps.IsLeader() {
@@ -220,7 +223,8 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					if _, err := task.ConnectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
 						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
-						return errors.Errorf("failed to send or write userdata to leader rqlite %w", err)
+						actionErr = errors.Errorf("failed to send or write userdata to leader rqlite %w", err)
+						return nil
 					}
 					// Write success:
 					processResult.ResponseCode = userdata.SuccessProcess
@@ -229,7 +233,8 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 				} else {
 					processResult.ResponseCode = userdata.ErrorRQLiteDBNotFound
 					processResult.Detail = userdata.Description[userdata.ErrorRQLiteDBNotFound]
-					return errors.Errorf("leader rqlite node object is empty")
+					actionErr = errors.Errorf("leader rqlite node object is empty")
+					return nil
 				}
 			} else {
 				// This supernode contain rqlite leader, write to db here
@@ -262,7 +267,8 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 				if err != nil {
 					processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 					processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
-					return err
+					actionErr = err
+					return nil
 				}
 
 				// If can go to here, all process of setting userdata have passed
@@ -277,7 +283,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 	return &pbwn.UserdataReply{
 		ResponseCode: processResult.ResponseCode,
 		Detail:       processResult.Detail,
-	}, nil
+	}, actionErr
 }
 
 // ReceiveUserdata implements walletnode.ProcessUserdataServer.ReceiveUserdata()
