@@ -30,7 +30,7 @@ metadb:
   data_dir: "metadb-4447"
 
 userdb:
-  schema-path: ../metadb/database/commands/schema.sql
+  schema-path: ../metadb/database/commands/schema_v1.sql
   write-template-path: ../metadb/database/commands/user_info_write.tmpl
   query-template-path: ../metadb/database/commands/user_info_query.tmpl
 dupe-detection:
