@@ -2,7 +2,6 @@ package database
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
@@ -56,18 +55,6 @@ func extractImageInfo(img *pb.UserdataRequest_UserImageUpload) (string, string) 
 	}
 
 	return fmt.Sprintf("%x", img.GetContent()), processInputString(img.GetFilename())
-}
-
-func processEscapeString(s string) string {
-	s = strings.Replace(s, `'`, `''`, -1)
-	return s
-}
-
-func processInputString(s string) string {
-	if s == "" {
-		return "NULL"
-	}
-	return processEscapeString(s)
 }
 
 func pbToWriteCommand(d *pb.UserdataRequest) UserdataWriteCommand {
