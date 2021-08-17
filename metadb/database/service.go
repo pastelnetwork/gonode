@@ -97,56 +97,56 @@ func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) (interface{},
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.WriteUserData(ctx, &data)
+		return nil, db.WriteUserData(ctx, safeStringQueryStruct(&data).(*pb.UserdataRequest))
 
 	case userdata.CommandArtInstanceAskingPrice:
 		var data userdata.AskingPriceUpdateRequest
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.UpdateAskingPrice(ctx, data)
+		return nil, db.UpdateAskingPrice(ctx, *safeStringQueryStruct(&data).(*userdata.AskingPriceUpdateRequest))
 
 	case userdata.CommandUserInfoQuery:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.ReadUserData(ctx, data.ID)
+		return db.ReadUserData(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandArtInfoWrite:
 		var data userdata.ArtInfo
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.WriteArtInfo(ctx, data)
+		return nil, db.WriteArtInfo(ctx, *safeStringQueryStruct(&data).(*userdata.ArtInfo))
 
 	case userdata.CommandArtInstanceInfoWrite:
 		var data userdata.ArtInstanceInfo
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.WriteArtInstanceInfo(ctx, data)
+		return nil, db.WriteArtInstanceInfo(ctx, *safeStringQueryStruct(&data).(*userdata.ArtInstanceInfo))
 
 	case userdata.CommandArtLikeWrite:
 		var data userdata.ArtLike
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.WriteArtLike(ctx, data)
+		return nil, db.WriteArtLike(ctx, *safeStringQueryStruct(&data).(*userdata.ArtLike))
 
 	case userdata.CommandArtPlaceBid:
 		var data userdata.ArtPlaceBidRequest
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.ArtPlaceBid(ctx, data)
+		return nil, db.ArtPlaceBid(ctx, *safeStringQueryStruct(&data).(*userdata.ArtPlaceBidRequest))
 
 	case userdata.CommandCumulatedSalePriceByUser:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetCumulatedSalePriceByUser(ctx, data.ID)
+		return db.GetCumulatedSalePriceByUser(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandEndArtAuction:
 		var data userdata.IDIntQuery
@@ -167,126 +167,126 @@ func (db *Ops) ProcessCommand(ctx context.Context, req *pb.Metric) (interface{},
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetFollowees(ctx, data)
+		return db.GetFollowees(ctx, *safeStringQueryStruct(&data).(*userdata.PaginationIDStringQuery))
 
 	case userdata.CommandGetFollowers:
 		var data userdata.PaginationIDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetFollowers(ctx, data)
+		return db.GetFollowers(ctx, *safeStringQueryStruct(&data).(*userdata.PaginationIDStringQuery))
 
 	case userdata.CommandGetFriend:
 		var data userdata.PaginationIDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetFriends(ctx, data)
+		return db.GetFriends(ctx, *safeStringQueryStruct(&data).(*userdata.PaginationIDStringQuery))
 
 	case userdata.CommandGetInstanceInfo:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetArtInstanceInfo(ctx, data.ID)
+		return db.GetArtInstanceInfo(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandGetTopSNActivities:
 		var data userdata.SNTopActivityRequest
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetTopSNActivities(ctx, data)
+		return db.GetTopSNActivities(ctx, *safeStringQueryStruct(&data).(*userdata.SNTopActivityRequest))
 
 	case userdata.CommandHighestSalePriceByUser:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetHighestSalePriceByUser(ctx, data.ID)
+		return db.GetHighestSalePriceByUser(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandNewArtAuction:
 		var data userdata.NewArtAuctionRequest
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.NewArtAuction(ctx, data)
+		return db.NewArtAuction(ctx, *safeStringQueryStruct(&data).(*userdata.NewArtAuctionRequest))
 
 	case userdata.CommandNftCopiesExist:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetExistingNftCopies(ctx, data.ID)
+		return db.GetExistingNftCopies(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandNftCreatedByArtist:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetNftCreatedByArtist(ctx, data.ID)
+		return db.GetNftCreatedByArtist(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandNftForSaleByArtist:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetNftForSaleByArtist(ctx, data.ID)
+		return db.GetNftForSaleByArtist(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandNftOwnedByUser:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetNftOwnedByUser(ctx, data.ID)
+		return db.GetNftOwnedByUser(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandNftSoldByArtID:
 		var data userdata.IDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetNftSoldByArtID(ctx, data.ID)
+		return db.GetNftSoldByArtID(ctx, processEscapeString(data.ID))
 
 	case userdata.CommandSnActivityWrite:
 		var data userdata.SNActivityInfo
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.WriteSNActivity(ctx, data)
+		return nil, db.WriteSNActivity(ctx, *safeStringQueryStruct(&data).(*userdata.SNActivityInfo))
 
 	case userdata.CommandTransactionWrite:
 		var data userdata.ArtTransaction
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.WriteTransaction(ctx, data)
+		return nil, db.WriteTransaction(ctx, *safeStringQueryStruct(&data).(*userdata.ArtTransaction))
 
 	case userdata.CommandUniqueNftByUser:
 		var data userdata.UniqueNftByUserQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetUniqueNftByUser(ctx, data)
+		return db.GetUniqueNftByUser(ctx, *safeStringQueryStruct(&data).(*userdata.UniqueNftByUserQuery))
 
 	case userdata.CommandUserFollowDelete:
 		var data userdata.UserFollow
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.DeleteUserFollow(ctx, data)
+		return nil, db.DeleteUserFollow(ctx, *safeStringQueryStruct(&data).(*userdata.UserFollow))
 
 	case userdata.CommandUserFollowWrite:
 		var data userdata.UserFollow
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return nil, db.WriteUserFollow(ctx, data)
+		return nil, db.WriteUserFollow(ctx, *safeStringQueryStruct(&data).(*userdata.UserFollow))
 
 	case userdata.CommandUsersLikeNft:
 		var data userdata.PaginationIDStringQuery
 		if err := json.Unmarshal(rawData, &data); err != nil {
 			return nil, errors.Errorf("error while unmarshaling json: %w", err)
 		}
-		return db.GetUsersLikeNft(ctx, data)
+		return db.GetUsersLikeNft(ctx, *safeStringQueryStruct(&data).(*userdata.PaginationIDStringQuery))
 
 	default:
 		return nil, errors.Errorf("Unsupported command: %s", req.Command)
