@@ -27,6 +27,11 @@ const (
 	SuccessWriteToRQLiteDB
 	ErrorRQLiteDBNotFound
 	ErrorWriteToRQLiteDBFail
+
+	// Status for store metric
+	ErrorSupernodeVerifyMetricFail
+	SuccessStoreMetric
+	ErrorStoreMetric
 )
 
 // Description of ResponseCode
@@ -51,4 +56,8 @@ var Description = map[int]string{
 	SuccessWriteToRQLiteDB:   "Data is written to rqlite db successfully",
 	ErrorRQLiteDBNotFound:    "RQLite Database not found",
 	ErrorWriteToRQLiteDBFail: "Data fail to write to rqlite db",
+
+	ErrorSupernodeVerifyMetricFail: "Supernode cannot verify the signature of this metric",
+	SuccessStoreMetric:    "Metric store successfully",
+	ErrorStoreMetric: "Fail to store metric",
 }

@@ -20,7 +20,7 @@ const (
 type Service struct {
 	*task.Worker
 	config       *Config
-	pastelClient pastel.Client
+	PastelClient pastel.Client
 	nodeClient   node.Client
 	databaseOps  *database.Ops
 }
@@ -58,7 +58,7 @@ func (service *Service) NewTask() *Task {
 func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client, databaseOps *database.Ops) *Service {
 	return &Service{
 		config:       config,
-		pastelClient: pastelClient,
+		PastelClient: pastelClient,
 		nodeClient:   nodeClient,
 		Worker:       task.NewWorker(),
 		databaseOps:  databaseOps,

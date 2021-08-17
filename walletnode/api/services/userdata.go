@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
@@ -105,7 +106,29 @@ func (service *Userdata) UserdataGet(ctx context.Context, req *userdatas.Userdat
 
 // Set a follower, followee relationship to metadb
 func (service *Userdata) SetUserFollowRelation(ctx context.Context, req *userdatas.SetUserFollowRelationPayload) (*userdatas.SetUserFollowRelationResult, error) {
-	return nil, nil
+	// Generalize the data to be get/set by marshaling it
+	js, err := json.Marshal(&req)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Generate the request
+	request := userdata.ProcessRequest{
+		Command: userdata.CommandUserFollowWrite,
+		Data: js,
+	}
+
+	// Send the request to set it in Metadata Layer
+	result, err := service.processUserdata(ctx, &request)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Return the result of Metadata Layer process this request
+	return &userdatas.SetUserFollowRelationResult {
+		ResponseCode :result.ResponseCode,
+		Detail:result.Detail,
+	},nil
 }
 
 // Get followers of a user
@@ -125,7 +148,29 @@ func (service *Userdata) GetFriends(ctx context.Context, req *userdatas.GetFrien
 
 // Notify a new like event of an user to an art
 func (service *Userdata) SetUserLikeArt(ctx context.Context, req *userdatas.SetUserLikeArtPayload) (*userdatas.SetUserLikeArtResult, error) {
-	return nil, nil
+	// Generalize the data to be get/set by marshaling it
+	js, err := json.Marshal(&req)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Generate the request
+	request := userdata.ProcessRequest{
+		Command: userdata.CommandArtLikeWrite,
+		Data: js,
+	}
+
+	// Send the request to set it in Metadata Layer
+	result, err := service.processUserdata(ctx, &request)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Return the result of Metadata Layer process this request
+	return &userdatas.SetUserLikeArtResult {
+		ResponseCode :result.ResponseCode,
+		Detail:result.Detail,
+	},nil
 }
 
 // Get users that liked an art

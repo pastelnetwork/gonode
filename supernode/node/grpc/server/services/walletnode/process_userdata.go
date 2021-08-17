@@ -179,6 +179,8 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 			ArtistPastelID:    req.ArtistPastelID,
 			Timestamp:         req.Timestamp,
 			PreviousBlockHash: req.PreviousBlockHash,
+			Command: req.Command,
+			Data:req.Data,
 		},
 		UserdataHash: req.UserdataHash,
 		Signature:    req.Signature,
@@ -258,6 +260,8 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					Timestamp:         (*req).Timestamp,
 					Signature:         (*req).Signature,
 					PreviousBlockHash: (*req).PreviousBlockHash,
+					Command: (*req).Command,
+					Data:	(*req).Data,
 				}
 
 				err := service.databaseOps.WriteUserData(ctx, &reqsn)
@@ -321,6 +325,8 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pbwn.R
 		ArtistPastelID:    result.ArtistPastelID,
 		Timestamp:         result.Timestamp,
 		PreviousBlockHash: result.PreviousBlockHash,
+		Command: result.Command,
+		Data:	result.Data,
 	}
 
 	return respProto, nil

@@ -146,8 +146,11 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 		ArtistPastelID:    request.Userdata.ArtistPastelID,
 		Timestamp:         request.Userdata.Timestamp,
 		PreviousBlockHash: request.Userdata.PreviousBlockHash,
+		Command: request.Userdata.Command,
+		Data:	request.Userdata.Data,
 		UserdataHash:      request.UserdataHash,
 		Signature:         request.Signature,
+
 	}
 
 	resp, err := service.client.SendUserdata(ctx, reqProto)
@@ -216,6 +219,8 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 		ArtistPastelID:    resp.ArtistPastelID,
 		Timestamp:         resp.Timestamp,
 		PreviousBlockHash: resp.PreviousBlockHash,
+		Command: resp.Command,
+		Data:	resp.Data,
 	}
 
 	return &response, nil

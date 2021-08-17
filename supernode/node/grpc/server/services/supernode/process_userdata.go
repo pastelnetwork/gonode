@@ -3,6 +3,7 @@ package supernode
 import (
 	"context"
 	"io"
+	"encoding/hex"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 
@@ -148,6 +149,35 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 	}()
 	defer task.Cancel()
 
+	// Get hash of the data to verify
+	hashvalue, err := userdata.Sha3256hash(req.Data)
+	if err != nil {
+		return &pb.SuperNodeReply{
+			ResponseCode: userdata.ErrorSupernodeVerifyMetricFail,
+			Detail:       userdata.Description[userdata.ErrorSupernodeVerifyMetricFail],
+		}, nil
+	}
+
+	// Validate user signature
+	signature, err := hex.DecodeString(req.Signature)
+	if err != nil {
+		log.WithContext(ctx).Debugf("failed to decode signature %s of node %s", req.Signature, req.PastelID)
+		return &pb.SuperNodeReply{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, nil
+	}
+
+
+	ok, err := task.Service.PastelClient.Verify(ctx, hashvalue, string(signature), req.PastelID, "ed448")
+	if err != nil || !ok {
+		log.WithContext(ctx).Debugf("failed to verify signature %s of node %s", req.Signature, req.PastelID)
+		return &pb.SuperNodeReply{
+			ResponseCode: userdata.ErrorVerifyUserdataFail,
+			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
+		}, nil
+	}
+
 	if service.databaseOps.IsLeader() {
 		if _, err := service.databaseOps.ProcessCommand(ctx, req); err != nil {
 			return nil, errors.Errorf("error occurs while writting to database: %w", err)
@@ -156,8 +186,6 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 		if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), ""); err != nil {
 			return nil, err
 		}
-
-
 
 		metric := userdata.Metric{
 			Command: req.Command,

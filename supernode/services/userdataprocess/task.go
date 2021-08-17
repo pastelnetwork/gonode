@@ -200,7 +200,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 		}, nil
 	}
 
-	ok, err := task.pastelClient.Verify(ctx, userdatahash, string(signature), req.Userdata.ArtistPastelID, "ed448")
+	ok, err := task.PastelClient.Verify(ctx, userdatahash, string(signature), req.Userdata.ArtistPastelID, "ed448")
 	if err != nil || !ok {
 		log.WithContext(ctx).Debugf("failed to verify signature %s of user %s", req.Userdata.ArtistPastelID, req.Userdata.ArtistPastelID)
 		return userdata.ProcessResult{
@@ -280,7 +280,7 @@ func (task *Task) ReceiveUserdata(ctx context.Context, userpastelid string) (use
 // Sign and send SNDataSigned if not primary
 func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.SuperNodeRequest, isPrimary bool) error {
 	log.WithContext(ctx).Debugf("signAndSendSNDataSigned begin to sign SuperNodeRequest")
-	signature, err := task.pastelClient.Sign(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), task.config.PastelID, task.config.PassPhrase, "ed448")
+	signature, err := task.PastelClient.Sign(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), task.config.PastelID, task.config.PassPhrase, "ed448")
 	if err != nil {
 		return errors.Errorf("failed to sign sndata %w", err)
 	}
@@ -332,7 +332,7 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResu
 			continue
 		}
 
-		ok, err := task.pastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID, "ed448")
+		ok, err := task.PastelClient.Verify(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), string(signature), sndata.NodeID, "ed448")
 		if err != nil {
 			log.WithContext(ctx).Debugf("failed to verify signature %s of node %s", sndata.HashSignature, sndata.NodeID)
 			continue
@@ -436,7 +436,7 @@ func (task *Task) validateUserdata(req *userdata.ProcessRequest) (userdata.Proce
 }
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
-	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
+	masterNodes, err := task.PastelClient.MasterNodesTop(ctx)
 	// log.WithContext(ctx).Debugf("master node %s", masterNodes)
 
 	if err != nil {
@@ -496,15 +496,30 @@ func (task *Task) ConnectToLeader(ctx context.Context, extAddress string, sessID
 }
 
 
-// pastelTopNodes retrieve the top super nodes we want to send metric to, limit by maxNode
+// SendMetricToPrimary send metric to 1st ranked Supernode return by masternode top
 func (task *Task) SendMetricToPrimary(ctx context.Context, metric userdata.Metric) error {
 	log.WithContext(ctx).Debugf("SendMetricToPrimary with metric %s", metric.Command)
 
 	// Get the top 10 supernode
-	mns, err := task.pastelClient.MasterNodesTop(ctx)
+	mns, err := task.PastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		return err
 	}
+
+	// Hash the data
+	hashvalue, err := userdata.Sha3256hash(metric.Data)
+	if err != nil {
+		return errors.Errorf("failed to hash data %w", err)
+	}
+
+	// Sign the data before send with this SuperNode's pastelID and passphrase
+	signature, err := task.PastelClient.Sign(ctx, hashvalue, task.config.PastelID, task.config.PassPhrase, "ed448")
+	if err != nil {
+		return errors.Errorf("failed to sign ticket %w", err)
+	}
+
+	metric.Signature = hex.EncodeToString(signature)
+	metric.PastelID = task.config.PastelID
 
 	// Find the highest ranked SN which we can connect to
 	for _, mn := range mns {

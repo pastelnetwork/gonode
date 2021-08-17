@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"encoding/json"
 	
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -127,10 +126,11 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 		ArtistPastelID:    finalUserdata.Userdata.ArtistPastelID,
 		Timestamp:         finalUserdata.Userdata.Timestamp,
 		PreviousBlockHash: finalUserdata.Userdata.PreviousBlockHash,
+		Command: finalUserdata.Userdata.Command,
+		Data:finalUserdata.Userdata.Data,
 		UserdataHash:      finalUserdata.UserdataHash,
 		Signature:         finalUserdata.Signature,
 	}
-
 	// Send the data
 	resp, err := service.client.SendUserdataToLeader(ctx, reqProto)
 
@@ -149,18 +149,8 @@ func (service *processUserdata) StoreMetric(ctx context.Context, metric userdata
 
 	reqProto := &pb.Metric{}
 	reqProto.Command = metric.Command
-	switch metric.Data.(type) {
-	case []byte:
-		// Already been Marshal before
-		test := "khoa test data is sent"
-		reqProto.Data = []byte(test)// []byte(metric.Data.(string))
-	default:
-		byteData, err := json.Marshal(metric.Data)
-		if err != nil {
-			return userdata.SuperNodeReply{}, errors.Errorf("failed to marshal data: %w", err)
-		}
-		reqProto.Data = byteData
-	}
+
+	reqProto.Data = metric.Data
 
 	// Send the data
 	_, err := service.client.StoreMetric(ctx, reqProto)

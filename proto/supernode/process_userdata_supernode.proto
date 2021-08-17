@@ -85,11 +85,19 @@ message UserdataRequest {
   string userdata_hash = 14;
   // Signature of the userdata_hash
   string signature = 15;
+  // Command is database operation that will apply to the data
+	string command = 16;
+	// Data is the walletnode metric that will set/get to/from Metadata Layer
+	bytes data = 17;
 }
 
 message Metric {
+  // Signature of the pastelid that sign this metric data
+	string signature = 1;
+	// PastelID of the actor that sign this data
+	string pastelID = 2;
   // Command the the predefine database operation name 
-  string command = 1;
+  string command = 3;
   // Data is the general structure accept many kind of metric, send as byte stream in protobuf and will be marshal at receiver
-  bytes data = 2;
+  bytes data = 4;
 }

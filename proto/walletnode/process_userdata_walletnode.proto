@@ -80,6 +80,10 @@ message UserdataRequest {
   string userdata_hash = 14;
   // Signature of the userdata_hash
   string signature = 15;
+  // Command is database operation that will apply to the data
+	string command = 16;
+	// Data is the walletnode metric that will set/get to/from Metadata Layer
+	bytes data = 17;
 }
 
 message UserdataReply {

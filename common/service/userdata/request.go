@@ -69,6 +69,10 @@ type ProcessRequest struct {
 	Timestamp int64
 	// Previous block hash in the chain (generated, not sending by UI)
 	PreviousBlockHash string
+	// Command is database operation that will apply to the data
+	Command string
+	// Data is the walletnode metric that will set/get to/from Metadata Layer
+	Data []byte
 }
 
 // ProcessRequestSigned represents userdata and signature created by wallet node
@@ -139,10 +143,14 @@ type SuperNodeReply struct {
 
 // Metric represents the metric need to be stored
 type Metric struct {
+	// Signature of the pastelid that sign this metric data
+	Signature string
+	// PastelID of the actor that sign this data
+	PastelID string 
 	// Command the the predefine database operation name
 	Command string
 	// Data is the general structure accept many kind of metric, but it need to be match with Command
-	Data interface{}
+	Data []byte
 }
 
 type ArtInfo struct {
