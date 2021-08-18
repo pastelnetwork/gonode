@@ -285,6 +285,7 @@ func toUserdataProcessResult(result *userdata.ProcessResult) *userdatas.Userdata
 		Categories:      &result.Categories,
 		AvatarImage:     &result.AvatarImage,
 		CoverPhoto:      &result.CoverPhoto,
+		Data:            result.Data,
 	}
 	return res
 }

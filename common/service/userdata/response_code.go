@@ -30,8 +30,8 @@ const (
 
 	// Status for store metric
 	ErrorSupernodeVerifyMetricFail
-	SuccessStoreMetric
-	ErrorStoreMetric
+	SuccessProcessMetric
+	ErrorProcessMetric
 )
 
 // Description of ResponseCode
@@ -58,6 +58,6 @@ var Description = map[int]string{
 	ErrorWriteToRQLiteDBFail: "Data fail to write to rqlite db",
 
 	ErrorSupernodeVerifyMetricFail: "Supernode cannot verify the signature of this metric",
-	SuccessStoreMetric:    "Metric store successfully",
-	ErrorStoreMetric: "Fail to store metric",
+	SuccessProcessMetric:           "Metric process successfully",
+	ErrorProcessMetric:             "Fail to process metric",
 }

@@ -310,6 +310,58 @@ paths:
                     top_left_y: 0
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+              - id: n6Qn6TFM
+                status: Task Started
+                ticket:
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
+                  green: false
+                  issued_copies: 1
+                  keywords: Renaissance, sfumato, portrait
+                  maximum_fee: 100
+                  name: Mona Lisa
+                  royalty: 12
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                  thumbnail_coordinate:
+                    bottom_right_x: 640
+                    bottom_right_y: 480
+                    top_left_x: 0
+                    top_left_y: 0
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+              - id: n6Qn6TFM
+                status: Task Started
+                ticket:
+                  artist_name: Leonardo da Vinci
+                  artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  artist_pastelid_passphrase: qwerasdf1234
+                  artist_website_url: https://www.leonardodavinci.net
+                  description: The Mona Lisa is an oil painting by Italian artist,
+                    inventor, and writer Leonardo da Vinci. Likely completed in 1506,
+                    the piece features a portrait of a seated woman set against an
+                    imaginary landscape.
+                  green: false
+                  issued_copies: 1
+                  keywords: Renaissance, sfumato, portrait
+                  maximum_fee: 100
+                  name: Mona Lisa
+                  royalty: 12
+                  series_name: Famous artist
+                  spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+                  thumbnail_coordinate:
+                    bottom_right_x: 640
+                    bottom_right_y: 480
+                    top_left_x: 0
+                    top_left_y: 0
+                  youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+                txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         "500":
           description: Internal Server Error response.
           content:
@@ -413,8 +465,6 @@ paths:
               example:
                 id: n6Qn6TFM
                 states:
-                - date: 2006-01-02T15:04:05Z07:00
-                  status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
                   status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
@@ -528,7 +578,13 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 81
+              - 72
+              - 97
+              - 114
+              - 117
+              - 109
+              - 32
+              - 113
               - 117
               - 97
               - 115
@@ -560,14 +616,6 @@ paths:
               - 116
               - 101
               - 115
-              - 32
-              - 112
-              - 108
-              - 97
-              - 99
-              - 101
-              - 97
-              - 116
               - 46
       responses:
         "201":
@@ -614,9 +662,9 @@ paths:
         schema:
           type: string
           description: Artist PastelID or special value; mine
-          example: od0
+          example: 4r0
           maxLength: 256
-        example: obd
+        example: 4rr
       - name: limit
         in: query
         description: Number of results to be return
@@ -637,8 +685,8 @@ paths:
         schema:
           type: string
           description: Query is search query entered by user
-          example: Cupiditate nihil quae sit praesentium et.
-        example: Neque eveniet doloribus.
+          example: Quia neque adipisci assumenda rerum natus ut.
+        example: Sed maiores corporis.
       - name: artist_name
         in: query
         description: Name of the artist
@@ -658,7 +706,7 @@ paths:
           description: Title of artwork
           default: true
           example: true
-        example: true
+        example: false
       - name: series
         in: query
         description: Artwork series name
@@ -668,7 +716,7 @@ paths:
           description: Artwork series name
           default: true
           example: true
-        example: true
+        example: false
       - name: descr
         in: query
         description: Artist written statement
@@ -687,8 +735,8 @@ paths:
           type: boolean
           description: Keyword that Artist assigns to Artwork
           default: true
-          example: true
-        example: false
+          example: false
+        example: true
       - name: min_copies
         in: query
         description: Minimum number of created copies
@@ -719,9 +767,9 @@ paths:
           type: integer
           description: Minimum blocknum
           default: 1
-          example: 2702846823020679703
+          example: 260770186598301784
           minimum: 1
-        example: 4361441127564409241
+        example: 2352424995877792281
       - name: max_block
         in: query
         description: Maximum blocknum
@@ -729,9 +777,9 @@ paths:
         schema:
           type: integer
           description: Maximum blocknum
-          example: 4553163751436229209
+          example: 7654996366519215973
           minimum: 1
-        example: 901295744388932296
+        example: 4084532491103032603
       - name: min_rareness_score
         in: query
         description: Minimum pastel rareness score
@@ -905,97 +953,49 @@ paths:
                 artist_pastelid_passphrase: qwerasdf1234
                 avatar_image:
                   content:
-                  - 69
-                  - 115
-                  - 116
-                  - 32
-                  - 112
+                  - 76
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
                   - 111
                   - 115
-                  - 115
-                  - 105
+                  - 97
                   - 109
+                  - 32
+                  - 113
                   - 117
-                  - 115
-                  - 32
-                  - 101
-                  - 115
-                  - 116
-                  - 32
                   - 105
-                  - 112
                   - 115
-                  - 97
-                  - 109
-                  - 32
-                  - 109
-                  - 97
-                  - 120
-                  - 105
-                  - 109
-                  - 101
-                  - 32
-                  - 101
-                  - 118
-                  - 101
-                  - 110
-                  - 105
-                  - 101
-                  - 116
-                  - 32
-                  - 99
+                  - 113
                   - 117
-                  - 108
-                  - 112
                   - 97
+                  - 109
                   - 46
                 biography: I'm a digital artist based in Paris, France. ...
-                categories: Ea nihil voluptas.
+                categories: Quia deserunt.
                 cover_photo:
                   content:
-                  - 69
-                  - 115
-                  - 116
-                  - 32
-                  - 112
+                  - 76
+                  - 97
+                  - 98
+                  - 111
+                  - 114
+                  - 105
                   - 111
                   - 115
-                  - 115
-                  - 105
+                  - 97
                   - 109
+                  - 32
+                  - 113
                   - 117
-                  - 115
-                  - 32
-                  - 101
-                  - 115
-                  - 116
-                  - 32
                   - 105
-                  - 112
                   - 115
-                  - 97
-                  - 109
-                  - 32
-                  - 109
-                  - 97
-                  - 120
-                  - 105
-                  - 109
-                  - 101
-                  - 32
-                  - 101
-                  - 118
-                  - 101
-                  - 110
-                  - 105
-                  - 101
-                  - 116
-                  - 32
-                  - 99
+                  - 113
                   - 117
-                  - 108
-                  - 112
                   - 97
+                  - 109
                   - 46
                 facebook_link: https://www.facebook.com/Williams_Scottish
                 location: New York, US
@@ -1155,6 +1155,40 @@ paths:
                 biography: 0w7
                 categories: c22
                 cover_photo: r4o
+                data:
+                - 65
+                - 117
+                - 116
+                - 32
+                - 113
+                - 117
+                - 97
+                - 101
+                - 32
+                - 105
+                - 108
+                - 108
+                - 117
+                - 109
+                - 32
+                - 101
+                - 116
+                - 32
+                - 110
+                - 105
+                - 115
+                - 105
+                - 32
+                - 112
+                - 114
+                - 111
+                - 118
+                - 105
+                - 100
+                - 101
+                - 110
+                - 116
+                - 46
                 detail: All userdata is processed
                 facebook_link: k4i
                 location: d9v
@@ -1258,40 +1292,31 @@ paths:
                 response_code: 0
                 result:
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
+                  - 115
+                  - 101
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
                   - 105
+                  - 112
                   - 115
-                  - 113
-                  - 117
                   - 97
-                  - 109
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 112
+                  - 101
+                  - 114
                   - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
                   - 97
-                  - 109
-                  - 117
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1299,40 +1324,31 @@ paths:
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
+                  - 115
+                  - 101
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
                   - 105
+                  - 112
                   - 115
-                  - 113
-                  - 117
                   - 97
-                  - 109
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 112
+                  - 101
+                  - 114
                   - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
                   - 97
-                  - 109
-                  - 117
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1340,81 +1356,31 @@ paths:
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
-                  - 114
-                  - 105
-                  - 111
                   - 115
-                  - 97
-                  - 109
-                  - 32
-                  - 113
-                  - 117
-                  - 105
-                  - 115
-                  - 113
-                  - 117
-                  - 97
-                  - 109
-                  - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
-                  - 115
-                  - 97
-                  - 109
-                  - 117
-                  - 115
-                  - 46
-                  followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                  realname: Williams Scottish
-                  username: w_scottish
-                - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
                   - 105
+                  - 112
                   - 115
-                  - 113
-                  - 117
                   - 97
-                  - 109
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 112
+                  - 101
+                  - 114
                   - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
                   - 97
-                  - 109
-                  - 117
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1471,40 +1437,31 @@ paths:
                 response_code: 0
                 result:
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
+                  - 115
+                  - 101
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
                   - 105
+                  - 112
                   - 115
-                  - 113
-                  - 117
                   - 97
-                  - 109
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 112
+                  - 101
+                  - 114
                   - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
                   - 97
-                  - 109
-                  - 117
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1512,40 +1469,31 @@ paths:
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
+                  - 115
+                  - 101
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
                   - 105
+                  - 112
                   - 115
-                  - 113
-                  - 117
                   - 97
-                  - 109
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 112
+                  - 101
+                  - 114
                   - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
                   - 97
-                  - 109
-                  - 117
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1553,40 +1501,63 @@ paths:
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
+                  - 115
+                  - 101
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
+                  - 105
+                  - 112
+                  - 115
+                  - 97
+                  - 32
+                  - 112
+                  - 101
+                  - 114
+                  - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
+                  - 97
+                  - 116
                   - 105
                   - 115
-                  - 113
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 68
+                  - 101
+                  - 115
+                  - 101
+                  - 114
                   - 117
-                  - 97
-                  - 109
+                  - 110
+                  - 116
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 105
+                  - 112
                   - 115
                   - 97
-                  - 109
-                  - 117
+                  - 32
+                  - 112
+                  - 101
+                  - 114
+                  - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
+                  - 97
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1643,40 +1614,31 @@ paths:
                 response_code: 0
                 result:
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
+                  - 115
+                  - 101
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
                   - 105
+                  - 112
                   - 115
-                  - 113
-                  - 117
                   - 97
-                  - 109
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 112
+                  - 101
+                  - 114
                   - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
                   - 97
-                  - 109
-                  - 117
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1684,40 +1646,95 @@ paths:
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
+                  - 115
+                  - 101
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
+                  - 105
+                  - 112
+                  - 115
+                  - 97
+                  - 32
+                  - 112
+                  - 101
+                  - 114
+                  - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
+                  - 97
+                  - 116
                   - 105
                   - 115
-                  - 113
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 68
+                  - 101
+                  - 115
+                  - 101
+                  - 114
                   - 117
-                  - 97
-                  - 109
+                  - 110
+                  - 116
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 105
+                  - 112
                   - 115
                   - 97
-                  - 109
+                  - 32
+                  - 112
+                  - 101
+                  - 114
+                  - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
+                  - 97
+                  - 116
+                  - 105
+                  - 115
+                  - 46
+                  followers_count: 10
+                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+                  realname: Williams Scottish
+                  username: w_scottish
+                - avatar_thumbnail:
+                  - 68
+                  - 101
+                  - 115
+                  - 101
+                  - 114
                   - 117
+                  - 110
+                  - 116
+                  - 32
+                  - 105
+                  - 112
+                  - 115
+                  - 97
+                  - 32
+                  - 112
+                  - 101
+                  - 114
+                  - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
+                  - 97
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1774,40 +1791,31 @@ paths:
                 response_code: 0
                 result:
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
+                  - 115
+                  - 101
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
                   - 105
+                  - 112
                   - 115
-                  - 113
-                  - 117
                   - 97
-                  - 109
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 112
+                  - 101
+                  - 114
                   - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
                   - 97
-                  - 109
-                  - 117
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -1815,81 +1823,31 @@ paths:
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
+                  - 68
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
-                  - 114
-                  - 105
-                  - 111
                   - 115
-                  - 97
-                  - 109
-                  - 32
-                  - 113
-                  - 117
-                  - 105
-                  - 115
-                  - 113
-                  - 117
-                  - 97
-                  - 109
-                  - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
-                  - 115
-                  - 97
-                  - 109
-                  - 117
-                  - 115
-                  - 46
-                  followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-                  realname: Williams Scottish
-                  username: w_scottish
-                - avatar_thumbnail:
-                  - 69
-                  - 97
-                  - 113
-                  - 117
                   - 101
-                  - 32
-                  - 108
-                  - 97
-                  - 98
-                  - 111
                   - 114
-                  - 105
-                  - 111
-                  - 115
-                  - 97
-                  - 109
+                  - 117
+                  - 110
+                  - 116
                   - 32
-                  - 113
-                  - 117
                   - 105
+                  - 112
                   - 115
-                  - 113
-                  - 117
                   - 97
-                  - 109
                   - 32
-                  - 97
-                  - 99
-                  - 99
-                  - 117
+                  - 112
+                  - 101
+                  - 114
                   - 115
+                  - 112
+                  - 105
+                  - 99
+                  - 105
                   - 97
-                  - 109
-                  - 117
+                  - 116
+                  - 105
                   - 115
                   - 46
                   followers_count: 10
@@ -2022,7 +1980,7 @@ paths:
                 - 97
                 - 46
               biography: I'm a digital artist based in Paris, France. ...
-              categories: Aut quae illum et nisi provident.
+              categories: Dolores qui modi possimus labore.
               cover_photo:
                 content:
                 - 69
@@ -2080,18 +2038,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/UserdataProcessResult'
               example:
-                avatar_image: 3xy
-                biography: tg4
-                categories: h0d
-                cover_photo: lks
+                avatar_image: seo
+                biography: y3l
+                categories: "423"
+                cover_photo: znn
+                data:
+                - 67
+                - 117
+                - 108
+                - 112
+                - 97
+                - 32
+                - 110
+                - 111
+                - 110
+                - 32
+                - 101
+                - 97
+                - 32
+                - 110
+                - 105
+                - 104
+                - 105
+                - 108
+                - 32
+                - 118
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
+                - 97
+                - 115
+                - 32
+                - 117
+                - 116
+                - 46
                 detail: All userdata is processed
-                facebook_link: 8uu
-                location: idg
-                native_currency: 4dw
-                primary_language: 2ap
-                realname: r0y
+                facebook_link: "494"
+                location: pqh
+                native_currency: gd2
+                primary_language: dkt
+                realname: u0h
                 response_code: 0
-                twitter_link: hq4
+                twitter_link: wbi
         "400":
           description: Bad Request response.
           content:
@@ -2202,7 +2192,7 @@ components:
         royalty:
           type: integer
           description: how much artist should get on all future resales
-          example: 835622049909476862
+          example: 8924398428559739880
           format: int64
         seen_score:
           type: integer
@@ -2230,30 +2220,27 @@ components:
           type: string
           description: Thumbnail image
           example:
-          - 80
-          - 108
+          - 77
+          - 105
+          - 110
+          - 105
+          - 109
           - 97
-          - 99
-          - 101
-          - 97
-          - 116
           - 32
-          - 101
-          - 116
-          - 32
-          - 100
-          - 111
-          - 108
-          - 111
-          - 114
           - 101
           - 115
+          - 116
           - 32
-          - 100
-          - 105
-          - 99
+          - 118
+          - 111
+          - 108
+          - 117
+          - 112
           - 116
           - 97
+          - 116
+          - 101
+          - 109
           - 46
           format: binary
         title:
@@ -2288,51 +2275,37 @@ components:
         drawing_nsfw_score: 1000
         hentai_nsfw_score: 1000
         internet_rareness_score: 1
-        is_green: true
+        is_green: false
         keywords: Renaissance, sfumato, portrait
         neutral_nsfw_score: 1000
         nsfw_score: 1000
         porn_nsfw_score: 1000
         rareness_score: 1
-        royalty: 8035891178329452880
+        royalty: 2792026132894393566
         seen_score: 1
         series_name: Famous artist
         sexy_nsfw_score: 1000
         storage_fee: 100
         thumbnail:
         - 69
-        - 108
-        - 105
-        - 103
-        - 101
+        - 117
+        - 109
+        - 32
         - 110
+        - 111
+        - 115
+        - 116
+        - 114
+        - 117
+        - 109
+        - 32
+        - 105
+        - 109
+        - 112
+        - 101
         - 100
         - 105
-        - 32
-        - 110
-        - 111
-        - 98
-        - 105
-        - 115
-        - 32
-        - 101
-        - 114
-        - 114
-        - 111
-        - 114
-        - 32
-        - 101
         - 116
-        - 32
-        - 105
-        - 110
-        - 118
-        - 101
-        - 110
-        - 116
-        - 111
-        - 114
-        - 101
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -2358,7 +2331,7 @@ components:
           type: integer
           description: Sort index of the match based on score.This must be used to
             sort results on UI.
-          example: 7335301940955756338
+          example: 6987172449824527307
           format: int64
         matches:
           type: array
@@ -2366,14 +2339,6 @@ components:
             $ref: '#/components/schemas/FuzzyMatch'
           description: Match result details
           example:
-          - field_type: artist_name
-            matched_indexes:
-            - 7380319872106704681
-            - 7456758987449087545
-            - 6691974645807088378
-            - 787606581070214255
-            score: 6280315198310502525
-            str: Consequatur libero nihil.
           - field_type: artist_name
             matched_indexes:
             - 7380319872106704681
@@ -2427,8 +2392,24 @@ components:
           title: Mona Lisa
           txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        match_index: 7306944698651271173
+        match_index: 4238034306809650474
         matches:
+        - field_type: artist_name
+          matched_indexes:
+          - 7380319872106704681
+          - 7456758987449087545
+          - 6691974645807088378
+          - 787606581070214255
+          score: 6280315198310502525
+          str: Consequatur libero nihil.
+        - field_type: artist_name
+          matched_indexes:
+          - 7380319872106704681
+          - 7456758987449087545
+          - 6691974645807088378
+          - 787606581070214255
+          score: 6280315198310502525
+          str: Consequatur libero nihil.
         - field_type: artist_name
           matched_indexes:
           - 7380319872106704681
@@ -2497,35 +2478,22 @@ components:
           type: string
           description: Thumbnail image
           example:
-          - 86
-          - 101
-          - 108
-          - 32
-          - 113
+          - 81
           - 117
           - 105
-          - 97
-          - 32
-          - 97
-          - 117
-          - 116
+          - 100
           - 101
           - 109
           - 32
-          - 101
-          - 120
-          - 101
-          - 114
-          - 99
-          - 105
-          - 116
           - 97
-          - 116
-          - 105
-          - 111
+          - 115
+          - 115
+          - 117
+          - 109
+          - 101
           - 110
-          - 101
-          - 109
+          - 100
+          - 97
           - 46
           format: binary
         title:
@@ -2556,16 +2524,34 @@ components:
         keywords: Renaissance, sfumato, portrait
         series_name: Famous artist
         thumbnail:
-        - 83
-        - 97
+        - 82
         - 101
-        - 112
-        - 101
-        - 32
-        - 113
+        - 114
         - 117
+        - 109
+        - 32
+        - 118
+        - 101
+        - 108
         - 105
+        - 116
+        - 32
+        - 105
+        - 100
+        - 32
+        - 105
+        - 108
+        - 108
+        - 111
+        - 32
+        - 115
         - 97
+        - 112
+        - 105
+        - 101
+        - 110
+        - 116
+        - 101
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -2719,7 +2705,7 @@ components:
         categories:
           type: string
           description: The categories of user's work
-          example: Nulla quia eum.
+          example: Sit culpa eum sunt quibusdam quam ipsum.
         cover_photo:
           $ref: '#/components/schemas/UserImageUploadPayload'
         facebook_link:
@@ -2800,7 +2786,7 @@ components:
           - 97
           - 46
         biography: I'm a digital artist based in Paris, France. ...
-        categories: Sit culpa eum sunt quibusdam quam ipsum.
+        categories: Illum in.
         cover_photo:
           content:
           - 69
@@ -2860,63 +2846,62 @@ components:
           type: string
           description: File downloaded
           example:
-          - 65
-          - 116
-          - 113
-          - 117
+          - 82
           - 101
-          - 32
-          - 115
-          - 117
-          - 115
-          - 99
-          - 105
           - 112
+          - 117
+          - 100
           - 105
-          - 116
-          - 32
-          - 109
           - 97
-          - 120
-          - 105
-          - 109
+          - 110
+          - 100
+          - 97
           - 101
           - 32
-          - 97
-          - 98
-          - 32
+          - 116
+          - 101
           - 110
+          - 101
+          - 116
           - 117
-          - 109
+          - 114
+          - 32
           - 113
           - 117
-          - 97
-          - 109
+          - 105
           - 46
           format: binary
       example:
         file:
-        - 77
+        - 86
         - 105
+        - 116
+        - 97
+        - 101
+        - 32
+        - 113
+        - 117
+        - 111
+        - 32
+        - 115
+        - 101
+        - 100
+        - 32
+        - 101
         - 110
         - 105
         - 109
-        - 97
+        - 32
+        - 115
+        - 105
+        - 116
         - 32
         - 101
         - 115
         - 116
         - 32
-        - 118
-        - 111
-        - 108
-        - 117
-        - 112
-        - 116
-        - 97
-        - 116
-        - 101
-        - 109
+        - 105
+        - 110
         - 46
       required:
       - file
@@ -2926,7 +2911,7 @@ components:
         fault:
           type: boolean
           description: Is the error a server-side fault?
-          example: true
+          example: false
         id:
           type: string
           description: ID is a unique identifier for this particular occurrence of
@@ -2944,11 +2929,11 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: false
+          example: true
         timeout:
           type: boolean
           description: Is the error a timeout?
-          example: false
+          example: true
       example:
         id: 3F1FKVRR
         message: Value of ID must be an integer
@@ -2966,7 +2951,7 @@ components:
         field_type:
           type: string
           description: Field that is matched
-          example: artist_name
+          example: keyword
           enum:
           - artist_name
           - art_title
@@ -2977,29 +2962,29 @@ components:
           type: array
           items:
             type: integer
-            example: 1952330488600555315
+            example: 4255020538149861689
             format: int64
           description: The indexes of matched characters. Useful for highlighting
             matches
           example:
-          - 7652299471164286656
-          - 6205466999640365265
+          - 5906477666687632229
+          - 6645921082090086012
         score:
           type: integer
           description: Score used to rank matches
-          example: 4799818539570126910
+          example: 5687660001100513247
           format: int64
         str:
           type: string
           description: String that is matched
-          example: Vel impedit iusto.
+          example: Dicta facere alias totam exercitationem voluptatem ea.
       example:
-        field_type: keyword
+        field_type: artist_name
         matched_indexes:
-        - 3653516008863643564
-        - 8658558806554774039
-        score: 3997279316230547581
-        str: Id illo sapiente numquam qui.
+        - 2791661244699899387
+        - 3886741038533029020
+        score: 8846577000524666048
+        str: Dicta deleniti fugit iusto eligendi.
     GetFollowersRequestBody:
       type: object
       properties:
@@ -3046,40 +3031,31 @@ components:
           description: Artist's PastelID
           example:
           - avatar_thumbnail:
-            - 69
-            - 97
-            - 113
-            - 117
+            - 68
             - 101
-            - 32
-            - 108
-            - 97
-            - 98
-            - 111
+            - 115
+            - 101
             - 114
-            - 105
-            - 111
-            - 115
-            - 97
-            - 109
+            - 117
+            - 110
+            - 116
             - 32
-            - 113
-            - 117
             - 105
+            - 112
             - 115
-            - 113
-            - 117
             - 97
-            - 109
             - 32
-            - 97
-            - 99
-            - 99
-            - 117
+            - 112
+            - 101
+            - 114
             - 115
+            - 112
+            - 105
+            - 99
+            - 105
             - 97
-            - 109
-            - 117
+            - 116
+            - 105
             - 115
             - 46
             followers_count: 10
@@ -3087,40 +3063,31 @@ components:
             realname: Williams Scottish
             username: w_scottish
           - avatar_thumbnail:
-            - 69
-            - 97
-            - 113
-            - 117
+            - 68
             - 101
-            - 32
-            - 108
-            - 97
-            - 98
-            - 111
+            - 115
+            - 101
             - 114
-            - 105
-            - 111
-            - 115
-            - 97
-            - 109
+            - 117
+            - 110
+            - 116
             - 32
-            - 113
-            - 117
             - 105
+            - 112
             - 115
-            - 113
-            - 117
             - 97
-            - 109
             - 32
-            - 97
-            - 99
-            - 99
-            - 117
+            - 112
+            - 101
+            - 114
             - 115
+            - 112
+            - 105
+            - 99
+            - 105
             - 97
-            - 109
-            - 117
+            - 116
+            - 105
             - 115
             - 46
             followers_count: 10
@@ -3128,40 +3095,31 @@ components:
             realname: Williams Scottish
             username: w_scottish
           - avatar_thumbnail:
-            - 69
-            - 97
-            - 113
-            - 117
+            - 68
             - 101
-            - 32
-            - 108
-            - 97
-            - 98
-            - 111
+            - 115
+            - 101
             - 114
-            - 105
-            - 111
-            - 115
-            - 97
-            - 109
+            - 117
+            - 110
+            - 116
             - 32
-            - 113
-            - 117
             - 105
+            - 112
             - 115
-            - 113
-            - 117
             - 97
-            - 109
             - 32
-            - 97
-            - 99
-            - 99
-            - 117
+            - 112
+            - 101
+            - 114
             - 115
+            - 112
+            - 105
+            - 99
+            - 105
             - 97
-            - 109
-            - 117
+            - 116
+            - 105
             - 115
             - 46
             followers_count: 10
@@ -3178,40 +3136,31 @@ components:
         response_code: 0
         result:
         - avatar_thumbnail:
-          - 69
-          - 97
-          - 113
-          - 117
+          - 68
           - 101
-          - 32
-          - 108
-          - 97
-          - 98
-          - 111
+          - 115
+          - 101
           - 114
-          - 105
-          - 111
-          - 115
-          - 97
-          - 109
+          - 117
+          - 110
+          - 116
           - 32
-          - 113
-          - 117
           - 105
+          - 112
           - 115
-          - 113
-          - 117
           - 97
-          - 109
           - 32
-          - 97
-          - 99
-          - 99
-          - 117
+          - 112
+          - 101
+          - 114
           - 115
+          - 112
+          - 105
+          - 99
+          - 105
           - 97
-          - 109
-          - 117
+          - 116
+          - 105
           - 115
           - 46
           followers_count: 10
@@ -3219,81 +3168,31 @@ components:
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
-          - 69
-          - 97
-          - 113
-          - 117
+          - 68
           - 101
-          - 32
-          - 108
-          - 97
-          - 98
-          - 111
-          - 114
-          - 105
-          - 111
           - 115
-          - 97
-          - 109
-          - 32
-          - 113
-          - 117
-          - 105
-          - 115
-          - 113
-          - 117
-          - 97
-          - 109
-          - 32
-          - 97
-          - 99
-          - 99
-          - 117
-          - 115
-          - 97
-          - 109
-          - 117
-          - 115
-          - 46
-          followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-          realname: Williams Scottish
-          username: w_scottish
-        - avatar_thumbnail:
-          - 69
-          - 97
-          - 113
-          - 117
           - 101
-          - 32
-          - 108
-          - 97
-          - 98
-          - 111
           - 114
-          - 105
-          - 111
-          - 115
-          - 97
-          - 109
+          - 117
+          - 110
+          - 116
           - 32
-          - 113
-          - 117
           - 105
+          - 112
           - 115
-          - 113
-          - 117
           - 97
-          - 109
           - 32
-          - 97
-          - 99
-          - 99
-          - 117
+          - 112
+          - 101
+          - 114
           - 115
+          - 112
+          - 105
+          - 99
+          - 105
           - 97
-          - 109
-          - 117
+          - 116
+          - 105
           - 115
           - 46
           followers_count: 10
@@ -3510,8 +3409,6 @@ components:
             status: Task Started
           - date: 2006-01-02T15:04:05Z07:00
             status: Task Started
-          - date: 2006-01-02T15:04:05Z07:00
-            status: Task Started
         status:
           type: string
           description: Status of the registration process
@@ -3543,8 +3440,6 @@ components:
       example:
         id: n6Qn6TFM
         states:
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -3933,26 +3828,14 @@ components:
           example:
           - 78
           - 101
-          - 109
-          - 111
-          - 32
           - 113
           - 117
-          - 97
           - 101
-          - 114
-          - 97
-          - 116
           - 32
           - 117
-          - 108
-          - 108
-          - 97
-          - 109
-          - 32
-          - 97
-          - 117
-          - 116
+          - 110
+          - 100
+          - 101
           - 46
           format: binary
         filename:
@@ -3960,33 +3843,23 @@ components:
           description: For internal use
       example:
         file:
-        - 81
-        - 117
-        - 97
-        - 101
-        - 114
-        - 97
-        - 116
-        - 32
-        - 97
-        - 108
-        - 105
-        - 113
-        - 117
-        - 97
+        - 73
         - 109
-        - 32
-        - 99
-        - 111
-        - 110
-        - 115
+        - 112
         - 101
-        - 113
-        - 117
-        - 97
+        - 100
+        - 105
         - 116
+        - 32
+        - 105
         - 117
-        - 114
+        - 115
+        - 116
+        - 111
+        - 32
+        - 104
+        - 105
+        - 99
         - 46
       required:
       - file
@@ -3998,41 +3871,41 @@ components:
           description: File to upload
           example:
           - 73
-          - 109
-          - 112
-          - 101
-          - 100
-          - 105
-          - 116
-          - 32
           - 110
-          - 105
-          - 115
-          - 105
-          - 32
+          - 118
+          - 101
+          - 110
+          - 116
+          - 111
           - 114
           - 101
-          - 112
-          - 117
-          - 100
-          - 105
-          - 97
-          - 110
-          - 100
-          - 97
-          - 101
           - 32
-          - 116
-          - 101
-          - 110
-          - 101
-          - 116
-          - 117
+          - 97
           - 114
+          - 99
+          - 104
+          - 105
+          - 116
+          - 101
+          - 99
+          - 116
+          - 111
+          - 32
+          - 101
+          - 116
           - 32
           - 113
           - 117
           - 105
+          - 32
+          - 101
+          - 115
+          - 116
+          - 32
+          - 113
+          - 117
+          - 105
+          - 115
           - 46
           format: binary
         filename:
@@ -4041,35 +3914,26 @@ components:
       description: User image upload payload
       example:
         content:
-        - 86
-        - 105
-        - 116
-        - 97
-        - 101
-        - 32
-        - 113
-        - 117
-        - 111
-        - 32
-        - 115
-        - 101
-        - 100
-        - 32
+        - 69
+        - 118
         - 101
         - 110
         - 105
+        - 101
+        - 116
+        - 32
+        - 101
+        - 115
+        - 115
+        - 101
+        - 32
+        - 99
+        - 117
         - 109
         - 32
         - 115
         - 105
         - 116
-        - 32
-        - 101
-        - 115
-        - 116
-        - 32
-        - 105
-        - 110
         - 46
       required:
       - content
@@ -4081,34 +3945,9 @@ components:
           description: 40x40 avatar thumbnail
           example:
           - 65
-          - 99
-          - 99
-          - 117
-          - 115
-          - 97
-          - 110
-          - 116
-          - 105
-          - 117
-          - 109
           - 32
-          - 105
-          - 110
-          - 118
-          - 101
-          - 110
+          - 117
           - 116
-          - 111
-          - 114
-          - 101
-          - 32
-          - 100
-          - 111
-          - 108
-          - 111
-          - 114
-          - 101
-          - 109
           - 46
           format: binary
         followers_count:
@@ -4135,31 +3974,47 @@ components:
           maxLength: 256
       example:
         avatar_thumbnail:
-        - 83
+        - 79
+        - 99
+        - 99
+        - 97
+        - 101
+        - 99
+        - 97
+        - 116
         - 105
-        - 110
-        - 116
         - 32
-        - 98
-        - 101
-        - 97
-        - 116
-        - 97
-        - 101
-        - 32
-        - 115
-        - 97
-        - 112
-        - 105
-        - 101
-        - 110
-        - 116
-        - 101
-        - 32
-        - 110
+        - 100
         - 111
-        - 98
+        - 108
+        - 111
+        - 114
+        - 117
+        - 109
+        - 32
+        - 101
+        - 120
+        - 32
+        - 99
+        - 117
+        - 109
+        - 113
+        - 117
+        - 101
+        - 32
+        - 110
+        - 101
+        - 99
+        - 101
+        - 115
+        - 115
         - 105
+        - 116
+        - 97
+        - 116
+        - 105
+        - 98
+        - 117
         - 115
         - 46
         followers_count: 10
@@ -4176,23 +4031,64 @@ components:
         avatar_image:
           type: string
           description: Error detail on avatar
-          example: 20i
+          example: bkn
           maxLength: 256
         biography:
           type: string
           description: Error detail on biography
-          example: 71z
+          example: z9a
           maxLength: 256
         categories:
           type: string
           description: Error detail on categories
-          example: 9rf
+          example: pcg
           maxLength: 256
         cover_photo:
           type: string
           description: Error detail on cover photo
-          example: d1k
+          example: 3kc
           maxLength: 256
+        data:
+          type: string
+          description: Metadata Layer process metric response
+          example:
+          - 81
+          - 117
+          - 97
+          - 101
+          - 32
+          - 100
+          - 101
+          - 115
+          - 101
+          - 114
+          - 117
+          - 110
+          - 116
+          - 32
+          - 105
+          - 108
+          - 108
+          - 117
+          - 109
+          - 32
+          - 109
+          - 111
+          - 108
+          - 101
+          - 115
+          - 116
+          - 105
+          - 97
+          - 101
+          - 32
+          - 105
+          - 100
+          - 32
+          - 97
+          - 116
+          - 46
+          format: binary
         detail:
           type: string
           description: The detail of why result is success/fail, depend on response_code
@@ -4201,27 +4097,27 @@ components:
         facebook_link:
           type: string
           description: Error detail on facebook_link
-          example: 8kn
+          example: 4la
           maxLength: 256
         location:
           type: string
           description: Error detail on location
-          example: 42w
+          example: "720"
           maxLength: 256
         native_currency:
           type: string
           description: Error detail on native_currency
-          example: j1g
+          example: m71
           maxLength: 256
         primary_language:
           type: string
           description: Error detail on primary_language
-          example: las
+          example: dd1
           maxLength: 256
         realname:
           type: string
           description: Error detail on realname
-          example: j8a
+          example: o42
           maxLength: 256
         response_code:
           type: integer
@@ -4231,21 +4127,69 @@ components:
         twitter_link:
           type: string
           description: Error detail on twitter_link
-          example: 01q
+          example: 49r
           maxLength: 256
       example:
-        avatar_image: flk
-        biography: ajs
-        categories: 0ke
-        cover_photo: dud
+        avatar_image: job
+        biography: dod
+        categories: bqg
+        cover_photo: 0ag
+        data:
+        - 83
+        - 105
+        - 116
+        - 32
+        - 112
+        - 114
+        - 97
+        - 101
+        - 115
+        - 101
+        - 110
+        - 116
+        - 105
+        - 117
+        - 109
+        - 32
+        - 101
+        - 116
+        - 32
+        - 110
+        - 111
+        - 110
+        - 32
+        - 110
+        - 101
+        - 113
+        - 117
+        - 101
+        - 32
+        - 101
+        - 118
+        - 101
+        - 110
+        - 105
+        - 101
+        - 116
+        - 32
+        - 100
+        - 111
+        - 108
+        - 111
+        - 114
+        - 105
+        - 98
+        - 117
+        - 115
+        - 46
         detail: All userdata is processed
-        facebook_link: 9ag
-        location: xk8
-        native_currency: kcm
-        primary_language: sss
-        realname: cgm
+        facebook_link: e5a
+        location: d7s
+        native_currency: kid
+        primary_language: n3n
+        realname: s60
         response_code: 0
-        twitter_link: kn8
+        twitter_link: smf
       required:
       - response_code
       - detail

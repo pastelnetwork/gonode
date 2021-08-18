@@ -2,6 +2,7 @@ package walletnode
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -179,8 +180,8 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 			ArtistPastelID:    req.ArtistPastelID,
 			Timestamp:         req.Timestamp,
 			PreviousBlockHash: req.PreviousBlockHash,
-			Command: req.Command,
-			Data:req.Data,
+			Command:           req.Command,
+			Data:              req.Data,
 		},
 		UserdataHash: req.UserdataHash,
 		Signature:    req.Signature,
@@ -237,44 +238,76 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 				}
 			} else {
 				// This supernode contain rqlite leader, write to db here
-				// Kinda weird here but not walletnode and supernode have duplicate of UserdataRequest
-				// so we need to convert pbwn.UserdataRequest to pbsn.UserdataRequest
-				reqsn := pbsn.UserdataRequest{
-					Realname:        (*req).Realname,
-					FacebookLink:    (*req).FacebookLink,
-					TwitterLink:     (*req).TwitterLink,
-					NativeCurrency:  (*req).NativeCurrency,
-					Location:        (*req).Location,
-					PrimaryLanguage: (*req).PrimaryLanguage,
-					Categories:      (*req).Categories,
-					Biography:       (*req).Biography,
-					AvatarImage: &pbsn.UserdataRequest_UserImageUpload{
-						Content:  (*req).AvatarImage.Content,
-						Filename: (*req).AvatarImage.Filename,
-					},
-					CoverPhoto: &pbsn.UserdataRequest_UserImageUpload{
-						Content:  (*req).CoverPhoto.Content,
-						Filename: (*req).CoverPhoto.Filename,
-					},
-					ArtistPastelID:    (*req).ArtistPastelID,
-					Timestamp:         (*req).Timestamp,
-					Signature:         (*req).Signature,
-					PreviousBlockHash: (*req).PreviousBlockHash,
-					Command: (*req).Command,
-					Data:	(*req).Data,
-				}
 
-				err := service.databaseOps.WriteUserData(ctx, &reqsn)
-				if err != nil {
-					processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
-					processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
-					return err
-				}
+				if len((*req).Data) == 0 {
+					// This is user specified data (user profile data)
+					reqsn := pbsn.UserdataRequest{
+						Realname:        (*req).Realname,
+						FacebookLink:    (*req).FacebookLink,
+						TwitterLink:     (*req).TwitterLink,
+						NativeCurrency:  (*req).NativeCurrency,
+						Location:        (*req).Location,
+						PrimaryLanguage: (*req).PrimaryLanguage,
+						Categories:      (*req).Categories,
+						Biography:       (*req).Biography,
+						AvatarImage: &pbsn.UserdataRequest_UserImageUpload{
+							Content:  (*req).AvatarImage.Content,
+							Filename: (*req).AvatarImage.Filename,
+						},
+						CoverPhoto: &pbsn.UserdataRequest_UserImageUpload{
+							Content:  (*req).CoverPhoto.Content,
+							Filename: (*req).CoverPhoto.Filename,
+						},
+						ArtistPastelID:    (*req).ArtistPastelID,
+						Timestamp:         (*req).Timestamp,
+						Signature:         (*req).Signature,
+						PreviousBlockHash: (*req).PreviousBlockHash,
+						Command:           (*req).Command,
+						Data:              (*req).Data,
+					}
 
-				// If can go to here, all process of setting userdata have passed
-				// We can consider to pass userdata.SuccessProcess or userdata.SuccessWriteToRQLiteDB (both have same success meaning)
-				processResult.ResponseCode = userdata.SuccessProcess
-				processResult.Detail = userdata.Description[userdata.SuccessProcess]
+					err := service.databaseOps.WriteUserData(ctx, &reqsn)
+					if err != nil {
+						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
+						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
+						return err
+					}
+
+					// If can go to here, all process of setting userdata have passed
+					// We can consider to pass userdata.SuccessProcess or userdata.SuccessWriteToRQLiteDB (both have same success meaning)
+					processResult.ResponseCode = userdata.SuccessProcess
+					processResult.Detail = userdata.Description[userdata.SuccessProcess]
+				} else {
+					// This is walletnode metric (for both get/set data)
+					request := pbsn.Metric{
+						Command: (*req).Command,
+						Data:    (*req).Data,
+						// No need to pass Signature of the data or PastelID to the database operation
+					}
+
+					var result interface{}
+					var err error
+					if result, err = service.databaseOps.ProcessCommand(ctx, &request); err != nil {
+						log.WithContext(ctx).Debugf("Error ProcessCommand:%s, Data %s, err:%s", request.Command, string(request.Data), err.Error())
+						processResult.ResponseCode = userdata.ErrorProcessMetric
+						processResult.Detail = userdata.Description[userdata.ErrorProcessMetric]
+						return nil
+					}
+
+					// Marshal the response from MetadataLayer
+					js, err := json.Marshal(result)
+					if err != nil {
+						log.WithContext(ctx).Debugf("Error Marshal result: %s")
+						processResult.ResponseCode = userdata.ErrorProcessMetric
+						processResult.Detail = userdata.Description[userdata.ErrorProcessMetric]
+						return nil
+					}
+
+					processResult.ResponseCode = userdata.SuccessProcess
+					processResult.Detail = userdata.Description[userdata.SuccessProcess]
+					processResult.Data = js
+					return nil
+				}
 			}
 		}
 		return nil
@@ -283,6 +316,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 	return &pbwn.UserdataReply{
 		ResponseCode: processResult.ResponseCode,
 		Detail:       processResult.Detail,
+		Data:         processResult.Data,
 	}, nil
 }
 
@@ -325,8 +359,8 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pbwn.R
 		ArtistPastelID:    result.ArtistPastelID,
 		Timestamp:         result.Timestamp,
 		PreviousBlockHash: result.PreviousBlockHash,
-		Command: result.Command,
-		Data:	result.Data,
+		Command:           result.Command,
+		Data:              result.Data,
 	}
 
 	return respProto, nil

@@ -2,8 +2,9 @@ package supernode
 
 import (
 	"context"
-	"io"
 	"encoding/hex"
+	"encoding/json"
+	"io"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 
@@ -121,14 +122,46 @@ func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *p
 
 	// This code run in supernode contain leader rqlite db
 	// Process write the data to rqlite happen here
-	if err := service.databaseOps.WriteUserData(ctx, req); err != nil {
-		return nil, errors.Errorf("error occurs while writting to database: %w", err)
+	if len(req.Data) == 0 {
+		// This is user specified data (user profile data)
+		if err := service.databaseOps.WriteUserData(ctx, req); err != nil {
+			return nil, errors.Errorf("error occurs while writting to database: %w", err)
+		}
+
+		return &pb.SuperNodeReply{
+			ResponseCode: userdata.SuccessWriteToRQLiteDB,
+			Detail:       userdata.Description[userdata.SuccessWriteToRQLiteDB],
+		}, nil
+	}
+
+	// This is walletnode metric (for both get/set data)
+	request := pb.Metric{
+		Command: req.Command,
+		Data:    req.Data,
+		// No need to pass Signature of the data or PastelID to the database operation
+	}
+
+	var result interface{}
+	var err error
+	if result, err = service.databaseOps.ProcessCommand(ctx, &request); err != nil {
+		return nil, errors.Errorf("error occurs while process metric to database: %w", err)
+	}
+
+	// Marshal the response from MetadataLayer
+	js, err := json.Marshal(result)
+	if err != nil {
+		return &pb.SuperNodeReply{
+			ResponseCode: userdata.ErrorProcessMetric,
+			Detail:       userdata.Description[userdata.ErrorProcessMetric],
+		}, nil
 	}
 
 	return &pb.SuperNodeReply{
-		ResponseCode: userdata.SuccessWriteToRQLiteDB,
-		Detail:       userdata.Description[userdata.SuccessWriteToRQLiteDB],
+		ResponseCode: userdata.SuccessProcessMetric,
+		Detail:       userdata.Description[userdata.SuccessProcessMetric],
+		Data:         js,
 	}, nil
+
 }
 
 // StoreMetric implements supernode.ProcessUserdataServer.StoreMetric()
@@ -168,7 +201,6 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 		}, nil
 	}
 
-
 	ok, err := task.Service.PastelClient.Verify(ctx, hashvalue, string(signature), req.PastelID, "ed448")
 	if err != nil || !ok {
 		log.WithContext(ctx).Debugf("failed to verify signature %s of node %s", req.Signature, req.PastelID)
@@ -177,33 +209,48 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 			Detail:       userdata.Description[userdata.ErrorVerifyUserdataFail],
 		}, nil
 	}
-
 	if service.databaseOps.IsLeader() {
-		if _, err := service.databaseOps.ProcessCommand(ctx, req); err != nil {
+		var result interface{}
+		if result, err = service.databaseOps.ProcessCommand(ctx, req); err != nil {
 			return nil, errors.Errorf("error occurs while writting to database: %w", err)
 		}
-	} else {		
-		if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), ""); err != nil {
-			return nil, err
+
+		js, err := json.Marshal(result)
+		if err != nil {
+			return nil, errors.Errorf("error occurs while Marshal MetadataLayer result: %w", err)
 		}
 
-		metric := userdata.Metric{
-			Command: req.Command,
-			Data: req.Data,
-		}
-
-		if task.ConnectedToLeader != nil {
-			if _, err := task.ConnectedToLeader.ProcessUserdata.StoreMetric(ctx, metric); err != nil {
-				return &pb.SuperNodeReply{
-					ResponseCode: userdata.ErrorWriteToRQLiteDBFail,
-					Detail:       userdata.Description[userdata.ErrorWriteToRQLiteDBFail],
-				}, nil
-			}
-		}
+		return &pb.SuperNodeReply{
+			ResponseCode: userdata.SuccessWriteToRQLiteDB,
+			Detail:       userdata.Description[userdata.SuccessWriteToRQLiteDB],
+			Data:         js,
+		}, nil
 	}
 
+	if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), ""); err != nil {
+		return nil, err
+	}
+
+	metric := userdata.Metric{
+		Command: req.Command,
+		Data:    req.Data,
+	}
+
+	if task.ConnectedToLeader != nil {
+		resp := userdata.SuperNodeReply{}
+		if resp, err = task.ConnectedToLeader.ProcessUserdata.StoreMetric(ctx, metric); err != nil {
+			return nil, errors.Errorf("error occurs while writting to database: %w", err)
+		}
+		return &pb.SuperNodeReply{
+			ResponseCode: userdata.SuccessWriteToRQLiteDB,
+			Detail:       userdata.Description[userdata.SuccessWriteToRQLiteDB],
+			Data:         resp.Data,
+		}, nil
+	}
+
+	log.WithContext(ctx).Debugf("Process Metric ConnectedToLeader is null")
 	return &pb.SuperNodeReply{
-		ResponseCode: userdata.SuccessWriteToRQLiteDB,
+		ResponseCode: userdata.ErrorProcessMetric,
 		Detail:       userdata.Description[userdata.SuccessWriteToRQLiteDB],
 	}, nil
 }

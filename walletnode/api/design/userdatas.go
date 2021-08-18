@@ -338,6 +338,11 @@ var UserdataProcessResult = Type("UserdataProcessResult", func() {
 		Description("Error detail on cover photo")
 		MaxLength(256)
 	})
+
+	Attribute("data", Bytes, func() {
+		Description("Metadata Layer process metric response")
+	})
+
 	Required("response_code", "detail")
 })
 

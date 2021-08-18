@@ -471,7 +471,6 @@ func (task *Task) getRQliteLeaderNode(ctx context.Context, extAddress string) (*
 	return node, nil
 }
 
-
 // ConnectToLeader connects to RQLite Leader node
 func (task *Task) ConnectToLeader(ctx context.Context, extAddress string, sessID string) error {
 	log.WithContext(ctx).Debugf("ConnectToLeader on address %s", extAddress)
@@ -494,7 +493,6 @@ func (task *Task) ConnectToLeader(ctx context.Context, extAddress string, sessID
 	})
 	return nil
 }
-
 
 // SendMetricToPrimary send metric to 1st ranked Supernode return by masternode top
 func (task *Task) SendMetricToPrimary(ctx context.Context, metric userdata.Metric) error {
@@ -535,7 +533,7 @@ func (task *Task) SendMetricToPrimary(ctx context.Context, metric userdata.Metri
 		// Send data to the highest ranked SN that we just connect
 		_, err = node.StoreMetric(ctx, metric)
 		if err != nil {
-			// If there is issue then we return 
+			// If there is issue then we return
 			return err
 		}
 		log.WithContext(ctx).Debugf("SendMetricToPrimary StoreMetric successfully to node %s", mn.ExtAddress)

@@ -71,7 +71,7 @@ type ProcessRequest struct {
 	PreviousBlockHash string
 	// Command is database operation that will apply to the data
 	Command string
-	// Data is the walletnode metric that will set/get to/from Metadata Layer
+	// Data is the walletnode set/get input provide to Metadata Layer
 	Data []byte
 }
 
@@ -118,6 +118,8 @@ type ProcessResult struct {
 	AvatarImage string
 	// Error detail on cover photo
 	CoverPhoto string
+	// Data is the walletnode metric that MetadataLayer return
+	Data []byte
 }
 
 // SuperNodeRequest represents the ProcessResult request
@@ -139,9 +141,11 @@ type SuperNodeReply struct {
 	ResponseCode int32
 	// The detail of why SuperNodeRequest is success/fail, depend on response_code
 	Detail string
+	// Data is the walletnode metric that MetadataLayer return
+	Data []byte
 }
 
-// Metric represents the metric need to be stored
+// Metric represents the metric need to be stored, this use for supernode metric only
 type Metric struct {
 	// Signature of the pastelid that sign this metric data
 	Signature string

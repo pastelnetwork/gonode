@@ -115,7 +115,7 @@ func (service *Userdata) SetUserFollowRelation(ctx context.Context, req *userdat
 	// Generate the request
 	request := userdata.ProcessRequest{
 		Command: userdata.CommandUserFollowWrite,
-		Data: js,
+		Data:    js,
 	}
 
 	// Send the request to set it in Metadata Layer
@@ -125,25 +125,97 @@ func (service *Userdata) SetUserFollowRelation(ctx context.Context, req *userdat
 	}
 
 	// Return the result of Metadata Layer process this request
-	return &userdatas.SetUserFollowRelationResult {
-		ResponseCode :result.ResponseCode,
-		Detail:result.Detail,
-	},nil
+	return &userdatas.SetUserFollowRelationResult{
+		ResponseCode: result.ResponseCode,
+		Detail:       result.Detail,
+	}, nil
 }
 
 // Get followers of a user
 func (service *Userdata) GetFollowers(ctx context.Context, req *userdatas.GetFollowersPayload) (*userdatas.GetFollowersResult, error) {
-	return nil, nil
+	// Generalize the data to be get/set by marshaling it
+	js, err := json.Marshal(&req)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Generate the request
+	request := userdata.ProcessRequest{
+		Command: userdata.CommandGetFollowers,
+		Data:    js,
+	}
+
+	// Send the request to set it in Metadata Layer
+	result, err := service.processUserdata(ctx, &request)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	mdlResult := userdatas.GetFollowersResult{}
+	if err := json.Unmarshal(result.Data, &mdlResult); err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Return the result of Metadata Layer process this request
+	return &mdlResult, nil
 }
 
 // Get followers of a user
 func (service *Userdata) GetFollowees(ctx context.Context, req *userdatas.GetFolloweesPayload) (*userdatas.GetFolloweesResult, error) {
-	return nil, nil
+	// Generalize the data to be get/set by marshaling it
+	js, err := json.Marshal(&req)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Generate the request
+	request := userdata.ProcessRequest{
+		Command: userdata.CommandGetFollowees,
+		Data:    js,
+	}
+
+	// Send the request to set it in Metadata Layer
+	result, err := service.processUserdata(ctx, &request)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	mdlResult := userdatas.GetFolloweesResult{}
+	if err := json.Unmarshal(result.Data, &mdlResult); err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Return the result of Metadata Layer process this request
+	return &mdlResult, nil
 }
 
 // Get followers of a user
 func (service *Userdata) GetFriends(ctx context.Context, req *userdatas.GetFriendsPayload) (*userdatas.GetFriendsResult, error) {
-	return nil, nil
+	// Generalize the data to be get/set by marshaling it
+	js, err := json.Marshal(&req)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Generate the request
+	request := userdata.ProcessRequest{
+		Command: userdata.CommandGetFriend,
+		Data:    js,
+	}
+
+	// Send the request to set it in Metadata Layer
+	result, err := service.processUserdata(ctx, &request)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	mdlResult := userdatas.GetFriendsResult{}
+	if err := json.Unmarshal(result.Data, &mdlResult); err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Return the result of Metadata Layer process this request
+	return &mdlResult, nil
 }
 
 // Notify a new like event of an user to an art
@@ -157,7 +229,7 @@ func (service *Userdata) SetUserLikeArt(ctx context.Context, req *userdatas.SetU
 	// Generate the request
 	request := userdata.ProcessRequest{
 		Command: userdata.CommandArtLikeWrite,
-		Data: js,
+		Data:    js,
 	}
 
 	// Send the request to set it in Metadata Layer
@@ -167,15 +239,39 @@ func (service *Userdata) SetUserLikeArt(ctx context.Context, req *userdatas.SetU
 	}
 
 	// Return the result of Metadata Layer process this request
-	return &userdatas.SetUserLikeArtResult {
-		ResponseCode :result.ResponseCode,
-		Detail:result.Detail,
-	},nil
+	return &userdatas.SetUserLikeArtResult{
+		ResponseCode: result.ResponseCode,
+		Detail:       result.Detail,
+	}, nil
 }
 
 // Get users that liked an art
 func (service *Userdata) GetUsersLikeArt(ctx context.Context, req *userdatas.GetUsersLikeArtPayload) (*userdatas.GetUsersLikeArtResult, error) {
-	return nil, nil
+	// Generalize the data to be get/set by marshaling it
+	js, err := json.Marshal(&req)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Generate the request
+	request := userdata.ProcessRequest{
+		Command: userdata.CommandUsersLikeNft,
+		Data:    js,
+	}
+
+	// Send the request to set it in Metadata Layer
+	result, err := service.processUserdata(ctx, &request)
+	if err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	mdlResult := userdatas.GetUsersLikeArtResult{}
+	if err := json.Unmarshal(result.Data, &mdlResult); err != nil {
+		return nil, userdatas.MakeInternalServerError(err)
+	}
+
+	// Return the result of Metadata Layer process this request
+	return &mdlResult, nil
 }
 
 // NewUserdata returns the Userdata implementation.

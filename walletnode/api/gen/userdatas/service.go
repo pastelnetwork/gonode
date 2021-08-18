@@ -101,6 +101,8 @@ type UserdataProcessResult struct {
 	AvatarImage *string
 	// Error detail on cover photo
 	CoverPhoto *string
+	// Metadata Layer process metric response
+	Data []byte
 }
 
 // UpdateUserdataPayload is the payload type of the userdatas service

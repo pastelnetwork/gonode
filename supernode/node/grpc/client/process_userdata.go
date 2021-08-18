@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
-	
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
@@ -94,6 +94,7 @@ func (service *processUserdata) SendUserdataToPrimary(ctx context.Context, dataS
 	return userdata.SuperNodeReply{
 		ResponseCode: resp.ResponseCode,
 		Detail:       resp.Detail,
+		Data:         resp.Data,
 	}, err
 }
 
@@ -126,8 +127,8 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 		ArtistPastelID:    finalUserdata.Userdata.ArtistPastelID,
 		Timestamp:         finalUserdata.Userdata.Timestamp,
 		PreviousBlockHash: finalUserdata.Userdata.PreviousBlockHash,
-		Command: finalUserdata.Userdata.Command,
-		Data:finalUserdata.Userdata.Data,
+		Command:           finalUserdata.Userdata.Command,
+		Data:              finalUserdata.Userdata.Data,
 		UserdataHash:      finalUserdata.UserdataHash,
 		Signature:         finalUserdata.Signature,
 	}
@@ -137,6 +138,7 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 	return userdata.SuperNodeReply{
 		ResponseCode: resp.ResponseCode,
 		Detail:       resp.Detail,
+		Data:         resp.Data,
 	}, err
 }
 
@@ -157,8 +159,8 @@ func (service *processUserdata) StoreMetric(ctx context.Context, metric userdata
 	if err != nil {
 		log.WithContext(ctx).Debugf("StoreMetric error %s", err.Error())
 		return userdata.SuperNodeReply{
-			ResponseCode: userdata.ErrorStoreMetric,
-			Detail:       userdata.Description[userdata.ErrorStoreMetric],
+			ResponseCode: userdata.ErrorProcessMetric,
+			Detail:       userdata.Description[userdata.ErrorProcessMetric],
 		}, nil
 	}
 

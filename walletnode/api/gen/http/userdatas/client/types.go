@@ -161,6 +161,8 @@ type CreateUserdataResponseBody struct {
 	AvatarImage *string `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
 	// Error detail on cover photo
 	CoverPhoto *string `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
+	// Metadata Layer process metric response
+	Data []byte `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
 }
 
 // UpdateUserdataResponseBody is the type of the "userdatas" service
@@ -190,6 +192,8 @@ type UpdateUserdataResponseBody struct {
 	AvatarImage *string `form:"avatar_image,omitempty" json:"avatar_image,omitempty" xml:"avatar_image,omitempty"`
 	// Error detail on cover photo
 	CoverPhoto *string `form:"cover_photo,omitempty" json:"cover_photo,omitempty" xml:"cover_photo,omitempty"`
+	// Metadata Layer process metric response
+	Data []byte `form:"data,omitempty" json:"data,omitempty" xml:"data,omitempty"`
 }
 
 // UserdataGetResponseBody is the type of the "userdatas" service "userdataGet"
@@ -804,6 +808,7 @@ func NewCreateUserdataUserdataProcessResultCreated(body *CreateUserdataResponseB
 		Biography:       body.Biography,
 		AvatarImage:     body.AvatarImage,
 		CoverPhoto:      body.CoverPhoto,
+		Data:            body.Data,
 	}
 
 	return v
@@ -855,6 +860,7 @@ func NewUpdateUserdataUserdataProcessResultCreated(body *UpdateUserdataResponseB
 		Biography:       body.Biography,
 		AvatarImage:     body.AvatarImage,
 		CoverPhoto:      body.CoverPhoto,
+		Data:            body.Data,
 	}
 
 	return v

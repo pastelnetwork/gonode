@@ -111,6 +111,8 @@ message UserdataReply {
   string avatar_image = 11;
   // Error detail on cover photo
   string cover_photo = 12;
+  // Data is the walletnode metric that Metadata Layer will response
+	bytes data = 13;
 }
 
 message RetrieveRequest {
