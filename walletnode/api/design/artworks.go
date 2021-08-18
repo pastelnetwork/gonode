@@ -548,8 +548,12 @@ var SearchArtworkParams = func() {
 var ArtworkSummary = Type("ArtworkSummary", func() {
 	Description("Artwork response")
 
-	Attribute("thumbnail", Bytes, func() {
-		Description("Thumbnail image")
+	Attribute("thumbnail_1", Bytes, func() {
+		Description("Thumbnail_1 image")
+	})
+
+	Attribute("thumbnail_2", Bytes, func() {
+		Description("Thumbnail_2 image")
 	})
 
 	Attribute("txid", String, func() {
