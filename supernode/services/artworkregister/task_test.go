@@ -4,10 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"image"
-	"image/png"
 	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -15,7 +12,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
-	"github.com/pastelnetwork/gonode/common/storage/fs"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	ddMock "github.com/pastelnetwork/gonode/dupedetection/test"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
@@ -824,104 +820,4 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestTaskMatchFingersPrintAndScores(t *testing.T) {
-	type args struct {
-		task      *Task
-		verifyErr error
-		genErr    error
-		fileErr   error
-		verifyRet bool
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"match-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
-					fingerAndScores:         &pastel.FingerAndScores{},
-				},
-
-				genErr: nil,
-			},
-			wantErr: errors.New("fingerprint or scores"),
-		},
-		"dd-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket:                  &pastel.NFTTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
-					fingerAndScores:         &pastel.FingerAndScores{},
-				},
-				verifyRet: true,
-				verifyErr: nil,
-				fileErr:   nil,
-				genErr:    errors.New("test"),
-			},
-			wantErr: errors.New("test"),
-		},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnVerify(tc.args.verifyRet, tc.args.verifyErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
-
-			fingerprints := []float64{12.3}
-			fgBytes, err := json.Marshal(fingerprints)
-			assert.Nil(t, err)
-
-			ddmock := ddMock.NewMockClient(t)
-			ddmock.ListenOnGenerate(&dupedetection.DupeDetection{Fingerprints: string(fgBytes)},
-				tc.args.genErr)
-
-			tc.args.task.ddClient = ddmock
-			file, err := newTestImageFile()
-			assert.Nil(t, err)
-			tc.args.task.Artwork = file
-
-			err = tc.args.task.matchFingersPrintAndScores(context.Background())
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				if err != nil {
-					fmt.Println("err: ", err.Error())
-				}
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
-func newTestImageFile() (*artwork.File, error) {
-	imageStorage := artwork.NewStorage(fs.NewFileStorage(os.TempDir()))
-	imgFile := imageStorage.NewFile()
-
-	f, err := imgFile.Create()
-	if err != nil {
-		return nil, errors.Errorf("failed to create storage file: %w", err)
-	}
-	defer f.Close()
-
-	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
-	png.Encode(f, img)
-
-	return imgFile, nil
 }
