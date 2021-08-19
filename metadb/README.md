@@ -63,6 +63,17 @@ Execute the swagger api call using the info provided by swagger api, there is fo
 
 - http://localhost:8080/userdatas/<pastelid> (GET)
 
+- http://localhost:8080/swagger/#/userdatas/userdatas%23setUserFollowRelation (POST)
+
+- http://localhost:8080/swagger/#/userdatas/userdatas%23getFollowees (GET)
+
+- http://localhost:8080/swagger/#/userdatas/userdatas%23getFollowers (GET)
+
+- http://localhost:8080/swagger/#/userdatas/userdatas%23getFriends (GET)
+
+- http://localhost:8080/swagger/#/userdatas/userdatas%23getUsersLikeArt (GET)
+
+- http://localhost:8080/swagger/#/userdatas/userdatas%23setUserLikeArt (POST)
   
   
 
@@ -89,10 +100,90 @@ curl -X 'POST' \
 -F 'categories=Quos dignissimos ut corrupti eos aut.' \
 -F 'artist_pastelid_passphrase=qwerasdf1234'
 
+
+curl -X 'POST' \
+  'http://localhost:8080/userdatas/update' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: multipart/form-data' \
+  -F 'twitter_link=' \
+  -F 'realname=' \
+  -F 'cover_photo=' \
+  -F 'artist_pastelid=jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS' \
+  -F 'facebook_link=' \
+  -F 'biography=' \
+  -F 'primary_language=' \
+  -F 'avatar_image=' \
+  -F 'location=' \
+  -F 'native_currency=' \
+  -F 'categories=' \
+  -F 'artist_pastelid_passphrase=qwerasdf9876'
+
   
 curl -X 'GET' \
 'http://localhost:8080/userdatas/jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS' \
 -H 'accept: application/json'
+
+
+--- SET FOLLOW RELATIONSHIP ---
+curl -X 'POST' \
+  'http://localhost:8080/userdatas/follow' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "followee_pastel_id": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS",
+  "follower_pastel_id": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS"
+}'
+
+--- GET FOLLOWERS ---
+curl -X 'GET'   'http://localhost:8080/userdatas/follow/followers'   -H 'accept: application/json'   -H 'Content-Type: application/json'   -d '{
+  "limit": 10,
+  "offset": 0,
+  "pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS"
+}'
+
+--- GET FOLLOWEES ---
+curl -X 'GET' \
+  'http://localhost:8080/userdatas/follow/followees' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "limit": 10,
+  "offset": 0,
+  "pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS"
+}'
+
+--- GET FRIEND ---
+curl -X 'GET' \
+  'http://localhost:8080/userdatas/follow/friends' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "limit": 10,
+  "offset": 0,
+  "pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS"
+}'
+
+--- SET ART LIKE ---
+curl -X 'POST' \
+  'http://localhost:8080/userdatas/like/art' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "art_pastel_id": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VaoRqi1GnQrYKjSxQAC7NBtvtEdS",
+  "user_pastel_id": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS"
+}'
+
+--- GET ART LIKE ---
+curl -X 'GET' \
+  'http://localhost:8080/userdatas/like/art' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "art_id": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS",
+  "limit": 10,
+  "offset": 0
+}'
+
 
 </pre>
   

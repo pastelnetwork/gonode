@@ -273,7 +273,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					if err != nil {
 						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
-						return err
+						return nil
 					}
 
 					// If can go to here, all process of setting userdata have passed

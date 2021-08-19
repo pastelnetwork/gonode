@@ -54,7 +54,7 @@ const (
 // Config is rqlite database config
 type Config struct {
 	SchemaPath   string `mapstructure:"schema-path" json:"schema-path,omitempty"`
-	TemplatePath string `mapstructure:"template-path" json:"write-template-path,omitempty"`
+	TemplatePath string `mapstructure:"template-path" json:"template-path,omitempty"`
 }
 
 // NewConfig return the new Config
@@ -957,6 +957,7 @@ func (db *Ops) Run(ctx context.Context) error {
 
 	db.templates, err = NewTemplateKeeper(db.config.TemplatePath)
 	if err != nil {
+		fmt.Println(db.config.TemplatePath)
 		return errors.Errorf("error while creating new template keeper: %w", err)
 	}
 
