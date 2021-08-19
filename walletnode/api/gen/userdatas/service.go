@@ -202,10 +202,6 @@ type GetFollowersPayload struct {
 // GetFollowersResult is the result type of the userdatas service getFollowers
 // method.
 type GetFollowersResult struct {
-	// Result of the request is success or not
-	ResponseCode int
-	// The detail of why result is success/fail, depend on response_code
-	Detail string
 	// total number of users in relationship with this user
 	TotalCount int
 	// Artist's PastelID
@@ -226,10 +222,6 @@ type GetFolloweesPayload struct {
 // GetFolloweesResult is the result type of the userdatas service getFollowees
 // method.
 type GetFolloweesResult struct {
-	// Result of the request is success or not
-	ResponseCode int
-	// The detail of why result is success/fail, depend on response_code
-	Detail string
 	// total number of users in relationship with this user
 	TotalCount int
 	// Artist's PastelID
@@ -250,10 +242,6 @@ type GetFriendsPayload struct {
 // GetFriendsResult is the result type of the userdatas service getFriends
 // method.
 type GetFriendsResult struct {
-	// Result of the request is success or not
-	ResponseCode int
-	// The detail of why result is success/fail, depend on response_code
-	Detail string
 	// total number of users in relationship with this user
 	TotalCount int
 	// Artist's PastelID
@@ -292,10 +280,6 @@ type GetUsersLikeArtPayload struct {
 // GetUsersLikeArtResult is the result type of the userdatas service
 // getUsersLikeArt method.
 type GetUsersLikeArtResult struct {
-	// Result of the request is success or not
-	ResponseCode int
-	// The detail of why result is success/fail, depend on response_code
-	Detail string
 	// total number of users in relationship with this user
 	TotalCount int
 	// Artist's PastelID
@@ -311,8 +295,6 @@ type UserImageUploadPayload struct {
 }
 
 type UserRelationshipInfo struct {
-	// Artist's PastelID
-	Pastelid string
 	// Username of the user
 	Username string
 	// Real name of the user

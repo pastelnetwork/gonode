@@ -527,8 +527,6 @@ paths:
           schema:
             $ref: '#/definitions/UserdatasGetFolloweesResponseBody'
             required:
-            - response_code
-            - detail
             - total_count
         "400":
           description: Bad Request response.
@@ -561,8 +559,6 @@ paths:
           schema:
             $ref: '#/definitions/UserdatasGetFollowersResponseBody'
             required:
-            - response_code
-            - detail
             - total_count
         "400":
           description: Bad Request response.
@@ -595,8 +591,6 @@ paths:
           schema:
             $ref: '#/definitions/UserdatasGetFriendsResponseBody'
             required:
-            - response_code
-            - detail
             - total_count
         "400":
           description: Bad Request response.
@@ -629,8 +623,6 @@ paths:
           schema:
             $ref: '#/definitions/UserdatasGetUsersLikeArtResponseBody'
             required:
-            - response_code
-            - detail
             - total_count
         "400":
           description: Bad Request response.
@@ -3127,13 +3119,6 @@ definitions:
         description: number of users follow this user
         example: 10
         format: int64
-      pastelid:
-        type: string
-        description: Artist's PastelID
-        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-        pattern: ^[a-zA-Z0-9]+$
-        minLength: 86
-        maxLength: 86
       realname:
         type: string
         description: Real name of the user
@@ -3178,11 +3163,9 @@ definitions:
       - 116
       - 46
       followers_count: 10
-      pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
       realname: Williams Scottish
       username: w_scottish
     required:
-    - pastelid
     - username
     - followers_count
   UserdatasCreateUserdataBadRequestResponseBody:
@@ -3697,16 +3680,6 @@ definitions:
     title: UserdatasGetFolloweesResponseBody
     type: object
     properties:
-      detail:
-        type: string
-        description: The detail of why result is success/fail, depend on response_code
-        example: All userdata is processed
-        maxLength: 256
-      response_code:
-        type: integer
-        description: Result of the request is success or not
-        example: 0
-        format: int64
       result:
         type: array
         items:
@@ -3742,7 +3715,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
@@ -3774,7 +3746,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
       total_count:
@@ -3783,8 +3754,6 @@ definitions:
         example: 10
         format: int64
     example:
-      detail: All userdata is processed
-      response_code: 0
       result:
       - avatar_thumbnail:
         - 68
@@ -3815,7 +3784,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -3847,13 +3815,10 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       total_count: 10
     required:
-    - response_code
-    - detail
     - total_count
   UserdatasGetFollowersBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
@@ -3977,16 +3942,6 @@ definitions:
     title: UserdatasGetFollowersResponseBody
     type: object
     properties:
-      detail:
-        type: string
-        description: The detail of why result is success/fail, depend on response_code
-        example: All userdata is processed
-        maxLength: 256
-      response_code:
-        type: integer
-        description: Result of the request is success or not
-        example: 0
-        format: int64
       result:
         type: array
         items:
@@ -4022,7 +3977,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
@@ -4054,7 +4008,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
@@ -4086,7 +4039,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
       total_count:
@@ -4095,8 +4047,6 @@ definitions:
         example: 10
         format: int64
     example:
-      detail: All userdata is processed
-      response_code: 0
       result:
       - avatar_thumbnail:
         - 68
@@ -4127,7 +4077,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -4159,7 +4108,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -4191,13 +4139,10 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       total_count: 10
     required:
-    - response_code
-    - detail
     - total_count
   UserdatasGetFriendsBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
@@ -4321,16 +4266,6 @@ definitions:
     title: UserdatasGetFriendsResponseBody
     type: object
     properties:
-      detail:
-        type: string
-        description: The detail of why result is success/fail, depend on response_code
-        example: All userdata is processed
-        maxLength: 256
-      response_code:
-        type: integer
-        description: Result of the request is success or not
-        example: 0
-        format: int64
       result:
         type: array
         items:
@@ -4366,7 +4301,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
@@ -4398,7 +4332,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
       total_count:
@@ -4407,8 +4340,6 @@ definitions:
         example: 10
         format: int64
     example:
-      detail: All userdata is processed
-      response_code: 0
       result:
       - avatar_thumbnail:
         - 68
@@ -4439,7 +4370,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -4471,7 +4401,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -4503,7 +4432,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -4535,13 +4463,10 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       total_count: 10
     required:
-    - response_code
-    - detail
     - total_count
   UserdatasGetUsersLikeArtBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
@@ -4665,16 +4590,6 @@ definitions:
     title: UserdatasGetUsersLikeArtResponseBody
     type: object
     properties:
-      detail:
-        type: string
-        description: The detail of why result is success/fail, depend on response_code
-        example: All userdata is processed
-        maxLength: 256
-      response_code:
-        type: integer
-        description: Result of the request is success or not
-        example: 0
-        format: int64
       result:
         type: array
         items:
@@ -4710,7 +4625,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
@@ -4742,7 +4656,6 @@ definitions:
           - 115
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
       total_count:
@@ -4751,8 +4664,6 @@ definitions:
         example: 10
         format: int64
     example:
-      detail: All userdata is processed
-      response_code: 0
       result:
       - avatar_thumbnail:
         - 68
@@ -4783,7 +4694,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -4815,7 +4725,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -4847,7 +4756,6 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       - avatar_thumbnail:
@@ -4879,13 +4787,10 @@ definitions:
         - 115
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       total_count: 10
     required:
-    - response_code
-    - detail
     - total_count
   UserdatasSetUserFollowRelationBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'

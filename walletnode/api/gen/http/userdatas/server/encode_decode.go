@@ -775,7 +775,6 @@ func marshalUserdatasUserRelationshipInfoToUserRelationshipInfoResponseBody(v *u
 		return nil
 	}
 	res := &UserRelationshipInfoResponseBody{
-		Pastelid:        v.Pastelid,
 		Username:        v.Username,
 		Realname:        v.Realname,
 		FollowersCount:  v.FollowersCount,

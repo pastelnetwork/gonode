@@ -237,10 +237,6 @@ type SetUserFollowRelationResponseBody struct {
 // GetFollowersResponseBody is the type of the "userdatas" service
 // "getFollowers" endpoint HTTP response body.
 type GetFollowersResponseBody struct {
-	// Result of the request is success or not
-	ResponseCode int `form:"response_code" json:"response_code" xml:"response_code"`
-	// The detail of why result is success/fail, depend on response_code
-	Detail string `form:"detail" json:"detail" xml:"detail"`
 	// total number of users in relationship with this user
 	TotalCount int `form:"total_count" json:"total_count" xml:"total_count"`
 	// Artist's PastelID
@@ -250,10 +246,6 @@ type GetFollowersResponseBody struct {
 // GetFolloweesResponseBody is the type of the "userdatas" service
 // "getFollowees" endpoint HTTP response body.
 type GetFolloweesResponseBody struct {
-	// Result of the request is success or not
-	ResponseCode int `form:"response_code" json:"response_code" xml:"response_code"`
-	// The detail of why result is success/fail, depend on response_code
-	Detail string `form:"detail" json:"detail" xml:"detail"`
 	// total number of users in relationship with this user
 	TotalCount int `form:"total_count" json:"total_count" xml:"total_count"`
 	// Artist's PastelID
@@ -263,10 +255,6 @@ type GetFolloweesResponseBody struct {
 // GetFriendsResponseBody is the type of the "userdatas" service "getFriends"
 // endpoint HTTP response body.
 type GetFriendsResponseBody struct {
-	// Result of the request is success or not
-	ResponseCode int `form:"response_code" json:"response_code" xml:"response_code"`
-	// The detail of why result is success/fail, depend on response_code
-	Detail string `form:"detail" json:"detail" xml:"detail"`
 	// total number of users in relationship with this user
 	TotalCount int `form:"total_count" json:"total_count" xml:"total_count"`
 	// Artist's PastelID
@@ -285,10 +273,6 @@ type SetUserLikeArtResponseBody struct {
 // GetUsersLikeArtResponseBody is the type of the "userdatas" service
 // "getUsersLikeArt" endpoint HTTP response body.
 type GetUsersLikeArtResponseBody struct {
-	// Result of the request is success or not
-	ResponseCode int `form:"response_code" json:"response_code" xml:"response_code"`
-	// The detail of why result is success/fail, depend on response_code
-	Detail string `form:"detail" json:"detail" xml:"detail"`
 	// total number of users in relationship with this user
 	TotalCount int `form:"total_count" json:"total_count" xml:"total_count"`
 	// Artist's PastelID
@@ -659,8 +643,6 @@ type UserImageUploadPayloadResponseBody struct {
 // UserRelationshipInfoResponseBody is used to define fields on response body
 // types.
 type UserRelationshipInfoResponseBody struct {
-	// Artist's PastelID
-	Pastelid string `form:"pastelid" json:"pastelid" xml:"pastelid"`
 	// Username of the user
 	Username string `form:"username" json:"username" xml:"username"`
 	// Real name of the user
@@ -760,9 +742,7 @@ func NewSetUserFollowRelationResponseBody(res *userdatas.SetUserFollowRelationRe
 // the "getFollowers" endpoint of the "userdatas" service.
 func NewGetFollowersResponseBody(res *userdatas.GetFollowersResult) *GetFollowersResponseBody {
 	body := &GetFollowersResponseBody{
-		ResponseCode: res.ResponseCode,
-		Detail:       res.Detail,
-		TotalCount:   res.TotalCount,
+		TotalCount: res.TotalCount,
 	}
 	if res.Result != nil {
 		body.Result = make([]*UserRelationshipInfoResponseBody, len(res.Result))
@@ -777,9 +757,7 @@ func NewGetFollowersResponseBody(res *userdatas.GetFollowersResult) *GetFollower
 // the "getFollowees" endpoint of the "userdatas" service.
 func NewGetFolloweesResponseBody(res *userdatas.GetFolloweesResult) *GetFolloweesResponseBody {
 	body := &GetFolloweesResponseBody{
-		ResponseCode: res.ResponseCode,
-		Detail:       res.Detail,
-		TotalCount:   res.TotalCount,
+		TotalCount: res.TotalCount,
 	}
 	if res.Result != nil {
 		body.Result = make([]*UserRelationshipInfoResponseBody, len(res.Result))
@@ -794,9 +772,7 @@ func NewGetFolloweesResponseBody(res *userdatas.GetFolloweesResult) *GetFollowee
 // the "getFriends" endpoint of the "userdatas" service.
 func NewGetFriendsResponseBody(res *userdatas.GetFriendsResult) *GetFriendsResponseBody {
 	body := &GetFriendsResponseBody{
-		ResponseCode: res.ResponseCode,
-		Detail:       res.Detail,
-		TotalCount:   res.TotalCount,
+		TotalCount: res.TotalCount,
 	}
 	if res.Result != nil {
 		body.Result = make([]*UserRelationshipInfoResponseBody, len(res.Result))
@@ -821,9 +797,7 @@ func NewSetUserLikeArtResponseBody(res *userdatas.SetUserLikeArtResult) *SetUser
 // of the "getUsersLikeArt" endpoint of the "userdatas" service.
 func NewGetUsersLikeArtResponseBody(res *userdatas.GetUsersLikeArtResult) *GetUsersLikeArtResponseBody {
 	body := &GetUsersLikeArtResponseBody{
-		ResponseCode: res.ResponseCode,
-		Detail:       res.Detail,
-		TotalCount:   res.TotalCount,
+		TotalCount: res.TotalCount,
 	}
 	if res.Result != nil {
 		body.Result = make([]*UserRelationshipInfoResponseBody, len(res.Result))
