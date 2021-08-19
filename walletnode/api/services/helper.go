@@ -321,3 +321,19 @@ func toUserSpecifiedData(req *userdata.ProcessRequest) *userdatas.UserSpecifiedD
 
 	return result
 }
+
+func toRelationshipInfoArray(items []userdata.UserRelationshipItem) []*userdatas.UserRelationshipInfo {
+	if items == nil {
+		return nil
+	}
+	result := make([]*userdatas.UserRelationshipInfo, 0)
+	for _, item := range items {
+		result = append(result, &userdatas.UserRelationshipInfo{
+			Username:        item.Username,
+			Realname:        &item.Realname,
+			FollowersCount:  item.FollowersCount,
+			AvatarThumbnail: item.AvatarImage,
+		})
+	}
+	return result
+}

@@ -151,13 +151,16 @@ func (service *Userdata) GetFollowers(ctx context.Context, req *userdatas.GetFol
 		return nil, userdatas.MakeInternalServerError(err)
 	}
 
-	mdlResult := userdatas.GetFollowersResult{}
-	if err := json.Unmarshal(result.Data, &mdlResult); err != nil {
+	var relationResult userdata.UserRelationshipQueryResult
+	if err := json.Unmarshal(result.Data, &relationResult); err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
 
 	// Return the result of Metadata Layer process this request
-	return &mdlResult, nil
+	return &userdatas.GetFollowersResult{
+		TotalCount: relationResult.TotalCount,
+		Result:     toRelationshipInfoArray(relationResult.Items),
+	}, nil
 }
 
 // Get followers of a user
