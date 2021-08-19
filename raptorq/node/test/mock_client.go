@@ -111,7 +111,7 @@ func (client *Client) AssertRaptorQCall(expectedCalls int, arguments ...interfac
 
 // ListenOnEncode listening Encode call and returns channel from args
 func (client *Client) ListenOnEncode(returnEnc *node.Encode, returnErr error) *Client {
-	client.Connection.On(EncodeMethod, mock.Anything, mock.IsType([]byte{})).Return(returnEnc, returnErr)
+	client.RaptorQ.On(EncodeMethod, mock.Anything, mock.IsType([]byte{})).Return(returnEnc, returnErr)
 	return client
 }
 

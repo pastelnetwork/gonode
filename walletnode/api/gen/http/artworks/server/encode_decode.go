@@ -1074,7 +1074,8 @@ func marshalArtworksviewsThumbnailcoordinateViewToThumbnailcoordinateResponse(v 
 // *artworks.ArtworkSummary.
 func marshalArtworksArtworkSummaryToArtworkSummaryResponseBody(v *artworks.ArtworkSummary) *ArtworkSummaryResponseBody {
 	res := &ArtworkSummaryResponseBody{
-		Thumbnail:        v.Thumbnail,
+		Thumbnail1:       v.Thumbnail1,
+		Thumbnail2:       v.Thumbnail2,
 		Txid:             v.Txid,
 		Title:            v.Title,
 		Description:      v.Description,

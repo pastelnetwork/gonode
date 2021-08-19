@@ -94,9 +94,10 @@ func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSea
 	ticketData := srch.RegTicketData.NFTTicketData.AppTicketData
 	res := &artworks.ArtworkSearchResult{
 		Artwork: &artworks.ArtworkSummary{
-			Txid:      srch.TXID,
-			Thumbnail: srch.Thumbnail,
-			Title:     ticketData.NFTTitle,
+			Txid:       srch.TXID,
+			Thumbnail1: srch.Thumbnail,
+			Thumbnail2: srch.ThumbnailSecondry,
+			Title:      ticketData.NFTTitle,
 
 			Copies:           srch.RegTicketData.NFTTicketData.Copies,
 			ArtistName:       ticketData.CreatorName,
@@ -112,11 +113,11 @@ func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSea
 	}
 
 	res.Matches = []*artworks.FuzzyMatch{}
-	for _, match := range res.Matches {
+	for _, match := range srch.Matches {
 		res.Matches = append(res.Matches, &artworks.FuzzyMatch{
-			Score:          match.Score,
-			Str:            match.Str,
-			FieldType:      match.FieldType,
+			Score:          &match.Score,
+			Str:            &match.Str,
+			FieldType:      &match.FieldType,
 			MatchedIndexes: match.MatchedIndexes,
 		})
 	}

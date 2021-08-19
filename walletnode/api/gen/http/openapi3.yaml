@@ -48,50 +48,94 @@ paths:
                 nsfw_score: 1
                 porn_nsfw_score: 1
                 rareness_score: 1
-                royalty: 0.8422043798623209
+                royalty: 0.7600055709346397
                 series_name: Famous artist
                 sexy_nsfw_score: 1
                 storage_fee: 100
-                thumbnail:
-                - 73
-                - 108
-                - 108
-                - 117
-                - 109
-                - 32
-                - 118
-                - 101
-                - 108
+                thumbnail_1:
+                - 65
+                - 114
+                - 99
+                - 104
                 - 105
+                - 116
+                - 101
+                - 99
+                - 116
+                - 111
+                - 32
+                - 115
+                - 117
+                - 110
                 - 116
                 - 32
                 - 118
-                - 101
-                - 110
-                - 105
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
                 - 97
+                - 115
+                - 32
+                - 105
+                - 115
+                - 116
+                - 101
+                - 32
+                - 115
+                - 117
+                - 110
+                - 116
+                - 46
+                thumbnail_2:
+                - 78
+                - 111
+                - 115
+                - 116
+                - 114
+                - 117
                 - 109
                 - 32
-                - 102
-                - 97
-                - 99
                 - 101
-                - 114
+                - 120
+                - 112
                 - 101
-                - 32
-                - 110
-                - 111
-                - 110
-                - 32
-                - 113
-                - 117
+                - 100
                 - 105
-                - 98
+                - 116
+                - 97
+                - 32
+                - 100
+                - 117
+                - 99
+                - 105
+                - 109
                 - 117
                 - 115
+                - 32
+                - 118
+                - 111
+                - 108
+                - 117
+                - 112
+                - 116
+                - 97
+                - 116
+                - 101
+                - 109
+                - 32
+                - 114
+                - 101
+                - 112
+                - 117
+                - 100
+                - 105
+                - 97
+                - 110
                 - 100
                 - 97
-                - 109
+                - 101
                 - 46
                 title: Mona Lisa
                 txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -169,46 +213,17 @@ paths:
                 $ref: '#/components/schemas/DownloadResult'
               example:
                 file:
-                - 84
+                - 65
+                - 117
+                - 116
                 - 101
                 - 109
-                - 112
-                - 111
-                - 114
-                - 97
-                - 32
-                - 110
-                - 111
-                - 110
-                - 32
-                - 99
-                - 117
-                - 108
-                - 112
-                - 97
-                - 32
-                - 118
-                - 111
-                - 108
-                - 117
-                - 112
-                - 116
-                - 97
-                - 116
-                - 105
-                - 98
-                - 117
-                - 115
-                - 32
-                - 114
-                - 101
-                - 114
-                - 117
-                - 109
                 - 32
                 - 101
-                - 115
-                - 116
+                - 97
+                - 113
+                - 117
+                - 101
                 - 46
         "404":
           description: Not Found response.
@@ -434,8 +449,6 @@ paths:
                   status: Task Started
                 - date: 2006-01-02T15:04:05Z07:00
                   status: Task Started
-                - date: 2006-01-02T15:04:05Z07:00
-                  status: Task Started
                 status: Task Started
                 ticket:
                   artist_name: Leonardo da Vinci
@@ -545,20 +558,51 @@ paths:
               $ref: '#/components/schemas/UploadImageRequestBody'
             example:
               file:
-              - 69
+              - 73
+              - 116
+              - 97
+              - 113
+              - 117
+              - 101
+              - 32
+              - 113
+              - 117
+              - 97
+              - 101
+              - 114
+              - 97
               - 116
               - 32
-              - 101
+              - 108
+              - 97
+              - 98
+              - 111
+              - 114
               - 117
               - 109
               - 32
+              - 108
               - 97
-              - 117
-              - 116
+              - 98
+              - 111
+              - 114
+              - 101
               - 32
-              - 105
-              - 116
+              - 110
+              - 117
+              - 108
+              - 108
               - 97
+              - 32
+              - 118
+              - 101
+              - 110
+              - 105
+              - 97
+              - 109
+              - 32
+              - 97
+              - 116
               - 113
               - 117
               - 101
@@ -608,9 +652,9 @@ paths:
         schema:
           type: string
           description: Artist PastelID or special value; mine
-          example: 9c4
+          example: zt3
           maxLength: 256
-        example: sku
+        example: avr
       - name: limit
         in: query
         description: Number of results to be return
@@ -631,8 +675,8 @@ paths:
         schema:
           type: string
           description: Query is search query entered by user
-          example: Nemo eum aliquid.
-        example: In nostrum occaecati.
+          example: Voluptatem eum eaque ut qui qui esse.
+        example: Praesentium exercitationem placeat eaque voluptates numquam.
       - name: artist_name
         in: query
         description: Name of the artist
@@ -641,8 +685,8 @@ paths:
           type: boolean
           description: Name of the artist
           default: true
-          example: false
-        example: true
+          example: true
+        example: false
       - name: art_title
         in: query
         description: Title of artwork
@@ -671,8 +715,8 @@ paths:
           type: boolean
           description: Artist written statement
           default: true
-          example: true
-        example: false
+          example: false
+        example: true
       - name: keyword
         in: query
         description: Keyword that Artist assigns to Artwork
@@ -682,7 +726,7 @@ paths:
           description: Keyword that Artist assigns to Artwork
           default: true
           example: true
-        example: false
+        example: true
       - name: min_copies
         in: query
         description: Minimum number of created copies
@@ -713,9 +757,9 @@ paths:
           type: integer
           description: Minimum blocknum
           default: 1
-          example: 8675528034041244421
+          example: 4228916980120202470
           minimum: 1
-        example: 891081685150826249
+        example: 7426989803577313846
       - name: max_block
         in: query
         description: Maximum blocknum
@@ -723,9 +767,9 @@ paths:
         schema:
           type: integer
           description: Maximum blocknum
-          example: 4674234723425297206
+          example: 7320921110623869220
           minimum: 1
-        example: 1057818091506256027
+        example: 7701314416563881360
       - name: min_rareness_score
         in: query
         description: Minimum pastel rareness score
@@ -811,64 +855,94 @@ paths:
                     imaginary landscape.
                   keywords: Renaissance, sfumato, portrait
                   series_name: Famous artist
-                  thumbnail:
-                  - 69
-                  - 111
-                  - 115
-                  - 32
-                  - 98
-                  - 108
-                  - 97
-                  - 110
-                  - 100
-                  - 105
-                  - 116
-                  - 105
-                  - 105
-                  - 115
-                  - 32
+                  thumbnail_1:
+                  - 82
                   - 101
+                  - 114
+                  - 117
+                  - 109
+                  - 32
+                  - 118
+                  - 111
+                  - 108
+                  - 117
+                  - 112
+                  - 116
+                  - 97
+                  - 116
+                  - 101
+                  - 32
+                  - 110
                   - 105
+                  - 104
+                  - 105
+                  - 108
+                  - 46
+                  thumbnail_2:
+                  - 65
+                  - 99
+                  - 99
                   - 117
                   - 115
+                  - 97
+                  - 110
+                  - 116
+                  - 105
+                  - 117
+                  - 109
+                  - 32
+                  - 105
+                  - 112
+                  - 115
+                  - 117
+                  - 109
+                  - 32
+                  - 116
+                  - 111
+                  - 116
+                  - 97
+                  - 109
+                  - 32
+                  - 101
+                  - 115
+                  - 116
+                  - 32
+                  - 117
+                  - 110
+                  - 100
+                  - 101
+                  - 32
+                  - 113
+                  - 117
+                  - 105
+                  - 97
                   - 46
                   title: Mona Lisa
                   txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
                   youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-                match_index: 1491312143304408231
+                match_index: 8602235441413505903
                 matches:
-                - field_type: art_title
+                - field_type: series
                   matched_indexes:
-                  - 8830161846526020474
-                  - 6577107819799959969
-                  - 7129840891655550567
-                  - 2035670134737008339
-                  score: 7525781640486193864
-                  str: Aut ut voluptates rerum.
-                - field_type: art_title
+                  - 428534624021342475
+                  - 7636056011211397649
+                  - 2926345857488496302
+                  score: 3231062264282873716
+                  str: Cum harum illum velit veniam.
+                - field_type: series
                   matched_indexes:
-                  - 8830161846526020474
-                  - 6577107819799959969
-                  - 7129840891655550567
-                  - 2035670134737008339
-                  score: 7525781640486193864
-                  str: Aut ut voluptates rerum.
-                - field_type: art_title
+                  - 428534624021342475
+                  - 7636056011211397649
+                  - 2926345857488496302
+                  score: 3231062264282873716
+                  str: Cum harum illum velit veniam.
+                - field_type: series
                   matched_indexes:
-                  - 8830161846526020474
-                  - 6577107819799959969
-                  - 7129840891655550567
-                  - 2035670134737008339
-                  score: 7525781640486193864
-                  str: Aut ut voluptates rerum.
-                - field_type: art_title
-                  matched_indexes:
-                  - 8830161846526020474
-                  - 6577107819799959969
-                  - 7129840891655550567
-                  - 2035670134737008339
-                  score: 7525781640486193864
-                  str: Aut ut voluptates rerum.
+                  - 428534624021342475
+                  - 7636056011211397649
+                  - 2926345857488496302
+                  score: 3231062264282873716
+                  str: Cum harum illum velit veniam.
         "400":
           description: Bad Request response.
           content:
@@ -1193,7 +1267,7 @@ components:
         royalty:
           type: number
           description: how much artist should get on all future resales
-          example: 0.1147305597394367
+          example: 0.12901623821715646
           format: double
         series_name:
           type: string
@@ -1211,50 +1285,64 @@ components:
           description: Storage fee %
           example: 100
           format: int64
-        thumbnail:
+        thumbnail_1:
           type: string
-          description: Thumbnail image
+          description: Thumbnail_1 image
           example:
-          - 79
-          - 99
-          - 99
-          - 97
-          - 101
-          - 99
-          - 97
-          - 116
-          - 105
-          - 32
-          - 97
-          - 117
-          - 116
+          - 69
+          - 114
+          - 114
+          - 111
+          - 114
           - 32
           - 114
           - 101
-          - 112
-          - 101
-          - 108
-          - 108
+          - 105
+          - 99
+          - 105
           - 101
           - 110
           - 100
-          - 117
+          - 105
           - 115
           - 32
-          - 100
-          - 111
-          - 108
-          - 111
-          - 114
+          - 115
           - 101
-          - 109
-          - 32
-          - 99
-          - 117
-          - 109
           - 113
           - 117
+          - 105
+          - 32
+          - 115
+          - 117
+          - 115
+          - 99
+          - 105
+          - 112
+          - 105
+          - 116
+          - 32
+          - 115
+          - 105
+          - 110
+          - 116
+          - 32
+          - 117
+          - 116
+          - 32
+          - 105
+          - 110
+          - 46
+          format: binary
+        thumbnail_2:
+          type: string
+          description: Thumbnail_2 image
+          example:
+          - 69
+          - 115
+          - 116
+          - 32
           - 101
+          - 97
           - 46
           format: binary
         title:
@@ -1287,7 +1375,7 @@ components:
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
         drawing_nsfw_score: 1
-        green_address: true
+        green_address: false
         hentai_nsfw_score: 1
         internet_rareness_score: 1
         keywords: Renaissance, sfumato, portrait
@@ -1295,25 +1383,86 @@ components:
         nsfw_score: 1
         porn_nsfw_score: 1
         rareness_score: 1
-        royalty: 0.7676800539101692
+        royalty: 0.7288343926229734
         series_name: Famous artist
         sexy_nsfw_score: 1
         storage_fee: 100
-        thumbnail:
-        - 83
-        - 105
+        thumbnail_1:
+        - 84
+        - 111
+        - 116
+        - 97
         - 109
+        - 32
+        - 118
+        - 101
+        - 108
         - 105
+        - 116
+        - 32
+        - 99
+        - 117
+        - 109
+        - 32
+        - 118
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
+        - 115
+        - 32
+        - 117
+        - 116
+        - 32
+        - 109
+        - 111
+        - 108
+        - 108
+        - 105
+        - 116
+        - 105
+        - 97
+        - 32
+        - 105
+        - 110
+        - 99
+        - 105
+        - 100
+        - 117
+        - 110
+        - 116
+        - 46
+        thumbnail_2:
+        - 72
+        - 97
+        - 114
+        - 117
+        - 109
+        - 32
+        - 101
+        - 116
+        - 32
+        - 99
+        - 111
+        - 110
+        - 115
+        - 101
+        - 99
+        - 116
+        - 101
+        - 116
+        - 117
+        - 114
+        - 32
+        - 97
         - 108
         - 105
         - 113
         - 117
-        - 101
-        - 32
-        - 111
-        - 100
         - 105
-        - 116
+        - 100
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1337,7 +1486,7 @@ components:
           type: integer
           description: Sort index of the match based on score.This must be used to
             sort results on UI.
-          example: 1659745518820384192
+          example: 3515329537935295995
           format: int64
         matches:
           type: array
@@ -1345,22 +1494,20 @@ components:
             $ref: '#/components/schemas/FuzzyMatch'
           description: Match result details
           example:
-          - field_type: art_title
+          - field_type: series
             matched_indexes:
-            - 8830161846526020474
-            - 6577107819799959969
-            - 7129840891655550567
-            - 2035670134737008339
-            score: 7525781640486193864
-            str: Aut ut voluptates rerum.
-          - field_type: art_title
+            - 428534624021342475
+            - 7636056011211397649
+            - 2926345857488496302
+            score: 3231062264282873716
+            str: Cum harum illum velit veniam.
+          - field_type: series
             matched_indexes:
-            - 8830161846526020474
-            - 6577107819799959969
-            - 7129840891655550567
-            - 2035670134737008339
-            score: 7525781640486193864
-            str: Aut ut voluptates rerum.
+            - 428534624021342475
+            - 7636056011211397649
+            - 2926345857488496302
+            score: 3231062264282873716
+            str: Cum harum illum velit veniam.
       example:
         artwork:
           artist_name: Leonardo da Vinci
@@ -1372,56 +1519,87 @@ components:
             a portrait of a seated woman set against an imaginary landscape.
           keywords: Renaissance, sfumato, portrait
           series_name: Famous artist
-          thumbnail:
-          - 69
-          - 111
-          - 115
-          - 32
-          - 98
-          - 108
-          - 97
-          - 110
-          - 100
-          - 105
-          - 116
-          - 105
-          - 105
-          - 115
-          - 32
+          thumbnail_1:
+          - 82
           - 101
+          - 114
+          - 117
+          - 109
+          - 32
+          - 118
+          - 111
+          - 108
+          - 117
+          - 112
+          - 116
+          - 97
+          - 116
+          - 101
+          - 32
+          - 110
           - 105
+          - 104
+          - 105
+          - 108
+          - 46
+          thumbnail_2:
+          - 65
+          - 99
+          - 99
           - 117
           - 115
+          - 97
+          - 110
+          - 116
+          - 105
+          - 117
+          - 109
+          - 32
+          - 105
+          - 112
+          - 115
+          - 117
+          - 109
+          - 32
+          - 116
+          - 111
+          - 116
+          - 97
+          - 109
+          - 32
+          - 101
+          - 115
+          - 116
+          - 32
+          - 117
+          - 110
+          - 100
+          - 101
+          - 32
+          - 113
+          - 117
+          - 105
+          - 97
           - 46
           title: Mona Lisa
           txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        match_index: 4220410847214103227
+        match_index: 1057818091506256026
         matches:
-        - field_type: art_title
+        - field_type: series
           matched_indexes:
-          - 8830161846526020474
-          - 6577107819799959969
-          - 7129840891655550567
-          - 2035670134737008339
-          score: 7525781640486193864
-          str: Aut ut voluptates rerum.
-        - field_type: art_title
+          - 428534624021342475
+          - 7636056011211397649
+          - 2926345857488496302
+          score: 3231062264282873716
+          str: Cum harum illum velit veniam.
+        - field_type: series
           matched_indexes:
-          - 8830161846526020474
-          - 6577107819799959969
-          - 7129840891655550567
-          - 2035670134737008339
-          score: 7525781640486193864
-          str: Aut ut voluptates rerum.
-        - field_type: art_title
-          matched_indexes:
-          - 8830161846526020474
-          - 6577107819799959969
-          - 7129840891655550567
-          - 2035670134737008339
-          score: 7525781640486193864
-          str: Aut ut voluptates rerum.
+          - 428534624021342475
+          - 7636056011211397649
+          - 2926345857488496302
+          score: 3231062264282873716
+          str: Cum harum illum velit veniam.
       required:
       - artwork
       - matches
@@ -1470,45 +1648,79 @@ components:
           description: Series name
           example: Famous artist
           maxLength: 256
-        thumbnail:
+        thumbnail_1:
           type: string
-          description: Thumbnail image
+          description: Thumbnail_1 image
           example:
-          - 67
-          - 111
-          - 109
-          - 109
-          - 111
-          - 100
-          - 105
-          - 32
+          - 82
           - 101
-          - 118
+          - 112
+          - 101
+          - 108
+          - 108
           - 101
           - 110
-          - 105
-          - 101
-          - 116
-          - 32
-          - 97
-          - 117
-          - 116
-          - 32
-          - 97
-          - 99
-          - 99
+          - 100
           - 117
           - 115
-          - 97
+          - 32
+          - 100
+          - 111
+          - 108
+          - 111
+          - 114
+          - 101
           - 109
+          - 32
+          - 99
           - 117
+          - 109
+          - 113
+          - 117
+          - 101
+          - 32
+          - 112
+          - 101
+          - 114
+          - 115
+          - 112
+          - 105
+          - 99
+          - 105
+          - 97
+          - 116
+          - 105
           - 115
           - 32
-          - 118
+          - 108
+          - 105
+          - 98
+          - 101
+          - 114
+          - 111
+          - 32
+          - 105
+          - 110
+          - 99
+          - 105
+          - 100
+          - 117
+          - 110
+          - 116
+          - 46
+          format: binary
+        thumbnail_2:
+          type: string
+          description: Thumbnail_2 image
+          example:
+          - 79
+          - 100
           - 105
           - 116
-          - 97
-          - 101
+          - 32
+          - 104
+          - 105
+          - 99
           - 46
           format: binary
         title:
@@ -1538,13 +1750,78 @@ components:
           a portrait of a seated woman set against an imaginary landscape.
         keywords: Renaissance, sfumato, portrait
         series_name: Famous artist
-        thumbnail:
-        - 85
+        thumbnail_1:
+        - 69
+        - 115
         - 116
         - 32
-        - 114
+        - 118
         - 101
+        - 108
+        - 105
+        - 116
+        - 32
         - 109
+        - 105
+        - 110
+        - 117
+        - 115
+        - 32
+        - 113
+        - 117
+        - 105
+        - 32
+        - 111
+        - 99
+        - 99
+        - 97
+        - 101
+        - 99
+        - 97
+        - 116
+        - 105
+        - 32
+        - 118
+        - 101
+        - 114
+        - 105
+        - 116
+        - 97
+        - 116
+        - 105
+        - 115
+        - 46
+        thumbnail_2:
+        - 69
+        - 116
+        - 32
+        - 101
+        - 114
+        - 114
+        - 111
+        - 114
+        - 32
+        - 101
+        - 105
+        - 117
+        - 115
+        - 32
+        - 101
+        - 120
+        - 99
+        - 101
+        - 112
+        - 116
+        - 117
+        - 114
+        - 105
+        - 32
+        - 101
+        - 116
+        - 32
+        - 115
+        - 101
+        - 100
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1759,84 +2036,75 @@ components:
           type: string
           description: File downloaded
           example:
-          - 77
-          - 111
+          - 82
+          - 101
+          - 114
+          - 117
+          - 109
+          - 32
+          - 105
+          - 109
+          - 112
+          - 101
           - 100
           - 105
-          - 32
-          - 101
-          - 115
           - 116
           - 32
-          - 118
           - 101
-          - 108
+          - 116
+          - 32
+          - 101
+          - 116
+          - 32
+          - 115
           - 105
           - 116
           - 32
           - 109
-          - 105
-          - 110
-          - 117
-          - 115
-          - 32
-          - 113
-          - 117
-          - 105
-          - 32
-          - 111
-          - 99
-          - 99
           - 97
+          - 120
+          - 105
+          - 109
           - 101
-          - 99
-          - 97
-          - 116
-          - 105
           - 32
           - 118
-          - 101
-          - 114
-          - 105
+          - 111
+          - 108
+          - 117
+          - 112
           - 116
           - 97
           - 116
-          - 105
-          - 115
+          - 117
+          - 109
           - 46
           format: binary
       example:
         file:
-        - 69
-        - 116
-        - 32
-        - 101
-        - 114
-        - 114
+        - 86
         - 111
-        - 114
-        - 32
-        - 101
-        - 105
+        - 108
         - 117
-        - 115
-        - 32
-        - 101
-        - 120
-        - 99
-        - 101
         - 112
         - 116
-        - 117
-        - 114
-        - 105
-        - 32
-        - 101
+        - 97
         - 116
-        - 32
-        - 115
         - 101
+        - 32
+        - 110
+        - 111
+        - 115
+        - 116
+        - 114
+        - 117
+        - 109
+        - 32
+        - 113
+        - 117
+        - 105
         - 100
+        - 101
+        - 109
         - 46
       required:
       - file
@@ -1864,7 +2132,7 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: true
+          example: false
         timeout:
           type: boolean
           description: Is the error a timeout?
@@ -1897,31 +2165,32 @@ components:
           type: array
           items:
             type: integer
-            example: 3206788431443741098
+            example: 3906127724952320465
             format: int64
           description: The indexes of matched characters. Useful for highlighting
             matches
           example:
-          - 5789618659164813295
-          - 4207102844918501474
+          - 1793464317651624513
+          - 3557600072324757415
+          - 2555301338556022982
+          - 956332017285011125
         score:
           type: integer
           description: Score used to rank matches
-          example: 9026164415411249610
+          example: 8741894780656247267
           format: int64
         str:
           type: string
           description: String that is matched
-          example: Dolorum quaerat.
+          example: Ex quia nihil autem et tenetur voluptatem.
       example:
         field_type: artist_name
         matched_indexes:
-        - 7178544526880291778
-        - 8378351739193209534
-        - 4741039288036524955
-        - 4642919933004192550
-        score: 4024804003976990846
-        str: Dolor qui possimus dolorem ut veritatis.
+        - 1520162407439282412
+        - 3848234667434913569
+        - 8675528034041244420
+        score: 891081685150826248
+        str: Autem qui aut ea.
     Image:
       type: object
       properties:
@@ -2099,8 +2368,6 @@ components:
             status: Task Started
           - date: 2006-01-02T15:04:05Z07:00
             status: Task Started
-          - date: 2006-01-02T15:04:05Z07:00
-            status: Task Started
         status:
           type: string
           description: Status of the registration process
@@ -2132,6 +2399,8 @@ components:
       example:
         id: n6Qn6TFM
         states:
+        - date: 2006-01-02T15:04:05Z07:00
+          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -2238,6 +2507,31 @@ components:
       description: RegisterTasksResponseBody is the result type for an array of TaskResponse
         (tiny view)
       example:
+      - id: n6Qn6TFM
+        status: Task Started
+        ticket:
+          artist_name: Leonardo da Vinci
+          artist_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          artist_pastelid_passphrase: qwerasdf1234
+          artist_website_url: https://www.leonardodavinci.net
+          description: The Mona Lisa is an oil painting by Italian artist, inventor,
+            and writer Leonardo da Vinci. Likely completed in 1506, the piece features
+            a portrait of a seated woman set against an imaginary landscape.
+          green: false
+          issued_copies: 1
+          keywords: Renaissance, sfumato, portrait
+          maximum_fee: 100
+          name: Mona Lisa
+          royalty: 12
+          series_name: Famous artist
+          spendable_address: PtiqRXn2VQwBjp1K8QXR2uW2w2oZ3Ns7N6j
+          thumbnail_coordinate:
+            bottom_right_x: 640
+            bottom_right_y: 480
+            top_left_x: 0
+            top_left_y: 0
+          youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
+        txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
       - id: n6Qn6TFM
         status: Task Started
         ticket:
@@ -2403,53 +2697,28 @@ components:
           type: string
           description: File to upload
           example:
-          - 82
+          - 68
           - 101
-          - 112
-          - 117
-          - 100
-          - 105
-          - 97
-          - 110
-          - 100
-          - 97
-          - 101
-          - 32
-          - 117
-          - 116
-          - 32
-          - 110
-          - 97
-          - 116
-          - 117
-          - 115
-          - 32
-          - 111
-          - 100
+          - 98
           - 105
           - 116
-          - 32
-          - 99
-          - 111
-          - 110
+          - 105
           - 115
+          - 32
           - 101
-          - 113
-          - 117
-          - 97
-          - 116
-          - 117
+          - 120
+          - 101
           - 114
-          - 32
+          - 99
+          - 105
+          - 116
           - 97
-          - 115
-          - 115
-          - 117
-          - 109
-          - 101
+          - 116
+          - 105
+          - 111
           - 110
-          - 100
-          - 97
+          - 101
+          - 109
           - 46
           format: binary
         filename:
@@ -2457,31 +2726,33 @@ components:
           description: For internal use
       example:
         file:
-        - 76
-        - 97
-        - 98
-        - 111
+        - 67
+        - 117
+        - 109
+        - 32
         - 114
+        - 101
+        - 114
+        - 117
+        - 109
+        - 32
+        - 97
+        - 108
         - 105
-        - 111
-        - 115
+        - 113
+        - 117
         - 97
         - 109
         - 32
-        - 117
-        - 110
-        - 100
-        - 101
-        - 32
-        - 97
-        - 98
-        - 32
-        - 105
-        - 110
-        - 32
-        - 110
         - 111
-        - 110
+        - 99
+        - 99
+        - 97
+        - 101
+        - 99
+        - 97
+        - 116
+        - 105
         - 46
       required:
       - file
