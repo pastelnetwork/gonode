@@ -30,11 +30,11 @@
 
 - Start 3 Supernodes:
 
->SUPERNODE_DEBUG=1 LOAD_TFMODELS=0 ./supernode --log-level debug -c ./examples/configs/localnet-4444.yml
+>SUPERNODE_DEBUG=1 ./supernode --log-level debug -c ./examples/configs/localnet-4444.yml
 
->SUPERNODE_DEBUG=1 LOAD_TFMODELS=0 ./supernode --log-level debug -c ./examples/configs/localnet-4445.yml
+>SUPERNODE_DEBUG=1 ./supernode --log-level debug -c ./examples/configs/localnet-4445.yml
 
->SUPERNODE_DEBUG=1 LOAD_TFMODELS=0 ./supernode --log-level debug -c ./examples/configs/localnet-4446.yml
+>SUPERNODE_DEBUG=1 ./supernode --log-level debug -c ./examples/configs/localnet-4446.yml
 
   
 
