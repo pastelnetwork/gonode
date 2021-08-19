@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"regexp"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -76,9 +75,7 @@ func (db *Ops) IsLeader() bool {
 
 // LeaderAddress return the ipaddress of the supernode contain the leader
 func (db *Ops) LeaderAddress() string {
-	re := regexp.MustCompile(":[0-9]+$")
-	address := re.Split(db.metaDB.LeaderAddress(), -1)[0]
-	return address
+	return db.metaDB.LeaderAddress()
 }
 
 // ProcessCommand handle different type of metric to be store
@@ -958,7 +955,12 @@ func (db *Ops) Run(ctx context.Context) error {
 		}
 	}
 
-	db.templates, err = NewTemplateKeeper(db.config.TemplatePath)
+	db.writeTemplate, err = template.New("writeTemplate").Parse(userInfoWriteTemplate)
+	if err != nil {
+		return errors.Errorf("error while parsing write template: %w", err)
+	}
+
+	db.queryTemplate, err = template.New("readTemplate").Parse(userInfoQueryTemplate)
 	if err != nil {
 		return errors.Errorf("error while creating new template keeper: %w", err)
 	}

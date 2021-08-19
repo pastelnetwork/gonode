@@ -18,8 +18,9 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DownloadArtworkClient interface {
-	// Download downloads artwork by given txid, timestamp signature.
+	// Download downloads artwork by given txid, timestamp and signature.
 	Download(ctx context.Context, in *DownloadRequest, opts ...grpc.CallOption) (DownloadArtwork_DownloadClient, error)
+	DownloadThumbnail(ctx context.Context, in *DownloadThumbnailRequest, opts ...grpc.CallOption) (*DownloadThumbnailReply, error)
 }
 
 type downloadArtworkClient struct {
@@ -62,12 +63,22 @@ func (x *downloadArtworkDownloadClient) Recv() (*DownloadReply, error) {
 	return m, nil
 }
 
+func (c *downloadArtworkClient) DownloadThumbnail(ctx context.Context, in *DownloadThumbnailRequest, opts ...grpc.CallOption) (*DownloadThumbnailReply, error) {
+	out := new(DownloadThumbnailReply)
+	err := c.cc.Invoke(ctx, "/walletnode.DownloadArtwork/DownloadThumbnail", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // DownloadArtworkServer is the server API for DownloadArtwork service.
 // All implementations must embed UnimplementedDownloadArtworkServer
 // for forward compatibility
 type DownloadArtworkServer interface {
-	// Download downloads artwork by given txid, timestamp signature.
+	// Download downloads artwork by given txid, timestamp and signature.
 	Download(*DownloadRequest, DownloadArtwork_DownloadServer) error
+	DownloadThumbnail(context.Context, *DownloadThumbnailRequest) (*DownloadThumbnailReply, error)
 	mustEmbedUnimplementedDownloadArtworkServer()
 }
 
@@ -77,6 +88,9 @@ type UnimplementedDownloadArtworkServer struct {
 
 func (UnimplementedDownloadArtworkServer) Download(*DownloadRequest, DownloadArtwork_DownloadServer) error {
 	return status.Errorf(codes.Unimplemented, "method Download not implemented")
+}
+func (UnimplementedDownloadArtworkServer) DownloadThumbnail(context.Context, *DownloadThumbnailRequest) (*DownloadThumbnailReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DownloadThumbnail not implemented")
 }
 func (UnimplementedDownloadArtworkServer) mustEmbedUnimplementedDownloadArtworkServer() {}
 
@@ -112,13 +126,36 @@ func (x *downloadArtworkDownloadServer) Send(m *DownloadReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _DownloadArtwork_DownloadThumbnail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DownloadThumbnailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DownloadArtworkServer).DownloadThumbnail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.DownloadArtwork/DownloadThumbnail",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DownloadArtworkServer).DownloadThumbnail(ctx, req.(*DownloadThumbnailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // DownloadArtwork_ServiceDesc is the grpc.ServiceDesc for DownloadArtwork service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var DownloadArtwork_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "walletnode.DownloadArtwork",
 	HandlerType: (*DownloadArtworkServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "DownloadThumbnail",
+			Handler:    _DownloadArtwork_DownloadThumbnail_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Download",
@@ -126,5 +163,5 @@ var DownloadArtwork_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "download_artwork.proto",
+	Metadata: "walletnode/download_artwork.proto",
 }

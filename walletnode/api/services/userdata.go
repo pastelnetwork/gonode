@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/walletnode/api"
@@ -68,7 +69,7 @@ func (service *Userdata) processUserdata(ctx context.Context, request *userdata.
 					return nil, userdatas.MakeInternalServerError(task.Error())
 				}
 
-				return nil, nil
+				return nil, userdatas.MakeInternalServerError(errors.New("no info retrieve"))
 			}
 
 			res := toUserdataProcessResult(response)
@@ -77,8 +78,8 @@ func (service *Userdata) processUserdata(ctx context.Context, request *userdata.
 	}
 }
 
-// UserdataGet will get userdata from Super Nodes to store in Metadata layer
-func (service *Userdata) UserdataGet(ctx context.Context, req *userdatas.UserdataGetPayload) (*userdatas.UserSpecifiedData, error) {
+// GetUserdata will get userdata from Super Nodes to store in Metadata layer
+func (service *Userdata) GetUserdata(ctx context.Context, req *userdatas.GetUserdataPayload) (*userdatas.UserSpecifiedData, error) {
 	userpastelid := req.Pastelid
 
 	taskID := service.process.AddTask(nil, userpastelid)

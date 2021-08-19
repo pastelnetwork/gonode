@@ -22,11 +22,11 @@ type ActTicket struct {
 
 // ActTicketData represents activation ticket properties
 type ActTicketData struct {
-	PastelID     string `json:"pastelID"`
-	Signature    string `json:"signature"`
-	Type         string `json:"type"`
-	ArtistHeight int    `json:"artist_height"`
-	RegTXID      string `json:"reg_txid"`
-	StorageFee   int    `json:"storage_fee"`
-	Version      int    `json:"version"`
+	PastelID      string `json:"pastelID"`
+	Signature     string `json:"signature"`
+	Type          string `json:"type"`
+	CreatorHeight int    `json:"creator_height"`
+	RegTXID       string `json:"reg_txid"`
+	StorageFee    int    `json:"storage_fee"`
+	Version       int    `json:"version"`
 }

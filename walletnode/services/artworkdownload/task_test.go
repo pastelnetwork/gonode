@@ -140,9 +140,7 @@ func TestTaskPastelTopNodes(t *testing.T) {
 }
 
 func TestTaskRun(t *testing.T) {
-	// t.Skip()
-
-	// t.Parallel()
+	t.Parallel()
 
 	type args struct {
 		ctx                context.Context

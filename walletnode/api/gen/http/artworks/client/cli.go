@@ -187,7 +187,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 	{
 		err = json.Unmarshal([]byte(artworksUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"SGFydW0gcXVhcyBzYXBpZW50ZSBldCB1bmRlIHZvbHVwdGF0ZXMu\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"Vm9sdXB0YXMgbW9kaS4=\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -387,13 +387,13 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 				return nil, fmt.Errorf("invalid value for minRarenessScore, must be FLOAT64")
 			}
 			if minRarenessScore != nil {
-				if *minRarenessScore < 1 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1, true))
+				if *minRarenessScore < 0 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 0, true))
 				}
 			}
 			if minRarenessScore != nil {
-				if *minRarenessScore > 1000 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1000, false))
+				if *minRarenessScore > 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minRarenessScore", *minRarenessScore, 1, false))
 				}
 			}
 			if err != nil {
@@ -410,13 +410,13 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 				return nil, fmt.Errorf("invalid value for maxRarenessScore, must be FLOAT64")
 			}
 			if maxRarenessScore != nil {
-				if *maxRarenessScore < 1 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1, true))
+				if *maxRarenessScore < 0 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 0, true))
 				}
 			}
 			if maxRarenessScore != nil {
-				if *maxRarenessScore > 1000 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1000, false))
+				if *maxRarenessScore > 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxRarenessScore", *maxRarenessScore, 1, false))
 				}
 			}
 			if err != nil {
@@ -433,13 +433,13 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 				return nil, fmt.Errorf("invalid value for minNsfwScore, must be FLOAT64")
 			}
 			if minNsfwScore != nil {
-				if *minNsfwScore < 1 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1, true))
+				if *minNsfwScore < 0 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 0, true))
 				}
 			}
 			if minNsfwScore != nil {
-				if *minNsfwScore > 1000 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1000, false))
+				if *minNsfwScore > 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minNsfwScore", *minNsfwScore, 1, false))
 				}
 			}
 			if err != nil {
@@ -456,13 +456,13 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 				return nil, fmt.Errorf("invalid value for maxNsfwScore, must be FLOAT64")
 			}
 			if maxNsfwScore != nil {
-				if *maxNsfwScore < 1 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1, true))
+				if *maxNsfwScore < 0 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 0, true))
 				}
 			}
 			if maxNsfwScore != nil {
-				if *maxNsfwScore > 1000 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1000, false))
+				if *maxNsfwScore > 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxNsfwScore", *maxNsfwScore, 1, false))
 				}
 			}
 			if err != nil {
@@ -479,13 +479,13 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 				return nil, fmt.Errorf("invalid value for minInternetRarenessScore, must be FLOAT64")
 			}
 			if minInternetRarenessScore != nil {
-				if *minInternetRarenessScore < 1 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1, true))
+				if *minInternetRarenessScore < 0 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 0, true))
 				}
 			}
 			if minInternetRarenessScore != nil {
-				if *minInternetRarenessScore > 1000 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1000, false))
+				if *minInternetRarenessScore > 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("minInternetRarenessScore", *minInternetRarenessScore, 1, false))
 				}
 			}
 			if err != nil {
@@ -502,13 +502,13 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 				return nil, fmt.Errorf("invalid value for maxInternetRarenessScore, must be FLOAT64")
 			}
 			if maxInternetRarenessScore != nil {
-				if *maxInternetRarenessScore < 1 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1, true))
+				if *maxInternetRarenessScore < 0 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 0, true))
 				}
 			}
 			if maxInternetRarenessScore != nil {
-				if *maxInternetRarenessScore > 1000 {
-					err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1000, false))
+				if *maxInternetRarenessScore > 1 {
+					err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1, false))
 				}
 			}
 			if err != nil {
@@ -564,7 +564,7 @@ func BuildArtworkGetPayload(artworksArtworkGetTxid string) (*artworks.ArtworkGet
 
 // BuildDownloadPayload builds the payload for the artworks download endpoint
 // from CLI flags.
-func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid string, artworksDownloadKey string) (*artworks.DownloadPayload, error) {
+func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid string, artworksDownloadKey string) (*artworks.ArtworkDownloadPayload, error) {
 	var err error
 	var txid string
 	{
@@ -597,7 +597,7 @@ func BuildDownloadPayload(artworksDownloadTxid string, artworksDownloadPid strin
 	{
 		key = artworksDownloadKey
 	}
-	v := &artworks.DownloadPayload{}
+	v := &artworks.ArtworkDownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key

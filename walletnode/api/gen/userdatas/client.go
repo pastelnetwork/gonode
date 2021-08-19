@@ -17,7 +17,7 @@ import (
 type Client struct {
 	CreateUserdataEndpoint        goa.Endpoint
 	UpdateUserdataEndpoint        goa.Endpoint
-	UserdataGetEndpoint           goa.Endpoint
+	GetUserdataEndpoint           goa.Endpoint
 	SetUserFollowRelationEndpoint goa.Endpoint
 	GetFollowersEndpoint          goa.Endpoint
 	GetFolloweesEndpoint          goa.Endpoint
@@ -27,11 +27,11 @@ type Client struct {
 }
 
 // NewClient initializes a "userdatas" service client given the endpoints.
-func NewClient(createUserdata, updateUserdata, userdataGet, setUserFollowRelation, getFollowers, getFollowees, getFriends, setUserLikeArt, getUsersLikeArt goa.Endpoint) *Client {
+func NewClient(createUserdata, updateUserdata, getUserdata, setUserFollowRelation, getFollowers, getFollowees, getFriends, setUserLikeArt, getUsersLikeArt goa.Endpoint) *Client {
 	return &Client{
 		CreateUserdataEndpoint:        createUserdata,
 		UpdateUserdataEndpoint:        updateUserdata,
-		UserdataGetEndpoint:           userdataGet,
+		GetUserdataEndpoint:           getUserdata,
 		SetUserFollowRelationEndpoint: setUserFollowRelation,
 		GetFollowersEndpoint:          getFollowers,
 		GetFolloweesEndpoint:          getFollowees,
@@ -63,10 +63,10 @@ func (c *Client) UpdateUserdata(ctx context.Context, p *UpdateUserdataPayload) (
 	return ires.(*UserdataProcessResult), nil
 }
 
-// UserdataGet calls the "userdataGet" endpoint of the "userdatas" service.
-func (c *Client) UserdataGet(ctx context.Context, p *UserdataGetPayload) (res *UserSpecifiedData, err error) {
+// GetUserdata calls the "getUserdata" endpoint of the "userdatas" service.
+func (c *Client) GetUserdata(ctx context.Context, p *GetUserdataPayload) (res *UserSpecifiedData, err error) {
 	var ires interface{}
-	ires, err = c.UserdataGetEndpoint(ctx, p)
+	ires, err = c.GetUserdataEndpoint(ctx, p)
 	if err != nil {
 		return
 	}

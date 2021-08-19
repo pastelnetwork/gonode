@@ -42,7 +42,7 @@ const (
 // ProcessRequest represents userdata created by wallet node
 type ProcessRequest struct {
 	// Real name of the user
-	Realname string
+	RealName string
 	// Facebook link of the user
 	FacebookLink string
 	// Twitter link of the user
@@ -99,7 +99,7 @@ type ProcessResult struct {
 	// The detail of why result is success/fail, depend on response_code
 	Detail string
 	// Error detail on realname
-	Realname string
+	RealName string
 	// Error detail on facebook_link
 	FacebookLink string
 	// Error detail on twitter_link

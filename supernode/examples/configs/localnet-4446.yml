@@ -1,11 +1,11 @@
 pastel-api:
   hostname: "127.0.0.1"
-  port: 29932
+  port: 12158
   username: "rt"
   password: "rt"
 
 node:
-  pastel_id: jXaMnqwbdCFhNJFDhTPGryxxB8brGkAZ14qVzywRB9jahNEZDKQZwquUzaQt7gFKPppi7rXYKxWobhbFvL2R2M 
+  pastel_id: jXYUbc59imKKoSNFdu7BcNbCBULS21MBBe8GjzfRXi9vGZrXV1y7ihJwY9ib8xTB8cSnsatvNroNJ8b7DN4Rrd
   pass_phrase: "passphrase"
   preburnt_tx_min_confirmation: 3
   # Timeout in minutes
@@ -31,9 +31,9 @@ metadb:
   data_dir: "metadb-4446"
 
 userdb:
-  schema-path: ../metadb/database/commands/schema.sql
-  template-path: ../metadb/database/commands
-
+  schema-path: ../metadb/database/commands/schema_v1.sql
+  write-template-path: ../metadb/database/commands/user_info_write.tmpl
+  query-template-path: ../metadb/database/commands/user_info_query.tmpl
 raptorq:
   hostname: "localhost"
   port: 50053

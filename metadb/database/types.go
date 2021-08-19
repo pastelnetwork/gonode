@@ -10,7 +10,7 @@ import (
 // UserdataWriteCommand represents userdata record in DB
 type UserdataWriteCommand struct {
 	// Real name of the user
-	Realname string
+	RealName string
 	// Facebook link of the user
 	FacebookLink string
 	// Twitter link of the user
@@ -62,7 +62,7 @@ func pbToWriteCommand(d *pb.UserdataRequest) UserdataWriteCommand {
 	coverPhotoHex, coverPhotoFilename := extractImageInfo(d.GetCoverPhoto())
 
 	return UserdataWriteCommand{
-		Realname:           processInputString(d.GetRealname()),
+		RealName:           processInputString(d.GetRealName()),
 		FacebookLink:       processInputString(d.GetFacebookLink()),
 		TwitterLink:        processInputString(d.GetTwitterLink()),
 		NativeCurrency:     processInputString(d.GetNativeCurrency()),
@@ -85,7 +85,7 @@ func pbToWriteCommand(d *pb.UserdataRequest) UserdataWriteCommand {
 // UserdataReadResult represents userdata record reading from DB
 type UserdataReadResult struct {
 	// Real name of the user
-	Realname string `mapstructure:"real_name"`
+	RealName string `mapstructure:"real_name"`
 	// Facebook link of the user
 	FacebookLink string `mapstructure:"facebook_link"`
 	// Twitter link of the user
@@ -123,7 +123,7 @@ type UserdataReadResult struct {
 // ToUserData return the ProcessRequest
 func (d *UserdataReadResult) ToUserData() userdata.ProcessRequest {
 	return userdata.ProcessRequest{
-		Realname:        d.Realname,
+		RealName:        d.RealName,
 		FacebookLink:    d.FacebookLink,
 		TwitterLink:     d.TwitterLink,
 		NativeCurrency:  d.NativeCurrency,

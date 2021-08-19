@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -143,7 +144,7 @@ func (service *Artwork) UploadImage(_ context.Context, p *artworks.UploadImagePa
 }
 
 // Download registered artwork.
-func (service *Artwork) Download(ctx context.Context, p *artworks.DownloadPayload, stream artworks.DownloadServerStream) (err error) {
+func (service *Artwork) Download(ctx context.Context, p *artworks.ArtworkDownloadPayload) (res *artworks.DownloadResult, err error) {
 	log.WithContext(ctx).Info("Start downloading")
 	defer log.WithContext(ctx).Info("Finished downloading")
 	ticket := fromDownloadPayload(p)
@@ -155,20 +156,19 @@ func (service *Artwork) Download(ctx context.Context, p *artworks.DownloadPayloa
 	for {
 		select {
 		case <-ctx.Done():
-			return nil
+			return nil, nil
 		case status := <-sub():
 			if status.IsFailure() {
-				return artworks.MakeInternalServerError(task.Error())
+				return nil, artworks.MakeInternalServerError(task.Error())
 			}
 
 			if status.IsFinal() {
-				res := &artworks.DownloadResult{
+				log.WithContext(ctx).WithField("size", fmt.Sprintf("%d bytes", len(task.File))).Info("NFT downloaded")
+				res = &artworks.DownloadResult{
 					File: task.File,
 				}
-				if err := stream.Send(res); err != nil {
-					return artworks.MakeInternalServerError(err)
-				}
-				return nil
+
+				return res, nil
 			}
 		}
 	}
@@ -232,7 +232,7 @@ func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPa
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
-	res.Thumbnail = data
+	res.Thumbnail1 = data
 
 	return res, nil
 }

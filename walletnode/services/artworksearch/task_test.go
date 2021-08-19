@@ -22,13 +22,14 @@ const (
 )
 
 func TestRunTask(t *testing.T) {
+
 	regTicketA := pastel.RegTicket{
 		TXID: testIDA,
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id",
-					ArtistName:     "Alan Majchrowicz",
+					CreatorName:    "Alan Majchrowicz",
 				},
 			},
 		},
@@ -37,11 +38,11 @@ func TestRunTask(t *testing.T) {
 	regTicketB := pastel.RegTicket{
 		TXID: testIDB,
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id-b",
-					ArtistName:     "Andy",
-					ArtworkTitle:   "alantic",
+					CreatorName:    "Andy",
+					NFTTitle:       "alantic",
 				},
 			},
 		},
@@ -49,11 +50,6 @@ func TestRunTask(t *testing.T) {
 
 	assignBase64strs(t, &regTicketA)
 	assignBase64strs(t, &regTicketB)
-
-	nodes := pastel.MasterNodes{}
-	for i := 0; i < 10; i++ {
-		nodes = append(nodes, pastel.MasterNode{})
-	}
 
 	type args struct {
 		actTickets    pastel.ActTickets
@@ -155,11 +151,17 @@ func TestRunTask(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase- %v", name), func(t *testing.T) {
 			pastelClientMock := pastelMock.NewMockClient(t)
 
+			nodes := pastel.MasterNodes{}
+			for i := 0; i < 10; i++ {
+				nodes = append(nodes, pastel.MasterNode{})
+			}
+
 			pastelClientMock.ListenOnActTickets(testCase.args.actTickets, testCase.args.actTicketsErr)
 			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 			nodeClientMock := nodeMock.NewMockClient(t)
-			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().ListenOnClose(nil)
+			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().
+				ListenOnClose(nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil)
 
 			if len(testCase.args.actTickets) != len(testCase.args.regTickets) {
 				t.Fatalf("#act_tickets != # reg_tickets")
@@ -205,8 +207,8 @@ func TestRunTask(t *testing.T) {
 
 			for i, result := range results {
 				assert.Equal(t, testCase.want[i].TXID, result.TXID)
-				assert.Equal(t, testCase.want[i].RegTicketData.ArtTicketData.Author,
-					result.RegTicketData.ArtTicketData.Author)
+				assert.Equal(t, testCase.want[i].RegTicketData.NFTTicketData.Author,
+					result.RegTicketData.NFTTicketData.Author)
 
 				assert.Equal(t, testCase.want[i].MatchIndex, result.MatchIndex)
 			}

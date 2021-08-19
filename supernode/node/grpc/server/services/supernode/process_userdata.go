@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
+	"strconv"
+	"strings"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 
@@ -17,6 +20,8 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )
+
+const defaultGRPCPort = 4444
 
 // ProcessUserdata represents grpc service for processing userdata.
 type ProcessUserdata struct {
@@ -90,6 +95,33 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	// Primary node will connect to leader node here.
+	if !service.databaseOps.IsLeader() {
+		var extAddress string
+
+		leaderAddress := service.databaseOps.LeaderAddress()
+		parts := strings.Split(leaderAddress, ":")
+		//temporary use this to test on local machine
+		localEnv := false
+		if localEnv {
+			port := parts[len(parts)-1]
+			portnum, err := strconv.Atoi(port)
+			if err != nil {
+				return nil, errors.Errorf("cannot convert port to num %s / err: %w", port, err)
+			}
+			//4041 -> 4444, 4051 -> 4445
+			portnum = (portnum/10)%10 + 4440
+			extAddress = fmt.Sprintf("127.0.0.1:%d", portnum)
+		} else {
+			ipAddress := parts[0]
+			extAddress = fmt.Sprintf("%s:%d", ipAddress, defaultGRPCPort)
+		}
+
+		if err := task.ConnectToLeader(ctx, extAddress); err != nil {
+			return nil, err
+		}
 	}
 
 	snrequest := userdata.SuperNodeRequest{

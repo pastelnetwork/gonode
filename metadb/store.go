@@ -15,8 +15,6 @@ const (
 	ReadLevelWeak = "weak"
 	// ReadLevelStrong - to avoid even the issues associated with weak consistency, rqlite also offers strong
 	ReadLevelStrong = "strong"
-	// AllowedSubStatement - the supported count of sub statements
-	AllowedSubStatement = 1
 )
 
 // WaitForStarting wait for the db to completely started, just run once after starting up the db
@@ -50,9 +48,6 @@ func (s *service) Write(_ context.Context, statement string) (*WriteResult, erro
 	if !s.IsLeader() {
 		return nil, errors.New("not a leader")
 	}
-	// if len(strings.Split(statement, ";")) > AllowedSubStatement {
-	// 	return nil, errors.New("only support one sub statement")
-	// }
 
 	// prepare the execute command request
 	request := &command.ExecuteRequest{

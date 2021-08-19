@@ -13,18 +13,18 @@ func TestGetSearchableFields(t *testing.T) {
 		Height: 0,
 		TXID:   "id",
 		RegTicketData: pastel.RegTicketData{
-			ArtTicketData: pastel.ArtTicket{
+			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
 					AuthorPastelID: "author-id",
 					BlockTxID:      "block-txid",
-					ArtistName:     "Alan Majchrowicz",
-					ArtworkTitle:   "Lake Superior Sky III",
+					CreatorName:    "Alan Majchrowicz",
+					NFTTitle:       "Lake Superior Sky III",
 					TotalCopies:    10,
-					ArtistWrittenStatement: `Why settle for blank walls, when you can
-					 transform them into stunning vista points. Explore from imaginative
+					CreatorWrittenStatement: `Lakes Why settle for blank walls, when you can
+					 transform them into stunning vista points. Explore Lake Superiorfrom imaginative
 					  scenic abstracts to sublime beach landscapes captured on camera.`,
-					ArtworkKeywordSet: "Michigan,Midwest,Peninsula,Great Lakes,Lakeview",
-					ArtworkSeriesName: "Science Art Lake",
+					NFTKeywordSet: "Michigan,Midwest,Peninsula,Great Lakes,Lakeview",
+					NFTSeriesName: "Science Art Lake",
 				},
 			},
 			TotalCopies: 10,
@@ -68,7 +68,7 @@ func TestGetSearchableFields(t *testing.T) {
 		"descr-match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
 			req: &ArtSearchRequest{
-				Query: "beach",
+				Query: "Explore Lake Superiorfrom ",
 				Descr: true,
 			},
 			matching: true,
@@ -86,7 +86,7 @@ func TestGetSearchableFields(t *testing.T) {
 		"title,descr match": {
 			search: &RegTicketSearch{RegTicket: regTicket},
 			req: &ArtSearchRequest{
-				Query:    "Lakes",
+				Query:    "Lakes ",
 				ArtTitle: true,
 				Descr:    true,
 			},

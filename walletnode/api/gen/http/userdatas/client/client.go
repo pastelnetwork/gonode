@@ -27,9 +27,9 @@ type Client struct {
 	// updateUserdata endpoint.
 	UpdateUserdataDoer goahttp.Doer
 
-	// UserdataGet Doer is the HTTP client used to make requests to the userdataGet
+	// GetUserdata Doer is the HTTP client used to make requests to the getUserdata
 	// endpoint.
-	UserdataGetDoer goahttp.Doer
+	GetUserdataDoer goahttp.Doer
 
 	// SetUserFollowRelation Doer is the HTTP client used to make requests to the
 	// setUserFollowRelation endpoint.
@@ -88,7 +88,7 @@ func NewClient(
 	return &Client{
 		CreateUserdataDoer:        doer,
 		UpdateUserdataDoer:        doer,
-		UserdataGetDoer:           doer,
+		GetUserdataDoer:           doer,
 		SetUserFollowRelationDoer: doer,
 		GetFollowersDoer:          doer,
 		GetFolloweesDoer:          doer,
@@ -152,20 +152,20 @@ func (c *Client) UpdateUserdata(userdatasUpdateUserdataEncoderFn UserdatasUpdate
 	}
 }
 
-// UserdataGet returns an endpoint that makes HTTP requests to the userdatas
-// service userdataGet server.
-func (c *Client) UserdataGet() goa.Endpoint {
+// GetUserdata returns an endpoint that makes HTTP requests to the userdatas
+// service getUserdata server.
+func (c *Client) GetUserdata() goa.Endpoint {
 	var (
-		decodeResponse = DecodeUserdataGetResponse(c.decoder, c.RestoreResponseBody)
+		decodeResponse = DecodeGetUserdataResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildUserdataGetRequest(ctx, v)
+		req, err := c.BuildGetUserdataRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.UserdataGetDoer.Do(req)
+		resp, err := c.GetUserdataDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("userdatas", "userdataGet", err)
+			return nil, goahttp.ErrRequestError("userdatas", "getUserdata", err)
 		}
 		return decodeResponse(resp)
 	}

@@ -132,12 +132,6 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConn
 		return nil, err
 	}
 
-	if !service.databaseOps.IsLeader() {
-		if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), req.SessID); err != nil {
-			return nil, err
-		}
-	}
-
 	resp := &pbwn.MDLConnectToReply{}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
 	return resp, nil
@@ -161,7 +155,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 	// Convert protobuf request to UserdataProcessRequest
 	request := userdata.ProcessRequestSigned{
 		Userdata: &userdata.ProcessRequest{
-			Realname:        req.Realname,
+			RealName:        req.RealName,
 			FacebookLink:    req.FacebookLink,
 			TwitterLink:     req.TwitterLink,
 			NativeCurrency:  req.NativeCurrency,
@@ -195,7 +189,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 		return &pbwn.UserdataReply{
 			ResponseCode:    processResult.ResponseCode,
 			Detail:          processResult.Detail,
-			Realname:        processResult.Realname,
+			RealName:        processResult.RealName,
 			FacebookLink:    processResult.FacebookLink,
 			TwitterLink:     processResult.TwitterLink,
 			NativeCurrency:  processResult.NativeCurrency,
@@ -215,13 +209,16 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 			Detail:       processResult.Detail,
 		}, nil
 	}
+
 	// Process actual write to rqlite db happen here
+	var actionErr error
 	<-task.NewAction(func(ctx context.Context) error {
 		if processResult.ResponseCode == userdata.SuccessVerifyAllSignature {
 			if service.databaseOps == nil {
 				processResult.ResponseCode = userdata.ErrorRQLiteDBNotFound
 				processResult.Detail = userdata.Description[userdata.ErrorRQLiteDBNotFound]
-				return errors.Errorf("databaseOps service object is empty")
+				actionErr = errors.Errorf("databaseOps service object is empty")
+				return nil
 			}
 			// Send data to SN contain the leader rqlite
 			if !service.databaseOps.IsLeader() {
@@ -229,12 +226,18 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					if _, err := task.ConnectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
 						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
-						return errors.Errorf("failed to send or write userdata to leader rqlite %w", err)
+						actionErr = errors.Errorf("failed to send or write userdata to leader rqlite %w", err)
+						return nil
 					}
+					// Write success:
+					processResult.ResponseCode = userdata.SuccessProcess
+					processResult.Detail = userdata.Description[userdata.SuccessProcess]
+
 				} else {
 					processResult.ResponseCode = userdata.ErrorRQLiteDBNotFound
 					processResult.Detail = userdata.Description[userdata.ErrorRQLiteDBNotFound]
-					return errors.Errorf("leader rqlite node object is empty")
+					actionErr = errors.Errorf("leader rqlite node object is empty")
+					return nil
 				}
 			} else {
 				// This supernode contain rqlite leader, write to db here
@@ -340,7 +343,7 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pbwn.R
 
 	// Generate protobuf response respProto
 	respProto := &pbwn.UserdataRequest{
-		Realname:        result.Realname,
+		RealName:        result.RealName,
 		FacebookLink:    result.FacebookLink,
 		TwitterLink:     result.TwitterLink,
 		NativeCurrency:  result.NativeCurrency,

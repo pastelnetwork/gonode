@@ -276,6 +276,26 @@ func (file *File) Thumbnail(coordinate ThumbnailCoordinate) (*File, error) {
 	return f, nil
 }
 
+// UpdateFormat updates file format
+func (file *File) UpdateFormat() error {
+	f, err := file.Open()
+	if err != nil {
+		log.Debug("Failed to open")
+		return err
+	}
+	defer f.Close()
+
+	_, format, err := image.Decode(f)
+	if err != nil {
+		return errors.Errorf("failed to decode image: %w", err).WithField("filename", f.Name())
+	}
+	err = file.SetFormatFromExtension(format)
+	if err != nil {
+		return errors.Errorf("failed to set file format: %w", err).WithField("filename", f.Name())
+	}
+	return nil
+}
+
 // Encoder represents an image encoder.
 type Encoder interface {
 	Encode(img image.Image) (image.Image, error)

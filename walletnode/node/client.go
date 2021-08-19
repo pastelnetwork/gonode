@@ -59,6 +59,7 @@ type RegisterArtwork interface {
 type DownloadArtwork interface {
 	// Download sends image downloading request to supernode.
 	Download(ctx context.Context, txid, timestamp, signature, ttxid string) (file []byte, err error)
+	DownloadThumbnail(ctx context.Context, key []byte) (file []byte, err error)
 }
 
 // ProcessUserdata contains methods for processing userdata.

@@ -3,16 +3,8 @@ module github.com/pastelnetwork/gonode/metadb
 go 1.16
 
 replace (
-	github.com/kolesa-team/go-webp => ../go-webp
 	github.com/pastelnetwork/gonode/common => ../common
-	github.com/pastelnetwork/gonode/dupedetection => ../dupedetection
-	github.com/pastelnetwork/gonode/metadb => ../metadb
-	github.com/pastelnetwork/gonode/p2p => ../p2p
-	github.com/pastelnetwork/gonode/pastel => ../pastel
-	github.com/pastelnetwork/gonode/probe => ../probe
 	github.com/pastelnetwork/gonode/proto => ../proto
-	github.com/pastelnetwork/gonode/raptorq => ../raptorq
-	github.com/pastelnetwork/gonode/supernode => ../supernode
 )
 
 require (
@@ -32,5 +24,4 @@ require (
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	google.golang.org/grpc v1.39.0 // indirect
 	google.golang.org/protobuf v1.27.1
-	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )

@@ -23,7 +23,7 @@ type Server struct {
 	Mounts                []*MountPoint
 	CreateUserdata        http.Handler
 	UpdateUserdata        http.Handler
-	UserdataGet           http.Handler
+	GetUserdata           http.Handler
 	SetUserFollowRelation http.Handler
 	GetFollowers          http.Handler
 	GetFollowees          http.Handler
@@ -78,7 +78,7 @@ func New(
 		Mounts: []*MountPoint{
 			{"CreateUserdata", "POST", "/userdatas/create"},
 			{"UpdateUserdata", "POST", "/userdatas/update"},
-			{"UserdataGet", "GET", "/userdatas/{pastelid}"},
+			{"GetUserdata", "GET", "/userdatas/{pastelid}"},
 			{"SetUserFollowRelation", "POST", "/userdatas/follow"},
 			{"GetFollowers", "GET", "/userdatas/follow/followers"},
 			{"GetFollowees", "GET", "/userdatas/follow/followees"},
@@ -96,7 +96,7 @@ func New(
 		},
 		CreateUserdata:        NewCreateUserdataHandler(e.CreateUserdata, mux, NewUserdatasCreateUserdataDecoder(mux, userdatasCreateUserdataDecoderFn), encoder, errhandler, formatter),
 		UpdateUserdata:        NewUpdateUserdataHandler(e.UpdateUserdata, mux, NewUserdatasUpdateUserdataDecoder(mux, userdatasUpdateUserdataDecoderFn), encoder, errhandler, formatter),
-		UserdataGet:           NewUserdataGetHandler(e.UserdataGet, mux, decoder, encoder, errhandler, formatter),
+		GetUserdata:           NewGetUserdataHandler(e.GetUserdata, mux, decoder, encoder, errhandler, formatter),
 		SetUserFollowRelation: NewSetUserFollowRelationHandler(e.SetUserFollowRelation, mux, decoder, encoder, errhandler, formatter),
 		GetFollowers:          NewGetFollowersHandler(e.GetFollowers, mux, decoder, encoder, errhandler, formatter),
 		GetFollowees:          NewGetFolloweesHandler(e.GetFollowees, mux, decoder, encoder, errhandler, formatter),
@@ -114,7 +114,7 @@ func (s *Server) Service() string { return "userdatas" }
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.CreateUserdata = m(s.CreateUserdata)
 	s.UpdateUserdata = m(s.UpdateUserdata)
-	s.UserdataGet = m(s.UserdataGet)
+	s.GetUserdata = m(s.GetUserdata)
 	s.SetUserFollowRelation = m(s.SetUserFollowRelation)
 	s.GetFollowers = m(s.GetFollowers)
 	s.GetFollowees = m(s.GetFollowees)
@@ -128,7 +128,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountCreateUserdataHandler(mux, h.CreateUserdata)
 	MountUpdateUserdataHandler(mux, h.UpdateUserdata)
-	MountUserdataGetHandler(mux, h.UserdataGet)
+	MountGetUserdataHandler(mux, h.GetUserdata)
 	MountSetUserFollowRelationHandler(mux, h.SetUserFollowRelation)
 	MountGetFollowersHandler(mux, h.GetFollowers)
 	MountGetFolloweesHandler(mux, h.GetFollowees)
@@ -240,9 +240,9 @@ func NewUpdateUserdataHandler(
 	})
 }
 
-// MountUserdataGetHandler configures the mux to serve the "userdatas" service
-// "userdataGet" endpoint.
-func MountUserdataGetHandler(mux goahttp.Muxer, h http.Handler) {
+// MountGetUserdataHandler configures the mux to serve the "userdatas" service
+// "getUserdata" endpoint.
+func MountGetUserdataHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := handleUserdatasOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -252,9 +252,9 @@ func MountUserdataGetHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("GET", "/userdatas/{pastelid}", f)
 }
 
-// NewUserdataGetHandler creates a HTTP handler which loads the HTTP request
-// and calls the "userdatas" service "userdataGet" endpoint.
-func NewUserdataGetHandler(
+// NewGetUserdataHandler creates a HTTP handler which loads the HTTP request
+// and calls the "userdatas" service "getUserdata" endpoint.
+func NewGetUserdataHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -263,13 +263,13 @@ func NewUserdataGetHandler(
 	formatter func(err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeUserdataGetRequest(mux, decoder)
-		encodeResponse = EncodeUserdataGetResponse(encoder)
-		encodeError    = EncodeUserdataGetError(encoder, formatter)
+		decodeRequest  = DecodeGetUserdataRequest(mux, decoder)
+		encodeResponse = EncodeGetUserdataResponse(encoder)
+		encodeError    = EncodeGetUserdataError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "userdataGet")
+		ctx = context.WithValue(ctx, goa.MethodKey, "getUserdata")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "userdatas")
 		payload, err := decodeRequest(r)
 		if err != nil {

@@ -38,59 +38,58 @@ func fakeRQIDsData(isValid bool) ([]byte, []string) {
 
 func fakeRegiterTicket() pastel.RegTicket {
 	appTicketData := pastel.AppTicket{
-		AuthorPastelID:                 "pastelID",
-		BlockTxID:                      "block_tx_id",
-		BlockNum:                       10,
-		ArtistName:                     "artist_name",
-		ArtistWebsite:                  "artist_website",
-		ArtistWrittenStatement:         "artist_written_statement",
-		ArtworkTitle:                   "artwork_title",
-		ArtworkSeriesName:              "artwork_series_name",
-		ArtworkCreationVideoYoutubeURL: "artwork_creation_video_youtube_url",
-		ArtworkKeywordSet:              "artwork_keyword_set",
-		TotalCopies:                    10,
-		PreviewHash:                    []byte("preview_hash"),
-		Thumbnail1Hash:                 []byte("thumbnail1_hash"),
-		Thumbnail2Hash:                 []byte("thumbnail2_hash"),
-		DataHash:                       []byte("data_hash"),
-		FingerprintsHash:               []byte("fingerprints_hash"),
-		FingerprintsSignature:          []byte("fingerprints_signature"),
-		PastelRarenessScore:            0.8,
-		OpenNSFWScore:                  0.08,
-		InternetRarenessScore:          0.4,
-		RQIDs:                          []string{"raptorq ID1", "raptorq ID2"},
-		RQOti:                          []byte("rq_oti"),
+		AuthorPastelID:             "pastelID",
+		BlockTxID:                  "block_tx_id",
+		BlockNum:                   10,
+		CreatorName:                "artist_name",
+		CreatorWebsite:             "artist_website",
+		CreatorWrittenStatement:    "artist_written_statement",
+		NFTTitle:                   "artwork_title",
+		NFTSeriesName:              "artwork_series_name",
+		NFTCreationVideoYoutubeURL: "artwork_creation_video_youtube_url",
+		NFTKeywordSet:              "artwork_keyword_set",
+		TotalCopies:                10,
+		PreviewHash:                []byte("preview_hash"),
+		Thumbnail1Hash:             []byte("thumbnail1_hash"),
+		Thumbnail2Hash:             []byte("thumbnail2_hash"),
+		DataHash:                   []byte("data_hash"),
+		FingerprintsHash:           []byte("fingerprints_hash"),
+		FingerprintsSignature:      []byte("fingerprints_signature"),
+		PastelRarenessScore:        0.8,
+		OpenNSFWScore:              0.08,
+		InternetRarenessScore:      0.4,
+		RQIDs:                      []string{"raptorq ID1", "raptorq ID2"},
+		RQOti:                      []byte("rq_oti"),
 	}
 	appTicket, _ := json.Marshal(&appTicketData)
-	// appTicket := base64.StdEncoding.EncodeToString(data)
-	// fmt.Println(string(appTicket))
-	artTicketData := pastel.ArtTicket{
+
+	nftTicketData := pastel.NFTTicket{
 		Version:       1,
-		Author:        []byte("pastelID"),
+		Author:        "pastelID",
 		BlockNum:      10,
-		BlockHash:     []byte("block_hash"),
+		BlockHash:     "block_hash",
 		Copies:        10,
 		Royalty:       99,
-		Green:         "green_address",
+		Green:         false,
 		AppTicket:     appTicket,
 		AppTicketData: appTicketData,
 	}
-	artTicket, _ := json.Marshal(&artTicketData)
+	artTicket, _ := json.Marshal(&nftTicketData)
 	// fmt.Println(string(artTicket))
 	ticketSignature := pastel.TicketSignatures{}
 	regTicketData := pastel.RegTicketData{
 		Type:          "type",
-		ArtistHeight:  235,
+		CreatorHeight: 235,
 		Signatures:    ticketSignature,
 		Key1:          "key1",
 		Key2:          "key2",
-		IsGreen:       true,
+		Green:         false,
 		StorageFee:    1,
 		TotalCopies:   10,
 		Royalty:       99,
 		Version:       1,
-		ArtTicket:     artTicket,
-		ArtTicketData: artTicketData,
+		NFTTicket:     artTicket,
+		NFTTicketData: nftTicketData,
 	}
 	regTicket := pastel.RegTicket{
 		Height:        235,
@@ -184,7 +183,7 @@ func TestDecodeRegTicket(t *testing.T) {
 	regTicket := fakeRegiterTicket()
 	testCases := []struct {
 		args          args
-		artTicketData pastel.ArtTicket
+		nftTicketData pastel.NFTTicket
 		appTicketData pastel.AppTicket
 		assertion     assert.ErrorAssertionFunc
 	}{
@@ -192,8 +191,8 @@ func TestDecodeRegTicket(t *testing.T) {
 			args: args{
 				regTicket: &regTicket,
 			},
-			artTicketData: regTicket.RegTicketData.ArtTicketData,
-			appTicketData: regTicket.RegTicketData.ArtTicketData.AppTicketData,
+			nftTicketData: regTicket.RegTicketData.NFTTicketData,
+			appTicketData: regTicket.RegTicketData.NFTTicketData.AppTicketData,
 			assertion:     assert.NoError,
 		},
 	}
@@ -206,8 +205,8 @@ func TestDecodeRegTicket(t *testing.T) {
 			task := NewTask(service)
 			err := task.decodeRegTicket(testCase.args.regTicket)
 			testCase.assertion(t, err)
-			assert.Equal(t, testCase.artTicketData, testCase.args.regTicket.RegTicketData.ArtTicketData)
-			assert.Equal(t, testCase.appTicketData, testCase.args.regTicket.RegTicketData.ArtTicketData.AppTicketData)
+			assert.Equal(t, testCase.nftTicketData, testCase.args.regTicket.RegTicketData.NFTTicketData)
+			assert.Equal(t, testCase.appTicketData, testCase.args.regTicket.RegTicketData.NFTTicketData.AppTicketData)
 		})
 	}
 }
@@ -272,11 +271,15 @@ func TestTaskDownload(t *testing.T) {
 	regTicket := fakeRegiterTicket()
 	tradeTickets := []pastel.TradeTicket{
 		{
-			Type:     "trade",
-			PastelID: "buyerPastelID", // PastelID of the buyer
-			SellTXID: "sell_txid",     // txid with sale ticket
-			BueTXID:  "buy_txid",      // txid with buy ticket
-			ArtTXID:  "ttxid",         // txid with either 1) art activation ticket or 2) trade ticket in it
+			Height: 238,
+			TXID:   "ttxid",
+			Ticket: pastel.TradeTicketData{
+				Type:     "trade",
+				PastelID: "buyerPastelID", // PastelID of the buyer
+				SellTXID: "sell_txid",     // txid with sale ticket
+				BuyTXID:  "buy_txid",      // txid with buy ticket
+				NFTTXID:  "NFT_txid",      // txid with either 1) NFT activation ticket or 2) trade ticket in it
+			},
 		},
 	}
 	file := []byte("test file")
@@ -415,10 +418,10 @@ func TestTaskDownload(t *testing.T) {
 			pastelClient.AssertExpectations(t)
 			pastelClient.AssertRegTicketCall(testCase.numberRegTicket, mock.Anything, testCase.args.txid)
 			pastelClient.AssertListAvailableTradeTicketsCall(testCase.numberListAvailableTradeTickets, mock.Anything)
-			pastelID := testCase.args.regTicket.RegTicketData.ArtTicketData.AppTicketData.AuthorPastelID
+			pastelID := testCase.args.regTicket.RegTicketData.NFTTicketData.AppTicketData.AuthorPastelID
 			for _, trade := range testCase.args.tradeTickets {
-				if trade.ArtTXID == testCase.args.ttxid {
-					pastelID = trade.PastelID
+				if trade.TXID == testCase.args.ttxid {
+					pastelID = trade.Ticket.PastelID
 				}
 			}
 			pastelClient.AssertVerifyCall(testCase.numberVerify, mock.Anything, []byte(testCase.args.timestamp),

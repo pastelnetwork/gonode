@@ -12,6 +12,9 @@ const (
 	// MasterNodesTopMethod represent MasterNodesTop name method
 	MasterNodesTopMethod = "MasterNodesTop"
 
+	// MasterNodeStatusMethod represent MasterNodesTop name method
+	MasterNodeStatusMethod = "MasterNodeStatus"
+
 	// StorageNetWorkFeeMethod represent StorageNetworkFee name method
 	StorageNetWorkFeeMethod = "StorageNetworkFee"
 
@@ -23,6 +26,9 @@ const (
 
 	// RegTicketMethod represent RegTicket name method
 	RegTicketMethod = "RegTicket"
+
+	// RegTicketsMethod represent RegTickets name method
+	RegTicketsMethod = "RegTickets"
 
 	// GetBlockVerbose1Method represent GetBlockVerbose1 method
 	GetBlockVerbose1Method = "GetBlockVerbose1"
@@ -48,8 +54,11 @@ const (
 	// VerifyMethod represents Verify method name
 	VerifyMethod = "Verify"
 
-	// RegisterActTicket represents RegisterArtTicket method name
-	RegisterActTicket = "RegisterActTicket"
+	// RegisterNFTTicket represents RegisterNFTTicket method name
+	RegisterNFTTicket = "RegisterNFTTicket"
+
+	// RegisterArtTicketMethod represents RegisterArtTicket method
+	RegisterArtTicketMethod = "RegisterArtTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -69,6 +78,12 @@ func NewMockClient(t *testing.T) *Client {
 // ListenOnMasterNodesTop listening MasterNodesTop and returns Mn's and error from args
 func (client *Client) ListenOnMasterNodesTop(nodes pastel.MasterNodes, err error) *Client {
 	client.On(MasterNodesTopMethod, mock.Anything).Return(nodes, err)
+	return client
+}
+
+// ListenOnMasterNodeStatus listening MasterNodeStatus and returns master node status and error from args
+func (client *Client) ListenOnMasterNodeStatus(status *pastel.MasterNodeStatus, err error) *Client {
+	client.On(MasterNodeStatusMethod, mock.Anything).Return(status, err)
 	return client
 }
 
@@ -137,6 +152,12 @@ func (client *Client) ListenOnRegTicket(id string, ticket pastel.RegTicket, err 
 	return client
 }
 
+// ListenOnRegTickets listening RegTickets and returns ticket and error from args
+func (client *Client) ListenOnRegTickets(ticket pastel.RegTickets, err error) *Client {
+	client.On(RegTicketsMethod, mock.Anything).Return(ticket, err)
+	return client
+}
+
 // ListenOnGetBlockCount listening GetBlockCount and returns blockNum and error from args
 func (client *Client) ListenOnGetBlockCount(blockNum int32, err error) *Client {
 	client.On(GetBlockCountMethod, mock.Anything).Return(blockNum, err)
@@ -155,10 +176,9 @@ func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err erro
 	return client
 }
 
-// ListenOnRegisterActTicket listening on RegisterActTicket
-func (client *Client) ListenOnRegisterActTicket(txid string, err error) *Client {
-	client.On(RegisterActTicket, mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int"),
-		mock.AnythingOfType("int64"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(txid, err)
+// ListenOnRegisterNFTTicket listening on RegisterNFTTicket
+func (client *Client) ListenOnRegisterNFTTicket(txid string, err error) *Client {
+	client.On(RegisterNFTTicket, mock.Anything, mock.Anything).Return(txid, err)
 	return client
 }
 
@@ -204,6 +224,12 @@ func (client *Client) AssertListAvailableTradeTicketsCall(expectedCalls int, arg
 // ListenOnVerify listening Verify call and returns values from args
 func (client *Client) ListenOnVerify(isValid bool, returnErr error) *Client {
 	client.On(VerifyMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(isValid, returnErr)
+	return client
+}
+
+// ListenOnRegisterArtTicket listenes register art ticket & return id & err
+func (client *Client) ListenOnRegisterArtTicket(retID string, retErr error) *Client {
+	client.On(RegisterArtTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
 	return client
 }
 

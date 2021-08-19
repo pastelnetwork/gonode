@@ -18,6 +18,13 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
 )
 
+func safeStr(p *string) string {
+	if p != nil {
+		return *p
+	}
+	return ""
+}
+
 func fromRegisterPayload(payload *artworks.RegisterPayload) *artworkregister.Request {
 	thumbnail := artwork.ThumbnailCoordinate{
 		TopLeftX:     payload.ThumbnailCoordinate.TopLeftX,
@@ -84,32 +91,33 @@ func toArtworkStates(statuses []*state.Status) []*artworks.TaskState {
 }
 
 func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSearchResult {
-	ticketData := srch.RegTicketData.ArtTicketData.AppTicketData
+	ticketData := srch.RegTicketData.NFTTicketData.AppTicketData
 	res := &artworks.ArtworkSearchResult{
 		Artwork: &artworks.ArtworkSummary{
-			Txid:      srch.TXID,
-			Thumbnail: srch.Thumbnail,
-			Title:     ticketData.ArtworkTitle,
+			Txid:       srch.TXID,
+			Thumbnail1: srch.Thumbnail,
+			Thumbnail2: srch.ThumbnailSecondry,
+			Title:      ticketData.NFTTitle,
 
-			Copies:           srch.RegTicketData.ArtTicketData.Copies,
-			ArtistName:       ticketData.ArtistName,
-			YoutubeURL:       &ticketData.ArtworkCreationVideoYoutubeURL,
+			Copies:           srch.RegTicketData.NFTTicketData.Copies,
+			ArtistName:       ticketData.CreatorName,
+			YoutubeURL:       &ticketData.NFTCreationVideoYoutubeURL,
 			ArtistPastelID:   ticketData.AuthorPastelID,
-			ArtistWebsiteURL: &ticketData.ArtistWebsite,
-			Description:      ticketData.ArtistWrittenStatement,
-			Keywords:         &ticketData.ArtworkKeywordSet,
-			SeriesName:       &ticketData.ArtworkSeriesName,
+			ArtistWebsiteURL: &ticketData.CreatorWebsite,
+			Description:      ticketData.CreatorWrittenStatement,
+			Keywords:         &ticketData.NFTKeywordSet,
+			SeriesName:       &ticketData.NFTSeriesName,
 		},
 
 		MatchIndex: srch.MatchIndex,
 	}
 
 	res.Matches = []*artworks.FuzzyMatch{}
-	for _, match := range res.Matches {
+	for _, match := range srch.Matches {
 		res.Matches = append(res.Matches, &artworks.FuzzyMatch{
-			Score:          match.Score,
-			Str:            match.Str,
-			FieldType:      match.FieldType,
+			Score:          &match.Score,
+			Str:            &match.Str,
+			FieldType:      &match.FieldType,
 			MatchedIndexes: match.MatchedIndexes,
 		})
 	}
@@ -141,31 +149,30 @@ func fromArtSearchRequest(req *artworks.ArtSearchPayload) *artworksearch.ArtSear
 func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 	return &artworks.ArtworkDetail{
 		Txid:                  ticket.TXID,
-		Title:                 ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkTitle,
-		Copies:                ticket.RegTicketData.ArtTicketData.Copies,
-		ArtistName:            ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistName,
-		YoutubeURL:            &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkCreationVideoYoutubeURL,
-		ArtistPastelID:        ticket.RegTicketData.ArtTicketData.AppTicketData.AuthorPastelID,
-		ArtistWebsiteURL:      &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistWebsite,
-		Description:           ticket.RegTicketData.ArtTicketData.AppTicketData.ArtistWrittenStatement,
-		Keywords:              &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkKeywordSet,
-		SeriesName:            &ticket.RegTicketData.ArtTicketData.AppTicketData.ArtworkSeriesName,
-		IsGreen:               ticket.RegTicketData.IsGreen,
-		Royalty:               ticket.RegTicketData.Royalty,
-		RarenessScore:         ticket.RegTicketData.ArtTicketData.AppTicketData.PastelRarenessScore,
-		NsfwScore:             ticket.RegTicketData.ArtTicketData.AppTicketData.OpenNSFWScore,
-		InternetRarenessScore: &ticket.RegTicketData.ArtTicketData.AppTicketData.InternetRarenessScore,
-		Version:               &ticket.RegTicketData.ArtTicketData.Version,
+		Title:                 ticket.RegTicketData.NFTTicketData.AppTicketData.NFTTitle,
+		Copies:                ticket.RegTicketData.NFTTicketData.Copies,
+		ArtistName:            ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorName,
+		YoutubeURL:            &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTCreationVideoYoutubeURL,
+		ArtistPastelID:        ticket.RegTicketData.NFTTicketData.AppTicketData.AuthorPastelID,
+		ArtistWebsiteURL:      &ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWebsite,
+		Description:           ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWrittenStatement,
+		Keywords:              &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTKeywordSet,
+		SeriesName:            &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName,
+		Royalty:               &ticket.RegTicketData.Royalty,
+		RarenessScore:         ticket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore,
+		NsfwScore:             ticket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore,
+		InternetRarenessScore: &ticket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore,
+		Version:               &ticket.RegTicketData.NFTTicketData.Version,
 		StorageFee:            &ticket.RegTicketData.StorageFee,
-		HentaiNsfwScore:       &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Hentai,
-		DrawingNsfwScore:      &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Drawing,
-		NeutralNsfwScore:      &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Neutral,
-		PornNsfwScore:         &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Porn,
-		SexyNsfwScore:         &ticket.RegTicketData.ArtTicketData.AppTicketData.AlternateNSFWScores.Sexy,
+		HentaiNsfwScore:       &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Hentai,
+		DrawingNsfwScore:      &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Drawing,
+		NeutralNsfwScore:      &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Neutral,
+		PornNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Porn,
+		SexyNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Sexy,
 	}
 }
 
-func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Ticket {
+func fromDownloadPayload(payload *artworks.ArtworkDownloadPayload) *artworkdownload.Ticket {
 	return &artworkdownload.Ticket{
 		Txid:               payload.Txid,
 		PastelID:           payload.Pid,
@@ -177,40 +184,27 @@ func fromDownloadPayload(payload *artworks.DownloadPayload) *artworkdownload.Tic
 func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.ProcessRequest {
 	request := &userdata.ProcessRequest{}
 
-	if req.Realname != nil {
-		request.Realname = *(req.Realname)
-	}
-	if req.FacebookLink != nil {
-		request.FacebookLink = *(req.FacebookLink)
-	}
-	if req.TwitterLink != nil {
-		request.TwitterLink = *(req.TwitterLink)
-	}
-	if req.Location != nil {
-		request.Location = *(req.Location)
-	}
-	if req.PrimaryLanguage != nil {
-		request.PrimaryLanguage = *(req.PrimaryLanguage)
-	}
-	if req.Categories != nil {
-		request.Categories = *(req.Categories)
-	}
-	if req.Biography != nil {
-		request.Biography = *(req.Biography)
-	}
+	request.RealName = safeStr(req.RealName)
+	request.FacebookLink = safeStr(req.FacebookLink)
+	request.TwitterLink = safeStr(req.TwitterLink)
+	request.Location = safeStr(req.Location)
+	request.PrimaryLanguage = safeStr(req.PrimaryLanguage)
+	request.Categories = safeStr(req.Categories)
+	request.Biography = safeStr(req.Biography)
+
 	if req.AvatarImage != nil {
 		if req.AvatarImage.Content != nil && len(req.AvatarImage.Content) > 0 {
 			request.AvatarImage.Content = make([]byte, len(req.AvatarImage.Content))
 			copy(request.AvatarImage.Content, req.AvatarImage.Content)
 		}
-		request.AvatarImage.Filename = *(req.AvatarImage.Filename)
+		request.AvatarImage.Filename = safeStr(req.AvatarImage.Filename)
 	}
 	if req.CoverPhoto != nil {
 		if req.CoverPhoto.Content != nil && len(req.CoverPhoto.Content) > 0 {
 			request.CoverPhoto.Content = make([]byte, len(req.CoverPhoto.Content))
 			copy(request.CoverPhoto.Content, req.CoverPhoto.Content)
 		}
-		request.CoverPhoto.Filename = *(req.CoverPhoto.Filename)
+		request.CoverPhoto.Filename = safeStr(req.CoverPhoto.Filename)
 	}
 
 	request.ArtistPastelID = req.ArtistPastelID
@@ -226,40 +220,27 @@ func fromUserdataCreateRequest(req *userdatas.CreateUserdataPayload) *userdata.P
 func fromUserdataUpdateRequest(req *userdatas.UpdateUserdataPayload) *userdata.ProcessRequest {
 	request := &userdata.ProcessRequest{}
 
-	if req.Realname != nil {
-		request.Realname = *(req.Realname)
-	}
-	if req.FacebookLink != nil {
-		request.FacebookLink = *(req.FacebookLink)
-	}
-	if req.TwitterLink != nil {
-		request.TwitterLink = *(req.TwitterLink)
-	}
-	if req.Location != nil {
-		request.Location = *(req.Location)
-	}
-	if req.PrimaryLanguage != nil {
-		request.PrimaryLanguage = *(req.PrimaryLanguage)
-	}
-	if req.Categories != nil {
-		request.Categories = *(req.Categories)
-	}
-	if req.Biography != nil {
-		request.Biography = *(req.Biography)
-	}
+	request.RealName = safeStr(req.RealName)
+	request.FacebookLink = safeStr(req.FacebookLink)
+	request.TwitterLink = safeStr(req.TwitterLink)
+	request.Location = safeStr(req.Location)
+	request.PrimaryLanguage = safeStr(req.PrimaryLanguage)
+	request.Categories = safeStr(req.Categories)
+	request.Biography = safeStr(req.Biography)
+
 	if req.AvatarImage != nil {
 		if req.AvatarImage.Content != nil && len(req.AvatarImage.Content) > 0 {
 			request.AvatarImage.Content = make([]byte, len(req.AvatarImage.Content))
 			copy(request.AvatarImage.Content, req.AvatarImage.Content)
 		}
-		request.AvatarImage.Filename = *(req.AvatarImage.Filename)
+		request.AvatarImage.Filename = safeStr(req.AvatarImage.Filename)
 	}
 	if req.CoverPhoto != nil {
 		if req.CoverPhoto.Content != nil && len(req.CoverPhoto.Content) > 0 {
 			request.CoverPhoto.Content = make([]byte, len(req.CoverPhoto.Content))
 			copy(request.CoverPhoto.Content, req.CoverPhoto.Content)
 		}
-		request.CoverPhoto.Filename = *(req.CoverPhoto.Filename)
+		request.CoverPhoto.Filename = safeStr(req.CoverPhoto.Filename)
 	}
 
 	request.ArtistPastelID = req.ArtistPastelID
@@ -276,7 +257,7 @@ func toUserdataProcessResult(result *userdata.ProcessResult) *userdatas.Userdata
 	res := &userdatas.UserdataProcessResult{
 		ResponseCode:    int(result.ResponseCode),
 		Detail:          result.Detail,
-		Realname:        &result.Realname,
+		RealName:        &result.RealName,
 		FacebookLink:    &result.FacebookLink,
 		TwitterLink:     &result.TwitterLink,
 		NativeCurrency:  &result.NativeCurrency,
@@ -293,7 +274,7 @@ func toUserdataProcessResult(result *userdata.ProcessResult) *userdatas.Userdata
 func toUserSpecifiedData(req *userdata.ProcessRequest) *userdatas.UserSpecifiedData {
 	result := &userdatas.UserSpecifiedData{}
 
-	result.Realname = &req.Realname
+	result.RealName = &req.RealName
 	result.FacebookLink = &req.FacebookLink
 	result.TwitterLink = &req.TwitterLink
 	result.NativeCurrency = &req.NativeCurrency
@@ -309,14 +290,14 @@ func toUserSpecifiedData(req *userdata.ProcessRequest) *userdatas.UserSpecifiedD
 			req.AvatarImage.Content = make([]byte, len(result.AvatarImage.Content))
 			copy(req.AvatarImage.Content, result.AvatarImage.Content)
 		}
-		req.AvatarImage.Filename = *result.AvatarImage.Filename
+		req.AvatarImage.Filename = safeStr(result.AvatarImage.Filename)
 	}
 	if result.CoverPhoto != nil {
 		if result.CoverPhoto.Content != nil && len(result.CoverPhoto.Content) > 0 {
 			req.CoverPhoto.Content = make([]byte, len(result.CoverPhoto.Content))
 			copy(req.CoverPhoto.Content, result.CoverPhoto.Content)
 		}
-		req.CoverPhoto.Filename = *result.CoverPhoto.Filename
+		req.CoverPhoto.Filename = safeStr(result.CoverPhoto.Filename)
 	}
 
 	return result

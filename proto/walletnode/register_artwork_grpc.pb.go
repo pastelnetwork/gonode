@@ -29,7 +29,7 @@ type RegisterArtworkClient interface {
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
 	// SendArtTicket sends a signed art-ticket to the supernode.
-	SendSignedArtTicket(ctx context.Context, in *SendSignedArtTicketRequest, opts ...grpc.CallOption) (*SendSignedArtTicketReply, error)
+	SendSignedNFTTicket(ctx context.Context, in *SendSignedNFTTicketRequest, opts ...grpc.CallOption) (*SendSignedNFTTicketReply, error)
 	// SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
 	SendPreBurntFeeTxid(ctx context.Context, in *SendPreBurntFeeTxidRequest, opts ...grpc.CallOption) (*SendPreBurntFeeTxidReply, error)
 	// SendTicket sends a ticket to the supernode.
@@ -129,9 +129,9 @@ func (x *registerArtworkProbeImageClient) CloseAndRecv() (*ProbeImageReply, erro
 	return m, nil
 }
 
-func (c *registerArtworkClient) SendSignedArtTicket(ctx context.Context, in *SendSignedArtTicketRequest, opts ...grpc.CallOption) (*SendSignedArtTicketReply, error) {
-	out := new(SendSignedArtTicketReply)
-	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendSignedArtTicket", in, out, opts...)
+func (c *registerArtworkClient) SendSignedNFTTicket(ctx context.Context, in *SendSignedNFTTicketRequest, opts ...grpc.CallOption) (*SendSignedNFTTicketReply, error) {
+	out := new(SendSignedNFTTicketReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/SendSignedNFTTicket", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +205,7 @@ type RegisterArtworkServer interface {
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
 	ProbeImage(RegisterArtwork_ProbeImageServer) error
 	// SendArtTicket sends a signed art-ticket to the supernode.
-	SendSignedArtTicket(context.Context, *SendSignedArtTicketRequest) (*SendSignedArtTicketReply, error)
+	SendSignedNFTTicket(context.Context, *SendSignedNFTTicketRequest) (*SendSignedNFTTicketReply, error)
 	// SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
 	SendPreBurntFeeTxid(context.Context, *SendPreBurntFeeTxidRequest) (*SendPreBurntFeeTxidReply, error)
 	// SendTicket sends a ticket to the supernode.
@@ -231,8 +231,8 @@ func (UnimplementedRegisterArtworkServer) ConnectTo(context.Context, *ConnectToR
 func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageServer) error {
 	return status.Errorf(codes.Unimplemented, "method ProbeImage not implemented")
 }
-func (UnimplementedRegisterArtworkServer) SendSignedArtTicket(context.Context, *SendSignedArtTicketRequest) (*SendSignedArtTicketReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendSignedArtTicket not implemented")
+func (UnimplementedRegisterArtworkServer) SendSignedNFTTicket(context.Context, *SendSignedNFTTicketRequest) (*SendSignedNFTTicketReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendSignedNFTTicket not implemented")
 }
 func (UnimplementedRegisterArtworkServer) SendPreBurntFeeTxid(context.Context, *SendPreBurntFeeTxidRequest) (*SendPreBurntFeeTxidReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendPreBurntFeeTxid not implemented")
@@ -344,20 +344,20 @@ func (x *registerArtworkProbeImageServer) Recv() (*ProbeImageRequest, error) {
 	return m, nil
 }
 
-func _RegisterArtwork_SendSignedArtTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendSignedArtTicketRequest)
+func _RegisterArtwork_SendSignedNFTTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendSignedNFTTicketRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).SendSignedArtTicket(ctx, in)
+		return srv.(RegisterArtworkServer).SendSignedNFTTicket(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.RegisterArtwork/SendSignedArtTicket",
+		FullMethod: "/walletnode.RegisterArtwork/SendSignedNFTTicket",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).SendSignedArtTicket(ctx, req.(*SendSignedArtTicketRequest))
+		return srv.(RegisterArtworkServer).SendSignedNFTTicket(ctx, req.(*SendSignedNFTTicketRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -440,8 +440,8 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RegisterArtwork_ConnectTo_Handler,
 		},
 		{
-			MethodName: "SendSignedArtTicket",
-			Handler:    _RegisterArtwork_SendSignedArtTicket_Handler,
+			MethodName: "SendSignedNFTTicket",
+			Handler:    _RegisterArtwork_SendSignedNFTTicket_Handler,
 		},
 		{
 			MethodName: "SendPreBurntFeeTxid",

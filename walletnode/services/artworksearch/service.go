@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	thumbnail "github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
+	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
 )
 
 const (
@@ -69,22 +70,18 @@ func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client
 	}
 }
 
-// RegTicket pull art registration ticket from cNode & decodes base64 encoded fields
+// RegTicket pull NFT registration ticket from cNode & decodes base64 encoded fields
 func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.RegTicket, error) {
 	regTicket, err := service.pastelClient.RegTicket(ctx, RegTXID)
 	if err != nil {
 		return nil, fmt.Errorf("fetch: %s", err)
 	}
 
-	if err := fromBase64(string(regTicket.RegTicketData.ArtTicket),
-		&regTicket.RegTicketData.ArtTicketData); err != nil {
-		return &regTicket, fmt.Errorf("convert art ticket: %s", err)
+	articketData, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
+	if err != nil {
+		return nil, errors.Errorf("failed to convert NFT ticket: %w", err)
 	}
-
-	if err := fromBase64(string(regTicket.RegTicketData.ArtTicketData.AppTicket),
-		&regTicket.RegTicketData.ArtTicketData.AppTicketData); err != nil {
-		return &regTicket, fmt.Errorf("convert app ticket: %s", err)
-	}
+	regTicket.RegTicketData.NFTTicketData = *articketData
 
 	return &regTicket, nil
 }
@@ -98,5 +95,5 @@ func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegT
 	}
 	defer thumbnailHelper.Close()
 
-	return thumbnailHelper.Fetch(ctx, string(regTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash))
+	return thumbnailHelper.Fetch(ctx, regTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
 }

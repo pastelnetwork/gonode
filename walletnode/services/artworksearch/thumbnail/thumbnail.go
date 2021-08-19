@@ -21,7 +21,7 @@ const (
 // Helper is interface contract for Thumbnail Getter
 type Helper interface {
 	Connect(ctx context.Context, connections uint) error
-	Fetch(ctx context.Context, key string) ([]byte, error)
+	Fetch(ctx context.Context, key []byte) ([]byte, error)
 	Close()
 }
 
@@ -33,6 +33,7 @@ type thumbnailHelper struct {
 	timeOut    time.Duration
 	isClosed   bool
 	closeMutex sync.Mutex
+	cancel     context.CancelFunc
 }
 
 // New returns a new instance of thumbnailHelper as Helper
@@ -51,7 +52,7 @@ type response struct {
 }
 
 type request struct {
-	key    string
+	key    []byte
 	respCh chan *response
 }
 
@@ -61,19 +62,31 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 		return errors.New(maxConnectionsErr)
 	}
 
-	nodes, err := t.pastelTopNodes(ctx, connections)
+	nodes, err := t.pastelTopNodes(ctx)
 	if err != nil {
 		return fmt.Errorf("pastelTopNodes: %v", err)
 	}
 
+	if len(nodes) < int(connections) {
+		return errors.New("not enough masternodes")
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	t.cancel = cancel
+	connCnt := 0
+
 	for _, node := range nodes {
 		node := node
-		if err := node.Connect(ctx, t.timeOut); err != nil {
-			t.Close()
-
-			return err
+		if connCnt == int(connections) {
+			break
 		}
 
+		if err := node.Connect(ctx, t.timeOut); err != nil {
+			log.WithContext(ctx).WithError(err).Error("Failed to connect to master node")
+			continue
+		}
+
+		connCnt = connCnt + 1
 		go func() {
 			t.listen(ctx, node)
 			t.Close()
@@ -81,6 +94,11 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 				log.WithContext(ctx).WithError(err).Error("ThumbnailPuller.Start-Close node connection")
 			}
 		}()
+	}
+
+	if connCnt != int(connections) {
+		t.Close()
+		return errors.New("could not connect to enough nodes")
 	}
 
 	return nil
@@ -96,18 +114,16 @@ func (t *thumbnailHelper) listen(ctx context.Context, n *node.Node) {
 				return
 			}
 
-			// TODO: get thumbnail from supernode using Node
-			// hard-coding fetched thumbnail for dev purposes
-			fmt.Println("thumb-key:", req.key, n.PastelID())
-			thumb := []byte{}
-			resp := &response{data: thumb}
-			req.respCh <- resp
+			log.WithContext(ctx).Debugf("thumb-key: %v-%v", req.key, n.PastelID())
+			data, err := n.DownloadThumbnail(ctx, req.key)
+			req.respCh <- &response{err: err, data: data}
 		}
 	}
 }
 
 // Fetch gets thumbnail
-func (t *thumbnailHelper) Fetch(ctx context.Context, key string) (data []byte, err error) {
+func (t *thumbnailHelper) Fetch(ctx context.Context, key []byte) (data []byte, err error) {
+	// FIXME : verify hash of returned data
 	if t.IsClosed() {
 		return data, errors.New("connection is closed")
 	}
@@ -127,16 +143,12 @@ func (t *thumbnailHelper) Fetch(ctx context.Context, key string) (data []byte, e
 	}
 }
 
-func (t *thumbnailHelper) pastelTopNodes(ctx context.Context, connections uint) (nodes node.List, err error) {
+func (t *thumbnailHelper) pastelTopNodes(ctx context.Context) (nodes node.List, err error) {
 	mns, err := t.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for i, mn := range mns {
-		if uint(i) == connections {
-			break
-		}
-
+	for _, mn := range mns {
 		nodes = append(nodes, node.NewNode(t.nodeClient, mn.ExtAddress, mn.ExtKey))
 	}
 
@@ -153,6 +165,10 @@ func (t *thumbnailHelper) Close() {
 	}
 
 	t.isClosed = true
+	if t.cancel != nil {
+		t.cancel()
+		t.cancel = nil
+	}
 	close(t.reqCh)
 }
 

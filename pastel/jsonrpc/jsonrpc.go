@@ -356,7 +356,7 @@ func (client *rpcClient) CallForWithContext(ctx context.Context, out interface{}
 	}
 
 	if rpcResponse.Error != nil {
-		return rpcResponse.Error
+		return fmt.Errorf("code: %d, message: %s", rpcResponse.Error.Code, rpcResponse.Error.Message)
 	}
 
 	return rpcResponse.GetObject(out)
