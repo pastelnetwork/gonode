@@ -3,3 +3,6 @@ node:
     hostname: "localhost"
     port: 8080
   burn_address: "PtpasteLBurnAddressXXXXXXXXXXbJ5ndd"
+  userdata_process:
+    number_super_nodes: 10
+    minimal_node_confirm_success: 8

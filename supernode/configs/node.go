@@ -18,7 +18,7 @@ type Node struct {
 	// timeout in minute
 	PreburntTxConfirmationTimeout int                    `mapstructure:"preburnt_tx_confirmation_timeout" json:"preburnt_tx_confirmation_timeout,omitempty"`
 	ArtworkDownload               artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
-	UserdataProcess               userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
+	UserdataProcess               userdataprocess.Config `mapstructure:"userdata_process" json:"userdata_process,omitempty"`
 }
 
 // NewNode returns a new Node instance
