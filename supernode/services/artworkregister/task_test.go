@@ -4,10 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"image"
-	"image/png"
 	"io"
-	"os"
 	"strings"
 	"testing"
 
@@ -15,7 +12,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
-	"github.com/pastelnetwork/gonode/common/storage/fs"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	ddMock "github.com/pastelnetwork/gonode/dupedetection/test"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
@@ -824,20 +820,4 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 			}
 		})
 	}
-}
-
-func newTestImageFile() (*artwork.File, error) {
-	imageStorage := artwork.NewStorage(fs.NewFileStorage(os.TempDir()))
-	imgFile := imageStorage.NewFile()
-
-	f, err := imgFile.Create()
-	if err != nil {
-		return nil, errors.Errorf("failed to create storage file: %w", err)
-	}
-	defer f.Close()
-
-	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
-	png.Encode(f, img)
-
-	return imgFile, nil
 }
