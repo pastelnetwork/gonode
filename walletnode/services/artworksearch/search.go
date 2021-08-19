@@ -8,10 +8,11 @@ import (
 // RegTicketSearch is a helper to aggregate RegTicket search
 type RegTicketSearch struct {
 	*pastel.RegTicket
-	Thumbnail  []byte
-	MaxScore   int
-	Matches    []Match
-	MatchIndex int
+	Thumbnail         []byte
+	ThumbnailSecondry []byte
+	MaxScore          int
+	Matches           []Match
+	MatchIndex        int
 }
 
 // Match represents a matched string.

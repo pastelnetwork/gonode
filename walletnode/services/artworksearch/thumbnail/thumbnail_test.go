@@ -15,7 +15,6 @@ import (
 )
 
 func TestConnect(t *testing.T) {
-	t.Skip()
 	t.Parallel()
 	nodes := pastel.MasterNodes{}
 	for i := 0; i < 10; i++ {
@@ -32,8 +31,8 @@ func TestConnect(t *testing.T) {
 		"one":              {connections: 1, err: nil, nodesRet: nodes},
 		"max":              {connections: 10, err: nil, nodesRet: nodes},
 		"more-than-max":    {connections: maxConnections + 1, err: errors.New(maxConnectionsErr), nodesRet: nodes},
-		"node-connect-err": {connections: 4, nodeErr: errors.New("test"), err: errors.New("test"), nodesRet: nodes},
-		"no-nodes-err":     {connections: 10, nodesRet: pastel.MasterNodes{}, err: errors.New("no nodes available")},
+		"node-connect-err": {connections: 3, nodeErr: errors.New("test"), err: nil, nodesRet: nodes},
+		"no-nodes-err":     {connections: 10, nodesRet: pastel.MasterNodes{}, err: errors.New("not enough masternodes")},
 	}
 
 	for name, tc := range tests {
@@ -51,7 +50,7 @@ func TestConnect(t *testing.T) {
 				nodeClientMock.ListenOnConnect("2", nil)
 				nodeClientMock.ListenOnConnect("3", tc.nodeErr)
 			}
-			nodeClientMock.ListenOnClose(nil)
+			nodeClientMock.ListenOnClose(nil).ListenOnDownloadArtwork()
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnMasterNodesTop(tc.nodesRet, nil)
@@ -65,7 +64,6 @@ func TestConnect(t *testing.T) {
 }
 
 func TestFetch(t *testing.T) {
-	t.Skip()
 	t.Parallel()
 	nodes := pastel.MasterNodes{}
 	for i := 0; i < 10; i++ {
@@ -93,7 +91,6 @@ func TestFetch(t *testing.T) {
 		tc := tc
 
 		t.Run(name, func(t *testing.T) {
-			t.Parallel()
 
 			ctx := context.Background()
 			err := tc.helper.Connect(ctx, tc.connections)

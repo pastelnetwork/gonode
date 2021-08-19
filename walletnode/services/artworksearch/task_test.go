@@ -22,7 +22,7 @@ const (
 )
 
 func TestRunTask(t *testing.T) {
-	t.Skip()
+
 	regTicketA := pastel.RegTicket{
 		TXID: testIDA,
 		RegTicketData: pastel.RegTicketData{
@@ -160,7 +160,8 @@ func TestRunTask(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
 
 			nodeClientMock := nodeMock.NewMockClient(t)
-			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().ListenOnClose(nil)
+			nodeClientMock.ListenOnConnect("", nil).ListenOnRegisterArtwork().
+				ListenOnClose(nil).ListenOnDownloadArtwork().ListenOnDownloadThumbnail([]byte{}, nil)
 
 			if len(testCase.args.actTickets) != len(testCase.args.regTickets) {
 				t.Fatalf("#act_tickets != # reg_tickets")

@@ -117,13 +117,26 @@ func (task *Task) run(ctx context.Context) error {
 		res.MatchIndex = i
 
 		group.Go(func() error {
-			data, err := task.thumbnailHelper.Fetch(gctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.PreviewHash)
-			if err != nil {
-				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("Fetch Thumbnail")
+			tgroup, tgctx := errgroup.WithContext(ctx)
+			var t1Data, t2Data []byte
+			tgroup.Go(func() (err error) {
+				t1Data, err = task.thumbnailHelper.Fetch(tgctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash)
+				return err
+			})
+
+			tgroup.Go(func() (err error) {
+				t2Data, err = task.thumbnailHelper.Fetch(tgctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail2Hash)
+				return err
+			})
+
+			if tgroup.Wait() != nil {
+				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("fetch Thumbnail")
 
 				return fmt.Errorf("fetch thumbnail: txid: %s - err: %s", res.TXID, err)
 			}
-			res.Thumbnail = data
+
+			res.Thumbnail = t1Data
+			res.ThumbnailSecondry = t2Data
 			// Post on result channel
 			task.resultChan <- res
 

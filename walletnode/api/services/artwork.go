@@ -232,7 +232,7 @@ func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPa
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
-	res.Thumbnail = data
+	res.Thumbnail1 = data
 
 	return res, nil
 }
