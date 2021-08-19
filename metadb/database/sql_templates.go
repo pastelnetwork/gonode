@@ -1,6 +1,6 @@
 package database
 
-const UserInfoWriteTemplate = `INSERT OR REPLACE INTO user_metadata (
+const userInfoWriteTemplate = `INSERT OR REPLACE INTO user_metadata (
     artist_pastel_id,
     real_name,
     facebook_link,
@@ -38,4 +38,4 @@ const UserInfoWriteTemplate = `INSERT OR REPLACE INTO user_metadata (
     '{{.CoverPhotoFilename}}'
 );`
 
-const UserInfoQueryTemplate = `SELECT * FROM user_metadata WHERE artist_pastel_id = '{{.}}';`
+const userInfoQueryTemplate = `SELECT * FROM user_metadata WHERE artist_pastel_id = '{{.}}';`
