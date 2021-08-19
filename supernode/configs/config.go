@@ -5,6 +5,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/dupedetection"
 	"github.com/pastelnetwork/gonode/metadb"
+	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/raptorq"
@@ -30,6 +31,7 @@ type Config struct {
 	Pastel        *pastel.Config        `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
 	P2P           *p2p.Config           `mapstructure:"p2p" json:"p2p,omitempty"`
 	MetaDB        *metadb.Config        `mapstructure:"metadb" json:"metadb,omitempty"`
+	UserDB        *database.Config      `mapstructure:"userdb" json:"userdb,omitempty"`
 	DupeDetection *dupedetection.Config `mapstructure:"dupe-detection" json:"dupe-detection,omitempty"`
 	RaptorQ       *raptorq.Config       `mapstructure:"raptorq" json:"raptorq,omitempty"`
 }
@@ -49,6 +51,7 @@ func New() *Config {
 		Pastel:        pastel.NewConfig(),
 		P2P:           p2p.NewConfig(),
 		MetaDB:        metadb.NewConfig(),
+		UserDB:        database.NewConfig(),
 		RaptorQ:       raptorq.NewConfig(),
 		DupeDetection: dupedetection.NewConfig(),
 	}

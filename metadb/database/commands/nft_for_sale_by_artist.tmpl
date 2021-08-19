@@ -1,0 +1,8 @@
+{{/* How many NFT copies created by the user are currently available for sale by the user. */}}
+
+SELECT
+    instance_id, art_id, price
+FROM
+    art_instance_metadata LEFT JOIN art_metadata USING(art_id)
+WHERE
+    artist_pastel_id = '{{.}}' AND owner_pastel_id = '{{.}}';

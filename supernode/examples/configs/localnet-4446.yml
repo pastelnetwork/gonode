@@ -22,11 +22,18 @@ p2p:
   bootstrap_port: 6000
 
 metadb:
+  is_leader: false
+  none_voter: false
+  exposed_address: "0.0.0.0:4061"
   listen_address: "0.0.0.0"
   http_port: 4061
   raft_port: 4062
   data_dir: "metadb-4446"
 
+userdb:
+  schema-path: ../metadb/database/commands/schema_v1.sql
+  write-template-path: ../metadb/database/commands/user_info_write.tmpl
+  query-template-path: ../metadb/database/commands/user_info_query.tmpl
 raptorq:
   hostname: "localhost"
   port: 50053

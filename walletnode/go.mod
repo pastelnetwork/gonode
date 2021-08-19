@@ -12,7 +12,7 @@ require (
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/pastelnetwork/gonode/common v0.0.0
-	github.com/pastelnetwork/gonode/p2p v0.0.0-20210615205941-9aa3fc8e6fee
+	github.com/pastelnetwork/gonode/p2p v0.0.0
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0-20210731175226-8a39b3090588
@@ -34,6 +34,7 @@ require (
 
 replace (
 	github.com/pastelnetwork/gonode/common => ../common
+	github.com/pastelnetwork/gonode/metadb => ../metadb
 	github.com/pastelnetwork/gonode/p2p => ../p2p
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto

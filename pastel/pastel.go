@@ -10,6 +10,10 @@ type Client interface {
 	// Command `masternode top`.
 	MasterNodesTop(ctx context.Context) (MasterNodes, error)
 
+	// MasterNodesList returns all masternodes.
+	// Command `masternode list full`.
+	MasterNodesList(ctx context.Context) (MasterNodes, error)
+
 	// MasterNodeStatus returns masternode status information.
 	// Command `masternode status`.
 	MasterNodeStatus(ctx context.Context) (*MasterNodeStatus, error)

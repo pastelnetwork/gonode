@@ -3,14 +3,24 @@ package metadb
 import "path/filepath"
 
 const (
-	defaultListenAddress = "0.0.0.0"
-	defaultHTTPPort      = 4001
-	defaultRaftPort      = 4002
-	defaultDataDir       = "metadb"
+	defaultExposedAddress = "0.0.0.0:4001"
+	defaultListenAddress  = "0.0.0.0"
+	defaultHTTPPort       = 4001
+	defaultRaftPort       = 4002
+	defaultDataDir        = "metadb"
 )
 
 // Config contains settings of the rqlite server
 type Config struct {
+	// Let this instance be the leader
+	IsLeader bool `mapstructure:"is_leader" json:"is_leader,omitempty"`
+
+	// None voter node
+	NoneVoter bool `mapstructure:"none_voter" json:"none_voter,omitempty"`
+
+	// IPv4 or IPv6 exposed address
+	ExposedAddress string `mapstructure:"exposed_address" json:"exposed_address,omitempty"`
+
 	// IPv4 or IPv6 address for listening by http server and raft
 	ListenAddress string `mapstructure:"listen_address" json:"listen_address,omitempty"`
 
@@ -34,9 +44,10 @@ func (config *Config) SetWorkDir(workDir string) {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		ListenAddress: defaultListenAddress,
-		HTTPPort:      defaultHTTPPort,
-		RaftPort:      defaultRaftPort,
-		DataDir:       defaultDataDir,
+		ExposedAddress: defaultExposedAddress,
+		ListenAddress:  defaultListenAddress,
+		HTTPPort:       defaultHTTPPort,
+		RaftPort:       defaultRaftPort,
+		DataDir:        defaultDataDir,
 	}
 }
