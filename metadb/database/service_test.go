@@ -21,63 +21,6 @@ import (
 )
 
 var (
-	schema = `CREATE TABLE IF NOT EXISTS user_metadata (
-		artist_pastel_id TEXT PRIMARY KEY UNIQUE,
-		real_name TEXT,
-		facebook_link TEXT,
-		twitter_link TEXT,
-		native_currency TEXT,
-		location TEXT,
-		primary_language TEXT,
-		categories TEXT,
-		biography TEXT,
-		timestamp INTEGER NOT NULL,
-		signature TEXT NOT NULL,
-		previous_block_hash TEXT NOT NULL,
-		avatar_image BLOB,
-		avatar_filename TEXT,
-		cover_photo_image BLOB,
-		cover_photo_filename TEXT
-	)`
-
-	queryTemplate = `SELECT * FROM user_metadata WHERE artist_pastel_id = '{{.}}'`
-
-	writeTemplate = `INSERT OR REPLACE INTO user_metadata (
-		artist_pastel_id,
-		real_name,
-		facebook_link,
-		twitter_link,
-		native_currency,
-		location,
-		primary_language,
-		categories,
-		biography,
-		timestamp,
-		signature,
-		previous_block_hash,
-		avatar_image,
-		avatar_filename,
-		cover_photo_image,
-		cover_photo_filename
-	) VALUES (
-		'{{.ArtistPastelID}}',
-		'{{.RealName}}',
-		'{{.FacebookLink}}',
-		'{{.TwitterLink}}',
-		'{{.NativeCurrency}}',
-		'{{.Location}}',
-		'{{.PrimaryLanguage}}',
-		'{{.Categories}}',
-		'{{.Biography}}',
-		{{.Timestamp}},
-		'{{.Signature}}',
-		'{{.PreviousBlockHash}}',
-		{{ if (eq .AvatarImage "")}}NULL,{{ else }}x'{{.AvatarImage}}',{{ end }}
-		'{{.AvatarFilename}}',
-		{{ if (eq .CoverPhotoImage "")}}NULL,{{ else }}x'{{.CoverPhotoImage}}',{{ end }}
-		'{{.CoverPhotoFilename}}'
-	)`
-
 	data1 = pb.UserdataRequest{
 		RealName:        "cat",
 		FacebookLink:    "fb.com",
@@ -214,115 +157,28 @@ var (
 		PreviousBlockHash: "hash",
 	}
 
-	userdata1 = UserdataWriteCommand{
-		RealName:           "cat",
-		FacebookLink:       "fb.com",
-		TwitterLink:        "tw.com",
-		NativeCurrency:     "usd",
-		Location:           "us",
-		PrimaryLanguage:    "en",
-		Categories:         "a",
-		Biography:          "b",
-		AvatarImage:        "",
-		AvatarFilename:     "1234.jpg",
-		CoverPhotoImage:    fmt.Sprintf("%x", []byte{4, 5, 6, 7}),
-		CoverPhotoFilename: "4567.jpg",
-		ArtistPastelID:     "abc",
-		Timestamp:          123,
-		Signature:          "xyz",
-		PreviousBlockHash:  "hash",
+	userDataFrame = pb.UserdataRequest{
+		RealName:        "cat",
+		FacebookLink:    "fb.com",
+		TwitterLink:     "tw.com",
+		NativeCurrency:  "usd",
+		Location:        "us",
+		PrimaryLanguage: "en",
+		Categories:      "a",
+		Biography:       "b",
+		AvatarImage: &pb.UserdataRequest_UserImageUpload{
+			Content:  []byte{1, 2, 3, 4},
+			Filename: "1234.jpg",
+		},
+		CoverPhoto: &pb.UserdataRequest_UserImageUpload{
+			Content:  []byte{4, 5, 6, 7},
+			Filename: "4567.jpg",
+		},
+		ArtistPastelID:    "rty",
+		Timestamp:         123,
+		Signature:         "xyz",
+		PreviousBlockHash: "hash",
 	}
-
-	userdata2 = UserdataWriteCommand{
-		RealName:           "cat",
-		FacebookLink:       "fb.com",
-		TwitterLink:        "tw.com",
-		NativeCurrency:     "usd",
-		Location:           "us",
-		PrimaryLanguage:    "en",
-		Categories:         "a",
-		Biography:          "b",
-		AvatarImage:        fmt.Sprintf("%x", []byte{1, 2, 3, 4}),
-		AvatarFilename:     "1234.jpg",
-		CoverPhotoImage:    fmt.Sprintf("%x", []byte{4, 5, 6, 255}),
-		CoverPhotoFilename: "4567.jpg",
-		ArtistPastelID:     "xyz",
-		Timestamp:          123,
-		Signature:          "xyz",
-		PreviousBlockHash:  "hash",
-	}
-
-	writeTemplateResult1 = `INSERT OR REPLACE INTO user_metadata (
-		artist_pastel_id,
-		real_name,
-		facebook_link,
-		twitter_link,
-		native_currency,
-		location,
-		primary_language,
-		categories,
-		biography,
-		timestamp,
-		signature,
-		previous_block_hash,
-		avatar_image,
-		avatar_filename,
-		cover_photo_image,
-		cover_photo_filename
-	) VALUES (
-		'abc',
-		'cat',
-		'fb.com',
-		'tw.com',
-		'usd',
-		'us',
-		'en',
-		'a',
-		'b',
-		123,
-		'xyz',
-		'hash',
-		NULL,
-		'1234.jpg',
-		x'04050607',
-		'4567.jpg'
-	)`
-
-	writeTemplateResult2 = `INSERT OR REPLACE INTO user_metadata (
-		artist_pastel_id,
-		real_name,
-		facebook_link,
-		twitter_link,
-		native_currency,
-		location,
-		primary_language,
-		categories,
-		biography,
-		timestamp,
-		signature,
-		previous_block_hash,
-		avatar_image,
-		avatar_filename,
-		cover_photo_image,
-		cover_photo_filename
-	) VALUES (
-		'xyz',
-		'cat',
-		'fb.com',
-		'tw.com',
-		'usd',
-		'us',
-		'en',
-		'a',
-		'b',
-		123,
-		'xyz',
-		'hash',
-		x'01020304',
-		'1234.jpg',
-		x'040506ff',
-		'4567.jpg'
-	)`
 )
 
 func TestSuite(t *testing.T) {
@@ -419,7 +275,7 @@ func (ts *testSuite) SetupSuite() {
 
 	ts.Nil(db.EnableFKConstraints(true))
 
-	content, err := ioutil.ReadFile("./commands/schema.sql")
+	content, err := ioutil.ReadFile("./commands/schema_v1.sql")
 	ts.Nil(err)
 	listOfCommands := strings.Split(string(content), schemaDelimiter)
 	for _, cmd := range listOfCommands {

@@ -245,7 +245,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 				if len((*req).Data) == 0 {
 					// This is user specified data (user profile data)
 					reqsn := pbsn.UserdataRequest{
-						Realname:        (*req).Realname,
+						RealName:        (*req).RealName,
 						FacebookLink:    (*req).FacebookLink,
 						TwitterLink:     (*req).TwitterLink,
 						NativeCurrency:  (*req).NativeCurrency,

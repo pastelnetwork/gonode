@@ -259,7 +259,7 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 		}, nil
 	}
 
-	if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress(), ""); err != nil {
+	if err := task.ConnectToLeader(ctx, service.databaseOps.LeaderAddress()); err != nil {
 		return nil, err
 	}
 

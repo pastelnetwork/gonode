@@ -11,7 +11,7 @@ import (
 
 var (
 	userdata1 = UserdataWriteCommand{
-		Realname:           "cat",
+		RealName:           "cat",
 		FacebookLink:       "fb.com",
 		TwitterLink:        "tw.com",
 		NativeCurrency:     "usd",
@@ -31,7 +31,7 @@ var (
 	}
 
 	userdata2 = UserdataWriteCommand{
-		Realname:           "cat",
+		RealName:           "cat",
 		FacebookLink:       "fb.com",
 		TwitterLink:        "tw.com",
 		NativeCurrency:     "usd",
