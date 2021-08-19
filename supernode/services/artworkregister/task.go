@@ -295,12 +295,6 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	<-task.NewAction(func(ctx context.Context) error {
 		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), task.config.PreburntTxConfirmationTimeout)
 
-		if err = task.matchFingersPrintAndScores(ctx); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("fingerprints or scores don't matched")
-			err = errors.Errorf("fingerprints or scores don't matched")
-			return nil
-		}
-
 		// compare rqsymbols
 		if err = task.compareRQSymbolID(ctx); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("failed to generate rqids")
@@ -391,20 +385,6 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	}
 
 	return nftRegTxid, err
-}
-
-func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
-	log.WithContext(ctx).Debug("match fingerprints and scores")
-
-	fingerAndScores, _, err := task.genFingerprintsData(ctx, task.Artwork)
-	if err != nil {
-		return errors.Errorf("failed to generate fingerprints data %w", err)
-	}
-
-	if err := pastel.CompareFingerPrintAndScore(task.fingerAndScores, fingerAndScores); err != nil {
-		return errors.Errorf("fingerprint or scores are not equal: %w", err)
-	}
-	return nil
 }
 
 func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, timeout time.Duration) <-chan error {
