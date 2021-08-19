@@ -139,12 +139,12 @@ func (db *Ops) Run(ctx context.Context) error {
 		}
 	}
 
-	db.writeTemplate, err = template.ParseFiles(db.config.WriteTemplatePath)
+	db.writeTemplate, err = template.New("writeTemplate").Parse(UserInfoWriteTemplate)
 	if err != nil {
 		return errors.Errorf("error while parsing write template: %w", err)
 	}
 
-	db.queryTemplate, err = template.ParseFiles(db.config.QueryTemplatePath)
+	db.queryTemplate, err = template.New("readTemplate").Parse(UserInfoQueryTemplate)
 	if err != nil {
 		return errors.Errorf("error while parsing query template: %w", err)
 	}
