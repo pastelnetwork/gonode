@@ -493,17 +493,6 @@ var GetUserLikeArtPayload = func() {
 
 // GetUserRelationshipResult is result of getting user relationship
 var GetUserRelationshipResult = func() {
-	Attribute("response_code", Int, func() {
-		Description("Result of the request is success or not")
-		Example(0) // Success
-	})
-
-	Attribute("detail", String, func() {
-		Description("The detail of why result is success/fail, depend on response_code")
-		MaxLength(256)
-		Example("All userdata is processed") // In case of Success
-	})
-
 	Attribute("total_count", Int, func() {
 		Description("total number of users in relationship with this user")
 		Example(10)
@@ -513,19 +502,11 @@ var GetUserRelationshipResult = func() {
 		Description("Artist's PastelID")
 	})
 
-	Required("response_code", "detail", "total_count")
+	Required("total_count")
 }
 
 // UserRelationshipInfo is detail of the person in relationship with a user
 var UserRelationshipInfo = Type("UserRelationshipInfo", func() {
-	Attribute("pastelid", String, func() {
-		Description("Artist's PastelID")
-		MinLength(86)
-		MaxLength(86)
-		Pattern(`^[a-zA-Z0-9]+$`)
-		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
-	})
-
 	Attribute("username", String, func() {
 		Meta("struct:field:name", "Username")
 		Description("Username of the user")
@@ -550,5 +531,5 @@ var UserRelationshipInfo = Type("UserRelationshipInfo", func() {
 		Description("40x40 avatar thumbnail")
 	})
 
-	Required("pastelid", "username", "followers_count")
+	Required("username", "followers_count")
 })

@@ -1189,8 +1189,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetFollowersResponseBody'
               example:
-                detail: All userdata is processed
-                response_code: 0
                 result:
                 - avatar_thumbnail:
                   - 73
@@ -1212,7 +1210,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
@@ -1235,7 +1232,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
@@ -1258,7 +1254,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 total_count: 10
@@ -1307,8 +1302,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetFollowersResponseBody'
               example:
-                detail: All userdata is processed
-                response_code: 0
                 result:
                 - avatar_thumbnail:
                   - 73
@@ -1330,7 +1323,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
@@ -1353,7 +1345,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
@@ -1376,7 +1367,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
@@ -1399,7 +1389,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 total_count: 10
@@ -1448,8 +1437,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetFollowersResponseBody'
               example:
-                detail: All userdata is processed
-                response_code: 0
                 result:
                 - avatar_thumbnail:
                   - 73
@@ -1471,7 +1458,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
@@ -1494,7 +1480,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 total_count: 10
@@ -1543,8 +1528,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/GetFollowersResponseBody'
               example:
-                detail: All userdata is processed
-                response_code: 0
                 result:
                 - avatar_thumbnail:
                   - 73
@@ -1566,7 +1549,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 - avatar_thumbnail:
@@ -1589,7 +1571,6 @@ paths:
                   - 114
                   - 46
                   followers_count: 10
-                  pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
                   realname: Williams Scottish
                   username: w_scottish
                 total_count: 10
@@ -2785,16 +2766,6 @@ components:
     GetFollowersResponseBody:
       type: object
       properties:
-        detail:
-          type: string
-          description: The detail of why result is success/fail, depend on response_code
-          example: All userdata is processed
-          maxLength: 256
-        response_code:
-          type: integer
-          description: Result of the request is success or not
-          example: 0
-          format: int64
         result:
           type: array
           items:
@@ -2821,7 +2792,6 @@ components:
             - 114
             - 46
             followers_count: 10
-            pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             realname: Williams Scottish
             username: w_scottish
           - avatar_thumbnail:
@@ -2844,7 +2814,6 @@ components:
             - 114
             - 46
             followers_count: 10
-            pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
             realname: Williams Scottish
             username: w_scottish
         total_count:
@@ -2853,8 +2822,6 @@ components:
           example: 10
           format: int64
       example:
-        detail: All userdata is processed
-        response_code: 0
         result:
         - avatar_thumbnail:
           - 73
@@ -2876,7 +2843,6 @@ components:
           - 114
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
@@ -2899,7 +2865,6 @@ components:
           - 114
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
@@ -2922,7 +2887,6 @@ components:
           - 114
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         - avatar_thumbnail:
@@ -2945,13 +2909,10 @@ components:
           - 114
           - 46
           followers_count: 10
-          pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
           realname: Williams Scottish
           username: w_scottish
         total_count: 10
       required:
-      - response_code
-      - detail
       - total_count
     GetUsersLikeArtRequestBody:
       type: object
@@ -3664,13 +3625,6 @@ components:
           description: number of users follow this user
           example: 10
           format: int64
-        pastelid:
-          type: string
-          description: Artist's PastelID
-          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-          pattern: ^[a-zA-Z0-9]+$
-          minLength: 86
-          maxLength: 86
         realname:
           type: string
           description: Real name of the user
@@ -3704,11 +3658,9 @@ components:
         - 109
         - 46
         followers_count: 10
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
         realname: Williams Scottish
         username: w_scottish
       required:
-      - pastelid
       - username
       - followers_count
     UserdataProcessResult:

@@ -237,10 +237,6 @@ type SetUserFollowRelationResponseBody struct {
 // GetFollowersResponseBody is the type of the "userdatas" service
 // "getFollowers" endpoint HTTP response body.
 type GetFollowersResponseBody struct {
-	// Result of the request is success or not
-	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
-	// The detail of why result is success/fail, depend on response_code
-	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
 	// total number of users in relationship with this user
 	TotalCount *int `form:"total_count,omitempty" json:"total_count,omitempty" xml:"total_count,omitempty"`
 	// Artist's PastelID
@@ -250,10 +246,6 @@ type GetFollowersResponseBody struct {
 // GetFolloweesResponseBody is the type of the "userdatas" service
 // "getFollowees" endpoint HTTP response body.
 type GetFolloweesResponseBody struct {
-	// Result of the request is success or not
-	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
-	// The detail of why result is success/fail, depend on response_code
-	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
 	// total number of users in relationship with this user
 	TotalCount *int `form:"total_count,omitempty" json:"total_count,omitempty" xml:"total_count,omitempty"`
 	// Artist's PastelID
@@ -263,10 +255,6 @@ type GetFolloweesResponseBody struct {
 // GetFriendsResponseBody is the type of the "userdatas" service "getFriends"
 // endpoint HTTP response body.
 type GetFriendsResponseBody struct {
-	// Result of the request is success or not
-	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
-	// The detail of why result is success/fail, depend on response_code
-	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
 	// total number of users in relationship with this user
 	TotalCount *int `form:"total_count,omitempty" json:"total_count,omitempty" xml:"total_count,omitempty"`
 	// Artist's PastelID
@@ -285,10 +273,6 @@ type SetUserLikeArtResponseBody struct {
 // GetUsersLikeArtResponseBody is the type of the "userdatas" service
 // "getUsersLikeArt" endpoint HTTP response body.
 type GetUsersLikeArtResponseBody struct {
-	// Result of the request is success or not
-	ResponseCode *int `form:"response_code,omitempty" json:"response_code,omitempty" xml:"response_code,omitempty"`
-	// The detail of why result is success/fail, depend on response_code
-	Detail *string `form:"detail,omitempty" json:"detail,omitempty" xml:"detail,omitempty"`
 	// total number of users in relationship with this user
 	TotalCount *int `form:"total_count,omitempty" json:"total_count,omitempty" xml:"total_count,omitempty"`
 	// Artist's PastelID
@@ -668,8 +652,6 @@ type UserImageUploadPayloadResponseBody struct {
 // UserRelationshipInfoResponseBody is used to define fields on response body
 // types.
 type UserRelationshipInfoResponseBody struct {
-	// Artist's PastelID
-	Pastelid *string `form:"pastelid,omitempty" json:"pastelid,omitempty" xml:"pastelid,omitempty"`
 	// Username of the user
 	Username *string `form:"username,omitempty" json:"username,omitempty" xml:"username,omitempty"`
 	// Real name of the user
@@ -1011,9 +993,7 @@ func NewSetUserFollowRelationInternalServerError(body *SetUserFollowRelationInte
 // result from a HTTP "OK" response.
 func NewGetFollowersResultOK(body *GetFollowersResponseBody) *userdatas.GetFollowersResult {
 	v := &userdatas.GetFollowersResult{
-		ResponseCode: *body.ResponseCode,
-		Detail:       *body.Detail,
-		TotalCount:   *body.TotalCount,
+		TotalCount: *body.TotalCount,
 	}
 	if body.Result != nil {
 		v.Result = make([]*userdatas.UserRelationshipInfo, len(body.Result))
@@ -1059,9 +1039,7 @@ func NewGetFollowersInternalServerError(body *GetFollowersInternalServerErrorRes
 // result from a HTTP "OK" response.
 func NewGetFolloweesResultOK(body *GetFolloweesResponseBody) *userdatas.GetFolloweesResult {
 	v := &userdatas.GetFolloweesResult{
-		ResponseCode: *body.ResponseCode,
-		Detail:       *body.Detail,
-		TotalCount:   *body.TotalCount,
+		TotalCount: *body.TotalCount,
 	}
 	if body.Result != nil {
 		v.Result = make([]*userdatas.UserRelationshipInfo, len(body.Result))
@@ -1107,9 +1085,7 @@ func NewGetFolloweesInternalServerError(body *GetFolloweesInternalServerErrorRes
 // result from a HTTP "OK" response.
 func NewGetFriendsResultOK(body *GetFriendsResponseBody) *userdatas.GetFriendsResult {
 	v := &userdatas.GetFriendsResult{
-		ResponseCode: *body.ResponseCode,
-		Detail:       *body.Detail,
-		TotalCount:   *body.TotalCount,
+		TotalCount: *body.TotalCount,
 	}
 	if body.Result != nil {
 		v.Result = make([]*userdatas.UserRelationshipInfo, len(body.Result))
@@ -1196,9 +1172,7 @@ func NewSetUserLikeArtInternalServerError(body *SetUserLikeArtInternalServerErro
 // endpoint result from a HTTP "OK" response.
 func NewGetUsersLikeArtResultOK(body *GetUsersLikeArtResponseBody) *userdatas.GetUsersLikeArtResult {
 	v := &userdatas.GetUsersLikeArtResult{
-		ResponseCode: *body.ResponseCode,
-		Detail:       *body.Detail,
-		TotalCount:   *body.TotalCount,
+		TotalCount: *body.TotalCount,
 	}
 	if body.Result != nil {
 		v.Result = make([]*userdatas.UserRelationshipInfo, len(body.Result))
@@ -1469,19 +1443,8 @@ func ValidateSetUserFollowRelationResponseBody(body *SetUserFollowRelationRespon
 // ValidateGetFollowersResponseBody runs the validations defined on
 // GetFollowersResponseBody
 func ValidateGetFollowersResponseBody(body *GetFollowersResponseBody) (err error) {
-	if body.ResponseCode == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
-	}
-	if body.Detail == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
-	}
 	if body.TotalCount == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_count", "body"))
-	}
-	if body.Detail != nil {
-		if utf8.RuneCountInString(*body.Detail) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
-		}
 	}
 	for _, e := range body.Result {
 		if e != nil {
@@ -1496,19 +1459,8 @@ func ValidateGetFollowersResponseBody(body *GetFollowersResponseBody) (err error
 // ValidateGetFolloweesResponseBody runs the validations defined on
 // GetFolloweesResponseBody
 func ValidateGetFolloweesResponseBody(body *GetFolloweesResponseBody) (err error) {
-	if body.ResponseCode == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
-	}
-	if body.Detail == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
-	}
 	if body.TotalCount == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_count", "body"))
-	}
-	if body.Detail != nil {
-		if utf8.RuneCountInString(*body.Detail) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
-		}
 	}
 	for _, e := range body.Result {
 		if e != nil {
@@ -1523,19 +1475,8 @@ func ValidateGetFolloweesResponseBody(body *GetFolloweesResponseBody) (err error
 // ValidateGetFriendsResponseBody runs the validations defined on
 // GetFriendsResponseBody
 func ValidateGetFriendsResponseBody(body *GetFriendsResponseBody) (err error) {
-	if body.ResponseCode == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
-	}
-	if body.Detail == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
-	}
 	if body.TotalCount == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_count", "body"))
-	}
-	if body.Detail != nil {
-		if utf8.RuneCountInString(*body.Detail) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
-		}
 	}
 	for _, e := range body.Result {
 		if e != nil {
@@ -1567,19 +1508,8 @@ func ValidateSetUserLikeArtResponseBody(body *SetUserLikeArtResponseBody) (err e
 // ValidateGetUsersLikeArtResponseBody runs the validations defined on
 // GetUsersLikeArtResponseBody
 func ValidateGetUsersLikeArtResponseBody(body *GetUsersLikeArtResponseBody) (err error) {
-	if body.ResponseCode == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("response_code", "body"))
-	}
-	if body.Detail == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("detail", "body"))
-	}
 	if body.TotalCount == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("total_count", "body"))
-	}
-	if body.Detail != nil {
-		if utf8.RuneCountInString(*body.Detail) > 256 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.detail", *body.Detail, utf8.RuneCountInString(*body.Detail), 256, false))
-		}
 	}
 	for _, e := range body.Result {
 		if e != nil {
@@ -2075,27 +2005,11 @@ func ValidateUserImageUploadPayloadResponseBody(body *UserImageUploadPayloadResp
 // ValidateUserRelationshipInfoResponseBody runs the validations defined on
 // UserRelationshipInfoResponseBody
 func ValidateUserRelationshipInfoResponseBody(body *UserRelationshipInfoResponseBody) (err error) {
-	if body.Pastelid == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("pastelid", "body"))
-	}
 	if body.Username == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("username", "body"))
 	}
 	if body.FollowersCount == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("followers_count", "body"))
-	}
-	if body.Pastelid != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", *body.Pastelid, "^[a-zA-Z0-9]+$"))
-	}
-	if body.Pastelid != nil {
-		if utf8.RuneCountInString(*body.Pastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, true))
-		}
-	}
-	if body.Pastelid != nil {
-		if utf8.RuneCountInString(*body.Pastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, false))
-		}
 	}
 	if body.Username != nil {
 		if utf8.RuneCountInString(*body.Username) > 256 {

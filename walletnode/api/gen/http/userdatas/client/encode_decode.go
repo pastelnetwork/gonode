@@ -1043,7 +1043,6 @@ func unmarshalUserRelationshipInfoResponseBodyToUserdatasUserRelationshipInfo(v 
 		return nil
 	}
 	res := &userdatas.UserRelationshipInfo{
-		Pastelid:        *v.Pastelid,
 		Username:        *v.Username,
 		Realname:        v.Realname,
 		FollowersCount:  *v.FollowersCount,
