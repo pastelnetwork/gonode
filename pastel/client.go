@@ -15,7 +15,9 @@ import (
 )
 
 const (
-	SignAlgorithmED448    = "ed448"
+	// SignAlgorithmED448 is ED448 signature algorithm
+	SignAlgorithmED448 = "ed448"
+	// SignAlgorithmLegRoast is Efficient post-quantum signatures algorithm
 	SignAlgorithmLegRoast = "legroast"
 )
 

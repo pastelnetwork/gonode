@@ -9,6 +9,7 @@ import (
 // Refer https://pastel.wiki/en/Architecture/Components/TicketStructures
 
 const (
+	// NFTTypeImage is NFT type "image"
 	NFTTypeImage = "image"
 )
 
