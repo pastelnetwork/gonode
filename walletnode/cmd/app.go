@@ -80,7 +80,7 @@ func NewApp() *cli.App {
 		}
 
 		if pastelConfigFile != "" {
-			if err := configurer.ParseFile(pastelConfigFile, config.Pastel.ExternalConfig); err != nil {
+			if err := configurer.ParseFile(pastelConfigFile, config.Pastel); err != nil {
 				log.WithContext(ctx).Debug(err)
 			}
 		}
