@@ -813,6 +813,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					CreatorWrittenStatement:    safeString(tc.args.task.Request.Description),
 					NFTCreationVideoYoutubeURL: safeString(tc.args.task.Request.YoutubeURL),
 					NFTKeywordSet:              safeString(tc.args.task.Request.Keywords),
+					NFTType:                    pastel.NFTTypeImage,
 					TotalCopies:                tc.args.task.Request.IssuedCopies,
 					PreviewHash:                tc.args.task.previewHash,
 					Thumbnail1Hash:             tc.args.task.mediumThumbnailHash,

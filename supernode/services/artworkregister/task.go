@@ -429,7 +429,7 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 	if err != nil {
 		return errors.Errorf("failed to serialize NFT ticket %w", err)
 	}
-	task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase, "ed448")
+	task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
@@ -450,7 +450,7 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 		return errors.Errorf("failed to encoded NFT ticket %w", err)
 	}
 	for nodeID, signature := range task.peersArtTicketSignature {
-		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID, "ed448"); err != nil {
+		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
 			return errors.Errorf("failed to verify signature %s of node %s", signature, nodeID)
 		} else if !ok {
 			return errors.Errorf("signature of node %s mistmatch", nodeID)
@@ -605,6 +605,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 			AverageHash:    ddResult.ImageHashes.AverageHash,
 			DifferenceHash: ddResult.ImageHashes.DifferenceHash,
 			PDQHash:        ddResult.ImageHashes.PDQHash,
+			NeuralHash:     ddResult.ImageHashes.NeuralHash,
 		},
 	}
 	compressedFg, err := zstd.CompressLevel(nil, pastel.Fingerprint(fingerprint).Bytes(), 22)

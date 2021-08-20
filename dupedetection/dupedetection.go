@@ -34,6 +34,7 @@ type ImageHashes struct {
 	PerceptualHash string `json:"perceptual_hash"`
 	AverageHash    string `json:"average_hash"`
 	DifferenceHash string `json:"difference_hash"`
+	NeuralHash     string `json:"neuralhash_hash"`
 }
 
 // Client represents the interface to communicate with dupe-detection service

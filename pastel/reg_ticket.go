@@ -8,6 +8,10 @@ import (
 
 // Refer https://pastel.wiki/en/Architecture/Components/TicketStructures
 
+const (
+	NFTTypeImage = "image"
+)
+
 // RegTickets is a collection of RegTicket
 type RegTickets []RegTicket
 
@@ -84,6 +88,7 @@ type AppTicket struct {
 	CreatorWrittenStatement string `json:"creator_written_statement"`
 
 	NFTTitle                   string `json:"nft_title"`
+	NFTType                    string `json:"nft_type"`
 	NFTSeriesName              string `json:"nft_series_name"`
 	NFTCreationVideoYoutubeURL string `json:"nft_creation_video_youtube_url"`
 	NFTKeywordSet              string `json:"nft_keyword_set"`
@@ -127,6 +132,7 @@ type ImageHashes struct {
 	PerceptualHash string `json:"perceptual_hash"`
 	AverageHash    string `json:"average_hash"`
 	DifferenceHash string `json:"difference_hash"`
+	NeuralHash     string `json:"neuralhash_hash"`
 }
 
 // GetRegisterNFTFeeRequest represents a request to get registration fee

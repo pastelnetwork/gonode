@@ -14,6 +14,11 @@ import (
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 )
 
+const (
+	SignAlgorithmED448    = "ed448"
+	SignAlgorithmLegRoast = "legroast"
+)
+
 type client struct {
 	jsonrpc.RPCClient
 }
@@ -129,7 +134,7 @@ func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphras
 	text := base64.StdEncoding.EncodeToString(data)
 
 	switch algorithm {
-	case "ed448", "legroast":
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
 		if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase, algorithm); err != nil {
 			return nil, errors.Errorf("failed to sign data: %w", err)
 		}
@@ -147,12 +152,12 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 	text := base64.StdEncoding.EncodeToString(data)
 
 	switch algorithm {
-	case "ed448", "legroast":
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
 		if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID, algorithm); err != nil {
 			return false, errors.Errorf("failed to verify data: %w", err)
 		}
 	default:
-		return false, errors.Errorf("unsupported algoritm %s", algorithm)
+		return false, errors.Errorf("unsupported algorithm %s", algorithm)
 	}
 
 	return verify.Verification == "OK", nil
