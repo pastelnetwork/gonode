@@ -1,10 +1,13 @@
 package pastel
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 const (
-	defaultHostname = "localhost"
-	defaultPort     = 9932
+	defaultHostname    = "localhost"
+	defaultMainnetPort = 9932
+	defaultTestnetPort = 19932
 )
 
 // ExternalConfig represents the structure of the `pastel.conf` file.
@@ -13,6 +16,7 @@ type ExternalConfig struct {
 	Port     int    `mapstructure:"rpcport"`
 	Username string `mapstructure:"rpcuser"`
 	Password string `mapstructure:"rpcpassword"`
+	Testnet  int    `mapstructure:"testnet"`
 }
 
 // Config contains settings of the Pastel client.
@@ -53,7 +57,16 @@ func (config *Config) port() int {
 	if config.Port != nil {
 		return *config.Port
 	}
-	return config.ExternalConfig.Port
+
+	if config.ExternalConfig.Port != 0 {
+		return config.ExternalConfig.Port
+	}
+
+	if config.ExternalConfig.Testnet == 1 {
+		return defaultTestnetPort
+	}
+
+	return defaultMainnetPort
 }
 
 // Username returns username port if it is specified, otherwise returns username from external config.
@@ -77,7 +90,6 @@ func NewConfig() *Config {
 	return &Config{
 		ExternalConfig: &ExternalConfig{
 			Hostname: defaultHostname,
-			Port:     defaultPort,
 		},
 	}
 }
