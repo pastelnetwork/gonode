@@ -85,12 +85,12 @@ func NewApp() *cli.App {
 
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
-				return err
+				return fmt.Errorf("error parsing supernode config file: %v", err)
 			}
 		}
 		if pastelConfigFile != "" {
 			if err := configurer.ParseFile(pastelConfigFile, config.Pastel); err != nil {
-				log.WithContext(ctx).Debug(err)
+				return fmt.Errorf("error parsing pastel config file: %v", err)
 			}
 		}
 

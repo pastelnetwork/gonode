@@ -1,9 +1,4 @@
-pastel-api:
-  hostname: "127.0.0.1"
-  port: 12156 
-  username: "rt"
-  password: "rt"
-
+# please provide pastel configs in pastel.conf
 node:
   pastel_id: jXXsFY5CMSFy5T1cHFiqTsK2B5kMv93zP48G2FdfPWuPP6p2jH6c1JrNGL3VJHDxFvq6eZSsWppC3191sbG3oD
   pass_phrase: "passphrase"

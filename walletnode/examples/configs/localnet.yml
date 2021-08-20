@@ -1,9 +1,4 @@
-pastel-api:
-  hostname: "127.0.0.1"
-  port: 12170
-  username: "rt"
-  password: "rt"
-
+# please provide pastel configs in pastel.conf
 node:
   api:
     hostname: "localhost"

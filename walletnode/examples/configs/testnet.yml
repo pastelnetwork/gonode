@@ -1,6 +1,4 @@
-pastel-api:
-  port: 19932
-
+# please provide pastel configs in pastel.conf
 node:
   api:
     hostname: "localhost"
