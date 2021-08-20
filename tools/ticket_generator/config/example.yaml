@@ -1,0 +1,22 @@
+wallet-node:
+  pastel_api:
+    hostname: "locahost"
+    port: 12170
+    username: "rt"
+    password: "rt"
+  rest_api:
+    hostname: "locahost"
+    port: 8080
+  artist:
+    pastel_id: ""
+    passphrase: "passphrase"
+    spendable_addr: ""
+
+miner-node:
+  pastel_api:
+    hostname: "locahost"
+    port: 12170
+    username: "rt"
+    passphrase: "rt"
+    
+
