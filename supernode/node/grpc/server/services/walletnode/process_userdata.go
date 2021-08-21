@@ -273,6 +273,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					if err != nil {
 						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
+						actionErr = errors.Errorf("error while writting data: %w", err)
 						return nil
 					}
 
@@ -294,6 +295,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 						log.WithContext(ctx).Debugf("Error ProcessCommand:%s, Data %s, err:%s", request.Command, string(request.Data), err.Error())
 						processResult.ResponseCode = userdata.ErrorProcessMetric
 						processResult.Detail = userdata.Description[userdata.ErrorProcessMetric]
+						actionErr = errors.Errorf("error while processing command: %w", err)
 						return nil
 					}
 
@@ -303,6 +305,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 						log.WithContext(ctx).Debugf("Error Marshal result: %s")
 						processResult.ResponseCode = userdata.ErrorProcessMetric
 						processResult.Detail = userdata.Description[userdata.ErrorProcessMetric]
+						actionErr = errors.Errorf("error while marshaling command: %w", err)
 						return nil
 					}
 
@@ -320,7 +323,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 		ResponseCode: processResult.ResponseCode,
 		Detail:       processResult.Detail,
 		Data:         processResult.Data,
-	}, nil
+	}, actionErr
 }
 
 // ReceiveUserdata implements walletnode.ProcessUserdataServer.ReceiveUserdata()

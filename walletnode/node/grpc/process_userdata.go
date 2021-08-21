@@ -170,6 +170,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 		Categories:      resp.Categories,
 		AvatarImage:     resp.AvatarImage,
 		CoverPhoto:      resp.CoverPhoto,
+		Data:            resp.Data,
 	}
 
 	return result, nil
