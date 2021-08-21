@@ -2,6 +2,7 @@ package artworkdownload
 
 import (
 	"context"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -10,7 +11,9 @@ import (
 )
 
 const (
-	logPrefix = "artwork"
+	logPrefix            = "artwork"
+	getTaskRetry         = 3
+	getTaskRetryInterval = 100 * time.Millisecond
 )
 
 // Service represents a service for the registration artwork.
@@ -43,8 +46,11 @@ func (service *Service) Tasks() []*Task {
 
 // Task returns the task of the artwork downloading by the given id.
 func (service *Service) Task(id string) *Task {
-	if t := service.Worker.Task(id); t != nil {
-		return t.(*Task)
+	for i := 0; i < getTaskRetry; i++ {
+		if task := service.Worker.Task(id); task != nil {
+			return task.(*Task)
+		}
+		time.Sleep(getTaskRetryInterval)
 	}
 	return nil
 }
