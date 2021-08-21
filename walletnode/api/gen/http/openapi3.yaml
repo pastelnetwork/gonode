@@ -1171,16 +1171,40 @@ paths:
       summary: Get followers of a user
       description: Get followees of a user
       operationId: userdatas#getFollowees
-      requestBody:
+      parameters:
+      - name: pastelid
+        in: query
+        description: Artist's PastelID
+        allowEmptyValue: true
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GetFollowersRequestBody'
-            example:
-              limit: 10
-              offset: 0
-              pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        schema:
+          type: string
+          description: Artist's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      - name: limit
+        in: query
+        description: limit for paginated list
+        allowEmptyValue: true
+        schema:
+          type: integer
+          description: limit for paginated list
+          example: 10
+          format: int64
+        example: 10
+      - name: offset
+        in: query
+        description: offset for paginated list
+        allowEmptyValue: true
+        schema:
+          type: integer
+          description: offset for paginated list
+          example: 0
+          format: int64
+        example: 0
       responses:
         "200":
           description: OK response.
@@ -1284,16 +1308,40 @@ paths:
       summary: Get followers of a user
       description: Get followers of a user
       operationId: userdatas#getFollowers
-      requestBody:
+      parameters:
+      - name: pastelid
+        in: query
+        description: Artist's PastelID
+        allowEmptyValue: true
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GetFollowersRequestBody'
-            example:
-              limit: 10
-              offset: 0
-              pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        schema:
+          type: string
+          description: Artist's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      - name: limit
+        in: query
+        description: limit for paginated list
+        allowEmptyValue: true
+        schema:
+          type: integer
+          description: limit for paginated list
+          example: 10
+          format: int64
+        example: 10
+      - name: offset
+        in: query
+        description: offset for paginated list
+        allowEmptyValue: true
+        schema:
+          type: integer
+          description: offset for paginated list
+          example: 0
+          format: int64
+        example: 0
       responses:
         "200":
           description: OK response.
@@ -1419,16 +1467,40 @@ paths:
       summary: Get followers of a user
       description: Get friends of a user
       operationId: userdatas#getFriends
-      requestBody:
+      parameters:
+      - name: pastelid
+        in: query
+        description: Artist's PastelID
+        allowEmptyValue: true
         required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GetFollowersRequestBody'
-            example:
-              limit: 10
-              offset: 0
-              pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        schema:
+          type: string
+          description: Artist's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      - name: limit
+        in: query
+        description: limit for paginated list
+        allowEmptyValue: true
+        schema:
+          type: integer
+          description: limit for paginated list
+          example: 10
+          format: int64
+        example: 10
+      - name: offset
+        in: query
+        description: offset for paginated list
+        allowEmptyValue: true
+        schema:
+          type: integer
+          description: offset for paginated list
+          example: 0
+          format: int64
+        example: 0
       responses:
         "200":
           description: OK response.
@@ -2737,32 +2809,6 @@ components:
         - 3053517935004004982
         score: 3942202410450048095
         str: Incidunt laboriosam.
-    GetFollowersRequestBody:
-      type: object
-      properties:
-        limit:
-          type: integer
-          description: limit for paginated list
-          example: 10
-          format: int64
-        offset:
-          type: integer
-          description: offset for paginated list
-          example: 0
-          format: int64
-        pastelid:
-          type: string
-          description: Artist's PastelID
-          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-          pattern: ^[a-zA-Z0-9]+$
-          minLength: 86
-          maxLength: 86
-      example:
-        limit: 10
-        offset: 0
-        pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-      required:
-      - pastelid
     GetFollowersResponseBody:
       type: object
       properties:

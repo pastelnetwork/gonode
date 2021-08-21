@@ -81,39 +81,6 @@ type SetUserFollowRelationRequestBody struct {
 	FolloweePastelID *string `form:"followee_pastel_id,omitempty" json:"followee_pastel_id,omitempty" xml:"followee_pastel_id,omitempty"`
 }
 
-// GetFollowersRequestBody is the type of the "userdatas" service
-// "getFollowers" endpoint HTTP request body.
-type GetFollowersRequestBody struct {
-	// Artist's PastelID
-	Pastelid *string `form:"pastelid,omitempty" json:"pastelid,omitempty" xml:"pastelid,omitempty"`
-	// limit for paginated list
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
-	// offset for paginated list
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
-}
-
-// GetFolloweesRequestBody is the type of the "userdatas" service
-// "getFollowees" endpoint HTTP request body.
-type GetFolloweesRequestBody struct {
-	// Artist's PastelID
-	Pastelid *string `form:"pastelid,omitempty" json:"pastelid,omitempty" xml:"pastelid,omitempty"`
-	// limit for paginated list
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
-	// offset for paginated list
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
-}
-
-// GetFriendsRequestBody is the type of the "userdatas" service "getFriends"
-// endpoint HTTP request body.
-type GetFriendsRequestBody struct {
-	// Artist's PastelID
-	Pastelid *string `form:"pastelid,omitempty" json:"pastelid,omitempty" xml:"pastelid,omitempty"`
-	// limit for paginated list
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
-	// offset for paginated list
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
-}
-
 // SetUserLikeArtRequestBody is the type of the "userdatas" service
 // "setUserLikeArt" endpoint HTTP request body.
 type SetUserLikeArtRequestBody struct {
@@ -1152,35 +1119,32 @@ func NewSetUserFollowRelationPayload(body *SetUserFollowRelationRequestBody) *us
 
 // NewGetFollowersPayload builds a userdatas service getFollowers endpoint
 // payload.
-func NewGetFollowersPayload(body *GetFollowersRequestBody) *userdatas.GetFollowersPayload {
-	v := &userdatas.GetFollowersPayload{
-		Pastelid: *body.Pastelid,
-		Limit:    body.Limit,
-		Offset:   body.Offset,
-	}
+func NewGetFollowersPayload(pastelid string, limit *int, offset *int) *userdatas.GetFollowersPayload {
+	v := &userdatas.GetFollowersPayload{}
+	v.Pastelid = pastelid
+	v.Limit = limit
+	v.Offset = offset
 
 	return v
 }
 
 // NewGetFolloweesPayload builds a userdatas service getFollowees endpoint
 // payload.
-func NewGetFolloweesPayload(body *GetFolloweesRequestBody) *userdatas.GetFolloweesPayload {
-	v := &userdatas.GetFolloweesPayload{
-		Pastelid: *body.Pastelid,
-		Limit:    body.Limit,
-		Offset:   body.Offset,
-	}
+func NewGetFolloweesPayload(pastelid string, limit *int, offset *int) *userdatas.GetFolloweesPayload {
+	v := &userdatas.GetFolloweesPayload{}
+	v.Pastelid = pastelid
+	v.Limit = limit
+	v.Offset = offset
 
 	return v
 }
 
 // NewGetFriendsPayload builds a userdatas service getFriends endpoint payload.
-func NewGetFriendsPayload(body *GetFriendsRequestBody) *userdatas.GetFriendsPayload {
-	v := &userdatas.GetFriendsPayload{
-		Pastelid: *body.Pastelid,
-		Limit:    body.Limit,
-		Offset:   body.Offset,
-	}
+func NewGetFriendsPayload(pastelid string, limit *int, offset *int) *userdatas.GetFriendsPayload {
+	v := &userdatas.GetFriendsPayload{}
+	v.Pastelid = pastelid
+	v.Limit = limit
+	v.Offset = offset
 
 	return v
 }
@@ -1391,72 +1355,6 @@ func ValidateSetUserFollowRelationRequestBody(body *SetUserFollowRelationRequest
 	if body.FolloweePastelID != nil {
 		if utf8.RuneCountInString(*body.FolloweePastelID) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.followee_pastel_id", *body.FolloweePastelID, utf8.RuneCountInString(*body.FolloweePastelID), 86, false))
-		}
-	}
-	return
-}
-
-// ValidateGetFollowersRequestBody runs the validations defined on
-// GetFollowersRequestBody
-func ValidateGetFollowersRequestBody(body *GetFollowersRequestBody) (err error) {
-	if body.Pastelid == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("pastelid", "body"))
-	}
-	if body.Pastelid != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", *body.Pastelid, "^[a-zA-Z0-9]+$"))
-	}
-	if body.Pastelid != nil {
-		if utf8.RuneCountInString(*body.Pastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, true))
-		}
-	}
-	if body.Pastelid != nil {
-		if utf8.RuneCountInString(*body.Pastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, false))
-		}
-	}
-	return
-}
-
-// ValidateGetFolloweesRequestBody runs the validations defined on
-// GetFolloweesRequestBody
-func ValidateGetFolloweesRequestBody(body *GetFolloweesRequestBody) (err error) {
-	if body.Pastelid == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("pastelid", "body"))
-	}
-	if body.Pastelid != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", *body.Pastelid, "^[a-zA-Z0-9]+$"))
-	}
-	if body.Pastelid != nil {
-		if utf8.RuneCountInString(*body.Pastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, true))
-		}
-	}
-	if body.Pastelid != nil {
-		if utf8.RuneCountInString(*body.Pastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, false))
-		}
-	}
-	return
-}
-
-// ValidateGetFriendsRequestBody runs the validations defined on
-// GetFriendsRequestBody
-func ValidateGetFriendsRequestBody(body *GetFriendsRequestBody) (err error) {
-	if body.Pastelid == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("pastelid", "body"))
-	}
-	if body.Pastelid != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", *body.Pastelid, "^[a-zA-Z0-9]+$"))
-	}
-	if body.Pastelid != nil {
-		if utf8.RuneCountInString(*body.Pastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, true))
-		}
-	}
-	if body.Pastelid != nil {
-		if utf8.RuneCountInString(*body.Pastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", *body.Pastelid, utf8.RuneCountInString(*body.Pastelid), 86, false))
 		}
 	}
 	return

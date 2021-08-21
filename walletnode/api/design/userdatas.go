@@ -107,6 +107,9 @@ var _ = Service("userdatas", func() {
 
 		HTTP(func() {
 			GET("/follow/followers")
+			Param("pastelid")
+			Param("limit")
+			Param("offset")
 
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)
@@ -123,6 +126,9 @@ var _ = Service("userdatas", func() {
 
 		HTTP(func() {
 			GET("/follow/followees")
+			Param("pastelid")
+			Param("limit")
+			Param("offset")
 
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)
@@ -139,6 +145,9 @@ var _ = Service("userdatas", func() {
 
 		HTTP(func() {
 			GET("/follow/friends")
+			Param("pastelid")
+			Param("limit")
+			Param("offset")
 
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)

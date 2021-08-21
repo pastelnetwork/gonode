@@ -10,6 +10,7 @@ package client
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"unicode/utf8"
 
 	userdatas "github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
@@ -264,90 +265,150 @@ func BuildSetUserFollowRelationPayload(userdatasSetUserFollowRelationBody string
 
 // BuildGetFollowersPayload builds the payload for the userdatas getFollowers
 // endpoint from CLI flags.
-func BuildGetFollowersPayload(userdatasGetFollowersBody string) (*userdatas.GetFollowersPayload, error) {
+func BuildGetFollowersPayload(userdatasGetFollowersPastelid string, userdatasGetFollowersLimit string, userdatasGetFollowersOffset string) (*userdatas.GetFollowersPayload, error) {
 	var err error
-	var body GetFollowersRequestBody
+	var pastelid string
 	{
-		err = json.Unmarshal([]byte(userdatasGetFollowersBody), &body)
-		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"limit\": 10,\n      \"offset\": 0,\n      \"pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		pastelid = userdatasGetFollowersPastelid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pastelid", pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, true))
 		}
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", body.Pastelid, "^[a-zA-Z0-9]+$"))
-		if utf8.RuneCountInString(body.Pastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, true))
-		}
-		if utf8.RuneCountInString(body.Pastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, false))
+		if utf8.RuneCountInString(pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, false))
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	v := &userdatas.GetFollowersPayload{
-		Pastelid: body.Pastelid,
-		Limit:    body.Limit,
-		Offset:   body.Offset,
+	var limit *int
+	{
+		if userdatasGetFollowersLimit != "" {
+			var v int64
+			v, err = strconv.ParseInt(userdatasGetFollowersLimit, 10, 64)
+			val := int(v)
+			limit = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for limit, must be INT")
+			}
+		}
 	}
+	var offset *int
+	{
+		if userdatasGetFollowersOffset != "" {
+			var v int64
+			v, err = strconv.ParseInt(userdatasGetFollowersOffset, 10, 64)
+			val := int(v)
+			offset = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for offset, must be INT")
+			}
+		}
+	}
+	v := &userdatas.GetFollowersPayload{}
+	v.Pastelid = pastelid
+	v.Limit = limit
+	v.Offset = offset
 
 	return v, nil
 }
 
 // BuildGetFolloweesPayload builds the payload for the userdatas getFollowees
 // endpoint from CLI flags.
-func BuildGetFolloweesPayload(userdatasGetFolloweesBody string) (*userdatas.GetFolloweesPayload, error) {
+func BuildGetFolloweesPayload(userdatasGetFolloweesPastelid string, userdatasGetFolloweesLimit string, userdatasGetFolloweesOffset string) (*userdatas.GetFolloweesPayload, error) {
 	var err error
-	var body GetFolloweesRequestBody
+	var pastelid string
 	{
-		err = json.Unmarshal([]byte(userdatasGetFolloweesBody), &body)
-		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"limit\": 10,\n      \"offset\": 0,\n      \"pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		pastelid = userdatasGetFolloweesPastelid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pastelid", pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, true))
 		}
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", body.Pastelid, "^[a-zA-Z0-9]+$"))
-		if utf8.RuneCountInString(body.Pastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, true))
-		}
-		if utf8.RuneCountInString(body.Pastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, false))
+		if utf8.RuneCountInString(pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, false))
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	v := &userdatas.GetFolloweesPayload{
-		Pastelid: body.Pastelid,
-		Limit:    body.Limit,
-		Offset:   body.Offset,
+	var limit *int
+	{
+		if userdatasGetFolloweesLimit != "" {
+			var v int64
+			v, err = strconv.ParseInt(userdatasGetFolloweesLimit, 10, 64)
+			val := int(v)
+			limit = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for limit, must be INT")
+			}
+		}
 	}
+	var offset *int
+	{
+		if userdatasGetFolloweesOffset != "" {
+			var v int64
+			v, err = strconv.ParseInt(userdatasGetFolloweesOffset, 10, 64)
+			val := int(v)
+			offset = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for offset, must be INT")
+			}
+		}
+	}
+	v := &userdatas.GetFolloweesPayload{}
+	v.Pastelid = pastelid
+	v.Limit = limit
+	v.Offset = offset
 
 	return v, nil
 }
 
 // BuildGetFriendsPayload builds the payload for the userdatas getFriends
 // endpoint from CLI flags.
-func BuildGetFriendsPayload(userdatasGetFriendsBody string) (*userdatas.GetFriendsPayload, error) {
+func BuildGetFriendsPayload(userdatasGetFriendsPastelid string, userdatasGetFriendsLimit string, userdatasGetFriendsOffset string) (*userdatas.GetFriendsPayload, error) {
 	var err error
-	var body GetFriendsRequestBody
+	var pastelid string
 	{
-		err = json.Unmarshal([]byte(userdatasGetFriendsBody), &body)
-		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"limit\": 10,\n      \"offset\": 0,\n      \"pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		pastelid = userdatasGetFriendsPastelid
+		err = goa.MergeErrors(err, goa.ValidatePattern("pastelid", pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, true))
 		}
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.pastelid", body.Pastelid, "^[a-zA-Z0-9]+$"))
-		if utf8.RuneCountInString(body.Pastelid) < 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, true))
-		}
-		if utf8.RuneCountInString(body.Pastelid) > 86 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.pastelid", body.Pastelid, utf8.RuneCountInString(body.Pastelid), 86, false))
+		if utf8.RuneCountInString(pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, false))
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	v := &userdatas.GetFriendsPayload{
-		Pastelid: body.Pastelid,
-		Limit:    body.Limit,
-		Offset:   body.Offset,
+	var limit *int
+	{
+		if userdatasGetFriendsLimit != "" {
+			var v int64
+			v, err = strconv.ParseInt(userdatasGetFriendsLimit, 10, 64)
+			val := int(v)
+			limit = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for limit, must be INT")
+			}
+		}
 	}
+	var offset *int
+	{
+		if userdatasGetFriendsOffset != "" {
+			var v int64
+			v, err = strconv.ParseInt(userdatasGetFriendsOffset, 10, 64)
+			val := int(v)
+			offset = &val
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for offset, must be INT")
+			}
+		}
+	}
+	v := &userdatas.GetFriendsPayload{}
+	v.Pastelid = pastelid
+	v.Limit = limit
+	v.Offset = offset
 
 	return v, nil
 }

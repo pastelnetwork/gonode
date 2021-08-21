@@ -81,39 +81,6 @@ type SetUserFollowRelationRequestBody struct {
 	FolloweePastelID string `form:"followee_pastel_id" json:"followee_pastel_id" xml:"followee_pastel_id"`
 }
 
-// GetFollowersRequestBody is the type of the "userdatas" service
-// "getFollowers" endpoint HTTP request body.
-type GetFollowersRequestBody struct {
-	// Artist's PastelID
-	Pastelid string `form:"pastelid" json:"pastelid" xml:"pastelid"`
-	// limit for paginated list
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
-	// offset for paginated list
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
-}
-
-// GetFolloweesRequestBody is the type of the "userdatas" service
-// "getFollowees" endpoint HTTP request body.
-type GetFolloweesRequestBody struct {
-	// Artist's PastelID
-	Pastelid string `form:"pastelid" json:"pastelid" xml:"pastelid"`
-	// limit for paginated list
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
-	// offset for paginated list
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
-}
-
-// GetFriendsRequestBody is the type of the "userdatas" service "getFriends"
-// endpoint HTTP request body.
-type GetFriendsRequestBody struct {
-	// Artist's PastelID
-	Pastelid string `form:"pastelid" json:"pastelid" xml:"pastelid"`
-	// limit for paginated list
-	Limit *int `form:"limit,omitempty" json:"limit,omitempty" xml:"limit,omitempty"`
-	// offset for paginated list
-	Offset *int `form:"offset,omitempty" json:"offset,omitempty" xml:"offset,omitempty"`
-}
-
 // SetUserLikeArtRequestBody is the type of the "userdatas" service
 // "setUserLikeArt" endpoint HTTP request body.
 type SetUserLikeArtRequestBody struct {
@@ -716,39 +683,6 @@ func NewSetUserFollowRelationRequestBody(p *userdatas.SetUserFollowRelationPaylo
 	body := &SetUserFollowRelationRequestBody{
 		FollowerPastelID: p.FollowerPastelID,
 		FolloweePastelID: p.FolloweePastelID,
-	}
-	return body
-}
-
-// NewGetFollowersRequestBody builds the HTTP request body from the payload of
-// the "getFollowers" endpoint of the "userdatas" service.
-func NewGetFollowersRequestBody(p *userdatas.GetFollowersPayload) *GetFollowersRequestBody {
-	body := &GetFollowersRequestBody{
-		Pastelid: p.Pastelid,
-		Limit:    p.Limit,
-		Offset:   p.Offset,
-	}
-	return body
-}
-
-// NewGetFolloweesRequestBody builds the HTTP request body from the payload of
-// the "getFollowees" endpoint of the "userdatas" service.
-func NewGetFolloweesRequestBody(p *userdatas.GetFolloweesPayload) *GetFolloweesRequestBody {
-	body := &GetFolloweesRequestBody{
-		Pastelid: p.Pastelid,
-		Limit:    p.Limit,
-		Offset:   p.Offset,
-	}
-	return body
-}
-
-// NewGetFriendsRequestBody builds the HTTP request body from the payload of
-// the "getFriends" endpoint of the "userdatas" service.
-func NewGetFriendsRequestBody(p *userdatas.GetFriendsPayload) *GetFriendsRequestBody {
-	body := &GetFriendsRequestBody{
-		Pastelid: p.Pastelid,
-		Limit:    p.Limit,
-		Offset:   p.Offset,
 	}
 	return body
 }

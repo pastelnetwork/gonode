@@ -108,7 +108,11 @@ func (service *Userdata) GetUserdata(ctx context.Context, req *userdatas.GetUser
 // Set a follower, followee relationship to metadb
 func (service *Userdata) SetUserFollowRelation(ctx context.Context, req *userdatas.SetUserFollowRelationPayload) (*userdatas.SetUserFollowRelationResult, error) {
 	// Generalize the data to be get/set by marshaling it
-	js, err := json.Marshal(&req)
+	data := userdata.UserFollow{
+		FollowerPastelID: req.FollowerPastelID,
+		FolloweePastelID: req.FolloweePastelID,
+	}
+	js, err := json.Marshal(data)
 	if err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
@@ -135,7 +139,17 @@ func (service *Userdata) SetUserFollowRelation(ctx context.Context, req *userdat
 // Get followers of a user
 func (service *Userdata) GetFollowers(ctx context.Context, req *userdatas.GetFollowersPayload) (*userdatas.GetFollowersResult, error) {
 	// Generalize the data to be get/set by marshaling it
-	js, err := json.Marshal(&req)
+	data := userdata.PaginationIDStringQuery{
+		ID: req.Pastelid,
+	}
+	if req.Limit != nil {
+		data.Limit = *req.Limit
+	}
+	if req.Offset != nil {
+		data.Offset = *req.Offset
+	}
+
+	js, err := json.Marshal(data)
 	if err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
@@ -166,8 +180,18 @@ func (service *Userdata) GetFollowers(ctx context.Context, req *userdatas.GetFol
 
 // Get followers of a user
 func (service *Userdata) GetFollowees(ctx context.Context, req *userdatas.GetFolloweesPayload) (*userdatas.GetFolloweesResult, error) {
+	data := userdata.PaginationIDStringQuery{
+		ID: req.Pastelid,
+	}
+	if req.Limit != nil {
+		data.Limit = *req.Limit
+	}
+	if req.Offset != nil {
+		data.Offset = *req.Offset
+	}
+
 	// Generalize the data to be get/set by marshaling it
-	js, err := json.Marshal(&req)
+	js, err := json.Marshal(data)
 	if err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
@@ -184,19 +208,32 @@ func (service *Userdata) GetFollowees(ctx context.Context, req *userdatas.GetFol
 		return nil, userdatas.MakeInternalServerError(err)
 	}
 
-	mdlResult := userdatas.GetFolloweesResult{}
-	if err := json.Unmarshal(result.Data, &mdlResult); err != nil {
+	var relationResult userdata.UserRelationshipQueryResult
+	if err := json.Unmarshal(result.Data, &relationResult); err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
 
 	// Return the result of Metadata Layer process this request
-	return &mdlResult, nil
+	return &userdatas.GetFolloweesResult{
+		TotalCount: relationResult.TotalCount,
+		Result:     toRelationshipInfoArray(relationResult.Items),
+	}, nil
 }
 
 // Get followers of a user
 func (service *Userdata) GetFriends(ctx context.Context, req *userdatas.GetFriendsPayload) (*userdatas.GetFriendsResult, error) {
+	data := userdata.PaginationIDStringQuery{
+		ID: req.Pastelid,
+	}
+	if req.Limit != nil {
+		data.Limit = *req.Limit
+	}
+	if req.Offset != nil {
+		data.Offset = *req.Offset
+	}
+
 	// Generalize the data to be get/set by marshaling it
-	js, err := json.Marshal(&req)
+	js, err := json.Marshal(data)
 	if err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
@@ -213,19 +250,26 @@ func (service *Userdata) GetFriends(ctx context.Context, req *userdatas.GetFrien
 		return nil, userdatas.MakeInternalServerError(err)
 	}
 
-	mdlResult := userdatas.GetFriendsResult{}
-	if err := json.Unmarshal(result.Data, &mdlResult); err != nil {
+	var relationResult userdata.UserRelationshipQueryResult
+	if err := json.Unmarshal(result.Data, &relationResult); err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
 
 	// Return the result of Metadata Layer process this request
-	return &mdlResult, nil
+	return &userdatas.GetFriendsResult{
+		TotalCount: relationResult.TotalCount,
+		Result:     toRelationshipInfoArray(relationResult.Items),
+	}, nil
 }
 
 // Notify a new like event of an user to an art
 func (service *Userdata) SetUserLikeArt(ctx context.Context, req *userdatas.SetUserLikeArtPayload) (*userdatas.SetUserLikeArtResult, error) {
+	data := userdata.ArtLike{
+		ArtID:    req.ArtPastelID,
+		PastelID: req.UserPastelID,
+	}
 	// Generalize the data to be get/set by marshaling it
-	js, err := json.Marshal(&req)
+	js, err := json.Marshal(data)
 	if err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
@@ -251,8 +295,18 @@ func (service *Userdata) SetUserLikeArt(ctx context.Context, req *userdatas.SetU
 
 // Get users that liked an art
 func (service *Userdata) GetUsersLikeArt(ctx context.Context, req *userdatas.GetUsersLikeArtPayload) (*userdatas.GetUsersLikeArtResult, error) {
+	data := userdata.PaginationIDStringQuery{
+		ID: req.ArtID,
+	}
+	if req.Limit != nil {
+		data.Limit = *req.Limit
+	}
+	if req.Offset != nil {
+		data.Offset = *req.Offset
+	}
+
 	// Generalize the data to be get/set by marshaling it
-	js, err := json.Marshal(&req)
+	js, err := json.Marshal(data)
 	if err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
@@ -269,13 +323,16 @@ func (service *Userdata) GetUsersLikeArt(ctx context.Context, req *userdatas.Get
 		return nil, userdatas.MakeInternalServerError(err)
 	}
 
-	mdlResult := userdatas.GetUsersLikeArtResult{}
-	if err := json.Unmarshal(result.Data, &mdlResult); err != nil {
+	var relationResult userdata.UserRelationshipQueryResult
+	if err := json.Unmarshal(result.Data, &relationResult); err != nil {
 		return nil, userdatas.MakeInternalServerError(err)
 	}
 
 	// Return the result of Metadata Layer process this request
-	return &mdlResult, nil
+	return &userdatas.GetUsersLikeArtResult{
+		TotalCount: relationResult.TotalCount,
+		Result:     toRelationshipInfoArray(relationResult.Items),
+	}, nil
 }
 
 // NewUserdata returns the Userdata implementation.

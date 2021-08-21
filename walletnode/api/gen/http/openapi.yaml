@@ -512,13 +512,24 @@ paths:
       description: Get followees of a user
       operationId: userdatas#getFollowees
       parameters:
-      - name: GetFolloweesRequestBody
-        in: body
+      - name: pastelid
+        in: query
+        description: Artist's PastelID
         required: true
-        schema:
-          $ref: '#/definitions/UserdatasGetFolloweesRequestBody'
-          required:
-          - pastelid
+        type: string
+        maxLength: 86
+        minLength: 86
+        pattern: ^[a-zA-Z0-9]+$
+      - name: limit
+        in: query
+        description: limit for paginated list
+        required: false
+        type: integer
+      - name: offset
+        in: query
+        description: offset for paginated list
+        required: false
+        type: integer
       responses:
         "200":
           description: OK response.
@@ -544,13 +555,24 @@ paths:
       description: Get followers of a user
       operationId: userdatas#getFollowers
       parameters:
-      - name: GetFollowersRequestBody
-        in: body
+      - name: pastelid
+        in: query
+        description: Artist's PastelID
         required: true
-        schema:
-          $ref: '#/definitions/UserdatasGetFollowersRequestBody'
-          required:
-          - pastelid
+        type: string
+        maxLength: 86
+        minLength: 86
+        pattern: ^[a-zA-Z0-9]+$
+      - name: limit
+        in: query
+        description: limit for paginated list
+        required: false
+        type: integer
+      - name: offset
+        in: query
+        description: offset for paginated list
+        required: false
+        type: integer
       responses:
         "200":
           description: OK response.
@@ -576,13 +598,24 @@ paths:
       description: Get friends of a user
       operationId: userdatas#getFriends
       parameters:
-      - name: GetFriendsRequestBody
-        in: body
+      - name: pastelid
+        in: query
+        description: Artist's PastelID
         required: true
-        schema:
-          $ref: '#/definitions/UserdatasGetFriendsRequestBody'
-          required:
-          - pastelid
+        type: string
+        maxLength: 86
+        minLength: 86
+        pattern: ^[a-zA-Z0-9]+$
+      - name: limit
+        in: query
+        description: limit for paginated list
+        required: false
+        type: integer
+      - name: offset
+        in: query
+        description: offset for paginated list
+        required: false
+        type: integer
       responses:
         "200":
           description: OK response.
@@ -3718,33 +3751,6 @@ definitions:
     - temporary
     - timeout
     - fault
-  UserdatasGetFolloweesRequestBody:
-    title: UserdatasGetFolloweesRequestBody
-    type: object
-    properties:
-      limit:
-        type: integer
-        description: limit for paginated list
-        example: 10
-        format: int64
-      offset:
-        type: integer
-        description: offset for paginated list
-        example: 0
-        format: int64
-      pastelid:
-        type: string
-        description: Artist's PastelID
-        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-        pattern: ^[a-zA-Z0-9]+$
-        minLength: 86
-        maxLength: 86
-    example:
-      limit: 10
-      offset: 0
-      pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-    required:
-    - pastelid
   UserdatasGetFolloweesResponseBody:
     title: UserdatasGetFolloweesResponseBody
     type: object
@@ -4010,33 +4016,6 @@ definitions:
     - temporary
     - timeout
     - fault
-  UserdatasGetFollowersRequestBody:
-    title: UserdatasGetFollowersRequestBody
-    type: object
-    properties:
-      limit:
-        type: integer
-        description: limit for paginated list
-        example: 10
-        format: int64
-      offset:
-        type: integer
-        description: offset for paginated list
-        example: 0
-        format: int64
-      pastelid:
-        type: string
-        description: Artist's PastelID
-        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-        pattern: ^[a-zA-Z0-9]+$
-        minLength: 86
-        maxLength: 86
-    example:
-      limit: 10
-      offset: 0
-      pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-    required:
-    - pastelid
   UserdatasGetFollowersResponseBody:
     title: UserdatasGetFollowersResponseBody
     type: object
@@ -4258,33 +4237,6 @@ definitions:
     - temporary
     - timeout
     - fault
-  UserdatasGetFriendsRequestBody:
-    title: UserdatasGetFriendsRequestBody
-    type: object
-    properties:
-      limit:
-        type: integer
-        description: limit for paginated list
-        example: 10
-        format: int64
-      offset:
-        type: integer
-        description: offset for paginated list
-        example: 0
-        format: int64
-      pastelid:
-        type: string
-        description: Artist's PastelID
-        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-        pattern: ^[a-zA-Z0-9]+$
-        minLength: 86
-        maxLength: 86
-    example:
-      limit: 10
-      offset: 0
-      pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
-    required:
-    - pastelid
   UserdatasGetFriendsResponseBody:
     title: UserdatasGetFriendsResponseBody
     type: object

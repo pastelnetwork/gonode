@@ -10,6 +10,7 @@ package client
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
@@ -498,10 +499,15 @@ func EncodeGetFollowersRequest(encoder func(*http.Request) goahttp.Encoder) func
 		if !ok {
 			return goahttp.ErrInvalidType("userdatas", "getFollowers", "*userdatas.GetFollowersPayload", v)
 		}
-		body := NewGetFollowersRequestBody(p)
-		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("userdatas", "getFollowers", err)
+		values := req.URL.Query()
+		values.Add("pastelid", p.Pastelid)
+		if p.Limit != nil {
+			values.Add("limit", fmt.Sprintf("%v", *p.Limit))
 		}
+		if p.Offset != nil {
+			values.Add("offset", fmt.Sprintf("%v", *p.Offset))
+		}
+		req.URL.RawQuery = values.Encode()
 		return nil
 	}
 }
@@ -601,10 +607,15 @@ func EncodeGetFolloweesRequest(encoder func(*http.Request) goahttp.Encoder) func
 		if !ok {
 			return goahttp.ErrInvalidType("userdatas", "getFollowees", "*userdatas.GetFolloweesPayload", v)
 		}
-		body := NewGetFolloweesRequestBody(p)
-		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("userdatas", "getFollowees", err)
+		values := req.URL.Query()
+		values.Add("pastelid", p.Pastelid)
+		if p.Limit != nil {
+			values.Add("limit", fmt.Sprintf("%v", *p.Limit))
 		}
+		if p.Offset != nil {
+			values.Add("offset", fmt.Sprintf("%v", *p.Offset))
+		}
+		req.URL.RawQuery = values.Encode()
 		return nil
 	}
 }
@@ -704,10 +715,15 @@ func EncodeGetFriendsRequest(encoder func(*http.Request) goahttp.Encoder) func(*
 		if !ok {
 			return goahttp.ErrInvalidType("userdatas", "getFriends", "*userdatas.GetFriendsPayload", v)
 		}
-		body := NewGetFriendsRequestBody(p)
-		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("userdatas", "getFriends", err)
+		values := req.URL.Query()
+		values.Add("pastelid", p.Pastelid)
+		if p.Limit != nil {
+			values.Add("limit", fmt.Sprintf("%v", *p.Limit))
 		}
+		if p.Offset != nil {
+			values.Add("offset", fmt.Sprintf("%v", *p.Offset))
+		}
+		req.URL.RawQuery = values.Encode()
 		return nil
 	}
 }

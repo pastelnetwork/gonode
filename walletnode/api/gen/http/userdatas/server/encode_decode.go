@@ -11,6 +11,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strconv"
 	"unicode/utf8"
 
 	userdatas "github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
@@ -369,21 +370,48 @@ func EncodeGetFollowersResponse(encoder func(context.Context, http.ResponseWrite
 func DecodeGetFollowersRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			body GetFollowersRequestBody
-			err  error
+			pastelid string
+			limit    *int
+			offset   *int
+			err      error
 		)
-		err = decoder(r).Decode(&body)
-		if err != nil {
-			if err == io.EOF {
-				return nil, goa.MissingPayloadError()
-			}
-			return nil, goa.DecodePayloadError(err.Error())
+		pastelid = r.URL.Query().Get("pastelid")
+		if pastelid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("pastelid", "query string"))
 		}
-		err = ValidateGetFollowersRequestBody(&body)
+		err = goa.MergeErrors(err, goa.ValidatePattern("pastelid", pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, true))
+		}
+		if utf8.RuneCountInString(pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, false))
+		}
+		{
+			limitRaw := r.URL.Query().Get("limit")
+			if limitRaw != "" {
+				v, err2 := strconv.ParseInt(limitRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("limit", limitRaw, "integer"))
+				}
+				pv := int(v)
+				limit = &pv
+			}
+		}
+		{
+			offsetRaw := r.URL.Query().Get("offset")
+			if offsetRaw != "" {
+				v, err2 := strconv.ParseInt(offsetRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("offset", offsetRaw, "integer"))
+				}
+				pv := int(v)
+				offset = &pv
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetFollowersPayload(&body)
+		payload := NewGetFollowersPayload(pastelid, limit, offset)
 
 		return payload, nil
 	}
@@ -446,21 +474,48 @@ func EncodeGetFolloweesResponse(encoder func(context.Context, http.ResponseWrite
 func DecodeGetFolloweesRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			body GetFolloweesRequestBody
-			err  error
+			pastelid string
+			limit    *int
+			offset   *int
+			err      error
 		)
-		err = decoder(r).Decode(&body)
-		if err != nil {
-			if err == io.EOF {
-				return nil, goa.MissingPayloadError()
-			}
-			return nil, goa.DecodePayloadError(err.Error())
+		pastelid = r.URL.Query().Get("pastelid")
+		if pastelid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("pastelid", "query string"))
 		}
-		err = ValidateGetFolloweesRequestBody(&body)
+		err = goa.MergeErrors(err, goa.ValidatePattern("pastelid", pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, true))
+		}
+		if utf8.RuneCountInString(pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, false))
+		}
+		{
+			limitRaw := r.URL.Query().Get("limit")
+			if limitRaw != "" {
+				v, err2 := strconv.ParseInt(limitRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("limit", limitRaw, "integer"))
+				}
+				pv := int(v)
+				limit = &pv
+			}
+		}
+		{
+			offsetRaw := r.URL.Query().Get("offset")
+			if offsetRaw != "" {
+				v, err2 := strconv.ParseInt(offsetRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("offset", offsetRaw, "integer"))
+				}
+				pv := int(v)
+				offset = &pv
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetFolloweesPayload(&body)
+		payload := NewGetFolloweesPayload(pastelid, limit, offset)
 
 		return payload, nil
 	}
@@ -523,21 +578,48 @@ func EncodeGetFriendsResponse(encoder func(context.Context, http.ResponseWriter)
 func DecodeGetFriendsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			body GetFriendsRequestBody
-			err  error
+			pastelid string
+			limit    *int
+			offset   *int
+			err      error
 		)
-		err = decoder(r).Decode(&body)
-		if err != nil {
-			if err == io.EOF {
-				return nil, goa.MissingPayloadError()
-			}
-			return nil, goa.DecodePayloadError(err.Error())
+		pastelid = r.URL.Query().Get("pastelid")
+		if pastelid == "" {
+			err = goa.MergeErrors(err, goa.MissingFieldError("pastelid", "query string"))
 		}
-		err = ValidateGetFriendsRequestBody(&body)
+		err = goa.MergeErrors(err, goa.ValidatePattern("pastelid", pastelid, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(pastelid) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, true))
+		}
+		if utf8.RuneCountInString(pastelid) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("pastelid", pastelid, utf8.RuneCountInString(pastelid), 86, false))
+		}
+		{
+			limitRaw := r.URL.Query().Get("limit")
+			if limitRaw != "" {
+				v, err2 := strconv.ParseInt(limitRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("limit", limitRaw, "integer"))
+				}
+				pv := int(v)
+				limit = &pv
+			}
+		}
+		{
+			offsetRaw := r.URL.Query().Get("offset")
+			if offsetRaw != "" {
+				v, err2 := strconv.ParseInt(offsetRaw, 10, strconv.IntSize)
+				if err2 != nil {
+					err = goa.MergeErrors(err, goa.InvalidFieldTypeError("offset", offsetRaw, "integer"))
+				}
+				pv := int(v)
+				offset = &pv
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewGetFriendsPayload(&body)
+		payload := NewGetFriendsPayload(pastelid, limit, offset)
 
 		return payload, nil
 	}
