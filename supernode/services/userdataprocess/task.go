@@ -151,7 +151,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 	}
 
 	var actionErr error
-	task.NewAction(func(ctx context.Context) error {
+	<-task.NewAction(func(ctx context.Context) error {
 		node, err := task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
 			actionErr = err

@@ -2,6 +2,7 @@ package userdataprocess
 
 import (
 	"context"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -13,7 +14,9 @@ import (
 )
 
 const (
-	logPrefix = "userdata"
+	logPrefix            = "userdata"
+	getTaskRetry         = 3
+	getTaskRetryInterval = 100 * time.Millisecond
 )
 
 // Service represent userdata service.
@@ -43,7 +46,13 @@ func (service *Service) Run(ctx context.Context) error {
 
 // Task returns the task of the registration userdata by the given id.
 func (service *Service) Task(id string) *Task {
-	return service.Worker.Task(id).(*Task)
+	for i := 0; i < getTaskRetry; i++ {
+		if task := service.Worker.Task(id); task != nil {
+			return task.(*Task)
+		}
+		time.Sleep(getTaskRetryInterval)
+	}
+	return nil
 }
 
 // NewTask runs a new task of the registration userdata and returns its taskID.
