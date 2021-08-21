@@ -16,7 +16,7 @@ type Node struct {
 	ArtworkDownload artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
 	API             *api.Config            `mapstructure:"api" json:"api,omitempty"`
 
-	UserdataProcess userdataprocess.Config `mapstructure:"userdata_process" json:"userdata_process,omitempty"`
+	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
 	BurnAddress     string                 `mapstructure:"burn_address" json:"burn_address,omitempty"`
 
 	RegArtTxMinConfirmations int `mapstructure:"reg_art_tx_min_confirmations" json:"reg_art_tx_min_confirmation,omitempty"`

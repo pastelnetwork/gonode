@@ -15,9 +15,8 @@ node:
   # Timeout waiting for 
   reg_act_tx_timeout: 13
   burn_address: tPce2T47TFPcHPj3sKiKdFLhQpmzJ1tkzjr 
-  userdata_process:
-    number_super_nodes: 3
-    minimal_node_confirm_success: 2
+  number_super_nodes: 3
+  minimal_node_confirm_success: 2
 
 raptorq:
   hostname: "locahost"
