@@ -59,6 +59,9 @@ const (
 
 	// RegisterArtTicketMethod represents RegisterArtTicket method
 	RegisterArtTicketMethod = "RegisterArtTicket"
+
+	// GetRegisterNFTFeeMethod represents GetRegisterNFTFee method
+	GetRegisterNFTFeeMethod = "GetRegisterNFTFee"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -179,6 +182,12 @@ func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err erro
 // ListenOnRegisterNFTTicket listening on RegisterNFTTicket
 func (client *Client) ListenOnRegisterNFTTicket(txid string, err error) *Client {
 	client.On(RegisterNFTTicket, mock.Anything, mock.Anything).Return(txid, err)
+	return client
+}
+
+// ListenOnGetRegisterNFTFee listen on get register NFT Fee & return fee & err
+func (client *Client) ListenOnGetRegisterNFTFee(retFee int64, retErr error) *Client {
+	client.On(GetRegisterNFTFeeMethod, mock.Anything, mock.Anything).Return(retFee, retErr)
 	return client
 }
 
