@@ -135,7 +135,7 @@ func TestSuiteTemplate(t *testing.T) {
 
 type testSuiteTemplate struct {
 	suite.Suite
-	k *templateKeeper
+	k *TemplateKeeper
 }
 
 func (ts *testSuiteTemplate) SetupSuite() {

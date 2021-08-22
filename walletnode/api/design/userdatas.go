@@ -439,6 +439,7 @@ var UserdataSetLikeArtPayload = func() {
 	Required("user_pastel_id", "art_pastel_id")
 }
 
+// UserdataSetRelationResult is result of set user relation
 var UserdataSetRelationResult = func() {
 	Attribute("response_code", Int, func() {
 		Description("Result of the request is success or not")
@@ -477,7 +478,7 @@ var GetUserRelationshipPayload = func() {
 	Required("pastelid")
 }
 
-// GetUserRelationshipPayload is request param to get user relationship
+// GetUserLikeArtPayload is request param to get art like
 var GetUserLikeArtPayload = func() {
 	Attribute("art_id", String, func() {
 		Description("art id that we want to get like data")

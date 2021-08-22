@@ -262,7 +262,7 @@ func (service *Userdata) GetFriends(ctx context.Context, req *userdatas.GetFrien
 	}, nil
 }
 
-// Notify a new like event of an user to an art
+// SetUserLikeArt Notify a new like event of an user to an art
 func (service *Userdata) SetUserLikeArt(ctx context.Context, req *userdatas.SetUserLikeArtPayload) (*userdatas.SetUserLikeArtResult, error) {
 	data := userdata.ArtLike{
 		ArtID:    req.ArtPastelID,
@@ -293,7 +293,7 @@ func (service *Userdata) SetUserLikeArt(ctx context.Context, req *userdatas.SetU
 	}, nil
 }
 
-// Get users that liked an art
+// GetUsersLikeArt Get users that liked an art
 func (service *Userdata) GetUsersLikeArt(ctx context.Context, req *userdatas.GetUsersLikeArtPayload) (*userdatas.GetUsersLikeArtResult, error) {
 	data := userdata.PaginationIDStringQuery{
 		ID: req.ArtID,

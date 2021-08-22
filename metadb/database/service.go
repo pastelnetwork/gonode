@@ -62,9 +62,10 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
+// NewConfig is database operator
 type Ops struct {
 	metaDB    metadb.MetaDB
-	templates *templateKeeper
+	templates *TemplateKeeper
 	config    *Config
 }
 
@@ -321,6 +322,7 @@ func (db *Ops) writeDataReturning(ctx context.Context, command string) (*metadb.
 	return result, nil
 }
 
+// WriteArtInfo writes art info to db
 func (db *Ops) WriteArtInfo(ctx context.Context, data userdata.ArtInfo) error {
 	command, err := db.templates.GetCommand(artInfoWriteTemplate, data)
 	if err != nil {
@@ -329,6 +331,7 @@ func (db *Ops) WriteArtInfo(ctx context.Context, data userdata.ArtInfo) error {
 	return db.writeData(ctx, command)
 }
 
+// WriteArtInstanceInfo writes art instace info to db
 func (db *Ops) WriteArtInstanceInfo(ctx context.Context, data userdata.ArtInstanceInfo) error {
 	command, err := db.templates.GetCommand(artInstanceInfoWriteTemplate, data)
 	if err != nil {
@@ -337,6 +340,7 @@ func (db *Ops) WriteArtInstanceInfo(ctx context.Context, data userdata.ArtInstan
 	return db.writeData(ctx, command)
 }
 
+// WriteArtLike writes art like info to db
 func (db *Ops) WriteArtLike(ctx context.Context, data userdata.ArtLike) error {
 	command, err := db.templates.GetCommand(artLikeWriteTemplate, data)
 	if err != nil {
@@ -345,6 +349,7 @@ func (db *Ops) WriteArtLike(ctx context.Context, data userdata.ArtLike) error {
 	return db.writeData(ctx, command)
 }
 
+// WriteTransaction writes transaction info to db
 func (db *Ops) WriteTransaction(ctx context.Context, data userdata.ArtTransaction) error {
 	command, err := db.templates.GetCommand(transactionWriteTemplate, data)
 	if err != nil {
@@ -353,6 +358,7 @@ func (db *Ops) WriteTransaction(ctx context.Context, data userdata.ArtTransactio
 	return db.writeData(ctx, command)
 }
 
+// WriteUserFollow writes user follow to db
 func (db *Ops) WriteUserFollow(ctx context.Context, data userdata.UserFollow) error {
 	command, err := db.templates.GetCommand(userFollowWriteTemplate, data)
 	if err != nil {
@@ -361,6 +367,7 @@ func (db *Ops) WriteUserFollow(ctx context.Context, data userdata.UserFollow) er
 	return db.writeData(ctx, command)
 }
 
+// DeleteUserFollow delete user follow
 func (db *Ops) DeleteUserFollow(ctx context.Context, data userdata.UserFollow) error {
 	command, err := db.templates.GetCommand(userFollowDeleteTemplate, data)
 	if err != nil {
@@ -369,6 +376,7 @@ func (db *Ops) DeleteUserFollow(ctx context.Context, data userdata.UserFollow) e
 	return db.writeData(ctx, command)
 }
 
+// WriteSNActivity write SN activity
 func (db *Ops) WriteSNActivity(ctx context.Context, data userdata.SNActivityInfo) error {
 	if data.Query == "" {
 		return errors.Errorf("invalid query")
@@ -393,6 +401,7 @@ func (db *Ops) WriteUserData(ctx context.Context, data *pb.UserdataRequest) erro
 	return db.writeData(ctx, command)
 }
 
+// UpdateAskingPrice updates art asking price to db
 func (db *Ops) UpdateAskingPrice(ctx context.Context, data userdata.AskingPriceUpdateRequest) error {
 	command, err := db.templates.GetCommand(artInstanceAskingPriceTemplate, data)
 	if err != nil {
@@ -402,6 +411,7 @@ func (db *Ops) UpdateAskingPrice(ctx context.Context, data userdata.AskingPriceU
 	return db.writeData(ctx, command)
 }
 
+// NewArtAuction creates new art auction in db
 func (db *Ops) NewArtAuction(ctx context.Context, data userdata.NewArtAuctionRequest) (int64, error) {
 	command, err := db.templates.GetCommand(newArtAuctionTemplate, data)
 	if err != nil {
@@ -415,6 +425,7 @@ func (db *Ops) NewArtAuction(ctx context.Context, data userdata.NewArtAuctionReq
 	return result.LastInsertID, nil
 }
 
+// EndArtAuction ends art auction in db
 func (db *Ops) EndArtAuction(ctx context.Context, auctionID int64) error {
 	command, err := db.templates.GetCommand(endArtAuctionTemplate, auctionID)
 	if err != nil {
@@ -424,6 +435,7 @@ func (db *Ops) EndArtAuction(ctx context.Context, auctionID int64) error {
 	return db.writeData(ctx, command)
 }
 
+// ArtPlaceBid place bid for an art
 func (db *Ops) ArtPlaceBid(ctx context.Context, data userdata.ArtPlaceBidRequest) error {
 	command, err := db.templates.GetCommand(artPlaceBidTemplate, data)
 	if err != nil {
@@ -496,6 +508,7 @@ func (db *Ops) salePriceByUserQuery(ctx context.Context, command string) (float6
 	return price, nil
 }
 
+// GetCumulatedSalePriceByUser get cumulated sale price by a user
 func (db *Ops) GetCumulatedSalePriceByUser(ctx context.Context, pastelID string) (float64, error) {
 	if pastelID == "" {
 		return 0.0, errors.Errorf("invalid pastel ID")
@@ -626,18 +639,22 @@ func (db *Ops) getPaginationUsersWithTemplate(ctx context.Context, data userdata
 	return result, nil
 }
 
+// GetFollowees get followee relationship
 func (db *Ops) GetFollowees(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
 	return db.getPaginationUsersWithTemplate(ctx, data, getFolloweesTemplate)
 }
 
+// GetFollowers get follower relationship
 func (db *Ops) GetFollowers(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
 	return db.getPaginationUsersWithTemplate(ctx, data, getFollowersTemplate)
 }
 
+// GetFriends get friend relationship
 func (db *Ops) GetFriends(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
 	return db.getPaginationUsersWithTemplate(ctx, data, getFriendTemplate)
 }
 
+// GetHighestSalePriceByUser get highest sale price by user
 func (db *Ops) GetHighestSalePriceByUser(ctx context.Context, pastelID string) (float64, error) {
 	if pastelID == "" {
 		return 0.0, errors.Errorf("invalid pastel ID")
@@ -651,6 +668,7 @@ func (db *Ops) GetHighestSalePriceByUser(ctx context.Context, pastelID string) (
 	return db.salePriceByUserQuery(ctx, command)
 }
 
+// GetExistingNftCopies get existing copies of an NFT
 func (db *Ops) GetExistingNftCopies(ctx context.Context, artID string) (int, error) {
 	if artID == "" {
 		return 0, errors.Errorf("invalid art ID")
@@ -711,6 +729,7 @@ func (db *Ops) queryToInterface(ctx context.Context, command string) ([]map[stri
 	return result, nil
 }
 
+// GetNftCreatedByArtist acquire all NFTs created by an artist
 func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string) ([]userdata.NftCreatedByArtistQueryResult, error) {
 	if artistPastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
@@ -738,6 +757,7 @@ func (db *Ops) GetNftCreatedByArtist(ctx context.Context, artistPastelID string)
 	return result, nil
 }
 
+// GetNftForSaleByArtist get NFT for sale byan artist
 func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string) ([]userdata.NftForSaleByArtistQueryResult, error) {
 	if artistPastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
@@ -765,6 +785,7 @@ func (db *Ops) GetNftForSaleByArtist(ctx context.Context, artistPastelID string)
 	return result, nil
 }
 
+// GetNftOwnedByUser get NFTs owned by an user
 func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]userdata.NftOwnedByUserQueryResult, error) {
 	if pastelID == "" {
 		return nil, errors.Errorf("invalid pastel ID")
@@ -792,6 +813,7 @@ func (db *Ops) GetNftOwnedByUser(ctx context.Context, pastelID string) ([]userda
 	return result, nil
 }
 
+// GetNftSoldByArtID get sold NFT
 func (db *Ops) GetNftSoldByArtID(ctx context.Context, artID string) (userdata.NftSoldByArtIDQueryResult, error) {
 	var result userdata.NftSoldByArtIDQueryResult
 	if artID == "" {
@@ -822,6 +844,7 @@ func (db *Ops) GetNftSoldByArtID(ctx context.Context, artID string) (userdata.Nf
 	return result, nil
 }
 
+// GetUniqueNftByUser get unique NFT by user
 func (db *Ops) GetUniqueNftByUser(ctx context.Context, query userdata.UniqueNftByUserQuery) ([]userdata.ArtInfo, error) {
 	command, err := db.templates.GetCommand(uniqueNftByUserTemplate, query)
 	if err != nil {
@@ -845,10 +868,12 @@ func (db *Ops) GetUniqueNftByUser(ctx context.Context, query userdata.UniqueNftB
 	return result, nil
 }
 
+// GetUsersLikeNft get users like the NFT
 func (db *Ops) GetUsersLikeNft(ctx context.Context, data userdata.PaginationIDStringQuery) (userdata.UserRelationshipQueryResult, error) {
 	return db.getPaginationUsersWithTemplate(ctx, data, usersLikeNftTemplate)
 }
 
+// GetArtInstanceInfo acquires art instance info
 func (db *Ops) GetArtInstanceInfo(ctx context.Context, instanceID string) (userdata.ArtInstanceInfo, error) {
 	var result userdata.ArtInstanceInfo
 	if instanceID == "" {
@@ -879,6 +904,7 @@ func (db *Ops) GetArtInstanceInfo(ctx context.Context, instanceID string) (userd
 	return result, nil
 }
 
+// GetAuctionInfo acuire auction info
 func (db *Ops) GetAuctionInfo(ctx context.Context, auctionID int64) (userdata.ArtAuctionInfo, error) {
 	var result userdata.ArtAuctionInfo
 	command, err := db.templates.GetCommand(getAuctionInfoTemplate, auctionID)
@@ -905,6 +931,7 @@ func (db *Ops) GetAuctionInfo(ctx context.Context, auctionID int64) (userdata.Ar
 	return result, nil
 }
 
+// GetTopSNActivities get top SN activities
 func (db *Ops) GetTopSNActivities(ctx context.Context, query userdata.SNTopActivityRequest) ([]userdata.SNActivityInfo, error) {
 	command, err := db.templates.GetCommand(getTopSNActivitiesTemplate, query)
 	if err != nil {

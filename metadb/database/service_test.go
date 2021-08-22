@@ -2233,39 +2233,39 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 
 func (ts *testSuite) TestOps_ProcessCommand() {
 	userDataFrame.ArtistPastelID = "id_pc_0"
-	userdataJson, err := json.Marshal(&userDataFrame)
+	userdataJSON, err := json.Marshal(&userDataFrame)
 	ts.Nil(err)
 
 	userdataQuery := userdata.IDStringQuery{
 		ID: "qwe",
 	}
-	userdataQueryJson, err := json.Marshal(userdataQuery)
+	userdataQueryJSON, err := json.Marshal(userdataQuery)
 	ts.Nil(err)
 
 	artInfo := userdata.ArtInfo{ArtID: "art0_id_pc_0", ArtistPastelID: "id_pc_0", Copies: 2, CreatedTimestamp: 150}
-	artInfoJson, err := json.Marshal(artInfo)
+	artInfoJSON, err := json.Marshal(artInfo)
 	ts.Nil(err)
 
 	artInstance0 := userdata.ArtInstanceInfo{InstanceID: "ins0_art0_id_pc_0", ArtID: "art0_id_pc_0", Price: 10.0}
-	artInstanceJson0, err := json.Marshal(artInstance0)
+	artInstanceJSON0, err := json.Marshal(artInstance0)
 	ts.Nil(err)
 	artInstance0.OwnerPastelID = "id_pc_0"
 
 	artInstance1 := userdata.ArtInstanceInfo{InstanceID: "ins1_art0_id_pc_0", ArtID: "art0_id_pc_0", Price: 10.0}
-	artInstanceJson1, err := json.Marshal(artInstance1)
+	artInstanceJSON1, err := json.Marshal(artInstance1)
 	ts.Nil(err)
 	artInstance1.OwnerPastelID = "id_pc_0"
 
 	instanceQuery0 := userdata.IDStringQuery{
 		ID: "ins0_art0_id_pc_0",
 	}
-	instanceQueryJson0, err := json.Marshal(instanceQuery0)
+	instanceQueryJSON0, err := json.Marshal(instanceQuery0)
 	ts.Nil(err)
 
 	instanceQuery1 := userdata.IDStringQuery{
 		ID: "ins1_art0_id_pc_0",
 	}
-	instanceQueryJson1, err := json.Marshal(instanceQuery1)
+	instanceQueryJSON1, err := json.Marshal(instanceQuery1)
 	ts.Nil(err)
 
 	tests := []struct {
@@ -2295,7 +2295,7 @@ func (ts *testSuite) TestOps_ProcessCommand() {
 		{
 			req: &pb.Metric{
 				Command: userdata.CommandUserInfoWrite,
-				Data:    userdataJson,
+				Data:    userdataJSON,
 			},
 			want:    nil,
 			wantErr: false,
@@ -2303,7 +2303,7 @@ func (ts *testSuite) TestOps_ProcessCommand() {
 		{
 			req: &pb.Metric{
 				Command: userdata.CommandUserInfoQuery,
-				Data:    userdataQueryJson,
+				Data:    userdataQueryJSON,
 			},
 			want:    data3ReadResult,
 			wantErr: false,
@@ -2311,7 +2311,7 @@ func (ts *testSuite) TestOps_ProcessCommand() {
 		{
 			req: &pb.Metric{
 				Command: userdata.CommandArtInfoWrite,
-				Data:    artInfoJson,
+				Data:    artInfoJSON,
 			},
 			want:    nil,
 			wantErr: false,
@@ -2319,7 +2319,7 @@ func (ts *testSuite) TestOps_ProcessCommand() {
 		{
 			req: &pb.Metric{
 				Command: userdata.CommandArtInstanceInfoWrite,
-				Data:    artInstanceJson0,
+				Data:    artInstanceJSON0,
 			},
 			want:    nil,
 			wantErr: false,
@@ -2327,7 +2327,7 @@ func (ts *testSuite) TestOps_ProcessCommand() {
 		{
 			req: &pb.Metric{
 				Command: userdata.CommandArtInstanceInfoWrite,
-				Data:    artInstanceJson1,
+				Data:    artInstanceJSON1,
 			},
 			want:    nil,
 			wantErr: false,
@@ -2335,7 +2335,7 @@ func (ts *testSuite) TestOps_ProcessCommand() {
 		{
 			req: &pb.Metric{
 				Command: userdata.CommandGetInstanceInfo,
-				Data:    instanceQueryJson0,
+				Data:    instanceQueryJSON0,
 			},
 			want:    artInstance0,
 			wantErr: false,
@@ -2343,7 +2343,7 @@ func (ts *testSuite) TestOps_ProcessCommand() {
 		{
 			req: &pb.Metric{
 				Command: userdata.CommandGetInstanceInfo,
-				Data:    instanceQueryJson1,
+				Data:    instanceQueryJSON1,
 			},
 			want:    artInstance1,
 			wantErr: false,

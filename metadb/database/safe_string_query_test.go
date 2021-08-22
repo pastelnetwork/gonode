@@ -8,11 +8,11 @@ import (
 
 func Test_safeStringQueryStruct(t *testing.T) {
 	type testStruct struct {
-		String_      string
-		Float64_     float64
-		Float64Star_ *float64
-		Int_         int
-		IntStart_    *int
+		String      string
+		Float64     float64
+		Float64Star *float64
+		Int         int
+		IntStart    *int
 	}
 	hackString := "abc213ef ' OR 1==1 --"
 	f10 := float64(10.0)
@@ -25,18 +25,18 @@ func Test_safeStringQueryStruct(t *testing.T) {
 	}{
 		{
 			v: &testStruct{
-				String_:      hackString,
-				Float64_:     f10,
-				Float64Star_: &f10,
-				Int_:         i10,
-				IntStart_:    &i10,
+				String:      hackString,
+				Float64:     f10,
+				Float64Star: &f10,
+				Int:         i10,
+				IntStart:    &i10,
 			},
 			want: &testStruct{
-				String_:      processedHackString,
-				Float64_:     f10,
-				Float64Star_: &f10,
-				Int_:         i10,
-				IntStart_:    &i10,
+				String:      processedHackString,
+				Float64:     f10,
+				Float64Star: &f10,
+				Int:         i10,
+				IntStart:    &i10,
 			},
 		},
 	}

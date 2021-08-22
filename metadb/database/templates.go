@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
-type templateKeeper struct {
+type TemplateKeeper struct {
 	mp map[string]*template.Template
 }
 
@@ -25,7 +25,7 @@ func substituteTemplate(tmpl *template.Template, data interface{}) (string, erro
 	return templateBuffer.String(), nil
 }
 
-func (k *templateKeeper) GetCommand(key string, data interface{}) (string, error) {
+func (k *TemplateKeeper) GetCommand(key string, data interface{}) (string, error) {
 	template := k.GetTemplate(key)
 	if template == nil {
 		return "", errors.Errorf("no template for key: %s", key)
@@ -33,14 +33,15 @@ func (k *templateKeeper) GetCommand(key string, data interface{}) (string, error
 	return substituteTemplate(template, data)
 }
 
-func (k *templateKeeper) GetTemplate(key string) *template.Template {
+func (k *TemplateKeeper) GetTemplate(key string) *template.Template {
 	if tmpl, found := k.mp[key]; found {
 		return tmpl
 	}
 	return nil
 }
 
-func NewTemplateKeeper(templateDir string) (*templateKeeper, error) {
+// NewTemplateKeeper create new template keeper instance
+func NewTemplateKeeper(templateDir string) (*TemplateKeeper, error) {
 	files, err := ioutil.ReadDir(templateDir)
 	if err != nil {
 		return nil, err
@@ -63,7 +64,7 @@ func NewTemplateKeeper(templateDir string) (*templateKeeper, error) {
 		mp[key] = tmpl
 	}
 
-	return &templateKeeper{
+	return &TemplateKeeper{
 		mp: mp,
 	}, nil
 }

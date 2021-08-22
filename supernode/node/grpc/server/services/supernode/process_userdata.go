@@ -205,9 +205,8 @@ func (service *ProcessUserdata) StoreMetric(ctx context.Context, req *pb.Metric)
 	if req == nil {
 		return nil, errors.Errorf("receive nil request")
 	}
-	var task *userdataprocess.Task
 
-	task = service.NewTask()
+	task := service.NewTask()
 	go func() {
 		<-task.Done()
 		cancel()

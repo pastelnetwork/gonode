@@ -158,144 +158,144 @@ type Metric struct {
 }
 
 type ArtInfo struct {
-	ArtID                 string  `mapstructure:"art_id",json:"art_id"`
-	ArtistPastelID        string  `mapstructure:"artist_pastel_id",json:"artist_pastel_id"`
-	Copies                int64   `mapstructure:"copies",json:"copies"`
-	CreatedTimestamp      int64   `mapstructure:"created_timestamp",json:"created_timestamp"`
-	GreenNft              bool    `mapstructure:"green_nft",json:"green_nft"`
-	RarenessScore         float64 `mapstructure:"rareness_score",json:"rareness_score"`
-	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage",json:"royalty_rate_percentage"`
+	ArtID                 string  `mapstructure:"art_id" json:"art_id"`
+	ArtistPastelID        string  `mapstructure:"artist_pastel_id" json:"artist_pastel_id"`
+	Copies                int64   `mapstructure:"copies" json:"copies"`
+	CreatedTimestamp      int64   `mapstructure:"created_timestamp" json:"created_timestamp"`
+	GreenNft              bool    `mapstructure:"green_nft" json:"green_nft"`
+	RarenessScore         float64 `mapstructure:"rareness_score" json:"rareness_score"`
+	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage" json:"royalty_rate_percentage"`
 }
 
 type ArtInstanceInfo struct {
-	InstanceID    string   `mapstructure:"instance_id",json:"instance_id"`
-	ArtID         string   `mapstructure:"art_id",json:"art_id"`
-	OwnerPastelID string   `mapstructure:"owner_pastel_id",json:"owner_pastel_id"`
-	Price         float64  `mapstructure:"price",json:"price"`
-	AskingPrice   *float64 `mapstructure:"asking_price,omitempty",json:"asking_price,omitempty"`
+	InstanceID    string   `mapstructure:"instance_id" json:"instance_id"`
+	ArtID         string   `mapstructure:"art_id" json:"art_id"`
+	OwnerPastelID string   `mapstructure:"owner_pastel_id" json:"owner_pastel_id"`
+	Price         float64  `mapstructure:"price" json:"price"`
+	AskingPrice   *float64 `mapstructure:"asking_price,omitempty" json:"asking_price,omitempty"`
 }
 
 type ArtLike struct {
-	ArtID    string `mapstructure:"art_id",json:"art_id"`
-	PastelID string `mapstructure:"pastel_id",json:"pastel_id"`
+	ArtID    string `mapstructure:"art_id" json:"art_id"`
+	PastelID string `mapstructure:"pastel_id" json:"pastel_id"`
 }
 
 type ArtTransaction struct {
-	TransactionID  string  `mapstructure:"transaction_id",json:"transaction_id"`
-	InstanceID     string  `mapstructure:"instance_id",json:"instance_id"`
-	Timestamp      int64   `mapstructure:"timestamp",json:"timestamp"`
-	SellerPastelID string  `mapstructure:"seller_pastel_id",json:"seller_pastel_id"`
-	BuyerPastelID  string  `mapstructure:"buyer_pastel_id",json:"buyer_pastel_id"`
-	Price          float64 `mapstructure:"price",json:"price"`
+	TransactionID  string  `mapstructure:"transaction_id" json:"transaction_id"`
+	InstanceID     string  `mapstructure:"instance_id" json:"instance_id"`
+	Timestamp      int64   `mapstructure:"timestamp" json:"timestamp"`
+	SellerPastelID string  `mapstructure:"seller_pastel_id" json:"seller_pastel_id"`
+	BuyerPastelID  string  `mapstructure:"buyer_pastel_id" json:"buyer_pastel_id"`
+	Price          float64 `mapstructure:"price" json:"price"`
 }
 
 type UserFollow struct {
-	FollowerPastelID string `mapstructure:"follower_pastel_id",json:"follower_pastel_id"`
-	FolloweePastelID string `mapstructure:"followee_pastel_id",json:"followee_pastel_id"`
+	FollowerPastelID string `mapstructure:"follower_pastel_id" json:"follower_pastel_id"`
+	FolloweePastelID string `mapstructure:"followee_pastel_id" json:"followee_pastel_id"`
 }
 
 type NftCreatedByArtistQueryResult struct {
-	InstanceID            string  `mapstructure:"instance_id",json:"instance_id"`
-	ArtID                 string  `mapstructure:"art_id",json:"art_id"`
-	Copies                int64   `mapstructure:"copies",json:"copies"`
-	CreatedTimestamp      int64   `mapstructure:"created_timestamp",json:"created_timestamp"`
-	GreenNft              bool    `mapstructure:"green_nft",json:"green_nft"`
-	RarenessScore         float64 `mapstructure:"rareness_score",json:"rareness_score"`
-	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage",json:"royalty_rate_percentage"`
+	InstanceID            string  `mapstructure:"instance_id" json:"instance_id"`
+	ArtID                 string  `mapstructure:"art_id" json:"art_id"`
+	Copies                int64   `mapstructure:"copies" json:"copies"`
+	CreatedTimestamp      int64   `mapstructure:"created_timestamp" json:"created_timestamp"`
+	GreenNft              bool    `mapstructure:"green_nft" json:"green_nft"`
+	RarenessScore         float64 `mapstructure:"rareness_score" json:"rareness_score"`
+	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage" json:"royalty_rate_percentage"`
 }
 
 type NftForSaleByArtistQueryResult struct {
-	InstanceID string  `mapstructure:"instance_id",json:"instance_id"`
-	ArtID      string  `mapstructure:"art_id",json:"art_id"`
-	Price      float64 `mapstructure:"price",json:"price"`
+	InstanceID string  `mapstructure:"instance_id" json:"instance_id"`
+	ArtID      string  `mapstructure:"art_id" json:"art_id"`
+	Price      float64 `mapstructure:"price" json:"price"`
 }
 
 type NftOwnedByUserQueryResult struct {
-	ArtID string `mapstructure:"art_id",json:"art_id"`
-	Count int    `mapstructure:"cnt",json:"cnt"`
+	ArtID string `mapstructure:"art_id" json:"art_id"`
+	Count int    `mapstructure:"cnt" json:"cnt"`
 }
 
 type NftSoldByArtIDQueryResult struct {
-	TotalCopies int `mapstructure:"total_copies",json:"total_copies"`
-	SoldCopies  int `mapstructure:"sold_copies",json:"sold_copies"`
+	TotalCopies int `mapstructure:"total_copies" json:"total_copies"`
+	SoldCopies  int `mapstructure:"sold_copies" json:"sold_copies"`
 }
 
 type UniqueNftByUserQuery struct {
-	ArtistPastelID string `mapstructure:"artist_pastel_id",json:"artist_pastel_id"`
-	LimitTimestamp int64  `mapstructure:"limit_timestamp",json:"limit_timestamp"`
+	ArtistPastelID string `mapstructure:"artist_pastel_id" json:"artist_pastel_id"`
+	LimitTimestamp int64  `mapstructure:"limit_timestamp" json:"limit_timestamp"`
 }
 
 type AskingPriceUpdateRequest struct {
-	InstanceID  string  `mapstructure:"instance_id",json:"instance_id"`
-	AskingPrice float64 `mapstructure:"asking_price",json:"asking_price"`
+	InstanceID  string  `mapstructure:"instance_id" json:"instance_id"`
+	AskingPrice float64 `mapstructure:"asking_price" json:"asking_price"`
 }
 
 type ArtPlaceBidRequest struct {
-	AuctionID int64   `mapstructure:"auction_id",json:"auction_id"`
-	PastelID  string  `mapstructure:"pastel_id",json:"pastel_id"`
-	BidPrice  float64 `mapstructure:"bid_price",json:"bid_price"`
+	AuctionID int64   `mapstructure:"auction_id" json:"auction_id"`
+	PastelID  string  `mapstructure:"pastel_id" json:"pastel_id"`
+	BidPrice  float64 `mapstructure:"bid_price" json:"bid_price"`
 }
 
 type NewArtAuctionRequest struct {
-	InstanceID  string  `mapstructure:"instance_id",json:"instance_id"`
-	LowestPrice float64 `mapstructure:"lowest_price",json:"lowest_price"`
+	InstanceID  string  `mapstructure:"instance_id" json:"instance_id"`
+	LowestPrice float64 `mapstructure:"lowest_price" json:"lowest_price"`
 }
 
 type ArtAuctionInfo struct {
-	AuctionID   int64      `mapstructure:"auction_id",json:"auction_id"`
-	InstanceID  string     `mapstructure:"instance_id",json:"instance_id"`
-	LowestPrice float64    `mapstructure:"lowest_price",json:"lowest_price"`
-	IsOpen      bool       `mapstructure:"is_open",json:"is_open"`
-	StartTime   *time.Time `mapstructure:"start_time",json:"start_time"`
-	EndTime     *time.Time `mapstructure:"end_time",json:"end_time"`
-	FirstPrice  *float64   `mapstructure:"first_price",json:"first_price"`
-	SecondPrice *float64   `mapstructure:"second_price",json:"second_price"`
+	AuctionID   int64      `mapstructure:"auction_id" json:"auction_id"`
+	InstanceID  string     `mapstructure:"instance_id" json:"instance_id"`
+	LowestPrice float64    `mapstructure:"lowest_price" json:"lowest_price"`
+	IsOpen      bool       `mapstructure:"is_open" json:"is_open"`
+	StartTime   *time.Time `mapstructure:"start_time" json:"start_time"`
+	EndTime     *time.Time `mapstructure:"end_time" json:"end_time"`
+	FirstPrice  *float64   `mapstructure:"first_price" json:"first_price"`
+	SecondPrice *float64   `mapstructure:"second_price" json:"second_price"`
 }
 
 type SNActivityInfo struct {
-	Query string `mapstructure:"query",json:"query"`
+	Query string `mapstructure:"query" json:"query"`
 
 	// SNActivityThumbnailRequest = "thumbnail_request"
 	// SNActivityNftSearch        = "nft_search"
 	// SNActivityCreatorSearch    = "creator_search"
 	// SNActivityUserSearch       = "user_search"
 	// SNActivityKeywordSearch    = "keyword_search"
-	ActivityType string `mapstructure:"activity_type",json:"activity_type"`
+	ActivityType string `mapstructure:"activity_type" json:"activity_type"`
 
-	SNPastelID string `mapstructure:"sn_pastel_id",json:"sn_pastel_id"`
+	SNPastelID string `mapstructure:"sn_pastel_id" json:"sn_pastel_id"`
 
 	// Cnt is the number of query activities, ignored on write request
-	Cnt int `mapstructure:"cnt",json:"cnt"`
+	Cnt int `mapstructure:"cnt" json:"cnt"`
 }
 
 type UserRelationshipItem struct {
-	Username       string `mapstructure:"username",json:"username"`
-	Realname       string `mapstructure:"real_name",json:"real_name"`
-	FollowersCount int    `mapstructure:"followers_count",json:"followers_count"`
-	AvatarImage    []byte `mapstructure:"avatar_image",json:"avatar_image"`
+	Username       string `mapstructure:"username" json:"username"`
+	Realname       string `mapstructure:"real_name" json:"real_name"`
+	FollowersCount int    `mapstructure:"followers_count" json:"followers_count"`
+	AvatarImage    []byte `mapstructure:"avatar_image" json:"avatar_image"`
 }
 
 type UserRelationshipQueryResult struct {
-	TotalCount int                    `mapstructure:"total_count",json:"total_count"`
-	Items      []UserRelationshipItem `mapstructure:"items",json:"items"`
+	TotalCount int                    `mapstructure:"total_count" json:"total_count"`
+	Items      []UserRelationshipItem `mapstructure:"items" json:"items"`
 }
 
 type SNTopActivityRequest struct {
-	ActivityType string `mapstructure:"activity_type",json:"activity_type"`
-	SNPastelID   string `mapstructure:"sn_pastel_id",json:"sn_pastel_id"`
-	NRecords     int    `mapstructure:"n_records",json:"n_records"`
+	ActivityType string `mapstructure:"activity_type" json:"activity_type"`
+	SNPastelID   string `mapstructure:"sn_pastel_id" json:"sn_pastel_id"`
+	NRecords     int    `mapstructure:"n_records" json:"n_records"`
 }
 
 type IDStringQuery struct {
-	ID string `mapstructure:"id",json:"id"`
+	ID string `mapstructure:"id" json:"id"`
 }
 
 type PaginationIDStringQuery struct {
-	ID     string `mapstructure:"id",json:"id"`
-	Limit  int    `mapstructure:"limit",json:"limit"`
-	Offset int    `mapstructure:"offset",json:"offset"`
+	ID     string `mapstructure:"id" json:"id"`
+	Limit  int    `mapstructure:"limit" json:"limit"`
+	Offset int    `mapstructure:"offset" json:"offset"`
 }
 
 type IDIntQuery struct {
-	ID int64 `mapstructure:"id",json:"id"`
+	ID int64 `mapstructure:"id" json:"id"`
 }
