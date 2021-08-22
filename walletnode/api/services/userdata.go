@@ -105,7 +105,7 @@ func (service *Userdata) GetUserdata(ctx context.Context, req *userdatas.GetUser
 	}
 }
 
-// Set a follower, followee relationship to metadb
+// SetUserFollowRelation Set a follower, followee relationship to metadb
 func (service *Userdata) SetUserFollowRelation(ctx context.Context, req *userdatas.SetUserFollowRelationPayload) (*userdatas.SetUserFollowRelationResult, error) {
 	// Generalize the data to be get/set by marshaling it
 	data := userdata.UserFollow{
@@ -136,7 +136,7 @@ func (service *Userdata) SetUserFollowRelation(ctx context.Context, req *userdat
 	}, nil
 }
 
-// Get followers of a user
+// GetFollowers Get followers of a user
 func (service *Userdata) GetFollowers(ctx context.Context, req *userdatas.GetFollowersPayload) (*userdatas.GetFollowersResult, error) {
 	// Generalize the data to be get/set by marshaling it
 	data := userdata.PaginationIDStringQuery{
@@ -178,7 +178,7 @@ func (service *Userdata) GetFollowers(ctx context.Context, req *userdatas.GetFol
 	}, nil
 }
 
-// Get followers of a user
+// GetFollowees Get followees of a user
 func (service *Userdata) GetFollowees(ctx context.Context, req *userdatas.GetFolloweesPayload) (*userdatas.GetFolloweesResult, error) {
 	data := userdata.PaginationIDStringQuery{
 		ID: req.Pastelid,
@@ -220,7 +220,7 @@ func (service *Userdata) GetFollowees(ctx context.Context, req *userdatas.GetFol
 	}, nil
 }
 
-// Get followers of a user
+// GetFriends Get friends of a user
 func (service *Userdata) GetFriends(ctx context.Context, req *userdatas.GetFriendsPayload) (*userdatas.GetFriendsResult, error) {
 	data := userdata.PaginationIDStringQuery{
 		ID: req.Pastelid,

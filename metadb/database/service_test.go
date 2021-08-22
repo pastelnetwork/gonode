@@ -2232,9 +2232,8 @@ func (ts *testSuite) TestOps_GetTopSNActivities() {
 }
 
 func (ts *testSuite) TestOps_ProcessCommand() {
-	userdatastruct := userDataFrame
-	userdatastruct.ArtistPastelID = "id_pc_0"
-	userdataJson, err := json.Marshal(userdatastruct)
+	userDataFrame.ArtistPastelID = "id_pc_0"
+	userdataJson, err := json.Marshal(&userDataFrame)
 	ts.Nil(err)
 
 	userdataQuery := userdata.IDStringQuery{

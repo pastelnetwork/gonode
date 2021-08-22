@@ -292,7 +292,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					var result interface{}
 					var err error
 					if result, err = service.databaseOps.ProcessCommand(ctx, &request); err != nil {
-						log.WithContext(ctx).Debugf("Error ProcessCommand:%s, Data %s, err:%s", request.Command, string(request.Data), err.Error())
+						log.WithContext(ctx).Debugf("error ProcessCommand:%s, Data %s, err:%s", request.Command, string(request.Data), err.Error())
 						processResult.ResponseCode = userdata.ErrorProcessMetric
 						processResult.Detail = userdata.Description[userdata.ErrorProcessMetric]
 						actionErr = errors.Errorf("error while processing command: %w", err)
@@ -302,7 +302,6 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					// Marshal the response from MetadataLayer
 					js, err := json.Marshal(result)
 					if err != nil {
-						log.WithContext(ctx).Debugf("Error Marshal result: %s")
 						processResult.ResponseCode = userdata.ErrorProcessMetric
 						processResult.Detail = userdata.Description[userdata.ErrorProcessMetric]
 						actionErr = errors.Errorf("error while marshaling command: %w", err)

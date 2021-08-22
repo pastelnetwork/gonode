@@ -150,7 +150,7 @@ type Metric struct {
 	// Signature of the pastelid that sign this metric data
 	Signature string
 	// PastelID of the actor that sign this data
-	PastelID string 
+	PastelID string
 	// Command the the predefine database operation name
 	Command string
 	// Data is the general structure accept many kind of metric, but it need to be match with Command
