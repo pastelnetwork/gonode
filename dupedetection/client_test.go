@@ -153,6 +153,7 @@ func TestCollectOutput(t *testing.T) {
 			PerceptualHash: "c999d3d3230724fc",
 			AverageHash:    "ffff990999181800",
 			DifferenceHash: "7333237333337331",
+			NeuralHash:     "a8d5bdc438dbe150084b56d2",
 		},
 		Fingerprints: "[0.1, 0.2, 0.3]",
 	}
