@@ -3,40 +3,73 @@ package userdata
 import "time"
 
 const (
+	// SNActivityThumbnailRequest is for thumbnail_request
 	SNActivityThumbnailRequest = "thumbnail_request"
-	SNActivityNftSearch        = "nft_search"
-	SNActivityCreatorSearch    = "creator_search"
-	SNActivityUserSearch       = "user_search"
-	SNActivityKeywordSearch    = "keyword_search"
+	// SNActivityNftSearch is for nft_search
+	SNActivityNftSearch = "nft_search"
+	// SNActivityCreatorSearch is for creator_search
+	SNActivityCreatorSearch = "creator_search"
+	// SNActivityUserSearch is for user_search
+	SNActivityUserSearch = "user_search"
+	// SNActivityKeywordSearch is for keyword_search
+	SNActivityKeywordSearch = "keyword_search"
 
-	CommandUserInfoWrite            = "user_info_write"
-	CommandArtInstanceAskingPrice   = "art_instance_asking_price"
-	CommandUserInfoQuery            = "user_info_query"
-	CommandArtInfoWrite             = "art_info_write"
-	CommandArtInstanceInfoWrite     = "art_instance_info_write"
-	CommandArtLikeWrite             = "art_like_write"
-	CommandArtPlaceBid              = "art_place_bid"
+	// CommandUserInfoWrite is for user_info_write
+	CommandUserInfoWrite = "user_info_write"
+	// CommandArtInstanceAskingPrice is for art_instance_asking_price
+	CommandArtInstanceAskingPrice = "art_instance_asking_price"
+	// CommandUserInfoQuery is for user_info_query
+	CommandUserInfoQuery = "user_info_query"
+	// CommandArtInfoWrite is for art_info_write
+	CommandArtInfoWrite = "art_info_write"
+	// CommandArtInstanceInfoWrite is for art_instance_info_write
+	CommandArtInstanceInfoWrite = "art_instance_info_write"
+	// CommandArtLikeWrite is for art_like_write
+	CommandArtLikeWrite = "art_like_write"
+	// CommandArtPlaceBid is for art_place_bid
+	CommandArtPlaceBid = "art_place_bid"
+	// CommandCumulatedSalePriceByUser is for cumulated_sale_price_by_user
 	CommandCumulatedSalePriceByUser = "cumulated_sale_price_by_user"
-	CommandEndArtAuction            = "end_art_auction"
-	CommandGetAuctionInfo           = "get_auction_info"
-	CommandGetFollowees             = "get_followees"
-	CommandGetFollowers             = "get_followers"
-	CommandGetFriend                = "get_friend"
-	CommandGetInstanceInfo          = "get_instance_info"
-	CommandGetTopSNActivities       = "get_top_sn_activities"
-	CommandHighestSalePriceByUser   = "highest_sale_price_by_user"
-	CommandNewArtAuction            = "new_art_auction"
-	CommandNftCopiesExist           = "nft_copies_exist"
-	CommandNftCreatedByArtist       = "nft_created_by_artist"
-	CommandNftForSaleByArtist       = "nft_for_sale_by_artist"
-	CommandNftOwnedByUser           = "nft_owned_by_user"
-	CommandNftSoldByArtID           = "nft_sold_by_art_id"
-	CommandSnActivityWrite          = "sn_activity_write"
-	CommandTransactionWrite         = "transaction_write"
-	CommandUniqueNftByUser          = "unique_nft_by_user"
-	CommandUserFollowDelete         = "user_follow_delete"
-	CommandUserFollowWrite          = "user_follow_write"
-	CommandUsersLikeNft             = "users_like_nft"
+	// CommandEndArtAuction is for end_art_auction
+	CommandEndArtAuction = "end_art_auction"
+	// CommandGetAuctionInfo is for get_auction_info
+	CommandGetAuctionInfo = "get_auction_info"
+	// CommandGetFollowees is for get_followees
+	CommandGetFollowees = "get_followees"
+	// CommandGetFollowers is for get_followers
+	CommandGetFollowers = "get_followers"
+	// CommandGetFriend is for get_friend
+	CommandGetFriend = "get_friend"
+	// CommandGetInstanceInfo is for get_instance_info
+	CommandGetInstanceInfo = "get_instance_info"
+	// CommandGetTopSNActivities is for get_top_sn_activities
+	CommandGetTopSNActivities = "get_top_sn_activities"
+	// CommandHighestSalePriceByUser is for highest_sale_price_by_user
+	CommandHighestSalePriceByUser = "highest_sale_price_by_user"
+	// CommandNewArtAuction is for new_art_auction
+	CommandNewArtAuction = "new_art_auction"
+	// CommandNftCopiesExist is for nft_copies_exist
+	CommandNftCopiesExist = "nft_copies_exist"
+	// CommandNftCreatedByArtist is for nft_created_by_artist
+	CommandNftCreatedByArtist = "nft_created_by_artist"
+	// CommandNftForSaleByArtist is for nft_for_sale_by_artist
+	CommandNftForSaleByArtist = "nft_for_sale_by_artist"
+	// CommandNftOwnedByUser is for nft_owned_by_user
+	CommandNftOwnedByUser = "nft_owned_by_user"
+	// CommandNftSoldByArtID is for nft_sold_by_art_id
+	CommandNftSoldByArtID = "nft_sold_by_art_id"
+	// CommandSnActivityWrite is for sn_activity_write
+	CommandSnActivityWrite = "sn_activity_write"
+	// CommandTransactionWrite is for transaction_write
+	CommandTransactionWrite = "transaction_write"
+	// CommandUniqueNftByUser is for unique_nft_by_user
+	CommandUniqueNftByUser = "unique_nft_by_user"
+	// CommandUserFollowDelete is for user_follow_delete
+	CommandUserFollowDelete = "user_follow_delete"
+	// CommandUserFollowWrite is for user_follow_write
+	CommandUserFollowWrite = "user_follow_write"
+	// CommandUsersLikeNft is for users_like_nft
+	CommandUsersLikeNft = "users_like_nft"
 )
 
 // ProcessRequest represents userdata created by wallet node
@@ -157,6 +190,7 @@ type Metric struct {
 	Data []byte
 }
 
+// ArtInfo is representation of an art
 type ArtInfo struct {
 	ArtID                 string  `mapstructure:"art_id" json:"art_id"`
 	ArtistPastelID        string  `mapstructure:"artist_pastel_id" json:"artist_pastel_id"`
@@ -167,6 +201,7 @@ type ArtInfo struct {
 	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage" json:"royalty_rate_percentage"`
 }
 
+// ArtInstanceInfo is representation of an art instance
 type ArtInstanceInfo struct {
 	InstanceID    string   `mapstructure:"instance_id" json:"instance_id"`
 	ArtID         string   `mapstructure:"art_id" json:"art_id"`
@@ -175,11 +210,13 @@ type ArtInstanceInfo struct {
 	AskingPrice   *float64 `mapstructure:"asking_price,omitempty" json:"asking_price,omitempty"`
 }
 
+// ArtLike is representation of an art like
 type ArtLike struct {
 	ArtID    string `mapstructure:"art_id" json:"art_id"`
 	PastelID string `mapstructure:"pastel_id" json:"pastel_id"`
 }
 
+// ArtTransaction is representation of an art transaction
 type ArtTransaction struct {
 	TransactionID  string  `mapstructure:"transaction_id" json:"transaction_id"`
 	InstanceID     string  `mapstructure:"instance_id" json:"instance_id"`
@@ -189,11 +226,13 @@ type ArtTransaction struct {
 	Price          float64 `mapstructure:"price" json:"price"`
 }
 
+// UserFollow is representation of user follow activity
 type UserFollow struct {
 	FollowerPastelID string `mapstructure:"follower_pastel_id" json:"follower_pastel_id"`
 	FolloweePastelID string `mapstructure:"followee_pastel_id" json:"followee_pastel_id"`
 }
 
+// NftCreatedByArtistQueryResult is representation of nft query result
 type NftCreatedByArtistQueryResult struct {
 	InstanceID            string  `mapstructure:"instance_id" json:"instance_id"`
 	ArtID                 string  `mapstructure:"art_id" json:"art_id"`
@@ -204,43 +243,51 @@ type NftCreatedByArtistQueryResult struct {
 	RoyaltyRatePercentage float64 `mapstructure:"royalty_rate_percentage" json:"royalty_rate_percentage"`
 }
 
+// NftForSaleByArtistQueryResult is representation of nft query result
 type NftForSaleByArtistQueryResult struct {
 	InstanceID string  `mapstructure:"instance_id" json:"instance_id"`
 	ArtID      string  `mapstructure:"art_id" json:"art_id"`
 	Price      float64 `mapstructure:"price" json:"price"`
 }
 
+// NftOwnedByUserQueryResult is representation of nft query result
 type NftOwnedByUserQueryResult struct {
 	ArtID string `mapstructure:"art_id" json:"art_id"`
 	Count int    `mapstructure:"cnt" json:"cnt"`
 }
 
+// NftSoldByArtIDQueryResult is representation of nft query result
 type NftSoldByArtIDQueryResult struct {
 	TotalCopies int `mapstructure:"total_copies" json:"total_copies"`
 	SoldCopies  int `mapstructure:"sold_copies" json:"sold_copies"`
 }
 
+// UniqueNftByUserQuery is representation of nft query result
 type UniqueNftByUserQuery struct {
 	ArtistPastelID string `mapstructure:"artist_pastel_id" json:"artist_pastel_id"`
 	LimitTimestamp int64  `mapstructure:"limit_timestamp" json:"limit_timestamp"`
 }
 
+// AskingPriceUpdateRequest is representation of asking price request
 type AskingPriceUpdateRequest struct {
 	InstanceID  string  `mapstructure:"instance_id" json:"instance_id"`
 	AskingPrice float64 `mapstructure:"asking_price" json:"asking_price"`
 }
 
+// ArtPlaceBidRequest is representation of place bid request
 type ArtPlaceBidRequest struct {
 	AuctionID int64   `mapstructure:"auction_id" json:"auction_id"`
 	PastelID  string  `mapstructure:"pastel_id" json:"pastel_id"`
 	BidPrice  float64 `mapstructure:"bid_price" json:"bid_price"`
 }
 
+// NewArtAuctionRequest is representation of new auction request
 type NewArtAuctionRequest struct {
 	InstanceID  string  `mapstructure:"instance_id" json:"instance_id"`
 	LowestPrice float64 `mapstructure:"lowest_price" json:"lowest_price"`
 }
 
+// ArtAuctionInfo is representation of art auction
 type ArtAuctionInfo struct {
 	AuctionID   int64      `mapstructure:"auction_id" json:"auction_id"`
 	InstanceID  string     `mapstructure:"instance_id" json:"instance_id"`
@@ -252,6 +299,7 @@ type ArtAuctionInfo struct {
 	SecondPrice *float64   `mapstructure:"second_price" json:"second_price"`
 }
 
+// SNActivityInfo is representation of SN activity
 type SNActivityInfo struct {
 	Query string `mapstructure:"query" json:"query"`
 
@@ -268,6 +316,7 @@ type SNActivityInfo struct {
 	Cnt int `mapstructure:"cnt" json:"cnt"`
 }
 
+// UserRelationshipItem is representation of user relationship
 type UserRelationshipItem struct {
 	Username       string `mapstructure:"username" json:"username"`
 	Realname       string `mapstructure:"real_name" json:"real_name"`
@@ -275,27 +324,32 @@ type UserRelationshipItem struct {
 	AvatarImage    []byte `mapstructure:"avatar_image" json:"avatar_image"`
 }
 
+// UserRelationshipQueryResult is representation of user relation ship query result
 type UserRelationshipQueryResult struct {
 	TotalCount int                    `mapstructure:"total_count" json:"total_count"`
 	Items      []UserRelationshipItem `mapstructure:"items" json:"items"`
 }
 
+// SNTopActivityRequest is representation of SN top activity request
 type SNTopActivityRequest struct {
 	ActivityType string `mapstructure:"activity_type" json:"activity_type"`
 	SNPastelID   string `mapstructure:"sn_pastel_id" json:"sn_pastel_id"`
 	NRecords     int    `mapstructure:"n_records" json:"n_records"`
 }
 
+// IDStringQuery is representation of ID string query
 type IDStringQuery struct {
 	ID string `mapstructure:"id" json:"id"`
 }
 
+// PaginationIDStringQuery is representation of Pagination ID String Query
 type PaginationIDStringQuery struct {
 	ID     string `mapstructure:"id" json:"id"`
 	Limit  int    `mapstructure:"limit" json:"limit"`
 	Offset int    `mapstructure:"offset" json:"offset"`
 }
 
+// IDIntQuery is representation of ID int query
 type IDIntQuery struct {
 	ID int64 `mapstructure:"id" json:"id"`
 }

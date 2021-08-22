@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
+// TemplateKeeper is a query template keeper
 type TemplateKeeper struct {
 	mp map[string]*template.Template
 }
@@ -25,6 +26,7 @@ func substituteTemplate(tmpl *template.Template, data interface{}) (string, erro
 	return templateBuffer.String(), nil
 }
 
+// GetCommand get a sql command
 func (k *TemplateKeeper) GetCommand(key string, data interface{}) (string, error) {
 	template := k.GetTemplate(key)
 	if template == nil {
@@ -33,6 +35,7 @@ func (k *TemplateKeeper) GetCommand(key string, data interface{}) (string, error
 	return substituteTemplate(template, data)
 }
 
+// GetTemplate get a sql template
 func (k *TemplateKeeper) GetTemplate(key string) *template.Template {
 	if tmpl, found := k.mp[key]; found {
 		return tmpl

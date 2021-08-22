@@ -62,7 +62,7 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
-// NewConfig is database operator
+// Ops is database operator
 type Ops struct {
 	metaDB    metadb.MetaDB
 	templates *TemplateKeeper
@@ -520,31 +520,6 @@ func (db *Ops) GetCumulatedSalePriceByUser(ctx context.Context, pastelID string)
 	}
 
 	return db.salePriceByUserQuery(ctx, command)
-}
-
-func (db *Ops) queryPastelID(ctx context.Context, command string) ([]string, error) {
-	if len(command) == 0 {
-		return nil, errors.Errorf("invalid command")
-	}
-
-	queryResult, err := db.metaDB.Query(ctx, command, queryLevelNone)
-	if err != nil {
-		return nil, errors.Errorf("error while querying db: %w", err)
-	}
-	if queryResult.Err != nil {
-		return nil, errors.Errorf("error while querying db: %w", queryResult.Err)
-	}
-
-	result := make([]string, 0)
-	for queryResult.Next() {
-		var id string
-		if err := queryResult.Scan(&id); err != nil {
-			return nil, errors.Errorf("error while scaning db result: %w", err)
-		}
-		result = append(result, id)
-	}
-
-	return result, nil
 }
 
 func (db *Ops) queryPastelIDPagination(ctx context.Context, command string) ([]string, int, error) {
