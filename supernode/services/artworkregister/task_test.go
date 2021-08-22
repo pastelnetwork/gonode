@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"testing"
+	"time"
+
+	"github.com/pastelnetwork/gonode/common/service/task"
 
 	"github.com/pastelnetwork/gonode/dupedetection"
 
@@ -812,6 +816,525 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			err := tc.args.task.verifyPeersSingature(context.Background())
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskWaitConfirmation(t *testing.T) {
+	type args struct {
+		task             *Task
+		txid             string
+		timeout          time.Duration
+		interval         time.Duration
+		minConfirmations int64
+		ctxTimeout       time.Duration
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+		retRes  *pastel.GetRawTransactionVerbose1Result
+		retErr  error
+	}{
+		"timeout": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Ticket: &pastel.NFTTicket{},
+				},
+				interval:   200 * time.Millisecond,
+				timeout:    100 * time.Millisecond,
+				ctxTimeout: 500 * time.Millisecond,
+			},
+			wantErr: errors.New("timeout"),
+		},
+		"min-confirmations-timeout": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Ticket: &pastel.NFTTicket{},
+				},
+				minConfirmations: 2,
+				timeout:          200 * time.Millisecond,
+				interval:         100 * time.Millisecond,
+				ctxTimeout:       500 * time.Millisecond,
+			},
+			retRes: &pastel.GetRawTransactionVerbose1Result{
+				Confirmations: 1,
+			},
+			wantErr: errors.New("timeout"),
+		},
+		"success": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Ticket: &pastel.NFTTicket{},
+				},
+				minConfirmations: 1,
+				timeout:          100 * time.Millisecond,
+				interval:         50 * time.Millisecond,
+				ctxTimeout:       500 * time.Millisecond,
+			},
+			retRes: &pastel.GetRawTransactionVerbose1Result{
+				Confirmations: 1,
+			},
+			wantErr: nil,
+		},
+		"ctx-done-err": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Ticket: &pastel.NFTTicket{},
+				},
+				minConfirmations: 1,
+				timeout:          100 * time.Millisecond,
+				interval:         50 * time.Millisecond,
+				ctxTimeout:       10 * time.Millisecond,
+			},
+			retRes: &pastel.GetRawTransactionVerbose1Result{
+				Confirmations: 1,
+			},
+			wantErr: errors.New("context"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+
+			ctx, cancel := context.WithTimeout(context.Background(), tc.args.ctxTimeout)
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.retRes, tc.retErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			err := <-tc.args.task.waitConfirmation(ctx, tc.args.txid,
+				tc.args.minConfirmations, tc.args.timeout, tc.args.interval)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+
+			cancel()
+		})
+	}
+
+}
+
+func TestTaskProbeImage(t *testing.T) {
+	type args struct {
+		task    *Task
+		fileErr error
+		genErr  error
+		genResp *dupedetection.DupeDetection
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				genErr:  nil,
+				fileErr: nil,
+				genResp: &dupedetection.DupeDetection{},
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:                    task.New(StatusConnected),
+					Ticket:                  &pastel.NFTTicket{},
+					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
+					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+				},
+			},
+			wantErr: nil,
+		},
+		"status-err": {
+			args: args{
+				genErr:  nil,
+				fileErr: nil,
+				genResp: &dupedetection.DupeDetection{},
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:                    task.New(StatusImageProbed),
+					Ticket:                  &pastel.NFTTicket{},
+					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
+					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+				},
+			},
+			wantErr: errors.New("required status"),
+		},
+		"gen-err": {
+			args: args{
+				genErr:  errors.New("test"),
+				fileErr: nil,
+				genResp: &dupedetection.DupeDetection{},
+				task: &Task{
+					Task: task.New(StatusConnected),
+					Service: &Service{
+						config: &Config{},
+					},
+					Ticket:                  &pastel.NFTTicket{},
+					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
+					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+				},
+			},
+			wantErr: errors.New("test"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			fsMock := storageMock.NewMockFileStorage()
+			fileMock := storageMock.NewMockFile()
+			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
+
+			storage := artwork.NewStorage(fsMock)
+			file := artwork.NewFile(storage, "test")
+			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
+
+			fingerprints := []float64{12.3, 34.4}
+			fgBytes, err := json.Marshal(fingerprints)
+			assert.Nil(t, err)
+
+			tc.args.genResp.Fingerprints = string(fgBytes)
+			ddmock := ddMock.NewMockClient(t)
+			ddmock.ListenOnGenerate(tc.args.genResp, tc.args.genErr)
+			tc.args.task.ddClient = ddmock
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			go tc.args.task.RunAction(ctx)
+
+			_, err = tc.args.task.ProbeImage(context.Background(), file)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskGetRegistrationFee(t *testing.T) {
+	type args struct {
+		task   *Task
+		retFee int64
+		retErr error
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
+					Ticket: &pastel.NFTTicket{
+						AppTicketData: pastel.AppTicket{
+							AuthorPastelID: "author-id-b",
+							CreatorName:    "Andy",
+							NFTTitle:       "alantic",
+						},
+					},
+				},
+			},
+			wantErr: nil,
+		},
+
+		"status-err": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task: task.New(StatusConnected),
+					Ticket: &pastel.NFTTicket{
+						AppTicketData: pastel.AppTicket{
+							AuthorPastelID: "author-id-b",
+							CreatorName:    "Andy",
+							NFTTitle:       "alantic",
+						},
+					},
+				},
+			},
+			wantErr: errors.New("require status"),
+		},
+		"fee-err": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
+					Ticket: &pastel.NFTTicket{
+						AppTicketData: pastel.AppTicket{
+							AuthorPastelID: "author-id-b",
+							CreatorName:    "Andy",
+							NFTTitle:       "alantic",
+						},
+					},
+				},
+				retErr: errors.New("test"),
+			},
+			wantErr: errors.New("test"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetRegisterNFTFee(tc.args.retFee, tc.args.retErr)
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			go tc.args.task.RunAction(ctx)
+			artTicketBytes, err := pastel.EncodeNFTTicket(tc.args.task.Ticket)
+			assert.Nil(t, err)
+
+			_, err = tc.args.task.GetRegistrationFee(context.Background(), artTicketBytes,
+				[]byte{}, "", "", map[string][]byte{}, []byte{})
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskSessionNode(t *testing.T) {
+	type args struct {
+		task           *Task
+		nodeID         string
+		masterNodesErr error
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:   task.New(StatusPrimaryMode),
+					Ticket: &pastel.NFTTicket{},
+				},
+				masterNodesErr: nil,
+				nodeID:         "A",
+			},
+			wantErr: nil,
+		},
+		"status-err": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:   task.New(StatusConnected),
+					Ticket: &pastel.NFTTicket{},
+				},
+				masterNodesErr: nil,
+				nodeID:         "A",
+			},
+			wantErr: errors.New("status"),
+		},
+		"pastel-err": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:   task.New(StatusPrimaryMode),
+					Ticket: &pastel.NFTTicket{},
+				},
+				masterNodesErr: errors.New("test"),
+				nodeID:         "A",
+			},
+			wantErr: errors.New("failed to get node"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			go tc.args.task.RunAction(ctx)
+
+			nodes := pastel.MasterNodes{}
+			for i := 0; i < 10; i++ {
+				nodes = append(nodes, pastel.MasterNode{})
+			}
+			nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			tc.args.task.pastelClient = pastelClientMock
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			err := tc.args.task.SessionNode(context.Background(), tc.args.nodeID)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskAddPeerArticketSignature(t *testing.T) {
+	type args struct {
+		task           *Task
+		nodeID         string
+		masterNodesErr error
+		acceptedNodeID string
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					peersArtTicketSignatureMtx: &sync.Mutex{},
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:                  task.New(StatusRegistrationFeeCalculated),
+					Ticket:                &pastel.NFTTicket{},
+					allSignaturesReceived: make(chan struct{}),
+				},
+				masterNodesErr: nil,
+				nodeID:         "A",
+				acceptedNodeID: "A",
+			},
+			wantErr: nil,
+		},
+		"status-err": {
+			args: args{
+				task: &Task{
+					peersArtTicketSignatureMtx: &sync.Mutex{},
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:                  task.New(StatusConnected),
+					Ticket:                &pastel.NFTTicket{},
+					allSignaturesReceived: make(chan struct{}),
+				},
+				masterNodesErr: nil,
+				nodeID:         "A",
+				acceptedNodeID: "A",
+			},
+			wantErr: errors.New("status"),
+		},
+		"no-node-err": {
+			args: args{
+				task: &Task{
+					peersArtTicketSignatureMtx: &sync.Mutex{},
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:                  task.New(StatusRegistrationFeeCalculated),
+					Ticket:                &pastel.NFTTicket{},
+					allSignaturesReceived: make(chan struct{}),
+				},
+				masterNodesErr: nil,
+				nodeID:         "A",
+				acceptedNodeID: "B",
+			},
+			wantErr: errors.New("accepted"),
+		},
+		"success-close-sign-chn": {
+			args: args{
+				task: &Task{
+					peersArtTicketSignatureMtx: &sync.Mutex{},
+					Service: &Service{
+						config: &Config{},
+					},
+					allSignaturesReceived: make(chan struct{}),
+					Task:                  task.New(StatusRegistrationFeeCalculated),
+					Ticket:                &pastel.NFTTicket{},
+				},
+				masterNodesErr: nil,
+				nodeID:         "A",
+				acceptedNodeID: "A",
+			},
+			wantErr: nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			go tc.args.task.RunAction(ctx)
+
+			nodes := pastel.MasterNodes{}
+			for i := 0; i < 10; i++ {
+				nodes = append(nodes, pastel.MasterNode{})
+			}
+			nodes = append(nodes, pastel.MasterNode{ExtKey: tc.args.nodeID})
+			tc.args.task.accepted = Nodes{&Node{ID: tc.args.acceptedNodeID, Address: tc.args.acceptedNodeID}}
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnMasterNodesTop(nodes, tc.args.masterNodesErr)
+			tc.args.task.pastelClient = pastelClientMock
+			tc.args.task.Service.pastelClient = pastelClientMock
+
+			tc.args.task.peersArtTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
+
+			err := tc.args.task.AddPeerArticketSignature(tc.args.nodeID, []byte{})
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
