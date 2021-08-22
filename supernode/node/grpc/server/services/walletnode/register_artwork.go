@@ -195,7 +195,8 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 			PerceptualHash: fingerAndScores.ImageHashes.PerceptualHash,
 			AverageHash:    fingerAndScores.ImageHashes.AverageHash,
 			DifferenceHash: fingerAndScores.ImageHashes.DifferenceHash,
-			PdqHash:        fingerAndScores.ImageHashes.PDQHash,
+			PDQHash:        fingerAndScores.ImageHashes.PDQHash,
+			NeuralHash:     fingerAndScores.ImageHashes.NeuralHash,
 		},
 	}
 

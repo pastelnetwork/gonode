@@ -144,8 +144,10 @@ type ArtworkGetResponseBody struct {
 	PornNsfwScore *float64 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
 	// nsfw score
 	HentaiNsfwScore *float64 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
-	// Thumbnail image
-	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// Thumbnail_1 image
+	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
+	// Thumbnail_2 image
+	Thumbnail2 []byte `form:"thumbnail_2,omitempty" json:"thumbnail_2,omitempty" xml:"thumbnail_2,omitempty"`
 	// txid
 	Txid string `form:"txid" json:"txid" xml:"txid"`
 	// Name of the artwork
@@ -587,8 +589,10 @@ type ThumbnailcoordinateResponse struct {
 
 // ArtworkSummaryResponseBody is used to define fields on response body types.
 type ArtworkSummaryResponseBody struct {
-	// Thumbnail image
-	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// Thumbnail_1 image
+	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
+	// Thumbnail_2 image
+	Thumbnail2 []byte `form:"thumbnail_2,omitempty" json:"thumbnail_2,omitempty" xml:"thumbnail_2,omitempty"`
 	// txid
 	Txid string `form:"txid" json:"txid" xml:"txid"`
 	// Name of the artwork
@@ -729,7 +733,8 @@ func NewArtworkGetResponseBody(res *artworks.ArtworkDetail) *ArtworkGetResponseB
 		SexyNsfwScore:         res.SexyNsfwScore,
 		PornNsfwScore:         res.PornNsfwScore,
 		HentaiNsfwScore:       res.HentaiNsfwScore,
-		Thumbnail:             res.Thumbnail,
+		Thumbnail1:            res.Thumbnail1,
+		Thumbnail2:            res.Thumbnail2,
 		Txid:                  res.Txid,
 		Title:                 res.Title,
 		Description:           res.Description,

@@ -295,12 +295,6 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	<-task.NewAction(func(ctx context.Context) error {
 		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), task.config.PreburntTxConfirmationTimeout)
 
-		if err = task.matchFingersPrintAndScores(ctx); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("fingerprints or scores don't matched")
-			err = errors.Errorf("fingerprints or scores don't matched")
-			return nil
-		}
-
 		// compare rqsymbols
 		if err = task.compareRQSymbolID(ctx); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("failed to generate rqids")
@@ -393,20 +387,6 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	return nftRegTxid, err
 }
 
-func (task *Task) matchFingersPrintAndScores(ctx context.Context) error {
-	log.WithContext(ctx).Debug("match fingerprints and scores")
-
-	fingerAndScores, _, err := task.genFingerprintsData(ctx, task.Artwork)
-	if err != nil {
-		return errors.Errorf("failed to generate fingerprints data %w", err)
-	}
-
-	if err := pastel.CompareFingerPrintAndScore(task.fingerAndScores, fingerAndScores); err != nil {
-		return errors.Errorf("fingerprint or scores are not equal: %w", err)
-	}
-	return nil
-}
-
 func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, timeout time.Duration) <-chan error {
 	ch := make(chan error)
 	timeoutCh := make(chan struct{})
@@ -449,7 +429,7 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 	if err != nil {
 		return errors.Errorf("failed to serialize NFT ticket %w", err)
 	}
-	task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase, "ed448")
+	task.ownSignature, err = task.pastelClient.Sign(ctx, ticket, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
@@ -470,7 +450,7 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 		return errors.Errorf("failed to encoded NFT ticket %w", err)
 	}
 	for nodeID, signature := range task.peersArtTicketSignature {
-		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID, "ed448"); err != nil {
+		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
 			return errors.Errorf("failed to verify signature %s of node %s", signature, nodeID)
 		} else if !ok {
 			return errors.Errorf("signature of node %s mistmatch", nodeID)
@@ -625,6 +605,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 			AverageHash:    ddResult.ImageHashes.AverageHash,
 			DifferenceHash: ddResult.ImageHashes.DifferenceHash,
 			PDQHash:        ddResult.ImageHashes.PDQHash,
+			NeuralHash:     ddResult.ImageHashes.NeuralHash,
 		},
 	}
 	compressedFg, err := zstd.CompressLevel(nil, pastel.Fingerprint(fingerprint).Bytes(), 22)

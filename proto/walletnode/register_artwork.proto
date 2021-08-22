@@ -70,7 +70,8 @@ message ProbeImageReply {
       string perceptual_hash = 1;
       string average_hash = 2;
       string difference_hash = 3;
-      string pdq_hash = 4;
+      string PDQ_hash = 4;
+      string neural_hash = 5;
     }
     // version of dupde detection system
     string dupe_detection_version = 1;

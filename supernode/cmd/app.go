@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
@@ -18,6 +19,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection"
 	"github.com/pastelnetwork/gonode/metadb"
+	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
@@ -28,6 +30,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
 
 const (
@@ -47,8 +50,10 @@ var (
 	defaultWorkDir          = filepath.Join(defaultPath, appName)
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
-	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
-	defaultDdWorkDir        = filepath.Join(homePath, ddWorkDir)
+
+	rqliteDefaultPort = 4446
+	defaultRqFilesDir = filepath.Join(defaultPath, rqFilesDir)
+	defaultDdWorkDir  = filepath.Join(homePath, ddWorkDir)
 )
 
 // NewApp inits a new command line interface.
@@ -126,6 +131,33 @@ func NewApp() *cli.App {
 	return app
 }
 
+func getDatabaseNodes(ctx context.Context, pastelClient pastel.Client) ([]string, error) {
+	var nodeIPList []string
+	// Note: Lock the db clustering feature, run it in single node first
+	if test := sys.GetStringEnv("DB_CLUSTER", ""); test != "" {
+		nodeList, err := pastelClient.MasterNodesList(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, nodeInfo := range nodeList {
+			address := nodeInfo.ExtAddress
+			segments := strings.Split(address, ":")
+			if len(segments) != 2 {
+				return nil, errors.Errorf("malformed db node address: %s", address)
+			}
+			nodeAddress := fmt.Sprintf("%s:%d", segments[0], rqliteDefaultPort)
+			nodeIPList = append(nodeIPList, nodeAddress)
+		}
+	}
+
+	// Important notice !!!
+	// Enable this line below to run rqlite with 1 leader and multiple replicas, if want to test the real rqlite cluster behavior
+	// Otherwise, this will run rqlite cluster with every node as a rqlite leader, and data to highest rank SN can write directly to its local rqlite
+	// return []string{"0.0.0.0:4041"}, nil
+
+	return nodeIPList, nil
+}
+
 func runApp(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
@@ -153,9 +185,15 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.P2P.SetWorkDir(config.WorkDir)
 	p2p := p2p.New(config.P2P)
 
+	nodeIPList, err := getDatabaseNodes(ctx, pastelClient)
+	if err != nil {
+		return err
+	}
+
 	// new metadb service
 	config.MetaDB.SetWorkDir(config.WorkDir)
-	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
+	metadb := metadb.New(config.MetaDB, config.Node.PastelID, nodeIPList)
+	database := database.NewDatabaseOps(metadb, config.UserDB)
 
 	// raptorq client
 	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
@@ -176,12 +214,18 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		return errors.Errorf("can not start dupe detection service, err: %w", err)
 	}
 
+	// ----Userdata Services----
+	userdataNodeClient := client.New()
+	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
+
 	// server
 	grpc := server.New(config.Server,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),
+		walletnode.NewProcessUserdata(userdataProcess, database),
+		supernode.NewProcessUserdata(userdataProcess, database),
 	)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess)
 }

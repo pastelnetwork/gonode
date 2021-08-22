@@ -269,8 +269,10 @@ type ArtworkDetail struct {
 	PornNsfwScore *float64
 	// nsfw score
 	HentaiNsfwScore *float64
-	// Thumbnail image
-	Thumbnail []byte
+	// Thumbnail_1 image
+	Thumbnail1 []byte
+	// Thumbnail_2 image
+	Thumbnail2 []byte
 	// txid
 	Txid string
 	// Name of the artwork
@@ -359,8 +361,10 @@ type ArtworkTicket struct {
 
 // Artwork response
 type ArtworkSummary struct {
-	// Thumbnail image
-	Thumbnail []byte
+	// Thumbnail_1 image
+	Thumbnail1 []byte
+	// Thumbnail_2 image
+	Thumbnail2 []byte
 	// txid
 	Txid string
 	// Name of the artwork

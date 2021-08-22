@@ -14,6 +14,13 @@ import (
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 )
 
+const (
+	// SignAlgorithmED448 is ED448 signature algorithm
+	SignAlgorithmED448 = "ed448"
+	// SignAlgorithmLegRoast is Efficient post-quantum signatures algorithm
+	SignAlgorithmLegRoast = "legroast"
+)
+
 type client struct {
 	jsonrpc.RPCClient
 }
@@ -40,6 +47,18 @@ func (client *client) MasterNodesTop(ctx context.Context) (MasterNodes, error) {
 		return nil, errors.Errorf("failed to get top masternodes: %w", err)
 	}
 
+	for _, masterNodes := range blocknumMNs {
+		return masterNodes, nil
+	}
+	return nil, nil
+}
+
+// MasterNodesList implements pastel.Client.MasterNodesList
+func (client *client) MasterNodesList(ctx context.Context) (MasterNodes, error) {
+	blocknumMNs := make(map[string]MasterNodes)
+	if err := client.callFor(ctx, &blocknumMNs, "masternode", "list", "full"); err != nil {
+		return nil, errors.Errorf("failed to get list of masternodes: %w", err)
+	}
 	for _, masterNodes := range blocknumMNs {
 		return masterNodes, nil
 	}
@@ -117,7 +136,7 @@ func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphras
 	text := base64.StdEncoding.EncodeToString(data)
 
 	switch algorithm {
-	case "ed448", "legroast":
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
 		if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase, algorithm); err != nil {
 			return nil, errors.Errorf("failed to sign data: %w", err)
 		}
@@ -135,12 +154,12 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 	text := base64.StdEncoding.EncodeToString(data)
 
 	switch algorithm {
-	case "ed448", "legroast":
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
 		if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID, algorithm); err != nil {
 			return false, errors.Errorf("failed to verify data: %w", err)
 		}
 	default:
-		return false, errors.Errorf("unsupported algoritm %s", algorithm)
+		return false, errors.Errorf("unsupported algorithm %s", algorithm)
 	}
 
 	return verify.Verification == "OK", nil

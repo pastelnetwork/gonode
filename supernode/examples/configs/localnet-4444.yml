@@ -13,6 +13,9 @@ node:
   server:
     listen_addresses: "0.0.0.0"
     port: 4444
+  userdata_process:
+    number_super_nodes: 3
+    minimal_node_confirm_success: 2
 
 p2p:
   listen_address: "0.0.0.0"
@@ -20,11 +23,18 @@ p2p:
   data_dir: "p2p-localnet-6000"
 
 metadb:
+  is_leader: true
+  none_voter: false
+  exposed_address: "0.0.0.0:4041"
   listen_address: "0.0.0.0"
   http_port: 4041
   raft_port: 4042
   data_dir: "metadb-4444"
 
+userdb:
+  schema-path: ../metadb/database/commands/schema_v1.sql
+  write-template-path: ../metadb/database/commands/user_info_write.tmpl
+  query-template-path: ../metadb/database/commands/user_info_query.tmpl
 raptorq:
   hostname: "localhost"
   port: 50051

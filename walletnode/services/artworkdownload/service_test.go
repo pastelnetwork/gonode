@@ -198,7 +198,6 @@ func TestServiceGetTask(t *testing.T) {
 }
 
 func TestServiceListTasks(t *testing.T) {
-	t.Skip()
 	type args struct {
 		ctx     context.Context
 		tickets []*Ticket

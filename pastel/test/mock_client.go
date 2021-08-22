@@ -56,6 +56,9 @@ const (
 
 	// RegisterNFTTicket represents RegisterNFTTicket method name
 	RegisterNFTTicket = "RegisterNFTTicket"
+
+	// RegisterArtTicketMethod represents RegisterArtTicket method
+	RegisterArtTicketMethod = "RegisterArtTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -175,8 +178,7 @@ func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err erro
 
 // ListenOnRegisterNFTTicket listening on RegisterNFTTicket
 func (client *Client) ListenOnRegisterNFTTicket(txid string, err error) *Client {
-	client.On(RegisterNFTTicket, mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("int"),
-		mock.AnythingOfType("int64"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(txid, err)
+	client.On(RegisterNFTTicket, mock.Anything, mock.Anything).Return(txid, err)
 	return client
 }
 
@@ -222,6 +224,12 @@ func (client *Client) AssertListAvailableTradeTicketsCall(expectedCalls int, arg
 // ListenOnVerify listening Verify call and returns values from args
 func (client *Client) ListenOnVerify(isValid bool, returnErr error) *Client {
 	client.On(VerifyMethod, mock.Anything, mock.IsType([]byte{}), mock.IsType(string("")), mock.IsType(string("")), mock.Anything).Return(isValid, returnErr)
+	return client
+}
+
+// ListenOnRegisterArtTicket listenes register art ticket & return id & err
+func (client *Client) ListenOnRegisterArtTicket(retID string, retErr error) *Client {
+	client.On(RegisterArtTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
 	return client
 }
 

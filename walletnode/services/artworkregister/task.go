@@ -260,7 +260,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
 	// Sign fingerprint
 	ed448PubKey := []byte(task.Request.ArtistPastelID)
-	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
+	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign fingerprint with pastelId and pastelPassphrase failed %w", err)
 	}
@@ -270,7 +270,7 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	if err != nil {
 		return errors.Errorf("failed to find register ticket of artist pastel id:%s :%w", task.Request.ArtistPastelID, err)
 	}
-	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "legroast")
+	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmLegRoast)
 	if err != nil {
 		return errors.Errorf("failed to sign fingerprint with legroats: %w", err)
 	}
@@ -506,7 +506,7 @@ func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawS
 	}
 
 	// log.WithContext(ctx).Debugf("%s", content)
-	signature, err := task.pastelClient.Sign(ctx, content, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
+	signature, err := task.pastelClient.Sign(ctx, content, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return "", nil, errors.Errorf("failed to sign identifiers file: %w", err)
 	}
@@ -552,6 +552,8 @@ func (task *Task) createArtTicket(_ context.Context) error {
 		return errEmptyRaptorQSymbols
 	}
 
+	nftType := pastel.NFTTypeImage
+
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
 	ticket := &pastel.NFTTicket{
 		Version:   1,
@@ -572,6 +574,7 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			NFTSeriesName:              safeString(task.Request.SeriesName),
 			NFTCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
 			NFTKeywordSet:              safeString(task.Request.Keywords),
+			NFTType:                    nftType,
 			TotalCopies:                task.Request.IssuedCopies,
 			PreviewHash:                task.previewHash,
 			Thumbnail1Hash:             task.mediumThumbnailHash,
@@ -594,9 +597,11 @@ func (task *Task) createArtTicket(_ context.Context) error {
 				Sexy:    task.fingerprintAndScores.AlternativeNSFWScore.Sexy,
 			},
 			ImageHashes: pastel.ImageHashes{
-				PerceptualHash: "",
-				AverageHash:    "",
-				DifferenceHash: "",
+				PerceptualHash: task.fingerprintAndScores.ImageHashes.PerceptualHash,
+				AverageHash:    task.fingerprintAndScores.ImageHashes.AverageHash,
+				DifferenceHash: task.fingerprintAndScores.ImageHashes.DifferenceHash,
+				PDQHash:        task.fingerprintAndScores.ImageHashes.PDQHash,
+				NeuralHash:     task.fingerprintAndScores.ImageHashes.NeuralHash,
 			},
 			RQIDs: task.rqids,
 			RQOti: task.rqEncodeParams.Oti,
@@ -613,7 +618,7 @@ func (task *Task) signTicket(ctx context.Context) error {
 		return errors.Errorf("failed to encode ticket %w", err)
 	}
 
-	task.creatorSignature, err = task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, "ed448")
+	task.creatorSignature, err = task.pastelClient.Sign(ctx, data, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("failed to sign ticket %w", err)
 	}
