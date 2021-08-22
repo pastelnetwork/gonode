@@ -9,9 +9,8 @@ node:
   server:
     listen_addresses: "0.0.0.0"
     port: 4447
-  userdata_process:
-    number_super_nodes: 3
-    minimal_node_confirm_success: 2
+  number_super_nodes: 3
+  minimal_node_confirm_success: 2
 
 p2p:
   listen_address: "0.0.0.0"

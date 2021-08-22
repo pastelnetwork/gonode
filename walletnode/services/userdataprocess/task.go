@@ -239,6 +239,8 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	// FIXME: ugly hack here. Need to make the Node and List to be safer
 	secondariesMtx := &sync.Mutex{}
 	var secondaries node.List
+	var wg sync.WaitGroup
+	wg.Add(len(nodes) - 1)
 	go func() {
 		for i, node := range nodes {
 			node := node
@@ -253,11 +255,14 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 			case <-time.After(task.config.connectToNextNodeDelay):
 				go func() {
 					defer errors.Recover(log.Fatal)
+					defer wg.Done()
 
 					if err := node.Connect(ctx, task.config.connectTimeout); err != nil {
+						log.WithContext(ctx).Errorf("error while connecting to primary %s", err)
 						return
 					}
 					if err := node.Session(ctx, false); err != nil {
+						log.WithContext(ctx).Errorf("error while creating session %s", err)
 						return
 					}
 					go func() {
@@ -267,6 +272,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 					}()
 
 					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
+						log.WithContext(ctx).Errorf("error while creating connection %s", err)
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
@@ -274,6 +280,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 			}
 		}
 	}()
+	wg.Wait()
 
 	acceptCtx, acceptCancel := context.WithTimeout(ctx, task.config.acceptNodesTimeout)
 	defer acceptCancel()

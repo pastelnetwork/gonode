@@ -3,6 +3,7 @@ package artworksearch
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -14,7 +15,9 @@ import (
 )
 
 const (
-	logPrefix = "artwork"
+	logPrefix            = "artwork"
+	getTaskRetry         = 3
+	getTaskRetryInterval = 100 * time.Millisecond
 )
 
 // Service represents a service for the artwork search.
@@ -48,7 +51,13 @@ func (service *Service) Tasks() []*Task {
 
 // Task returns the task of the artwork search by the given id.
 func (service *Service) Task(id string) *Task {
-	return service.Worker.Task(id).(*Task)
+	for i := 0; i < getTaskRetry; i++ {
+		if task := service.Worker.Task(id); task != nil {
+			return task.(*Task)
+		}
+		time.Sleep(getTaskRetryInterval)
+	}
+	return nil
 }
 
 // AddTask runs a new task of the artwork search and returns its taskID.

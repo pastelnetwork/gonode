@@ -135,34 +135,20 @@ curl -X 'POST' \
 }'
 
 --- GET FOLLOWERS ---
-curl -X 'GET'   'http://localhost:8080/userdatas/follow/followers'   -H 'accept: application/json'   -H 'Content-Type: application/json'   -d '{
-  "limit": 10,
-  "offset": 0,
-  "pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS"
-}'
+curl -X 'GET' \
+  'http://localhost:8080/userdatas/follow/followers?pastelid=jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS&limit=10&offset=0' \
+  -H 'accept: application/json'
 
 --- GET FOLLOWEES ---
 curl -X 'GET' \
-  'http://localhost:8080/userdatas/follow/followees' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "limit": 10,
-  "offset": 0,
-  "pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS"
-}'
+  'http://localhost:8080/userdatas/follow/followees?pastelid=jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS&limit=10&offset=0' \
+  -H 'accept: application/json'
 
 --- GET FRIEND ---
 curl -X 'GET' \
-  'http://localhost:8080/userdatas/follow/friends' \
-  -H 'accept: application/json' \
-  -H 'Content-Type: application/json' \
-  -d '{
-  "limit": 10,
-  "offset": 0,
-  "pastelid": "jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS"
-}'
-
+  'http://localhost:8080/userdatas/follow/friends?pastelid=jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS&limit=10&offset=0' \
+  -H 'accept: application/json'
+  
 --- SET ART LIKE ---
 curl -X 'POST' \
   'http://localhost:8080/userdatas/like/art' \
