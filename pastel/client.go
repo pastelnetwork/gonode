@@ -427,6 +427,22 @@ func (client *client) GetBalance(ctx context.Context, address string) (float64, 
 	return balance, nil
 }
 
+func (client *client) GenBlock(ctx context.Context, amount int) ([]string, error) {
+	var blockHashes []string
+	if err := client.callFor(ctx, &blockHashes, "generate", amount); err != nil {
+		return nil, errors.Errorf("failed to call generate: %w", err)
+	}
+	return blockHashes, nil
+}
+
+func (client *client) FindActTicketByCreatorHeight(ctx context.Context, creatorHeight int32) ([]ActTicket, error) {
+	tickets := []ActTicket{}
+	if err := client.callFor(ctx, &tickets, "tickets", "find", "act", strconv.FormatInt(int64(creatorHeight), 10)); err != nil {
+		return nil, errors.Errorf("failed to call tickets get act %d: %w", creatorHeight, err)
+	}
+	return tickets, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }

@@ -152,6 +152,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// send preburn-txid to master node(s)
 	// master node will create reg-art ticket and returns transaction id
+	task.UpdateStatus(StatusPreburntRegistrationFee)
 	if err := task.preburntRegistrationFee(ctx); err != nil {
 		return errors.Errorf("faild to pre-burnt ten percent of registration fee: %w", err)
 	}
@@ -166,11 +167,13 @@ func (task *Task) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
+	task.UpdateStatus(StatusTicketAccepted)
 	if err := task.waitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout, 15*time.Second); err != nil {
 		return errors.Errorf("failed to wait reg-nft ticket valid %w", err)
 	}
 
 	// activate reg-art ticket at previous step
+	task.UpdateStatus(StatusTicketRegistered)
 	actTxid, err := task.registerActTicket(newCtx)
 	if err != nil {
 		return errors.Errorf("failed to register act ticket %w", err)
@@ -182,6 +185,7 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("failed to reg-act ticket valid %w", err)
 	}
+	task.UpdateStatus(StatusTicketActivated)
 	log.Debugf("reg-act-tixd is confirmed")
 
 	return nil

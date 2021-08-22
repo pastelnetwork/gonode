@@ -119,4 +119,12 @@ type Client interface {
 	// GetBalance returns the amount of PSL stored at address
 	// Command `z_getbalance address`
 	GetBalance(ctx context.Context, address string) (float64, error)
+
+	// GenBlock generates amount of block from the miner inorder to confirm transaction
+	// Command `generate amount`
+	GenBlock(ctx context.Context, amount int) ([]string, error)
+
+	// GetActTicketByCreatorHeight returns act-ticket at creatorHeight
+	// Command `get act creatorHeight`
+	FindActTicketByCreatorHeight(ctx context.Context, creatorHeight int32) ([]ActTicket, error)
 }

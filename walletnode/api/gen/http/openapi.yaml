@@ -1869,6 +1869,7 @@ definitions:
         - Image Probed
         - Image And Thumbnail Uploaded
         - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -2035,6 +2036,7 @@ definitions:
         - Image Probed
         - Image And Thumbnail Uploaded
         - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -2440,6 +2442,7 @@ definitions:
         - Image Probed
         - Image And Thumbnail Uploaded
         - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated
@@ -2506,6 +2509,7 @@ definitions:
         - Image Probed
         - Image And Thumbnail Uploaded
         - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
         - Ticket Accepted
         - Ticket Registered
         - Ticket Activated

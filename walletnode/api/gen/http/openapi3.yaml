@@ -1778,6 +1778,7 @@ components:
           - Image Probed
           - Image And Thumbnail Uploaded
           - Status Gen ReptorQ Symbols
+          - Preburn Registration Fee
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
@@ -1850,6 +1851,7 @@ components:
           - Image Probed
           - Image And Thumbnail Uploaded
           - Status Gen ReptorQ Symbols
+          - Preburn Registration Fee
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated
@@ -2022,6 +2024,7 @@ components:
           - Image Probed
           - Image And Thumbnail Uploaded
           - Status Gen ReptorQ Symbols
+          - Preburn Registration Fee
           - Ticket Accepted
           - Ticket Registered
           - Ticket Activated

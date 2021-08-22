@@ -8,7 +8,7 @@ require (
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/walletnode v0.0.0-20210723172801-5d493665cdd7
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/stretchr/testify v1.7.0
 	goa.design/goa/v3 v3.4.3
 )
 
