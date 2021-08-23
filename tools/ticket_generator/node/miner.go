@@ -9,11 +9,11 @@ import (
 )
 
 type Miner struct {
-	config       config.MinderNode
+	config       config.MinerNode
 	pastelClient pastel.Client
 }
 
-func NewMiner(config config.MinderNode) *Miner {
+func NewMiner(config config.MinerNode) *Miner {
 	pastelCfg := &pastel.Config{
 		Hostname: ptrFromStr(config.PastelAPI.Hostname),
 		Port:     ptrFromInt(config.PastelAPI.Port),

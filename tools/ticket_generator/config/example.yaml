@@ -1,21 +1,21 @@
-wallet-node:
+wallet_node:
   pastel_api:
-    hostname: "locahost"
+    hostname: "localhost"
     port: 12170
     username: "rt"
-    password: "rt"
+    passphrase: "rt"
   rest_api:
-    hostname: "locahost"
+    hostname: "localhost"
     port: 8080
   artist:
-    pastel_id: ""
+    pastel_id: "jXa8KpmY4cf2PMXbHFL6wYkS7MaD1FjqHV1MUJPnVv2Ayua8TQ3PUu2Dtyr9mTUEW1BGZbCrdQ54mPp6gsaF1s"
     passphrase: "passphrase"
-    spendable_addr: ""
+    spendable_addr: "tPSFddCX7intdWJpig5931VeEAYPnkt4CFL"
 
-miner-node:
+miner_node:
   pastel_api:
-    hostname: "locahost"
-    port: 12170
+    hostname: "localhost"
+    port: 12169
     username: "rt"
     passphrase: "rt"
     

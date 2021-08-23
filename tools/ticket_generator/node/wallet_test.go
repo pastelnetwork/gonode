@@ -50,7 +50,7 @@ func TestUploadImage(t *testing.T) {
 	assert.Nil(t, err, fmt.Sprintf("%s", err))
 	assert.NotNil(t, stateReceiver, "task state receiver is nil")
 
-	minerConfig := config.MinderNode{
+	minerConfig := config.MinerNode{
 		PastelAPI: config.PastelAPI{
 			Hostname:   "localhost",
 			Port:       12169,
