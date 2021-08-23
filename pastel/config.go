@@ -1,28 +1,22 @@
 package pastel
 
-import "encoding/json"
-
-const (
-	defaultHostname = "localhost"
-	defaultPort     = 9932
+import (
+	"encoding/json"
 )
 
-// ExternalConfig represents the structure of the `pastel.conf` file.
-type ExternalConfig struct {
+const (
+	defaultHostname    = "localhost"
+	defaultMainnetPort = 9932
+	defaultTestnetPort = 19932
+)
+
+// Config Represents the structure of the `pastel.conf` file.
+type Config struct {
 	Hostname string `mapstructure:"rpcconnect"`
 	Port     int    `mapstructure:"rpcport"`
 	Username string `mapstructure:"rpcuser"`
 	Password string `mapstructure:"rpcpassword"`
-}
-
-// Config contains settings of the Pastel client.
-type Config struct {
-	*ExternalConfig
-
-	Hostname *string `mapstructure:"hostname"`
-	Port     *int    `mapstructure:"port"`
-	Username *string `mapstructure:"username"`
-	Password *string `mapstructure:"password"`
+	Testnet  int    `mapstructure:"testnet"`
 }
 
 // MarshalJSON returns the JSON encoding.
@@ -33,51 +27,31 @@ func (config *Config) MarshalJSON() ([]byte, error) {
 		Username string `json:"username,omitempty"`
 		Password string `json:"-"`
 	}{
-		Hostname: config.hostname(),
+		Hostname: config.Hostname,
 		Port:     config.port(),
-		Username: config.username(),
-		Password: config.password(),
+		Username: config.Username,
+		Password: config.Password,
 	})
 }
 
-// Hostname returns node hostname if it is specified, otherwise returns hostname from external config.
-func (config *Config) hostname() string {
-	if config.Hostname != nil {
-		return *config.Hostname
-	}
-	return config.ExternalConfig.Hostname
-}
-
-// Port returns node port if it is specified, otherwise returns port from external config.
+// Port returns port from external config.
+// if port is not provided & testnet=1 it uses default testnet port
+// else it uses default mainnet port
 func (config *Config) port() int {
-	if config.Port != nil {
-		return *config.Port
+	if config.Port != 0 {
+		return config.Port
 	}
-	return config.ExternalConfig.Port
-}
 
-// Username returns username port if it is specified, otherwise returns username from external config.
-func (config *Config) username() string {
-	if config.Username != nil {
-		return *config.Username
+	if config.Testnet == 1 {
+		return defaultTestnetPort
 	}
-	return config.ExternalConfig.Username
-}
 
-// Password returns password port if it is specified, otherwise returns password from external config.
-func (config *Config) password() string {
-	if config.Password != nil {
-		return *config.Password
-	}
-	return config.ExternalConfig.Password
+	return defaultMainnetPort
 }
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{
-		ExternalConfig: &ExternalConfig{
-			Hostname: defaultHostname,
-			Port:     defaultPort,
-		},
+		Hostname: defaultHostname,
 	}
 }
