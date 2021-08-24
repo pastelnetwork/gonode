@@ -184,10 +184,10 @@ func NewWallet(config config.WalletNode) *Wallet {
 	)
 
 	pastelCfg := &pastel.Config{
-		Hostname: ptrFromStr(config.PastelAPI.Hostname),
-		Port:     ptrFromInt(config.PastelAPI.Port),
-		Username: ptrFromStr(config.PastelAPI.Username),
-		Password: ptrFromStr(config.PastelAPI.Passphrase),
+		Hostname: config.PastelAPI.Hostname,
+		Port:     config.PastelAPI.Port,
+		Username: config.PastelAPI.Username,
+		Password: config.PastelAPI.Passphrase,
 	}
 	pastelClient := pastel.NewClient(pastelCfg)
 

@@ -1,10 +1,11 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/tools/ticket_generator/config"
 	"github.com/pastelnetwork/gonode/tools/ticket_generator/generator"
 	"github.com/pastelnetwork/gonode/tools/ticket_generator/node"
@@ -13,8 +14,8 @@ import (
 )
 
 const (
-	exampleConfig string = "../config/example.yaml"
-	exampleNFT    string = "../data/test-image1.jpg"
+	exampleConfig string = "./config/example.yaml"
+	exampleNFT    string = "./data/test-image1.jpg"
 )
 
 type Config struct {
@@ -46,5 +47,10 @@ func main() {
 		panic(errors.Errorf("registe NFT %s failed: %w", nft, err))
 	}
 
-	log.Debugf("%+v", actTicket)
+	js, err := json.MarshalIndent(actTicket, "", "  ")
+	if err != nil {
+		panic(errors.Errorf("marshal ticket %v failed: %w", actTicket, err))
+	}
+
+	fmt.Println(string(js))
 }
