@@ -28,7 +28,7 @@ type Config struct {
 	DdWorkDir  string `mapstructure:"dd-service-dir" json:"dd-service-dir"`
 
 	Node          `mapstructure:"node" json:"node,omitempty"`
-	Pastel        *pastel.Config        `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
+	Pastel        *pastel.Config        `mapstructure:"-" json:"-"`
 	P2P           *p2p.Config           `mapstructure:"p2p" json:"p2p,omitempty"`
 	MetaDB        *metadb.Config        `mapstructure:"metadb" json:"metadb,omitempty"`
 	UserDB        *database.Config      `mapstructure:"userdb" json:"userdb,omitempty"`

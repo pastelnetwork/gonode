@@ -22,7 +22,7 @@ type Config struct {
 	RqFilesDir string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
 
 	Node    `mapstructure:"node" json:"node,omitempty"`
-	Pastel  *pastel.Config  `mapstructure:"pastel-api" json:"pastel-api,omitempty"`
+	Pastel  *pastel.Config  `mapstructure:"-" json:"-"`
 	P2P     *p2p.Config     `mapstructure:"p2p" json:"p2p,omitempty"`
 	RaptorQ *raptorq.Config `mapstructure:"raptorq" json:"raptorq,omitempty"`
 }

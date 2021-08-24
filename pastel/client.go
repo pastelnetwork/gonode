@@ -468,14 +468,14 @@ func (client *client) callFor(ctx context.Context, object interface{}, method st
 
 // NewClient returns a new Client instance.
 func NewClient(config *Config) Client {
-	endpoint := net.JoinHostPort(config.hostname(), strconv.Itoa(config.port()))
+	endpoint := net.JoinHostPort(config.Hostname, strconv.Itoa(config.port()))
 	if !strings.Contains(endpoint, "//") {
 		endpoint = "http://" + endpoint
 	}
 
 	opts := &jsonrpc.RPCClientOpts{
 		CustomHeaders: map[string]string{
-			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(config.username()+":"+config.password())),
+			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(config.Username+":"+config.Password)),
 		},
 	}
 

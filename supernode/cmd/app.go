@@ -69,8 +69,8 @@ func NewApp() *cli.App {
 
 	app.AddFlags(
 		// Main
-		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
-		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
+		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(defaultConfigFile).SetAliases("c"),
+		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetValue(defaultPastelConfigFile),
 		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
@@ -85,12 +85,12 @@ func NewApp() *cli.App {
 
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
-				return err
+				return fmt.Errorf("error parsing supernode config file: %v", err)
 			}
 		}
 		if pastelConfigFile != "" {
-			if err := configurer.ParseFile(pastelConfigFile, config.Pastel.ExternalConfig); err != nil {
-				log.WithContext(ctx).Debug(err)
+			if err := configurer.ParseFile(pastelConfigFile, config.Pastel); err != nil {
+				return fmt.Errorf("error parsing pastel config file: %v", err)
 			}
 		}
 
