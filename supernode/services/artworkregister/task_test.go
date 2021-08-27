@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/storage/fs"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	ddMock "github.com/pastelnetwork/gonode/dupedetection/test"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
@@ -1335,6 +1337,76 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 			tc.args.task.peersArtTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
 
 			err := tc.args.task.AddPeerArticketSignature(tc.args.nodeID, []byte{})
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskUploadImageWithThumbnail(t *testing.T) {
+	type args struct {
+		task *Task
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:   task.New(StatusImageProbed),
+					Ticket: &pastel.NFTTicket{},
+				},
+			},
+			wantErr: nil,
+		},
+		"failure-status": {
+			args: args{
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					Task:   task.New(StatusConnected),
+					Ticket: &pastel.NFTTicket{},
+				},
+			},
+			wantErr: errors.New("status"),
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			go tc.args.task.RunAction(ctx)
+
+			stg := artwork.NewStorage(fs.NewFileStorage(os.TempDir()))
+
+			tc.args.task.Storage = stg
+			file, err := newTestImageFile(stg)
+			assert.Nil(t, err)
+			tc.args.task.Artwork = file
+
+			coordinate := artwork.ThumbnailCoordinate{
+				TopLeftX:     0,
+				TopLeftY:     0,
+				BottomRightX: 400,
+				BottomRightY: 400,
+			}
+			_, _, _, err = tc.args.task.UploadImageWithThumbnail(ctx, file, coordinate)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
