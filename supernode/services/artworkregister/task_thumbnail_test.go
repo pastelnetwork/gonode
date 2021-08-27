@@ -141,9 +141,7 @@ func newTestImageFile(stg *artwork.Storage) (*artwork.File, error) {
 }
 func TestCreateAndHashThumbnail(t *testing.T) {
 	type args struct {
-		task     *Task
-		storeErr error
-		fileErr  error
+		task *Task
 	}
 
 	testCases := map[string]struct {
