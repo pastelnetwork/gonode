@@ -22,9 +22,7 @@ var (
 )
 
 // Config is rqlite database config
-type Config struct {
-	SchemaPath string `mapstructure:"schema-path" json:"schema-path,omitempty"`
-}
+type Config struct{}
 
 // NewConfig return the new Config
 func NewConfig() *Config {

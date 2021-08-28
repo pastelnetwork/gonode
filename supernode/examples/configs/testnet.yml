@@ -40,9 +40,6 @@ metadb:
   raft_port: 4042
   data_dir: "metadb-4444"
 
-userdb:
-  schema-path: ../metadb/database/commands/schema_v1.sql
-
 raptorq:
   #host: ""
   #port: 50051
