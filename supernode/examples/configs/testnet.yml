@@ -1,12 +1,28 @@
 # please provide pastel configs in pastel.conf
+log-level: info
+log-file:  # e.g: logs.json - by default, logs are only written to stdout
+quiet: false
+temp-dir:
+work-dir:
+rq-files-dir: 
+dd-service-dir:
+
+# please provide pastel configs in pastel.conf
 node:
   # `pastel_id` must match to active `PastelID` from masternode.
   # To check it out first get the active outpoint from `masteronde status`, then filter the result of `tickets list id mine` by this outpoint.
   pastel_id: jXXk5k99wK1ca5ZqC6cXSwiiUv57NNiEAApUBtQCNYPbgXDTVwo1k4vVb8J9CAMtnUC4QrNED4DhUGqKyEZCQS
+  pass_phrase:
   server:
     # `listen_address` and `port` must match to `extAddress` from masternode.conf
     listen_addresses: "0.0.0.0"
     port: 4444
+  number_connected_nodes: 2   # artwork reg
+  preburnt_tx_min_confirmation: 3
+  preburnt_tx_confirmation_timeout: 8   # Timeout in minutes
+  raptorq_service: # artwork download raptorq service addr
+  number_super_nodes: 3   # userdata_process
+  minimal_node_confirm_success: 2   # userdata_process
 
 p2p:
   listen_address: "0.0.0.0"
@@ -16,6 +32,9 @@ p2p:
   # bootstrap_port: ""
 
 metadb:
+  # is_leader: false
+  # none_voter: true
+  # exposed_address: "0.0.0.0:4071"
   listen_address: "0.0.0.0"
   http_port: 4041
   raft_port: 4042
@@ -23,5 +42,14 @@ metadb:
 
 userdb:
   schema-path: ../metadb/database/commands/schema_v1.sql
-  write-template-path: ../metadb/database/commands/user_info_write.tmpl
-  query-template-path: ../metadb/database/commands/user_info_query.tmpl
+
+raptorq:
+  #host: ""
+  #port: 50051
+
+dupe-detection:
+  #input_dir: "input"
+  #output_dir: "output"
+  #data_file: "dupe_detection_image_fingerprint_database.sqlite"
+  ## timeout when waiting for output from dupe detection service in second
+  #timeout: 300

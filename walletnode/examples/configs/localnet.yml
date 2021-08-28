@@ -3,7 +3,7 @@ log-file: # e.g: logs.json
 quiet: false
 temp-dir: "/tmp/walletnode"
 work-dir:
-rq-files-dir: /home/matee/.pastel/rq
+rq-files-dir: 
 
 node:
   api:
