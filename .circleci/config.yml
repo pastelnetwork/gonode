@@ -313,15 +313,6 @@ jobs:
       - test:
           package: "legroast"
 
-  test_probe:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - install_tensorflow
-      - test:
-          package: "probe"
-
   test_pqsignatures:
     <<: *defaults
     steps:
@@ -443,9 +434,6 @@ workflows:
           requires:
             - prepare_workspace
       - test_legroast:
-          requires:
-            - prepare_workspace
-      - test_probe:
           requires:
             - prepare_workspace
       - test_pqsignatures:
