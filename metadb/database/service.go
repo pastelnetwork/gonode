@@ -3,7 +3,6 @@ package database
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	"strings"
 
 	"text/template"
@@ -120,18 +119,16 @@ func (db *Ops) ReadUserData(ctx context.Context, artistPastelID string) (userdat
 
 // Run run the rqlite database service
 func (db *Ops) Run(ctx context.Context) error {
+	var err error
 
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	log.WithContext(ctx).Info("start initialization")
 
-	content, err := ioutil.ReadFile(db.config.SchemaPath)
-	if err != nil {
-		return errors.Errorf("error while reading schema file: %w", err)
-	}
+	content := schemaV1Content
 
 	db.metaDB.WaitForStarting()
 	if db.metaDB.IsLeader() {
-		listOfCommands := strings.Split(string(content), schemaDelimiter)
+		listOfCommands := strings.Split(content, schemaDelimiter)
 		for _, cmd := range listOfCommands {
 			if _, err := db.metaDB.Write(ctx, cmd); err != nil {
 				return errors.Errorf("error while creating db schema: %w", err)
