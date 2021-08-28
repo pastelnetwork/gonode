@@ -30,3 +30,4 @@ p2p:
   data_dir: "p2p-localnet-6000"
   bootstrap_ip: #string
   bootstap_port: #int
+  
