@@ -129,7 +129,7 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 
 			b, err := hex.DecodeString(str)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Errorf("failed to hex decode npy str, columns: %s", row[0].Columns[i])
+				log.WithContext(ctx).WithError(err).Errorf("Failed to hex decode npy str, columns: %s", row[0].Columns[i])
 				continue
 			}
 
@@ -137,7 +137,7 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 
 			var fp []float64
 			if err := npyio.Read(f, &fp); err != nil {
-				log.WithContext(ctx).Errorf("failed to convert npy to float64, err: %s", err)
+				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float64")
 				continue
 			}
 			resultStr[row[0].Columns[i]] = fp
@@ -191,7 +191,7 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 	statement := fmt.Sprintf(insertFingerprintStatement, input.Sha256HashOfArtImageFile, fp1, fp2, fp3, fp4)
 	_, err = s.db.ExecuteStringStmt(statement)
 	if err != nil {
-		log.WithContext(ctx).Errorf("failed to insert fingerprint record: %s", err.Error())
+		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 	}
 	return nil
 }
@@ -218,20 +218,20 @@ func (s *service) runTask(ctx context.Context) error {
 
 		nftTicketData, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
 		if err != nil {
-			log.WithContext(ctx).Errorf("failed to decode reg ticket: err %s", err)
+			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
 
 		fingerprintsHash := nftTicketData.AppTicketData.FingerprintsHash
 		fingerprintByte, err := s.p2pClient.Retrieve(ctx, base58.Encode(fingerprintsHash))
 		if err != nil {
-			log.WithContext(ctx).Errorf("failed to retrieve fingerprint, err: %s", err)
+			log.WithContext(ctx).WithError(err).Error("Failed to retrieve fingerprint")
 			continue
 		}
 
 		fingerprint, err := pastel.FingerprintFromBytes(fingerprintByte)
 		if err != nil {
-			log.WithContext(ctx).Errorf("failed to convert fingerprint, err: %s", err)
+			log.WithContext(ctx).WithError(err).Error("Failed to convert fingerprint")
 			continue
 		}
 
@@ -267,7 +267,7 @@ func (s *service) runTask(ctx context.Context) error {
 			NumberOfBlock:                      nftRegTickets[i].Height,
 			DatetimeFingerprintAddedToDatabase: time.Now(),
 		}); err != nil {
-			log.WithContext(ctx).Errorf("failed to store fingerprint, err: %s", err)
+			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
 	}
 
