@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -19,7 +20,11 @@ func runServices(ctx context.Context, services ...service) error {
 
 		group.Go(func() error {
 			err := service.Run(ctx)
-			log.WithContext(ctx).WithError(err).Error("Server stop error")
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("service %s stopped", reflect.TypeOf(service))
+			} else {
+				log.WithContext(ctx).Warnf("service %s stopped", reflect.TypeOf(service))
+			}
 			return err
 		})
 	}
