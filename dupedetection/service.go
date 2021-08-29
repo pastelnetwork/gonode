@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	synchronizationIntervalSec    = 2
+	synchronizationIntervalSec    = 5
 	synchronizationTimeoutSec     = 60
 	runTaskIntervalMin            = 2
 	fingerprintSizeModel1         = 4032
@@ -60,7 +60,7 @@ func (s *service) Run(ctx context.Context) error {
 	}
 
 	if err := s.runTask(ctx); err != nil {
-		log.WithContext(ctx).Errorf("failed to run task, err: %s", err)
+		log.WithContext(ctx).WithError(err).Errorf("First runTask() failed")
 	}
 
 	for {
@@ -69,11 +69,10 @@ func (s *service) Run(ctx context.Context) error {
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(runTaskIntervalMin * time.Minute):
 			if err := s.runTask(ctx); err != nil {
-				log.WithContext(ctx).Errorf("failed to run task, err: %s", err)
+				log.WithContext(ctx).WithError(err).Errorf("runTask() failed")
 			}
 		}
 	}
-	return nil
 }
 
 func (s *service) waitSynchronization(ctx context.Context) error {
@@ -92,16 +91,15 @@ func (s *service) waitSynchronization(ctx context.Context) error {
 		case <-time.After(synchronizationIntervalSec * time.Second):
 			st, err := s.pastelClient.MasterNodeStatus(ctx)
 			if err != nil {
-				log.WithContext(ctx).Errorf("failed to get status from master node, err: %s", err)
-				return err
-			}
-
-			if st.Status == masterNodeSuccessfulStatus {
-				log.WithContext(ctx).Debug("done for waiting synchronization status")
-				return nil
+				log.WithContext(ctx).WithError(err).Warn("Failed to get status from master node")
+			} else {
+				if st.Status == masterNodeSuccessfulStatus {
+					log.WithContext(ctx).Debug("Done for waiting synchronization status")
+					return nil
+				}
 			}
 		case <-timeoutCh:
-			return errors.Errorf("timeout")
+			return errors.New("timeout expired")
 		}
 	}
 }
