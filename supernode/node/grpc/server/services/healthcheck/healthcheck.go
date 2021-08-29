@@ -13,6 +13,7 @@ type HealthCheck struct {
 	pb.UnimplementedHealthCheckServer
 }
 
+// Ping will send a message to and get back a reply from supernode
 func (service *HealthCheck) Ping(_ context.Context, req *pb.PingRequest) (*pb.PingReply, error) {
 	// echos received message
 	return &pb.PingReply{Reply: req.Msg}, nil
@@ -23,7 +24,7 @@ func (service *HealthCheck) Desc() *grpc.ServiceDesc {
 	return &pb.HealthCheck_ServiceDesc
 }
 
-// NewDownloadArtwork returns a new DownloadArtwork instance.
+// NewHealthCheck returns a new HealthCheck instance.
 func NewHealthCheck() *HealthCheck {
 	return &HealthCheck{}
 }
