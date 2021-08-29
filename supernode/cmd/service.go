@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 type service interface {
@@ -17,7 +18,9 @@ func runServices(ctx context.Context, services ...service) error {
 		service := service
 
 		group.Go(func() error {
-			return service.Run(ctx)
+			err := service.Run(ctx)
+			log.WithContext(ctx).WithError(err).Error("Server stop error")
+			return err
 		})
 	}
 
