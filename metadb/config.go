@@ -1,6 +1,9 @@
 package metadb
 
-import "path/filepath"
+import (
+	"fmt"
+	"path/filepath"
+)
 
 // Config contains settings of the rqlite server
 type Config struct {
@@ -9,9 +12,6 @@ type Config struct {
 
 	// None voter node
 	NoneVoter bool `mapstructure:"none_voter" json:"none_voter,omitempty"`
-
-	// IPv4 or IPv6 exposed address
-	ExposedAddress string `mapstructure:"exposed_address" json:"exposed_address,omitempty"`
 
 	// IPv4 or IPv6 address for listening by http server and raft
 	ListenAddress string `mapstructure:"listen_address" json:"listen_address,omitempty"`
@@ -31,6 +31,11 @@ func (config *Config) SetWorkDir(workDir string) {
 	if !filepath.IsAbs(config.DataDir) {
 		config.DataDir = filepath.Join(workDir, config.DataDir)
 	}
+}
+
+// GetExposedAddr returns IPv4 or IPv6 Addr along with port
+func (config *Config) GetExposedAddr() string {
+	return fmt.Sprintf("%s:%v", config.ListenAddress, config.HTTPPort)
 }
 
 // NewConfig returns a new Config instance.
