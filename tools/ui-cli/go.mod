@@ -1,6 +1,6 @@
 module github.com/pastelnetwork/gonode/tools/ui-cli
 
-go 1.16
+go 1.17
 
 require (
 	github.com/gorilla/websocket v1.4.2
@@ -9,10 +9,14 @@ require (
 	goa.design/goa/v3 v3.4.3
 )
 
+require (
+	github.com/dimfeld/httptreemux/v5 v5.3.0 // indirect
+	github.com/google/uuid v1.2.0 // indirect
+)
+
 replace (
 	github.com/pastelnetwork/gonode/common => ../../common
 	github.com/pastelnetwork/gonode/pastel => ../../pastel
 	github.com/pastelnetwork/gonode/proto => ../../proto
 	github.com/pastelnetwork/gonode/raptorq => ../../raptorq
-	github.com/pastelnetwork/gonode/walletnode => ../../walletnode
 )

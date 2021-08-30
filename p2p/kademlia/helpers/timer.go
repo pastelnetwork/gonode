@@ -23,7 +23,7 @@ func StartTimer(ctx context.Context, name string, done chan struct{}, interval t
 			case <-ticker.C:
 				// do the function
 				if err := fn(); err != nil {
-					log.WithContext(ctx).Errorf("run worker(%s): %v", name, err)
+					log.WithContext(ctx).WithError(err).Errorf("run worker(%s) failed", name)
 				}
 
 				// reset the timer

@@ -247,7 +247,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 
 			err := checkConfirms()
 			if err != nil {
-				log.WithContext(ctx).Errorf("check confirmations failed : %v", err)
+				log.WithContext(ctx).WithError(err).Error("check confirmations failed")
 			} else {
 				return nil
 			}

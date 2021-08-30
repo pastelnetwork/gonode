@@ -123,11 +123,18 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 		case "date", "datetime":
 			// TODO
 		case "array":
-			b, ok := values[i].([]byte)
+			str, ok := values[i].(string)
 			if !ok {
-				log.WithContext(ctx).Errorf("failed to get byte from npy, columns: %s", row[0].Columns[i])
+				log.WithContext(ctx).Errorf("failed to get str from npy, columns: %s", row[0].Columns[i])
 				continue
 			}
+
+			b, err := hex.DecodeString(str)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("failed to hex decode npy str, columns: %s", row[0].Columns[i])
+				continue
+			}
+
 			f := bytes.NewBuffer(b)
 
 			var fp []float64
@@ -146,12 +153,12 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 		return nil, errors.Errorf("failed to JSON marshal value, err: %w", err)
 	}
 
-	var ddFingerprint dupeDetectionFingerprints
-	if err := json.Unmarshal(b, &ddFingerprint); err != nil {
+	ddFingerprint := &dupeDetectionFingerprints{}
+	if err := json.Unmarshal(b, ddFingerprint); err != nil {
 		return nil, errors.Errorf("failed to JSON unmarshal, err: %w", err)
 	}
 
-	return &ddFingerprint, nil
+	return ddFingerprint, nil
 }
 
 func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFingerprints) error {
@@ -192,14 +199,18 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 }
 
 func (s *service) runTask(ctx context.Context) error {
-	lastestFp, err := s.getLatestFingerprint(ctx)
-	if err != nil {
-		return errors.Errorf("failed to get lastest fingerprint, err: %w", err)
-	}
-
 	nftRegTickets, err := s.pastelClient.RegTickets(ctx)
 	if err != nil {
 		return errors.Errorf("failed to get registered ticket, err: %w", err)
+	}
+
+	if len(nftRegTickets) == 0 {
+		return nil
+	}
+
+	lastestFp, err := s.getLatestFingerprint(ctx)
+	if err != nil {
+		return errors.Errorf("failed to get lastest fingerprint, err: %w", err)
 	}
 
 	for i := 0; i < len(nftRegTickets); i++ {

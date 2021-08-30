@@ -234,7 +234,7 @@ func (s *Service) Start() error {
 	go func() {
 		err := server.Serve(s.ln)
 		if err != nil {
-			log.WithContext(s.ctx).Errorf("HTTP service Serve() returned: %v", err.Error())
+			log.WithContext(s.ctx).WithError(err).Error("HTTP service Serve() returned")
 		}
 	}()
 	log.WithContext(s.ctx).Infof("service listening on: %v", s.Addr())
@@ -998,7 +998,7 @@ func (s *Service) writeResponse(w http.ResponseWriter, r *http.Request, j *Respo
 	}
 	_, err = w.Write(b)
 	if err != nil {
-		log.WithContext(s.ctx).Errorf("writing response failed: %v", err.Error())
+		log.WithContext(s.ctx).WithError(err).Error("writing response failed")
 	}
 }
 

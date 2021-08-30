@@ -166,7 +166,7 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 
 	var err error
 
-	task.NewAction(func(ctx context.Context) error {
+	<-task.NewAction(func(ctx context.Context) error {
 		var node *Node
 		node, err = task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
@@ -293,7 +293,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), task.config.PreburntTxConfirmationTimeout)
+		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), task.config.PreburntTxConfirmationTimeout, 15*time.Second)
 
 		// compare rqsymbols
 		if err = task.compareRQSymbolID(ctx); err != nil {
@@ -387,7 +387,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	return nftRegTxid, err
 }
 
-func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, timeout time.Duration) <-chan error {
+func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, timeout time.Duration, interval time.Duration) <-chan error {
 	ch := make(chan error)
 	timeoutCh := make(chan struct{})
 	go func() {
@@ -405,7 +405,7 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 				log.WithContext(ctx).Debugf("context done: %s", ctx.Err())
 				ch <- ctx.Err()
 				return
-			case <-time.After(15 * time.Second):
+			case <-time.After(interval):
 				log.WithContext(ctx).Debugf("retry: %d", retry)
 				retry++
 				txResult, _ := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)

@@ -94,7 +94,7 @@ func (s *DHT) Start(ctx context.Context) error {
 				// refresh the bucket by iterative find node
 				id := s.ht.randomIDFromBucket(K)
 				if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
-					log.WithContext(ctx).Errorf("iterate find node: %v", err)
+					log.WithContext(ctx).WithError(err).Error("iterate find node failed")
 				}
 			}
 		}
@@ -104,13 +104,13 @@ func (s *DHT) Start(ctx context.Context) error {
 		for _, key := range replicationKeys {
 			value, err := s.store.Retrieve(ctx, key)
 			if err != nil {
-				log.WithContext(ctx).Errorf("store retrieve: %v", err)
+				log.WithContext(ctx).WithError(err).Error("store retrieve failed")
 				continue
 			}
 			if value != nil {
 				// iteratve store the value
 				if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
-					log.WithContext(ctx).Errorf("iterate store data: %v", err)
+					log.WithContext(ctx).WithError(err).Error("iterate store data failed")
 				}
 			}
 		}
@@ -168,7 +168,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err != nil {
-		log.WithContext(ctx).Errorf("store retrive: %v", err)
+		log.WithContext(ctx).WithError(err).Error("store retrive failed")
 	}
 	// if not found locally, iterative find value from kademlia network
 	if value == nil {
@@ -206,7 +206,7 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 				// invoke the request and handle the response
 				response, err := s.network.Call(ctx, request)
 				if err != nil {
-					log.WithContext(ctx).Errorf("network call: %v", err)
+					log.WithContext(ctx).WithError(err).Error("network call failed")
 					return
 				}
 				log.WithContext(ctx).Debugf("ping response: %v", response.String())
@@ -224,7 +224,7 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 	if s.ht.totalCount() > 0 {
 		// iterative find node from the nodes
 		if _, err := s.iterate(ctx, IterateFindNode, s.ht.self.ID, nil); err != nil {
-			log.WithContext(ctx).Errorf("iterative find node: %v", err)
+			log.WithContext(ctx).WithError(err).Error("iterative find node failed")
 			return err
 		}
 	}
@@ -291,7 +291,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 				// send the request and receive the response
 				response, err := s.network.Call(ctx, request)
 				if err != nil {
-					log.WithContext(ctx).Errorf("network call: %v, request: %v", err, request.String())
+					log.WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
 					// node is unreachable, remove the node
 					removedNodes = append(removedNodes, receiver)
 					return
@@ -411,7 +411,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					// send the request and receive the response
 					if _, err := s.network.Call(ctx, request); err != nil {
 						// <TODO> need to remove the node ?
-						log.WithContext(ctx).Errorf("network call: %v", err)
+						log.WithContext(ctx).WithError(err).Error("network call")
 					}
 				}
 				return nil, nil

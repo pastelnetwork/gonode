@@ -120,7 +120,7 @@ func (s *Badger) Delete(ctx context.Context, key []byte) {
 		rk := replicationPrefix + base58.Encode(key)
 		return txn.Delete([]byte(rk))
 	}); err != nil {
-		log.WithContext(ctx).Errorf("badger delete: %v", err)
+		log.WithContext(ctx).WithError(err).Error("badger delete failed")
 		return
 	}
 	log.WithContext(ctx).Infof("delete key: %s", base58.Encode(key))
@@ -145,7 +145,7 @@ func (s *Badger) Keys(ctx context.Context) [][]byte {
 		}
 		return nil
 	}); err != nil {
-		log.WithContext(ctx).Errorf("badger iterate keys: %v", err)
+		log.WithContext(ctx).WithError(err).Error("badger iterate keys failed")
 	}
 	return keys
 }
@@ -180,7 +180,7 @@ func (s *Badger) findKeysWithPrefix(ctx context.Context, prefix string) [][]byte
 		}
 		return nil
 	}); err != nil {
-		log.WithContext(ctx).Errorf("badger iterate with prefix: %s, %s", prefix, err)
+		log.WithContext(ctx).WithError(err).Errorf("badger iterate failed with prefix: %s", prefix)
 	}
 
 	return keys
@@ -198,7 +198,7 @@ func (s *Badger) Close(ctx context.Context) {
 	}
 	if s.db != nil {
 		if err := s.db.Close(); err != nil {
-			log.WithContext(ctx).Errorf("close badger: %s", err)
+			log.WithContext(ctx).WithError(err).Errorf("close badger failed")
 		}
 	}
 }
