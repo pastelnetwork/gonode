@@ -20,7 +20,7 @@ type MetaDB interface {
 	// Write execute a statement, not support multple statements
 	Write(ctx context.Context, statement string) (*WriteResult, error)
 	// WaitForStarting wait for the db to completely started, just run once after starting up the db
-	WaitForStarting()
+	WaitForStarting(ctx context.Context) error
 	// LeaderAddr returns the address of the current leader. Returns a
 	// blank string if there is no leader.
 	LeaderAddress() string

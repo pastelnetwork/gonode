@@ -122,7 +122,10 @@ func (db *Ops) Run(ctx context.Context) error {
 
 	content := schemaV1Content
 
-	db.metaDB.WaitForStarting()
+	if err := db.metaDB.WaitForStarting(ctx); err != nil {
+		return errors.Errorf("error while waiting for starting: %w", err)
+	}
+
 	if db.metaDB.IsLeader() {
 		listOfCommands := strings.Split(content, schemaDelimiter)
 		for _, cmd := range listOfCommands {
