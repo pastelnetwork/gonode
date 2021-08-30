@@ -2,14 +2,6 @@ package metadb
 
 import "path/filepath"
 
-const (
-	defaultExposedAddress = "0.0.0.0:4001"
-	defaultListenAddress  = "0.0.0.0"
-	defaultHTTPPort       = 4001
-	defaultRaftPort       = 4002
-	defaultDataDir        = "metadb"
-)
-
 // Config contains settings of the rqlite server
 type Config struct {
 	// Let this instance be the leader
@@ -43,11 +35,5 @@ func (config *Config) SetWorkDir(workDir string) {
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
-	return &Config{
-		ExposedAddress: defaultExposedAddress,
-		ListenAddress:  defaultListenAddress,
-		HTTPPort:       defaultHTTPPort,
-		RaftPort:       defaultRaftPort,
-		DataDir:        defaultDataDir,
-	}
+	return &Config{}
 }

@@ -2,12 +2,6 @@ package p2p
 
 import "path/filepath"
 
-const (
-	defaultListenAddress = "0.0.0.0"
-	defaultPort          = 4445
-	defaultDataDir       = "p2p"
-)
-
 // Config contains settings of the p2p service
 type Config struct {
 	// the local IPv4 or IPv6 address
@@ -35,9 +29,5 @@ func (config *Config) SetWorkDir(workDir string) {
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
-	return &Config{
-		ListenAddress: defaultListenAddress,
-		Port:          defaultPort,
-		DataDir:       defaultDataDir,
-	}
+	return &Config{}
 }
