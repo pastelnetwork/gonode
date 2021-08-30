@@ -29,7 +29,7 @@ const (
 	fingerprintSizeModel          = 10048
 	masterNodeSuccessfulStatus    = "Masternode successfully started"
 	getLatestFingerprintStatement = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
-	insertFingerprintStatement    = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector) VALUES("%s", x'%s', x'%s', x'%s', x'%s')`
+	insertFingerprintStatement    = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector) VALUES("%s", '%s', '%s', '%s', '%s')`
 )
 
 type dupeDetectionFingerprints struct {
