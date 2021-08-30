@@ -5,6 +5,10 @@ import (
 	"path/filepath"
 )
 
+const (
+	errValidationStr = "metadb configs validation failed - missing val"
+)
+
 // Config contains settings of the rqlite server
 type Config struct {
 	// Let this instance be the leader
@@ -36,6 +40,24 @@ func (config *Config) SetWorkDir(workDir string) {
 // GetExposedAddr returns IPv4 or IPv6 Addr along with port
 func (config *Config) GetExposedAddr() string {
 	return fmt.Sprintf("%s:%v", config.ListenAddress, config.HTTPPort)
+}
+
+// Validate metadb configs
+func (config *Config) Validate() error {
+	if config.ListenAddress == "" {
+		return fmt.Errorf("%s: %s", errValidationStr, "listen_address")
+	}
+	if config.HTTPPort == 0 {
+		return fmt.Errorf("%s: %s", errValidationStr, "http_port")
+	}
+	if config.RaftPort == 0 {
+		return fmt.Errorf("%s: %s", errValidationStr, "raft_port")
+	}
+	if config.DataDir == "" {
+		return fmt.Errorf("%s: %s", errValidationStr, "data_dir")
+	}
+
+	return nil
 }
 
 // NewConfig returns a new Config instance.

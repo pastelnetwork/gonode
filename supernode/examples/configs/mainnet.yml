@@ -11,21 +11,21 @@ node:
   pass_phrase: 
   server:
     listen_addresses: "0.0.0.0"
-    port:
+    port: 4444
 
 p2p:
   listen_address: "0.0.0.0"
-  port: 
+  port: 6000
   data_dir: "p2p"
 
 metadb:
   is_leader: false
   none_voter: true
-  listen_address: 
-  http_port: 
-  raft_port: 
+  listen_address: "0.0.0.0"
+  http_port: 4001
+  raft_port: 4002
   data_dir: "metadb"
 
 raptorq:
   host: "localhost"
-  port: 
+  port: 50051

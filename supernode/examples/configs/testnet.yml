@@ -16,7 +16,7 @@ node:
 p2p:
   listen_address: "0.0.0.0"
   port: 14445
-  data_dir: 
+  data_dir: "p2p-data"
 
 metadb:
   is_leader: false

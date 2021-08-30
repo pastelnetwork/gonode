@@ -1,6 +1,13 @@
 package p2p
 
-import "path/filepath"
+import (
+	"fmt"
+	"path/filepath"
+)
+
+const (
+	errValidationStr = "p2p config validation failed - missing val"
+)
 
 // Config contains settings of the p2p service
 type Config struct {
@@ -30,4 +37,19 @@ func (config *Config) SetWorkDir(workDir string) {
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
 	return &Config{}
+}
+
+// Validate p2p configs
+func (config *Config) Validate() error {
+	if config.ListenAddress == "" {
+		return fmt.Errorf("%s: %s", errValidationStr, "listen_address")
+	}
+	if config.Port == 0 {
+		return fmt.Errorf("%s: %s", errValidationStr, "port")
+	}
+	if config.DataDir == "" {
+		return fmt.Errorf("%s: %s", errValidationStr, "data_dir")
+	}
+
+	return nil
 }
