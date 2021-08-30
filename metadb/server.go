@@ -214,12 +214,12 @@ func (s *service) startServer(ctx context.Context) error {
 
 	// close the rqlite store
 	if err := db.Close(true); err != nil {
-		log.WithContext(ctx).Errorf("close store: %v", err)
+		log.WithContext(ctx).WithError(err).Errorf("close store failed")
 	}
 
 	// close the mux listener
 	if err := muxListener.Close(); err != nil {
-		log.WithContext(ctx).Errorf("close mux listener: %v", err)
+		log.WithContext(ctx).WithError(err).Errorf("Close mux listener failed")
 	}
 
 	log.WithContext(ctx).Info("metadb service is stopped")

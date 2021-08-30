@@ -242,7 +242,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	dataSign = append(dataSign, challengeB...)
 	signature, err := secClient.Sign(ctx, dataSign, secInfo.PastelID, secInfo.PassPhrase, secInfo.Algorithm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("failed to generate signature: %v", err)
+		log.WithContext(ctx).WithError(err).Error("failed to generate signature")
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
 
@@ -266,7 +266,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	dataVerify = append(dataVerify, response.PubKey[:]...)
 	dataVerify = append(dataVerify, challengeA...)
 	if ok, err := secClient.Verify(ctx, dataVerify, string(response.Signature), response.PastelID, secInfo.Algorithm); err != nil || !ok {
-		log.WithContext(ctx).Errorf("failed to verify server public key: %v", err)
+		log.WithContext(ctx).WithError(err).Error("failed to verify server public key")
 		return fmt.Errorf("failed to verify server public key: %w", err)
 	}
 
@@ -341,7 +341,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	dataVerify = append(dataVerify, request.PubKey[:]...)
 	dataVerify = append(dataVerify, challengeB...)
 	if ok, err := secClient.Verify(ctx, dataVerify, string(request.Signature), request.PastelID, secInfo.Algorithm); err != nil || !ok {
-		log.WithContext(ctx).Errorf("failed to verify client public key: %v", err)
+		log.WithContext(ctx).WithError(err).Error("failed to verify client public key")
 		return fmt.Errorf("failed to verify client public key: %w", err)
 	}
 
@@ -357,7 +357,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	dataSign = append(dataSign, challengeA...)
 	signature, err := secClient.Sign(ctx, dataSign, secInfo.PastelID, secInfo.PassPhrase, secInfo.Algorithm)
 	if err != nil {
-		log.WithContext(ctx).Errorf("failed to generate signature: %v", err)
+		log.WithContext(ctx).WithError(err).Error("failed to generate signature")
 		return fmt.Errorf("failed to generate signature: %w", err)
 	}
 

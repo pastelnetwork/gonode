@@ -22,11 +22,7 @@ var (
 )
 
 // Config is rqlite database config
-type Config struct {
-	SchemaPath        string `mapstructure:"schema-path" json:"schema-path,omitempty"`
-	WriteTemplatePath string `mapstructure:"write-template-path" json:"write-template-path,omitempty"`
-	QueryTemplatePath string `mapstructure:"query-template-path" json:"query-template-path,omitempty"`
-}
+type Config struct{}
 
 // NewConfig return the new Config
 func NewConfig() *Config {

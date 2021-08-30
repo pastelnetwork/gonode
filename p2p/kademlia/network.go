@@ -64,7 +64,7 @@ func (s *Network) Stop(ctx context.Context) {
 	// close the socket
 	if s.socket != nil {
 		if err := s.socket.Close(); err != nil {
-			log.WithContext(ctx).Errorf("close socket: %v", err)
+			log.WithContext(ctx).WithError(err).Errorf("close socket failed")
 		}
 	}
 }
@@ -192,7 +192,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			if err == io.EOF {
 				return
 			}
-			log.WithContext(ctx).Errorf("read and decode: %v", err)
+			log.WithContext(ctx).WithError(err).Error("read and decode failed")
 			return
 		}
 
@@ -201,7 +201,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 		case FindNode:
 			encoded, err := s.handleFindNode(ctx, request)
 			if err != nil {
-				log.WithContext(ctx).Errorf("handle find node request: %v", err)
+				log.WithContext(ctx).WithError(err).Error("handle find node request failed")
 				continue
 			}
 			response = encoded
@@ -209,14 +209,14 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			// handle the request for finding value
 			encoded, err := s.handleFindValue(ctx, request)
 			if err != nil {
-				log.WithContext(ctx).Errorf("handle find value request: %v", err)
+				log.WithContext(ctx).WithError(err).Error("handle find value request failed")
 				continue
 			}
 			response = encoded
 		case Ping:
 			encoded, err := s.handlePing(ctx, request)
 			if err != nil {
-				log.WithContext(ctx).Errorf("handle ping request: %v", err)
+				log.WithContext(ctx).WithError(err).Error("handle ping request failed")
 				continue
 			}
 			response = encoded
@@ -224,7 +224,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			// handle the request for storing data
 			encoded, err := s.handleStoreData(ctx, request)
 			if err != nil {
-				log.WithContext(ctx).Errorf("handle store data request: %v", err)
+				log.WithContext(ctx).WithError(err).Error("handle store data request failed")
 				continue
 			}
 			response = encoded
@@ -235,7 +235,7 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 
 		// write the response
 		if _, err := conn.Write(response); err != nil {
-			log.WithContext(ctx).Errorf("conn write: %v", err)
+			log.WithContext(ctx).WithError(err).Error("conn write: failed")
 		}
 	}
 }
@@ -265,7 +265,7 @@ func (s *Network) serve(ctx context.Context) {
 				if max := 1 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				log.WithContext(ctx).Errorf("socket accept: %v; retrying in %v", err, tempDelay)
+				log.WithContext(ctx).WithError(err).Errorf("socket accept failed, retrying in %v", tempDelay)
 
 				time.Sleep(tempDelay)
 				continue
@@ -274,7 +274,7 @@ func (s *Network) serve(ctx context.Context) {
 				return
 			}
 
-			log.WithContext(ctx).Errorf("socket accept: %v", err)
+			log.WithContext(ctx).WithError(err).Error("socket accept failed")
 			return
 		}
 		log.WithContext(ctx).Debugf("%v: incomming connection: %v", s.self.String(), conn.RemoteAddr())
