@@ -1,3 +1,10 @@
+log-level:
+log-file:
+quiet: false
+temp-dir:
+work-dir:
+rq-files-dir: 
+
 node:
   api:
     hostname: "localhost"
