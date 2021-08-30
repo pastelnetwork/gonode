@@ -7,7 +7,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/task"
-	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
@@ -20,7 +19,6 @@ const (
 // Service represents a service for the artwork search.
 type Service struct {
 	*task.Worker
-	p2pClient    p2p.Client
 	pastelClient pastel.Client
 	nodeClient   node.Client
 	config       *Config
@@ -60,11 +58,10 @@ func (service *Service) AddTask(request *ArtSearchRequest) string {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client, nodeClient node.Client) *Service {
+func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Client) *Service {
 	return &Service{
 		config:       config,
 		pastelClient: pastelClient,
-		p2pClient:    p2pClient,
 		Worker:       task.NewWorker(),
 		nodeClient:   nodeClient,
 	}

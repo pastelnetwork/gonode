@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
 	"github.com/pastelnetwork/gonode/common/cli"
@@ -134,9 +133,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// Business logic services
 	// ----Artwork Services----
 	nodeClient := grpc.NewClient()
-	// p2p service (currently using kademlia)
-	config.P2P.SetWorkDir(config.WorkDir)
-	p2p := p2p.New(config.P2P)
 
 	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
@@ -156,7 +152,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient, rqClient)
-	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, p2p, nodeClient)
+	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, nodeClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
 
 	// ----Userdata Services----
