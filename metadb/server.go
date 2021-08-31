@@ -205,7 +205,12 @@ func (s *service) startServer(ctx context.Context) error {
 		return errors.Errorf("start http server: %w", err)
 	}
 	// mark the rqlite node is ready
-	s.ready <- struct{}{}
+	select {
+	case <-ctx.Done():
+		return errors.Errorf("context done: %w", ctx.Err())
+	case s.ready <- struct{}{}:
+		// do nothing, continue
+	}
 
 	log.WithContext(ctx).Info("metadb service is started")
 
