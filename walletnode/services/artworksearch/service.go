@@ -85,7 +85,7 @@ func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.
 
 // GetThumbnail gets thumbnail
 func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket) (data []byte, err error) {
-	thumbnailHelper := thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectTimeout)
+	thumbnailHelper := thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout)
 
 	if err := thumbnailHelper.Connect(ctx, 1); err != nil {
 		return data, fmt.Errorf("connect Thumbnail helper : %s", err)

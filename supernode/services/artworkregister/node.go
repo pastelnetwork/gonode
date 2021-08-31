@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	connectToNodeTimeout = time.Second * 1
+	defaultConnectToNodeTimeout = time.Second * 5
 )
 
 // Nodes represents muptiple Nodes
@@ -50,7 +50,7 @@ type Node struct {
 }
 
 func (node *Node) connect(ctx context.Context) error {
-	connCtx, connCancel := context.WithTimeout(ctx, connectToNodeTimeout)
+	connCtx, connCancel := context.WithTimeout(ctx, defaultConnectToNodeTimeout)
 	defer connCancel()
 
 	conn, err := node.client.Connect(connCtx, node.Address)

@@ -81,7 +81,7 @@ func (task *Task) run(ctx context.Context) error {
 	var errs error
 	// Connect to top supernodes
 	for _, node := range topNodes {
-		if err := node.Connect(ctx, task.config.connectTimeout); err == nil {
+		if err := node.Connect(ctx, task.config.connectToNodeTimeout); err == nil {
 			log.WithContext(ctx).WithError(err).WithField("address", node.String()).WithField("pastelid", node.PastelID()).Debug("Connected to supernode")
 			connectedNodes.Add(node)
 		} else {

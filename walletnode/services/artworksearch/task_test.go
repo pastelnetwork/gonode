@@ -243,7 +243,7 @@ func TestNewTask(t *testing.T) {
 				Task:            task.New(StatusTaskStarted),
 				Service:         service,
 				request:         req,
-				thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectTimeout),
+				thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
 			},
 		},
 	}

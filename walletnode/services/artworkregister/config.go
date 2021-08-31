@@ -11,16 +11,16 @@ const (
 
 	defaultNumberRQIDSFiles uint32 = 10
 
-	connectToNextNodeDelay = time.Millisecond * 200
-	acceptNodesTimeout     = connectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accepted by primary nodes.
+	defaultConnectToNextNodeDelay = time.Millisecond * 200
+	defaultAcceptNodesTimeout     = defaultConnectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
 
-	thumbnailSize = 224
+	defaultThumbnailSize = 224
 
-	regArtTxMinConfirmations = 10
-	regArtTxTimeout          = 26 * time.Minute
+	defaultRegArtTxMinConfirmations = 10
+	defaultRegArtTxTimeout          = 26 * time.Minute
 
-	regActTxMinConfirmations = 5
-	regActTxTimeout          = 13 * time.Minute
+	defaultRegActTxMinConfirmations = 5
+	defaultRegActTxTimeout          = 13 * time.Minute
 )
 
 // Config contains settings of the registering artwork.
@@ -57,12 +57,12 @@ func NewConfig() *Config {
 		Config:                   *common.NewConfig(),
 		NumberSuperNodes:         defaultNumberSuperNodes,
 		NumberRQIDSFiles:         defaultNumberRQIDSFiles,
-		RegArtTxMinConfirmations: regArtTxMinConfirmations,
-		RegArtTxTimeout:          regArtTxTimeout,
-		RegActTxMinConfirmations: regActTxMinConfirmations,
-		RegActTxTimeout:          regActTxTimeout,
-		connectToNextNodeDelay:   connectToNextNodeDelay,
-		acceptNodesTimeout:       acceptNodesTimeout,
-		thumbnailSize:            thumbnailSize,
+		RegArtTxMinConfirmations: defaultRegArtTxMinConfirmations,
+		RegArtTxTimeout:          defaultRegArtTxTimeout,
+		RegActTxMinConfirmations: defaultRegActTxMinConfirmations,
+		RegActTxTimeout:          defaultRegActTxTimeout,
+		connectToNextNodeDelay:   defaultConnectToNextNodeDelay,
+		acceptNodesTimeout:       defaultAcceptNodesTimeout,
+		thumbnailSize:            defaultThumbnailSize,
 	}
 }
