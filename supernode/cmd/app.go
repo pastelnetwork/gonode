@@ -26,6 +26,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
@@ -237,6 +238,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewDownloadArtwork(artworkDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
+		healthcheck.NewHealthCheck(),
 	)
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess)

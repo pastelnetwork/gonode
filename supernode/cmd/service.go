@@ -2,8 +2,10 @@ package cmd
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 type service interface {
@@ -17,7 +19,13 @@ func runServices(ctx context.Context, services ...service) error {
 		service := service
 
 		group.Go(func() error {
-			return service.Run(ctx)
+			err := service.Run(ctx)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("service %s stopped", reflect.TypeOf(service))
+			} else {
+				log.WithContext(ctx).Warnf("service %s stopped", reflect.TypeOf(service))
+			}
+			return err
 		})
 	}
 
