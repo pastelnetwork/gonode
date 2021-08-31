@@ -11,6 +11,8 @@ const (
 	DefaultTimeout = 300
 	// DefaultDataFile that dd-service uses to store fingerprints
 	DefaultDataFile = "dupe_detection_image_fingerprint_database.sqlite"
+	// DefaultSupportDir that dd-service uses for support files
+	DefaultSupportDir = "dupe_detection_support_files"
 )
 
 // Config contains settings of the dupe detection service
@@ -20,6 +22,9 @@ type Config struct {
 
 	// OutputDir is directory to contain output of dupe detection service
 	OutputDir string `mapstructure:"output_dir" json:"output_dir,omitempty"`
+
+	// SupportDir is directory to contain support files of dupe detection service
+	SupportDir string `mapstructure:"support_dir" json:"support_dir,omitempty"`
 
 	// WaitForOutputTimeout is timeout when waiting for output from dupe detection service in second
 	WaitForOutputTimeout int64 `mapstructure:"timeout" json:"timeout,omitempty"`
@@ -40,7 +45,7 @@ func (config *Config) SetWorkDir(workDir string) {
 	}
 
 	if !filepath.IsAbs(config.DataFile) {
-		config.DataFile = filepath.Join(workDir, config.DataFile)
+		config.DataFile = filepath.Join(workDir, config.SupportDir, config.DataFile)
 	}
 }
 
@@ -49,6 +54,7 @@ func NewConfig() *Config {
 	return &Config{
 		InputDir:             DefaultInputDir,
 		OutputDir:            DefaultOutputDir,
+		SupportDir:           DefaultSupportDir,
 		WaitForOutputTimeout: DefaultTimeout,
 		DataFile:             DefaultDataFile,
 	}
