@@ -18,8 +18,13 @@ const (
 )
 
 // WaitForStarting wait for the db to completely started, just run once after starting up the db
-func (s *service) WaitForStarting() {
-	<-s.ready
+func (s *service) WaitForStarting(ctx context.Context) error {
+	select {
+	case <-s.ready:
+		return nil
+	case <-ctx.Done():
+		return errors.Errorf("context done: %w", ctx.Err())
+	}
 }
 
 // LeaderAddr returns the address of the current leader. Returns a

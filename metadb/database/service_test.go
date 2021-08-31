@@ -361,7 +361,7 @@ func (ts *testSuite) SetupSuite() {
 		// start the rqlite server
 		ts.Nil(db.Run(ts.ctx), "run service")
 	}()
-	db.WaitForStarting()
+	db.WaitForStarting(ts.ctx)
 	_, err = db.Write(ts.ctx, schema)
 
 	ts.Nil(err)
