@@ -32,7 +32,7 @@ type Config struct {
 	NumberRQIDSFiles uint32 `mapstructure:"number_rqids_files" json:"number_rqids_files,omitempty"`
 
 	// raptorq service
-	RaptorQServiceAddress string `mapstructure:"raptorq_service" json:"raptorq_service,omitempty"`
+	RaptorQServiceAddress string `mapstructure:"-" json:"-"`
 	RqFilesDir            string
 
 	// BurnAddress

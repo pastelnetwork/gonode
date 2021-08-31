@@ -105,6 +105,18 @@ func NewApp() *cli.App {
 		}
 		log.AddHook(hooks.NewDurationHook())
 
+		if err := config.P2P.Validate(); err != nil {
+			return err
+		}
+
+		if err := config.MetaDB.Validate(); err != nil {
+			return err
+		}
+
+		if err := config.RaptorQ.Validate(); err != nil {
+			return err
+		}
+
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
 		}

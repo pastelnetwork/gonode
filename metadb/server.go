@@ -110,7 +110,7 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
-	selfAddress := s.config.ExposedAddress
+	selfAddress := s.config.GetExposedAddr()
 	var joinIPAddresses []string
 	if !s.config.IsLeader {
 		for _, ip := range s.nodeIPList {

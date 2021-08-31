@@ -1,13 +1,12 @@
 package metadb
 
-import "path/filepath"
+import (
+	"fmt"
+	"path/filepath"
+)
 
 const (
-	defaultExposedAddress = "0.0.0.0:4001"
-	defaultListenAddress  = "0.0.0.0"
-	defaultHTTPPort       = 4001
-	defaultRaftPort       = 4002
-	defaultDataDir        = "metadb"
+	errValidationStr = "metadb configs validation failed - missing val"
 )
 
 // Config contains settings of the rqlite server
@@ -17,9 +16,6 @@ type Config struct {
 
 	// None voter node
 	NoneVoter bool `mapstructure:"none_voter" json:"none_voter,omitempty"`
-
-	// IPv4 or IPv6 exposed address
-	ExposedAddress string `mapstructure:"exposed_address" json:"exposed_address,omitempty"`
 
 	// IPv4 or IPv6 address for listening by http server and raft
 	ListenAddress string `mapstructure:"listen_address" json:"listen_address,omitempty"`
@@ -41,13 +37,30 @@ func (config *Config) SetWorkDir(workDir string) {
 	}
 }
 
+// GetExposedAddr returns IPv4 or IPv6 Addr along with port
+func (config *Config) GetExposedAddr() string {
+	return fmt.Sprintf("%s:%v", config.ListenAddress, config.HTTPPort)
+}
+
+// Validate metadb configs
+func (config *Config) Validate() error {
+	if config.ListenAddress == "" {
+		return fmt.Errorf("%s: %s", errValidationStr, "listen_address")
+	}
+	if config.HTTPPort == 0 {
+		return fmt.Errorf("%s: %s", errValidationStr, "http_port")
+	}
+	if config.RaftPort == 0 {
+		return fmt.Errorf("%s: %s", errValidationStr, "raft_port")
+	}
+	if config.DataDir == "" {
+		return fmt.Errorf("%s: %s", errValidationStr, "data_dir")
+	}
+
+	return nil
+}
+
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
-	return &Config{
-		ExposedAddress: defaultExposedAddress,
-		ListenAddress:  defaultListenAddress,
-		HTTPPort:       defaultHTTPPort,
-		RaftPort:       defaultRaftPort,
-		DataDir:        defaultDataDir,
-	}
+	return &Config{}
 }

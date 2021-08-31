@@ -1,8 +1,9 @@
 package raptorq
 
+import "fmt"
+
 const (
-	defaultHost = "127.0.0.1"
-	defaultPort = 50051
+	errValidationStr = "raptorq validation failed - missing val"
 )
 
 // Config contains settings of the p2p service
@@ -16,8 +17,17 @@ type Config struct {
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
-	return &Config{
-		Host: defaultHost,
-		Port: defaultPort,
+	return &Config{}
+}
+
+// Validate raptorq configs
+func (config *Config) Validate() error {
+	if config.Host == "" {
+		return fmt.Errorf("%s: %s", errValidationStr, "host")
 	}
+	if config.Port == 0 {
+		return fmt.Errorf("%s: %s", errValidationStr, "port")
+	}
+
+	return nil
 }
