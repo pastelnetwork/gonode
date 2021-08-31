@@ -92,11 +92,9 @@ func (s *service) waitSynchronization(ctx context.Context) error {
 			st, err := s.pastelClient.MasterNodeStatus(ctx)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Warn("Failed to get status from master node")
-			} else {
-				if st.Status == masterNodeSuccessfulStatus {
-					log.WithContext(ctx).Debug("Done for waiting synchronization status")
-					return nil
-				}
+			} else if st.Status == masterNodeSuccessfulStatus {
+				log.WithContext(ctx).Debug("Done for waiting synchronization status")
+				return nil
 			}
 		case <-timeoutCh:
 			return errors.New("timeout expired")
