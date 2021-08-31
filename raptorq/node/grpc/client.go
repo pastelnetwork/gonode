@@ -22,13 +22,13 @@ type client struct{}
 // Connect implements node.Client.Connect()
 func (client *client) Connect(ctx context.Context, address string) (node.Connection, error) {
 	// Limits the dial timeout, prevent got stuck too long
-	diagCtx, cancel := context.WithTimeout(ctx, defaultConnectTimeout)
+	dialCtx, cancel := context.WithTimeout(ctx, defaultConnectTimeout)
 	defer cancel()
 
 	id, _ := random.String(8, random.Base62Chars)
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 
-	grpcConn, err := grpc.DialContext(diagCtx, address,
+	grpcConn, err := grpc.DialContext(dialCtx, address,
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)
