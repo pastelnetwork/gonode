@@ -116,6 +116,8 @@ func (s *p2p) bootstrapIpPort(ctx context.Context) (ip string, port int, err err
 		if err != nil {
 			return ip, port, fmt.Errorf("masternodesExtra failed: %s", err)
 		} else if extP2p == "" {
+			log.WithContext(ctx).Info("unable to fetch bootstrap ip. Missing extP2P")
+
 			return "", 0, nil
 		}
 	}
@@ -137,11 +139,16 @@ func (s *p2p) bootstrapIpPort(ctx context.Context) (ip string, port int, err err
 func (s *p2p) configure(ctx context.Context) error {
 	ip, port, err := s.bootstrapIpPort(ctx)
 	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
+
 		return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
 	}
 
 	var bootstrapNodes []*kademlia.Node
 	if ip != "" && port > 0 {
+		log.WithContext(ctx).WithField("bootstap_ip", ip).
+			WithField("bootstrap_port", port).Info("adding p2p bootstap node")
+
 		bootstrapNode := &kademlia.Node{
 			IP:   ip,
 			Port: port,
