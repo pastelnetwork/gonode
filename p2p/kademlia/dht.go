@@ -19,7 +19,7 @@ var (
 	defaultNetworkPort   = 4445
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
-	defaultPingTime      = time.Second * 1
+	defaultPingTime      = time.Second * 5
 	defaultUpdateTime    = time.Minute * 1
 )
 

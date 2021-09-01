@@ -205,6 +205,6 @@ func NewTask(service *Service, request *ArtSearchRequest) *Task {
 		Service:         service,
 		request:         request,
 		resultChan:      make(chan *RegTicketSearch),
-		thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectTimeout),
+		thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
 	}
 }
