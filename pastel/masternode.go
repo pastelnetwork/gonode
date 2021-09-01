@@ -12,4 +12,5 @@ type MasterNode struct {
 	Fee        float64 `json:"fee"`
 	ExtAddress string  `json:"extAddress"`
 	ExtKey     string  `json:"extKey"`
+	ExtP2P     string  `json:"extP2P"`
 }

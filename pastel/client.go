@@ -446,6 +446,22 @@ func (client *client) GetBalance(ctx context.Context, address string) (float64, 
 	return balance, nil
 }
 
+// MasterNodesExtra implements pastel.Client.MasterNodesExtra
+func (client *client) MasterNodesExtra(ctx context.Context) (MasterNodes, error) {
+	blocknumMNs := make(map[string]MasterNode)
+	masterNodes := MasterNodes{}
+
+	if err := client.callFor(ctx, &blocknumMNs, "masternode", "list", "extra"); err != nil {
+		return nil, errors.Errorf("failed to get top masternodes: %w", err)
+	}
+
+	for _, masterNode := range blocknumMNs {
+		masterNodes = append(masterNodes, masterNode)
+	}
+
+	return masterNodes, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }

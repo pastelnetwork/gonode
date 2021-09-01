@@ -196,7 +196,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
-	p2p := p2p.New(config.P2P)
+	p2p := p2p.New(config.P2P, pastelClient)
 
 	nodeIPList, err := getDatabaseNodes(ctx, pastelClient)
 	if err != nil {
