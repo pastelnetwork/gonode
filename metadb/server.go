@@ -110,7 +110,7 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
-	selfAddress := s.config.ExposedAddress
+	selfAddress := s.config.GetExposedAddr()
 	var joinIPAddresses []string
 	if !s.config.IsLeader {
 		for _, ip := range s.nodeIPList {
@@ -205,7 +205,12 @@ func (s *service) startServer(ctx context.Context) error {
 		return errors.Errorf("start http server: %w", err)
 	}
 	// mark the rqlite node is ready
-	s.ready <- struct{}{}
+	select {
+	case <-ctx.Done():
+		return errors.Errorf("context done: %w", ctx.Err())
+	case s.ready <- struct{}{}:
+		// do nothing, continue
+	}
 
 	log.WithContext(ctx).Info("metadb service is started")
 

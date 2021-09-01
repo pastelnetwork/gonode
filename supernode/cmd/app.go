@@ -26,6 +26,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/configs"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
@@ -104,6 +105,18 @@ func NewApp() *cli.App {
 			log.AddHook(hooks.NewFileHook(config.LogFile))
 		}
 		log.AddHook(hooks.NewDurationHook())
+
+		if err := config.P2P.Validate(); err != nil {
+			return err
+		}
+
+		if err := config.MetaDB.Validate(); err != nil {
+			return err
+		}
+
+		if err := config.RaptorQ.Validate(); err != nil {
+			return err
+		}
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
@@ -225,6 +238,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewDownloadArtwork(artworkDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
+		healthcheck.NewHealthCheck(),
 	)
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess)

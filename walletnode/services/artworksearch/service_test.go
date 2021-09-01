@@ -91,7 +91,7 @@ func TestRegTicket(t *testing.T) {
 
 			pastelClientMock.ListenOnRegTicket(testCase.args.regTicketID, testCase.want, testCase.args.regTicketErr)
 
-			service := NewService(NewConfig(), pastelClientMock, nil, nodeClientMock)
+			service := NewService(NewConfig(), pastelClientMock, nodeClientMock)
 
 			result, err := service.RegTicket(ctx, testCase.args.regTicketID)
 			assert.Equal(t, testCase.err, err)
