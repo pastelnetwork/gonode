@@ -92,7 +92,7 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 }
 
 // bootstrapIpPort connects with pastel client & gets p2p boostrap ip & port
-func (s *p2p) bootstrapIpPort(ctx context.Context) (ip string, port int, err error) {
+func (s *p2p) bootstrapIPPort(ctx context.Context) (ip string, port int, err error) {
 	get := func(ctx context.Context, f func(context.Context) (pastel.MasterNodes, error)) (string, error) {
 		mns, err := f(ctx)
 		if err != nil {
@@ -137,7 +137,7 @@ func (s *p2p) bootstrapIpPort(ctx context.Context) (ip string, port int, err err
 
 // configure the distributed hash table for p2p service
 func (s *p2p) configure(ctx context.Context) error {
-	ip, port, err := s.bootstrapIpPort(ctx)
+	ip, port, err := s.bootstrapIPPort(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
 
