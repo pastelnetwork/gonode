@@ -152,15 +152,15 @@ commands:
             cd ./<< parameters.outputDirectory >>
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Create sha256 checksum of linux/amd64 build"
-              sha256sum << parameters.binaryName >>-linux-amd64 > << parameters.binaryName >>-linux-amd64.sha256
+              sha256sum << parameters.moduleSubDir >>-linux-amd64 > << parameters.moduleSubDir >>-linux-amd64.sha256
             fi
             if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
               echo "Create sha256 checksum of darwin-10.14/amd64 build"
-              sha256sum  << parameters.binaryName >>-darwin-10.14-amd64 >  << parameters.binaryName >>-darwin-10.14-amd64.sha256
+              sha256sum  << parameters.moduleSubDir >>-darwin-10.14-amd64 >  << parameters.moduleSubDir >>-darwin-10.14-amd64.sha256
             fi
             if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
               echo "Create sha256 checksum of windows/amd64 build"
-              sha256 << parameters.binaryName >>-windows-4.0-amd64.exe > << parameters.binaryName >>-windows-4.0-amd64.sha256
+              sha256 << parameters.moduleSubDir >>-windows-4.0-amd64.exe > << parameters.moduleSubDir >>-windows-4.0-amd64.sha256
             fi
             ls -R ./*
 
