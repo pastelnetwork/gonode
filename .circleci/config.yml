@@ -165,7 +165,7 @@ commands:
             fi
             if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
               echo "Create sha256 checksum of windows/amd64 build"
-              sha256 "$WINDOWS_ARTIFACT" > "$WINDOWS_ARTIFACT.sha256"
+              sha256sum "$WINDOWS_ARTIFACT" > "$WINDOWS_ARTIFACT.sha256"
             fi
             ls -R ./*
 
