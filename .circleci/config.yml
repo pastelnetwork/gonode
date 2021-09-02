@@ -148,7 +148,9 @@ commands:
 
             mkdir -p << parameters.outputDirectory >>
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
-
+            
+            sync
+            ls -R ./<< parameters.outputDirectory >>
             cd ./<< parameters.outputDirectory >>
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Create sha256 checksum of linux/amd64 build"
