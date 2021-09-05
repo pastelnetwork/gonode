@@ -182,6 +182,26 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return value, nil
 }
 
+// StorageSize returns size of DB
+func (s *DHT) Nodes(_ context.Context) []Node {
+	return s.ht.nodes()
+}
+
+// KeyCount returns number of current keys
+func (s *DHT) KeyCount(ctx context.Context) (int, error) {
+	return len(s.store.Keys(ctx)), nil
+}
+
+// StorageSize returns size of DB
+func (s *DHT) StorageSize(ctx context.Context) (int64, error) {
+	dbSize, err := s.store.Size(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	return dbSize, nil
+}
+
 // Bootstrap attempts to bootstrap the network using the BootstrapNodes provided
 // to the Options struct
 func (s *DHT) Bootstrap(ctx context.Context) error {

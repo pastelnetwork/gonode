@@ -22,6 +22,9 @@ type Store interface {
 	// KeysForReplication returns the keys of all data to be replicated across the network
 	KeysForReplication(ctx context.Context) [][]byte
 
+	// Size returns the size in bytes of DB
+	Size(ctx context.Context) (int64, error)
+
 	// Close the store
 	Close(ctx context.Context)
 }

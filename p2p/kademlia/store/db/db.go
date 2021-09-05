@@ -202,3 +202,8 @@ func (s *Badger) Close(ctx context.Context) {
 		}
 	}
 }
+
+func (s *Badger) Size(ctx context.Context) (int64, error) {
+	lsm, vlog := s.db.Size()
+	return lsm + vlog, nil
+}

@@ -83,6 +83,11 @@ func (s *Store) Keys(_ context.Context) [][]byte {
 func (s *Store) Close(_ context.Context) {
 }
 
+func (s *Store) Size(_ context.Context) (int64, error) {
+	// FIXME : improve later
+	return 0, nil
+}
+
 // NewStore returns a new memory store
 func NewStore() *Store {
 	return &Store{

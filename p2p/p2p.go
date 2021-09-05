@@ -91,6 +91,39 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return s.dht.Retrieve(ctx, key)
 }
 
+// Peers return info of peers
+func (s *p2p) Peers(ctx context.Context) ([]PeerInfo, error) {
+	nodes := s.dht.Nodes(ctx)
+	peers := []PeerInfo{}
+	for _, node := range nodes {
+		peers = append(peers, PeerInfo{
+			ID:   node.ID,
+			IP:   node.IP,
+			Port: node.Port,
+		})
+	}
+
+	return peers, nil
+}
+
+// DatabaseStatus return status of backend database
+func (s *p2p) DatabaseStatus(ctx context.Context) (DbStatus, error) {
+	keyCnt, err := s.dht.KeyCount(ctx)
+	if err != nil {
+		return DbStatus{}, errors.Errorf("get key count failed: %w", err)
+	}
+
+	dbSize, err := s.dht.StorageSize(ctx)
+	if err != nil {
+		return DbStatus{}, errors.Errorf("get storage size failed: %w", err)
+	}
+
+	return DbStatus{
+		KeyCount: keyCnt,
+		SizeInMb: int(dbSize / (1024 * 1024)),
+	}, nil
+}
+
 // bootstrapIpPort connects with pastel client & gets p2p boostrap ip & port
 func (s *p2p) bootstrapIPPort(ctx context.Context) (ip string, port int, err error) {
 	get := func(ctx context.Context, f func(context.Context) (pastel.MasterNodes, error)) (string, error) {

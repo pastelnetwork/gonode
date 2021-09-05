@@ -276,6 +276,20 @@ func (ht *HashTable) totalCount() int {
 	return num
 }
 
+// nodes returns nodes in table
+func (ht *HashTable) nodes() []Node {
+	nodeList := []Node{}
+	ht.mutex.RLock()
+	defer ht.mutex.RUnlock()
+
+	for _, v := range ht.routeTable {
+		for _, node := range v {
+			nodeList = append(nodeList, *node)
+		}
+	}
+	return nodeList
+}
+
 // newRandomID returns a new random id
 func newRandomID() ([]byte, error) {
 	id := make([]byte, 20)
