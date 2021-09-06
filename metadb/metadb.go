@@ -26,6 +26,8 @@ type MetaDB interface {
 	LeaderAddress() string
 	// IsLeader let us know if this instance is leader or not
 	IsLeader() bool
+	// Stats return status of MetaDB
+	Stats(ctx context.Context) (map[string]interface{}, error)
 }
 
 type service struct {

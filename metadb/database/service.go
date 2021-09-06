@@ -58,6 +58,11 @@ func (db *Ops) LeaderAddress() string {
 	return db.metaDB.LeaderAddress()
 }
 
+// Stats return stats of database
+func (db *Ops) Stats(ctx context.Context) (map[string]interface{}, error) {
+	return db.metaDB.Stats(ctx)
+}
+
 // WriteUserData writes metadata in the struct UserdataProcessRequest to metadb
 func (db *Ops) WriteUserData(ctx context.Context, data *pb.UserdataRequest) error {
 	if data == nil {

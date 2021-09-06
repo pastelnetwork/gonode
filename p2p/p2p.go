@@ -100,6 +100,7 @@ func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	}
 
 	retStats["dht"] = dhtStats
+	retStats["config"] = s.config
 	return retStats, nil
 }
 
@@ -153,7 +154,7 @@ func (s *p2p) configure(ctx context.Context) error {
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
 
-		return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
+		//return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
 	}
 
 	var bootstrapNodes []*kademlia.Node

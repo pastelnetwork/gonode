@@ -32,6 +32,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
+	statsmngr "github.com/pastelnetwork/gonode/supernode/stats_manager"
 )
 
 const (
@@ -241,5 +242,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		healthcheck.NewHealthCheck(),
 	)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess)
+	// create stats manager
+	statsMngr := statsmngr.NewStatsMngr()
+	statsMngr.Add("p2p", p2p)
+	statsMngr.Add("metaDB", metadb)
+	//FIXME: add stats monitor for pasteld
+
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess, statsMngr)
 }

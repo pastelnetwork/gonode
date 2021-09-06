@@ -208,9 +208,8 @@ func (s *Badger) Stats(ctx context.Context) (map[string]interface{}, error) {
 	stats := map[string]interface{}{}
 
 	lsm, vlog := s.db.Size()
-	stats["lsm"] = lsm
-	stats["vlog"] = vlog
-	stats["directory_size"] = lsm + vlog
+	stats["log_size"] = vlog
+	stats["dir_size"] = lsm + vlog
 	stats["record_count"] = len(s.Keys(ctx))
 	return stats, nil
 }
