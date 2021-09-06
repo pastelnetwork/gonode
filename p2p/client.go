@@ -4,18 +4,6 @@ package p2p
 
 import "context"
 
-// PeerInfo is every thing related to an p2p peer
-type PeerInfo struct {
-	// id is a 32 byte unique identifier
-	ID []byte
-
-	// ip address of the node
-	IP string
-
-	// port of the node
-	Port int
-}
-
 // return current status of backend Database
 type DbStatus struct {
 	SizeInMb int // Current size of DB
@@ -33,9 +21,6 @@ type Client interface {
 	// - the base58 encoded identifier will be returned
 	Store(ctx context.Context, data []byte) (string, error)
 
-	// Peers return info of peers
-	Peers(ctx context.Context) ([]PeerInfo, error)
-
-	// DatabaseStatus return status of backend database
-	DatabaseStatus(ctx context.Context) (DbStatus, error)
+	// Stats return status of p2p
+	Stats(ctx context.Context) (map[string]interface{}, error)
 }

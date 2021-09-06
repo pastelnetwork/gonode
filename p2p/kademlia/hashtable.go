@@ -277,15 +277,13 @@ func (ht *HashTable) totalCount() int {
 }
 
 // nodes returns nodes in table
-func (ht *HashTable) nodes() []Node {
-	nodeList := []Node{}
+func (ht *HashTable) nodes() []*Node {
+	nodeList := []*Node{}
 	ht.mutex.RLock()
 	defer ht.mutex.RUnlock()
 
 	for _, v := range ht.routeTable {
-		for _, node := range v {
-			nodeList = append(nodeList, *node)
-		}
+		nodeList = append(nodeList, v...)
 	}
 	return nodeList
 }

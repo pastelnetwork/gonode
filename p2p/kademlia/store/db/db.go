@@ -203,7 +203,14 @@ func (s *Badger) Close(ctx context.Context) {
 	}
 }
 
-func (s *Badger) Size(ctx context.Context) (int64, error) {
+// Stats returns stats of store
+func (s *Badger) Stats(ctx context.Context) (map[string]interface{}, error) {
+	stats := map[string]interface{}{}
+
 	lsm, vlog := s.db.Size()
-	return lsm + vlog, nil
+	stats["lsm"] = lsm
+	stats["vlog"] = vlog
+	stats["directory_size"] = lsm + vlog
+	stats["record_count"] = len(s.Keys(ctx))
+	return stats, nil
 }
