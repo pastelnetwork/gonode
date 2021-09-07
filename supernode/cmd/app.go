@@ -243,7 +243,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	)
 
 	// create stats manager
-	statsMngr := healthcheck_lib.NewStatsMngr()
+	statsMngr := healthcheck_lib.NewStatsMngr(150 * time.Second)
 	statsMngr.Add("p2p", p2p)
 	statsMngr.Add("metaDB", metadb)
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))

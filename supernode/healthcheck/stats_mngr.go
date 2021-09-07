@@ -22,14 +22,16 @@ type StatsClient interface {
 
 // StatsMngr is definitation of stats manager
 type StatsMngr struct {
-	mtx     sync.RWMutex
-	clients map[string]StatsClient
+	mtx            sync.RWMutex
+	updateDuration time.Duration
+	clients        map[string]StatsClient
 }
 
 // NewStatsMngr return an instance of StatsMngr
-func NewStatsMngr() *StatsMngr {
+func NewStatsMngr(duration time.Duration) *StatsMngr {
 	return &StatsMngr{
-		clients: map[string]StatsClient{},
+		clients:        map[string]StatsClient{},
+		updateDuration: duration,
 	}
 }
 
@@ -67,15 +69,15 @@ func (mngr *StatsMngr) Run(ctx context.Context) error {
 			err = errors.Errorf("context done %w", ctx.Err())
 			log.WithContext(ctx).WithError(err).Warnf("StatsManager stopped")
 			return err
-		case <-time.After(150 * time.Second): // update stats each 2.5 minutes
+		case <-time.After(mngr.updateDuration):
 			stats, subErr := mngr.Stats(ctx)
 			if subErr != nil {
-				log.WithContext(ctx).WithError(err).Warn("UpdateStatsFailed")
+				log.WithContext(ctx).WithError(subErr).Warn("UpdateStatsFailed")
 			} else {
 				// FIXME : update local stats for fetching later
 				data, subErr := json.Marshal(stats)
 				if subErr != nil {
-					log.WithContext(ctx).WithError(err).Warn("MarshalStatsFailed")
+					log.WithContext(ctx).WithError(subErr).Warn("MarshalStatsFailed")
 				} else {
 					log.WithContext(ctx).WithField("Stats", string(data)).Warn("UpdateStatsFinished")
 				}

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
