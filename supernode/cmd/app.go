@@ -24,6 +24,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
+	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
@@ -32,7 +33,6 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
-	statsmngr "github.com/pastelnetwork/gonode/supernode/stats_manager"
 )
 
 const (
@@ -243,10 +243,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	)
 
 	// create stats manager
-	statsMngr := statsmngr.NewStatsMngr()
+	statsMngr := healthcheck_lib.NewStatsMngr()
 	statsMngr.Add("p2p", p2p)
 	statsMngr.Add("metaDB", metadb)
-	//FIXME: add stats monitor for pasteld
+	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess, statsMngr)
 }

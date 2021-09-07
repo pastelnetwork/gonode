@@ -1,4 +1,4 @@
-package statsmanager
+package healthcheck
 
 import (
 	"context"
