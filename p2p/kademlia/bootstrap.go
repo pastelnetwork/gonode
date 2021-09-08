@@ -48,7 +48,7 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("masternodesExtra failed: %s", err)
 		} else if extP2p == "" {
-			log.WithContext(ctx).Info("unable to fetch bootstrap ip. Missing extP2P")
+			log.WithContext(ctx).Error("unable to fetch bootstrap ip. Missing extP2P")
 
 			return nil
 		}
@@ -95,6 +95,7 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 			addr := fmt.Sprintf("%s:%v", node.IP, node.Port)
 			if _, err := s.cache.Get(addr); err == nil {
 				log.WithContext(ctx).WithField("addr", addr).Info("skip bad p2p boostrap addr")
+				continue
 			}
 
 			wg.Add(1)
