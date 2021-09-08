@@ -9,18 +9,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-type HealthCheckMngr interface {
+// StatsMngr is interface of StatsManger, return stats of system
+type StatsMngr interface {
+	// Stats returns stats of system
 	Stats(ctx context.Context) (map[string]interface{}, error)
 }
 
 // HealthCheck represents grpc service for supernode healthcheck
 type HealthCheck struct {
-	HealthCheckMngr
+	StatsMngr
 	pb.UnimplementedHealthCheckServer
 }
 
 // Ping will send a message to and get back a reply from supernode
-func (service *HealthCheck) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingReply, error) {
+func (service *HealthCheck) Ping(ctx context.Context, _ *pb.PingRequest) (*pb.PingReply, error) {
 	stats, err := service.Stats(ctx)
 	if err != nil {
 		return &pb.PingReply{Reply: ""}, errors.Errorf("failed to Stats(): %w", err)
@@ -41,8 +43,8 @@ func (service *HealthCheck) Desc() *grpc.ServiceDesc {
 }
 
 // NewHealthCheck returns a new HealthCheck instance.
-func NewHealthCheck(mngr HealthCheckMngr) *HealthCheck {
+func NewHealthCheck(mngr StatsMngr) *HealthCheck {
 	return &HealthCheck{
-		HealthCheckMngr: mngr,
+		StatsMngr: mngr,
 	}
 }

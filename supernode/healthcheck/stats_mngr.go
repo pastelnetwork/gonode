@@ -46,7 +46,7 @@ func (mngr *StatsMngr) Add(id string, client StatsClient) {
 }
 
 // Stats returns cached stats of all monitored clients
-func (mngr *StatsMngr) Stats(ctx context.Context) (map[string]interface{}, error) {
+func (mngr *StatsMngr) Stats(_ context.Context) (map[string]interface{}, error) {
 	mngr.mtx.RLock()
 	defer mngr.mtx.RUnlock()
 	stats := mngr.currentStats
