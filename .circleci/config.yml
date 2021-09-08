@@ -203,7 +203,7 @@ commands:
               echo "Check existence of windows/amd64 build and upload to GitHub"
               test -f $WINDOWS_ARTIFACT
               github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-win-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-win-amd64.sha256 --file << parameters.binaryName >>-windows-4.0-amd64.sha256
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-win-amd64.sha256 --file << parameters.binaryName >>-windows-4.0-amd64.exe.sha256
             fi
   install_tensorflow:
     steps:
