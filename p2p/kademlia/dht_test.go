@@ -14,17 +14,22 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
+	"github.com/pastelnetwork/gonode/pastel"
+	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/ratelimit"
 )
 
 func TestSuite(t *testing.T) {
-	suite.Run(t, new(testSuite))
+	ts := new(testSuite)
+	ts.t = t
+	suite.Run(t, ts)
 }
 
 type testSuite struct {
 	suite.Suite
 
+	t       *testing.T
 	Key     string
 	Value   []byte
 	IP      string
@@ -143,7 +148,16 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 		options.BootstrapNodes = nodes
 	}
 
-	dht, err := NewDHT(ts.memStore, options)
+	pnodes := pastel.MasterNodes{}
+	for i := 0; i < 10; i++ {
+		pnodes = append(pnodes, pastel.MasterNode{})
+	}
+	pnodes = append(pnodes, pastel.MasterNode{ExtKey: "A"})
+
+	pastelClientMock := pastelMock.NewMockClient(ts.t)
+	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
+
+	dht, err := NewDHT(ts.memStore, pastelClientMock, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -163,7 +177,16 @@ func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []
 		options.BootstrapNodes = nodes
 	}
 
-	dht, err := NewDHT(ts.dbStore, options)
+	pnodes := pastel.MasterNodes{}
+	for i := 0; i < 10; i++ {
+		pnodes = append(pnodes, pastel.MasterNode{})
+	}
+	pnodes = append(pnodes, pastel.MasterNode{ExtKey: "A"})
+
+	pastelClientMock := pastelMock.NewMockClient(ts.t)
+	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
+
+	dht, err := NewDHT(ts.dbStore, pastelClientMock, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
