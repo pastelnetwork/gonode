@@ -7,12 +7,12 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-// StatsMngr is definitation of stats manager
+// PastelStatsClient is definitation of stats manager
 type PastelStatsClient struct {
 	pastelClient pastel.Client
 }
 
-// NewStatsMngr return an instance of StatsMngr
+// NewPastelStatsClient return an instance of PastelStatsClient
 func NewPastelStatsClient(pastelClient pastel.Client) *PastelStatsClient {
 	return &PastelStatsClient{
 		pastelClient: pastelClient,

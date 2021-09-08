@@ -27,7 +27,6 @@ import (
 	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
@@ -234,16 +233,16 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// server
 	grpc := server.New(config.Server,
+		"service",
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
-		healthcheck.NewHealthCheck(),
 	)
 
 	// create stats manager
-	statsMngr := healthcheck_lib.NewStatsMngr(150 * time.Second)
+	statsMngr := healthcheck_lib.NewStatsMngr(config.HealthCheck)
 	statsMngr.Add("p2p", p2p)
 	statsMngr.Add("metaDB", metadb)
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))

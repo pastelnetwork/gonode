@@ -2,12 +2,13 @@ package healthcheck
 
 import (
 	"context"
-	"encoding/json"
 	"sync"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 )
 
 const (
@@ -22,16 +23,18 @@ type StatsClient interface {
 
 // StatsMngr is definitation of stats manager
 type StatsMngr struct {
-	mtx            sync.RWMutex
-	updateDuration time.Duration
-	clients        map[string]StatsClient
+	mtx          sync.RWMutex
+	clients      map[string]StatsClient
+	config       *Config
+	currentStats map[string]interface{}
 }
 
 // NewStatsMngr return an instance of StatsMngr
-func NewStatsMngr(duration time.Duration) *StatsMngr {
+func NewStatsMngr(config *Config) *StatsMngr {
 	return &StatsMngr{
-		clients:        map[string]StatsClient{},
-		updateDuration: duration,
+		clients:      map[string]StatsClient{},
+		config:       config,
+		currentStats: map[string]interface{}{"time_stamp": ""},
 	}
 }
 
@@ -42,8 +45,16 @@ func (mngr *StatsMngr) Add(id string, client StatsClient) {
 	mngr.clients[id] = client
 }
 
-// Stats returns stats of all monitored clients
+// Stats returns cached stats of all monitored clients
 func (mngr *StatsMngr) Stats(ctx context.Context) (map[string]interface{}, error) {
+	mngr.mtx.RLock()
+	defer mngr.mtx.RUnlock()
+	stats := mngr.currentStats
+	return stats, nil
+}
+
+// updateStats returns stats of all monitored clients
+func (mngr *StatsMngr) updateStats(ctx context.Context) (map[string]interface{}, error) {
 	mngr.mtx.RLock()
 	defer mngr.mtx.RUnlock()
 	stats := map[string]interface{}{}
@@ -55,11 +66,42 @@ func (mngr *StatsMngr) Stats(ctx context.Context) (map[string]interface{}, error
 		stats[id] = subStats
 	}
 
+	stats["time_stamp"] = time.Now()
 	return stats, nil
 }
 
 // Run start update stats of system periodically
 func (mngr *StatsMngr) Run(ctx context.Context) error {
+	var err error
+	wg := sync.WaitGroup{}
+
+	// start update stats periodically
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if err := mngr.runUpdateStats(ctx); err != nil {
+			log.WithContext(ctx).WithError(err).Error("StatsMngr peridically update stoppped failed")
+		} else {
+			log.WithContext(ctx).Warn("StatsMngr peridically update stoppped successfully")
+		}
+	}()
+
+	// if ping service is enable, start it
+	if mngr.config.Enable {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err = mngr.runPingService(ctx)
+		}()
+	}
+
+	// wait until sevices finish
+	wg.Wait()
+	return err
+}
+
+// Run start update stats of system periodically
+func (mngr *StatsMngr) runUpdateStats(ctx context.Context) error {
 	var err error
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	log.WithContext(ctx).Info("StatsManager started")
@@ -69,19 +111,33 @@ func (mngr *StatsMngr) Run(ctx context.Context) error {
 			err = errors.Errorf("context done %w", ctx.Err())
 			log.WithContext(ctx).WithError(err).Warnf("StatsManager stopped")
 			return err
-		case <-time.After(mngr.updateDuration):
-			stats, subErr := mngr.Stats(ctx)
+		case <-time.After(mngr.config.UpdateInterval):
+			stats, subErr := mngr.updateStats(ctx)
 			if subErr != nil {
 				log.WithContext(ctx).WithError(subErr).Warn("UpdateStatsFailed")
 			} else {
-				// FIXME : update local stats for fetching later
-				data, subErr := json.Marshal(stats)
-				if subErr != nil {
-					log.WithContext(ctx).WithError(subErr).Warn("MarshalStatsFailed")
-				} else {
-					log.WithContext(ctx).WithField("Stats", string(data)).Warn("UpdateStatsFinished")
-				}
+				mngr.mtx.Lock()
+				mngr.currentStats = stats
+				mngr.mtx.Unlock()
 			}
 		}
 	}
+}
+
+// Run start update stats of system periodically
+func (mngr *StatsMngr) runPingService(ctx context.Context) error {
+	var serverConfig server.Config
+	serverConfig.Port = mngr.config.Port
+	if mngr.config.LocalOnly {
+		serverConfig.ListenAddresses = "127.0.0.0"
+	} else {
+		serverConfig.ListenAddresses = "0.0.0.0"
+	}
+
+	grpc := server.New(&serverConfig,
+		"pingservice",
+		healthcheck.NewHealthCheck(mngr),
+	)
+
+	return grpc.Run(ctx)
 }

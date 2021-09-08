@@ -182,6 +182,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return value, nil
 }
 
+// Stats returns stats of DHT
 func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 	dbStats, err := s.store.Stats(ctx)
 	if err != nil {
