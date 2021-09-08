@@ -62,6 +62,9 @@ const (
 
 	// GetRegisterNFTFeeMethod represents GetRegisterNFTFee method
 	GetRegisterNFTFeeMethod = "GetRegisterNFTFee"
+
+	// MasterNodesExtraMethod represent MasterNodesExtra name method
+	MasterNodesExtraMethod = "MasterNodesExtra"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -81,6 +84,12 @@ func NewMockClient(t *testing.T) *Client {
 // ListenOnMasterNodesTop listening MasterNodesTop and returns Mn's and error from args
 func (client *Client) ListenOnMasterNodesTop(nodes pastel.MasterNodes, err error) *Client {
 	client.On(MasterNodesTopMethod, mock.Anything).Return(nodes, err)
+	return client
+}
+
+// ListenOnMasterNodesExtra listening MasterNodesExtra and returns Mn's and error from args
+func (client *Client) ListenOnMasterNodesExtra(nodes pastel.MasterNodes, err error) *Client {
+	client.On(MasterNodesExtraMethod, mock.Anything).Return(nodes, err)
 	return client
 }
 
