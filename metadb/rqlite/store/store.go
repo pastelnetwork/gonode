@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/raft"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	rlog "github.com/pastelnetwork/gonode/metadb/rqlite/log"
@@ -505,6 +506,15 @@ func (s *Store) Stats() (map[string]interface{}, error) {
 		"sqlite3":            dbStatus,
 		"db_conf":            s.dbConf,
 	}
+
+	// get free space of current kademlia folder
+	diskUse, err := utils.DiskUsage(s.raftDir)
+	if err != nil {
+		return nil, errors.Errorf("get disk info failed: %w", err)
+	}
+
+	status["disk-info"] = &diskUse
+
 	return status, nil
 }
 
