@@ -1,48 +1,53 @@
 package memory
 
 import (
-	"sync"
+	"errors"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/storage"
+	cache "github.com/patrickmn/go-cache"
 )
 
 type keyValue struct {
-	sync.Mutex
-	values map[string][]byte
+	store *cache.Cache
 }
 
 // Get implements storage.KeyValue.Set().
 func (db *keyValue) Get(key string) ([]byte, error) {
-	db.Lock()
-	defer db.Unlock()
+	if value, ok := db.store.Get(key); ok {
+		if bytes, ok := value.([]byte); ok {
+			return bytes, nil
+		}
 
-	if value, ok := db.values[key]; ok {
-		return value, nil
+		return nil, errors.New("unable to get bytes from value")
 	}
+
 	return nil, storage.ErrKeyValueNotFound
 }
 
 // Delete implements storage.KeyValue.Delete().
 func (db *keyValue) Delete(key string) error {
-	db.Lock()
-	defer db.Unlock()
+	db.store.Delete(key)
 
-	delete(db.values, key)
 	return nil
 }
 
 // Get implements storage.KeyValue.Set().
 func (db *keyValue) Set(key string, value []byte) error {
-	db.Lock()
-	defer db.Unlock()
+	db.store.Set(key, value, cache.NoExpiration)
+	return nil
+}
 
-	db.values[key] = value
+// Get implements storage.KeyValue.Set().
+func (db *keyValue) SetWithExpiry(key string, value []byte, expiry time.Duration) error {
+	db.store.Set(key, value, expiry)
 	return nil
 }
 
 // NewKeyValue return new instance key value storage
 func NewKeyValue() storage.KeyValue {
+	c := cache.New(-1*time.Minute, 12*time.Hour)
 	return &keyValue{
-		values: make(map[string][]byte),
+		store: c,
 	}
 }
