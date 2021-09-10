@@ -3,8 +3,6 @@ package p2p
 import (
 	"context"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -47,6 +45,12 @@ func (s *p2p) Run(ctx context.Context) error {
 	// start the node for kademlia network
 	if err := s.dht.Start(ctx); err != nil {
 		return errors.Errorf("start the kademlia network: %w", err)
+	}
+
+	if err := s.dht.ConfigureBootstrapNodes(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
+
+		return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
 	}
 
 	// join the kademlia network if bootstrap nodes is set
@@ -113,71 +117,8 @@ func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return retStats, nil
 }
 
-// bootstrapIpPort connects with pastel client & gets p2p boostrap ip & port
-func (s *p2p) bootstrapIPPort(ctx context.Context) (ip string, port int, err error) {
-	get := func(ctx context.Context, f func(context.Context) (pastel.MasterNodes, error)) (string, error) {
-		mns, err := f(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		for _, mn := range mns {
-			if mn.ExtP2P != "" {
-				return mn.ExtP2P, nil
-			}
-		}
-
-		return "", nil
-	}
-
-	extP2p, err := get(ctx, s.pastelClient.MasterNodesTop)
-	if err != nil {
-		return ip, port, fmt.Errorf("masternodesTop failed: %s", err)
-	} else if extP2p == "" {
-		extP2p, err = get(ctx, s.pastelClient.MasterNodesExtra)
-		if err != nil {
-			return ip, port, fmt.Errorf("masternodesExtra failed: %s", err)
-		} else if extP2p == "" {
-			log.WithContext(ctx).Info("unable to fetch bootstrap ip. Missing extP2P")
-
-			return "", 0, nil
-		}
-	}
-
-	addr := strings.Split(extP2p, ":")
-	if len(addr) != 2 {
-		return ip, port, fmt.Errorf("invalid extP2P format: %s", extP2p)
-	}
-
-	port, err = strconv.Atoi(addr[1])
-	if err != nil {
-		return ip, port, fmt.Errorf("invalid extP2P port: %s", extP2p)
-	}
-
-	return addr[0], port, nil
-}
-
 // configure the distributed hash table for p2p service
 func (s *p2p) configure(ctx context.Context) error {
-	ip, port, err := s.bootstrapIPPort(ctx)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
-
-		return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
-	}
-
-	var bootstrapNodes []*kademlia.Node
-	if ip != "" && port > 0 {
-		log.WithContext(ctx).WithField("bootstap_ip", ip).
-			WithField("bootstrap_port", port).Info("adding p2p bootstap node")
-
-		bootstrapNode := &kademlia.Node{
-			IP:   ip,
-			Port: port,
-		}
-		bootstrapNodes = append(bootstrapNodes, bootstrapNode)
-	}
-
 	// new the local storage
 	store, err := db.NewStore(ctx, s.config.DataDir)
 	if err != nil {
@@ -186,8 +127,8 @@ func (s *p2p) configure(ctx context.Context) error {
 	s.store = store
 
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, &kademlia.Options{
-		BootstrapNodes: bootstrapNodes,
+	dht, err := kademlia.NewDHT(store, s.pastelClient, &kademlia.Options{
+		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
 	})

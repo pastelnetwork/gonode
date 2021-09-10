@@ -3,16 +3,18 @@ package memory
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/storage"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/stretchr/testify/assert"
 )
 
 func newTestDB() *keyValue {
+	c := cache.New(-1*time.Minute, 12*time.Hour)
+	c.Set("exist", []byte("bar"), cache.NoExpiration)
 	return &keyValue{
-		values: map[string][]byte{
-			"exist": []byte("bar"),
-		},
+		store: c,
 	}
 }
 
@@ -83,9 +85,9 @@ func TestSet(t *testing.T) {
 			err := db.Set(testCase.key, testCase.value)
 			assert.Equal(t, testCase.expectedError, err)
 
-			value, ok := db.values[testCase.key]
+			value, ok := db.store.Get(testCase.key)
 			assert.True(t, ok, "not found new key")
-			assert.Equal(t, testCase.value, value)
+			assert.Equal(t, testCase.value, value.([]byte))
 		})
 	}
 
@@ -119,7 +121,7 @@ func TestDelete(t *testing.T) {
 			err := db.Delete(testCase.key)
 			assert.Equal(t, testCase.expectedError, err)
 
-			_, ok := db.values[testCase.key]
+			_, ok := db.store.Get(testCase.key)
 			assert.False(t, ok, "found deleted key")
 		})
 	}
