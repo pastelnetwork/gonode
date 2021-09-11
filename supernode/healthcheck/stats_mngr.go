@@ -7,8 +7,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
-	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 )
 
 const (
@@ -73,36 +71,6 @@ func (mngr *StatsMngr) updateStats(ctx context.Context) (map[string]interface{},
 // Run start update stats of system periodically
 func (mngr *StatsMngr) Run(ctx context.Context) error {
 	var err error
-	wg := sync.WaitGroup{}
-
-	// start update stats periodically
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		if err := mngr.runUpdateStats(ctx); err != nil {
-			log.WithContext(ctx).WithError(err).Error("StatsMngr peridically update stoppped failed")
-		} else {
-			log.WithContext(ctx).Warn("StatsMngr peridically update stoppped successfully")
-		}
-	}()
-
-	// if ping service is enable, start it
-	if mngr.config.Enable {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err = mngr.runPingService(ctx)
-		}()
-	}
-
-	// wait until sevices finish
-	wg.Wait()
-	return err
-}
-
-// Run start update stats of system periodically
-func (mngr *StatsMngr) runUpdateStats(ctx context.Context) error {
-	var err error
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	log.WithContext(ctx).Info("StatsManager started")
 	for {
@@ -122,22 +90,4 @@ func (mngr *StatsMngr) runUpdateStats(ctx context.Context) error {
 			}
 		}
 	}
-}
-
-// Run start update stats of system periodically
-func (mngr *StatsMngr) runPingService(ctx context.Context) error {
-	var serverConfig server.Config
-	serverConfig.Port = mngr.config.Port
-	if mngr.config.LocalOnly {
-		serverConfig.ListenAddresses = "127.0.0.0"
-	} else {
-		serverConfig.ListenAddresses = "0.0.0.0"
-	}
-
-	grpc := server.New(&serverConfig,
-		"pingservice",
-		healthcheck.NewHealthCheck(mngr),
-	)
-
-	return grpc.Run(ctx)
 }
