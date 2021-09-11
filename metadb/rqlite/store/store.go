@@ -427,31 +427,35 @@ func (s *Store) WaitForAppliedIndex(ctx context.Context, idx uint64, timeout tim
 
 // Stats returns stats for the store.
 func (s *Store) Stats() (map[string]interface{}, error) {
-	fkEnabled, err := s.db.FKConstraints()
-	if err != nil {
-		return nil, err
-	}
+	/*
+		fkEnabled, err := s.db.FKConstraints()
+		if err != nil {
+			return nil, err
+		}
 
-	dbSz, err := s.db.Size()
-	if err != nil {
-		return nil, err
-	}
-	dbStatus := map[string]interface{}{
-		"dsn":            s.dbConf.DSN,
-		"fk_constraints": enabledFromBool(fkEnabled),
-		"version":        sql.DBVersion,
-		"db_size":        dbSz,
-	}
-	if s.dbConf.Memory {
-		dbStatus["path"] = ":memory:"
-	} else {
-		dbStatus["path"] = s.dbPath
-		if s.onDiskCreated {
-			if dbStatus["size"], err = s.db.FileSize(); err != nil {
-				return nil, err
+		dbSz, err := s.db.Size()
+		if err != nil {
+			return nil, err
+		}
+
+
+		dbStatus := map[string]interface{}{
+			"dsn":            s.dbConf.DSN,
+			"fk_constraints": enabledFromBool(fkEnabled),
+			"version":        sql.DBVersion,
+			"db_size":        dbSz,
+		}
+		if s.dbConf.Memory {
+			dbStatus["path"] = ":memory:"
+		} else {
+			dbStatus["path"] = s.dbPath
+			if s.onDiskCreated {
+				if dbStatus["size"], err = s.db.FileSize(); err != nil {
+					return nil, err
+				}
 			}
 		}
-	}
+	*/
 
 	nodes, err := s.Nodes()
 	if err != nil {
@@ -493,18 +497,21 @@ func (s *Store) Stats() (map[string]interface{}, error) {
 			"node_id": leaderID,
 			"addr":    leaderAddr,
 		},
-		"apply_timeout":      s.ApplyTimeout.String(),
-		"heartbeat_timeout":  s.HeartbeatTimeout.String(),
-		"election_timeout":   s.ElectionTimeout.String(),
-		"snapshot_threshold": s.SnapshotThreshold,
-		"snapshot_interval":  s.SnapshotInterval,
-		"trailing_logs":      s.numTrailingLogs,
-		"request_marshaler":  s.reqMarshaller.Stats(),
-		"nodes":              nodes,
-		"dir":                s.raftDir,
-		"dir_size":           dirSz,
-		"sqlite3":            dbStatus,
-		"db_conf":            s.dbConf,
+		/*
+			"apply_timeout":      s.ApplyTimeout.String(),
+			"heartbeat_timeout":  s.HeartbeatTimeout.String(),
+			"election_timeout":   s.ElectionTimeout.String(),
+			"snapshot_threshold": s.SnapshotThreshold,
+			"snapshot_interval":  s.SnapshotInterval,
+			"trailing_logs":      s.numTrailingLogs,
+			"request_marshaler":  s.reqMarshaller.Stats(),
+			"sqlite3":     dbStatus,
+			"db_conf": s.dbConf,
+		*/
+		"nodes_count":   len(nodes),
+		"nodes":         nodes,
+		"rarf_dir":      s.raftDir,
+		"rarf_dir_size": dirSz,
 	}
 
 	// get free space of current kademlia folder

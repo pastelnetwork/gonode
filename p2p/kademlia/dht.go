@@ -201,7 +201,7 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 
 	dhtStats := map[string]interface{}{}
 	dhtStats["self"] = s.ht.self
-	dhtStats["peers_cnt"] = len(s.ht.nodes())
+	dhtStats["peers_count"] = len(s.ht.nodes())
 	dhtStats["peers"] = s.ht.nodes()
 	dhtStats["database"] = dbStats
 
