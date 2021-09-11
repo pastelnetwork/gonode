@@ -1232,6 +1232,7 @@ func writeUint64(w io.Writer, v uint64) error {
 	return binary.Write(w, binary.LittleEndian, v)
 }
 
+/*
 // enabledFromBool converts bool to "enabled" or "disabled".
 func enabledFromBool(b bool) string {
 	if b {
@@ -1239,6 +1240,7 @@ func enabledFromBool(b bool) string {
 	}
 	return "disabled"
 }
+*/
 
 // prettyVoter converts bool to "voter" or "non-voter"
 func prettyVoter(v bool) string {
