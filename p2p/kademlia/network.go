@@ -144,7 +144,8 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	s.dht.addNode(message.Sender)
 
 	// format the key
-	key := s.dht.hashKey(request.Data)
+	key := request.Key
+
 	// replication time for key
 	replication := time.Now().Add(defaultReplicateTime)
 	// store the data to local storage

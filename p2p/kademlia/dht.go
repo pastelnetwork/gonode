@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +25,10 @@ var (
 	defaultReplicateTime = time.Second * 3600
 	defaultPingTime      = time.Second * 5
 	defaultUpdateTime    = time.Minute * 1
+)
+
+const (
+	prefixNamespace = "ns:"
 )
 
 // DHT represents the state of the local node in the distributed hash table
@@ -147,10 +152,16 @@ func (s *DHT) hashKey(data []byte) []byte {
 	return sha[:]
 }
 
+func (s *DHT) storedKey(namespace string, b58Key string) []byte {
+	str := fmt.Sprintf("%s%s:%s", prefixNamespace, namespace, b58Key)
+	return []byte(str)
+}
+
 // Store the data into the network
 func (s *DHT) Store(ctx context.Context, namespace string, data []byte) (string, error) {
 	key := base58.Encode(s.hashKey(data))
-	actualKey := []byte(namespace + "." + key)
+	actualKey := s.storedKey(namespace, key)
+	log.WithContext(ctx).WithField("key", string(actualKey)).Infof("newKey")
 
 	// replicate time for the key
 	replication := time.Now().Add(defaultReplicateTime)
@@ -176,7 +187,7 @@ func (s *DHT) Retrieve(ctx context.Context, namespace string, key string) ([]byt
 		return nil, fmt.Errorf("invalid key: %v", key)
 	}
 
-	actualKey := []byte(namespace + "." + key)
+	actualKey := s.storedKey(namespace, key)
 
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, actualKey)
@@ -186,6 +197,27 @@ func (s *DHT) Retrieve(ctx context.Context, namespace string, key string) ([]byt
 	// if not found locally, iterative find value from kademlia network
 	if value == nil {
 		data, err := s.iterate(ctx, IterateFindValue, actualKey, nil)
+		if err != nil {
+			//return nil, fmt.Errorf("iterate find value: %v", err)
+			// be compatible with old key
+			return s.oldRetrieve(ctx, decoded)
+		}
+		return data, nil
+	}
+
+	return value, nil
+}
+
+// oldRetrieve use previous key name match, be compatible with previous version
+func (s *DHT) oldRetrieve(ctx context.Context, key []byte) ([]byte, error) {
+	// retrieve the key/value from local storage
+	value, err := s.store.Retrieve(ctx, key)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("store retrive failed")
+	}
+	// if not found locally, iterative find value from kademlia network
+	if value == nil {
+		data, err := s.iterate(ctx, IterateFindValue, key, nil)
 		if err != nil {
 			return nil, fmt.Errorf("iterate find value: %v", err)
 		}
@@ -208,7 +240,51 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 	dhtStats["peers"] = s.ht.nodes()
 	dhtStats["database"] = dbStats
 
+	// count key status
+	detailsStats, err := s.dataDetailsStats(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dhtStats["data_details"] = detailsStats
+
 	return dhtStats, nil
+}
+
+// Stats returns stats of DHT
+func (s *DHT) dataDetailsStats(ctx context.Context) (map[string]interface{}, error) {
+	// get allkeys
+	cntsMap := map[string]int{}
+	increaseCnt := func(key string) {
+		cnt := cntsMap[key]
+		cnt = cnt + 1
+		cntsMap[key] = cnt
+	}
+
+	// count number of key for each kind of namespace
+	for _, key := range s.store.Keys(ctx) {
+		// old items
+		if bytes.HasPrefix(key, []byte(prefixNamespace)) {
+			log.WithContext(ctx).Info(string(key))
+			items := strings.Split(string(key), ":")
+
+			// This is old kind of key?
+			if len(items) != 3 {
+				increaseCnt("unknown")
+				continue
+			}
+			increaseCnt(items[1])
+		} else {
+			increaseCnt("unknown")
+		}
+	}
+
+	stats := map[string]interface{}{}
+	// merge cnt data to output
+	for ns, count := range cntsMap {
+		stats[ns+"_count"] = count
+	}
+	return stats, nil
 }
 
 // new a message
@@ -384,7 +460,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 						return nil, nil
 					}
 
-					data := &StoreDataRequest{Data: data}
+					data := &StoreDataRequest{Key: target, Data: data}
 					// new a request message
 					request := s.newMessage(StoreData, n, data)
 					// send the request and receive the response
