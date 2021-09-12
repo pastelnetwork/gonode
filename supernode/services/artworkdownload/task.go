@@ -59,7 +59,7 @@ func (task *Task) DownloadThumbnail(ctx context.Context, key []byte) ([]byte, er
 	var file []byte
 	<-task.NewAction(func(ctx context.Context) error {
 		base58Key := base58.Encode(key)
-		file, err = task.p2pClient.Retrieve(ctx, base58Key)
+		file, err = task.p2pClient.RetrieveThumbnails(ctx, base58Key)
 		if err != nil {
 			err = errors.Errorf("failed to fetch p2p key : %s, error: %w", string(base58Key), err)
 			task.UpdateStatus(StatusKeyNotFound)
@@ -200,7 +200,7 @@ func (task *Task) restoreFile(ctx context.Context, nftRegTicket *pastel.RegTicke
 
 	for _, id := range nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs {
 		var rqIDsData []byte
-		rqIDsData, err = task.p2pClient.Retrieve(ctx, id)
+		rqIDsData, err = task.p2pClient.RetrieveData(ctx, id)
 		if err != nil {
 			err = errors.Errorf("could not retrieve compressed symbol file from Kademlia: %w", err)
 			task.UpdateStatus(StatusSymbolFileNotFound)
@@ -226,7 +226,7 @@ func (task *Task) restoreFile(ctx context.Context, nftRegTicket *pastel.RegTicke
 		symbols := make(map[string][]byte)
 		for _, id := range rqIDs {
 			var symbol []byte
-			symbol, err = task.p2pClient.Retrieve(ctx, id)
+			symbol, err = task.p2pClient.RetrieveData(ctx, id)
 			if err != nil {
 				log.WithContext(ctx).Debugf("Could not retrieve symbol of key: %s", id)
 				task.UpdateStatus(StatusSymbolNotFound)

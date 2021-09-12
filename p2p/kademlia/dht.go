@@ -148,41 +148,44 @@ func (s *DHT) hashKey(data []byte) []byte {
 }
 
 // Store the data into the network
-func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
-	key := s.hashKey(data)
+func (s *DHT) Store(ctx context.Context, namespace string, data []byte) (string, error) {
+	key := base58.Encode(s.hashKey(data))
+	actualKey := []byte(namespace + "." + key)
 
 	// replicate time for the key
 	replication := time.Now().Add(defaultReplicateTime)
 
 	// store the key to local storage
-	if err := s.store.Store(ctx, key, data, replication); err != nil {
+	if err := s.store.Store(ctx, actualKey, data, replication); err != nil {
 		return "", fmt.Errorf("store data to local storage: %v", err)
 	}
 
 	// iterative store the data
-	if _, err := s.iterate(ctx, IterateStore, key, data); err != nil {
+	if _, err := s.iterate(ctx, IterateStore, actualKey, data); err != nil {
 		return "", fmt.Errorf("iterative store data: %v", err)
 	}
 
-	return base58.Encode(key), nil
+	return key, nil
 }
 
 // Retrieve data from the networking using key. Key is the base58 encoded
 // identifier of the data.
-func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
+func (s *DHT) Retrieve(ctx context.Context, namespace string, key string) ([]byte, error) {
 	decoded := base58.Decode(key)
 	if len(decoded) != B/8 {
 		return nil, fmt.Errorf("invalid key: %v", key)
 	}
 
+	actualKey := []byte(namespace + "." + key)
+
 	// retrieve the key/value from local storage
-	value, err := s.store.Retrieve(ctx, decoded)
+	value, err := s.store.Retrieve(ctx, actualKey)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("store retrive failed")
 	}
 	// if not found locally, iterative find value from kademlia network
 	if value == nil {
-		data, err := s.iterate(ctx, IterateFindValue, decoded, nil)
+		data, err := s.iterate(ctx, IterateFindValue, actualKey, nil)
 		if err != nil {
 			return nil, fmt.Errorf("iterate find value: %v", err)
 		}
