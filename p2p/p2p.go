@@ -2,6 +2,7 @@ package p2p
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -14,12 +15,6 @@ import (
 
 const (
 	logPrefix = "p2p"
-)
-
-const (
-	namespaceData         = "data"
-	namespaceFingerprints = "fingerprints"
-	namespaceThumbnails   = "thumbnails"
 )
 
 // P2P represents the p2p service.
@@ -88,7 +83,7 @@ func (s *p2p) StoreData(ctx context.Context, data []byte) (string, error) {
 		return "", errors.New("p2p service is not running")
 	}
 
-	return s.dht.Store(ctx, namespaceData, data)
+	return s.dht.Store(ctx, kademlia.KeyTypeData, data)
 }
 
 // StoreThumbnails store thumbnails into the kademlia network
@@ -99,7 +94,7 @@ func (s *p2p) StoreThumbnails(ctx context.Context, data []byte) (string, error) 
 		return "", errors.New("p2p service is not running")
 	}
 
-	return s.dht.Store(ctx, namespaceThumbnails, data)
+	return s.dht.Store(ctx, kademlia.KeyTypeThumbnails, data)
 }
 
 // StoreFingerprints store fringerprints into the kademlia network
@@ -110,7 +105,7 @@ func (s *p2p) StoreFingerprints(ctx context.Context, data []byte) (string, error
 		return "", errors.New("p2p service is not running")
 	}
 
-	return s.dht.Store(ctx, namespaceFingerprints, data)
+	return s.dht.Store(ctx, kademlia.KeyTypeFingerprints, data)
 }
 
 // RetrieveData retrive the data from the kademlia network
@@ -121,7 +116,7 @@ func (s *p2p) RetrieveData(ctx context.Context, key string) ([]byte, error) {
 		return nil, errors.New("p2p service is not running")
 	}
 
-	return s.dht.Retrieve(ctx, namespaceData, key)
+	return s.dht.Retrieve(ctx, kademlia.KeyTypeData, key)
 }
 
 // RetrieveThumbnails retrive the data from the kademlia network
@@ -132,7 +127,7 @@ func (s *p2p) RetrieveThumbnails(ctx context.Context, key string) ([]byte, error
 		return nil, errors.New("p2p service is not running")
 	}
 
-	return s.dht.Retrieve(ctx, namespaceThumbnails, key)
+	return s.dht.Retrieve(ctx, kademlia.KeyTypeThumbnails, key)
 }
 
 // RetrieveFingerprints retrive the data from the kademlia network
@@ -143,11 +138,17 @@ func (s *p2p) RetrieveFingerprints(ctx context.Context, key string) ([]byte, err
 		return nil, errors.New("p2p service is not running")
 	}
 
-	return s.dht.Retrieve(ctx, namespaceFingerprints, key)
+	return s.dht.Retrieve(ctx, kademlia.KeyTypeFingerprints, key)
 }
 
 // Stats return status of p2p
 func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
+	fakeData := make([]byte, 20)
+	rand.Read(fakeData)
+	if _, err := s.StoreThumbnails(ctx, fakeData); err != nil {
+		log.WithContext(ctx).WithError(err).Error("p2pStoreFailed")
+	}
+
 	retStats := map[string]interface{}{}
 	dhtStats, err := s.dht.Stats(ctx)
 	if err != nil {

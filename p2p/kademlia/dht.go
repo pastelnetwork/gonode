@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"math/rand"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
@@ -27,8 +27,13 @@ var (
 	defaultUpdateTime    = time.Minute * 1
 )
 
+type KeyType byte
+
 const (
-	prefixNamespace = "ns:"
+	Sha32_256Bytes              = 32
+	KeyTypeData         KeyType = 0
+	KeyTypeFingerprints KeyType = 1
+	KeyTypeThumbnails   KeyType = 2
 )
 
 // DHT represents the state of the local node in the distributed hash table
@@ -152,16 +157,19 @@ func (s *DHT) hashKey(data []byte) []byte {
 	return sha[:]
 }
 
-func (s *DHT) storedKey(namespace string, b58Key string) []byte {
-	str := fmt.Sprintf("%s%s:%s", prefixNamespace, namespace, b58Key)
-	return []byte(str)
+func (s *DHT) storedKey(keyType KeyType, key []byte) []byte {
+
+	buffer := new(bytes.Buffer)
+	buffer.WriteByte(byte(keyType))
+	buffer.Write(key)
+
+	return buffer.Bytes()
 }
 
 // Store the data into the network
-func (s *DHT) Store(ctx context.Context, namespace string, data []byte) (string, error) {
-	key := base58.Encode(s.hashKey(data))
-	actualKey := s.storedKey(namespace, key)
-	log.WithContext(ctx).WithField("key", string(actualKey)).Infof("newKey")
+func (s *DHT) Store(ctx context.Context, keyType KeyType, data []byte) (string, error) {
+	key := s.hashKey(data)
+	actualKey := s.storedKey(keyType, key)
 
 	// replicate time for the key
 	replication := time.Now().Add(defaultReplicateTime)
@@ -176,18 +184,18 @@ func (s *DHT) Store(ctx context.Context, namespace string, data []byte) (string,
 		return "", fmt.Errorf("iterative store data: %v", err)
 	}
 
-	return key, nil
+	return base58.Encode(key), nil
 }
 
 // Retrieve data from the networking using key. Key is the base58 encoded
 // identifier of the data.
-func (s *DHT) Retrieve(ctx context.Context, namespace string, key string) ([]byte, error) {
+func (s *DHT) Retrieve(ctx context.Context, keyType KeyType, key string) ([]byte, error) {
 	decoded := base58.Decode(key)
 	if len(decoded) != B/8 {
 		return nil, fmt.Errorf("invalid key: %v", key)
 	}
 
-	actualKey := s.storedKey(namespace, key)
+	actualKey := s.storedKey(keyType, decoded)
 
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, actualKey)
@@ -229,6 +237,15 @@ func (s *DHT) oldRetrieve(ctx context.Context, key []byte) ([]byte, error) {
 
 // Stats returns stats of DHT
 func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
+	fakekey := make([]byte, 20)
+	rand.Read(fakekey)
+	fakeData := make([]byte, 20)
+	rand.Read(fakeData)
+	// store the key to local storage
+	if err := s.store.Store(ctx, fakekey, fakeData, time.Now()); err != nil {
+		log.WithContext(ctx).WithError(err).Error("dhtStoreFailed")
+	}
+
 	dbStats, err := s.store.Stats(ctx)
 	if err != nil {
 		return nil, err
@@ -255,28 +272,35 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 func (s *DHT) dataDetailsStats(ctx context.Context) (map[string]interface{}, error) {
 	// get allkeys
 	cntsMap := map[string]int{}
-	increaseCnt := func(key string) {
-		cnt := cntsMap[key]
+	increaseCnt := func(keyType string) {
+		cnt := cntsMap[keyType]
 		cnt = cnt + 1
-		cntsMap[key] = cnt
+		cntsMap[keyType] = cnt
 	}
 
 	// count number of key for each kind of namespace
-	for _, key := range s.store.Keys(ctx) {
-		// old items
-		if bytes.HasPrefix(key, []byte(prefixNamespace)) {
-			log.WithContext(ctx).Info(string(key))
-			items := strings.Split(string(key), ":")
-
-			// This is old kind of key?
-			if len(items) != 3 {
+	keyFunc := func(key []byte) {
+		if len(key) == Sha32_256Bytes+1 {
+			keyType := KeyType(key[0])
+			switch keyType {
+			case KeyTypeData:
+				increaseCnt("data")
+			case KeyTypeFingerprints:
+				increaseCnt("fingerprints")
+			case KeyTypeThumbnails:
+				increaseCnt("thumbnails")
+			default:
 				increaseCnt("unknown")
-				continue
 			}
-			increaseCnt(items[1])
 		} else {
+			// old items
 			increaseCnt("unknown")
 		}
+	}
+
+	err := s.store.ForEachKey(ctx, keyFunc)
+	if err != nil {
+		return nil, err
 	}
 
 	stats := map[string]interface{}{}

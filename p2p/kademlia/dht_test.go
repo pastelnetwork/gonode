@@ -215,7 +215,7 @@ func (ts *testSuite) TestStartDHTNode() {
 }
 
 func (ts *testSuite) TestRetrieveWithNil() {
-	value, err := ts.main.Retrieve(ts.ctx, "test", string(ts.Key))
+	value, err := ts.main.Retrieve(ts.ctx, KeyTypeData, string(ts.Key))
 	if err != nil {
 		ts.T().Fatalf("dht retrive: %v", err)
 	}
@@ -240,12 +240,12 @@ func (ts *testSuite) TestStoreAndRetrieveWithMemStore() {
 	}
 	defer dht.Stop(ts.ctx)
 
-	key, err := dht.Store(ts.ctx, "test", ts.Value)
+	key, err := dht.Store(ts.ctx, KeyTypeData, ts.Value)
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 
-	value, err := dht.Retrieve(ts.ctx, "test", key)
+	value, err := dht.Retrieve(ts.ctx, KeyTypeData, key)
 	if err != nil {
 		ts.T().Fatalf("dht retrieve: %v", err)
 	}
@@ -253,12 +253,12 @@ func (ts *testSuite) TestStoreAndRetrieveWithMemStore() {
 }
 
 func (ts *testSuite) TestStoreAndRetrieve() {
-	key, err := ts.main.Store(ts.ctx, "test", ts.Value)
+	key, err := ts.main.Store(ts.ctx, KeyTypeData, ts.Value)
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 
-	value, err := ts.main.Retrieve(ts.ctx, "test", key)
+	value, err := ts.main.Retrieve(ts.ctx, KeyTypeData, key)
 	if err != nil {
 		ts.T().Fatalf("dht retrieve: %v", err)
 	}
@@ -266,13 +266,13 @@ func (ts *testSuite) TestStoreAndRetrieve() {
 }
 
 func (ts *testSuite) TestStoreWithMain() {
-	encodedKey, err := ts.main.Store(ts.ctx, "test", ts.Value)
+	encodedKey, err := ts.main.Store(ts.ctx, KeyTypeData, ts.Value)
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 
 	// verify the value for dht store
-	ts.verifyValue(ts.main.storedKey("test", encodedKey), ts.Value, ts.main)
+	ts.verifyValue(ts.main.storedKey(KeyTypeData, base58.Decode(encodedKey)), ts.Value, ts.main)
 }
 
 func (ts *testSuite) TestStoreWithTwoNodes() {
@@ -294,14 +294,14 @@ func (ts *testSuite) TestStoreWithTwoNodes() {
 	defer dht.Stop(ts.ctx)
 
 	// store the key and value by main node
-	encodedKey, err := ts.main.Store(ts.ctx, "test", ts.Value)
+	encodedKey, err := ts.main.Store(ts.ctx, KeyTypeData, ts.Value)
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 	ts.Equal(ts.Key, encodedKey)
 
 	// verify the value for dht store
-	ts.verifyValue(ts.main.storedKey("test", encodedKey), ts.Value, ts.main, dht)
+	ts.verifyValue(ts.main.storedKey(KeyTypeData, base58.Decode(encodedKey)), ts.Value, ts.main, dht)
 }
 
 // verify the value stored for distributed hash table
@@ -353,14 +353,14 @@ func (ts *testSuite) TestStoreWith10Nodes() {
 	dhts = append(dhts, ts.main)
 
 	// store the key and value by main node
-	encodedKey, err := ts.main.Store(ts.ctx, "test", ts.Value)
+	encodedKey, err := ts.main.Store(ts.ctx, KeyTypeData, ts.Value)
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 	ts.Equal(ts.Key, encodedKey)
 
 	// verify the value for dht store
-	ts.verifyValue(ts.main.storedKey("test", encodedKey), ts.Value, dhts...)
+	ts.verifyValue(ts.main.storedKey(KeyTypeData, base58.Decode(encodedKey)), ts.Value, dhts...)
 }
 
 func (ts *testSuite) TestIterativeFindNode() {
@@ -395,12 +395,12 @@ func (ts *testSuite) TestIterativeFindValue() {
 	}
 
 	// store the key/value
-	encodedKey, err := ts.main.Store(ts.ctx, "test", ts.Value)
+	encodedKey, err := ts.main.Store(ts.ctx, KeyTypeData, ts.Value)
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
 
-	value, err := ts.main.iterate(ts.ctx, IterateFindValue, ts.main.storedKey("test", encodedKey), nil)
+	value, err := ts.main.iterate(ts.ctx, IterateFindValue, ts.main.storedKey(KeyTypeData, base58.Decode(encodedKey)), nil)
 	if err != nil {
 		ts.T().Fatalf("iterative find value: %v", err)
 	}
