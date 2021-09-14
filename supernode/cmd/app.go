@@ -237,6 +237,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	statsMngr.Add("p2p", p2p)
 	statsMngr.Add("mdl", metadb)
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
+	statsMngr.Add("dupedetection", dupeDetection)
 
 	// server
 	grpc := server.New(config.Server,
