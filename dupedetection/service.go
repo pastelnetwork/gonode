@@ -19,17 +19,18 @@ import (
 )
 
 const (
-	synchronizationIntervalSec    = 5
-	synchronizationTimeoutSec     = 60
-	runTaskIntervalMin            = 2
-	fingerprintSizeModel1         = 4032
-	fingerprintSizeModel2         = 2560
-	fingerprintSizeModel3         = 1920
-	fingerprintSizeModel4         = 1536
-	fingerprintSizeModel          = 10048
-	masterNodeSuccessfulStatus    = "Masternode successfully started"
-	getLatestFingerprintStatement = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
-	insertFingerprintStatement    = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector) VALUES("%s", '%s', '%s', '%s', '%s')`
+	synchronizationIntervalSec       = 5
+	synchronizationTimeoutSec        = 60
+	runTaskInterval                  = 2 * time.Minute
+	fingerprintSizeModel1            = 4032
+	fingerprintSizeModel2            = 2560
+	fingerprintSizeModel3            = 1920
+	fingerprintSizeModel4            = 1536
+	fingerprintSizeModel             = 10048
+	masterNodeSuccessfulStatus       = "Masternode successfully started"
+	getLatestFingerprintStatement    = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
+	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector) VALUES("%s", '%s', '%s', '%s', '%s')`
+	getNumberOfFingerprintsStatement = `SELECT COUNT(*) FROM image_hash_to_image_fingerprint_table`
 )
 
 type dupeDetectionFingerprints struct {
@@ -67,7 +68,7 @@ func (s *service) Run(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
-		case <-time.After(runTaskIntervalMin * time.Minute):
+		case <-time.After(runTaskInterval):
 			if err := s.runTask(ctx); err != nil {
 				log.WithContext(ctx).WithError(err).Errorf("runTask() failed")
 			}
@@ -195,6 +196,14 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 }
 
 func (s *service) runTask(ctx context.Context) error {
+	/* // For debugging
+	if cnt, err := s.getRecordCount(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("Failed to get count")
+	} else {
+		log.WithContext(ctx).WithField("cnt", cnt).Info("GetCount")
+	}
+	*/
+
 	nftRegTickets, err := s.pastelClient.RegTickets(ctx)
 	if err != nil {
 		return errors.Errorf("failed to get registered ticket, err: %w", err)
@@ -270,6 +279,51 @@ func (s *service) runTask(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *service) getRecordCount(ctx context.Context) (int64, error) {
+	statement := getNumberOfFingerprintsStatement
+	rows, err := s.db.QueryStringStmt(statement)
+	if err != nil {
+		return 0, errors.Errorf("query failed: %w", err)
+	}
+	row := rows[0]
+
+	if len(row.Values) != 1 {
+		return 0, errors.Errorf("invalid Values length: %d", len(row.Columns))
+	}
+
+	if len(row.Values[0]) != 1 {
+		return 0, errors.Errorf("invalid Values[0] length: %d", len(row.Columns))
+	}
+
+	cnt, ok := row.Values[0][0].(int64)
+	if !ok {
+		return 0, errors.Errorf("invalid returned type : %v", row.Values[0][0])
+	}
+
+	return cnt, nil
+}
+
+// Stats return status of dupde detection
+func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
+	stats := map[string]interface{}{}
+
+	// Get last inserted item
+	lastItem, err := s.getLatestFingerprint(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to getLatestFingerprint(): %w", err)
+	}
+	stats["last_insert_time"] = lastItem.DatetimeFingerprintAddedToDatabase
+
+	// Get total of records
+	record_count, err := s.getRecordCount(ctx)
+	if err != nil {
+		return nil, errors.Errorf("failed to getRecordCount(): %w", err)
+	}
+	stats["record_count"] = record_count
+
+	return stats, nil
 }
 
 // NewService return a new Service instance
