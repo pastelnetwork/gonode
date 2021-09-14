@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -143,12 +142,6 @@ func (s *p2p) RetrieveFingerprints(ctx context.Context, key string) ([]byte, err
 
 // Stats return status of p2p
 func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
-	fakeData := make([]byte, 20)
-	rand.Read(fakeData)
-	if _, err := s.StoreThumbnails(ctx, fakeData); err != nil {
-		log.WithContext(ctx).WithError(err).Error("p2pStoreFailed")
-	}
-
 	retStats := map[string]interface{}{}
 	dhtStats, err := s.dht.Stats(ctx)
 	if err != nil {

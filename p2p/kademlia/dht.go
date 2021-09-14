@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"math/rand"
 	"sort"
 	"sync"
 	"time"
@@ -241,15 +240,6 @@ func (s *DHT) oldRetrieve(ctx context.Context, key []byte) ([]byte, error) {
 
 // Stats returns stats of DHT
 func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
-	fakekey := make([]byte, 20)
-	rand.Read(fakekey)
-	fakeData := make([]byte, 20)
-	rand.Read(fakeData)
-	// store the key to local storage
-	if err := s.store.Store(ctx, fakekey, fakeData, time.Now()); err != nil {
-		log.WithContext(ctx).WithError(err).Error("dhtStoreFailed")
-	}
-
 	dbStats, err := s.store.Stats(ctx)
 	if err != nil {
 		return nil, err
