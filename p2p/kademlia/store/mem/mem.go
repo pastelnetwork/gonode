@@ -83,6 +83,13 @@ func (s *Store) Keys(_ context.Context) [][]byte {
 func (s *Store) Close(_ context.Context) {
 }
 
+// Stats returns stats of store
+func (s *Store) Stats(ctx context.Context) (map[string]interface{}, error) {
+	stats := map[string]interface{}{}
+	stats["record_count"] = len(s.Keys(ctx))
+	return stats, nil
+}
+
 // NewStore returns a new memory store
 func NewStore() *Store {
 	return &Store{

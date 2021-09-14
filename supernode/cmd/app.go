@@ -24,6 +24,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
+	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
@@ -231,15 +232,22 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	userdataNodeClient := client.New()
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
 
+	// create stats manager
+	statsMngr := healthcheck_lib.NewStatsMngr(config.HealthCheck)
+	statsMngr.Add("p2p", p2p)
+	statsMngr.Add("mdl", metadb)
+	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
+
 	// server
 	grpc := server.New(config.Server,
+		"service",
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
-		healthcheck.NewHealthCheck(),
+		healthcheck.NewHealthCheck(statsMngr),
 	)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess, statsMngr)
 }

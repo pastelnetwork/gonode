@@ -12,13 +12,13 @@ import (
 // Node is the over-the-wire representation of a node
 type Node struct {
 	// id is a 32 byte unique identifier
-	ID []byte
+	ID []byte `json:"id,omitempty"`
 
 	// ip address of the node
-	IP string
+	IP string `json:"ip,omitempty"`
 
 	// port of the node
-	Port int
+	Port int `json:"port,omitempty"`
 }
 
 func (s *Node) String() string {

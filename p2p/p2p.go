@@ -6,6 +6,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -93,6 +94,27 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	}
 
 	return s.dht.Retrieve(ctx, key)
+}
+
+// Stats return status of p2p
+func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
+	retStats := map[string]interface{}{}
+	dhtStats, err := s.dht.Stats(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	retStats["dht"] = dhtStats
+	retStats["config"] = s.config
+
+	// get free space of current kademlia folder
+	diskUse, err := utils.DiskUsage(s.config.DataDir)
+	if err != nil {
+		return nil, errors.Errorf("get disk info failed: %w", err)
+	}
+
+	retStats["disk-info"] = &diskUse
+	return retStats, nil
 }
 
 // configure the distributed hash table for p2p service

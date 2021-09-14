@@ -22,6 +22,9 @@ type Store interface {
 	// KeysForReplication returns the keys of all data to be replicated across the network
 	KeysForReplication(ctx context.Context) [][]byte
 
+	// Stats returns stats of store
+	Stats(ctx context.Context) (map[string]interface{}, error)
+
 	// Close the store
 	Close(ctx context.Context)
 }

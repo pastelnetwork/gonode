@@ -192,6 +192,22 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return value, nil
 }
 
+// Stats returns stats of DHT
+func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
+	dbStats, err := s.store.Stats(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dhtStats := map[string]interface{}{}
+	dhtStats["self"] = s.ht.self
+	dhtStats["peers_count"] = len(s.ht.nodes())
+	dhtStats["peers"] = s.ht.nodes()
+	dhtStats["database"] = dbStats
+
+	return dhtStats, nil
+}
+
 // new a message
 func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Message {
 	return &Message{

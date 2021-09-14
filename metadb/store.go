@@ -40,6 +40,11 @@ func (s *service) IsLeader() bool {
 	return address == s.db.Addr()
 }
 
+// Stats return status of store
+func (s *service) Stats(_ context.Context) (map[string]interface{}, error) {
+	return s.db.Stats()
+}
+
 // Write execute a statement, not support multple statements
 func (s *service) Write(_ context.Context, statement string) (*WriteResult, error) {
 	if len(statement) == 0 {
