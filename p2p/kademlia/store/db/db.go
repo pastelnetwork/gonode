@@ -151,8 +151,8 @@ func (s *Badger) Keys(ctx context.Context) [][]byte {
 }
 
 // ForEachKey process each key
-func (s *Badger) ForEachKey(ctx context.Context, handler func(key []byte)) error {
-	if err := s.db.View(func(txn *badger.Txn) error {
+func (s *Badger) ForEachKey(_ context.Context, handler func(key []byte)) error {
+	return s.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchValues = false
 		it := txn.NewIterator(opts)
@@ -167,10 +167,7 @@ func (s *Badger) ForEachKey(ctx context.Context, handler func(key []byte)) error
 			handler(key)
 		}
 		return nil
-	}); err != nil {
-		return err
-	}
-	return nil
+	})
 }
 
 // ForEach will loop through all items and processing them

@@ -27,13 +27,17 @@ var (
 	defaultUpdateTime    = time.Minute * 1
 )
 
+// KeyType is type of key
 type KeyType byte
 
 const (
-	Sha3Sum256HashLength         = 32
-	KeyTypeData          KeyType = 0
-	KeyTypeFingerprints  KeyType = 1
-	KeyTypeThumbnails    KeyType = 2
+	sha3Sum256HashLength = 32
+	// KeyTypeData is key associated with a data
+	KeyTypeData KeyType = 0
+	// KeyTypeFingerprints is key associated with a fingerprints
+	KeyTypeFingerprints KeyType = 1
+	// KeyTypeThumbnails is key associated with a thumbnails
+	KeyTypeThumbnails KeyType = 2
 )
 
 // DHT represents the state of the local node in the distributed hash table
@@ -280,7 +284,7 @@ func (s *DHT) dataDetailsStats(ctx context.Context) (map[string]interface{}, err
 
 	// count number of key for each kind of namespace
 	keyFunc := func(key []byte) {
-		if len(key) == Sha3Sum256HashLength+1 {
+		if len(key) == sha3Sum256HashLength+1 {
 			keyType := KeyType(key[0])
 			switch keyType {
 			case KeyTypeData:

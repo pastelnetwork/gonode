@@ -17,9 +17,9 @@ const (
 
 	// StoreDataMethod represent Store data name method
 	StoreDataMethod = "StoreData"
-	// StoreDataMethod represent Store Thumbnails name method
+	// StoreThumbnailsMethod represent Store Thumbnails name method
 	StoreThumbnailsMethod = "StoreThumbnails"
-	// StoreDataMethod represent Store Fingerprints name method
+	// StoreFingerprintsMethod represent Store Fingerprints name method
 	StoreFingerprintsMethod = "StoreFingerprints"
 )
 
