@@ -36,13 +36,13 @@ type Config struct {
 	RqFilesDir            string
 
 	// BurnAddress
-	BurnAddress string `mapstructure:"burn_address" json:"burn_address,omitempty"`
+	BurnAddress string `mapstructure:"-" json:"burn_address,omitempty"`
 
-	RegArtTxMinConfirmations int           `mapstructure:"reg_art_tx_min_confirmations" json:"reg_art_tx_min_confirmations,omitempty"`
-	RegArtTxTimeout          time.Duration `mapstructure:"reg_art_tx_timeout" json:"reg_art_tx_timeout,omitempty"`
+	RegArtTxMinConfirmations int           `mapstructure:"-" json:"reg_art_tx_min_confirmations,omitempty"`
+	RegArtTxTimeout          time.Duration `mapstructure:"-" json:"reg_art_tx_timeout,omitempty"`
 
-	RegActTxMinConfirmations int           `mapstructure:"reg_act_tx_min_confirmations" json:"reg_act_tx_min_confirmations,omitempty"`
-	RegActTxTimeout          time.Duration `mapstructure:"reg_act_tx_timeout" json:"reg_act_tx_timeout,omitempty"`
+	RegActTxMinConfirmations int           `mapstructure:"-" json:"reg_act_tx_min_confirmations,omitempty"`
+	RegActTxTimeout          time.Duration `mapstructure:"-" json:"reg_act_tx_timeout,omitempty"`
 
 	// internal settings
 	connectToNextNodeDelay time.Duration
