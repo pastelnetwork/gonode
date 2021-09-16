@@ -98,6 +98,11 @@ func (task *Task) run(ctx context.Context) error {
 		task.searchResult = task.searchResult[:task.request.Limit]
 	}
 
+	if len(task.searchResult) == 0 {
+		log.WithContext(ctx).WithField("request", task.request).Debug("No matching results")
+		return nil
+	}
+
 	pastelConnections := 10
 	if len(task.searchResult) < pastelConnections {
 		pastelConnections = len(task.searchResult)
@@ -117,14 +122,26 @@ func (task *Task) run(ctx context.Context) error {
 		res.MatchIndex = i
 
 		group.Go(func() error {
-			data, err := task.thumbnailHelper.Fetch(gctx, string(res.RegTicket.RegTicketData.ArtTicketData.AppTicketData.PreviewHash))
-			if err != nil {
-				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("Fetch Thumbnail")
+			tgroup, tgctx := errgroup.WithContext(ctx)
+			var t1Data, t2Data []byte
+			tgroup.Go(func() (err error) {
+				t1Data, err = task.thumbnailHelper.Fetch(tgctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail1Hash)
+				return err
+			})
+
+			tgroup.Go(func() (err error) {
+				t2Data, err = task.thumbnailHelper.Fetch(tgctx, res.RegTicket.RegTicketData.NFTTicketData.AppTicketData.Thumbnail2Hash)
+				return err
+			})
+
+			if tgroup.Wait() != nil {
+				log.WithContext(ctx).WithField("txid", res.TXID).WithError(err).Error("fetch Thumbnail")
 
 				return fmt.Errorf("fetch thumbnail: txid: %s - err: %s", res.TXID, err)
 			}
-			res.Thumbnail = data
 
+			res.Thumbnail = t1Data
+			res.ThumbnailSecondry = t2Data
 			// Post on result channel
 			task.resultChan <- res
 
@@ -139,18 +156,23 @@ func (task *Task) run(ctx context.Context) error {
 
 // filterRegTicket filters ticket against request params & checks if its a match
 func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
-	// FIXME
-	// if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.RarenessScore,
-	// 	task.request.MinRarenessScore, task.request.MaxRarenessScore) {
-	// 	return srch, false
-	// }
 
-	// if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.NSFWScore,
-	// 	task.request.MinNsfwScore, task.request.MaxNsfwScore) {
-	// 	return srch, false
-	// }
+	if !inFloatRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore,
+		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
+		return srch, false
+	}
 
-	if !inIntRange(regTicket.RegTicketData.ArtTicketData.AppTicketData.TotalCopies,
+	if !inFloatRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore,
+		task.request.MinNsfwScore, task.request.MaxNsfwScore) {
+		return srch, false
+	}
+
+	if !inFloatRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore,
+		task.request.MinInternetRarenessScore, task.request.MaxInternetRarenessScore) {
+		return srch, false
+	}
+
+	if !inIntRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.TotalCopies,
 		task.request.MinCopies, task.request.MaxCopies) {
 		return srch, false
 	}
@@ -188,6 +210,6 @@ func NewTask(service *Service, request *ArtSearchRequest) *Task {
 		Service:         service,
 		request:         request,
 		resultChan:      make(chan *RegTicketSearch),
-		thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectTimeout),
+		thumbnailHelper: thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout),
 	}
 }

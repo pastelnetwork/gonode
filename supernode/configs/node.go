@@ -4,6 +4,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
 
 // Node contains the SuperNode configuration itself.
@@ -17,12 +18,15 @@ type Node struct {
 	// timeout in minute
 	PreburntTxConfirmationTimeout int                    `mapstructure:"preburnt_tx_confirmation_timeout" json:"preburnt_tx_confirmation_timeout,omitempty"`
 	ArtworkDownload               artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
+	UserdataProcess               userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
 }
 
 // NewNode returns a new Node instance
 func NewNode() Node {
 	return Node{
 		ArtworkRegister: *artworkregister.NewConfig(),
+		ArtworkDownload: *artworkdownload.NewConfig(),
+		UserdataProcess: *userdataprocess.NewConfig(),
 		Server:          server.NewConfig(),
 	}
 }

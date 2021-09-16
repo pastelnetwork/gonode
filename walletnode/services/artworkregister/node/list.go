@@ -180,10 +180,10 @@ func (nodes *List) SendPreBurntFeeTxid(ctx context.Context, txid string) error {
 				return err
 			}
 			if !node.IsPrimary() && ticketTxid != "" {
-				return errors.Errorf("receive response %s from secondary node", ticketTxid)
+				return errors.Errorf("receive response %s from secondary node %s", ticketTxid, node.pastelID)
 			}
 
-			node.regArtTxid = ticketTxid
+			node.regNFTTxid = ticketTxid
 			return nil
 		})
 	}
@@ -219,7 +219,7 @@ func (nodes *List) SmallThumbnailHash() []byte {
 func (nodes *List) RegArtTicketID() string {
 	for i := range *nodes {
 		if (*nodes)[i].isPrimary {
-			return (*nodes)[i].regArtTxid
+			return (*nodes)[i].regNFTTxid
 		}
 	}
 	return string("")

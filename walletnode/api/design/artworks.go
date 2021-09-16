@@ -148,6 +148,8 @@ var _ = Service("artworks", func() {
 				Param("max_rareness_score")
 				Param("min_nsfw_score")
 				Param("max_nsfw_score")
+				Param("min_internet_rareness_score")
+				Param("max_internet_rareness_score")
 			})
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)
@@ -179,10 +181,8 @@ var _ = Service("artworks", func() {
 
 		Security(APIKeyAuth)
 
-		Payload(func() {
-			Extend(ArtworkDownloadPayload)
-		})
-		StreamingResult(ArtworkDownloadResult)
+		Payload(ArtworkDownloadPayload)
+		Result(ArtworkDownloadResult)
 
 		HTTP(func() {
 			GET("/download")
@@ -503,29 +503,42 @@ var SearchArtworkParams = func() {
 		Maximum(1000)
 		Example(1000)
 	})
-	Attribute("min_nsfw_score", Int, func() {
+	Attribute("min_nsfw_score", Float64, func() {
 		Description("Minimum nsfw score")
-		Minimum(1)
-		Maximum(1000)
+		Minimum(0)
+		Maximum(1)
 		Example(1)
 	})
-	Attribute("max_nsfw_score", Int, func() {
+	Attribute("max_nsfw_score", Float64, func() {
 		Description("Maximum nsfw score")
-		Minimum(1)
-		Maximum(1000)
-		Example(1000)
-	})
-	Attribute("min_rareness_score", Int, func() {
-		Description("Minimum rareness score")
-		Minimum(1)
-		Maximum(1000)
+		Minimum(0)
+		Maximum(1)
 		Example(1)
 	})
-	Attribute("max_rareness_score", Int, func() {
-		Description("Maximum rareness score")
-		Minimum(1)
-		Maximum(1000)
-		Example(1000)
+	Attribute("min_rareness_score", Float64, func() {
+		Description("Minimum pastel rareness score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("max_rareness_score", Float64, func() {
+		Description("Maximum pastel rareness score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+
+	Attribute("min_internet_rareness_score", Float64, func() {
+		Description("Minimum internet rareness score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("max_internet_rareness_score", Float64, func() {
+		Description("Maximum internet rareness score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
 	})
 
 	Required("query")
@@ -535,8 +548,12 @@ var SearchArtworkParams = func() {
 var ArtworkSummary = Type("ArtworkSummary", func() {
 	Description("Artwork response")
 
-	Attribute("thumbnail", Bytes, func() {
-		Description("Thumbnail image")
+	Attribute("thumbnail_1", Bytes, func() {
+		Description("Thumbnail_1 image")
+	})
+
+	Attribute("thumbnail_2", Bytes, func() {
+		Description("Thumbnail_2 image")
 	})
 
 	Attribute("txid", String, func() {
@@ -612,36 +629,66 @@ var ArtworkDetail = Type("ArtworkDetail", func() {
 		Description("version")
 		Example(1)
 	})
-	Attribute("is_green", Boolean, func() {
-		Description("Green flag")
+	Attribute("green_address", Boolean, func() {
+		Description("Green address")
 	})
 	Attribute("royalty", Float64, func() {
 		Description("how much artist should get on all future resales")
 	})
 	Attribute("storage_fee", Int, func() {
-		Description("Storage fee")
+		Description("Storage fee %")
 		Example(100)
 	})
-	Attribute("nsfw_score", Int, func() {
+	Attribute("nsfw_score", Float64, func() {
 		Description("nsfw score")
 		Minimum(0)
-		Maximum(1000)
-		Example(1000)
-	})
-	Attribute("rareness_score", Int, func() {
-		Description("rareness score")
-		Minimum(0)
-		Maximum(1000)
+		Maximum(1)
 		Example(1)
 	})
-	Attribute("seen_score", Int, func() {
-		Description("seen score")
+	Attribute("rareness_score", Float64, func() {
+		Description("pastel rareness score")
 		Minimum(0)
-		Maximum(1000)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("internet_rareness_score", Float64, func() {
+		Description("internet rareness score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("drawing_nsfw_score", Float64, func() {
+		Description("nsfw score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("neutral_nsfw_score", Float64, func() {
+		Description("nsfw score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("sexy_nsfw_score", Float64, func() {
+		Description("nsfw score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("porn_nsfw_score", Float64, func() {
+		Description("nsfw score")
+		Minimum(0)
+		Maximum(1)
+		Example(1)
+	})
+	Attribute("hentai_nsfw_score", Float64, func() {
+		Description("nsfw score")
+		Minimum(0)
+		Maximum(1)
 		Example(1)
 	})
 
-	Required("is_green", "royalty", "seen_score", "rareness_score", "nsfw_score")
+	Required("rareness_score", "nsfw_score")
 })
 
 // ThumbnailCoordinate is the cordinate of the cropped region selectd by user

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
 	"golang.org/x/crypto/sha3"
 
@@ -47,6 +48,28 @@ func (task *Task) Run(ctx context.Context) error {
 	return task.RunAction(ctx)
 }
 
+// DownloadThumbnail downloads thumbnail of given hash.
+func (task *Task) DownloadThumbnail(ctx context.Context, key []byte) ([]byte, error) {
+	var err error
+	if err = task.RequiredStatus(StatusTaskStarted); err != nil {
+		log.WithContext(ctx).WithField("status", task.Status().String()).Error("Wrong task status")
+		return nil, errors.Errorf("wrong status: %w", err)
+	}
+
+	var file []byte
+	<-task.NewAction(func(ctx context.Context) error {
+		base58Key := base58.Encode(key)
+		file, err = task.p2pClient.Retrieve(ctx, base58Key)
+		if err != nil {
+			err = errors.Errorf("failed to fetch p2p key : %s, error: %w", string(base58Key), err)
+			task.UpdateStatus(StatusKeyNotFound)
+		}
+		return nil
+	})
+
+	return file, err
+}
+
 // Download downloads image and return the image.
 func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxid string) ([]byte, error) {
 	var err error
@@ -56,7 +79,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 	}
 
 	var file []byte
-	var artRegTicket pastel.RegTicket
+	var nftRegTicket pastel.RegTicket
 
 	<-task.NewAction(func(ctx context.Context) error {
 		// Validate timestamp is not older than 10 minutes
@@ -70,23 +93,23 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 		}
 
 		// Get Art Registration ticket by txid
-		artRegTicket, err = task.pastelClient.RegTicket(ctx, txid)
+		nftRegTicket, err = task.pastelClient.RegTicket(ctx, txid)
 		if err != nil {
 			err = errors.Errorf("could not get registered ticket: %w, txid: %s", err, txid)
 			task.UpdateStatus(StatusArtRegGettingFailed)
 			return nil
 		}
 
-		log.WithContext(ctx).Debugf("Art ticket: %s", string(artRegTicket.RegTicketData.ArtTicket))
+		log.WithContext(ctx).Debugf("Art ticket: %s", string(nftRegTicket.RegTicketData.NFTTicket))
 
 		// Decode Art Ticket
-		err = task.decodeRegTicket(&artRegTicket)
+		err = task.decodeRegTicket(&nftRegTicket)
 		if err != nil {
 			task.UpdateStatus(StatusArtRegDecodingFailed)
 			return nil
 		}
 
-		pastelID := string(artRegTicket.RegTicketData.ArtTicketData.Author)
+		pastelID := nftRegTicket.RegTicketData.NFTTicketData.Author
 
 		if len(ttxid) > 0 {
 			// Get list of non sold Trade ticket owened by the owner of the PastelID from request
@@ -107,13 +130,14 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 			}
 			isTXIDValid := false
 			for _, t := range tradeTickets {
-				if t.ArtTXID == ttxid {
+				if t.TXID == ttxid {
 					isTXIDValid = true
-					pastelID = t.PastelID
+					pastelID = t.Ticket.PastelID
 					break
 				}
 			}
 			if !isTXIDValid {
+				log.WithContext(ctx).WithField("ttxid", ttxid).Errorf("not found trade ticket of transaction")
 				err = errors.Errorf("not found trade ticket of transaction %s", ttxid)
 				task.UpdateStatus(StatusTradeTicketMismatched)
 				return nil
@@ -137,12 +161,13 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 		// Get the list of "symbols/chunks" from Kademlia by using symbol identifiers from file
 		// Pass all symbols/chunks to the raptorq service to decode (also passing encoder parameters: rq_oti)
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
-		file, err = task.restoreFile(ctx, &artRegTicket)
+		file, err = task.restoreFile(ctx, &nftRegTicket)
 		if err != nil {
 			err = errors.Errorf("failed to restore file: %w", err)
 		}
 
 		if len(file) == 0 {
+			err = errors.Errorf("empty file")
 			task.UpdateStatus(StatusFileEmpty)
 		}
 
@@ -152,11 +177,11 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 	return file, err
 }
 
-func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicket) ([]byte, error) {
+func (task *Task) restoreFile(ctx context.Context, nftRegTicket *pastel.RegTicket) ([]byte, error) {
 	var file []byte
 	var err error
 
-	if len(artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs) == 0 {
+	if len(nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs) == 0 {
 		task.UpdateStatus(StatusArtRegTicketInvalid)
 		return file, errors.Errorf("ticket has empty symbol identifier files")
 	}
@@ -173,17 +198,25 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 	}
 	rqService := rqConnection.RaptorQ(rqNodeConfig)
 
-	for _, id := range artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQIDs {
+	for _, id := range nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs {
 		var rqIDsData []byte
 		rqIDsData, err = task.p2pClient.Retrieve(ctx, id)
 		if err != nil {
-			err = errors.Errorf("could not retrieve symbol file from Kademlia: %w", err)
+			err = errors.Errorf("could not retrieve compressed symbol file from Kademlia: %w", err)
 			task.UpdateStatus(StatusSymbolFileNotFound)
 			continue
 		}
 
+		fileContent, err := zstd.Decompress(nil, rqIDsData)
+		if err != nil {
+			err = errors.Errorf("could not decompress symbol file: %w", err)
+			task.UpdateStatus(StatusSymbolFileInvalid)
+			continue
+		}
+
+		log.WithContext(ctx).Debugf("symbolFile: %s", string(fileContent))
 		var rqIDs []string
-		rqIDs, err = task.getRQSymbolIDs(rqIDsData)
+		rqIDs, err = task.getRQSymbolIDs(fileContent)
 		if err != nil {
 			task.UpdateStatus(StatusSymbolFileInvalid)
 			continue
@@ -222,7 +255,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		encodeInfo := rqnode.Encode{
 			Symbols: symbols,
 			EncoderParam: rqnode.EncoderParameters{
-				Oti: artRegTicket.RegTicketData.ArtTicketData.AppTicketData.RQOti,
+				Oti: nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.RQOti,
 			},
 		}
 
@@ -239,7 +272,7 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
 		fileHash := sha3.Sum256(decodeInfo.File)
 
-		if !bytes.Equal(fileHash[:], artRegTicket.RegTicketData.ArtTicketData.AppTicketData.DataHash) {
+		if !bytes.Equal(fileHash[:], nftRegTicket.RegTicketData.NFTTicketData.AppTicketData.DataHash) {
 			err = errors.New("file mismatched")
 			task.UpdateStatus(StatusFileMismatched)
 			continue
@@ -248,39 +281,36 @@ func (task *Task) restoreFile(ctx context.Context, artRegTicket *pastel.RegTicke
 		file = decodeInfo.File
 		break
 	}
-	if len(file) > 0 {
-		err = nil
-	}
+
 	return file, err
 }
 
-func (task *Task) decodeRegTicket(artRegTicket *pastel.RegTicket) error {
-	// n := base64.StdEncoding.DecodedLen(len(artRegTicket.RegTicketData.ArtTicket))
-	// artTicketData := make([]byte, n)
-	// _, err := base64.StdEncoding.Decode(artTicketData, artRegTicket.RegTicketData.ArtTicket)
+func (task *Task) decodeRegTicket(nftRegTicket *pastel.RegTicket) error {
+	// n := base64.StdEncoding.DecodedLen(len(nftRegTicket.RegTicketData.NFTTicket))
+	// nftTicketData := make([]byte, n)
+	// _, err := base64.StdEncoding.Decode(nftTicketData, nftRegTicket.RegTicketData.NFTTicket)
 	// if err != nil {
-	// 	return errors.New(fmt.Sprintf("Could not decode art ticket. %w", err))
+	// 	return errors.New(fmt.Sprintf("Could not decode NFT ticket. %w", err))
 	// }
 
-	err := json.Unmarshal(artRegTicket.RegTicketData.ArtTicket, &artRegTicket.RegTicketData.ArtTicketData)
+	err := json.Unmarshal(nftRegTicket.RegTicketData.NFTTicket, &nftRegTicket.RegTicketData.NFTTicketData)
 	if err != nil {
-		return errors.Errorf("Could not parse art ticket. %w", err)
+		return errors.Errorf("could not parse NFT ticket. %w", err)
 	}
-	// log.Debug(fmt.Sprintf("App ticket: %s", string(artRegTicket.RegTicketData.ArtTicketData.AppTicket)))
+	// log.Debug(fmt.Sprintf("App ticket: %s", string(nftRegTicket.RegTicketData.NFTTicketData.AppTicket)))
 
-	appTicketData := artRegTicket.RegTicketData.ArtTicketData.AppTicket
-	// n := base64.StdEncoding.DecodedLen(len(artRegTicket.RegTicketData.ArtTicketData.AppTicket))
+	appTicketData := nftRegTicket.RegTicketData.NFTTicketData.AppTicket
+	// n := base64.StdEncoding.DecodedLen(len(nftRegTicket.RegTicketData.NFTTicketData.AppTicket))
 	// appTicketData := make([]byte, n)
-	// _, err = base64.StdEncoding.Decode(appTicketData, artRegTicket.RegTicketData.ArtTicketData.AppTicket)
+	// _, err = base64.StdEncoding.Decode(appTicketData, nftRegTicket.RegTicketData.NFTTicketData.AppTicket)
 	// if err != nil {
 	// 	return errors.New(fmt.Sprintf("Could not decode app ticket. %w", err))
 	// }
 
-	err = json.Unmarshal(appTicketData, &artRegTicket.RegTicketData.ArtTicketData.AppTicketData)
+	err = json.Unmarshal(appTicketData, &nftRegTicket.RegTicketData.NFTTicketData.AppTicketData)
 	if err != nil {
-		return errors.Errorf("Could not parse app ticket. %w", err)
+		return errors.Errorf("could not parse app ticket. %w", err)
 	}
-
 	return nil
 }
 
@@ -296,7 +326,8 @@ func (task Task) getRQSymbolIDs(rqIDsData []byte) (rqIDs []string, err error) {
 		return
 	}
 
-	rqIDs = lines[3:]
+	l := len(lines)
+	rqIDs = lines[3 : l-1]
 
 	return
 }

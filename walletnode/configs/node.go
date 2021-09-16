@@ -5,6 +5,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
+	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 )
 
 // Node contains the SuperNode configuration itself.
@@ -14,13 +15,15 @@ type Node struct {
 	ArtworkSearch   artworksearch.Config   `mapstructure:",squash" json:"artwork_search,omitempty"`
 	ArtworkDownload artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
 	API             *api.Config            `mapstructure:"api" json:"api,omitempty"`
+
+	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
 	BurnAddress     string                 `mapstructure:"burn_address" json:"burn_address,omitempty"`
 
 	RegArtTxMinConfirmations int `mapstructure:"reg_art_tx_min_confirmations" json:"reg_art_tx_min_confirmation,omitempty"`
 	// Timeout in minutes
 	RegArtTxTimeout int `mapstructure:"reg_art_tx_timeout" json:"reg_art_tx_timeout,omitempty"`
 
-	RegActTxMinConfirmations int `mapstructure:"reg_act_tx_min_confirmation" json:"reg_act_tx_min_confirmation,omitempty"`
+	RegActTxMinConfirmations int `mapstructure:"reg_act_tx_min_confirmations" json:"reg_act_tx_min_confirmations,omitempty"`
 	// Timeout in minutes
 	RegActTxTimeout int `mapstructure:"reg_act_tx_timeout" json:"reg_act_tx_timeout,omitempty"`
 }
@@ -32,5 +35,6 @@ func NewNode() Node {
 		ArtworkRegister: *artworkregister.NewConfig(),
 		ArtworkDownload: *artworkdownload.NewConfig(),
 		API:             api.NewConfig(),
+		UserdataProcess: *userdataprocess.NewConfig(),
 	}
 }

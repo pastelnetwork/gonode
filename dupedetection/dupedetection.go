@@ -30,12 +30,23 @@ type AlternateNSFWScores struct {
 
 // ImageHashes represents image hashes in the output of dupe detection service
 type ImageHashes struct {
+	PDQHash        string `json:"pdq_hash"`
 	PerceptualHash string `json:"perceptual_hash"`
 	AverageHash    string `json:"average_hash"`
 	DifferenceHash string `json:"difference_hash"`
+	NeuralHash     string `json:"neuralhash_hash"`
 }
 
+// Client represents the interface to communicate with dupe-detection service
 type Client interface {
 	// Generate returns fingerprints and ranks for a given image
 	Generate(ctx context.Context, img []byte, format string) (*DupeDetection, error)
+}
+
+type Service interface {
+	// Run starts task
+	Run(ctx context.Context) error
+
+	// Stats returns current status of service
+	Stats(ctx context.Context) (map[string]interface{}, error)
 }

@@ -1,7 +1,18 @@
-pastel-api:
-  port: 19932
+log-level:
+log-file:
+quiet: false
+temp-dir:
+work-dir:
+rq-files-dir: 
 
 node:
   api:
     hostname: "localhost"
     port: 8080
+    swagger: true 
+  burn_address: "tPpasteLBurnAddressXXXXXXXXXXX3wy7u" 
+
+raptorq:
+  host: "locahost"
+  port: 50051
+  

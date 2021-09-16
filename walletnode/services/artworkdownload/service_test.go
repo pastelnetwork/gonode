@@ -15,8 +15,6 @@ import (
 )
 
 func TestNewService(t *testing.T) {
-	// t.Parallel()
-
 	type args struct {
 		config       *Config
 		pastelClient pastel.Client
@@ -59,8 +57,6 @@ func TestNewService(t *testing.T) {
 }
 
 func TestServiceRun(t *testing.T) {
-	// t.Parallel()
-
 	type args struct {
 		ctx context.Context
 	}
@@ -101,8 +97,6 @@ func TestServiceRun(t *testing.T) {
 }
 
 func TestServiceAddTask(t *testing.T) {
-	// t.Parallel()
-
 	type args struct {
 		ctx    context.Context
 		ticket *Ticket
@@ -141,19 +135,17 @@ func TestServiceAddTask(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
 			taskID := service.AddTask(testCase.args.ticket)
-			task := service.Worker.Task(taskID).(*Task)
+			task := service.Task(taskID)
 			assert.Equal(t, testCase.want, task.Ticket)
 		})
 	}
 }
 
 func TestServiceGetTask(t *testing.T) {
-	// t.Parallel()
-
 	type args struct {
 		ctx    context.Context
 		ticket *Ticket
@@ -192,7 +184,7 @@ func TestServiceGetTask(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
 			task := NewTask(service, testCase.args.ticket)
@@ -200,13 +192,12 @@ func TestServiceGetTask(t *testing.T) {
 			taskID := task.ID()
 			addedTask := service.Task(taskID)
 			assert.Equal(t, testCase.want, addedTask.Ticket)
+			time.Sleep(time.Second)
 		})
 	}
 }
 
 func TestServiceListTasks(t *testing.T) {
-	// t.Parallel()
-
 	type args struct {
 		ctx     context.Context
 		tickets []*Ticket
@@ -247,15 +238,16 @@ func TestServiceListTasks(t *testing.T) {
 				nodeClient:   nodeClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithCancel(testCase.args.ctx)
 			defer cancel()
 			go service.Run(ctx)
+			var listTaskID []string
 			for _, ticket := range testCase.args.tickets {
-				task := NewTask(service, ticket)
-				service.Worker.AddTask(task)
+				listTaskID = append(listTaskID, service.AddTask(ticket))
 			}
-			listAddedTask := service.Tasks()
-			for i, task := range listAddedTask {
+
+			for i := range listTaskID {
+				task := service.Task(listTaskID[i])
 				assert.Equal(t, testCase.want[i], task.Ticket)
 			}
 		})

@@ -21,7 +21,7 @@ type RegisterArtworkClient interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
 	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_SessionClient, error)
-	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg art session id to primary supernode
+	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
 	SendArtTicketSignature(ctx context.Context, in *SendArtTicketSignatureRequest, opts ...grpc.CallOption) (*SendArtTicketSignatureReply, error)
 }
 
@@ -80,7 +80,7 @@ type RegisterArtworkServer interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
 	Session(RegisterArtwork_SessionServer) error
-	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg art session id to primary supernode
+	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
 	SendArtTicketSignature(context.Context, *SendArtTicketSignatureRequest) (*SendArtTicketSignatureReply, error)
 	mustEmbedUnimplementedRegisterArtworkServer()
 }

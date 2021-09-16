@@ -122,20 +122,32 @@ type ArtSearchResponseBody struct {
 type ArtworkGetResponseBody struct {
 	// version
 	Version *int `form:"version,omitempty" json:"version,omitempty" xml:"version,omitempty"`
-	// Green flag
-	IsGreen bool `form:"is_green" json:"is_green" xml:"is_green"`
+	// Green address
+	GreenAddress *bool `form:"green_address,omitempty" json:"green_address,omitempty" xml:"green_address,omitempty"`
 	// how much artist should get on all future resales
-	Royalty float64 `form:"royalty" json:"royalty" xml:"royalty"`
-	// Storage fee
+	Royalty *float64 `form:"royalty,omitempty" json:"royalty,omitempty" xml:"royalty,omitempty"`
+	// Storage fee %
 	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
 	// nsfw score
-	NsfwScore int `form:"nsfw_score" json:"nsfw_score" xml:"nsfw_score"`
-	// rareness score
-	RarenessScore int `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
-	// seen score
-	SeenScore int `form:"seen_score" json:"seen_score" xml:"seen_score"`
-	// Thumbnail image
-	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	NsfwScore float64 `form:"nsfw_score" json:"nsfw_score" xml:"nsfw_score"`
+	// pastel rareness score
+	RarenessScore float64 `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
+	// internet rareness score
+	InternetRarenessScore *float64 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
+	// nsfw score
+	DrawingNsfwScore *float64 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
+	// nsfw score
+	NeutralNsfwScore *float64 `form:"neutral_nsfw_score,omitempty" json:"neutral_nsfw_score,omitempty" xml:"neutral_nsfw_score,omitempty"`
+	// nsfw score
+	SexyNsfwScore *float64 `form:"sexy_nsfw_score,omitempty" json:"sexy_nsfw_score,omitempty" xml:"sexy_nsfw_score,omitempty"`
+	// nsfw score
+	PornNsfwScore *float64 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
+	// nsfw score
+	HentaiNsfwScore *float64 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
+	// Thumbnail_1 image
+	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
+	// Thumbnail_2 image
+	Thumbnail2 []byte `form:"thumbnail_2,omitempty" json:"thumbnail_2,omitempty" xml:"thumbnail_2,omitempty"`
 	// txid
 	Txid string `form:"txid" json:"txid" xml:"txid"`
 	// Name of the artwork
@@ -577,8 +589,10 @@ type ThumbnailcoordinateResponse struct {
 
 // ArtworkSummaryResponseBody is used to define fields on response body types.
 type ArtworkSummaryResponseBody struct {
-	// Thumbnail image
-	Thumbnail []byte `form:"thumbnail,omitempty" json:"thumbnail,omitempty" xml:"thumbnail,omitempty"`
+	// Thumbnail_1 image
+	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
+	// Thumbnail_2 image
+	Thumbnail2 []byte `form:"thumbnail_2,omitempty" json:"thumbnail_2,omitempty" xml:"thumbnail_2,omitempty"`
 	// txid
 	Txid string `form:"txid" json:"txid" xml:"txid"`
 	// Name of the artwork
@@ -707,24 +721,30 @@ func NewArtSearchResponseBody(res *artworks.ArtworkSearchResult) *ArtSearchRespo
 // the "artworkGet" endpoint of the "artworks" service.
 func NewArtworkGetResponseBody(res *artworks.ArtworkDetail) *ArtworkGetResponseBody {
 	body := &ArtworkGetResponseBody{
-		Version:          res.Version,
-		IsGreen:          res.IsGreen,
-		Royalty:          res.Royalty,
-		StorageFee:       res.StorageFee,
-		NsfwScore:        res.NsfwScore,
-		RarenessScore:    res.RarenessScore,
-		SeenScore:        res.SeenScore,
-		Thumbnail:        res.Thumbnail,
-		Txid:             res.Txid,
-		Title:            res.Title,
-		Description:      res.Description,
-		Keywords:         res.Keywords,
-		SeriesName:       res.SeriesName,
-		Copies:           res.Copies,
-		YoutubeURL:       res.YoutubeURL,
-		ArtistPastelID:   res.ArtistPastelID,
-		ArtistName:       res.ArtistName,
-		ArtistWebsiteURL: res.ArtistWebsiteURL,
+		Version:               res.Version,
+		GreenAddress:          res.GreenAddress,
+		Royalty:               res.Royalty,
+		StorageFee:            res.StorageFee,
+		NsfwScore:             res.NsfwScore,
+		RarenessScore:         res.RarenessScore,
+		InternetRarenessScore: res.InternetRarenessScore,
+		DrawingNsfwScore:      res.DrawingNsfwScore,
+		NeutralNsfwScore:      res.NeutralNsfwScore,
+		SexyNsfwScore:         res.SexyNsfwScore,
+		PornNsfwScore:         res.PornNsfwScore,
+		HentaiNsfwScore:       res.HentaiNsfwScore,
+		Thumbnail1:            res.Thumbnail1,
+		Thumbnail2:            res.Thumbnail2,
+		Txid:                  res.Txid,
+		Title:                 res.Title,
+		Description:           res.Description,
+		Keywords:              res.Keywords,
+		SeriesName:            res.SeriesName,
+		Copies:                res.Copies,
+		YoutubeURL:            res.YoutubeURL,
+		ArtistPastelID:        res.ArtistPastelID,
+		ArtistName:            res.ArtistName,
+		ArtistWebsiteURL:      res.ArtistWebsiteURL,
 	}
 	return body
 }
@@ -1029,7 +1049,7 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePa
 }
 
 // NewArtSearchPayload builds a artworks service artSearch endpoint payload.
-func NewArtSearchPayload(artist *string, limit int, query string, artistName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *int, maxRarenessScore *int, minNsfwScore *int, maxNsfwScore *int) *artworks.ArtSearchPayload {
+func NewArtSearchPayload(artist *string, limit int, query string, artistName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *float64, maxRarenessScore *float64, minNsfwScore *float64, maxNsfwScore *float64, minInternetRarenessScore *float64, maxInternetRarenessScore *float64) *artworks.ArtSearchPayload {
 	v := &artworks.ArtSearchPayload{}
 	v.Artist = artist
 	v.Limit = limit
@@ -1047,6 +1067,8 @@ func NewArtSearchPayload(artist *string, limit int, query string, artistName boo
 	v.MaxRarenessScore = maxRarenessScore
 	v.MinNsfwScore = minNsfwScore
 	v.MaxNsfwScore = maxNsfwScore
+	v.MinInternetRarenessScore = minInternetRarenessScore
+	v.MaxInternetRarenessScore = maxInternetRarenessScore
 
 	return v
 }
@@ -1059,9 +1081,10 @@ func NewArtworkGetPayload(txid string) *artworks.ArtworkGetPayload {
 	return v
 }
 
-// NewDownloadPayload builds a artworks service download endpoint payload.
-func NewDownloadPayload(txid string, pid string, key string) *artworks.DownloadPayload {
-	v := &artworks.DownloadPayload{}
+// NewDownloadArtworkDownloadPayload builds a artworks service download
+// endpoint payload.
+func NewDownloadArtworkDownloadPayload(txid string, pid string, key string) *artworks.ArtworkDownloadPayload {
+	v := &artworks.ArtworkDownloadPayload{}
 	v.Txid = txid
 	v.Pid = pid
 	v.Key = key

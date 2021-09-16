@@ -1,4 +1,17 @@
+log-level:
+log-file:
+quiet: false
+temp-dir:
+work-dir:
+rq-files-dir: 
+
 node:
   api:
     hostname: "localhost"
     port: 8080
+    swagger: true 
+  burn_address: "PtpasteLBurnAddressXXXXXXXXXXbJ5ndd" 
+
+raptorq:
+  host: "locahost"
+  port: 50051

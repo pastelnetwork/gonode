@@ -106,10 +106,12 @@ func (g *altsTC) ServerHandshake(rawConn net.Conn) (net.Conn, credentials.AuthIn
 	return secureConn, authInfo, nil
 }
 
+// Info provides the ProtocolInfo of this TransportCredentials.
 func (g *altsTC) Info() credentials.ProtocolInfo {
 	return *g.info
 }
 
+// Clone makes a copy of this TransportCredentials.
 func (g *altsTC) Clone() credentials.TransportCredentials {
 	return &altsTC{
 		info: g.info,
@@ -117,6 +119,9 @@ func (g *altsTC) Clone() credentials.TransportCredentials {
 	}
 }
 
+// OverrideServerName overrides the server name used to verify the hostname on the returned certificates from the server.
+// gRPC internals also use it to override the virtual hosting name if it is set.
+// It must be called before dialing. Currently, this is only used by grpclb.
 func (g *altsTC) OverrideServerName(serverNameOverride string) error {
 	g.info.ServerName = serverNameOverride
 	return nil

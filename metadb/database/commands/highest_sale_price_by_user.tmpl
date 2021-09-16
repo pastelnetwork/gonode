@@ -1,0 +1,11 @@
+{{/* Highest sale price received for a single copy of any NFT sold by user */}}
+
+SELECT
+    seller_pastel_id, MAX(price) AS max_price
+FROM
+    transactions
+GROUP BY
+    seller_pastel_id
+ORDER BY 
+    max_price
+DESC;

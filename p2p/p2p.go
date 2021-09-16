@@ -2,11 +2,14 @@ package p2p
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
+	"github.com/pastelnetwork/gonode/pastel"
 )
 
 const (
@@ -23,10 +26,11 @@ type P2P interface {
 
 // p2p structure to implements interface
 type p2p struct {
-	store   kademlia.Store // the store for kademlia network
-	dht     *kademlia.DHT  // the kademlia network
-	config  *Config        // the service configuration
-	running bool           // if the kademlia network is ready
+	store        kademlia.Store // the store for kademlia network
+	dht          *kademlia.DHT  // the kademlia network
+	config       *Config        // the service configuration
+	running      bool           // if the kademlia network is ready
+	pastelClient pastel.Client
 }
 
 // Run the kademlia network
@@ -41,6 +45,12 @@ func (s *p2p) Run(ctx context.Context) error {
 	// start the node for kademlia network
 	if err := s.dht.Start(ctx); err != nil {
 		return errors.Errorf("start the kademlia network: %w", err)
+	}
+
+	if err := s.dht.ConfigureBootstrapNodes(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
+
+		return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
 	}
 
 	// join the kademlia network if bootstrap nodes is set
@@ -86,17 +96,29 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return s.dht.Retrieve(ctx, key)
 }
 
-// configure the distributed hash table for p2p service
-func (s *p2p) configure(ctx context.Context) error {
-	var bootstrapNodes []*kademlia.Node
-	if s.config.BootstrapIP != "" || s.config.BootstrapPort > 0 {
-		bootstrapNode := &kademlia.Node{
-			IP:   s.config.BootstrapIP,
-			Port: s.config.BootstrapPort,
-		}
-		bootstrapNodes = append(bootstrapNodes, bootstrapNode)
+// Stats return status of p2p
+func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
+	retStats := map[string]interface{}{}
+	dhtStats, err := s.dht.Stats(ctx)
+	if err != nil {
+		return nil, err
 	}
 
+	retStats["dht"] = dhtStats
+	retStats["config"] = s.config
+
+	// get free space of current kademlia folder
+	diskUse, err := utils.DiskUsage(s.config.DataDir)
+	if err != nil {
+		return nil, errors.Errorf("get disk info failed: %w", err)
+	}
+
+	retStats["disk-info"] = &diskUse
+	return retStats, nil
+}
+
+// configure the distributed hash table for p2p service
+func (s *p2p) configure(ctx context.Context) error {
 	// new the local storage
 	store, err := db.NewStore(ctx, s.config.DataDir)
 	if err != nil {
@@ -105,8 +127,8 @@ func (s *p2p) configure(ctx context.Context) error {
 	s.store = store
 
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, &kademlia.Options{
-		BootstrapNodes: bootstrapNodes,
+	dht, err := kademlia.NewDHT(store, s.pastelClient, &kademlia.Options{
+		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
 	})
@@ -119,8 +141,9 @@ func (s *p2p) configure(ctx context.Context) error {
 }
 
 // New returns a new p2p instance.
-func New(config *Config) P2P {
+func New(config *Config, pastelClient pastel.Client) P2P {
 	return &p2p{
-		config: config,
+		config:       config,
+		pastelClient: pastelClient,
 	}
 }

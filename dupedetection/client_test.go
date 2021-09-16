@@ -149,9 +149,11 @@ func TestCollectOutput(t *testing.T) {
 			Sexy:     0.5,
 		},
 		ImageHashes: ImageHashes{
+			PDQHash:        "b3bc4c45b39ab3aa4c444c47b3bab3aab3bbb38ab3b8b3aab39a4c414c40b31a",
 			PerceptualHash: "c999d3d3230724fc",
 			AverageHash:    "ffff990999181800",
 			DifferenceHash: "7333237333337331",
+			NeuralHash:     "a8d5bdc438dbe150084b56d2",
 		},
 		Fingerprints: "[0.1, 0.2, 0.3]",
 	}

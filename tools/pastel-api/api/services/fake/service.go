@@ -17,6 +17,7 @@ var fs embed.FS
 type service struct {
 	*services.Common
 	topMasterNodes          models.TopMasterNodes
+	fullListMasterNodes     models.FullListMasterNodes
 	idTickets               models.IDTickets
 	storageFeeGetNetworkFee *models.StorageFeeGetNetworkFee
 }
@@ -28,6 +29,8 @@ func (service *service) Handle(_ context.Context, r *http.Request, method string
 	switch routePath {
 	case "masternode_top":
 		return newTopMasterNodes(service.topMasterNodes), nil
+	case "masternode_list_full":
+		return newFullListMasterNodes(service.fullListMasterNodes), nil
 	case "storagefee_getnetworkfee":
 		return newStorageFeeGetNetworkFee(service.storageFeeGetNetworkFee), nil
 	case "tickets_list_id_mine":
@@ -41,9 +44,9 @@ func (service *service) Handle(_ context.Context, r *http.Request, method string
 		return newMasterNodeStatusByNode(node), nil
 	default:
 		switch {
-		case strings.HasPrefix(routePath, "pastelid_sign_") && len(params) == 4:
+		case strings.HasPrefix(routePath, "pastelid_sign_") && len(params) == 5:
 			return newPastelID(params[2]).sign(params[1]), nil
-		case strings.HasPrefix(routePath, "pastelid_verify_") && len(params) == 4:
+		case strings.HasPrefix(routePath, "pastelid_verify_") && len(params) == 5:
 			return newPastelID(params[3]).verify(params[1], params[2]), nil
 		}
 	}
@@ -64,6 +67,7 @@ func (service *service) loadFiles() error {
 	files := map[string]interface{}{
 		"data/storagefee_getnetworkfee.json": &service.storageFeeGetNetworkFee,
 		"data/masternode_top.json":           &service.topMasterNodes,
+		"data/masternode_list_full.json":     &service.fullListMasterNodes,
 		"data/tickets_list_id_mine.json":     &service.idTickets,
 	}
 

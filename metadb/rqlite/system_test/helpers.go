@@ -5,13 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
+	// "io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
+	// "path/filepath"
 	"strings"
 	"time"
 
@@ -625,7 +625,7 @@ func isJSON(s string) bool {
 // destination file exists, all it's contents will be replaced by the contents
 // of the source file. The file mode will be copied from the source and
 // the copied data is synced/flushed to stable storage.
-func copyFile(src, dst string) (err error) {
+/*func copyFile(src, dst string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return
@@ -662,12 +662,12 @@ func copyFile(src, dst string) (err error) {
 	}
 
 	return
-}
+}*/
 
 // copyDir recursively copies a directory tree, attempting to preserve permissions.
 // Source directory must exist, destination directory must *not* exist.
 // Symlinks are ignored and skipped.
-func copyDir(src string, dst string) (err error) {
+/*func copyDir(src string, dst string) (err error) {
 	src = filepath.Clean(src)
 	dst = filepath.Clean(dst)
 
@@ -720,4 +720,4 @@ func copyDir(src string, dst string) (err error) {
 	}
 
 	return
-}
+}*/

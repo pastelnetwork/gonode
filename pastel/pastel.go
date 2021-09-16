@@ -10,6 +10,14 @@ type Client interface {
 	// Command `masternode top`.
 	MasterNodesTop(ctx context.Context) (MasterNodes, error)
 
+	// MasterNodesList returns all masternodes.
+	// Command `masternode list full`.
+	MasterNodesList(ctx context.Context) (MasterNodes, error)
+
+	// MasterNodesExtra returns all masternodes.
+	// Command `masternode list extra`.
+	MasterNodesExtra(ctx context.Context) (MasterNodes, error)
+
 	// MasterNodeStatus returns masternode status information.
 	// Command `masternode status`.
 	MasterNodeStatus(ctx context.Context) (*MasterNodeStatus, error)
@@ -52,13 +60,17 @@ type Client interface {
 	// Command `sendmany  "pastelID" "{...}"`.
 	SendFromAddress(ctx context.Context, fromID string, toID string, amount float64) (txID string, error error)
 
-	// ActTickets returns activated art tickets.
+	// ActTickets returns activated NFT tickets.
 	// Command `tickets list act`.
 	ActTickets(ctx context.Context, actType ActTicketType, minHeight int) (ActTickets, error)
 
-	// ActTickets returns art registration tickets.
+	// RegTicket returns NFT registration tickets.
 	// Command `tickets get <txid>`.
 	RegTicket(ctx context.Context, regTxid string) (RegTicket, error)
+
+	// RegTickets returns all NFT registration tickets.
+	// Command `tickets list art`.
+	RegTickets(ctx context.Context) (RegTickets, error)
 
 	// GetBlockVerbose1 Return block info with verbose is 1
 	// Command `getblock height 1`
@@ -88,27 +100,31 @@ type Client interface {
 	// Command `storagefee  getnetworkfee`
 	GetNetworkFeePerMB(ctx context.Context) (int64, error)
 
-	// GetArtTicketFeePerKB return network ticket fee
-	// Command `storagefee  getartticketfee`
-	GetArtTicketFeePerKB(ctx context.Context) (int64, error)
+	// GetNFTTicketFeePerKB return network ticket fee
+	// Command `storagefee  getNFTticketfee`
+	GetNFTTicketFeePerKB(ctx context.Context) (int64, error)
 
-	// GetRegisterArtFee return fee of ticket
+	// GetRegisterNFTFee return fee of ticket
 	// refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 12
 	// Command `gettotalstoragefee ...`
-	GetRegisterArtFee(ctx context.Context, request GetRegisterArtFeeRequest) (int64, error)
+	GetRegisterNFTFee(ctx context.Context, request GetRegisterNFTFeeRequest) (int64, error)
 
-	// RegisterArtTicket register an art ticket
+	// RegisterNFTTicket register an NFT ticket
 	// Refer https://pastel.wiki/en/Architecture/Workflows/NewArtRegistration - step 18
-	// Command `tickets register art ...`
+	// Command `tickets register NFT ...`
 	// Return txid of transaction
-	RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (string, error)
+	RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error)
 
-	// RegisterActTicket activates an registered art ticket
+	// RegisterActTicket activates an registered NFT ticket
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
-	// Return txid of ArtActivateTicket
+	// Return txid of NFTActivateTicket
 	RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error)
 
 	// FindTicketByID returns the register ticket of pastelid
 	// Command `tickets find id <pastelid>`
 	FindTicketByID(ctx context.Context, pastelid string) (*IDTicket, error)
+
+	// GetBalance returns the amount of PSL stored at address
+	// Command `z_getbalance address`
+	GetBalance(ctx context.Context, address string) (float64, error)
 }

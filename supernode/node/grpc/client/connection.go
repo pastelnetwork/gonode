@@ -18,6 +18,11 @@ func (conn *clientConn) RegisterArtwork() node.RegisterArtwork {
 	return newRegisterArtwork(conn)
 }
 
+// ProcessUserdata implements node.Connection.ProcessUserdata()
+func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
+	return newProcessUserdata(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

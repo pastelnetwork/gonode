@@ -10,7 +10,10 @@ import (
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/storage"
+	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
+	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -19,17 +22,19 @@ var (
 	defaultNetworkPort   = 4445
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
-	defaultPingTime      = time.Second * 1
+	defaultPingTime      = time.Second * 5
 	defaultUpdateTime    = time.Minute * 1
 )
 
 // DHT represents the state of the local node in the distributed hash table
 type DHT struct {
-	ht      *HashTable    // the hashtable for routing
-	options *Options      // the options of DHT
-	network *Network      // the network of DHT
-	store   Store         // the storage of DHT
-	done    chan struct{} // distributed hash table is done
+	ht           *HashTable       // the hashtable for routing
+	options      *Options         // the options of DHT
+	network      *Network         // the network of DHT
+	store        Store            // the storage of DHT
+	done         chan struct{}    // distributed hash table is done
+	cache        storage.KeyValue // store bad bootstrap addresses
+	pastelClient pastel.Client
 }
 
 // Options contains configuration options for the local node
@@ -45,10 +50,13 @@ type Options struct {
 	// The nodes being used to bootstrap the network. Without a bootstrap
 	// node there is no way to connect to the network
 	BootstrapNodes []*Node
+
+	// PastelClient to retrieve p2p bootstrap addrs
+	PastelClient pastel.Client
 }
 
 // NewDHT returns a new DHT node
-func NewDHT(store Store, options *Options) (*DHT, error) {
+func NewDHT(store Store, pc pastel.Client, options *Options) (*DHT, error) {
 	// validate the options, if it's invalid, set them to default value
 	if options.IP == "" {
 		options.IP = defaultNetworkAddr
@@ -58,9 +66,11 @@ func NewDHT(store Store, options *Options) (*DHT, error) {
 	}
 
 	s := &DHT{
-		store:   store,
-		options: options,
-		done:    make(chan struct{}),
+		store:        store,
+		options:      options,
+		pastelClient: pc,
+		done:         make(chan struct{}),
+		cache:        memory.NewKeyValue(),
 	}
 	// new a hashtable with options
 	ht, err := NewHashTable(options)
@@ -94,7 +104,7 @@ func (s *DHT) Start(ctx context.Context) error {
 				// refresh the bucket by iterative find node
 				id := s.ht.randomIDFromBucket(K)
 				if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
-					log.WithContext(ctx).Errorf("iterate find node: %v", err)
+					log.WithContext(ctx).WithError(err).Error("iterate find node failed")
 				}
 			}
 		}
@@ -104,13 +114,13 @@ func (s *DHT) Start(ctx context.Context) error {
 		for _, key := range replicationKeys {
 			value, err := s.store.Retrieve(ctx, key)
 			if err != nil {
-				log.WithContext(ctx).Errorf("store retrieve: %v", err)
+				log.WithContext(ctx).WithError(err).Error("store retrieve failed")
 				continue
 			}
 			if value != nil {
 				// iteratve store the value
 				if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
-					log.WithContext(ctx).Errorf("iterate store data: %v", err)
+					log.WithContext(ctx).WithError(err).Error("iterate store data failed")
 				}
 			}
 		}
@@ -168,7 +178,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
 	if err != nil {
-		log.WithContext(ctx).Errorf("store retrive: %v", err)
+		log.WithContext(ctx).WithError(err).Error("store retrive failed")
 	}
 	// if not found locally, iterative find value from kademlia network
 	if value == nil {
@@ -182,54 +192,20 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return value, nil
 }
 
-// Bootstrap attempts to bootstrap the network using the BootstrapNodes provided
-// to the Options struct
-func (s *DHT) Bootstrap(ctx context.Context) error {
-	if len(s.options.BootstrapNodes) == 0 {
-		return nil
+// Stats returns stats of DHT
+func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
+	dbStats, err := s.store.Stats(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	var wg sync.WaitGroup
-	for _, node := range s.options.BootstrapNodes {
-		// sync the node id when it's empty
-		if len(node.ID) == 0 {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+	dhtStats := map[string]interface{}{}
+	dhtStats["self"] = s.ht.self
+	dhtStats["peers_count"] = len(s.ht.nodes())
+	dhtStats["peers"] = s.ht.nodes()
+	dhtStats["database"] = dbStats
 
-				// new a ping request message
-				request := s.newMessage(Ping, node, nil)
-				// new a context with timeout
-				ctx, cancel := context.WithTimeout(ctx, defaultPingTime)
-				defer cancel()
-
-				// invoke the request and handle the response
-				response, err := s.network.Call(ctx, request)
-				if err != nil {
-					log.WithContext(ctx).Errorf("network call: %v", err)
-					return
-				}
-				log.WithContext(ctx).Debugf("ping response: %v", response.String())
-
-				// add the node to the route table
-				s.addNode(response.Sender)
-			}()
-		}
-	}
-
-	// wait until all are done
-	wg.Wait()
-
-	// if it has nodes in local route tables
-	if s.ht.totalCount() > 0 {
-		// iterative find node from the nodes
-		if _, err := s.iterate(ctx, IterateFindNode, s.ht.self.ID, nil); err != nil {
-			log.WithContext(ctx).Errorf("iterative find node: %v", err)
-			return err
-		}
-	}
-
-	return nil
+	return dhtStats, nil
 }
 
 // new a message
@@ -291,7 +267,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 				// send the request and receive the response
 				response, err := s.network.Call(ctx, request)
 				if err != nil {
-					log.WithContext(ctx).Errorf("network call: %v, request: %v", err, request.String())
+					log.WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
 					// node is unreachable, remove the node
 					removedNodes = append(removedNodes, receiver)
 					return
@@ -411,7 +387,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					// send the request and receive the response
 					if _, err := s.network.Call(ctx, request); err != nil {
 						// <TODO> need to remove the node ?
-						log.WithContext(ctx).Errorf("network call: %v", err)
+						log.WithContext(ctx).WithError(err).Error("network call")
 					}
 				}
 				return nil, nil

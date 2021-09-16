@@ -215,7 +215,7 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	// Set a read deadline so connections with no data don't timeout.
 	if err := conn.SetReadDeadline(time.Now().Add(mux.Timeout)); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).Errorf("tcp.Mux: cannot set read deadline: %s", err)
+		log.WithContext(mux.ctx).WithError(err).Error("tcp.Mux: cannot set read deadline")
 		return
 	}
 
@@ -223,14 +223,14 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	var typ [1]byte
 	if _, err := io.ReadFull(conn, typ[:]); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).Errorf("tcp.Mux: cannot read header byte: %s", err)
+		log.WithContext(mux.ctx).WithError(err).Error("tcp.Mux: cannot read header byte")
 		return
 	}
 
 	// Reset read deadline and let the listener handle that.
 	if err := conn.SetReadDeadline(time.Time{}); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).Errorf("tcp.Mux: cannot reset set read deadline: %s", err)
+		log.WithContext(mux.ctx).WithError(err).Error("tcp.Mux: cannot reset set read deadline")
 		return
 	}
 

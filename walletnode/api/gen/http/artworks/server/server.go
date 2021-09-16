@@ -99,7 +99,7 @@ func New(
 		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewArtworksUploadImageDecoder(mux, artworksUploadImageDecoderFn), encoder, errhandler, formatter),
 		ArtSearch:         NewArtSearchHandler(e.ArtSearch, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.ArtSearchFn),
 		ArtworkGet:        NewArtworkGetHandler(e.ArtworkGet, mux, decoder, encoder, errhandler, formatter),
-		Download:          NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.DownloadFn),
+		Download:          NewDownloadHandler(e.Download, mux, decoder, encoder, errhandler, formatter),
 		CORS:              NewCORSHandler(),
 	}
 }
@@ -136,7 +136,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 // MountRegisterHandler configures the mux to serve the "artworks" service
 // "register" endpoint.
 func MountRegisterHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleArtworksOrigin(h).(http.HandlerFunc)
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -187,7 +187,7 @@ func NewRegisterHandler(
 // MountRegisterTaskStateHandler configures the mux to serve the "artworks"
 // service "registerTaskState" endpoint.
 func MountRegisterTaskStateHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleArtworksOrigin(h).(http.HandlerFunc)
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -251,7 +251,7 @@ func NewRegisterTaskStateHandler(
 // MountRegisterTaskHandler configures the mux to serve the "artworks" service
 // "registerTask" endpoint.
 func MountRegisterTaskHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleArtworksOrigin(h).(http.HandlerFunc)
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -302,7 +302,7 @@ func NewRegisterTaskHandler(
 // MountRegisterTasksHandler configures the mux to serve the "artworks" service
 // "registerTasks" endpoint.
 func MountRegisterTasksHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleArtworksOrigin(h).(http.HandlerFunc)
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -346,7 +346,7 @@ func NewRegisterTasksHandler(
 // MountUploadImageHandler configures the mux to serve the "artworks" service
 // "uploadImage" endpoint.
 func MountUploadImageHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleArtworksOrigin(h).(http.HandlerFunc)
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -397,7 +397,7 @@ func NewUploadImageHandler(
 // MountArtSearchHandler configures the mux to serve the "artworks" service
 // "artSearch" endpoint.
 func MountArtSearchHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleArtworksOrigin(h).(http.HandlerFunc)
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -461,7 +461,7 @@ func NewArtSearchHandler(
 // MountArtworkGetHandler configures the mux to serve the "artworks" service
 // "artworkGet" endpoint.
 func MountArtworkGetHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleArtworksOrigin(h).(http.HandlerFunc)
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -512,7 +512,7 @@ func NewArtworkGetHandler(
 // MountDownloadHandler configures the mux to serve the "artworks" service
 // "download" endpoint.
 func MountDownloadHandler(mux goahttp.Muxer, h http.Handler) {
-	f, ok := HandleArtworksOrigin(h).(http.HandlerFunc)
+	f, ok := handleArtworksOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
@@ -530,12 +530,11 @@ func NewDownloadHandler(
 	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
-	upgrader goahttp.Upgrader,
-	configurer goahttp.ConnConfigureFunc,
 ) http.Handler {
 	var (
-		decodeRequest = DecodeDownloadRequest(mux, decoder)
-		encodeError   = EncodeDownloadError(encoder, formatter)
+		decodeRequest  = DecodeDownloadRequest(mux, decoder)
+		encodeResponse = EncodeDownloadResponse(encoder)
+		encodeError    = EncodeDownloadError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
@@ -548,27 +547,15 @@ func NewDownloadHandler(
 			}
 			return
 		}
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(ctx)
-		v := &artworks.DownloadEndpointInput{
-			Stream: &DownloadServerStream{
-				upgrader:   upgrader,
-				configurer: configurer,
-				cancel:     cancel,
-				w:          w,
-				r:          r,
-			},
-			Payload: payload.(*artworks.DownloadPayload),
-		}
-		_, err = endpoint(ctx, v)
+		res, err := endpoint(ctx, payload)
 		if err != nil {
-			if _, ok := err.(websocket.HandshakeError); ok {
-				return
-			}
 			if err := encodeError(ctx, w, err); err != nil {
 				errhandler(ctx, w, err)
 			}
 			return
+		}
+		if err := encodeResponse(ctx, w, res); err != nil {
+			errhandler(ctx, w, err)
 		}
 	})
 }
@@ -576,7 +563,7 @@ func NewDownloadHandler(
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service artworks.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
-	h = HandleArtworksOrigin(h)
+	h = handleArtworksOrigin(h)
 	f, ok := h.(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
@@ -599,9 +586,9 @@ func NewCORSHandler() http.Handler {
 	})
 }
 
-// HandleArtworksOrigin applies the CORS response headers corresponding to the
+// handleArtworksOrigin applies the CORS response headers corresponding to the
 // origin for the service artworks.
-func HandleArtworksOrigin(h http.Handler) http.Handler {
+func handleArtworksOrigin(h http.Handler) http.Handler {
 	origHndlr := h.(http.HandlerFunc)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		origin := r.Header.Get("Origin")

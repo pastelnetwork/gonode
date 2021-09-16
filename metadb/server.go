@@ -29,15 +29,6 @@ const (
 	defaultCompressionBatch       = 5
 )
 
-// determine the join addresses
-func (s *service) determineJoinAddresses(_ context.Context) ([]string, error) {
-	var addrs []string
-
-	// <TODO> get the list of supernodes from Pastel RPC API, and try to connect automatically.
-
-	return addrs, nil
-}
-
 // wait until the store is in full consensus
 func (s *service) waitForConsensus(ctx context.Context, dbStore *store.Store) error {
 	if _, err := dbStore.WaitForLeader(ctx, defaultRaftOpenTimeout); err != nil {
@@ -119,20 +110,25 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
-	// determine the join addresses
-	joins, err := s.determineJoinAddresses(ctx)
-	if err != nil {
-		return nil, errors.Errorf("determine join addresses: %w", err)
+	selfAddress := s.config.GetExposedAddr()
+	var joinIPAddresses []string
+	if !s.config.IsLeader {
+		for _, ip := range s.nodeIPList {
+			if selfAddress == ip {
+				continue
+			}
+			joinIPAddresses = append(joinIPAddresses, ip)
+		}
 	}
-	// supplying join addresses means bootstrapping a new cluster won't be required.
-	if len(joins) > 0 {
+
+	if len(joinIPAddresses) > 0 {
 		bootstrap = false
 		log.WithContext(ctx).Info("join addresses specified, node is not bootstrap")
 	} else {
 		log.WithContext(ctx).Info("no join addresses")
 	}
 	// join address supplied, but we don't need them
-	if !isNew && len(joins) > 0 {
+	if !isNew && len(joinIPAddresses) > 0 {
 		log.WithContext(ctx).Info("node is already member of cluster")
 	}
 
@@ -143,24 +139,24 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 	s.db = db
 
 	// execute any requested join operation
-	if len(joins) > 0 && isNew {
-		log.WithContext(ctx).Infof("join addresses are: %v", joins)
+	if len(joinIPAddresses) > 0 {
+		log.WithContext(ctx).Infof("join addresses are: %v", joinIPAddresses)
 
 		raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
 		// join rqlite cluster
 		joinAddr, err := cluster.Join(
 			ctx,
 			"",
-			joins,
+			joinIPAddresses,
 			db.ID(),
 			raftAddr,
-			true,
+			!s.config.NoneVoter,
 			defaultJoinAttempts,
 			defaultJoinInterval,
 			nil,
 		)
 		if err != nil {
-			return nil, errors.Errorf("join cluster at %v: %w", joins, err)
+			return nil, errors.Errorf("join cluster at %v: %w", joinIPAddresses, err)
 		}
 		log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
 	}
@@ -209,7 +205,12 @@ func (s *service) startServer(ctx context.Context) error {
 		return errors.Errorf("start http server: %w", err)
 	}
 	// mark the rqlite node is ready
-	s.ready <- struct{}{}
+	select {
+	case <-ctx.Done():
+		return errors.Errorf("context done: %w", ctx.Err())
+	case s.ready <- struct{}{}:
+		// do nothing, continue
+	}
 
 	log.WithContext(ctx).Info("metadb service is started")
 
@@ -218,12 +219,12 @@ func (s *service) startServer(ctx context.Context) error {
 
 	// close the rqlite store
 	if err := db.Close(true); err != nil {
-		log.WithContext(ctx).Errorf("close store: %v", err)
+		log.WithContext(ctx).WithError(err).Errorf("close store failed")
 	}
 
 	// close the mux listener
 	if err := muxListener.Close(); err != nil {
-		log.WithContext(ctx).Errorf("close mux listener: %v", err)
+		log.WithContext(ctx).WithError(err).Errorf("Close mux listener failed")
 	}
 
 	log.WithContext(ctx).Info("metadb service is stopped")

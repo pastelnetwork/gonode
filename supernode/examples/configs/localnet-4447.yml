@@ -1,11 +1,15 @@
-pastel-api:
-  hostname: "127.0.0.1"
-  port: 29932
-  username: "4447"
-  password: ""
+# please provide pastel configs in pastel.conf
+log-level: info
+log-file:  # e.g: logs.json - by default, logs are only written to stdout
+quiet: false
+temp-dir:
+work-dir:
+rq-files-dir: 
+dd-service-dir:
 
 node:
   pastel_id: jXZDyPoescC4pgWMeD2qMzyPi5gaxMkkggrwGFAK2izTQgEkrjKqHSbG1HCfCFY9n3pAQ9q4VFHLrakL89bvfR
+  pass_phrase: "passphrase"
   server:
     listen_addresses: "0.0.0.0"
     port: 4447
@@ -14,16 +18,15 @@ p2p:
   listen_address: "0.0.0.0"
   port: 6003
   data_dir: "p2p-localnet-6003"
-  bootstrap_ip: "localhost"
-  bootstrap_port: 6000
 
 metadb:
+  is_leader: false
+  none_voter: true
   listen_address: "0.0.0.0"
   http_port: 4071
   raft_port: 4072
   data_dir: "metadb-4447"
 
-dupe-detection:
-  input_dir: "input"
-  output_dir: "output"
-  data_file: "dupe_detection_image_fingerprint_database.sqlite"
+raptorq:
+  host: "localhost"
+  port: 50054

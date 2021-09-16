@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
@@ -19,16 +20,20 @@ import (
 	"github.com/pastelnetwork/gonode/common/version"
 	"github.com/pastelnetwork/gonode/dupedetection"
 	"github.com/pastelnetwork/gonode/metadb"
+	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
+	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
+	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
 
 const (
@@ -48,8 +53,10 @@ var (
 	defaultWorkDir          = filepath.Join(defaultPath, appName)
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
-	defaultRqFilesDir       = filepath.Join(defaultPath, rqFilesDir)
-	defaultDdWorkDir        = filepath.Join(homePath, ddWorkDir)
+
+	rqliteDefaultPort = 4446
+	defaultRqFilesDir = filepath.Join(defaultPath, rqFilesDir)
+	defaultDdWorkDir  = filepath.Join(homePath, ddWorkDir)
 )
 
 // NewApp inits a new command line interface.
@@ -65,8 +72,8 @@ func NewApp() *cli.App {
 
 	app.AddFlags(
 		// Main
-		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
-		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
+		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(defaultConfigFile).SetAliases("c"),
+		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetValue(defaultPastelConfigFile),
 		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
@@ -81,12 +88,12 @@ func NewApp() *cli.App {
 
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
-				return err
+				return fmt.Errorf("error parsing supernode config file: %v", err)
 			}
 		}
 		if pastelConfigFile != "" {
-			if err := configurer.ParseFile(pastelConfigFile, config.Pastel.ExternalConfig); err != nil {
-				log.WithContext(ctx).Debug(err)
+			if err := configurer.ParseFile(pastelConfigFile, config.Pastel); err != nil {
+				return fmt.Errorf("error parsing pastel config file: %v", err)
 			}
 		}
 
@@ -100,6 +107,18 @@ func NewApp() *cli.App {
 			log.AddHook(hooks.NewFileHook(config.LogFile))
 		}
 		log.AddHook(hooks.NewDurationHook())
+
+		if err := config.P2P.Validate(); err != nil {
+			return err
+		}
+
+		if err := config.MetaDB.Validate(); err != nil {
+			return err
+		}
+
+		if err := config.RaptorQ.Validate(); err != nil {
+			return err
+		}
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
@@ -125,6 +144,33 @@ func NewApp() *cli.App {
 	})
 
 	return app
+}
+
+func getDatabaseNodes(ctx context.Context, pastelClient pastel.Client) ([]string, error) {
+	var nodeIPList []string
+	// Note: Lock the db clustering feature, run it in single node first
+	if test := sys.GetStringEnv("DB_CLUSTER", ""); test != "" {
+		nodeList, err := pastelClient.MasterNodesList(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, nodeInfo := range nodeList {
+			address := nodeInfo.ExtAddress
+			segments := strings.Split(address, ":")
+			if len(segments) != 2 {
+				return nil, errors.Errorf("malformed db node address: %s", address)
+			}
+			nodeAddress := fmt.Sprintf("%s:%d", segments[0], rqliteDefaultPort)
+			nodeIPList = append(nodeIPList, nodeAddress)
+		}
+	}
+
+	// Important notice !!!
+	// Enable this line below to run rqlite with 1 leader and multiple replicas, if want to test the real rqlite cluster behavior
+	// Otherwise, this will run rqlite cluster with every node as a rqlite leader, and data to highest rank SN can write directly to its local rqlite
+	// return []string{"0.0.0.0:4041"}, nil
+
+	return nodeIPList, nil
 }
 
 func runApp(ctx context.Context, config *configs.Config) error {
@@ -156,11 +202,17 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
-	p2p := p2p.New(config.P2P)
+	p2p := p2p.New(config.P2P, pastelClient)
+
+	nodeIPList, err := getDatabaseNodes(ctx, pastelClient)
+	if err != nil {
+		return err
+	}
 
 	// new metadb service
 	config.MetaDB.SetWorkDir(config.WorkDir)
-	metadb := metadb.New(config.MetaDB, config.Node.PastelID)
+	metadb := metadb.New(config.MetaDB, config.Node.PastelID, nodeIPList)
+	database := database.NewDatabaseOps(metadb, config.UserDB)
 
 	// raptorq client
 	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
@@ -176,15 +228,34 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
+	dupeDetection, err := dupedetection.NewService(config.DupeDetection, pastelClient, p2p)
+	if err != nil {
+		return errors.Errorf("can not start dupe detection service, err: %w", err)
+	}
+
+	// ----Userdata Services----
+	userdataNodeClient := client.New(pastelClient, secInfo)
+	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
+
+	// create stats manager
+	statsMngr := healthcheck_lib.NewStatsMngr(config.HealthCheck)
+	statsMngr.Add("p2p", p2p)
+	statsMngr.Add("mdl", metadb)
+	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
+	statsMngr.Add("dupedetection", dupeDetection)
 
 	// server
 	grpc := server.New(config.Server,
+		"service",
 		pastelClient,
 		secInfo,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),
+		walletnode.NewProcessUserdata(userdataProcess, database),
+		supernode.NewProcessUserdata(userdataProcess, database),
+		healthcheck.NewHealthCheck(statsMngr),
 	)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess, statsMngr)
 }

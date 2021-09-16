@@ -15,17 +15,43 @@ const (
 	ReadLevelWeak = "weak"
 	// ReadLevelStrong - to avoid even the issues associated with weak consistency, rqlite also offers strong
 	ReadLevelStrong = "strong"
-	// AllowedSubStatement - the supported count of sub statements
-	AllowedSubStatement = 1
 )
+
+// WaitForStarting wait for the db to completely started, just run once after starting up the db
+func (s *service) WaitForStarting(ctx context.Context) error {
+	select {
+	case <-s.ready:
+		return nil
+	case <-ctx.Done():
+		return errors.Errorf("context done: %w", ctx.Err())
+	}
+}
+
+// LeaderAddr returns the address of the current leader. Returns a
+// blank string if there is no leader.
+func (s *service) LeaderAddress() string {
+	address, _ := s.db.LeaderAddr()
+	return address
+}
+
+// IsLeader let us know if this instance is leader or not
+func (s *service) IsLeader() bool {
+	address, _ := s.db.LeaderAddr()
+	return address == s.db.Addr()
+}
+
+// Stats return status of store
+func (s *service) Stats(_ context.Context) (map[string]interface{}, error) {
+	return s.db.Stats()
+}
 
 // Write execute a statement, not support multple statements
 func (s *service) Write(_ context.Context, statement string) (*WriteResult, error) {
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
 	}
-	if len(strings.Split(statement, ";")) > AllowedSubStatement {
-		return nil, errors.New("only support one sub statement")
+	if !s.IsLeader() {
+		return nil, errors.New("not a leader")
 	}
 
 	// prepare the execute command request
@@ -75,9 +101,6 @@ func (s *service) consistencyLevel(level string) command.QueryRequest_Level {
 func (s *service) Query(_ context.Context, statement string, level string) (*QueryResult, error) {
 	if len(statement) == 0 {
 		return nil, errors.New("statement are empty")
-	}
-	if len(strings.Split(statement, ";")) > AllowedSubStatement {
-		return nil, errors.New("only support one sub statement")
 	}
 
 	// prepare the query command request

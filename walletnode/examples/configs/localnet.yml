@@ -1,21 +1,18 @@
-pastel-api:
-  hostname: "127.0.0.1"
-  port: 12170
-  username: "rt"
-  password: "rt"
+log-level:
+log-file:
+quiet: false
+temp-dir:
+work-dir:
+rq-files-dir: 
 
 node:
   api:
     hostname: "localhost"
     port: 8080
-  reg_art_tx_min_confirmations: 10
-  # Timeout waiting for 
-  reg_art_tx_timeout: 26
-  reg_act_tx_min_confirmations: 5 
-  # Timeout waiting for 
-  reg_act_tx_timeout: 13
+    swagger: true 
   burn_address: tPce2T47TFPcHPj3sKiKdFLhQpmzJ1tkzjr 
 
 raptorq:
-  hostname: "locahost"
+  host: "locahost"
   port: 50051
+  

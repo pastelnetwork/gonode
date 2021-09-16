@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/healthcheck";
+
+package healthcheck;
+
+service HealthCheck {
+    // ConnectTo requests to connect to the primary supernode.
+    rpc Ping(PingRequest) returns (PingReply);
+    //  TODO : add new ping requests to check dependencies like p2p, rqserice, pastel,...
+}
+
+message PingRequest {
+    string msg = 1;
+}
+message PingReply {
+    string reply = 1;
+}

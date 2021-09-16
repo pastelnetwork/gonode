@@ -2,7 +2,11 @@
 
 package storage
 
-import "github.com/pastelnetwork/gonode/common/errors"
+import (
+	"time"
+
+	"github.com/pastelnetwork/gonode/common/errors"
+)
 
 var (
 	// ErrKeyValueNotFound is returned when key isn't found.
@@ -15,8 +19,11 @@ type KeyValue interface {
 	// If key is not found, ErrKeyValueNotFound is returned.
 	Get(key string) (value []byte, err error)
 
-	// Set adds a key-value pair to the database.
+	// Set adds a key-value pair to the database
 	Set(key string, value []byte) (err error)
+
+	// Set adds a key-value pair to the database with expiry time
+	SetWithExpiry(key string, value []byte, expiry time.Duration) (err error)
 
 	// Delete deletes a key.
 	Delete(key string) error

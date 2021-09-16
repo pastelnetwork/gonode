@@ -19,7 +19,7 @@ type client struct {
 
 // Generate implements dupedection.Client.Generate
 func (client *client) Generate(ctx context.Context, img []byte, format string) (*DupeDetection, error) {
-	if img == nil || len(img) == 0 || format == "" {
+	if img == nil || format == "" {
 		return nil, errors.Errorf("invalid image content or format(data=%v, format=%s", img, format)
 	}
 
@@ -64,6 +64,7 @@ func (client *client) collectOutput(ctx context.Context, path string) (*DupeDete
 	defer cancel()
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()
+	log.WithContext(ctx).WithField("filename", path).Debug("waiting for output from dupe detection service")
 	for {
 		select {
 		case <-ctx.Done():
@@ -72,9 +73,9 @@ func (client *client) collectOutput(ctx context.Context, path string) (*DupeDete
 			result, err := parseOutput(path)
 
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Debug("Failed to collect output from dupe detection service")
 				continue
 			}
+			log.WithContext(ctx).WithField("filename", path).Debug("collected output from dupe detection service")
 			return result, nil
 		}
 	}

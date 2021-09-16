@@ -14,6 +14,13 @@ import (
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 )
 
+const (
+	// SignAlgorithmED448 is ED448 signature algorithm
+	SignAlgorithmED448 = "ed448"
+	// SignAlgorithmLegRoast is Efficient post-quantum signatures algorithm
+	SignAlgorithmLegRoast = "legroast"
+)
+
 type client struct {
 	jsonrpc.RPCClient
 }
@@ -40,6 +47,18 @@ func (client *client) MasterNodesTop(ctx context.Context) (MasterNodes, error) {
 		return nil, errors.Errorf("failed to get top masternodes: %w", err)
 	}
 
+	for _, masterNodes := range blocknumMNs {
+		return masterNodes, nil
+	}
+	return nil, nil
+}
+
+// MasterNodesList implements pastel.Client.MasterNodesList
+func (client *client) MasterNodesList(ctx context.Context) (MasterNodes, error) {
+	blocknumMNs := make(map[string]MasterNodes)
+	if err := client.callFor(ctx, &blocknumMNs, "masternode", "list", "full"); err != nil {
+		return nil, errors.Errorf("failed to get list of masternodes: %w", err)
+	}
 	for _, masterNodes := range blocknumMNs {
 		return masterNodes, nil
 	}
@@ -90,7 +109,7 @@ func (client *client) FindTicketByID(ctx context.Context, pastelID string) (*IDT
 // TicketOwnership implements pastel.Client.TicketOwnership
 func (client *client) TicketOwnership(ctx context.Context, txID, pastelID, passphrase string) (string, error) {
 	var ownership struct {
-		Art   string `json:"art"`   // txid from the request
+		NFT   string `json:"NFT"`   // txid from the request
 		Trade string `json:"trade"` // txid from trade ticket
 	}
 
@@ -117,7 +136,7 @@ func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphras
 	text := base64.StdEncoding.EncodeToString(data)
 
 	switch algorithm {
-	case "ed448", "legroast":
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
 		if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase, algorithm); err != nil {
 			return nil, errors.Errorf("failed to sign data: %w", err)
 		}
@@ -135,12 +154,12 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 	text := base64.StdEncoding.EncodeToString(data)
 
 	switch algorithm {
-	case "ed448", "legroast":
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
 		if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID, algorithm); err != nil {
 			return false, errors.Errorf("failed to verify data: %w", err)
 		}
 	default:
-		return false, errors.Errorf("unsupported algoritm %s", algorithm)
+		return false, errors.Errorf("unsupported algorithm %s", algorithm)
 	}
 
 	return verify.Verification == "OK", nil
@@ -226,6 +245,17 @@ func (client *client) RegTicket(ctx context.Context, regTxid string) (RegTicket,
 	return ticket, nil
 }
 
+// RegTickets implements pastel.Client.RegTickets
+func (client *client) RegTickets(ctx context.Context) (RegTickets, error) {
+	tickets := RegTickets{}
+
+	if err := client.callFor(ctx, &tickets, "tickets", "list", "nft"); err != nil {
+		return nil, errors.Errorf("failed to get registration tickets: %w", err)
+	}
+
+	return tickets, nil
+}
+
 func (client *client) GetBlockVerbose1(ctx context.Context, blkHeight int32) (*GetBlockVerbose1Result, error) {
 	result := &GetBlockVerbose1Result{}
 
@@ -305,24 +335,24 @@ func (client *client) GetNetworkFeePerMB(ctx context.Context) (int64, error) {
 	return networkFee.NetworkFee, nil
 }
 
-func (client *client) GetArtTicketFeePerKB(ctx context.Context) (int64, error) {
-	var artticketFee struct {
-		ArtticketFee int64 `json:"artticketfee"`
+func (client *client) GetNFTTicketFeePerKB(ctx context.Context) (int64, error) {
+	var NFTticketFee struct {
+		NFTticketFee int64 `json:"nftticketfee"`
 	}
 
-	if err := client.callFor(ctx, &artticketFee, "storagefee", "getartticketfee"); err != nil {
+	if err := client.callFor(ctx, &NFTticketFee, "storagefee", "getnftticketfee"); err != nil {
 		return 0, errors.Errorf("failed to call storagefee: %w", err)
 	}
-	return artticketFee.ArtticketFee, nil
+	return NFTticketFee.NFTticketFee, nil
 }
 
-func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegisterArtFeeRequest) (int64, error) {
+func (client *client) GetRegisterNFTFee(ctx context.Context, request GetRegisterNFTFeeRequest) (int64, error) {
 	var totalStorageFee struct {
 		TotalStorageFee int64 `json:"totalstoragefee"`
 	}
 
 	// command : tickets tools gettotalstoragefee "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee" "imagesize"
-	ticket, err := EncodeArtTicket(request.Ticket)
+	ticket, err := EncodeNFTTicket(request.Ticket)
 	if err != nil {
 		return 0, errors.Errorf("failed to encode ticket: %w", err)
 	}
@@ -352,12 +382,12 @@ func (client *client) GetRegisterArtFee(ctx context.Context, request GetRegister
 	return totalStorageFee.TotalStorageFee, nil
 }
 
-func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArtRequest) (string, error) {
+func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error) {
 	var txID struct {
 		TxID string `json:"txid"`
 	}
 
-	ticket, err := EncodeArtTicket(request.Ticket)
+	ticket, err := EncodeNFTTicket(request.Ticket)
 	if err != nil {
 		return "", errors.Errorf("failed to encode ticket: %w", err)
 	}
@@ -370,7 +400,7 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 
 	params := []interface{}{}
 	params = append(params, "register")
-	params = append(params, "art")
+	params = append(params, "nft")
 	params = append(params, string(ticketBlob))
 	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelID)
@@ -379,9 +409,9 @@ func (client *client) RegisterArtTicket(ctx context.Context, request RegisterArt
 	params = append(params, request.Key2)
 	params = append(params, fmt.Sprint(request.Fee))
 
-	// command : tickets register art "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee"
+	// command : tickets register NFT "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee"
 	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
-		return "", errors.Errorf("failed to call register art ticket: %w", err)
+		return "", errors.Errorf("failed to call register NFT ticket: %w", err)
 	}
 	return txID.TxID, nil
 }
@@ -408,20 +438,44 @@ func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid strin
 	return txID.TxID, nil
 }
 
+func (client *client) GetBalance(ctx context.Context, address string) (float64, error) {
+	var balance float64
+	if err := client.callFor(ctx, &balance, "z_getbalance", address); err != nil {
+		return 0.0, errors.Errorf("failed to call z_getbalance: %w", err)
+	}
+	return balance, nil
+}
+
+// MasterNodesExtra implements pastel.Client.MasterNodesExtra
+func (client *client) MasterNodesExtra(ctx context.Context) (MasterNodes, error) {
+	blocknumMNs := make(map[string]MasterNode)
+	masterNodes := MasterNodes{}
+
+	if err := client.callFor(ctx, &blocknumMNs, "masternode", "list", "extra"); err != nil {
+		return nil, errors.Errorf("failed to get top masternodes: %w", err)
+	}
+
+	for _, masterNode := range blocknumMNs {
+		masterNodes = append(masterNodes, masterNode)
+	}
+
+	return masterNodes, nil
+}
+
 func (client *client) callFor(ctx context.Context, object interface{}, method string, params ...interface{}) error {
 	return client.CallForWithContext(ctx, object, method, params)
 }
 
 // NewClient returns a new Client instance.
 func NewClient(config *Config) Client {
-	endpoint := net.JoinHostPort(config.hostname(), strconv.Itoa(config.port()))
+	endpoint := net.JoinHostPort(config.Hostname, strconv.Itoa(config.port()))
 	if !strings.Contains(endpoint, "//") {
 		endpoint = "http://" + endpoint
 	}
 
 	opts := &jsonrpc.RPCClientOpts{
 		CustomHeaders: map[string]string{
-			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(config.username()+":"+config.password())),
+			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(config.Username+":"+config.Password)),
 		},
 	}
 

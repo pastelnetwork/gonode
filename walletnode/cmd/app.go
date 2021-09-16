@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
 	"github.com/pastelnetwork/gonode/common/cli"
@@ -28,6 +27,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/node/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 )
 
 const (
@@ -58,8 +58,8 @@ func NewApp() *cli.App {
 
 	app.AddFlags(
 		// Main
-		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetDefaultText(defaultConfigFile).SetAliases("c"),
-		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetDefaultText(defaultPastelConfigFile),
+		cli.NewFlag("config-file", &configFile).SetUsage("Set `path` to the config file.").SetValue(defaultConfigFile).SetAliases("c"),
+		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetValue(defaultPastelConfigFile),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
@@ -74,12 +74,13 @@ func NewApp() *cli.App {
 
 		if configFile != "" {
 			if err := configurer.ParseFile(configFile, config); err != nil {
-				return err
+				return fmt.Errorf("error parsing walletnode config file: %v", err)
 			}
 		}
+
 		if pastelConfigFile != "" {
-			if err := configurer.ParseFile(pastelConfigFile, config.Pastel.ExternalConfig); err != nil {
-				log.WithContext(ctx).Debug(err)
+			if err := configurer.ParseFile(pastelConfigFile, config.Pastel); err != nil {
+				return fmt.Errorf("error parsing pastel config: %v", err)
 			}
 		}
 
@@ -128,10 +129,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// entities
 	pastelClient := pastel.NewClient(config.Pastel)
+
+	// Business logic services
+	// ----Artwork Services----
 	nodeClient := grpc.NewClient(pastelClient)
-	// p2p service (currently using kademlia)
-	config.P2P.SetWorkDir(config.WorkDir)
-	p2p := p2p.New(config.P2P)
 
 	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
@@ -151,14 +152,19 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient, rqClient)
-	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, p2p, nodeClient)
+	artworkSearch := artworksearch.NewService(&config.ArtworkSearch, pastelClient, nodeClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
+
+	// ----Userdata Services----
+	userdataNodeClient := grpc.NewClient(pastelClient)
+	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
 	// api service
 	server := api.NewServer(config.API,
 		services.NewArtwork(artworkRegister, artworkSearch, artworkDownload),
+		services.NewUserdata(userdataProcess),
 		services.NewSwagger(),
 	)
 
-	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload)
+	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload, userdataProcess)
 }

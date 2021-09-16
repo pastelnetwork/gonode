@@ -1,9 +1,15 @@
+log-level:
+log-file:
+quiet:
+temp-dir:
+work-dir:
+rq-files-dir: 
+dd-service-dir:
+
 node:
-  # `pastel_id` must match to active `PastelID` from masternode.
-  # To check it out first get the active outpoint from `masteronde status`, then filter the result of `tickets list id mine` by this outpoint.
-  pastel_id: some-value
+  pastel_id:
+  pass_phrase: 
   server:
-    # `listen_address` and `port` must match to `extAddress` from masternode.conf
     listen_addresses: "0.0.0.0"
     port: 4444
 
@@ -11,10 +17,15 @@ p2p:
   listen_address: "0.0.0.0"
   port: 6000
   data_dir: "p2p"
-  # bootstrap_ip: ""
-  # bootstrap_port: ""
 
 metadb:
+  is_leader: false
+  none_voter: true
   listen_address: "0.0.0.0"
   http_port: 4001
   raft_port: 4002
+  data_dir: "metadb"
+
+raptorq:
+  host: "localhost"
+  port: 50051

@@ -142,11 +142,32 @@ commands:
       - run:
           name: "<< parameters.moduleSubDir >> << parameters.package >>: xgo build for << parameters.targets >>"
           command: |
-            GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> ./
+            export WORKING_DIR=~/project/build/github.com/pastelnetwork/gonode
+            export MACOS_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-darwin-10.14-amd64
+            export WINDOWS_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-windows-4.0-amd64.exe
+            export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-linux-amd64
+            export APP_VERSION=$(git describe --tag)
+            export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
+            GOPATH= xgo -go latest --targets=<< parameters.targets >>  -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> -ldflags "$APP_LDFLAGS"  ./
 
             mkdir -p << parameters.outputDirectory >>
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
+            
             ls -R ./<< parameters.outputDirectory >>
+            cd ./<< parameters.outputDirectory >>
+            if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
+              echo "Create sha256 checksum of linux/amd64 build"
+              sha256sum "$LINUX_ARTIFACT" > "$LINUX_ARTIFACT.sha256"
+            fi
+            if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
+              echo "Create sha256 checksum of darwin-10.14/amd64 build"
+              sha256sum  "$MACOS_ARTIFACT" > "$MACOS_ARTIFACT.sha256"
+            fi
+            if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
+              echo "Create sha256 checksum of windows/amd64 build"
+              sha256sum "$WINDOWS_ARTIFACT" > "$WINDOWS_ARTIFACT.sha256"
+            fi
+            ls -R ./*
 
   github-upload-all-os:
     parameters:
@@ -169,17 +190,20 @@ commands:
             if [[ "<< parameters.targets >>" == *"linux/amd64,"* ]]; then
               echo "Check existence of linux/amd64 build and upload to GitHub"
               test -f $LINUX_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-linux-amd64 --file << parameters.binaryName >>-linux-amd64
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-ubuntu20.04-amd64 --file << parameters.binaryName >>-linux-amd64
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-ubuntu20.04-amd64.sha256 --file << parameters.binaryName >>-linux-amd64.sha256
             fi
             if [[ "<< parameters.targets >>" == *"darwin-10.14/amd64,"* ]]; then
               echo "Check existence of darwin-10.14/amd64 build and upload to GitHub"
               test -f $MACOS_ARTIFACT
               github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64 --file << parameters.binaryName >>-darwin-10.14-amd64
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-darwin-amd64.sha256 --file << parameters.binaryName >>-darwin-10.14-amd64.sha256
             fi
             if [[ "<< parameters.targets >>" == *"windows/amd64,"* ]]; then
               echo "Check existence of windows/amd64 build and upload to GitHub"
               test -f $WINDOWS_ARTIFACT
-              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-windows-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-win-amd64.exe --file << parameters.binaryName >>-windows-4.0-amd64.exe
+              github-release upload --user pastelnetwork --repo << parameters.repo >> --tag $CIRCLE_TAG --name << parameters.binaryName >>-win-amd64.sha256 --file << parameters.binaryName >>-windows-4.0-amd64.exe.sha256
             fi
   install_tensorflow:
     steps:
@@ -313,15 +337,6 @@ jobs:
       - test:
           package: "legroast"
 
-  test_probe:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - install_tensorflow
-      - test:
-          package: "probe"
-
   test_pqsignatures:
     <<: *defaults
     steps:
@@ -395,7 +410,7 @@ jobs:
       - run:
           name: Install xgo
           command: |
-            go install -v github.com/pastelnetwork/xgo@48be1f35b934924c998997a8470ffdb6a022b968
+            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
       - create-sources-container:
           containerName: "sourcesContainer"
       - release:
@@ -443,9 +458,6 @@ workflows:
           requires:
             - prepare_workspace
       - test_legroast:
-          requires:
-            - prepare_workspace
-      - test_probe:
           requires:
             - prepare_workspace
       - test_pqsignatures:

@@ -17,6 +17,17 @@ func inIntRange(val int, min *int, max *int) bool {
 	return true
 }
 
+func inFloatRange(val float64, min *float64, max *float64) bool {
+	if min != nil && val < *min {
+		return false
+	}
+	if max != nil && val > *max {
+		return false
+	}
+
+	return true
+}
+
 func fromBase64(encoded string, to interface{}) error {
 	bytes, err := b64.StdEncoding.DecodeString(encoded)
 	if err != nil {

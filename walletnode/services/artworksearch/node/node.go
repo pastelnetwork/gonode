@@ -12,6 +12,7 @@ import (
 type Node struct {
 	node.Client
 	node.Connection
+	node.DownloadArtwork
 
 	activated   bool
 	fingerprint []byte
@@ -43,6 +44,7 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration, secInfo *a
 		return err
 	}
 	node.Connection = conn
+	node.DownloadArtwork = conn.DownloadArtwork()
 
 	return nil
 }

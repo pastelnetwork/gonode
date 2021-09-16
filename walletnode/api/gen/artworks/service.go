@@ -32,7 +32,7 @@ type Service interface {
 	// Gets the Artwork detail
 	ArtworkGet(context.Context, *ArtworkGetPayload) (res *ArtworkDetail, err error)
 	// Download registered artwork.
-	Download(context.Context, *DownloadPayload, DownloadServerStream) (err error)
+	Download(context.Context, *ArtworkDownloadPayload) (res *DownloadResult, err error)
 }
 
 // Auther defines the authorization functions to be implemented by the service.
@@ -81,22 +81,6 @@ type ArtSearchServerStream interface {
 type ArtSearchClientStream interface {
 	// Recv reads instances of "ArtworkSearchResult" from the stream.
 	Recv() (*ArtworkSearchResult, error)
-}
-
-// DownloadServerStream is the interface a "download" endpoint server stream
-// must satisfy.
-type DownloadServerStream interface {
-	// Send streams instances of "DownloadResult".
-	Send(*DownloadResult) error
-	// Close closes the stream.
-	Close() error
-}
-
-// DownloadClientStream is the interface a "download" endpoint client stream
-// must satisfy.
-type DownloadClientStream interface {
-	// Recv reads instances of "DownloadResult" from the stream.
-	Recv() (*DownloadResult, error)
 }
 
 // RegisterPayload is the payload type of the artworks service register method.
@@ -227,13 +211,17 @@ type ArtSearchPayload struct {
 	// Maximum number of created copies
 	MaxCopies *int
 	// Minimum nsfw score
-	MinNsfwScore *int
+	MinNsfwScore *float64
 	// Maximum nsfw score
-	MaxNsfwScore *int
-	// Minimum rareness score
-	MinRarenessScore *int
-	// Maximum rareness score
-	MaxRarenessScore *int
+	MaxNsfwScore *float64
+	// Minimum pastel rareness score
+	MinRarenessScore *float64
+	// Maximum pastel rareness score
+	MaxRarenessScore *float64
+	// Minimum internet rareness score
+	MinInternetRarenessScore *float64
+	// Maximum internet rareness score
+	MaxInternetRarenessScore *float64
 }
 
 // ArtworkSearchResult is the result type of the artworks service artSearch
@@ -259,20 +247,32 @@ type ArtworkGetPayload struct {
 type ArtworkDetail struct {
 	// version
 	Version *int
-	// Green flag
-	IsGreen bool
+	// Green address
+	GreenAddress *bool
 	// how much artist should get on all future resales
-	Royalty float64
-	// Storage fee
+	Royalty *float64
+	// Storage fee %
 	StorageFee *int
 	// nsfw score
-	NsfwScore int
-	// rareness score
-	RarenessScore int
-	// seen score
-	SeenScore int
-	// Thumbnail image
-	Thumbnail []byte
+	NsfwScore float64
+	// pastel rareness score
+	RarenessScore float64
+	// internet rareness score
+	InternetRarenessScore *float64
+	// nsfw score
+	DrawingNsfwScore *float64
+	// nsfw score
+	NeutralNsfwScore *float64
+	// nsfw score
+	SexyNsfwScore *float64
+	// nsfw score
+	PornNsfwScore *float64
+	// nsfw score
+	HentaiNsfwScore *float64
+	// Thumbnail_1 image
+	Thumbnail1 []byte
+	// Thumbnail_2 image
+	Thumbnail2 []byte
 	// txid
 	Txid string
 	// Name of the artwork
@@ -295,8 +295,9 @@ type ArtworkDetail struct {
 	ArtistWebsiteURL *string
 }
 
-// DownloadPayload is the payload type of the artworks service download method.
-type DownloadPayload struct {
+// ArtworkDownloadPayload is the payload type of the artworks service download
+// method.
+type ArtworkDownloadPayload struct {
 	// Art Registration Ticket transaction ID
 	Txid string
 	// Owner's PastelID
@@ -360,8 +361,10 @@ type ArtworkTicket struct {
 
 // Artwork response
 type ArtworkSummary struct {
-	// Thumbnail image
-	Thumbnail []byte
+	// Thumbnail_1 image
+	Thumbnail1 []byte
+	// Thumbnail_2 image
+	Thumbnail2 []byte
 	// txid
 	Txid string
 	// Name of the artwork

@@ -48,7 +48,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 
 	req, err := stream.Recv()
 	if err != nil {
-		return errors.Errorf("failed to receieve handshake request: %w", err)
+		return errors.Errorf("failed to receive handshake request: %w", err)
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 

@@ -1,0 +1,12 @@
+{{/* The number of unique NFTs (i.e., not copies; a single NFT with 10 copies would count as just 1 for this purpose) created by that user */}}
+
+SELECT
+    *
+FROM
+    art_metadata
+WHERE
+    artist_pastel_id = '{{.ArtistPastelID}}' 
+    AND created_timestamp > {{.LimitTimestamp}}
+ORDER BY
+    created_timestamp DESC
+;

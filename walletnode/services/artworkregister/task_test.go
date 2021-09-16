@@ -1,8 +1,8 @@
 package artworkregister
 
 import (
+	"bytes"
 	"context"
-	"encoding/hex"
 	"fmt"
 	"image"
 	"image/png"
@@ -10,11 +10,11 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -25,7 +25,6 @@ import (
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -33,6 +32,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+func appendStr(b []byte, s string) []byte {
+	b = append(b, []byte(s)...)
+	b = append(b, '\n')
+	return b
+}
 
 func newTestNode(address, pastelID string) *node.Node {
 	return node.NewNode(nil, address, pastelID)
@@ -65,24 +70,25 @@ func newTestImageFile() (*artwork.File, error) {
 }
 
 func TestTaskRun(t *testing.T) {
-	t.Skip()
-
 	t.Parallel()
+	t.Skip()
 
 	type fields struct {
 		Request *Request
 	}
 
 	type args struct {
-		taskID        string
-		ctx           context.Context
-		networkFee    float64
-		masterNodes   pastel.MasterNodes
-		primarySessID string
-		pastelIDS     []string
-		fingerPrint   []byte
-		signature     []byte
-		returnErr     error
+		taskID            string
+		ctx               context.Context
+		networkFee        float64
+		masterNodes       pastel.MasterNodes
+		primarySessID     string
+		pastelIDS         []string
+		fingerPrint       []byte
+		signature         []byte
+		returnErr         error
+		connectErr        error
+		encodeInfoReturns *rqnode.EncodeInfo
 	}
 
 	testCases := []struct {
@@ -113,11 +119,21 @@ func TestTaskRun(t *testing.T) {
 				fingerPrint:   []byte("match"),
 				signature:     []byte("sign"),
 				returnErr:     nil,
+				encodeInfoReturns: &rqnode.EncodeInfo{
+					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
+						"test-file": rqnode.RawSymbolIDFile{
+							ID:                uuid.New().String(),
+							SymbolIdentifiers: []string{"test-s1, test-s2"},
+							BlockHash:         "test-block-hash",
+							PastelID:          "test-pastel-id",
+						},
+					},
+				},
 			},
 			assertion:         assert.NoError,
 			numSessIDCall:     3,
-			numUpdateStatus:   3,
-			numSignCall:       1,
+			numUpdateStatus:   4,
+			numSignCall:       4,
 			numSessionCall:    4,
 			numConnectToCall:  3,
 			numProbeImageCall: 4,
@@ -131,7 +147,15 @@ func TestTaskRun(t *testing.T) {
 		for i, testCase := range testCases {
 			testCase := testCase
 
+			// prepare task
+			fg := pastel.Fingerprint{0.1, 0, 2}
+			compressedFg, err := zstd.CompressLevel(nil, fg.Bytes(), 22)
+			assert.Nil(t, err)
+			testCase.args.fingerPrint = compressedFg
+
 			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
+				var task *Task
+
 				nodeClient := test.NewMockClient(t)
 				nodeClient.
 					ListenOnConnect("", testCase.args.returnErr).
@@ -140,12 +164,33 @@ func TestTaskRun(t *testing.T) {
 					ListenOnConnectTo(testCase.args.returnErr).
 					ListenOnSessID(testCase.args.primarySessID).
 					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
-					ListenOnDone()
+					ListenOnDone().
+					ListenOnUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
+					ListenOnSendSignedTicket(1, nil).
+					ListenOnClose(nil)
+
+				counter := &struct {
+					sync.Mutex
+					val int
+				}{}
+				preburnCustomHandler := func() (string, error) {
+					counter.Lock()
+					defer counter.Unlock()
+					counter.val++
+					if counter.val == 1 {
+						return "reg-art-txid", nil
+					}
+					return "", nil
+				}
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
 
 				//need to remove generate thumbnail file
-				customProbeImageFunc := func(ctx context.Context, file *artwork.File) []byte {
+				customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.FingerAndScores {
 					file.Remove()
-					return testCase.args.fingerPrint
+					return &pastel.FingerAndScores{ZstdCompressedFingerprint: testCase.args.fingerPrint}
 				}
 				nodeClient.ListenOnProbeImage(customProbeImageFunc, testCase.args.returnErr)
 
@@ -153,11 +198,23 @@ func TestTaskRun(t *testing.T) {
 				pastelClientMock.
 					ListenOnStorageNetworkFee(testCase.args.networkFee, testCase.args.returnErr).
 					ListenOnMasterNodesTop(testCase.args.masterNodes, testCase.args.returnErr).
-					ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr)
+					ListenOnSign([]byte(testCase.args.signature), testCase.args.returnErr).
+					ListenOnGetBlockCount(100, nil).
+					ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil).
+					ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
+					ListenOnSendFromAddress("pre-burnt-txid", nil).
+					ListenOnGetRawTransactionVerbose1(&pastel.GetRawTransactionVerbose1Result{Confirmations: 10}, nil).
+					ListenOnRegisterNFTTicket("art-act-txid", nil)
+
+				rqClientMock := rqMock.NewMockClient(t)
+				rqClientMock.ListenOnEncodeInfo(testCase.args.encodeInfoReturns, nil)
+				rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
+				rqClientMock.ListenOnConnect(testCase.args.connectErr)
 
 				service := &Service{
 					pastelClient: pastelClientMock.Client,
 					nodeClient:   nodeClient.Client,
+					rqClient:     rqClientMock,
 					config:       NewConfig(),
 				}
 
@@ -169,7 +226,8 @@ func TestTaskRun(t *testing.T) {
 
 				Request := testCase.fields.Request
 				Request.Image = artworkFile
-				task := &Task{
+				Request.MaximumFee = 100
+				task = &Task{
 					Task:    taskClient.Task,
 					Service: service,
 					Request: Request,
@@ -186,26 +244,22 @@ func TestTaskRun(t *testing.T) {
 				taskClient.AssertSetStatusNotifyFuncCall(1, mock.Anything)
 
 				// //pastelClient mock assertion
-				pastelClientMock.AssertExpectations(t)
 				pastelClientMock.AssertStorageNetworkFeeCall(1, mock.Anything)
 				pastelClientMock.AssertSignCall(testCase.numSignCall,
 					mock.Anything,
-					testCase.args.fingerPrint,
+					mock.Anything,
 					Request.ArtistPastelID,
 					Request.ArtistPastelIDPassphrase,
+					mock.Anything,
 				)
 
 				// //nodeClient mock assertion
-				nodeClient.Client.AssertExpectations(t)
-				nodeClient.Connection.AssertExpectations(t)
-				nodeClient.RegisterArtwork.AssertExpectations(t)
 				nodeClient.AssertAcceptedNodesCall(1, mock.Anything)
 				nodeClient.AssertSessIDCall(testCase.numSessIDCall)
 				nodeClient.AssertSessionCall(testCase.numSessionCall, mock.Anything, false)
 				nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
 				nodeClient.AssertProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
 			})
-
 		}
 	})
 
@@ -554,7 +608,7 @@ func TestTaskCreateTicket(t *testing.T) {
 
 	testCases := map[string]struct {
 		args    args
-		want    *pastel.ArtTicket
+		want    *pastel.NFTTicket
 		wantErr error
 	}{
 		"fingerprint-error": {
@@ -745,31 +799,30 @@ func TestTaskCreateTicket(t *testing.T) {
 				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			pastelID := base58.Decode(tc.args.task.Request.ArtistPastelID)
-
-			tc.want = &pastel.ArtTicket{
+			tc.want = &pastel.NFTTicket{
 				Version:  1,
-				Author:   pastelID,
-				BlockNum: tc.args.task.artistBlockHeight,
+				Author:   tc.args.task.Request.ArtistPastelID,
+				BlockNum: tc.args.task.creatorBlockHeight,
 				Copies:   tc.args.task.Request.IssuedCopies,
 				AppTicketData: pastel.AppTicket{
-					AuthorPastelID:                 tc.args.task.Request.ArtistPastelID,
-					BlockTxID:                      tc.args.task.blockTxID,
-					BlockNum:                       0,
-					ArtistName:                     tc.args.task.Request.ArtistName,
-					ArtistWebsite:                  safeString(tc.args.task.Request.ArtistWebsiteURL),
-					ArtistWrittenStatement:         safeString(tc.args.task.Request.Description),
-					ArtworkCreationVideoYoutubeURL: safeString(tc.args.task.Request.YoutubeURL),
-					ArtworkKeywordSet:              safeString(tc.args.task.Request.Keywords),
-					TotalCopies:                    tc.args.task.Request.IssuedCopies,
-					PreviewHash:                    tc.args.task.previewHash,
-					Thumbnail1Hash:                 tc.args.task.mediumThumbnailHash,
-					Thumbnail2Hash:                 tc.args.task.smallThumbnailHash,
-					DataHash:                       tc.args.task.datahash,
-					FingerprintsHash:               tc.args.task.fingerprintsHash,
-					FingerprintsSignature:          tc.args.task.fingerprintSignature,
-					RQIDs:                          tc.args.task.rqids,
-					RQOti:                          tc.args.task.rqEncodeParams.Oti,
+					AuthorPastelID:             tc.args.task.Request.ArtistPastelID,
+					BlockTxID:                  tc.args.task.blockTxID,
+					BlockNum:                   0,
+					CreatorName:                tc.args.task.Request.ArtistName,
+					CreatorWebsite:             safeString(tc.args.task.Request.ArtistWebsiteURL),
+					CreatorWrittenStatement:    safeString(tc.args.task.Request.Description),
+					NFTCreationVideoYoutubeURL: safeString(tc.args.task.Request.YoutubeURL),
+					NFTKeywordSet:              safeString(tc.args.task.Request.Keywords),
+					NFTType:                    pastel.NFTTypeImage,
+					TotalCopies:                tc.args.task.Request.IssuedCopies,
+					PreviewHash:                tc.args.task.previewHash,
+					Thumbnail1Hash:             tc.args.task.mediumThumbnailHash,
+					Thumbnail2Hash:             tc.args.task.smallThumbnailHash,
+					DataHash:                   tc.args.task.datahash,
+					FingerprintsHash:           tc.args.task.fingerprintsHash,
+					FingerprintsSignature:      tc.args.task.fingerprintSignature,
+					RQIDs:                      tc.args.task.rqids,
+					RQOti:                      tc.args.task.rqEncodeParams.Oti,
 				},
 			}
 
@@ -800,7 +853,7 @@ func TestTaskGetBlock(t *testing.T) {
 
 	testCases := map[string]struct {
 		args                  args
-		wantArtistblockHash   []byte
+		wantArtistblockHash   string
 		wantArtistBlockHeight int
 		wantErr               error
 	}{
@@ -867,18 +920,16 @@ func TestTaskGetBlock(t *testing.T) {
 				ListenOnGetBlockVerbose1(tc.args.blockInfo, tc.args.blockVerboseErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			blockhash, err := hex.DecodeString(tc.args.blockInfo.Hash)
-			assert.Nil(t, err)
-			tc.wantArtistblockHash = blockhash
+			tc.wantArtistblockHash = tc.args.blockInfo.Hash
 
-			err = tc.args.task.getBlock(context.Background())
+			err := tc.args.task.getBlock(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, tc.wantArtistblockHash, tc.args.task.artistBlockHash)
-				assert.Equal(t, tc.wantArtistBlockHeight, tc.args.task.artistBlockHeight)
+				assert.Equal(t, tc.wantArtistblockHash, tc.args.task.creatorBlockHash)
+				assert.Equal(t, tc.wantArtistBlockHeight, tc.args.task.creatorBlockHeight)
 			}
 		})
 	}
@@ -895,10 +946,10 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 	}
 
 	testCases := map[string]struct {
-		args     args
-		want     *rq.SymbolIDFile
-		wantErr  error
-		wantSign []byte
+		args        args
+		wantContent []byte
+		wantErr     error
+		wantSign    []byte
 	}{
 		"success": {
 			args: args{
@@ -910,19 +961,13 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 				},
 				inFile: rqnode.RawSymbolIDFile{
 					ID:                uuid.New().String(),
-					SymbolIdentifiers: []string{"test-s1, test-s2"},
+					SymbolIdentifiers: []string{"test-s1", "test-s2"},
 					BlockHash:         "test-block-hash",
 					PastelID:          "test-pastel-id",
 				},
 			},
-			wantErr: nil,
-			want: &rq.SymbolIDFile{
-				ID:                uuid.New().String(),
-				BlockHash:         "test-block-hash",
-				SymbolIdentifiers: []string{"test-s1, test-s2"},
-				Signature:         []byte("test-signature"),
-			},
 			wantSign: []byte("test-signature"),
+			wantErr:  nil,
 		},
 		"error": {
 			args: args{
@@ -935,7 +980,6 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 				signErr: errors.New(testErrStr),
 			},
 			wantErr: errors.New(testErrStr),
-			want:    nil,
 		},
 	}
 
@@ -945,20 +989,32 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
 			t.Parallel()
 
+			var rawContent []byte
+			rawContent = appendStr(rawContent, tc.args.inFile.ID)
+			rawContent = appendStr(rawContent, tc.args.inFile.BlockHash)
+			rawContent = appendStr(rawContent, tc.args.inFile.PastelID)
+			for _, id := range tc.args.inFile.SymbolIdentifiers {
+				rawContent = appendStr(rawContent, id)
+			}
+			rawContent = append(rawContent, tc.wantSign...)
+			fmt.Printf("%s\n", string(rawContent))
+
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			got, err := tc.args.task.convertToSymbolIDFile(context.Background(), tc.args.inFile)
+			_, content, err := tc.args.task.convertToSymbolIDFile(context.Background(), tc.args.inFile)
+			fmt.Printf("%x\n", content)
 
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), testErrStr))
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, tc.want.SymbolIdentifiers, got.SymbolIdentifiers)
-				assert.Equal(t, tc.want.BlockHash, got.BlockHash)
-				assert.Equal(t, tc.want.Signature, got.Signature)
+				compressContent, zstdErr := zstd.CompressLevel(nil, rawContent, 22)
+				fmt.Printf("%x\n", compressContent)
+				assert.Nil(t, zstdErr)
+				assert.True(t, bytes.Equal(content, compressContent))
 			}
 		})
 	}
@@ -984,6 +1040,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"success": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1012,6 +1069,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"connect-error": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1035,6 +1093,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"encode-info-error": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1057,6 +1116,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"read-error": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1075,6 +1135,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 		"sign-err": {
 			args: args{
 				task: &Task{
+					Task: task.New(StatusTaskStarted),
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
@@ -1200,7 +1261,6 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
-				fmt.Println(err.Error())
 				assert.Nil(t, err)
 			}
 		})
@@ -1228,7 +1288,7 @@ func TestTaskSignTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket: &pastel.ArtTicket{},
+					ticket: &pastel.NFTTicket{},
 				},
 			},
 			wantErr: nil,
@@ -1242,7 +1302,7 @@ func TestTaskSignTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket: &pastel.ArtTicket{},
+					ticket: &pastel.NFTTicket{},
 				},
 				signErr: errors.New("test"),
 			},
@@ -1265,7 +1325,7 @@ func TestTaskSignTicket(t *testing.T) {
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, tc.args.signReturns, tc.args.task.artistSignature)
+				assert.Equal(t, tc.args.signReturns, tc.args.task.creatorSignature)
 			}
 		})
 	}
@@ -1400,7 +1460,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket: &pastel.ArtTicket{},
+					ticket: &pastel.NFTTicket{},
 				},
 			},
 			wantErr: errors.New("registration fee"),
@@ -1414,7 +1474,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
+					ticket:          &pastel.NFTTicket{},
 					registrationFee: 40,
 				},
 				sendFromAddressRetErr: errors.New("test"),
@@ -1431,7 +1491,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
+					ticket:          &pastel.NFTTicket{},
 					registrationFee: 40,
 				},
 				nodes: []nodeArg{
@@ -1454,13 +1514,13 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
+					ticket:          &pastel.NFTTicket{},
 					registrationFee: 40,
 				},
 				sendFromAddressRetErr: nil,
 				burnTxnIDRet:          "test-id",
 			},
-			wantErr: errors.New("regArtTxid is empty"),
+			wantErr: errors.New("regNFTTxid is empty"),
 		},
 		"success": {
 			args: args{
@@ -1473,7 +1533,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
+					ticket:          &pastel.NFTTicket{},
 					registrationFee: 40,
 				},
 				nodes: []nodeArg{
@@ -1555,8 +1615,8 @@ func TestTaskUploadImage(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1577,8 +1637,8 @@ func TestTaskUploadImage(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1662,8 +1722,8 @@ func TestTaskProbeImage(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1683,8 +1743,8 @@ func TestTaskProbeImage(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1771,8 +1831,8 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1790,8 +1850,8 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1810,8 +1870,8 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1892,8 +1952,8 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1912,8 +1972,8 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1932,8 +1992,8 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{NumberSuperNodes: 1},
 					},
-					ticket:          &pastel.ArtTicket{},
-					rqSymbolIDFiles: rq.SymbolIDFiles{},
+					ticket:          &pastel.NFTTicket{},
+					rqSymbolIDFiles: map[string][]byte{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
