@@ -89,8 +89,8 @@ func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegT
 	thumbnailHelper := thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout)
 
 	if err := thumbnailHelper.Connect(ctx, 1, &alts.SecInfo{
-		PastelID:   "",
-		PassPhrase: "",
+		PastelID:   "TBD",
+		PassPhrase: "TBD",
 		Algorithm:  "ed448",
 	}); err != nil {
 		return data, fmt.Errorf("connect Thumbnail helper : %s", err)

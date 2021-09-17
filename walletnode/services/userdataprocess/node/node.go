@@ -32,19 +32,13 @@ func (node *Node) PastelID() string {
 }
 
 // Connect connects to supernode.
-func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
+func (node *Node) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
 	if node.Connection != nil {
 		return nil
 	}
 
 	connCtx, connCancel := context.WithTimeout(ctx, timeout)
 	defer connCancel()
-
-	secInfo := &alts.SecInfo{
-		PastelID:   "TBD",
-		PassPhrase: "TBD",
-		Algorithm:  "TBD",
-	}
 
 	conn, err := node.Client.Connect(connCtx, node.address, secInfo)
 	if err != nil {

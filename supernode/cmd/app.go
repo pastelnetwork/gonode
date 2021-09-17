@@ -191,7 +191,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	pastelClient := pastel.NewClient(config.Pastel)
 	secInfo := &alts.SecInfo{
 		PastelID:   config.PastelID,
-		PassPhrase: "passphare",
+		PassPhrase: config.PassPhrase,
+		Algorithm:  "ed448",
 	}
 	nodeClient := client.New(pastelClient, secInfo)
 	fileStorage := fs.NewFileStorage(config.TempDir)
