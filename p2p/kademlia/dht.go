@@ -177,19 +177,17 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, decoded)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("store retrive failed")
-	}
-	// if not found locally, iterative find value from kademlia network
-	if value == nil {
-		data, err := s.iterate(ctx, IterateFindValue, decoded, nil)
-		if err != nil {
-			return nil, fmt.Errorf("iterate find value: %v", err)
-		}
-		return data, nil
+	if err == nil {
+		return value, nil
 	}
 
-	return value, nil
+	log.WithContext(ctx).WithError(err).Error("store retrieve failed")
+	// if not found locally, iterative find value from kademlia network
+	remoteValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
+	if err != nil {
+		return nil, fmt.Errorf("iterate find failed: %v", err)
+	}
+	return remoteValue, nil
 }
 
 // Stats returns stats of DHT

@@ -91,7 +91,7 @@ func main() {
 		return
 	}
 
-	ioutil.WriteFile("outputThumbnail", result.Thumbnail, os.ModePerm)
+	ioutil.WriteFile("outputThumbnail", result.Thumbnail1, os.ModePerm)
 }
 
 func prettyPrint(s interface{}) {

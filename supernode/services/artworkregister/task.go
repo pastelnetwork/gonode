@@ -560,8 +560,12 @@ func (task *Task) storeThumbnails(ctx context.Context) error {
 }
 
 func (task *Task) storeFingerprints(ctx context.Context) error {
-	data := task.fingerprints.Bytes()
-	if _, err := task.p2pClient.Store(ctx, data); err != nil {
+	compressFringerprints, err := zstd.CompressLevel(nil, pastel.Fingerprint(task.fingerprints).Bytes(), 22)
+	if err != nil {
+		return errors.Errorf("failed to compress fingerprint")
+	}
+
+	if _, err := task.p2pClient.Store(ctx, compressFringerprints); err != nil {
 		return errors.Errorf("failed to store fingerprints into kamedila")
 	}
 	return nil
