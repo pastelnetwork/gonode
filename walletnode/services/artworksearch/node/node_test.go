@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -60,10 +61,10 @@ func TestNodeConnect(t *testing.T) {
 			testCase.node.Client = clientMock.Client
 
 			//assertion error
-			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second))
+			testCase.assertion(t, testCase.node.Connect(testCase.args.ctx, time.Second, &alts.SecInfo{}))
 			//mock assertion
 			clientMock.Client.AssertExpectations(t)
-			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address)
+			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address, mock.Anything)
 		})
 	}
 }

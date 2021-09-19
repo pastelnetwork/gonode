@@ -7,6 +7,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -273,7 +274,7 @@ func TestTask_meshNodes(t *testing.T) {
 			task := &Task{
 				Service: service,
 			}
-			got, err := task.meshNodes(tt.args.ctx, nodes, tt.args.primaryIndex)
+			got, err := task.meshNodes(tt.args.ctx, nodes, tt.args.primaryIndex, &alts.SecInfo{})
 			tt.assertion(t, err)
 			assert.Equal(t, tt.want, pullPastelAddressIDNodes(got))
 

@@ -17,6 +17,7 @@ import (
 	"github.com/DataDog/zstd"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
@@ -363,7 +364,7 @@ func TestTaskMeshNodes(t *testing.T) {
 				config: NewConfig(),
 			}
 
-			task := &Task{Service: service}
+			task := &Task{Service: service, Request: &Request{}}
 			got, err := task.meshNodes(testCase.args.ctx, nodes, testCase.args.primaryIndex)
 
 			testCase.assertion(t, err)
@@ -1570,7 +1571,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 			for _, n := range tc.args.nodes {
 				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
 				newNode.SetPrimary(true)
-				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
 
 				nodes.Add(newNode)
 			}
@@ -1679,7 +1680,7 @@ func TestTaskUploadImage(t *testing.T) {
 			for _, n := range tc.args.nodes {
 				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
 				newNode.SetPrimary(true)
-				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
 
 				nodes.Add(newNode)
 			}
@@ -1786,7 +1787,7 @@ func TestTaskProbeImage(t *testing.T) {
 			for _, n := range tc.args.nodes {
 				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
 				newNode.SetPrimary(true)
-				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
 				nodes.Add(newNode)
 			}
 			tc.args.task.nodes = nodes
@@ -1903,7 +1904,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 			for _, n := range tc.args.nodes {
 				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
 				newNode.SetPrimary(true)
-				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
 
 				nodes.Add(newNode)
 			}
@@ -2036,7 +2037,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			for _, n := range tc.args.nodes {
 				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
 				newNode.SetPrimary(true)
-				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second))
+				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
 
 				nodes.Add(newNode)
 			}

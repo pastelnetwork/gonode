@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	nodeMock "github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -163,7 +164,7 @@ func TestGetThumbnail(t *testing.T) {
 				config:       NewConfig(),
 			}
 
-			result, err := service.GetThumbnail(ctx, testCase.args.regTicket)
+			result, err := service.GetThumbnail(ctx, testCase.args.regTicket, &alts.SecInfo{})
 			assert.Nil(t, err)
 			assert.Equal(t, testCase.want, result)
 		})
