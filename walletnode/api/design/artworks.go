@@ -151,6 +151,8 @@ var _ = Service("artworks", func() {
 				Param("min_internet_rareness_score")
 				Param("max_internet_rareness_score")
 			})
+			Header("user_pastelid")
+			Header("user_passphrase")
 			Response("BadRequest", StatusBadRequest)
 			Response("InternalServerError", StatusInternalServerError)
 			Response(StatusOK)
@@ -442,8 +444,20 @@ var ArtworkGetParams = func() {
 		MaxLength(64)
 		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
 	})
-
-	Required("txid")
+	Attribute("user_pastelid", String, func() {
+		Meta("struct:field:name", "UserPastelID")
+		Description("User's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+	Attribute("user_passphrase", String, func() {
+		Meta("struct:field:name", "UserPassphrase")
+		Description("Passphrase of the User PastelID")
+		Example("qwerasdf1234")
+	})
+	Required("txid", "user_pastelid", "user_passphrase")
 }
 
 // SearchArtworkParams are query params to searchArtwork request
@@ -540,7 +554,17 @@ var SearchArtworkParams = func() {
 		Maximum(1)
 		Example(1)
 	})
-
+	Attribute("user_pastelid", String, func() {
+		Description("User's PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+	Attribute("user_passphrase", String, func() {
+		Description("Passphrase of the User PastelID")
+		Example("qwerasdf1234")
+	})
 	Required("query")
 }
 

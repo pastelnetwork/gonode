@@ -143,6 +143,8 @@ func fromArtSearchRequest(req *artworks.ArtSearchPayload) *artworksearch.ArtSear
 		MaxNsfwScore:     req.MaxNsfwScore,
 		MinRarenessScore: req.MinRarenessScore,
 		MaxRarenessScore: req.MaxRarenessScore,
+		UserPastelID:     *req.UserPastelid,
+		UserPassphrase:   *req.UserPassphrase,
 	}
 }
 

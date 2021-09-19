@@ -62,6 +62,15 @@ type UploadImageRequestBody struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
+// ArtworkGetRequestBody is the type of the "artworks" service "artworkGet"
+// endpoint HTTP request body.
+type ArtworkGetRequestBody struct {
+	// User's PastelID
+	UserPastelID *string `form:"user_pastelid,omitempty" json:"user_pastelid,omitempty" xml:"user_pastelid,omitempty"`
+	// Passphrase of the User PastelID
+	UserPassphrase *string `form:"user_passphrase,omitempty" json:"user_passphrase,omitempty" xml:"user_passphrase,omitempty"`
+}
+
 // RegisterResponseBody is the type of the "artworks" service "register"
 // endpoint HTTP response body.
 type RegisterResponseBody struct {
@@ -1049,7 +1058,7 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *artworks.UploadImagePa
 }
 
 // NewArtSearchPayload builds a artworks service artSearch endpoint payload.
-func NewArtSearchPayload(artist *string, limit int, query string, artistName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *float64, maxRarenessScore *float64, minNsfwScore *float64, maxNsfwScore *float64, minInternetRarenessScore *float64, maxInternetRarenessScore *float64) *artworks.ArtSearchPayload {
+func NewArtSearchPayload(artist *string, limit int, query string, artistName bool, artTitle bool, series bool, descr bool, keyword bool, minCopies *int, maxCopies *int, minBlock int, maxBlock *int, minRarenessScore *float64, maxRarenessScore *float64, minNsfwScore *float64, maxNsfwScore *float64, minInternetRarenessScore *float64, maxInternetRarenessScore *float64, userPastelid *string, userPassphrase *string) *artworks.ArtSearchPayload {
 	v := &artworks.ArtSearchPayload{}
 	v.Artist = artist
 	v.Limit = limit
@@ -1069,13 +1078,18 @@ func NewArtSearchPayload(artist *string, limit int, query string, artistName boo
 	v.MaxNsfwScore = maxNsfwScore
 	v.MinInternetRarenessScore = minInternetRarenessScore
 	v.MaxInternetRarenessScore = maxInternetRarenessScore
+	v.UserPastelid = userPastelid
+	v.UserPassphrase = userPassphrase
 
 	return v
 }
 
 // NewArtworkGetPayload builds a artworks service artworkGet endpoint payload.
-func NewArtworkGetPayload(txid string) *artworks.ArtworkGetPayload {
-	v := &artworks.ArtworkGetPayload{}
+func NewArtworkGetPayload(body *ArtworkGetRequestBody, txid string) *artworks.ArtworkGetPayload {
+	v := &artworks.ArtworkGetPayload{
+		UserPastelID:   *body.UserPastelID,
+		UserPassphrase: *body.UserPassphrase,
+	}
 	v.Txid = txid
 
 	return v
@@ -1228,6 +1242,31 @@ func ValidateRegisterRequestBody(body *RegisterRequestBody) (err error) {
 func ValidateUploadImageRequestBody(body *UploadImageRequestBody) (err error) {
 	if body.Bytes == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
+	}
+	return
+}
+
+// ValidateArtworkGetRequestBody runs the validations defined on
+// ArtworkGetRequestBody
+func ValidateArtworkGetRequestBody(body *ArtworkGetRequestBody) (err error) {
+	if body.UserPastelID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("user_pastelid", "body"))
+	}
+	if body.UserPassphrase == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("user_passphrase", "body"))
+	}
+	if body.UserPastelID != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.user_pastelid", *body.UserPastelID, "^[a-zA-Z0-9]+$"))
+	}
+	if body.UserPastelID != nil {
+		if utf8.RuneCountInString(*body.UserPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", *body.UserPastelID, utf8.RuneCountInString(*body.UserPastelID), 86, true))
+		}
+	}
+	if body.UserPastelID != nil {
+		if utf8.RuneCountInString(*body.UserPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", *body.UserPastelID, utf8.RuneCountInString(*body.UserPastelID), 86, false))
+		}
 	}
 	return
 }

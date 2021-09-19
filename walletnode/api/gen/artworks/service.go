@@ -222,6 +222,10 @@ type ArtSearchPayload struct {
 	MinInternetRarenessScore *float64
 	// Maximum internet rareness score
 	MaxInternetRarenessScore *float64
+	// User's PastelID
+	UserPastelid *string
+	// Passphrase of the User PastelID
+	UserPassphrase *string
 }
 
 // ArtworkSearchResult is the result type of the artworks service artSearch
@@ -241,6 +245,10 @@ type ArtworkSearchResult struct {
 type ArtworkGetPayload struct {
 	// txid
 	Txid string
+	// User's PastelID
+	UserPastelID string
+	// Passphrase of the User PastelID
+	UserPassphrase string
 }
 
 // ArtworkDetail is the result type of the artworks service artworkGet method.

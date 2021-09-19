@@ -64,4 +64,8 @@ type ArtSearchRequest struct {
 	MinInternetRarenessScore *float64
 	// MaxInternetRarenessScore
 	MaxInternetRarenessScore *float64
+	//UserPastelID
+	UserPastelID string
+	//UserPastelID
+	UserPassphrase string
 }

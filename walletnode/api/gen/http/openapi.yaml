@@ -27,6 +27,14 @@ paths:
         type: string
         maxLength: 64
         minLength: 64
+      - name: ArtworkGetRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/ArtworksArtworkGetRequestBody'
+          required:
+          - user_pastelid
+          - user_passphrase
       responses:
         "200":
           description: OK response.
@@ -377,6 +385,19 @@ paths:
         type: number
         maximum: 1
         minimum: 0
+      - name: user_pastelid
+        in: header
+        description: User's PastelID
+        required: false
+        type: string
+        maxLength: 86
+        minLength: 86
+        pattern: ^[a-zA-Z0-9]+$
+      - name: user_passphrase
+        in: header
+        description: Passphrase of the User PastelID
+        required: false
+        type: string
       responses:
         "101":
           description: Switching Protocols response.
@@ -1355,6 +1376,27 @@ definitions:
     - temporary
     - timeout
     - fault
+  ArtworksArtworkGetRequestBody:
+    title: ArtworksArtworkGetRequestBody
+    type: object
+    properties:
+      user_passphrase:
+        type: string
+        description: Passphrase of the User PastelID
+        example: qwerasdf1234
+      user_pastelid:
+        type: string
+        description: User's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+    example:
+      user_passphrase: qwerasdf1234
+      user_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+    required:
+    - user_pastelid
+    - user_passphrase
   ArtworksArtworkGetResponseBody:
     title: ArtworksArtworkGetResponseBody
     type: object

@@ -109,8 +109,8 @@ func (task *Task) run(ctx context.Context) error {
 	}
 
 	if err := task.thumbnailHelper.Connect(ctx, uint(pastelConnections), &alts.SecInfo{
-		PastelID:   "TBD",
-		PassPhrase: "TBD",
+		PastelID:   task.request.UserPastelID,
+		PassPhrase: task.request.UserPassphrase,
 		Algorithm:  "ed448",
 	}); err != nil {
 		return fmt.Errorf("connect Thumbnail helper : %s", err)

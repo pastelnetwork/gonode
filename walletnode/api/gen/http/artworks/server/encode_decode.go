@@ -388,6 +388,8 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			maxNsfwScore             *float64
 			minInternetRarenessScore *float64
 			maxInternetRarenessScore *float64
+			userPastelid             *string
+			userPassphrase           *string
 			err                      error
 		)
 		artistRaw := r.URL.Query().Get("artist")
@@ -674,10 +676,31 @@ func DecodeArtSearchRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 				err = goa.MergeErrors(err, goa.InvalidRangeError("maxInternetRarenessScore", *maxInternetRarenessScore, 1, false))
 			}
 		}
+		userPastelidRaw := r.Header.Get("user_pastelid")
+		if userPastelidRaw != "" {
+			userPastelid = &userPastelidRaw
+		}
+		if userPastelid != nil {
+			err = goa.MergeErrors(err, goa.ValidatePattern("userPastelid", *userPastelid, "^[a-zA-Z0-9]+$"))
+		}
+		if userPastelid != nil {
+			if utf8.RuneCountInString(*userPastelid) < 86 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("userPastelid", *userPastelid, utf8.RuneCountInString(*userPastelid), 86, true))
+			}
+		}
+		if userPastelid != nil {
+			if utf8.RuneCountInString(*userPastelid) > 86 {
+				err = goa.MergeErrors(err, goa.InvalidLengthError("userPastelid", *userPastelid, utf8.RuneCountInString(*userPastelid), 86, false))
+			}
+		}
+		userPassphraseRaw := r.Header.Get("user_passphrase")
+		if userPassphraseRaw != "" {
+			userPassphrase = &userPassphraseRaw
+		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewArtSearchPayload(artist, limit, query, artistName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore, minInternetRarenessScore, maxInternetRarenessScore)
+		payload := NewArtSearchPayload(artist, limit, query, artistName, artTitle, series, descr, keyword, minCopies, maxCopies, minBlock, maxBlock, minRarenessScore, maxRarenessScore, minNsfwScore, maxNsfwScore, minInternetRarenessScore, maxInternetRarenessScore, userPastelid, userPassphrase)
 
 		return payload, nil
 	}
@@ -740,8 +763,23 @@ func EncodeArtworkGetResponse(encoder func(context.Context, http.ResponseWriter)
 func DecodeArtworkGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			txid string
+			body ArtworkGetRequestBody
 			err  error
+		)
+		err = decoder(r).Decode(&body)
+		if err != nil {
+			if err == io.EOF {
+				return nil, goa.MissingPayloadError()
+			}
+			return nil, goa.DecodePayloadError(err.Error())
+		}
+		err = ValidateArtworkGetRequestBody(&body)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			txid string
 
 			params = mux.Vars(r)
 		)
@@ -755,7 +793,7 @@ func DecodeArtworkGetRequest(mux goahttp.Muxer, decoder func(*http.Request) goah
 		if err != nil {
 			return nil, err
 		}
-		payload := NewArtworkGetPayload(txid)
+		payload := NewArtworkGetPayload(&body, txid)
 
 		return payload, nil
 	}
