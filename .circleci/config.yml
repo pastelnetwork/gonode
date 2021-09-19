@@ -351,6 +351,7 @@ jobs:
       - attach_workspace:
           at: .
       - install_tensorflow
+      - install_libsodium
       - test:
           package: "walletnode"
 
@@ -360,6 +361,7 @@ jobs:
       - attach_workspace:
           at: .
       - install_tensorflow
+      - install_libsodium
       - test:
           package: "supernode"
 
@@ -374,6 +376,7 @@ jobs:
       - create-sources-container:
           containerName: "sourcesContainer"
       - install_tensorflow
+      - install_libsodium
       - build:
           buildContainerName: "pqsignatures"
           moduleSubDir: "pqsignatures"
