@@ -54,6 +54,7 @@ type FindValueRequest struct {
 
 // StoreDataRequest defines the request data for store data
 type StoreDataRequest struct {
+	Key  []byte
 	Data []byte
 }
 
