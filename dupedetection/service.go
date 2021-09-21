@@ -230,7 +230,7 @@ func (s *service) runTask(ctx context.Context) error {
 		}
 
 		fingerprintsHash := nftTicketData.AppTicketData.FingerprintsHash
-		fingerprintByte, err := s.p2pClient.Retrieve(ctx, base58.Encode(fingerprintsHash))
+		fingerprintByte, err := s.p2pClient.RetrieveFingerprints(ctx, base58.Encode(fingerprintsHash))
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to retrieve fingerprint")
 			continue
