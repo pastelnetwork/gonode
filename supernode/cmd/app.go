@@ -177,8 +177,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
 
-	log.WithContext(ctx).Infof("Config: %s", config)
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -218,8 +216,18 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// raptorq client
 	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
-	config.ArtworkRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
-	config.ArtworkRegister.PreburntTxConfirmationTimeout = time.Duration(config.PreburntTxConfirmationTimeout * int(time.Minute))
+	if config.NumberConnectedNodes > 0 {
+		config.ArtworkRegister.NumberConnectedNodes = config.NumberConnectedNodes
+	}
+
+	if config.PreburntTxMinConfirmations > 0 {
+		config.ArtworkRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
+	}
+
+	if config.PreburntTxConfirmationTimeout > 0 {
+		config.ArtworkRegister.PreburntTxConfirmationTimeout = time.Duration(config.PreburntTxConfirmationTimeout * int(time.Minute))
+	}
+
 	rqClient := rqgrpc.NewClient()
 
 	// business logic services
@@ -257,6 +265,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		supernode.NewProcessUserdata(userdataProcess, database),
 		healthcheck.NewHealthCheck(statsMngr),
 	)
+
+	log.WithContext(ctx).Infof("Config: %s", config)
 
 	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess, statsMngr)
 }
