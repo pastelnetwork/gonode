@@ -74,26 +74,70 @@ func (s *p2p) Run(ctx context.Context) error {
 	return nil
 }
 
-// Store data into the kademlia network
-func (s *p2p) Store(ctx context.Context, data []byte) (string, error) {
+// StoreData store data into the kademlia network
+func (s *p2p) StoreData(ctx context.Context, data []byte) (string, error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if !s.running {
 		return "", errors.New("p2p service is not running")
 	}
 
-	return s.dht.Store(ctx, data)
+	return s.dht.Store(ctx, kademlia.KeyTypeData, data)
 }
 
-// Retrive the data from the kademlia network
-func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
+// StoreThumbnails store thumbnails into the kademlia network
+func (s *p2p) StoreThumbnails(ctx context.Context, data []byte) (string, error) {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if !s.running {
+		return "", errors.New("p2p service is not running")
+	}
+
+	return s.dht.Store(ctx, kademlia.KeyTypeThumbnails, data)
+}
+
+// StoreFingerprints store fringerprints into the kademlia network
+func (s *p2p) StoreFingerprints(ctx context.Context, data []byte) (string, error) {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if !s.running {
+		return "", errors.New("p2p service is not running")
+	}
+
+	return s.dht.Store(ctx, kademlia.KeyTypeFingerprints, data)
+}
+
+// RetrieveData retrive the data from the kademlia network
+func (s *p2p) RetrieveData(ctx context.Context, key string) ([]byte, error) {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if !s.running {
 		return nil, errors.New("p2p service is not running")
 	}
 
-	return s.dht.Retrieve(ctx, key)
+	return s.dht.Retrieve(ctx, kademlia.KeyTypeData, key)
+}
+
+// RetrieveThumbnails retrive the data from the kademlia network
+func (s *p2p) RetrieveThumbnails(ctx context.Context, key string) ([]byte, error) {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if !s.running {
+		return nil, errors.New("p2p service is not running")
+	}
+
+	return s.dht.Retrieve(ctx, kademlia.KeyTypeThumbnails, key)
+}
+
+// RetrieveFingerprints retrive the data from the kademlia network
+func (s *p2p) RetrieveFingerprints(ctx context.Context, key string) ([]byte, error) {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if !s.running {
+		return nil, errors.New("p2p service is not running")
+	}
+
+	return s.dht.Retrieve(ctx, kademlia.KeyTypeFingerprints, key)
 }
 
 // Stats return status of p2p

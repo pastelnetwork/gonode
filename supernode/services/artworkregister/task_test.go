@@ -581,7 +581,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 				ListenOnEncode(tc.args.encodeResp, tc.args.encodeErr)
 
 			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr)
+			p2pClient.ListenOnStoreData("", tc.args.storeErr)
 			tc.args.task.Service.p2pClient = p2pClient
 			tc.args.task.p2pClient = p2pClient
 
@@ -667,7 +667,7 @@ func TestTaskStoreThumbnails(t *testing.T) {
 			t.Parallel()
 
 			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr)
+			p2pClient.ListenOnStoreThumbnails("", tc.args.storeErr)
 			tc.args.task.Service.p2pClient = p2pClient
 			tc.args.task.p2pClient = p2pClient
 
@@ -738,7 +738,7 @@ func TestTaskStoreFingerprints(t *testing.T) {
 			t.Parallel()
 
 			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr)
+			p2pClient.ListenOnStoreFingerprints("", tc.args.storeErr)
 			tc.args.task.Service.p2pClient = p2pClient
 			tc.args.task.p2pClient = p2pClient
 

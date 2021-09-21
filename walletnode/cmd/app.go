@@ -117,8 +117,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
 
-	log.WithContext(ctx).Infof("Config: %s", config)
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -145,10 +143,22 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// burn address
 	// TODO: this should be hardcoded with format like Ptxxxxxxx
 	config.ArtworkRegister.BurnAddress = config.BurnAddress
-	config.ArtworkRegister.RegArtTxMinConfirmations = config.RegArtTxMinConfirmations
-	config.ArtworkRegister.RegArtTxTimeout = time.Duration(config.RegArtTxTimeout * int(time.Minute))
-	config.ArtworkRegister.RegActTxMinConfirmations = config.RegActTxMinConfirmations
-	config.ArtworkRegister.RegActTxTimeout = time.Duration(config.RegActTxTimeout * int(time.Minute))
+
+	if config.RegArtTxMinConfirmations > 0 {
+		config.ArtworkRegister.RegArtTxMinConfirmations = config.RegArtTxMinConfirmations
+	}
+
+	if config.RegArtTxTimeout > 0 {
+		config.ArtworkRegister.RegArtTxTimeout = time.Duration(config.RegArtTxTimeout * int(time.Minute))
+	}
+
+	if config.RegActTxMinConfirmations > 0 {
+		config.ArtworkRegister.RegActTxMinConfirmations = config.RegActTxMinConfirmations
+	}
+
+	if config.RegActTxTimeout > 0 {
+		config.ArtworkRegister.RegActTxTimeout = time.Duration(config.RegActTxTimeout * int(time.Minute))
+	}
 
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, db, fileStorage, pastelClient, nodeClient, rqClient)
@@ -165,6 +175,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		services.NewUserdata(userdataProcess),
 		services.NewSwagger(),
 	)
+
+	log.WithContext(ctx).Infof("Config: %s", config)
 
 	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload, userdataProcess)
 }

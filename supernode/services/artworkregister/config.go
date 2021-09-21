@@ -20,10 +20,10 @@ type Config struct {
 	RaptorQServiceAddress string `mapstructure:"-" json:"-"`
 	RqFilesDir            string
 
-	NumberConnectedNodes int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
+	NumberConnectedNodes int `mapstructure:"-" json:"number_connected_nodes,omitempty"`
 
-	PreburntTxMinConfirmations    int           `mapstructure:"preburnt_tx_min_confirmations" json:"preburnt_tx_min_confirmations,omitempty"`
-	PreburntTxConfirmationTimeout time.Duration `mapstructure:"preburnt_tx_confirmation_timeout" json:"preburnt_tx_confirmation_timeout,omitempty"`
+	PreburntTxMinConfirmations    int           `mapstructure:"-" json:"preburnt_tx_min_confirmations,omitempty"`
+	PreburntTxConfirmationTimeout time.Duration `mapstructure:"-" json:"preburnt_tx_confirmation_timeout,omitempty"`
 }
 
 // NewConfig returns a new Config instance.

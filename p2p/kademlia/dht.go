@@ -26,6 +26,19 @@ var (
 	defaultUpdateTime    = time.Minute * 1
 )
 
+// KeyType is type of key
+type KeyType byte
+
+const (
+	sha3Sum256HashLength = 32
+	// KeyTypeData is key associated with a data
+	KeyTypeData KeyType = 0
+	// KeyTypeFingerprints is key associated with a fingerprints
+	KeyTypeFingerprints KeyType = 1
+	// KeyTypeThumbnails is key associated with a thumbnails
+	KeyTypeThumbnails KeyType = 2
+)
+
 // DHT represents the state of the local node in the distributed hash table
 type DHT struct {
 	ht           *HashTable       // the hashtable for routing
@@ -147,20 +160,30 @@ func (s *DHT) hashKey(data []byte) []byte {
 	return sha[:]
 }
 
+func (s *DHT) storedKey(keyType KeyType, key []byte) []byte {
+
+	buffer := new(bytes.Buffer)
+	buffer.WriteByte(byte(keyType))
+	buffer.Write(key)
+
+	return buffer.Bytes()
+}
+
 // Store the data into the network
-func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
+func (s *DHT) Store(ctx context.Context, keyType KeyType, data []byte) (string, error) {
 	key := s.hashKey(data)
+	actualKey := s.storedKey(keyType, key)
 
 	// replicate time for the key
 	replication := time.Now().Add(defaultReplicateTime)
 
 	// store the key to local storage
-	if err := s.store.Store(ctx, key, data, replication); err != nil {
+	if err := s.store.Store(ctx, actualKey, data, replication); err != nil {
 		return "", fmt.Errorf("store data to local storage: %v", err)
 	}
 
 	// iterative store the data
-	if _, err := s.iterate(ctx, IterateStore, key, data); err != nil {
+	if _, err := s.iterate(ctx, IterateStore, actualKey, data); err != nil {
 		return "", fmt.Errorf("iterative store data: %v", err)
 	}
 
@@ -169,21 +192,44 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 
 // Retrieve data from the networking using key. Key is the base58 encoded
 // identifier of the data.
-func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
+func (s *DHT) Retrieve(ctx context.Context, keyType KeyType, key string) ([]byte, error) {
 	decoded := base58.Decode(key)
 	if len(decoded) != B/8 {
 		return nil, fmt.Errorf("invalid key: %v", key)
 	}
 
+	actualKey := s.storedKey(keyType, decoded)
+
 	// retrieve the key/value from local storage
-	value, err := s.store.Retrieve(ctx, decoded)
+	value, err := s.store.Retrieve(ctx, actualKey)
+	if err == nil {
+		return value, nil
+	}
+
+	log.WithContext(ctx).WithError(err).Error("store retrive failed")
+
+	// if not found locally, iterative find value from kademlia network
+	peerValue, err := s.iterate(ctx, IterateFindValue, actualKey, nil)
+	if err != nil {
+		//return nil, fmt.Errorf("iterate find value: %v", err)
+		// be compatible with old key
+		return s.oldRetrieve(ctx, decoded)
+	}
+
+	return peerValue, nil
+}
+
+// oldRetrieve use previous key name match, be compatible with previous version
+func (s *DHT) oldRetrieve(ctx context.Context, key []byte) ([]byte, error) {
+	// retrieve the key/value from local storage
+	value, err := s.store.Retrieve(ctx, key)
 	if err == nil {
 		return value, nil
 	}
 
 	log.WithContext(ctx).WithError(err).Error("store retrieve failed")
 	// if not found locally, iterative find value from kademlia network
-	remoteValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
+	remoteValue, err := s.iterate(ctx, IterateFindValue, key, nil)
 	if err != nil {
 		return nil, fmt.Errorf("iterate find failed: %v", err)
 	}
@@ -203,7 +249,58 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 	dhtStats["peers"] = s.ht.nodes()
 	dhtStats["database"] = dbStats
 
+	// count key status
+	detailsStats, err := s.dataDetailsStats(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	dhtStats["data_details"] = detailsStats
+
 	return dhtStats, nil
+}
+
+// Stats returns stats of DHT
+func (s *DHT) dataDetailsStats(ctx context.Context) (map[string]interface{}, error) {
+	// get allkeys
+	cntsMap := map[string]int{}
+	increaseCnt := func(keyType string) {
+		cnt := cntsMap[keyType]
+		cnt = cnt + 1
+		cntsMap[keyType] = cnt
+	}
+
+	// count number of key for each kind of namespace
+	keyFunc := func(key []byte) {
+		if len(key) == sha3Sum256HashLength+1 {
+			keyType := KeyType(key[0])
+			switch keyType {
+			case KeyTypeData:
+				increaseCnt("data")
+			case KeyTypeFingerprints:
+				increaseCnt("fingerprints")
+			case KeyTypeThumbnails:
+				increaseCnt("thumbnails")
+			default:
+				increaseCnt("unknown")
+			}
+		} else {
+			// old items
+			increaseCnt("unknown")
+		}
+	}
+
+	err := s.store.ForEachKey(ctx, keyFunc)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := map[string]interface{}{}
+	// merge cnt data to output
+	for ns, count := range cntsMap {
+		stats[ns+"_count"] = count
+	}
+	return stats, nil
 }
 
 // new a message
@@ -379,7 +476,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 						return nil, nil
 					}
 
-					data := &StoreDataRequest{Data: data}
+					data := &StoreDataRequest{Key: target, Data: data}
 					// new a request message
 					request := s.newMessage(StoreData, n, data)
 					// send the request and receive the response

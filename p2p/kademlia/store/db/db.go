@@ -147,6 +147,28 @@ func (s *Badger) Keys(ctx context.Context) [][]byte {
 	return keys
 }
 
+// ForEachKey process each key
+func (s *Badger) ForEachKey(_ context.Context, handler func(key []byte)) error {
+	return s.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Rewind(); it.Valid(); it.Next() {
+			key := it.Item().Key()
+
+			if bytes.HasPrefix(key, []byte(replicationPrefix)) {
+				continue
+			}
+
+			handler(key)
+		}
+		return nil
+	})
+}
+
+// ForEach will loop through all items and processing them
+
 func (s *Badger) findKeysWithPrefix(ctx context.Context, prefix string) [][]byte {
 	var keys [][]byte
 
