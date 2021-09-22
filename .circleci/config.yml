@@ -121,8 +121,10 @@ commands:
       - run:
           name: "Create named docker container << parameters.containerName >> with project's sources"
           command: |
-            docker create -v /source --name << parameters.containerName >> ubuntu:18.04 /bin/true
+            wget https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz
+            docker create -v /source -v /deps-cache --name << parameters.containerName >> ubuntu:18.04 /bin/true
             docker cp ./. << parameters.containerName >>:/source
+            docker cp ./libsodium-1.0.18.tar.gz << parameters.containerName >>:/deps-cache
 
   xgo-build:
     parameters:
@@ -148,7 +150,7 @@ commands:
             export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-linux-amd64
             export APP_VERSION=$(git describe --tag)
             export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
-            GOPATH= xgo -go latest --deps=https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz  --targets=<< parameters.targets >> -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> -ldflags "$APP_LDFLAGS"  ./
+            GOPATH= xgo -go latest --deps=https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz  --targets=<< parameters.targets >> -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> -ldflags "$APP_LDFLAGS"  ./
 
             mkdir -p << parameters.outputDirectory >>
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
