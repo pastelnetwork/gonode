@@ -376,7 +376,6 @@ jobs:
       - create-sources-container:
           containerName: "sourcesContainer"
       - install_tensorflow
-      - install_libsodium
       - build:
           buildContainerName: "pqsignatures"
           moduleSubDir: "pqsignatures"
