@@ -267,7 +267,7 @@ jobs:
       - run:
           name: Install xgo
           command: |
-            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+            go install -v github.com/pastelnetwork/xgo@186fd182716a32fdda18c81ec4d9a6da0b929627
       - run:
           name: "Go generate"
           working_directory: ~/project/
@@ -412,7 +412,7 @@ jobs:
       - run:
           name: Install xgo
           command: |
-            go install -v github.com/pastelnetwork/xgo@cfada204f14596d56540b02e38526a56d57ddc30
+            go install -v github.com/pastelnetwork/xgo@186fd182716a32fdda18c81ec4d9a6da0b929627
       - create-sources-container:
           containerName: "sourcesContainer"
       - release:
