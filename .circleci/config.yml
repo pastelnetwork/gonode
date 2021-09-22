@@ -148,7 +148,7 @@ commands:
             export LINUX_ARTIFACT=$WORKING_DIR/<< parameters.moduleSubDir >>-linux-amd64
             export APP_VERSION=$(git describe --tag)
             export APP_LDFLAGS="-X github.com/pastelnetwork/gonode/common/version.version=$APP_VERSION" 
-            GOPATH= xgo -go latest --targets=<< parameters.targets >> --deps https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> -ldflags "$APP_LDFLAGS"  ./
+            GOPATH= xgo -go latest --deps=https://download.libsodium.org/libsodium/releases/libsodium-1.0.18.tar.gz  --targets=<< parameters.targets >> -moduleSubDir=<< parameters.moduleSubDir >> -pkg=<< parameters.package >> -volumesFrom=<< parameters.sourcesContainerName >> -dockerRM=false -dockerContainerName=<< parameters.buildContainerName >> -ldflags "$APP_LDFLAGS"  ./
 
             mkdir -p << parameters.outputDirectory >>
             docker cp << parameters.buildContainerName >>:/build/. ./<< parameters.outputDirectory >>
