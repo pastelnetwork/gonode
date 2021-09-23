@@ -57,7 +57,7 @@ func (s *xchacha20poly1305ietfReKey) Encrypt(dst, plaintext []byte) ([]byte, err
 	// If we need to allocate an output buffer, we want to include space for
 	// GCM tag to avoid forcing ALTS record to reallocate as well.
 	dlen := len(dst)
-	dst, out := SliceForAppend(dst, len(plaintext)+GcmTagSize)
+	dst, out := SliceForAppend(dst, len(plaintext)+chacha20poly1305.Overhead)
 	seq, err := s.outCounter.Value()
 	if err != nil {
 		return nil, errors.Wrap(err, "get seq")
