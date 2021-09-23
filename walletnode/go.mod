@@ -30,7 +30,6 @@ require (
 )
 
 require (
-	github.com/GoKillers/libsodium-go v0.0.0-20171022220152-dd733721c3cb // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimfeld/httppath v0.0.0-20170720192232-ee938bf73598 // indirect
@@ -86,4 +85,5 @@ replace (
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto
 	github.com/pastelnetwork/gonode/raptorq => ../raptorq
+	golang.org/x/crypto => github.com/golang/crypto v0.0.0-20210921155107-089bfa567519
 )

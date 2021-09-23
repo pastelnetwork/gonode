@@ -23,7 +23,6 @@ require (
 )
 
 require (
-	github.com/GoKillers/libsodium-go v0.0.0-20171022220152-dd733721c3cb // indirect
 	github.com/anacrolix/missinggo v1.2.1 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/sync v0.2.0 // indirect
@@ -103,4 +102,5 @@ replace (
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto
 	github.com/pastelnetwork/gonode/raptorq => ../raptorq
+	golang.org/x/crypto => github.com/golang/crypto v0.0.0-20210921155107-089bfa567519
 )
