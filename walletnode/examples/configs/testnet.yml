@@ -13,6 +13,6 @@ node:
   burn_address: "tPpasteLBurnAddressXXXXXXXXXXX3wy7u" 
 
 raptorq:
-  host: "locahost"
+  host: "localhost"
   port: 50051
   

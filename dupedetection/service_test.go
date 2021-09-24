@@ -207,7 +207,7 @@ func TestRunTaskSuccessful(t *testing.T) {
 	_ = binary.Write(fpBuffer, binary.LittleEndian, fp)
 
 	p2pClient := p2pMock.NewMockClient(t)
-	p2pClient.ListenOnRetrieve(fpBuffer.Bytes(), nil)
+	p2pClient.ListenOnRetrieveFingerprints(fpBuffer.Bytes(), nil)
 	s.p2pClient = p2pClient
 
 	err = s.runTask(context.Background())

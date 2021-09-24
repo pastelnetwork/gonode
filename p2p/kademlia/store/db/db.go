@@ -87,9 +87,6 @@ func (s *Badger) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 	if err := s.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 		if err != nil {
-			if err == badger.ErrKeyNotFound {
-				return nil
-			}
 			return errors.Errorf("read from badger: %w", err)
 		}
 		if err := item.Value(func(val []byte) error {

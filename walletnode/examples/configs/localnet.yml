@@ -13,6 +13,6 @@ node:
   burn_address: tPce2T47TFPcHPj3sKiKdFLhQpmzJ1tkzjr 
 
 raptorq:
-  host: "locahost"
+  host: "localhost"
   port: 50051
   

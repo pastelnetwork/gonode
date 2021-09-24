@@ -13,5 +13,5 @@ node:
   burn_address: "PtpasteLBurnAddressXXXXXXXXXXbJ5ndd" 
 
 raptorq:
-  host: "locahost"
+  host: "localhost"
   port: 50051

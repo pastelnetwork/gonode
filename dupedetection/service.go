@@ -9,7 +9,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/btcsuite/btcutil/base58"
+	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
@@ -229,16 +229,22 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		fingerprintsHash := nftTicketData.AppTicketData.FingerprintsHash
-		fingerprintByte, err := s.p2pClient.RetrieveFingerprints(ctx, base58.Encode(fingerprintsHash))
+		fingerprintsHash := string(nftTicketData.AppTicketData.FingerprintsHash)
+		compressedFingerprintBytes, err := s.p2pClient.RetrieveFingerprints(ctx, fingerprintsHash)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to retrieve fingerprint")
+			log.WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to retrieve fingerprint")
 			continue
 		}
 
-		fingerprint, err := pastel.FingerprintFromBytes(fingerprintByte)
+		fingerprintFromBytes, err := zstd.Decompress(nil, compressedFingerprintBytes)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to convert fingerprint")
+			log.WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to decompress fingerprint")
+			continue
+		}
+
+		fingerprint, err := pastel.FingerprintFromBytes(fingerprintFromBytes)
+		if err != nil {
+			log.WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to convert fingerprint")
 			continue
 		}
 
@@ -266,7 +272,7 @@ func (s *service) runTask(ctx context.Context) error {
 		copy(model4ImageFingerprintVector, fingerprint[start:end])
 
 		if err := s.storeFingerprint(ctx, &dupeDetectionFingerprints{
-			Sha256HashOfArtImageFile:           hex.EncodeToString(fingerprintsHash),
+			Sha256HashOfArtImageFile:           fingerprintsHash,
 			Model1ImageFingerprintVector:       model1ImageFingerprintVector,
 			Model2ImageFingerprintVector:       model2ImageFingerprintVector,
 			Model3ImageFingerprintVector:       model3ImageFingerprintVector,
