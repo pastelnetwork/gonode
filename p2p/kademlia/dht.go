@@ -202,40 +202,38 @@ func (s *DHT) Retrieve(ctx context.Context, keyType KeyType, key string) ([]byte
 
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, actualKey)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("store retrive failed")
-	}
-	// if not found locally, iterative find value from kademlia network
-	if value == nil {
-		data, err := s.iterate(ctx, IterateFindValue, actualKey, nil)
-		if err != nil {
-			//return nil, fmt.Errorf("iterate find value: %v", err)
-			// be compatible with old key
-			return s.oldRetrieve(ctx, decoded)
-		}
-		return data, nil
+	if err == nil {
+		return value, nil
 	}
 
-	return value, nil
+	log.WithContext(ctx).WithError(err).Error("store retrive failed")
+
+	// if not found locally, iterative find value from kademlia network
+	peerValue, err := s.iterate(ctx, IterateFindValue, actualKey, nil)
+	if err != nil {
+		//return nil, fmt.Errorf("iterate find value: %v", err)
+		// be compatible with old key
+		return s.oldRetrieve(ctx, decoded)
+	}
+
+	return peerValue, nil
 }
 
 // oldRetrieve use previous key name match, be compatible with previous version
 func (s *DHT) oldRetrieve(ctx context.Context, key []byte) ([]byte, error) {
 	// retrieve the key/value from local storage
 	value, err := s.store.Retrieve(ctx, key)
-	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("store retrive failed")
-	}
-	// if not found locally, iterative find value from kademlia network
-	if value == nil {
-		data, err := s.iterate(ctx, IterateFindValue, key, nil)
-		if err != nil {
-			return nil, fmt.Errorf("iterate find value: %v", err)
-		}
-		return data, nil
+	if err == nil {
+		return value, nil
 	}
 
-	return value, nil
+	log.WithContext(ctx).WithError(err).Error("store retrieve failed")
+	// if not found locally, iterative find value from kademlia network
+	remoteValue, err := s.iterate(ctx, IterateFindValue, key, nil)
+	if err != nil {
+		return nil, fmt.Errorf("iterate find failed: %v", err)
+	}
+	return remoteValue, nil
 }
 
 // Stats returns stats of DHT
