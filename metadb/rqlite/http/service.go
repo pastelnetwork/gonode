@@ -66,6 +66,8 @@ type Store interface {
 
 	// Backup wites backup of the node state to dst
 	Backup(leader bool, f store.BackupFormat, dst io.Writer) error
+
+	TransferLeadership(serverID, serverAddr string) error
 }
 
 // Cluster is the interface node API services must provide
