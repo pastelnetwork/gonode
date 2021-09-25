@@ -20,6 +20,10 @@ type Config struct {
 	RaptorQServiceAddress string `mapstructure:"-" json:"-"`
 	RqFilesDir            string
 
+	// DD server service
+	DDServerAddress string `mapstructure:"-" json:"-"`
+	DDTempFileDir   string `mapstructure:"-" json:"-"`
+
 	NumberConnectedNodes int `mapstructure:"-" json:"number_connected_nodes,omitempty"`
 
 	PreburntTxMinConfirmations    int           `mapstructure:"-" json:"preburnt_tx_min_confirmations,omitempty"`

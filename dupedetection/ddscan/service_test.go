@@ -1,4 +1,4 @@
-package dupedetection
+package ddscan
 
 import (
 	"bytes"

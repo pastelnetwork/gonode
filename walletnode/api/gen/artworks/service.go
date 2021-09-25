@@ -254,21 +254,21 @@ type ArtworkDetail struct {
 	// Storage fee %
 	StorageFee *int
 	// nsfw score
-	NsfwScore float64
+	NsfwScore float32
 	// pastel rareness score
-	RarenessScore float64
+	RarenessScore float32
 	// internet rareness score
-	InternetRarenessScore *float64
+	InternetRarenessScore *float32
 	// nsfw score
-	DrawingNsfwScore *float64
+	DrawingNsfwScore *float32
 	// nsfw score
-	NeutralNsfwScore *float64
+	NeutralNsfwScore *float32
 	// nsfw score
-	SexyNsfwScore *float64
+	SexyNsfwScore *float32
 	// nsfw score
-	PornNsfwScore *float64
+	PornNsfwScore *float32
 	// nsfw score
-	HentaiNsfwScore *float64
+	HentaiNsfwScore *float32
 	// Thumbnail_1 image
 	Thumbnail1 []byte
 	// Thumbnail_2 image

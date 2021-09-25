@@ -11,10 +11,10 @@ import (
 )
 
 // Fingerprint uniquely identify an image
-type Fingerprint []float64
+type Fingerprint []float32
 
 func fingerprintBaseTypeSize() int {
-	return int(unsafe.Sizeof(float64(0)))
+	return int(unsafe.Sizeof(float32(0)))
 }
 
 // FingerprintFromBytes deserialize a slice of bytes into Fingerprint
@@ -23,11 +23,11 @@ func FingerprintFromBytes(data []byte) (Fingerprint, error) {
 	if len(data)%typeSize != 0 {
 		return nil, errors.Errorf("invalid data length %d, length should be multiple of sizeof(float64)", len(data))
 	}
-	fg := make([]float64, len(data)/typeSize)
+	fg := make([]float32, len(data)/typeSize)
 
 	for i := range fg {
-		bits := binary.LittleEndian.Uint64(data[i*typeSize : (i+1)*typeSize])
-		fg[i] = math.Float64frombits(bits)
+		bits := binary.LittleEndian.Uint32(data[i*typeSize : (i+1)*typeSize])
+		fg[i] = math.Float32frombits(bits)
 	}
 	return fg, nil
 }
@@ -60,7 +60,7 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 	}
 
 	if lhs.IsRareOnInternet != rhs.IsRareOnInternet {
-		return errors.Errorf("is rare on internet score not matched: lhs(%d) != rhs(%d)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
+		return errors.Errorf("is rare on internet score not matched: lhs(%t) != rhs(%t)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
 	}
 
 	if lhs.OpenNSFWScore != rhs.OpenNSFWScore {

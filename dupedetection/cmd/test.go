@@ -1,5 +1,10 @@
 package main
 
+func main() {
+
+}
+
+/*
 import (
 	"context"
 	"flag"
@@ -62,3 +67,4 @@ func main() {
 	fmt.Printf("Image Hashes: %v\n", result.ImageHashes)
 	fmt.Printf("Fingerprints: %v\n", result.Fingerprints)
 }
+*/

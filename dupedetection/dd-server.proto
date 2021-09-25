@@ -1,0 +1,48 @@
+// Copyright (c) 2021-2021 The Pastel Core developers
+// Distributed under the MIT software license, see the accompanying
+// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/dupedetection";
+
+package dupedetection;
+
+service DupeDetectionServer {
+    rpc ImageRarenessScore(RarenessScoreRequest) returns(ImageRarenessScoreReply);
+}
+
+message RarenessScoreRequest {
+    string path = 1;
+}
+
+message ImageRarenessScoreReply {
+    string dupe_detection_system_version = 1;
+    bytes hash_of_candidate_image_file = 2;
+    bool is_likely_dupe = 3;
+    float overall_average_rareness_score = 4;
+    bool is_rare_on_internet = 5;
+    uint32 matches_found_on_first_page = 6;
+    uint32 number_of_pages_of_results = 7;
+    string url_of_first_match_in_page = 8;
+    float open_nsfw_score = 9;
+    AltNsfwScores alternative_nsfw_scores = 10;
+    ImageHashes image_hashes = 11;
+    repeated float image_fingerprint_of_candidate_image_file = 12;
+}
+
+message AltNsfwScores {
+    float drawings = 1;
+    float hentai = 2;
+    float neutral = 3;
+    float porn = 4;
+    float sexy = 5;
+}
+
+message ImageHashes {
+    string pdq_hash = 1;
+    string perceptual_hash = 2;
+    string average_hash = 3;
+    string difference_hash = 4;
+    string neuralhash_hash = 5;
+}

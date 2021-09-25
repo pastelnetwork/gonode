@@ -60,11 +60,11 @@ message ProbeImageRequest {
 }
 message ProbeImageReply {
     message AlternativeNSFWScore {
-      double drawing = 1;
-      double hentai = 2;
-      double neutral = 3;
-      double porn = 4;
-      double sexy = 5;
+      float drawing = 1;
+      float hentai = 2;
+      float neutral = 3;
+      float porn = 4;
+      float sexy = 5;
     }
     message ImageHashes {
       string perceptual_hash = 1;
@@ -76,13 +76,13 @@ message ProbeImageReply {
     // version of dupde detection system
     string dupe_detection_version = 1;
     // hexstring of hash of candidate image
-    string hash_of_candidate_img = 2;
-    double average_rareness_score = 3;
-    int32 is_rare_on_internet = 4;
-    int32 matches_found_on_first_page = 5;
-    int32 number_of_pages_of_results = 6;
+    bytes hash_of_candidate_img = 2;
+    float average_rareness_score = 3;
+    bool is_rare_on_internet = 4;
+    uint32 matches_found_on_first_page = 5;
+    uint32 number_of_pages_of_results = 6;
     string url_of_first_match_in_page = 7;
-    double open_nsfw_score = 8;
+    float open_nsfw_score = 8;
     bytes zstd_compressed_fingerprint = 9;
     AlternativeNSFWScore alternative_nsfw_score = 10;
     ImageHashes image_hashes = 11;

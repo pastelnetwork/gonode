@@ -639,49 +639,49 @@ var ArtworkDetail = Type("ArtworkDetail", func() {
 		Description("Storage fee %")
 		Example(100)
 	})
-	Attribute("nsfw_score", Float64, func() {
+	Attribute("nsfw_score", Float32, func() {
 		Description("nsfw score")
 		Minimum(0)
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("rareness_score", Float64, func() {
+	Attribute("rareness_score", Float32, func() {
 		Description("pastel rareness score")
 		Minimum(0)
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("internet_rareness_score", Float64, func() {
+	Attribute("internet_rareness_score", Float32, func() {
 		Description("internet rareness score")
 		Minimum(0)
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("drawing_nsfw_score", Float64, func() {
+	Attribute("drawing_nsfw_score", Float32, func() {
 		Description("nsfw score")
 		Minimum(0)
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("neutral_nsfw_score", Float64, func() {
+	Attribute("neutral_nsfw_score", Float32, func() {
 		Description("nsfw score")
 		Minimum(0)
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("sexy_nsfw_score", Float64, func() {
+	Attribute("sexy_nsfw_score", Float32, func() {
 		Description("nsfw score")
 		Minimum(0)
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("porn_nsfw_score", Float64, func() {
+	Attribute("porn_nsfw_score", Float32, func() {
 		Description("nsfw score")
 		Minimum(0)
 		Maximum(1)
 		Example(1)
 	})
-	Attribute("hentai_nsfw_score", Float64, func() {
+	Attribute("hentai_nsfw_score", Float32, func() {
 		Description("nsfw score")
 		Minimum(0)
 		Maximum(1)

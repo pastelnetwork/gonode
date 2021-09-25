@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -16,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	ddclient "github.com/pastelnetwork/gonode/dupedetection/node"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -577,21 +577,28 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 		return nil, nil, errors.Errorf("failed to get content of image %s %w", file.Name(), err)
 	}
 
-	ddResult, err := task.ddClient.Generate(ctx, img, file.Format().String())
+	conn, err := task.ddClient.Connect(ctx, task.config.DDServerAddress)
 	if err != nil {
-		return nil, nil, errors.Errorf("failed to get dupe detection result from dd-service %w", err)
+		return nil, nil, errors.Errorf("failed to connect to dd-server  %w", err)
 	}
 
-	var fingerprint []float64
-	err = json.Unmarshal([]byte(ddResult.Fingerprints), &fingerprint)
+	ddServer := conn.Dupedetection(&ddclient.DDServerConfig{
+		DDFilesDir: task.Service.config.DDTempFileDir,
+	})
+
+	ddResult, err := ddServer.ImageRarenessScore(ctx, img, file.Format().String())
+
 	if err != nil {
-		return nil, nil, errors.Errorf("failed to parse fingerprints from dd-service result %w", err)
+		return nil, nil, errors.Errorf("failed to get dupe detection result from dd-server %w", err)
 	}
+
+	fingerprint := ddResult.Fingerprints
+
 	fingerprintAndScores := pastel.FingerAndScores{
 		DupeDectectionSystemVersion: ddResult.DupeDetectionSystemVer,
 		HashOfCandidateImageFile:    ddResult.ImageHash,
 		OverallAverageRarenessScore: ddResult.PastelRarenessScore,
-		IsRareOnInternet:            int(ddResult.InternetRarenessScore),
+		IsRareOnInternet:            ddResult.IsRareOnInternet,
 		MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
 		NumberOfPagesOfResults:      ddResult.NumberOfResultPages,
 		URLOfFirstMatchInPage:       ddResult.FirstMatchURL,

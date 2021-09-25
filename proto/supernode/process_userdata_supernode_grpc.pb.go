@@ -214,5 +214,5 @@ var ProcessUserdata_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "process_userdata_supernode.proto",
+	Metadata: "supernode/process_userdata_supernode.proto",
 }
