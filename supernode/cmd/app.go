@@ -17,8 +17,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/dupedetection/ddscan"
-	ddgrpc "github.com/pastelnetwork/gonode/dupedetection/node/grpc"
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -77,8 +77,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
-		cli.NewFlag("dd-database-file", &config.DDDataBaseFile).SetUsage("Set `path` to the database file of dupe detection service."),
-		cli.NewFlag("dd-temp-file-dir", &config.DDTempFileDir).SetUsage("Set `path` to the directory storing temp data of dd client"),
+		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the directory of dupe detection service - contains database file").SetValue(defaultDdWorkDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -137,8 +136,8 @@ func NewApp() *cli.App {
 			return errors.Errorf("could not create rq-files-dir %q, %w", config.RqFilesDir, err)
 		}
 
-		if err := os.MkdirAll(config.DDTempFileDir, os.ModePerm); err != nil {
-			return errors.Errorf("could not create dd-temp-file-dir %q, %w", config.DDTempFileDir, err)
+		if err := os.MkdirAll(config.DdWorkDir, os.ModePerm); err != nil {
+			return errors.Errorf("could not create dd-service-dir %q, %w", config.DdWorkDir, err)
 		}
 
 		return runApp(ctx, config)
@@ -209,9 +208,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
 
-	// dd server client
-	config.ArtworkRegister.DDServerAddress = fmt.Sprint(config.DDServer.Host, ":", config.DDServer.Port)
-	config.ArtworkRegister.DDTempFileDir = config.DDTempFileDir
 	if config.NumberConnectedNodes > 0 {
 		config.ArtworkRegister.NumberConnectedNodes = config.NumberConnectedNodes
 	}
@@ -225,7 +221,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 
 	rqClient := rqgrpc.NewClient()
-	ddClient := ddgrpc.NewClient()
+
+	// prepare for dd client
+	ddClient := ddclient.NewDDServerClient(config.DDServer)
+	if err := os.MkdirAll(config.DDServer.DDFilesDir, os.ModePerm); err != nil {
+		return errors.Errorf("could not create dd-temp-file-dir %q, %w", config.DDServer.DDFilesDir, err)
+	}
 
 	// business logic services
 	config.ArtworkDownload.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
@@ -235,12 +236,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
 
-	if len(config.DDDataBaseFile) == 0 {
-		return errors.Errorf("empty dd-database-file %s", config.DDDataBaseFile)
-	}
-	ddScan, err := ddscan.NewService(&ddscan.Config{
-		DataFile: config.DDDataBaseFile,
-	}, pastelClient, p2p)
+	ddScanConfig := ddscan.NewConfig()
+	ddScanConfig.SetWorkDir(config.DdWorkDir)
+
+	ddScan, err := ddscan.NewService(ddScanConfig, pastelClient, p2p)
 	if err != nil {
 		return errors.Errorf("can not start dupe detection service, err: %w", err)
 	}

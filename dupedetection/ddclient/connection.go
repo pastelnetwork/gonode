@@ -1,8 +1,7 @@
-package grpc
+package ddclient
 
 import (
 	commongrpc "github.com/pastelnetwork/gonode/common/net/grpc"
-	"github.com/pastelnetwork/gonode/dupedetection/node"
 	"google.golang.org/grpc"
 )
 
@@ -13,11 +12,7 @@ type clientConn struct {
 	id string
 }
 
-func (conn *clientConn) Dupedetection(config *node.DDServerConfig) node.Dupedetection {
-	return newDupedetectionImpl(conn, config)
-}
-
-func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
+func newClientConn(id string, conn *grpc.ClientConn) *clientConn {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),
 		id:         id,

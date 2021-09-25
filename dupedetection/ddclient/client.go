@@ -1,32 +1,29 @@
-package grpc
+package ddclient
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
-	"github.com/pastelnetwork/gonode/dupedetection/node"
+
 	"google.golang.org/grpc"
 )
 
 const (
-	logPrefix             = "dupedetectionClient"
 	defaultConnectTimeout = 5 * time.Second
 )
 
 type client struct{}
 
 // Connect implements node.Client.Connect()
-func (client *client) Connect(ctx context.Context, address string) (node.Connection, error) {
+func (cl *client) Connect(ctx context.Context, address string) (*clientConn, error) {
 	// Limits the dial timeout, prevent got stuck too long
 	dialCtx, cancel := context.WithTimeout(ctx, defaultConnectTimeout)
 	defer cancel()
 
 	id, _ := random.String(8, random.Base62Chars)
-	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, id))
 
 	grpcConn, err := grpc.DialContext(dialCtx, address,
 		grpc.WithInsecure(),
@@ -46,6 +43,6 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 }
 
 // NewClient returns a new client instance.
-func NewClient() node.Client {
+func NewClient() *client {
 	return &client{}
 }

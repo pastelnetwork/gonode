@@ -3,7 +3,7 @@ package configs
 import (
 	"encoding/json"
 
-	ddclient "github.com/pastelnetwork/gonode/dupedetection/node"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -20,14 +20,13 @@ const (
 type Config struct {
 	DefaultDir string `json:"-"`
 
-	LogLevel       string `mapstructure:"log-level" json:"log-level,omitempty"`
-	LogFile        string `mapstructure:"log-file" json:"log-file,omitempty"`
-	Quiet          bool   `mapstructure:"quiet" json:"quiet"`
-	TempDir        string `mapstructure:"temp-dir" json:"temp-dir"`
-	WorkDir        string `mapstructure:"work-dir" json:"work-dir"`
-	RqFilesDir     string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
-	DDTempFileDir  string `mapstructure:"dd-file-dir" json:"dd-temp-file-dir"`
-	DDDataBaseFile string `mapstructure:"dd-data-base-file" json:"dd-database-file"`
+	LogLevel   string `mapstructure:"log-level" json:"log-level,omitempty"`
+	LogFile    string `mapstructure:"log-file" json:"log-file,omitempty"`
+	Quiet      bool   `mapstructure:"quiet" json:"quiet"`
+	TempDir    string `mapstructure:"temp-dir" json:"temp-dir"`
+	WorkDir    string `mapstructure:"work-dir" json:"work-dir"`
+	RqFilesDir string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
+	DdWorkDir  string `mapstructure:"dd-service-dir" json:"dd-service-dir"`
 
 	Node        `mapstructure:"node" json:"node,omitempty"`
 	Pastel      *pastel.Config          `mapstructure:"-" json:"-"`

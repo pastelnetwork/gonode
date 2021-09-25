@@ -1,4 +1,4 @@
-package node
+package ddclient
 
 import "fmt"
 
@@ -8,11 +8,14 @@ const (
 
 // Config contains settings of the dd-server
 type Config struct {
-	// the local IPv4 or IPv6 address
+	// Host the local IPv4 or IPv6 address
 	Host string `mapstructure:"host" json:"host,omitempty"`
 
-	// the local port to listen for connections on
+	// Port the local port to listen for connections on
 	Port int `mapstructure:"port" json:"port,omitempty"`
+
+	// DDFilesDir - the location of temporary folder to transfer image data to ddserver
+	DDFilesDir string `mapstructure:"dd-temp-file-dir" json:"dd-temp-file-dir,omitempty"`
 }
 
 // NewConfig returns a new Config instance.
@@ -27,6 +30,10 @@ func (config *Config) Validate() error {
 	}
 	if config.Port == 0 {
 		return fmt.Errorf("%s: %s", errValidationStr, "port")
+	}
+
+	if len(config.DDFilesDir) == 0 {
+		return fmt.Errorf("%s: %s", errValidationStr, "dd-temp-file-dir")
 	}
 
 	return nil

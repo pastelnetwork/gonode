@@ -9,7 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
-	ddclient "github.com/pastelnetwork/gonode/dupedetection/node"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -30,7 +30,7 @@ type Service struct {
 	nodeClient   node.Client
 	p2pClient    p2p.Client
 	rqClient     rqnode.Client
-	ddClient     ddclient.Client
+	ddClient     ddclient.DDServerClient
 }
 
 // Run starts task
@@ -65,7 +65,7 @@ func (service *Service) NewTask() *Task {
 }
 
 // NewService returns a new Service instance.
-func NewService(config *Config, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client, rqClient rqnode.Client, ddClient ddclient.Client) *Service {
+func NewService(config *Config, fileStorage storage.FileStorage, pastelClient pastel.Client, nodeClient node.Client, p2pClient p2p.Client, rqClient rqnode.Client, ddClient ddclient.DDServerClient) *Service {
 	return &Service{
 		config:       config,
 		pastelClient: pastelClient,
