@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 
@@ -20,11 +21,13 @@ func main() {
 		panic("read file error" + err.Error())
 	}
 
-	_, err = client.ImageRarenessScore(context.Background(), data, "png")
+	res, err := client.ImageRarenessScore(context.Background(), data, "png")
 	if err != nil {
 		panic("do ImageRarenessScore() error" + err.Error())
 	}
 
-	fmt.Println("Successful")
+	dataJson, _ := json.Marshal(res)
+
+	fmt.Println(string(dataJson))
 
 }

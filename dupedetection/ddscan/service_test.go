@@ -50,10 +50,10 @@ func prepareService(t *testing.T) *service {
 	return s
 }
 
-func randFloats(n int) []float64 {
-	res := make([]float64, n)
+func randFloats(n int) []float32 {
+	res := make([]float32, n)
 	for i := range res {
-		res[i] = 0.0 + mrand.Float64()*(0.0-1.0)
+		res[i] = 0.0 + mrand.Float32()*(0.0-1.0)
 	}
 	return res
 }

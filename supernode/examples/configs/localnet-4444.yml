@@ -30,3 +30,8 @@ metadb:
 raptorq:
   host: "localhost"
   port: 50051
+
+dd-server:
+  host: "localhost"
+  port: 50052
+  dd-temp-file-dir: "dd-server"
