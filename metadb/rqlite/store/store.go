@@ -340,6 +340,7 @@ func (s *Store) LeaderID() (string, error) {
 	return s.GetServerID(addr)
 }
 
+// GetServerID retrieves the server id in the cluster, given the address
 func (s *Store) GetServerID(addr string) (string, error) {
 	configFuture := s.raft.GetConfiguration()
 	if err := configFuture.Error(); err != nil {
@@ -1104,6 +1105,7 @@ func (s *Store) logSize() (int64, error) {
 	return fi.Size(), nil
 }
 
+// TransferLeadership transfers leadership to another server
 func (s *Store) TransferLeadership(serverID, serverAddr string) error {
 	address, _ := s.LeaderAddr()
 	if address != s.Addr() {

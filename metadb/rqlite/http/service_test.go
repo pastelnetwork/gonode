@@ -724,7 +724,7 @@ func (m *MockStore) ExecuteOrAbort(_ *command.ExecuteRequest) ([]*sql.Result, er
 	return nil, nil
 }
 
-func (m *MockStore) TransferLeadership(serverID, serverAddr string) error {
+func (m *MockStore) TransferLeadership(_, _ string) error {
 	return nil
 }
 func (m *MockStore) Query(_ *command.QueryRequest) ([]*sql.Rows, error) {
