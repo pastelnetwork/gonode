@@ -53,7 +53,6 @@ var (
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 
-	rqliteDefaultPort = 4446
 	defaultRqFilesDir = filepath.Join(defaultPath, rqFilesDir)
 	defaultDdWorkDir  = filepath.Join(homePath, ddWorkDir)
 )

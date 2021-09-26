@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -82,7 +84,12 @@ func (s *service) leadershipTransfer(ctx context.Context, interval time.Duration
 
 			// transfer leadership to the next leader
 			if err := s.db.TransferLeadership(id, address); err != nil {
-				log.WithContext(ctx).WithError(err).Error("initLeaderElectionTrigger failed to transfer Leadership")
+				if errors.Is(err, store.ErrNotLeader) {
+					log.WithContext(ctx).Warn("leadershipTransfer called by non-leader node")
+					return
+				}
+
+				log.WithContext(ctx).WithError(err).Error("leadershipTransfer - failed to transfer Leadership")
 			} else {
 				// we only want to update the count if leadership was transferred successfully
 				// otherwise it will wait again for the block interval to pass while still being leader

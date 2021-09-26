@@ -1105,6 +1105,11 @@ func (s *Store) logSize() (int64, error) {
 }
 
 func (s *Store) TransferLeadership(serverID, serverAddr string) error {
+	address, _ := s.LeaderAddr()
+	if address != s.Addr() {
+		return ErrNotLeader
+	}
+
 	futureErr := s.raft.LeadershipTransferToServer(raft.ServerID(serverID),
 		raft.ServerAddress(serverAddr))
 
