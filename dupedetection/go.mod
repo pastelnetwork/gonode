@@ -9,7 +9,7 @@ require (
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/metadb v0.0.0-20210803173228-bd776aecea6a
 	github.com/pastelnetwork/gonode/p2p v0.0.0-20210803173228-bd776aecea6a
-	github.com/pastelnetwork/gonode/pastel v0.0.0-20210803173228-bd776aecea6a
+	github.com/pastelnetwork/gonode/pastel v0.0.0-20210921141840-854e94914b9b
 	github.com/sbinet/npyio v0.5.2
 	github.com/stretchr/testify v1.7.0
 	google.golang.org/grpc v1.39.0
