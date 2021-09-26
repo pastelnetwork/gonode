@@ -142,9 +142,9 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 
 			f := bytes.NewBuffer(b)
 
-			var fp []float64
+			var fp []float32
 			if err := npyio.Read(f, &fp); err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float64")
+				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float32")
 				continue
 			}
 			resultStr[row[0].Columns[i]] = fp

@@ -148,14 +148,14 @@ func TestWaitSynchronizationTimeout(t *testing.T) {
 	s.pastelClient = pMock
 
 	err := s.waitSynchronization(context.Background())
-	assert.Equal(t, err.Error(), "timeout")
+	assert.Equal(t, err.Error(), "timeout expired")
 }
 
 func TestWaitSynchronizationError(t *testing.T) {
 	s := prepareService(t)
 	defer s.db.Close()
 	defer os.Remove(s.config.DataFile)
-	errMsg := "error in wait synchronization"
+	errMsg := "timeout expired"
 
 	pMock := pastelMock.NewMockClient(t)
 	pMock.ListenOnMasterNodeStatus(nil, errors.New(errMsg))
