@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/google/uuid"
@@ -97,6 +98,9 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	req := pb.RarenessScoreRequest{
 		Path: inputPath,
 	}
+
+	// remove file after use
+	defer os.Remove(inputPath)
 
 	res, err := client.ImageRarenessScore(ctx, &req)
 	if err != nil {
