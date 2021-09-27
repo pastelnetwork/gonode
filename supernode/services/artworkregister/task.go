@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -577,21 +576,20 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 		return nil, nil, errors.Errorf("failed to get content of image %s %w", file.Name(), err)
 	}
 
-	ddResult, err := task.ddClient.Generate(ctx, img, file.Format().String())
+	ddResult, err := task.ddClient.ImageRarenessScore(ctx, img, file.Format().String())
+
 	if err != nil {
-		return nil, nil, errors.Errorf("failed to get dupe detection result from dd-service %w", err)
+		return nil, nil, errors.Errorf("failed to get dupe detection result from dd-server %w", err)
 	}
 
-	var fingerprint []float64
-	err = json.Unmarshal([]byte(ddResult.Fingerprints), &fingerprint)
-	if err != nil {
-		return nil, nil, errors.Errorf("failed to parse fingerprints from dd-service result %w", err)
-	}
+	fingerprint := ddResult.Fingerprints
+
 	fingerprintAndScores := pastel.FingerAndScores{
 		DupeDectectionSystemVersion: ddResult.DupeDetectionSystemVer,
 		HashOfCandidateImageFile:    ddResult.ImageHash,
 		OverallAverageRarenessScore: ddResult.PastelRarenessScore,
-		IsRareOnInternet:            int(ddResult.InternetRarenessScore),
+		IsLikelyDupe:                ddResult.IsLikelyDupe,
+		IsRareOnInternet:            ddResult.IsRareOnInternet,
 		MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
 		NumberOfPagesOfResults:      ddResult.NumberOfResultPages,
 		URLOfFirstMatchInPage:       ddResult.FirstMatchURL,

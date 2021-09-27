@@ -13,13 +13,13 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/service/task"
 
-	"github.com/pastelnetwork/gonode/dupedetection"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
-	ddMock "github.com/pastelnetwork/gonode/dupedetection/test"
+	ddMock "github.com/pastelnetwork/gonode/dupedetection/ddclient/test"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -180,7 +180,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 		task    *Task
 		fileErr error
 		genErr  error
-		genResp *dupedetection.DupeDetection
+		genResp *ddclient.DupeDetection
 	}
 
 	testCases := map[string]struct {
@@ -191,7 +191,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			args: args{
 				genErr:  nil,
 				fileErr: nil,
-				genResp: &dupedetection.DupeDetection{},
+				genResp: &ddclient.DupeDetection{},
 				task: &Task{
 					Service: &Service{
 						config: &Config{},
@@ -207,7 +207,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			args: args{
 				genErr:  nil,
 				fileErr: errors.New("test"),
-				genResp: &dupedetection.DupeDetection{},
+				genResp: &ddclient.DupeDetection{},
 				task: &Task{
 					Service: &Service{
 						config: &Config{},
@@ -223,7 +223,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			args: args{
 				genErr:  errors.New("test"),
 				fileErr: nil,
-				genResp: &dupedetection.DupeDetection{},
+				genResp: &ddclient.DupeDetection{},
 				task: &Task{
 					Service: &Service{
 						config: &Config{},
@@ -250,15 +250,15 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			file := artwork.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
-			fingerprints := []float64{12.3, 34.4}
-			fgBytes, err := json.Marshal(fingerprints)
-			assert.Nil(t, err)
+			fingerprints := []float32{12.3, 34.4}
+			//fgBytes, err := json.Marshal(fingerprints)
+			//assert.Nil(t, err)
 
-			tc.args.genResp.Fingerprints = string(fgBytes)
+			tc.args.genResp.Fingerprints = fingerprints
 			ddmock := ddMock.NewMockClient(t)
-			ddmock.ListenOnGenerate(tc.args.genResp, tc.args.genErr)
+			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
 			tc.args.task.ddClient = ddmock
-			_, _, err = tc.args.task.genFingerprintsData(context.Background(), file)
+			_, _, err := tc.args.task.genFingerprintsData(context.Background(), file)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -944,7 +944,7 @@ func TestTaskProbeImage(t *testing.T) {
 		task    *Task
 		fileErr error
 		genErr  error
-		genResp *dupedetection.DupeDetection
+		genResp *ddclient.DupeDetection
 	}
 
 	testCases := map[string]struct {
@@ -955,7 +955,7 @@ func TestTaskProbeImage(t *testing.T) {
 			args: args{
 				genErr:  nil,
 				fileErr: nil,
-				genResp: &dupedetection.DupeDetection{},
+				genResp: &ddclient.DupeDetection{},
 				task: &Task{
 					Service: &Service{
 						config: &Config{},
@@ -972,7 +972,7 @@ func TestTaskProbeImage(t *testing.T) {
 			args: args{
 				genErr:  nil,
 				fileErr: nil,
-				genResp: &dupedetection.DupeDetection{},
+				genResp: &ddclient.DupeDetection{},
 				task: &Task{
 					Service: &Service{
 						config: &Config{},
@@ -989,7 +989,7 @@ func TestTaskProbeImage(t *testing.T) {
 			args: args{
 				genErr:  errors.New("test"),
 				fileErr: nil,
-				genResp: &dupedetection.DupeDetection{},
+				genResp: &ddclient.DupeDetection{},
 				task: &Task{
 					Task: task.New(StatusConnected),
 					Service: &Service{
@@ -1018,13 +1018,10 @@ func TestTaskProbeImage(t *testing.T) {
 			file := artwork.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
-			fingerprints := []float64{12.3, 34.4}
-			fgBytes, err := json.Marshal(fingerprints)
-			assert.Nil(t, err)
-
-			tc.args.genResp.Fingerprints = string(fgBytes)
+			fingerprints := []float32{12.3, 34.4}
+			tc.args.genResp.Fingerprints = fingerprints
 			ddmock := ddMock.NewMockClient(t)
-			ddmock.ListenOnGenerate(tc.args.genResp, tc.args.genErr)
+			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
 			tc.args.task.ddClient = ddmock
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -1032,7 +1029,7 @@ func TestTaskProbeImage(t *testing.T) {
 
 			go tc.args.task.RunAction(ctx)
 
-			_, err = tc.args.task.ProbeImage(context.Background(), file)
+			_, err := tc.args.task.ProbeImage(context.Background(), file)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

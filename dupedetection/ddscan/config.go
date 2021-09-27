@@ -1,4 +1,4 @@
-package dupedetection
+package ddscan
 
 import "path/filepath"
 
@@ -7,11 +7,10 @@ const (
 	DefaultInputDir = "dupe_detection_input_files"
 	// DefaultOutputDir that dd-service uses to put new fingerprints
 	DefaultOutputDir = "dupe_detection_output_files"
-	// DefaultOutputDir that dd-service uses to put new fingerprints(5 minutes)
-	DefaultTimeout = 300
 	// DefaultDataFile that dd-service uses to store fingerprints
 	DefaultDataFile = "dupe_detection_image_fingerprint_database.sqlite"
 	// DefaultSupportDir that dd-service uses for support files
+	// Should be ~/pastel_dupe_detection_service/dupe_detection_support_files/dupe_detection_image_fingerprint_database.sqlite
 	DefaultSupportDir = "dupe_detection_support_files"
 )
 
@@ -25,9 +24,6 @@ type Config struct {
 
 	// SupportDir is directory to contain support files of dupe detection service
 	SupportDir string `mapstructure:"support_dir" json:"support_dir,omitempty"`
-
-	// WaitForOutputTimeout is timeout when waiting for output from dupe detection service in second
-	WaitForOutputTimeout int64 `mapstructure:"timeout" json:"timeout,omitempty"`
 
 	// DataName is sqlite database name used by dd-service
 	DataFile string `mapstructure:"data_file" json:"data_file"`
@@ -52,10 +48,9 @@ func (config *Config) SetWorkDir(workDir string) {
 // NewConfig returns a new Config instance
 func NewConfig() *Config {
 	return &Config{
-		InputDir:             DefaultInputDir,
-		OutputDir:            DefaultOutputDir,
-		SupportDir:           DefaultSupportDir,
-		WaitForOutputTimeout: DefaultTimeout,
-		DataFile:             DefaultDataFile,
+		InputDir:   DefaultInputDir,
+		OutputDir:  DefaultOutputDir,
+		SupportDir: DefaultSupportDir,
+		DataFile:   DefaultDataFile,
 	}
 }
