@@ -599,8 +599,10 @@ func (task *Task) createArtTicket(_ context.Context) error {
 				PDQHash:        task.fingerprintAndScores.ImageHashes.PDQHash,
 				NeuralHash:     task.fingerprintAndScores.ImageHashes.NeuralHash,
 			},
-			RQIDs: task.rqids,
-			RQOti: task.rqEncodeParams.Oti,
+			IsRareOnInternet: task.fingerprintAndScores.IsRareOnInternet,
+			IsLikelyDupe:     task.fingerprintAndScores.IsLikelyDupe,
+			RQIDs:            task.rqids,
+			RQOti:            task.rqEncodeParams.Oti,
 		},
 	}
 

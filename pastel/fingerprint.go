@@ -59,6 +59,10 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 		return errors.Errorf("overall average rareness score not matched: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
 	}
 
+	if lhs.IsLikelyDupe != rhs.IsLikelyDupe {
+		return errors.Errorf("is likely dupe score not matched: lhs(%t) != rhs(%t)", lhs.IsLikelyDupe, rhs.IsLikelyDupe)
+	}
+
 	if lhs.IsRareOnInternet != rhs.IsRareOnInternet {
 		return errors.Errorf("is rare on internet score not matched: lhs(%t) != rhs(%t)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
 	}

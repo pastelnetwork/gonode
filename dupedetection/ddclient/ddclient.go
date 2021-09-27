@@ -24,6 +24,7 @@ type DupeDetection struct {
 	DupeDetectionSystemVer  string              `json:"dupe_detection_system_version"`
 	ImageHash               []byte              `json:"hash_of_candidate_image_file"`
 	PastelRarenessScore     float32             `json:"overall_average_rareness_score"`
+	IsLikelyDupe            bool                `json:"is_likely_dupe"`
 	IsRareOnInternet        bool                `json:"is_rare_on_internet"`
 	MatchesFoundOnFirstPage uint32              `json:"matches_found_on_first_page"`
 	NumberOfResultPages     uint32              `json:"number_of_pages_of_results"`
@@ -125,6 +126,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		DupeDetectionSystemVer:  res.DupeDetectionSystemVersion,
 		ImageHash:               res.HashOfCandidateImageFile,
 		PastelRarenessScore:     res.OverallAverageRarenessScore,
+		IsLikelyDupe:            res.IsLikelyDupe,
 		IsRareOnInternet:        res.IsRareOnInternet,
 		MatchesFoundOnFirstPage: res.MatchesFoundOnFirstPage,
 		NumberOfResultPages:     res.NumberOfPagesOfResults,

@@ -588,6 +588,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 		DupeDectectionSystemVersion: ddResult.DupeDetectionSystemVer,
 		HashOfCandidateImageFile:    ddResult.ImageHash,
 		OverallAverageRarenessScore: ddResult.PastelRarenessScore,
+		IsLikelyDupe:                ddResult.IsLikelyDupe,
 		IsRareOnInternet:            ddResult.IsRareOnInternet,
 		MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
 		NumberOfPagesOfResults:      ddResult.NumberOfResultPages,

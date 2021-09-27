@@ -68,7 +68,8 @@ type FingerAndScores struct {
 	DupeDectectionSystemVersion string               `json:"dupe_dectection_system_version"`
 	HashOfCandidateImageFile    []byte               `json:"hash_of_candidate_image_file"`
 	OverallAverageRarenessScore float32              `json:"overall_average_rareness_score"`
-	IsRareOnInternet            bool                 `json:"is_rare_on_internet"`
+	IsLikelyDupe                bool                 `json:"is_rare_on_internet"`
+	IsRareOnInternet            bool                 `json:"is_likely_dupe"`
 	NumberOfPagesOfResults      uint32               `json:"number_of_pages_of_results"`
 	MatchesFoundOnFirstPage     uint32               `json:"matches_found_on_first_page"`
 	URLOfFirstMatchInPage       string               `json:"url_of_first_match_in_page"`
@@ -113,6 +114,8 @@ type AppTicket struct {
 	OpenNSFWScore           float32             `json:"open_nsfw_score"`
 	AlternateNSFWScores     AlternateNSFWScores `json:"alternate_nsfw_scores"`
 	ImageHashes             ImageHashes         `json:"image_hashes"`
+	IsLikelyDupe            bool                `json:"is_likely_dupe"`
+	IsRareOnInternet        bool                `json:"is_rare_on_internet"`
 
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
