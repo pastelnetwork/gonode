@@ -585,11 +585,11 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			FingerprintsHash:           task.fingerprintsHash,
 			FingerprintsSignature:      task.fingerprintSignature,
 			DupeDetectionSystemVer:     task.fingerprintAndScores.DupeDectectionSystemVersion,
-			MatchesFoundOnFirstPage:    task.fingerprintAndScores.MatchesFoundOnFirstPage,
-			NumberOfResultPages:        task.fingerprintAndScores.NumberOfPagesOfResults,
+			MatchesFoundOnFirstPage:    int(task.fingerprintAndScores.MatchesFoundOnFirstPage),
+			NumberOfResultPages:        int(task.fingerprintAndScores.NumberOfPagesOfResults),
 			FirstMatchURL:              task.fingerprintAndScores.URLOfFirstMatchInPage,
 			PastelRarenessScore:        task.fingerprintAndScores.OverallAverageRarenessScore,
-			InternetRarenessScore:      float64(task.fingerprintAndScores.IsRareOnInternet),
+			InternetRarenessScore:      0, // FIXME
 			OpenNSFWScore:              task.fingerprintAndScores.OpenNSFWScore,
 			AlternateNSFWScores: pastel.AlternateNSFWScores{
 				Drawing: task.fingerprintAndScores.AlternativeNSFWScore.Drawing,
@@ -605,8 +605,10 @@ func (task *Task) createArtTicket(_ context.Context) error {
 				PDQHash:        task.fingerprintAndScores.ImageHashes.PDQHash,
 				NeuralHash:     task.fingerprintAndScores.ImageHashes.NeuralHash,
 			},
-			RQIDs: task.rqids,
-			RQOti: task.rqEncodeParams.Oti,
+			IsRareOnInternet: task.fingerprintAndScores.IsRareOnInternet,
+			IsLikelyDupe:     task.fingerprintAndScores.IsLikelyDupe,
+			RQIDs:            task.rqids,
+			RQOti:            task.rqEncodeParams.Oti,
 		},
 	}
 

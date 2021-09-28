@@ -138,21 +138,21 @@ type ArtworkGetResponseBody struct {
 	// Storage fee %
 	StorageFee *int `form:"storage_fee,omitempty" json:"storage_fee,omitempty" xml:"storage_fee,omitempty"`
 	// nsfw score
-	NsfwScore float64 `form:"nsfw_score" json:"nsfw_score" xml:"nsfw_score"`
+	NsfwScore float32 `form:"nsfw_score" json:"nsfw_score" xml:"nsfw_score"`
 	// pastel rareness score
-	RarenessScore float64 `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
+	RarenessScore float32 `form:"rareness_score" json:"rareness_score" xml:"rareness_score"`
 	// internet rareness score
-	InternetRarenessScore *float64 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
+	InternetRarenessScore *float32 `form:"internet_rareness_score,omitempty" json:"internet_rareness_score,omitempty" xml:"internet_rareness_score,omitempty"`
 	// nsfw score
-	DrawingNsfwScore *float64 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
+	DrawingNsfwScore *float32 `form:"drawing_nsfw_score,omitempty" json:"drawing_nsfw_score,omitempty" xml:"drawing_nsfw_score,omitempty"`
 	// nsfw score
-	NeutralNsfwScore *float64 `form:"neutral_nsfw_score,omitempty" json:"neutral_nsfw_score,omitempty" xml:"neutral_nsfw_score,omitempty"`
+	NeutralNsfwScore *float32 `form:"neutral_nsfw_score,omitempty" json:"neutral_nsfw_score,omitempty" xml:"neutral_nsfw_score,omitempty"`
 	// nsfw score
-	SexyNsfwScore *float64 `form:"sexy_nsfw_score,omitempty" json:"sexy_nsfw_score,omitempty" xml:"sexy_nsfw_score,omitempty"`
+	SexyNsfwScore *float32 `form:"sexy_nsfw_score,omitempty" json:"sexy_nsfw_score,omitempty" xml:"sexy_nsfw_score,omitempty"`
 	// nsfw score
-	PornNsfwScore *float64 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
+	PornNsfwScore *float32 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
 	// nsfw score
-	HentaiNsfwScore *float64 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
+	HentaiNsfwScore *float32 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
 	// Thumbnail_1 image
 	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
 	// Thumbnail_2 image

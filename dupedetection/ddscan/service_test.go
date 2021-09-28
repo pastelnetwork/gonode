@@ -1,4 +1,4 @@
-package dupedetection
+package ddscan
 
 import (
 	"bytes"
@@ -50,10 +50,10 @@ func prepareService(t *testing.T) *service {
 	return s
 }
 
-func randFloats(n int) []float64 {
-	res := make([]float64, n)
+func randFloats(n int) []float32 {
+	res := make([]float32, n)
 	for i := range res {
-		res[i] = 0.0 + mrand.Float64()*(0.0-1.0)
+		res[i] = 0.0 + mrand.Float32()*(0.0-1.0)
 	}
 	return res
 }
@@ -148,14 +148,14 @@ func TestWaitSynchronizationTimeout(t *testing.T) {
 	s.pastelClient = pMock
 
 	err := s.waitSynchronization(context.Background())
-	assert.Equal(t, err.Error(), "timeout")
+	assert.Equal(t, err.Error(), "timeout expired")
 }
 
 func TestWaitSynchronizationError(t *testing.T) {
 	s := prepareService(t)
 	defer s.db.Close()
 	defer os.Remove(s.config.DataFile)
-	errMsg := "error in wait synchronization"
+	errMsg := "timeout expired"
 
 	pMock := pastelMock.NewMockClient(t)
 	pMock.ListenOnMasterNodeStatus(nil, errors.New(errMsg))

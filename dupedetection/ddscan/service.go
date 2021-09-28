@@ -1,4 +1,4 @@
-package dupedetection
+package ddscan
 
 import (
 	"bytes"
@@ -17,6 +17,14 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/sbinet/npyio"
 )
+
+type Service interface {
+	// Run starts task
+	Run(ctx context.Context) error
+
+	// Stats returns current status of service
+	Stats(ctx context.Context) (map[string]interface{}, error)
+}
 
 const (
 	synchronizationIntervalSec       = 5
@@ -38,10 +46,10 @@ type dupeDetectionFingerprints struct {
 	PathToArtImageFile                 string    `json:"path_to_art_image_file,omitempty"`
 	NumberOfBlock                      int       `json:"number_of_block,omitempty"`
 	DatetimeFingerprintAddedToDatabase time.Time `json:"datetime_fingerprint_added_to_database,omitempty"`
-	Model1ImageFingerprintVector       []float64 `json:"model_1_image_fingerprint_vector,omitempty"`
-	Model2ImageFingerprintVector       []float64 `json:"model_2_image_fingerprint_vector,omitempty"`
-	Model3ImageFingerprintVector       []float64 `json:"model_3_image_fingerprint_vector,omitempty"`
-	Model4ImageFingerprintVector       []float64 `json:"model_4_image_fingerprint_vector,omitempty"`
+	Model1ImageFingerprintVector       []float32 `json:"model_1_image_fingerprint_vector,omitempty"`
+	Model2ImageFingerprintVector       []float32 `json:"model_2_image_fingerprint_vector,omitempty"`
+	Model3ImageFingerprintVector       []float32 `json:"model_3_image_fingerprint_vector,omitempty"`
+	Model4ImageFingerprintVector       []float32 `json:"model_4_image_fingerprint_vector,omitempty"`
 }
 
 type service struct {
@@ -134,9 +142,9 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 
 			f := bytes.NewBuffer(b)
 
-			var fp []float64
+			var fp []float32
 			if err := npyio.Read(f, &fp); err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float64")
+				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float32")
 				continue
 			}
 			resultStr[row[0].Columns[i]] = fp
@@ -159,7 +167,7 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 }
 
 func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFingerprints) error {
-	encodeFloat2Npy := func(v []float64) (string, error) {
+	encodeFloat2Npy := func(v []float32) (string, error) {
 		f := bytes.NewBuffer(nil)
 		if err := npyio.Write(f, v); err != nil {
 			return "", errors.Errorf("failed to encode to npy, err: %w", err)
@@ -254,10 +262,10 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		model1ImageFingerprintVector := make([]float64, fingerprintSizeModel1)
-		model2ImageFingerprintVector := make([]float64, fingerprintSizeModel2)
-		model3ImageFingerprintVector := make([]float64, fingerprintSizeModel3)
-		model4ImageFingerprintVector := make([]float64, fingerprintSizeModel4)
+		model1ImageFingerprintVector := make([]float32, fingerprintSizeModel1)
+		model2ImageFingerprintVector := make([]float32, fingerprintSizeModel2)
+		model3ImageFingerprintVector := make([]float32, fingerprintSizeModel3)
+		model4ImageFingerprintVector := make([]float32, fingerprintSizeModel4)
 
 		start, end := 0, fingerprintSizeModel1
 		copy(model1ImageFingerprintVector, fingerprint[start:end])

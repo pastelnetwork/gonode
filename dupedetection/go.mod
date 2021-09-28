@@ -3,24 +3,27 @@ module github.com/pastelnetwork/gonode/dupedetection
 go 1.17
 
 require (
-	github.com/btcsuite/btcutil v1.0.2
+	github.com/DataDog/zstd v1.4.8
 	github.com/google/gofuzz v1.2.0
+	github.com/google/uuid v1.3.0
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/metadb v0.0.0-20210803173228-bd776aecea6a
 	github.com/pastelnetwork/gonode/p2p v0.0.0-20210803173228-bd776aecea6a
 	github.com/pastelnetwork/gonode/pastel v0.0.0-20210803173228-bd776aecea6a
 	github.com/sbinet/npyio v0.5.2
 	github.com/stretchr/testify v1.7.0
+	google.golang.org/grpc v1.39.0
+	google.golang.org/protobuf v1.27.1
 )
 
 require (
-	github.com/DataDog/zstd v1.4.8 // indirect
 	github.com/anacrolix/log v0.9.0 // indirect
 	github.com/anacrolix/missinggo v1.2.1 // indirect
 	github.com/anacrolix/missinggo/perf v1.0.0 // indirect
 	github.com/anacrolix/sync v0.2.0 // indirect
 	github.com/anacrolix/utp v0.1.0 // indirect
 	github.com/andres-erbsen/clock v0.0.0-20160526145045-9e14626cd129 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/campoy/embedmd v1.0.0 // indirect
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
@@ -49,8 +52,9 @@ require (
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1 // indirect
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
+	golang.org/x/text v0.3.6 // indirect
 	gonum.org/v1/gonum v0.8.2 // indirect
-	google.golang.org/protobuf v1.27.1 // indirect
+	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 )

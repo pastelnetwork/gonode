@@ -56,23 +56,24 @@ type NFTTicket struct {
 
 // AlternativeNSFWScore represents the not-safe-for-work of an image
 type AlternativeNSFWScore struct {
-	Drawing float64 `json:"drawing"`
-	Hentai  float64 `json:"hentai"`
-	Neutral float64 `json:"neutral"`
-	Porn    float64 `json:"porn"`
-	Sexy    float64 `json:"sexy"`
+	Drawing float32 `json:"drawing"`
+	Hentai  float32 `json:"hentai"`
+	Neutral float32 `json:"neutral"`
+	Porn    float32 `json:"porn"`
+	Sexy    float32 `json:"sexy"`
 }
 
 // FingerAndScores represents structure of app ticket
 type FingerAndScores struct {
 	DupeDectectionSystemVersion string               `json:"dupe_dectection_system_version"`
-	HashOfCandidateImageFile    string               `json:"hash_of_candidate_image_file"`
-	OverallAverageRarenessScore float64              `json:"overall_average_rareness_score"`
-	IsRareOnInternet            int                  `json:"is_rare_on_internet"`
-	NumberOfPagesOfResults      int                  `json:"number_of_pages_of_results"`
-	MatchesFoundOnFirstPage     int                  `json:"matches_found_on_first_page"`
+	HashOfCandidateImageFile    []byte               `json:"hash_of_candidate_image_file"`
+	OverallAverageRarenessScore float32              `json:"overall_average_rareness_score"`
+	IsLikelyDupe                bool                 `json:"is_rare_on_internet"`
+	IsRareOnInternet            bool                 `json:"is_likely_dupe"`
+	NumberOfPagesOfResults      uint32               `json:"number_of_pages_of_results"`
+	MatchesFoundOnFirstPage     uint32               `json:"matches_found_on_first_page"`
 	URLOfFirstMatchInPage       string               `json:"url_of_first_match_in_page"`
-	OpenNSFWScore               float64              `json:"open_nsfw_score"`
+	OpenNSFWScore               float32              `json:"open_nsfw_score"`
 	ZstdCompressedFingerprint   []byte               `json:"zstd_compressed_fingerprint"`
 	AlternativeNSFWScore        AlternativeNSFWScore `json:"alternative_nsfw_score"`
 	ImageHashes                 ImageHashes          `json:"image_hashes"`
@@ -108,11 +109,13 @@ type AppTicket struct {
 	MatchesFoundOnFirstPage int                 `json:"matches_found_on_first_page"`
 	NumberOfResultPages     int                 `json:"number_of_pages_of_results"`
 	FirstMatchURL           string              `json:"url_of_first_match_in_page"`
-	PastelRarenessScore     float64             `json:"pastel_rareness_score"`
-	InternetRarenessScore   float64             `json:"internet_rareness_score"`
-	OpenNSFWScore           float64             `json:"open_nsfw_score"`
+	PastelRarenessScore     float32             `json:"pastel_rareness_score"`
+	InternetRarenessScore   float32             `json:"internet_rareness_score"`
+	OpenNSFWScore           float32             `json:"open_nsfw_score"`
 	AlternateNSFWScores     AlternateNSFWScores `json:"alternate_nsfw_scores"`
 	ImageHashes             ImageHashes         `json:"image_hashes"`
+	IsLikelyDupe            bool                `json:"is_likely_dupe"`
+	IsRareOnInternet        bool                `json:"is_rare_on_internet"`
 
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
@@ -120,11 +123,11 @@ type AppTicket struct {
 
 // AlternateNSFWScores represents alternate NSFW scores from dupe detection service
 type AlternateNSFWScores struct {
-	Drawing float64 `json:"drawing"`
-	Hentai  float64 `json:"hentai"`
-	Neutral float64 `json:"neutral"`
-	Porn    float64 `json:"porn"`
-	Sexy    float64 `json:"sexy"`
+	Drawing float32 `json:"drawing"`
+	Hentai  float32 `json:"hentai"`
+	Neutral float32 `json:"neutral"`
+	Porn    float32 `json:"porn"`
+	Sexy    float32 `json:"sexy"`
 }
 
 // ImageHashes represents image hashes from dupe detection service

@@ -18,7 +18,8 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
-	"github.com/pastelnetwork/gonode/dupedetection"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
+	"github.com/pastelnetwork/gonode/dupedetection/ddscan"
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -77,7 +78,7 @@ func NewApp() *cli.App {
 		cli.NewFlag("work-dir", &config.WorkDir).SetUsage("Set `path` for storing work data.").SetValue(defaultWorkDir),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
-		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the work directory of dupe detection service.").SetValue(defaultDdWorkDir),
+		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the directory of dupe detection service - contains database file").SetValue(defaultDdWorkDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
@@ -195,10 +196,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	nodeClient := client.New(pastelClient, secInfo)
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
-	// analysis tools
-	config.DupeDetection.SetWorkDir(config.DdWorkDir)
-	ddClient := dupedetection.NewClient(config.DupeDetection)
-
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
 	p2p := p2p.New(config.P2P, pastelClient)
@@ -216,6 +213,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// raptorq client
 	config.ArtworkRegister.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	config.ArtworkRegister.RqFilesDir = config.RqFilesDir
+
 	if config.NumberConnectedNodes > 0 {
 		config.ArtworkRegister.NumberConnectedNodes = config.NumberConnectedNodes
 	}
@@ -230,6 +228,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	rqClient := rqgrpc.NewClient()
 
+	// prepare for dd client
+	ddClient := ddclient.NewDDServerClient(config.DDServer)
+	if err := os.MkdirAll(config.DDServer.DDFilesDir, os.ModePerm); err != nil {
+		return errors.Errorf("could not create dd-temp-file-dir %q, %w", config.DDServer.DDFilesDir, err)
+	}
+
 	// business logic services
 	config.ArtworkDownload.RaptorQServiceAddress = fmt.Sprint(config.RaptorQ.Host, ":", config.RaptorQ.Port)
 	config.ArtworkDownload.RqFilesDir = config.RqFilesDir
@@ -237,7 +241,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// business logic services
 	artworkRegister := artworkregister.NewService(&config.ArtworkRegister, fileStorage, pastelClient, nodeClient, p2p, rqClient, ddClient)
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, p2p, rqClient)
-	dupeDetection, err := dupedetection.NewService(config.DupeDetection, pastelClient, p2p)
+
+	ddScanConfig := ddscan.NewConfig()
+	ddScanConfig.SetWorkDir(config.DdWorkDir)
+
+	ddScan, err := ddscan.NewService(ddScanConfig, pastelClient, p2p)
 	if err != nil {
 		return errors.Errorf("can not start dupe detection service, err: %w", err)
 	}
@@ -251,7 +259,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	statsMngr.Add("p2p", p2p)
 	statsMngr.Add("mdl", metadb)
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
-	statsMngr.Add("dupedetection", dupeDetection)
+	statsMngr.Add("ddscan", ddScan)
 
 	// server
 	grpc := server.New(config.Server,
@@ -268,5 +276,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, dupeDetection, database, userdataProcess, statsMngr)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, ddScan, database, userdataProcess, statsMngr)
 }
