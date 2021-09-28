@@ -60,7 +60,7 @@ func (config *Config) Validate() error {
 		return fmt.Errorf("%s: %s", errValidationStr, "data_dir")
 	}
 	if config.BlockInterval == 0 {
-		config.BlockInterval = 48 // set default
+		return fmt.Errorf("%s: %s", errValidationStr, "block_interval")
 	}
 
 	return nil
@@ -68,5 +68,7 @@ func (config *Config) Validate() error {
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
-	return &Config{}
+	return &Config{
+		BlockInterval: 48,
+	}
 }

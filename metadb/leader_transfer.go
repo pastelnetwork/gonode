@@ -31,6 +31,7 @@ func (s *service) initLeadershipTransferTrigger(ctx context.Context,
 			count, err := s.pastelClient.GetBlockCount(ctx)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("initLeaderElectionTrigger failed to call pastel client BlockCount")
+				break
 			}
 			// store current block count so we may check block interval
 			s.currentBlockCount = count
