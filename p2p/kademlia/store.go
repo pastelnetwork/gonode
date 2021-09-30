@@ -19,9 +19,6 @@ type Store interface {
 	// Keys returns all the keys from the store
 	Keys(ctx context.Context) [][]byte
 
-	// ForEach will loop through all key and processing them
-	ForEachKey(ctx context.Context, handler func(key []byte)) error
-
 	// KeysForReplication returns the keys of all data to be replicated across the network
 	KeysForReplication(ctx context.Context) [][]byte
 

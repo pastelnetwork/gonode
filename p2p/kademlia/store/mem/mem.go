@@ -79,16 +79,6 @@ func (s *Store) Keys(_ context.Context) [][]byte {
 	return keys
 }
 
-// ForEachKey process each key
-func (s *Store) ForEachKey(ctx context.Context, handler func(key []byte)) error {
-	keys := s.Keys(ctx)
-	for _, key := range keys {
-		handler(key)
-	}
-
-	return nil
-}
-
 // Close the store
 func (s *Store) Close(_ context.Context) {
 }

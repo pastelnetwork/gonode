@@ -8,19 +8,10 @@ import (
 )
 
 const (
-	// RetrieveDataMethod represent retrieve data name method
-	RetrieveDataMethod = "RetrieveData"
-	// RetrieveThumbnailsMethod represent retrieve thumbnails name method
-	RetrieveThumbnailsMethod = "RetrieveThumbnails"
-	// RetrieveFingerprintsMethod represent retrieve Fingerprints name method
-	RetrieveFingerprintsMethod = "RetrieveFingerprints"
-
-	// StoreDataMethod represent Store data name method
-	StoreDataMethod = "StoreData"
-	// StoreThumbnailsMethod represent Store Thumbnails name method
-	StoreThumbnailsMethod = "StoreThumbnails"
-	// StoreFingerprintsMethod represent Store Fingerprints name method
-	StoreFingerprintsMethod = "StoreFingerprints"
+	// RetrieveMethod represent Get name method
+	RetrieveMethod = "Retrieve"
+	// StoreMethod represent Store name method
+	StoreMethod = "Store"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -37,21 +28,9 @@ func NewMockClient(t *testing.T) *Client {
 	}
 }
 
-// ListenOnRetrieveData listening Retrieve and returns data, and error from args
-func (client *Client) ListenOnRetrieveData(data []byte, err error) *Client {
-	client.On(RetrieveDataMethod, mock.Anything, mock.Anything).Return(data, err)
-	return client
-}
-
-// ListenOnRetrieveThumbnails listening Retrieve and returns data, and error from args
-func (client *Client) ListenOnRetrieveThumbnails(data []byte, err error) *Client {
-	client.On(RetrieveThumbnailsMethod, mock.Anything, mock.Anything).Return(data, err)
-	return client
-}
-
-// ListenOnRetrieveFingerprints listening Retrieve and returns data, and error from args
-func (client *Client) ListenOnRetrieveFingerprints(data []byte, err error) *Client {
-	client.On(RetrieveFingerprintsMethod, mock.Anything, mock.Anything).Return(data, err)
+// ListenOnRetrieve listening Retrieve and returns data, and error from args
+func (client *Client) ListenOnRetrieve(data []byte, err error) *Client {
+	client.On(RetrieveMethod, mock.Anything, mock.Anything).Return(data, err)
 	return client
 }
 
@@ -66,20 +45,8 @@ func (client *Client) AssertRetrieveCall(expectedCalls int, arguments ...interfa
 }
 */
 
-//  ListenOnStoreData listening  Store and returns id and error from args
-func (client *Client) ListenOnStoreData(id string, err error) *Client {
-	client.On(StoreDataMethod, mock.Anything, mock.Anything).Return(id, err)
-	return client
-}
-
-//  ListenOnStoreThumbnails listening  Store and returns id and error from args
-func (client *Client) ListenOnStoreThumbnails(id string, err error) *Client {
-	client.On(StoreThumbnailsMethod, mock.Anything, mock.Anything).Return(id, err)
-	return client
-}
-
-//  ListenOnStoreFingerprints listening  Store and returns id and error from args
-func (client *Client) ListenOnStoreFingerprints(id string, err error) *Client {
-	client.On(StoreFingerprintsMethod, mock.Anything, mock.Anything).Return(id, err)
+//  ListenOnStore listening  Store and returns id and error from args
+func (client *Client) ListenOnStore(id string, err error) *Client {
+	client.On(StoreMethod, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }

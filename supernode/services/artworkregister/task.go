@@ -522,13 +522,13 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 	}
 
 	for name, data := range task.RQIDS {
-		if _, err := task.p2pClient.StoreData(ctx, data); err != nil {
+		if _, err := task.p2pClient.Store(ctx, data); err != nil {
 			return errors.Errorf("failed to store raptorq symbols id files %s %w", name, err)
 		}
 	}
 
 	for id, symbol := range encodeResp.Symbols {
-		if _, err := task.p2pClient.StoreData(ctx, symbol); err != nil {
+		if _, err := task.p2pClient.Store(ctx, symbol); err != nil {
 			return errors.Errorf("failed to store symbolid %s into kamedila %w", id, err)
 		}
 	}
@@ -542,7 +542,7 @@ func (task *Task) storeThumbnails(ctx context.Context) error {
 		if err != nil {
 			return "", errors.Errorf("failed to get data from artwork %s", artwork.Name())
 		}
-		return task.p2pClient.StoreThumbnails(ctx, data)
+		return task.p2pClient.Store(ctx, data)
 	}
 
 	if _, err := storeFn(ctx, task.PreviewThumbnail); err != nil {
@@ -564,7 +564,7 @@ func (task *Task) storeFingerprints(ctx context.Context) error {
 		return errors.Errorf("failed to compress fingerprint")
 	}
 
-	if _, err := task.p2pClient.StoreFingerprints(ctx, compressFringerprints); err != nil {
+	if _, err := task.p2pClient.Store(ctx, compressFringerprints); err != nil {
 		return errors.Errorf("failed to store fingerprints into kamedila")
 	}
 	return nil
