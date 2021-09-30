@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/log/hooks"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	"github.com/pastelnetwork/gonode/common/sys"
 	"github.com/pastelnetwork/gonode/common/version"
@@ -187,7 +188,12 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// entities
 	pastelClient := pastel.NewClient(config.Pastel)
-	nodeClient := client.New()
+	secInfo := &alts.SecInfo{
+		PastelID:   config.PastelID,
+		PassPhrase: config.PassPhrase,
+		Algorithm:  "ed448",
+	}
+	nodeClient := client.New(pastelClient, secInfo)
 	fileStorage := fs.NewFileStorage(config.TempDir)
 
 	// p2p service (currently using kademlia)
@@ -245,7 +251,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 
 	// ----Userdata Services----
-	userdataNodeClient := client.New()
+	userdataNodeClient := client.New(pastelClient, secInfo)
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
 
 	// create stats manager
@@ -258,6 +264,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// server
 	grpc := server.New(config.Server,
 		"service",
+		pastelClient,
+		secInfo,
 		walletnode.NewRegisterArtwork(artworkRegister),
 		supernode.NewRegisterArtwork(artworkRegister),
 		walletnode.NewDownloadArtwork(artworkDownload),

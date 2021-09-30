@@ -62,6 +62,15 @@ type UploadImageRequestBody struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
+// ArtworkGetRequestBody is the type of the "artworks" service "artworkGet"
+// endpoint HTTP request body.
+type ArtworkGetRequestBody struct {
+	// User's PastelID
+	UserPastelID string `form:"user_pastelid" json:"user_pastelid" xml:"user_pastelid"`
+	// Passphrase of the User PastelID
+	UserPassphrase string `form:"user_passphrase" json:"user_passphrase" xml:"user_passphrase"`
+}
+
 // RegisterResponseBody is the type of the "artworks" service "register"
 // endpoint HTTP response body.
 type RegisterResponseBody struct {
@@ -694,6 +703,16 @@ func NewUploadImageRequestBody(p *artworks.UploadImagePayload) *UploadImageReque
 	body := &UploadImageRequestBody{
 		Bytes:    p.Bytes,
 		Filename: p.Filename,
+	}
+	return body
+}
+
+// NewArtworkGetRequestBody builds the HTTP request body from the payload of
+// the "artworkGet" endpoint of the "artworks" service.
+func NewArtworkGetRequestBody(p *artworks.ArtworkGetPayload) *ArtworkGetRequestBody {
+	body := &ArtworkGetRequestBody{
+		UserPastelID:   p.UserPastelID,
+		UserPassphrase: p.UserPassphrase,
 	}
 	return body
 }

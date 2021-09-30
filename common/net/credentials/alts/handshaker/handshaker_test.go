@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	aeadSizeOverhead = 16 // overhead of poly 1305 authentication tag
+	aeadSizeOverhead = chacha20poly1305.Overhead // overhead of poly 1305 authentication tag
 	aeadKeySize      = chacha20poly1305.KeySize
-	aeadNonceSize    = chacha20poly1305.NonceSize
+	aeadNonceSize    = chacha20poly1305.NonceSizeX
 )
 
 var (

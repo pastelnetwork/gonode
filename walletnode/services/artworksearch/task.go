@@ -9,6 +9,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/thumbnail"
@@ -107,7 +108,11 @@ func (task *Task) run(ctx context.Context) error {
 		pastelConnections = len(task.searchResult)
 	}
 
-	if err := task.thumbnailHelper.Connect(ctx, uint(pastelConnections)); err != nil {
+	if err := task.thumbnailHelper.Connect(ctx, uint(pastelConnections), &alts.SecInfo{
+		PastelID:   task.request.UserPastelID,
+		PassPhrase: task.request.UserPassphrase,
+		Algorithm:  "ed448",
+	}); err != nil {
 		return fmt.Errorf("connect Thumbnail helper : %s", err)
 	}
 

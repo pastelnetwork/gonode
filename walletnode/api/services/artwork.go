@@ -8,16 +8,16 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
-
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
 
 	goahttp "goa.design/goa/v3/http"
 	"goa.design/goa/v3/security"
@@ -228,7 +228,10 @@ func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPa
 	}
 
 	res = toArtworkDetail(ticket)
-	data, err := service.search.GetThumbnail(ctx, ticket)
+	data, err := service.search.GetThumbnail(ctx, ticket, &alts.SecInfo{
+		PastelID:   p.UserPastelID,
+		PassPhrase: p.UserPassphrase,
+		Algorithm:  "ed448"})
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}

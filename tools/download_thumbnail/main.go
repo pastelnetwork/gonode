@@ -55,6 +55,8 @@ func main() {
 
 	var (
 		regNFTTxid = flag.String("regnfttxid", "", "reg NFT txid")
+		pastelID   = flag.String("pastelid", "", "valid user pastelid")
+		passphrase = flag.String("passphase", "", "valid user passhrase")
 	)
 	//flag.Usage = usage
 	flag.Parse()
@@ -68,7 +70,23 @@ func main() {
 
 	endpoint := client.ArtworkGet()
 	// create payload
-	payload, err := cli.BuildArtworkGetPayload(*regNFTTxid)
+	/*
+		body := `{
+			"user_passphrase": "passphrase",
+			"user_pastelid": "jXYX6qAEiQKvTmpLZvNKQuphrzKPLACkx73zo9mE3B1kRQ7sjvnJMit3fHVPGNCY7REwdnVB2H42FaZoG8keAi"
+		  }`
+	*/
+	bodyPayload := &cli.ArtworkGetRequestBody{
+		UserPastelID:   *pastelID,
+		UserPassphrase: *passphrase,
+	}
+	jsonBody, err := json.Marshal(bodyPayload)
+	if err != nil {
+		printError(errors.Wrap(err, "error marshal request body"))
+		return
+	}
+
+	payload, err := cli.BuildArtworkGetPayload(string(jsonBody), *regNFTTxid)
 	if err != nil {
 		printError(errors.Wrap(err, "error creating payload"))
 		return
@@ -100,19 +118,5 @@ func prettyPrint(s interface{}) {
 }
 
 func usage() {
-	fmt.Fprintf(os.Stderr, `%s is a command line client to simulate ui
-
- Usage:
-     %s [-regnfttxid REGARTTXID]
-
-     -regnfttxid    string:  reg NFT tx id
-
- Commands:
- %s
- Additional help:
-    None
-
- Example:
- %s -regnfttxid 7602bf7c95487521c8a8c56a0a45a03438fcfd607a0089942382afd5fd3867c5
- `, os.Args[0], os.Args[0], os.Args[0], os.Args[0])
+	flag.PrintDefaults()
 }

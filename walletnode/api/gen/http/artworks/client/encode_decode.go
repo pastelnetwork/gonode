@@ -555,6 +555,14 @@ func EncodeArtSearchRequest(encoder func(*http.Request) goahttp.Encoder) func(*h
 		if !ok {
 			return goahttp.ErrInvalidType("artworks", "artSearch", "*artworks.ArtSearchPayload", v)
 		}
+		if p.UserPastelid != nil {
+			head := *p.UserPastelid
+			req.Header.Set("user_pastelid", head)
+		}
+		if p.UserPassphrase != nil {
+			head := *p.UserPassphrase
+			req.Header.Set("user_passphrase", head)
+		}
 		values := req.URL.Query()
 		if p.Artist != nil {
 			values.Add("artist", *p.Artist)
@@ -694,6 +702,22 @@ func (c *Client) BuildArtworkGetRequest(ctx context.Context, v interface{}) (*ht
 	}
 
 	return req, nil
+}
+
+// EncodeArtworkGetRequest returns an encoder for requests sent to the artworks
+// artworkGet server.
+func EncodeArtworkGetRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+	return func(req *http.Request, v interface{}) error {
+		p, ok := v.(*artworks.ArtworkGetPayload)
+		if !ok {
+			return goahttp.ErrInvalidType("artworks", "artworkGet", "*artworks.ArtworkGetPayload", v)
+		}
+		body := NewArtworkGetRequestBody(p)
+		if err := encoder(req).Encode(&body); err != nil {
+			return goahttp.ErrEncodingError("artworks", "artworkGet", err)
+		}
+		return nil
+	}
 }
 
 // DecodeArtworkGetResponse returns a decoder for responses returned by the

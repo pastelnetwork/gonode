@@ -6,6 +6,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -84,10 +85,10 @@ func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.
 }
 
 // GetThumbnail gets thumbnail
-func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket) (data []byte, err error) {
+func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegTicket, secInfo *alts.SecInfo) (data []byte, err error) {
 	thumbnailHelper := thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout)
 
-	if err := thumbnailHelper.Connect(ctx, 1); err != nil {
+	if err := thumbnailHelper.Connect(ctx, 1, secInfo); err != nil {
 		return data, fmt.Errorf("connect Thumbnail helper : %s", err)
 	}
 	defer thumbnailHelper.Close()

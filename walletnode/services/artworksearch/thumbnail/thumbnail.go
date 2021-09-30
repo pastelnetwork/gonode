@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/pastel"
 	nodeClient "github.com/pastelnetwork/gonode/walletnode/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch/node"
@@ -20,7 +21,7 @@ const (
 
 // Helper is interface contract for Thumbnail Getter
 type Helper interface {
-	Connect(ctx context.Context, connections uint) error
+	Connect(ctx context.Context, connections uint, secInfo *alts.SecInfo) error
 	Fetch(ctx context.Context, key []byte) ([]byte, error)
 	Close()
 }
@@ -57,7 +58,7 @@ type request struct {
 }
 
 // Connect creates `conncetions` no. of connections with supernode & starts thumbnail request listeners
-func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
+func (t *thumbnailHelper) Connect(ctx context.Context, connections uint, secInfo *alts.SecInfo) error {
 	if connections > maxConnections {
 		return errors.New(maxConnectionsErr)
 	}
@@ -81,7 +82,7 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint) error {
 			break
 		}
 
-		if err := node.Connect(ctx, t.timeOut); err != nil {
+		if err := node.Connect(ctx, t.timeOut, secInfo); err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to connect to master node")
 			continue
 		}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/middleware"
 	"google.golang.org/grpc"
 )
@@ -19,9 +21,11 @@ type service interface {
 
 // Server represents supernode server
 type Server struct {
-	config   *Config
-	services []service
-	name     string
+	config    *Config
+	services  []service
+	name      string
+	secClient alts.SecClient
+	secInfo   *alts.SecInfo
 }
 
 // Run starts the server
@@ -32,6 +36,9 @@ func (server *Server) Run(ctx context.Context) error {
 
 	addresses := strings.Split(server.config.ListenAddresses, ",")
 	grpcServer := server.grpcServer(ctx)
+	if grpcServer == nil {
+		return fmt.Errorf("failed to initialize grpc server")
+	}
 
 	for _, address := range addresses {
 		addr := net.JoinHostPort(strings.TrimSpace(address), strconv.Itoa(server.config.Port))
@@ -71,9 +78,15 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 }
 
 func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
+	if server.secClient == nil || server.secInfo == nil {
+		log.WithContext(ctx).Errorln("secClient or secInfo don't initialize")
+		return nil
+	}
+
 	grpcServer := grpc.NewServer(
 		middleware.UnaryInterceptor(),
 		middleware.StreamInterceptor(),
+		middleware.AltsCredential(server.secClient, server.secInfo),
 	)
 
 	for _, service := range server.services {
@@ -85,10 +98,12 @@ func (server *Server) grpcServer(ctx context.Context) *grpc.Server {
 }
 
 // New returns a new Server instance.
-func New(config *Config, name string, services ...service) *Server {
+func New(config *Config, name string, secClient alts.SecClient, secInfo *alts.SecInfo, services ...service) *Server {
 	return &Server{
-		config:   config,
-		services: services,
-		name:     name,
+		config:    config,
+		secClient: secClient,
+		secInfo:   secInfo,
+		services:  services,
+		name:      name,
 	}
 }
