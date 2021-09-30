@@ -53,19 +53,22 @@ type dupeDetectionFingerprints struct {
 }
 
 type service struct {
-	config       *Config
-	pastelClient pastel.Client
-	p2pClient    p2p.Client
-	db           *db.DB
+	config             *Config
+	pastelClient       pastel.Client
+	p2pClient          p2p.Client
+	db                 *db.DB
+	isMasterNodeSynced bool
 }
 
 // Run starts task
 func (s *service) Run(ctx context.Context) error {
-	ctx = log.ContextWithPrefix(ctx, "dd-service")
+	ctx = log.ContextWithPrefix(ctx, "dd-scan")
 	defer s.db.Close()
 
 	if err := s.waitSynchronization(ctx); err != nil {
-		return errors.Errorf("failed to wait synchronization, err: %w", err)
+		log.WithContext(ctx).WithError(err).Error("failed to initial wait synchronization")
+	} else {
+		s.isMasterNodeSynced = true
 	}
 
 	if err := s.runTask(ctx); err != nil {
@@ -77,11 +80,34 @@ func (s *service) Run(ctx context.Context) error {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(runTaskInterval):
+			// Check if node is synchronized or not
+			if !s.isMasterNodeSynced {
+				if err := s.checkSynchronized(ctx); err != nil {
+					log.WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
+					continue
+				} else {
+					log.WithContext(ctx).Debug("Done for waiting synchronization status")
+					s.isMasterNodeSynced = true
+				}
+			}
 			if err := s.runTask(ctx); err != nil {
 				log.WithContext(ctx).WithError(err).Errorf("runTask() failed")
 			}
 		}
 	}
+}
+
+func (s *service) checkSynchronized(ctx context.Context) error {
+	st, err := s.pastelClient.MasterNodeStatus(ctx)
+	if err != nil {
+		errors.Errorf("get MasterNodeStatus() failed: %w", err)
+	}
+
+	if st.Status == masterNodeSuccessfulStatus {
+		return nil
+	}
+
+	return errors.Errorf("node not synced, status is %s", st.Status)
 }
 
 func (s *service) waitSynchronization(ctx context.Context) error {
@@ -98,11 +124,11 @@ func (s *service) waitSynchronization(ctx context.Context) error {
 		case <-ctx.Done():
 			return errors.Errorf("context done: %w", ctx.Err())
 		case <-time.After(synchronizationIntervalSec * time.Second):
-			st, err := s.pastelClient.MasterNodeStatus(ctx)
+			err := s.checkSynchronized(ctx)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Warn("Failed to get status from master node")
-			} else if st.Status == masterNodeSuccessfulStatus {
-				log.WithContext(ctx).Debug("Done for waiting synchronization status")
+				log.WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
+			} else {
+				log.WithContext(ctx).Info("Done for waiting synchronization status")
 				return nil
 			}
 		case <-timeoutCh:
