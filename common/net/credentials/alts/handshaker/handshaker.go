@@ -5,19 +5,21 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/binary"
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"sync"
 
-	"github.com/GoKillers/libsodium-go/cryptokdf"
 	"github.com/otrv4/ed448"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts/authinfo"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts/conn"
+	"golang.org/x/crypto/hkdf"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -217,6 +219,26 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 	return nil
 }
 
+func keyDerive(secret []byte) ([]byte, error) {
+	hash := sha256.New
+
+	// Create the key derivation function
+	hkdf := hkdf.New(hash, secret, nil, nil)
+
+	// Generate the required keys
+	hkdf1 := make([]byte, 32)
+	if _, err := io.ReadFull(hkdf, hkdf1); err != nil {
+		return nil, err
+	}
+
+	hkdf2 := make([]byte, 32)
+	if _, err := io.ReadFull(hkdf, hkdf2); err != nil {
+		return nil, err
+	}
+
+	return append(hkdf1, hkdf2...), nil
+}
+
 func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.SecClient, secInfo *alts.SecInfo) error {
 	challengeA := make([]byte, challengeSize)
 	rand.Read(challengeA)
@@ -272,22 +294,19 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 
 	// compute the secret key for connection
 	secret := curve.ComputeSecret(priv, response.PubKey)
-	if len(secret) < cryptokdf.CryptoKdfKeybytes() {
-		return fmt.Errorf("secret key length is missmatch, len=%d", len(secret))
-	}
 
+	// derive key
+	derivedKey, err := keyDerive([]byte(secret[:]))
+	if err != nil {
+		return fmt.Errorf("failed to derive key: %w", err)
+	}
 	subkeyLen, ok := recordKeyLen[s.protocol]
 	if !ok {
 		return fmt.Errorf("unknown resulted record protocol: %v", s.protocol)
 	}
 
-	kdfValue, exit := cryptokdf.CryptoKdfDeriveFromKey(subkeyLen, kdfSubKeyID, kdfContext,
-		secret[:cryptokdf.CryptoKdfKeybytes()])
-	if exit != 0 {
-		return fmt.Errorf("failed to compute kdf, exit=%d", exit)
-	}
 	// update the record key
-	s.key = kdfValue
+	s.key = derivedKey[:subkeyLen]
 
 	return nil
 }
@@ -363,22 +382,20 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 
 	// compute the secret key for connection
 	secret := curve.ComputeSecret(priv, request.PubKey)
-	if len(secret) < cryptokdf.CryptoKdfKeybytes() {
-		return fmt.Errorf("secret key length is missmatch, len=%d", len(secret))
-	}
 
+	// derive key
+	derivedKey, err := keyDerive([]byte(secret[:]))
+	if err != nil {
+		return fmt.Errorf("failed to derive key: %w", err)
+	}
 	subkeyLen, ok := recordKeyLen[s.protocol]
 	if !ok {
 		return fmt.Errorf("unknown resulted record protocol: %v", s.protocol)
 	}
 
-	kdfValue, exit := cryptokdf.CryptoKdfDeriveFromKey(subkeyLen, kdfSubKeyID, kdfContext,
-		secret[:cryptokdf.CryptoKdfKeybytes()])
-	if exit != 0 {
-		return fmt.Errorf("failed to compute kdf, exit=%d", exit)
-	}
 	// update the record key
-	s.key = kdfValue
+	s.key = derivedKey[:subkeyLen]
+
 	response := kexExchangeResponse{
 		PubKey:    pub,
 		Signature: signature,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
@@ -31,7 +32,7 @@ func (node *Node) PastelID() string {
 }
 
 // Connect connects to supernode.
-func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
+func (node *Node) Connect(ctx context.Context, timeout time.Duration, secInfo *alts.SecInfo) error {
 	if node.Connection != nil {
 		return nil
 	}
@@ -39,7 +40,7 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration) error {
 	connCtx, connCancel := context.WithTimeout(ctx, timeout)
 	defer connCancel()
 
-	conn, err := node.Client.Connect(connCtx, node.address)
+	conn, err := node.Client.Connect(connCtx, node.address, secInfo)
 	if err != nil {
 		return err
 	}

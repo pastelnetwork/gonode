@@ -4,13 +4,11 @@ go 1.17
 
 require (
 	github.com/DataDog/zstd v1.4.8
-	github.com/GoKillers/libsodium-go v0.0.0-20171022220152-dd733721c3cb
 	github.com/cloudflare/circl v1.0.0
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/go-errors/errors v1.1.1
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
-	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629
 	github.com/makiuchi-d/gozxing v0.0.0-20210610151345-232d6193415d
 	github.com/mattn/go-colorable v0.1.8 // indirect
@@ -28,7 +26,7 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4
+	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
@@ -62,3 +60,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
+
+replace golang.org/x/crypto => github.com/golang/crypto v0.0.0-20210921155107-089bfa567519

@@ -450,7 +450,7 @@ func TestTaskRun(t *testing.T) {
 			nodeClient.Connection.AssertExpectations(t)
 			nodeClient.Client.AssertExpectations(t)
 			nodeClient.DownloadArtwork.AssertExpectations(t)
-			nodeClient.AssertConnectCall(testCase.numConnect, mock.Anything, mock.Anything)
+			nodeClient.AssertConnectCall(testCase.numConnect, mock.Anything, mock.Anything, mock.Anything)
 			nodeClient.AssertDownloadArtworkCall(testCase.numDownLoadArtwork)
 			nodeClient.AssertDownloadCall(testCase.numDownload, mock.Anything, testCase.fields.Ticket.Txid,
 				mock.Anything, string(testCase.args.signature), testCase.args.ttxid)

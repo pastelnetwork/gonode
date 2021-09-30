@@ -206,7 +206,7 @@ func BuildUploadImagePayload(artworksUploadImageBody string) (*artworks.UploadIm
 
 // BuildArtSearchPayload builds the payload for the artworks artSearch endpoint
 // from CLI flags.
-func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimit string, artworksArtSearchQuery string, artworksArtSearchArtistName string, artworksArtSearchArtTitle string, artworksArtSearchSeries string, artworksArtSearchDescr string, artworksArtSearchKeyword string, artworksArtSearchMinCopies string, artworksArtSearchMaxCopies string, artworksArtSearchMinBlock string, artworksArtSearchMaxBlock string, artworksArtSearchMinRarenessScore string, artworksArtSearchMaxRarenessScore string, artworksArtSearchMinNsfwScore string, artworksArtSearchMaxNsfwScore string, artworksArtSearchMinInternetRarenessScore string, artworksArtSearchMaxInternetRarenessScore string) (*artworks.ArtSearchPayload, error) {
+func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimit string, artworksArtSearchQuery string, artworksArtSearchArtistName string, artworksArtSearchArtTitle string, artworksArtSearchSeries string, artworksArtSearchDescr string, artworksArtSearchKeyword string, artworksArtSearchMinCopies string, artworksArtSearchMaxCopies string, artworksArtSearchMinBlock string, artworksArtSearchMaxBlock string, artworksArtSearchMinRarenessScore string, artworksArtSearchMaxRarenessScore string, artworksArtSearchMinNsfwScore string, artworksArtSearchMaxNsfwScore string, artworksArtSearchMinInternetRarenessScore string, artworksArtSearchMaxInternetRarenessScore string, artworksArtSearchUserPastelid string, artworksArtSearchUserPassphrase string) (*artworks.ArtSearchPayload, error) {
 	var err error
 	var artist *string
 	{
@@ -516,6 +516,34 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 			}
 		}
 	}
+	var userPastelid *string
+	{
+		if artworksArtSearchUserPastelid != "" {
+			userPastelid = &artworksArtSearchUserPastelid
+			if userPastelid != nil {
+				err = goa.MergeErrors(err, goa.ValidatePattern("userPastelid", *userPastelid, "^[a-zA-Z0-9]+$"))
+			}
+			if userPastelid != nil {
+				if utf8.RuneCountInString(*userPastelid) < 86 {
+					err = goa.MergeErrors(err, goa.InvalidLengthError("userPastelid", *userPastelid, utf8.RuneCountInString(*userPastelid), 86, true))
+				}
+			}
+			if userPastelid != nil {
+				if utf8.RuneCountInString(*userPastelid) > 86 {
+					err = goa.MergeErrors(err, goa.InvalidLengthError("userPastelid", *userPastelid, utf8.RuneCountInString(*userPastelid), 86, false))
+				}
+			}
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	var userPassphrase *string
+	{
+		if artworksArtSearchUserPassphrase != "" {
+			userPassphrase = &artworksArtSearchUserPassphrase
+		}
+	}
 	v := &artworks.ArtSearchPayload{}
 	v.Artist = artist
 	v.Limit = limit
@@ -535,14 +563,33 @@ func BuildArtSearchPayload(artworksArtSearchArtist string, artworksArtSearchLimi
 	v.MaxNsfwScore = maxNsfwScore
 	v.MinInternetRarenessScore = minInternetRarenessScore
 	v.MaxInternetRarenessScore = maxInternetRarenessScore
+	v.UserPastelid = userPastelid
+	v.UserPassphrase = userPassphrase
 
 	return v, nil
 }
 
 // BuildArtworkGetPayload builds the payload for the artworks artworkGet
 // endpoint from CLI flags.
-func BuildArtworkGetPayload(artworksArtworkGetTxid string) (*artworks.ArtworkGetPayload, error) {
+func BuildArtworkGetPayload(artworksArtworkGetBody string, artworksArtworkGetTxid string) (*artworks.ArtworkGetPayload, error) {
 	var err error
+	var body ArtworkGetRequestBody
+	{
+		err = json.Unmarshal([]byte(artworksArtworkGetBody), &body)
+		if err != nil {
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"user_passphrase\": \"qwerasdf1234\",\n      \"user_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.user_pastelid", body.UserPastelID, "^[a-zA-Z0-9]+$"))
+		if utf8.RuneCountInString(body.UserPastelID) < 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", body.UserPastelID, utf8.RuneCountInString(body.UserPastelID), 86, true))
+		}
+		if utf8.RuneCountInString(body.UserPastelID) > 86 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.user_pastelid", body.UserPastelID, utf8.RuneCountInString(body.UserPastelID), 86, false))
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
 	var txid string
 	{
 		txid = artworksArtworkGetTxid
@@ -556,7 +603,10 @@ func BuildArtworkGetPayload(artworksArtworkGetTxid string) (*artworks.ArtworkGet
 			return nil, err
 		}
 	}
-	v := &artworks.ArtworkGetPayload{}
+	v := &artworks.ArtworkGetPayload{
+		UserPastelID:   body.UserPastelID,
+		UserPassphrase: body.UserPassphrase,
+	}
 	v.Txid = txid
 
 	return v, nil

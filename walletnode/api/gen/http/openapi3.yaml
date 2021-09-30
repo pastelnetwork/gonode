@@ -24,6 +24,15 @@ paths:
           minLength: 64
           maxLength: 64
         example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ArtworkGetRequestBody'
+            example:
+              user_passphrase: qwerasdf1234
+              user_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
       responses:
         "200":
           description: OK response.
@@ -836,6 +845,27 @@ paths:
           minimum: 0
           maximum: 1
         example: 1
+      - name: user_pastelid
+        in: header
+        description: User's PastelID
+        allowEmptyValue: true
+        schema:
+          type: string
+          description: User's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      - name: user_passphrase
+        in: header
+        description: Passphrase of the User PastelID
+        allowEmptyValue: true
+        schema:
+          type: string
+          description: Passphrase of the User PastelID
+          example: qwerasdf1234
+        example: qwerasdf1234
       responses:
         "101":
           description: Switching Protocols response.
@@ -1477,6 +1507,26 @@ components:
       - copies
       - artist_pastelid
       - txid
+    ArtworkGetRequestBody:
+      type: object
+      properties:
+        user_passphrase:
+          type: string
+          description: Passphrase of the User PastelID
+          example: qwerasdf1234
+        user_pastelid:
+          type: string
+          description: User's PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+      example:
+        user_passphrase: qwerasdf1234
+        user_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+      required:
+      - user_pastelid
+      - user_passphrase
     ArtworkSearchResult:
       type: object
       properties:

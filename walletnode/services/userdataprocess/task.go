@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -78,7 +80,12 @@ func (task *Task) run(ctx context.Context) error {
 	// Try to create mesh of supernodes, connecting to all supernodes in a different sequences.
 	var nodes node.List
 	var errs error
-	nodes, err = task.meshNodes(ctx, topNodes, 0) // Connect a mesh node with primary is 1st ranked SN
+	secInfo := &alts.SecInfo{
+		PastelID:   task.request.ArtistPastelID,
+		PassPhrase: task.request.ArtistPastelIDPassphrase,
+		Algorithm:  "ed448",
+	}
+	nodes, err = task.meshNodes(ctx, topNodes, 0, secInfo) // Connect a mesh node with primary is 1st ranked SN
 	if err != nil {
 		if errors.IsContextCanceled(err) {
 			return err
@@ -215,11 +222,11 @@ func (task *Task) AggregateResult(_ context.Context, nodes node.List) (userdata.
 }
 
 // meshNodes establishes communication between supernodes.
-func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex int) (node.List, error) {
+func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex int, secInfo *alts.SecInfo) (node.List, error) {
 	var meshNodes node.List
 
 	primary := nodes[primaryIndex]
-	if err := primary.Connect(ctx, task.config.connectToNodeTimeout); err != nil {
+	if err := primary.Connect(ctx, task.config.connectToNodeTimeout, secInfo); err != nil {
 		return nil, err
 	}
 	if err := primary.Session(ctx, true); err != nil {
@@ -254,7 +261,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 				go func() {
 					defer errors.Recover(log.Fatal)
 
-					if err := node.Connect(ctx, task.config.connectToNodeTimeout); err != nil {
+					if err := node.Connect(ctx, task.config.connectToNodeTimeout, secInfo); err != nil {
 						return
 					}
 					if err := node.Session(ctx, false); err != nil {

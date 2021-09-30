@@ -1,9 +1,11 @@
 package conn
 
 import (
-	"github.com/GoKillers/libsodium-go/crypto/aead/xchacha20poly1305ietf"
+	"crypto/cipher"
+
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pkg/errors"
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 const (
@@ -15,8 +17,9 @@ const (
 type xchacha20poly1305ietfReKey struct {
 	inCounter  Counter
 	outCounter Counter
-	inAEAD     *rekeyAEADChaChaPoly
-	outAEAD    *rekeyAEADChaChaPoly
+	inAEAD     cipher.AEAD
+	outAEAD    cipher.AEAD
+	nonceMask  [chacha20poly1305.NonceSizeX]byte
 }
 
 // NewxChaCha20Poly1305IETFReKey creates an instance that uses chacha20poly1305 with rekeying
@@ -27,53 +30,71 @@ func NewxChaCha20Poly1305IETFReKey(side alts.Side, key []byte) (ALTSRecordCrypto
 	inCounter := NewInCounter(side, overflowLenxChacha20Poly1305IETF)
 	outCounter := NewOutCounter(side, overflowLenxChacha20Poly1305IETF)
 
-	inAEAD, err := newRekeyAEADChaChaPoly(key)
+	if len(key) < chacha20poly1305.KeySize+chacha20poly1305.NonceSizeX {
+		return nil, errors.New("invalid keylength")
+	}
+
+	inAEAD, err := chacha20poly1305.NewX(key[:chacha20poly1305.KeySize])
 	if err != nil {
 		return nil, errors.Wrap(err, "new rekey aead in")
 	}
-	outAEAD, err := newRekeyAEADChaChaPoly(key)
+	outAEAD, err := chacha20poly1305.NewX(key[:chacha20poly1305.KeySize])
 	if err != nil {
 		return nil, errors.Wrap(err, "new rekey aead out")
 	}
 
-	return &xchacha20poly1305ietfReKey{
+	c := &xchacha20poly1305ietfReKey{
 		inCounter:  inCounter,
 		outCounter: outCounter,
 		inAEAD:     inAEAD,
 		outAEAD:    outAEAD,
-	}, nil
+	}
+	copy(c.nonceMask[:], key[chacha20poly1305.KeySize:chacha20poly1305.KeySize+chacha20poly1305.NonceSizeX])
+	return c, nil
 }
 
 func (s *xchacha20poly1305ietfReKey) Encrypt(dst, plaintext []byte) ([]byte, error) {
+	// If we need to allocate an output buffer, we want to include space for
+	// GCM tag to avoid forcing ALTS record to reallocate as well.
+	dlen := len(dst)
+	dst, out := SliceForAppend(dst, len(plaintext)+chacha20poly1305.Overhead)
 	seq, err := s.outCounter.Value()
 	if err != nil {
 		return nil, errors.Wrap(err, "get seq")
 	}
 
-	ec, err := s.outAEAD.Encrypt(plaintext, seq)
-	if err != nil {
-		return nil, errors.Wrap(err, "encrypt")
-	}
-	dst = append(dst, ec...)
+	var nonceBuf [chacha20poly1305.NonceSizeX]byte
+	maskNonce(nonceBuf[:], seq, s.nonceMask[:])
+
+	data := out[:len(plaintext)]
+	copy(data, plaintext) // data may alias plaintext
+
+	// Seal appends the ciphertext and the tag to its first argument and
+	// returns the updated slice. However, SliceForAppend above ensures that
+	// dst has enough capacity to avoid a reallocation and copy due to the
+	// append.
+	dst = s.outAEAD.Seal(dst[:dlen], nonceBuf[:], data, nil)
 	s.outCounter.Inc()
 	return dst, nil
 }
 
 // EncryptionOverhead returns tag size
 func (s *xchacha20poly1305ietfReKey) EncryptionOverhead() int {
-	return xchacha20poly1305ietf.ABytes
+	return chacha20poly1305.Overhead
 }
 
-func (s *xchacha20poly1305ietfReKey) Decrypt(_, ciphertext []byte) ([]byte, error) {
+func (s *xchacha20poly1305ietfReKey) Decrypt(dst, ciphertext []byte) ([]byte, error) {
 	seq, err := s.inCounter.Value()
 	if err != nil {
 		return nil, errors.Wrap(err, "get seq")
 	}
+	var nonceBuf [chacha20poly1305.NonceSizeX]byte
+	maskNonce(nonceBuf[:], seq, s.nonceMask[:])
 
-	p, err := s.inAEAD.Decrypt(ciphertext, seq)
+	plaintext, err := s.inAEAD.Open(dst, nonceBuf[:], ciphertext, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "decrypt")
+		return nil, ErrAuthorize
 	}
 	s.inCounter.Inc()
-	return p, nil
+	return plaintext, nil
 }

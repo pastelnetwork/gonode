@@ -49,8 +49,10 @@ require (
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
+	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.7.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
@@ -83,4 +85,5 @@ replace (
 	github.com/pastelnetwork/gonode/pastel => ../pastel
 	github.com/pastelnetwork/gonode/proto => ../proto
 	github.com/pastelnetwork/gonode/raptorq => ../raptorq
+	golang.org/x/crypto => github.com/golang/crypto v0.0.0-20210921155107-089bfa567519
 )

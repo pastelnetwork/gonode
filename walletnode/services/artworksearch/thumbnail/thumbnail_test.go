@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/pastel"
 
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -56,7 +57,7 @@ func TestConnect(t *testing.T) {
 			pastelClientMock.ListenOnMasterNodesTop(tc.nodesRet, nil)
 			helper := New(pastelClientMock, nodeClientMock, 2*time.Second)
 
-			err := helper.Connect(context.Background(), tc.connections)
+			err := helper.Connect(context.Background(), tc.connections, &alts.SecInfo{})
 			assert.Equal(t, tc.err, err)
 			helper.Close()
 		})
@@ -93,7 +94,7 @@ func TestFetch(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 
 			ctx := context.Background()
-			err := tc.helper.Connect(ctx, tc.connections)
+			err := tc.helper.Connect(ctx, tc.connections, &alts.SecInfo{})
 			assert.Nil(t, err)
 
 			_, err = tc.helper.Fetch(ctx, []byte("key"))

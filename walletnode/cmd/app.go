@@ -130,7 +130,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// Business logic services
 	// ----Artwork Services----
-	nodeClient := grpc.NewClient()
+	nodeClient := grpc.NewClient(pastelClient)
 
 	db := memory.NewKeyValue()
 	fileStorage := fs.NewFileStorage(config.TempDir)
@@ -166,7 +166,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	artworkDownload := artworkdownload.NewService(&config.ArtworkDownload, pastelClient, nodeClient)
 
 	// ----Userdata Services----
-	userdataNodeClient := grpc.NewClient()
+	userdataNodeClient := grpc.NewClient(pastelClient)
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
 	// api service

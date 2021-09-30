@@ -277,10 +277,15 @@ func (c *Client) ArtSearch() goa.Endpoint {
 // service artworkGet server.
 func (c *Client) ArtworkGet() goa.Endpoint {
 	var (
+		encodeRequest  = EncodeArtworkGetRequest(c.encoder)
 		decodeResponse = DecodeArtworkGetResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
 		req, err := c.BuildArtworkGetRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
 		if err != nil {
 			return nil, err
 		}
