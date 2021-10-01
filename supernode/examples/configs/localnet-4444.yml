@@ -26,6 +26,7 @@ metadb:
   http_port: 4041
   raft_port: 4042
   data_dir: "metadb-4444"
+  block_interval: 48
 
 raptorq:
   host: "localhost"

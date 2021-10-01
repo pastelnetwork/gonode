@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
+	"github.com/pastelnetwork/gonode/pastel"
 )
 
 const (
@@ -31,20 +32,22 @@ type MetaDB interface {
 }
 
 type service struct {
-	nodeID     string        // the node id for rqlite cluster
-	config     *Config       // the service configuration
-	db         *store.Store  // the store for accessing the rqlite cluster
-	ready      chan struct{} // mark the rqlite node is started
-	nodeIPList []string
+	nodeID            string        // the node id for rqlite cluster
+	config            *Config       // the service configuration
+	db                *store.Store  // the store for accessing the rqlite cluster
+	ready             chan struct{} // mark the rqlite node is started
+	nodeIPList        []string
+	pastelClient      pastel.Client
+	currentBlockCount int32
 }
 
 // New returns a new service for metadb
-func New(config *Config, nodeID string, nodeIPList []string) MetaDB {
+func New(config *Config, nodeID string, pastelClient pastel.Client) MetaDB {
 	return &service{
-		nodeID:     nodeID,
-		config:     config,
-		ready:      make(chan struct{}, 5),
-		nodeIPList: nodeIPList,
+		nodeID:       nodeID,
+		config:       config,
+		ready:        make(chan struct{}, 5),
+		pastelClient: pastelClient,
 	}
 }
 

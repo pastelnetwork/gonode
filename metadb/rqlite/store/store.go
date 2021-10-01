@@ -336,10 +336,15 @@ func (s *Store) LeaderID() (string, error) {
 	if err != nil {
 		return "", nil
 	}
+
+	return s.GetServerID(addr)
+}
+
+// GetServerID retrieves the server id in the cluster, given the address
+func (s *Store) GetServerID(addr string) (string, error) {
 	configFuture := s.raft.GetConfiguration()
 	if err := configFuture.Error(); err != nil {
-		log.WithContext(s.ctx).WithError(err).Errorf("failed to get raft configuration")
-		return "", err
+		return "", fmt.Errorf("failed to get raft configuration: %s", err)
 	}
 
 	for _, srv := range configFuture.Configuration().Servers {
@@ -347,6 +352,7 @@ func (s *Store) LeaderID() (string, error) {
 			return string(srv.ID), nil
 		}
 	}
+
 	return "", nil
 }
 
@@ -1097,6 +1103,19 @@ func (s *Store) logSize() (int64, error) {
 		return 0, err
 	}
 	return fi.Size(), nil
+}
+
+// TransferLeadership transfers leadership to another server
+func (s *Store) TransferLeadership(serverID, serverAddr string) error {
+	address, _ := s.LeaderAddr()
+	if address != s.Addr() {
+		return ErrNotLeader
+	}
+
+	futureErr := s.raft.LeadershipTransferToServer(raft.ServerID(serverID),
+		raft.ServerAddress(serverAddr))
+
+	return futureErr.Error()
 }
 
 type fsmSnapshot struct {

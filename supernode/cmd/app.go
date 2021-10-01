@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
@@ -55,7 +54,6 @@ var (
 	defaultConfigFile       = filepath.Join(defaultPath, appName+".yml")
 	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
 
-	rqliteDefaultPort = 4446
 	defaultRqFilesDir = filepath.Join(defaultPath, rqFilesDir)
 	defaultDdWorkDir  = filepath.Join(homePath, ddWorkDir)
 )
@@ -147,33 +145,6 @@ func NewApp() *cli.App {
 	return app
 }
 
-func getDatabaseNodes(ctx context.Context, pastelClient pastel.Client) ([]string, error) {
-	var nodeIPList []string
-	// Note: Lock the db clustering feature, run it in single node first
-	if test := sys.GetStringEnv("DB_CLUSTER", ""); test != "" {
-		nodeList, err := pastelClient.MasterNodesList(ctx)
-		if err != nil {
-			return nil, err
-		}
-		for _, nodeInfo := range nodeList {
-			address := nodeInfo.ExtAddress
-			segments := strings.Split(address, ":")
-			if len(segments) != 2 {
-				return nil, errors.Errorf("malformed db node address: %s", address)
-			}
-			nodeAddress := fmt.Sprintf("%s:%d", segments[0], rqliteDefaultPort)
-			nodeIPList = append(nodeIPList, nodeAddress)
-		}
-	}
-
-	// Important notice !!!
-	// Enable this line below to run rqlite with 1 leader and multiple replicas, if want to test the real rqlite cluster behavior
-	// Otherwise, this will run rqlite cluster with every node as a rqlite leader, and data to highest rank SN can write directly to its local rqlite
-	// return []string{"0.0.0.0:4041"}, nil
-
-	return nodeIPList, nil
-}
-
 func runApp(ctx context.Context, config *configs.Config) error {
 	log.WithContext(ctx).Info("Start")
 	defer log.WithContext(ctx).Info("End")
@@ -200,14 +171,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	config.P2P.SetWorkDir(config.WorkDir)
 	p2p := p2p.New(config.P2P, pastelClient)
 
-	nodeIPList, err := getDatabaseNodes(ctx, pastelClient)
-	if err != nil {
-		return err
-	}
-
 	// new metadb service
 	config.MetaDB.SetWorkDir(config.WorkDir)
-	metadb := metadb.New(config.MetaDB, config.Node.PastelID, nodeIPList)
+	metadb := metadb.New(config.MetaDB, config.Node.PastelID, pastelClient)
 	database := database.NewDatabaseOps(metadb, config.UserDB)
 
 	// raptorq client

@@ -28,6 +28,9 @@ type Config struct {
 
 	// data directory for rqlite
 	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
+
+	// BlockInterval is the block interval after which leadership is transferred
+	BlockInterval int32 `mapstructure:"block_interval" json:"block_interval,omitempty"`
 }
 
 // SetWorkDir applies `workDir` to DataDir if it was not specified as an absolute path.
@@ -56,11 +59,16 @@ func (config *Config) Validate() error {
 	if config.DataDir == "" {
 		return fmt.Errorf("%s: %s", errValidationStr, "data_dir")
 	}
+	if config.BlockInterval == 0 {
+		return fmt.Errorf("%s: %s", errValidationStr, "block_interval")
+	}
 
 	return nil
 }
 
 // NewConfig returns a new Config instance.
 func NewConfig() *Config {
-	return &Config{}
+	return &Config{
+		BlockInterval: 48,
+	}
 }

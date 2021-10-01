@@ -11,8 +11,11 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/pastelnetwork/gonode/pastel"
+
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb"
+	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -352,7 +355,9 @@ func (ts *testSuite) SetupSuite() {
 	config.RaftPort = 4004
 	ts.workDir = workDir
 
-	db := metadb.New(config, "uuid", []string{})
+	pastelClientMock := pastelMock.NewMockClient(ts.T())
+	pastelClientMock.ListenOnMasterNodesExtra(pastel.MasterNodes{}, nil)
+	db := metadb.New(config, "uuid", pastelClientMock)
 	ts.ctx, ts.cancel = context.WithCancel(context.Background())
 
 	ts.wg.Add(1)

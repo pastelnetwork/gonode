@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -15,18 +16,20 @@ import (
 )
 
 const (
-	defaultJoinAttempts           = 5
-	defaultJoinInterval           = 5 * time.Second
-	defaultRaftHeartbeatTimeout   = time.Second
-	defaultRaftElectionTimeout    = time.Second
-	defaultRaftApplyTimeout       = 10 * time.Second
-	defaultRaftOpenTimeout        = 60 * time.Second
-	defaultRaftWaitForLeader      = true
-	defaultRaftSnapThreshold      = 8192
-	defaultRaftSnapInterval       = 30 * time.Second
-	defaultRaftLeaderLeaseTimeout = 0 * time.Second
-	defaultCompressionSize        = 150
-	defaultCompressionBatch       = 5
+	defaultJoinAttempts            = 5
+	defaultJoinInterval            = 5 * time.Second
+	defaultRaftHeartbeatTimeout    = time.Second
+	defaultRaftElectionTimeout     = time.Second
+	defaultRaftApplyTimeout        = 10 * time.Second
+	defaultRaftOpenTimeout         = 60 * time.Second
+	defaultRaftWaitForLeader       = true
+	defaultRaftSnapThreshold       = 8192
+	defaultRaftSnapInterval        = 30 * time.Second
+	defaultRaftLeaderLeaseTimeout  = 0 * time.Second
+	defaultCompressionSize         = 150
+	defaultCompressionBatch        = 5
+	defaultCheckLeaderInterval     = 30 * time.Second
+	defaultCheckBlockCountInterval = 30 * time.Second
 )
 
 // wait until the store is in full consensus
@@ -167,6 +170,9 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 // start the rqlite server, and try to join rqlite cluster if the join addresses is not empty
 func (s *service) startServer(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
+	if err := s.setDatabaseNodes(ctx); err != nil {
+		return errors.Errorf("set database nodes failure: %w", err)
+	}
 
 	raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
 	// create internode network mux and configure.
@@ -193,6 +199,9 @@ func (s *service) startServer(ctx context.Context) error {
 		return errors.Errorf("create and open store: %w", err)
 	}
 	s.db = db
+
+	go s.initLeadershipTransferTrigger(ctx, defaultCheckLeaderInterval,
+		defaultCheckBlockCountInterval)
 
 	// wait until the store is in full consensus
 	if err := s.waitForConsensus(ctx, db); err != nil {
@@ -228,5 +237,26 @@ func (s *service) startServer(ctx context.Context) error {
 	}
 
 	log.WithContext(ctx).Info("metadb service is stopped")
+	return nil
+}
+
+func (s *service) setDatabaseNodes(ctx context.Context) error {
+	var nodeIPList []string
+	nodeList, err := s.pastelClient.MasterNodesExtra(ctx)
+	if err != nil {
+		return err
+	}
+
+	for _, nodeInfo := range nodeList {
+		address := nodeInfo.ExtAddress
+		segments := strings.Split(address, ":")
+		if len(segments) != 2 {
+			return errors.Errorf("malformed db node address: %s", address)
+		}
+		nodeAddress := fmt.Sprintf("%s:%d", segments[0], s.config.RaftPort)
+		nodeIPList = append(nodeIPList, nodeAddress)
+	}
+	s.nodeIPList = nodeIPList
+
 	return nil
 }

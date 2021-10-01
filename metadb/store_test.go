@@ -9,6 +9,8 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/pastel"
+	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
@@ -33,10 +35,14 @@ func (ts *testSuite) SetupSuite() {
 	config := NewConfig()
 	config.SetWorkDir(workDir)
 
+	pastelClientMock := pastelMock.NewMockClient(ts.T())
+	pastelClientMock.ListenOnMasterNodesExtra(pastel.MasterNodes{}, nil)
+
 	ts.s = &service{
-		nodeID: "uuid",
-		config: config,
-		ready:  make(chan struct{}, 1),
+		nodeID:       "uuid",
+		config:       config,
+		ready:        make(chan struct{}, 1),
+		pastelClient: pastelClientMock,
 	}
 	ts.ctx, ts.cancel = context.WithCancel(context.Background())
 
