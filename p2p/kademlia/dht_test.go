@@ -3,6 +3,7 @@ package kademlia
 import (
 	"context"
 	"crypto/rand"
+	"encoding/base64"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,8 +11,11 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/otrv4/ed448"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -19,6 +23,45 @@ import (
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/ratelimit"
 )
+
+var TestPri [144]byte
+var TestPub [56]byte
+
+func init() {
+	curve := ed448.NewCurve()
+	// generate the private and public key for client
+	TestPri, TestPub, _ = curve.GenerateKeys()
+}
+
+// FakePastelClient - fake of pastel client to do sign/verify
+type FakePastelClient struct {
+	curve ed448.Curve
+	pri   [144]byte
+	pub   [56]byte
+}
+
+// Sign
+func (c *FakePastelClient) Sign(_ context.Context, data []byte, pastelID, _ string, _ string) ([]byte, error) {
+	signature, ok := c.curve.Sign(c.pri, data)
+	if !ok {
+		return nil, errors.New("sign failed")
+	}
+	signatureStr := base64.StdEncoding.EncodeToString(signature[:])
+	return []byte(signatureStr), nil
+}
+
+// Verify
+func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, pastelID string, _ string) (ok bool, err error) {
+	signatureData, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		return false, errors.Errorf("decode failed %w", err)
+	}
+	var copiedSignature [112]byte
+	copy(copiedSignature[:], signatureData)
+
+	ok = c.curve.Verify(copiedSignature, data, c.pub)
+	return ok, nil
+}
 
 func TestSuite(t *testing.T) {
 	ts := new(testSuite)
@@ -157,7 +200,15 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 	pastelClientMock := pastelMock.NewMockClient(ts.t)
 	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
 
-	dht, err := NewDHT(ts.memStore, pastelClientMock, options)
+	secInfo := &alts.SecInfo{}
+	fakePastelClient := &FakePastelClient{
+		curve: ed448.NewCurve(),
+		pri:   TestPri,
+		pub:   TestPub,
+	}
+	transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
+
+	dht, err := NewDHT(ts.memStore, pastelClientMock, transportCredentials, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -186,7 +237,15 @@ func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []
 	pastelClientMock := pastelMock.NewMockClient(ts.t)
 	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
 
-	dht, err := NewDHT(ts.dbStore, pastelClientMock, options)
+	secInfo := &alts.SecInfo{}
+	fakePastelClient := &FakePastelClient{
+		curve: ed448.NewCurve(),
+		pri:   TestPri,
+		pub:   TestPub,
+	}
+	transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
+
+	dht, err := NewDHT(ts.dbStore, pastelClientMock, transportCredentials, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -352,15 +411,20 @@ func (ts *testSuite) TestStoreWith10Nodes() {
 	}
 	dhts = append(dhts, ts.main)
 
+	// init key and value for one data
+	value := make([]byte, 50*1024)
+	rand.Read(value)
+	key := base58.Encode(ts.main.hashKey(value))
+
 	// store the key and value by main node
-	encodedKey, err := ts.main.Store(ts.ctx, ts.Value)
+	encodedKey, err := ts.main.Store(ts.ctx, value)
 	if err != nil {
 		ts.T().Fatalf("dht store: %v", err)
 	}
-	ts.Equal(ts.Key, encodedKey)
+	ts.Equal(key, encodedKey)
 
 	// verify the value for dht store
-	ts.verifyValue(base58.Decode(encodedKey), ts.Value, dhts...)
+	ts.verifyValue(base58.Decode(encodedKey), value, dhts...)
 }
 
 func (ts *testSuite) TestIterativeFindNode() {

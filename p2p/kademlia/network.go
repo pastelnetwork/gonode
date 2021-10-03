@@ -13,6 +13,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"google.golang.org/grpc/credentials"
 )
 
 const (
@@ -28,14 +29,18 @@ type Network struct {
 	self    *Node             // local node itself
 	limiter ratelimit.Limiter // the rate limit for accept socket
 	done    chan struct{}     // network is stopped
+
+	// For secure connection
+	tpCredentials credentials.TransportCredentials
 }
 
 // NewNetwork returns a network service
-func NewNetwork(dht *DHT, self *Node) (*Network, error) {
+func NewNetwork(dht *DHT, self *Node, tpCredentials credentials.TransportCredentials) (*Network, error) {
 	s := &Network{
-		dht:  dht,
-		self: self,
-		done: make(chan struct{}),
+		dht:           dht,
+		self:          self,
+		done:          make(chan struct{}),
+		tpCredentials: tpCredentials,
 	}
 	// init the rate limiter
 	s.limiter = ratelimit.New(defaultConnRate)
@@ -177,8 +182,22 @@ func (s *Network) handlePing(_ context.Context, message *Message) ([]byte, error
 }
 
 // handle the connection request
-func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
-	defer conn.Close()
+func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
+	var conn net.Conn
+	var err error
+	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("conn:%s->%s", rawConn.LocalAddr(), rawConn.RemoteAddr()))
+	defer rawConn.Close()
+
+	// do secure handshaking
+	if s.tpCredentials != nil {
+		conn, _, err = s.tpCredentials.ServerHandshake(rawConn)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("server secure establish failed")
+			return
+		}
+	} else {
+		conn = rawConn
+	}
 
 	for {
 		select {
@@ -230,13 +249,13 @@ func (s *Network) handleConn(ctx context.Context, conn net.Conn) {
 			}
 			response = encoded
 		default:
-			log.WithContext(ctx).Errorf("impossible: invalid message type: %v", request.MessageType)
+			log.WithContext(ctx).Errorf("invalid message type: %v", request.MessageType)
 			return
 		}
 
 		// write the response
 		if _, err := conn.Write(response); err != nil {
-			log.WithContext(ctx).WithError(err).Error("conn write: failed")
+			log.WithContext(ctx).WithError(err).Error("write failed")
 		}
 	}
 }
@@ -287,17 +306,30 @@ func (s *Network) serve(ctx context.Context) {
 
 // Call sends the request to target and receive the response
 func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) {
+	var conn net.Conn
+	var err error
+
 	remoteAddr := fmt.Sprintf("%s:%d", request.Sender.IP, request.Receiver.Port)
 
 	// dial the remote address with udp network
-	conn, err := utp.DialContext(ctx, remoteAddr)
+	rawConn, err := utp.DialContext(ctx, remoteAddr)
 	if err != nil {
 		return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
 	}
-	defer conn.Close()
+	defer rawConn.Close()
 
 	// set the deadline for read and write
-	conn.SetDeadline(time.Now().Add(defaultConnDeadline))
+	rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
+
+	// do secure handshaking
+	if s.tpCredentials != nil {
+		conn, _, err = s.tpCredentials.ClientHandshake(ctx, "", rawConn)
+		if err != nil {
+			return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
+		}
+	} else {
+		conn = rawConn
+	}
 
 	// encode and send the request message
 	data, err := encode(request)

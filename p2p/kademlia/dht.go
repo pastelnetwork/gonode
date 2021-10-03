@@ -15,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
+	grpcCredentials "google.golang.org/grpc/credentials"
 )
 
 var (
@@ -56,7 +57,7 @@ type Options struct {
 }
 
 // NewDHT returns a new DHT node
-func NewDHT(store Store, pc pastel.Client, options *Options) (*DHT, error) {
+func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.TransportCredentials, options *Options) (*DHT, error) {
 	// validate the options, if it's invalid, set them to default value
 	if options.IP == "" {
 		options.IP = defaultNetworkAddr
@@ -80,7 +81,7 @@ func NewDHT(store Store, pc pastel.Client, options *Options) (*DHT, error) {
 	s.ht = ht
 
 	// new network service for dht
-	network, err := NewNetwork(s, ht.self)
+	network, err := NewNetwork(s, ht.self, tpCredentials)
 	if err != nil {
 		return nil, fmt.Errorf("new network: %v", err)
 	}
