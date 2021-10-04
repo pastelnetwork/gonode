@@ -16,15 +16,6 @@ import (
 
 const defaultConnDeadline = 5 * time.Second
 
-func createSocket(addr string) (*utp.Socket, error) {
-	socket, err := utp.NewSocket("udp", addr)
-	if err != nil {
-		return nil, err
-	}
-
-	return socket, nil
-}
-
 func main() {
 	var (
 		ip   = flag.String("ip", "", "ip of server")
