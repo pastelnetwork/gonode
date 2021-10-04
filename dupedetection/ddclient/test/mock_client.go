@@ -3,8 +3,8 @@ package test
 import (
 	"testing"
 
-	"ddclient"
-	"ddclient/mocks"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
+	"github.com/pastelnetwork/gonode/dupedetection/ddclient/mocks"
 
 	"github.com/stretchr/testify/mock"
 )

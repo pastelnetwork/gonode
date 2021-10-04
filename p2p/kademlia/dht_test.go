@@ -41,7 +41,7 @@ type FakePastelClient struct {
 }
 
 // Sign
-func (c *FakePastelClient) Sign(_ context.Context, data []byte, pastelID, _ string, _ string) ([]byte, error) {
+func (c *FakePastelClient) Sign(_ context.Context, data []byte, _, _ string, _ string) ([]byte, error) {
 	signature, ok := c.curve.Sign(c.pri, data)
 	if !ok {
 		return nil, errors.New("sign failed")
@@ -51,7 +51,7 @@ func (c *FakePastelClient) Sign(_ context.Context, data []byte, pastelID, _ stri
 }
 
 // Verify
-func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, pastelID string, _ string) (ok bool, err error) {
+func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, _ string, _ string) (ok bool, err error) {
 	signatureData, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
 		return false, errors.Errorf("decode failed %w", err)

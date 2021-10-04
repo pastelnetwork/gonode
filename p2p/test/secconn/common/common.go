@@ -15,7 +15,7 @@ const (
 	B64PubKey = "sHOGixUXIYotoEatOPVP1d1151eM0UVGQG/YQcdlwfoxf2BUMk/oCn83xoypAm9RDvnnt/d8hj4="
 )
 
-// GetKeys
+// GetKeys return a couple of (private/public) keys to sign/verify handshake authentication
 func GetKeys() (PriKey [144]byte, PubKey [56]byte) {
 	Priv, err := base64.StdEncoding.DecodeString(B64PriKey)
 	if err != nil {
@@ -32,15 +32,15 @@ func GetKeys() (PriKey [144]byte, PubKey [56]byte) {
 	return
 }
 
-// SecClient
+// SecClient is implemented Sign/Verify functions
 type SecClient struct {
 	Curve ed448.Curve
 	Pri   [144]byte
 	Pub   [56]byte
 }
 
-// Sign
-func (c *SecClient) Sign(_ context.Context, data []byte, pastelID, _ string, _ string) ([]byte, error) {
+// Sign a data
+func (c *SecClient) Sign(_ context.Context, data []byte, _, _ string, _ string) ([]byte, error) {
 	signature, ok := c.Curve.Sign(c.Pri, data)
 	if !ok {
 		return nil, errors.New("sign failed")
@@ -49,8 +49,8 @@ func (c *SecClient) Sign(_ context.Context, data []byte, pastelID, _ string, _ s
 	return []byte(signatureStr), nil
 }
 
-// Verify
-func (c *SecClient) Verify(_ context.Context, data []byte, signature, pastelID string, _ string) (ok bool, err error) {
+// Verify data + signature
+func (c *SecClient) Verify(_ context.Context, data []byte, signature, _ string, _ string) (ok bool, err error) {
 	signatureData, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
 		return false, errors.Errorf("decode failed %w", err)
