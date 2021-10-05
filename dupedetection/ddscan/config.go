@@ -4,9 +4,9 @@ import "path/filepath"
 
 const (
 	// DefaultInputDir that dd-service monitors for the new file to generate fingerprints
-	DefaultInputDir = "dupe_detection_input_files"
+	DefaultInputDir = "input_files"
 	// DefaultOutputDir that dd-service uses to put new fingerprints
-	DefaultOutputDir = "dupe_detection_output_files"
+	DefaultOutputDir = "output_files"
 	// DefaultDataFile that dd-service uses to store fingerprints
 	DefaultDataFile = "dupe_detection_image_fingerprint_database.sqlite"
 	// DefaultSupportDir that dd-service uses for support files

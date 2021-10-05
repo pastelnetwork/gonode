@@ -31,12 +31,12 @@ sudo apt install ./google-chrome-stable_current_amd64.deb
 Then create the following folder structure:
 
 ```
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_input_files/
+mkdir -p /home/$USER/pastel_dupe_detection_service/input_files/
 mkdir -p /home/$USER/pastel_dupe_detection_service/support_files/
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_output_files/
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_processed_files/
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_rare_on_internet/
-mkdir -p /home/$USER/pastel_dupe_detection_service/mobilenet_v2_140_224/
+mkdir -p /home/$USER/pastel_dupe_detection_service/output_files/
+mkdir -p /home/$USER/pastel_dupe_detection_service/processed_files/
+mkdir -p /home/$USER/pastel_dupe_detection_service/rare_on_internet/
+mkdir -p /home/$USER/pastel_dupe_detection_service/support_files/mobilenet_v2_140_224/
 ```
 
 Then, in the "support_files" directory, put the following files:
@@ -54,8 +54,8 @@ input_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_inpu
 support_files_path = /home/$USER/pastel_dupe_detection_service/support_files/
 output_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_output_files/
 processed_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_processed_files/
-internet_rareness_downloaded_images_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_rare_on_internet/
-nsfw_model_path = /home/$USER/pastel_dupe_detection_service/mobilenet_v2_140_224/
+internet_rareness_downloaded_images_path = /home/$USER/pastel_dupe_detection_service/rare_on_internet/
+nsfw_model_path = /home/$USER/pastel_dupe_detection_service/support_files/mobilenet_v2_140_224/
 
 ```
 
