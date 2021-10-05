@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
@@ -42,7 +44,8 @@ func Join(ctx context.Context, srcIP string, joinAddr []string, id, addr string,
 				return j, nil
 			}
 		}
-		log.WithContext(ctx).Warnf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, err.Error(), attemptInterval)
+
+		log.WithContext(ctx).Warnf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, utils.SafeErrStr(err), attemptInterval)
 		time.Sleep(attemptInterval)
 	}
 	log.WithContext(ctx).Errorf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
