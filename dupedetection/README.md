@@ -50,10 +50,10 @@ Then, in the "support_files" directory, put the following files:
 * config.ini
 ```ini
 [DUPEDETECTIONCONFIG]
-input_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_input_files/
+input_files_path = /home/$USER/pastel_dupe_detection_service/input_files/
 support_files_path = /home/$USER/pastel_dupe_detection_service/support_files/
-output_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_output_files/
-processed_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_processed_files/
+output_files_path = /home/$USER/pastel_dupe_detection_service/output_files/
+processed_files_path = /home/$USER/pastel_dupe_detection_service/processed_files/
 internet_rareness_downloaded_images_path = /home/$USER/pastel_dupe_detection_service/rare_on_internet/
 nsfw_model_path = /home/$USER/pastel_dupe_detection_service/support_files/mobilenet_v2_140_224/
 
