@@ -7,6 +7,7 @@ type DiskStatus struct {
 	Free uint64 `json:"free"`
 }
 
+// SafeErrStr returns err string
 func SafeErrStr(err error) string {
 	if err != nil {
 		return err.Error()
