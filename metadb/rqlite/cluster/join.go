@@ -41,9 +41,9 @@ func Join(ctx context.Context, srcIP string, joinAddr []string, id, addr string,
 			j, err = join(ctx, srcIP, a, id, addr, voter, tlsConfig)
 			if err == nil {
 				return j, nil // join success
-			} else {
-				log.WithContext(ctx).Warnf("failed to join at %s: error: %s", a, err.Error())
 			}
+
+			log.WithContext(ctx).Warnf("failed to join at %s: error: %s", a, err.Error())
 		}
 
 		log.WithContext(ctx).Warnf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, utils.SafeErrStr(err), attemptInterval)
