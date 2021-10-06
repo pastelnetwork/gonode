@@ -25,8 +25,10 @@ func (s *service) initLeadershipTransferTrigger(ctx context.Context,
 			// this logic is only for leader, we don't want to exit for loop
 			// as current node can become leader in future
 			if !s.IsLeader() {
+				log.WithContext(ctx).Debug("leadership transfer: non-leader node")
 				break
 			}
+			log.WithContext(ctx).Info("leadership transfer: leader node! Initiaing scheduler")
 
 			count, err := s.pastelClient.GetBlockCount(ctx)
 			if err != nil {
@@ -34,6 +36,7 @@ func (s *service) initLeadershipTransferTrigger(ctx context.Context,
 				break
 			}
 			// store current block count so we may check block interval
+			log.WithContext(ctx).Infof("leadership transfer: initial block count: %d", count)
 			s.currentBlockCount = count
 
 			// this will wait for configured block intervals to pass & then
@@ -55,6 +58,8 @@ func (s *service) leadershipTransfer(ctx context.Context, interval time.Duration
 			if !s.IsLeader() {
 				// so its no longer the leader, go back to initLeadershipTransferTrigger
 				// and wait for itself to become leader
+				log.WithContext(ctx).Info("leadership transfer: node is no longer a leader.")
+
 				return
 			}
 
@@ -63,12 +68,14 @@ func (s *service) leadershipTransfer(ctx context.Context, interval time.Duration
 				log.WithContext(ctx).WithError(err).Error("leadershipTransfer failed to call pastel client BlockCount")
 				break
 			}
+			log.WithContext(ctx).Debugf("leadership transfer: current block count: %d", count)
 
 			// check if configured block inteval has passed
 			if count-s.currentBlockCount < s.config.BlockInterval {
 				// No! so will try again after 5 seconds
 				break
 			}
+			log.WithContext(ctx).Info("leadership transfer: block interval surpass, transferring leadership")
 
 			nodes, err := s.pastelClient.MasterNodesTop(ctx)
 			if err != nil {
@@ -82,6 +89,7 @@ func (s *service) leadershipTransfer(ctx context.Context, interval time.Duration
 				log.WithContext(ctx).WithError(err).Error("leadershipTransfer - getNextLeaderAddress failed")
 				break
 			}
+			log.WithContext(ctx).Infof("leadership transfer: transferring to: %s", address)
 
 			// transfer leadership to the next leader
 			if err := s.db.TransferLeadership(id, address); err != nil {
@@ -92,6 +100,9 @@ func (s *service) leadershipTransfer(ctx context.Context, interval time.Duration
 
 				log.WithContext(ctx).WithError(err).Error("leadershipTransfer - failed to transfer Leadership")
 			} else {
+				log.WithContext(ctx).WithField("next-leader", address).
+					Info("leadership transfer: leadership transfer successful.")
+
 				// we only want to update the count if leadership was transferred successfully
 				// otherwise it will wait again for the block interval to pass while still being leader
 				s.currentBlockCount = count

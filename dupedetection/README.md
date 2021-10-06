@@ -31,15 +31,15 @@ sudo apt install ./google-chrome-stable_current_amd64.deb
 Then create the following folder structure:
 
 ```
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_input_files/
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_support_files/
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_output_files/
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_processed_files/
-mkdir -p /home/$USER/pastel_dupe_detection_service/dupe_detection_rare_on_internet/
-mkdir -p /home/$USER/pastel_dupe_detection_service/mobilenet_v2_140_224/
+mkdir -p /home/$USER/pastel_dupe_detection_service/input_files/
+mkdir -p /home/$USER/pastel_dupe_detection_service/support_files/
+mkdir -p /home/$USER/pastel_dupe_detection_service/output_files/
+mkdir -p /home/$USER/pastel_dupe_detection_service/processed_files/
+mkdir -p /home/$USER/pastel_dupe_detection_service/rare_on_internet/
+mkdir -p /home/$USER/pastel_dupe_detection_service/support_files/mobilenet_v2_140_224/
 ```
 
-Then, in the "dupe_detection_support_files" directory, put the following files:
+Then, in the "support_files" directory, put the following files:
 
 * dupe_detection_image_fingerprint_database.sqlite (download and extract from: https://download.pastel.network/machine-learning/dupe_detection_image_fingerprint_database.zip )
 
@@ -50,12 +50,12 @@ Then, in the "dupe_detection_support_files" directory, put the following files:
 * config.ini
 ```ini
 [DUPEDETECTIONCONFIG]
-input_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_input_files/
-support_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_support_files/
-output_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_output_files/
-processed_files_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_processed_files/
-internet_rareness_downloaded_images_path = /home/$USER/pastel_dupe_detection_service/dupe_detection_rare_on_internet/
-nsfw_model_path = /home/$USER/pastel_dupe_detection_service/mobilenet_v2_140_224/
+input_files_path = /home/$USER/pastel_dupe_detection_service/input_files/
+support_files_path = /home/$USER/pastel_dupe_detection_service/support_files/
+output_files_path = /home/$USER/pastel_dupe_detection_service/output_files/
+processed_files_path = /home/$USER/pastel_dupe_detection_service/processed_files/
+internet_rareness_downloaded_images_path = /home/$USER/pastel_dupe_detection_service/rare_on_internet/
+nsfw_model_path = /home/$USER/pastel_dupe_detection_service/support_files/mobilenet_v2_140_224/
 
 ```
 
@@ -64,7 +64,7 @@ saved model (download and extract from: https://download.pastel.network/machine-
 
 Then create the following environmental variable to store the config.ini path:
 ```
-export DUPEDETECTIONCONFIGPATH=/home/$USER/pastel_dupe_detection_service/dupe_detection_support_files/config.ini
+export DUPEDETECTIONCONFIGPATH=/home/$USER/pastel_dupe_detection_service/support_files/config.ini
 ```
 
 Clone dd-service source: https://github.com/pastelnetwork/dd-service
