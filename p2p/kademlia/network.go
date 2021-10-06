@@ -197,7 +197,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 
 	// do secure handshaking
 	if s.tpCredentials != nil {
-		conn, err = NewSecureServerConn(s.tpCredentials, ctx, rawConn)
+		conn, err = NewSecureServerConn(ctx, s.tpCredentials, rawConn)
 		if err != nil {
 			rawConn.Close()
 			log.WithContext(ctx).WithError(err).Error("server secure establish failed")
@@ -327,7 +327,7 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 		s.connPoolMtx.Lock()
 		conn, err = s.connPool.Get(remoteAddr)
 		if err != nil {
-			conn, err = NewSecureClientConn(s.tpCredentials, ctx, remoteAddr)
+			conn, err = NewSecureClientConn(ctx, s.tpCredentials, remoteAddr)
 			if err != nil {
 				s.connPoolMtx.Unlock()
 				return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
