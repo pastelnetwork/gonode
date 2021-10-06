@@ -166,12 +166,10 @@ func (s *service) initClusterJoin(ctx context.Context, joinAddrs []string, inter
 			if err == nil {
 				log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
 				return
-			} else {
-				err := errors.Errorf("join cluster at %v: %s", joinAddrs, err.Error())
-				log.WithContext(ctx).WithError(err).Error("metdadb join cluster failure")
-				log.WithContext(ctx).Infof("retrying join cluster in %v", interval)
 			}
 
+			err = errors.Errorf("join cluster at %v: %s", joinAddrs, err.Error())
+			log.WithContext(ctx).WithError(err).Errorf("metdadb join cluster failure, retrying in %v s", interval.Seconds())
 		}
 	}
 }
