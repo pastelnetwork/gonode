@@ -16,20 +16,21 @@ import (
 )
 
 const (
-	defaultJoinAttempts            = 5
-	defaultJoinInterval            = 5 * time.Second
-	defaultRaftHeartbeatTimeout    = time.Second
-	defaultRaftElectionTimeout     = time.Second
-	defaultRaftApplyTimeout        = 10 * time.Second
-	defaultRaftOpenTimeout         = 60 * time.Second
-	defaultRaftWaitForLeader       = true
-	defaultRaftSnapThreshold       = 8192
-	defaultRaftSnapInterval        = 30 * time.Second
-	defaultRaftLeaderLeaseTimeout  = 0 * time.Second
-	defaultCompressionSize         = 150
-	defaultCompressionBatch        = 5
-	defaultCheckLeaderInterval     = 30 * time.Second
-	defaultCheckBlockCountInterval = 30 * time.Second
+	defaultJoinAttempts             = 5
+	defaultJoinInterval             = 5 * time.Second
+	defaultRaftHeartbeatTimeout     = time.Second
+	defaultRaftElectionTimeout      = time.Second
+	defaultRaftApplyTimeout         = 10 * time.Second
+	defaultRaftOpenTimeout          = 60 * time.Second
+	defaultRaftWaitForLeader        = true
+	defaultRaftSnapThreshold        = 8192
+	defaultRaftSnapInterval         = 30 * time.Second
+	defaultRaftLeaderLeaseTimeout   = 0 * time.Second
+	defaultCompressionSize          = 150
+	defaultCompressionBatch         = 5
+	defaultCheckLeaderInterval      = 30 * time.Second
+	defaultCheckBlockCountInterval  = 30 * time.Second
+	defaultJoinClusterRetryInterval = 10 * time.Second
 )
 
 // wait until the store is in full consensus
@@ -143,28 +144,36 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 
 	// execute any requested join operation
 	if len(joinIPAddresses) > 0 {
-		log.WithContext(ctx).Infof("join addresses are: %v", joinIPAddresses)
-
-		raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
-		// join rqlite cluster
-		joinAddr, err := cluster.Join(
-			ctx,
-			"",
-			joinIPAddresses,
-			db.ID(),
-			raftAddr,
-			!s.config.NoneVoter,
-			defaultJoinAttempts,
-			defaultJoinInterval,
-			nil,
-		)
-		if err != nil {
-			return nil, errors.Errorf("join cluster at %v: %w", joinIPAddresses, err)
-		}
-		log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
+		go s.initClusterJoin(ctx, joinIPAddresses, defaultJoinClusterRetryInterval)
 	}
 
 	return db, nil
+}
+
+func (s *service) initClusterJoin(ctx context.Context, joinAddrs []string, interval time.Duration) {
+	log.WithContext(ctx).Infof("cluster-join initiated - joining in %v", interval)
+	raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(interval):
+			log.WithContext(ctx).Infof("join addresses are: %v", joinAddrs)
+			// join rqlite cluster
+			joinAddr, err := cluster.Join(ctx, "", joinAddrs, s.db.ID(), raftAddr,
+				!s.config.NoneVoter, defaultJoinAttempts, defaultJoinInterval, nil)
+			if err == nil {
+				log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
+				return
+			} else {
+				err := errors.Errorf("join cluster at %v: %s", joinAddrs, err.Error())
+				log.WithContext(ctx).WithError(err).Error("metdadb join cluster failure")
+				log.WithContext(ctx).Infof("retrying join cluster in %v", interval)
+			}
+
+		}
+	}
 }
 
 // start the rqlite server, and try to join rqlite cluster if the join addresses is not empty
