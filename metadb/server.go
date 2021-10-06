@@ -144,7 +144,7 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 
 	// execute any requested join operation
 	if len(joinIPAddresses) > 0 {
-		go s.initClusterJoin(ctx, joinIPAddresses, defaultJoinClusterRetryInterval)
+		s.initClusterJoin(ctx, joinIPAddresses, defaultJoinClusterRetryInterval)
 	}
 
 	return db, nil
