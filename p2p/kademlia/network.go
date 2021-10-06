@@ -70,6 +70,9 @@ func (s *Network) Start(ctx context.Context) error {
 
 // Stop the network
 func (s *Network) Stop(ctx context.Context) {
+	if s.tpCredentials != nil {
+		s.connPool.Release()
+	}
 	// close the socket
 	if s.socket != nil {
 		if err := s.socket.Close(); err != nil {
@@ -77,9 +80,6 @@ func (s *Network) Stop(ctx context.Context) {
 		}
 	}
 
-	if s.tpCredentials != nil {
-		s.connPool.Release()
-	}
 }
 
 func (s *Network) handleFindNode(_ context.Context, message *Message) ([]byte, error) {
@@ -194,18 +194,20 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 	var conn net.Conn
 	var err error
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("conn:%s->%s", rawConn.LocalAddr(), rawConn.RemoteAddr()))
-	defer rawConn.Close()
 
 	// do secure handshaking
 	if s.tpCredentials != nil {
-		conn, _, err = s.tpCredentials.ServerHandshake(rawConn)
+		conn, err = NewSecureServerConn(s.tpCredentials, ctx, rawConn)
 		if err != nil {
+			rawConn.Close()
 			log.WithContext(ctx).WithError(err).Error("server secure establish failed")
 			return
 		}
 	} else {
 		conn = rawConn
 	}
+
+	defer conn.Close()
 
 	for {
 		select {
@@ -323,24 +325,14 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 	// do secure handshaking
 	if s.tpCredentials != nil {
 		s.connPoolMtx.Lock()
-		conn, rawConn, err = s.connPool.Get(remoteAddr)
+		conn, err = s.connPool.Get(remoteAddr)
 		if err != nil {
-			// dial the remote address with udp network
-			rawConn, err = utp.DialContext(ctx, remoteAddr)
-			if err != nil {
-				s.connPoolMtx.Unlock()
-				return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
-			}
-
-			// set the deadline for read and write
-			rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
-
-			conn, _, err = s.tpCredentials.ClientHandshake(ctx, "", rawConn)
+			conn, err = NewSecureClientConn(s.tpCredentials, ctx, remoteAddr)
 			if err != nil {
 				s.connPoolMtx.Unlock()
 				return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
 			}
-			s.connPool.Add(remoteAddr, conn, rawConn)
+			s.connPool.Add(remoteAddr, conn)
 		}
 		s.connPoolMtx.Unlock()
 	} else {
@@ -360,7 +352,7 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 		if err != nil && s.tpCredentials != nil {
 			s.connPoolMtx.Unlock()
 			defer s.connPoolMtx.Unlock()
-			rawConn.Close()
+			conn.Close()
 			s.connPool.Del(remoteAddr)
 		}
 	}()
