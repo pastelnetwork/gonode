@@ -143,35 +143,46 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 	s.db = db
 
 	// execute any requested join operation
-	if len(joinIPAddresses) > 0 {
-		s.initClusterJoin(ctx, joinIPAddresses, defaultJoinClusterRetryInterval)
+	if len(joinIPAddresses) == 0 {
+		log.WithContext(ctx).Warn("No nearby nodes found. Not joining cluster")
+		return db, nil
+	}
+
+	if err := s.joinCluster(ctx, joinIPAddresses); err == nil {
+		return db, nil
+	}
+
+loop:
+	for {
+		select {
+		case <-ctx.Done():
+			break loop
+		case <-time.After(defaultJoinClusterRetryInterval):
+			err := s.joinCluster(ctx, joinIPAddresses)
+			if err == nil {
+				break loop
+			}
+
+			log.WithContext(ctx).WithError(err).Errorf("metdadb join cluster failure, retrying in %v s", defaultJoinClusterRetryInterval)
+		}
 	}
 
 	return db, nil
 }
 
-func (s *service) initClusterJoin(ctx context.Context, joinAddrs []string, interval time.Duration) {
-	log.WithContext(ctx).Infof("cluster-join initiated - joining in %v", interval)
+func (s *service) joinCluster(ctx context.Context, joinAddrs []string) error {
 	raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
+	log.WithContext(ctx).Infof("join addresses are: %v", joinAddrs)
 
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(interval):
-			log.WithContext(ctx).Infof("join addresses are: %v", joinAddrs)
-			// join rqlite cluster
-			joinAddr, err := cluster.Join(ctx, "", joinAddrs, s.db.ID(), raftAddr,
-				!s.config.NoneVoter, defaultJoinAttempts, defaultJoinInterval, nil)
-			if err == nil {
-				log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
-				return
-			}
-
-			err = errors.Errorf("join cluster at %v: %s", joinAddrs, err.Error())
-			log.WithContext(ctx).WithError(err).Errorf("metdadb join cluster failure, retrying in %v s", interval.Seconds())
-		}
+	// join rqlite cluster
+	joinAddr, err := cluster.Join(ctx, "", joinAddrs, s.db.ID(), raftAddr, !s.config.NoneVoter,
+		defaultJoinAttempts, defaultJoinInterval, nil)
+	if err != nil {
+		return fmt.Errorf("join cluster at %v: %s", joinAddrs, err.Error())
 	}
+
+	log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
+	return nil
 }
 
 // start the rqlite server, and try to join rqlite cluster if the join addresses is not empty
@@ -260,7 +271,7 @@ func (s *service) setDatabaseNodes(ctx context.Context) error {
 		if len(segments) != 2 {
 			return errors.Errorf("malformed db node address: %s", address)
 		}
-		nodeAddress := fmt.Sprintf("%s:%d", segments[0], s.config.RaftPort)
+		nodeAddress := fmt.Sprintf("%s:%d", segments[0], s.config.HTTPPort)
 		nodeIPList = append(nodeIPList, nodeAddress)
 	}
 	s.nodeIPList = nodeIPList
