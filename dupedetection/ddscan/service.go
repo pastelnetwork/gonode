@@ -100,7 +100,11 @@ func (s *service) Run(ctx context.Context) error {
 func (s *service) checkSynchronized(ctx context.Context) error {
 	st, err := s.pastelClient.MasterNodeStatus(ctx)
 	if err != nil {
-		errors.Errorf("get MasterNodeStatus() failed: %w", err)
+		return errors.Errorf("get MasterNodeStatus() failed: %w", err)
+	}
+
+	if st == nil {
+		return errors.New("empty status")
 	}
 
 	if st.Status == masterNodeSuccessfulStatus {
