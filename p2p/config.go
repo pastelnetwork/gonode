@@ -17,12 +17,6 @@ type Config struct {
 	// the local port to listen for connections on
 	Port int `mapstructure:"port" json:"port,omitempty"`
 
-	// ip address to bootstrap
-	BootstrapIP string `mapstructure:"bootstrap_ip" json:"bootstrap_ip,omitempty"`
-
-	// port to bootstrap
-	BootstrapPort int `mapstructure:"bootstrap_port" json:"bootstrap_port,omitempty"`
-
 	// data directory for badger
 	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
 }
