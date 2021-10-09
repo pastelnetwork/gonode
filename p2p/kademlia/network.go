@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/anacrolix/utp"
@@ -32,6 +33,8 @@ type Network struct {
 
 	// For secure connection
 	tpCredentials credentials.TransportCredentials
+	connPool      *ConnPool
+	connPoolMtx   sync.Mutex
 }
 
 // NewNetwork returns a network service
@@ -41,6 +44,7 @@ func NewNetwork(dht *DHT, self *Node, tpCredentials credentials.TransportCredent
 		self:          self,
 		done:          make(chan struct{}),
 		tpCredentials: tpCredentials,
+		connPool:      NewConnPool(),
 	}
 	// init the rate limiter
 	s.limiter = ratelimit.New(defaultConnRate)
@@ -66,12 +70,16 @@ func (s *Network) Start(ctx context.Context) error {
 
 // Stop the network
 func (s *Network) Stop(ctx context.Context) {
+	if s.tpCredentials != nil {
+		s.connPool.Release()
+	}
 	// close the socket
 	if s.socket != nil {
 		if err := s.socket.Close(); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("close socket failed")
 		}
 	}
+
 }
 
 func (s *Network) handleFindNode(_ context.Context, message *Message) ([]byte, error) {
@@ -186,18 +194,20 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 	var conn net.Conn
 	var err error
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("conn:%s->%s", rawConn.LocalAddr(), rawConn.RemoteAddr()))
-	defer rawConn.Close()
 
 	// do secure handshaking
 	if s.tpCredentials != nil {
-		conn, _, err = s.tpCredentials.ServerHandshake(rawConn)
+		conn, err = NewSecureServerConn(ctx, s.tpCredentials, rawConn)
 		if err != nil {
+			rawConn.Close()
 			log.WithContext(ctx).WithError(err).Error("server secure establish failed")
 			return
 		}
 	} else {
 		conn = rawConn
 	}
+
+	defer conn.Close()
 
 	for {
 		select {
@@ -307,29 +317,45 @@ func (s *Network) serve(ctx context.Context) {
 // Call sends the request to target and receive the response
 func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) {
 	var conn net.Conn
+	var rawConn net.Conn
 	var err error
 
 	remoteAddr := fmt.Sprintf("%s:%d", request.Sender.IP, request.Receiver.Port)
 
-	// dial the remote address with udp network
-	rawConn, err := utp.DialContext(ctx, remoteAddr)
-	if err != nil {
-		return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
-	}
-	defer rawConn.Close()
-
-	// set the deadline for read and write
-	rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
-
 	// do secure handshaking
 	if s.tpCredentials != nil {
-		conn, _, err = s.tpCredentials.ClientHandshake(ctx, "", rawConn)
+		s.connPoolMtx.Lock()
+		conn, err = s.connPool.Get(remoteAddr)
 		if err != nil {
-			return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
+			conn, err = NewSecureClientConn(ctx, s.tpCredentials, remoteAddr)
+			if err != nil {
+				s.connPoolMtx.Unlock()
+				return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
+			}
+			s.connPool.Add(remoteAddr, conn)
 		}
+		s.connPoolMtx.Unlock()
 	} else {
+		// dial the remote address with udp network
+		rawConn, err = utp.DialContext(ctx, remoteAddr)
+		if err != nil {
+			return nil, errors.Errorf("dial %q: %w", remoteAddr, err)
+		}
+		defer rawConn.Close()
+
+		// set the deadline for read and write
+		rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
 		conn = rawConn
 	}
+
+	defer func() {
+		if err != nil && s.tpCredentials != nil {
+			s.connPoolMtx.Unlock()
+			defer s.connPoolMtx.Unlock()
+			conn.Close()
+			s.connPool.Del(remoteAddr)
+		}
+	}()
 
 	// encode and send the request message
 	data, err := encode(request)

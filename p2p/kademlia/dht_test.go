@@ -428,7 +428,7 @@ func (ts *testSuite) TestStoreWith10Nodes() {
 }
 
 func (ts *testSuite) TestIterativeFindNode() {
-	start, end := 1, 10
+	start, end := 11, 20
 	// start the nodes
 	dhts, err := ts.startNodes(start, end)
 	if err != nil {
@@ -448,7 +448,7 @@ func (ts *testSuite) TestIterativeFindNode() {
 }
 
 func (ts *testSuite) TestIterativeFindValue() {
-	start, end := 1, 2
+	start, end := 21, 22
 	// start the nodes
 	dhts, err := ts.startNodes(start, end)
 	if err != nil {
@@ -573,7 +573,7 @@ func (ts *testSuite) TestHashKey() {
 }
 
 func (ts *testSuite) TestRateLimiter() {
-	start, end := 10, 20
+	start, end := 23, 32
 	// start 10 nodes
 	dhts, err := ts.startNodes(start, end)
 	if err != nil {
