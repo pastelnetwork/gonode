@@ -40,11 +40,6 @@ func (config *Config) SetWorkDir(workDir string) {
 	}
 }
 
-// GetExposedAddr returns IPv4 or IPv6 Addr along with port
-func (config *Config) GetExposedAddr() string {
-	return fmt.Sprintf("%s:%v", config.ListenAddress, config.HTTPPort)
-}
-
 // Validate metadb configs
 func (config *Config) Validate() error {
 	if config.ListenAddress == "" {

@@ -176,8 +176,16 @@ loop:
 	return db, nil
 }
 
-func (s *service) joinCluster(ctx context.Context, joinAddrs []string) error {
-	raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
+func (s *service) joinCluster(ctx context.Context, joinAddrs []string) (err error) {
+
+	advertisedExternalAddress := s.config.ListenAddress
+	if advertisedExternalAddress == "0.0.0.0" {
+		if advertisedExternalAddress, err = utils.GetExternalIPAddress(); err != nil {
+			return fmt.Errorf("cannot find own external address: %s. Replace 'listen_address: 0.0.0.0' in config for real IP", err.Error())
+		}
+	}
+
+	raftAddr := fmt.Sprintf("%s:%d", advertisedExternalAddress, s.config.RaftPort)
 	log.WithContext(ctx).Infof("join addresses are: %v", joinAddrs)
 
 	// join rqlite cluster
