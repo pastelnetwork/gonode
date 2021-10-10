@@ -1,5 +1,10 @@
 package utils
 
+import (
+	"io/ioutil"
+	"net/http"
+)
+
 // DiskStatus cotains info of disk storage
 type DiskStatus struct {
 	All  uint64 `json:"all"`
@@ -14,4 +19,22 @@ func SafeErrStr(err error) string {
 	}
 
 	return ""
+}
+
+// GetExternalIPAddress returns external IP address
+func GetExternalIPAddress() (externalIP string, err error) {
+
+	resp, err := http.Get("http://ipinfo.io/ip")
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(body), nil
 }

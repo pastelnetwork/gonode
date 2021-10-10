@@ -9,6 +9,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/cluster"
 	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
@@ -114,7 +115,12 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
-	selfAddress := s.config.GetExposedAddr()
+	selfAddress, err := utils.GetExternalIPAddress()
+	if err != nil {
+		return nil, err
+	}
+	selfAddress = fmt.Sprintf("%s:%d", selfAddress, s.config.HTTPPort)
+
 	var joinIPAddresses []string
 	if !s.config.IsLeader {
 		for _, ip := range s.nodeIPList {
