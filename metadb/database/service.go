@@ -118,8 +118,7 @@ func (db *Ops) ReadUserData(ctx context.Context, artistPastelID string) (userdat
 	return dbResult.ToUserData(), nil
 }
 
-// Run run the rqlite database service
-func (db *Ops) Run(ctx context.Context) error {
+func (db *Ops) run(ctx context.Context) error {
 	var err error
 
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
@@ -154,6 +153,15 @@ func (db *Ops) Run(ctx context.Context) error {
 	// block until context is done
 	<-ctx.Done()
 	log.WithContext(ctx).Info("userdata service is stopped")
+	return nil
+}
+
+// Run run the rqlite database service
+func (db *Ops) Run(ctx context.Context) error {
+	if err := db.run(ctx); err != nil {
+		log.WithContext(ctx).WithError(err).Error("error in starting rqlite database service.")
+	}
+
 	return nil
 }
 
