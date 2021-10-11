@@ -167,7 +167,7 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 		case "date", "datetime":
 			// TODO
 		case "array":
-			// FIXME: these follow value is nil, skip it
+			// FIXME: these follow columns are nil, skip them
 			if row[0].Columns[i] == "model_5_image_fingerprint_vector" ||
 				row[0].Columns[i] == "model_6_image_fingerprint_vector" ||
 				row[0].Columns[i] == "model_7_image_fingerprint_vector" {
@@ -176,6 +176,7 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 
 			if values[i] == nil {
 				log.WithContext(ctx).Errorf("nil value at column: %s", row[0].Columns[i])
+				continue
 			}
 
 			b, ok := values[i].([]byte)
