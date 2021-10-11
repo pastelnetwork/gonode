@@ -12,6 +12,7 @@ require (
 	github.com/pastelnetwork/gonode/pastel v0.0.0-20210921141840-854e94914b9b
 	github.com/sbinet/npyio v0.5.2
 	github.com/stretchr/testify v1.7.0
+	gonum.org/v1/gonum v0.8.2
 	google.golang.org/grpc v1.39.0
 	google.golang.org/protobuf v1.27.1
 )
@@ -38,6 +39,7 @@ require (
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -53,7 +55,6 @@ require (
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.6 // indirect
-	gonum.org/v1/gonum v0.8.2 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect

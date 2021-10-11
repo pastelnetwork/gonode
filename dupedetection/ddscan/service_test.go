@@ -50,10 +50,10 @@ func prepareService(t *testing.T) *service {
 	return s
 }
 
-func randFloats(n int) []float32 {
-	res := make([]float32, n)
+func randFloats(n int) []float64 {
+	res := make([]float64, n)
 	for i := range res {
-		res[i] = 0.0 + mrand.Float32()*(0.0-1.0)
+		res[i] = 0.0 + mrand.Float64()*(0.0-1.0)
 	}
 	return res
 }
@@ -203,11 +203,12 @@ func TestRunTaskSuccessful(t *testing.T) {
 
 	// Prepare p2p client
 	fp := randFloats(fingerprintSizeModel)
+
 	fpBuffer := new(bytes.Buffer)
 	_ = binary.Write(fpBuffer, binary.LittleEndian, fp)
 
 	p2pClient := p2pMock.NewMockClient(t)
-	p2pClient.ListenOnRetrieveFingerprints(fpBuffer.Bytes(), nil)
+	p2pClient.ListenOnRetrieve(fpBuffer.Bytes(), nil)
 	s.p2pClient = p2pClient
 
 	err = s.runTask(context.Background())
