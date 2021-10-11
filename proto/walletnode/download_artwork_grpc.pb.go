@@ -163,5 +163,5 @@ var DownloadArtwork_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "walletnode/download_artwork.proto",
+	Metadata: "download_artwork.proto",
 }

@@ -1226,7 +1226,7 @@ func TestTaskSessionNode(t *testing.T) {
 	}
 }
 
-func TestTaskAddPeerArticketSignature(t *testing.T) {
+func TestTaskAddPeerArtTicketSignature(t *testing.T) {
 	type args struct {
 		task           *Task
 		nodeID         string
@@ -1333,7 +1333,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 
 			tc.args.task.peersArtTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
 
-			err := tc.args.task.AddPeerArticketSignature(tc.args.nodeID, []byte{})
+			err := tc.args.task.AddPeerArtTicketSignature(tc.args.nodeID, []byte{})
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

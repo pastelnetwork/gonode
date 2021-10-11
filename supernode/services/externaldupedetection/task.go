@@ -1,4 +1,4 @@
-package artworkregister
+package externaldupedetection
 
 import (
 	"bufio"
@@ -19,7 +19,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
-// Task is the task of registering new artwork.
+// Task is the task of external dupe detection request
 type Task struct {
 	task.Task
 	*Service
@@ -303,7 +303,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.connectedTo == nil)
-		if err = task.signAndSendArtTicket(ctx, task.connectedTo == nil); err != nil {
+		if err = task.signAndSendDDTicket(ctx, task.connectedTo == nil); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("failed to signed and send NFT ticket")
 			err = errors.Errorf("failed to signed and send NFT ticket")
 			return nil
@@ -423,7 +423,7 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 }
 
 // sign and send NFT ticket if not primary
-func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) error {
+func (task *Task) signAndSendDDTicket(ctx context.Context, isPrimary bool) error {
 	ticket, err := pastel.EncodeNFTTicket(task.Ticket)
 	if err != nil {
 		return errors.Errorf("failed to serialize NFT ticket %w", err)
@@ -434,7 +434,7 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 	}
 	if !isPrimary {
 		log.WithContext(ctx).Debug("send signed articket to primary node")
-		if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, task.config.PastelID, task.ownSignature); err != nil {
+		if err := task.connectedTo.ExternalDupeDetection.SendDDTicketSignature(ctx, task.config.PastelID, task.ownSignature); err != nil {
 			return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.connectedTo.ID, task.connectedTo.Address, err)
 		}
 	}

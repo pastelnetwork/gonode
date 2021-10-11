@@ -7,6 +7,7 @@ package node
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
@@ -26,6 +27,8 @@ type Connection interface {
 	RegisterArtwork() RegisterArtwork
 	// ProcessUserdata returns a new ProcessUserdata stream.
 	ProcessUserdata() ProcessUserdata
+	// ExternalDupeDetection returns a new ExternalDupeDetection stream.
+	ExternalDupeDetection() ExternalDupeDetection
 }
 
 // RegisterArtwork represents an interaction stream with supernodes for registering artwork.
@@ -48,4 +51,13 @@ type ProcessUserdata interface {
 	SendUserdataToPrimary(ctx context.Context, dataSigned userdata.SuperNodeRequest) (userdata.SuperNodeReply, error)
 	// Send userdata to supernode with leader rqlite
 	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.ProcessRequestSigned) (userdata.SuperNodeReply, error)
+}
+
+type ExternalDupeDetection interface {
+	// SessID returns the taskID received from the server during the handshake.
+	SessID() (taskID string)
+	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
+	Session(ctx context.Context, nodeID, sessID string) (err error)
+	// Send signature of ticket to primary supernode
+	SendDDTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }

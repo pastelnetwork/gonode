@@ -15,18 +15,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type registerArtwork struct {
+type externalDupeDetection struct {
 	conn   *clientConn
-	client pb.RegisterArtworkClient
+	client pb.ExternalDupeDetectionClient
 	sessID string
 }
 
-func (service *registerArtwork) SessID() string {
+func (service *externalDupeDetection) SessID() string {
 	return service.sessID
 }
 
-// Session implements node.RegisterArtwork.Session()
-func (service *registerArtwork) Session(ctx context.Context, nodeID, sessID string) error {
+// Session implements node.ExternalDupeDetection.Session()
+func (service *externalDupeDetection) Session(ctx context.Context, nodeID, sessID string) error {
 	service.sessID = sessID
 
 	ctx = service.contextWithLogPrefix(ctx)
@@ -71,10 +71,10 @@ func (service *registerArtwork) Session(ctx context.Context, nodeID, sessID stri
 	return nil
 }
 
-func (service *registerArtwork) SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
+func (service *externalDupeDetection) SendDDTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
-	_, err := service.client.SendArtTicketSignature(ctx, &pb.SendTicketSignatureRequest{
+	_, err := service.client.SendDDTicketSignature(ctx, &pb.SendTicketSignatureRequest{
 		NodeID:    nodeID,
 		Signature: signature,
 	})
@@ -82,18 +82,18 @@ func (service *registerArtwork) SendArtTicketSignature(ctx context.Context, node
 	return err
 }
 
-func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {
+func (service *externalDupeDetection) contextWithMDSessID(ctx context.Context) context.Context {
 	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
-func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
+func (service *externalDupeDetection) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {
-	return &registerArtwork{
+func newExternalDupeDetection(conn *clientConn) node.ExternalDupeDetection {
+	return &externalDupeDetection{
 		conn:   conn,
-		client: pb.NewRegisterArtworkClient(conn),
+		client: pb.NewExternalDupeDetectionClient(conn),
 	}
 }

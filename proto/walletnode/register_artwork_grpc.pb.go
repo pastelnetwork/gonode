@@ -470,5 +470,5 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "walletnode/register_artwork.proto",
+	Metadata: "register_artwork.proto",
 }

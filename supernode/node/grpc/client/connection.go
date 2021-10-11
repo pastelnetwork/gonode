@@ -23,6 +23,11 @@ func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)
 }
 
+// ExternalDupeDetection implements node.Connection.ExternalDupeDetection()
+func (conn *clientConn) ExternalDupeDetection() node.ExternalDupeDetection {
+	return newExternalDupeDetection(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),
