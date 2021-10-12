@@ -14,6 +14,9 @@ type Config struct {
 	// Let this instance be the leader
 	IsLeader bool `mapstructure:"is_leader" json:"is_leader,omitempty"`
 
+	// Let this instance be the leader
+	LeaderAddress string `mapstructure:"leader_address" json:"leader_address,omitempty"`
+
 	// None voter node
 	NoneVoter bool `mapstructure:"none_voter" json:"none_voter,omitempty"`
 
