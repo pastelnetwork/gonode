@@ -11,6 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/metadb"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
@@ -118,8 +119,7 @@ func (db *Ops) ReadUserData(ctx context.Context, artistPastelID string) (userdat
 	return dbResult.ToUserData(), nil
 }
 
-// Run run the rqlite database service
-func (db *Ops) Run(ctx context.Context) error {
+func (db *Ops) run(ctx context.Context) error {
 	var err error
 
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
@@ -155,6 +155,20 @@ func (db *Ops) Run(ctx context.Context) error {
 	<-ctx.Done()
 	log.WithContext(ctx).Info("userdata service is stopped")
 	return nil
+}
+
+// Run run the rqlite database service
+func (db *Ops) Run(ctx context.Context) error {
+	for {
+		if err := db.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			log.WithContext(ctx).WithError(err).Error("error in starting rqlite database service, retrying.")
+		} else {
+			return nil
+		}
+	}
 }
 
 // NewDatabaseOps return the Ops

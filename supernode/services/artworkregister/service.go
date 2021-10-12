@@ -3,6 +3,8 @@ package artworkregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -33,8 +35,8 @@ type Service struct {
 	ddClient     ddclient.DDServerClient
 }
 
-// Run starts task
-func (service *Service) Run(ctx context.Context) error {
+// run starts task
+func (service *Service) run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if service.config.PastelID == "" {
@@ -49,6 +51,22 @@ func (service *Service) Run(ctx context.Context) error {
 		return service.Worker.Run(ctx)
 	})
 	return group.Wait()
+}
+
+// Run starts task
+func (service *Service) Run(ctx context.Context) error {
+	for {
+		if err := service.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			service.Worker = task.NewWorker()
+			log.WithContext(ctx).WithError(err).Error("run artwork register failure, retrying")
+
+		} else {
+			return nil
+		}
+	}
 }
 
 // Task returns the task of the registration artwork by the given id.
