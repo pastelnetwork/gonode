@@ -3,6 +3,8 @@ package userdataprocess
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -27,6 +29,22 @@ type Service struct {
 
 // Run starts task
 func (service *Service) Run(ctx context.Context) error {
+	for {
+		if err := service.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+
+			service.Worker = task.NewWorker()
+			log.WithContext(ctx).WithError(err).Error("failed to run userdata process, retrying.")
+		} else {
+			return nil
+		}
+	}
+}
+
+// run starts task
+func (service *Service) run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if service.config.PastelID == "" {

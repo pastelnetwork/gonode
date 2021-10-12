@@ -35,6 +35,20 @@ type p2p struct {
 
 // Run the kademlia network
 func (s *p2p) Run(ctx context.Context) error {
+	for {
+		if err := s.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			log.WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
+		} else {
+			return nil
+		}
+	}
+}
+
+// run the kademlia network
+func (s *p2p) run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	// configure the kademlia dht for p2p service

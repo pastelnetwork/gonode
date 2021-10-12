@@ -11,6 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/metadb"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
@@ -158,11 +159,16 @@ func (db *Ops) run(ctx context.Context) error {
 
 // Run run the rqlite database service
 func (db *Ops) Run(ctx context.Context) error {
-	if err := db.run(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("error in starting rqlite database service.")
+	for {
+		if err := db.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			log.WithContext(ctx).WithError(err).Error("error in starting rqlite database service, retrying.")
+		} else {
+			return nil
+		}
 	}
-
-	return nil
 }
 
 // NewDatabaseOps return the Ops
