@@ -20,16 +20,14 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PingRequest struct {
+type StatusRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
-
-	Msg string `protobuf:"bytes,1,opt,name=msg,proto3" json:"msg,omitempty"`
 }
 
-func (x *PingRequest) Reset() {
-	*x = PingRequest{}
+func (x *StatusRequest) Reset() {
+	*x = StatusRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_healthcheck_healthcheck_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -37,13 +35,13 @@ func (x *PingRequest) Reset() {
 	}
 }
 
-func (x *PingRequest) String() string {
+func (x *StatusRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PingRequest) ProtoMessage() {}
+func (*StatusRequest) ProtoMessage() {}
 
-func (x *PingRequest) ProtoReflect() protoreflect.Message {
+func (x *StatusRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_healthcheck_healthcheck_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -55,28 +53,21 @@ func (x *PingRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PingRequest.ProtoReflect.Descriptor instead.
-func (*PingRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use StatusRequest.ProtoReflect.Descriptor instead.
+func (*StatusRequest) Descriptor() ([]byte, []int) {
 	return file_healthcheck_healthcheck_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *PingRequest) GetMsg() string {
-	if x != nil {
-		return x.Msg
-	}
-	return ""
-}
-
-type PingReply struct {
+type StatusReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Reply string `protobuf:"bytes,1,opt,name=reply,proto3" json:"reply,omitempty"`
+	StatusInJson string `protobuf:"bytes,1,opt,name=status_in_json,json=statusInJson,proto3" json:"status_in_json,omitempty"`
 }
 
-func (x *PingReply) Reset() {
-	*x = PingReply{}
+func (x *StatusReply) Reset() {
+	*x = StatusReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_healthcheck_healthcheck_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -84,13 +75,13 @@ func (x *PingReply) Reset() {
 	}
 }
 
-func (x *PingReply) String() string {
+func (x *StatusReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*PingReply) ProtoMessage() {}
+func (*StatusReply) ProtoMessage() {}
 
-func (x *PingReply) ProtoReflect() protoreflect.Message {
+func (x *StatusReply) ProtoReflect() protoreflect.Message {
 	mi := &file_healthcheck_healthcheck_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -102,16 +93,204 @@ func (x *PingReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PingReply.ProtoReflect.Descriptor instead.
-func (*PingReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use StatusReply.ProtoReflect.Descriptor instead.
+func (*StatusReply) Descriptor() ([]byte, []int) {
 	return file_healthcheck_healthcheck_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *PingReply) GetReply() string {
+func (x *StatusReply) GetStatusInJson() string {
 	if x != nil {
-		return x.Reply
+		return x.StatusInJson
 	}
 	return ""
+}
+
+type P2PSetRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (x *P2PSetRequest) Reset() {
+	*x = P2PSetRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_healthcheck_healthcheck_proto_msgTypes[2]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *P2PSetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*P2PSetRequest) ProtoMessage() {}
+
+func (x *P2PSetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_healthcheck_healthcheck_proto_msgTypes[2]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use P2PSetRequest.ProtoReflect.Descriptor instead.
+func (*P2PSetRequest) Descriptor() ([]byte, []int) {
+	return file_healthcheck_healthcheck_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *P2PSetRequest) GetValue() []byte {
+	if x != nil {
+		return x.Value
+	}
+	return nil
+}
+
+type P2PSetReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+}
+
+func (x *P2PSetReply) Reset() {
+	*x = P2PSetReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_healthcheck_healthcheck_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *P2PSetReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*P2PSetReply) ProtoMessage() {}
+
+func (x *P2PSetReply) ProtoReflect() protoreflect.Message {
+	mi := &file_healthcheck_healthcheck_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use P2PSetReply.ProtoReflect.Descriptor instead.
+func (*P2PSetReply) Descriptor() ([]byte, []int) {
+	return file_healthcheck_healthcheck_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *P2PSetReply) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type P2PGetRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Key string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+}
+
+func (x *P2PGetRequest) Reset() {
+	*x = P2PGetRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_healthcheck_healthcheck_proto_msgTypes[4]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *P2PGetRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*P2PGetRequest) ProtoMessage() {}
+
+func (x *P2PGetRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_healthcheck_healthcheck_proto_msgTypes[4]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use P2PGetRequest.ProtoReflect.Descriptor instead.
+func (*P2PGetRequest) Descriptor() ([]byte, []int) {
+	return file_healthcheck_healthcheck_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *P2PGetRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type P2PGetReply struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Value []byte `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (x *P2PGetReply) Reset() {
+	*x = P2PGetReply{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_healthcheck_healthcheck_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *P2PGetReply) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*P2PGetReply) ProtoMessage() {}
+
+func (x *P2PGetReply) ProtoReflect() protoreflect.Message {
+	mi := &file_healthcheck_healthcheck_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use P2PGetReply.ProtoReflect.Descriptor instead.
+func (*P2PGetReply) Descriptor() ([]byte, []int) {
+	return file_healthcheck_healthcheck_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *P2PGetReply) GetValue() []byte {
+	if x != nil {
+		return x.Value
+	}
+	return nil
 }
 
 var File_healthcheck_healthcheck_proto protoreflect.FileDescriptor
@@ -119,20 +298,37 @@ var File_healthcheck_healthcheck_proto protoreflect.FileDescriptor
 var file_healthcheck_healthcheck_proto_rawDesc = []byte{
 	0x0a, 0x1d, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2f, 0x68, 0x65,
 	0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
-	0x0b, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x22, 0x1f, 0x0a, 0x0b,
-	0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6d,
-	0x73, 0x67, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6d, 0x73, 0x67, 0x22, 0x21, 0x0a,
-	0x09, 0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x72, 0x65,
-	0x70, 0x6c, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x72, 0x65, 0x70, 0x6c, 0x79,
-	0x32, 0x47, 0x0a, 0x0b, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x12,
-	0x38, 0x0a, 0x04, 0x50, 0x69, 0x6e, 0x67, 0x12, 0x18, 0x2e, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68,
-	0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e, 0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
-	0x74, 0x1a, 0x16, 0x2e, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e,
-	0x50, 0x69, 0x6e, 0x67, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x70, 0x61, 0x73, 0x74, 0x65, 0x6c, 0x6e, 0x65,
-	0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x67, 0x6f, 0x6e, 0x6f, 0x64, 0x65, 0x2f, 0x70, 0x72, 0x6f,
-	0x74, 0x6f, 0x2f, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x62, 0x06,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x0b, 0x68, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x22, 0x0f, 0x0a, 0x0d,
+	0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x33, 0x0a,
+	0x0b, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x24, 0x0a, 0x0e,
+	0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x5f, 0x69, 0x6e, 0x5f, 0x6a, 0x73, 0x6f, 0x6e, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x09, 0x52, 0x0c, 0x73, 0x74, 0x61, 0x74, 0x75, 0x73, 0x49, 0x6e, 0x4a, 0x73,
+	0x6f, 0x6e, 0x22, 0x25, 0x0a, 0x0d, 0x50, 0x32, 0x50, 0x53, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75,
+	0x65, 0x73, 0x74, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0c, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x1f, 0x0a, 0x0b, 0x50, 0x32, 0x50,
+	0x53, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x22, 0x21, 0x0a, 0x0d, 0x50, 0x32,
+	0x50, 0x47, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6b,
+	0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x22, 0x23, 0x0a,
+	0x0b, 0x50, 0x32, 0x50, 0x47, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x14, 0x0a, 0x05,
+	0x76, 0x61, 0x6c, 0x75, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x05, 0x76, 0x61, 0x6c,
+	0x75, 0x65, 0x32, 0xcd, 0x01, 0x0a, 0x0b, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x43, 0x68, 0x65,
+	0x63, 0x6b, 0x12, 0x3e, 0x0a, 0x06, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x1a, 0x2e, 0x68,
+	0x65, 0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75,
+	0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x68, 0x65, 0x61, 0x6c, 0x74,
+	0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x52, 0x65, 0x70,
+	0x6c, 0x79, 0x12, 0x3e, 0x0a, 0x06, 0x50, 0x32, 0x50, 0x53, 0x65, 0x74, 0x12, 0x1a, 0x2e, 0x68,
+	0x65, 0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e, 0x50, 0x32, 0x50, 0x53, 0x65,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x68, 0x65, 0x61, 0x6c, 0x74,
+	0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e, 0x50, 0x32, 0x50, 0x53, 0x65, 0x74, 0x52, 0x65, 0x70,
+	0x6c, 0x79, 0x12, 0x3e, 0x0a, 0x06, 0x50, 0x32, 0x50, 0x47, 0x65, 0x74, 0x12, 0x1a, 0x2e, 0x68,
+	0x65, 0x61, 0x6c, 0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e, 0x50, 0x32, 0x50, 0x47, 0x65,
+	0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x18, 0x2e, 0x68, 0x65, 0x61, 0x6c, 0x74,
+	0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x2e, 0x50, 0x32, 0x50, 0x47, 0x65, 0x74, 0x52, 0x65, 0x70,
+	0x6c, 0x79, 0x42, 0x33, 0x5a, 0x31, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d,
+	0x2f, 0x70, 0x61, 0x73, 0x74, 0x65, 0x6c, 0x6e, 0x65, 0x74, 0x77, 0x6f, 0x72, 0x6b, 0x2f, 0x67,
+	0x6f, 0x6e, 0x6f, 0x64, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x68, 0x65, 0x61, 0x6c,
+	0x74, 0x68, 0x63, 0x68, 0x65, 0x63, 0x6b, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -147,16 +343,24 @@ func file_healthcheck_healthcheck_proto_rawDescGZIP() []byte {
 	return file_healthcheck_healthcheck_proto_rawDescData
 }
 
-var file_healthcheck_healthcheck_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_healthcheck_healthcheck_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_healthcheck_healthcheck_proto_goTypes = []interface{}{
-	(*PingRequest)(nil), // 0: healthcheck.PingRequest
-	(*PingReply)(nil),   // 1: healthcheck.PingReply
+	(*StatusRequest)(nil), // 0: healthcheck.StatusRequest
+	(*StatusReply)(nil),   // 1: healthcheck.StatusReply
+	(*P2PSetRequest)(nil), // 2: healthcheck.P2PSetRequest
+	(*P2PSetReply)(nil),   // 3: healthcheck.P2PSetReply
+	(*P2PGetRequest)(nil), // 4: healthcheck.P2PGetRequest
+	(*P2PGetReply)(nil),   // 5: healthcheck.P2PGetReply
 }
 var file_healthcheck_healthcheck_proto_depIdxs = []int32{
-	0, // 0: healthcheck.HealthCheck.Ping:input_type -> healthcheck.PingRequest
-	1, // 1: healthcheck.HealthCheck.Ping:output_type -> healthcheck.PingReply
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	0, // 0: healthcheck.HealthCheck.Status:input_type -> healthcheck.StatusRequest
+	2, // 1: healthcheck.HealthCheck.P2PSet:input_type -> healthcheck.P2PSetRequest
+	4, // 2: healthcheck.HealthCheck.P2PGet:input_type -> healthcheck.P2PGetRequest
+	1, // 3: healthcheck.HealthCheck.Status:output_type -> healthcheck.StatusReply
+	3, // 4: healthcheck.HealthCheck.P2PSet:output_type -> healthcheck.P2PSetReply
+	5, // 5: healthcheck.HealthCheck.P2PGet:output_type -> healthcheck.P2PGetReply
+	3, // [3:6] is the sub-list for method output_type
+	0, // [0:3] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -169,7 +373,7 @@ func file_healthcheck_healthcheck_proto_init() {
 	}
 	if !protoimpl.UnsafeEnabled {
 		file_healthcheck_healthcheck_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PingRequest); i {
+			switch v := v.(*StatusRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -181,7 +385,55 @@ func file_healthcheck_healthcheck_proto_init() {
 			}
 		}
 		file_healthcheck_healthcheck_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*PingReply); i {
+			switch v := v.(*StatusReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_healthcheck_healthcheck_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*P2PSetRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_healthcheck_healthcheck_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*P2PSetReply); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_healthcheck_healthcheck_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*P2PGetRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_healthcheck_healthcheck_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*P2PGetReply); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -199,7 +451,7 @@ func file_healthcheck_healthcheck_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_healthcheck_healthcheck_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

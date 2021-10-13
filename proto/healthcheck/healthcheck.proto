@@ -5,14 +5,35 @@ option go_package = "github.com/pastelnetwork/gonode/proto/healthcheck";
 package healthcheck;
 
 service HealthCheck {
-    // ConnectTo requests to connect to the primary supernode.
-    rpc Ping(PingRequest) returns (PingReply);
+    // rpc get overview status of service
+    rpc Status(StatusRequest) returns (StatusReply);
+    
+    // Set a data to p2p
+    rpc P2PSet(P2PSetRequest) returns (P2PSetReply);
+
+    // Get a key from p2p
+    rpc P2PGet(P2PGetRequest) returns (P2PGetReply);
+
     //  TODO : add new ping requests to check dependencies like p2p, rqserice, pastel,...
 }
 
-message PingRequest {
-    string msg = 1;
+message StatusRequest {
 }
-message PingReply {
-    string reply = 1;
+
+message StatusReply {
+    string status_in_json = 1;
+}
+
+message P2PSetRequest {
+    bytes value = 1;
+}
+message P2PSetReply {
+    string key = 1;
+}
+
+message P2PGetRequest {
+    string key = 1;
+}
+message P2PGetReply {
+    bytes value = 1;
 }

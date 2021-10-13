@@ -18,8 +18,12 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HealthCheckClient interface {
-	// ConnectTo requests to connect to the primary supernode.
-	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingReply, error)
+	// rpc get overview status of service
+	Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusReply, error)
+	// Set a data to p2p
+	P2PSet(ctx context.Context, in *P2PSetRequest, opts ...grpc.CallOption) (*P2PSetReply, error)
+	// Get a key from p2p
+	P2PGet(ctx context.Context, in *P2PGetRequest, opts ...grpc.CallOption) (*P2PGetReply, error)
 }
 
 type healthCheckClient struct {
@@ -30,9 +34,27 @@ func NewHealthCheckClient(cc grpc.ClientConnInterface) HealthCheckClient {
 	return &healthCheckClient{cc}
 }
 
-func (c *healthCheckClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingReply, error) {
-	out := new(PingReply)
-	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/Ping", in, out, opts...)
+func (c *healthCheckClient) Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusReply, error) {
+	out := new(StatusReply)
+	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/Status", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *healthCheckClient) P2PSet(ctx context.Context, in *P2PSetRequest, opts ...grpc.CallOption) (*P2PSetReply, error) {
+	out := new(P2PSetReply)
+	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/P2PSet", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *healthCheckClient) P2PGet(ctx context.Context, in *P2PGetRequest, opts ...grpc.CallOption) (*P2PGetReply, error) {
+	out := new(P2PGetReply)
+	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/P2PGet", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -43,8 +65,12 @@ func (c *healthCheckClient) Ping(ctx context.Context, in *PingRequest, opts ...g
 // All implementations must embed UnimplementedHealthCheckServer
 // for forward compatibility
 type HealthCheckServer interface {
-	// ConnectTo requests to connect to the primary supernode.
-	Ping(context.Context, *PingRequest) (*PingReply, error)
+	// rpc get overview status of service
+	Status(context.Context, *StatusRequest) (*StatusReply, error)
+	// Set a data to p2p
+	P2PSet(context.Context, *P2PSetRequest) (*P2PSetReply, error)
+	// Get a key from p2p
+	P2PGet(context.Context, *P2PGetRequest) (*P2PGetReply, error)
 	mustEmbedUnimplementedHealthCheckServer()
 }
 
@@ -52,8 +78,14 @@ type HealthCheckServer interface {
 type UnimplementedHealthCheckServer struct {
 }
 
-func (UnimplementedHealthCheckServer) Ping(context.Context, *PingRequest) (*PingReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
+func (UnimplementedHealthCheckServer) Status(context.Context, *StatusRequest) (*StatusReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
+}
+func (UnimplementedHealthCheckServer) P2PSet(context.Context, *P2PSetRequest) (*P2PSetReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method P2PSet not implemented")
+}
+func (UnimplementedHealthCheckServer) P2PGet(context.Context, *P2PGetRequest) (*P2PGetReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method P2PGet not implemented")
 }
 func (UnimplementedHealthCheckServer) mustEmbedUnimplementedHealthCheckServer() {}
 
@@ -68,20 +100,56 @@ func RegisterHealthCheckServer(s grpc.ServiceRegistrar, srv HealthCheckServer) {
 	s.RegisterService(&HealthCheck_ServiceDesc, srv)
 }
 
-func _HealthCheck_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
+func _HealthCheck_Status_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StatusRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(HealthCheckServer).Ping(ctx, in)
+		return srv.(HealthCheckServer).Status(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/healthcheck.HealthCheck/Ping",
+		FullMethod: "/healthcheck.HealthCheck/Status",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HealthCheckServer).Ping(ctx, req.(*PingRequest))
+		return srv.(HealthCheckServer).Status(ctx, req.(*StatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HealthCheck_P2PSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(P2PSetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HealthCheckServer).P2PSet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/healthcheck.HealthCheck/P2PSet",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HealthCheckServer).P2PSet(ctx, req.(*P2PSetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _HealthCheck_P2PGet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(P2PGetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HealthCheckServer).P2PGet(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/healthcheck.HealthCheck/P2PGet",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HealthCheckServer).P2PGet(ctx, req.(*P2PGetRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -94,8 +162,16 @@ var HealthCheck_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*HealthCheckServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Ping",
-			Handler:    _HealthCheck_Ping_Handler,
+			MethodName: "Status",
+			Handler:    _HealthCheck_Status_Handler,
+		},
+		{
+			MethodName: "P2PSet",
+			Handler:    _HealthCheck_P2PSet_Handler,
+		},
+		{
+			MethodName: "P2PGet",
+			Handler:    _HealthCheck_P2PGet_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

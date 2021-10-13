@@ -237,7 +237,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewDownloadArtwork(artworkDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
-		healthcheck.NewHealthCheck(statsMngr),
+		healthcheck.NewHealthCheck(statsMngr, p2p),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
