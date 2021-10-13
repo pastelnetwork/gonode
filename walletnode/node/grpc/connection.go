@@ -28,6 +28,10 @@ func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)
 }
 
+func (conn *clientConn) ExternalDupeDetection() node.ExternalDupeDetection {
+	return newExternalDupeDetection(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

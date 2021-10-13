@@ -58,6 +58,6 @@ type ExternalDupeDetection interface {
 	SessID() (taskID string)
 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
 	Session(ctx context.Context, nodeID, sessID string) (err error)
-	// Send signature of ticket to primary supernode
-	SendDDTicketSignature(ctx context.Context, nodeID string, signature []byte) error
+	// SendEDDTicketSignature Send signature of ticket to primary supernode
+	SendEDDTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }

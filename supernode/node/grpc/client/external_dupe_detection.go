@@ -71,10 +71,10 @@ func (service *externalDupeDetection) Session(ctx context.Context, nodeID, sessI
 	return nil
 }
 
-func (service *externalDupeDetection) SendDDTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
+func (service *externalDupeDetection) SendEDDTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
-	_, err := service.client.SendDDTicketSignature(ctx, &pb.SendTicketSignatureRequest{
+	_, err := service.client.SendEDDTicketSignature(ctx, &pb.SendTicketSignatureRequest{
 		NodeID:    nodeID,
 		Signature: signature,
 	})

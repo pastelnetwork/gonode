@@ -34,6 +34,8 @@ type Connection interface {
 	DownloadArtwork() DownloadArtwork
 	// ProcessUserdata returns a new ProcessUserdata stream.
 	ProcessUserdata() ProcessUserdata
+	// ExternalDupeDetection returns a new ExternalDupeDetection stream.
+	ExternalDupeDetection() ExternalDupeDetection
 }
 
 // RegisterArtwork contains methods for registering artwork.
@@ -77,4 +79,24 @@ type ProcessUserdata interface {
 	SendUserdata(ctx context.Context, request *userdata.ProcessRequestSigned) (result *userdata.ProcessResult, err error)
 	// ReceiveUserdata get user specified data from supernode
 	ReceiveUserdata(ctx context.Context, userpastelid string) (result *userdata.ProcessRequest, err error)
+}
+
+// ExternalDupeDetection contains methods for registering artwork.
+type ExternalDupeDetection interface {
+	// SessID returns the sessID received from the server during the handshake.
+	SessID() (sessID string)
+	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.
+	Session(ctx context.Context, IsPrimary bool) (err error)
+	// AcceptedNodes requests information about connected secondary nodes.
+	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
+	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
+	ConnectTo(ctx context.Context, nodeKey, sessID string) error
+	// ProbeImage uploads image to supernode.
+	ProbeImage(ctx context.Context, image *artwork.File) (rep *pastel.FingerAndScores, err error)
+	// UploadImageImage uploads the image with pqsignature to supernodes
+	UploadImage(ctx context.Context, image *artwork.File) error
+	// SendSignedEDDTicket send a reg-art ticket signed by cNode to SuperNode
+	SendSignedEDDTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
+	// SendPreBurnedFeeEDDTxId send TxId of the transaction in which 10% of registration fee is preburned
+	SendPreBurnedFeeEDDTxId(ctx context.Context, txid string) (string, error)
 }

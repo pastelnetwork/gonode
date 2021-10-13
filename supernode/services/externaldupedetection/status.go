@@ -11,7 +11,7 @@ const (
 	// Process
 	StatusConnected
 	StatusImageProbed
-	StatusImageAndThumbnailCoordinateUploaded
+	StatusImageUploaded
 	StatusRegistrationFeeCalculated
 
 	// Final
@@ -20,15 +20,15 @@ const (
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted:                         "Task started",
-	StatusPrimaryMode:                         "Primary Mode",
-	StatusSecondaryMode:                       "Secondary Mode",
-	StatusConnected:                           "Connected",
-	StatusImageProbed:                         "Image Probed",
-	StatusImageAndThumbnailCoordinateUploaded: "Imaged And Thumbnail Coordinate Uploaded",
-	StatusRegistrationFeeCalculated:           "Registration Fee Caculated",
-	StatusTaskCanceled:                        "Task Canceled",
-	StatusTaskCompleted:                       "Task Completed",
+	StatusTaskStarted:               "Task started",
+	StatusPrimaryMode:               "Primary Mode",
+	StatusSecondaryMode:             "Secondary Mode",
+	StatusConnected:                 "Connected",
+	StatusImageProbed:               "Image Probed",
+	StatusImageUploaded:             "Imaged Uploaded",
+	StatusRegistrationFeeCalculated: "Registration Fee Caculated",
+	StatusTaskCanceled:              "Task Canceled",
+	StatusTaskCompleted:             "Task Completed",
 }
 
 // Status represents status of the task

@@ -259,3 +259,7 @@ func (client *Client) AssertVerifyCall(expectedCalls int, arguments ...interface
 	client.AssertNumberOfCalls(client.t, VerifyMethod, expectedCalls)
 	return client
 }
+
+func newMockClient() pastel.Client {
+	return &Client{}
+}

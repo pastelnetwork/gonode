@@ -22,8 +22,8 @@ type ExternalDupeDetectionClient interface {
 	// to connect to. The stream is used by the parties to inform each other about
 	// the cancellation of the task.
 	Session(ctx context.Context, opts ...grpc.CallOption) (ExternalDupeDetection_SessionClient, error)
-	// SendDDTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-	SendDDTicketSignature(ctx context.Context, in *SendTicketSignatureRequest, opts ...grpc.CallOption) (*SendTicketSignatureReply, error)
+	// SendEDDTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
+	SendEDDTicketSignature(ctx context.Context, in *SendTicketSignatureRequest, opts ...grpc.CallOption) (*SendTicketSignatureReply, error)
 }
 
 type externalDupeDetectionClient struct {
@@ -65,9 +65,9 @@ func (x *externalDupeDetectionSessionClient) Recv() (*SessionReply, error) {
 	return m, nil
 }
 
-func (c *externalDupeDetectionClient) SendDDTicketSignature(ctx context.Context, in *SendTicketSignatureRequest, opts ...grpc.CallOption) (*SendTicketSignatureReply, error) {
+func (c *externalDupeDetectionClient) SendEDDTicketSignature(ctx context.Context, in *SendTicketSignatureRequest, opts ...grpc.CallOption) (*SendTicketSignatureReply, error) {
 	out := new(SendTicketSignatureReply)
-	err := c.cc.Invoke(ctx, "/supernode.ExternalDupeDetection/SendDDTicketSignature", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/supernode.ExternalDupeDetection/SendEDDTicketSignature", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +82,8 @@ type ExternalDupeDetectionServer interface {
 	// to connect to. The stream is used by the parties to inform each other about
 	// the cancellation of the task.
 	Session(ExternalDupeDetection_SessionServer) error
-	// SendDDTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-	SendDDTicketSignature(context.Context, *SendTicketSignatureRequest) (*SendTicketSignatureReply, error)
+	// SendEDDTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
+	SendEDDTicketSignature(context.Context, *SendTicketSignatureRequest) (*SendTicketSignatureReply, error)
 	mustEmbedUnimplementedExternalDupeDetectionServer()
 }
 
@@ -94,8 +94,8 @@ type UnimplementedExternalDupeDetectionServer struct {
 func (UnimplementedExternalDupeDetectionServer) Session(ExternalDupeDetection_SessionServer) error {
 	return status.Errorf(codes.Unimplemented, "method Session not implemented")
 }
-func (UnimplementedExternalDupeDetectionServer) SendDDTicketSignature(context.Context, *SendTicketSignatureRequest) (*SendTicketSignatureReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendDDTicketSignature not implemented")
+func (UnimplementedExternalDupeDetectionServer) SendEDDTicketSignature(context.Context, *SendTicketSignatureRequest) (*SendTicketSignatureReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendEDDTicketSignature not implemented")
 }
 func (UnimplementedExternalDupeDetectionServer) mustEmbedUnimplementedExternalDupeDetectionServer() {}
 
@@ -136,20 +136,20 @@ func (x *externalDupeDetectionSessionServer) Recv() (*SessionRequest, error) {
 	return m, nil
 }
 
-func _ExternalDupeDetection_SendDDTicketSignature_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ExternalDupeDetection_SendEDDTicketSignature_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendTicketSignatureRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExternalDupeDetectionServer).SendDDTicketSignature(ctx, in)
+		return srv.(ExternalDupeDetectionServer).SendEDDTicketSignature(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/supernode.ExternalDupeDetection/SendDDTicketSignature",
+		FullMethod: "/supernode.ExternalDupeDetection/SendEDDTicketSignature",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExternalDupeDetectionServer).SendDDTicketSignature(ctx, req.(*SendTicketSignatureRequest))
+		return srv.(ExternalDupeDetectionServer).SendEDDTicketSignature(ctx, req.(*SendTicketSignatureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -162,8 +162,8 @@ var ExternalDupeDetection_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ExternalDupeDetectionServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "SendDDTicketSignature",
-			Handler:    _ExternalDupeDetection_SendDDTicketSignature_Handler,
+			MethodName: "SendEDDTicketSignature",
+			Handler:    _ExternalDupeDetection_SendEDDTicketSignature_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

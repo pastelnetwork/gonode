@@ -12,8 +12,8 @@ service ExternalDupeDetection {
     // the cancellation of the task.
     rpc Session(stream SessionRequest) returns(stream SessionReply);
 
-    // SendDDTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-    rpc SendDDTicketSignature(SendTicketSignatureRequest) returns (SendTicketSignatureReply);
+    // SendEDDTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
+    rpc SendEDDTicketSignature(SendTicketSignatureRequest) returns (SendTicketSignatureReply);
 }
 
 message ExternalDupeDetectionReply {}

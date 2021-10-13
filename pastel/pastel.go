@@ -115,6 +115,15 @@ type Client interface {
 	// Return txid of transaction
 	RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error)
 
+	// GetRegisterExDDFee return fee of ticket
+	// Command `gettotalstoragefee ...`
+	GetRegisterExDDFee(ctx context.Context, request GetRegisterExDDFeeRequest) (int64, error)
+
+	// RegisterExDDTicket register an ExDD ticket
+	// Command `tickets register edd ...`
+	// Return txid of transaction
+	RegisterExDDTicket(ctx context.Context, request RegisterExDDRequest) (string, error)
+
 	// RegisterActTicket activates an registered NFT ticket
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
 	// Return txid of NFTActivateTicket

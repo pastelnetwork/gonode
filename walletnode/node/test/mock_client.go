@@ -65,17 +65,19 @@ type Client struct {
 	*mocks.RegisterArtwork
 	*mocks.DownloadArtwork
 	*mocks.ProcessUserdata
+	*mocks.ExternalDupeDetection
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:               t,
-		Client:          &mocks.Client{},
-		Connection:      &mocks.Connection{},
-		RegisterArtwork: &mocks.RegisterArtwork{},
-		DownloadArtwork: &mocks.DownloadArtwork{},
-		ProcessUserdata: &mocks.ProcessUserdata{},
+		t:                     t,
+		Client:                &mocks.Client{},
+		Connection:            &mocks.Connection{},
+		RegisterArtwork:       &mocks.RegisterArtwork{},
+		DownloadArtwork:       &mocks.DownloadArtwork{},
+		ProcessUserdata:       &mocks.ProcessUserdata{},
+		ExternalDupeDetection: &mocks.ExternalDupeDetection{},
 	}
 }
 
