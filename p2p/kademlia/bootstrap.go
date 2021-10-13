@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -19,6 +21,12 @@ const (
 
 // ConfigureBootstrapNodes connects with pastel client & gets p2p boostrap ip & port
 func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
+	selfAddress, err := utils.GetExternalIPAddress()
+	if err != nil {
+		return fmt.Errorf("get external ip addr: %s", err)
+	}
+	selfAddress = fmt.Sprintf("%s:%d", selfAddress, s.options.Port)
+
 	get := func(ctx context.Context, f func(context.Context) (pastel.MasterNodes, error)) (string, error) {
 		mns, err := f(ctx)
 		if err != nil {
@@ -26,15 +34,20 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 		}
 
 		for _, mn := range mns {
-			if mn.ExtP2P != "" {
-				if _, err := s.cache.Get(mn.ExtP2P); err == nil {
-					log.WithContext(ctx).WithField("addr", mn.ExtP2P).Info("configure: skip bad p2p boostrap addr")
-
-					continue
-				}
-
-				return mn.ExtP2P, nil
+			if mn.ExtP2P == "" {
+				continue
 			}
+
+			if mn.ExtP2P == selfAddress {
+				continue
+			}
+
+			if _, err := s.cache.Get(mn.ExtP2P); err == nil {
+				log.WithContext(ctx).WithField("addr", mn.ExtP2P).Info("configure: skip bad p2p boostrap addr")
+				continue
+			}
+
+			return mn.ExtP2P, nil
 		}
 
 		return "", nil

@@ -9,6 +9,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/cluster"
 	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
@@ -114,7 +115,12 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
-	selfAddress := s.config.GetExposedAddr()
+	selfAddress, err := utils.GetExternalIPAddress()
+	if err != nil {
+		return nil, err
+	}
+	selfAddress = fmt.Sprintf("%s:%d", selfAddress, s.config.HTTPPort)
+
 	var joinIPAddresses []string
 	if !s.config.IsLeader {
 		for _, ip := range s.nodeIPList {
@@ -170,8 +176,16 @@ loop:
 	return db, nil
 }
 
-func (s *service) joinCluster(ctx context.Context, joinAddrs []string) error {
-	raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
+func (s *service) joinCluster(ctx context.Context, joinAddrs []string) (err error) {
+
+	advertisedExternalAddress := s.config.ListenAddress
+	if advertisedExternalAddress == "0.0.0.0" {
+		if advertisedExternalAddress, err = utils.GetExternalIPAddress(); err != nil {
+			return fmt.Errorf("cannot find own external address: %s. Replace 'listen_address: 0.0.0.0' in config for real IP", err.Error())
+		}
+	}
+
+	raftAddr := fmt.Sprintf("%s:%d", advertisedExternalAddress, s.config.RaftPort)
 	log.WithContext(ctx).Infof("join addresses are: %v", joinAddrs)
 
 	// join rqlite cluster

@@ -3,19 +3,19 @@ package ddscan
 import (
 	"bytes"
 	"context"
-	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/sbinet/npyio"
+	"gonum.org/v1/gonum/mat"
 )
 
 type Service interface {
@@ -37,7 +37,7 @@ const (
 	fingerprintSizeModel             = 10048
 	masterNodeSuccessfulStatus       = "Masternode successfully started"
 	getLatestFingerprintStatement    = `SELECT * FROM image_hash_to_image_fingerprint_table ORDER BY datetime_fingerprint_added_to_database DESC LIMIT 1`
-	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector) VALUES("%s", '%s', '%s', '%s', '%s')`
+	insertFingerprintStatement       = `INSERT INTO image_hash_to_image_fingerprint_table(sha256_hash_of_art_image_file, model_1_image_fingerprint_vector, model_2_image_fingerprint_vector, model_3_image_fingerprint_vector, model_4_image_fingerprint_vector) VALUES(?,?,?,?,?)`
 	getNumberOfFingerprintsStatement = `SELECT COUNT(*) FROM image_hash_to_image_fingerprint_table`
 )
 
@@ -46,10 +46,10 @@ type dupeDetectionFingerprints struct {
 	PathToArtImageFile                 string    `json:"path_to_art_image_file,omitempty"`
 	NumberOfBlock                      int       `json:"number_of_block,omitempty"`
 	DatetimeFingerprintAddedToDatabase time.Time `json:"datetime_fingerprint_added_to_database,omitempty"`
-	Model1ImageFingerprintVector       []float32 `json:"model_1_image_fingerprint_vector,omitempty"`
-	Model2ImageFingerprintVector       []float32 `json:"model_2_image_fingerprint_vector,omitempty"`
-	Model3ImageFingerprintVector       []float32 `json:"model_3_image_fingerprint_vector,omitempty"`
-	Model4ImageFingerprintVector       []float32 `json:"model_4_image_fingerprint_vector,omitempty"`
+	Model1ImageFingerprintVector       []float64 `json:"model_1_image_fingerprint_vector,omitempty"`
+	Model2ImageFingerprintVector       []float64 `json:"model_2_image_fingerprint_vector,omitempty"`
+	Model3ImageFingerprintVector       []float64 `json:"model_3_image_fingerprint_vector,omitempty"`
+	Model4ImageFingerprintVector       []float64 `json:"model_4_image_fingerprint_vector,omitempty"`
 }
 
 type service struct {
@@ -58,6 +58,15 @@ type service struct {
 	p2pClient          p2p.Client
 	db                 *db.DB
 	isMasterNodeSynced bool
+}
+
+func toFloat64Array(data []float32) []float64 {
+	ret := make([]float64, len(data))
+	for idx, value := range data {
+		ret[idx] = float64(value)
+	}
+
+	return ret
 }
 
 // Run starts task
@@ -100,7 +109,11 @@ func (s *service) Run(ctx context.Context) error {
 func (s *service) checkSynchronized(ctx context.Context) error {
 	st, err := s.pastelClient.MasterNodeStatus(ctx)
 	if err != nil {
-		errors.Errorf("get MasterNodeStatus() failed: %w", err)
+		return errors.Errorf("get MasterNodeStatus() failed: %w", err)
+	}
+
+	if st == nil {
+		return errors.New("empty status")
 	}
 
 	if st.Status == masterNodeSuccessfulStatus {
@@ -154,25 +167,33 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 		case "date", "datetime":
 			// TODO
 		case "array":
-			str, ok := values[i].(string)
+			// FIXME: these follow columns are nil, skip them
+			if row[0].Columns[i] == "model_5_image_fingerprint_vector" ||
+				row[0].Columns[i] == "model_6_image_fingerprint_vector" ||
+				row[0].Columns[i] == "model_7_image_fingerprint_vector" {
+				continue
+			}
+
+			if values[i] == nil {
+				log.WithContext(ctx).Errorf("nil value at column: %s", row[0].Columns[i])
+				continue
+			}
+
+			b, ok := values[i].([]byte)
 			if !ok {
 				log.WithContext(ctx).Errorf("failed to get str from npy, columns: %s", row[0].Columns[i])
 				continue
 			}
 
-			b, err := hex.DecodeString(str)
-			if err != nil {
-				log.WithContext(ctx).WithError(err).Errorf("Failed to hex decode npy str, columns: %s", row[0].Columns[i])
-				continue
-			}
-
+			// even the shape if these should be Nx1, but for reading, we convert it into 1xN array
 			f := bytes.NewBuffer(b)
 
-			var fp []float32
+			var fp []float64
 			if err := npyio.Read(f, &fp); err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float32")
+				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float64")
 				continue
 			}
+
 			resultStr[row[0].Columns[i]] = fp
 		default:
 			resultStr[row[0].Columns[i]] = values[i]
@@ -193,12 +214,14 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 }
 
 func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFingerprints) error {
-	encodeFloat2Npy := func(v []float32) (string, error) {
+	encodeFloat2Npy := func(v []float64) ([]byte, error) {
+		// create numpy matrix Nx1
+		m := mat.NewDense(len(v), 1, v)
 		f := bytes.NewBuffer(nil)
-		if err := npyio.Write(f, v); err != nil {
-			return "", errors.Errorf("failed to encode to npy, err: %w", err)
+		if err := npyio.Write(f, m); err != nil {
+			return nil, errors.Errorf("failed to encode to npy, err: %w", err)
 		}
-		return hex.EncodeToString(f.Bytes()), nil
+		return f.Bytes(), nil
 	}
 
 	fp1, err := encodeFloat2Npy(input.Model1ImageFingerprintVector)
@@ -221,8 +244,42 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 		return err
 	}
 
-	statement := fmt.Sprintf(insertFingerprintStatement, input.Sha256HashOfArtImageFile, fp1, fp2, fp3, fp4)
-	_, err = s.db.ExecuteStringStmt(statement)
+	req := &command.Request{
+		Statements: []*command.Statement{
+			{
+				Sql: insertFingerprintStatement,
+				Parameters: []*command.Parameter{
+					{
+						Value: &command.Parameter_S{
+							S: input.Sha256HashOfArtImageFile,
+						},
+					},
+					{
+						Value: &command.Parameter_Y{
+							Y: fp1,
+						},
+					},
+					{
+						Value: &command.Parameter_Y{
+							Y: fp2,
+						},
+					},
+					{
+						Value: &command.Parameter_Y{
+							Y: fp3,
+						},
+					},
+					{
+						Value: &command.Parameter_Y{
+							Y: fp4,
+						},
+					},
+				},
+			},
+		},
+	}
+
+	_, err = s.db.Execute(req, false)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
 	}
@@ -277,6 +334,7 @@ func (s *service) runTask(ctx context.Context) error {
 		}
 
 		fingerprint, err := pastel.FingerprintFromBytes(fingerprintFromBytes)
+
 		if err != nil {
 			log.WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to convert fingerprint")
 			continue
@@ -288,22 +346,24 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		model1ImageFingerprintVector := make([]float32, fingerprintSizeModel1)
-		model2ImageFingerprintVector := make([]float32, fingerprintSizeModel2)
-		model3ImageFingerprintVector := make([]float32, fingerprintSizeModel3)
-		model4ImageFingerprintVector := make([]float32, fingerprintSizeModel4)
+		fingerprint64 := toFloat64Array(fingerprint)
+
+		model1ImageFingerprintVector := make([]float64, fingerprintSizeModel1)
+		model2ImageFingerprintVector := make([]float64, fingerprintSizeModel2)
+		model3ImageFingerprintVector := make([]float64, fingerprintSizeModel3)
+		model4ImageFingerprintVector := make([]float64, fingerprintSizeModel4)
 
 		start, end := 0, fingerprintSizeModel1
-		copy(model1ImageFingerprintVector, fingerprint[start:end])
+		copy(model1ImageFingerprintVector, fingerprint64[start:end])
 
 		start, end = start+fingerprintSizeModel1, end+fingerprintSizeModel2
-		copy(model2ImageFingerprintVector, fingerprint[start:end])
+		copy(model2ImageFingerprintVector, fingerprint64[start:end])
 
 		start, end = start+fingerprintSizeModel2, end+fingerprintSizeModel3
-		copy(model3ImageFingerprintVector, fingerprint[start:end])
+		copy(model3ImageFingerprintVector, fingerprint64[start:end])
 
 		start, end = start+fingerprintSizeModel3, end+fingerprintSizeModel4
-		copy(model4ImageFingerprintVector, fingerprint[start:end])
+		copy(model4ImageFingerprintVector, fingerprint64[start:end])
 
 		if err := s.storeFingerprint(ctx, &dupeDetectionFingerprints{
 			Sha256HashOfArtImageFile:           fingerprintsHash,
