@@ -23,7 +23,7 @@ type HealthCheck struct {
 	pb.UnimplementedHealthCheckServer
 }
 
-// Ping will send a message to and get back a reply from supernode
+// Status will send a message to and get back a reply from supernode
 func (service *HealthCheck) Status(ctx context.Context, _ *pb.StatusRequest) (*pb.StatusReply, error) {
 	stats, err := service.Stats(ctx)
 	if err != nil {
@@ -39,24 +39,26 @@ func (service *HealthCheck) Status(ctx context.Context, _ *pb.StatusRequest) (*p
 	return &pb.StatusReply{StatusInJson: string(jsonData)}, nil
 }
 
-func (service *HealthCheck) P2PSet(ctx context.Context, in *pb.P2PSetRequest) (*pb.P2PSetReply, error) {
+// P2PStore store a data, and return given key
+func (service *HealthCheck) P2PStore(ctx context.Context, in *pb.P2PStoreRequest) (*pb.P2PStoreReply, error) {
 	value := in.GetValue()
 	key, err := service.p2pService.Store(ctx, value)
 
 	if err != nil {
-		return &pb.P2PSetReply{Key: ""}, err
+		return &pb.P2PStoreReply{Key: ""}, err
 	}
-	return &pb.P2PSetReply{Key: key}, nil
+	return &pb.P2PStoreReply{Key: key}, nil
 }
 
-func (service *HealthCheck) P2PGet(ctx context.Context, in *pb.P2PGetRequest) (*pb.P2PGetReply, error) {
+// P2PRetrieve get data of given key
+func (service *HealthCheck) P2PRetrieve(ctx context.Context, in *pb.P2PRetrieveRequest) (*pb.P2PRetrieveReply, error) {
 	key := in.GetKey()
 	value, err := service.p2pService.Retrieve(ctx, key)
 
 	if err != nil {
-		return &pb.P2PGetReply{Value: nil}, err
+		return &pb.P2PRetrieveReply{Value: nil}, err
 	}
-	return &pb.P2PGetReply{Value: value}, nil
+	return &pb.P2PRetrieveReply{Value: value}, nil
 }
 
 // Desc returns a description of the service.

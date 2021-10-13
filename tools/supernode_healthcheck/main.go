@@ -18,9 +18,9 @@ import (
 func main() {
 	var (
 		serverAddr = flag.String("server_addr", "", "The server address in the format of host:port, like localhost:4444")
-		cmd        = flag.String("cmd", "", "one of value set/get/status")
-		key        = flag.String("key", "", "set when action is `get`")
-		value      = flag.String("value", "", "set when action is `set`")
+		cmd        = flag.String("cmd", "", "one of value store/retrieve/status")
+		key        = flag.String("key", "", "set when action is `retrieve`")
+		value      = flag.String("value", "", "set when action is `store`")
 	)
 
 	flag.Parse()
@@ -66,7 +66,7 @@ func main() {
 	client := pb.NewHealthCheckClient(conn)
 
 	switch *cmd {
-	case "set":
+	case "store":
 		if len(*value) == 0 {
 			log.Error("value is empty")
 			return
@@ -74,15 +74,15 @@ func main() {
 
 		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		res, err := client.P2PSet(ctx, &pb.P2PSetRequest{Value: []byte(*value)})
+		res, err := client.P2PStore(ctx, &pb.P2PStoreRequest{Value: []byte(*value)})
 		if err != nil {
-			log.WithError(err).Fatal("Failed to call P2PSet")
+			log.WithError(err).Fatal("Failed to call P2PStore")
 			return
 		} else {
 			log.Infof("Returned Key is: %s", res.Key)
 		}
 
-	case "get":
+	case "retrieve":
 		if len(*key) == 0 {
 			log.Error("key is empty")
 			return
@@ -90,9 +90,9 @@ func main() {
 
 		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		res, err := client.P2PGet(ctx, &pb.P2PGetRequest{Key: *key})
+		res, err := client.P2PRetrieve(ctx, &pb.P2PRetrieveRequest{Key: *key})
 		if err != nil {
-			log.WithError(err).Fatal("Failed to call P2PGet")
+			log.WithError(err).Fatal("Failed to call P2PRetrieve")
 			return
 		} else {
 			log.Infof("Returned Value is: %s", string(res.Value))

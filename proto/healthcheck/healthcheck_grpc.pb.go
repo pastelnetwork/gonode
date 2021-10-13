@@ -20,10 +20,10 @@ const _ = grpc.SupportPackageIsVersion7
 type HealthCheckClient interface {
 	// rpc get overview status of service
 	Status(ctx context.Context, in *StatusRequest, opts ...grpc.CallOption) (*StatusReply, error)
-	// Set a data to p2p
-	P2PSet(ctx context.Context, in *P2PSetRequest, opts ...grpc.CallOption) (*P2PSetReply, error)
-	// Get a key from p2p
-	P2PGet(ctx context.Context, in *P2PGetRequest, opts ...grpc.CallOption) (*P2PGetReply, error)
+	// Store a data to p2p
+	P2PStore(ctx context.Context, in *P2PStoreRequest, opts ...grpc.CallOption) (*P2PStoreReply, error)
+	// Retrieve a key from p2p
+	P2PRetrieve(ctx context.Context, in *P2PRetrieveRequest, opts ...grpc.CallOption) (*P2PRetrieveReply, error)
 }
 
 type healthCheckClient struct {
@@ -43,18 +43,18 @@ func (c *healthCheckClient) Status(ctx context.Context, in *StatusRequest, opts 
 	return out, nil
 }
 
-func (c *healthCheckClient) P2PSet(ctx context.Context, in *P2PSetRequest, opts ...grpc.CallOption) (*P2PSetReply, error) {
-	out := new(P2PSetReply)
-	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/P2PSet", in, out, opts...)
+func (c *healthCheckClient) P2PStore(ctx context.Context, in *P2PStoreRequest, opts ...grpc.CallOption) (*P2PStoreReply, error) {
+	out := new(P2PStoreReply)
+	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/P2PStore", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *healthCheckClient) P2PGet(ctx context.Context, in *P2PGetRequest, opts ...grpc.CallOption) (*P2PGetReply, error) {
-	out := new(P2PGetReply)
-	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/P2PGet", in, out, opts...)
+func (c *healthCheckClient) P2PRetrieve(ctx context.Context, in *P2PRetrieveRequest, opts ...grpc.CallOption) (*P2PRetrieveReply, error) {
+	out := new(P2PRetrieveReply)
+	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/P2PRetrieve", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,10 +67,10 @@ func (c *healthCheckClient) P2PGet(ctx context.Context, in *P2PGetRequest, opts 
 type HealthCheckServer interface {
 	// rpc get overview status of service
 	Status(context.Context, *StatusRequest) (*StatusReply, error)
-	// Set a data to p2p
-	P2PSet(context.Context, *P2PSetRequest) (*P2PSetReply, error)
-	// Get a key from p2p
-	P2PGet(context.Context, *P2PGetRequest) (*P2PGetReply, error)
+	// Store a data to p2p
+	P2PStore(context.Context, *P2PStoreRequest) (*P2PStoreReply, error)
+	// Retrieve a key from p2p
+	P2PRetrieve(context.Context, *P2PRetrieveRequest) (*P2PRetrieveReply, error)
 	mustEmbedUnimplementedHealthCheckServer()
 }
 
@@ -81,11 +81,11 @@ type UnimplementedHealthCheckServer struct {
 func (UnimplementedHealthCheckServer) Status(context.Context, *StatusRequest) (*StatusReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Status not implemented")
 }
-func (UnimplementedHealthCheckServer) P2PSet(context.Context, *P2PSetRequest) (*P2PSetReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method P2PSet not implemented")
+func (UnimplementedHealthCheckServer) P2PStore(context.Context, *P2PStoreRequest) (*P2PStoreReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method P2PStore not implemented")
 }
-func (UnimplementedHealthCheckServer) P2PGet(context.Context, *P2PGetRequest) (*P2PGetReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method P2PGet not implemented")
+func (UnimplementedHealthCheckServer) P2PRetrieve(context.Context, *P2PRetrieveRequest) (*P2PRetrieveReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method P2PRetrieve not implemented")
 }
 func (UnimplementedHealthCheckServer) mustEmbedUnimplementedHealthCheckServer() {}
 
@@ -118,38 +118,38 @@ func _HealthCheck_Status_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HealthCheck_P2PSet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(P2PSetRequest)
+func _HealthCheck_P2PStore_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(P2PStoreRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(HealthCheckServer).P2PSet(ctx, in)
+		return srv.(HealthCheckServer).P2PStore(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/healthcheck.HealthCheck/P2PSet",
+		FullMethod: "/healthcheck.HealthCheck/P2PStore",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HealthCheckServer).P2PSet(ctx, req.(*P2PSetRequest))
+		return srv.(HealthCheckServer).P2PStore(ctx, req.(*P2PStoreRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _HealthCheck_P2PGet_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(P2PGetRequest)
+func _HealthCheck_P2PRetrieve_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(P2PRetrieveRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(HealthCheckServer).P2PGet(ctx, in)
+		return srv.(HealthCheckServer).P2PRetrieve(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/healthcheck.HealthCheck/P2PGet",
+		FullMethod: "/healthcheck.HealthCheck/P2PRetrieve",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HealthCheckServer).P2PGet(ctx, req.(*P2PGetRequest))
+		return srv.(HealthCheckServer).P2PRetrieve(ctx, req.(*P2PRetrieveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -166,12 +166,12 @@ var HealthCheck_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _HealthCheck_Status_Handler,
 		},
 		{
-			MethodName: "P2PSet",
-			Handler:    _HealthCheck_P2PSet_Handler,
+			MethodName: "P2PStore",
+			Handler:    _HealthCheck_P2PStore_Handler,
 		},
 		{
-			MethodName: "P2PGet",
-			Handler:    _HealthCheck_P2PGet_Handler,
+			MethodName: "P2PRetrieve",
+			Handler:    _HealthCheck_P2PRetrieve_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
