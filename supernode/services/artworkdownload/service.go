@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -30,6 +31,22 @@ type Service struct {
 
 // Run starts task
 func (service *Service) Run(ctx context.Context) error {
+	for {
+		if err := service.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			service.Worker = task.NewWorker()
+			log.WithContext(ctx).WithError(err).Error("run artwork register failure, retrying")
+
+		} else {
+			return nil
+		}
+	}
+}
+
+// run starts task
+func (service *Service) run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	if service.config.PastelID == "" {

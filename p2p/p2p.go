@@ -6,6 +6,8 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
@@ -31,10 +33,25 @@ type p2p struct {
 	config       *Config        // the service configuration
 	running      bool           // if the kademlia network is ready
 	pastelClient pastel.Client
+	secInfo      *alts.SecInfo
 }
 
 // Run the kademlia network
 func (s *p2p) Run(ctx context.Context) error {
+	for {
+		if err := s.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			log.WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
+		} else {
+			return nil
+		}
+	}
+}
+
+// run the kademlia network
+func (s *p2p) run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 
 	// configure the kademlia dht for p2p service
@@ -126,8 +143,10 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 	s.store = store
 
+	transportCredentials := credentials.NewClientCreds(s.pastelClient, s.secInfo)
+
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, s.pastelClient, &kademlia.Options{
+	dht, err := kademlia.NewDHT(store, s.pastelClient, transportCredentials, &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
@@ -141,9 +160,10 @@ func (s *p2p) configure(ctx context.Context) error {
 }
 
 // New returns a new p2p instance.
-func New(config *Config, pastelClient pastel.Client) P2P {
+func New(config *Config, pastelClient pastel.Client, secInfo *alts.SecInfo) P2P {
 	return &p2p{
 		config:       config,
 		pastelClient: pastelClient,
+		secInfo:      secInfo,
 	}
 }

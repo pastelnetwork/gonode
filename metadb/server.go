@@ -52,6 +52,13 @@ func (s *service) waitForConsensus(ctx context.Context, dbStore *store.Store) er
 // start the http server
 func (s *service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs *cluster.Service) error {
 	httpAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.HTTPPort)
+
+	//clstrDialer := tcp.NewDialer(cluster.MuxClusterHeader, nodeEncrypt, noNodeVerify)
+	//clstrClient := cluster.NewClient(clstrDialer)
+	//if err := clstrClient.SetLocal(raftAdv, clstr); err != nil {
+	//	log.Fatalf("failed to set cluster client local parameters: %s", err.Error())
+	//}
+
 	// create http server
 	server := httpd.New(ctx, httpAddr, dbStore, cs, nil)
 
@@ -60,8 +67,17 @@ func (s *service) startHTTPServer(ctx context.Context, dbStore *store.Store, cs 
 }
 
 // start a mux for rqlite node
-func (s *service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, error) {
-	mux, err := tcp.NewMux(ctx, ln, nil)
+func (s *service) startNodeMux(ctx context.Context, ln net.Listener, raftAdvAddr string) (*tcp.Mux, error) {
+	var adv net.Addr
+	var err error
+	if raftAdvAddr != "" {
+		adv, err = net.ResolveTCPAddr("tcp", raftAdvAddr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve advertise address %s: %s", raftAdvAddr, err.Error())
+		}
+	}
+
+	mux, err := tcp.NewMux(ctx, ln, adv)
 	if err != nil {
 		return nil, errors.Errorf("create node-to-node mux: %w", err)
 	}
@@ -72,12 +88,11 @@ func (s *service) startNodeMux(ctx context.Context, ln net.Listener) (*tcp.Mux, 
 }
 
 // start the cluster server
-func (s *service) startClusterService(ctx context.Context, tn cluster.Transport) (*cluster.Service, error) {
+func (s *service) startClusterService(ctx context.Context, tn cluster.Transport, httpAdvAddr string) (*cluster.Service, error) {
 	c := cluster.New(ctx, tn)
 
-	httpAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.HTTPPort)
 	// set the api address
-	c.SetAPIAddr(httpAddr)
+	c.SetAPIAddr(httpAdvAddr)
 
 	// open the cluster service
 	if err := c.Open(); err != nil {
@@ -87,7 +102,7 @@ func (s *service) startClusterService(ctx context.Context, tn cluster.Transport)
 }
 
 // create and open the store of rqlite cluster
-func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Store, error) {
+func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer, externalAddress string) (*store.Store, error) {
 	// create and open the store, which is on disk
 	dbConf := store.NewDBConfig("", false)
 	db := store.New(ctx, raftTn, &store.Config{
@@ -115,19 +130,19 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
-	selfAddress, err := utils.GetExternalIPAddress()
-	if err != nil {
-		return nil, err
-	}
-	selfAddress = fmt.Sprintf("%s:%d", selfAddress, s.config.HTTPPort)
+	httpAdvAddr := fmt.Sprintf("%s:%d", externalAddress, s.config.HTTPPort)
 
 	var joinIPAddresses []string
 	if !s.config.IsLeader {
-		for _, ip := range s.nodeIPList {
-			if selfAddress == ip {
-				continue
+		if s.config.LeaderAddress != "" {
+			joinIPAddresses = append(joinIPAddresses, s.config.LeaderAddress)
+		} else {
+			for _, ip := range s.nodeIPList {
+				if httpAdvAddr == ip {
+					continue
+				}
+				joinIPAddresses = append(joinIPAddresses, ip)
 			}
-			joinIPAddresses = append(joinIPAddresses, ip)
 		}
 	}
 
@@ -154,7 +169,9 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer) (*store.Stor
 		return db, nil
 	}
 
-	if err := s.joinCluster(ctx, joinIPAddresses); err == nil {
+	raftAdvAddr := fmt.Sprintf("%s:%d", externalAddress, s.config.RaftPort)
+
+	if err := s.joinCluster(ctx, joinIPAddresses, raftAdvAddr); err == nil {
 		return db, nil
 	}
 
@@ -164,7 +181,7 @@ loop:
 		case <-ctx.Done():
 			break loop
 		case <-time.After(defaultJoinClusterRetryInterval):
-			err := s.joinCluster(ctx, joinIPAddresses)
+			err := s.joinCluster(ctx, joinIPAddresses, raftAdvAddr)
 			if err == nil {
 				break loop
 			}
@@ -176,20 +193,12 @@ loop:
 	return db, nil
 }
 
-func (s *service) joinCluster(ctx context.Context, joinAddrs []string) (err error) {
+func (s *service) joinCluster(ctx context.Context, joinAddrs []string, raftAdvAddr string) (err error) {
 
-	advertisedExternalAddress := s.config.ListenAddress
-	if advertisedExternalAddress == "0.0.0.0" {
-		if advertisedExternalAddress, err = utils.GetExternalIPAddress(); err != nil {
-			return fmt.Errorf("cannot find own external address: %s. Replace 'listen_address: 0.0.0.0' in config for real IP", err.Error())
-		}
-	}
-
-	raftAddr := fmt.Sprintf("%s:%d", advertisedExternalAddress, s.config.RaftPort)
 	log.WithContext(ctx).Infof("join addresses are: %v", joinAddrs)
 
 	// join rqlite cluster
-	joinAddr, err := cluster.Join(ctx, "", joinAddrs, s.db.ID(), raftAddr, !s.config.NoneVoter,
+	joinAddr, err := cluster.Join(ctx, "", joinAddrs, s.db.ID(), raftAdvAddr, !s.config.NoneVoter,
 		defaultJoinAttempts, defaultJoinInterval, nil)
 	if err != nil {
 		return fmt.Errorf("join cluster at %v: %s", joinAddrs, err.Error())
@@ -206,13 +215,24 @@ func (s *service) startServer(ctx context.Context) error {
 		return errors.Errorf("set database nodes failure: %w", err)
 	}
 
-	raftAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
-	// create internode network mux and configure.
-	muxListener, err := net.Listen("tcp", raftAddr)
-	if err != nil {
-		return errors.Errorf("listen on %s: %w", raftAddr, err)
+	externalAddress := s.config.ListenAddress
+	if externalAddress == "0.0.0.0" {
+		var err error
+		if externalAddress, err = utils.GetExternalIPAddress(); err != nil {
+			return fmt.Errorf("cannot find own external address: %s. Replace 'listen_address: 0.0.0.0' in config for real IP", err.Error())
+		}
 	}
-	mux, err := s.startNodeMux(ctx, muxListener)
+
+	raftListenAddr := fmt.Sprintf("%s:%d", s.config.ListenAddress, s.config.RaftPort)
+	raftAdvAddr := fmt.Sprintf("%s:%d", externalAddress, s.config.RaftPort)
+	httpAdvAddr := fmt.Sprintf("%s:%d", externalAddress, s.config.HTTPPort)
+
+	// create internode network mux and configure.
+	muxListener, err := net.Listen("tcp", raftListenAddr)
+	if err != nil {
+		return errors.Errorf("listen on %s: %w", raftListenAddr, err)
+	}
+	mux, err := s.startNodeMux(ctx, muxListener, raftAdvAddr)
 	if err != nil {
 		return errors.Errorf("start node mux: %w", err)
 	}
@@ -220,13 +240,13 @@ func (s *service) startServer(ctx context.Context) error {
 
 	// create cluster service, so nodes can learn information about each other.
 	// This can be started now since it doesn't require a functioning Store yet.
-	cs, err := s.startClusterService(ctx, mux.Listen(cluster.MuxClusterHeader))
+	cs, err := s.startClusterService(ctx, mux.Listen(cluster.MuxClusterHeader), httpAdvAddr)
 	if err != nil {
 		return errors.Errorf("start create cluster service: %w", err)
 	}
 
 	// create and open the store
-	db, err := s.initStore(ctx, raftTn)
+	db, err := s.initStore(ctx, raftTn, externalAddress)
 	if err != nil {
 		return errors.Errorf("create and open store: %w", err)
 	}

@@ -7,6 +7,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -71,6 +73,19 @@ func toFloat64Array(data []float32) []float64 {
 
 // Run starts task
 func (s *service) Run(ctx context.Context) error {
+	for {
+		if err := s.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			log.WithContext(ctx).WithError(err).Error("failed to start dd-scan service, retrying.")
+		} else {
+			return nil
+		}
+	}
+}
+
+func (s *service) run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, "dd-scan")
 	defer s.db.Close()
 

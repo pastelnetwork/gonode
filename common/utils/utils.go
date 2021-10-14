@@ -3,6 +3,7 @@ package utils
 import (
 	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 // DiskStatus cotains info of disk storage
@@ -19,6 +20,16 @@ func SafeErrStr(err error) string {
 	}
 
 	return ""
+}
+
+// IsContextErr checks if err is related to context
+func IsContextErr(err error) bool {
+	if err != nil {
+		errStr := strings.ToLower(err.Error())
+		return strings.Contains(errStr, "context") || strings.Contains(errStr, "ctx")
+	}
+
+	return false
 }
 
 // GetExternalIPAddress returns external IP address

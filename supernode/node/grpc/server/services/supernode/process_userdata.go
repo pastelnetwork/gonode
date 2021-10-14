@@ -95,6 +95,10 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 		return nil, err
 	}
 
+	if service.databaseOps == nil {
+		return nil, errors.New("databaseOps is nil")
+	}
+
 	// Primary node will connect to leader node here.
 	if !service.databaseOps.IsLeader() {
 		var extAddress string
@@ -148,6 +152,10 @@ func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *p
 
 	if req == nil {
 		return nil, errors.Errorf("receive nil request")
+	}
+
+	if service.databaseOps == nil {
+		return nil, errors.New("databaseOps is nil")
 	}
 
 	// This code run in supernode contain leader rqlite db

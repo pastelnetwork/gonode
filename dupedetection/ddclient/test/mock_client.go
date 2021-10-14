@@ -5,6 +5,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient/mocks"
+
 	"github.com/stretchr/testify/mock"
 )
 

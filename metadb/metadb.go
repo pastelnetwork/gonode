@@ -3,6 +3,9 @@ package metadb
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
 	"github.com/pastelnetwork/gonode/pastel"
 )
@@ -53,5 +56,15 @@ func New(config *Config, nodeID string, pastelClient pastel.Client) MetaDB {
 
 // Run starts the rqlite server
 func (s *service) Run(ctx context.Context) error {
-	return s.startServer(ctx)
+	for {
+		if err := s.startServer(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			log.WithContext(ctx).WithError(err).Error("error starting metadb server,retrying.")
+			s.ready = make(chan struct{}, 5)
+		} else {
+			return nil
+		}
+	}
 }

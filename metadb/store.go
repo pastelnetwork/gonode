@@ -36,8 +36,7 @@ func (s *service) LeaderAddress() string {
 
 // IsLeader let us know if this instance is leader or not
 func (s *service) IsLeader() bool {
-	address, _ := s.db.LeaderAddr()
-	return address == s.db.Addr()
+	return s.db.IsLeader()
 }
 
 // Stats return status of store

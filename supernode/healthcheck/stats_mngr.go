@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 )
@@ -68,8 +70,7 @@ func (mngr *StatsMngr) updateStats(ctx context.Context) (map[string]interface{},
 	return stats, nil
 }
 
-// Run start update stats of system periodically
-func (mngr *StatsMngr) Run(ctx context.Context) error {
+func (mngr *StatsMngr) run(ctx context.Context) error {
 	var err error
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
 	log.WithContext(ctx).Info("StatsManager started")
@@ -88,6 +89,20 @@ func (mngr *StatsMngr) Run(ctx context.Context) error {
 				mngr.currentStats = stats
 				mngr.mtx.Unlock()
 			}
+		}
+	}
+}
+
+// Run start update stats of system periodically
+func (mngr *StatsMngr) Run(ctx context.Context) error {
+	for {
+		if err := mngr.run(ctx); err != nil {
+			if utils.IsContextErr(err) {
+				return err
+			}
+			log.WithContext(ctx).WithError(err).Error("failed to run stats manager, retrying.")
+		} else {
+			return nil
 		}
 	}
 }
