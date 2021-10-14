@@ -459,7 +459,7 @@ func (task *Task) registerExternalDupeDetection(ctx context.Context) (string, er
 			ImageHash:            task.Ticket.ImageHash,
 			MaximumFee:           task.Ticket.MaximumFee,
 			SendingAddress:       task.Ticket.SendingAddress,
-			EfectiveTotalFee:     task.Ticket.EfectiveTotalFee,
+			EffectiveTotalFee:    task.Ticket.EffectiveTotalFee,
 			KamedilaJSONListHash: task.Ticket.KamedilaJSONListHash,
 			SupernodesSignature:  task.Ticket.SupernodesSignature,
 		},

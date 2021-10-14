@@ -809,7 +809,7 @@ func (task *Task) preburntRegistrationFee(ctx context.Context) error {
 	task.burnTxid = burnTxid
 	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxid)
 
-	if err := task.nodes.SendPreBurntFeeTxid(ctx, task.burnTxid); err != nil {
+	if err := task.nodes.SendPreBurnedFeeTxid(ctx, task.burnTxid); err != nil {
 		return errors.Errorf("failed to send pre-burn-txid: %s to supernode(s): %w", task.burnTxid, err)
 	}
 	task.regNFTTxid = task.nodes.RegArtTicketID()

@@ -32,12 +32,12 @@ type RegExDDTicketData struct {
 type ExDDTicket struct {
 	Version              int                 `json:"external_dupe_detection_version"`
 	BlockHash            string              `json:"block_hash"`
-	BlockNum             string              `json:"block_num"`
+	BlockNum             int                 `json:"block_num"`
 	Identifier           string              `json:"external_dupe_detection_request_identifier"`
 	ImageHash            string              `json:"image_file_sha3_256_hash"`
 	MaximumFee           float64             `json:"maximum_psl_fee_for_external_dupe_detection"`
 	SendingAddress       string              `json:"external_dupe_detection_sending_address"`
-	EfectiveTotalFee     float64             `json:"effective_total_fee_paid_by_user_in_psl"`
+	EffectiveTotalFee    float64             `json:"effective_total_fee_paid_by_user_in_psl"`
 	KamedilaJSONListHash string              `json:"kademlia_hash_list_json_sha3_256_hash"`
 	SupernodesSignature  []map[string]string `json:"supernode_signatures_on_external_dupe_request"`
 	UserSignature        []map[string]string `json:"user_signature_on_external_dupe_request"`

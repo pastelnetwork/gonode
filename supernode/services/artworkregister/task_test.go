@@ -30,7 +30,7 @@ import (
 	"github.com/tj/assert"
 )
 
-func TestTaskSignAndSendArtTicket(t *testing.T) {
+func TestTaskSignAndSendEDDicket(t *testing.T) {
 	type args struct {
 		task        *Task
 		signErr     error

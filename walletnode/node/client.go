@@ -55,7 +55,7 @@ type RegisterArtwork interface {
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
 	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
-	SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error)
+	SendPreBurnedFeeTxid(ctx context.Context, txid string) (string, error)
 }
 
 // DownloadArtwork contains methods for downloading artwork.

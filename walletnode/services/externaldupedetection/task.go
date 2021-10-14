@@ -41,9 +41,6 @@ type Task struct {
 	fingerprintsHash             []byte
 	fingerprint                  []byte
 	imageEncodedWithFingerprints *artwork.File
-	previewHash                  []byte
-	mediumThumbnailHash          []byte
-	smallThumbnailHash           []byte
 	datahash                     []byte
 	rqids                        []string
 
@@ -153,7 +150,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// send preburn-txid to master node(s)
 	// master node will create reg-art ticket and returns transaction id
-	if err := task.preburneddetectionFee(ctx); err != nil {
+	if err := task.preburnedDetectionFee(ctx); err != nil {
 		return errors.Errorf("faild to pre-burnt ten percent of registration fee: %w", err)
 	}
 
@@ -541,15 +538,6 @@ func (task *Task) createEDDTicket(_ context.Context) error {
 	if task.datahash == nil {
 		return errEmptyDatahash
 	}
-	if task.previewHash == nil {
-		return errEmptyPreviewHash
-	}
-	if task.mediumThumbnailHash == nil {
-		return errEmptyMediumThumbnailHash
-	}
-	if task.smallThumbnailHash == nil {
-		return errEmptySmallThumbnailHash
-	}
 	if task.rqids == nil {
 		return errEmptyRaptorQSymbols
 	}
@@ -563,7 +551,7 @@ func (task *Task) createEDDTicket(_ context.Context) error {
 		ImageHash:           task.Request.ImageHash,
 		MaximumFee:          task.Request.MaximumFee,
 		SendingAddress:      task.Request.SendingAddress,
-		EfectiveTotalFee:    float64(task.detectionFee),
+		EffectiveTotalFee:   float64(task.detectionFee),
 		SupernodesSignature: []map[string]string{},
 	}
 	return nil
@@ -707,7 +695,7 @@ func (task *Task) uploadImage(ctx context.Context) error {
 
 	// Upload image with pqgsinganature and its thumb to supernodes
 	if err := task.nodes.UploadImage(ctx, img1); err != nil {
-		return errors.Errorf("upload encoded image and thumbnail coordinate failed %w", err)
+		return errors.Errorf("upload encoded image failed %w", err)
 	}
 	task.UpdateStatus(StatusImageUploaded)
 
@@ -736,7 +724,7 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) preburneddetectionFee(ctx context.Context) error {
+func (task *Task) preburnedDetectionFee(ctx context.Context) error {
 	if task.detectionFee <= 0 {
 		return errors.Errorf("invalid registration fee")
 	}

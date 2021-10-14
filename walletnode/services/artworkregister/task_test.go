@@ -151,7 +151,7 @@ func TestTaskRun(t *testing.T) {
 			// prepare task
 			fg := pastel.Fingerprint{0.1, 0, 2}
 			compressedFg, err := zstd.CompressLevel(nil, fg.Bytes(), 22)
-			assert.Nil(t, err)
+			assert.Error(t, err)
 			testCase.args.fingerPrint = compressedFg
 
 			t.Run(fmt.Sprintf("testCase-%d", i), func(t *testing.T) {
@@ -161,13 +161,13 @@ func TestTaskRun(t *testing.T) {
 				nodeClient.
 					ListenOnConnect("", testCase.args.returnErr).
 					ListenOnRegisterArtwork().
-					ListenOnSession(testCase.args.returnErr).
-					ListenOnConnectTo(testCase.args.returnErr).
-					ListenOnSessID(testCase.args.primarySessID).
-					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
+					ListenOnRegisterArtwork_Session(testCase.args.returnErr).
+					ListenOnRegisterArtwork_ConnectTo(testCase.args.returnErr).
+					ListenOnRegisterArtwork_SessID(testCase.args.primarySessID).
+					ListenOnRegisterArtwork_AcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 					ListenOnDone().
-					ListenOnUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
-					ListenOnSendSignedTicket(1, nil).
+					ListenOnRegisterArtwork_UploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
+					ListenOnRegisterArtwork_SendSignedTicket(1, nil).
 					ListenOnClose(nil)
 
 				counter := &struct {
@@ -183,17 +183,17 @@ func TestTaskRun(t *testing.T) {
 					}
 					return "", nil
 				}
-				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurnedFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurnedFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurnedFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurnedFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
 
 				//need to remove generate thumbnail file
 				customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.FingerAndScores {
 					file.Remove()
 					return &pastel.FingerAndScores{ZstdCompressedFingerprint: testCase.args.fingerPrint}
 				}
-				nodeClient.ListenOnProbeImage(customProbeImageFunc, testCase.args.returnErr)
+				nodeClient.ListenOnRegisterArtwork_ProbeImage(customProbeImageFunc, testCase.args.returnErr)
 
 				pastelClientMock := pastelMock.NewMockClient(t)
 				pastelClientMock.
@@ -255,11 +255,11 @@ func TestTaskRun(t *testing.T) {
 				)
 
 				// //nodeClient mock assertion
-				nodeClient.AssertAcceptedNodesCall(1, mock.Anything)
-				nodeClient.AssertSessIDCall(testCase.numSessIDCall)
-				nodeClient.AssertSessionCall(testCase.numSessionCall, mock.Anything, false)
-				nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
-				nodeClient.AssertProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
+				nodeClient.AssertRegisterArtwork_AcceptedNodesCall(1, mock.Anything)
+				nodeClient.AssertRegisterArtwork_SessIDCall(testCase.numSessIDCall)
+				nodeClient.AssertRegisterArtwork_SessionCall(testCase.numSessionCall, mock.Anything, false)
+				nodeClient.AssertRegisterArtwork_ConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
+				nodeClient.AssertRegisterArtwork_ProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
 			})
 		}
 	})
@@ -350,10 +350,10 @@ func TestTaskMeshNodes(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", testCase.args.returnErr).
 				ListenOnRegisterArtwork().
-				ListenOnSession(testCase.args.returnErr).
-				ListenOnConnectTo(testCase.args.returnErr).
-				ListenOnSessID(testCase.args.primarySessID).
-				ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.acceptNodeErr)
+				ListenOnRegisterArtwork_Session(testCase.args.returnErr).
+				ListenOnRegisterArtwork_ConnectTo(testCase.args.returnErr).
+				ListenOnRegisterArtwork_SessID(testCase.args.primarySessID).
+				ListenOnRegisterArtwork_AcceptedNodes(testCase.args.pastelIDS, testCase.args.acceptNodeErr)
 
 			nodes := node.List{}
 			for _, n := range testCase.args.nodes {
@@ -370,10 +370,10 @@ func TestTaskMeshNodes(t *testing.T) {
 			testCase.assertion(t, err)
 			assert.Equal(t, testCase.want, pullPastelAddressIDNodes(got))
 
-			nodeClient.AssertAcceptedNodesCall(1, mock.Anything)
-			nodeClient.AssertSessIDCall(testCase.numSessIDCall)
-			nodeClient.AssertSessionCall(testCase.numSessionCall, mock.Anything, false)
-			nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
+			nodeClient.AssertRegisterArtwork_AcceptedNodesCall(1, mock.Anything)
+			nodeClient.AssertRegisterArtwork_SessIDCall(testCase.numSessIDCall)
+			nodeClient.AssertRegisterArtwork_SessionCall(testCase.numSessionCall, mock.Anything, false)
+			nodeClient.AssertRegisterArtwork_ConnectToCall(testCase.numConnectToCall, mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
 			nodeClient.Client.AssertExpectations(t)
 			nodeClient.Connection.AssertExpectations(t)
 		})
@@ -829,10 +829,10 @@ func TestTaskCreateTicket(t *testing.T) {
 
 			err := tc.args.task.createArtTicket(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
+				assert.Error(t, err)
 				assert.Equal(t, tc.wantErr.Error(), err.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.NotNil(t, tc.args.task.ticket)
 				assert.Equal(t, *tc.want, *tc.args.task.ticket)
 			}
@@ -925,10 +925,10 @@ func TestTaskGetBlock(t *testing.T) {
 
 			err := tc.args.task.getBlock(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tc.wantArtistblockHash, tc.args.task.creatorBlockHash)
 				assert.Equal(t, tc.wantArtistBlockHeight, tc.args.task.creatorBlockHeight)
 			}
@@ -1008,10 +1008,10 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 			fmt.Printf("%x\n", content)
 
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
+				assert.Error(t, err)
 				assert.True(t, strings.Contains(err.Error(), testErrStr))
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				compressContent, zstdErr := zstd.CompressLevel(nil, rawContent, 22)
 				fmt.Printf("%x\n", compressContent)
 				assert.Nil(t, zstdErr)
@@ -1194,12 +1194,11 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 
 			err := tc.args.task.genRQIdentifiersFiles(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
+				assert.Error(t, err)
 				// TODO: fix this when the return error is define correctly
-				// assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				fmt.Printf("%s", err)
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -1259,10 +1258,10 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 
 			err := tc.args.task.encodeFingerprint(context.Background(), tc.args.fingerprint, file)
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -1322,10 +1321,10 @@ func TestTaskSignTicket(t *testing.T) {
 
 			err := tc.args.task.signTicket(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 				assert.Equal(t, tc.args.signReturns, tc.args.task.creatorSignature)
 			}
 		})
@@ -1422,10 +1421,10 @@ func TestWaitTxnValid(t *testing.T) {
 
 			err := tc.args.task.waitTxidValid(ctx, "txid", 5, time.Second, 500*time.Millisecond)
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 			cancel()
 		})
@@ -1561,11 +1560,11 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnSession(nil).
-				ListenOnConnectTo(nil).
-				ListenOnSessID("").
-				ListenOnAcceptedNodes([]string{}, nil).
-				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
+				ListenOnRegisterArtwork_Session(nil).
+				ListenOnRegisterArtwork_ConnectTo(nil).
+				ListenOnRegisterArtwork_SessID("").
+				ListenOnRegisterArtwork_AcceptedNodes([]string{}, nil).
+				ListenOnRegisterArtwork_SendPreBurnedFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
@@ -1579,10 +1578,10 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 
 			err := tc.args.task.preburntRegistrationFee(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -1672,7 +1671,7 @@ func TestTaskUploadImage(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnUploadImageWithThumbnail(tc.args.previewHash, tc.args.mediumHash,
+				ListenOnRegisterArtwork_UploadImageWithThumbnail(tc.args.previewHash, tc.args.mediumHash,
 					tc.args.smallHash, tc.args.uploadImageThumbnailErr)
 
 			tc.args.task.Request.Image = artworkFile
@@ -1688,10 +1687,10 @@ func TestTaskUploadImage(t *testing.T) {
 
 			err = tc.args.task.uploadImage(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -1780,7 +1779,7 @@ func TestTaskProbeImage(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnProbeImage(customProbeImageFunc, tc.args.probeImgErr)
+				ListenOnRegisterArtwork_ProbeImage(customProbeImageFunc, tc.args.probeImgErr)
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
@@ -1794,11 +1793,10 @@ func TestTaskProbeImage(t *testing.T) {
 
 			err = tc.args.task.probeImage(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				fmt.Printf("%v", err)
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -1893,12 +1891,12 @@ func TestTaskSendSignedTicket(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnSession(nil).
-				ListenOnConnectTo(nil).
-				ListenOnSessID("").
-				ListenOnAcceptedNodes([]string{}, nil).
-				ListenOnSendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
-				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
+				ListenOnRegisterArtwork_Session(nil).
+				ListenOnRegisterArtwork_ConnectTo(nil).
+				ListenOnRegisterArtwork_SessID("").
+				ListenOnRegisterArtwork_AcceptedNodes([]string{}, nil).
+				ListenOnRegisterArtwork_SendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
+				ListenOnRegisterArtwork_SendPreBurnedFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
@@ -1912,10 +1910,10 @@ func TestTaskSendSignedTicket(t *testing.T) {
 
 			err := tc.args.task.sendSignedTicket(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}
@@ -2025,10 +2023,10 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnSession(nil).
-				ListenOnConnectTo(nil).
-				ListenOnSessID("").
-				ListenOnAcceptedNodes([]string{}, nil).
+				ListenOnRegisterArtwork_Session(nil).
+				ListenOnRegisterArtwork_ConnectTo(nil).
+				ListenOnRegisterArtwork_SessID("").
+				ListenOnRegisterArtwork_AcceptedNodes([]string{}, nil).
 				ListenOnClose(tc.wantErr)
 			tc.args.task.Service.nodeClient = nodeClient
 
@@ -2045,10 +2043,10 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 
 			err = tc.args.task.connectToTopRankNodes(context.Background())
 			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), tc.wantErr.Error())
 			} else {
-				assert.Nil(t, err)
+				assert.NoError(t, err)
 			}
 		})
 	}

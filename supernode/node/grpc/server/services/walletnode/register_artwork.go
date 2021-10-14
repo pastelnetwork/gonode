@@ -352,9 +352,9 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 	return &rsp, nil
 }
 
-// SendPreBurntFeeTxid implements walletnode.RegisterArtwork.SendPreBurntFeeTxid
-func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (*pb.SendPreBurntFeeTxidReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurntFeeTxidRequest request")
+// SendPreBurnedFeeTxid implements walletnode.RegisterArtwork.SendPreBurnedFeeTxid
+func (service *RegisterArtwork) SendPreBurnedFeeTxid(ctx context.Context, req *pb.SendPreBurnedFeeTxidRequest) (*pb.SendPreBurnedFeeTxidReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurnedFeeTxidRequest request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to get task from meta data %w", err)
@@ -365,7 +365,7 @@ func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb
 		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
 	}
 
-	rsp := pb.SendPreBurntFeeTxidReply{
+	rsp := pb.SendPreBurnedFeeTxidReply{
 		NFTRegTxid: nftRegTxid,
 	}
 	return &rsp, nil

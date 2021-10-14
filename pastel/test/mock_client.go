@@ -55,7 +55,10 @@ const (
 	VerifyMethod = "Verify"
 
 	// RegisterNFTTicket represents RegisterNFTTicket method name
-	RegisterNFTTicket = "RegisterNFTTicket"
+	RegisterNFTTicketMethod = "RegisterNFTTicket"
+
+	// RegisterExDDTicket represents RegisterExDDTicket method name
+	RegisterExDDTicketMethod = "RegisterExDDTicket"
 
 	// RegisterArtTicketMethod represents RegisterArtTicket method
 	RegisterArtTicketMethod = "RegisterArtTicket"
@@ -190,7 +193,13 @@ func (client *Client) ListenOnFindTicketByID(idticket *pastel.IDTicket, err erro
 
 // ListenOnRegisterNFTTicket listening on RegisterNFTTicket
 func (client *Client) ListenOnRegisterNFTTicket(txid string, err error) *Client {
-	client.On(RegisterNFTTicket, mock.Anything, mock.Anything).Return(txid, err)
+	client.On(RegisterNFTTicketMethod, mock.Anything, mock.Anything).Return(txid, err)
+	return client
+}
+
+// ListenOnRegisterExDDTicket listening on RegisterExDDTicket
+func (client *Client) ListenOnRegisterExDDTicket(txid string, err error) *Client {
+	client.On(RegisterExDDTicketMethod, mock.Anything, mock.Anything).Return(txid, err)
 	return client
 }
 

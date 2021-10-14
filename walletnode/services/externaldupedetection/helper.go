@@ -13,9 +13,6 @@ var (
 	errEmptyFingerprintsHash     = errors.Errorf("empty fingerprints hash")
 	errEmptyFingerprintSignature = errors.Errorf("empty fingerprint signature")
 	errEmptyDatahash             = errors.Errorf("empty data hash")
-	errEmptyPreviewHash          = errors.Errorf("empty preview hash")
-	errEmptyMediumThumbnailHash  = errors.Errorf("empty medium thumbnail hash")
-	errEmptySmallThumbnailHash   = errors.Errorf("empty small thumbnail hash")
 	errEmptyRaptorQSymbols       = errors.Errorf("empty RaptorQ symbols identifiers")
 )
 

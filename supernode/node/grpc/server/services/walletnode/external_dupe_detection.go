@@ -333,9 +333,9 @@ func (service *ExternalDupeDetection) SendSignedEDDTicket(ctx context.Context, r
 	return &rsp, nil
 }
 
-// SendPreBurnedFeeTxid implements walletnode.ExternalDupeDetection.SendPreBurntFeeTxid
-func (service *ExternalDupeDetection) SendPreBurnedFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (*pb.SendPreBurntFeeTxidReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurntFeeTxidRequest request")
+// SendPreBurnedFeeTxid implements walletnode.ExternalDupeDetection.SendPreBurnedFeeTxid
+func (service *ExternalDupeDetection) SendPreBurnedFeeTxid(ctx context.Context, req *pb.SendPreBurnedFeeTxidRequest) (*pb.SendPreBurnedFeeTxidReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurnedFeeTxidRequest request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to get task from meta data %w", err)
@@ -346,7 +346,7 @@ func (service *ExternalDupeDetection) SendPreBurnedFeeTxid(ctx context.Context, 
 		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
 	}
 
-	rsp := pb.SendPreBurntFeeTxidReply{
+	rsp := pb.SendPreBurnedFeeTxidReply{
 		NFTRegTxid: nftRegTxid,
 	}
 	return &rsp, nil
