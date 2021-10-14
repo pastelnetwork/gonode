@@ -3,10 +3,11 @@ package pastel
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/DataDog/zstd"
 	"math"
+	"strings"
 	"unsafe"
 
-	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
@@ -41,58 +42,119 @@ func (fg Fingerprint) Bytes() []byte {
 
 // CompareFingerPrintAndScore returns nil if two FingerAndScores are equal
 func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) error {
+
+	//hash_of_candidate_image_file
+	if !bytes.Equal(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
+		return errors.Errorf("image hash do not match")
+	}
+
+	//is_likely_dupe
+	if lhs.IsLikelyDupe != rhs.IsLikelyDupe {
+		return errors.Errorf("is likely dupe score do not match: lhs(%t) != rhs(%t)", lhs.IsLikelyDupe, rhs.IsLikelyDupe)
+	}
+
+	//overall_average_rareness_score
+	if !compareFloatWithPrecision(lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore, 7.0) {
+		return errors.Errorf("overall average rareness score do not match: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
+	}
+
+	//is_rare_on_internet
+	if lhs.IsRareOnInternet != rhs.IsRareOnInternet {
+		return errors.Errorf("is rare on internet score do not match: lhs(%t) != rhs(%t)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
+	}
+
+	//open_nsfw_score
+	if !compareFloatWithPrecision(lhs.OpenNSFWScore, rhs.OpenNSFWScore, 7.0) {
+		return errors.Errorf("open nsfw score do not match: lhs(%f) != rhs(%f)", lhs.OpenNSFWScore, rhs.OpenNSFWScore)
+	}
+
+	//alternative_nsfw_scores
+	if err := CompareAlternativeNSFWScore(&lhs.AlternativeNSFWScore, &rhs.AlternativeNSFWScore); err != nil {
+		return errors.Errorf("alternative nsfw score do not match: %w", err)
+	}
+
+	//image_hashes
+	if err := CompareImageHashes(&lhs.ImageHashes, &rhs.ImageHashes); err != nil {
+		return errors.Errorf("image hashes do not match: %w", err)
+	}
+
 	lhsFingerprint, err := zstd.Decompress(nil, lhs.ZstdCompressedFingerprint)
 	if err != nil {
 		return errors.Errorf("failed to decompress lhs fingerprint: %w", err)
 	}
 
-	rhsFingerpint, err := zstd.Decompress(nil, rhs.ZstdCompressedFingerprint)
+	rhsFingerprint, err := zstd.Decompress(nil, rhs.ZstdCompressedFingerprint)
 	if err != nil {
 		return errors.Errorf("failed to decompress rhs fingerprint: %w", err)
 	}
 
-	if !bytes.Equal(lhsFingerprint, rhsFingerpint) {
-		return errors.Errorf("fingerprint not matched")
-	}
+	if !bytes.Equal(lhsFingerprint, rhsFingerprint) {
 
-	if lhs.OverallAverageRarenessScore != rhs.OverallAverageRarenessScore {
-		return errors.Errorf("overall average rareness score not matched: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
-	}
-
-	if lhs.IsLikelyDupe != rhs.IsLikelyDupe {
-		return errors.Errorf("is likely dupe score not matched: lhs(%t) != rhs(%t)", lhs.IsLikelyDupe, rhs.IsLikelyDupe)
-	}
-
-	if lhs.IsRareOnInternet != rhs.IsRareOnInternet {
-		return errors.Errorf("is rare on internet score not matched: lhs(%t) != rhs(%t)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
-	}
-
-	if lhs.OpenNSFWScore != rhs.OpenNSFWScore {
-		return errors.Errorf("open nsfw score not matched: lhs(%f) != rhs(%f)", lhs.OpenNSFWScore, rhs.OpenNSFWScore)
-	}
-
-	if err := CompareAlternativeNSFWScore(&lhs.AlternativeNSFWScore, &rhs.AlternativeNSFWScore); err != nil {
-		return errors.Errorf("alternative nsfw score not matched: %w", err)
+		lfg, err := FingerprintFromBytes(lhsFingerprint)
+		if err != nil {
+			return errors.Errorf("fingerprints corrupted")
+		}
+		rfg, err := FingerprintFromBytes(lhsFingerprint)
+		if err != nil {
+			return errors.Errorf("fingerprints corrupted")
+		}
+		if len(lfg) != len(rfg) {
+			return errors.Errorf("fingerprints do not match")
+		}
+		for i := range lfg {
+			if !compareFloatWithPrecision(lfg[i], rfg[i], 4.0) {
+				return errors.Errorf("fingerprints do not match: lfg(%f) != rfg(%f)", lfg[i], rfg[i])
+			}
+		}
 	}
 	return nil
 }
 
 // CompareAlternativeNSFWScore return nil if two AlternativeNSFWScore are equal
 func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScore, rhs *AlternativeNSFWScore) error {
-	if lhs.Drawing != rhs.Drawing {
+
+	if !compareFloatWithPrecision(lhs.Drawing, rhs.Drawing, 5.0) {
 		return errors.Errorf("drawing score not matched: lhs(%f) != rhs(%f)", lhs.Drawing, rhs.Drawing)
 	}
-	if lhs.Hentai != rhs.Hentai {
+	if !compareFloatWithPrecision(lhs.Hentai, rhs.Hentai, 5.0) {
 		return errors.Errorf("hentai score not matched: lhs(%f) != rhs(%f)", lhs.Hentai, rhs.Hentai)
 	}
-	if lhs.Neutral != rhs.Neutral {
+	if !compareFloatWithPrecision(lhs.Neutral, rhs.Neutral, 5.0) {
 		return errors.Errorf("neutral score not matched: lhs(%f) != rhs(%f)", lhs.Neutral, rhs.Neutral)
 	}
-	if lhs.Porn != rhs.Porn {
+	if !compareFloatWithPrecision(lhs.Porn, rhs.Porn, 5.0) {
 		return errors.Errorf("porn score not matched: lhs(%f) != rhs(%f)", lhs.Porn, rhs.Porn)
 	}
-	if lhs.Sexy != rhs.Sexy {
+	if !compareFloatWithPrecision(lhs.Sexy, rhs.Sexy, 5.0) {
 		return errors.Errorf("sexy score not matched: lhs(%f) != rhs(%f)", lhs.Sexy, rhs.Sexy)
 	}
 	return nil
+}
+
+// CompareAlternativeNSFWScore return nil if two AlternativeNSFWScore are equal
+func CompareImageHashes(lhs *ImageHashes, rhs *ImageHashes) error {
+	if !strings.EqualFold(lhs.PDQHash, rhs.PDQHash) {
+		return errors.Errorf("pdq_hash not matched: lhs(%f) != rhs(%f)", lhs.PDQHash, rhs.PDQHash)
+	}
+	if !strings.EqualFold(lhs.PerceptualHash, rhs.PerceptualHash) {
+		return errors.Errorf("perceptual_hash not matched: lhs(%f) != rhs(%f)", lhs.PerceptualHash, rhs.PerceptualHash)
+	}
+	if !strings.EqualFold(lhs.AverageHash, rhs.AverageHash) {
+		return errors.Errorf("average_hash not matched: lhs(%f) != rhs(%f)", lhs.AverageHash, rhs.AverageHash)
+	}
+	if !strings.EqualFold(lhs.DifferenceHash, rhs.DifferenceHash) {
+		return errors.Errorf("difference_hash not matched: lhs(%f) != rhs(%f)", lhs.DifferenceHash, rhs.DifferenceHash)
+	}
+	if !strings.EqualFold(lhs.NeuralHash, rhs.NeuralHash) {
+		return errors.Errorf("neuralhash_hash not matched: lhs(%f) != rhs(%f)", lhs.NeuralHash, rhs.NeuralHash)
+	}
+	return nil
+}
+
+func compareFloatWithPrecision(l float32, r float32, prec float64) bool {
+	if l == r {
+		return true
+	}
+	multiplier := math.Pow(10, prec)
+	return math.Round(float64(l)*multiplier)/multiplier == math.Round(float64(l)*multiplier)/multiplier
 }
