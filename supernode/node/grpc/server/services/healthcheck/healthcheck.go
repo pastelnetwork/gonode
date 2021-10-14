@@ -89,12 +89,12 @@ func (service *HealthCheck) QueryRqlite(ctx context.Context, in *pb.QueryRqliteR
 		row = row + 1
 	}
 
-	resultJson, err := json.Marshal(resultMap)
+	resultJSON, err := json.Marshal(resultMap)
 	if err != nil {
 		return nil, errors.Errorf("error while marshal result: %w", err)
 	}
 
-	return &pb.QueryRqliteReply{Result: string(resultJson)}, nil
+	return &pb.QueryRqliteReply{Result: string(resultJSON)}, nil
 }
 
 // Desc returns a description of the service.
