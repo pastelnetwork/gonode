@@ -63,7 +63,7 @@ require (
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rqlite/go-sqlite3 v1.20.4 // indirect
+	github.com/rqlite/go-sqlite3 v1.22.0 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/sbinet/npyio v0.5.2 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect

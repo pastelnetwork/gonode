@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+
 	"net"
 	"strconv"
 	"sync"
@@ -40,41 +41,18 @@ func init() {
 // make connections to other nodes, and receive connections from other
 // nodes.
 type Layer struct {
-	ln     net.Listener
-	header byte
-	addr   net.Addr
+	ln   net.Listener
+	addr net.Addr
 
-	remoteEncrypted bool
-	skipVerify      bool
-	nodeX509CACert  string
-	tlsConfig       *tls.Config
+	dialer *Dialer
+
+	nodeX509CACert string
+	tlsConfig      *tls.Config
 }
 
 // Dial creates a new network connection.
 func (l *Layer) Dial(addr string, timeout time.Duration) (net.Conn, error) {
-	dialer := &net.Dialer{Timeout: timeout}
-
-	var err error
-	var conn net.Conn
-	if l.remoteEncrypted {
-		conf := &tls.Config{
-			InsecureSkipVerify: l.skipVerify,
-		}
-		conn, err = tls.DialWithDialer(dialer, "tcp", addr, conf)
-	} else {
-		conn, err = dialer.Dial("tcp", addr)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	// Write a marker byte to indicate message type.
-	_, err = conn.Write([]byte{l.header})
-	if err != nil {
-		conn.Close()
-		return nil, err
-	}
-	return conn, err
+	return l.dialer.Dial(addr, timeout)
 }
 
 // Accept waits for the next connection.
@@ -127,11 +105,11 @@ func NewMux(ctx context.Context, ln net.Listener, adv net.Addr) (*Mux, error) {
 	}
 
 	return &Mux{
-		ctx:     ctx,
 		ln:      ln,
 		addr:    addr,
 		m:       make(map[byte]*listener),
 		Timeout: DefaultTimeout,
+		ctx:     ctx,
 	}, nil
 }
 
@@ -215,7 +193,7 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	// Set a read deadline so connections with no data don't timeout.
 	if err := conn.SetReadDeadline(time.Now().Add(mux.Timeout)); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).WithError(err).Error("tcp.Mux: cannot set read deadline")
+		log.WithContext(mux.ctx).Infof("tcp.Mux: cannot set read deadline: %s", err)
 		return
 	}
 
@@ -223,14 +201,14 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	var typ [1]byte
 	if _, err := io.ReadFull(conn, typ[:]); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).WithError(err).Error("tcp.Mux: cannot read header byte")
+		log.WithContext(mux.ctx).Infof("tcp.Mux: cannot read header byte: %s", err)
 		return
 	}
 
 	// Reset read deadline and let the listener handle that.
 	if err := conn.SetReadDeadline(time.Time{}); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).WithError(err).Error("tcp.Mux: cannot reset set read deadline")
+		log.WithContext(mux.ctx).Infof("tcp.Mux: cannot reset set read deadline: %s", err)
 		return
 	}
 
@@ -239,7 +217,8 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	if handler == nil {
 		conn.Close()
 		stats.Add(numUnregisteredHandlers, 1)
-		log.WithContext(mux.ctx).Errorf("tcp.Mux: handler not registered: %d (unsupported protocol?)", typ[0])
+		log.WithContext(mux.ctx).Infof("tcp.Mux: handler not registered for request from %s: %d (unsupported protocol?)",
+			conn.RemoteAddr().String(), typ[0])
 		return
 	}
 
@@ -254,7 +233,6 @@ func (mux *Mux) Listen(header byte) *Layer {
 	if _, ok := mux.m[header]; ok {
 		panic(fmt.Sprintf("listener already registered under header byte: %d", header))
 	}
-	log.WithContext(mux.ctx).Infof("received handler registration request for header %d", header)
 
 	// Create a new listener and assign it.
 	ln := &listener{
@@ -263,14 +241,12 @@ func (mux *Mux) Listen(header byte) *Layer {
 	mux.m[header] = ln
 
 	layer := &Layer{
-		ln:              ln,
-		header:          header,
-		addr:            mux.addr,
-		remoteEncrypted: mux.remoteEncrypted,
-		skipVerify:      mux.InsecureSkipVerify,
-		nodeX509CACert:  mux.x509CACert,
-		tlsConfig:       mux.tlsConfig,
+		ln:             ln,
+		addr:           mux.addr,
+		nodeX509CACert: mux.x509CACert,
+		tlsConfig:      mux.tlsConfig,
 	}
+	layer.dialer = NewDialer(header, mux.remoteEncrypted, mux.InsecureSkipVerify)
 
 	return layer
 }

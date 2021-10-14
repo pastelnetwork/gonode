@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -20,9 +22,13 @@ import (
 var stats *expvar.Map
 
 const (
-	numGetNodeAPI         = "num_get_node_api"
 	numGetNodeAPIRequest  = "num_get_node_api_req"
 	numGetNodeAPIResponse = "num_get_node_api_resp"
+	numExecuteRequest     = "num_execute_req"
+	numQueryRequest       = "num_query_req"
+	numGetNodeAPI         = "num_get_node_api"
+	// Client stats for this package.
+	numGetNodeAPIRequestLocal = "num_get_node_api_req_local"
 )
 
 const (
@@ -35,46 +41,112 @@ const (
 
 func init() {
 	stats = expvar.NewMap("cluster")
-	stats.Add(numGetNodeAPI, 0)
 	stats.Add(numGetNodeAPIRequest, 0)
 	stats.Add(numGetNodeAPIResponse, 0)
+	stats.Add(numExecuteRequest, 0)
+	stats.Add(numQueryRequest, 0)
+	stats.Add(numGetNodeAPIRequestLocal, 0)
 }
 
-// Transport is the interface the network layer must provide.
-type Transport interface {
-	net.Listener
-
+// Dialer is the interface dialers must implement.
+type Dialer interface {
 	// Dial is used to create a connection to a service listening
 	// on an address.
 	Dial(address string, timeout time.Duration) (net.Conn, error)
 }
 
+// Database is the interface any queryable system must implement
+type Database interface {
+	// Execute executes a slice of queries, none of which is expected
+	// to return rows.
+	Execute(er *command.ExecuteRequest) ([]*command.ExecuteResult, error)
+
+	// Query executes a slice of queries, each of which returns rows.
+	Query(qr *command.QueryRequest) ([]*command.QueryRows, error)
+}
+
+// Transport is the interface the network layer must provide.
+type Transport interface {
+	net.Listener
+	Dialer
+}
+
 // Service provides information about the node and cluster.
 type Service struct {
-	tn      Transport // Network layer this service uses
-	addr    net.Addr  // Address on which this service is listening
-	timeout time.Duration
+	tn   Transport // Network layer this service uses
+	addr net.Addr  // Address on which this service is listening
+
+	db Database // The queryable system.
 
 	mu      sync.RWMutex
 	https   bool   // Serving HTTPS?
 	apiAddr string // host:port this node serves the HTTP API.
-	ctx     context.Context
+
+	ctx context.Context
 }
 
 // New returns a new instance of the cluster service
-func New(ctx context.Context, tn Transport) *Service {
+func New(ctx context.Context, tn Transport, db Database) *Service {
 	return &Service{
-		ctx:     ctx,
-		tn:      tn,
-		addr:    tn.Addr(),
-		timeout: 10 * time.Second,
+		tn:   tn,
+		addr: tn.Addr(),
+		db:   db,
+		ctx:  ctx,
 	}
+}
+
+// GetNodeAPIAddr retrieves the API Address for the node at nodeAddr
+func (s *Service) GetNodeAPIAddr(nodeAddr string, timeout time.Duration) (string, error) {
+	stats.Add(numGetNodeAPI, 1)
+	conn, err := s.tn.Dial(nodeAddr, timeout)
+	if err != nil {
+		return "", fmt.Errorf("dial connection: %s", err)
+	}
+	defer conn.Close()
+	// Send the request
+	c := &Command{
+		Type: Command_COMMAND_TYPE_GET_NODE_API_URL,
+	}
+	p, err := proto.Marshal(c)
+	if err != nil {
+		return "", fmt.Errorf("command marshal: %s", err)
+	}
+	// Write length of Protobuf, the Protobuf
+	b := make([]byte, 4)
+	binary.LittleEndian.PutUint16(b[0:], uint16(len(p)))
+	_, err = conn.Write(b)
+	if err != nil {
+		return "", fmt.Errorf("write protobuf length: %s", err)
+	}
+	_, err = conn.Write(p)
+	if err != nil {
+		return "", fmt.Errorf("write protobuf: %s", err)
+	}
+	b, err = ioutil.ReadAll(conn)
+	if err != nil {
+		return "", fmt.Errorf("read protobuf bytes: %s", err)
+	}
+	a := &Address{}
+	err = proto.Unmarshal(b, a)
+	if err != nil {
+		return "", fmt.Errorf("protobuf unmarshal: %s", err)
+	}
+	return a.Url, nil
+}
+
+// Query runs query on the contained database
+func (s *Service) Query(qr *command.QueryRequest, _ string, _ time.Duration) ([]*command.QueryRows, error) {
+	return s.db.Query(qr)
+}
+
+// Execute executes the statement on database
+func (s *Service) Execute(er *command.ExecuteRequest, _ string, _ time.Duration) ([]*command.ExecuteResult, error) {
+	return s.db.Execute(er)
 }
 
 // Open opens the Service.
 func (s *Service) Open() error {
 	go s.serve()
-
 	log.WithContext(s.ctx).Infof("service listening on: %v", s.tn.Addr())
 	return nil
 }
@@ -111,57 +183,23 @@ func (s *Service) GetAPIAddr() string {
 	return s.apiAddr
 }
 
-// GetNodeAPIAddr retrieves the API Address for the node at nodeAddr
-func (s *Service) GetNodeAPIAddr(nodeAddr string) (string, error) {
-	stats.Add(numGetNodeAPI, 1)
+// GetNodeAPIURL returns fully-specified HTTP(S) API URL for the
+// node running this service.
+func (s *Service) GetNodeAPIURL() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 
-	conn, err := s.tn.Dial(nodeAddr, s.timeout)
-	if err != nil {
-		return "", fmt.Errorf("dial connection: %s", err)
+	scheme := "http"
+	if s.https {
+		scheme = "https"
 	}
-	defer conn.Close()
-
-	// Send the request
-	c := &Command{
-		Type: Command_COMMAND_TYPE_GET_NODE_API_URL,
-	}
-	p, err := proto.Marshal(c)
-	if err != nil {
-		return "", fmt.Errorf("command marshal: %s", err)
-	}
-
-	// Write length of Protobuf, the Protobuf
-	b := make([]byte, 4)
-	binary.LittleEndian.PutUint16(b[0:], uint16(len(p)))
-
-	_, err = conn.Write(b)
-	if err != nil {
-		return "", fmt.Errorf("write protobuf length: %s", err)
-	}
-	_, err = conn.Write(p)
-	if err != nil {
-		return "", fmt.Errorf("write protobuf: %s", err)
-	}
-
-	b, err = ioutil.ReadAll(conn)
-	if err != nil {
-		return "", fmt.Errorf("read protobuf bytes: %s", err)
-	}
-
-	a := &Address{}
-	err = proto.Unmarshal(b, a)
-	if err != nil {
-		return "", fmt.Errorf("protobuf unmarshal: %s", err)
-	}
-
-	return a.Url, nil
+	return fmt.Sprintf("%s://%s", scheme, s.apiAddr)
 }
 
 // Stats returns status of the Service.
 func (s *Service) Stats() (map[string]interface{}, error) {
 	st := map[string]interface{}{
 		"addr":     s.addr.String(),
-		"timeout":  s.timeout.String(),
 		"https":    strconv.FormatBool(s.https),
 		"api_addr": s.apiAddr,
 	}
@@ -183,43 +221,102 @@ func (s *Service) serve() error {
 func (s *Service) handleConn(conn net.Conn) {
 	defer conn.Close()
 
-	b := make([]byte, 4)
-	_, err := io.ReadFull(conn, b)
-	if err != nil {
-		return
-	}
-	sz := binary.LittleEndian.Uint16(b[0:])
-
-	b = make([]byte, sz)
-	_, err = io.ReadFull(conn, b)
-	if err != nil {
-		return
-	}
-
-	c := &Command{}
-	err = proto.Unmarshal(b, c)
-	if err != nil {
-		conn.Close()
-	}
-
-	switch c.Type {
-	case Command_COMMAND_TYPE_GET_NODE_API_URL:
-		stats.Add(numGetNodeAPIRequest, 1)
-		s.mu.RLock()
-		defer s.mu.RUnlock()
-
-		a := &Address{}
-		scheme := "http"
-		if s.https {
-			scheme = "https"
+	for {
+		b := make([]byte, 4)
+		_, err := io.ReadFull(conn, b)
+		if err != nil {
+			return
 		}
-		a.Url = fmt.Sprintf("%s://%s", scheme, s.apiAddr)
+		sz := binary.LittleEndian.Uint16(b[0:])
 
-		b, err = proto.Marshal(a)
+		p := make([]byte, sz)
+		_, err = io.ReadFull(conn, p)
+		if err != nil {
+			return
+		}
+
+		c := &Command{}
+		err = proto.Unmarshal(p, c)
 		if err != nil {
 			conn.Close()
 		}
-		conn.Write(b)
-		stats.Add(numGetNodeAPIResponse, 1)
+
+		switch c.Type {
+		case Command_COMMAND_TYPE_GET_NODE_API_URL:
+			stats.Add(numGetNodeAPIRequest, 1)
+			p, err = proto.Marshal(&Address{
+				Url: s.GetNodeAPIURL(),
+			})
+			if err != nil {
+				conn.Close()
+			}
+
+			// Write length of Protobuf first, then write the actual Protobuf.
+			b = make([]byte, 4)
+			binary.LittleEndian.PutUint16(b[0:], uint16(len(p)))
+			conn.Write(b)
+			conn.Write(p)
+			stats.Add(numGetNodeAPIResponse, 1)
+
+		case Command_COMMAND_TYPE_EXECUTE:
+			stats.Add(numExecuteRequest, 1)
+
+			resp := &CommandExecuteResponse{}
+
+			er := c.GetExecuteRequest()
+			if er == nil {
+				resp.Error = "ExecuteRequest is nil"
+			} else {
+				res, err := s.db.Execute(er)
+				if err != nil {
+					resp.Error = err.Error()
+				} else {
+					resp.Results = make([]*command.ExecuteResult, len(res))
+					for i := range res {
+						resp.Results[i] = res[i]
+					}
+				}
+			}
+
+			p, err := proto.Marshal(resp)
+			if err != nil {
+				return
+			}
+			// Write length of Protobuf first, then write the actual Protobuf.
+			b = make([]byte, 4)
+			binary.LittleEndian.PutUint16(b[0:], uint16(len(p)))
+			conn.Write(b)
+			conn.Write(p)
+
+		case Command_COMMAND_TYPE_QUERY:
+			stats.Add(numQueryRequest, 1)
+
+			resp := &CommandQueryResponse{}
+
+			qr := c.GetQueryRequest()
+			if qr == nil {
+				resp.Error = "QueryRequest is nil"
+			} else {
+				res, err := s.db.Query(qr)
+				if err != nil {
+					resp.Error = err.Error()
+				} else {
+					resp.Rows = make([]*command.QueryRows, len(res))
+					for i := range res {
+						resp.Rows[i] = res[i]
+					}
+				}
+			}
+
+			p, err = proto.Marshal(resp)
+			if err != nil {
+				return
+			}
+			// Write length of Protobuf first, then write the actual Protobuf.
+			b = make([]byte, 4)
+			binary.LittleEndian.PutUint16(b[0:], uint16(len(p)))
+			conn.Write(b)
+			conn.Write(p)
+		}
 	}
 }

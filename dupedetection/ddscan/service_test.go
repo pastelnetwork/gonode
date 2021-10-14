@@ -29,7 +29,7 @@ func prepareService(t *testing.T) *service {
 	if err != nil {
 		panic(err.Error())
 	}
-	db, err := db.Open(tmpfile.Name())
+	db, err := db.Open(tmpfile.Name(), true)
 	if err != nil {
 		panic("failed to open database")
 	}

@@ -7,15 +7,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/pastelnetwork/gonode/common/utils"
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
 )
 
@@ -32,6 +33,7 @@ func Join(ctx context.Context, srcIP string, joinAddr []string, id, addr string,
 	attemptInterval time.Duration, tlsConfig *tls.Config) (string, error) {
 	var err error
 	var j string
+
 	if tlsConfig == nil {
 		tlsConfig = &tls.Config{InsecureSkipVerify: true}
 	}
@@ -40,7 +42,8 @@ func Join(ctx context.Context, srcIP string, joinAddr []string, id, addr string,
 		for _, a := range joinAddr {
 			j, err = join(ctx, srcIP, a, id, addr, voter, tlsConfig)
 			if err == nil {
-				return j, nil // join success
+				// Success!
+				return j, nil
 			}
 
 			log.WithContext(ctx).Warnf("failed to join at %s: error: %s", a, err.Error())
@@ -50,6 +53,7 @@ func Join(ctx context.Context, srcIP string, joinAddr []string, id, addr string,
 		time.Sleep(attemptInterval)
 	}
 	log.WithContext(ctx).Errorf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
+
 	return "", ErrJoinFailed
 }
 

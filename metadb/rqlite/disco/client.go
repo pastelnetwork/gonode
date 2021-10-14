@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+
 	"fmt"
 	"io/ioutil"
+
 	"net/http"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -29,8 +31,8 @@ type Client struct {
 // New returns an initialized Discovery Service client.
 func New(ctx context.Context, url string) *Client {
 	return &Client{
-		ctx: ctx,
 		url: url,
+		ctx: ctx,
 	}
 }
 

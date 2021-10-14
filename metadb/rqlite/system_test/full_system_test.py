@@ -40,7 +40,9 @@ class Node(object):
     if api_adv is None:
       api_adv = api_addr
 
+    self.dir = dir
     self.path = path
+    self.peers_path = os.path.join(self.dir, "raft/peers.json")
     self.node_id = node_id
     self.api_addr = api_addr
     self.api_adv = api_adv
@@ -49,7 +51,6 @@ class Node(object):
     self.raft_voter = raft_voter
     self.raft_snap_threshold = raft_snap_threshold
     self.raft_snap_int = raft_snap_int
-    self.dir = dir
     self.on_disk = on_disk
     self.process = None
     self.stdout_file = os.path.join(dir, 'rqlited.log')
@@ -123,20 +124,24 @@ class Node(object):
 
   def status(self):
     r = requests.get(self._status_url())
-    r.raise_for_status()
+    raise_for_status(r)
     return r.json()
 
   def nodes(self):
     r = requests.get(self._nodes_url())
-    r.raise_for_status()
+    raise_for_status(r)
     return r.json()
+
+  def ready(self):
+    r = requests.get(self._ready_url())
+    return r.status_code == 200
 
   def expvar(self):
     r = requests.get(self._expvar_url())
-    r.raise_for_status()
+    raise_for_status(r)
     return r.json()
 
-  def is_leader(self, constraint_check=True):
+  def is_leader(self):
     '''
     is_leader returns whether this node is the cluster leader
     It also performs a check, to ensure the node nevers gives out
@@ -144,45 +149,45 @@ class Node(object):
     '''
 
     try:
-      isLeaderRaft = self.status()['store']['raft']['state'] == 'Leader'
-      isLeaderNodes = self.nodes()[self.node_id]['leader'] is True
+      return self.status()['store']['raft']['state'] == 'Leader'
     except requests.exceptions.ConnectionError:
       return False
-
-    if (isLeaderRaft != isLeaderNodes) and constraint_check:
-      raise AssertionError("conflicting states reported for leadership (raft: %s, nodes: %s)"
-        % (isLeaderRaft, isLeaderNodes))
-    return isLeaderNodes
 
   def is_follower(self):
     try:
-      isFollowerRaft = self.status()['store']['raft']['state'] == 'Follower'
-      isFollowersNodes = self.nodes()[self.node_id]['leader'] is False
+      return self.status()['store']['raft']['state'] == 'Follower'
     except requests.exceptions.ConnectionError:
       return False
-
-    if isFollowerRaft != isFollowersNodes:
-      raise AssertionError("conflicting states reported for followership (raft: %s, nodes: %s)"
-        % (isFollowerRaft, isFollowersNodes))
-    return isFollowersNodes
 
   def wait_for_leader(self, timeout=TIMEOUT):
     lr = None
     t = 0
-    while lr == None or lr is '':
+    while lr == None or lr['addr'] == '':
       if t > timeout:
         raise Exception('timeout')
-      lr = self.status()['store']['leader']
+      try:
+        lr = self.status()['store']['leader']
+      except requests.exceptions.ConnectionError:
+        pass
       time.sleep(1)
       t+=1
 
+    # Perform a check on readyness while we're here.
+    if self.ready() is not True:
+      raise Exception('leader is available but node reports not ready')
     return lr
 
-  def applied_index(self):
-    return int(self.status()['store']['raft']['applied_index'])
+  def db_applied_index(self):
+    return int(self.status()['store']['db_applied_index'])
+
+  def fsm_index(self):
+    return int(self.status()['store']['fsm_index'])
 
   def commit_index(self):
     return int(self.status()['store']['raft']['commit_index'])
+
+  def applied_index(self):
+    return int(self.status()['store']['raft']['applied_index'])
 
   def last_log_index(self):
     return int(self.status()['store']['raft']['last_log_index'])
@@ -193,16 +198,22 @@ class Node(object):
   def num_join_requests(self):
     return int(self.expvar()['http']['joins'])
 
-  def wait_for_applied_index(self, index, timeout=TIMEOUT):
+  def wait_for_fsm_index(self, index, timeout=TIMEOUT):
+    '''
+    Wait until the given index has been applied to the state machine.
+    '''
     t = 0
-    while self.applied_index() < index:
+    while self.fsm_index() < index:
       if t > timeout:
         raise Exception('timeout')
       time.sleep(1)
       t+=1
-    return self.applied_index()
+    return self.fsm_index()
 
   def wait_for_commit_index(self, index, timeout=TIMEOUT):
+    '''
+    Wait until the commit index reaches the given value
+    '''
     t = 0
     while self.commit_index() < index:
       if t > timeout:
@@ -212,6 +223,9 @@ class Node(object):
     return self.commit_index()
 
   def wait_for_all_applied(self, timeout=TIMEOUT):
+    '''
+    Wait until the applied index equals the commit index.
+    '''
     t = 0
     while self.commit_index() != self.applied_index():
       if t > timeout:
@@ -220,12 +234,31 @@ class Node(object):
       t+=1
     return self.applied_index()
 
-  def query(self, statement, params=None, level='weak'):
+  def wait_for_all_fsm(self, timeout=TIMEOUT):
+    '''
+    Wait until all outstanding database commands have actually
+    been applied to the database i.e. state machine.
+    '''
+    t = 0
+    while self.fsm_index() != self.db_applied_index():
+      if t > timeout:
+        raise Exception('timeout')
+      time.sleep(1)
+      t+=1
+    return self.fsm_index()
+
+  def query(self, statement, params=None, level='weak', pretty=False, text=False):
     body = [statement]
     if params is not None:
       body = [body + params]
-    r = requests.post(self._query_url(), params={'level': level}, data=json.dumps(body))
-    r.raise_for_status()
+
+    reqParams = {'level': level}
+    if pretty:
+      reqParams['pretty'] = "yes"
+    r = requests.post(self._query_url(), params=reqParams, data=json.dumps(body))
+    raise_for_status(r)
+    if text:
+      return r.text
     return r.json()
 
   def execute(self, statement, params=None):
@@ -236,38 +269,52 @@ class Node(object):
 
   def execute_raw(self, body):
     r = requests.post(self._execute_url(), data=body)
-    r.raise_for_status()
+    raise_for_status(r)
     return r.json()
 
   def backup(self, file):
     with open(file, 'w') as fd:
       r = requests.get(self._backup_url())
-      r.raise_for_status()
+      raise_for_status(r)
       fd.write(r.content)
 
   def restore(self, file):
     # This is the one API that doesn't expect JSON.
     conn = sqlite3.connect(file)
     r = requests.post(self._load_url(), data='\n'.join(conn.iterdump()))
-    r.raise_for_status()
+    raise_for_status(r)
     conn.close()
     return r.json()
 
   def redirect_addr(self):
-    r = requests.post(self._execute_url(), data=json.dumps(['nonsense']), allow_redirects=False)
+    r = requests.post(self._execute_url(redirect=True), data=json.dumps(['nonsense']), allow_redirects=False)
+    raise_for_status(r)
     if r.status_code == 301:
       return "%s://%s" % (urlparse(r.headers['Location']).scheme, urlparse(r.headers['Location']).netloc)
+
+  def set_peers(self, peers):
+    f = open(self.peers_path, "w")
+    f.write(json.dumps(peers))
+    f.close()
 
   def _status_url(self):
     return 'http://' + self.APIAddr() + '/status'
   def _nodes_url(self):
     return 'http://' + self.APIAddr() + '/nodes?nonvoters' # Getting all nodes back makes testing easier
+  def _ready_url(self):
+    return 'http://' + self.APIAddr() + '/readyz'
   def _expvar_url(self):
     return 'http://' + self.APIAddr() + '/debug/vars'
-  def _query_url(self):
-    return 'http://' + self.APIAddr() + '/db/query'
-  def _execute_url(self):
-    return 'http://' + self.APIAddr() + '/db/execute'
+  def _query_url(self, redirect=False):
+    rd = ""
+    if redirect:
+      rd = "?redirect"
+    return 'http://' + self.APIAddr() + '/db/query' + rd
+  def _execute_url(self, redirect=False):
+    rd = ""
+    if redirect:
+      rd = "?redirect"
+    return 'http://' + self.APIAddr() + '/db/execute' + rd
   def _backup_url(self):
     return 'http://' + self.APIAddr() + '/db/backup'
   def _load_url(self):
@@ -280,6 +327,14 @@ class Node(object):
     self.stdout_fd.close()
     self.stderr_fd.close()
 
+def raise_for_status(r):
+  try:
+    r.raise_for_status()
+  except requests.exceptions.HTTPError as e:
+    print(e)
+    print(r.text)
+    raise e
+
 def random_addr():
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   s.bind(('localhost', 0))
@@ -287,13 +342,14 @@ def random_addr():
 
 def deprovision_node(node):
   node.stop()
-  shutil.rmtree(node.dir)
+  if os.path.isdir(node.dir):
+    shutil.rmtree(node.dir)
   node = None
 
 class Cluster(object):
   def __init__(self, nodes):
     self.nodes = nodes
-  def wait_for_leader(self, node_exc=None, timeout=TIMEOUT, constraint_check=True):
+  def wait_for_leader(self, node_exc=None, timeout=TIMEOUT):
     t = 0
     while True:
       if t > timeout:
@@ -301,10 +357,13 @@ class Cluster(object):
       for n in self.nodes:
         if node_exc is not None and n == node_exc:
           continue
-        if n.is_leader(constraint_check):
+        if n.is_leader():
           return n
       time.sleep(1)
       t+=1
+  def stop(self):
+    for n in self.nodes:
+      n.stop()
   def followers(self):
     return [n for n in self.nodes if n.is_follower()]
   def deprovision(self):
@@ -328,10 +387,45 @@ class TestSingleNode(unittest.TestCase):
     j = n.execute('CREATE TABLE bar (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
     self.assertEqual(str(j), "{u'results': [{}]}")
     j = n.execute('INSERT INTO bar(name) VALUES("fiona")')
-    applied = n.wait_for_all_applied()
+    applied = n.wait_for_all_fsm()
     self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
     j = n.query('SELECT * from bar')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+
+    # Ensure raw response from API is as expected.
+    j = n.query('SELECT * from bar', text=True)
+    self.assertEqual(str(j), '{"results":[{"columns":["id","name"],"types":["integer","text"],"values":[[1,"fiona"]]}]}')
+
+  def test_simple_raw_queries_pretty(self):
+    '''Test simple queries, requesting pretty output, work as expected'''
+    n = self.cluster.wait_for_leader()
+    j = n.execute('CREATE TABLE bar (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
+    self.assertEqual(str(j), "{u'results': [{}]}")
+    j = n.execute('INSERT INTO bar(name) VALUES("fiona")')
+    applied = n.wait_for_all_fsm()
+    self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
+    j = n.query('SELECT * from bar', pretty=True, text=True)
+    exp = '''{
+    "results": [
+        {
+            "columns": [
+                "id",
+                "name"
+            ],
+            "types": [
+                "integer",
+                "text"
+            ],
+            "values": [
+                [
+                    1,
+                    "fiona"
+                ]
+            ]
+        }
+    ]
+}'''
+    self.assertEqual(str(j), exp)
 
   def test_simple_parameterized_queries(self):
     '''Test parameterized queries work as expected'''
@@ -339,7 +433,7 @@ class TestSingleNode(unittest.TestCase):
     j = n.execute('CREATE TABLE bar (id INTEGER NOT NULL PRIMARY KEY, name TEXT, age INTEGER)')
     self.assertEqual(str(j), "{u'results': [{}]}")
     j = n.execute('INSERT INTO bar(name, age) VALUES(?,?)', params=["fiona", 20])
-    applied = n.wait_for_all_applied()
+    applied = n.wait_for_all_fsm()
     self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
     j = n.query('SELECT * from bar')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona', 20]], u'types': [u'integer', u'text', u'integer'], u'columns': [u'id', u'name', u'age']}]}")
@@ -357,7 +451,7 @@ class TestSingleNode(unittest.TestCase):
         ['INSERT INTO bar(name, age) VALUES("sinead", 25)']
     ])
     j = n.execute_raw(body)
-    applied = n.wait_for_all_applied()
+    applied = n.wait_for_all_fsm()
     self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}, {u'last_insert_id': 2, u'rows_affected': 1}]}")
     j = n.query('SELECT * from bar')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona', 20], [2, u'sinead', 25]], u'types': [u'integer', u'text', u'integer'], u'columns': [u'id', u'name', u'age']}]}")
@@ -370,7 +464,7 @@ class TestSingleNode(unittest.TestCase):
     j = n.execute('INSERT INTO foo(name) VALUES("fiona")')
     self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
 
-    applied = n.wait_for_all_applied()
+    applied = n.wait_for_all_fsm()
 
     # Wait for a snapshot to happen.
     timeout = 10
@@ -383,69 +477,6 @@ class TestSingleNode(unittest.TestCase):
         raise Exception('timeout', nSnaps)
       time.sleep(1)
       t+=1
-
-class TestIdempotentJoin(unittest.TestCase):
-  def tearDown(self):
-    deprovision_node(self.n0)
-    deprovision_node(self.n1)
-
-  def test(self):
-    '''Test that a node performing two join requests works fine'''
-    self.n0 = Node(RQLITED_PATH, '0')
-    self.n0.start()
-    self.n0.wait_for_leader()
-
-    self.n1 = Node(RQLITED_PATH, '1')
-    self.n1.start(join=self.n0.APIAddr())
-    self.n1.wait_for_leader()
-
-    self.assertEqual(self.n0.num_join_requests(), 1)
-
-    # Restart n1, and ensure it doesn't make a second join request
-    # since it's already part of the cluster.
-    self.n1.stop()
-    self.n1.start(join=self.n0.APIAddr())
-    self.n1.wait_for_leader()
-    self.assertEqual(self.n0.num_join_requests(), 1)
-
-class TestRedirectedJoin(unittest.TestCase):
-  def tearDown(self):
-    deprovision_node(self.n0)
-    deprovision_node(self.n1)
-    deprovision_node(self.n2)
-
-  def test(self):
-    '''Test that a node can join via a follower'''
-    self.n0 = Node(RQLITED_PATH, '0')
-    self.n0.start()
-    l0 = self.n0.wait_for_leader()
-
-    self.n1 = Node(RQLITED_PATH, '1')
-    self.n1.start(join=self.n0.APIAddr())
-    self.n1.wait_for_leader()
-    self.assertTrue(self.n1.is_follower())
-
-    self.n2 = Node(RQLITED_PATH, '2')
-    self.n2.start(join=self.n1.APIAddr())
-    l2 = self.n2.wait_for_leader()
-    self.assertEqual(l0, l2)
-
-  def test_api_adv(self):
-    '''Test that a node can join via a follower that advertises a different API address'''
-    self.n0 = Node(RQLITED_PATH, '0',
-      api_addr="0.0.0.0:4001", api_adv="localhost:4001")
-    self.n0.start()
-    l0 = self.n0.wait_for_leader()
-
-    self.n1 = Node(RQLITED_PATH, '1')
-    self.n1.start(join=self.n0.APIAddr())
-    self.n1.wait_for_leader()
-    self.assertTrue(self.n1.is_follower())
-
-    self.n2 = Node(RQLITED_PATH, '2')
-    self.n2.start(join=self.n1.APIAddr())
-    l2 = self.n2.wait_for_leader()
-    self.assertEqual(l0, l2)
 
 class TestEndToEnd(unittest.TestCase):
   def setUp(self):
@@ -482,14 +513,14 @@ class TestEndToEnd(unittest.TestCase):
     j = n.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
     self.assertEqual(str(j), "{u'results': [{}]}")
     j = n.execute('INSERT INTO foo(name) VALUES("fiona")')
-    applied = n.wait_for_all_applied()
+    fsmIdx = n.wait_for_all_fsm()
     self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
     j = n.query('SELECT * FROM foo')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
 
     n0 = self.cluster.wait_for_leader().stop()
     n1 = self.cluster.wait_for_leader(node_exc=n0)
-    n1.wait_for_applied_index(applied)
+    n1.wait_for_fsm_index(fsmIdx)
     j = n1.query('SELECT * FROM foo')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
     j = n1.execute('INSERT INTO foo(name) VALUES("declan")')
@@ -497,7 +528,7 @@ class TestEndToEnd(unittest.TestCase):
 
     n0.start()
     n0.wait_for_leader()
-    n0.wait_for_applied_index(n1.applied_index())
+    n0.wait_for_fsm_index(n1.fsm_index())
     j = n0.query('SELECT * FROM foo', level='none')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona'], [2, u'declan']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
 
@@ -510,10 +541,37 @@ class TestEndToEnd(unittest.TestCase):
     for n in fs:
       self.assertEqual(l.APIProtoAddr(), n.redirect_addr())
 
+    # Kill the leader, wait for a new leader, and check that the
+    # redirect returns the new leader address.
     l.stop()
     n = self.cluster.wait_for_leader(node_exc=l)
     for f in self.cluster.followers():
       self.assertEqual(n.APIProtoAddr(), f.redirect_addr())
+
+  def test_nodes(self):
+    '''Test that the nodes/ endpoint operates as expected'''
+    l = self.cluster.wait_for_leader()
+    fs = self.cluster.followers()
+    self.assertEqual(len(fs), 2)
+
+    nodes = l.nodes()
+    self.assertEqual(nodes[l.node_id]['leader'], True)
+    self.assertEqual(nodes[l.node_id]['reachable'], True)
+    self.assertEqual(nodes[l.node_id]['api_addr'], l.APIProtoAddr())
+    self.assertTrue(nodes[fs[0].node_id].has_key('time'))
+    for n in [fs[0], fs[1]]:
+      self.assertEqual(nodes[n.node_id]['leader'], False)
+      self.assertEqual(nodes[n.node_id]['reachable'], True)
+      self.assertEqual(nodes[n.node_id]['api_addr'], n.APIProtoAddr())
+      self.assertTrue(nodes[n.node_id].has_key('time'))
+
+    fs[0].stop()
+    nodes = l.nodes()
+    self.assertEqual(nodes[fs[0].node_id]['reachable'], False)
+    self.assertTrue(nodes[fs[0].node_id].has_key('error'))
+    self.assertEqual(nodes[fs[1].node_id]['reachable'], True)
+    self.assertEqual(nodes[l.node_id]['reachable'], True)
+
 
 class TestEndToEndOnDisk(TestEndToEnd):
   def setUp(self):
@@ -549,6 +607,104 @@ class TestEndToEndAdvAddr(TestEndToEnd):
 
     self.cluster = Cluster([n0, n1, n2])
 
+class TestClusterRecovery(unittest.TestCase):
+  '''Test that a cluster can recover after all Raft network addresses change'''
+  def test(self):
+    n0 = Node(RQLITED_PATH, '0')
+    n0.start()
+    n0.wait_for_leader()
+
+    n1 = Node(RQLITED_PATH, '1')
+    n1.start(join=n0.APIAddr())
+    n1.wait_for_leader()
+
+    n2 = Node(RQLITED_PATH, '2')
+    n2.start(join=n0.APIAddr())
+    n2.wait_for_leader()
+
+    self.nodes = [n0, n1, n2]
+
+    j = n0.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
+    self.assertEqual(str(j), "{u'results': [{}]}")
+    j = n0.execute('INSERT INTO foo(name) VALUES("fiona")')
+    fsmIdx = n0.wait_for_all_fsm()
+    self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
+    j = n0.query('SELECT * FROM foo')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+
+    n0.stop()
+    n1.stop()
+    n2.stop()
+
+    # Create new cluster from existing data, but with new network addresses.
+    addr3 = "127.0.0.1:10003"
+    addr4 = "127.0.0.1:10004"
+    addr5 = "127.0.0.1:10005"
+
+    peers = [
+      {"id": n0.node_id, "address": addr3},
+      {"id": n1.node_id, "address": addr4},
+      {"id": n2.node_id, "address": addr5},
+    ]
+
+    n3 = Node(RQLITED_PATH, n0.node_id, dir=n0.dir, raft_addr=addr3)
+    n4 = Node(RQLITED_PATH, n1.node_id, dir=n1.dir, raft_addr=addr4)
+    n5 = Node(RQLITED_PATH, n2.node_id, dir=n2.dir, raft_addr=addr5)
+    self.nodes = self.nodes + [n3, n4, n5]
+
+    n3.set_peers(peers)
+    n4.set_peers(peers)
+    n5.set_peers(peers)
+
+    n3.start(wait=False)
+    n4.start(wait=False)
+    n5.start(wait=False)
+
+    # New cluster ok?
+    n3.wait_for_leader()
+
+    j = n3.query('SELECT * FROM foo')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+
+  def tearDown(self):
+    for n in self.nodes:
+      deprovision_node(n)
+
+class TestRequestForwarding(unittest.TestCase):
+  '''Test that followers transparently forward requests to leaders'''
+
+  def setUp(self):
+    n0 = Node(RQLITED_PATH, '0')
+    n0.start()
+    n0.wait_for_leader()
+
+    n1 = Node(RQLITED_PATH, '1')
+    n1.start(join=n0.APIAddr())
+    n1.wait_for_leader()
+
+    self.cluster = Cluster([n0, n1])
+
+  def tearDown(self):
+    self.cluster.deprovision()
+
+  def test_execute_query_forward(self):
+      l = self.cluster.wait_for_leader()
+      j = l.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
+      self.assertEqual(str(j), "{u'results': [{}]}")
+
+      f = self.cluster.followers()[0]
+      j = f.execute('INSERT INTO foo(name) VALUES("fiona")')
+      self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
+      fsmIdx = l.wait_for_all_fsm()
+
+      j = l.query('SELECT * FROM foo')
+      self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+      j = f.query('SELECT * FROM foo')
+      self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+      self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+      j = f.query('SELECT * FROM foo', level="strong")
+      self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+
 class TestEndToEndNonVoter(unittest.TestCase):
   def setUp(self):
     self.leader = Node(RQLITED_PATH, '0')
@@ -571,7 +727,7 @@ class TestEndToEndNonVoter(unittest.TestCase):
     j = self.leader.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
     self.assertEqual(str(j), "{u'results': [{}]}")
     j = self.leader.execute('INSERT INTO foo(name) VALUES("fiona")')
-    applied = self.leader.wait_for_all_applied()
+    self.leader.wait_for_all_fsm()
     self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
     j = self.leader.query('SELECT * FROM foo')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
@@ -584,7 +740,7 @@ class TestEndToEndNonVoter(unittest.TestCase):
     # Restart non-voter and confirm it picks up changes
     self.non_voter.start()
     self.non_voter.wait_for_leader()
-    self.non_voter.wait_for_applied_index(self.leader.applied_index())
+    self.non_voter.wait_for_fsm_index(self.leader.fsm_index())
     j = self.non_voter.query('SELECT * FROM foo', level='none')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona'], [2, u'declan']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
 
@@ -633,23 +789,22 @@ class TestEndToEndNonVoterFollowsLeader(unittest.TestCase):
     j = n.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
     self.assertEqual(str(j), "{u'results': [{}]}")
     j = n.execute('INSERT INTO foo(name) VALUES("fiona")')
-    applied = n.wait_for_all_applied()
+    n.wait_for_all_fsm()
     self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
     j = n.query('SELECT * FROM foo')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
 
-    # Kill leader, and then make more changes. Don't perform leader-constraint checks
-    # since the cluster is changing right now.
-    n0 = self.cluster.wait_for_leader(constraint_check=False).stop()
-    n1 = self.cluster.wait_for_leader(node_exc=n0, constraint_check=False)
-    n1.wait_for_applied_index(applied)
+    # Kill leader, and then make more changes.
+    n0 = self.cluster.wait_for_leader().stop()
+    n1 = self.cluster.wait_for_leader(node_exc=n0)
+    n1.wait_for_all_applied()
     j = n1.query('SELECT * FROM foo')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
     j = n1.execute('INSERT INTO foo(name) VALUES("declan")')
     self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 2, u'rows_affected': 1}]}")
 
     # Confirm non-voter sees changes made through old and new leader.
-    self.non_voter.wait_for_applied_index(n1.applied_index())
+    self.non_voter.wait_for_fsm_index(n1.fsm_index())
     j = self.non_voter.query('SELECT * FROM foo', level='none')
     self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona'], [2, u'declan']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
 
@@ -663,7 +818,7 @@ class TestEndToEndBackupRestore(unittest.TestCase):
     self.node0.wait_for_leader()
     self.node0.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
     self.node0.execute('INSERT INTO foo(name) VALUES("fiona")')
-    self.node0.wait_for_all_applied()
+    self.node0.wait_for_all_fsm()
 
     self.node0.backup(self.db_file)
     conn = sqlite3.connect(self.db_file)
@@ -712,7 +867,7 @@ class TestEndToEndSnapRestoreSingle(unittest.TestCase):
 
     for i in range(0,200):
       self.n0.execute('INSERT INTO foo(name) VALUES("fiona")')
-    self.n0.wait_for_all_applied()
+    self.n0.wait_for_all_fsm()
     self.waitForSnapIndex(175)
 
     # Ensure node has the full correct state.
@@ -761,12 +916,12 @@ class TestEndToEndSnapRestoreCluster(unittest.TestCase):
     self.n0.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
     for i in range(0,100):
       self.n0.execute('INSERT INTO foo(name) VALUES("fiona")')
-    self.n0.wait_for_all_applied()
+    self.n0.wait_for_all_fsm()
     self.waitForSnap(1)
 
     for i in range(0,100):
       self.n0.execute('INSERT INTO foo(name) VALUES("fiona")')
-    self.n0.wait_for_all_applied()
+    self.n0.wait_for_all_fsm()
     self.waitForSnap(2)
 
     # Add two more nodes to the cluster
@@ -789,11 +944,11 @@ class TestEndToEndSnapRestoreCluster(unittest.TestCase):
 
     for i in range(0,100):
       self.n0.execute('INSERT INTO foo(name) VALUES("fiona")')
-    self.n0.wait_for_all_applied()
+    self.n0.wait_for_all_fsm()
     self.waitForSnap(3)
     for i in range(0,100):
       self.n0.execute('INSERT INTO foo(name) VALUES("fiona")')
-    self.n0.wait_for_all_applied()
+    self.n0.wait_for_all_fsm()
     self.waitForSnap(4)
 
     # Restart killed node, check it has full state.
@@ -806,6 +961,151 @@ class TestEndToEndSnapRestoreCluster(unittest.TestCase):
     deprovision_node(self.n0)
     deprovision_node(self.n1)
     deprovision_node(self.n2)
+
+class TestIdempotentJoin(unittest.TestCase):
+  def tearDown(self):
+    deprovision_node(self.n0)
+    deprovision_node(self.n1)
+
+  def test(self):
+    '''Test that a node performing two join requests works fine'''
+    self.n0 = Node(RQLITED_PATH, '0')
+    self.n0.start()
+    self.n0.wait_for_leader()
+
+    self.n1 = Node(RQLITED_PATH, '1')
+    self.n1.start(join=self.n0.APIAddr())
+    self.n1.wait_for_leader()
+
+    self.assertEqual(self.n0.num_join_requests(), 1)
+
+    self.n1.stop()
+    self.n1.start(join=self.n0.APIAddr())
+    self.n1.wait_for_leader()
+    self.assertEqual(self.n0.num_join_requests(), 2)
+
+class TestJoinCatchup(unittest.TestCase):
+  def setUp(self):
+    self.n0 = Node(RQLITED_PATH, '0')
+    self.n0.start()
+    self.n0.wait_for_leader()
+
+    self.n1 = Node(RQLITED_PATH, '1')
+    self.n1.start(join=self.n0.APIAddr())
+    self.n1.wait_for_leader()
+
+    self.n2 = Node(RQLITED_PATH, '2')
+    self.n2.start(join=self.n0.APIAddr())
+    self.n2.wait_for_leader()
+
+    self.cluster = Cluster([self.n0, self.n1, self.n2])
+
+  def tearDown(self):
+    self.cluster.deprovision()
+
+  def test_no_change_id_addr(self):
+    '''Test that a node rejoining without changing ID or address picks up changes'''
+    n0 = self.cluster.wait_for_leader()
+    j = n0.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
+    self.assertEqual(str(j), "{u'results': [{}]}")
+    j = n0.execute('INSERT INTO foo(name) VALUES("fiona")')
+    self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
+    j = n0.query('SELECT * FROM foo')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+    applied = n0.wait_for_all_fsm()
+
+    # Test that follower node has correct state in local database, and then kill the follower
+    self.n1.wait_for_fsm_index(applied)
+    j = self.n1.query('SELECT * FROM foo', level='none')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+    self.n1.stop()
+
+    # Insert a new record
+    j = n0.execute('INSERT INTO foo(name) VALUES("fiona")')
+    self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 2, u'rows_affected': 1}]}")
+    j = n0.query('SELECT COUNT(*) FROM foo')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[2]], u'types': [u''], u'columns': [u'COUNT(*)']}]}")
+    applied = n0.wait_for_all_fsm()
+
+    # Restart follower, explicity rejoin, and ensure it picks up new records
+    self.n1.start(join=self.n0.APIAddr())
+    self.n1.wait_for_leader()
+    self.n1.wait_for_fsm_index(applied)
+    self.assertEqual(n0.expvar()['store']['num_ignored_joins'], 1)
+    j = self.n1.query('SELECT COUNT(*) FROM foo', level='none')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[2]], u'types': [u''], u'columns': [u'COUNT(*)']}]}")
+
+  def test_change_addresses(self):
+    '''Test that a node rejoining with new addresses works fine'''
+    n0 = self.cluster.wait_for_leader()
+    j = n0.execute('CREATE TABLE foo (id INTEGER NOT NULL PRIMARY KEY, name TEXT)')
+    self.assertEqual(str(j), "{u'results': [{}]}")
+    j = n0.execute('INSERT INTO foo(name) VALUES("fiona")')
+    self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 1, u'rows_affected': 1}]}")
+    j = n0.query('SELECT * FROM foo')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+    applied = n0.wait_for_all_fsm()
+
+    # Test that follower node has correct state in local database, and then kill the follower
+    self.n1.wait_for_fsm_index(applied)
+    j = self.n1.query('SELECT * FROM foo', level='none')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[1, u'fiona']], u'types': [u'integer', u'text'], u'columns': [u'id', u'name']}]}")
+    self.n1.stop()
+
+    # Insert a new record
+    j = n0.execute('INSERT INTO foo(name) VALUES("fiona")')
+    self.assertEqual(str(j), "{u'results': [{u'last_insert_id': 2, u'rows_affected': 1}]}")
+    j = n0.query('SELECT COUNT(*) FROM foo')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[2]], u'types': [u''], u'columns': [u'COUNT(*)']}]}")
+    applied = n0.wait_for_all_fsm()
+
+    # Restart follower with new network attributes, explicity rejoin, and ensure it picks up new records
+    self.n1.scramble_network()
+    self.n1.start(join=self.n0.APIAddr())
+    self.n1.wait_for_leader()
+    self.assertEqual(n0.expvar()['store']['num_removed_before_joins'], 1)
+    self.n1.wait_for_fsm_index(applied)
+    j = self.n1.query('SELECT COUNT(*) FROM foo', level='none')
+    self.assertEqual(str(j), "{u'results': [{u'values': [[2]], u'types': [u''], u'columns': [u'COUNT(*)']}]}")
+
+class TestRedirectedJoin(unittest.TestCase):
+  def tearDown(self):
+    deprovision_node(self.n0)
+    deprovision_node(self.n1)
+    deprovision_node(self.n2)
+
+  def test(self):
+    '''Test that a node can join via a follower'''
+    self.n0 = Node(RQLITED_PATH, '0')
+    self.n0.start()
+    l0 = self.n0.wait_for_leader()
+
+    self.n1 = Node(RQLITED_PATH, '1')
+    self.n1.start(join=self.n0.APIAddr())
+    self.n1.wait_for_leader()
+    self.assertTrue(self.n1.is_follower())
+
+    self.n2 = Node(RQLITED_PATH, '2')
+    self.n2.start(join=self.n1.APIAddr())
+    l2 = self.n2.wait_for_leader()
+    self.assertEqual(l0, l2)
+
+  def test_api_adv(self):
+    '''Test that a node can join via a follower that advertises a different API address'''
+    self.n0 = Node(RQLITED_PATH, '0',
+      api_addr="0.0.0.0:4001", api_adv="localhost:4001")
+    self.n0.start()
+    l0 = self.n0.wait_for_leader()
+
+    self.n1 = Node(RQLITED_PATH, '1')
+    self.n1.start(join=self.n0.APIAddr())
+    self.n1.wait_for_leader()
+    self.assertTrue(self.n1.is_follower())
+
+    self.n2 = Node(RQLITED_PATH, '2')
+    self.n2.start(join=self.n1.APIAddr())
+    l2 = self.n2.wait_for_leader()
+    self.assertEqual(l0, l2)
 
 if __name__ == "__main__":
   unittest.main(verbosity=2)
