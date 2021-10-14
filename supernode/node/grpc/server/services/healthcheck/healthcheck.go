@@ -3,8 +3,10 @@ package healthcheck
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/p2p"
 	pb "github.com/pastelnetwork/gonode/proto/healthcheck"
 	"google.golang.org/grpc"
@@ -18,9 +20,10 @@ type StatsMngr interface {
 
 // HealthCheck represents grpc service for supernode healthcheck
 type HealthCheck struct {
+	pb.UnimplementedHealthCheckServer
 	StatsMngr
 	p2pService p2p.P2P
-	pb.UnimplementedHealthCheckServer
+	metaDb     metadb.MetaDB
 }
 
 // Status will send a message to and get back a reply from supernode
@@ -61,15 +64,49 @@ func (service *HealthCheck) P2PRetrieve(ctx context.Context, in *pb.P2PRetrieveR
 	return &pb.P2PRetrieveReply{Value: value}, nil
 }
 
+// QueryRqlite do a query
+func (service *HealthCheck) QueryRqlite(ctx context.Context, in *pb.QueryRqliteRequest) (*pb.QueryRqliteReply, error) {
+	queryResult, err := service.metaDb.Query(ctx, in.GetQuery(), "nono")
+	if err != nil {
+		return nil, errors.Errorf("error while querying db: %w", err)
+	}
+
+	nrows := queryResult.NumRows()
+	if nrows == 0 {
+		return &pb.QueryRqliteReply{Result: "{}"}, nil
+	}
+
+	//log.WithContext(ctx).WithField("Count", nrows).Debug("NumberOfRows")
+	row := 0
+	resultMap := map[string]interface{}{}
+
+	for queryResult.Next() {
+		rowMap, err := queryResult.Map()
+		if err != nil {
+			return nil, errors.Errorf("error while extracting result: %w", err)
+		}
+		resultMap[strconv.Itoa(row)] = rowMap
+		row = row + 1
+	}
+
+	resultJson, err := json.Marshal(resultMap)
+	if err != nil {
+		return nil, errors.Errorf("error while marshal result: %w", err)
+	}
+
+	return &pb.QueryRqliteReply{Result: string(resultJson)}, nil
+}
+
 // Desc returns a description of the service.
 func (service *HealthCheck) Desc() *grpc.ServiceDesc {
 	return &pb.HealthCheck_ServiceDesc
 }
 
 // NewHealthCheck returns a new HealthCheck instance.
-func NewHealthCheck(mngr StatsMngr, p2pService p2p.P2P) *HealthCheck {
+func NewHealthCheck(mngr StatsMngr, p2pService p2p.P2P, metaDb metadb.MetaDB) *HealthCheck {
 	return &HealthCheck{
 		StatsMngr:  mngr,
 		p2pService: p2pService,
+		metaDb:     metaDb,
 	}
 }

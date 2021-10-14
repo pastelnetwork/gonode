@@ -24,6 +24,8 @@ type HealthCheckClient interface {
 	P2PStore(ctx context.Context, in *P2PStoreRequest, opts ...grpc.CallOption) (*P2PStoreReply, error)
 	// Retrieve a key from p2p
 	P2PRetrieve(ctx context.Context, in *P2PRetrieveRequest, opts ...grpc.CallOption) (*P2PRetrieveReply, error)
+	// Do a query on rqlite
+	QueryRqlite(ctx context.Context, in *QueryRqliteRequest, opts ...grpc.CallOption) (*QueryRqliteReply, error)
 }
 
 type healthCheckClient struct {
@@ -61,6 +63,15 @@ func (c *healthCheckClient) P2PRetrieve(ctx context.Context, in *P2PRetrieveRequ
 	return out, nil
 }
 
+func (c *healthCheckClient) QueryRqlite(ctx context.Context, in *QueryRqliteRequest, opts ...grpc.CallOption) (*QueryRqliteReply, error) {
+	out := new(QueryRqliteReply)
+	err := c.cc.Invoke(ctx, "/healthcheck.HealthCheck/QueryRqlite", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // HealthCheckServer is the server API for HealthCheck service.
 // All implementations must embed UnimplementedHealthCheckServer
 // for forward compatibility
@@ -71,6 +82,8 @@ type HealthCheckServer interface {
 	P2PStore(context.Context, *P2PStoreRequest) (*P2PStoreReply, error)
 	// Retrieve a key from p2p
 	P2PRetrieve(context.Context, *P2PRetrieveRequest) (*P2PRetrieveReply, error)
+	// Do a query on rqlite
+	QueryRqlite(context.Context, *QueryRqliteRequest) (*QueryRqliteReply, error)
 	mustEmbedUnimplementedHealthCheckServer()
 }
 
@@ -86,6 +99,9 @@ func (UnimplementedHealthCheckServer) P2PStore(context.Context, *P2PStoreRequest
 }
 func (UnimplementedHealthCheckServer) P2PRetrieve(context.Context, *P2PRetrieveRequest) (*P2PRetrieveReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method P2PRetrieve not implemented")
+}
+func (UnimplementedHealthCheckServer) QueryRqlite(context.Context, *QueryRqliteRequest) (*QueryRqliteReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryRqlite not implemented")
 }
 func (UnimplementedHealthCheckServer) mustEmbedUnimplementedHealthCheckServer() {}
 
@@ -154,6 +170,24 @@ func _HealthCheck_P2PRetrieve_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _HealthCheck_QueryRqlite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryRqliteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(HealthCheckServer).QueryRqlite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/healthcheck.HealthCheck/QueryRqlite",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(HealthCheckServer).QueryRqlite(ctx, req.(*QueryRqliteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // HealthCheck_ServiceDesc is the grpc.ServiceDesc for HealthCheck service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -172,6 +206,10 @@ var HealthCheck_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "P2PRetrieve",
 			Handler:    _HealthCheck_P2PRetrieve_Handler,
+		},
+		{
+			MethodName: "QueryRqlite",
+			Handler:    _HealthCheck_QueryRqlite_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

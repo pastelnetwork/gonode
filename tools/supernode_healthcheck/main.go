@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"time"
 
@@ -18,9 +19,10 @@ import (
 func main() {
 	var (
 		serverAddr = flag.String("server_addr", "", "The server address in the format of host:port, like localhost:4444")
-		cmd        = flag.String("cmd", "", "one of value store/retrieve/status")
+		cmd        = flag.String("cmd", "", "one of value store/retrieve/status/query")
 		key        = flag.String("key", "", "set when action is `retrieve`")
 		value      = flag.String("value", "", "set when action is `store`")
+		queryFile  = flag.String("query-file", "", "set file path of query when action is `query`")
 	)
 
 	flag.Parse()
@@ -68,7 +70,7 @@ func main() {
 	switch *cmd {
 	case "store":
 		if len(*value) == 0 {
-			log.Error("value is empty")
+			log.Error("Please set --value")
 			return
 		}
 
@@ -84,7 +86,7 @@ func main() {
 
 	case "retrieve":
 		if len(*key) == 0 {
-			log.Error("key is empty")
+			log.Error("Please set --key")
 			return
 		}
 
@@ -108,6 +110,27 @@ func main() {
 		} else {
 			log.Infof("Received Status reply: %s", res.StatusInJson)
 		}
+	case "query":
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if len(*queryFile) == 0 {
+			log.Error("Please set --query-file")
+			return
+		}
+		queryData, err := ioutil.ReadFile(*queryFile)
+		if err != nil {
+			log.WithError(err).WithField("query-file", *queryFile).Fatal("Failed to read query file")
+			return
+		}
+
+		res, err := client.QueryRqlite(ctx, &pb.QueryRqliteRequest{Query: string(queryData)})
+		if err != nil {
+			log.WithError(err).Fatal("Failed to get status")
+			return
+		} else {
+			log.Infof("Received query reply: %s", res.GetResult())
+		}
+
 	default:
 		log.Error("cmd is not supported")
 	}

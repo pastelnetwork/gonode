@@ -14,7 +14,8 @@ service HealthCheck {
     // Retrieve a key from p2p
     rpc P2PRetrieve(P2PRetrieveRequest) returns (P2PRetrieveReply);
 
-    //  TODO : add new ping requests to check dependencies like p2p, rqserice, pastel,...
+    // Do a query on rqlite
+    rpc QueryRqlite(QueryRqliteRequest)  returns (QueryRqliteReply);
 }
 
 message StatusRequest {
@@ -36,4 +37,11 @@ message P2PRetrieveRequest {
 }
 message P2PRetrieveReply {
     bytes value = 1;
+}
+
+message QueryRqliteRequest {
+    string query = 1;
+}
+message QueryRqliteReply {
+    string result = 1;
 }
