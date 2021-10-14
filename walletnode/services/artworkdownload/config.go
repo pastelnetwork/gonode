@@ -9,8 +9,8 @@ import (
 const (
 	defaultNumberSuperNodes = 3
 
-	defaultConnectToNextNodeDelay = time.Millisecond * 200
-	defaultAcceptNodesTimeout     = defaultConnectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
+	defaultConnectToNextNodeDelay = 200 * time.Millisecond
+	defaultAcceptNodesTimeout     = 30 * time.Second // = 3 * (2* ConnectToNodeTimeout)
 	defaultConnectToNodeTimeout   = time.Second * 5
 )
 
