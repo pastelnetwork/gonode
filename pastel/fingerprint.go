@@ -134,19 +134,19 @@ func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScore, rhs *AlternativeNSFW
 // CompareAlternativeNSFWScore return nil if two AlternativeNSFWScore are equal
 func CompareImageHashes(lhs *ImageHashes, rhs *ImageHashes) error {
 	if !strings.EqualFold(lhs.PDQHash, rhs.PDQHash) {
-		return errors.Errorf("pdq_hash not matched: lhs(%f) != rhs(%f)", lhs.PDQHash, rhs.PDQHash)
+		return errors.Errorf("pdq_hash not matched: lhs(%s) != rhs(%s)", lhs.PDQHash, rhs.PDQHash)
 	}
 	if !strings.EqualFold(lhs.PerceptualHash, rhs.PerceptualHash) {
-		return errors.Errorf("perceptual_hash not matched: lhs(%f) != rhs(%f)", lhs.PerceptualHash, rhs.PerceptualHash)
+		return errors.Errorf("perceptual_hash not matched: lhs(%s) != rhs(%s)", lhs.PerceptualHash, rhs.PerceptualHash)
 	}
 	if !strings.EqualFold(lhs.AverageHash, rhs.AverageHash) {
-		return errors.Errorf("average_hash not matched: lhs(%f) != rhs(%f)", lhs.AverageHash, rhs.AverageHash)
+		return errors.Errorf("average_hash not matched: lhs(%s) != rhs(%s)", lhs.AverageHash, rhs.AverageHash)
 	}
 	if !strings.EqualFold(lhs.DifferenceHash, rhs.DifferenceHash) {
-		return errors.Errorf("difference_hash not matched: lhs(%f) != rhs(%f)", lhs.DifferenceHash, rhs.DifferenceHash)
+		return errors.Errorf("difference_hash not matched: lhs(%s) != rhs(%s)", lhs.DifferenceHash, rhs.DifferenceHash)
 	}
 	if !strings.EqualFold(lhs.NeuralHash, rhs.NeuralHash) {
-		return errors.Errorf("neuralhash_hash not matched: lhs(%f) != rhs(%f)", lhs.NeuralHash, rhs.NeuralHash)
+		return errors.Errorf("neuralhash_hash not matched: lhs(%s) != rhs(%s)", lhs.NeuralHash, rhs.NeuralHash)
 	}
 	return nil
 }
