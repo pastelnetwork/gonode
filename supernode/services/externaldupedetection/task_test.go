@@ -1,9 +1,11 @@
-package artworkregister
+package externaldupedetection
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"os"
 	"sync"
@@ -29,7 +31,7 @@ import (
 	"github.com/tj/assert"
 )
 
-func TestTaskSignAndSendArtTicket(t *testing.T) {
+func TestTaskSignAndSendEDDTicket(t *testing.T) {
 	type args struct {
 		task        *Task
 		signErr     error
@@ -48,7 +50,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				primary: true,
 			},
@@ -60,7 +62,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				signErr: errors.New("test"),
 				primary: true,
@@ -73,7 +75,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				sendArtErr: errors.New("test"),
 				signErr:    nil,
@@ -93,15 +95,15 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			clientMock := test.NewMockClient(t)
-			clientMock.ListenOnRegisterArtwork_SendArtTicketSignature(tc.args.sendArtErr).
-				ListenOnConnect("", nil).ListenOnRegisterArtwork()
+			clientMock.ListenOnExternalDupeDetection_SendEDDTicketSignature(tc.args.sendArtErr).
+				ListenOnConnect("", nil).ListenOnExternalDupeDetection()
 
 			tc.args.task.nodeClient = clientMock
 			tc.args.task.connectedTo = &Node{client: clientMock}
 			err := tc.args.task.connectedTo.connect(context.Background())
 			assert.NoError(t, err)
 
-			err = tc.args.task.signAndSendArtTicket(context.Background(), tc.args.primary)
+			err = tc.args.task.signAndSendDDTicket(context.Background(), tc.args.primary)
 			if tc.wantErr != nil {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.wantErr.Error())
@@ -129,9 +131,9 @@ func TestTaskRegisterArt(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ExDDTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: nil,
@@ -142,9 +144,9 @@ func TestTaskRegisterArt(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ExDDTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 				regErr: errors.New("test"),
 			},
@@ -159,10 +161,10 @@ func TestTaskRegisterArt(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnRegisterArtTicket(tc.args.regRetID, tc.args.regErr).
-				ListenOnRegisterNFTTicket(tc.args.regRetID, tc.args.regErr)
+				ListenOnRegisterExDDTicket(tc.args.regRetID, tc.args.regErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			id, err := tc.args.task.registerArt(context.Background())
+			id, err := tc.args.task.registerExternalDupeDetection(context.Background())
 			if tc.wantErr != nil {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.wantErr.Error())
@@ -195,9 +197,9 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ExDDTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: nil,
@@ -211,9 +213,9 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ExDDTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: errors.New("test"),
@@ -227,9 +229,9 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ExDDTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: errors.New("test"),
@@ -285,7 +287,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				masterNodesErr: nil,
 				nodeID:         "A",
@@ -298,7 +300,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				masterNodesErr: errors.New("test"),
 			},
@@ -310,7 +312,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				nodeID:         "B",
 				masterNodesErr: nil,
@@ -364,7 +366,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				connectErr:  nil,
@@ -379,7 +381,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				connectErr:  errors.New("test"),
@@ -394,7 +396,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				fileErr:     errors.New("test"),
@@ -409,7 +411,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				fileErr:     nil,
@@ -480,7 +482,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				encodeErr:  nil,
@@ -497,7 +499,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				encodeErr:  nil,
@@ -514,7 +516,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				encodeErr:  nil,
@@ -531,7 +533,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				encodeErr:  errors.New("test"),
@@ -548,7 +550,7 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 					RQIDS:  make(map[string][]byte),
 				},
 				encodeErr:  nil,
@@ -606,93 +608,6 @@ func TestTaskStoreRaptorQSymbols(t *testing.T) {
 	}
 }
 
-func TestTaskStoreThumbnails(t *testing.T) {
-	type args struct {
-		task     *Task
-		storeErr error
-		fileErr  error
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				fileErr:  nil,
-				storeErr: nil,
-			},
-			wantErr: nil,
-		},
-
-		"store-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				fileErr:  nil,
-				storeErr: errors.New("test"),
-			},
-			wantErr: errors.New("test"),
-		},
-		"file-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				fileErr:  errors.New("test"),
-				storeErr: nil,
-			},
-			wantErr: errors.New("test"),
-		},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr)
-			tc.args.task.Service.p2pClient = p2pClient
-			tc.args.task.p2pClient = p2pClient
-
-			fsMock := storageMock.NewMockFileStorage()
-			fileMock := storageMock.NewMockFile()
-			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
-
-			storage := artwork.NewStorage(fsMock)
-
-			tc.args.task.SmallThumbnail = artwork.NewFile(storage, "test-small")
-			tc.args.task.MediumThumbnail = artwork.NewFile(storage, "test-medium")
-			tc.args.task.PreviewThumbnail = artwork.NewFile(storage, "test-preview")
-
-			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
-
-			err := tc.args.task.storeThumbnails(context.Background())
-			if tc.wantErr != nil {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tc.wantErr.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
-
 func TestTaskStoreFingerprints(t *testing.T) {
 	type args struct {
 		task     *Task
@@ -709,7 +624,7 @@ func TestTaskStoreFingerprints(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				storeErr: nil,
 			},
@@ -722,7 +637,7 @@ func TestTaskStoreFingerprints(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				storeErr: errors.New("test"),
 			},
@@ -769,8 +684,8 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
+					Ticket:                  &pastel.ExDDTicket{},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte("test")},
 				},
 				verifyRet: true,
 				verifyErr: nil,
@@ -783,8 +698,8 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
+					Ticket:                  &pastel.ExDDTicket{},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte("test")},
 				},
 				verifyRet: true,
 				verifyErr: errors.New("test"),
@@ -797,8 +712,8 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
-					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
+					Ticket:                  &pastel.ExDDTicket{},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte("test")},
 				},
 				verifyRet: false,
 				verifyErr: nil,
@@ -849,7 +764,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				interval:   200 * time.Millisecond,
 				timeout:    100 * time.Millisecond,
@@ -863,7 +778,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				minConfirmations: 2,
 				timeout:          200 * time.Millisecond,
@@ -881,7 +796,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				minConfirmations: 1,
 				timeout:          100 * time.Millisecond,
@@ -899,7 +814,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				minConfirmations: 1,
 				timeout:          100 * time.Millisecond,
@@ -960,9 +875,9 @@ func TestTaskProbeImage(t *testing.T) {
 						config: &Config{},
 					},
 					Task:                    task.New(StatusConnected),
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ExDDTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: nil,
@@ -977,9 +892,9 @@ func TestTaskProbeImage(t *testing.T) {
 						config: &Config{},
 					},
 					Task:                    task.New(StatusImageProbed),
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ExDDTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: errors.New("required status"),
@@ -994,9 +909,9 @@ func TestTaskProbeImage(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ExDDTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					peersEDDTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: errors.New("test"),
@@ -1056,14 +971,8 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
-					Ticket: &pastel.NFTTicket{
-						AppTicketData: pastel.AppTicket{
-							AuthorPastelID: "author-id-b",
-							CreatorName:    "Andy",
-							NFTTitle:       "alantic",
-						},
-					},
+					Task:   task.New(StatusImageUploaded),
+					Ticket: &pastel.ExDDTicket{},
 				},
 			},
 			wantErr: nil,
@@ -1075,14 +984,8 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Task: task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{
-						AppTicketData: pastel.AppTicket{
-							AuthorPastelID: "author-id-b",
-							CreatorName:    "Andy",
-							NFTTitle:       "alantic",
-						},
-					},
+					Task:   task.New(StatusConnected),
+					Ticket: &pastel.ExDDTicket{},
 				},
 			},
 			wantErr: errors.New("require status"),
@@ -1093,14 +996,8 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
-					Ticket: &pastel.NFTTicket{
-						AppTicketData: pastel.AppTicket{
-							AuthorPastelID: "author-id-b",
-							CreatorName:    "Andy",
-							NFTTitle:       "alantic",
-						},
-					},
+					Task:   task.New(StatusImageUploaded),
+					Ticket: &pastel.ExDDTicket{},
 				},
 				retErr: errors.New("test"),
 			},
@@ -1115,17 +1012,17 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 			t.Parallel()
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnGetRegisterNFTFee(tc.args.retFee, tc.args.retErr)
+			pastelClientMock.ListenOnGetRegisterExDDFee(tc.args.retFee, tc.args.retErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			go tc.args.task.RunAction(ctx)
-			artTicketBytes, err := pastel.EncodeNFTTicket(tc.args.task.Ticket)
-			assert.Nil(t, err)
+			eddTicketBytes, err := pastel.EncodeExDDTicket(tc.args.task.Ticket)
+			assert.NoError(t, err)
 
-			_, err = tc.args.task.GetRegistrationFee(context.Background(), artTicketBytes,
+			_, err = tc.args.task.GetRegistrationFee(context.Background(), eddTicketBytes, tc.args.task.creatorPastelID,
 				[]byte{}, "", "", map[string][]byte{}, []byte{})
 			if tc.wantErr != nil {
 				assert.Error(t, err)
@@ -1155,7 +1052,7 @@ func TestTaskSessionNode(t *testing.T) {
 						config: &Config{},
 					},
 					Task:   task.New(StatusPrimaryMode),
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				masterNodesErr: nil,
 				nodeID:         "A",
@@ -1169,7 +1066,7 @@ func TestTaskSessionNode(t *testing.T) {
 						config: &Config{},
 					},
 					Task:   task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				masterNodesErr: nil,
 				nodeID:         "A",
@@ -1183,7 +1080,7 @@ func TestTaskSessionNode(t *testing.T) {
 						config: &Config{},
 					},
 					Task:   task.New(StatusPrimaryMode),
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 				masterNodesErr: errors.New("test"),
 				nodeID:         "A",
@@ -1240,12 +1137,12 @@ func TestTaskAddPeerArtTicketSignature(t *testing.T) {
 		"success": {
 			args: args{
 				task: &Task{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
+					peersEDDTicketSignatureMtx: &sync.Mutex{},
 					Service: &Service{
 						config: &Config{},
 					},
 					Task:                  task.New(StatusRegistrationFeeCalculated),
-					Ticket:                &pastel.NFTTicket{},
+					Ticket:                &pastel.ExDDTicket{},
 					allSignaturesReceived: make(chan struct{}),
 				},
 				masterNodesErr: nil,
@@ -1257,12 +1154,12 @@ func TestTaskAddPeerArtTicketSignature(t *testing.T) {
 		"status-err": {
 			args: args{
 				task: &Task{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
+					peersEDDTicketSignatureMtx: &sync.Mutex{},
 					Service: &Service{
 						config: &Config{},
 					},
 					Task:                  task.New(StatusConnected),
-					Ticket:                &pastel.NFTTicket{},
+					Ticket:                &pastel.ExDDTicket{},
 					allSignaturesReceived: make(chan struct{}),
 				},
 				masterNodesErr: nil,
@@ -1274,12 +1171,12 @@ func TestTaskAddPeerArtTicketSignature(t *testing.T) {
 		"no-node-err": {
 			args: args{
 				task: &Task{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
+					peersEDDTicketSignatureMtx: &sync.Mutex{},
 					Service: &Service{
 						config: &Config{},
 					},
 					Task:                  task.New(StatusRegistrationFeeCalculated),
-					Ticket:                &pastel.NFTTicket{},
+					Ticket:                &pastel.ExDDTicket{},
 					allSignaturesReceived: make(chan struct{}),
 				},
 				masterNodesErr: nil,
@@ -1291,13 +1188,13 @@ func TestTaskAddPeerArtTicketSignature(t *testing.T) {
 		"success-close-sign-chn": {
 			args: args{
 				task: &Task{
-					peersArtTicketSignatureMtx: &sync.Mutex{},
+					peersEDDTicketSignatureMtx: &sync.Mutex{},
 					Service: &Service{
 						config: &Config{},
 					},
 					allSignaturesReceived: make(chan struct{}),
 					Task:                  task.New(StatusRegistrationFeeCalculated),
-					Ticket:                &pastel.NFTTicket{},
+					Ticket:                &pastel.ExDDTicket{},
 				},
 				masterNodesErr: nil,
 				nodeID:         "A",
@@ -1330,7 +1227,7 @@ func TestTaskAddPeerArtTicketSignature(t *testing.T) {
 			tc.args.task.pastelClient = pastelClientMock
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			tc.args.task.peersArtTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
+			tc.args.task.peersEDDTicketSignature = map[string][]byte{tc.args.acceptedNodeID: []byte{}}
 
 			err := tc.args.task.AddPeerArtTicketSignature(tc.args.nodeID, []byte{})
 			if tc.wantErr != nil {
@@ -1343,7 +1240,7 @@ func TestTaskAddPeerArtTicketSignature(t *testing.T) {
 	}
 }
 
-func TestTaskUploadImageWithThumbnail(t *testing.T) {
+func TestTaskUploadImage(t *testing.T) {
 	type args struct {
 		task *Task
 	}
@@ -1359,7 +1256,7 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 						config: &Config{},
 					},
 					Task:   task.New(StatusImageProbed),
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 			},
 			wantErr: nil,
@@ -1371,7 +1268,7 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 						config: &Config{},
 					},
 					Task:   task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ExDDTicket{},
 				},
 			},
 			wantErr: errors.New("status"),
@@ -1396,13 +1293,7 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 			assert.NoError(t, err)
 			tc.args.task.Artwork = file
 
-			coordinate := artwork.ThumbnailCoordinate{
-				TopLeftX:     0,
-				TopLeftY:     0,
-				BottomRightX: 400,
-				BottomRightY: 400,
-			}
-			_, _, _, err = tc.args.task.UploadImageWithThumbnail(ctx, file, coordinate)
+			err = tc.args.task.UploadImage(ctx, file)
 			if tc.wantErr != nil {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.wantErr.Error())
@@ -1411,4 +1302,21 @@ func TestTaskUploadImageWithThumbnail(t *testing.T) {
 			}
 		})
 	}
+}
+
+func newTestImageFile(stg *artwork.Storage) (*artwork.File, error) {
+	imgFile := stg.NewFile()
+
+	f, err := imgFile.Create()
+	if err != nil {
+		return nil, errors.Errorf("failed to create storage file: %w", err)
+	}
+	defer f.Close()
+
+	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
+	if err := png.Encode(f, img); err != nil {
+		return nil, err
+	}
+
+	return imgFile, nil
 }

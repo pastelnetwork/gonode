@@ -139,6 +139,7 @@ func newTestImageFile(stg *artwork.Storage) (*artwork.File, error) {
 
 	return imgFile, nil
 }
+
 func TestCreateAndHashThumbnail(t *testing.T) {
 	type args struct {
 		task *Task

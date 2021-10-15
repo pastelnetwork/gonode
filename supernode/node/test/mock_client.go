@@ -31,6 +31,9 @@ const (
 	// RegisterArtworkMethod represent RegisterArtwork name method
 	RegisterArtworkMethod = "RegisterArtwork"
 
+	// ExternalDupeDetectionMethod represent ExternalDupeDetection name method
+	ExternalDupeDetectionMethod = "ExternalDupeDetection"
+
 	// DownloadArtworkMethod represent DownloadArtwork name method
 	DownloadArtworkMethod = "DownloadArtwork"
 
@@ -40,8 +43,8 @@ const (
 	// SessIDMethod represent SessID name method
 	SessIDMethod = "SessID"
 
-	// SendPreBurntFeeTxidMethod represent SendPreBurntFeeTxId method
-	SendPreBurntFeeTxidMethod = "SendPreBurntFeeTxid"
+	// SendPreBurnedFeeTxidMethod represent SendPreBurnedFeeTxId method
+	SendPreBurnedFeeTxidMethod = "SendPreBurnedFeeTxid"
 
 	// SendSignedTicketMethod represent SendSignedTicket method
 	SendSignedTicketMethod = "SendSignedTicket"
@@ -53,6 +56,12 @@ const (
 
 	// SendArtTicketSignatureMethod represent SendArtTicketSignature method
 	SendArtTicketSignatureMethod = "SendArtTicketSignature"
+
+	// UploadImageMethod represent UploadImage method
+	UploadImageMethod = "UploadImage"
+
+	// SendEDDTicketSignatureMethod represent SendEDDTicketSignature method
+	SendEDDTicketSignatureMethod = "SendEDDTicketSignature"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -61,15 +70,17 @@ type Client struct {
 	*mocks.Client
 	*mocks.Connection
 	*mocks.RegisterArtwork
+	*mocks.ExternalDupeDetection
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:               t,
-		Client:          &mocks.Client{},
-		Connection:      &mocks.Connection{},
-		RegisterArtwork: &mocks.RegisterArtwork{},
+		t:                     t,
+		Client:                &mocks.Client{},
+		Connection:            &mocks.Connection{},
+		RegisterArtwork:       &mocks.RegisterArtwork{},
+		ExternalDupeDetection: &mocks.ExternalDupeDetection{},
 	}
 }
 
@@ -79,21 +90,27 @@ func (client *Client) ListenOnRegisterArtwork() *Client {
 	return client
 }
 
-// ListenOnSendPreBurntFeeTxID listening SendPreBurntFeeTxIdMethod call
-func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Client {
-	client.RegisterArtwork.On(SendPreBurntFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
+// ListenOnExternalDupeDetection listening ExternalDupeDetection call
+func (client *Client) ListenOnExternalDupeDetection() *Client {
+	client.Connection.On(ExternalDupeDetectionMethod).Return(client.ExternalDupeDetection)
 	return client
 }
 
-// ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
-func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
+// ListenOnRegisterArtwork_SendPreBurnedFeeTxID listening SendPreBurnedFeeTxId call
+func (client *Client) ListenOnRegisterArtwork_SendPreBurnedFeeTxID(txid string, err error) *Client {
+	client.RegisterArtwork.On(SendPreBurnedFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
+	return client
+}
+
+// ListenOnRegisterArtwork_SendSignedTicket listening SendSignedTicke call
+func (client *Client) ListenOnRegisterArtwork_SendSignedTicket(id int64, err error) *Client {
 	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }
 
-// ListenOnUploadImageWithThumbnail listening UploadImageWithThumbnail call
-func (client *Client) ListenOnUploadImageWithThumbnail(retPreviewHash []byte,
+// ListenOnRegisterArtwork_UploadImageWithThumbnail listening UploadImageWithThumbnail call
+func (client *Client) ListenOnRegisterArtwork_UploadImageWithThumbnail(retPreviewHash []byte,
 	retMediumThumbnailHash []byte, retsmallThumbnailHash []byte, retErr error) *Client {
 
 	client.RegisterArtwork.On(UploadImageWithThumbnailMethod, mock.Anything,
@@ -171,14 +188,14 @@ func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}
 	return client
 }
 
-// ListenOnProbeImage listening ProbeImage call and returns args value
-func (client *Client) ListenOnProbeImage(arguments ...interface{}) *Client {
+// ListenOnRegisterArtwork_ProbeImage listening ProbeImage call and returns args value
+func (client *Client) ListenOnRegisterArtwork_ProbeImage(arguments ...interface{}) *Client {
 	client.RegisterArtwork.On(ProbeImageMethod, mock.Anything, mock.IsType(&artwork.File{})).Return(arguments...)
 	return client
 }
 
-// AssertProbeImageCall assertion ProbeImage call
-func (client *Client) AssertProbeImageCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertRegisterArtwork_ProbeImageCall assertion ProbeImage call
+func (client *Client) AssertRegisterArtwork_ProbeImageCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.RegisterArtwork.AssertCalled(client.t, ProbeImageMethod, arguments...)
 	}
@@ -186,20 +203,20 @@ func (client *Client) AssertProbeImageCall(expectedCalls int, arguments ...inter
 	return client
 }
 
-// ListenOnSession listening Session call and returns error from args
-func (client *Client) ListenOnSession(returnErr error) *Client {
+// ListenOnRegisterArtwork_Session listening Session call and returns error from args
+func (client *Client) ListenOnRegisterArtwork_Session(returnErr error) *Client {
 	client.RegisterArtwork.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
 	return client
 }
 
-// ListenOnSendArtTicketSignature listens on send art ticket signature
-func (client *Client) ListenOnSendArtTicketSignature(returnErr error) *Client {
+// ListenOnRegisterArtwork_SendArtTicketSignature listens on send art ticket signature
+func (client *Client) ListenOnRegisterArtwork_SendArtTicketSignature(returnErr error) *Client {
 	client.RegisterArtwork.On(SendArtTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 
-// AssertSessionCall assertion Session Call
-func (client *Client) AssertSessionCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertRegisterArtwork_SessionCall assertion Session Call
+func (client *Client) AssertRegisterArtwork_SessionCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.RegisterArtwork.AssertCalled(client.t, SessionMethod, arguments...)
 	}
@@ -207,8 +224,8 @@ func (client *Client) AssertSessionCall(expectedCalls int, arguments ...interfac
 	return client
 }
 
-// ListenOnAcceptedNodes listening AcceptedNodes call and returns pastelIDs and error from args.
-func (client *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error) *Client {
+// ListenOnRegisterArtwork_AcceptedNodes listening AcceptedNodes call and returns pastelIDs and error from args.
+func (client *Client) ListenOnRegisterArtwork_AcceptedNodes(pastelIDs []string, returnErr error) *Client {
 	handleFunc := func(ctx context.Context) []string {
 		//need block operation until context is done
 		<-ctx.Done()
@@ -220,7 +237,7 @@ func (client *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error)
 }
 
 // AssertAcceptedNodesCall assertion AcceptedNodes call
-func (client *Client) AssertAcceptedNodesCall(expectedCalls int, arguments ...interface{}) *Client {
+func (client *Client) AssertRegisterArtwork_AcceptedNodesCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.RegisterArtwork.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
 	}
@@ -228,14 +245,14 @@ func (client *Client) AssertAcceptedNodesCall(expectedCalls int, arguments ...in
 	return client
 }
 
-// ListenOnConnectTo listening ConnectTo call and returns error from args
-func (client *Client) ListenOnConnectTo(returnErr error) *Client {
+// ListenOnRegisterArtwork_ConnectTo listening ConnectTo call and returns error from args
+func (client *Client) ListenOnRegisterArtwork_ConnectTo(returnErr error) *Client {
 	client.RegisterArtwork.On(ConnectToMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string(""))).Return(returnErr)
 	return client
 }
 
-// AssertConnectToCall assertion ConnectTo call
-func (client *Client) AssertConnectToCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertRegisterArtwork_ConnectToCall assertion ConnectTo call
+func (client *Client) AssertRegisterArtwork_ConnectToCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.RegisterArtwork.AssertCalled(client.t, ConnectToMethod, arguments...)
 	}
@@ -243,17 +260,137 @@ func (client *Client) AssertConnectToCall(expectedCalls int, arguments ...interf
 	return client
 }
 
-// ListenOnSessID listening SessID call and returns sessID from args
-func (client *Client) ListenOnSessID(sessID string) *Client {
+// ListenOnRegisterArtwork_SessID listening SessID call and returns sessID from args
+func (client *Client) ListenOnRegisterArtwork_SessID(sessID string) *Client {
 	client.RegisterArtwork.On(SessIDMethod).Return(sessID)
 	return client
 }
 
-// AssertSessIDCall assertion SessID call
-func (client *Client) AssertSessIDCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertRegisterArtwork_SessIDCall assertion SessID call
+func (client *Client) AssertRegisterArtwork_SessIDCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.RegisterArtwork.AssertCalled(client.t, SessIDMethod, arguments...)
 	}
 	client.RegisterArtwork.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
+	return client
+}
+
+// ListenOnExternalDupeDetection_SendPreBurnedFeeTxID listening SendPreBurnedFeeTxId call
+func (client *Client) ListenOnExternalDupeDetection_SendPreBurnedFeeTxID(txid string, err error) *Client {
+	client.ExternalDupeDetection.On(SendPreBurnedFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
+	return client
+}
+
+// ListenOnExternalDupeDetection_SendSignedTicket listening SendSignedTicke call
+func (client *Client) ListenOnExternalDupeDetection_SendSignedTicket(id int64, err error) *Client {
+	client.ExternalDupeDetection.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
+	return client
+}
+
+// ListenOnExternalDupeDetection_UploadImage listening UploadImage call
+func (client *Client) ListenOnExternalDupeDetection_UploadImage(retPreviewHash []byte,
+	retMediumThumbnailHash []byte, retsmallThumbnailHash []byte, retErr error) *Client {
+
+	client.ExternalDupeDetection.On(UploadImageMethod, mock.Anything,
+		mock.Anything, mock.Anything).Return(retPreviewHash,
+		retMediumThumbnailHash, retsmallThumbnailHash, retErr)
+
+	return client
+}
+
+// AssertExternalDupeDetectionCall assertion ExternalDupeDetection call
+func (client *Client) AssertExternalDupeDetectionCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.Connection.AssertCalled(client.t, ExternalDupeDetectionMethod, arguments...)
+	}
+	client.Connection.AssertNumberOfCalls(client.t, ExternalDupeDetectionMethod, expectedCalls)
+	return client
+}
+
+// ListenOnExternalDupeDetection_ProbeImage listening ProbeImage call and returns args value
+func (client *Client) ListenOnExternalDupeDetection_ProbeImage(arguments ...interface{}) *Client {
+	client.ExternalDupeDetection.On(ProbeImageMethod, mock.Anything, mock.IsType(&artwork.File{})).Return(arguments...)
+	return client
+}
+
+// AssertExternalDupeDetection_ProbeImageCall assertion ProbeImage call
+func (client *Client) AssertExternalDupeDetection_ProbeImageCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.ExternalDupeDetection.AssertCalled(client.t, ProbeImageMethod, arguments...)
+	}
+	client.ExternalDupeDetection.AssertNumberOfCalls(client.t, ProbeImageMethod, expectedCalls)
+	return client
+}
+
+// ListenOnExternalDupeDetection_Session listening Session call and returns error from args
+func (client *Client) ListenOnExternalDupeDetection_Session(returnErr error) *Client {
+	client.ExternalDupeDetection.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+	return client
+}
+
+// ListenOnExternalDupeDetection_SendEDDTicketSignature listens on send art ticket signature
+func (client *Client) ListenOnExternalDupeDetection_SendEDDTicketSignature(returnErr error) *Client {
+	client.ExternalDupeDetection.On(SendEDDTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
+	return client
+}
+
+// AssertExternalDupeDetection_SessionCall assertion Session Call
+func (client *Client) AssertExternalDupeDetection_SessionCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.ExternalDupeDetection.AssertCalled(client.t, SessionMethod, arguments...)
+	}
+	client.ExternalDupeDetection.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
+	return client
+}
+
+// ListenOnExternalDupeDetection_AcceptedNodes listening AcceptedNodes call and returns pastelIDs and error from args.
+func (client *Client) ListenOnExternalDupeDetection_AcceptedNodes(pastelIDs []string, returnErr error) *Client {
+	handleFunc := func(ctx context.Context) []string {
+		//need block operation until context is done
+		<-ctx.Done()
+		return pastelIDs
+	}
+
+	client.ExternalDupeDetection.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
+	return client
+}
+
+// AssertAcceptedNodesCall assertion AcceptedNodes call
+func (client *Client) AssertExternalDupeDetection_AcceptedNodesCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.ExternalDupeDetection.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
+	}
+	client.ExternalDupeDetection.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
+	return client
+}
+
+// ListenOnExternalDupeDetection_ConnectTo listening ConnectTo call and returns error from args
+func (client *Client) ListenOnExternalDupeDetection_ConnectTo(returnErr error) *Client {
+	client.ExternalDupeDetection.On(ConnectToMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string(""))).Return(returnErr)
+	return client
+}
+
+// AssertExternalDupeDetection_ConnectToCall assertion ConnectTo call
+func (client *Client) AssertExternalDupeDetection_ConnectToCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.ExternalDupeDetection.AssertCalled(client.t, ConnectToMethod, arguments...)
+	}
+	client.ExternalDupeDetection.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
+	return client
+}
+
+// ListenOnExternalDupeDetection_SessID listening SessID call and returns sessID from args
+func (client *Client) ListenOnExternalDupeDetection_SessID(sessID string) *Client {
+	client.ExternalDupeDetection.On(SessIDMethod).Return(sessID)
+	return client
+}
+
+// AssertExternalDupeDetection_SessIDCall assertion SessID call
+func (client *Client) AssertExternalDupeDetection_SessIDCall(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.ExternalDupeDetection.AssertCalled(client.t, SessIDMethod, arguments...)
+	}
+	client.ExternalDupeDetection.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
 	return client
 }

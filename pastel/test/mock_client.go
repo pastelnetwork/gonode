@@ -66,6 +66,9 @@ const (
 	// GetRegisterNFTFeeMethod represents GetRegisterNFTFee method
 	GetRegisterNFTFeeMethod = "GetRegisterNFTFee"
 
+	// GetRegisterExDDFeeMethod represents GetRegisterExDDFee method
+	GetRegisterExDDFeeMethod = "GetRegisterEDDFee"
+
 	// MasterNodesExtraMethod represent MasterNodesExtra name method
 	MasterNodesExtraMethod = "MasterNodesExtra"
 )
@@ -209,6 +212,12 @@ func (client *Client) ListenOnGetRegisterNFTFee(retFee int64, retErr error) *Cli
 	return client
 }
 
+// ListenOnGetRegisterExDDFee listen on get register EDD Fee & return fee & err
+func (client *Client) ListenOnGetRegisterExDDFee(retFee int64, retErr error) *Client {
+	client.On(GetRegisterExDDFeeMethod, mock.Anything, mock.Anything).Return(retFee, retErr)
+	return client
+}
+
 // AssertRegTicketCall RegTicket call assertion
 func (client *Client) AssertRegTicketCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
@@ -267,8 +276,4 @@ func (client *Client) AssertVerifyCall(expectedCalls int, arguments ...interface
 	}
 	client.AssertNumberOfCalls(client.t, VerifyMethod, expectedCalls)
 	return client
-}
-
-func newMockClient() pastel.Client {
-	return &Client{}
 }
