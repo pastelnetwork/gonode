@@ -131,7 +131,7 @@ func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScore, rhs *AlternativeNSFW
 	return nil
 }
 
-// CompareAlternativeNSFWScore return nil if two AlternativeNSFWScore are equal
+// CompareImageHashes return nil if two ImageHashes are equal
 func CompareImageHashes(lhs *ImageHashes, rhs *ImageHashes) error {
 	if !strings.EqualFold(lhs.PDQHash, rhs.PDQHash) {
 		return errors.Errorf("pdq_hash not matched: lhs(%s) != rhs(%s)", lhs.PDQHash, rhs.PDQHash)
