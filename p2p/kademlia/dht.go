@@ -193,6 +193,20 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return peerValue, nil
 }
 
+// Delete  key from node
+func (s *DHT) Delete(ctx context.Context, key string) error {
+	decoded := base58.Decode(key)
+	if len(decoded) != B/8 {
+		return fmt.Errorf("invalid key: %v", key)
+	}
+
+	// detele the key/value from local storage
+	s.store.Delete(ctx, decoded)
+
+	// TODO : delete from nearest nodes??
+	return nil
+}
+
 // Stats returns stats of DHT
 func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 	dbStats, err := s.store.Stats(ctx)

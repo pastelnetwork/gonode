@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/metadb"
@@ -12,10 +13,22 @@ import (
 	"google.golang.org/grpc"
 )
 
+const (
+	defaultP2PDataMaxLength     = 32
+	defaultP2PExpiresDuraction  = 15 * time.Minute
+	defaultRqliteQueryMaxLength = 4 * 1024 // 4k
+)
+
 // StatsMngr is interface of StatsManger, return stats of system
 type StatsMngr interface {
 	// Stats returns stats of system
 	Stats(ctx context.Context) (map[string]interface{}, error)
+}
+
+// P2PTracker is interface of lifetime tracker that will periodically check to remove expired temporary p2p's (key, value)
+type P2PTracker interface {
+	// Track monitor to delete temporary key
+	Track(key string, expires time.Time)
 }
 
 // HealthCheck represents grpc service for supernode healthcheck
@@ -24,18 +37,19 @@ type HealthCheck struct {
 	StatsMngr
 	p2pService p2p.P2P
 	metaDb     metadb.MetaDB
+	p2pTracker P2PTracker
 }
 
 // Status will send a message to and get back a reply from supernode
 func (service *HealthCheck) Status(ctx context.Context, _ *pb.StatusRequest) (*pb.StatusReply, error) {
 	stats, err := service.Stats(ctx)
 	if err != nil {
-		return &pb.StatusReply{StatusInJson: ""}, errors.Errorf("failed to Stats(): %w", err)
+		return nil, errors.Errorf("failed to Stats(): %w", err)
 	}
 
 	jsonData, err := json.Marshal(stats)
 	if err != nil {
-		return &pb.StatusReply{StatusInJson: ""}, errors.Errorf("failed to Marshal(): %w", err)
+		return nil, errors.Errorf("failed to Marshal(): %w", err)
 	}
 
 	// echos received message
@@ -45,11 +59,18 @@ func (service *HealthCheck) Status(ctx context.Context, _ *pb.StatusRequest) (*p
 // P2PStore store a data, and return given key
 func (service *HealthCheck) P2PStore(ctx context.Context, in *pb.P2PStoreRequest) (*pb.P2PStoreReply, error) {
 	value := in.GetValue()
+	if len(value) > defaultP2PDataMaxLength {
+		return nil, errors.New("length too big (>32bytes")
+	}
 	key, err := service.p2pService.Store(ctx, value)
 
 	if err != nil {
-		return &pb.P2PStoreReply{Key: ""}, err
+		return nil, err
 	}
+
+	// track to delete key soon
+	service.p2pTracker.Track(key, time.Now().Add(defaultP2PExpiresDuraction))
+
 	return &pb.P2PStoreReply{Key: key}, nil
 }
 
@@ -103,10 +124,11 @@ func (service *HealthCheck) Desc() *grpc.ServiceDesc {
 }
 
 // NewHealthCheck returns a new HealthCheck instance.
-func NewHealthCheck(mngr StatsMngr, p2pService p2p.P2P, metaDb metadb.MetaDB) *HealthCheck {
+func NewHealthCheck(mngr StatsMngr, p2pService p2p.P2P, metaDb metadb.MetaDB, p2pTracker P2PTracker) *HealthCheck {
 	return &HealthCheck{
 		StatsMngr:  mngr,
 		p2pService: p2pService,
 		metaDb:     metaDb,
+		p2pTracker: p2pTracker,
 	}
 }
