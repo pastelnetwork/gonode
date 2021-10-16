@@ -150,13 +150,13 @@ func (nodes *List) MatchDetectionFee() error {
 	return nil
 }
 
-// SendPreBurnedFeeTxid send txid of transaction in which 10% of registration fee is preburnt
-func (nodes *List) SendPreBurnedFeeTxid(ctx context.Context, txid string) error {
+// SendPreBurnedFeeTxID send txid of transaction in which 10% of registration fee is preburnt
+func (nodes *List) SendPreBurnedFeeTxID(ctx context.Context, txid string) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() error {
-			ticketTxid, err := node.SendPreBurnedFeeEDDTxId(ctx, txid)
+			ticketTxid, err := node.SendPreBurnedFeeEDDTxID(ctx, txid)
 			if err != nil {
 				return err
 			}

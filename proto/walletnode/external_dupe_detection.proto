@@ -24,8 +24,8 @@ service ExternalDupeDetection {
     // SendSignedEDDTicket sends a signed art-ticket to the supernode.
     rpc SendSignedEDDTicket(SendSignedEDDTicketRequest) returns (SendSignedEDDTicketReply);
 
-    // SendPreBurnedFeeEDDTxid sends tx_id of 10% burnt transaction fee to the supernode.
-    rpc SendPreBurnedFeeEDDTxid(SendPreBurnedFeeEDDTxidRequest) returns (SendPreBurnedFeeEDDTxidReply);
+    // SendPreBurnedFeeEDDTxID sends tx_id of 10% burnt transaction fee to the supernode.
+    rpc SendPreBurnedFeeEDDTxID(SendPreBurnedFeeEDDTxIDRequest) returns (SendPreBurnedFeeEDDTxIDReply);
 
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
@@ -48,9 +48,9 @@ message SendSignedEDDTicketReply {
     int64 registration_fee = 1;
 }
 
-message SendPreBurnedFeeEDDTxidRequest {
+message SendPreBurnedFeeEDDTxIDRequest {
     string txid = 1;
 }
-message SendPreBurnedFeeEDDTxidReply {
+message SendPreBurnedFeeEDDTxIDReply {
     string edd_reg_txid = 1;
 }

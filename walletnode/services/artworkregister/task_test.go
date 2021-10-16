@@ -161,13 +161,13 @@ func TestTaskRun(t *testing.T) {
 				nodeClient.
 					ListenOnConnect("", testCase.args.returnErr).
 					ListenOnRegisterArtwork().
-					ListenOnRegisterArtwork_Session(testCase.args.returnErr).
-					ListenOnRegisterArtwork_ConnectTo(testCase.args.returnErr).
-					ListenOnRegisterArtwork_SessID(testCase.args.primarySessID).
-					ListenOnRegisterArtwork_AcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
+					ListenOnRegisterArtworkSession(testCase.args.returnErr).
+					ListenOnRegisterArtworkConnectTo(testCase.args.returnErr).
+					ListenOnRegisterArtworkSessID(testCase.args.primarySessID).
+					ListenOnRegisterArtworkAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 					ListenOnDone().
-					ListenOnRegisterArtwork_UploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
-					ListenOnRegisterArtwork_SendSignedTicket(1, nil).
+					ListenOnRegisterArtworkUploadImageWithThumbnail([]byte("preview-hash"), []byte("medium-hash"), []byte("small-hash"), nil).
+					ListenOnRegisterArtworkSendSignedTicket(1, nil).
 					ListenOnClose(nil)
 
 				counter := &struct {
@@ -193,7 +193,7 @@ func TestTaskRun(t *testing.T) {
 					file.Remove()
 					return &pastel.FingerAndScores{ZstdCompressedFingerprint: testCase.args.fingerPrint}
 				}
-				nodeClient.ListenOnRegisterArtwork_ProbeImage(customProbeImageFunc, testCase.args.returnErr)
+				nodeClient.ListenOnRegisterArtworkProbeImage(customProbeImageFunc, testCase.args.returnErr)
 
 				pastelClientMock := pastelMock.NewMockClient(t)
 				pastelClientMock.
@@ -255,11 +255,11 @@ func TestTaskRun(t *testing.T) {
 				)
 
 				// //nodeClient mock assertion
-				nodeClient.AssertRegisterArtwork_AcceptedNodesCall(1, mock.Anything)
-				nodeClient.AssertRegisterArtwork_SessIDCall(testCase.numSessIDCall)
-				nodeClient.AssertRegisterArtwork_SessionCall(testCase.numSessionCall, mock.Anything, false)
-				nodeClient.AssertRegisterArtwork_ConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
-				nodeClient.AssertRegisterArtwork_ProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
+				nodeClient.AssertRegisterArtworkAcceptedNodesCall(1, mock.Anything)
+				nodeClient.AssertRegisterArtworkSessIDCall(testCase.numSessIDCall)
+				nodeClient.AssertRegisterArtworkSessionCall(testCase.numSessionCall, mock.Anything, false)
+				nodeClient.AssertRegisterArtworkConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
+				nodeClient.AssertRegisterArtworkProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
 			})
 		}
 	})
@@ -350,10 +350,10 @@ func TestTaskMeshNodes(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", testCase.args.returnErr).
 				ListenOnRegisterArtwork().
-				ListenOnRegisterArtwork_Session(testCase.args.returnErr).
-				ListenOnRegisterArtwork_ConnectTo(testCase.args.returnErr).
-				ListenOnRegisterArtwork_SessID(testCase.args.primarySessID).
-				ListenOnRegisterArtwork_AcceptedNodes(testCase.args.pastelIDS, testCase.args.acceptNodeErr)
+				ListenOnRegisterArtworkSession(testCase.args.returnErr).
+				ListenOnRegisterArtworkConnectTo(testCase.args.returnErr).
+				ListenOnRegisterArtworkSessID(testCase.args.primarySessID).
+				ListenOnRegisterArtworkAcceptedNodes(testCase.args.pastelIDS, testCase.args.acceptNodeErr)
 
 			nodes := node.List{}
 			for _, n := range testCase.args.nodes {
@@ -370,10 +370,10 @@ func TestTaskMeshNodes(t *testing.T) {
 			testCase.assertion(t, err)
 			assert.Equal(t, testCase.want, pullPastelAddressIDNodes(got))
 
-			nodeClient.AssertRegisterArtwork_AcceptedNodesCall(1, mock.Anything)
-			nodeClient.AssertRegisterArtwork_SessIDCall(testCase.numSessIDCall)
-			nodeClient.AssertRegisterArtwork_SessionCall(testCase.numSessionCall, mock.Anything, false)
-			nodeClient.AssertRegisterArtwork_ConnectToCall(testCase.numConnectToCall, mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
+			nodeClient.AssertRegisterArtworkAcceptedNodesCall(1, mock.Anything)
+			nodeClient.AssertRegisterArtworkSessIDCall(testCase.numSessIDCall)
+			nodeClient.AssertRegisterArtworkSessionCall(testCase.numSessionCall, mock.Anything, false)
+			nodeClient.AssertRegisterArtworkConnectToCall(testCase.numConnectToCall, mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
 			nodeClient.Client.AssertExpectations(t)
 			nodeClient.Connection.AssertExpectations(t)
 		})
@@ -1560,11 +1560,11 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnRegisterArtwork_Session(nil).
-				ListenOnRegisterArtwork_ConnectTo(nil).
-				ListenOnRegisterArtwork_SessID("").
-				ListenOnRegisterArtwork_AcceptedNodes([]string{}, nil).
-				ListenOnRegisterArtwork_SendPreBurnedFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
+				ListenOnRegisterArtworkSession(nil).
+				ListenOnRegisterArtworkConnectTo(nil).
+				ListenOnRegisterArtworkSessID("").
+				ListenOnRegisterArtworkAcceptedNodes([]string{}, nil).
+				ListenOnRegisterArtworkSendPreBurnedFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
@@ -1671,7 +1671,7 @@ func TestTaskUploadImage(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnRegisterArtwork_UploadImageWithThumbnail(tc.args.previewHash, tc.args.mediumHash,
+				ListenOnRegisterArtworkUploadImageWithThumbnail(tc.args.previewHash, tc.args.mediumHash,
 					tc.args.smallHash, tc.args.uploadImageThumbnailErr)
 
 			tc.args.task.Request.Image = artworkFile
@@ -1779,7 +1779,7 @@ func TestTaskProbeImage(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnRegisterArtwork_ProbeImage(customProbeImageFunc, tc.args.probeImgErr)
+				ListenOnRegisterArtworkProbeImage(customProbeImageFunc, tc.args.probeImgErr)
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
@@ -1891,12 +1891,12 @@ func TestTaskSendSignedTicket(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnRegisterArtwork_Session(nil).
-				ListenOnRegisterArtwork_ConnectTo(nil).
-				ListenOnRegisterArtwork_SessID("").
-				ListenOnRegisterArtwork_AcceptedNodes([]string{}, nil).
-				ListenOnRegisterArtwork_SendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
-				ListenOnRegisterArtwork_SendPreBurnedFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
+				ListenOnRegisterArtworkSession(nil).
+				ListenOnRegisterArtworkConnectTo(nil).
+				ListenOnRegisterArtworkSessID("").
+				ListenOnRegisterArtworkAcceptedNodes([]string{}, nil).
+				ListenOnRegisterArtworkSendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
+				ListenOnRegisterArtworkSendPreBurnedFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
@@ -2023,10 +2023,10 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnRegisterArtwork_Session(nil).
-				ListenOnRegisterArtwork_ConnectTo(nil).
-				ListenOnRegisterArtwork_SessID("").
-				ListenOnRegisterArtwork_AcceptedNodes([]string{}, nil).
+				ListenOnRegisterArtworkSession(nil).
+				ListenOnRegisterArtworkConnectTo(nil).
+				ListenOnRegisterArtworkSessID("").
+				ListenOnRegisterArtworkAcceptedNodes([]string{}, nil).
 				ListenOnClose(tc.wantErr)
 			tc.args.task.Service.nodeClient = nodeClient
 

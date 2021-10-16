@@ -223,7 +223,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
-func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, createtorPastelId string, creatorSignature []byte, key1 string, key2 string, rqids map[string][]byte, oti []byte) (int64, error) {
+func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, createtorPastelID string, creatorSignature []byte, key1 string, key2 string, rqids map[string][]byte, oti []byte) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageUploaded); err != nil {
 		return 0, errors.Errorf("require status %s not satisfied", StatusImageUploaded)
@@ -231,7 +231,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, createtor
 
 	task.Oti = oti
 	task.RQIDS = rqids
-	task.creatorPastelID = createtorPastelId
+	task.creatorPastelID = createtorPastelID
 	task.creatorSignature = creatorSignature
 	task.key1 = key1
 	task.key2 = key2
@@ -252,7 +252,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, createtor
 			Ticket: task.Ticket,
 			Signatures: &pastel.TicketSignatures{
 				Creator: map[string]string{
-					createtorPastelId: string(creatorSignature),
+					createtorPastelID: string(creatorSignature),
 				},
 				Mn2: map[string]string{
 					task.Service.config.PastelID: string(creatorSignature),

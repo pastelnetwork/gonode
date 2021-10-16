@@ -6,7 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
-// RegTickets is a collection of RegTicket
+// RegExDDTickets is a collection of RegTicket
 type RegExDDTickets []RegExDDTicket
 
 // RegExDDTicket represents pastel registration ticket.
@@ -16,7 +16,7 @@ type RegExDDTicket struct {
 	RegExDDTicketData RegExDDTicketData `json:"ticket"`
 }
 
-// RegExDDTicket represents external dupe detection registration ticket
+// RegExDDTicketData represents external dupe detection registration ticket
 type RegExDDTicketData struct {
 	Type           string           `json:"type"`
 	Version        int              `json:"version"`
@@ -55,6 +55,7 @@ type RegisterExDDRequest struct {
 	Fee         int64
 }
 
+// GetRegisterExDDFeeRequest represents a request to get registration fee
 type GetRegisterExDDFeeRequest struct {
 	Ticket      *ExDDTicket
 	Signatures  *TicketSignatures

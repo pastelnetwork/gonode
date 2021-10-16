@@ -93,7 +93,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			clientMock := test.NewMockClient(t)
-			clientMock.ListenOnRegisterArtwork_SendArtTicketSignature(tc.args.sendArtErr).
+			clientMock.ListenOnRegisterArtworkSendArtTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnRegisterArtwork()
 
 			tc.args.task.nodeClient = clientMock

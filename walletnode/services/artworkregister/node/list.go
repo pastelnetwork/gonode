@@ -175,7 +175,7 @@ func (nodes *List) SendPreBurnedFeeTxid(ctx context.Context, txid string) error 
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() error {
-			ticketTxid, err := node.SendPreBurnedFeeTxid(ctx, txid)
+			ticketTxid, err := node.SendPreBurnedFeeTxID(ctx, txid)
 			if err != nil {
 				return err
 			}

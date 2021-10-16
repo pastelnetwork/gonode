@@ -95,7 +95,7 @@ func TestTaskSignAndSendEDDTicket(t *testing.T) {
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			clientMock := test.NewMockClient(t)
-			clientMock.ListenOnExternalDupeDetection_SendEDDTicketSignature(tc.args.sendArtErr).
+			clientMock.ListenOnExternalDupeDetectionSendEDDTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnExternalDupeDetection()
 
 			tc.args.task.nodeClient = clientMock

@@ -54,10 +54,10 @@ const (
 	// VerifyMethod represents Verify method name
 	VerifyMethod = "Verify"
 
-	// RegisterNFTTicket represents RegisterNFTTicket method name
+	// RegisterNFTTicketMethod represents RegisterNFTTicket method name
 	RegisterNFTTicketMethod = "RegisterNFTTicket"
 
-	// RegisterExDDTicket represents RegisterExDDTicket method name
+	// RegisterExDDTicketMethod represents RegisterExDDTicket method name
 	RegisterExDDTicketMethod = "RegisterExDDTicket"
 
 	// RegisterArtTicketMethod represents RegisterArtTicket method

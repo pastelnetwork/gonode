@@ -54,8 +54,8 @@ type RegisterArtwork interface {
 	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (previewHash []byte, mediumThumbnailHash []byte, smallThumbnailHash []byte, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
-	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
-	SendPreBurnedFeeTxid(ctx context.Context, txid string) (string, error)
+	// SendPreBurnedFeeTxID send Txid of the transaction in which 10% of registration fee is preburned
+	SendPreBurnedFeeTxID(ctx context.Context, txid string) (string, error)
 }
 
 // DownloadArtwork contains methods for downloading artwork.
@@ -97,6 +97,6 @@ type ExternalDupeDetection interface {
 	UploadImage(ctx context.Context, image *artwork.File) error
 	// SendSignedEDDTicket send a reg-art ticket signed by cNode to SuperNode
 	SendSignedEDDTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
-	// SendPreBurnedFeeEDDTxId send TxId of the transaction in which 10% of registration fee is preburned
-	SendPreBurnedFeeEDDTxId(ctx context.Context, txid string) (string, error)
+	// SendPreBurnedFeeEDDTxID send TxID of the transaction in which 10% of registration fee is preburned
+	SendPreBurnedFeeEDDTxID(ctx context.Context, txid string) (string, error)
 }

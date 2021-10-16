@@ -333,21 +333,21 @@ func (service *ExternalDupeDetection) SendSignedEDDTicket(ctx context.Context, r
 	return &rsp, nil
 }
 
-// SendPreBurnedFeeTxid implements walletnode.ExternalDupeDetection.SendPreBurnedFeeTxid
-func (service *ExternalDupeDetection) SendPreBurnedFeeTxid(ctx context.Context, req *pb.SendPreBurnedFeeTxidRequest) (*pb.SendPreBurnedFeeTxidReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurnedFeeTxidRequest request")
+// SendPreBurnedFeeTxID implements walletnode.ExternalDupeDetection.SendPreBurnedFeeTxID
+func (service *ExternalDupeDetection) SendPreBurnedFeeTxID(ctx context.Context, req *pb.SendPreBurnedFeeTxIDRequest) (*pb.SendPreBurnedFeeTxIDReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurnedFeeTxIDRequest request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("failed to get task from meta data %w", err)
 	}
 
-	nftRegTxid, err := task.ValidatePreBurnedTransaction(ctx, req.Txid)
+	nftRegTxID, err := task.ValidatePreBurnedTransaction(ctx, req.Txid)
 	if err != nil {
 		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
 	}
 
-	rsp := pb.SendPreBurnedFeeTxidReply{
-		NFTRegTxid: nftRegTxid,
+	rsp := pb.SendPreBurnedFeeTxIDReply{
+		NFTRegTxid: nftRegTxID,
 	}
 	return &rsp, nil
 }

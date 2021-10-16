@@ -22,8 +22,8 @@ service RegisterArtwork {
     // SendArtTicket sends a signed art-ticket to the supernode.
     rpc SendSignedNFTTicket(SendSignedNFTTicketRequest) returns (SendSignedNFTTicketReply);
 
-    // SendPreBurnedFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
-    rpc SendPreBurnedFeeTxid(SendPreBurnedFeeTxidRequest) returns (SendPreBurnedFeeTxidReply);
+    // SendPreBurnedFeeTxID sends tx_id of 10% burnt transaction fee to the supernode.
+    rpc SendPreBurnedFeeTxID(SendPreBurnedFeeTxIDRequest) returns (SendPreBurnedFeeTxIDReply);
 
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
@@ -104,10 +104,10 @@ message SendSignedNFTTicketReply {
     int64 registration_fee = 1;
 }
 
-message SendPreBurnedFeeTxidRequest {
+message SendPreBurnedFeeTxIDRequest {
     string txid = 1;
 }
-message SendPreBurnedFeeTxidReply {
+message SendPreBurnedFeeTxIDReply {
     string NFT_reg_txid = 1;
 }
 

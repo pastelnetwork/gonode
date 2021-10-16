@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/service/artwork"
-
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/p2p"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"

@@ -227,7 +227,7 @@ func TestNodesSendImage(t *testing.T) {
 				//client mock
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
-				client.ListenOnExternalDupeDetection_ProbeImage(testCase.fingersAndScore, testCase.err)
+				client.ListenOnExternalDupeDetectionProbeImage(testCase.fingersAndScore, testCase.err)
 				clients = append(clients, client)
 
 				nodes.Add(&Node{
@@ -246,7 +246,7 @@ func TestNodesSendImage(t *testing.T) {
 			//mock assertion each client
 			for _, client := range clients {
 				client.ExternalDupeDetection.AssertExpectations(t)
-				client.AssertExternalDupeDetection_ProbeImageCall(testCase.numberProbeImageCall, testCase.args.ctx, testCase.args.file)
+				client.AssertExternalDupeDetectionProbeImageCall(testCase.numberProbeImageCall, testCase.args.ctx, testCase.args.file)
 			}
 		})
 	}

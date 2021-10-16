@@ -30,8 +30,8 @@ type ExternalDupeDetectionClient interface {
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (ExternalDupeDetection_ProbeImageClient, error)
 	// SendSignedEDDTicket sends a signed art-ticket to the supernode.
 	SendSignedEDDTicket(ctx context.Context, in *SendSignedEDDTicketRequest, opts ...grpc.CallOption) (*SendSignedEDDTicketReply, error)
-	// SendPreBurnedFeeEDDTxid sends tx_id of 10% burnt transaction fee to the supernode.
-	SendPreBurnedFeeEDDTxid(ctx context.Context, in *SendPreBurnedFeeEDDTxidRequest, opts ...grpc.CallOption) (*SendPreBurnedFeeEDDTxidReply, error)
+	// SendPreBurnedFeeEDDTxID sends tx_id of 10% burnt transaction fee to the supernode.
+	SendPreBurnedFeeEDDTxID(ctx context.Context, in *SendPreBurnedFeeEDDTxIDRequest, opts ...grpc.CallOption) (*SendPreBurnedFeeEDDTxIDReply, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
 	// Upload the image after pq signature is appended along with its thumbnail coordinates
@@ -138,9 +138,9 @@ func (c *externalDupeDetectionClient) SendSignedEDDTicket(ctx context.Context, i
 	return out, nil
 }
 
-func (c *externalDupeDetectionClient) SendPreBurnedFeeEDDTxid(ctx context.Context, in *SendPreBurnedFeeEDDTxidRequest, opts ...grpc.CallOption) (*SendPreBurnedFeeEDDTxidReply, error) {
-	out := new(SendPreBurnedFeeEDDTxidReply)
-	err := c.cc.Invoke(ctx, "/walletnode.ExternalDupeDetection/SendPreBurnedFeeEDDTxid", in, out, opts...)
+func (c *externalDupeDetectionClient) SendPreBurnedFeeEDDTxID(ctx context.Context, in *SendPreBurnedFeeEDDTxIDRequest, opts ...grpc.CallOption) (*SendPreBurnedFeeEDDTxIDReply, error) {
+	out := new(SendPreBurnedFeeEDDTxIDReply)
+	err := c.cc.Invoke(ctx, "/walletnode.ExternalDupeDetection/SendPreBurnedFeeEDDTxID", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -206,8 +206,8 @@ type ExternalDupeDetectionServer interface {
 	ProbeImage(ExternalDupeDetection_ProbeImageServer) error
 	// SendSignedEDDTicket sends a signed art-ticket to the supernode.
 	SendSignedEDDTicket(context.Context, *SendSignedEDDTicketRequest) (*SendSignedEDDTicketReply, error)
-	// SendPreBurnedFeeEDDTxid sends tx_id of 10% burnt transaction fee to the supernode.
-	SendPreBurnedFeeEDDTxid(context.Context, *SendPreBurnedFeeEDDTxidRequest) (*SendPreBurnedFeeEDDTxidReply, error)
+	// SendPreBurnedFeeEDDTxID sends tx_id of 10% burnt transaction fee to the supernode.
+	SendPreBurnedFeeEDDTxID(context.Context, *SendPreBurnedFeeEDDTxIDRequest) (*SendPreBurnedFeeEDDTxIDReply, error)
 	// SendTicket sends a ticket to the supernode.
 	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
 	// Upload the image after pq signature is appended along with its thumbnail coordinates
@@ -234,8 +234,8 @@ func (UnimplementedExternalDupeDetectionServer) ProbeImage(ExternalDupeDetection
 func (UnimplementedExternalDupeDetectionServer) SendSignedEDDTicket(context.Context, *SendSignedEDDTicketRequest) (*SendSignedEDDTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendSignedEDDTicket not implemented")
 }
-func (UnimplementedExternalDupeDetectionServer) SendPreBurnedFeeEDDTxid(context.Context, *SendPreBurnedFeeEDDTxidRequest) (*SendPreBurnedFeeEDDTxidReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendPreBurnedFeeEDDTxid not implemented")
+func (UnimplementedExternalDupeDetectionServer) SendPreBurnedFeeEDDTxID(context.Context, *SendPreBurnedFeeEDDTxIDRequest) (*SendPreBurnedFeeEDDTxIDReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendPreBurnedFeeEDDTxID not implemented")
 }
 func (UnimplementedExternalDupeDetectionServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
@@ -362,20 +362,20 @@ func _ExternalDupeDetection_SendSignedEDDTicket_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ExternalDupeDetection_SendPreBurnedFeeEDDTxid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendPreBurnedFeeEDDTxidRequest)
+func _ExternalDupeDetection_SendPreBurnedFeeEDDTxID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendPreBurnedFeeEDDTxIDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ExternalDupeDetectionServer).SendPreBurnedFeeEDDTxid(ctx, in)
+		return srv.(ExternalDupeDetectionServer).SendPreBurnedFeeEDDTxID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/walletnode.ExternalDupeDetection/SendPreBurnedFeeEDDTxid",
+		FullMethod: "/walletnode.ExternalDupeDetection/SendPreBurnedFeeEDDTxID",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ExternalDupeDetectionServer).SendPreBurnedFeeEDDTxid(ctx, req.(*SendPreBurnedFeeEDDTxidRequest))
+		return srv.(ExternalDupeDetectionServer).SendPreBurnedFeeEDDTxID(ctx, req.(*SendPreBurnedFeeEDDTxIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -444,8 +444,8 @@ var ExternalDupeDetection_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ExternalDupeDetection_SendSignedEDDTicket_Handler,
 		},
 		{
-			MethodName: "SendPreBurnedFeeEDDTxid",
-			Handler:    _ExternalDupeDetection_SendPreBurnedFeeEDDTxid_Handler,
+			MethodName: "SendPreBurnedFeeEDDTxID",
+			Handler:    _ExternalDupeDetection_SendPreBurnedFeeEDDTxID_Handler,
 		},
 		{
 			MethodName: "SendTicket",

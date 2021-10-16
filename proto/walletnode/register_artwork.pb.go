@@ -649,7 +649,7 @@ func (x *SendSignedNFTTicketReply) GetRegistrationFee() int64 {
 	return 0
 }
 
-type SendPreBurnedFeeTxidRequest struct {
+type SendPreBurnedFeeTxIDRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -657,8 +657,8 @@ type SendPreBurnedFeeTxidRequest struct {
 	Txid string `protobuf:"bytes,1,opt,name=txid,proto3" json:"txid,omitempty"`
 }
 
-func (x *SendPreBurnedFeeTxidRequest) Reset() {
-	*x = SendPreBurnedFeeTxidRequest{}
+func (x *SendPreBurnedFeeTxIDRequest) Reset() {
+	*x = SendPreBurnedFeeTxIDRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_register_artwork_proto_msgTypes[11]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -666,13 +666,13 @@ func (x *SendPreBurnedFeeTxidRequest) Reset() {
 	}
 }
 
-func (x *SendPreBurnedFeeTxidRequest) String() string {
+func (x *SendPreBurnedFeeTxIDRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendPreBurnedFeeTxidRequest) ProtoMessage() {}
+func (*SendPreBurnedFeeTxIDRequest) ProtoMessage() {}
 
-func (x *SendPreBurnedFeeTxidRequest) ProtoReflect() protoreflect.Message {
+func (x *SendPreBurnedFeeTxIDRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_register_artwork_proto_msgTypes[11]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -684,19 +684,19 @@ func (x *SendPreBurnedFeeTxidRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendPreBurnedFeeTxidRequest.ProtoReflect.Descriptor instead.
-func (*SendPreBurnedFeeTxidRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendPreBurnedFeeTxIDRequest.ProtoReflect.Descriptor instead.
+func (*SendPreBurnedFeeTxIDRequest) Descriptor() ([]byte, []int) {
 	return file_register_artwork_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *SendPreBurnedFeeTxidRequest) GetTxid() string {
+func (x *SendPreBurnedFeeTxIDRequest) GetTxid() string {
 	if x != nil {
 		return x.Txid
 	}
 	return ""
 }
 
-type SendPreBurnedFeeTxidReply struct {
+type SendPreBurnedFeeTxIDReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -704,8 +704,8 @@ type SendPreBurnedFeeTxidReply struct {
 	NFTRegTxid string `protobuf:"bytes,1,opt,name=NFT_reg_txid,json=NFTRegTxid,proto3" json:"NFT_reg_txid,omitempty"`
 }
 
-func (x *SendPreBurnedFeeTxidReply) Reset() {
-	*x = SendPreBurnedFeeTxidReply{}
+func (x *SendPreBurnedFeeTxIDReply) Reset() {
+	*x = SendPreBurnedFeeTxIDReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_register_artwork_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -713,13 +713,13 @@ func (x *SendPreBurnedFeeTxidReply) Reset() {
 	}
 }
 
-func (x *SendPreBurnedFeeTxidReply) String() string {
+func (x *SendPreBurnedFeeTxIDReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendPreBurnedFeeTxidReply) ProtoMessage() {}
+func (*SendPreBurnedFeeTxIDReply) ProtoMessage() {}
 
-func (x *SendPreBurnedFeeTxidReply) ProtoReflect() protoreflect.Message {
+func (x *SendPreBurnedFeeTxIDReply) ProtoReflect() protoreflect.Message {
 	mi := &file_register_artwork_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -731,12 +731,12 @@ func (x *SendPreBurnedFeeTxidReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendPreBurnedFeeTxidReply.ProtoReflect.Descriptor instead.
-func (*SendPreBurnedFeeTxidReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendPreBurnedFeeTxIDReply.ProtoReflect.Descriptor instead.
+func (*SendPreBurnedFeeTxIDReply) Descriptor() ([]byte, []int) {
 	return file_register_artwork_proto_rawDescGZIP(), []int{12}
 }
 
-func (x *SendPreBurnedFeeTxidReply) GetNFTRegTxid() string {
+func (x *SendPreBurnedFeeTxIDReply) GetNFTRegTxid() string {
 	if x != nil {
 		return x.NFTRegTxid
 	}
@@ -1495,10 +1495,10 @@ var file_register_artwork_proto_rawDesc = []byte{
 	0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x66, 0x65, 0x65, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x03, 0x52, 0x0f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x46, 0x65, 0x65, 0x22, 0x31, 0x0a, 0x1b, 0x53, 0x65, 0x6e, 0x64, 0x50, 0x72, 0x65,
-	0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x69, 0x64, 0x52, 0x65, 0x71,
+	0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x49, 0x44, 0x52, 0x65, 0x71,
 	0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x69, 0x64, 0x22, 0x3d, 0x0a, 0x19, 0x53, 0x65, 0x6e, 0x64,
-	0x50, 0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x69, 0x64,
+	0x50, 0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x49, 0x44,
 	0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x20, 0x0a, 0x0c, 0x4e, 0x46, 0x54, 0x5f, 0x72, 0x65, 0x67,
 	0x5f, 0x74, 0x78, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0a, 0x4e, 0x46, 0x54,
 	0x52, 0x65, 0x67, 0x54, 0x78, 0x69, 0x64, 0x22, 0xca, 0x01, 0x0a, 0x11, 0x53, 0x65, 0x6e, 0x64,
@@ -1583,12 +1583,12 @@ var file_register_artwork_proto_rawDesc = []byte{
 	0x74, 0x1a, 0x24, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53,
 	0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x4e, 0x46, 0x54, 0x54, 0x69, 0x63, 0x6b,
 	0x65, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x66, 0x0a, 0x14, 0x53, 0x65, 0x6e, 0x64, 0x50,
-	0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x69, 0x64, 0x12,
+	0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x49, 0x44, 0x12,
 	0x27, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e,
-	0x64, 0x50, 0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x69,
-	0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65,
+	0x64, 0x50, 0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x49,
+	0x44, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x25, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65,
 	0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e, 0x64, 0x50, 0x72, 0x65, 0x42, 0x75, 0x72,
-	0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x69, 0x64, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12,
+	0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x54, 0x78, 0x49, 0x44, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12,
 	0x48, 0x0a, 0x0a, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x1d, 0x2e,
 	0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e, 0x64, 0x54,
 	0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x77,
@@ -1630,8 +1630,8 @@ var file_register_artwork_proto_goTypes = []interface{}{
 	(*EncoderParameters)(nil),                    // 8: walletnode.EncoderParameters
 	(*SendSignedNFTTicketRequest)(nil),           // 9: walletnode.SendSignedNFTTicketRequest
 	(*SendSignedNFTTicketReply)(nil),             // 10: walletnode.SendSignedNFTTicketReply
-	(*SendPreBurnedFeeTxidRequest)(nil),          // 11: walletnode.SendPreBurnedFeeTxidRequest
-	(*SendPreBurnedFeeTxidReply)(nil),            // 12: walletnode.SendPreBurnedFeeTxidReply
+	(*SendPreBurnedFeeTxIDRequest)(nil),          // 11: walletnode.SendPreBurnedFeeTxIDRequest
+	(*SendPreBurnedFeeTxIDReply)(nil),            // 12: walletnode.SendPreBurnedFeeTxIDReply
 	(*SendTicketRequest)(nil),                    // 13: walletnode.SendTicketRequest
 	(*SendTicketReply)(nil),                      // 14: walletnode.SendTicketReply
 	(*UploadImageRequest)(nil),                   // 15: walletnode.UploadImageRequest
@@ -1656,7 +1656,7 @@ var file_register_artwork_proto_depIdxs = []int32{
 	4,  // 9: walletnode.RegisterArtwork.ConnectTo:input_type -> walletnode.ConnectToRequest
 	6,  // 10: walletnode.RegisterArtwork.ProbeImage:input_type -> walletnode.ProbeImageRequest
 	9,  // 11: walletnode.RegisterArtwork.SendSignedNFTTicket:input_type -> walletnode.SendSignedNFTTicketRequest
-	11, // 12: walletnode.RegisterArtwork.SendPreBurnedFeeTxid:input_type -> walletnode.SendPreBurnedFeeTxidRequest
+	11, // 12: walletnode.RegisterArtwork.SendPreBurnedFeeTxID:input_type -> walletnode.SendPreBurnedFeeTxIDRequest
 	13, // 13: walletnode.RegisterArtwork.SendTicket:input_type -> walletnode.SendTicketRequest
 	15, // 14: walletnode.RegisterArtwork.UploadImage:input_type -> walletnode.UploadImageRequest
 	1,  // 15: walletnode.RegisterArtwork.Session:output_type -> walletnode.SessionReply
@@ -1664,7 +1664,7 @@ var file_register_artwork_proto_depIdxs = []int32{
 	5,  // 17: walletnode.RegisterArtwork.ConnectTo:output_type -> walletnode.ConnectToReply
 	7,  // 18: walletnode.RegisterArtwork.ProbeImage:output_type -> walletnode.ProbeImageReply
 	10, // 19: walletnode.RegisterArtwork.SendSignedNFTTicket:output_type -> walletnode.SendSignedNFTTicketReply
-	12, // 20: walletnode.RegisterArtwork.SendPreBurnedFeeTxid:output_type -> walletnode.SendPreBurnedFeeTxidReply
+	12, // 20: walletnode.RegisterArtwork.SendPreBurnedFeeTxID:output_type -> walletnode.SendPreBurnedFeeTxIDReply
 	14, // 21: walletnode.RegisterArtwork.SendTicket:output_type -> walletnode.SendTicketReply
 	16, // 22: walletnode.RegisterArtwork.UploadImage:output_type -> walletnode.UploadImageReply
 	15, // [15:23] is the sub-list for method output_type
@@ -1813,7 +1813,7 @@ func file_register_artwork_proto_init() {
 			}
 		}
 		file_register_artwork_proto_msgTypes[11].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendPreBurnedFeeTxidRequest); i {
+			switch v := v.(*SendPreBurnedFeeTxIDRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -1825,7 +1825,7 @@ func file_register_artwork_proto_init() {
 			}
 		}
 		file_register_artwork_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendPreBurnedFeeTxidReply); i {
+			switch v := v.(*SendPreBurnedFeeTxIDReply); i {
 			case 0:
 				return &v.state
 			case 1:

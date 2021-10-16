@@ -737,7 +737,7 @@ func (task *Task) preburnedDetectionFee(ctx context.Context) error {
 	task.burnTxID = burnTxid
 	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxID)
 
-	if err := task.nodes.SendPreBurnedFeeTxid(ctx, task.burnTxID); err != nil {
+	if err := task.nodes.SendPreBurnedFeeTxID(ctx, task.burnTxID); err != nil {
 		return errors.Errorf("failed to send pre-burn-txid: %s to supernode(s): %w", task.burnTxID, err)
 	}
 	task.regEDDTxID = task.nodes.RegEDDTicketID()

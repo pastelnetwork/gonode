@@ -159,13 +159,13 @@ func TestTaskRun(t *testing.T) {
 				nodeClient.
 					ListenOnConnect("", testCase.args.returnErr).
 					ListenOnExternalDupeDetection().
-					ListenOnExternalDupeDetection_Session(testCase.args.returnErr).
-					ListenOnExternalDupeDetection_ConnectTo(testCase.args.returnErr).
-					ListenOnExternalDupeDetection_SessID(testCase.args.primarySessID).
-					ListenOnExternalDupeDetection_AcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
+					ListenOnExternalDupeDetectionSession(testCase.args.returnErr).
+					ListenOnExternalDupeDetectionConnectTo(testCase.args.returnErr).
+					ListenOnExternalDupeDetectionSessID(testCase.args.primarySessID).
+					ListenOnExternalDupeDetectionAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 					ListenOnDone().
-					ListenOnExternalDupeDetection_UploadImage(nil).
-					ListenOnExternalDupeDetection_SendSignedEDDTicket(1, nil).
+					ListenOnExternalDupeDetectionUploadImage(nil).
+					ListenOnExternalDupeDetectionSendSignedEDDTicket(1, nil).
 					ListenOnClose(nil)
 
 				counter := &struct {
@@ -191,7 +191,7 @@ func TestTaskRun(t *testing.T) {
 					file.Remove()
 					return &pastel.FingerAndScores{ZstdCompressedFingerprint: testCase.args.fingerPrint}
 				}
-				nodeClient.ListenOnExternalDupeDetection_ProbeImage(customProbeImageFunc, testCase.args.returnErr)
+				nodeClient.ListenOnExternalDupeDetectionProbeImage(customProbeImageFunc, testCase.args.returnErr)
 
 				pastelClientMock := pastelMock.NewMockClient(t)
 				pastelClientMock.
@@ -253,11 +253,11 @@ func TestTaskRun(t *testing.T) {
 				)
 
 				// //nodeClient mock assertion
-				nodeClient.AssertExternalDupeDetection_AcceptedNodesCall(1, mock.Anything)
-				nodeClient.AssertExternalDupeDetection_SessIDCall(testCase.numSessIDCall)
-				nodeClient.AssertExternalDupeDetection_SessionCall(testCase.numSessionCall, mock.Anything, false)
-				nodeClient.AssertExternalDupeDetection_ConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
-				nodeClient.AssertExternalDupeDetection_ProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
+				nodeClient.AssertExternalDupeDetectionAcceptedNodesCall(1, mock.Anything)
+				nodeClient.AssertExternalDupeDetectionSessIDCall(testCase.numSessIDCall)
+				nodeClient.AssertExternalDupeDetectionSessionCall(testCase.numSessionCall, mock.Anything, false)
+				nodeClient.AssertExternalDupeDetectionConnectToCall(testCase.numConnectToCall, mock.Anything, mock.Anything, testCase.args.primarySessID)
+				nodeClient.AssertExternalDupeDetectionProbeImageCall(testCase.numProbeImageCall, mock.Anything, mock.IsType(&artwork.File{}))
 			})
 		}
 	})
@@ -348,10 +348,10 @@ func TestTaskMeshNodes(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", testCase.args.returnErr).
 				ListenOnExternalDupeDetection().
-				ListenOnExternalDupeDetection_Session(testCase.args.returnErr).
-				ListenOnExternalDupeDetection_ConnectTo(testCase.args.returnErr).
-				ListenOnExternalDupeDetection_SessID(testCase.args.primarySessID).
-				ListenOnExternalDupeDetection_AcceptedNodes(testCase.args.pastelIDS, testCase.args.acceptNodeErr)
+				ListenOnExternalDupeDetectionSession(testCase.args.returnErr).
+				ListenOnExternalDupeDetectionConnectTo(testCase.args.returnErr).
+				ListenOnExternalDupeDetectionSessID(testCase.args.primarySessID).
+				ListenOnExternalDupeDetectionAcceptedNodes(testCase.args.pastelIDS, testCase.args.acceptNodeErr)
 
 			nodes := node.List{}
 			for _, n := range testCase.args.nodes {
@@ -368,10 +368,10 @@ func TestTaskMeshNodes(t *testing.T) {
 			testCase.assertion(t, err)
 			assert.Equal(t, testCase.want, pullPastelAddressIDNodes(got))
 
-			nodeClient.AssertExternalDupeDetection_AcceptedNodesCall(1, mock.Anything)
-			nodeClient.AssertExternalDupeDetection_SessIDCall(testCase.numSessIDCall)
-			nodeClient.AssertExternalDupeDetection_SessionCall(testCase.numSessionCall, mock.Anything, false)
-			nodeClient.AssertExternalDupeDetection_ConnectToCall(testCase.numConnectToCall, mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
+			nodeClient.AssertExternalDupeDetectionAcceptedNodesCall(1, mock.Anything)
+			nodeClient.AssertExternalDupeDetectionSessIDCall(testCase.numSessIDCall)
+			nodeClient.AssertExternalDupeDetectionSessionCall(testCase.numSessionCall, mock.Anything, false)
+			nodeClient.AssertExternalDupeDetectionConnectToCall(testCase.numConnectToCall, mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
 			nodeClient.Client.AssertExpectations(t)
 			nodeClient.Connection.AssertExpectations(t)
 		})
@@ -1468,11 +1468,11 @@ func TestTaskPreburnedDetectionFee(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnExternalDupeDetection().
-				ListenOnExternalDupeDetection_Session(nil).
-				ListenOnExternalDupeDetection_ConnectTo(nil).
-				ListenOnExternalDupeDetection_SessID("").
-				ListenOnExternalDupeDetection_AcceptedNodes([]string{}, nil).
-				ListenOnExternalDupeDetection_SendPreBurnedFeeEDDTxID(tc.args.preBurnedFeeRetTxID, tc.args.preBurnedFeeRetErr)
+				ListenOnExternalDupeDetectionSession(nil).
+				ListenOnExternalDupeDetectionConnectTo(nil).
+				ListenOnExternalDupeDetectionSessID("").
+				ListenOnExternalDupeDetectionAcceptedNodes([]string{}, nil).
+				ListenOnExternalDupeDetectionSendPreBurnedFeeEDDTxID(tc.args.preBurnedFeeRetTxID, tc.args.preBurnedFeeRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
@@ -1576,7 +1576,7 @@ func TestTaskUploadImage(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnExternalDupeDetection().
-				ListenOnExternalDupeDetection_UploadImage(tc.args.uploadImageErr)
+				ListenOnExternalDupeDetectionUploadImage(tc.args.uploadImageErr)
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
@@ -1683,7 +1683,7 @@ func TestTaskProbeImage(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnExternalDupeDetection().
-				ListenOnExternalDupeDetection_ProbeImage(customProbeImageFunc, tc.args.probeImgErr)
+				ListenOnExternalDupeDetectionProbeImage(customProbeImageFunc, tc.args.probeImgErr)
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
@@ -1796,12 +1796,12 @@ func TestTaskSendSignedTicket(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnExternalDupeDetection().
-				ListenOnExternalDupeDetection_Session(nil).
-				ListenOnExternalDupeDetection_ConnectTo(nil).
-				ListenOnExternalDupeDetection_SessID("").
-				ListenOnExternalDupeDetection_AcceptedNodes([]string{}, nil).
-				ListenOnExternalDupeDetection_SendSignedEDDTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
-				ListenOnExternalDupeDetection_SendPreBurnedFeeEDDTxID(tc.args.preBurnedFeeRetTxID, tc.args.preBurnedFeeRetErr)
+				ListenOnExternalDupeDetectionSession(nil).
+				ListenOnExternalDupeDetectionConnectTo(nil).
+				ListenOnExternalDupeDetectionSessID("").
+				ListenOnExternalDupeDetectionAcceptedNodes([]string{}, nil).
+				ListenOnExternalDupeDetectionSendSignedEDDTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
+				ListenOnExternalDupeDetectionSendPreBurnedFeeEDDTxID(tc.args.preBurnedFeeRetTxID, tc.args.preBurnedFeeRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
@@ -1928,10 +1928,10 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnExternalDupeDetection().
-				ListenOnExternalDupeDetection_Session(nil).
-				ListenOnExternalDupeDetection_ConnectTo(nil).
-				ListenOnExternalDupeDetection_SessID("").
-				ListenOnExternalDupeDetection_AcceptedNodes([]string{}, nil).
+				ListenOnExternalDupeDetectionSession(nil).
+				ListenOnExternalDupeDetectionConnectTo(nil).
+				ListenOnExternalDupeDetectionSessID("").
+				ListenOnExternalDupeDetectionAcceptedNodes([]string{}, nil).
 				ListenOnClose(tc.wantErr)
 			tc.args.task.Service.nodeClient = nodeClient
 

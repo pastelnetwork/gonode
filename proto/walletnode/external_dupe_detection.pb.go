@@ -162,7 +162,7 @@ func (x *SendSignedEDDTicketReply) GetRegistrationFee() int64 {
 	return 0
 }
 
-type SendPreBurnedFeeEDDTxidRequest struct {
+type SendPreBurnedFeeEDDTxIDRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -170,8 +170,8 @@ type SendPreBurnedFeeEDDTxidRequest struct {
 	Txid string `protobuf:"bytes,1,opt,name=txid,proto3" json:"txid,omitempty"`
 }
 
-func (x *SendPreBurnedFeeEDDTxidRequest) Reset() {
-	*x = SendPreBurnedFeeEDDTxidRequest{}
+func (x *SendPreBurnedFeeEDDTxIDRequest) Reset() {
+	*x = SendPreBurnedFeeEDDTxIDRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_external_dupe_detection_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -179,13 +179,13 @@ func (x *SendPreBurnedFeeEDDTxidRequest) Reset() {
 	}
 }
 
-func (x *SendPreBurnedFeeEDDTxidRequest) String() string {
+func (x *SendPreBurnedFeeEDDTxIDRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendPreBurnedFeeEDDTxidRequest) ProtoMessage() {}
+func (*SendPreBurnedFeeEDDTxIDRequest) ProtoMessage() {}
 
-func (x *SendPreBurnedFeeEDDTxidRequest) ProtoReflect() protoreflect.Message {
+func (x *SendPreBurnedFeeEDDTxIDRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_external_dupe_detection_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -197,19 +197,19 @@ func (x *SendPreBurnedFeeEDDTxidRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendPreBurnedFeeEDDTxidRequest.ProtoReflect.Descriptor instead.
-func (*SendPreBurnedFeeEDDTxidRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendPreBurnedFeeEDDTxIDRequest.ProtoReflect.Descriptor instead.
+func (*SendPreBurnedFeeEDDTxIDRequest) Descriptor() ([]byte, []int) {
 	return file_external_dupe_detection_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SendPreBurnedFeeEDDTxidRequest) GetTxid() string {
+func (x *SendPreBurnedFeeEDDTxIDRequest) GetTxid() string {
 	if x != nil {
 		return x.Txid
 	}
 	return ""
 }
 
-type SendPreBurnedFeeEDDTxidReply struct {
+type SendPreBurnedFeeEDDTxIDReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -217,8 +217,8 @@ type SendPreBurnedFeeEDDTxidReply struct {
 	EddRegTxid string `protobuf:"bytes,1,opt,name=edd_reg_txid,json=eddRegTxid,proto3" json:"edd_reg_txid,omitempty"`
 }
 
-func (x *SendPreBurnedFeeEDDTxidReply) Reset() {
-	*x = SendPreBurnedFeeEDDTxidReply{}
+func (x *SendPreBurnedFeeEDDTxIDReply) Reset() {
+	*x = SendPreBurnedFeeEDDTxIDReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_external_dupe_detection_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -226,13 +226,13 @@ func (x *SendPreBurnedFeeEDDTxidReply) Reset() {
 	}
 }
 
-func (x *SendPreBurnedFeeEDDTxidReply) String() string {
+func (x *SendPreBurnedFeeEDDTxIDReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendPreBurnedFeeEDDTxidReply) ProtoMessage() {}
+func (*SendPreBurnedFeeEDDTxIDReply) ProtoMessage() {}
 
-func (x *SendPreBurnedFeeEDDTxidReply) ProtoReflect() protoreflect.Message {
+func (x *SendPreBurnedFeeEDDTxIDReply) ProtoReflect() protoreflect.Message {
 	mi := &file_external_dupe_detection_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -244,12 +244,12 @@ func (x *SendPreBurnedFeeEDDTxidReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendPreBurnedFeeEDDTxidReply.ProtoReflect.Descriptor instead.
-func (*SendPreBurnedFeeEDDTxidReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendPreBurnedFeeEDDTxIDReply.ProtoReflect.Descriptor instead.
+func (*SendPreBurnedFeeEDDTxIDReply) Descriptor() ([]byte, []int) {
 	return file_external_dupe_detection_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SendPreBurnedFeeEDDTxidReply) GetEddRegTxid() string {
+func (x *SendPreBurnedFeeEDDTxIDReply) GetEddRegTxid() string {
 	if x != nil {
 		return x.EddRegTxid
 	}
@@ -295,11 +295,11 @@ var file_external_dupe_detection_proto_rawDesc = []byte{
 	0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x66, 0x65, 0x65, 0x18, 0x01,
 	0x20, 0x01, 0x28, 0x03, 0x52, 0x0f, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69,
 	0x6f, 0x6e, 0x46, 0x65, 0x65, 0x22, 0x34, 0x0a, 0x1e, 0x53, 0x65, 0x6e, 0x64, 0x50, 0x72, 0x65,
-	0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x45, 0x44, 0x44, 0x54, 0x78, 0x69, 0x64,
+	0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x45, 0x44, 0x44, 0x54, 0x78, 0x49, 0x44,
 	0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x78, 0x69, 0x64, 0x18,
 	0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x74, 0x78, 0x69, 0x64, 0x22, 0x40, 0x0a, 0x1c, 0x53,
 	0x65, 0x6e, 0x64, 0x50, 0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x45,
-	0x44, 0x44, 0x54, 0x78, 0x69, 0x64, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x20, 0x0a, 0x0c, 0x65,
+	0x44, 0x44, 0x54, 0x78, 0x49, 0x44, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x20, 0x0a, 0x0c, 0x65,
 	0x64, 0x64, 0x5f, 0x72, 0x65, 0x67, 0x5f, 0x74, 0x78, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x0a, 0x65, 0x64, 0x64, 0x52, 0x65, 0x67, 0x54, 0x78, 0x69, 0x64, 0x32, 0xb1, 0x05,
 	0x0a, 0x15, 0x45, 0x78, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x44, 0x75, 0x70, 0x65, 0x44, 0x65,
@@ -330,12 +330,12 @@ var file_external_dupe_detection_proto_rawDesc = []byte{
 	0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x45, 0x44, 0x44, 0x54, 0x69, 0x63, 0x6b,
 	0x65, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x6f, 0x0a, 0x17, 0x53, 0x65, 0x6e, 0x64, 0x50,
 	0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x45, 0x44, 0x44, 0x54, 0x78,
-	0x69, 0x64, 0x12, 0x2a, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e,
+	0x49, 0x44, 0x12, 0x2a, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e,
 	0x53, 0x65, 0x6e, 0x64, 0x50, 0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65,
-	0x45, 0x44, 0x44, 0x54, 0x78, 0x69, 0x64, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28,
+	0x45, 0x44, 0x44, 0x54, 0x78, 0x49, 0x44, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x28,
 	0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e, 0x64,
 	0x50, 0x72, 0x65, 0x42, 0x75, 0x72, 0x6e, 0x65, 0x64, 0x46, 0x65, 0x65, 0x45, 0x44, 0x44, 0x54,
-	0x78, 0x69, 0x64, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x48, 0x0a, 0x0a, 0x53, 0x65, 0x6e, 0x64,
+	0x78, 0x49, 0x44, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x48, 0x0a, 0x0a, 0x53, 0x65, 0x6e, 0x64,
 	0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x1d, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e,
 	0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e, 0x64, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65,
 	0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1b, 0x2e, 0x77, 0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f,
@@ -367,8 +367,8 @@ var file_external_dupe_detection_proto_msgTypes = make([]protoimpl.MessageInfo, 
 var file_external_dupe_detection_proto_goTypes = []interface{}{
 	(*SendSignedEDDTicketRequest)(nil),     // 0: walletnode.SendSignedEDDTicketRequest
 	(*SendSignedEDDTicketReply)(nil),       // 1: walletnode.SendSignedEDDTicketReply
-	(*SendPreBurnedFeeEDDTxidRequest)(nil), // 2: walletnode.SendPreBurnedFeeEDDTxidRequest
-	(*SendPreBurnedFeeEDDTxidReply)(nil),   // 3: walletnode.SendPreBurnedFeeEDDTxidReply
+	(*SendPreBurnedFeeEDDTxIDRequest)(nil), // 2: walletnode.SendPreBurnedFeeEDDTxIDRequest
+	(*SendPreBurnedFeeEDDTxIDReply)(nil),   // 3: walletnode.SendPreBurnedFeeEDDTxIDReply
 	nil,                                    // 4: walletnode.SendSignedEDDTicketRequest.EncodeFilesEntry
 	(*EncoderParameters)(nil),              // 5: walletnode.EncoderParameters
 	(*SessionRequest)(nil),                 // 6: walletnode.SessionRequest
@@ -392,7 +392,7 @@ var file_external_dupe_detection_proto_depIdxs = []int32{
 	8,  // 4: walletnode.ExternalDupeDetection.ConnectTo:input_type -> walletnode.ConnectToRequest
 	9,  // 5: walletnode.ExternalDupeDetection.ProbeImage:input_type -> walletnode.ProbeImageRequest
 	0,  // 6: walletnode.ExternalDupeDetection.SendSignedEDDTicket:input_type -> walletnode.SendSignedEDDTicketRequest
-	2,  // 7: walletnode.ExternalDupeDetection.SendPreBurnedFeeEDDTxid:input_type -> walletnode.SendPreBurnedFeeEDDTxidRequest
+	2,  // 7: walletnode.ExternalDupeDetection.SendPreBurnedFeeEDDTxID:input_type -> walletnode.SendPreBurnedFeeEDDTxIDRequest
 	10, // 8: walletnode.ExternalDupeDetection.SendTicket:input_type -> walletnode.SendTicketRequest
 	11, // 9: walletnode.ExternalDupeDetection.UploadImage:input_type -> walletnode.UploadImageRequest
 	12, // 10: walletnode.ExternalDupeDetection.Session:output_type -> walletnode.SessionReply
@@ -400,7 +400,7 @@ var file_external_dupe_detection_proto_depIdxs = []int32{
 	14, // 12: walletnode.ExternalDupeDetection.ConnectTo:output_type -> walletnode.ConnectToReply
 	15, // 13: walletnode.ExternalDupeDetection.ProbeImage:output_type -> walletnode.ProbeImageReply
 	1,  // 14: walletnode.ExternalDupeDetection.SendSignedEDDTicket:output_type -> walletnode.SendSignedEDDTicketReply
-	3,  // 15: walletnode.ExternalDupeDetection.SendPreBurnedFeeEDDTxid:output_type -> walletnode.SendPreBurnedFeeEDDTxidReply
+	3,  // 15: walletnode.ExternalDupeDetection.SendPreBurnedFeeEDDTxID:output_type -> walletnode.SendPreBurnedFeeEDDTxIDReply
 	16, // 16: walletnode.ExternalDupeDetection.SendTicket:output_type -> walletnode.SendTicketReply
 	17, // 17: walletnode.ExternalDupeDetection.UploadImage:output_type -> walletnode.UploadImageReply
 	10, // [10:18] is the sub-list for method output_type
@@ -442,7 +442,7 @@ func file_external_dupe_detection_proto_init() {
 			}
 		}
 		file_external_dupe_detection_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendPreBurnedFeeEDDTxidRequest); i {
+			switch v := v.(*SendPreBurnedFeeEDDTxIDRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -454,7 +454,7 @@ func file_external_dupe_detection_proto_init() {
 			}
 		}
 		file_external_dupe_detection_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendPreBurnedFeeEDDTxidReply); i {
+			switch v := v.(*SendPreBurnedFeeEDDTxIDReply); i {
 			case 0:
 				return &v.state
 			case 1:

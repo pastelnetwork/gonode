@@ -266,7 +266,7 @@ func (service *externalDupeDetection) contextWithLogPrefix(ctx context.Context) 
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-// SendSignedEDDTicket
+// SendSignedEDDTicket implements node.ExternalDupeDetection.SendSignedEDDTicket()
 func (service *externalDupeDetection) SendSignedEDDTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
@@ -289,16 +289,18 @@ func (service *externalDupeDetection) SendSignedEDDTicket(ctx context.Context, t
 
 	return rsp.RegistrationFee, nil
 }
-func (service *externalDupeDetection) SendPreBurnedFeeEDDTxId(ctx context.Context, txid string) (string, error) {
+
+// SendPreBurnedFeeEDDTxID implements node.ExternalDupeDetection.SendPreBurnedFeeEDDTxID()
+func (service *externalDupeDetection) SendPreBurnedFeeEDDTxID(ctx context.Context, txid string) (string, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	log.WithContext(ctx).Debug("send burned txid to super node")
-	req := pb.SendPreBurnedFeeEDDTxidRequest{
+	req := pb.SendPreBurnedFeeEDDTxIDRequest{
 		Txid: txid,
 	}
 
-	rsp, err := service.client.SendPreBurnedFeeEDDTxid(ctx, &req)
+	rsp, err := service.client.SendPreBurnedFeeEDDTxID(ctx, &req)
 	if err != nil {
 		return "", errors.Errorf("failed to send burned txid to super node %w", err)
 	}

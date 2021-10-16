@@ -53,6 +53,7 @@ type ProcessUserdata interface {
 	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.ProcessRequestSigned) (userdata.SuperNodeReply, error)
 }
 
+// ExternalDupeDetection  represents an interaction stream with supernodes for sending external dupe detection.
 type ExternalDupeDetection interface {
 	// SessID returns the taskID received from the server during the handshake.
 	SessID() (taskID string)

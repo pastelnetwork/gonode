@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/google/uuid v1.3.0
-	github.com/pastelnetwork/gonode/common v0.0.0-20210624142025-67ad31676597
+	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/stretchr/testify v1.7.0
 	google.golang.org/grpc v1.38.0
 	google.golang.org/protobuf v1.26.0
@@ -24,7 +24,7 @@ require (
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2 // indirect
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110 // indirect
-	golang.org/x/sys v0.0.0-20210119212857-b64e53b001e4 // indirect
+	golang.org/x/sys v0.0.0-20210615035016-665e8c7367d1 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
 	golang.org/x/text v0.3.5 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
@@ -32,4 +32,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-replace github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
+replace (
+	github.com/pastelnetwork/gonode/common => ../common
+	github.com/pastelnetwork/gonode/raptorq/grpc => ./node/grpc
+)
