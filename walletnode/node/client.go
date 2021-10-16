@@ -3,6 +3,7 @@
 //go:generate mockery --name=RegisterArtwork
 //go:generate mockery --name=DownloadArtwork
 //go:generate mockery --name=ProcessUserdata
+//go:generate mockery --name=ExternalDupeDetection
 
 package node
 
