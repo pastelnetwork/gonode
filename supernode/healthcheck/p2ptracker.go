@@ -44,8 +44,6 @@ func (tracker *P2PTracker) Run(ctx context.Context) error {
 			tracker.checkExpires(ctx)
 		}
 	}
-
-	return nil
 }
 
 func (tracker *P2PTracker) checkExpires(ctx context.Context) {
