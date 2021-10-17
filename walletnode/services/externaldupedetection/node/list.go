@@ -109,11 +109,7 @@ func (nodes *List) UploadImage(ctx context.Context, file *artwork.File) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() error {
-
-			if err := node.UploadImage(ctx, file); err != nil {
-				return err
-			}
-			return nil
+			return node.UploadImage(ctx, file)
 		})
 	}
 	return group.Wait()

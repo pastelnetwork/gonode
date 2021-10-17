@@ -46,10 +46,10 @@ const (
 	// SessIDMethod represent SessID name method
 	SessIDMethod = "SessID"
 
-	// SendPreBurnedFeeTxidMethod represent SendPreBurnedFeeTxid method
-	SendPreBurnedFeeTxidMethod = "SendPreBurnedFeeTxid"
+	// SendPreBurnedFeeTxIDMethod represent SendPreBurnedFeeTxID method
+	SendPreBurnedFeeTxIDMethod = "SendPreBurnedFeeTxID"
 
-	// SendPreBurnedFeeEDDTxIDMethod represent SendPreBurnedFeeTxid method
+	// SendPreBurnedFeeEDDTxIDMethod represent SendPreBurnedFeeEDDTxID method
 	SendPreBurnedFeeEDDTxIDMethod = "SendPreBurnedFeeEDDTxID"
 
 	// SendSignedTicketMethod represent SendSignedTicket method
@@ -106,7 +106,7 @@ func (client *Client) ListenOnExternalDupeDetection() *Client {
 
 // ListenOnRegisterArtworkSendPreBurnedFeeTxID listening SendPreBurnedFeeTxIDMethod call
 func (client *Client) ListenOnRegisterArtworkSendPreBurnedFeeTxID(txid string, err error) *Client {
-	client.RegisterArtwork.On(SendPreBurnedFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
+	client.RegisterArtwork.On(SendPreBurnedFeeTxIDMethod, mock.Anything, mock.Anything).Return(txid, err)
 	return client
 }
 

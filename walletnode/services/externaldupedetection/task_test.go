@@ -181,10 +181,10 @@ func TestTaskRun(t *testing.T) {
 					}
 					return "", nil
 				}
-				nodeClient.ExternalDupeDetection.Mock.On(test.SendPreBurnedFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-				nodeClient.ExternalDupeDetection.Mock.On(test.SendPreBurnedFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-				nodeClient.ExternalDupeDetection.Mock.On(test.SendPreBurnedFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
-				nodeClient.ExternalDupeDetection.Mock.On(test.SendPreBurnedFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.ExternalDupeDetection.Mock.On(test.SendPreBurnedFeeTxIDMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.ExternalDupeDetection.Mock.On(test.SendPreBurnedFeeTxIDMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.ExternalDupeDetection.Mock.On(test.SendPreBurnedFeeTxIDMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
+				nodeClient.ExternalDupeDetection.Mock.On(test.SendPreBurnedFeeTxIDMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
 
 				//need to remove generate thumbnail file
 				customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.FingerAndScores {

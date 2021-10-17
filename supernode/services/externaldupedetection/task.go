@@ -274,7 +274,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, createtor
 			log.WithContext(ctx).WithError(err).Errorf("failed to get register NFT fee")
 			err = errors.Errorf("failed to get register NFT fee %w", err)
 		}
-		return nil
+		return err
 	})
 
 	return task.registrationFee, err

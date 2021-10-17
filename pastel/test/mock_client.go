@@ -67,7 +67,7 @@ const (
 	GetRegisterNFTFeeMethod = "GetRegisterNFTFee"
 
 	// GetRegisterExDDFeeMethod represents GetRegisterExDDFee method
-	GetRegisterExDDFeeMethod = "GetRegisterEDDFee"
+	GetRegisterExDDFeeMethod = "GetRegisterExDDFee"
 
 	// MasterNodesExtraMethod represent MasterNodesExtra name method
 	MasterNodesExtraMethod = "MasterNodesExtra"
