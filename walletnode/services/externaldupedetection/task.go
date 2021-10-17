@@ -20,6 +20,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/externaldupedetection/node"
 	"golang.org/x/crypto/sha3"
 )
@@ -658,7 +659,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 
 	// As we are going to store the the compressed figerprint to kamedila
 	// so we calculated the hash base on the compressed fingerprint print also
-	fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
+	fingerprintsHash, err := common.Sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
 	if err != nil {
 		return errors.Errorf("failed to hash zstd commpressed fingerprints %w", err)
 	}
@@ -689,7 +690,7 @@ func (task *Task) uploadImage(ctx context.Context) error {
 		return errors.Errorf("failed to convert image to byte stream %w", err)
 	}
 
-	if task.datahash, err = sha3256hash(imgBytes); err != nil {
+	if task.datahash, err = common.Sha3256hash(imgBytes); err != nil {
 		return errors.Errorf("failed to hash encoded image: %w", err)
 	}
 

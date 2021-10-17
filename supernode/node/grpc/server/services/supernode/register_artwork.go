@@ -28,6 +28,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	defer cancel()
 
 	var task *artworkregister.Task
+	isTaskNew := false
 
 	if sessID, ok := service.SessID(ctx); ok {
 		if task = service.Task(sessID); task == nil {
@@ -35,12 +36,15 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 		}
 	} else {
 		task = service.NewTask()
+		isTaskNew = true
 	}
 	go func() {
 		<-task.Done()
 		cancel()
 	}()
-	defer task.Cancel()
+	if isTaskNew {
+		defer task.Cancel()
+	}
 
 	peer, _ := peer.FromContext(ctx)
 	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Session stream")
@@ -54,6 +58,10 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 
 	if err := task.SessionNode(ctx, req.NodeID); err != nil {
 		return err
+	}
+
+	if !isTaskNew {
+		defer task.Cancel()
 	}
 
 	resp := &pb.SessionReply{

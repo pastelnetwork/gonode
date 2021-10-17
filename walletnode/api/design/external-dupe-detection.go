@@ -40,6 +40,7 @@ var _ = Service("external_dupe_detection_api", func() {
 	})
 })
 
+// ExternalDupeDetetionAPIInitiateSubmission type
 var ExternalDupeDetetionAPIInitiateSubmission = Type("ExternalDupeDetetionAPIInitiateSubmission", func() {
 	Attribute("request_id", String, "SHA3-256 format, unique external dupe detection request id", func() {
 		Meta("struct:field:name", "RequestID")
@@ -84,6 +85,7 @@ var ExternalDupeDetetionAPIInitiateSubmission = Type("ExternalDupeDetetionAPIIni
 	Required("request_id", "datetime_request_initiated", "pastel_service_llc_api_secret", "max_cost_for_dupe_detection_in_usd", "submitted_image_data_base64", "sha3256_hash_of_submitted_image")
 })
 
+// ExternalDupeDetetionAPIInitiateSubmissionResult result type
 var ExternalDupeDetetionAPIInitiateSubmissionResult = ResultType("ExternalDupeDetetionAPIInitiateSubmissionResult", func() {
 	Attribute("request_id", String, "SHA3-256 format, unique external dupe detection request id", func() {
 		Meta("struct:field:name", "RequestID")

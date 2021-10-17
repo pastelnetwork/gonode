@@ -30,6 +30,7 @@ import (
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -810,10 +811,10 @@ func TestTaskCreateTicket(t *testing.T) {
 					BlockTxID:                  tc.args.task.blockTxID,
 					BlockNum:                   0,
 					CreatorName:                tc.args.task.Request.ArtistName,
-					CreatorWebsite:             safeString(tc.args.task.Request.ArtistWebsiteURL),
-					CreatorWrittenStatement:    safeString(tc.args.task.Request.Description),
-					NFTCreationVideoYoutubeURL: safeString(tc.args.task.Request.YoutubeURL),
-					NFTKeywordSet:              safeString(tc.args.task.Request.Keywords),
+					CreatorWebsite:             common.SafeString(tc.args.task.Request.ArtistWebsiteURL),
+					CreatorWrittenStatement:    common.SafeString(tc.args.task.Request.Description),
+					NFTCreationVideoYoutubeURL: common.SafeString(tc.args.task.Request.YoutubeURL),
+					NFTKeywordSet:              common.SafeString(tc.args.task.Request.Keywords),
 					NFTType:                    pastel.NFTTypeImage,
 					TotalCopies:                tc.args.task.Request.IssuedCopies,
 					PreviewHash:                tc.args.task.previewHash,

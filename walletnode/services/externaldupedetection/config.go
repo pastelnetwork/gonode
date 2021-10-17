@@ -12,7 +12,7 @@ const (
 	defaultNumberRQIDSFiles uint32 = 10
 
 	defaultConnectToNextNodeDelay = time.Millisecond * 200
-	defaultAcceptNodesTimeout     = defaultConnectToNextNodeDelay * 10 // waiting 2 seconds (10 supernodes) for secondary nodes to be accpeted by primary nodes.
+	defaultAcceptNodesTimeout     = 3 * time.Second // = 3 * (2* ConnectToNodeTimeout)
 
 	defaultThumbnailSize = 224
 

@@ -21,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -570,12 +571,12 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			BlockTxID:                  task.blockTxID,
 			BlockNum:                   task.creatorBlockHeight,
 			CreatorName:                task.Request.ArtistName,
-			CreatorWebsite:             safeString(task.Request.ArtistWebsiteURL),
-			CreatorWrittenStatement:    safeString(task.Request.Description),
-			NFTTitle:                   safeString(&task.Request.Name),
-			NFTSeriesName:              safeString(task.Request.SeriesName),
-			NFTCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
-			NFTKeywordSet:              safeString(task.Request.Keywords),
+			CreatorWebsite:             common.SafeString(task.Request.ArtistWebsiteURL),
+			CreatorWrittenStatement:    common.SafeString(task.Request.Description),
+			NFTTitle:                   common.SafeString(&task.Request.Name),
+			NFTSeriesName:              common.SafeString(task.Request.SeriesName),
+			NFTCreationVideoYoutubeURL: common.SafeString(task.Request.YoutubeURL),
+			NFTKeywordSet:              common.SafeString(task.Request.Keywords),
 			NFTType:                    nftType,
 			TotalCopies:                task.Request.IssuedCopies,
 			PreviewHash:                task.previewHash,
@@ -717,7 +718,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 
 	// As we are going to store the the compressed figerprint to kamedila
 	// so we calculated the hash base on the compressed fingerprint print also
-	fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
+	fingerprintsHash, err := common.Sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
 	if err != nil {
 		return errors.Errorf("failed to hash zstd commpressed fingerprints %w", err)
 	}
@@ -748,7 +749,7 @@ func (task *Task) uploadImage(ctx context.Context) error {
 		return errors.Errorf("failed to convert image to byte stream %w", err)
 	}
 
-	if task.datahash, err = sha3256hash(imgBytes); err != nil {
+	if task.datahash, err = common.Sha3256hash(imgBytes); err != nil {
 		return errors.Errorf("failed to hash encoded image: %w", err)
 	}
 

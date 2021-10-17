@@ -1123,7 +1123,7 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 
 			go tc.args.task.RunAction(ctx)
 			artTicketBytes, err := pastel.EncodeNFTTicket(tc.args.task.Ticket)
-			assert.Nil(t, err)
+			assert.NoError(t, err)
 
 			_, err = tc.args.task.GetRegistrationFee(context.Background(), artTicketBytes,
 				[]byte{}, "", "", map[string][]byte{}, []byte{})
