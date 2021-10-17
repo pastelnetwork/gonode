@@ -17,6 +17,7 @@ type P2PTracker struct {
 	mtx           sync.Mutex
 }
 
+// NewP2PTracker creates a tracker
 func NewP2PTracker(p2p p2p.P2P, pollDuration time.Duration) *P2PTracker {
 	return &P2PTracker{
 		p2p:           p2p,
@@ -25,12 +26,14 @@ func NewP2PTracker(p2p p2p.P2P, pollDuration time.Duration) *P2PTracker {
 	}
 }
 
+// Track add key into tracking list
 func (tracker *P2PTracker) Track(key string, expires time.Time) {
 	tracker.mtx.Lock()
 	defer tracker.mtx.Unlock()
 	tracker.expireTimeMap[key] = expires
 }
 
+// Run executes main delete function in background
 func (tracker *P2PTracker) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, "p2ptracker")
 	log.WithContext(ctx).Info("p2ptracker started")
