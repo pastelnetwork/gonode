@@ -55,7 +55,7 @@ func (s *Store) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 		return nil, nil
 	}
 
-	log.WithContext(ctx).Debugf("retrieve key: %s", base58.Encode(key))
+	//log.WithContext(ctx).Debugf("retrieve key: %s", base58.Encode(key))
 	return value, nil
 }
 

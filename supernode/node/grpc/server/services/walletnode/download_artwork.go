@@ -48,7 +48,7 @@ func (service *DownloadArtwork) Download(m *pb.DownloadRequest, stream pb.Downlo
 			File: data[i*downloadImageBufferSize : (i+1)*downloadImageBufferSize],
 		}
 		if err := stream.Send(res); err != nil {
-			return errors.Errorf("failed to send image data: %w", err)
+			return errors.Errorf("send image data: %w", err)
 		}
 	}
 	if remaining > 0 {
@@ -57,7 +57,7 @@ func (service *DownloadArtwork) Download(m *pb.DownloadRequest, stream pb.Downlo
 			File: data[lastPackageIndex : lastPackageIndex+remaining],
 		}
 		if err := stream.Send(res); err != nil {
-			return errors.Errorf("failed to send image data: %w", err)
+			return errors.Errorf("send image data: %w", err)
 		}
 	}
 

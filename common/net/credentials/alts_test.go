@@ -42,7 +42,7 @@ func (c *FakePastelClient) Sign(_ context.Context, data []byte, pastelID, _ stri
 	c.signatures[pastelID] = signature
 	c.data[pastelID] = data
 	if c.errorSign {
-		return nil, fmt.Errorf("failed in signing")
+		return nil, fmt.Errorf("signing failed")
 	}
 	return signature, nil
 }
@@ -58,7 +58,7 @@ func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, pas
 	}
 
 	if c.errorVerify {
-		return false, fmt.Errorf("failed in verifying")
+		return false, fmt.Errorf("verifying failed")
 	}
 	return ret, nil
 }

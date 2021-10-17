@@ -35,7 +35,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 
 	stream, err := service.client.Session(ctx)
 	if err != nil {
-		return errors.Errorf("failed to open Health stream: %w", err)
+		return errors.Errorf("open Health stream: %w", err)
 	}
 
 	req := &pb.MDLSessionRequest{
@@ -44,7 +44,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
 	if err := stream.Send(req); err != nil {
-		return errors.Errorf("failed to send Session request: %w", err)
+		return errors.Errorf("send Session request: %w", err)
 	}
 
 	resp, err := stream.Recv()
@@ -56,7 +56,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 		case codes.Canceled, codes.Unavailable:
 			return nil
 		}
-		return errors.Errorf("failed to receive Session response: %w", err)
+		return errors.Errorf("receive Session response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 

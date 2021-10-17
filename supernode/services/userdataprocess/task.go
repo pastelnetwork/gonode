@@ -128,7 +128,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 
 		node, err := task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
-			actionErr = errors.Errorf("failed to get node by extID %s %w", nodeID, err)
+			actionErr = errors.Errorf("get node by extID %s %w", nodeID, err)
 			return nil
 		}
 		task.accepted.Add(node)
@@ -182,7 +182,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 
 	validateResult, err := task.validateUserdata(req.Userdata)
 	if err != nil {
-		return userdata.ProcessResult{}, errors.Errorf("failed to validateUserdata")
+		return userdata.ProcessResult{}, errors.Errorf("validateUserdata")
 	}
 	if validateResult.ResponseCode == userdata.ErrorOnContent {
 		// If the request from Walletnode fail the validation, return the response to Walletnode and stop process further
@@ -223,12 +223,12 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 	// Marshal validateResult to byte array for signing
 	js, err := json.Marshal(validateResult)
 	if err != nil {
-		return userdata.ProcessResult{}, errors.Errorf("failed to encode validateResult %w", err)
+		return userdata.ProcessResult{}, errors.Errorf("encode validateResult %w", err)
 	}
 	// Hash the validateResult
 	hashvalue, err := userdata.Sha3256hash(js)
 	if err != nil {
-		return userdata.ProcessResult{}, errors.Errorf("failed to hash userdata %w", err)
+		return userdata.ProcessResult{}, errors.Errorf("hash userdata %w", err)
 	}
 	snRequest.UserdataResultHash = hex.EncodeToString(hashvalue)
 	snRequest.UserdataHash = req.UserdataHash
@@ -244,7 +244,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 		}
 		log.WithContext(ctx).Debugf("isPrimary: %t", isPrimary)
 		if err := task.signAndSendSNDataSigned(ctx, task.ownSNData, isPrimary); err != nil {
-			actionErr = errors.Errorf("failed to signed and send SuperNodeRequest:%w", err)
+			actionErr = errors.Errorf("signed and send SuperNodeRequest:%w", err)
 		}
 		return nil
 	})
@@ -301,14 +301,14 @@ func (task *Task) signAndSendSNDataSigned(ctx context.Context, sndata userdata.S
 	log.WithContext(ctx).Debugf("signAndSendSNDataSigned begin to sign SuperNodeRequest")
 	signature, err := task.pastelClient.Sign(ctx, []byte(sndata.UserdataHash+sndata.UserdataResultHash), task.config.PastelID, task.config.PassPhrase, "ed448")
 	if err != nil {
-		return errors.Errorf("failed to sign sndata %w", err)
+		return errors.Errorf("sign sndata %w", err)
 	}
 	if !isPrimary {
 		sndata.HashSignature = hex.EncodeToString(signature)
 		sndata.NodeID = task.config.PastelID
 		log.WithContext(ctx).Debug("send signed sndata to primary node")
 		if _, err := task.ConnectedTo.ProcessUserdata.SendUserdataToPrimary(ctx, sndata); err != nil {
-			return errors.Errorf("failed to send signature to primary node %s at address %s %w", task.ConnectedTo.ID, task.ConnectedTo.Address, err)
+			return errors.Errorf("send signature to primary node %s at address %s %w", task.ConnectedTo.ID, task.ConnectedTo.Address, err)
 		}
 	}
 	return nil

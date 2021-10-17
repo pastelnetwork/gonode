@@ -166,7 +166,7 @@ type internalNFTTicket struct {
 func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 	appTicket, err := json.Marshal(ticket.AppTicketData)
 	if err != nil {
-		return nil, errors.Errorf("failed to marshal app ticket data: %w", err)
+		return nil, errors.Errorf("marshal app ticket data: %w", err)
 	}
 
 	// NFTTicket is Pastel Art Ticket
@@ -183,7 +183,7 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 
 	b, err := json.Marshal(nftTicket)
 	if err != nil {
-		return nil, errors.Errorf("failed to marshal nft ticket: %w", err)
+		return nil, errors.Errorf("marshal nft ticket: %w", err)
 	}
 
 	return b, nil
@@ -195,14 +195,14 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 	err := json.Unmarshal(b, &res)
 
 	if err != nil {
-		return nil, errors.Errorf("failed to unmarshal nft ticket: %w", err)
+		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
 
 	appTicket := AppTicket{}
 
 	err = json.Unmarshal(res.AppTicket, &appTicket)
 	if err != nil {
-		return nil, errors.Errorf("failed to unmarshal app ticket data: %w", err)
+		return nil, errors.Errorf("unmarshal app ticket data: %w", err)
 	}
 
 	return &NFTTicket{
@@ -245,7 +245,7 @@ func EncodeSignatures(signatures TicketSignatures) ([]byte, error) {
 	b, err := json.Marshal(signatures)
 
 	if err != nil {
-		return nil, errors.Errorf("failed to marshal signatures: %w", err)
+		return nil, errors.Errorf("marshal signatures: %w", err)
 	}
 
 	return b, nil

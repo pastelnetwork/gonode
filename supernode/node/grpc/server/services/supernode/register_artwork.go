@@ -48,7 +48,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 
 	req, err := stream.Recv()
 	if err != nil {
-		return errors.Errorf("failed to receive handshake request: %w", err)
+		return errors.Errorf("receive handshake request: %w", err)
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
@@ -60,7 +60,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
-		return errors.Errorf("failed to send handshake response: %w", err)
+		return errors.Errorf("send handshake response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 
@@ -87,7 +87,7 @@ func (service *RegisterArtwork) SendArtTicketSignature(ctx context.Context, req 
 	}
 
 	if err := task.AddPeerArticketSignature(req.NodeID, req.Signature); err != nil {
-		return nil, errors.Errorf("failed to add peer signature %w", err)
+		return nil, errors.Errorf("add peer signature %w", err)
 	}
 
 	return &pb.SendArtTicketSignatureReply{}, nil

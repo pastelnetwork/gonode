@@ -53,7 +53,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 
 	req, err := stream.Recv()
 	if err != nil {
-		return errors.Errorf("failed to receieve handshake request: %w", err)
+		return errors.Errorf("receieve handshake request: %w", err)
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
@@ -65,7 +65,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
-		return errors.Errorf("failed to send handshake response: %w", err)
+		return errors.Errorf("send handshake response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 
@@ -139,7 +139,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	image := service.Storage.NewFile()
 	file, err := image.Create()
 	if err != nil {
-		return errors.Errorf("failed to open file %q: %w", file.Name(), err)
+		return errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 	log.WithContext(ctx).WithField("filename", file.Name()).Debugf("ProbeImage request")
@@ -156,17 +156,17 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 			if status.Code(err) == codes.Canceled {
 				return errors.New("connection closed")
 			}
-			return errors.Errorf("failed to receive ProbeImage: %w", err)
+			return errors.Errorf("receive ProbeImage: %w", err)
 		}
 
 		if _, err := wr.Write(req.Payload); err != nil {
-			return errors.Errorf("failed to write to file %q: %w", file.Name(), err)
+			return errors.Errorf("write to file %q: %w", file.Name(), err)
 		}
 	}
 
 	err = image.UpdateFormat()
 	if err != nil {
-		return errors.Errorf("failed to add image format: %w", err)
+		return errors.Errorf("add image format: %w", err)
 	}
 
 	fingerAndScores, err := task.ProbeImage(ctx, image)
@@ -201,7 +201,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	}
 
 	if err := stream.SendAndClose(resp); err != nil {
-		return errors.Errorf("failed to send ProbeImage response: %w", err)
+		return errors.Errorf("send ProbeImage response: %w", err)
 	}
 	return nil
 }
@@ -218,7 +218,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	image := service.Storage.NewFile()
 	imageFile, err := image.Create()
 	if err != nil {
-		return errors.Errorf("failed to open image file %q: %w", imageFile.Name(), err)
+		return errors.Errorf("open image file %q: %w", imageFile.Name(), err)
 	}
 	log.WithContext(ctx).WithField("filename", imageFile.Name()).Debugf("UploadImageWithThumbnail request")
 
@@ -241,14 +241,14 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 				if status.Code(err) == codes.Canceled {
 					return errors.New("connection closed")
 				}
-				return errors.Errorf("failed to receive UploadImageWithThumbnail: %w", err)
+				return errors.Errorf("receive UploadImageWithThumbnail: %w", err)
 			}
 
 			if imagePiece := req.GetImagePiece(); imagePiece != nil {
 				n, err := imageWriter.Write(imagePiece)
 				imageSize += int64(n)
 				if err != nil {
-					return errors.Errorf("failed to write to file %q: %w", imageFile.Name(), err)
+					return errors.Errorf("write to file %q: %w", imageFile.Name(), err)
 				}
 			} else {
 				if metaData := req.GetMetaData(); metaData != nil {
@@ -272,7 +272,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 
 					if metaData.Format != "" {
 						if err := image.SetFormatFromExtension(metaData.Format); err != nil {
-							return errors.Errorf("failed to set format %s for file %s", metaData.Format, image.Name())
+							return errors.Errorf("set format %s for file %s", metaData.Format, image.Name())
 						}
 					}
 				}
@@ -290,7 +290,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 		hasher := sha3.New256()
 		f, fileErr := image.Open()
 		if fileErr != nil {
-			return errors.Errorf("failed to open file %w", fileErr)
+			return errors.Errorf("open file %w", fileErr)
 		}
 		defer f.Close()
 
@@ -326,7 +326,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	log.WithContext(ctx).Debugf("small thumbnail hash: %x\n", smallThumbnailHash)
 
 	if err := stream.SendAndClose(resp); err != nil {
-		return errors.Errorf("failed to send UploadImageAndThumbnail response: %w", err)
+		return errors.Errorf("send UploadImageAndThumbnail response: %w", err)
 	}
 
 	return nil
@@ -337,12 +337,12 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 	log.WithContext(ctx).WithField("req", req).Debugf("SignTicket request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to get task from metada %w", err)
+		return nil, errors.Errorf("get task from metada %w", err)
 	}
 
 	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
 	if err != nil {
-		return nil, errors.Errorf("failed to get total storage fee %w", err)
+		return nil, errors.Errorf("get total storage fee %w", err)
 	}
 
 	rsp := pb.SendSignedNFTTicketReply{
@@ -357,12 +357,12 @@ func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb
 	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurntFeeTxidRequest request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to get task from meta data %w", err)
+		return nil, errors.Errorf("get task from meta data %w", err)
 	}
 
 	nftRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
 	if err != nil {
-		return nil, errors.Errorf("failed to validate preburn transaction %w", err)
+		return nil, errors.Errorf("validate preburn transaction %w", err)
 	}
 
 	rsp := pb.SendPreBurntFeeTxidReply{

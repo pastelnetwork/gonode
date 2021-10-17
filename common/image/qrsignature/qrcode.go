@@ -45,11 +45,11 @@ type QRCode struct {
 func (qr *QRCode) Decode() (string, error) {
 	bmp, err := gozxing.NewBinaryBitmapFromImage(qr.Image)
 	if err != nil {
-		return "", errors.Errorf("failed to get bitmap from the QR code image :%w", err)
+		return "", errors.Errorf("get bitmap from the QR code image: %w", err)
 	}
 	result, err := qr.reader.Decode(bmp, nil)
 	if err != nil {
-		return "", errors.Errorf("failed to decode a QR code :%w", err)
+		return "", errors.Errorf("decode a QR code: %w", err)
 	}
 
 	return result.GetText(), nil
@@ -59,7 +59,7 @@ func (qr *QRCode) Decode() (string, error) {
 func (qr *QRCode) Encode(title, data string) error {
 	img, err := qr.writer.Encode(data, gozxing.BarcodeFormat_QR_CODE, qr.imageSize, qr.imageSize, nil)
 	if err != nil {
-		return errors.Errorf("failed to encode data: %w", err)
+		return errors.Errorf("encode data: %w", err)
 	}
 
 	size := img.Bounds().Size()

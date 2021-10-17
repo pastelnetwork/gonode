@@ -29,7 +29,7 @@ func (service *downloadArtwork) Download(ctx context.Context, txid, timestamp, s
 	var stream pb.DownloadArtwork_DownloadClient
 	stream, err = service.client.Download(ctx, in)
 	if err != nil {
-		err = errors.Errorf("failed to open stream: %w", err)
+		err = errors.Errorf("open stream: %w", err)
 		return
 	}
 	defer stream.CloseSend()

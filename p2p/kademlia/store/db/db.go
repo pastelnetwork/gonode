@@ -100,7 +100,7 @@ func (s *Badger) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 		return nil, errors.Errorf("badger view: %w", err)
 	}
 
-	log.WithContext(ctx).Infof("retrieve key: %s", base58.Encode(key))
+	//log.WithContext(ctx).Infof("retrieve key: %s", base58.Encode(key))
 	return value, nil
 }
 

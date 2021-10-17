@@ -56,12 +56,12 @@ func (payload *Payload) Decode() error {
 
 	raw, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return errors.Errorf("failed to decode text to binary data: %w", err)
+		return errors.Errorf("decode: %w", err)
 	}
 
 	raw, err = zstd.Decompress(nil, raw)
 	if err != nil {
-		return errors.Errorf("failed to decompress binary data: %w", err)
+		return errors.Errorf("decompress: %w", err)
 	}
 	payload.raw = raw
 	return nil
@@ -71,7 +71,7 @@ func (payload *Payload) Decode() error {
 func (payload *Payload) Encode() error {
 	raw, err := zstd.CompressLevel(nil, payload.raw, 22)
 	if err != nil {
-		return errors.Errorf("failed to compress binary data: %w", err)
+		return errors.Errorf("compress: %w", err)
 	}
 
 	data := base64.StdEncoding.EncodeToString(raw)

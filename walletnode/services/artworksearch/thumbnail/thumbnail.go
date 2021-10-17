@@ -83,7 +83,7 @@ func (t *thumbnailHelper) Connect(ctx context.Context, connections uint, secInfo
 		}
 
 		if err := node.Connect(ctx, t.timeOut, secInfo); err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to connect to master node")
+			log.WithContext(ctx).WithError(err).Error("Connect to master node failed")
 			continue
 		}
 

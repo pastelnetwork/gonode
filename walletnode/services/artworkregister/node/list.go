@@ -40,6 +40,18 @@ func (nodes *List) DisconnectInactive() {
 	}
 }
 
+// DisconnectAll disconnects all nodes
+func (nodes *List) DisconnectAll() {
+	for _, node := range *nodes {
+		node.mtx.RLock()
+		defer node.mtx.RUnlock()
+
+		if node.Connection != nil {
+			node.Connection.Close()
+		}
+	}
+}
+
 // WaitConnClose waits for the connection closing by any supernodes.
 func (nodes *List) WaitConnClose(ctx context.Context, done <-chan struct{}) error {
 	group, ctx := errgroup.WithContext(ctx)
@@ -79,7 +91,7 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 		group.Go(func() (err error) {
 			res, err := node.ProbeImage(ctx, file)
 			if err != nil {
-				return errors.Errorf("failed to probe image: %w", err)
+				return errors.Errorf("node %s: %w", node.String(), err)
 			}
 			node.fingerprintAndScores = res
 			return nil
@@ -93,7 +105,7 @@ func (nodes *List) MatchFingerprintAndScores() error {
 	node := (*nodes)[0]
 	for i := 1; i < len(*nodes); i++ {
 		if err := pastel.CompareFingerPrintAndScore(node.fingerprintAndScores, (*nodes)[i].fingerprintAndScores); err != nil {
-			return errors.Errorf("fingerprint or score of node[%s] and node[%s] not matched: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
+			return errors.Errorf("node[%s] and node[%s] not matched: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
 		}
 	}
 	return nil

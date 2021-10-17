@@ -28,7 +28,7 @@ func (fs *FS) Open(filename string) (storage.File, error) {
 
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, errors.Errorf("failed to open file %q: %w", filename, err)
+		return nil, errors.Errorf("open file %q: %w", filename, err)
 	}
 	return file, nil
 }
@@ -45,7 +45,7 @@ func (fs *FS) Create(filename string) (storage.File, error) {
 
 	file, err := os.Create(filename)
 	if err != nil {
-		return nil, errors.Errorf("failed to create file %q: %w", filename, err)
+		return nil, errors.Errorf("create file %q: %w", filename, err)
 	}
 	return file, nil
 }
@@ -57,7 +57,7 @@ func (fs *FS) Remove(filename string) error {
 	log.WithPrefix(logPrefix).Debugf("Remove file %q", filename)
 
 	if err := os.Remove(filename); err != nil {
-		return errors.Errorf("failed to remove file %q: %w", filename, err)
+		return errors.Errorf("remove file %q: %w", filename, err)
 	}
 	return nil
 }
@@ -74,7 +74,7 @@ func (fs *FS) Rename(oldname, newname string) error {
 	log.WithPrefix(logPrefix).Debugf("Rename file %q to %q", oldname, newname)
 
 	if err := os.Rename(oldname, newname); err != nil {
-		return errors.Errorf("failed to rename file %q to %q: %w", oldname, newname, err)
+		return errors.Errorf("rename file %q to %q: %w", oldname, newname, err)
 	}
 	return nil
 }

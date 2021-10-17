@@ -26,21 +26,21 @@ func (client *PastelStatsClient) Stats(ctx context.Context) (map[string]interfac
 	// Get master top nodes
 	topNodes, err := client.pastelClient.MasterNodesTop(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to MasterNodesTop(): %w", err)
+		return nil, errors.Errorf("call MasterNodesTop(): %w", err)
 	}
 	stats["master_top_nodes"] = topNodes
 
 	// Get masternode status
 	masternodeStatus, err := client.pastelClient.MasterNodeStatus(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to MasterNodeStatus(): %w", err)
+		return nil, errors.Errorf("call MasterNodeStatus(): %w", err)
 	}
 	stats["master_node_status"] = masternodeStatus
 
 	// get current block height
 	blockHeight, err := client.pastelClient.GetBlockCount(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to GetBlockCount(): %w", err)
+		return nil, errors.Errorf("call GetBlockCount(): %w", err)
 	}
 	stats["block_height"] = blockHeight
 

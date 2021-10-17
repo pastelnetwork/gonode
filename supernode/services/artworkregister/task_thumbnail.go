@@ -83,7 +83,7 @@ func determineSmallQuality(size int) float32 {
 func (task *Task) createAndHashThumbnails(coordinate artwork.ThumbnailCoordinate) (preview []byte, medium []byte, small []byte, err error) {
 	srcImg, err := task.Artwork.LoadImage()
 	if err != nil {
-		err = errors.Errorf("failed to load image from artwork %s %w", task.Artwork.Name(), err)
+		err = errors.Errorf("load image from artwork %s %w", task.Artwork.Name(), err)
 		return
 	}
 
@@ -94,7 +94,7 @@ func (task *Task) createAndHashThumbnails(coordinate artwork.ThumbnailCoordinate
 	previewQuality := determinePreviewQuality(maxInt(originalW, originalH))
 	preview, err = task.createAndHashThumbnail(srcImg, previewThumbnail, nil, previewQuality, fileSizeLimit)
 	if err != nil {
-		err = errors.Errorf("failed to generate thumbnail %w", err)
+		err = errors.Errorf("generate thumbnail %w", err)
 		return
 	}
 
@@ -125,12 +125,12 @@ func (task *Task) createAndHashThumbnails(coordinate artwork.ThumbnailCoordinate
 func (task *Task) createAndHashThumbnail(srcImg image.Image, thumbnail thumbnailType, rect *image.Rectangle, quality float32, targetFileSize int) ([]byte, error) {
 	f := task.Storage.NewFile()
 	if f == nil {
-		return nil, errors.Errorf("failed to create thumbnail file")
+		return nil, errors.Errorf("create thumbnail file failed")
 	}
 
 	previewFile, err := f.Create()
 	if err != nil {
-		return nil, errors.Errorf("failed to create file %s %w", f.Name(), err)
+		return nil, errors.Errorf("create file %s: %w", f.Name(), err)
 	}
 	defer previewFile.Close()
 
@@ -145,18 +145,18 @@ func (task *Task) createAndHashThumbnail(srcImg image.Image, thumbnail thumbnail
 	encoderOptions, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, quality)
 	encoderOptions.TargetSize = targetFileSize
 	if err != nil {
-		return nil, errors.Errorf("failed to create lossless encoder option %w", err)
+		return nil, errors.Errorf("create lossless encoder option %w", err)
 	}
 
 	if err := webp.Encode(previewFile, thumbnailImg, encoderOptions); err != nil {
-		return nil, errors.Errorf("failed to encode to webp format %w", err)
+		return nil, errors.Errorf("encode to webp format: %w", err)
 	}
 	log.Debugf("preview thumbnail %s", f.Name())
 
 	previewFile.Seek(0, io.SeekStart)
 	hasher := sha3.New256()
 	if _, err := io.Copy(hasher, previewFile); err != nil {
-		return nil, errors.Errorf("hash failed %w", err)
+		return nil, errors.Errorf("hash failed: %w", err)
 	}
 
 	switch thumbnail {
