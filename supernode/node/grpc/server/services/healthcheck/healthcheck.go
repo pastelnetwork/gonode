@@ -16,7 +16,7 @@ import (
 const (
 	defaultP2PDataMaxLength     = 32
 	defaultP2PExpiresDuraction  = 15 * time.Minute
-	defaultRqliteQueryMaxLength = 4 * 1024 // 4k
+	defaultRqliteQueryMaxLength = 1 * 1024 // 1k
 )
 
 // StatsMngr is interface of StatsManger, return stats of system
@@ -87,6 +87,11 @@ func (service *HealthCheck) P2PRetrieve(ctx context.Context, in *pb.P2PRetrieveR
 
 // QueryRqlite do a query
 func (service *HealthCheck) QueryRqlite(ctx context.Context, in *pb.QueryRqliteRequest) (*pb.QueryRqliteReply, error) {
+	if len(in.GetQuery()) > defaultRqliteQueryMaxLength {
+		return nil, errors.New("length too big (>1kbytes")
+	}
+
+	// do query
 	queryResult, err := service.metaDb.Query(ctx, in.GetQuery(), "nono")
 	if err != nil {
 		return nil, errors.Errorf("error while querying db: %w", err)
@@ -97,7 +102,7 @@ func (service *HealthCheck) QueryRqlite(ctx context.Context, in *pb.QueryRqliteR
 		return &pb.QueryRqliteReply{Result: "{}"}, nil
 	}
 
-	//log.WithContext(ctx).WithField("Count", nrows).Debug("NumberOfRows")
+	// Get all rows of output, and fill into map to convert to json string
 	row := 0
 	resultMap := map[string]interface{}{}
 
