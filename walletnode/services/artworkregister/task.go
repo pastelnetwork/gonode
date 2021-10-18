@@ -353,10 +353,10 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 				go func() {
 					defer errors.Recover(log.Fatal)
 
-					if err := node.Connect(nextConnCtx, task.config.ConnectToNodeTimeout, secInfo); err != nil {
+					if err := node.Connect(ctx, task.config.ConnectToNodeTimeout, secInfo); err != nil {
 						return
 					}
-					if err := node.Session(nextConnCtx, false); err != nil {
+					if err := node.Session(ctx, false); err != nil {
 						return
 					}
 					// Should not run this code in go routine
@@ -366,7 +366,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 						secondaries.Add(node)
 					}()
 
-					if err := node.ConnectTo(nextConnCtx, primary.PastelID(), primary.SessID()); err != nil {
+					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
