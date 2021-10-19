@@ -14,8 +14,11 @@ service HealthCheck {
     // Retrieve a key from p2p
     rpc P2PRetrieve(P2PRetrieveRequest) returns (P2PRetrieveReply);
 
-    // Do a query on rqlite
-    rpc QueryRqlite(QueryRqliteRequest)  returns (QueryRqliteReply);
+    // Store a data to rqlite
+    rpc RqliteStore(RqliteStoreRequest) returns (RqliteStoreReply);
+
+    // Retrieve a key from rqlite
+    rpc RqliteRetrieve(RqliteRetrieveRequest) returns (RqliteRetrieveReply);
 }
 
 message StatusRequest {
@@ -26,7 +29,7 @@ message StatusReply {
 }
 
 message P2PStoreRequest {
-    bytes value = 1;
+    string value = 1;
 }
 message P2PStoreReply {
     string key = 1;
@@ -36,12 +39,19 @@ message P2PRetrieveRequest {
     string key = 1;
 }
 message P2PRetrieveReply {
-    bytes value = 1;
+    string value = 1;
 }
 
-message QueryRqliteRequest {
-    string query = 1;
+message RqliteStoreRequest {
+    string value = 1;
 }
-message QueryRqliteReply {
-    string result = 1;
+message RqliteStoreReply {
+string key = 1;
+}
+
+message RqliteRetrieveRequest {
+    string key = 1;
+}
+message RqliteRetrieveReply {
+    string value = 1;
 }

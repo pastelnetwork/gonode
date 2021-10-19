@@ -7,6 +7,8 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/disintegration/imaging v1.6.2
 	github.com/kolesa-team/go-webp v1.0.0
+	github.com/mitchellh/mapstructure v1.1.2
+	github.com/mr-tron/base58 v1.2.0
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/dupedetection v0.0.0
 	github.com/pastelnetwork/gonode/metadb v0.0.0
@@ -57,7 +59,6 @@ require (
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
-	github.com/mitchellh/mapstructure v1.1.2 // indirect
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect

@@ -110,6 +110,12 @@ WHEN (
 BEGIN
 	SELECT RAISE(FAIL, "user cannot follow him/her self");
 END;
+
+---
+CREATE TABLE IF NOT EXISTS test_keystore (
+	key TEXT PRIMARY KEY UNIQUE,
+	value TEXT
+);
 `
 const userInfoWriteTemplate = `INSERT OR REPLACE INTO user_metadata (
     artist_pastel_id,
