@@ -356,12 +356,6 @@ func (task *Task) ValidatePreBurnedTransaction(ctx context.Context, txid string)
 					// 	return errors.Errorf("failed to wait for confirmation of reg-art ticket %w", err)
 					// }
 
-					if err = task.storeRaptorQSymbols(ctx); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("failed to store raptor symbols")
-						err = errors.Errorf("failed to store raptor symbols %w", err)
-						return nil
-					}
-
 					if err = task.storeFingerprints(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("failed to store fingerprints")
 						err = errors.Errorf("failed to store fingerprints %w", err)
@@ -490,41 +484,6 @@ func (task *Task) registerExternalDupeDetection(ctx context.Context) (string, er
 		return "", errors.Errorf("failed to register NFT work %s", err)
 	}
 	return eddRegTxid, nil
-}
-
-func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
-	img, err := task.Artwork.Bytes()
-	if err != nil {
-		return errors.Errorf("failed to read image data %w", err)
-	}
-
-	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
-	if err != nil {
-		return errors.Errorf("failed to connect to raptorq service %w", err)
-	}
-
-	rqService := conn.RaptorQ(&rqnode.Config{
-		RqFilesDir: task.Service.config.RqFilesDir,
-	})
-
-	encodeResp, err := rqService.Encode(ctx, img)
-	if err != nil {
-		return errors.Errorf("failed to create raptorq symbol from image %s %w", task.Artwork.Name(), err)
-	}
-
-	for name, data := range task.RQIDS {
-		if _, err := task.p2pClient.Store(ctx, data); err != nil {
-			return errors.Errorf("failed to store raptorq symbols id files %s %w", name, err)
-		}
-	}
-
-	for id, symbol := range encodeResp.Symbols {
-		if _, err := task.p2pClient.Store(ctx, symbol); err != nil {
-			return errors.Errorf("failed to store symbolid %s into kamedila %w", id, err)
-		}
-	}
-
-	return nil
 }
 
 func (task *Task) storeFingerprints(ctx context.Context) error {

@@ -28,6 +28,7 @@ func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)
 }
 
+// ExternalDupeDetection implements node.Connection.ExternalDupeDetection()
 func (conn *clientConn) ExternalDupeDetection() node.ExternalDupeDetection {
 	return newExternalDupeDetection(conn)
 }

@@ -462,151 +462,151 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 	}
 }
 
-func TestTaskStoreRaptorQSymbols(t *testing.T) {
-	type args struct {
-		task       *Task
-		encodeErr  error
-		connectErr error
-		fileErr    error
-		storeErr   error
-		encodeResp *rqnode.Encode
-	}
+// func TestTaskStoreRaptorQSymbols(t *testing.T) {
+// 	type args struct {
+// 		task       *Task
+// 		encodeErr  error
+// 		connectErr error
+// 		fileErr    error
+// 		storeErr   error
+// 		encodeResp *rqnode.Encode
+// 	}
 
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.ExDDTicket{},
-					RQIDS:  make(map[string][]byte),
-				},
-				encodeErr:  nil,
-				connectErr: nil,
-				fileErr:    nil,
-				storeErr:   nil,
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: nil,
-		},
-		"file-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.ExDDTicket{},
-					RQIDS:  make(map[string][]byte),
-				},
-				encodeErr:  nil,
-				connectErr: nil,
-				fileErr:    errors.New("test"),
-				storeErr:   nil,
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: errors.New("test"),
-		},
-		"conn-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.ExDDTicket{},
-					RQIDS:  make(map[string][]byte),
-				},
-				encodeErr:  nil,
-				connectErr: errors.New("test"),
-				fileErr:    nil,
-				storeErr:   nil,
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: errors.New("test"),
-		},
-		"encode-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.ExDDTicket{},
-					RQIDS:  make(map[string][]byte),
-				},
-				encodeErr:  errors.New("test"),
-				connectErr: nil,
-				fileErr:    nil,
-				storeErr:   nil,
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: errors.New("test"),
-		},
-		"store-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.ExDDTicket{},
-					RQIDS:  make(map[string][]byte),
-				},
-				encodeErr:  nil,
-				connectErr: nil,
-				fileErr:    nil,
-				storeErr:   errors.New("test"),
-				encodeResp: &rqnode.Encode{},
-			},
-			wantErr: errors.New("test"),
-		},
-	}
+// 	testCases := map[string]struct {
+// 		args    args
+// 		wantErr error
+// 	}{
+// 		"success": {
+// 			args: args{
+// 				task: &Task{
+// 					Service: &Service{
+// 						config: &Config{},
+// 					},
+// 					Ticket: &pastel.ExDDTicket{},
+// 					RQIDS:  make(map[string][]byte),
+// 				},
+// 				encodeErr:  nil,
+// 				connectErr: nil,
+// 				fileErr:    nil,
+// 				storeErr:   nil,
+// 				encodeResp: &rqnode.Encode{},
+// 			},
+// 			wantErr: nil,
+// 		},
+// 		"file-err": {
+// 			args: args{
+// 				task: &Task{
+// 					Service: &Service{
+// 						config: &Config{},
+// 					},
+// 					Ticket: &pastel.ExDDTicket{},
+// 					RQIDS:  make(map[string][]byte),
+// 				},
+// 				encodeErr:  nil,
+// 				connectErr: nil,
+// 				fileErr:    errors.New("test"),
+// 				storeErr:   nil,
+// 				encodeResp: &rqnode.Encode{},
+// 			},
+// 			wantErr: errors.New("test"),
+// 		},
+// 		"conn-err": {
+// 			args: args{
+// 				task: &Task{
+// 					Service: &Service{
+// 						config: &Config{},
+// 					},
+// 					Ticket: &pastel.ExDDTicket{},
+// 					RQIDS:  make(map[string][]byte),
+// 				},
+// 				encodeErr:  nil,
+// 				connectErr: errors.New("test"),
+// 				fileErr:    nil,
+// 				storeErr:   nil,
+// 				encodeResp: &rqnode.Encode{},
+// 			},
+// 			wantErr: errors.New("test"),
+// 		},
+// 		"encode-err": {
+// 			args: args{
+// 				task: &Task{
+// 					Service: &Service{
+// 						config: &Config{},
+// 					},
+// 					Ticket: &pastel.ExDDTicket{},
+// 					RQIDS:  make(map[string][]byte),
+// 				},
+// 				encodeErr:  errors.New("test"),
+// 				connectErr: nil,
+// 				fileErr:    nil,
+// 				storeErr:   nil,
+// 				encodeResp: &rqnode.Encode{},
+// 			},
+// 			wantErr: errors.New("test"),
+// 		},
+// 		"store-err": {
+// 			args: args{
+// 				task: &Task{
+// 					Service: &Service{
+// 						config: &Config{},
+// 					},
+// 					Ticket: &pastel.ExDDTicket{},
+// 					RQIDS:  make(map[string][]byte),
+// 				},
+// 				encodeErr:  nil,
+// 				connectErr: nil,
+// 				fileErr:    nil,
+// 				storeErr:   errors.New("test"),
+// 				encodeResp: &rqnode.Encode{},
+// 			},
+// 			wantErr: errors.New("test"),
+// 		},
+// 	}
 
-	for name, tc := range testCases {
-		tc := tc
+// 	for name, tc := range testCases {
+// 		tc := tc
 
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
+// 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+// 			t.Parallel()
 
-			rqFile := rq.SymbolIDFile{ID: "A"}
-			bytes, err := json.Marshal(rqFile)
-			assert.Nil(t, err)
-			tc.args.task.RQIDS["A"] = bytes
-			tc.args.encodeResp.Symbols = map[string][]byte{"A": bytes}
+// 			rqFile := rq.SymbolIDFile{ID: "A"}
+// 			bytes, err := json.Marshal(rqFile)
+// 			assert.Nil(t, err)
+// 			tc.args.task.RQIDS["A"] = bytes
+// 			tc.args.encodeResp.Symbols = map[string][]byte{"A": bytes}
 
-			rqClientMock := rqMock.NewMockClient(t)
-			rqClientMock.ListenOnEncodeInfo(&rqnode.EncodeInfo{}, nil)
-			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
-			rqClientMock.ListenOnConnect(tc.args.connectErr).
-				ListenOnEncode(tc.args.encodeResp, tc.args.encodeErr)
+// 			rqClientMock := rqMock.NewMockClient(t)
+// 			rqClientMock.ListenOnEncodeInfo(&rqnode.EncodeInfo{}, nil)
+// 			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
+// 			rqClientMock.ListenOnConnect(tc.args.connectErr).
+// 				ListenOnEncode(tc.args.encodeResp, tc.args.encodeErr)
 
-			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr)
-			tc.args.task.Service.p2pClient = p2pClient
-			tc.args.task.p2pClient = p2pClient
+// 			p2pClient := p2pMock.NewMockClient(t)
+// 			p2pClient.ListenOnStore("", tc.args.storeErr)
+// 			tc.args.task.Service.p2pClient = p2pClient
+// 			tc.args.task.p2pClient = p2pClient
 
-			tc.args.task.Service.rqClient = rqClientMock
-			tc.args.task.rqClient = rqClientMock
+// 			tc.args.task.Service.rqClient = rqClientMock
+// 			tc.args.task.rqClient = rqClientMock
 
-			fsMock := storageMock.NewMockFileStorage()
-			fileMock := storageMock.NewMockFile()
-			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
+// 			fsMock := storageMock.NewMockFileStorage()
+// 			fileMock := storageMock.NewMockFile()
+// 			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF)
 
-			storage := artwork.NewStorage(fsMock)
-			tc.args.task.Artwork = artwork.NewFile(storage, "test")
-			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
+// 			storage := artwork.NewStorage(fsMock)
+// 			tc.args.task.Artwork = artwork.NewFile(storage, "test")
+// 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
-			err = tc.args.task.storeRaptorQSymbols(context.Background())
-			if tc.wantErr != nil {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tc.wantErr.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-		})
-	}
-}
+// 			err = tc.args.task.storeRaptorQSymbols(context.Background())
+// 			if tc.wantErr != nil {
+// 				assert.Error(t, err)
+// 				assert.Contains(t, err.Error(), tc.wantErr.Error())
+// 			} else {
+// 				assert.NoError(t, err)
+// 			}
+// 		})
+// 	}
+// }
 
 func TestTaskStoreFingerprints(t *testing.T) {
 	type args struct {

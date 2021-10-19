@@ -1,10 +1,8 @@
 package externaldupedetetion
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"sync"
 	"time"
 
@@ -22,7 +20,6 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/common"
 	"github.com/pastelnetwork/gonode/walletnode/services/externaldupedetection/node"
-	"golang.org/x/crypto/sha3"
 )
 
 // Task is the task of registering new artwork.
@@ -36,14 +33,13 @@ type Task struct {
 	nodes node.List
 
 	// task data to create RegArt ticket
-	creatorBlockHeight           int
-	creatorBlockHash             string
-	fingerprintAndScores         *pastel.FingerAndScores
-	fingerprintsHash             []byte
-	fingerprint                  []byte
-	imageEncodedWithFingerprints *artwork.File
-	datahash                     []byte
-	rqids                        []string
+	creatorBlockHeight   int
+	creatorBlockHash     string
+	fingerprintAndScores *pastel.FingerAndScores
+	fingerprintsHash     []byte
+	fingerprint          []byte
+	datahash             []byte
+	rqids                []string
 
 	// TODO: call cNodeAPI to get the reall signature instead of the fake one
 	fingerprintSignature []byte
@@ -123,11 +119,6 @@ func (task *Task) run(ctx context.Context) error {
 	// upload image and thumbnail coordinates to supernode(s)
 	if err := task.uploadImage(ctx); err != nil {
 		return errors.Errorf("failed to upload image: %w", err)
-	}
-
-	// connect to rq serivce to get rq symbols identifier
-	if err := task.genRQIdentifiersFiles(ctx); err != nil {
-		return errors.Errorf("gen RaptorQ symbols' identifiers failed %w", err)
 	}
 
 	if err := task.createEDDTicket(ctx); err != nil {
@@ -442,90 +433,6 @@ func (task *Task) getBlock(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
-	log.Debugf("Connect to %s", task.config.RaptorQServiceAddress)
-	conn, err := task.rqClient.Connect(ctx, task.config.RaptorQServiceAddress)
-	if err != nil {
-		return errors.Errorf("failed to connect to raptorQ service %w", err)
-	}
-	defer conn.Close()
-
-	content, err := task.imageEncodedWithFingerprints.Bytes()
-	if err != nil {
-		return errors.Errorf("failed to read image contents: %w", err)
-	}
-
-	rqService := conn.RaptorQ(&rqnode.Config{
-		RqFilesDir: task.Service.config.RqFilesDir,
-	})
-
-	log.WithContext(ctx).Debugf("Image hash %x", sha3.Sum256(content))
-	// FIXME :
-	// - check format of artis block hash should be base58 or not
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, task.creatorBlockHash, task.Request.PastelID)
-	if err != nil {
-		return errors.Errorf("failed to generate RaptorQ symbols' identifiers %w", err)
-	}
-
-	files := make(map[string][]byte)
-	for _, rawSymbolIDFile := range encodeInfo.SymbolIDFiles {
-		name, content, err := task.convertToSymbolIDFile(ctx, rawSymbolIDFile)
-		if err != nil {
-			task.UpdateStatus(StatusErrorGenRaptorQSymbolsFailed)
-			return errors.Errorf("failed to create rqids file %w", err)
-		}
-		files[name] = content
-	}
-
-	if len(files) < 1 {
-		return errors.Errorf("nuber of raptorq symbol identifiers files must be greater than 1")
-	}
-	for k := range files {
-		log.WithContext(ctx).Debugf("symbol file identifier %s", k)
-		task.rqids = append(task.rqids, k)
-	}
-
-	task.rqSymbolIDFiles = files
-	task.rqEncodeParams = encodeInfo.EncoderParam
-	return nil
-}
-
-func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawSymbolIDFile) (string, []byte, error) {
-	var content []byte
-	appendStr := func(b []byte, s string) []byte {
-		b = append(b, []byte(s)...)
-		b = append(b, '\n')
-		return b
-	}
-
-	content = appendStr(content, rawFile.ID)
-	content = appendStr(content, rawFile.BlockHash)
-	content = appendStr(content, rawFile.PastelID)
-	for _, id := range rawFile.SymbolIdentifiers {
-		content = appendStr(content, id)
-	}
-
-	// log.WithContext(ctx).Debugf("%s", content)
-	signature, err := task.pastelClient.Sign(ctx, content, task.Request.PastelID, task.Request.PastelIDPassphrase, pastel.SignAlgorithmED448)
-	if err != nil {
-		return "", nil, errors.Errorf("failed to sign identifiers file: %w", err)
-	}
-	content = append(content, signature...)
-
-	// read all content of the data b
-	// compress the contente of the file
-	compressedData, err := zstd.CompressLevel(nil, content, 22)
-	if err != nil {
-		return "", nil, errors.Errorf("failed to compress: ")
-	}
-	hasher := sha3.New256()
-	src := bytes.NewReader(compressedData)
-	if _, err := io.Copy(hasher, src); err != nil {
-		return "", nil, errors.Errorf("failed to hash identifiers file %w", err)
-	}
-	return base58.Encode(hasher.Sum(nil)), compressedData, nil
-}
-
 func (task *Task) createEDDTicket(_ context.Context) error {
 	if task.fingerprint == nil {
 		return errEmptyFingerprints
@@ -683,7 +590,6 @@ func (task *Task) uploadImage(ctx context.Context) error {
 	if err := task.encodeFingerprint(ctx, task.fingerprint, img1); err != nil {
 		return errors.Errorf("encode image with fingerprint %w", err)
 	}
-	task.imageEncodedWithFingerprints = img1
 
 	imgBytes, err := img1.Bytes()
 	if err != nil {
@@ -760,6 +666,5 @@ func (task *Task) removeArtifacts() {
 	}
 	if task.Request != nil {
 		removeFn(task.Request.Image)
-		removeFn(task.imageEncodedWithFingerprints)
 	}
 }
