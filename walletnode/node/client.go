@@ -4,6 +4,7 @@
 //go:generate mockery --name=DownloadArtwork
 //go:generate mockery --name=ProcessUserdata
 //go:generate mockery --name=ExternalDupeDetection
+//go:generate mockery --name=ExternalStorage
 
 package node
 
@@ -37,6 +38,8 @@ type Connection interface {
 	ProcessUserdata() ProcessUserdata
 	// ExternalDupeDetection returns a new ExternalDupeDetection stream.
 	ExternalDupeDetection() ExternalDupeDetection
+	// ExternalStorage returns a new ExternalStorage stream.
+	ExternalStorage() ExternalStorage
 }
 
 // RegisterArtwork contains methods for registering artwork.
@@ -101,4 +104,22 @@ type ExternalDupeDetection interface {
 	SendSignedEDDTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
 	// SendPreBurnedFeeEDDTxID send TxID of the transaction in which 10% of registration fee is preburned
 	SendPreBurnedFeeEDDTxID(ctx context.Context, txid string) (string, error)
+}
+
+// ExternalStorage contains methods for registering artwork.
+type ExternalStorage interface {
+	// SessID returns the sessID received from the server during the handshake.
+	SessID() (sessID string)
+	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.
+	Session(ctx context.Context, IsPrimary bool) (err error)
+	// AcceptedNodes requests information about connected secondary nodes.
+	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
+	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
+	ConnectTo(ctx context.Context, nodeKey, sessID string) error
+	// UploadImageImage uploads the image with pqsignature to supernodes
+	UploadImage(ctx context.Context, image *artwork.File) error
+	// SendSignedExternalStorageTicket send a reg-art ticket signed by cNode to SuperNode
+	SendSignedExternalStorageTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
+	// SendPreBurnedFeeExternalStorageTxID send TxID of the transaction in which 10% of registration fee is preburned
+	SendPreBurnedFeeExternalStorageTxID(ctx context.Context, txid string) (string, error)
 }

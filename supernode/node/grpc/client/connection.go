@@ -28,6 +28,11 @@ func (conn *clientConn) ExternalDupeDetection() node.ExternalDupeDetection {
 	return newExternalDupeDetection(conn)
 }
 
+// ExternalStorage implements node.Connection.ExternalStorage()
+func (conn *clientConn) ExternalStorage() node.ExternalStorage {
+	return newExternalStorage(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

@@ -119,10 +119,19 @@ type Client interface {
 	// Command `gettotalstoragefee ...`
 	GetRegisterExDDFee(ctx context.Context, request GetRegisterExDDFeeRequest) (int64, error)
 
+	// GetRegisterExternalStorageFee return fee of ticket
+	// Command `gettotalstoragefee ...`
+	GetRegisterExternalStorageFee(ctx context.Context, request GetRegisterExternalStorageFeeRequest) (int64, error)
+
 	// RegisterExDDTicket register an ExDD ticket
 	// Command `tickets register edd ...`
 	// Return txid of transaction
 	RegisterExDDTicket(ctx context.Context, request RegisterExDDRequest) (string, error)
+
+	// RegisterExternalStorageTicket register an external storage ticket
+	// Command `tickets register edd ...`
+	// Return txid of transaction
+	RegisterExternalStorageTicket(ctx context.Context, request RegisterExternalStorageRequest) (string, error)
 
 	// RegisterActTicket activates an registered NFT ticket
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`

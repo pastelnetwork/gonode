@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
+
+package walletnode;
+
+import "register_artwork.proto";
+
+service ExternalStorage {
+    // Session informs the supernode its position (primary/secondary).
+    // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
+    // The stream is used by the parties to inform each other about the cancellation of the task.
+    rpc Session(stream SessionRequest) returns (stream SessionReply);
+
+    // AcceptedNodes returns peers of the secondary supernodes connected to it.
+    rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
+
+    // ConnectTo requests to connect to the primary supernode.
+    rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
+
+    // SendSignedExternalStorageTicket sends a signed art-ticket to the supernode.
+    rpc SendSignedExternalStorageTicket(SendSignedExternalStorageTicketRequest) returns (SendSignedExternalStorageTicketReply);
+
+    // SendPreBurnedFeeExternalStorageTxID sends tx_id of 10% burnt transaction fee to the supernode.
+    rpc SendPreBurnedFeeExternalStorageTxID(SendPreBurnedFeeExternalStorageTxIDRequest) returns (SendPreBurnedFeeExternalStorageTxIDReply);
+
+    // SendTicket sends a ticket to the supernode.
+    rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
+
+    // Upload the image after pq signature is appended along with its thumbnail coordinates
+    rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
+}
+
+message SendSignedExternalStorageTicketRequest {
+    bytes external_storage_ticket = 1;
+    string createtor_pastel_id = 2;
+    bytes creator_signature = 3;
+    string key1 = 4;
+    string key2 = 5;
+    EncoderParameters encode_parameters = 6;
+    map<string, bytes> encode_files = 7;
+}
+
+message SendSignedExternalStorageTicketReply {
+    int64 registration_fee = 1;
+}
+
+message SendPreBurnedFeeExternalStorageTxIDRequest {
+    string txid = 1;
+}
+message SendPreBurnedFeeExternalStorageTxIDReply {
+    string external_storage_reg_txid = 1;
+}

@@ -418,6 +418,42 @@ func (client *client) GetRegisterExDDFee(ctx context.Context, request GetRegiste
 	return totalStorageFee.TotalStorageFee, nil
 }
 
+func (client *client) GetRegisterExternalStorageFee(ctx context.Context, request GetRegisterExternalStorageFeeRequest) (int64, error) {
+	var totalStorageFee struct {
+		TotalStorageFee int64 `json:"totalstoragefee"`
+	}
+
+	// command : tickets tools gettotalstoragefee "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee" "imagesize"
+	ticket, err := EncodeExternalStorageTicket(request.Ticket)
+	if err != nil {
+		return 0, errors.Errorf("failed to encode ticket: %w", err)
+	}
+
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+
+	signatures, err := EncodeSignatures(*request.Signatures)
+	if err != nil {
+		return 0, errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "tools")
+	params = append(params, "gettotalstoragefee")
+	params = append(params, string(ticketBlob))
+	params = append(params, string(signatures))
+	params = append(params, request.Mn1PastelID)
+	params = append(params, request.Passphrase)
+	params = append(params, request.Key1)
+	params = append(params, request.Key2)
+	params = append(params, request.Fee)
+	params = append(params, request.ImgSizeInMb)
+
+	if err := client.callFor(ctx, &totalStorageFee, "tickets", params...); err != nil {
+		return 0, errors.Errorf("failed to call gettotalstoragefee: %w", err)
+	}
+	return totalStorageFee.TotalStorageFee, nil
+}
+
 func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error) {
 	var txID struct {
 		TxID string `json:"txid"`
@@ -471,6 +507,40 @@ func (client *client) RegisterExDDTicket(ctx context.Context, request RegisterEx
 	params := []interface{}{}
 	params = append(params, "register")
 	params = append(params, "edd")
+	params = append(params, string(ticketBlob))
+	params = append(params, string(signatures))
+	params = append(params, request.Mn1PastelID)
+	params = append(params, request.Pasphase)
+	params = append(params, request.Key1)
+	params = append(params, request.Key2)
+	params = append(params, fmt.Sprint(request.Fee))
+
+	// command : tickets register NFT "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee"
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call register ExDD ticket: %w", err)
+	}
+	return txID.TxID, nil
+}
+
+func (client *client) RegisterExternalStorageTicket(ctx context.Context, request RegisterExternalStorageRequest) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	ticket, err := EncodeExternalStorageTicket(request.Ticket)
+	if err != nil {
+		return "", errors.Errorf("failed to encode ticket: %w", err)
+	}
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+
+	signatures, err := EncodeSignatures(*request.Signatures)
+	if err != nil {
+		return "", errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "register")
+	params = append(params, "es")
 	params = append(params, string(ticketBlob))
 	params = append(params, string(signatures))
 	params = append(params, request.Mn1PastelID)

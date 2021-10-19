@@ -3,6 +3,7 @@
 //go:generate mockery --name=RegisterArtwork
 //go:generate mockery --name=ProcessUserdata
 //go:generate mockery --name=ExternalDupeDetection
+//go:generate mockery --name=ExternalStorage
 
 package node
 
@@ -30,6 +31,8 @@ type Connection interface {
 	ProcessUserdata() ProcessUserdata
 	// ExternalDupeDetection returns a new ExternalDupeDetection stream.
 	ExternalDupeDetection() ExternalDupeDetection
+	// ExternalStorage returns a new ExternalStorage stream.
+	ExternalStorage() ExternalStorage
 }
 
 // RegisterArtwork represents an interaction stream with supernodes for registering artwork.
@@ -62,4 +65,14 @@ type ExternalDupeDetection interface {
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 	// SendEDDTicketSignature Send signature of ticket to primary supernode
 	SendEDDTicketSignature(ctx context.Context, nodeID string, signature []byte) error
+}
+
+// ExternalStorage  represents an interaction stream with supernodes for sending external dupe detection.
+type ExternalStorage interface {
+	// SessID returns the taskID received from the server during the handshake.
+	SessID() (taskID string)
+	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
+	Session(ctx context.Context, nodeID, sessID string) (err error)
+	// SendExternalStorageTicketSignature Send signature of ticket to primary supernode
+	SendExternalStorageTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }
