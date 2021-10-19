@@ -25,12 +25,12 @@ type HealthCheck struct {
 func (service *HealthCheck) Ping(ctx context.Context, _ *pb.PingRequest) (*pb.PingReply, error) {
 	stats, err := service.Stats(ctx)
 	if err != nil {
-		return &pb.PingReply{Reply: ""}, errors.Errorf("failed to Stats(): %w", err)
+		return &pb.PingReply{Reply: ""}, errors.Errorf("Stats(): %w", err)
 	}
 
 	jsonData, err := json.Marshal(stats)
 	if err != nil {
-		return &pb.PingReply{Reply: ""}, errors.Errorf("failed to Marshal(): %w", err)
+		return &pb.PingReply{Reply: ""}, errors.Errorf("Marshal(): %w", err)
 	}
 
 	// echos received message

@@ -52,7 +52,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 
 	req, err := stream.Recv()
 	if err != nil {
-		return errors.Errorf("failed to receieve handshake request: %w", err)
+		return errors.Errorf("receieve handshake request: %w", err)
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
@@ -64,7 +64,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
-		return errors.Errorf("failed to send handshake response: %w", err)
+		return errors.Errorf("send handshake response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 
@@ -148,9 +148,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 	if err != nil {
 		return nil, err
 	}
-	if req == nil {
-		return nil, errors.Errorf("Request receive from walletnode is nil")
-	}
+
 	// Convert protobuf request to UserdataProcessRequest
 	request := userdata.ProcessRequestSigned{
 		Userdata: &userdata.ProcessRequest{
@@ -223,7 +221,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 					if _, err := task.ConnectedToLeader.ProcessUserdata.SendUserdataToLeader(ctx, request); err != nil {
 						processResult.ResponseCode = userdata.ErrorWriteToRQLiteDBFail
 						processResult.Detail = userdata.Description[userdata.ErrorWriteToRQLiteDBFail]
-						actionErr = errors.Errorf("failed to send or write userdata to leader rqlite %w", err)
+						actionErr = errors.Errorf("send or write userdata to leader rqlite %w", err)
 						return nil
 					}
 					// Write success:

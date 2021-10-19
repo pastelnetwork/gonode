@@ -1234,7 +1234,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 					TXID: "test-txid",
 				},
 			},
-			wantErr: errors.New("failed to decode image"),
+			wantErr: errors.New("decode image"),
 		},
 	}
 	for name, tc := range testCases {
@@ -1480,7 +1480,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 				},
 				sendFromAddressRetErr: errors.New("test"),
 			},
-			wantErr: errors.New("failed to burn"),
+			wantErr: errors.New("burn"),
 		},
 		"send-preburnt-fee-err": {
 			args: args{
@@ -1502,7 +1502,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 				sendFromAddressRetErr: nil,
 				burnTxnIDRet:          "test-id",
 			},
-			wantErr: errors.New("failed to send pre-burn-txid"),
+			wantErr: errors.New("send pre-burn-txid"),
 		},
 		"regArtTxId-empty-err": {
 			args: args{
@@ -1521,7 +1521,7 @@ func TestTaskPreburntRegistrationFee(t *testing.T) {
 				sendFromAddressRetErr: nil,
 				burnTxnIDRet:          "test-id",
 			},
-			wantErr: errors.New("regNFTTxid is empty"),
+			wantErr: errors.New("empty regNFTTxid"),
 		},
 		"success": {
 			args: args{
@@ -1753,7 +1753,7 @@ func TestTaskProbeImage(t *testing.T) {
 				},
 				probeImgErr: errors.New("test"),
 			},
-			wantErr: errors.New("failed to probe image"),
+			wantErr: errors.New("send image"),
 		},
 	}
 
@@ -1795,6 +1795,7 @@ func TestTaskProbeImage(t *testing.T) {
 			err = tc.args.task.probeImage(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
+				fmt.Printf("%v", err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
 				fmt.Printf("%v", err)

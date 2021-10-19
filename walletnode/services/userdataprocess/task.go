@@ -115,14 +115,14 @@ func (task *Task) run(ctx context.Context) error {
 	if task.request == nil {
 		// PROCESS TO RETRIEVE USERDATA FROM METADATA LAYER
 		if err := nodes.ReceiveUserdata(ctx, task.userpastelid); err != nil {
-			return errors.Errorf("failed to receive userdata: %w", err)
+			return errors.Errorf("receive userdata: %w", err)
 		}
 		// Post on result channel
 		node := nodes[0]
 		if node.ResultGet != nil {
 			task.resultChanGet <- node.ResultGet
 		} else {
-			return errors.Errorf("failed to receive userdata")
+			return errors.Errorf("receive userdata")
 		}
 
 		log.WithContext(ctx).Debug("Finished retrieve userdata")
@@ -134,12 +134,12 @@ func (task *Task) run(ctx context.Context) error {
 		blockHash := ""
 		blockNum, err := task.pastelClient.GetBlockCount(ctx)
 		if err != nil {
-			log.WithContext(ctx).Debug("failed to get block num: %w", err)
+			log.WithContext(ctx).WithError(err).Debug("Get block num failed")
 		} else {
 			// Get block hash string
 			blockInfo, err := task.pastelClient.GetBlockVerbose1(ctx, blockNum)
 			if err != nil {
-				log.WithContext(ctx).Debug("failed to get block info with error: %w", err)
+				log.WithContext(ctx).WithError(err).Debug("Get block info failed")
 			} else {
 				blockHash = blockInfo.Hash
 			}
@@ -153,19 +153,19 @@ func (task *Task) run(ctx context.Context) error {
 		// Marshal task.request to byte array for signing
 		js, err := json.Marshal(task.request)
 		if err != nil {
-			return errors.Errorf("failed to encode request %w", err)
+			return errors.Errorf("marshal request: %w", err)
 		}
 
 		// Hash the request
 		hashvalue, err := userdata.Sha3256hash(js)
 		if err != nil {
-			return errors.Errorf("failed to hash request %w", err)
+			return errors.Errorf("hash request %w", err)
 		}
 
 		// Sign request with Wallet Node's pastelID and passphrase
 		signature, err := task.pastelClient.Sign(ctx, hashvalue, task.request.ArtistPastelID, passphrase, "ed448")
 		if err != nil {
-			return errors.Errorf("failed to sign ticket %w", err)
+			return errors.Errorf("sign ticket %w", err)
 		}
 
 		userdata := &userdata.ProcessRequestSigned{
@@ -218,7 +218,7 @@ func (task *Task) AggregateResult(_ context.Context, nodes node.List) (userdata.
 		}
 	}
 
-	return userdata.ProcessResult{}, errors.Errorf("failed to Aggregate Result")
+	return userdata.ProcessResult{}, errors.Errorf("aggregate Result failed")
 }
 
 // meshNodes establishes communication between supernodes.

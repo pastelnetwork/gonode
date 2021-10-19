@@ -44,7 +44,7 @@ func (service *Service) Run(ctx context.Context) error {
 			ImagePath *string `json:"image_path"`
 		}{}
 		if err := json.Unmarshal([]byte(test), &ticket); err != nil {
-			return errors.Errorf("failed to marshal ticket %q : %w", test, err)
+			return errors.Errorf("marshal ticket %q : %w", test, err)
 		}
 
 		if imagePath := ticket.ImagePath; imagePath != nil {

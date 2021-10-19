@@ -3,10 +3,11 @@ package pastel
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/DataDog/zstd"
 	"math"
 	"strings"
 	"unsafe"
+
+	"github.com/DataDog/zstd"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )
@@ -80,12 +81,12 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 
 	lhsFingerprint, err := zstd.Decompress(nil, lhs.ZstdCompressedFingerprint)
 	if err != nil {
-		return errors.Errorf("failed to decompress lhs fingerprint: %w", err)
+		return errors.Errorf("decompress lhs fingerprint: %w", err)
 	}
 
 	rhsFingerprint, err := zstd.Decompress(nil, rhs.ZstdCompressedFingerprint)
 	if err != nil {
-		return errors.Errorf("failed to decompress rhs fingerprint: %w", err)
+		return errors.Errorf("decompress rhs fingerprint: %w", err)
 	}
 
 	if !bytes.Equal(lhsFingerprint, rhsFingerprint) {

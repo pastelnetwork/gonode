@@ -136,7 +136,7 @@ func (file *File) Copy() (*File, error) {
 	defer dst.Close()
 
 	if _, err := io.Copy(dst, src); err != nil {
-		return nil, errors.Errorf("failed to copy file: %w", err)
+		return nil, errors.Errorf("copy file: %w", err)
 	}
 	return newFile, nil
 }
@@ -151,7 +151,7 @@ func (file *File) Bytes() ([]byte, error) {
 
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(f); err != nil {
-		return nil, errors.Errorf("failed to read from file: %w", err)
+		return nil, errors.Errorf("read file: %w", err)
 	}
 
 	return buf.Bytes(), nil
@@ -161,13 +161,13 @@ func (file *File) Bytes() ([]byte, error) {
 func (file *File) Write(data []byte) (n int, err error) {
 	f, err := file.Create()
 	if err != nil {
-		return
+		return 0, errors.Errorf("create file: %w", err)
 	}
 	defer f.Close()
 
 	n, err = f.Write(data)
 	if err != nil {
-		return n, errors.Errorf("failed to write to file: %w", err)
+		return n, errors.Errorf("write file: %w", err)
 	}
 
 	return
@@ -203,7 +203,7 @@ func (file *File) LoadImage() (image.Image, error) {
 
 	img, _, err := image.Decode(f)
 	if err != nil {
-		return nil, errors.Errorf("failed to decode image: %w", err).WithField("filename", f.Name())
+		return nil, errors.Errorf("decode image(%s): %w", f.Name(), err)
 	}
 	return img, nil
 }
@@ -225,25 +225,25 @@ func (file *File) SaveImage(img image.Image) error {
 				Rect:   nrgba.Rect,
 			}
 			if err := jpeg.Encode(f, rgba, nil); err != nil {
-				return errors.Errorf("failed to encode jpeg: %w", err).WithField("filename", f.Name())
+				return errors.Errorf("encode jpeg rgba(%s): %w", f.Name(), err)
 			}
 			return nil
 		}
 		if err := jpeg.Encode(f, img, nil); err != nil {
-			return errors.Errorf("failed to encode jpeg: %w", err).WithField("filename", f.Name())
+			return errors.Errorf("encode jpeg(%s): %w", f.Name(), err)
 		}
 		return nil
 
 	case PNG:
 		encoder := png.Encoder{CompressionLevel: png.DefaultCompression}
 		if err := encoder.Encode(f, img); err != nil {
-			return errors.Errorf("failed to encode png: %w", err).WithField("filename", f.Name())
+			return errors.Errorf("encode png(%s): %w", f.Name(), err)
 		}
 		return nil
 
 	case GIF:
 		if err := gif.Encode(f, img, nil); err != nil {
-			return errors.Errorf("failed to encode gif: %w", err).WithField("filename", f.Name())
+			return errors.Errorf("encode gif(%s): %w", f.Name(), err)
 		}
 		return nil
 	}
@@ -254,23 +254,23 @@ func (file *File) SaveImage(img image.Image) error {
 func (file *File) Thumbnail(coordinate ThumbnailCoordinate) (*File, error) {
 	f := NewFile(file.storage, "thumbnail-of-"+file.name)
 	if f == nil {
-		return nil, errors.Errorf("failed to create new file for thumbnail-of-%q", file.Name())
+		return nil, errors.Errorf("create new file for thumbnail-of-%q", file.Name())
 	}
 	f.SetFormat(file.Format())
 
 	img, err := file.LoadImage()
 	if err != nil {
-		return nil, errors.Errorf("failed to load image from file %w", err).WithField("Filename", file.Name())
+		return nil, errors.Errorf("load image from file(%s): %w", file.Name(), err)
 	}
 
 	rect := image.Rect(int(coordinate.TopLeftX), int(coordinate.TopLeftY), int(coordinate.BottomRightX), int(coordinate.BottomRightY))
 	thumbnail := imaging.Crop(img, rect)
 	if thumbnail == nil {
-		return nil, errors.Errorf("failed to generate thumbnail %w", err).WithField("filename", f.Name())
+		return nil, errors.Errorf("generate thumbnail(%s): %w", file.Name(), err)
 	}
 
 	if err := f.SaveImage(thumbnail); err != nil {
-		return nil, errors.Errorf("failed to save thumbnail to file %w", err).WithField("filename", f.Name())
+		return nil, errors.Errorf("save thumbnail(%s): %w", file.Name(), err)
 	}
 
 	return f, nil
@@ -287,11 +287,11 @@ func (file *File) UpdateFormat() error {
 
 	_, format, err := image.Decode(f)
 	if err != nil {
-		return errors.Errorf("failed to decode image: %w", err).WithField("filename", f.Name())
+		return errors.Errorf("decode image(%s): %w", file.Name(), err)
 	}
 	err = file.SetFormatFromExtension(format)
 	if err != nil {
-		return errors.Errorf("failed to set file format: %w", err).WithField("filename", f.Name())
+		return errors.Errorf("set file format(%s): %w", file.Name(), err)
 	}
 	return nil
 }

@@ -33,7 +33,7 @@ func (service *processUserdata) Session(ctx context.Context, isPrimary bool) err
 
 	stream, err := service.client.Session(ctx)
 	if err != nil {
-		return errors.Errorf("failed to open Health stream: %w", err)
+		return errors.Errorf("open Health stream: %w", err)
 	}
 
 	req := &pb.MDLSessionRequest{
@@ -42,7 +42,7 @@ func (service *processUserdata) Session(ctx context.Context, isPrimary bool) err
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
 	if err := stream.Send(req); err != nil {
-		return errors.Errorf("failed to send Session request: %w", err)
+		return errors.Errorf("send Session request: %w", err)
 	}
 
 	resp, err := stream.Recv()
@@ -54,7 +54,7 @@ func (service *processUserdata) Session(ctx context.Context, isPrimary bool) err
 		case codes.Canceled, codes.Unavailable:
 			return nil
 		}
-		return errors.Errorf("failed to receive Session response: %w", err)
+		return errors.Errorf("receive Session response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 	service.sessID = resp.SessID
@@ -81,7 +81,7 @@ func (service *processUserdata) AcceptedNodes(ctx context.Context) (pastelIDs []
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
 	if err != nil {
-		return nil, errors.Errorf("failed to request to accepted secondary nodes: %w", err)
+		return nil, errors.Errorf("request to accepted secondary nodes: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
 
@@ -105,7 +105,7 @@ func (service *processUserdata) ConnectTo(ctx context.Context, nodeID, sessID st
 
 	resp, err := service.client.ConnectTo(ctx, req)
 	if err != nil {
-		return errors.Errorf("failed to request to connect to primary node: %w", err)
+		return errors.Errorf("request to connect to primary node: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
 
@@ -152,7 +152,7 @@ func (service *processUserdata) SendUserdata(ctx context.Context, request *userd
 
 	resp, err := service.client.SendUserdata(ctx, reqProto)
 	if err != nil {
-		return nil, errors.Errorf("failed to send data: %w", err)
+		return nil, errors.Errorf("send user data: %w", err)
 	}
 
 	// Convert protobuf response to UserdataProcessResult then return it
@@ -183,7 +183,7 @@ func (service *processUserdata) ReceiveUserdata(ctx context.Context, userpasteli
 	}
 	resp, err := service.client.ReceiveUserdata(ctx, reqProto)
 	if err != nil {
-		return nil, errors.Errorf("failed to receive data: %w", err)
+		return nil, errors.Errorf("receive data: %w", err)
 	}
 
 	var avatarImage userdata.UserImageUpload

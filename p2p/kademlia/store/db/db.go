@@ -57,7 +57,7 @@ func NewStore(ctx context.Context, dataDir string) (*Badger, error) {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Badger) Store(ctx context.Context, key []byte, value []byte, replication time.Time) error {
+func (s *Badger) Store(_ context.Context, key []byte, value []byte, replication time.Time) error {
 	if err := s.db.Update(func(txn *badger.Txn) error {
 		// set the key/value to badger
 		if err := txn.Set(key, value); err != nil {
@@ -76,12 +76,11 @@ func (s *Badger) Store(ctx context.Context, key []byte, value []byte, replicatio
 		return errors.Errorf("badger update: %v, %w", base58.Encode(key), err)
 	}
 
-	log.WithContext(ctx).Infof("store key: %s", base58.Encode(key))
 	return nil
 }
 
 // Retrieve the local key/value from store
-func (s *Badger) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
+func (s *Badger) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	var value []byte
 	// find key from badger
 	if err := s.db.View(func(txn *badger.Txn) error {
@@ -100,7 +99,6 @@ func (s *Badger) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 		return nil, errors.Errorf("badger view: %w", err)
 	}
 
-	log.WithContext(ctx).Infof("retrieve key: %s", base58.Encode(key))
 	return value, nil
 }
 

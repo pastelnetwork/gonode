@@ -3,10 +3,10 @@ package node
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -238,7 +238,7 @@ func TestNodesSendImage(t *testing.T) {
 
 			err := nodes.ProbeImage(testCase.args.ctx, testCase.args.file)
 			if err != nil {
-				assert.Equal(t, errors.Errorf("failed to probe image: %w", testCase.err).Error(), err.Error())
+				assert.True(t, strings.Contains(err.Error(), testCase.err.Error()))
 			} else {
 				assert.Equal(t, err, testCase.err)
 			}

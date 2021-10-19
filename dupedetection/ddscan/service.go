@@ -78,7 +78,7 @@ func (s *service) Run(ctx context.Context) error {
 			if utils.IsContextErr(err) {
 				return err
 			}
-			log.WithContext(ctx).WithError(err).Error("failed to start dd-scan service, retrying.")
+			log.WithContext(ctx).WithError(err).Error("Failed to start dd-scan service, retrying.")
 		} else {
 			return nil
 		}
@@ -90,7 +90,7 @@ func (s *service) run(ctx context.Context) error {
 	defer s.db.Close()
 
 	if err := s.waitSynchronization(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to initial wait synchronization")
+		log.WithContext(ctx).WithError(err).Error("Failed to initial wait synchronization")
 	} else {
 		s.isMasterNodeSynced = true
 	}
@@ -124,7 +124,7 @@ func (s *service) run(ctx context.Context) error {
 func (s *service) checkSynchronized(ctx context.Context) error {
 	st, err := s.pastelClient.MasterNodeStatus(ctx)
 	if err != nil {
-		return errors.Errorf("get MasterNodeStatus() failed: %w", err)
+		return errors.Errorf("getMasterNodeStatus: %w", err)
 	}
 
 	if st == nil {
@@ -168,7 +168,7 @@ func (s *service) waitSynchronization(ctx context.Context) error {
 func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFingerprints, error) {
 	row, err := s.db.QueryStringStmt(getLatestFingerprintStatement)
 	if err != nil {
-		return nil, errors.Errorf("failed to query, err: %w", err)
+		return nil, errors.Errorf("query: %w", err)
 	}
 
 	if len(row) != 0 && len(row[0].Values) == 0 {
@@ -217,12 +217,12 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 
 	b, err := json.Marshal(resultStr)
 	if err != nil {
-		return nil, errors.Errorf("failed to JSON marshal value, err: %w", err)
+		return nil, errors.Errorf("marshal output: %w", err)
 	}
 
 	ddFingerprint := &dupeDetectionFingerprints{}
 	if err := json.Unmarshal(b, ddFingerprint); err != nil {
-		return nil, errors.Errorf("failed to JSON unmarshal, err: %w", err)
+		return nil, errors.Errorf("unmarshal json: %w", err)
 	}
 
 	return ddFingerprint, nil
@@ -234,7 +234,7 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 		m := mat.NewDense(len(v), 1, v)
 		f := bytes.NewBuffer(nil)
 		if err := npyio.Write(f, m); err != nil {
-			return nil, errors.Errorf("failed to encode to npy, err: %w", err)
+			return nil, errors.Errorf("encode to npy: %w", err)
 		}
 		return f.Bytes(), nil
 	}
@@ -312,7 +312,7 @@ func (s *service) runTask(ctx context.Context) error {
 
 	nftRegTickets, err := s.pastelClient.RegTickets(ctx)
 	if err != nil {
-		return errors.Errorf("failed to get registered ticket, err: %w", err)
+		return errors.Errorf("get registered ticket: %w", err)
 	}
 
 	if len(nftRegTickets) == 0 {
@@ -321,7 +321,7 @@ func (s *service) runTask(ctx context.Context) error {
 
 	lastestFp, err := s.getLatestFingerprint(ctx)
 	if err != nil {
-		return errors.Errorf("failed to get lastest fingerprint, err: %w", err)
+		return errors.Errorf("get lastest fingerprint: %w", err)
 	}
 
 	for i := 0; i < len(nftRegTickets); i++ {
@@ -400,7 +400,7 @@ func (s *service) getRecordCount(ctx context.Context) (int64, error) {
 	statement := getNumberOfFingerprintsStatement
 	rows, err := s.db.QueryStringStmt(statement)
 	if err != nil {
-		return 0, errors.Errorf("query failed: %w", err)
+		return 0, errors.Errorf("query: %w", err)
 	}
 	row := rows[0]
 
@@ -427,14 +427,14 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	// Get last inserted item
 	lastItem, err := s.getLatestFingerprint(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to getLatestFingerprint(): %w", err)
+		return nil, errors.Errorf("getLatestFingerprint: %w", err)
 	}
 	stats["last_insert_time"] = lastItem.DatetimeFingerprintAddedToDatabase
 
 	// Get total of records
 	record_count, err := s.getRecordCount(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to getRecordCount(): %w", err)
+		return nil, errors.Errorf("getRecordCount: %w", err)
 	}
 	stats["record_count"] = record_count
 
@@ -444,12 +444,12 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 // NewService return a new Service instance
 func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client) (Service, error) {
 	if _, err := os.Stat(config.DataFile); os.IsNotExist(err) {
-		return nil, errors.Errorf("database dd service not found, err: %w", err)
+		return nil, errors.Errorf("database dd service not found: %w", err)
 	}
 
 	db, err := db.Open(config.DataFile)
 	if err != nil {
-		return nil, errors.Errorf("failed to open dd-service database, err: %w", err)
+		return nil, errors.Errorf("open dd-service database: %w", err)
 	}
 
 	return &service{

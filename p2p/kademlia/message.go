@@ -104,7 +104,7 @@ func decode(conn io.Reader) (*Message, error) {
 	// parse the length of message
 	length, err := binary.ReadUvarint(bytes.NewBuffer(header))
 	if err != nil {
-		return nil, errors.Errorf("parse header length failed: %w", err)
+		return nil, errors.Errorf("parse header length: %w", err)
 	}
 	log.Debugf("message length %d", length)
 

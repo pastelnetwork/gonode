@@ -36,7 +36,7 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 		grpc.WithBlock(),
 	)
 	if err != nil {
-		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
+		return nil, errors.Errorf("dial address %s: %w", address, err)
 	}
 	log.WithContext(ctx).Debugf("Connected to %s", address)
 
