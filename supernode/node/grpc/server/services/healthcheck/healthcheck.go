@@ -15,7 +15,7 @@ import (
 
 const (
 	defaultInputMaxLength  = 64
-	defaultExpiresDuration = 15 * time.Minute
+	defaultExpiresDuration = 10 * time.Minute
 )
 
 // StatsMngr is interface of StatsManger, return stats of system

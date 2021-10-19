@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"fmt"
 	"io"
 
 	"github.com/mitchellh/mapstructure"
@@ -11,6 +12,12 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/metadb"
 	"golang.org/x/crypto/sha3"
+)
+
+const (
+	// B - the size in bits of the keys used to identify nodes and store and
+	// retrieve data; in basic Kademlia this is 256, the length of a SHA3-256
+	B = 256
 )
 
 //  generate hash value for the data
@@ -108,5 +115,19 @@ func (store *RqliteKVStore) Store(ctx context.Context, data []byte) (string, err
 
 // Delete a key, value
 func (store *RqliteKVStore) Delete(ctx context.Context, key string) error {
+	// verify key
+	decoded, err := base58.Decode(key)
+	if err != nil || len(decoded) != B/8 {
+		return fmt.Errorf("invalid key: %v", key)
+	}
+
+	queryString := `DELETE FROM test_keystore WHERE key = "` + key + `"`
+
+	// do query
+	_, err = store.metaDb.Query(ctx, queryString, "nono")
+	if err != nil {
+		return errors.Errorf("querying db: %w", err)
+	}
+
 	return nil
 }
