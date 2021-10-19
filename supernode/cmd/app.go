@@ -228,7 +228,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	statsMngr.Add("ddscan", ddScan)
 
 	// create p2pTracker
-	p2pTracker := healthcheck_lib.NewP2PTracker(p2p, 10*time.Minute)
+	cleanTracker := healthcheck.NewCleanTracker(10 * time.Minute)
 
 	// server
 	grpc := server.New(config.Server,
@@ -240,10 +240,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewDownloadArtwork(artworkDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
-		healthcheck.NewHealthCheck(statsMngr, p2p, metadb, p2pTracker),
+		healthcheck.NewHealthCheck(statsMngr, p2p, metadb, cleanTracker),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, ddScan, database, userdataProcess, statsMngr, p2pTracker)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, ddScan, database, userdataProcess, statsMngr, cleanTracker)
 }
