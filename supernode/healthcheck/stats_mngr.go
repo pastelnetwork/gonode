@@ -61,7 +61,7 @@ func (mngr *StatsMngr) updateStats(ctx context.Context) (map[string]interface{},
 	for id, client := range mngr.clients {
 		subStats, err := client.Stats(ctx)
 		if err != nil {
-			return nil, errors.Errorf("failed to get stats of %s: %w", id, err)
+			return nil, errors.Errorf("get stats of %s: %w", id, err)
 		}
 		stats[id] = subStats
 	}

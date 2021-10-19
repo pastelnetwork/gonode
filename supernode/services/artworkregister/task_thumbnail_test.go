@@ -128,7 +128,7 @@ func newTestImageFile(stg *artwork.Storage) (*artwork.File, error) {
 
 	f, err := imgFile.Create()
 	if err != nil {
-		return nil, errors.Errorf("failed to create storage file: %w", err)
+		return nil, errors.Errorf("create storage file: %w", err)
 	}
 	defer f.Close()
 

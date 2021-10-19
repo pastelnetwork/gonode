@@ -41,7 +41,7 @@ func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) err
 
 	stream, err := service.client.Session(ctx)
 	if err != nil {
-		return errors.Errorf("failed to open Health stream: %w", err)
+		return errors.Errorf("open Session stream: %w", err)
 	}
 
 	req := &pb.SessionRequest{
@@ -50,7 +50,7 @@ func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) err
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
 	if err := stream.Send(req); err != nil {
-		return errors.Errorf("failed to send Session request: %w", err)
+		return errors.Errorf("send Session request: %w", err)
 	}
 
 	resp, err := stream.Recv()
@@ -62,7 +62,7 @@ func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) err
 		case codes.Canceled, codes.Unavailable:
 			return nil
 		}
-		return errors.Errorf("failed to receive Session response: %w", err)
+		return errors.Errorf("receive Session response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 	service.sessID = resp.SessID
@@ -89,7 +89,7 @@ func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
 	if err != nil {
-		return nil, errors.Errorf("failed to request to accepted secondary nodes: %w", err)
+		return nil, errors.Errorf("request to accepted secondary nodes: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
 
@@ -113,7 +113,7 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 
 	resp, err := service.client.ConnectTo(ctx, req)
 	if err != nil {
-		return errors.Errorf("failed to request to connect to primary node: %w", err)
+		return err
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
 
@@ -127,13 +127,13 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, errors.Errorf("failed to open stream: %w", err)
+		return nil, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, errors.Errorf("failed to open file %q: %w", file.Name(), err)
+		return nil, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -148,13 +148,13 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return nil, errors.Errorf("failed to send image data: %w", err).WithField("reqID", service.conn.id)
+			return nil, errors.Errorf("send image data: %w", err)
 		}
 	}
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, errors.Errorf("failed to receive send image response: %w", err)
+		return nil, errors.Errorf("receive image response: %w", err)
 	}
 	return &pastel.FingerAndScores{
 		DupeDectectionSystemVersion: resp.DupeDetectionVersion,
@@ -191,13 +191,13 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	log.WithContext(ctx).Debug("Start upload image and thumbnail to node")
 	stream, err := service.client.UploadImage(ctx)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed to open stream: %w", err)
+		return nil, nil, nil, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed to open file %q: %w", file.Name(), err)
+		return nil, nil, nil, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -212,7 +212,7 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 			lastPiece = true
 			break
 		} else if err != nil {
-			return nil, nil, nil, errors.Errorf("read file faile %w", err)
+			return nil, nil, nil, errors.Errorf("read file: %w", err)
 		}
 
 		req := &pb.UploadImageRequest{
@@ -222,19 +222,19 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 		}
 
 		if err := stream.Send(req); err != nil {
-			return nil, nil, nil, errors.Errorf("failed to send image data: %w", err).WithField("ReqID", service.conn.id)
+			return nil, nil, nil, errors.Errorf("send image data: %w", err)
 		}
 	}
 
 	log.WithContext(ctx).Debugf("Encoded Image Size :%d\n", payloadSize)
 	if !lastPiece {
-		return nil, nil, nil, errors.Errorf("failed to read all image data")
+		return nil, nil, nil, errors.Errorf("read all image data failed")
 	}
 
 	file.Seek(0, io.SeekStart)
 	hasher := sha3.New256()
 	if _, err := io.Copy(hasher, file); err != nil {
-		return nil, nil, nil, errors.Errorf("failed to compute artwork hash %w", err)
+		return nil, nil, nil, errors.Errorf("compute artwork hash:%w", err)
 	}
 	hash := hasher.Sum(nil)
 	log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("hash: %s", base64.URLEncoding.EncodeToString(hash))
@@ -256,12 +256,12 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 	}
 
 	if err := stream.Send(thumnailReq); err != nil {
-		return nil, nil, nil, errors.Errorf("failed to send image thumbnail: %w", err).WithField("ReqID", service.conn.id)
+		return nil, nil, nil, errors.Errorf("send image thumbnail: %w", err)
 	}
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("failed to receive upload image response: %w", err)
+		return nil, nil, nil, errors.Errorf("receive upload image response: %w", err)
 	}
 	log.WithContext(ctx).Debugf("preview medium hash: %x", resp.PreviewThumbnailHash)
 	log.WithContext(ctx).Debugf("medium thumbnail hash: %x", resp.MediumThumbnailHash)
@@ -297,7 +297,7 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 
 	rsp, err := service.client.SendSignedNFTTicket(ctx, &req)
 	if err != nil {
-		return -1, errors.Errorf("failed to send signed ticket and its signature to node %w", err)
+		return -1, err
 	}
 
 	return rsp.RegistrationFee, nil
@@ -314,7 +314,7 @@ func (service *registerArtwork) SendPreBurnedFeeTxID(ctx context.Context, txid s
 
 	rsp, err := service.client.SendPreBurnedFeeTxID(ctx, &req)
 	if err != nil {
-		return "", errors.Errorf("failed to send burned txid to super node %w", err)
+		return "", errors.Errorf("send burned txid to super node: %w", err)
 	}
 
 	// TODO: response from sending preburned TxId should be the TxId of RegActTicket

@@ -37,7 +37,7 @@ func (server *Server) Run(ctx context.Context) error {
 	addresses := strings.Split(server.config.ListenAddresses, ",")
 	grpcServer := server.grpcServer(ctx)
 	if grpcServer == nil {
-		return fmt.Errorf("failed to initialize grpc server")
+		return fmt.Errorf("initialize grpc server failed")
 	}
 
 	for _, address := range addresses {
@@ -54,7 +54,7 @@ func (server *Server) Run(ctx context.Context) error {
 func (server *Server) listen(ctx context.Context, address string, grpcServer *grpc.Server) (err error) {
 	listen, err := net.Listen("tcp", address)
 	if err != nil {
-		return errors.Errorf("failed to listen: %w", err).WithField("address", address)
+		return errors.Errorf("listen: %w", err).WithField("address", address)
 	}
 
 	errCh := make(chan error, 1)
@@ -62,7 +62,7 @@ func (server *Server) listen(ctx context.Context, address string, grpcServer *gr
 		defer errors.Recover(func(recErr error) { err = recErr })
 		log.WithContext(ctx).Infof("gRPC server listening on %q", address)
 		if err := grpcServer.Serve(listen); err != nil {
-			errCh <- errors.Errorf("failed to serve: %w", err).WithField("address", address)
+			errCh <- errors.Errorf("serve: %w", err).WithField("address", address)
 		}
 	}()
 

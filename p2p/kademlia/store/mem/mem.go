@@ -4,9 +4,6 @@ import (
 	"context"
 	"sync"
 	"time"
-
-	"github.com/btcsuite/btcutil/base58"
-	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Store is a simple in-memory key/value store used for unit testing
@@ -34,19 +31,18 @@ func (s *Store) KeysForReplication(_ context.Context) [][]byte {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Store) Store(ctx context.Context, key []byte, value []byte, replication time.Time) error {
+func (s *Store) Store(_ context.Context, key []byte, value []byte, replication time.Time) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.replications[string(key)] = replication
 	s.data[string(key)] = value
 
-	log.WithContext(ctx).Debugf("store key: %s", base58.Encode(key))
 	return nil
 }
 
 // Retrieve will return the local key/value if it exists
-func (s *Store) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
+func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -55,7 +51,6 @@ func (s *Store) Retrieve(ctx context.Context, key []byte) ([]byte, error) {
 		return nil, nil
 	}
 
-	log.WithContext(ctx).Debugf("retrieve key: %s", base58.Encode(key))
 	return value, nil
 }
 

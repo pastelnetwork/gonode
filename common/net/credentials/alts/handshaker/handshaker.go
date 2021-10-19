@@ -214,7 +214,7 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 	}
 
 	if err := writer.Flush(); err != nil {
-		return fmt.Errorf("failed to flush, err: %s", err)
+		return fmt.Errorf("flush: %s", err)
 	}
 	return nil
 }
@@ -256,7 +256,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	// generate the private and public key for client
 	priv, pub, ok := curve.GenerateKeys()
 	if !ok {
-		return errors.New("failed to generate keys")
+		return errors.New("generate keys failed")
 	}
 
 	dataSign := make([]byte, challengeSize+ED448PubKeySize)
@@ -264,8 +264,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	dataSign = append(dataSign, challengeB...)
 	signature, err := secClient.Sign(ctx, dataSign, secInfo.PastelID, secInfo.PassPhrase, secInfo.Algorithm)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to generate signature")
-		return fmt.Errorf("failed to generate signature: %w", err)
+		return fmt.Errorf("generate signature: %w", err)
 	}
 
 	request := kexExchangeRequest{
@@ -289,7 +288,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	dataVerify = append(dataVerify, challengeA...)
 	if ok, err := secClient.Verify(ctx, dataVerify, string(response.Signature), response.PastelID, secInfo.Algorithm); err != nil || !ok {
 		log.WithContext(ctx).WithError(err).Error("failed to verify server public key")
-		return fmt.Errorf("failed to verify server public key: %w", err)
+		return fmt.Errorf("verify server public key: %w", err)
 	}
 
 	// compute the secret key for connection
@@ -298,7 +297,7 @@ func (s *altsHandshaker) doClientHandshake(ctx context.Context, secClient alts.S
 	// derive key
 	derivedKey, err := keyDerive([]byte(secret[:]))
 	if err != nil {
-		return fmt.Errorf("failed to derive key: %w", err)
+		return fmt.Errorf("derive key: %w", err)
 	}
 	subkeyLen, ok := recordKeyLen[s.protocol]
 	if !ok {
@@ -361,14 +360,14 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	dataVerify = append(dataVerify, challengeB...)
 	if ok, err := secClient.Verify(ctx, dataVerify, string(request.Signature), request.PastelID, secInfo.Algorithm); err != nil || !ok {
 		log.WithContext(ctx).WithError(err).Error("failed to verify client public key")
-		return fmt.Errorf("failed to verify client public key: %w", err)
+		return fmt.Errorf("verify client public key: %w", err)
 	}
 
 	curve := ed448.NewCurve()
 	// generate the private key and public key for server
 	priv, pub, ok := curve.GenerateKeys()
 	if !ok {
-		return errors.New("failed to generate keys")
+		return errors.New("generate keys failed")
 	}
 
 	dataSign := make([]byte, challengeSize+ED448PubKeySize)
@@ -377,7 +376,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	signature, err := secClient.Sign(ctx, dataSign, secInfo.PastelID, secInfo.PassPhrase, secInfo.Algorithm)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("failed to generate signature")
-		return fmt.Errorf("failed to generate signature: %w", err)
+		return fmt.Errorf("generate signature: %w", err)
 	}
 
 	// compute the secret key for connection
@@ -386,7 +385,7 @@ func (s *altsHandshaker) doServerHandshake(ctx context.Context, secClient alts.S
 	// derive key
 	derivedKey, err := keyDerive([]byte(secret[:]))
 	if err != nil {
-		return fmt.Errorf("failed to derive key: %w", err)
+		return fmt.Errorf("derive key: %w", err)
 	}
 	subkeyLen, ok := recordKeyLen[s.protocol]
 	if !ok {

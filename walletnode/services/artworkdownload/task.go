@@ -57,7 +57,7 @@ func (task *Task) run(ctx context.Context) error {
 	ttxid, err := task.pastelClient.TicketOwnership(ctx, task.Ticket.Txid, task.Ticket.PastelID, task.Ticket.PastelIDPassphrase)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).WithField("pastelid", task.Ticket.PastelID).Error("Could not get ticket ownership")
-		return errors.Errorf("failed to get ticket ownership: %w", err)
+		return errors.Errorf("get ticket ownership: %w", err)
 	}
 
 	// Sign current-timestamp with PsstelID passed in request
@@ -65,13 +65,13 @@ func (task *Task) run(ctx context.Context) error {
 	signature, err := task.pastelClient.Sign(ctx, []byte(timestamp), task.Ticket.PastelID, task.Ticket.PastelIDPassphrase, "ed448")
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("timestamp", timestamp).WithField("pastelid", task.Ticket.PastelID).Error("Could not sign timestamp")
-		return errors.Errorf("failed to sign timestamp: %w", err)
+		return errors.Errorf("sign timestamp: %w", err)
 	}
 
 	// Retrieve supernodes with highest ranks.
 	topNodes, err := task.pastelTopNodes(ctx)
 	if err != nil {
-		return errors.Errorf("failed to get top rank nodes: %w", err)
+		return errors.Errorf("get top rank nodes: %w", err)
 	}
 	if len(topNodes) < task.config.NumberSuperNodes {
 		task.UpdateStatus(StatusErrorNotEnoughSuperNode)
@@ -109,7 +109,7 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).Error("Could not download files")
 		task.UpdateStatus(StatusErrorDownloadFailed)
-		return errors.Errorf("failed to download files from supernodes: %w", err)
+		return errors.Errorf("download files from supernodes: %w", err)
 	}
 
 	nodes = connectedNodes.Active()

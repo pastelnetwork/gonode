@@ -67,7 +67,7 @@ func (sig Signature) Encode(img image.Image) (image.Image, error) {
 
 	sigData := new(bytes.Buffer)
 	if err := png.Encode(sigData, sigImg); err != nil {
-		return nil, errors.Errorf("failed to encode signature to data: %w", err)
+		return nil, errors.Errorf("encode signature: %w", err)
 	}
 
 	if sigW := sigImg.Bounds().Dx(); sigW > img.Bounds().Dx() {
@@ -88,7 +88,7 @@ func (sig Signature) Decode(img image.Image) error {
 
 	img, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
-		return errors.Errorf("failed to decode image from data: %w", err)
+		return errors.Errorf("decode image: %w", err)
 	}
 
 	if err := sig.metadata.qrCode.Load(img); err != nil {

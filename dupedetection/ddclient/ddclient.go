@@ -79,7 +79,7 @@ func createInputDDFile(base string, data []byte, format string) (string, error) 
 	err := writeFile(filePath, data)
 
 	if err != nil {
-		return "", errors.Errorf("failed to write data to %s: %w", filePath, err)
+		return "", errors.Errorf("write data to %s: %w", filePath, err)
 	}
 
 	return filePath, nil
@@ -93,7 +93,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 
 	inputPath, err := createInputDDFile(ddClient.config.DDFilesDir, img, format)
 	if err != nil {
-		return nil, errors.Errorf("failed to create input file: %w", err)
+		return nil, errors.Errorf("create input file: %w", err)
 	}
 
 	req := pb.RarenessScoreRequest{
@@ -105,7 +105,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 
 	res, err := client.ImageRarenessScore(ctx, &req)
 	if err != nil {
-		return nil, errors.Errorf("failed to send request: %w", err)
+		return nil, errors.Errorf("send request: %w", err)
 	}
 
 	/*
@@ -160,7 +160,7 @@ func (ddClient *ddServerClientImpl) ImageRarenessScore(ctx context.Context, img 
 	ddServerAddress := fmt.Sprint(ddClient.config.Host, ":", ddClient.config.Port)
 	conn, err := baseClient.Connect(ctx, ddServerAddress)
 	if err != nil {
-		return nil, errors.Errorf("failed to connect to dd-server  %w", err)
+		return nil, errors.Errorf("connect to dd-server  %w", err)
 	}
 
 	defer conn.Close()

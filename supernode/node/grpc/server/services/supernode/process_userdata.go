@@ -56,7 +56,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 
 	req, err := stream.Recv()
 	if err != nil {
-		return errors.Errorf("failed to receieve handshake request: %w", err)
+		return errors.Errorf("receive handshake request: %w", err)
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
@@ -68,7 +68,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
-		return errors.Errorf("failed to send handshake response: %w", err)
+		return errors.Errorf("send handshake response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 

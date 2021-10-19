@@ -44,7 +44,7 @@ func (hook *FileHook) SetMaxSize(maxSize int) {
 func (hook *FileHook) Fire(entry *logrus.Entry) error {
 	msg, err := hook.formatter.Format(entry)
 	if err != nil {
-		return fmt.Errorf("failed to generate string for entry, %s", err)
+		return fmt.Errorf("generate string for entry: %s", err)
 	}
 
 	_, err = hook.fileLogger.Write(msg)

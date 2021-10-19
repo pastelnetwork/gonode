@@ -61,7 +61,7 @@ func (task *Task) DownloadThumbnail(ctx context.Context, key []byte) ([]byte, er
 		base58Key := base58.Encode(key)
 		file, err = task.p2pClient.Retrieve(ctx, base58Key)
 		if err != nil {
-			err = errors.Errorf("failed to fetch p2p key : %s, error: %w", string(base58Key), err)
+			err = errors.Errorf("fetch p2p key : %s, error: %w", string(base58Key), err)
 			task.UpdateStatus(StatusKeyNotFound)
 		}
 		return nil
@@ -163,7 +163,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 		// Validate hash of the restored image matches the image hash in the Art Reistration ticket (data_hash)
 		file, err = task.restoreFile(ctx, &nftRegTicket)
 		if err != nil {
-			err = errors.Errorf("failed to restore file: %w", err)
+			err = errors.Errorf("restore file: %w", err)
 		}
 
 		if len(file) == 0 {
@@ -261,7 +261,7 @@ func (task *Task) restoreFile(ctx context.Context, nftRegTicket *pastel.RegTicke
 
 		decodeInfo, err = rqService.Decode(ctx, &encodeInfo)
 		if err != nil {
-			err = errors.Errorf("failed to restore file with rqserivce: %w", err)
+			err = errors.Errorf("restore file with rqserivce: %w", err)
 			task.UpdateStatus(StatusFileDecodingFailed)
 			continue
 		}

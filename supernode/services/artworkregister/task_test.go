@@ -371,7 +371,7 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 				fileErr:     nil,
 				assignRQIDS: true,
 			},
-			wantErr: errors.New("failed to decompress"),
+			wantErr: errors.New("decompress"),
 		},
 		"conn-err": {
 			args: args{
@@ -726,7 +726,7 @@ func TestTaskStoreFingerprints(t *testing.T) {
 				},
 				storeErr: errors.New("test"),
 			},
-			wantErr: errors.New("failed to store fingerprints"),
+			wantErr: errors.New("store fingerprints"),
 		},
 	}
 
@@ -1188,7 +1188,7 @@ func TestTaskSessionNode(t *testing.T) {
 				masterNodesErr: errors.New("test"),
 				nodeID:         "A",
 			},
-			wantErr: errors.New("failed to get node"),
+			wantErr: errors.New("get node"),
 		},
 	}
 

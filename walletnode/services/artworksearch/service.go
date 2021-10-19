@@ -72,12 +72,12 @@ func NewService(config *Config, pastelClient pastel.Client, nodeClient node.Clie
 func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.RegTicket, error) {
 	regTicket, err := service.pastelClient.RegTicket(ctx, RegTXID)
 	if err != nil {
-		return nil, fmt.Errorf("fetch: %s", err)
+		return nil, errors.Errorf("fetch: %w", err)
 	}
 
 	articketData, err := pastel.DecodeNFTTicket(regTicket.RegTicketData.NFTTicket)
 	if err != nil {
-		return nil, errors.Errorf("failed to convert NFT ticket: %w", err)
+		return nil, errors.Errorf("convert NFT ticket: %w", err)
 	}
 	regTicket.RegTicketData.NFTTicketData = *articketData
 
@@ -89,7 +89,7 @@ func (service *Service) GetThumbnail(ctx context.Context, regTicket *pastel.RegT
 	thumbnailHelper := thumbnail.New(service.pastelClient, service.nodeClient, service.config.ConnectToNodeTimeout)
 
 	if err := thumbnailHelper.Connect(ctx, 1, secInfo); err != nil {
-		return data, fmt.Errorf("connect Thumbnail helper : %s", err)
+		return data, fmt.Errorf("connect Thumbnail helper: %w", err)
 	}
 	defer thumbnailHelper.Close()
 

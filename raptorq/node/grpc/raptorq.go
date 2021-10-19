@@ -45,7 +45,7 @@ func readFileLines(path string) ([]string, error) {
 	b, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		return nil, errors.Errorf("failed to read file: %w", err)
+		return nil, errors.Errorf("read file: %w", err)
 	}
 	return strings.Split(string(b), "\n"), nil
 }
@@ -68,14 +68,14 @@ func createInputEncodeFile(base string, data []byte) (taskPath string, inputFile
 	taskPath, err = createTaskFolder(base)
 
 	if err != nil {
-		return "", "", errors.Errorf("failed to create task folder: %w", err)
+		return "", "", errors.Errorf("create task folder: %w", err)
 	}
 
 	inputFile = filepath.Join(taskPath, inputEncodeFileName)
 	err = writeFile(inputFile, data)
 
 	if err != nil {
-		return "", "", errors.Errorf("failed to create task folder: %w", err)
+		return "", "", errors.Errorf("write file: %w", err)
 	}
 
 	return taskPath, inputFile, nil
@@ -85,7 +85,7 @@ func createInputDecodeSymbols(base string, symbols map[string][]byte) (path stri
 	path, err = createTaskFolder(base, symbolFileSubdir)
 
 	if err != nil {
-		return "", errors.Errorf("failed to create task folder: %w", err)
+		return "", errors.Errorf("create task folder: %w", err)
 	}
 
 	for id, data := range symbols {
@@ -93,7 +93,7 @@ func createInputDecodeSymbols(base string, symbols map[string][]byte) (path stri
 		err = writeFile(symbolFile, data)
 
 		if err != nil {
-			return "", errors.Errorf("failed to create symbol file: %w", err)
+			return "", errors.Errorf("write symbol file: %w", err)
 		}
 	}
 
@@ -106,7 +106,7 @@ func scanSymbolIDFiles(dirPath string) (map[string][]string, error) {
 
 	err := filepath.Walk(dirPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
-			return errors.Errorf("failed to scan a path %s: %w", path, err)
+			return errors.Errorf("scan a path %s: %w", path, err)
 		}
 
 		if info.IsDir() {
@@ -118,7 +118,7 @@ func scanSymbolIDFiles(dirPath string) (map[string][]string, error) {
 
 		lines, err := readFileLines(path)
 		if err != nil {
-			return errors.Errorf("failed to read file %s: %w", path, err)
+			return errors.Errorf("read file %s: %w", path, err)
 		}
 
 		filesMap[fileID] = lines
@@ -139,7 +139,7 @@ func scanSymbolFiles(dirPath string) (map[string][]byte, error) {
 
 	err := filepath.Walk(dirPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
-			return errors.Errorf("failed to scan a path %s: %w", path, err)
+			return errors.Errorf("scan a path %s: %w", path, err)
 		}
 
 		if info.IsDir() {
@@ -151,7 +151,7 @@ func scanSymbolFiles(dirPath string) (map[string][]byte, error) {
 
 		data, err := readFile(path)
 		if err != nil {
-			return errors.Errorf("failed to read file %s: %w", path, err)
+			return errors.Errorf("read file %s: %w", path, err)
 		}
 
 		filesMap[fileID] = data
@@ -176,7 +176,7 @@ func (service *raptorQ) Encode(ctx context.Context, data []byte) (*node.Encode, 
 
 	_, inputPath, err := createInputEncodeFile(service.config.RqFilesDir, data)
 	if err != nil {
-		return nil, errors.Errorf("failed to create input file: %w", err)
+		return nil, errors.Errorf("create input file: %w", err)
 	}
 
 	req := pb.EncodeRequest{
@@ -185,12 +185,12 @@ func (service *raptorQ) Encode(ctx context.Context, data []byte) (*node.Encode, 
 
 	res, err := service.client.Encode(ctx, &req)
 	if err != nil {
-		return nil, errors.Errorf("failed to send request: %w", err)
+		return nil, errors.Errorf("send encode request: %w", err)
 	}
 
 	fileMap, err := scanSymbolFiles(res.Path)
 	if err != nil {
-		return nil, errors.Errorf("failed to scan symbol folder %s: %w", res.Path, err)
+		return nil, errors.Errorf("scan symbol folder %s: %w", res.Path, err)
 	}
 
 	if len(fileMap) != int(res.SymbolsCount) {
@@ -215,7 +215,7 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 
 	_, inputPath, err := createInputEncodeFile(service.config.RqFilesDir, data)
 	if err != nil {
-		return nil, errors.Errorf("failed to create input file: %w", err)
+		return nil, errors.Errorf("create input file: %w", err)
 	}
 
 	req := pb.EncodeMetaDataRequest{
@@ -227,14 +227,14 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 
 	res, err := service.client.EncodeMetaData(ctx, &req)
 	if err != nil {
-		return nil, errors.Errorf("failed to send request: %w", err)
+		return nil, errors.Errorf("send encode info request: %w", err)
 	}
 
 	// scan return symbol Id files
 	symbolCnt := res.SymbolsCount
 	filesMap, err := scanSymbolIDFiles(res.Path)
 	if err != nil {
-		return nil, errors.Errorf("failed to scan symbol id files folder %s: %w", res.Path, err)
+		return nil, errors.Errorf("scan symbol id files folder %s: %w", res.Path, err)
 	}
 
 	if len(filesMap) != int(copies) {
@@ -276,7 +276,7 @@ func (service *raptorQ) Decode(ctx context.Context, encodeInfo *node.Encode) (*n
 
 	symbolsDir, err := createInputDecodeSymbols(service.config.RqFilesDir, encodeInfo.Symbols)
 	if err != nil {
-		return nil, errors.Errorf("failed to create symbol files: %w", err)
+		return nil, errors.Errorf("create symbol files: %w", err)
 	}
 
 	req := pb.DecodeRequest{
@@ -286,12 +286,12 @@ func (service *raptorQ) Decode(ctx context.Context, encodeInfo *node.Encode) (*n
 
 	res, err := service.client.Decode(ctx, &req)
 	if err != nil {
-		return nil, errors.Errorf("failed to send request: %w", err)
+		return nil, errors.Errorf("send decode request: %w", err)
 	}
 
 	restoredFile, err := readFile(res.Path)
 	if err != nil {
-		return nil, errors.Errorf("failed to read file: %w, Path: %s", err, res.Path)
+		return nil, errors.Errorf("read file: %w, Path: %s", err, res.Path)
 	}
 
 	output := &node.Decode{
