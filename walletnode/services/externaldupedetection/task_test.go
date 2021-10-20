@@ -867,7 +867,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 					TXID: "test-txid",
 				},
 			},
-			wantErr: errors.New("failed to decode image"),
+			wantErr: errors.New("decode image"),
 		},
 	}
 	for name, tc := range testCases {
