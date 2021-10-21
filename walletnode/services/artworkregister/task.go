@@ -184,7 +184,7 @@ func (task *Task) run(ctx context.Context) error {
 	// Wait until actTxid is valid
 	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), task.config.RegActTxTimeout, 15*time.Second)
 	if err != nil {
-		return errors.Errorf("reg-act ticket valid: %w", err)
+		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
 	log.Debugf("reg-act-tixd is confirmed")
 
