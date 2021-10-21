@@ -1,7 +1,10 @@
 package pastel
 
 import (
+	"bytes"
+	a85 "encoding/ascii85"
 	"encoding/json"
+	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )
@@ -164,10 +167,13 @@ type internalNFTTicket struct {
 
 // EncodeNFTTicket encodes  NFTTicket into byte array
 func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
-	appTicket, err := json.Marshal(ticket.AppTicketData)
+	appTicketBytes, err := json.Marshal(ticket.AppTicketData)
 	if err != nil {
-		return nil, errors.Errorf("marshal app ticket data: %w", err)
+		return nil, fmt.Errorf("encode appTicket failure: %v", err)
 	}
+
+	appTicket := make([]byte, a85.MaxEncodedLen(len(appTicketBytes)))
+	_ = a85.Encode(appTicket, appTicketBytes)
 
 	// NFTTicket is Pastel Art Ticket
 	nftTicket := internalNFTTicket{
@@ -181,26 +187,39 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 		AppTicket: appTicket,
 	}
 
-	b, err := json.Marshal(nftTicket)
+	nftTicketBytes, err := json.Marshal(nftTicket)
 	if err != nil {
-		return nil, errors.Errorf("marshal nft ticket: %w", err)
+		return nil, fmt.Errorf("encode nftTicket failure: %v", err)
 	}
+
+	b := make([]byte, a85.MaxEncodedLen(len(nftTicketBytes)))
+	_ = a85.Encode(b, nftTicketBytes)
 
 	return b, nil
 }
 
 // DecodeNFTTicket decoded byte array into ArtTicket
 func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
-	res := internalNFTTicket{}
-	err := json.Unmarshal(b, &res)
+	nftDecodedBytes := make([]byte, len(b))
+	nNftDecodedBytes, _, _ := a85.Decode(nftDecodedBytes, b, true)
+	nftDecodedBytes = nftDecodedBytes[:nNftDecodedBytes]
+	//ascii85 adds /x00 null bytes at the end
+	nftDecodedBytes = bytes.Trim(nftDecodedBytes, "\x00")
 
+	res := internalNFTTicket{}
+	err := json.Unmarshal(nftDecodedBytes, &res)
 	if err != nil {
 		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
 
-	appTicket := AppTicket{}
+	appDecodedBytes := make([]byte, len(res.AppTicket))
+	nAppDecodedBytes, _, _ := a85.Decode(appDecodedBytes, res.AppTicket, true)
+	appDecodedBytes = appDecodedBytes[:nAppDecodedBytes]
+	//ascii85 adds /x00 null bytes at the end
+	appDecodedBytes = bytes.Trim(appDecodedBytes, "\x00")
 
-	err = json.Unmarshal(res.AppTicket, &appTicket)
+	appTicket := AppTicket{}
+	err = json.Unmarshal(appDecodedBytes, &appTicket)
 	if err != nil {
 		return nil, errors.Errorf("unmarshal app ticket data: %w", err)
 	}
