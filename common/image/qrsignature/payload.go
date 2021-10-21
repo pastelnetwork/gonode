@@ -1,11 +1,11 @@
 package qrsignature
 
 import (
-	"encoding/base64"
 	"fmt"
 	"math"
 
 	"github.com/DataDog/zstd"
+	"github.com/darkwyrm/b85"
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
@@ -54,7 +54,7 @@ func (payload *Payload) Decode() error {
 		data += text
 	}
 
-	raw, err := base64.StdEncoding.DecodeString(data)
+	raw, err := b85.Decode(data)
 	if err != nil {
 		return errors.Errorf("decode: %w", err)
 	}
@@ -74,7 +74,7 @@ func (payload *Payload) Encode() error {
 		return errors.Errorf("compress: %w", err)
 	}
 
-	data := base64.StdEncoding.EncodeToString(raw)
+	data := b85.Encode(raw)
 	size := int(payloadQRCapacity)
 	total := int(math.Ceil(float64(len(data)) / float64(size)))
 

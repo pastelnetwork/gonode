@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/darkwyrm/b85"
 	"github.com/otrv4/ed448"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -46,13 +47,13 @@ func (c *FakePastelClient) Sign(_ context.Context, data []byte, _, _ string, _ s
 	if !ok {
 		return nil, errors.New("sign failed")
 	}
-	signatureStr := base64.StdEncoding.EncodeToString(signature[:])
+	signatureStr := b85.Encode(signature[:])
 	return []byte(signatureStr), nil
 }
 
 // Verify
 func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, _ string, _ string) (ok bool, err error) {
-	signatureData, err := base64.StdEncoding.DecodeString(signature)
+	signatureData, err := b85.Decode(signature)
 	if err != nil {
 		return false, errors.Errorf("decode failed %w", err)
 	}

@@ -48,8 +48,8 @@ func TestRunTask(t *testing.T) {
 		},
 	}
 
-	assignBase64strs(t, &regTicketA)
-	assignBase64strs(t, &regTicketB)
+	assignBase85strs(t, &regTicketA)
+	assignBase85strs(t, &regTicketB)
 
 	type args struct {
 		actTickets    pastel.ActTickets

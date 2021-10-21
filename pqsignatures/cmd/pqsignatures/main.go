@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"encoding/hex"
 	"flag"
 	"fmt"
@@ -13,6 +12,7 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
+	"github.com/darkwyrm/b85"
 	"github.com/fogleman/gg"
 	"github.com/nfnt/resize"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -33,9 +33,9 @@ const (
 )
 
 var invalidSignature = errors.Errorf("signature is not valid")
-var decodedPublicKeyNotMatch = errors.Errorf("decoded base64 public key doesn't match")
-var decodedSignatureNotMatch = errors.Errorf("decoded base64 pastel id signature doesn't match")
-var decodedFingerprintNotMatch = errors.Errorf("decoded base64 image fingerprint doesn't match")
+var decodedPublicKeyNotMatch = errors.Errorf("decoded base85 public key doesn't match")
+var decodedSignatureNotMatch = errors.Errorf("decoded base85 pastel id signature doesn't match")
+var decodedFingerprintNotMatch = errors.Errorf("decoded base85 image fingerprint doesn't match")
 
 func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 	f, err := os.Open(sampleImageFilePath)
@@ -73,30 +73,30 @@ func loadImageFingerprint(fingerprintFilePath string) (string, error) {
 	if err != nil {
 		return "", errors.New(err)
 	}
-	return base64.StdEncoding.EncodeToString(output), nil
+	return b85.Encode(output), nil
 }
 
-func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, pastelIDSignatureBase64 string, inputImagePath string) error {
+func demonstrateSignatureQRCodeSteganography(pkBase85 string, skBase85 string, pastelIDSignatureBase85 string, inputImagePath string) error {
 	defer pqtime.Measure(time.Now())
 	timestamp := time.Now().Format("Jan_02_2006_15_04_05")
 
-	keypairImgs, err := generateKeypairQRs(pkBase64, skBase64)
+	keypairImgs, err := generateKeypairQRs(pkBase85, skBase85)
 	if err != nil {
 		return err
 	}
 
-	signatureImgs, err := qr.Encode(pastelIDSignatureBase64, "sig", pastelIDSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
+	signatureImgs, err := qr.Encode(pastelIDSignatureBase85, "sig", pastelIDSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
 	if err != nil {
 		return err
 	}
 
 	imgsToMap := append(keypairImgs, signatureImgs...)
 
-	imgFingerprintBase64, err := loadImageFingerprint("fingerprint")
+	imgFingerprintBase85, err := loadImageFingerprint("fingerprint")
 	if err != nil {
 		return err
 	}
-	fingerprintImgs, err := qr.Encode(imgFingerprintBase64, "fin", pastelIDSignatureFilesFolder, "Fingerprint", "fingerprint_qr_code", timestamp)
+	fingerprintImgs, err := qr.Encode(imgFingerprintBase85, "fin", pastelIDSignatureFilesFolder, "Fingerprint", "fingerprint_qr_code", timestamp)
 	if err != nil {
 		return err
 	}
@@ -147,30 +147,30 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 		return err
 	}
 
-	var decodedPKBase64 string
-	var decodedSignatureBase64 string
-	var decodedFingerprintBase64 string
+	var decodedPKBase85 string
+	var decodedSignatureBase85 string
+	var decodedFingerprintBase85 string
 	for _, message := range decodedMessages {
 		fmt.Printf("\nDecoded message with alias:%v and content:%v", message.Alias, message.Content)
 		if message.Alias == "pk" {
-			decodedPKBase64 = message.Content
+			decodedPKBase85 = message.Content
 		} else if message.Alias == "sig" {
-			decodedSignatureBase64 = message.Content
+			decodedSignatureBase85 = message.Content
 		} else if message.Alias == "fin" {
-			decodedFingerprintBase64 = message.Content
+			decodedFingerprintBase85 = message.Content
 		}
 	}
-	if pkBase64 != decodedPKBase64 {
+	if pkBase85 != decodedPKBase85 {
 		return errors.New(decodedPublicKeyNotMatch)
 	}
-	if pastelIDSignatureBase64 != decodedSignatureBase64 {
+	if pastelIDSignatureBase85 != decodedSignatureBase85 {
 		return errors.New(decodedSignatureNotMatch)
 	}
-	if imgFingerprintBase64 != decodedFingerprintBase64 {
+	if imgFingerprintBase85 != decodedFingerprintBase85 {
 		return errors.New(decodedFingerprintNotMatch)
 	}
 
-	fmt.Printf("\n\nBase64 public key and pastel id signature decoded from QR codes images are valid!\n")
+	fmt.Printf("\n\nBase85 public key and pastel id signature decoded from QR codes images are valid!\n")
 	return nil
 }
 
@@ -188,7 +188,7 @@ func sign(imagePath string) error {
 		if key, err = pq.SetupNaclKey(naclBoxKeyFilePath); err != nil {
 			return err
 		}
-		fmt.Printf("\nThis is the key for encrypting the pastel ID private key (using NACL box) in Base64: %v", key)
+		fmt.Printf("\nThis is the key for encrypting the pastel ID private key (using NACL box) in Base85: %v", key)
 		fmt.Printf("\nThe key has been saved as a file in the working directory. You should also write this key down as a backup.")
 	}
 
@@ -199,21 +199,21 @@ func sign(imagePath string) error {
 	}
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256HashOfImageToSign)
 
-	pkBase64, skBase64, err := pq.ImportPastelKeys(pastelKeysDirectoryPath, naclBoxKeyFilePath, otpSecretFile)
+	pkBase85, skBase85, err := pq.ImportPastelKeys(pastelKeysDirectoryPath, naclBoxKeyFilePath, otpSecretFile)
 	if err == pq.KeyNotFound {
-		pkBase64, skBase64, err = pq.GeneratePastelKeys(pastelKeysDirectoryPath, naclBoxKeyFilePath)
+		pkBase85, skBase85, err = pq.GeneratePastelKeys(pastelKeysDirectoryPath, naclBoxKeyFilePath)
 	}
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("\nGenerating LegRoast signature now...")
-	pastelIDSignatureBase64, err := pq.Sign(sha256HashOfImageToSign, skBase64, pkBase64)
+	pastelIDSignatureBase85, err := pq.Sign(sha256HashOfImageToSign, skBase85, pkBase85)
 	if err != nil {
 		return err
 	}
 	fmt.Printf("\nVerifying LegRoast signature now...")
-	verified, err := pq.Verify(sha256HashOfImageToSign, pastelIDSignatureBase64, pkBase64)
+	verified, err := pq.Verify(sha256HashOfImageToSign, pastelIDSignatureBase85, pkBase85)
 	if err != nil {
 		return err
 	}
@@ -224,7 +224,7 @@ func sign(imagePath string) error {
 		return errors.New(invalidSignature)
 	}
 
-	err = demonstrateSignatureQRCodeSteganography(pkBase64, skBase64, pastelIDSignatureBase64, imagePath)
+	err = demonstrateSignatureQRCodeSteganography(pkBase85, skBase85, pastelIDSignatureBase85, imagePath)
 	if err != nil {
 		return err
 	}

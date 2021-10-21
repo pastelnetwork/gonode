@@ -3,7 +3,6 @@ package pqsignatures
 
 import (
 	"bufio"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/darkwyrm/b85"
 	"github.com/kevinburke/nacl/secretbox"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/legroast"
@@ -86,21 +86,21 @@ func ImportPastelKeys(importDirectoryPath, naclBoxKeyFilePath, otpSecretFilePath
 		return "", "", errors.New(err)
 	}
 	sk := strings.ReplaceAll(string(skExportFormat), "-----BEGIN LEGROAST PRIVATE KEY-----\n", "")
-	skBase64 := strings.ReplaceAll(string(sk), "\n-----END LEGROAST PRIVATE KEY-----", "")
+	skBase85 := strings.ReplaceAll(string(sk), "\n-----END LEGROAST PRIVATE KEY-----", "")
 
 	pkExportFormat = strings.ReplaceAll(pkExportFormat, "-----BEGIN LEGROAST PUBLIC KEY-----\n", "")
-	pkBase64 := strings.ReplaceAll(pkExportFormat, "\n-----END LEGROAST PUBLIC KEY-----", "")
+	pkBase85 := strings.ReplaceAll(pkExportFormat, "\n-----END LEGROAST PUBLIC KEY-----", "")
 
-	return pkBase64, skBase64, nil
+	return pkBase85, skBase85, nil
 }
 
 // GeneratePastelKeys generates public and private keys, encodes private key with nacl secret box.
 func GeneratePastelKeys(targetDirectoryPath, naclBoxKeyFilePath string) (string, string, error) {
 	pk, sk := legroast.Keygen()
-	skBase64 := base64.StdEncoding.EncodeToString(sk)
-	pkBase64 := base64.StdEncoding.EncodeToString(pk)
-	pkExportFormat := "-----BEGIN LEGROAST PUBLIC KEY-----\n" + pkBase64 + "\n-----END LEGROAST PUBLIC KEY-----"
-	skExportFormat := "-----BEGIN LEGROAST PRIVATE KEY-----\n" + skBase64 + "\n-----END LEGROAST PRIVATE KEY-----"
+	skBase85 := b85.Encode(sk)
+	pkBase85 := b85.Encode(pk)
+	pkExportFormat := "-----BEGIN LEGROAST PUBLIC KEY-----\n" + pkBase85 + "\n-----END LEGROAST PUBLIC KEY-----"
+	skExportFormat := "-----BEGIN LEGROAST PRIVATE KEY-----\n" + skBase85 + "\n-----END LEGROAST PRIVATE KEY-----"
 	boxKey, err := naclBoxKeyFromFile(naclBoxKeyFilePath)
 	if err != nil {
 		return "", "", err
@@ -123,37 +123,37 @@ func GeneratePastelKeys(targetDirectoryPath, naclBoxKeyFilePath string) (string,
 		return "", "", errors.New(err)
 	}
 
-	return pkBase64, skBase64, nil
+	return pkBase85, skBase85, nil
 }
 
 // Sign signs data with provided pair of keys.
-func Sign(data string, skBase64 string, pkBase64 string) (string, error) {
+func Sign(data string, skBase85 string, pkBase85 string) (string, error) {
 	defer pqtime.Measure(time.Now())
 
-	sk, err := base64.StdEncoding.DecodeString(skBase64)
+	sk, err := b85.Decode(skBase85)
 	if err != nil {
 		return "", errors.New(err)
 	}
-	pk, err := base64.StdEncoding.DecodeString(pkBase64)
+	pk, err := b85.Decode(pkBase85)
 	if err != nil {
 		return "", errors.New(err)
 	}
 	pqtime.Sleep()
 	pastelIDSignature := legroast.Sign(pk, sk, ([]byte)(data[:]))
-	pastelIDSignatureBase64 := base64.StdEncoding.EncodeToString(pastelIDSignature)
+	pastelIDSignatureBase85 := b85.Encode(pastelIDSignature)
 	pqtime.Sleep()
-	return pastelIDSignatureBase64, nil
+	return pastelIDSignatureBase85, nil
 }
 
 // Verify validates previously signed data.
-func Verify(data string, signedData string, pkBase64 string) (int, error) {
+func Verify(data string, signedData string, pkBase85 string) (int, error) {
 	defer pqtime.Measure(time.Now())
 
-	pastelIDSignature, err := base64.StdEncoding.DecodeString(signedData)
+	pastelIDSignature, err := b85.Decode(signedData)
 	if err != nil {
 		return 0, errors.New(err)
 	}
-	pk, err := base64.StdEncoding.DecodeString(pkBase64)
+	pk, err := b85.Decode(pkBase85)
 	if err != nil {
 		return 0, errors.New(err)
 	}

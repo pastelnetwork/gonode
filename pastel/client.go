@@ -2,13 +2,13 @@ package pastel
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/darkwyrm/b85"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
@@ -133,7 +133,7 @@ func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphras
 	var sign struct {
 		Signature string `json:"signature"`
 	}
-	text := base64.StdEncoding.EncodeToString(data)
+	text := b85.Encode(data)
 
 	switch algorithm {
 	case SignAlgorithmED448, SignAlgorithmLegRoast:
@@ -151,7 +151,7 @@ func (client *client) Verify(ctx context.Context, data []byte, signature, pastel
 	var verify struct {
 		Verification string `json:"verification"`
 	}
-	text := base64.StdEncoding.EncodeToString(data)
+	text := b85.Encode(data)
 
 	switch algorithm {
 	case SignAlgorithmED448, SignAlgorithmLegRoast:
@@ -357,7 +357,7 @@ func (client *client) GetRegisterNFTFee(ctx context.Context, request GetRegister
 		return 0, errors.Errorf("failed to encode ticket: %w", err)
 	}
 
-	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+	ticketBlob := b85.Encode(ticket)
 
 	signatures, err := EncodeSignatures(*request.Signatures)
 	if err != nil {
@@ -391,7 +391,7 @@ func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFT
 	if err != nil {
 		return "", errors.Errorf("failed to encode ticket: %w", err)
 	}
-	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+	ticketBlob := b85.Encode(ticket)
 
 	signatures, err := EncodeSignatures(*request.Signatures)
 	if err != nil {
@@ -475,7 +475,7 @@ func NewClient(config *Config) Client {
 
 	opts := &jsonrpc.RPCClientOpts{
 		CustomHeaders: map[string]string{
-			"Authorization": "Basic " + base64.StdEncoding.EncodeToString([]byte(config.Username+":"+config.Password)),
+			"Authorization": "Basic " + b85.Encode([]byte(config.Username+":"+config.Password)),
 		},
 	}
 

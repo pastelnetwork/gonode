@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/darkwyrm/b85"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -74,7 +75,7 @@ func TestInFloatRange(t *testing.T) {
 	}
 }
 
-func TestFromBase64(t *testing.T) {
+func TestFromBase85(t *testing.T) {
 	t.Parallel()
 
 	type testStruct struct {
@@ -95,8 +96,8 @@ func TestFromBase64(t *testing.T) {
 		out        *testStruct
 		want       *testStruct
 	}{
-		"a": {encodedStr: b64.StdEncoding.EncodeToString([]byte(testBytesA)), out: &testStruct{}, want: &testVarA},
-		"b": {encodedStr: b64.StdEncoding.EncodeToString([]byte(testBytesB)), out: &testStruct{}, want: &testVarB},
+		"a": {encodedStr: b85.Encode([]byte(testBytesA)), out: &testStruct{}, want: &testVarA},
+		"b": {encodedStr: b85.Encode([]byte(testBytesB)), out: &testStruct{}, want: &testVarB},
 	}
 
 	for name, tc := range tests {
@@ -104,7 +105,7 @@ func TestFromBase64(t *testing.T) {
 
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
-			assert.Nil(t, fromBase64(tc.encodedStr, tc.out))
+			assert.Nil(t, fromBase85(tc.encodedStr, tc.out))
 			assert.Equal(t, tc.want.TestVarStr, tc.out.TestVarStr)
 			assert.Equal(t, tc.want.TestVarInt, tc.out.TestVarInt)
 		})

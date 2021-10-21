@@ -43,8 +43,8 @@ func TestRegTicket(t *testing.T) {
 		},
 	}
 
-	assignBase64strs(t, &regTicketA)
-	assignBase64strs(t, &regTicketB)
+	assignBase85strs(t, &regTicketA)
+	assignBase85strs(t, &regTicketB)
 
 	nodes := pastel.MasterNodes{}
 	for i := 0; i < 10; i++ {
@@ -171,7 +171,7 @@ func TestGetThumbnail(t *testing.T) {
 	}
 }
 
-func assignBase64strs(t *testing.T, ticket *pastel.RegTicket) {
+func assignBase85strs(t *testing.T, ticket *pastel.RegTicket) {
 	artTicketBytes, err := pastel.EncodeNFTTicket(&ticket.RegTicketData.NFTTicketData)
 	assert.Nil(t, err)
 	ticket.RegTicketData.NFTTicket = artTicketBytes

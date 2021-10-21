@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/darkwyrm/b85"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
