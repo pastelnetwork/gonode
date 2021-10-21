@@ -4,7 +4,6 @@ import (
 	"bytes"
 	a85 "encoding/ascii85"
 	"encoding/json"
-	"fmt"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )
@@ -169,7 +168,7 @@ type internalNFTTicket struct {
 func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 	appTicketBytes, err := json.Marshal(ticket.AppTicketData)
 	if err != nil {
-		return nil, fmt.Errorf("encode appTicket failure: %v", err)
+		return nil, errors.Errorf("marshal app ticket: %w", err)
 	}
 
 	appTicket := make([]byte, a85.MaxEncodedLen(len(appTicketBytes)))
@@ -189,7 +188,7 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 
 	nftTicketBytes, err := json.Marshal(nftTicket)
 	if err != nil {
-		return nil, fmt.Errorf("encode nftTicket failure: %v", err)
+		return nil, errors.Errorf("marshal nft ticket: %w", err)
 	}
 
 	b := make([]byte, a85.MaxEncodedLen(len(nftTicketBytes)))
@@ -200,28 +199,27 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 
 // DecodeNFTTicket decoded byte array into ArtTicket
 func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
-	nftDecodedBytes := make([]byte, len(b))
-	nNftDecodedBytes, _, _ := a85.Decode(nftDecodedBytes, b, true)
-	nftDecodedBytes = nftDecodedBytes[:nNftDecodedBytes]
-	//ascii85 adds /x00 null bytes at the end
-	nftDecodedBytes = bytes.Trim(nftDecodedBytes, "\x00")
+	b85Decode := func(in []byte) []byte {
+		decodedBytes := make([]byte, len(in))
+		nDecodedBytes, _, _ := a85.Decode(decodedBytes, in, true)
+		decodedBytes = decodedBytes[:nDecodedBytes]
 
+		//ascii85 adds /x00 null bytes at the end
+		return bytes.Trim(decodedBytes, "\x00")
+	}
+
+	nftDecodedBytes := b85Decode(b)
 	res := internalNFTTicket{}
 	err := json.Unmarshal(nftDecodedBytes, &res)
 	if err != nil {
 		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
 
-	appDecodedBytes := make([]byte, len(res.AppTicket))
-	nAppDecodedBytes, _, _ := a85.Decode(appDecodedBytes, res.AppTicket, true)
-	appDecodedBytes = appDecodedBytes[:nAppDecodedBytes]
-	//ascii85 adds /x00 null bytes at the end
-	appDecodedBytes = bytes.Trim(appDecodedBytes, "\x00")
-
+	appDecodedBytes := b85Decode(res.AppTicket)
 	appTicket := AppTicket{}
 	err = json.Unmarshal(appDecodedBytes, &appTicket)
 	if err != nil {
-		return nil, errors.Errorf("unmarshal app ticket data: %w", err)
+		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
 
 	return &NFTTicket{
