@@ -41,7 +41,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 	req := &pb.MDLSessionRequest{
 		NodeID: nodeID,
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
+	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := stream.Send(req); err != nil {
 		return errors.Errorf("send Session request: %w", err)
@@ -58,7 +58,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 		}
 		return errors.Errorf("receive Session response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
 
 	go func() {
 		defer service.conn.Close()

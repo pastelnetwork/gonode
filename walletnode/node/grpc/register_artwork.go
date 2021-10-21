@@ -47,7 +47,7 @@ func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) err
 	req := &pb.SessionRequest{
 		IsPrimary: isPrimary,
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
+	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := stream.Send(req); err != nil {
 		return errors.Errorf("send Session request: %w", err)
@@ -64,7 +64,7 @@ func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) err
 		}
 		return errors.Errorf("receive Session response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
 	service.sessID = resp.SessID
 
 	go func() {
@@ -85,13 +85,13 @@ func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.AcceptedNodesRequest{}
-	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
+	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
 	if err != nil {
 		return nil, errors.Errorf("request to accepted secondary nodes: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("AcceptedNodes response")
 
 	var ids []string
 	for _, peer := range resp.Peers {
@@ -109,13 +109,13 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 		NodeID: nodeID,
 		SessID: sessID,
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
+	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
 	resp, err := service.client.ConnectTo(ctx, req)
 	if err != nil {
 		return err
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("ConnectTo response")
 
 	return nil
 }
@@ -208,7 +208,7 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 		n, err := file.Read(buffer)
 		payloadSize += n
 		if err != nil && err == io.EOF {
-			log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("EOF")
+			log.WithContext(ctx).WithField("Filename", file.Name()).Debug("EOF")
 			lastPiece = true
 			break
 		} else if err != nil {

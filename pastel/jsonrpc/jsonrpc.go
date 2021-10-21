@@ -11,8 +11,6 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
-
-	"github.com/pastelnetwork/gonode/common/log"
 )
 
 const (
@@ -350,7 +348,8 @@ func (client *rpcClient) CallRaw(request *RPCRequest) (*RPCResponse, error) {
 
 func (client *rpcClient) CallForWithContext(ctx context.Context, out interface{}, method string, params ...interface{}) error {
 	rpcResponse, err := client.CallWithContext(ctx, method, params...)
-	log.WithContext(ctx).Debugf("%v", rpcResponse)
+
+	//log.WithContext(ctx).Debugf("%v", rpcResponse)
 	if err != nil {
 		return err
 	}
@@ -393,7 +392,8 @@ func (client *rpcClient) newRequest(ctx context.Context, req interface{}) (*http
 	if err != nil {
 		return nil, err
 	}
-	log.WithContext(ctx).Debugf("req: %s", string(body))
+
+	//log.WithContext(ctx).Debugf("req: %s", string(body))
 	request, err := http.NewRequestWithContext(ctx, "POST", client.endpoint, bytes.NewReader(body))
 	if err != nil {
 		return nil, err

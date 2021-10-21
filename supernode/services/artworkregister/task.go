@@ -66,7 +66,7 @@ func (task *Task) Run(ctx context.Context) error {
 	defer task.Cancel()
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
+		log.WithContext(ctx).WithField("status", status.String()).Debug("States updated")
 	})
 
 	defer task.removeArtifacts()
@@ -81,12 +81,12 @@ func (task *Task) Session(_ context.Context, isPrimary bool) error {
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if isPrimary {
-			log.WithContext(ctx).Debugf("Acts as primary node")
+			log.WithContext(ctx).Debug("Acts as primary node")
 			task.UpdateStatus(StatusPrimaryMode)
 			return nil
 		}
 
-		log.WithContext(ctx).Debugf("Acts as secondary node")
+		log.WithContext(ctx).Debug("Acts as secondary node")
 		task.UpdateStatus(StatusSecondaryMode)
 
 		return nil
@@ -101,7 +101,7 @@ func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
-		log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
+		log.WithContext(ctx).Debug("Waiting for supernodes to connect")
 
 		sub := task.SubscribeStatus()
 		for {
@@ -147,7 +147,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		}
 		task.accepted.Add(node)
 
-		log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
+		log.WithContext(ctx).WithField("nodeID", nodeID).Debug("Accept secondary node")
 
 		if len(task.accepted) >= task.config.NumberConnectedNodes {
 			task.UpdateStatus(StatusConnected)
@@ -309,13 +309,13 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 			return nil
 		}
 
-		log.WithContext(ctx).Debugf("waiting for confimation")
+		log.WithContext(ctx).Debug("waiting for confimation")
 		if err = <-confirmationChn; err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
 			err = errors.Errorf("validate preburn transaction validation :%w", err)
 			return nil
 		}
-		log.WithContext(ctx).Debugf("confirmation done")
+		log.WithContext(ctx).Debug("confirmation done")
 
 		return nil
 	})
@@ -338,7 +338,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 					}
 					return nil
 				case <-task.allSignaturesReceived:
-					log.WithContext(ctx).Debugf("all signature received so start validation")
+					log.WithContext(ctx).Debug("all signature received so start validation")
 
 					if err = task.verifyPeersSingature(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
@@ -409,7 +409,7 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 				retry++
 				txResult, _ := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
 				if txResult.Confirmations >= minConfirmation {
-					log.WithContext(ctx).Debugf("transaction confirmed")
+					log.WithContext(ctx).Debug("transaction confirmed")
 					ch <- nil
 					return
 				}
@@ -442,7 +442,7 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 }
 
 func (task *Task) verifyPeersSingature(ctx context.Context) error {
-	log.WithContext(ctx).Debugf("all signature received so start validation")
+	log.WithContext(ctx).Debug("all signature received so start validation")
 
 	data, err := pastel.EncodeNFTTicket(task.Ticket)
 	if err != nil {
@@ -459,7 +459,7 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 }
 
 func (task *Task) registerArt(ctx context.Context) (string, error) {
-	log.WithContext(ctx).Debugf("all signature received so start validation")
+	log.WithContext(ctx).Debug("all signature received so start validation")
 
 	req := pastel.RegisterNFTRequest{
 		Ticket: &pastel.NFTTicket{

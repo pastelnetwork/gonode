@@ -203,7 +203,7 @@ func (client *client) SendFromAddress(ctx context.Context, fromAddr string, toAd
 		}
 
 		if len(opstatus) == 0 {
-			return "", errors.Errorf("operationstatus is empty")
+			return "", errors.New("operationstatus is empty")
 		}
 
 		if opstatus[0].Error.Code != 0 {
@@ -211,13 +211,13 @@ func (client *client) SendFromAddress(ctx context.Context, fromAddr string, toAd
 		}
 
 		if opstatus[0].Status == "executing" {
-			log.WithContext(ctx).Debugf("operation is executing - wait: %d", i)
+			log.WithContext(ctx).Debugf("operation z_getoperationstatus() is executing - wait: %d", i)
 			time.Sleep(5 * time.Second)
 		}
 	}
 
 	if opstatus[0].Result.Txid == "" {
-		return "", errors.Errorf("empty txid")
+		return "", errors.New("empty txid")
 	}
 
 	return opstatus[0].Result.Txid, nil

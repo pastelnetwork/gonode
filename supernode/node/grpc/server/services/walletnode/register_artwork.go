@@ -48,14 +48,14 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	defer task.Cancel()
 
 	peer, _ := peer.FromContext(ctx)
-	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Session stream")
-	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Session stream closed")
+	log.WithContext(ctx).WithField("addr", peer.Addr).Debug("Session stream")
+	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debug("Session stream closed")
 
 	req, err := stream.Recv()
 	if err != nil {
 		return errors.Errorf("receieve handshake request: %w", err)
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
+	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := task.Session(ctx, req.IsPrimary); err != nil {
 		return err
@@ -67,7 +67,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	if err := stream.Send(resp); err != nil {
 		return errors.Errorf("send handshake response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
 
 	for {
 		if _, err := stream.Recv(); err != nil {
@@ -85,7 +85,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 
 // AcceptedNodes implements walletnode.RegisterArtworkServer.AcceptedNodes()
 func (service *RegisterArtwork) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
+	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
@@ -106,13 +106,13 @@ func (service *RegisterArtwork) AcceptedNodes(ctx context.Context, req *pb.Accep
 	resp := &pb.AcceptedNodesReply{
 		Peers: peers,
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("AcceptedNodes response")
 	return resp, nil
 }
 
 // ConnectTo implements walletnode.RegisterArtworkServer.ConnectTo()
 func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
+	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, err
@@ -123,7 +123,7 @@ func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	}
 
 	resp := &pb.ConnectToReply{}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("ConnectTo response")
 	return resp, nil
 }
 
@@ -142,7 +142,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		return errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
-	log.WithContext(ctx).WithField("filename", file.Name()).Debugf("ProbeImage request")
+	log.WithContext(ctx).WithField("filename", file.Name()).Debug("ProbeImage request")
 
 	wr := bufio.NewWriter(file)
 	defer wr.Flush()
@@ -220,7 +220,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 	if err != nil {
 		return errors.Errorf("open image file %q: %w", imageFile.Name(), err)
 	}
-	log.WithContext(ctx).WithField("filename", imageFile.Name()).Debugf("UploadImageWithThumbnail request")
+	log.WithContext(ctx).WithField("filename", imageFile.Name()).Debug("UploadImageWithThumbnail request")
 
 	imageWriter := bufio.NewWriter(imageFile)
 
@@ -334,7 +334,7 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 
 // SendSignedNFTTicket implements walletnode.RegisterArtwork.SendSignedNFTTicket
 func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (*pb.SendSignedNFTTicketReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SignTicket request")
+	log.WithContext(ctx).WithField("req", req).Debug("SignTicket request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("get task from metada %w", err)
@@ -354,7 +354,7 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 
 // SendPreBurntFeeTxid implements walletnode.RegisterArtwork.SendPreBurntFeeTxid
 func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (*pb.SendPreBurntFeeTxidReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendPreBurntFeeTxidRequest request")
+	log.WithContext(ctx).WithField("req", req).Debug("SendPreBurntFeeTxidRequest request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
 		return nil, errors.Errorf("get task from meta data %w", err)

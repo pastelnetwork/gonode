@@ -28,16 +28,16 @@ func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status).Debugf("States updated")
+		log.WithContext(ctx).WithField("status", status).Debug("States updated")
 	})
 
-	log.WithContext(ctx).Debugf("Start task")
-	defer log.WithContext(ctx).Debugf("End task")
+	log.WithContext(ctx).Debug("Start task")
+	defer log.WithContext(ctx).Debug("End task")
 
 	if err := task.run(ctx); err != nil {
 		task.err = err
 		task.UpdateStatus(StatusTaskRejected)
-		log.WithContext(ctx).WithErrorStack(err).Warnf("Task is rejected")
+		log.WithContext(ctx).WithErrorStack(err).Warn("Task is rejected")
 		return nil
 	}
 

@@ -47,14 +47,14 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 	defer task.Cancel()
 
 	peer, _ := peer.FromContext(ctx)
-	log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Session stream")
-	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debugf("Session stream closed")
+	log.WithContext(ctx).WithField("addr", peer.Addr).Debug("Session stream")
+	defer log.WithContext(ctx).WithField("addr", peer.Addr).Debug("Session stream closed")
 
 	req, err := stream.Recv()
 	if err != nil {
 		return errors.Errorf("receieve handshake request: %w", err)
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
+	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := task.Session(ctx, req.IsPrimary); err != nil {
 		return err
@@ -66,7 +66,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 	if err := stream.Send(resp); err != nil {
 		return errors.Errorf("send handshake response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
 
 	for {
 		if _, err := stream.Recv(); err != nil {
@@ -84,7 +84,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 
 // AcceptedNodes implements walletnode.ProcessUserdataServer.AcceptedNodes()
 func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pbwn.MDLAcceptedNodesRequest) (*pbwn.MDLAcceptedNodesReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
+	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 
 	if req == nil {
 		return nil, errors.Errorf("receive nil request")
@@ -110,13 +110,13 @@ func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pbwn.MDL
 	resp := &pbwn.MDLAcceptedNodesReply{
 		Peers: peers,
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("AcceptedNodes response")
 	return resp, nil
 }
 
 // ConnectTo implements walletnode.ProcessUserdataServer.ConnectTo()
 func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConnectToRequest) (*pbwn.MDLConnectToReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
+	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
 	if req == nil {
 		return nil, errors.Errorf("receive nil request")
@@ -132,13 +132,13 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConn
 	}
 
 	resp := &pbwn.MDLConnectToReply{}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("ConnectTo response")
 	return resp, nil
 }
 
 // SendUserdata implements walletnode.ProcessUserdataServer.SendUserdata()
 func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.UserdataRequest) (*pbwn.UserdataReply, error) {
-	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdata request")
+	log.WithContext(ctx).WithField("req", req).Debug("SendUserdata request")
 
 	if req == nil {
 		return nil, errors.Errorf("receive nil request")
@@ -289,7 +289,7 @@ func (service *ProcessUserdata) ReceiveUserdata(ctx context.Context, req *pbwn.R
 	if req == nil {
 		return nil, errors.Errorf("receive nil request")
 	}
-	log.WithContext(ctx).WithField("userpastelid", req.Userpastelid).Debugf("ReceiveUserdata request")
+	log.WithContext(ctx).WithField("userpastelid", req.Userpastelid).Debug("ReceiveUserdata request")
 
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
