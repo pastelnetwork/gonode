@@ -3,7 +3,6 @@ package qr
 
 import (
 	"bytes"
-	"encoding/base64"
 	"fmt"
 	"image"
 	"image/color"
@@ -16,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/DataDog/zstd"
+	"github.com/darkwyrm/b85"
 	"github.com/fogleman/gg"
 	"github.com/makiuchi-d/gozxing"
 	"github.com/makiuchi-d/gozxing/qrcode"
@@ -67,11 +67,11 @@ func compress(src string) (string, error) {
 	if err != nil {
 		return "", errors.New(err)
 	}
-	return base64.StdEncoding.EncodeToString(output), nil
+	return b85.Encode(output), nil
 }
 
 func decompress(src string) (string, error) {
-	input, err := base64.StdEncoding.DecodeString(src)
+	input, err := b85.Decode(src)
 	if err != nil {
 		return "", errors.New(err)
 	}
