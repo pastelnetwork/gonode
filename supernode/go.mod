@@ -6,6 +6,7 @@ require (
 	github.com/DataDog/zstd v1.4.8
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/disintegration/imaging v1.6.2
+	github.com/gorilla/mux v1.8.0
 	github.com/kolesa-team/go-webp v1.0.0
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/dupedetection v0.0.0

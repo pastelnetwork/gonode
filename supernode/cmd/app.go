@@ -25,6 +25,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
+	"github.com/pastelnetwork/gonode/supernode/debug"
 	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
@@ -227,6 +228,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
 	statsMngr.Add("ddscan", ddScan)
 
+	// Debug service
+	debugSerivce := debug.NewService(config.DebugService, p2p)
+
 	// server
 	grpc := server.New(config.Server,
 		"service",
@@ -242,5 +246,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, ddScan, database, userdataProcess, statsMngr)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, ddScan, database, userdataProcess, statsMngr, debugSerivce)
 }
