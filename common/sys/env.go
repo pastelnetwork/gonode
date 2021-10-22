@@ -9,7 +9,7 @@ import (
 // GetBoolEnv parses a boolean environment variable by the given key, if env is empty, returns the given fallback value
 func GetBoolEnv(key string, fallback bool) bool {
 	strValue := os.Getenv(key)
-	if len(strValue) == 0 {
+	if strValue == "" {
 		return fallback
 	}
 
@@ -23,7 +23,7 @@ func GetBoolEnv(key string, fallback bool) bool {
 // GetIntEnv parses a int environment variable by the given key, if env is empty, returns the given fallback value
 func GetIntEnv(key string, fallback int) int {
 	strValue := os.Getenv(key)
-	if len(strValue) == 0 {
+	if strValue == "" {
 		return fallback
 	}
 
@@ -37,7 +37,7 @@ func GetIntEnv(key string, fallback int) int {
 // GetDurationEnv parses a duration environment variable by the given key, if env is empty, returns the given fallback value
 func GetDurationEnv(key string, fallback time.Duration) time.Duration {
 	strValue := os.Getenv(key)
-	if len(strValue) == 0 {
+	if strValue == "" {
 		return fallback
 	}
 
@@ -51,7 +51,7 @@ func GetDurationEnv(key string, fallback time.Duration) time.Duration {
 // GetStringEnv returns an environment variable by the given key, if env is empty, returns the given fallback value
 func GetStringEnv(key, fallback string) string {
 	value := os.Getenv(key)
-	if len(value) == 0 {
+	if value == "" {
 		return fallback
 	}
 	return value

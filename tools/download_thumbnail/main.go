@@ -61,7 +61,7 @@ func main() {
 	//flag.Usage = usage
 	flag.Parse()
 
-	if len(*regNFTTxid) == 0 {
+	if *regNFTTxid == "" {
 		usage()
 		return
 	}

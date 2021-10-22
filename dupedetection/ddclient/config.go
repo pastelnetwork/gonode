@@ -32,7 +32,7 @@ func (config *Config) Validate() error {
 		return fmt.Errorf("%s: %s", errValidationStr, "port")
 	}
 
-	if len(config.DDFilesDir) == 0 {
+	if config.DDFilesDir == "" {
 		return fmt.Errorf("%s: %s", errValidationStr, "dd-temp-file-dir")
 	}
 
