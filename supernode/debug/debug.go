@@ -28,7 +28,7 @@ type StoreRequest struct {
 	Value []byte `json:"value"`
 }
 
-// StoreRequest indicates reply structure of store request
+// StoreReply indicates reply structure of store request
 type StoreReply struct {
 	Key string `json:"key"`
 }
@@ -54,14 +54,14 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 	router.HandleFunc("/p2p/{key}", service.p2pRetrieve).Methods(http.MethodGet)
 
 	service.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.HttpPort),
+		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.HTTPPort),
 		Handler: router,
 	}
 
 	return service
 }
 
-func responseWithJson(writer http.ResponseWriter, status int, object interface{}) {
+func responseWithJSON(writer http.ResponseWriter, status int, object interface{}) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.WriteHeader(status)
 	json.NewEncoder(writer).Encode(object)
@@ -76,10 +76,10 @@ func (service *Service) p2pStats(writer http.ResponseWriter, request *http.Reque
 	log.WithContext(ctx).Info("p2pStats")
 	stats, err := service.p2pClient.Stats(ctx)
 	if err != nil {
-		responseWithJson(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	responseWithJson(writer, http.StatusOK, stats)
+	responseWithJSON(writer, http.StatusOK, stats)
 }
 
 func (service *Service) p2pRetrieve(writer http.ResponseWriter, request *http.Request) {
@@ -92,10 +92,10 @@ func (service *Service) p2pRetrieve(writer http.ResponseWriter, request *http.Re
 
 	value, err := service.p2pClient.Retrieve(ctx, key)
 	if err != nil {
-		responseWithJson(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
+		responseWithJSON(writer, http.StatusNotFound, map[string]string{"error": err.Error()})
 	}
 
-	responseWithJson(writer, http.StatusOK, &RetrieveResponse{
+	responseWithJSON(writer, http.StatusOK, &RetrieveResponse{
 		Key:   key,
 		Value: value,
 	})
@@ -107,16 +107,16 @@ func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Reque
 
 	var storeRequest StoreRequest
 	if err := json.NewDecoder(request.Body).Decode(&storeRequest); err != nil {
-		responseWithJson(writer, http.StatusBadRequest, map[string]string{"message": "Invalid body"})
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"message": "Invalid body"})
 		return
 	}
 
 	key, err := service.p2pClient.Store(ctx, storeRequest.Value)
 	if err != nil {
-		responseWithJson(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
-	responseWithJson(writer, http.StatusOK, &StoreReply{
+	responseWithJSON(writer, http.StatusOK, &StoreReply{
 		Key: key,
 	})
 }
@@ -136,7 +136,7 @@ func (service *Service) Run(ctx context.Context) error {
 
 	// start http service
 	go func() {
-		log.WithContext(ctx).WithField("port", service.config.HttpPort).Info("Http server started")
+		log.WithContext(ctx).WithField("port", service.config.HTTPPort).Info("Http server started")
 		err := service.httpServer.ListenAndServe()
 		log.WithContext(ctx).WithError(err).Info("Http server stopped")
 	}()

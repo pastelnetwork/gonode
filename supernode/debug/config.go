@@ -10,8 +10,8 @@ const (
 
 // Config contains configuration of debug service
 type Config struct {
-	// the local port to listen for connections on
-	HttpPort int `mapstructure:"http-port" json:"http-port,omitempty"`
+	// HTTPPort the local port to listen for connections on
+	HTTPPort int `mapstructure:"http-port" json:"http-port,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -21,9 +21,9 @@ func (config *Config) String() string {
 	return string(data)
 }
 
-// New returns a new Config instance
+// NewConfig returns a new Config instance
 func NewConfig() *Config {
 	return &Config{
-		HttpPort: defaultPort,
+		HTTPPort: defaultPort,
 	}
 }
