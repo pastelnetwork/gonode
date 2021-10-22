@@ -113,6 +113,17 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return s.dht.Retrieve(ctx, key)
 }
 
+// Delete delete key in local node
+func (s *p2p) Delete(ctx context.Context, key string) error {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if !s.running {
+		return errors.New("p2p service is not running")
+	}
+
+	return s.dht.Delete(ctx, key)
+}
+
 // Stats return status of p2p
 func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	retStats := map[string]interface{}{}

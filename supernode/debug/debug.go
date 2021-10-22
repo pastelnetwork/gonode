@@ -13,7 +13,11 @@ import (
 	"net/http"
 )
 
-const defaultListenAddr = "127.0.0.1"
+const (
+	defaultListenAddr         = "127.0.0.1"
+	defaultPollDuration       = 10 * time.Minute
+	defaultP2PExpiresDuration = 15 * time.Minute
+)
 
 // contains http service providing debug services to user
 
@@ -35,9 +39,10 @@ type StoreReply struct {
 
 // Service is main point of debug service
 type Service struct {
-	config     *Config
-	p2pClient  p2p.Client
-	httpServer *http.Server
+	config       *Config
+	p2pClient    p2p.Client
+	httpServer   *http.Server
+	cleanTracker *CleanTracker
 }
 
 // NewService returns debug service
@@ -57,6 +62,7 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.HTTPPort),
 		Handler: router,
 	}
+	service.cleanTracker = NewCleanTracker(p2pClient)
 
 	return service
 }
@@ -116,6 +122,9 @@ func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Reque
 		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 
+	// Store to remove key after expires
+	service.cleanTracker.Track(key, time.Now().Add(defaultP2PExpiresDuration))
+
 	responseWithJSON(writer, http.StatusOK, &StoreReply{
 		Key: key,
 	})
@@ -142,6 +151,12 @@ func (service *Service) Run(ctx context.Context) error {
 	}()
 
 	// waiting until context is cancelled
-	<-ctx.Done()
-	return ctx.Err()
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(defaultPollDuration):
+			service.cleanTracker.CheckExpires(ctx)
+		}
+	}
 }
