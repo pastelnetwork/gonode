@@ -5,13 +5,13 @@ import (
 )
 
 const (
-	defaultPort = 8080
+	defaultPort = 9090
 )
 
 // Config contains configuration of debug service
 type Config struct {
 	// the local port to listen for connections on
-	HttpPort int `mapstructure:"port" json:"http-port,omitempty"`
+	HttpPort int `mapstructure:"http-port" json:"http-port,omitempty"`
 }
 
 func (config *Config) String() string {
