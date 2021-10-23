@@ -23,8 +23,8 @@ var (
 	defaultNetworkPort   = 4445
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
-	defaultPingTime      = time.Second * 5
-	defaultUpdateTime    = time.Minute * 1
+	defaultPingTime      = time.Second * 10
+	defaultUpdateTime    = time.Minute * 10 // FIXME : not sure how many is enough - but 1 is too small
 )
 
 // DHT represents the state of the local node in the distributed hash table
