@@ -215,7 +215,7 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 	appTicket := AppTicket{}
 	err = json.Unmarshal(appDecodedBytes, &appTicket)
 	if err != nil {
-		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
+		return nil, errors.Errorf("unmarshal app ticket: %w", err)
 	}
 
 	return &NFTTicket{
