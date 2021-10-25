@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
@@ -182,12 +183,16 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 		return value, nil
 	}
 
-	log.WithContext(ctx).WithError(err).Error("store retrive failed")
+	log.WithContext(ctx).WithError(err).Warn("local store retrieve failed, trying to retrieve from peers...")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
 	if err != nil {
 		return nil, err
+	}
+
+	if peerValue == nil {
+		return nil, errors.New("key not found")
 	}
 
 	return peerValue, nil
