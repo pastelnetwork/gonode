@@ -247,7 +247,7 @@ func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Nod
 }
 
 // bucketIndex return the bucket index from two node ids
-func (ht *HashTable) bucketIndex(id1 []byte, id2 []byte) int {
+func (*HashTable) bucketIndex(id1 []byte, id2 []byte) int {
 	// look at each byte from left to right
 	for j := 0; j < len(id1); j++ {
 		// xor the byte
