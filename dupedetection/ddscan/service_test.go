@@ -8,7 +8,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
-	mrand "math/rand"
+	"math/big"
+
 	"os"
 	"testing"
 	"time"
@@ -51,9 +52,12 @@ func prepareService(t *testing.T) *service {
 }
 
 func randFloats(n int) []float64 {
+	nBig, _ := rand.Int(rand.Reader, big.NewInt(5))
+	f := nBig.Int64()
+
 	res := make([]float64, n)
 	for i := range res {
-		res[i] = 0.0 + mrand.Float64()*(0.0-1.0)
+		res[i] = 0.0 + float64(f)*(0.0-1.0)
 	}
 	return res
 }

@@ -85,7 +85,7 @@ func decompress(src string) (string, error) {
 // Encode splits input msg into chunks to fit max supported length of QR code message and generates an array of QR codes images.
 func Encode(msg string, alias string, outputDir string, outputFileTitle string, outputFileNamePattern string, outputFileNameSuffix string) ([]Image, error) {
 	if _, err := os.Stat(outputDir); os.IsNotExist(err) {
-		if err := os.MkdirAll(outputDir, 0770); err != nil {
+		if err := os.MkdirAll(outputDir, 0750); err != nil {
 			return nil, errors.New(err)
 		}
 	}

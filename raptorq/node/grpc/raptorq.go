@@ -34,7 +34,7 @@ func randID() string {
 }
 
 func writeFile(path string, data []byte) error {
-	return ioutil.WriteFile(path, data, 0777)
+	return ioutil.WriteFile(path, data, 0750)
 }
 
 func readFile(path string) ([]byte, error) {
@@ -55,7 +55,7 @@ func createTaskFolder(base string, subDirs ...string) (string, error) {
 	taskPath := filepath.Join(base, taskID)
 	taskPath = filepath.Join(taskPath, filepath.Join(subDirs...))
 
-	err := os.MkdirAll(taskPath, 0777)
+	err := os.MkdirAll(taskPath, 0750)
 
 	if err != nil {
 		return "", err

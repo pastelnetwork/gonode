@@ -34,7 +34,7 @@ func NewStore(ctx context.Context, dataDir string) (*Badger, error) {
 
 	log.WithContext(ctx).Debugf("data dir: %v", dataDir)
 	// mkdir the data directory for badger
-	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+	if err := os.MkdirAll(dataDir, 0750); err != nil {
 		return nil, errors.Errorf("mkdir %q: %w", dataDir, err)
 	}
 	// init the badger options
