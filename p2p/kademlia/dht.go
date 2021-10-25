@@ -183,16 +183,12 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 		return value, nil
 	}
 
-	log.WithContext(ctx).WithError(err).Warn("local store retrieve failed, trying to retrieve from peers...")
+	log.WithContext(ctx).WithError(err).WithField("key", key).Debug("local store retrieve failed, trying to retrieve from peers...")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
 	if err != nil {
-		return nil, err
-	}
-
-	if peerValue == nil {
-		return nil, errors.New("key not found")
+		return nil, errors.Errorf("retrieve from peer: %w", err)
 	}
 
 	return peerValue, nil
