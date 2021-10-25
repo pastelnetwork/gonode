@@ -186,13 +186,10 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 		AppTicket: appTicket,
 	}
 
-	nftTicketBytes, err := json.Marshal(nftTicket)
+	b, err := json.Marshal(nftTicket)
 	if err != nil {
 		return nil, errors.Errorf("marshal nft ticket: %w", err)
 	}
-
-	b := make([]byte, a85.MaxEncodedLen(len(nftTicketBytes)))
-	_ = a85.Encode(b, nftTicketBytes)
 
 	return b, nil
 }
@@ -208,9 +205,8 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 		return bytes.Trim(decodedBytes, "\x00")
 	}
 
-	nftDecodedBytes := b85Decode(b)
 	res := internalNFTTicket{}
-	err := json.Unmarshal(nftDecodedBytes, &res)
+	err := json.Unmarshal(b, &res)
 	if err != nil {
 		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
