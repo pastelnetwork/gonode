@@ -1,0 +1,29 @@
+package debug
+
+import (
+	"encoding/json"
+)
+
+const (
+	defaultPort = 9090
+)
+
+// Config contains configuration of debug service
+type Config struct {
+	// HTTPPort the local port to listen for connections on
+	HTTPPort int `mapstructure:"http-port" json:"http-port,omitempty"`
+}
+
+func (config *Config) String() string {
+	// The main purpose of using a custom converting is to avoid unveiling credentials.
+	// All credentials fields must be tagged `json:"-"`.
+	data, _ := json.Marshal(config)
+	return string(data)
+}
+
+// NewConfig returns a new Config instance
+func NewConfig() *Config {
+	return &Config{
+		HTTPPort: defaultPort,
+	}
+}

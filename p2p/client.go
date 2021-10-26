@@ -13,6 +13,9 @@ type Client interface {
 	// - the base58 encoded identifier will be returned
 	Store(ctx context.Context, data []byte) (string, error)
 
+	// Delete a key, value
+	Delete(ctx context.Context, key string) error
+
 	// Stats return status of p2p
 	Stats(ctx context.Context) (map[string]interface{}, error)
 }
