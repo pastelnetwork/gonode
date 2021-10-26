@@ -136,7 +136,7 @@ func main() {
 	)
 	//flag.Usage = usage
 	flag.Parse()
-	if len(*imageId) == 0 || len(*artistId) == 0 || len(*passphrase) == 0 || len(*addr) == 0 {
+	if *imageId == "" || *artistId == "" || *passphrase == "" || *addr == "" {
 		usage()
 		return
 	}

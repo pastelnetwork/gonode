@@ -19,7 +19,7 @@ func main() {
 	)
 	flag.Parse()
 
-	if len(*port) == 0 {
+	if *port == "" {
 		flag.PrintDefaults()
 		return
 	}
