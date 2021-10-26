@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/log"
@@ -27,10 +28,11 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 	}
 	selfAddress = fmt.Sprintf("%s:%d", selfAddress, s.options.Port)
 
-	get := func(ctx context.Context, f func(context.Context) (pastel.MasterNodes, error)) (string, error) {
+	get := func(ctx context.Context, f func(context.Context) (pastel.MasterNodes, error)) ([]string, error) {
+		extP2PList := []string{}
 		mns, err := f(ctx)
 		if err != nil {
-			return "", err
+			return extP2PList, err
 		}
 
 		for _, mn := range mns {
@@ -47,45 +49,56 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 				continue
 			}
 
-			return mn.ExtP2P, nil
+			extP2PList = append(extP2PList, mn.ExtP2P)
 		}
 
-		return "", nil
+		return extP2PList, nil
 	}
 
-	extP2p, err := get(ctx, s.pastelClient.MasterNodesTop)
+	extP2PList, err := get(ctx, s.pastelClient.MasterNodesTop)
 	if err != nil {
 		return fmt.Errorf("masternodesTop failed: %s", err)
-	} else if extP2p == "" {
-		extP2p, err = get(ctx, s.pastelClient.MasterNodesExtra)
+	} else if len(extP2PList) == 0 {
+		extP2PList, err = get(ctx, s.pastelClient.MasterNodesExtra)
 		if err != nil {
 			return fmt.Errorf("masternodesExtra failed: %s", err)
-		} else if extP2p == "" {
+		} else if len(extP2PList) == 0 {
 			log.WithContext(ctx).Error("unable to fetch bootstrap ip. Missing extP2P")
 
 			return nil
 		}
 	}
 
-	addr := strings.Split(extP2p, ":")
-	if len(addr) != 2 {
-		return fmt.Errorf("invalid extP2P format: %s", extP2p)
+	available := false
+	for _, extP2P := range extP2PList {
+		addr := strings.Split(extP2P, ":")
+		if len(addr) != 2 {
+			log.WithContext(ctx).WithField("extP2P", extP2P).Warn("invalid extP2P")
+			continue
+		}
+
+		ip := addr[0]
+		port, err := strconv.Atoi(addr[1])
+		if err != nil {
+			log.WithContext(ctx).WithField("extP2P", extP2P).Warn("invalid extP2P's port")
+			continue
+		}
+
+		log.WithContext(ctx).WithField("bootstap_ip", ip).
+			WithField("bootstrap_port", port).Info("adding p2p bootstap node")
+
+		bootstrapNode := &Node{
+			IP:   ip,
+			Port: port,
+		}
+
+		s.options.BootstrapNodes = append(s.options.BootstrapNodes, bootstrapNode)
+		available = true
 	}
 
-	ip := addr[0]
-	port, err := strconv.Atoi(addr[1])
-	if err != nil {
-		return fmt.Errorf("invalid extP2P port: %s", extP2p)
+	if !available {
+		return errors.New("not found any boostrap node")
 	}
-
-	log.WithContext(ctx).WithField("bootstap_ip", ip).
-		WithField("bootstrap_port", port).Info("adding p2p bootstap node")
-
-	bootstrapNode := &Node{
-		IP:   ip,
-		Port: port,
-	}
-	s.options.BootstrapNodes = append(s.options.BootstrapNodes, bootstrapNode)
 
 	return nil
 }
