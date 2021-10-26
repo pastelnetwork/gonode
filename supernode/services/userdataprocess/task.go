@@ -56,7 +56,7 @@ func (task *Task) Run(ctx context.Context) error {
 	defer task.Cancel()
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
+		log.WithContext(ctx).WithField("status", status.String()).Debug("States updated")
 	})
 
 	return task.RunAction(ctx)
@@ -70,12 +70,12 @@ func (task *Task) Session(_ context.Context, isPrimary bool) error {
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if isPrimary {
-			log.WithContext(ctx).Debugf("Acts as primary node")
+			log.WithContext(ctx).Debug("Acts as primary node")
 			task.UpdateStatus(StatusPrimaryMode)
 			return nil
 		}
 
-		log.WithContext(ctx).Debugf("Acts as secondary node")
+		log.WithContext(ctx).Debug("Acts as secondary node")
 		task.UpdateStatus(StatusSecondaryMode)
 
 		return nil
@@ -90,7 +90,7 @@ func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
-		log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
+		log.WithContext(ctx).Debug("Waiting for supernodes to connect")
 
 		sub := task.SubscribeStatus()
 		for {
@@ -133,7 +133,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		}
 		task.accepted.Add(node)
 
-		log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
+		log.WithContext(ctx).WithField("nodeID", nodeID).Debug("Accept secondary node")
 
 		if len(task.accepted) >= task.config.NumberSuperNodes-1 {
 			task.UpdateStatus(StatusConnected)
@@ -269,7 +269,7 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 					}
 					return nil
 				case <-task.allPeersSNDatasReceived:
-					log.WithContext(ctx).Debugf("all SuperNodeRequest received so start validation")
+					log.WithContext(ctx).Debug("all SuperNodeRequest received so start validation")
 					resp, err := task.verifyPeersUserdata(ctx)
 					if err != nil {
 						actionErr = errors.Errorf("fail to verifyPeersUserdata: %w", err)

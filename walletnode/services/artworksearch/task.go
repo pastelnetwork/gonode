@@ -33,15 +33,15 @@ type Task struct {
 func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
 
-	log.WithContext(ctx).Debugf("Start task")
-	defer log.WithContext(ctx).Debugf("End task")
+	log.WithContext(ctx).Debug("Start task")
+	defer log.WithContext(ctx).Debug("End task")
 	defer close(task.resultChan)
 	defer task.thumbnailHelper.Close()
 
 	if err := task.run(ctx); err != nil {
 		task.err = err
 		task.UpdateStatus(StatusTaskFailure)
-		log.WithContext(ctx).WithError(err).Warnf("Task failed")
+		log.WithContext(ctx).WithError(err).Warn("Task failed")
 
 		return nil
 	}

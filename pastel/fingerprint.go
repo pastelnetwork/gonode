@@ -46,7 +46,7 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 
 	//hash_of_candidate_image_file
 	if !bytes.Equal(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
-		return errors.Errorf("image hash do not match")
+		return errors.New("image hash do not match")
 	}
 
 	//is_likely_dupe
@@ -93,14 +93,14 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 
 		lfg, err := FingerprintFromBytes(lhsFingerprint)
 		if err != nil {
-			return errors.Errorf("fingerprints corrupted")
+			return errors.New("fingerprints corrupted")
 		}
 		rfg, err := FingerprintFromBytes(lhsFingerprint)
 		if err != nil {
-			return errors.Errorf("fingerprints corrupted")
+			return errors.New("fingerprints corrupted")
 		}
 		if len(lfg) != len(rfg) {
-			return errors.Errorf("fingerprints do not match")
+			return errors.New("fingerprints do not match")
 		}
 		for i := range lfg {
 			if !compareFloatWithPrecision(lfg[i], rfg[i], 4.0) {

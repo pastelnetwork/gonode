@@ -42,7 +42,7 @@ func (task *Task) Run(ctx context.Context) error {
 	defer task.Cancel()
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
+		log.WithContext(ctx).WithField("status", status.String()).Debug("States updated")
 	})
 
 	return task.RunAction(ctx)

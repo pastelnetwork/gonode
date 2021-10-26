@@ -70,11 +70,11 @@ func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status).Debugf("States updated")
+		log.WithContext(ctx).WithField("status", status).Debug("States updated")
 	})
 
-	log.WithContext(ctx).Debugf("Start task")
-	defer log.WithContext(ctx).Debugf("End task")
+	log.WithContext(ctx).Debug("Start task")
+	defer log.WithContext(ctx).Debug("End task")
 
 	defer task.removeArtifacts()
 	if err := task.run(ctx); err != nil {
@@ -157,7 +157,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("pre-burnt ten percent of registration fee: %w", err)
 	}
 
-	log.WithContext(ctx).Debugf("close connections to supernodes")
+	log.WithContext(ctx).Debug("close connections to supernodes")
 	close(nodesDone)
 	for i := range task.nodes {
 		if err := task.nodes[i].Connection.Close(); err != nil {
@@ -184,7 +184,7 @@ func (task *Task) run(ctx context.Context) error {
 	// Wait until actTxid is valid
 	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), task.config.RegActTxTimeout, 15*time.Second)
 	if err != nil {
-		return errors.Errorf("reg-act ticket valid: %w", err)
+		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
 	log.Debugf("reg-act-tixd is confirmed")
 
@@ -233,7 +233,6 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 				defer cancel()
 
 				result, err := task.pastelClient.GetRawTransactionVerbose1(subCtx, txID)
-				log.WithContext(ctx).Debugf("getrawtransaction result: %s %v", txID, result)
 				if err != nil {
 					return errors.Errorf("get transaction: %w", err)
 				}
@@ -247,7 +246,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 
 			err := checkConfirms()
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("check confirmations failed")
+				log.WithContext(ctx).WithError(err).Warn("check confirmations failed")
 			} else {
 				return nil
 			}
@@ -687,7 +686,7 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 				return err
 			}
 			errs = errors.Append(errs, err)
-			log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
+			log.WithContext(ctx).WithError(err).Warn("Could not create a mesh of the nodes")
 			continue
 		}
 		break
@@ -711,7 +710,7 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 }
 
 func (task *Task) probeImage(ctx context.Context) error {
-	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debugf("probe image")
+	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debug("probe image")
 
 	// Send image to supernodes for probing.
 	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
@@ -748,7 +747,7 @@ func (task *Task) uploadImage(ctx context.Context) error {
 		return errors.Errorf("copy image to encode: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("FileName", img1.Name()).Debugf("final image")
+	log.WithContext(ctx).WithField("FileName", img1.Name()).Debug("final image")
 	if err := task.encodeFingerprint(ctx, task.fingerprint, img1); err != nil {
 		return errors.Errorf("encode image with fingerprint: %w", err)
 	}
