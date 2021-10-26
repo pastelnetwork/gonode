@@ -1,9 +1,9 @@
 package handshaker
 
 import (
+	"crypto/rand"
 	"encoding/hex"
 	"io"
-	"math/rand"
 	"testing"
 
 	"github.com/cloudflare/circl/dh/x448"
@@ -31,7 +31,11 @@ func TestCirclX448(t *testing.T) {
 	x448.KeyGen(&publicClient, &secretClient)
 
 	var secretServer x448.Key
-	rand.Read(secretServer[:])
+	_, err := rand.Read(secretServer[:])
+	if err != nil {
+		t.Fatalf("err in rand.Read: %v", err)
+	}
+
 	var publicServer x448.Key
 	x448.KeyGen(&publicServer, &secretServer)
 
@@ -48,7 +52,7 @@ func TestCirclX448(t *testing.T) {
 	hash := sha3.New512
 	hkdf := hkdf.New(hash, sharedClient[:], secretConnKeySalt, secretConnKeyInfo)
 	out := make([]byte, aeadKeySize)
-	_, err := io.ReadFull(hkdf, out)
+	_, err = io.ReadFull(hkdf, out)
 	if err != nil {
 		t.Fatalf("io read full: %v", err)
 	}

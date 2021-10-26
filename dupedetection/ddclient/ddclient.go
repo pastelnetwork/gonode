@@ -69,7 +69,7 @@ func randID() string {
 }
 
 func writeFile(path string, data []byte) error {
-	return ioutil.WriteFile(path, data, 0777)
+	return ioutil.WriteFile(path, data, 0750)
 }
 
 func createInputDDFile(base string, data []byte, format string) (string, error) {

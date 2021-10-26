@@ -110,7 +110,7 @@ func GeneratePastelKeys(targetDirectoryPath, naclBoxKeyFilePath string) (string,
 	encrypted := secretbox.EasySeal(([]byte)(skExportFormat[:]), &key)
 
 	if _, err := os.Stat(targetDirectoryPath); os.IsNotExist(err) {
-		if err = os.MkdirAll(targetDirectoryPath, 0770); err != nil {
+		if err = os.MkdirAll(targetDirectoryPath, 0750); err != nil {
 			return "", "", errors.New(err)
 		}
 	}
