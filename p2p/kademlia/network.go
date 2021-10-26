@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	defaultConnDeadline   = 5 * time.Second
+	defaultConnDeadline   = 30 * time.Second
 	defaultConnRate       = 500
 	defaultMaxPayloadSize = 16 * 1024 * 1024 // 16MB
 )
@@ -350,7 +350,7 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 
 	defer func() {
 		if err != nil && s.tpCredentials != nil {
-			s.connPoolMtx.Unlock()
+			s.connPoolMtx.Lock()
 			defer s.connPoolMtx.Unlock()
 			conn.Close()
 			s.connPool.Del(remoteAddr)
