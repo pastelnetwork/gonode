@@ -6,12 +6,54 @@ package system
 import (
 	"context"
 	"fmt"
-	// "os"
-	// "path/filepath"
 	"testing"
 	"time"
-	// "golang.org/x/sync/errgroup"
+
+	"golang.org/x/sync/errgroup"
 )
+
+func Test_SingleNodeBasicEndpoint(t *testing.T) {
+	node := mustNewLeaderNode(context.TODO())
+	defer node.Deprovision()
+
+	// Ensure accessing endpoints in basic manner works
+	_, err := node.Status()
+	if err != nil {
+		t.Fatalf(`failed to retrieve status for in-memory: %s`, err)
+	}
+
+	dir := mustTempDir()
+	mux, ln := mustNewOpenMux(context.TODO(), "")
+	defer ln.Close()
+	node = mustNodeEncryptedOnDisk(dir, true, false, mux, "", false)
+	if _, err := node.WaitForLeader(context.TODO()); err != nil {
+		t.Fatalf("node never became leader")
+	}
+	_, err = node.Status()
+	if err != nil {
+		t.Fatalf(`failed to retrieve status for on-disk: %s`, err)
+	}
+
+	ready, err := node.Ready()
+	if err != nil {
+		t.Fatalf(`failed to retrieve readiness: %s`, err)
+	}
+	if !ready {
+		t.Fatalf("node is not ready")
+	}
+}
+
+func Test_SingleNodeNotReady(t *testing.T) {
+	node := mustNewNode(context.TODO(), false)
+	defer node.Deprovision()
+	ready, err := node.Ready()
+	if err != nil {
+		t.Fatalf(`failed to retrieve readiness: %s`, err)
+	}
+	if ready {
+		t.Fatalf("node is ready when it should not be")
+	}
+}
 
 func Test_SingleNode(t *testing.T) {
 	node := mustNewLeaderNode(context.TODO())
@@ -137,7 +179,6 @@ func Test_SingleNodeMulti(t *testing.T) {
 	}
 }
 
-/*
 func Test_SingleNodeConcurrentRequests(t *testing.T) {
 	var err error
 	node := mustNewLeaderNode(context.TODO())
@@ -154,11 +195,12 @@ func Test_SingleNodeConcurrentRequests(t *testing.T) {
 		group.Go(func() error {
 			resp, err := PostExecuteStmt(node.APIAddr, `INSERT INTO foo(name) VALUES("fiona")`)
 			if err != nil {
-				return fmt.Errorf("failed to insert record: %s %s", err.Error(), resp)
+				t.Fatalf("failed to insert record: %s %s", err.Error(), resp)
 			}
 			return nil
 		})
 	}
+
 	if err := group.Wait(); err != nil {
 		t.Fatal(err)
 	}
@@ -170,8 +212,8 @@ func Test_SingleNodeConcurrentRequests(t *testing.T) {
 	if r != `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[200]]}]}` {
 		t.Fatalf("test received wrong result got %s", r)
 	}
-}*/
-/*
+}
+
 func Test_SingleNodeConcurrentRequestsCompressed(t *testing.T) {
 	var err error
 	node := mustNewLeaderNode(context.TODO())
@@ -204,7 +246,7 @@ func Test_SingleNodeConcurrentRequestsCompressed(t *testing.T) {
 	if r != `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[200]]}]}` {
 		t.Fatalf("test received wrong result got %s", r)
 	}
-}*/
+}
 
 func Test_SingleParameterizedNode(t *testing.T) {
 	node := mustNewLeaderNode(context.TODO())
@@ -266,14 +308,19 @@ func Test_SingleNodeSQLInjection(t *testing.T) {
 			execute:  true,
 		},
 		{
-			stmt:     `SELECT * FROM foo WHERE name="baz"`,
+			stmt:     `CREATE TABLE bar (id integer not null primary key, name text)`,
+			expected: `{"results":[{}]}`,
+			execute:  true,
+		},
+		{
+			stmt:     `SELECT * FROM foo`,
 			expected: `{"results":[{"columns":["id","name"],"types":["integer","text"]}]}`,
 			execute:  false,
 		},
 		{
-			stmt:     fmt.Sprintf(`SELECT * FROM foo WHERE name=%s`, `"baz";DROP TABLE FOO`),
-			expected: `{"results":[{}]}`,
-			execute:  false,
+			stmt:     fmt.Sprintf(`INSERT INTO foo(name) VALUES(%s)`, `"alice");DROP TABLE foo;INSERT INTO bar(name) VALUES("bob"`),
+			expected: `{"results":[{"last_insert_id":1,"rows_affected":1}]}`,
+			execute:  true,
 		},
 		{
 			stmt:     `SELECT * FROM foo`,
@@ -349,49 +396,6 @@ func Test_SingleNodeNoSQLInjection(t *testing.T) {
 	}
 }
 
-/*
-func Test_SingleNodeRestart(t *testing.T) {
-	// Deprovision of a node deletes the node's dir, so make a copy first.
-	srcdir := filepath.Join("testdata", "v6.0.0-data")
-	destdir := mustTempDir()
-	if err := os.Remove(destdir); err != nil {
-		t.Fatalf("failed to remove dest dir: %s", err)
-	}
-	if err := copyDir(srcdir, destdir); err != nil {
-		t.Fatalf("failed to copy node test directory: %s", err)
-	}
-
-	mux := mustNewOpenMux(context.TODO(), "")
-
-	node := mustNodeEncrypted(destdir, true, false, mux, "node1")
-	defer node.Deprovision()
-	if _, err := node.WaitForLeader(); err != nil {
-		t.Fatal("node never became leader")
-	}
-
-	// Let's wait a few seconds to be sure logs are applied.
-	n := 0
-	for {
-		time.Sleep(1 * time.Second)
-
-		r, err := node.QueryNoneConsistency(`SELECT COUNT(*) FROM foo`)
-		if err != nil {
-			t.Fatalf("query failed: %s", err)
-		}
-
-		expected := `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[20]]}]}`
-		if r != expected {
-			if n == 10 {
-				t.Fatalf(`query received wrong result, got: %s exp: %s`, r, expected)
-			}
-		} else {
-			break // Test successful!
-		}
-
-		n++
-	}
-}*/
-
 func Test_SingleNodeNodes(t *testing.T) {
 	node := mustNewLeaderNode(context.TODO())
 	defer node.Deprovision()
@@ -412,8 +416,8 @@ func Test_SingleNodeNodes(t *testing.T) {
 	if n.Addr != node.RaftAddr {
 		t.Fatalf("node has wrong Raft address")
 	}
-	if n.APIAddr != fmt.Sprintf("http://%s", node.APIAddr) {
-		t.Fatalf("node has wrong API address")
+	if got, exp := n.APIAddr, fmt.Sprintf("http://%s", node.APIAddr); exp != got {
+		t.Fatalf("node has wrong API address, exp: %s got: %s", exp, got)
 	}
 	if !n.Leader {
 		t.Fatalf("node is not leader")
@@ -456,10 +460,11 @@ func Test_SingleNodeReopen(t *testing.T) {
 		t.Logf("running test %s, on-disk=%v", t.Name(), onDisk)
 
 		dir := mustTempDir()
-		mux := mustNewOpenMux(context.TODO(), "")
+		mux, ln := mustNewOpenMux(context.TODO(), "")
+		defer ln.Close()
 		node := mustNodeEncrypted(dir, true, false, mux, "")
 
-		if _, err := node.WaitForLeader(); err != nil {
+		if _, err := node.WaitForLeader(context.TODO()); err != nil {
 			t.Fatalf("node never became leader")
 		}
 
@@ -474,7 +479,7 @@ func Test_SingleNodeReopen(t *testing.T) {
 			t.Fatalf("failed to restart service: %s", err)
 		}
 
-		if _, err := node.WaitForLeader(); err != nil {
+		if _, err := node.WaitForLeader(context.TODO()); err != nil {
 			t.Fatalf("node never became leader")
 		}
 
@@ -496,10 +501,11 @@ func Test_SingleNodeNoopReopen(t *testing.T) {
 		t.Logf("running test %s, on-disk=%v", t.Name(), onDisk)
 
 		dir := mustTempDir()
-		mux := mustNewOpenMux(context.TODO(), "")
+		mux, ln := mustNewOpenMux(context.TODO(), "")
+		defer ln.Close()
 		node := mustNodeEncryptedOnDisk(dir, true, false, mux, "", false)
 
-		if _, err := node.WaitForLeader(); err != nil {
+		if _, err := node.WaitForLeader(context.TODO()); err != nil {
 			t.Fatalf("node never became leader")
 		}
 
@@ -521,7 +527,7 @@ func Test_SingleNodeNoopReopen(t *testing.T) {
 		// again, so explicitly set the API address again.
 		node.APIAddr = node.Service.Addr().String()
 
-		if _, err := node.WaitForLeader(); err != nil {
+		if _, err := node.WaitForLeader(context.TODO()); err != nil {
 			t.Fatalf("node never became leader")
 		}
 
@@ -584,10 +590,11 @@ func Test_SingleNodeNoopSnapReopen(t *testing.T) {
 		t.Logf("running test %s, on-disk=%v", t.Name(), onDisk)
 
 		dir := mustTempDir()
-		mux := mustNewOpenMux(context.TODO(), "")
+		mux, ln := mustNewOpenMux(context.TODO(), "")
+		defer ln.Close()
 		node := mustNodeEncryptedOnDisk(dir, true, false, mux, "", onDisk)
 
-		if _, err := node.WaitForLeader(); err != nil {
+		if _, err := node.WaitForLeader(context.TODO()); err != nil {
 			t.Fatalf("node never became leader")
 		}
 
@@ -614,7 +621,7 @@ func Test_SingleNodeNoopSnapReopen(t *testing.T) {
 		// again, so explicitly set the API address again.
 		node.APIAddr = node.Service.Addr().String()
 
-		if _, err := node.WaitForLeader(); err != nil {
+		if _, err := node.WaitForLeader(context.TODO()); err != nil {
 			t.Fatalf("node never became leader")
 		}
 
@@ -677,12 +684,13 @@ func Test_SingleNodeNoopSnapLogsReopen(t *testing.T) {
 		t.Logf("running test %s, on-disk=%v", t.Name(), onDisk)
 
 		dir := mustTempDir()
-		mux := mustNewOpenMux(context.TODO(), "")
+		mux, ln := mustNewOpenMux(context.TODO(), "")
+		defer ln.Close()
 		node := mustNodeEncryptedOnDisk(dir, true, false, mux, "", onDisk)
 		raftAddr = node.RaftAddr
 		t.Logf("node listening for Raft on %s", raftAddr)
 
-		if _, err := node.WaitForLeader(); err != nil {
+		if _, err := node.WaitForLeader(context.TODO()); err != nil {
 			t.Fatalf("node never became leader")
 		}
 
@@ -714,7 +722,7 @@ func Test_SingleNodeNoopSnapLogsReopen(t *testing.T) {
 		// again, so explicitly set the API address again.
 		node.APIAddr = node.Service.Addr().String()
 
-		if _, err := node.WaitForLeader(); err != nil {
+		if _, err := node.WaitForLeader(context.TODO()); err != nil {
 			t.Fatalf("node never became leader")
 		}
 

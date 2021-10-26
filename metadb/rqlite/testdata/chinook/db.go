@@ -20,11 +20,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package chinook is a sample database available for SQL Server, Oracle, MySQL, etc. It can be created by running a single SQL script. Chinook database is an alternative to the Northwind database, being ideal for demos and testing ORM tools targeting single and multiple database servers.
+/*
+ Chinook is a sample database available for SQL Server, Oracle, MySQL, etc. It can be created by running a single SQL script. Chinook database is an alternative to the Northwind database, being ideal for demos and testing ORM tools targeting single and multiple database servers.
 
+*/
 package chinook
 
-// DB contains sql queries
 const DB = `PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE [Album]
@@ -33,7 +34,7 @@ CREATE TABLE [Album]
     [Title] NVARCHAR(160)  NOT NULL,
     [ArtistId] INTEGER  NOT NULL,
     CONSTRAINT [PK_Album] PRIMARY KEY  ([AlbumId]),
-    FOREIGN KEY ([ArtistId]) REFERENCES [Artist] ([ArtistId])
+    FOREIGN KEY ([ArtistId]) REFERENCES [Artist] ([ArtistId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 INSERT INTO "Album" VALUES(1,'For Those About To Rock We Salute You',1);
@@ -680,7 +681,7 @@ CREATE TABLE [Customer]
     [Email] NVARCHAR(60)  NOT NULL,
     [SupportRepId] INTEGER,
     CONSTRAINT [PK_Customer] PRIMARY KEY  ([CustomerId]),
-    FOREIGN KEY ([SupportRepId]) REFERENCES [Employee] ([EmployeeId])
+    FOREIGN KEY ([SupportRepId]) REFERENCES [Employee] ([EmployeeId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 INSERT INTO "Customer" VALUES(1,'Luís','Gonçalves','Embraer - Empresa Brasileira de Aeronáutica S.A.','Av. Brigadeiro Faria Lima, 2170','São José dos Campos','SP','Brazil','12227-000','+55 (12) 3923-5555','+55 (12) 3923-5566','luisg@embraer.com.br',3);
@@ -760,7 +761,7 @@ CREATE TABLE [Employee]
     [Fax] NVARCHAR(24),
     [Email] NVARCHAR(60),
     CONSTRAINT [PK_Employee] PRIMARY KEY  ([EmployeeId]),
-    FOREIGN KEY ([ReportsTo]) REFERENCES [Employee] ([EmployeeId])
+    FOREIGN KEY ([ReportsTo]) REFERENCES [Employee] ([EmployeeId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 INSERT INTO "Employee" VALUES(1,'Adams','Andrew','General Manager',NULL,'1962-02-18 00:00:00','2002-08-14 00:00:00','11120 Jasper Ave NW','Edmonton','AB','Canada','T5K 2N1','+1 (780) 428-9482','+1 (780) 428-3457','andrew@chinookcorp.com');
@@ -814,7 +815,7 @@ CREATE TABLE [Invoice]
     [BillingPostalCode] NVARCHAR(10),
     [Total] NUMERIC(10,2)  NOT NULL,
     CONSTRAINT [PK_Invoice] PRIMARY KEY  ([InvoiceId]),
-    FOREIGN KEY ([CustomerId]) REFERENCES [Customer] ([CustomerId])
+    FOREIGN KEY ([CustomerId]) REFERENCES [Customer] ([CustomerId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 INSERT INTO "Invoice" VALUES(1,2,'2009-01-01 00:00:00','Theodor-Heuss-Straße 34','Stuttgart',NULL,'Germany','70174',1.98);
@@ -1237,9 +1238,9 @@ CREATE TABLE [InvoiceLine]
     [UnitPrice] NUMERIC(10,2)  NOT NULL,
     [Quantity] INTEGER  NOT NULL,
     CONSTRAINT [PK_InvoiceLine] PRIMARY KEY  ([InvoiceLineId]),
-    FOREIGN KEY ([InvoiceId]) REFERENCES [Invoice] ([InvoiceId])
+    FOREIGN KEY ([InvoiceId]) REFERENCES [Invoice] ([InvoiceId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY ([TrackId]) REFERENCES [Track] ([TrackId])
+    FOREIGN KEY ([TrackId]) REFERENCES [Track] ([TrackId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 INSERT INTO "InvoiceLine" VALUES(1,1,2,0.99,1);
@@ -3522,9 +3523,9 @@ CREATE TABLE [PlaylistTrack]
     [PlaylistId] INTEGER  NOT NULL,
     [TrackId] INTEGER  NOT NULL,
     CONSTRAINT [PK_PlaylistTrack] PRIMARY KEY  ([PlaylistId], [TrackId]),
-    FOREIGN KEY ([PlaylistId]) REFERENCES [Playlist] ([PlaylistId])
+    FOREIGN KEY ([PlaylistId]) REFERENCES [Playlist] ([PlaylistId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY ([TrackId]) REFERENCES [Track] ([TrackId])
+    FOREIGN KEY ([TrackId]) REFERENCES [Track] ([TrackId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 INSERT INTO "PlaylistTrack" VALUES(1,3402);
@@ -12254,11 +12255,11 @@ CREATE TABLE [Track]
     [Bytes] INTEGER,
     [UnitPrice] NUMERIC(10,2)  NOT NULL,
     CONSTRAINT [PK_Track] PRIMARY KEY  ([TrackId]),
-    FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId])
+    FOREIGN KEY ([AlbumId]) REFERENCES [Album] ([AlbumId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId])
+    FOREIGN KEY ([GenreId]) REFERENCES [Genre] ([GenreId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION,
-    FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId])
+    FOREIGN KEY ([MediaTypeId]) REFERENCES [MediaType] ([MediaTypeId]) 
 		ON DELETE NO ACTION ON UPDATE NO ACTION
 );
 INSERT INTO "Track" VALUES(1,'For Those About To Rock (We Salute You)',1,1,1,'Angus Young, Malcolm Young, Brian Johnson',343719,11170334,0.99);

@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/x509"
 )
 
 func Test_NewServiceOpenClose(t *testing.T) {
 	ml := mustNewMockTransport()
-	s := New(context.TODO(), ml)
+	s := New(context.TODO(), ml, mustNewMockDatabase())
 	if s == nil {
 		t.Fatalf("failed to create cluster service")
 	}
@@ -31,7 +32,7 @@ func Test_NewServiceOpenClose(t *testing.T) {
 
 func Test_NewServiceSetGetAPIAddr(t *testing.T) {
 	ml := mustNewMockTransport()
-	s := New(context.TODO(), ml)
+	s := New(context.TODO(), ml, mustNewMockDatabase())
 	if s == nil {
 		t.Fatalf("failed to create cluster service")
 	}
@@ -52,7 +53,7 @@ func Test_NewServiceSetGetAPIAddr(t *testing.T) {
 
 func Test_NewServiceSetGetNodeAPIAddr(t *testing.T) {
 	ml := mustNewMockTransport()
-	s := New(context.TODO(), ml)
+	s := New(context.TODO(), ml, mustNewMockDatabase())
 	if s == nil {
 		t.Fatalf("failed to create cluster service")
 	}
@@ -64,7 +65,8 @@ func Test_NewServiceSetGetNodeAPIAddr(t *testing.T) {
 	s.SetAPIAddr("foo")
 
 	// Test by connecting to itself.
-	addr, err := s.GetNodeAPIAddr(s.Addr())
+	c := NewClient(ml)
+	addr, err := c.GetNodeAPIAddr(s.Addr(), 5*time.Second)
 	if err != nil {
 		t.Fatalf("failed to get node API address: %s", err)
 	}
@@ -73,10 +75,18 @@ func Test_NewServiceSetGetNodeAPIAddr(t *testing.T) {
 	}
 
 	s.EnableHTTPS(true)
-	addr, err = s.GetNodeAPIAddr(s.Addr())
+
+	// Test fetch via network.
+	addr, err = c.GetNodeAPIAddr(s.Addr(), 5*time.Second)
 	if err != nil {
 		t.Fatalf("failed to get node API address: %s", err)
 	}
+	if addr != "https://foo" {
+		t.Fatalf("failed to get correct node API address, exp %s, got %s", "https://foo", addr)
+	}
+
+	// Test fetch via local call.
+	addr = s.GetNodeAPIURL()
 	if addr != "https://foo" {
 		t.Fatalf("failed to get correct node API address, exp %s, got %s", "https://foo", addr)
 	}
@@ -86,9 +96,68 @@ func Test_NewServiceSetGetNodeAPIAddr(t *testing.T) {
 	}
 }
 
+func Test_NewServiceSetGetNodeAPIAddrLocal(t *testing.T) {
+	ml := mustNewMockTransport()
+	s := New(context.TODO(), ml, mustNewMockDatabase())
+	if s == nil {
+		t.Fatalf("failed to create cluster service")
+	}
+
+	if err := s.Open(); err != nil {
+		t.Fatalf("failed to open cluster service")
+	}
+
+	s.SetAPIAddr("foo")
+
+	// Check stats to confirm no local request yet.
+	if stats.Get(numGetNodeAPIRequestLocal).String() != "0" {
+		t.Fatalf("failed to confirm request served locally")
+	}
+
+	// Test by enabling local answering
+	c := NewClient(ml)
+	if err := c.SetLocal(s.Addr(), s); err != nil {
+		t.Fatalf("failed to set cluster client local parameters: %s", err)
+	}
+	addr, err := c.GetNodeAPIAddr(s.Addr(), 5*time.Second)
+	if err != nil {
+		t.Fatalf("failed to get node API address locally: %s", err)
+	}
+	if addr != "http://foo" {
+		t.Fatalf("failed to get correct node API address locally, exp %s, got %s", "http://foo", addr)
+	}
+
+	// Check stats to confirm local response.
+	if stats.Get(numGetNodeAPIRequestLocal).String() != "1" {
+		t.Fatalf("failed to confirm request served locally")
+	}
+
+	// Ensure it still works when hostname passed in.
+	_, port, err := net.SplitHostPort(s.Addr())
+	if err != nil {
+		t.Fatalf("failed to split host and port: %s", err)
+	}
+	if err := c.SetLocal(net.JoinHostPort("localhost", port), s); err != nil {
+		t.Fatalf("failed to set cluster client local parameters: %s", err)
+	}
+	addr, err = c.GetNodeAPIAddr(s.Addr(), 5*time.Second)
+	if err != nil {
+		t.Fatalf("failed to get node API address locally: %s", err)
+	}
+	if addr != "http://foo" {
+		t.Fatalf("failed to get correct node API address locally, exp %s, got %s", "http://foo", addr)
+	}
+
+	// Check stats to confirm local response.
+	if stats.Get(numGetNodeAPIRequestLocal).String() != "2" {
+		t.Fatalf("failed to confirm request served locally")
+	}
+
+}
+
 func Test_NewServiceSetGetNodeAPIAddrTLS(t *testing.T) {
 	ml := mustNewMockTLSTransport()
-	s := New(context.TODO(), ml)
+	s := New(context.TODO(), ml, mustNewMockDatabase())
 	if s == nil {
 		t.Fatalf("failed to create cluster service")
 	}
@@ -100,7 +169,8 @@ func Test_NewServiceSetGetNodeAPIAddrTLS(t *testing.T) {
 	s.SetAPIAddr("foo")
 
 	// Test by connecting to itself.
-	addr, err := s.GetNodeAPIAddr(s.Addr())
+	c := NewClient(ml)
+	addr, err := c.GetNodeAPIAddr(s.Addr(), 5*time.Second)
 	if err != nil {
 		t.Fatalf("failed to get node API address: %s", err)
 	}
@@ -110,7 +180,7 @@ func Test_NewServiceSetGetNodeAPIAddrTLS(t *testing.T) {
 	}
 
 	s.EnableHTTPS(true)
-	addr, err = s.GetNodeAPIAddr(s.Addr())
+	addr, err = c.GetNodeAPIAddr(s.Addr(), 5*time.Second)
 	if err != nil {
 		t.Fatalf("failed to get node API address: %s", err)
 	}
@@ -126,24 +196,6 @@ func Test_NewServiceSetGetNodeAPIAddrTLS(t *testing.T) {
 type mockTransport struct {
 	tn              net.Listener
 	remoteEncrypted bool
-}
-
-func mustNewMockTransport() *mockTransport {
-	tn, err := net.Listen("tcp", "localhost:0")
-	if err != nil {
-		panic("failed to create mock listener")
-	}
-	return &mockTransport{
-		tn: tn,
-	}
-}
-
-func mustNewMockTLSTransport() *mockTransport {
-	tn := mustNewMockTransport()
-	return &mockTransport{
-		tn:              tls.NewListener(tn, mustCreateTLSConfig()),
-		remoteEncrypted: true,
-	}
 }
 
 func (ml *mockTransport) Accept() (c net.Conn, err error) {
@@ -173,6 +225,41 @@ func (ml *mockTransport) Dial(addr string, timeout time.Duration) (net.Conn, err
 	}
 
 	return conn, err
+}
+
+func mustNewMockTransport() *mockTransport {
+	tn, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		panic("failed to create mock listener")
+	}
+	return &mockTransport{
+		tn: tn,
+	}
+}
+
+func mustNewMockTLSTransport() *mockTransport {
+	tn := mustNewMockTransport()
+	return &mockTransport{
+		tn:              tls.NewListener(tn, mustCreateTLSConfig()),
+		remoteEncrypted: true,
+	}
+}
+
+type mockDatabase struct {
+	executeFn func(er *command.ExecuteRequest) ([]*command.ExecuteResult, error)
+	queryFn   func(qr *command.QueryRequest) ([]*command.QueryRows, error)
+}
+
+func (m *mockDatabase) Execute(er *command.ExecuteRequest) ([]*command.ExecuteResult, error) {
+	return m.executeFn(er)
+}
+
+func (m *mockDatabase) Query(qr *command.QueryRequest) ([]*command.QueryRows, error) {
+	return m.queryFn(qr)
+}
+
+func mustNewMockDatabase() *mockDatabase {
+	return &mockDatabase{}
 }
 
 func mustCreateTLSConfig() *tls.Config {

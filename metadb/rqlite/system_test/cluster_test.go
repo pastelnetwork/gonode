@@ -3,8 +3,11 @@ package system
 import (
 	"context"
 	"fmt"
+	"net"
 	"testing"
 	"time"
+
+	"github.com/pastelnetwork/gonode/metadb/rqlite/tcp"
 )
 
 // Test_JoinLeaderNode tests a join operation between a leader and a new node.
@@ -17,7 +20,7 @@ func Test_JoinLeaderNode(t *testing.T) {
 	if err := node.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err := node.WaitForLeader()
+	_, err := node.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
@@ -33,20 +36,20 @@ func Test_MultiNodeCluster(t *testing.T) {
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err := node2.WaitForLeader()
+	_, err := node2.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c := Cluster{node1, node2}
-	leader, err := c.Leader()
+	leader, err := c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
 
 	// Get a follower and confirm redirects work properly.
-	followers, err := c.Followers()
+	followers, err := c.Followers(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to get followers: %s", err.Error())
 	}
@@ -59,14 +62,14 @@ func Test_MultiNodeCluster(t *testing.T) {
 	if err := node3.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err = node3.WaitForLeader()
+	_, err = node3.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c = Cluster{node1, node2, node3}
-	leader, err = c.Leader()
+	leader, err = c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
@@ -113,7 +116,7 @@ func Test_MultiNodeCluster(t *testing.T) {
 	// Kill the leader and wait for the new leader.
 	leader.Deprovision()
 	c.RemoveNode(leader)
-	leader, err = c.WaitForNewLeader(leader)
+	leader, err = c.WaitForNewLeader(context.TODO(), leader)
 	if err != nil {
 		t.Fatalf("failed to find new cluster leader after killing leader: %s", err.Error())
 	}
@@ -158,6 +161,69 @@ func Test_MultiNodeCluster(t *testing.T) {
 	}
 }
 
+// Test_MultiNodeClusterRaftAdv tests 3-node cluster with advertised Raft addresses usage.
+func Test_MultiNodeClusterRaftAdv(t *testing.T) {
+	ln1 := mustTCPListener("0.0.0.0:0")
+	defer ln1.Close()
+	ln2 := mustTCPListener("0.0.0.0:0")
+	defer ln2.Close()
+
+	advAddr := mustGetLocalIPv4Address()
+
+	_, port1, err := net.SplitHostPort(ln1.Addr().String())
+	if err != nil {
+		t.Fatalf("failed to get host and port: %s", err.Error())
+	}
+	_, port2, err := net.SplitHostPort(ln2.Addr().String())
+	if err != nil {
+		t.Fatalf("failed to get host and port: %s", err.Error())
+	}
+
+	advAddr1, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(advAddr, port1))
+	if err != nil {
+		t.Fatalf("failed to resolve TCP address: %s", err.Error())
+	}
+	advAddr2, err := net.ResolveTCPAddr("tcp", net.JoinHostPort(advAddr, port2))
+	if err != nil {
+		t.Fatalf("failed to resolve TCP address: %s", err.Error())
+	}
+
+	mux1, err := tcp.NewMux(context.TODO(), ln1, advAddr1)
+	if err != nil {
+		t.Fatalf("failed to create node-to-node mux: %s", err.Error())
+	}
+	go mux1.Serve()
+	mux2, err := tcp.NewMux(context.TODO(), ln2, advAddr2)
+	if err != nil {
+		t.Fatalf("failed to create node-to-node mux: %s", err.Error())
+	}
+	go mux2.Serve()
+
+	// Start two nodes, and ensure a cluster can be formed.
+	node1 := mustNodeEncrypted(mustTempDir(), true, false, mux1, "1")
+	defer node1.Deprovision()
+	leader, err := node1.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader on node1: %s", err.Error())
+	}
+	if exp, got := advAddr1.String(), leader; exp != got {
+		t.Fatalf("node return wrong leader from leader, exp: %s, got %s", exp, got)
+	}
+
+	node2 := mustNodeEncrypted(mustTempDir(), false, false, mux2, "2")
+	defer node2.Deprovision()
+	if err := node2.Join(node1); err != nil {
+		t.Fatalf("node2 failed to join leader: %s", err.Error())
+	}
+	leader, err = node2.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader on node2: %s", err.Error())
+	}
+	if exp, got := advAddr1.String(), leader; exp != got {
+		t.Fatalf("node return wrong leader from follower, exp: %s, got %s", exp, got)
+	}
+}
+
 // Test_MultiNodeClusterNodes checks nodes/ endpoint under various situations.
 func Test_MultiNodeClusterNodes(t *testing.T) {
 	node1 := mustNewLeaderNode(context.TODO())
@@ -168,14 +234,14 @@ func Test_MultiNodeClusterNodes(t *testing.T) {
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err := node2.WaitForLeader()
+	_, err := node2.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c := Cluster{node1, node2}
-	leader, err := c.Leader()
+	leader, err := c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
@@ -185,14 +251,14 @@ func Test_MultiNodeClusterNodes(t *testing.T) {
 	if err := node3.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err = node3.WaitForLeader()
+	_, err = node3.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c = Cluster{node1, node2, node3}
-	leader, err = c.Leader()
+	leader, err = c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
@@ -224,7 +290,7 @@ func Test_MultiNodeClusterNodes(t *testing.T) {
 	}
 
 	// Get a follower and confirm nodes/ looks good.
-	followers, err := c.Followers()
+	followers, err := c.Followers(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to get followers: %s", err.Error())
 	}
@@ -257,14 +323,14 @@ func Test_MultiNodeClusterNodesNonVoter(t *testing.T) {
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err := node2.WaitForLeader()
+	_, err := node2.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c := Cluster{node1, node2}
-	leader, err := c.Leader()
+	leader, err := c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
@@ -274,14 +340,14 @@ func Test_MultiNodeClusterNodesNonVoter(t *testing.T) {
 	if err := node3.JoinAsNonVoter(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err = node3.WaitForLeader()
+	_, err = node3.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c = Cluster{node1, node2, node3}
-	_, err = c.Leader()
+	_, err = c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
@@ -309,7 +375,7 @@ func Test_MultiNodeClusterNodesNonVoter(t *testing.T) {
 func Test_MultiNodeClusterNodeEncrypted(t *testing.T) {
 	node1 := mustNewNodeEncrypted(context.TODO(), true, false, true)
 	defer node1.Deprovision()
-	if _, err := node1.WaitForLeader(); err != nil {
+	if _, err := node1.WaitForLeader(context.TODO()); err != nil {
 		t.Fatalf("node never became leader")
 	}
 
@@ -318,20 +384,20 @@ func Test_MultiNodeClusterNodeEncrypted(t *testing.T) {
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err := node2.WaitForLeader()
+	_, err := node2.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c := Cluster{node1, node2}
-	leader, err := c.Leader()
+	leader, err := c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
 
 	// Check the followers
-	followers, err := c.Followers()
+	followers, err := c.Followers(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to get followers: %s", err.Error())
 	}
@@ -344,20 +410,20 @@ func Test_MultiNodeClusterNodeEncrypted(t *testing.T) {
 	if err := node3.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err = node3.WaitForLeader()
+	_, err = node3.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c = Cluster{node1, node2, node3}
-	leader, err = c.Leader()
+	leader, err = c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
 
 	// Check the followers
-	followers, err = c.Followers()
+	followers, err = c.Followers(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to get followers: %s", err.Error())
 	}
@@ -407,7 +473,7 @@ func Test_MultiNodeClusterNodeEncrypted(t *testing.T) {
 	// Kill the leader and wait for the new leader.
 	leader.Deprovision()
 	c.RemoveNode(leader)
-	leader, err = c.WaitForNewLeader(leader)
+	leader, err = c.WaitForNewLeader(context.TODO(), leader)
 	if err != nil {
 		t.Fatalf("failed to find new cluster leader after killing leader: %s", err.Error())
 	}
@@ -475,7 +541,7 @@ func Test_MultiNodeClusterSnapshot(t *testing.T) {
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err := node2.WaitForLeader()
+	_, err := node2.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
@@ -485,7 +551,7 @@ func Test_MultiNodeClusterSnapshot(t *testing.T) {
 	if err := node3.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err = node3.WaitForLeader()
+	_, err = node3.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
@@ -494,7 +560,7 @@ func Test_MultiNodeClusterSnapshot(t *testing.T) {
 	c := Cluster{node1, node2, node3}
 
 	// Wait for followers to pick up state.
-	followers, err := c.Followers()
+	followers, err := c.Followers(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to determine followers: %s", err.Error())
 	}
@@ -527,7 +593,7 @@ func Test_MultiNodeClusterSnapshot(t *testing.T) {
 	node1.Deprovision()
 	c.RemoveNode(node1)
 	var leader *Node
-	leader, err = c.WaitForNewLeader(node1)
+	leader, err = c.WaitForNewLeader(context.TODO(), node1)
 	if err != nil {
 		t.Fatalf("failed to find new cluster leader after killing leader: %s", err.Error())
 	}
@@ -566,14 +632,14 @@ func Test_MultiNodeClusterWithNonVoter(t *testing.T) {
 	if err := node2.Join(node1); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err := node2.WaitForLeader()
+	_, err := node2.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c := Cluster{node1, node2}
-	leader, err := c.Leader()
+	leader, err := c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
@@ -583,14 +649,14 @@ func Test_MultiNodeClusterWithNonVoter(t *testing.T) {
 	if err := node3.Join(leader); err != nil {
 		t.Fatalf("node failed to join leader: %s", err.Error())
 	}
-	_, err = node3.WaitForLeader()
+	_, err = node3.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
 
 	// Get the new leader, in case it changed.
 	c = Cluster{node1, node2, node3}
-	leader, err = c.Leader()
+	leader, err = c.Leader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed to find cluster leader: %s", err.Error())
 	}
@@ -600,7 +666,7 @@ func Test_MultiNodeClusterWithNonVoter(t *testing.T) {
 	if err := nonVoter.JoinAsNonVoter(leader); err != nil {
 		t.Fatalf("non-voting node failed to join leader: %s", err.Error())
 	}
-	_, err = nonVoter.WaitForLeader()
+	_, err = nonVoter.WaitForLeader(context.TODO())
 	if err != nil {
 		t.Fatalf("failed waiting for leader: %s", err.Error())
 	}
@@ -648,7 +714,7 @@ func Test_MultiNodeClusterWithNonVoter(t *testing.T) {
 	// Kill the leader and wait for the new leader.
 	leader.Deprovision()
 	c.RemoveNode(leader)
-	leader, err = c.WaitForNewLeader(leader)
+	leader, err = c.WaitForNewLeader(context.TODO(), leader)
 	if err != nil {
 		t.Fatalf("failed to find new cluster leader after killing leader: %s", err.Error())
 	}
@@ -690,5 +756,173 @@ func Test_MultiNodeClusterWithNonVoter(t *testing.T) {
 		if r != tt.expected {
 			t.Fatalf(`test %d received wrong result "%s" got: %s exp: %s`, i, tt.stmt, r, tt.expected)
 		}
+	}
+}
+
+// Test_MultiNodeClusterRecoverSingle tests recovery of a single node from a 3-node cluster,
+// which no longer has quorum.
+func Test_MultiNodeClusterRecoverSingle(t *testing.T) {
+	node1 := mustNewLeaderNode(context.TODO())
+	defer node1.Deprovision()
+
+	if _, err := node1.Execute(`CREATE TABLE foo (id integer not null primary key, name text)`); err != nil {
+		t.Fatalf("failed to create table: %s", err.Error())
+	}
+	if _, err := node1.Execute(`INSERT INTO foo(id, name) VALUES(1, "fiona")`); err != nil {
+		t.Fatalf("failed to create table: %s", err.Error())
+	}
+	if rows, _ := node1.Query(`SELECT COUNT(*) FROM foo`); rows != `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[1]]}]}` {
+		t.Fatalf("got incorrect results from node: %s", rows)
+	}
+
+	// Join a second and third nodes, which will get database state via snapshots.
+	node2 := mustNewNode(context.TODO(), false)
+	defer node2.Deprovision()
+	if err := node2.Join(node1); err != nil {
+		t.Fatalf("node failed to join leader: %s", err.Error())
+	}
+	_, err := node2.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader: %s", err.Error())
+	}
+
+	node3 := mustNewNode(context.TODO(), false)
+	defer node3.Deprovision()
+	if err := node3.Join(node1); err != nil {
+		t.Fatalf("node failed to join leader: %s", err.Error())
+	}
+	_, err = node3.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader: %s", err.Error())
+	}
+
+	// Shutdown all nodes
+	if err := node1.Close(true); err != nil {
+		t.Fatalf("failed to close node1: %s", err.Error())
+	}
+	if err := node2.Close(true); err != nil {
+		t.Fatalf("failed to close node2: %s", err.Error())
+	}
+	if err := node3.Close(true); err != nil {
+		t.Fatalf("failed to close node3: %s", err.Error())
+	}
+
+	// Create a single node using the node's data directory. It should fail because
+	// quorum can't be met. This isn't quite right since the Raft address is also
+	// changing, but it generally proves it doesn't come up.
+	mux0, ln0 := mustNewOpenMux(context.TODO(), "127.0.0.1:10000")
+	failedSingle := mustNodeEncrypted(node1.Dir, true, false, mux0, node1.Store.ID())
+	_, err = failedSingle.WaitForLeader(context.TODO())
+	if err == nil {
+		t.Fatalf("no error waiting for leader")
+	}
+	failedSingle.Close(true)
+	ln0.Close()
+
+	// Try again, this time injecting a single-node peers file.
+	mux1, ln1 := mustNewOpenMux(context.TODO(), "127.0.0.1:10001")
+	peers := fmt.Sprintf(`[{"id": "%s","address": "%s"}]`, node1.Store.ID(), "127.0.0.1:10001")
+	mustWriteFile(node1.PeersPath, peers)
+
+	okSingle := mustNodeEncrypted(node1.Dir, true, false, mux1, node1.Store.ID())
+	_, err = okSingle.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader: %s", err.Error())
+	}
+	if rows, _ := okSingle.Query(`SELECT COUNT(*) FROM foo`); rows != `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[1]]}]}` {
+		t.Fatalf("got incorrect results from recovered node: %s", rows)
+	}
+	okSingle.Close(true)
+	ln1.Close()
+}
+
+// Test_MultiNodeClusterRecoverFull tests recovery of a full 3-node cluster,
+// each node coming up with a different Raft address.
+func Test_MultiNodeClusterRecoverFull(t *testing.T) {
+	var err error
+
+	mux1, ln1 := mustNewOpenMux(context.TODO(), "127.0.0.1:10001")
+	node1 := mustNodeEncrypted(mustTempDir(), true, false, mux1, "1")
+	_, err = node1.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader: %s", err.Error())
+	}
+
+	mux2, ln2 := mustNewOpenMux(context.TODO(), "127.0.0.1:10002")
+	node2 := mustNodeEncrypted(mustTempDir(), false, false, mux2, "2")
+	if err := node2.Join(node1); err != nil {
+		t.Fatalf("node failed to join leader: %s", err.Error())
+	}
+	_, err = node2.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader: %s", err.Error())
+	}
+
+	mux3, ln3 := mustNewOpenMux(context.TODO(), "127.0.0.1:10003")
+	node3 := mustNodeEncrypted(mustTempDir(), false, false, mux3, "3")
+	if err := node3.Join(node1); err != nil {
+		t.Fatalf("node failed to join leader: %s", err.Error())
+	}
+	_, err = node3.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader: %s", err.Error())
+	}
+
+	if _, err := node1.Execute(`CREATE TABLE foo (id integer not null primary key, name text)`); err != nil {
+		t.Fatalf("failed to create table: %s", err.Error())
+	}
+	if _, err := node1.Execute(`INSERT INTO foo(id, name) VALUES(1, "fiona")`); err != nil {
+		t.Fatalf("failed to create table: %s", err.Error())
+	}
+	if rows, _ := node1.Query(`SELECT COUNT(*) FROM foo`); rows != `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[1]]}]}` {
+		t.Fatalf("got incorrect results from node: %s", rows)
+	}
+
+	// Shutdown all nodes
+	if err := node1.Close(true); err != nil {
+		t.Fatalf("failed to close node1: %s", err.Error())
+	}
+	ln1.Close()
+	if err := node2.Close(true); err != nil {
+		t.Fatalf("failed to close node2: %s", err.Error())
+	}
+	ln2.Close()
+	if err := node3.Close(true); err != nil {
+		t.Fatalf("failed to close node3: %s", err.Error())
+	}
+	ln3.Close()
+
+	// Restart cluster, each node with different Raft addresses.
+	peers := fmt.Sprintf(`[{"id": "%s","address": "%s"}, {"id": "%s","address": "%s"}, {"id": "%s","address": "%s"}]`,
+		"1", "127.0.0.1:11001",
+		"2", "127.0.0.1:11002",
+		"3", "127.0.0.1:11003",
+	)
+	mustWriteFile(node1.PeersPath, peers)
+	mustWriteFile(node2.PeersPath, peers)
+	mustWriteFile(node3.PeersPath, peers)
+
+	mux4, ln4 := mustNewOpenMux(context.TODO(), "127.0.0.1:11001")
+	node4 := mustNodeEncrypted(node1.Dir, false, false, mux4, "1")
+	defer node4.Deprovision()
+	defer ln4.Close()
+
+	mux5, ln5 := mustNewOpenMux(context.TODO(), "127.0.0.1:11002")
+	node5 := mustNodeEncrypted(node2.Dir, false, false, mux5, "2")
+	defer node5.Deprovision()
+	defer ln5.Close()
+
+	mux6, ln6 := mustNewOpenMux(context.TODO(), "127.0.0.1:11003")
+	node6 := mustNodeEncrypted(node3.Dir, false, false, mux6, "3")
+	defer node6.Deprovision()
+	defer ln6.Close()
+
+	_, err = node6.WaitForLeader(context.TODO())
+	if err != nil {
+		t.Fatalf("failed waiting for leader on recovered cluster: %s", err.Error())
+	}
+
+	if rows, _ := node4.Query(`SELECT COUNT(*) FROM foo`); rows != `{"results":[{"columns":["COUNT(*)"],"types":[""],"values":[[1]]}]}` {
+		t.Fatalf("got incorrect results from recovered node: %s", rows)
 	}
 }

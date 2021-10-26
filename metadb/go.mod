@@ -17,7 +17,7 @@ require (
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/pastel v0.0.0-20210921141840-854e94914b9b
 	github.com/pastelnetwork/gonode/proto v0.0.0
-	github.com/rqlite/go-sqlite3 v1.20.4
+	github.com/rqlite/go-sqlite3 v1.22.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1

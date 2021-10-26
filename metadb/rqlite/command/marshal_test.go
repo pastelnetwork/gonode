@@ -246,6 +246,7 @@ func Test_MarshalCompressedConcurrent(t *testing.T) {
 			return nil
 		})
 	}
+
 	if err := group.Wait(); err != nil {
 		t.Fatal(err)
 	}

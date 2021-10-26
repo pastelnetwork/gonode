@@ -12,5 +12,5 @@ https://groups.google.com/g/rqlite
 
 You can also start a discussion on the rqlite GitHub discussion page.
 
-https://github.com/rqlite/rqlite/discussions
+https://github.com/pastelnetwork/gonode/metadb/rqlite/discussions
 

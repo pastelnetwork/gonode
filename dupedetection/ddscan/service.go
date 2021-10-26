@@ -178,10 +178,8 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 	values := row[0].Values[0]
 	resultStr := make(map[string]interface{})
 	for i := 0; i < len(row[0].Columns); i++ {
-		switch row[0].Types[i] {
-		case "date", "datetime":
-			// TODO
-		case "array":
+		switch w := row[0].Values[0].GetParameters()[i].GetValue().(type) {
+		case *command.Parameter_Y:
 			// FIXME: these follow columns are nil, skip them
 			if row[0].Columns[i] == "model_5_image_fingerprint_vector" ||
 				row[0].Columns[i] == "model_6_image_fingerprint_vector" ||
@@ -189,19 +187,14 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 				continue
 			}
 
-			if values[i] == nil {
+			val := values.GetParameters()[i].GetY()
+			if val == nil {
 				log.WithContext(ctx).Errorf("nil value at column: %s", row[0].Columns[i])
 				continue
 			}
 
-			b, ok := values[i].([]byte)
-			if !ok {
-				log.WithContext(ctx).Errorf("failed to get str from npy, columns: %s", row[0].Columns[i])
-				continue
-			}
-
 			// even the shape if these should be Nx1, but for reading, we convert it into 1xN array
-			f := bytes.NewBuffer(b)
+			f := bytes.NewBuffer(val)
 
 			var fp []float64
 			if err := npyio.Read(f, &fp); err != nil {
@@ -210,8 +203,18 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 			}
 
 			resultStr[row[0].Columns[i]] = fp
+		case *command.Parameter_I:
+			resultStr[row[0].Columns[i]] = w.I
+		case *command.Parameter_D:
+			resultStr[row[0].Columns[i]] = w.D
+		case *command.Parameter_B:
+			resultStr[row[0].Columns[i]] = w.B
+		case *command.Parameter_S:
+			resultStr[row[0].Columns[i]] = w.S
+		case nil:
+			resultStr[row[0].Columns[i]] = nil
 		default:
-			resultStr[row[0].Columns[i]] = values[i]
+			return nil, errors.Errorf("getLatestFingerprint unsupported type: %w", w)
 		}
 	}
 
@@ -404,20 +407,21 @@ func (s *service) getRecordCount(ctx context.Context) (int64, error) {
 	}
 	row := rows[0]
 
-	if len(row.Values) != 1 {
+	if len(row.GetValues()) != 1 {
 		return 0, errors.Errorf("invalid Values length: %d", len(row.Columns))
 	}
 
-	if len(row.Values[0]) != 1 {
+	if len(row.GetValues()[0].GetParameters()) != 1 {
 		return 0, errors.Errorf("invalid Values[0] length: %d", len(row.Columns))
 	}
 
-	cnt, ok := row.Values[0][0].(int64)
-	if !ok {
-		return 0, errors.Errorf("invalid returned type : %v", row.Values[0][0])
+	switch w := row.GetValues()[0].GetParameters()[0].GetValue().(type) {
+	case *command.Parameter_I:
+		return row.GetValues()[0].GetParameters()[0].GetI(), nil
+	default:
+		return 0, errors.Errorf("invalid returned type : %v", w)
 	}
 
-	return cnt, nil
 }
 
 // Stats return status of dupde detection
@@ -447,7 +451,7 @@ func NewService(config *Config, pastelClient pastel.Client, p2pClient p2p.Client
 		return nil, errors.Errorf("database dd service not found: %w", err)
 	}
 
-	db, err := db.Open(config.DataFile)
+	db, err := db.Open(config.DataFile, true)
 	if err != nil {
 		return nil, errors.Errorf("open dd-service database: %w", err)
 	}

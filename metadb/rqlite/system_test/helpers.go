@@ -5,17 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	// "io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
-	// "path/filepath"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/pastelnetwork/gonode/metadb/rqlite/cluster"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command/encoding"
 	httpd "github.com/pastelnetwork/gonode/metadb/rqlite/http"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/tcp"
@@ -37,8 +37,10 @@ type Node struct {
 	NodeKeyPath  string
 	HTTPCertPath string
 	HTTPKeyPath  string
+	PeersPath    string
 	Store        *store.Store
 	Service      *httpd.Service
+	Cluster      *cluster.Service
 }
 
 // SameAs returns true if this node is the same as node o.
@@ -52,6 +54,7 @@ func (n *Node) Close(graceful bool) error {
 		return err
 	}
 	n.Service.Close()
+	n.Cluster.Close()
 	return nil
 }
 
@@ -59,12 +62,13 @@ func (n *Node) Close(graceful bool) error {
 func (n *Node) Deprovision() {
 	n.Store.Close(true)
 	n.Service.Close()
+	n.Cluster.Close()
 	os.RemoveAll(n.Dir)
 }
 
 // WaitForLeader blocks for up to 10 seconds until the node detects a leader.
-func (n *Node) WaitForLeader() (string, error) {
-	return n.Store.WaitForLeader(context.TODO(), 10*time.Second)
+func (n *Node) WaitForLeader(ctx context.Context) (string, error) {
+	return n.Store.WaitForLeader(ctx, 10*time.Second)
 }
 
 // Execute executes a single statement against the node.
@@ -238,6 +242,17 @@ func (n *Node) Status() (string, error) {
 	return string(body), nil
 }
 
+// Ready returns the ready status for the node
+func (n *Node) Ready() (bool, error) {
+	v, _ := url.Parse("http://" + n.APIAddr + "/readyz")
+
+	resp, err := http.Get(v.String())
+	if err != nil {
+		return false, err
+	}
+	return resp.StatusCode == 200, nil
+}
+
 // Expvar returns the expvar output for node.
 func (n *Node) Expvar() (string, error) {
 	v, _ := url.Parse("http://" + n.APIAddr + "/debug/vars")
@@ -331,8 +346,8 @@ func PostExecuteStmtMulti(apiAddr string, stmts []string) (string, error) {
 type Cluster []*Node
 
 // Leader returns the leader node of a cluster.
-func (c Cluster) Leader() (*Node, error) {
-	l, err := c[0].WaitForLeader()
+func (c Cluster) Leader(ctx context.Context) (*Node, error) {
+	l, err := c[0].WaitForLeader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +355,7 @@ func (c Cluster) Leader() (*Node, error) {
 }
 
 // WaitForNewLeader waits for the leader to change from the node passed in.
-func (c Cluster) WaitForNewLeader(old *Node) (*Node, error) {
+func (c Cluster) WaitForNewLeader(ctx context.Context, old *Node) (*Node, error) {
 	timer := time.NewTimer(30 * time.Second)
 	defer timer.Stop()
 	ticker := time.NewTicker(100 * time.Millisecond)
@@ -351,7 +366,7 @@ func (c Cluster) WaitForNewLeader(old *Node) (*Node, error) {
 		case <-timer.C:
 			return nil, fmt.Errorf("timed out waiting for new leader")
 		case <-ticker.C:
-			l, err := c.Leader()
+			l, err := c.Leader(ctx)
 			if err != nil {
 				continue
 			}
@@ -363,8 +378,8 @@ func (c Cluster) WaitForNewLeader(old *Node) (*Node, error) {
 }
 
 // Followers returns the slice of nodes in the cluster that are followers.
-func (c Cluster) Followers() ([]*Node, error) {
-	n, err := c[0].WaitForLeader()
+func (c Cluster) Followers(ctx context.Context) ([]*Node, error) {
+	n, err := c[0].WaitForLeader(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -387,6 +402,7 @@ func (c Cluster) Followers() ([]*Node, error) {
 func (c *Cluster) RemoveNode(node *Node) {
 	for i, n := range *c {
 		if n.RaftAddr == node.RaftAddr {
+
 			*c = append((*c)[:i], (*c)[i+1:]...)
 			return
 		}
@@ -454,7 +470,7 @@ func mustNewNodeEncrypted(ctx context.Context, enableSingle, httpEncrypt, nodeEn
 	if nodeEncrypt {
 		mux = mustNewOpenTLSMux(ctx, x509.CertFile(dir), x509.KeyFile(dir), "")
 	} else {
-		mux = mustNewOpenMux(ctx, "")
+		mux, _ = mustNewOpenMux(ctx, "")
 	}
 	go mux.Serve()
 
@@ -477,9 +493,10 @@ func mustNodeEncryptedOnDisk(dir string, enableSingle, httpEncrypt bool, mux *tc
 		NodeKeyPath:  nodeKeyPath,
 		HTTPCertPath: httpCertPath,
 		HTTPKeyPath:  httpKeyPath,
+		PeersPath:    filepath.Join(dir, "raft/peers.json"),
 	}
 
-	dbConf := store.NewDBConfig("", !onDisk)
+	dbConf := store.NewDBConfig(!onDisk)
 
 	raftTn := mux.Listen(cluster.MuxRaftHeader)
 	id := nodeID
@@ -501,12 +518,15 @@ func mustNodeEncryptedOnDisk(dir string, enableSingle, httpEncrypt bool, mux *tc
 	node.RaftAddr = node.Store.Addr()
 	node.ID = node.Store.ID()
 
-	cluster := cluster.New(context.TODO(), mux.Listen(cluster.MuxClusterHeader))
-	if err := cluster.Open(); err != nil {
+	clstr := cluster.New(context.TODO(), mux.Listen(cluster.MuxClusterHeader), node.Store)
+	if err := clstr.Open(); err != nil {
 		panic("failed to open Cluster service)")
 	}
+	node.Cluster = clstr
 
-	node.Service = httpd.New(context.TODO(), "localhost:0", node.Store, cluster, nil)
+	clstrDialer := tcp.NewDialer(cluster.MuxClusterHeader, false, true)
+	clstrClient := cluster.NewClient(clstrDialer)
+	node.Service = httpd.New(context.TODO(), "localhost:0", node.Store, clstrClient, nil)
 	node.Service.Expvar = true
 	if httpEncrypt {
 		node.Service.CertFile = node.HTTPCertPath
@@ -520,14 +540,14 @@ func mustNodeEncryptedOnDisk(dir string, enableSingle, httpEncrypt bool, mux *tc
 	node.APIAddr = node.Service.Addr().String()
 
 	// Finally, set API address in Cluster service
-	cluster.SetAPIAddr(node.APIAddr)
+	clstr.SetAPIAddr(node.APIAddr)
 
 	return node
 }
 
 func mustNewLeaderNode(ctx context.Context) *Node {
 	node := mustNewNode(ctx, true)
-	if _, err := node.WaitForLeader(); err != nil {
+	if _, err := node.WaitForLeader(ctx); err != nil {
 		node.Deprovision()
 		panic("node never became leader")
 	}
@@ -543,7 +563,7 @@ func mustTempDir() string {
 	return path
 }
 
-func mustNewOpenMux(ctx context.Context, addr string) *tcp.Mux {
+func mustNewOpenMux(ctx context.Context, addr string) (*tcp.Mux, net.Listener) {
 	if addr == "" {
 		addr = "localhost:0"
 	}
@@ -560,7 +580,7 @@ func mustNewOpenMux(ctx context.Context, addr string) *tcp.Mux {
 	}
 
 	go mux.Serve()
-	return mux
+	return mux, ln
 }
 
 func mustNewOpenTLSMux(ctx context.Context, certFile, keyPath, addr string) *tcp.Mux {
@@ -584,6 +604,29 @@ func mustNewOpenTLSMux(ctx context.Context, certFile, keyPath, addr string) *tcp
 	return mux
 }
 
+func mustTCPListener(bind string) net.Listener {
+	l, err := net.Listen("tcp", bind)
+	if err != nil {
+		panic(err)
+	}
+	return l
+}
+
+func mustGetLocalIPv4Address() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		panic(fmt.Sprintf("failed to get interface addresses: %s", err.Error()))
+	}
+	for _, address := range addrs {
+		if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				return ipnet.IP.String()
+			}
+		}
+	}
+	panic("couldn't find a local IPv4 address")
+}
+
 func mustParseDuration(d string) time.Duration {
 	if dur, err := time.ParseDuration(d); err != nil {
 		panic("failed to parse duration")
@@ -592,9 +635,24 @@ func mustParseDuration(d string) time.Duration {
 	}
 }
 
+func asJSON(v interface{}) string {
+	b, err := encoding.JSONMarshal(v)
+	if err != nil {
+		panic(fmt.Sprintf("failed to JSON marshal value: %s", err.Error()))
+	}
+	return string(b)
+}
+
 func isJSON(s string) bool {
 	var js map[string]interface{}
 	return json.Unmarshal([]byte(s), &js) == nil
+}
+
+func mustWriteFile(path, contents string) {
+	err := os.WriteFile(path, []byte(contents), 0644)
+	if err != nil {
+		panic("failed to write to file")
+	}
 }
 
 /* MIT License
@@ -620,12 +678,12 @@ func isJSON(s string) bool {
  * SOFTWARE.
  */
 
-// copyFile copies the contents of the file named src to the file named
+/*// copyFile copies the contents of the file named src to the file named
 // by dst. The file will be created if it does not already exist. If the
 // destination file exists, all it's contents will be replaced by the contents
 // of the source file. The file mode will be copied from the source and
 // the copied data is synced/flushed to stable storage.
-/*func copyFile(src, dst string) (err error) {
+func copyFile(src, dst string) (err error) {
 	in, err := os.Open(src)
 	if err != nil {
 		return
@@ -662,12 +720,12 @@ func isJSON(s string) bool {
 	}
 
 	return
-}*/
+}
 
 // copyDir recursively copies a directory tree, attempting to preserve permissions.
 // Source directory must exist, destination directory must *not* exist.
 // Symlinks are ignored and skipped.
-/*func copyDir(src string, dst string) (err error) {
+func copyDir(src string, dst string) (err error) {
 	src = filepath.Clean(src)
 	dst = filepath.Clean(dst)
 
@@ -720,4 +778,5 @@ func isJSON(s string) bool {
 	}
 
 	return
-}*/
+}
+*/

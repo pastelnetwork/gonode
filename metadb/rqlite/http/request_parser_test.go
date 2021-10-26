@@ -19,7 +19,7 @@ func Test_EmptyRequests(t *testing.T) {
 		t.Fatalf("empty simple request did not result in correct error")
 	}
 
-	b = []byte(`[[]]`)
+	b = []byte(`[]`)
 	_, err = ParseRequest(b)
 	if err != ErrNoStatements {
 		t.Fatalf("empty parameterized request did not result in correct error")
