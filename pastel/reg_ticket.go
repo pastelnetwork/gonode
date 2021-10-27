@@ -161,7 +161,7 @@ type internalNFTTicket struct {
 	Copies    int     `json:"copies"`
 	Royalty   float64 `json:"royalty"`
 	Green     bool    `json:"green"`
-	AppTicket []byte  `json:"app_ticket"`
+	AppTicket string  `json:"app_ticket"`
 }
 
 // EncodeNFTTicket encodes  NFTTicket into byte array
@@ -183,7 +183,7 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 		Copies:    ticket.Copies,
 		Royalty:   ticket.Royalty,
 		Green:     ticket.Green,
-		AppTicket: appTicket,
+		AppTicket: string(appTicket),
 	}
 
 	b, err := json.Marshal(nftTicket)
@@ -211,7 +211,7 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
 
-	appDecodedBytes := b85Decode(res.AppTicket)
+	appDecodedBytes := b85Decode([]byte(res.AppTicket))
 	appTicket := AppTicket{}
 	err = json.Unmarshal(appDecodedBytes, &appTicket)
 	if err != nil {
