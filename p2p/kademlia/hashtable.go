@@ -2,8 +2,9 @@ package kademlia
 
 import (
 	"bytes"
+	"crypto/rand"
 	"math"
-	"math/rand"
+	"math/big"
 	"sort"
 	"sync"
 	"time"
@@ -47,10 +48,6 @@ type HashTable struct {
 
 	// refresh time for every bucket
 	refreshers []time.Time
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
 }
 
 // NewHashTable returns a new hashtable
@@ -144,7 +141,10 @@ func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
 		if i < start {
 			bit = hasBit(ht.self.ID[index], uint(i))
 		} else {
-			bit = rand.Intn(2) == 1
+			nBig, _ := rand.Int(rand.Reader, big.NewInt(2))
+			n := nBig.Int64()
+
+			bit = n == 1
 		}
 		if bit {
 			first += byte(math.Pow(2, float64(7-i)))
@@ -154,7 +154,10 @@ func (ht *HashTable) randomIDFromBucket(bucket int) []byte {
 
 	// randomize each remaining byte
 	for i := index + 1; i < 20; i++ {
-		id = append(id, byte(rand.Intn(256)))
+		nBig, _ := rand.Int(rand.Reader, big.NewInt(256))
+		n := nBig.Int64()
+
+		id = append(id, byte(n))
 	}
 
 	return id
@@ -244,7 +247,7 @@ func (ht *HashTable) closestContacts(num int, target []byte, ignoredNodes []*Nod
 }
 
 // bucketIndex return the bucket index from two node ids
-func (ht *HashTable) bucketIndex(id1 []byte, id2 []byte) int {
+func (*HashTable) bucketIndex(id1 []byte, id2 []byte) int {
 	// look at each byte from left to right
 	for j := 0; j < len(id1); j++ {
 		// xor the byte
