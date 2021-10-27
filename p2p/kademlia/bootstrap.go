@@ -98,11 +98,11 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 		return nodes, nil
 	}
 
-	boostrapNodes, err := get(ctx, s.pastelClient.MasterNodesTop)
+	boostrapNodes, err := get(ctx, s.pastelClient.MasterNodesExtra)
 	if err != nil {
 		return fmt.Errorf("masternodesTop failed: %s", err)
 	} else if len(boostrapNodes) == 0 {
-		boostrapNodes, err = get(ctx, s.pastelClient.MasterNodesExtra)
+		boostrapNodes, err = get(ctx, s.pastelClient.MasterNodesTop)
 		if err != nil {
 			return fmt.Errorf("masternodesExtra failed: %s", err)
 		} else if len(boostrapNodes) == 0 {
