@@ -83,7 +83,7 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 		for _, mn := range mns {
 			node, err := s.parseNode(mn.ExtP2P, selfAddress)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Warn("Skip Bad Boostrap Address")
+				log.WithContext(ctx).WithError(err).WithField("extP2P", mn.ExtP2P).Warn("Skip Bad Boostrap Address")
 				continue
 			}
 
