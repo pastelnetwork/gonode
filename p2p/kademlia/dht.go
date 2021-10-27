@@ -81,6 +81,9 @@ func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.Transpo
 	}
 	s.ht = ht
 
+	// add bad boostrap addresss
+	s.skipBadBootstrapAddrs()
+
 	// new network service for dht
 	network, err := NewNetwork(s, ht.self, tpCredentials)
 	if err != nil {
@@ -346,7 +349,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		for response := range responses {
 			log.WithContext(ctx).Debugf("response: %v", response.String())
 			// add the target node to the bucket
-			s.addNode(response.Sender)
+			s.addNode(ctx, response.Sender)
 
 			switch response.MessageType {
 			case FindNode, StoreData:
@@ -414,7 +417,13 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 }
 
 // add a node into the appropriate k bucket, return the removed node if it's full
-func (s *DHT) addNode(node *Node) *Node {
+func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
+	// ensure this is not itself address
+	if bytes.Equal(node.ID, s.ht.self.ID) {
+		log.WithContext(ctx).Error("trying to add itself")
+		return nil
+	}
+
 	// the bucket index for the node
 	index := s.ht.bucketIndex(s.ht.self.ID, node.ID)
 

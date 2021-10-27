@@ -82,14 +82,14 @@ func (s *Network) Stop(ctx context.Context) {
 
 }
 
-func (s *Network) handleFindNode(_ context.Context, message *Message) ([]byte, error) {
+func (s *Network) handleFindNode(ctx context.Context, message *Message) ([]byte, error) {
 	request, ok := message.Data.(*FindNodeRequest)
 	if !ok {
 		return nil, errors.New("impossible: must be FindNodeRequest")
 	}
 
 	// add the sender to local hash table
-	s.dht.addNode(message.Sender)
+	s.dht.addNode(ctx, message.Sender)
 
 	// the closest contacts
 	closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
@@ -117,7 +117,7 @@ func (s *Network) handleFindValue(ctx context.Context, message *Message) ([]byte
 	}
 
 	// add the sender to local hash table
-	s.dht.addNode(message.Sender)
+	s.dht.addNode(ctx, message.Sender)
 
 	data := &FindValueResponse{}
 	// retrieve the value from local storage
@@ -154,7 +154,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	log.WithContext(ctx).Debugf("handle store data: %v", message.String())
 
 	// add the sender to local hash table
-	s.dht.addNode(message.Sender)
+	s.dht.addNode(ctx, message.Sender)
 
 	// format the key
 	key := s.dht.hashKey(request.Data)
