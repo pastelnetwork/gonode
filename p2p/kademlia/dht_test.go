@@ -484,7 +484,7 @@ func (ts *testSuite) TestAddNodeForFull() {
 			IP:   ts.IP,
 			Port: ts.bootstrapPort + i + 1,
 		}
-		if removed := ts.main.addNode(node); removed != nil {
+		if removed := ts.main.addNode(context.Background(), node); removed != nil {
 			ts.Equal(false, ts.main.ht.hasNode(removed.ID))
 			full = true
 			break
@@ -510,7 +510,7 @@ func (ts *testSuite) TestAddNodeForRefresh() {
 			IP:   ts.IP,
 			Port: ts.bootstrapPort + i + 1,
 		}
-		ts.main.addNode(node)
+		ts.main.addNode(context.Background(), node)
 	}
 	ts.Equal(number, ts.main.ht.totalCount())
 
@@ -526,7 +526,7 @@ func (ts *testSuite) TestAddNodeForRefresh() {
 	first := bucket[0]
 
 	// refresh the hash table with the first node
-	ts.main.addNode(bucket[0])
+	ts.main.addNode(context.Background(), bucket[0])
 	bucket = ts.main.ht.routeTable[index]
 	ts.Equal(count, len(bucket))
 	ts.Equal(first.ID, bucket[len(bucket)-1].ID)
@@ -544,7 +544,7 @@ func (ts *testSuite) TestAddNodeForAppend() {
 			IP:   ts.IP,
 			Port: ts.bootstrapPort + i + 1,
 		}
-		ts.main.addNode(node)
+		ts.main.addNode(context.Background(), node)
 	}
 	ts.Equal(number, ts.main.ht.totalCount())
 
@@ -561,7 +561,7 @@ func (ts *testSuite) TestAddNodeForAppend() {
 		IP:   ts.IP,
 		Port: ts.bootstrapPort + number + 1,
 	}
-	ts.main.addNode(node)
+	ts.main.addNode(context.Background(), node)
 
 	bucket := ts.main.ht.routeTable[index]
 	ts.Equal(id, bucket[len(bucket)-1].ID)

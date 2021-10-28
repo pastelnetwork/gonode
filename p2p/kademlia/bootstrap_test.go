@@ -43,13 +43,12 @@ func TestConfigureBootstrapNodes(t *testing.T) {
 				masterNodesErr:      nil,
 				masterNodesExtraErr: nil,
 				masterNodes: pastel.MasterNodes{
-					pastel.MasterNode{ExtP2P: "0.0.0.0:1234"},
-					pastel.MasterNode{ExtP2P: "0.0.0.0:8784"},
+					pastel.MasterNode{ExtP2P: "10.0.10.1:1234"},
 				},
 			},
 			wantErr:               nil,
 			wantBootstrapNodesLen: 1,
-			wantNodeIP:            "0.0.0.0",
+			wantNodeIP:            "10.0.10.1",
 			wantNodePort:          1234,
 		},
 		"success-extra": {
@@ -58,13 +57,12 @@ func TestConfigureBootstrapNodes(t *testing.T) {
 				masterNodesExtraErr: nil,
 				masterNodes:         pastel.MasterNodes{},
 				masterNodesExtra: pastel.MasterNodes{
-					pastel.MasterNode{ExtP2P: "0.0.0.0:1111"},
-					pastel.MasterNode{ExtP2P: "0.0.0.0:1313"},
+					pastel.MasterNode{ExtP2P: "10.0.10.1:1111"},
 				},
 			},
 			wantErr:               nil,
 			wantBootstrapNodesLen: 1,
-			wantNodeIP:            "0.0.0.0",
+			wantNodeIP:            "10.0.10.1",
 			wantNodePort:          1111,
 		},
 		"success-ignore-bad-addr": {

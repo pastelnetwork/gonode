@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/log"
@@ -19,6 +20,51 @@ const (
 	badAddrExpiryHours     = 12
 )
 
+func (s *DHT) skipBadBootstrapAddrs() {
+	skipAddress1 := fmt.Sprintf("%s:%d", "127.0.0.1", s.options.Port)
+	skipAddress2 := fmt.Sprintf("%s:%d", "localhost", s.options.Port)
+	s.cache.Set(skipAddress1, []byte("true"))
+	s.cache.Set(skipAddress2, []byte("true"))
+}
+
+func (s *DHT) parseNode(extP2P string, selfAddr string) (*Node, error) {
+	if extP2P == "" {
+		return nil, errors.New("empty address")
+	}
+
+	if strings.Contains(extP2P, "0.0.0.0") {
+		return nil, errors.New("invalid address")
+	}
+
+	if extP2P == selfAddr {
+		return nil, errors.New("self address")
+	}
+
+	if _, err := s.cache.Get(extP2P); err == nil {
+		return nil, errors.New("configure: skip bad p2p boostrap addr")
+	}
+
+	addr := strings.Split(extP2P, ":")
+	if len(addr) != 2 {
+		return nil, errors.New("wrong number of field")
+	}
+	ip := addr[0]
+
+	if ip == "" {
+		return nil, errors.New("empty ip")
+	}
+
+	port, err := strconv.Atoi(addr[1])
+	if err != nil {
+		return nil, errors.New("invalid port")
+	}
+
+	return &Node{
+		IP:   ip,
+		Port: port,
+	}, nil
+}
+
 // ConfigureBootstrapNodes connects with pastel client & gets p2p boostrap ip & port
 func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 	selfAddress, err := utils.GetExternalIPAddress()
@@ -27,65 +73,53 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 	}
 	selfAddress = fmt.Sprintf("%s:%d", selfAddress, s.options.Port)
 
-	get := func(ctx context.Context, f func(context.Context) (pastel.MasterNodes, error)) (string, error) {
+	get := func(ctx context.Context, f func(context.Context) (pastel.MasterNodes, error)) ([]*Node, error) {
 		mns, err := f(ctx)
 		if err != nil {
-			return "", err
+			return []*Node{}, err
 		}
 
+		mapNodes := map[string]*Node{}
 		for _, mn := range mns {
-			if mn.ExtP2P == "" {
+			node, err := s.parseNode(mn.ExtP2P, selfAddress)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("extP2P", mn.ExtP2P).Warn("Skip Bad Boostrap Address")
 				continue
 			}
 
-			if mn.ExtP2P == selfAddress {
-				continue
-			}
-
-			if _, err := s.cache.Get(mn.ExtP2P); err == nil {
-				log.WithContext(ctx).WithField("addr", mn.ExtP2P).Info("configure: skip bad p2p boostrap addr")
-				continue
-			}
-
-			return mn.ExtP2P, nil
+			mapNodes[mn.ExtP2P] = node
 		}
 
-		return "", nil
+		nodes := []*Node{}
+		for _, node := range mapNodes {
+			nodes = append(nodes, node)
+		}
+
+		return nodes, nil
 	}
 
-	extP2p, err := get(ctx, s.pastelClient.MasterNodesTop)
+	boostrapNodes, err := get(ctx, s.pastelClient.MasterNodesExtra)
 	if err != nil {
 		return fmt.Errorf("masternodesTop failed: %s", err)
-	} else if extP2p == "" {
-		extP2p, err = get(ctx, s.pastelClient.MasterNodesExtra)
+	} else if len(boostrapNodes) == 0 {
+		boostrapNodes, err = get(ctx, s.pastelClient.MasterNodesTop)
 		if err != nil {
 			return fmt.Errorf("masternodesExtra failed: %s", err)
-		} else if extP2p == "" {
+		} else if len(boostrapNodes) == 0 {
 			log.WithContext(ctx).Error("unable to fetch bootstrap ip. Missing extP2P")
 
 			return nil
 		}
 	}
 
-	addr := strings.Split(extP2p, ":")
-	if len(addr) != 2 {
-		return fmt.Errorf("invalid extP2P format: %s", extP2p)
+	for _, node := range boostrapNodes {
+		log.WithContext(ctx).WithFields(log.Fields{
+			"bootstap_ip":    node.IP,
+			"bootstrap_port": node.Port,
+		}).Info("adding p2p bootstap node")
 	}
 
-	ip := addr[0]
-	port, err := strconv.Atoi(addr[1])
-	if err != nil {
-		return fmt.Errorf("invalid extP2P port: %s", extP2p)
-	}
-
-	log.WithContext(ctx).WithField("bootstap_ip", ip).
-		WithField("bootstrap_port", port).Info("adding p2p bootstap node")
-
-	bootstrapNode := &Node{
-		IP:   ip,
-		Port: port,
-	}
-	s.options.BootstrapNodes = append(s.options.BootstrapNodes, bootstrapNode)
+	s.options.BootstrapNodes = append(s.options.BootstrapNodes, boostrapNodes...)
 
 	return nil
 }
@@ -132,7 +166,7 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 				log.WithContext(ctx).Debugf("ping response: %v", response.String())
 
 				// add the node to the route table
-				s.addNode(response.Sender)
+				s.addNode(ctx, response.Sender)
 			}()
 		}
 	}
