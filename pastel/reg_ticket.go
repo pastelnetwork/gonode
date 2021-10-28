@@ -1,6 +1,8 @@
 package pastel
 
 import (
+	"bytes"
+	a85 "encoding/ascii85"
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -159,15 +161,18 @@ type internalNFTTicket struct {
 	Copies    int     `json:"copies"`
 	Royalty   float64 `json:"royalty"`
 	Green     bool    `json:"green"`
-	AppTicket []byte  `json:"app_ticket"`
+	AppTicket string  `json:"app_ticket"`
 }
 
 // EncodeNFTTicket encodes  NFTTicket into byte array
 func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
-	appTicket, err := json.Marshal(ticket.AppTicketData)
+	appTicketBytes, err := json.Marshal(ticket.AppTicketData)
 	if err != nil {
-		return nil, errors.Errorf("marshal app ticket data: %w", err)
+		return nil, errors.Errorf("marshal app ticket: %w", err)
 	}
+
+	appTicket := make([]byte, a85.MaxEncodedLen(len(appTicketBytes)))
+	_ = a85.Encode(appTicket, appTicketBytes)
 
 	// NFTTicket is Pastel Art Ticket
 	nftTicket := internalNFTTicket{
@@ -178,7 +183,7 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 		Copies:    ticket.Copies,
 		Royalty:   ticket.Royalty,
 		Green:     ticket.Green,
-		AppTicket: appTicket,
+		AppTicket: string(appTicket),
 	}
 
 	b, err := json.Marshal(nftTicket)
@@ -191,18 +196,26 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 
 // DecodeNFTTicket decoded byte array into ArtTicket
 func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
+	b85Decode := func(in []byte) []byte {
+		decodedBytes := make([]byte, len(in))
+		nDecodedBytes, _, _ := a85.Decode(decodedBytes, in, true)
+		decodedBytes = decodedBytes[:nDecodedBytes]
+
+		//ascii85 adds /x00 null bytes at the end
+		return bytes.Trim(decodedBytes, "\x00")
+	}
+
 	res := internalNFTTicket{}
 	err := json.Unmarshal(b, &res)
-
 	if err != nil {
 		return nil, errors.Errorf("unmarshal nft ticket: %w", err)
 	}
 
+	appDecodedBytes := b85Decode([]byte(res.AppTicket))
 	appTicket := AppTicket{}
-
-	err = json.Unmarshal(res.AppTicket, &appTicket)
+	err = json.Unmarshal(appDecodedBytes, &appTicket)
 	if err != nil {
-		return nil, errors.Errorf("unmarshal app ticket data: %w", err)
+		return nil, errors.Errorf("unmarshal app ticket: %w", err)
 	}
 
 	return &NFTTicket{
