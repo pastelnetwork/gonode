@@ -72,6 +72,10 @@ func (s *p2p) run(ctx context.Context) error {
 
 	// join the kademlia network if bootstrap nodes is set
 	if err := s.dht.Bootstrap(ctx); err != nil {
+		// stop the node for kademlia network
+		s.dht.Stop(ctx)
+		// close the store of kademlia network
+		s.store.Close(ctx)
 		return errors.Errorf("bootstrap the node: %w", err)
 	}
 	s.running = true
