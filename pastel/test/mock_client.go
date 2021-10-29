@@ -172,7 +172,9 @@ func (client *Client) ListenOnRegTickets(ticket pastel.RegTickets, err error) *C
 
 // ListenOnGetBlockCount listening GetBlockCount and returns blockNum and error from args
 func (client *Client) ListenOnGetBlockCount(blockNum int32, err error) *Client {
-	client.On(GetBlockCountMethod, mock.Anything).Return(blockNum, err)
+	client.On(GetBlockCountMethod, mock.Anything).Return(blockNum, err).Times(1)
+	client.On(GetBlockCountMethod, mock.Anything).Return(blockNum+100, err)
+
 	return client
 }
 

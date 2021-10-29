@@ -6,12 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math/rand"
-	"net"
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
@@ -23,11 +20,11 @@ import (
 func Test_OpenStoreSingleNode(t *testing.T) {
 	s := mustNewStore(true)
 	defer os.RemoveAll(s.Path())
-	fmt.Println("open")
+
 	if err := s.Open(true); err != nil {
 		t.Fatalf("failed to open single-node store: %s", err.Error())
 	}
-	fmt.Println("after open")
+
 	_, err := s.WaitForLeader(context.TODO(), 10*time.Second)
 	if err != nil {
 		t.Fatalf("Error waiting for leader: %s", err)
@@ -1571,43 +1568,6 @@ func Test_State(t *testing.T) {
 	}
 }
 
-func mustNewStoreAtPathsLn(id, dataPath, sqlitePath string, inmem, fk bool) (*Store, net.Listener) {
-	cfg := NewDBConfig(inmem)
-	cfg.FKConstraints = fk
-	cfg.OnDiskPath = sqlitePath
-
-	ln := mustMockLister("localhost:0")
-	s := New(context.TODO(), ln, &Config{
-		DBConf: cfg,
-		Dir:    dataPath,
-		ID:     id,
-	})
-	if s == nil {
-		panic("failed to create new store")
-	}
-	return s, ln
-}
-
-func mustNewStoreAtPaths(dataPath, sqlitePath string, inmem, fk bool) *Store {
-	s, _ := mustNewStoreAtPathsLn(randomString(), dataPath, sqlitePath, inmem, fk)
-	return s
-}
-
-func mustNewStore(inmem bool) *Store {
-	return mustNewStoreAtPaths(mustTempDir(), "", inmem, false)
-}
-
-func mustNewStoreFK(inmem bool) *Store {
-	return mustNewStoreAtPaths(mustTempDir(), "", inmem, true)
-}
-
-func mustNewStoreSQLitePath() (*Store, string) {
-	dataDir := mustTempDir()
-	sqliteDir := mustTempDir()
-	sqlitePath := filepath.Join(sqliteDir, "explicit-path.db")
-	return mustNewStoreAtPaths(dataDir, sqlitePath, false, true), sqlitePath
-}
-
 type mockSnapshotSink struct {
 	*os.File
 }
@@ -1618,52 +1578,6 @@ func (m *mockSnapshotSink) ID() string {
 
 func (m *mockSnapshotSink) Cancel() error {
 	return nil
-}
-
-type mockListener struct {
-	ln net.Listener
-}
-
-func mustMockLister(addr string) Listener {
-	ln, err := net.Listen("tcp", addr)
-	if err != nil {
-		panic("failed to create new listner")
-	}
-	return &mockListener{ln}
-}
-
-func (m *mockListener) Dial(addr string, timeout time.Duration) (net.Conn, error) {
-	return net.DialTimeout("tcp", addr, timeout)
-}
-
-func (m *mockListener) Accept() (net.Conn, error) { return m.ln.Accept() }
-
-func (m *mockListener) Close() error { return m.ln.Close() }
-
-func (m *mockListener) Addr() net.Addr { return m.ln.Addr() }
-
-func mustWriteFile(path, contents string) {
-	err := os.WriteFile(path, []byte(contents), 0644)
-	if err != nil {
-		panic("failed to write to file")
-	}
-}
-
-func mustTempDir() string {
-	var err error
-	path, err := ioutil.TempDir("", "rqlilte-test-")
-	if err != nil {
-		panic("failed to create temp dir")
-	}
-	return path
-}
-
-func mustParseDuration(t string) time.Duration {
-	d, err := time.ParseDuration(t)
-	if err != nil {
-		panic("failed to parse duration")
-	}
-	return d
 }
 
 func executeRequestFromString(s string, timings, tx bool) *command.ExecuteRequest {
@@ -1739,17 +1653,6 @@ func asJSON(v interface{}) string {
 		panic(fmt.Sprintf("failed to JSON marshal value: %s", err.Error()))
 	}
 	return string(b)
-}
-
-func randomString() string {
-	var output strings.Builder
-	chars := "abcdedfghijklmnopqrstABCDEFGHIJKLMNOP"
-	for i := 0; i < 20; i++ {
-		random := rand.Intn(len(chars))
-		randomChar := chars[random]
-		output.WriteString(string(randomChar))
-	}
-	return output.String()
 }
 
 func testPoll(t *testing.T, f func() bool, p time.Duration, d time.Duration) {
