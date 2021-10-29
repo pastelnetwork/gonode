@@ -320,7 +320,7 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 	var rawConn net.Conn
 	var err error
 
-	remoteAddr := fmt.Sprintf("%s:%d", request.Sender.IP, request.Receiver.Port)
+	remoteAddr := fmt.Sprintf("%s:%d", request.Receiver.IP, request.Receiver.Port)
 
 	// do secure handshaking
 	if s.tpCredentials != nil {
