@@ -2,130 +2,62 @@
 package pqsignatures
 
 import (
-	"bufio"
+	"context"
 	"encoding/base64"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"strings"
-	"time"
 
-	"github.com/kevinburke/nacl/secretbox"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/legroast"
-	pqtime "github.com/pastelnetwork/gonode/pqsignatures/internal/time"
+	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
+	"github.com/pastelnetwork/gonode/pastel/"
+
 )
 
 const (
-	publicKeyFileName  = "pastel_id_legroast_public_key.pem"
-	privateKeyFileName = "pastel_id_legroast_private_key.pem"
+	// SignAlgorithmED448 is ED448 signature algorithm
+	SignAlgorithmED448 = "ed448"
+	// SignAlgorithmLegRoast is Efficient post-quantum signatures algorithm
+	SignAlgorithmLegRoast = "legroast"
 )
 
-// WrongOTPFormat describes errors message for wrong format of entered OTP password
-var WrongOTPFormat = errors.Errorf("one time password must contain 6 digits")
-
-// IncorrectEnteredOTP describes errors message if entered OTP doesn't match expected one
-var IncorrectEnteredOTP = errors.Errorf("entered OTP is incorrect")
-
-// KeyNotFound describes errors message if public or private keys are not found on their import attempt
-var KeyNotFound = errors.Errorf("public or private key is not found")
-
-// KeyReadError describes errors message if public or private keys files are not readable
-var KeyReadError = errors.Errorf("public or private key file read error")
-
-// ImportPastelKeys imports previously generated public and private keys.
-func ImportPastelKeys(importDirectoryPath, naclBoxKeyFilePath, otpSecretFilePath string) (string, string, error) {
-	pkPemFilePath := filepath.Join(importDirectoryPath, publicKeyFileName)
-	skPemFilePath := filepath.Join(importDirectoryPath, privateKeyFileName)
-
-	infoPK, errPK := os.Stat(pkPemFilePath)
-	infoSK, errSK := os.Stat(skPemFilePath)
-	if os.IsNotExist(errPK) || infoPK.IsDir() || os.IsNotExist(errSK) || infoSK.IsDir() {
-		return "", "", KeyNotFound
-	}
-
-	pkExportData, errPK := ioutil.ReadFile(pkPemFilePath)
-	if errPK != nil {
-		return "", "", KeyReadError
-	}
-	skExportDataEncrypted, errSK := ioutil.ReadFile(skPemFilePath)
-	if errSK != nil {
-		return "", "", KeyReadError
-	}
-
-	pkExportFormat := string(pkExportData)
-	skExportFormatEncrypted := string(skExportDataEncrypted)
-
-	otp := generateCurrentOtpString(otpSecretFilePath)
-	if otp == "" {
-		otp = generateCurrentOtpStringFromUserInput()
-	}
-	fmt.Println("\n\nPlease Enter your pastel Google Authenticator Code:")
-	fmt.Println(otp)
-
-	scanner := bufio.NewScanner(os.Stdin)
-	scanner.Scan()
-	otpFromUserInput := scanner.Text()
-
-	if len(otpFromUserInput) != 6 {
-		return "", "", errors.New(WrongOTPFormat)
-	}
-	if otpFromUserInput != otp {
-		return "", "", IncorrectEnteredOTP
-	}
-
-	boxKey, err := naclBoxKeyFromFile(naclBoxKeyFilePath)
-	if err != nil {
-		return "", "", err
-	}
-	var key [32]byte
-	copy(key[:], boxKey)
-	skExportFormat, err := secretbox.EasyOpen(([]byte)(skExportFormatEncrypted[:]), &key)
-	if err != nil {
-		return "", "", errors.New(err)
-	}
-	sk := strings.ReplaceAll(string(skExportFormat), "-----BEGIN LEGROAST PRIVATE KEY-----\n", "")
-	skBase64 := strings.ReplaceAll(string(sk), "\n-----END LEGROAST PRIVATE KEY-----", "")
-
-	pkExportFormat = strings.ReplaceAll(pkExportFormat, "-----BEGIN LEGROAST PUBLIC KEY-----\n", "")
-	pkBase64 := strings.ReplaceAll(pkExportFormat, "\n-----END LEGROAST PUBLIC KEY-----", "")
-
-	return pkBase64, skBase64, nil
+type client struct {
+	jsonrpc.RPCClient
 }
 
-// GeneratePastelKeys generates public and private keys, encodes private key with nacl secret box.
-func GeneratePastelKeys(targetDirectoryPath, naclBoxKeyFilePath string) (string, string, error) {
-	pk, sk := legroast.Keygen()
-	skBase64 := base64.StdEncoding.EncodeToString(sk)
-	pkBase64 := base64.StdEncoding.EncodeToString(pk)
-	pkExportFormat := "-----BEGIN LEGROAST PUBLIC KEY-----\n" + pkBase64 + "\n-----END LEGROAST PUBLIC KEY-----"
-	skExportFormat := "-----BEGIN LEGROAST PRIVATE KEY-----\n" + skBase64 + "\n-----END LEGROAST PRIVATE KEY-----"
-	boxKey, err := naclBoxKeyFromFile(naclBoxKeyFilePath)
-	if err != nil {
-		return "", "", err
+func (client *client) Sign(ctx context.Context, data []byte, pastelID, passphrase string, algorithm string) (signature []byte, err error) {
+	var sign struct {
+		Signature string `json:"signature"`
 	}
-	var key [32]byte
-	copy(key[:], boxKey)
-	encrypted := secretbox.EasySeal(([]byte)(skExportFormat[:]), &key)
+	text := base64.StdEncoding.EncodeToString(data)
 
-	if _, err := os.Stat(targetDirectoryPath); os.IsNotExist(err) {
-		if err = os.MkdirAll(targetDirectoryPath, 0750); err != nil {
-			return "", "", errors.New(err)
+	switch algorithm {
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
+		if err = client.callFor(ctx, &sign, "pastelid", "sign", text, pastelID, passphrase, algorithm); err != nil {
+			return nil, errors.Errorf("failed to sign data: %w", err)
 		}
+	default:
+		return nil, errors.Errorf("unsupported algorithm %s", algorithm)
 	}
-	err = os.WriteFile(filepath.Join(targetDirectoryPath, publicKeyFileName), []byte(pkExportFormat), 0644)
-	if err != nil {
-		return "", "", errors.New(err)
-	}
-	err = os.WriteFile(filepath.Join(targetDirectoryPath, privateKeyFileName), []byte(encrypted), 0644)
-	if err != nil {
-		return "", "", errors.New(err)
-	}
-
-	return pkBase64, skBase64, nil
+	return []byte(sign.Signature), nil
 }
 
+func (client *client) Verify(ctx context.Context, data []byte, signature, pastelID string, algorithm string) (ok bool, err error) {
+	var verify struct {
+		Verification string `json:"verification"`
+	}
+	text := base64.StdEncoding.EncodeToString(data)
+
+	switch algorithm {
+	case SignAlgorithmED448, SignAlgorithmLegRoast:
+		if err = client.callFor(ctx, &verify, "pastelid", "verify", text, signature, pastelID, algorithm); err != nil {
+			return false, errors.Errorf("failed to verify data: %w", err)
+		}
+	default:
+		return false, errors.Errorf("unsupported algorithm %s", algorithm)
+	}
+
+	return verify.Verification == "OK", nil
+}
+
+/*
 // Sign signs data with provided pair of keys.
 func Sign(data string, skBase64 string, pkBase64 string) (string, error) {
 	defer pqtime.Measure(time.Now())
@@ -162,3 +94,4 @@ func Verify(data string, signedData string, pkBase64 string) (int, error) {
 	pqtime.Sleep()
 	return verified, nil
 }
+*/
