@@ -242,8 +242,9 @@ func sign(imagePath string, pastelClient pastel.Client, pastelID string, passphr
 		return errors.New(invalidSignature)
 	}
 
-	//err = demonstrateSignatureQRCodeSteganography(string(signature_ed448), string(signature_legroast), imagePath)
-	err = demonstrateSignatureQRCodeSteganography(pastelID, string(signature_ed448), string(signature_legroast), imagePath)
+	// FIXME:
+	err = demonstrateSignatureQRCodeSteganography(string(signature_ed448), string(signature_legroast), imagePath)
+
 	if err != nil {
 		return err
 	}
