@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
@@ -37,6 +38,8 @@ type DHT struct {
 	done         chan struct{}    // distributed hash table is done
 	cache        storage.KeyValue // store bad bootstrap addresses
 	pastelClient pastel.Client
+	externalIP   string
+	mtx          sync.Mutex
 }
 
 // Options contains configuration options for the local node
@@ -92,6 +95,27 @@ func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.Transpo
 	s.network = network
 
 	return s, nil
+}
+
+func (s *DHT) getExternalIP() (string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+	// if listen IP is localhost - then return itself
+	if s.ht.self.IP == "127.0.0.1" || s.ht.self.IP == "localhost" {
+		return s.ht.self.IP, nil
+	}
+
+	if s.externalIP != "" {
+		return s.externalIP, nil
+	}
+
+	externalIP, err := utils.GetExternalIPAddress()
+	if err != nil {
+		return "", fmt.Errorf("get external ip addr: %s", err)
+	}
+
+	s.externalIP = externalIP
+	return externalIP, nil
 }
 
 // Start the distributed hash table
@@ -227,8 +251,14 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 
 // new a message
 func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Message {
+	externalIP, _ := s.getExternalIP()
+	sender := &Node{
+		IP:   externalIP,
+		ID:   s.ht.self.ID,
+		Port: s.ht.self.Port,
+	}
 	return &Message{
-		Sender:      s.ht.self,
+		Sender:      sender,
 		Receiver:    receiver,
 		MessageType: messageType,
 		Data:        data,
