@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/hex"
 	"flag"
@@ -15,19 +16,33 @@ import (
 	"github.com/DataDog/zstd"
 	"github.com/fogleman/gg"
 	"github.com/nfnt/resize"
+	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 	pqtime "github.com/pastelnetwork/gonode/pqsignatures/internal/time"
-	pq "github.com/pastelnetwork/gonode/pqsignatures/pkg/pqsignatures"
 	"github.com/pastelnetwork/gonode/pqsignatures/pkg/qr"
 	"github.com/pastelnetwork/gonode/pqsignatures/pkg/steganography"
 	"golang.org/x/crypto/sha3"
+)
+
+const (
+	pastelIDSignatureFilesFolder = "pastel_id_signature_files"
+	otpSecretFile                = "otp_secret.txt"
+	userEmail                    = "user@user.com"
+	otpQRCodeFilePath            = "Google_Authenticator_QR_Code.png"
+	pastelKeysDirectoryPath      = "pastel_id_key_files"
 )
 
 var invalidSignature = errors.Errorf("signature is not valid")
 var decodedPublicKeyNotMatch = errors.Errorf("decoded base64 public key doesn't match")
 var decodedSignatureNotMatch = errors.Errorf("decoded base64 pastel id signature doesn't match")
 var decodedFingerprintNotMatch = errors.Errorf("decoded base64 image fingerprint doesn't match")
+
+var (
+	defaultPath             = configurer.DefaultPath()
+	defaultPastelConfigFile = filepath.Join(defaultPath, "pastel.conf")
+)
 
 const (
 	// SignAlgorithmED448 is ED448 signature algorithm
@@ -177,7 +192,8 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 	return nil
 }
 
-func sign(imagePath string) error {
+func sign(imagePath string, pastelClient pastel.Client, pastelID string, passphrase string) error {
+	ctx := context.Background()
 	defer pqtime.Measure(time.Now())
 
 	fmt.Printf("\nApplying signature to file %v", imagePath)
@@ -186,46 +202,48 @@ func sign(imagePath string) error {
 		return err
 	}
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256HashOfImageToSign)
+	sha256HashOfImageToSignBytes := []byte(sha256HashOfImageToSign)
 
 	fmt.Printf("\nGenerating Ed448 signature now...")
 	//pastelIDSignatureBase64, err := pq.Sign(sha256HashOfImageToSign, skBase64, pkBase64)
-	signature_ed448, err := pq.Sign(ctx, sha256HashOfImageToSign, pastelID, passphrase, "ed448")
+	signature_ed448, err := pastelClient.Sign(ctx, sha256HashOfImageToSignBytes, pastelID, passphrase, "ed448")
 	if err != nil {
 		return err
 	}
 	fmt.Printf("\nGenerating LegRoast signature now...")
-	signature_legroast, err := pq.Sign(ctx, sha256HashOfImageToSign, pastelID, passphrase, "legroast")
+	signature_legroast, err := pastelClient.Sign(ctx, sha256HashOfImageToSignBytes, pastelID, passphrase, "legroast")
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("\nVerifying Ed448 signature now...")
-	verified_ed448, err := pq.Verify(sha256HashOfImageToSign, signature_ed448, pastelID, "ed448")
+	verified_ed448, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(signature_ed448), pastelID, "ed448")
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("\nVerifying LegRoast signature now...")
-	verified_legroast, err := pq.Verify(sha256HashOfImageToSign, signature_legroast, pastelID, "legroast")
+	verified_legroast, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(signature_legroast), pastelID, "legroast")
 	if err != nil {
 		return err
 	}
 
-	if verified_ed448 > 0 {
+	if verified_ed448 {
 		fmt.Printf("\nEd448 Signature is valid!")
 	} else {
 		fmt.Printf("\nWarning! Ed448 Signature was NOT valid!")
 		return errors.New(invalidSignature)
 	}
 
-	if verified_legroast > 0 {
+	if verified_legroast {
 		fmt.Printf("\nLegRoast Signature is valid!")
 	} else {
 		fmt.Printf("\nWarning! LegRoast Signature was NOT valid!")
 		return errors.New(invalidSignature)
 	}
 
-	err = demonstrateSignatureQRCodeSteganography(signature_ed448, signature_legroast, imagePath)
+	//err = demonstrateSignatureQRCodeSteganography(string(signature_ed448), string(signature_legroast), imagePath)
+	err = demonstrateSignatureQRCodeSteganography(pastelID, string(signature_ed448), string(signature_legroast), imagePath)
 	if err != nil {
 		return err
 	}
@@ -233,11 +251,28 @@ func sign(imagePath string) error {
 }
 
 func main() {
+	var pastelConfig pastel.Config
 	imagePathPtr := flag.String("image", "sample_image2.png", "an image file path")
+	pastelConfigFile := flag.String("pastel-config-file", defaultPastelConfigFile, "Set `path` to the pastel config file")
+	pastelID := flag.String("pastelID", "", "pastelID")
+	passphrase := flag.String("passphrase", "", "passphrase")
+
 	flag.Parse()
+	if *pastelID == "" || *passphrase == "" {
+		panic(errors.New("invalid pastelID or passphrase"))
+	}
+	if *pastelConfigFile != "" {
+		if err := configurer.ParseFile(*pastelConfigFile, &pastelConfig); err != nil {
+			panic(errors.Errorf("error parsing pastel config file: %v", err))
+		}
+	} else {
+		panic(errors.New("empty -pastel-config-file"))
+	}
+
+	pastelClient := pastel.NewClient(&pastelConfig)
 
 	sampleImageFilePath := *imagePathPtr
-	if err := sign(sampleImageFilePath); err != nil {
+	if err := sign(sampleImageFilePath, pastelClient, *pastelID, *passphrase); err != nil {
 		if err, isCommonError := err.(*errors.Error); isCommonError {
 			fmt.Println(errors.ErrorStack(err))
 		}

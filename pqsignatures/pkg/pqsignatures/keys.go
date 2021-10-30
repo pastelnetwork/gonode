@@ -7,8 +7,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
-	"github.com/pastelnetwork/gonode/pastel/"
-
 )
 
 const (
