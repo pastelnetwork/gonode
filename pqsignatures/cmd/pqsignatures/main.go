@@ -28,9 +28,6 @@ import (
 
 const (
 	pastelIDSignatureFilesFolder = "pastel_id_signature_files"
-	otpSecretFile                = "otp_secret.txt"
-	userEmail                    = "user@user.com"
-	otpQRCodeFilePath            = "Google_Authenticator_QR_Code.png"
 	pastelKeysDirectoryPath      = "pastel_id_key_files"
 )
 
