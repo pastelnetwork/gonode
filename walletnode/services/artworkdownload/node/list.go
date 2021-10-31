@@ -3,9 +3,12 @@ package node
 import (
 	"bytes"
 	"context"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 )
 
 // List represents multiple Node.
@@ -87,28 +90,41 @@ func (nodes List) File() []byte {
 }
 
 // Download download image from supernodes.
-func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string, downloadErrs error) error {
+func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string, connectTimeout time.Duration, secInfo *alts.SecInfo) (error, []error) {
+	downloadErrors := []error{}
 	group, _ := errgroup.WithContext(ctx)
 	errChan := make(chan error, len(*nodes))
 
 	for _, node := range *nodes {
-		node := node
-		group.Go(func() (err error) {
-			node.file, err = node.Download(ctx, txid, timestamp, signature, ttxid)
-			if err != nil {
-				errChan <- err
+		subNode := node
+		group.Go(func() error {
+			var subErr error
+			if subErr := subNode.Connect(ctx, connectTimeout, secInfo); subErr == nil {
+				log.WithContext(ctx).WithField("address", subNode.String()).Info("Connected to supernode")
 			} else {
-				node.activated = true
+				log.WithContext(ctx).WithError(subErr).WithField("address", subNode.String()).Error("Could not connect to supernode")
+				errChan <- subErr
+				return nil
 			}
-			return err
+
+			subNode.file, subErr = subNode.Download(ctx, txid, timestamp, signature, ttxid)
+			if subErr != nil {
+				log.WithContext(ctx).WithField("address", subNode.String()).WithError(subErr).Error("Could not download from supernode")
+				errChan <- subErr
+			} else {
+				log.WithContext(ctx).WithField("address", subNode.String()).Info("Downloaded from supernode")
+				subNode.activated = true
+			}
+			return nil
 		})
 	}
 	err := group.Wait()
 
 	close(errChan)
 
-	for err := range errChan {
-		downloadErrs = errors.Append(downloadErrs, err)
+	for subErr := range errChan {
+		downloadErrors = append(downloadErrors, subErr)
 	}
-	return err
+
+	return err, downloadErrors
 }
