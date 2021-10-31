@@ -91,21 +91,27 @@ func loadImageFingerprint(fingerprintFilePath string) (string, error) {
 	return base64.StdEncoding.EncodeToString(output), nil
 }
 
-func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, pastelIDSignatureBase64 string, inputImagePath string) error {
+func demonstrateSignatureQRCodeSteganography(pastelID string, ed448Signature string, legroastSignature string, inputImagePath string) error {
 	defer pqtime.Measure(time.Now())
 	timestamp := time.Now().Format("Jan_02_2006_15_04_05")
 
-	keypairImgs, err := generateKeypairQRs(pkBase64, skBase64)
+	pkImg, err := qr.Encode(pastelID, "pk", pastelKeysDirectoryPath, "Pastel ID", "pastel_id_legroast_public_key_qr_code", "")
 	if err != nil {
 		return err
 	}
 
-	signatureImgs, err := qr.Encode(pastelIDSignatureBase64, "sig", pastelIDSignatureFilesFolder, "Pastel Signature", "pastel_id_legroast_signature_qr_code", timestamp)
+	ed448SignatureImg, err := qr.Encode(ed448Signature, "ed448sig", pastelIDSignatureFilesFolder, "Pastel Ed448 Signature", "pastel_id_ed448_signature_qr_code", timestamp)
 	if err != nil {
 		return err
 	}
 
-	imgsToMap := append(keypairImgs, signatureImgs...)
+	legroastSignatureImg, err := qr.Encode(legroastSignature, "legroastsig", pastelIDSignatureFilesFolder, "Pastel Legroast Signature", "pastel_id_legroast_signature_qr_code", timestamp)
+	if err != nil {
+		return err
+	}
+
+	imgsToMap := append(pkImg, ed448SignatureImg...)
+	imgsToMap = append(imgsToMap, legroastSignatureImg...)
 
 	imgFingerprintBase64, err := loadImageFingerprint("fingerprint")
 	if err != nil {
@@ -163,22 +169,28 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 	}
 
 	var decodedPKBase64 string
-	var decodedSignatureBase64 string
+	var decodedEd448SignatureBase64 string
+	var decodedLegroastSignatureBase64 string
 	var decodedFingerprintBase64 string
 	for _, message := range decodedMessages {
 		fmt.Printf("\nDecoded message with alias:%v and content:%v", message.Alias, message.Content)
 		if message.Alias == "pk" {
 			decodedPKBase64 = message.Content
-		} else if message.Alias == "sig" {
-			decodedSignatureBase64 = message.Content
+		} else if message.Alias == "ed448sig" {
+			decodedEd448SignatureBase64 = message.Content
+		} else if message.Alias == "legroastsig" {
+			decodedLegroastSignatureBase64 = message.Content
 		} else if message.Alias == "fin" {
 			decodedFingerprintBase64 = message.Content
 		}
 	}
-	if pkBase64 != decodedPKBase64 {
+	if pastelID != decodedPKBase64 {
 		return errors.New(decodedPublicKeyNotMatch)
 	}
-	if pastelIDSignatureBase64 != decodedSignatureBase64 {
+	if ed448Signature != decodedEd448SignatureBase64 {
+		return errors.New(decodedSignatureNotMatch)
+	}
+	if legroastSignature != decodedLegroastSignatureBase64 {
 		return errors.New(decodedSignatureNotMatch)
 	}
 	if imgFingerprintBase64 != decodedFingerprintBase64 {
@@ -203,24 +215,24 @@ func sign(imagePath string, pastelClient pastel.Client, pastelID string, passphr
 
 	fmt.Printf("\nGenerating Ed448 signature now...")
 	//pastelIDSignatureBase64, err := pq.Sign(sha256HashOfImageToSign, skBase64, pkBase64)
-	signature_ed448, err := pastelClient.Sign(ctx, sha256HashOfImageToSignBytes, pastelID, passphrase, "ed448")
+	ed448Signature, err := pastelClient.Sign(ctx, sha256HashOfImageToSignBytes, pastelID, passphrase, "ed448")
 	if err != nil {
 		return err
 	}
 	fmt.Printf("\nGenerating LegRoast signature now...")
-	signature_legroast, err := pastelClient.Sign(ctx, sha256HashOfImageToSignBytes, pastelID, passphrase, "legroast")
+	legroastSignature, err := pastelClient.Sign(ctx, sha256HashOfImageToSignBytes, pastelID, passphrase, "legroast")
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("\nVerifying Ed448 signature now...")
-	verified_ed448, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(signature_ed448), pastelID, "ed448")
+	verified_ed448, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(ed448Signature), pastelID, "ed448")
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("\nVerifying LegRoast signature now...")
-	verified_legroast, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(signature_legroast), pastelID, "legroast")
+	verified_legroast, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(legroastSignature), pastelID, "legroast")
 	if err != nil {
 		return err
 	}
@@ -240,7 +252,7 @@ func sign(imagePath string, pastelClient pastel.Client, pastelID string, passphr
 	}
 
 	// FIXME:
-	err = demonstrateSignatureQRCodeSteganography(string(signature_ed448), string(signature_legroast), imagePath)
+	err = demonstrateSignatureQRCodeSteganography(pastelID, string(ed448Signature), string(legroastSignature), imagePath)
 
 	if err != nil {
 		return err
