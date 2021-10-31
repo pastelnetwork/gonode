@@ -82,10 +82,29 @@ func (s *Network) Stop(ctx context.Context) {
 
 }
 
+func (s *Network) encodeMesage(mesage *Message) ([]byte, error) {
+	// send the response to client
+	encoded, err := encode(mesage)
+	if err != nil {
+		return nil, errors.Errorf("encode response: %w", err)
+	}
+
+	return encoded, nil
+}
+
 func (s *Network) handleFindNode(ctx context.Context, message *Message) ([]byte, error) {
 	request, ok := message.Data.(*FindNodeRequest)
 	if !ok {
-		return nil, errors.New("impossible: must be FindNodeRequest")
+		err := errors.New("invalid FindNodeRequest")
+		response := &FindNodeResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		// new a response message
+		resMsg := s.dht.newMessage(FindNode, message.Sender, response)
+		return s.encodeMesage(resMsg)
 	}
 
 	// add the sender to local hash table
@@ -94,63 +113,86 @@ func (s *Network) handleFindNode(ctx context.Context, message *Message) ([]byte,
 	// the closest contacts
 	closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
 
-	// new a response message
-	response := s.dht.newMessage(
-		FindNode,
-		message.Sender,
-		&FindNodeResponse{Closest: closest.Nodes},
-	)
-
-	// send the response to client
-	encoded, err := encode(response)
-	if err != nil {
-		return nil, errors.Errorf("encode response for find node: %w", err)
+	response := &FindNodeResponse{
+		Status: ResponseStatus{
+			Result: ResultOk,
+		},
+		Closest: closest.Nodes,
 	}
 
-	return encoded, nil
+	// new a response message
+	resMsg := s.dht.newMessage(FindNode, message.Sender, response)
+	return s.encodeMesage(resMsg)
 }
 
 func (s *Network) handleFindValue(ctx context.Context, message *Message) ([]byte, error) {
 	request, ok := message.Data.(*FindValueRequest)
 	if !ok {
-		return nil, errors.New("impossible: must be FindValueRequest")
+		err := errors.New("invalid FindValueRequest")
+		response := &FindValueResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		// new a response message
+		resMsg := s.dht.newMessage(FindValue, message.Sender, response)
+		return s.encodeMesage(resMsg)
 	}
 
 	// add the sender to local hash table
 	s.dht.addNode(ctx, message.Sender)
 
-	data := &FindValueResponse{}
 	// retrieve the value from local storage
 	value, err := s.dht.store.Retrieve(ctx, request.Target)
 	if err != nil {
-		return nil, errors.Errorf("store retrieve: %w", err)
+		err = errors.Errorf("store retrieve: %w", err)
+		response := &FindValueResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		// new a response message
+		resMsg := s.dht.newMessage(FindValue, message.Sender, response)
+		return s.encodeMesage(resMsg)
 	}
+
+	response := &FindValueResponse{
+		Status: ResponseStatus{
+			Result: ResultOk,
+		},
+	}
+
 	if value != nil {
 		// return the value
-		data.Value = value
+		response.Value = value
 	} else {
 		// return the closest contacts
 		closest := s.dht.ht.closestContacts(K, request.Target, []*Node{message.Sender})
-		data.Closest = closest.Nodes
+		response.Closest = closest.Nodes
 	}
 
 	// new a response message
-	response := s.dht.newMessage(FindValue, message.Sender, data)
-
-	// send the response to client
-	encoded, err := encode(response)
-	if err != nil {
-		return nil, errors.Errorf("encode response for find value: %w", err)
-	}
-
-	return encoded, nil
+	resMsg := s.dht.newMessage(FindValue, message.Sender, response)
+	return s.encodeMesage(resMsg)
 }
 
 func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte, error) {
 	request, ok := message.Data.(*StoreDataRequest)
 	if !ok {
-		return nil, errors.New("impossible: must be StoreDataRequest")
+		err := errors.New("invalid StoreDataRequest")
+
+		response := &StoreDataResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		resMsg := s.dht.newMessage(StoreData, message.Sender, response)
+		return s.encodeMesage(resMsg)
 	}
+
 	log.WithContext(ctx).Debugf("handle store data: %v", message.String())
 
 	// add the sender to local hash table
@@ -163,30 +205,32 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	replication := time.Now().Add(defaultReplicateTime)
 	// store the data to local storage
 	if err := s.dht.store.Store(ctx, key, request.Data, replication); err != nil {
-		return nil, errors.Errorf("store the data: %w", err)
+		err = errors.Errorf("store the data: %w", err)
+		response := &StoreDataResponse{
+			Status: ResponseStatus{
+				Result: ResultFailed,
+				ErrMsg: err.Error(),
+			},
+		}
+		resMsg := s.dht.newMessage(StoreData, message.Sender, response)
+		return s.encodeMesage(resMsg)
+	}
+
+	response := &StoreDataResponse{
+		Status: ResponseStatus{
+			Result: ResultOk,
+		},
 	}
 
 	// new a response message
-	response := s.dht.newMessage(StoreData, message.Sender, nil)
-	// send the response to client
-	encoded, err := encode(response)
-	if err != nil {
-		return nil, errors.Errorf("encode response for store data: %w", err)
-	}
-
-	return encoded, nil
+	resMsg := s.dht.newMessage(StoreData, message.Sender, response)
+	return s.encodeMesage(resMsg)
 }
 
 func (s *Network) handlePing(_ context.Context, message *Message) ([]byte, error) {
 	// new a response message
-	response := s.dht.newMessage(Ping, message.Sender, nil)
-	// send the response to client
-	encoded, err := encode(response)
-	if err != nil {
-		return nil, errors.Errorf("encode response for ping: %w", err)
-	}
-
-	return encoded, nil
+	resMsg := s.dht.newMessage(Ping, message.Sender, nil)
+	return s.encodeMesage(resMsg)
 }
 
 // handle the connection request
@@ -232,7 +276,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			encoded, err := s.handleFindNode(ctx, request)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("handle find node request failed")
-				continue
+				return
 			}
 			response = encoded
 		case FindValue:
@@ -240,14 +284,14 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			encoded, err := s.handleFindValue(ctx, request)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("handle find value request failed")
-				continue
+				return
 			}
 			response = encoded
 		case Ping:
 			encoded, err := s.handlePing(ctx, request)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("handle ping request failed")
-				continue
+				return
 			}
 			response = encoded
 		case StoreData:
@@ -255,7 +299,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			encoded, err := s.handleStoreData(ctx, request)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).Error("handle store data request failed")
-				continue
+				return
 			}
 			response = encoded
 		default:
@@ -266,6 +310,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 		// write the response
 		if _, err := conn.Write(response); err != nil {
 			log.WithContext(ctx).WithError(err).Error("write failed")
+			return
 		}
 	}
 }
