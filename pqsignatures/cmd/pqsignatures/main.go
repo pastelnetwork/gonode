@@ -19,7 +19,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/configurer"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 	pqtime "github.com/pastelnetwork/gonode/pqsignatures/internal/time"
 	"github.com/pastelnetwork/gonode/pqsignatures/pkg/qr"
 	"github.com/pastelnetwork/gonode/pqsignatures/pkg/steganography"
@@ -48,10 +47,6 @@ const (
 	SignAlgorithmLegRoast = "legroast"
 )
 
-type client struct {
-	jsonrpc.RPCClient
-}
-
 func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 	f, err := os.Open(sampleImageFilePath)
 	if err != nil {
@@ -64,18 +59,6 @@ func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 		return "", errors.New(err)
 	}
 	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func generateKeypairQRs(pk string, sk string) ([]qr.Image, error) {
-	pkPngs, err := qr.Encode(pk, "pk", pastelKeysDirectoryPath, "Pastel Public Key", "pastel_id_legroast_public_key_qr_code", "")
-	if err != nil {
-		return nil, err
-	}
-	_, err = qr.Encode(sk, "sk", pastelKeysDirectoryPath, "", "pastel_id_legroast_private_key_qr_code", "")
-	if err != nil {
-		return nil, err
-	}
-	return pkPngs, nil
 }
 
 func loadImageFingerprint(fingerprintFilePath string) (string, error) {
