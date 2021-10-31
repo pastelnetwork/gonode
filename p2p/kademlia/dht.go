@@ -383,17 +383,21 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 
 			switch response.MessageType {
 			case FindNode, StoreData:
-				v := response.Data.(*FindNodeResponse)
-				if len(v.Closest) > 0 {
-					nl.AddNodes(v.Closest)
+				v, ok := response.Data.(*FindNodeResponse)
+				if ok && v.Status.Result == ResultOk {
+					if len(v.Closest) > 0 {
+						nl.AddNodes(v.Closest)
+					}
 				}
 			case FindValue:
-				v := response.Data.(*FindValueResponse)
-				if v.Value != nil {
-					return v.Value, nil
-				}
-				if len(v.Closest) > 0 {
-					nl.AddNodes(v.Closest)
+				v, ok := response.Data.(*FindValueResponse)
+				if ok && v.Status.Result == ResultOk {
+					if v.Value != nil {
+						return v.Value, nil
+					}
+					if len(v.Closest) > 0 {
+						nl.AddNodes(v.Closest)
+					}
 				}
 			}
 		}
@@ -428,13 +432,13 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 						return nil, nil
 					}
 
-					data := &StoreDataRequest{Data: data}
-					// new a request message
-					request := s.newMessage(StoreData, n, data)
-					// send the request and receive the response
-					if _, err := s.network.Call(ctx, request); err != nil {
+					request := &StoreDataRequest{Data: data}
+					response, err := s.sendStoreData(ctx, n, request)
+					if err != nil {
 						// <TODO> need to remove the node ?
-						log.WithContext(ctx).WithError(err).Error("network call")
+						log.WithContext(ctx).WithField("node", n).WithError(err).Error("send store data failed")
+					} else if response.Status.Result != ResultOk {
+						log.WithContext(ctx).WithField("node", n).WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
 					}
 				}
 				return nil, nil
@@ -444,6 +448,42 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 			closestNode = nl.Nodes[0]
 		}
 	}
+}
+
+func (s *DHT) sendPing(_ context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
+	// new a request message
+	reqMsg := s.newMessage(StoreData, n, request)
+	// send the request and receive the response
+	// FIXME: context background
+	rspMsg, err := s.network.Call(context.Background(), reqMsg)
+	if err != nil {
+		return nil, errors.Errorf("network call: %w", err)
+	}
+
+	response, ok := rspMsg.Data.(*StoreDataResponse)
+	if !ok {
+		return nil, errors.New("invalid StoreDataResponse")
+	}
+
+	return response, nil
+}
+
+func (s *DHT) sendStoreData(_ context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
+	// new a request message
+	reqMsg := s.newMessage(StoreData, n, request)
+	// send the request and receive the response
+	// FIXME: context background
+	rspMsg, err := s.network.Call(context.Background(), reqMsg)
+	if err != nil {
+		return nil, errors.Errorf("network call: %w", err)
+	}
+
+	response, ok := rspMsg.Data.(*StoreDataResponse)
+	if !ok {
+		return nil, errors.New("invalid StoreDataResponse")
+	}
+
+	return response, nil
 }
 
 // add a node into the appropriate k bucket, return the removed node if it's full
