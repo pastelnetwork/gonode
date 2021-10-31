@@ -327,14 +327,6 @@ jobs:
       - test:
           package: "proto"
 
-  test_legroast:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - test:
-          package: "legroast"
-
   test_pqsignatures:
     <<: *defaults
     steps:
@@ -453,9 +445,6 @@ workflows:
           requires:
             - prepare_workspace
       - test_proto:
-          requires:
-            - prepare_workspace
-      - test_legroast:
           requires:
             - prepare_workspace
       - test_pqsignatures:

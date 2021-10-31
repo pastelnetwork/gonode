@@ -226,25 +226,25 @@ func sign(imagePath string, pastelClient pastel.Client, pastelID string, passphr
 	}
 
 	fmt.Printf("\nVerifying Ed448 signature now...")
-	verified_ed448, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(ed448Signature), pastelID, "ed448")
+	verifiedEd448, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(ed448Signature), pastelID, "ed448")
 	if err != nil {
 		return err
 	}
 
 	fmt.Printf("\nVerifying LegRoast signature now...")
-	verified_legroast, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(legroastSignature), pastelID, "legroast")
+	verifiedLegroast, err := pastelClient.Verify(ctx, sha256HashOfImageToSignBytes, string(legroastSignature), pastelID, "legroast")
 	if err != nil {
 		return err
 	}
 
-	if verified_ed448 {
+	if verifiedEd448 {
 		fmt.Printf("\nEd448 Signature is valid!")
 	} else {
 		fmt.Printf("\nWarning! Ed448 Signature was NOT valid!")
 		return errors.New(invalidSignature)
 	}
 
-	if verified_legroast {
+	if verifiedLegroast {
 		fmt.Printf("\nLegRoast Signature is valid!")
 	} else {
 		fmt.Printf("\nWarning! LegRoast Signature was NOT valid!")
