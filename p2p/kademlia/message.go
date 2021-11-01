@@ -44,15 +44,17 @@ func (m *Message) String() string {
 	return fmt.Sprintf("type: %v, sender: %v, receiver: %v, data type: %T", m.MessageType, m.Sender.String(), m.Receiver.String(), m.Data)
 }
 
+// ResultType specify success of message request
 type ResultType int
 
 const (
-	ResultOk     ResultType = 0
+	// ResultOk means request is ok
+	ResultOk ResultType = 0
+	// ResultFailed meas request got failed
 	ResultFailed ResultType = 1
 )
 
-// ResponseStatus
-// FindNodeRequest defines the request data for find node
+// ResponseStatus defines the result of request
 type ResponseStatus struct {
 	Result ResultType
 	ErrMsg string

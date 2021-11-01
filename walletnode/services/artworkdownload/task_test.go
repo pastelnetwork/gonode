@@ -198,7 +198,7 @@ func TestTaskRun(t *testing.T) {
 				taskID: "downloadtask",
 			},
 			assertion:          assert.NoError,
-			numUpdateStatus:    3,
+			numUpdateStatus:    2,
 			numTicketOwnership: 1,
 			numMasterNodesTop:  1,
 			numSign:            1,
@@ -358,7 +358,7 @@ func TestTaskRun(t *testing.T) {
 				taskID: "downloadtask",
 			},
 			assertion:          assert.NoError,
-			numUpdateStatus:    3,
+			numUpdateStatus:    2,
 			numTicketOwnership: 1,
 			numSign:            1,
 			numMasterNodesTop:  1,
@@ -423,7 +423,7 @@ func TestTaskRun(t *testing.T) {
 			}
 
 			//create context with timeout to automatically end process after 1 sec
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithTimeout(testCase.args.ctx, 2*time.Second)
 			defer cancel()
 			err := task.Run(ctx)
 
