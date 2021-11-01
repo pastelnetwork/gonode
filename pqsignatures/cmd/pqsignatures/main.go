@@ -16,6 +16,7 @@ import (
 	"github.com/fogleman/gg"
 	"github.com/nfnt/resize"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/pastel/jsonrpc"
 	pqtime "github.com/pastelnetwork/gonode/pqsignatures/internal/time"
 	pq "github.com/pastelnetwork/gonode/pqsignatures/pkg/pqsignatures"
 	"github.com/pastelnetwork/gonode/pqsignatures/pkg/qr"
@@ -23,19 +24,21 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-const (
-	pastelIDSignatureFilesFolder = "pastel_id_signature_files"
-	otpSecretFile                = "otp_secret.txt"
-	userEmail                    = "user@user.com"
-	otpQRCodeFilePath            = "Google_Authenticator_QR_Code.png"
-	naclBoxKeyFilePath           = "box_key.bin"
-	pastelKeysDirectoryPath      = "pastel_id_key_files"
-)
-
 var invalidSignature = errors.Errorf("signature is not valid")
 var decodedPublicKeyNotMatch = errors.Errorf("decoded base64 public key doesn't match")
 var decodedSignatureNotMatch = errors.Errorf("decoded base64 pastel id signature doesn't match")
 var decodedFingerprintNotMatch = errors.Errorf("decoded base64 image fingerprint doesn't match")
+
+const (
+	// SignAlgorithmED448 is ED448 signature algorithm
+	SignAlgorithmED448 = "ed448"
+	// SignAlgorithmLegRoast is Efficient post-quantum signatures algorithm
+	SignAlgorithmLegRoast = "legroast"
+)
+
+type client struct {
+	jsonrpc.RPCClient
+}
 
 func getImageHashFromImageFilePath(sampleImageFilePath string) (string, error) {
 	f, err := os.Open(sampleImageFilePath)
@@ -177,21 +180,6 @@ func demonstrateSignatureQRCodeSteganography(pkBase64 string, skBase64 string, p
 func sign(imagePath string) error {
 	defer pqtime.Measure(time.Now())
 
-	if _, err := os.Stat(otpSecretFile); os.IsNotExist(err) {
-		if err := pq.SetupOTPAuthenticator(userEmail, otpSecretFile, otpQRCodeFilePath); err != nil {
-			return err
-		}
-	}
-
-	if _, err := os.Stat(naclBoxKeyFilePath); os.IsNotExist(err) {
-		var key string
-		if key, err = pq.SetupNaclKey(naclBoxKeyFilePath); err != nil {
-			return err
-		}
-		fmt.Printf("\nThis is the key for encrypting the pastel ID private key (using NACL box) in Base64: %v", key)
-		fmt.Printf("\nThe key has been saved as a file in the working directory. You should also write this key down as a backup.")
-	}
-
 	fmt.Printf("\nApplying signature to file %v", imagePath)
 	sha256HashOfImageToSign, err := getImageHashFromImageFilePath(imagePath)
 	if err != nil {
@@ -199,32 +187,45 @@ func sign(imagePath string) error {
 	}
 	fmt.Printf("\nSHA256 Hash of Image File: %v", sha256HashOfImageToSign)
 
-	pkBase64, skBase64, err := pq.ImportPastelKeys(pastelKeysDirectoryPath, naclBoxKeyFilePath, otpSecretFile)
-	if err == pq.KeyNotFound {
-		pkBase64, skBase64, err = pq.GeneratePastelKeys(pastelKeysDirectoryPath, naclBoxKeyFilePath)
+	fmt.Printf("\nGenerating Ed448 signature now...")
+	//pastelIDSignatureBase64, err := pq.Sign(sha256HashOfImageToSign, skBase64, pkBase64)
+	signature_ed448, err := pq.Sign(ctx, sha256HashOfImageToSign, pastelID, passphrase, "ed448")
+	if err != nil {
+		return err
 	}
+	fmt.Printf("\nGenerating LegRoast signature now...")
+	signature_legroast, err := pq.Sign(ctx, sha256HashOfImageToSign, pastelID, passphrase, "legroast")
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("\nGenerating LegRoast signature now...")
-	pastelIDSignatureBase64, err := pq.Sign(sha256HashOfImageToSign, skBase64, pkBase64)
+	fmt.Printf("\nVerifying Ed448 signature now...")
+	verified_ed448, err := pq.Verify(sha256HashOfImageToSign, signature_ed448, pastelID, "ed448")
 	if err != nil {
 		return err
 	}
+
 	fmt.Printf("\nVerifying LegRoast signature now...")
-	verified, err := pq.Verify(sha256HashOfImageToSign, pastelIDSignatureBase64, pkBase64)
+	verified_legroast, err := pq.Verify(sha256HashOfImageToSign, signature_legroast, pastelID, "legroast")
 	if err != nil {
 		return err
 	}
-	if verified > 0 {
-		fmt.Printf("\nSignature is valid!")
+
+	if verified_ed448 > 0 {
+		fmt.Printf("\nEd448 Signature is valid!")
 	} else {
-		fmt.Printf("\nWarning! Signature was NOT valid!")
+		fmt.Printf("\nWarning! Ed448 Signature was NOT valid!")
 		return errors.New(invalidSignature)
 	}
 
-	err = demonstrateSignatureQRCodeSteganography(pkBase64, skBase64, pastelIDSignatureBase64, imagePath)
+	if verified_legroast > 0 {
+		fmt.Printf("\nLegRoast Signature is valid!")
+	} else {
+		fmt.Printf("\nWarning! LegRoast Signature was NOT valid!")
+		return errors.New(invalidSignature)
+	}
+
+	err = demonstrateSignatureQRCodeSteganography(signature_ed448, signature_legroast, imagePath)
 	if err != nil {
 		return err
 	}
