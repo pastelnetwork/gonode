@@ -89,7 +89,7 @@ func (task *Task) run(ctx context.Context) error {
 	// Send download request to all top supernodes.
 	var nodes node.List
 
-	err, downloadErrs := topNodes.Download(ctx, task.Ticket.Txid, timestamp, string(signature), ttxid, task.config.connectToNodeTimeout, secInfo)
+	downloadErrs, err := topNodes.Download(ctx, task.Ticket.Txid, timestamp, string(signature), ttxid, task.config.connectToNodeTimeout, secInfo)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).Error("Could not download files")
 		task.UpdateStatus(StatusErrorDownloadFailed)

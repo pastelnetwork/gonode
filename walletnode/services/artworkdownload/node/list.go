@@ -90,8 +90,7 @@ func (nodes List) File() []byte {
 }
 
 // Download download image from supernodes.
-func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string, connectTimeout time.Duration, secInfo *alts.SecInfo) (error, []error) {
-	downloadErrors := []error{}
+func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttxid string, connectTimeout time.Duration, secInfo *alts.SecInfo) ([]error, error) {
 	group, _ := errgroup.WithContext(ctx)
 	errChan := make(chan error, len(*nodes))
 
@@ -122,9 +121,10 @@ func (nodes *List) Download(ctx context.Context, txid, timestamp, signature, ttx
 
 	close(errChan)
 
+	downloadErrors := []error{}
 	for subErr := range errChan {
 		downloadErrors = append(downloadErrors, subErr)
 	}
 
-	return err, downloadErrors
+	return downloadErrors, err
 }

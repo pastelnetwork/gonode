@@ -274,7 +274,7 @@ func TestNodesDownload(t *testing.T) {
 				})
 			}
 
-			err, _ := nodes.Download(testCase.args.ctx, testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid, 5*time.Second, nil)
+			_, err := nodes.Download(testCase.args.ctx, testCase.args.txid, testCase.args.timestamp, testCase.args.signature, testCase.args.ttxid, 5*time.Second, nil)
 			assert.Equal(t, testCase.err, err)
 
 			//mock assertion each client
