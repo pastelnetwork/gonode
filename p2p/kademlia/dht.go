@@ -450,24 +450,6 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	}
 }
 
-func (s *DHT) sendPing(_ context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
-	// new a request message
-	reqMsg := s.newMessage(StoreData, n, request)
-	// send the request and receive the response
-	// FIXME: context background
-	rspMsg, err := s.network.Call(context.Background(), reqMsg)
-	if err != nil {
-		return nil, errors.Errorf("network call: %w", err)
-	}
-
-	response, ok := rspMsg.Data.(*StoreDataResponse)
-	if !ok {
-		return nil, errors.New("invalid StoreDataResponse")
-	}
-
-	return response, nil
-}
-
 func (s *DHT) sendStoreData(_ context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
 	// new a request message
 	reqMsg := s.newMessage(StoreData, n, request)
