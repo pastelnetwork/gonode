@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// MustNewStoreTest creates test store
 func MustNewStoreTest(inmem bool) *Store {
 	return mustNewStoreAtPaths(mustTempDir(), "", inmem, false)
 }
