@@ -93,7 +93,9 @@ func demonstrateSignatureQRCodeSteganography(pastelID string, ed448Signature str
 		return err
 	}
 
-	imgsToMap := append(pkImg, ed448SignatureImg...)
+	imgsToMap := []qr.Image{}
+	imgsToMap = append(imgsToMap, pkImg...)
+	imgsToMap = append(imgsToMap, ed448SignatureImg...)
 	imgsToMap = append(imgsToMap, legroastSignatureImg...)
 
 	imgFingerprintBase64, err := loadImageFingerprint("fingerprint")
