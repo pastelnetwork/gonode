@@ -224,8 +224,7 @@ func TestNodesDownload(t *testing.T) {
 	}
 
 	type nodeAttribute struct {
-		address   string
-		returnErr error
+		address string
 	}
 
 	testCases := []struct {
@@ -236,14 +235,14 @@ func TestNodesDownload(t *testing.T) {
 		numberDownloadCall int
 	}{
 		{
-			nodes:              []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
+			nodes:              []nodeAttribute{{"127.0.0.1:4444"}, {"127.0.0.1:4445"}},
 			args:               args{context.Background(), "txid", "timestamp", "signature", "ttxid"},
 			err:                nil,
 			file:               []byte("test"),
 			numberDownloadCall: 1,
 		},
 		{
-			nodes:              []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
+			nodes:              []nodeAttribute{{"127.0.0.1:4444"}, {"127.0.0.1:4445"}},
 			args:               args{context.Background(), "txid", "timestamp", "signature", "ttxid"},
 			err:                nil,
 			file:               nil,
