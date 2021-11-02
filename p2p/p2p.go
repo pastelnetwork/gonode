@@ -6,7 +6,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/net/credentials"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
@@ -72,6 +71,10 @@ func (s *p2p) run(ctx context.Context) error {
 
 	// join the kademlia network if bootstrap nodes is set
 	if err := s.dht.Bootstrap(ctx); err != nil {
+		// stop the node for kademlia network
+		s.dht.Stop(ctx)
+		// close the store of kademlia network
+		s.store.Close(ctx)
 		return errors.Errorf("bootstrap the node: %w", err)
 	}
 	s.running = true
@@ -154,14 +157,25 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 	s.store = store
 
-	transportCredentials := credentials.NewClientCreds(s.pastelClient, s.secInfo)
+	/*
+		// FIXME - use this code to enable secure connection
+		transportCredentials := credentials.NewClientCreds(s.pastelClient, s.secInfo)
+
+		// new a kademlia distributed hash table
+		dht, err := kademlia.NewDHT(store, s.pastelClient, transportCredentials, &kademlia.Options{
+			BootstrapNodes: []*kademlia.Node{},
+			IP:             s.config.ListenAddress,
+			Port:           s.config.Port,
+		})
+	*/
 
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, s.pastelClient, transportCredentials, &kademlia.Options{
+	dht, err := kademlia.NewDHT(store, s.pastelClient, nil, &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
 	})
+
 	if err != nil {
 		return errors.Errorf("new kademlia dht: %w", err)
 	}

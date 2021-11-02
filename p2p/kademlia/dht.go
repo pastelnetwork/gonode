@@ -13,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
@@ -37,6 +38,8 @@ type DHT struct {
 	done         chan struct{}    // distributed hash table is done
 	cache        storage.KeyValue // store bad bootstrap addresses
 	pastelClient pastel.Client
+	externalIP   string
+	mtx          sync.Mutex
 }
 
 // Options contains configuration options for the local node
@@ -92,6 +95,27 @@ func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.Transpo
 	s.network = network
 
 	return s, nil
+}
+
+func (s *DHT) getExternalIP() (string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+	// if listen IP is localhost - then return itself
+	if s.ht.self.IP == "127.0.0.1" || s.ht.self.IP == "localhost" {
+		return s.ht.self.IP, nil
+	}
+
+	if s.externalIP != "" {
+		return s.externalIP, nil
+	}
+
+	externalIP, err := utils.GetExternalIPAddress()
+	if err != nil {
+		return "", fmt.Errorf("get external ip addr: %s", err)
+	}
+
+	s.externalIP = externalIP
+	return externalIP, nil
 }
 
 // Start the distributed hash table
@@ -227,8 +251,14 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 
 // new a message
 func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Message {
+	externalIP, _ := s.getExternalIP()
+	sender := &Node{
+		IP:   externalIP,
+		ID:   s.ht.self.ID,
+		Port: s.ht.self.Port,
+	}
 	return &Message{
-		Sender:      s.ht.self,
+		Sender:      sender,
 		Receiver:    receiver,
 		MessageType: messageType,
 		Data:        data,
@@ -353,17 +383,21 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 
 			switch response.MessageType {
 			case FindNode, StoreData:
-				v := response.Data.(*FindNodeResponse)
-				if len(v.Closest) > 0 {
-					nl.AddNodes(v.Closest)
+				v, ok := response.Data.(*FindNodeResponse)
+				if ok && v.Status.Result == ResultOk {
+					if len(v.Closest) > 0 {
+						nl.AddNodes(v.Closest)
+					}
 				}
 			case FindValue:
-				v := response.Data.(*FindValueResponse)
-				if v.Value != nil {
-					return v.Value, nil
-				}
-				if len(v.Closest) > 0 {
-					nl.AddNodes(v.Closest)
+				v, ok := response.Data.(*FindValueResponse)
+				if ok && v.Status.Result == ResultOk {
+					if v.Value != nil {
+						return v.Value, nil
+					}
+					if len(v.Closest) > 0 {
+						nl.AddNodes(v.Closest)
+					}
 				}
 			}
 		}
@@ -398,13 +432,13 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 						return nil, nil
 					}
 
-					data := &StoreDataRequest{Data: data}
-					// new a request message
-					request := s.newMessage(StoreData, n, data)
-					// send the request and receive the response
-					if _, err := s.network.Call(ctx, request); err != nil {
+					request := &StoreDataRequest{Data: data}
+					response, err := s.sendStoreData(ctx, n, request)
+					if err != nil {
 						// <TODO> need to remove the node ?
-						log.WithContext(ctx).WithError(err).Error("network call")
+						log.WithContext(ctx).WithField("node", n).WithError(err).Error("send store data failed")
+					} else if response.Status.Result != ResultOk {
+						log.WithContext(ctx).WithField("node", n).WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
 					}
 				}
 				return nil, nil
@@ -414,6 +448,24 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 			closestNode = nl.Nodes[0]
 		}
 	}
+}
+
+func (s *DHT) sendStoreData(_ context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
+	// new a request message
+	reqMsg := s.newMessage(StoreData, n, request)
+	// send the request and receive the response
+	// FIXME: context background
+	rspMsg, err := s.network.Call(context.Background(), reqMsg)
+	if err != nil {
+		return nil, errors.Errorf("network call: %w", err)
+	}
+
+	response, ok := rspMsg.Data.(*StoreDataResponse)
+	if !ok {
+		return nil, errors.New("invalid StoreDataResponse")
+	}
+
+	return response, nil
 }
 
 // add a node into the appropriate k bucket, return the removed node if it's full

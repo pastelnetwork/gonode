@@ -150,6 +150,11 @@ func TestConfigureBootstrapNodes(t *testing.T) {
 				pastelClient: pastelClientMock,
 				done:         make(chan struct{}),
 				cache:        memory.NewKeyValue(),
+				ht: &HashTable{
+					self: &Node{
+						IP: "localhost",
+					},
+				},
 			}
 
 			for _, addr := range tc.args.badAddrs {

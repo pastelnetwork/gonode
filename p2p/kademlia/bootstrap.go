@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -67,7 +66,7 @@ func (s *DHT) parseNode(extP2P string, selfAddr string) (*Node, error) {
 
 // ConfigureBootstrapNodes connects with pastel client & gets p2p boostrap ip & port
 func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
-	selfAddress, err := utils.GetExternalIPAddress()
+	selfAddress, err := s.getExternalIP()
 	if err != nil {
 		return fmt.Errorf("get external ip addr: %s", err)
 	}
@@ -158,7 +157,9 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 				// invoke the request and handle the response
 				response, err := s.network.Call(ctx, request)
 				if err != nil {
-					s.cache.SetWithExpiry(addr, []byte("true"), badAddrExpiryHours*time.Hour)
+					// This happening in bootstrap - so potentially other nodes not yet started
+					// So if bootstrap failed, should try to connect to node again for next bootstrap retry
+					// s.cache.SetWithExpiry(addr, []byte("true"), badAddrExpiryHours*time.Hour)
 
 					log.WithContext(ctx).WithError(err).Error("network call failed")
 					return

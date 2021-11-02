@@ -196,6 +196,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	rqClient := rqgrpc.NewClient()
 
 	// prepare for dd client
+	config.DDServer.SetWorkDir(config.WorkDir)
 	ddClient := ddclient.NewDDServerClient(config.DDServer)
 	if err := os.MkdirAll(config.DDServer.DDFilesDir, os.ModePerm); err != nil {
 		return errors.Errorf("could not create dd-temp-file-dir %q, %w", config.DDServer.DDFilesDir, err)

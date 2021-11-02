@@ -78,46 +78,32 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.New("unable to find enough supernodes")
 	}
 
-	var connectedNodes node.List
-	var errs error
+	//var connectedNodes node.List
+	//var errs error
 	secInfo := &alts.SecInfo{
 		PastelID:   task.Ticket.PastelID,
 		PassPhrase: task.Ticket.PastelIDPassphrase,
 		Algorithm:  "ed448",
 	}
-	// Connect to top supernodes
-	for _, node := range topNodes {
-		if err := node.Connect(ctx, task.config.connectToNodeTimeout, secInfo); err == nil {
-			log.WithContext(ctx).WithError(err).WithField("address", node.String()).WithField("pastelid", node.PastelID()).Debug("Connected to supernode")
-			connectedNodes.Add(node)
-		} else {
-			log.WithContext(ctx).WithError(err).WithField("address", node.String()).WithField("pastelid", node.PastelID()).Debug("Could not connect to supernode")
-			errs = errors.Append(errs, err)
-		}
-	}
-
-	if len(connectedNodes) < task.config.NumberSuperNodes {
-		task.UpdateStatus(StatusErrorNotEnoughSuperNode)
-		return errors.Errorf("could not connect enough %d supernodes: %w", task.config.NumberSuperNodes, errs)
-	}
-	task.UpdateStatus(StatusConnected)
 
 	// Send download request to all top supernodes.
 	var nodes node.List
-	var downloadErrs error
-	err = connectedNodes.Download(ctx, task.Ticket.Txid, timestamp, string(signature), ttxid, downloadErrs)
+
+	downloadErrs, err := topNodes.Download(ctx, task.Ticket.Txid, timestamp, string(signature), ttxid, task.config.connectToNodeTimeout, secInfo)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("txid", task.Ticket.Txid).Error("Could not download files")
 		task.UpdateStatus(StatusErrorDownloadFailed)
 		return errors.Errorf("download files from supernodes: %w", err)
 	}
 
-	nodes = connectedNodes.Active()
+	nodes = topNodes.Active()
 
 	if len(nodes) < task.config.NumberSuperNodes {
+		log.WithContext(ctx).WithField("DownloadedNodes", len(nodes)).Info("Not enough number of downloaded node")
 		task.UpdateStatus(StatusErrorNotEnoughFiles)
-		return errors.Errorf("could not download enough files from %d supernodes: %w", task.config.NumberSuperNodes, downloadErrs)
+		return errors.Errorf("could not download enough files from %d supernodes: %v", task.config.NumberSuperNodes, downloadErrs)
 	}
+
 	task.UpdateStatus(StatusDownloaded)
 
 	// Disconnect supernodes that did not return file.

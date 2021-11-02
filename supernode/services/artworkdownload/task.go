@@ -3,7 +3,6 @@ package artworkdownload
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -298,31 +297,12 @@ func (task *Task) restoreFile(ctx context.Context, nftRegTicket *pastel.RegTicke
 }
 
 func (task *Task) decodeRegTicket(nftRegTicket *pastel.RegTicket) error {
-	// n := base64.StdEncoding.DecodedLen(len(nftRegTicket.RegTicketData.NFTTicket))
-	// nftTicketData := make([]byte, n)
-	// _, err := base64.StdEncoding.Decode(nftTicketData, nftRegTicket.RegTicketData.NFTTicket)
-	// if err != nil {
-	// 	return errors.New(fmt.Sprintf("Could not decode NFT ticket. %w", err))
-	// }
-
-	err := json.Unmarshal(nftRegTicket.RegTicketData.NFTTicket, &nftRegTicket.RegTicketData.NFTTicketData)
+	articketData, err := pastel.DecodeNFTTicket(nftRegTicket.RegTicketData.NFTTicket)
 	if err != nil {
-		return errors.Errorf("could not parse NFT ticket. %w", err)
+		return errors.Errorf("convert NFT ticket: %w", err)
 	}
-	// log.Debug(fmt.Sprintf("App ticket: %s", string(nftRegTicket.RegTicketData.NFTTicketData.AppTicket)))
+	nftRegTicket.RegTicketData.NFTTicketData = *articketData
 
-	appTicketData := nftRegTicket.RegTicketData.NFTTicketData.AppTicket
-	// n := base64.StdEncoding.DecodedLen(len(nftRegTicket.RegTicketData.NFTTicketData.AppTicket))
-	// appTicketData := make([]byte, n)
-	// _, err = base64.StdEncoding.Decode(appTicketData, nftRegTicket.RegTicketData.NFTTicketData.AppTicket)
-	// if err != nil {
-	// 	return errors.New(fmt.Sprintf("Could not decode app ticket. %w", err))
-	// }
-
-	err = json.Unmarshal(appTicketData, &nftRegTicket.RegTicketData.NFTTicketData.AppTicketData)
-	if err != nil {
-		return errors.Errorf("could not parse app ticket. %w", err)
-	}
 	return nil
 }
 
