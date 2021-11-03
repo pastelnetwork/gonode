@@ -84,7 +84,7 @@ func (payload *Payload) Encode() error {
 	}
 
 	data := b85.Encode(raw)
-	fmt.Println("decoded data: ", data)
+
 	size := int(payloadQRCapacity)
 	total := int(math.Ceil(float64(len(data)) / float64(size)))
 

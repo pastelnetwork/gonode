@@ -183,7 +183,7 @@ func EncodeNFTTicket(ticket *NFTTicket) ([]byte, error) {
 		Copies:    ticket.Copies,
 		Royalty:   ticket.Royalty,
 		Green:     ticket.Green,
-		AppTicket: string(appTicket),
+		AppTicket: appTicket,
 	}
 
 	b, err := json.Marshal(nftTicket)
