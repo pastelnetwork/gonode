@@ -92,22 +92,22 @@ func (sig Signature) Decode(img image.Image) error {
 	}
 
 	if err := sig.metadata.qrCode.Load(img); err != nil {
-		return err
+		return errors.Errorf("load: %w", err)
 	}
 
 	if err := sig.metadata.Decode(sig.Payloads); err != nil {
-		return err
+		return errors.Errorf("metadata decode: %w", err)
 	}
 
 	for _, payload := range *sig.Payloads {
 		for _, qrCode := range payload.qrCodes {
 			if err := qrCode.Load(img); err != nil {
-				return err
+				return errors.Errorf("qrcode load: %w", err)
 			}
 		}
 
 		if err := payload.Decode(); err != nil {
-			return err
+			return errors.Errorf("decode payload: %w", err)
 		}
 	}
 	return nil
