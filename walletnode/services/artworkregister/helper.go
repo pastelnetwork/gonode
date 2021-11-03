@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"io"
 
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"golang.org/x/crypto/sha3"
 )
@@ -32,4 +33,14 @@ func safeString(ptr *string) string {
 		return *ptr
 	}
 	return ""
+}
+
+// getEd448PubKeyFromPastelID gets ED448 public key from base58 encoded PastelID
+func getEd448PubKeyFromPastelID(pastelID string) (key []byte, err error) {
+	pastelIDdec := base58.Decode(pastelID)
+	if len(pastelIDdec) < 2 {
+		return nil, errors.New("getEd448PubKeyFromPastelID: invalid ArtitstPastelID")
+	}
+
+	return pastelIDdec[2:], nil
 }

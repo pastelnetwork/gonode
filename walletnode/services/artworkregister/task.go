@@ -258,7 +258,11 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 
 func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
 	// Sign fingerprint
-	ed448PubKey := []byte(task.Request.ArtistPastelID)
+	ed448PubKey, err := getEd448PubKeyFromPastelID(task.Request.ArtistPastelID)
+	if err != nil {
+		return fmt.Errorf("encodeFingerprint: %v", err)
+	}
+
 	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign fingerprint: %w", err)
@@ -278,7 +282,7 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	encSig := qrsignature.New(
 		qrsignature.Fingerprint(fingerprint),
 		qrsignature.PostQuantumSignature(pqSignature),
-		qrsignature.PostQuantumPubKey([]byte(ticket.Signature)),
+		qrsignature.PostQuantumPubKey(base58.Decode(ticket.PqKey)),
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
