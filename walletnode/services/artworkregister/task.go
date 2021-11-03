@@ -282,7 +282,7 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	encSig := qrsignature.New(
 		qrsignature.Fingerprint(fingerprint),
 		qrsignature.PostQuantumSignature(pqSignature),
-		qrsignature.PostQuantumPubKey([]byte(ticket.PqKey)),
+		qrsignature.PostQuantumPubKey(base58.Decode(ticket.PqKey)),
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)

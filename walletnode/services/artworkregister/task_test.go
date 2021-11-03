@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcutil/base58"
+
 	"github.com/DataDog/zstd"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -1235,7 +1237,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
 					IDTicketProp: pastel.IDTicketProp{
-						PqKey: "test-pq-key",
+						PqKey: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 					},
 				},
 			},
@@ -1287,7 +1289,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 				if !bytes.Equal(tc.args.signReturns, decSig.PostQuantumSignature()) {
 					t.Fatalf("post quantum signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.PostQuantumSignature()))
 				}
-				dec := []byte(tc.args.findTicketIDReturns.PqKey)
+				dec := base58.Decode(tc.args.findTicketIDReturns.PqKey)
 				if !bytes.Equal(dec, decSig.PostQuantumPubKey()) {
 					t.Fatalf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(dec), len(decSig.PostQuantumPubKey()))
 				}

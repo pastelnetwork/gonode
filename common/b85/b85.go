@@ -8,6 +8,7 @@ import (
 	"strings"
 )
 
+// ErrDecodingB85 is decoding error
 var ErrDecodingB85 = errors.New("base85 decoding error")
 
 const b85chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
