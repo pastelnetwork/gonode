@@ -14,9 +14,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/btcsuite/btcutil/base58"
+
 	"github.com/DataDog/zstd"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
@@ -66,6 +69,7 @@ func newTestImageFile() (*artwork.File, error) {
 
 	img := image.NewRGBA(image.Rect(0, 0, 400, 400))
 	png.Encode(f, img)
+	imgFile.SetFormat(1)
 
 	return imgFile, nil
 }
@@ -1223,7 +1227,7 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
 					},
 					Service: &Service{},
 				},
@@ -1232,9 +1236,12 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 				fingerprint: []byte("test-fingerprint"),
 				findTicketIDReturns: &pastel.IDTicket{
 					TXID: "test-txid",
+					IDTicketProp: pastel.IDTicketProp{
+						PqKey: "test-pq-key",
+					},
 				},
 			},
-			wantErr: errors.New("decode image"),
+			wantErr: nil,
 		},
 	}
 	for name, tc := range testCases {
@@ -1248,25 +1255,53 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
 
 			tc.args.task.Service.pastelClient = pastelClientMock
-			fileStorageMock := storageMock.NewMockFileStorage()
-			storage := artwork.NewStorage(fileStorageMock)
 
-			fileMock := storageMock.NewMockFile()
-			fileMock.ListenOnClose(nil).ListenOnRead(0, io.EOF).ListenOnName("test")
+			file, err := newTestImageFile()
+			if err != nil {
+				t.Fatalf("err creating test file: %v", err)
+			}
 
-			file := artwork.NewFile(storage, "test-file")
-			fileStorageMock.ListenOnOpen(fileMock, nil)
+			ctx := context.Background()
 
-			err := tc.args.task.encodeFingerprint(context.Background(), tc.args.fingerprint, file)
+			err = tc.args.task.encodeFingerprint(ctx, tc.args.fingerprint, file)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
 				assert.Nil(t, err)
+
+				ed448PubKey, err := getEd448PubKeyFromPastelID(tc.args.task.Request.ArtistPastelID)
+				assert.Nil(t, err)
+
+				decSig := qrsignature.New()
+				copyImage, _ := file.Copy()
+				copyImage.SetFormatFromExtension(".png")
+				copyImage.SetFormat(1)
+
+				if err := file.Decode(decSig); err != nil {
+					t.Fatal(err)
+				}
+
+				if !bytes.Equal(tc.args.fingerprint, decSig.Fingerprint()) {
+					t.Fatalf("fingerprints do not match, original len:%d, decoded len:%d\n", tc.args.fingerprint, len(decSig.Fingerprint()))
+				}
+
+				if !bytes.Equal(tc.args.signReturns, decSig.PostQuantumSignature()) {
+					t.Fatalf("post quantum signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.PostQuantumSignature()))
+				}
+				dec := base58.Decode(tc.args.findTicketIDReturns.PqKey)
+				if !bytes.Equal(dec, decSig.PostQuantumPubKey()) {
+					t.Fatalf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(dec), len(decSig.PostQuantumPubKey()))
+				}
+				if !bytes.Equal(tc.args.signReturns, decSig.Ed448Signature()) {
+					t.Fatalf("ed448 signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.Ed448Signature()))
+				}
+				if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
+					t.Fatalf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
+				}
 			}
 		})
 	}
-
 }
 
 func TestTaskSignTicket(t *testing.T) {
