@@ -121,9 +121,13 @@ func (s *Badger) Delete(ctx context.Context, key []byte) {
 	log.WithContext(ctx).Infof("delete key: %s", base58.Encode(key))
 }
 
-// Keys returns all the keys from the Store
-func (s *Badger) Keys(ctx context.Context) [][]byte {
+// Keys return a list of keys with given offset + limit
+func (s *Badger) Keys(ctx context.Context, offset int, limit int) [][]byte {
 	keys := [][]byte{}
+	if offset < 0 {
+		offset = 0
+	}
+	curIndex := 0
 
 	if err := s.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
@@ -136,7 +140,14 @@ func (s *Badger) Keys(ctx context.Context) [][]byte {
 			if bytes.HasPrefix(key, []byte(replicationPrefix)) {
 				continue
 			}
-			keys = append(keys, key)
+			if limit >= 0 && curIndex >= offset+limit {
+				break
+			}
+
+			if curIndex >= offset {
+				keys = append(keys, key)
+			}
+			curIndex = curIndex + 1
 		}
 		return nil
 	}); err != nil {
@@ -205,6 +216,6 @@ func (s *Badger) Stats(ctx context.Context) (map[string]interface{}, error) {
 	lsm, vlog := s.db.Size()
 	stats["log_size"] = vlog
 	stats["dir_size"] = lsm + vlog
-	stats["record_count"] = len(s.Keys(ctx))
+	stats["record_count"] = len(s.Keys(ctx, 0, -1))
 	return stats, nil
 }

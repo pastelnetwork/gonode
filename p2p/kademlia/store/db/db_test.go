@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"crypto/rand"
+	"os"
 	"testing"
 	"time"
 
@@ -10,13 +11,20 @@ import (
 )
 
 func TestDB(t *testing.T) {
+	storePath := "/tmp/testDb"
 	// new the local storage
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
-	store, err := NewStore(ctx, "/tmp/testDb")
+	store, err := NewStore(ctx, storePath)
 	assert.Nil(t, err)
 
-	for i := 0; i <= 2000; i++ {
+	defer func() {
+		store.Close(ctx)
+		os.RemoveAll(storePath)
+	}()
+
+	numberOfKeys := 2000
+	for i := 0; i < numberOfKeys; i++ {
 		key := make([]byte, 32)
 		rand.Read(key)
 		writeData := make([]byte, 50*1024)
@@ -29,4 +37,10 @@ func TestDB(t *testing.T) {
 		assert.Nil(t, err)
 		assert.Equal(t, writeData, readData)
 	}
+
+	assert.Equal(t, 1, len(store.Keys(ctx, 0, 1)))
+	assert.Equal(t, 10, len(store.Keys(ctx, 0, 10)))
+	assert.Equal(t, numberOfKeys, len(store.Keys(ctx, 0, -1)))
+	assert.Equal(t, 0, len(store.Keys(ctx, numberOfKeys, 1)))
+	assert.Equal(t, 0, len(store.Keys(ctx, numberOfKeys, -1)))
 }
