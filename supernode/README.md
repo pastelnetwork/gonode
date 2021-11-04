@@ -81,6 +81,17 @@
         # Output : 
         {"key":"AU3GnD1W1zCxijnQPgNm895LkqwgQpYK8hYvF2WrPPcA","value":"SGVsbG8="}
     ```
+    4. Get list of keys:
+    ``` shell
+    curl -s  -H "Content-Type: application/json" "http://localhost:9090/p2p/get?offset=0&limit=3"
+    # Output :
+    {
+        "keys":["BpY5xbiAu8NTM5voZRWat1is3HJ9zurzE8AFnoTZQbP","9WhodxiYS13tuEQhTEjHL38Y4rJzJHh2BKL4vZk8XTj","BpY5xbiAu8NTM5voZRWat1is3HJ9zurzE8AFnoTZQbP"],
+        "len":3,
+        "limit":3,
+        "offset":0
+    }
+    ```
 
 ### CLI Options
 
