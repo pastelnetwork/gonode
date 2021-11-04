@@ -174,6 +174,7 @@ func (s *p2p) configure(ctx context.Context) error {
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
+		ID:             []byte(s.config.ID),
 	})
 
 	if err != nil {
