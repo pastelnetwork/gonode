@@ -258,7 +258,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 
 func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
 	// Sign fingerprint
-	ed448PubKey, err := getEd448PubKeyFromPastelID(task.Request.ArtistPastelID)
+	ed448PubKey, err := getPubKey(task.Request.ArtistPastelID)
 	if err != nil {
 		return fmt.Errorf("encodeFingerprint: %v", err)
 	}
@@ -268,21 +268,26 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 		return errors.Errorf("sign fingerprint: %w", err)
 	}
 
-	// TODO: Should be replaced with real data from the Pastel API.
 	ticket, err := task.pastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
 	if err != nil {
 		return errors.Errorf("find register ticket of artist pastel id(%s):%w", task.Request.ArtistPastelID, err)
 	}
+
 	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmLegRoast)
 	if err != nil {
 		return errors.Errorf("sign fingerprint with legroats: %w", err)
+	}
+
+	pqPubKey, err := getPubKey(ticket.PqKey)
+	if err != nil {
+		return fmt.Errorf("encodeFingerprint: %v", err)
 	}
 
 	// Encode data to the image.
 	encSig := qrsignature.New(
 		qrsignature.Fingerprint(fingerprint),
 		qrsignature.PostQuantumSignature(pqSignature),
-		qrsignature.PostQuantumPubKey(base58.Decode(ticket.PqKey)),
+		qrsignature.PostQuantumPubKey(pqPubKey),
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)

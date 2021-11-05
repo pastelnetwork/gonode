@@ -14,8 +14,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcutil/base58"
-
 	"github.com/DataDog/zstd"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -1270,7 +1268,10 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 			} else {
 				assert.Nil(t, err)
 
-				ed448PubKey, err := getEd448PubKeyFromPastelID(tc.args.task.Request.ArtistPastelID)
+				ed448PubKey, err := getPubKey(tc.args.task.Request.ArtistPastelID)
+				assert.Nil(t, err)
+
+				pqPubKey, err := getPubKey(tc.args.findTicketIDReturns.PqKey)
 				assert.Nil(t, err)
 
 				decSig := qrsignature.New()
@@ -1289,9 +1290,9 @@ func TestTaskEncodeFingerprint(t *testing.T) {
 				if !bytes.Equal(tc.args.signReturns, decSig.PostQuantumSignature()) {
 					t.Fatalf("post quantum signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.PostQuantumSignature()))
 				}
-				dec := base58.Decode(tc.args.findTicketIDReturns.PqKey)
-				if !bytes.Equal(dec, decSig.PostQuantumPubKey()) {
-					t.Fatalf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(dec), len(decSig.PostQuantumPubKey()))
+
+				if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
+					t.Fatalf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
 				}
 				if !bytes.Equal(tc.args.signReturns, decSig.Ed448Signature()) {
 					t.Fatalf("ed448 signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.Ed448Signature()))

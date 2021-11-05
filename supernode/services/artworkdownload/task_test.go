@@ -9,6 +9,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/service/task"
+
 	// taskMock "github.com/pastelnetwork/gonode/common/service/task/test"
 
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"

@@ -35,12 +35,12 @@ func safeString(ptr *string) string {
 	return ""
 }
 
-// getEd448PubKeyFromPastelID gets ED448 public key from base58 encoded PastelID
-func getEd448PubKeyFromPastelID(pastelID string) (key []byte, err error) {
-	pastelIDdec := base58.Decode(pastelID)
-	if len(pastelIDdec) < 2 {
-		return nil, errors.New("getEd448PubKeyFromPastelID: invalid ArtitstPastelID")
+// getPubKey gets ED448 or PQ public key from base58 encoded key
+func getPubKey(in string) (key []byte, err error) {
+	dec := base58.Decode(in)
+	if len(dec) < 2 {
+		return nil, errors.New("getPubKey: invalid id")
 	}
 
-	return pastelIDdec[2:], nil
+	return dec[2:], nil
 }
