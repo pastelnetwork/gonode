@@ -7,9 +7,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/service/task"
+
 	// taskMock "github.com/pastelnetwork/gonode/common/service/task/test"
-	a85 "encoding/ascii85"
 
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
 	"github.com/pastelnetwork/gonode/pastel"
@@ -67,8 +68,7 @@ func fakeRegiterTicket() pastel.RegTicket {
 
 	appTicketBytes, _ := json.Marshal(&appTicketData)
 
-	appTicket := make([]byte, a85.MaxEncodedLen(len(appTicketBytes)))
-	_ = a85.Encode(appTicket, appTicketBytes)
+	appTicket := b85.Encode(appTicketBytes)
 
 	nftTicketData := pastel.NFTTicket{
 		Version:       1,
@@ -78,7 +78,7 @@ func fakeRegiterTicket() pastel.RegTicket {
 		Copies:        10,
 		Royalty:       99,
 		Green:         false,
-		AppTicket:     string(appTicket),
+		AppTicket:     appTicket,
 		AppTicketData: appTicketData,
 	}
 	artTicket, _ := json.Marshal(&nftTicketData)

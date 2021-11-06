@@ -30,4 +30,5 @@ type IDTicketProp struct {
 	Signature string `json:"signature"`
 	TimeStamp string `json:"timeStamp"`
 	Type      string `json:"type"`
+	PqKey     string `json:"pq_key"`
 }

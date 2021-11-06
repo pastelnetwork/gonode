@@ -327,22 +327,6 @@ jobs:
       - test:
           package: "proto"
 
-  test_legroast:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - test:
-          package: "legroast"
-
-  test_pqsignatures:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: .
-      - test:
-          package: "pqsignatures"
-
   test_walletnode:
     <<: *defaults
     steps:
@@ -372,12 +356,6 @@ jobs:
       - create-sources-container:
           containerName: "sourcesContainer"
       - install_tensorflow
-      - build:
-          buildContainerName: "pqsignatures"
-          moduleSubDir: "pqsignatures"
-          package: "cmd/pqsignatures"
-          targets: "darwin-10.14/amd64,windows/amd64,"
-          binaryName: "pqsignatures"
       - build:
           buildContainerName: "walletnode"
           moduleSubDir: "walletnode"
@@ -453,12 +431,6 @@ workflows:
           requires:
             - prepare_workspace
       - test_proto:
-          requires:
-            - prepare_workspace
-      - test_legroast:
-          requires:
-            - prepare_workspace
-      - test_pqsignatures:
           requires:
             - prepare_workspace
       - test_walletnode:
