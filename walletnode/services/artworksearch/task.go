@@ -58,7 +58,6 @@ func (task *Task) run(ctx context.Context) error {
 	}
 
 	group, gctx := errgroup.WithContext(ctx)
-
 	for _, ticket := range actTickets {
 		ticket := ticket
 
@@ -156,7 +155,6 @@ func (task *Task) run(ctx context.Context) error {
 
 // filterRegTicket filters ticket against request params & checks if its a match
 func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
-
 	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),
 		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
 		return srch, false

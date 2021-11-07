@@ -195,6 +195,7 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 // ArtSearch searches for artwork & streams the result based on filters
 func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
 	defer stream.Close()
+
 	searchReq := fromArtSearchRequest(req)
 	taskID := service.search.AddTask(searchReq)
 	task := service.search.Task(taskID)

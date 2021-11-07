@@ -79,6 +79,7 @@ func (service *Service) RegTicket(ctx context.Context, RegTXID string) (*pastel.
 	if err != nil {
 		return nil, errors.Errorf("convert NFT ticket: %w", err)
 	}
+
 	regTicket.RegTicketData.NFTTicketData = *articketData
 
 	return &regTicket, nil
