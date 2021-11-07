@@ -127,6 +127,11 @@ func (s *p2p) Delete(ctx context.Context, key string) error {
 	return s.dht.Delete(ctx, key)
 }
 
+// Keys return a list of keys with given offset + limit
+func (s *p2p) Keys(ctx context.Context, offset int, limit int) []string {
+	return s.dht.Keys(ctx, offset, limit)
+}
+
 // Stats return status of p2p
 func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	retStats := map[string]interface{}{}

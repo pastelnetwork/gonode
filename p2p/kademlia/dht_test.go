@@ -146,7 +146,7 @@ func (ts *testSuite) SetupSuite() {
 // run before each test in the suite
 func (ts *testSuite) SetupTest() {
 	// make sure the store is empty
-	keys := ts.main.store.Keys(ts.ctx)
+	keys := ts.main.Keys(ts.ctx, 0, -1)
 	ts.Zero(len(keys))
 }
 
@@ -162,7 +162,7 @@ func (ts *testSuite) TearDownTest() {
 	ts.resetHashtable()
 
 	// reset the store
-	for _, key := range ts.main.store.Keys(ts.ctx) {
+	for _, key := range ts.main.store.Keys(ts.ctx, 0, -1) {
 		ts.main.store.Delete(ts.ctx, key)
 	}
 }

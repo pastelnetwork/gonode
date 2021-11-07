@@ -1,7 +1,9 @@
 package mem
 
 import (
+	"bytes"
 	"context"
+	"sort"
 	"sync"
 	"time"
 )
@@ -63,15 +65,38 @@ func (s *Store) Delete(_ context.Context, key []byte) {
 }
 
 // Keys returns all the keys from the Store
-func (s *Store) Keys(_ context.Context) [][]byte {
+// return all keys of limit is -1
+func (s *Store) Keys(_ context.Context, offset int, limit int) [][]byte {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
+
+	if offset < 0 {
+		offset = 0
+	}
+
+	if limit == -1 {
+		limit = len(s.data)
+	}
+
+	if offset >= len(s.data) {
+		return [][]byte{}
+	}
 
 	var keys [][]byte
 	for k := range s.data {
 		keys = append(keys, []byte(k))
 	}
-	return keys
+
+	// Sort keys
+	sort.SliceStable(keys, func(i, j int) bool {
+		return bytes.Compare(keys[i], keys[j]) < 0
+	})
+
+	if offset+limit > len(keys) {
+		return keys[offset:]
+	}
+
+	return keys[offset : offset+limit]
 }
 
 // Close the store
@@ -81,7 +106,7 @@ func (s *Store) Close(_ context.Context) {
 // Stats returns stats of store
 func (s *Store) Stats(ctx context.Context) (map[string]interface{}, error) {
 	stats := map[string]interface{}{}
-	stats["record_count"] = len(s.Keys(ctx))
+	stats["record_count"] = len(s.Keys(ctx, 0, -1))
 	return stats, nil
 }
 

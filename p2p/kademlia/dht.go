@@ -249,6 +249,17 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return dhtStats, nil
 }
 
+// Keys return a list of keys with given offset + limit
+func (s *DHT) Keys(ctx context.Context, offset int, limit int) []string {
+	rawKeys := s.store.Keys(ctx, offset, limit)
+	keys := []string{}
+	for _, rawKey := range rawKeys {
+		keys = append(keys, base58.Encode(rawKey))
+	}
+
+	return keys
+}
+
 // new a message
 func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Message {
 	externalIP, _ := s.getExternalIP()
