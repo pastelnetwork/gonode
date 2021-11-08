@@ -170,6 +170,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
+	config.P2P.ID = config.PastelID
 	p2p := p2p.New(config.P2P, pastelClient, secInfo)
 
 	// new metadb service

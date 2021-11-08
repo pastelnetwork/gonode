@@ -19,6 +19,9 @@ type Config struct {
 
 	// data directory for badger
 	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
+
+	// ID of masternode to be used in P2P - Supposed to be the PastelID
+	ID string `mapstructure:"id" json:"-"`
 }
 
 // SetWorkDir applies `workDir` to DataDir if it was not specified as an absolute path.
