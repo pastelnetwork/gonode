@@ -1,8 +1,11 @@
 package pastel
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+
+	"github.com/pastelnetwork/gonode/common/log"
 
 	"github.com/pastelnetwork/gonode/common/b85"
 
@@ -204,8 +207,13 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 
 	appDecodedBytes, err := b85.Decode(res.AppTicket)
 	if err != nil {
-		return nil, fmt.Errorf("b85 decode: %v", err)
+		log.Warnf("b85 decoding failed, trying to base64 decode - err: %v", err)
+		appDecodedBytes, err = base64.StdEncoding.DecodeString(res.AppTicket)
+		if err != nil {
+			return nil, fmt.Errorf("b64 decode: %v", err)
+		}
 	}
+
 	appTicket := AppTicket{}
 	err = json.Unmarshal(appDecodedBytes, &appTicket)
 	if err != nil {

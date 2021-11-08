@@ -126,7 +126,7 @@ func toArtSearchResult(srch *artworksearch.RegTicketSearch) *artworks.ArtworkSea
 }
 
 func fromArtSearchRequest(req *artworks.ArtSearchPayload) *artworksearch.ArtSearchRequest {
-	return &artworksearch.ArtSearchRequest{
+	rq := &artworksearch.ArtSearchRequest{
 		Artist:           req.Artist,
 		Limit:            req.Limit,
 		Query:            req.Query,
@@ -143,9 +143,17 @@ func fromArtSearchRequest(req *artworks.ArtSearchPayload) *artworksearch.ArtSear
 		MaxNsfwScore:     req.MaxNsfwScore,
 		MinRarenessScore: req.MinRarenessScore,
 		MaxRarenessScore: req.MaxRarenessScore,
-		UserPastelID:     *req.UserPastelid,
-		UserPassphrase:   *req.UserPassphrase,
 	}
+
+	if req.UserPastelid != nil {
+		rq.UserPastelID = *req.UserPastelid
+	}
+
+	if req.UserPassphrase != nil {
+		rq.UserPassphrase = *req.UserPassphrase
+	}
+
+	return rq
 }
 
 func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
