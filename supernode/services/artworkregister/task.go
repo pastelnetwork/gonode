@@ -634,7 +634,6 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 		CombinedRarenessScore:                        ddResult.CombinedRarenessScore,
 		XgboostPredictedRarenessScore:                ddResult.XgboostPredictedRarenessScore,
 		NnPredictedRarenessScore:                     ddResult.NnPredictedRarenessScore,
-		UrlOfFirstMatchInPage:                        ddResult.UrlOfFirstMatchInPage,
 	}
 	compressedFg, err := zstd.CompressLevel(nil, pastel.Fingerprint(fingerprint).Bytes(), 22)
 	if err != nil {

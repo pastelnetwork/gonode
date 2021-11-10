@@ -108,7 +108,6 @@ type FingerAndScores struct {
 	CombinedRarenessScore                        float32              `json:"combined_rareness_score"`
 	XgboostPredictedRarenessScore                float32              `json:"xgboost_predicted_rareness_score"`
 	NnPredictedRarenessScore                     float32              `json:"nn_predicted_rareness_score"`
-	UrlOfFirstMatchInPage                        string               `json:"url_of_first_match_in_page"`
 }
 
 // AppTicket represents pastel App ticket.

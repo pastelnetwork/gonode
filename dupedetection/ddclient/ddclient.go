@@ -60,7 +60,6 @@ type DupeDetection struct {
 	NnPredictedRarenessScore                     float32             `json:"nn_predicted_rareness_score"`
 	OverallAverageRarenessScore                  float32             `json:"overall_average_rareness_score"`
 	NumberOfPagesOfResults                       uint32              `json:"number_of_pages_of_results"`
-	UrlOfFirstMatchInPage                        string              `json:"url_of_first_match_in_page"`
 }
 
 // AlternateNSFWScores represents alternate NSFW scores in the output of dupe detection service
@@ -137,7 +136,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 	}
 
 	/*
-			DupeDetectionSystemVersion                    string                 `protobuf:"bytes,1,opt,name=dupe_detection_system_version,json=dupeDetectionSystemVersion,proto3" json:"dupe_detection_system_version,omitempty"`
+		DupeDetectionSystemVersion                    string                 `protobuf:"bytes,1,opt,name=dupe_detection_system_version,json=dupeDetectionSystemVersion,proto3" json:"dupe_detection_system_version,omitempty"`
 		HashOfCandidateImageFile                      string                 `protobuf:"bytes,2,opt,name=hash_of_candidate_image_file,json=hashOfCandidateImageFile,proto3" json:"hash_of_candidate_image_file,omitempty"`
 		IsLikelyDupe                                  bool                   `protobuf:"varint,3,opt,name=is_likely_dupe,json=isLikelyDupe,proto3" json:"is_likely_dupe,omitempty"`
 		PerceptualHashOverlapCount                    uint32                 `protobuf:"varint,4,opt,name=perceptual_hash_overlap_count,json=perceptualHashOverlapCount,proto3" json:"perceptual_hash_overlap_count,omitempty"`
@@ -227,7 +226,6 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		NnPredictedRarenessScore:                     res.NnPredictedRarenessScore,
 		OverallAverageRarenessScore:                  res.OverallAverageRarenessScore,
 		NumberOfPagesOfResults:                       res.NumberOfPagesOfResults,
-		UrlOfFirstMatchInPage:                        res.UrlOfFirstMatchInPage,
 	}
 
 	return output, nil
