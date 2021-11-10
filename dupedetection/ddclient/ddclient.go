@@ -58,8 +58,6 @@ type DupeDetection struct {
 	CombinedRarenessScore                        float32             `json:"combined_rareness_score"`
 	XgboostPredictedRarenessScore                float32             `json:"xgboost_predicted_rareness_score"`
 	NnPredictedRarenessScore                     float32             `json:"nn_predicted_rareness_score"`
-	OverallAverageRarenessScore                  float32             `json:"overall_average_rareness_score"`
-	NumberOfPagesOfResults                       uint32              `json:"number_of_pages_of_results"`
 }
 
 // AlternateNSFWScores represents alternate NSFW scores in the output of dupe detection service
@@ -224,8 +222,6 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		CombinedRarenessScore:                        res.CombinedRarenessScore,
 		XgboostPredictedRarenessScore:                res.XgboostPredictedRarenessScore,
 		NnPredictedRarenessScore:                     res.NnPredictedRarenessScore,
-		OverallAverageRarenessScore:                  res.OverallAverageRarenessScore,
-		NumberOfPagesOfResults:                       res.NumberOfPagesOfResults,
 	}
 
 	return output, nil
