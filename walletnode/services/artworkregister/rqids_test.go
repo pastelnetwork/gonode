@@ -14,7 +14,7 @@ func TestIdentifiers(t *testing.T) {
 		res   []string
 	}{
 		"simple": {
-			rqIDs: RQIDSList{&RQIDS{ID: "a"}, &RQIDS{ID: "b"}},
+			rqIDs: RQIDSList{&RQIDS{ID: ""}, &RQIDS{ID: "b"}},
 			res:   []string{"a", "b"},
 		},
 		"empty": {

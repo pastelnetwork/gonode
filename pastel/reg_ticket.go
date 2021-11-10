@@ -71,18 +71,44 @@ type AlternativeNSFWScore struct {
 
 // FingerAndScores represents structure of app ticket
 type FingerAndScores struct {
-	DupeDectectionSystemVersion string               `json:"dupe_dectection_system_version"`
-	HashOfCandidateImageFile    []byte               `json:"hash_of_candidate_image_file"`
-	OverallAverageRarenessScore float32              `json:"overall_average_rareness_score"`
-	IsLikelyDupe                bool                 `json:"is_rare_on_internet"`
-	IsRareOnInternet            bool                 `json:"is_likely_dupe"`
-	NumberOfPagesOfResults      uint32               `json:"number_of_pages_of_results"`
-	MatchesFoundOnFirstPage     uint32               `json:"matches_found_on_first_page"`
-	URLOfFirstMatchInPage       string               `json:"url_of_first_match_in_page"`
-	OpenNSFWScore               float32              `json:"open_nsfw_score"`
-	ZstdCompressedFingerprint   []byte               `json:"zstd_compressed_fingerprint"`
-	AlternativeNSFWScore        AlternativeNSFWScore `json:"alternative_nsfw_score"`
-	ImageHashes                 ImageHashes          `json:"image_hashes"`
+	DupeDectectionSystemVersion                  string               `json:"dupe_dectection_system_version"`
+	HashOfCandidateImageFile                     string               `json:"hash_of_candidate_image_file"`
+	OverallAverageRarenessScore                  float32              `json:"overall_average_rareness_score"`
+	IsLikelyDupe                                 bool                 `json:"is_rare_on_internet"`
+	IsRareOnInternet                             bool                 `json:"is_likely_dupe"`
+	NumberOfPagesOfResults                       uint32               `json:"number_of_pages_of_results"`
+	MatchesFoundOnFirstPage                      uint32               `json:"matches_found_on_first_page"`
+	URLOfFirstMatchInPage                        string               `json:"url_of_first_match_in_page"`
+	OpenNSFWScore                                float32              `json:"open_nsfw_score"`
+	ZstdCompressedFingerprint                    []byte               `json:"zstd_compressed_fingerprint"`
+	AlternativeNSFWScore                         AlternativeNSFWScore `json:"alternative_nsfw_score"`
+	ImageHashes                                  ImageHashes          `json:"image_hashes"`
+	PerceptualHashOverlapCount                   uint32               `json:"perceptual_hash_overlap_count"`
+	NumberOfFingerprintsRequiringFurtherTesting1 uint32               `json:"number_of_fingerprints_requiring_further_testing_1"`
+	NumberOfFingerprintsRequiringFurtherTesting2 uint32               `json:"number_of_fingerprints_requiring_further_testing_2"`
+	NumberOfFingerprintsRequiringFurtherTesting3 uint32               `json:"number_of_fingerprints_requiring_further_testing_3"`
+	NumberOfFingerprintsRequiringFurtherTesting4 uint32               `json:"number_of_fingerprints_requiring_further_testing_4"`
+	NumberOfFingerprintsRequiringFurtherTesting5 uint32               `json:"number_of_fingerprints_requiring_further_testing_5"`
+	NumberOfFingerprintsRequiringFurtherTesting6 uint32               `json:"number_of_fingerprints_requiring_further_testing_6"`
+	NumberOfFingerprintsOfSuspectedDupes         uint32               `json:"number_of_fingerprints_of_suspected_dupes"`
+	PearsonMax                                   float32              `json:"pearson_max"`
+	SpearmanMax                                  float32              `json:"spearman_max"`
+	KendallMax                                   float32              `json:"kendall_max"`
+	HoeffdingMax                                 float32              `json:"hoeffding_max"`
+	MutualInformationMax                         float32              `json:"mutual_information_max"`
+	HsicMax                                      float32              `json:"hsic_max"`
+	XgbimportanceMax                             float32              `json:"xgbimportance_max"`
+	PearsonTop1BpsPercentile                     float32              `json:"pearson_top_1_bps_percentile"`
+	SpearmanTop1BpsPercentile                    float32              `json:"spearman_top_1_bps_percentile"`
+	KendallTop1BpsPercentile                     float32              `json:"kendall_top_1_bps_percentile"`
+	HoeffdingTop10BpsPercentile                  float32              `json:"hoeffding_top_10_bps_percentile"`
+	MutualInformationTop100BpsPercentile         float32              `json:"mutual_information_top_100_bps_percentile"`
+	HsicTop100BpsPercentile                      float32              `json:"hsic_top_100_bps_percentile"`
+	XgbimportanceTop100BpsPercentile             float32              `json:"xgbimportance_top_100_bps_percentile"`
+	CombinedRarenessScore                        float32              `json:"combined_rareness_score"`
+	XgboostPredictedRarenessScore                float32              `json:"xgboost_predicted_rareness_score"`
+	NnPredictedRarenessScore                     float32              `json:"nn_predicted_rareness_score"`
+	UrlOfFirstMatchInPage                        string               `json:"url_of_first_match_in_page"`
 }
 
 // AppTicket represents pastel App ticket.

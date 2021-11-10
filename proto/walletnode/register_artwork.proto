@@ -76,7 +76,7 @@ message ProbeImageReply {
     // version of dupde detection system
     string dupe_detection_version = 1;
     // hexstring of hash of candidate image
-    bytes hash_of_candidate_img = 2;
+    string hash_of_candidate_img = 2;
     float average_rareness_score = 3;
     bool is_rare_on_internet = 4;
     uint32 matches_found_on_first_page = 5;

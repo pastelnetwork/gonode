@@ -124,7 +124,7 @@ func TestTaskRun(t *testing.T) {
 				returnErr:     nil,
 				encodeInfoReturns: &rqnode.EncodeInfo{
 					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-						"test-file": rqnode.RawSymbolIDFile{
+						"test-file": {
 							ID:                uuid.New().String(),
 							SymbolIdentifiers: []string{"test-s1, test-s2"},
 							BlockHash:         "test-block-hash",
@@ -1052,7 +1052,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 				},
 				encodeInfoReturns: &rqnode.EncodeInfo{
 					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-						"test-file": rqnode.RawSymbolIDFile{
+						"test-file": {
 							ID:                uuid.New().String(),
 							SymbolIdentifiers: []string{"test-s1, test-s2"},
 							BlockHash:         "test-block-hash",
@@ -1147,7 +1147,7 @@ func TestTaskGenRQIdentifiersFiles(t *testing.T) {
 				},
 				encodeInfoReturns: &rqnode.EncodeInfo{
 					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-						"test-file": rqnode.RawSymbolIDFile{
+						"test-file": {
 							ID:                uuid.New().String(),
 							SymbolIdentifiers: []string{"test-s1, test-s2"},
 							BlockHash:         "test-block-hash",
