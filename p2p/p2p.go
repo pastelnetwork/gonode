@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -186,6 +187,8 @@ func (s *p2p) configure(ctx context.Context) error {
 		return errors.Errorf("new kademlia dht: %w", err)
 	}
 	s.dht = dht
+
+	go s.store.InitCleanup(ctx, 5*time.Minute)
 
 	return nil
 }

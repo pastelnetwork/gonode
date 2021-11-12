@@ -27,4 +27,7 @@ type Store interface {
 
 	// Close the store
 	Close(ctx context.Context)
+
+	// InitCleanup initiates grabage cleanup
+	InitCleanup(ctx context.Context, cleanupInterval time.Duration)
 }
