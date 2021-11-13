@@ -80,6 +80,8 @@ func (s *p2p) run(ctx context.Context) error {
 	}
 	s.running = true
 
+	go s.store.InitCleanup(ctx, 5*time.Minute)
+
 	log.WithContext(ctx).Info("p2p service is started")
 
 	// block until context is done
@@ -187,8 +189,6 @@ func (s *p2p) configure(ctx context.Context) error {
 		return errors.Errorf("new kademlia dht: %w", err)
 	}
 	s.dht = dht
-
-	go s.store.InitCleanup(ctx, 5*time.Minute)
 
 	return nil
 }
