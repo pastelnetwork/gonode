@@ -14,6 +14,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/auth"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -32,19 +33,23 @@ type Network struct {
 	done    chan struct{}     // network is stopped
 
 	// For secure connection
-	tpCredentials credentials.TransportCredentials
-	connPool      *ConnPool
-	connPoolMtx   sync.Mutex
+	secureHelper credentials.TransportCredentials
+	connPool     *ConnPool
+	connPoolMtx  sync.Mutex
+
+	// for authentication only
+	authHelper *AuthHelper
 }
 
 // NewNetwork returns a network service
-func NewNetwork(dht *DHT, self *Node, tpCredentials credentials.TransportCredentials) (*Network, error) {
+func NewNetwork(dht *DHT, self *Node, secureHelper credentials.TransportCredentials, authHelper *AuthHelper) (*Network, error) {
 	s := &Network{
-		dht:           dht,
-		self:          self,
-		done:          make(chan struct{}),
-		tpCredentials: tpCredentials,
-		connPool:      NewConnPool(),
+		dht:          dht,
+		self:         self,
+		done:         make(chan struct{}),
+		secureHelper: secureHelper,
+		connPool:     NewConnPool(),
+		authHelper:   authHelper,
 	}
 	// init the rate limiter
 	s.limiter = ratelimit.New(defaultConnRate)
@@ -70,7 +75,7 @@ func (s *Network) Start(ctx context.Context) error {
 
 // Stop the network
 func (s *Network) Stop(ctx context.Context) {
-	if s.tpCredentials != nil {
+	if s.secureHelper != nil {
 		s.connPool.Release()
 	}
 	// close the socket
@@ -240,15 +245,26 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("conn:%s->%s", rawConn.LocalAddr(), rawConn.RemoteAddr()))
 
 	// do secure handshaking
-	if s.tpCredentials != nil {
-		conn, err = NewSecureServerConn(ctx, s.tpCredentials, rawConn)
+	if s.secureHelper != nil {
+		conn, err = NewSecureServerConn(ctx, s.secureHelper, rawConn)
 		if err != nil {
 			rawConn.Close()
 			log.WithContext(ctx).WithError(err).Error("server secure establish failed")
 			return
 		}
 	} else {
-		conn = rawConn
+		// if peer authentication is enabled
+		if s.authHelper != nil {
+			authHandshaker, _ := auth.NewServerHandshaker(ctx, s.authHelper, rawConn)
+			conn, err = authHandshaker.ServerHandshake(ctx)
+			if err != nil {
+				rawConn.Close()
+				log.WithContext(ctx).WithError(err).Error("server authentication failed")
+				return
+			}
+		} else {
+			conn = rawConn
+		}
 	}
 
 	defer conn.Close()
@@ -368,11 +384,11 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 	remoteAddr := fmt.Sprintf("%s:%d", request.Receiver.IP, request.Receiver.Port)
 
 	// do secure handshaking
-	if s.tpCredentials != nil {
+	if s.secureHelper != nil {
 		s.connPoolMtx.Lock()
 		conn, err = s.connPool.Get(remoteAddr)
 		if err != nil {
-			conn, err = NewSecureClientConn(ctx, s.tpCredentials, remoteAddr)
+			conn, err = NewSecureClientConn(ctx, s.secureHelper, remoteAddr)
 			if err != nil {
 				s.connPoolMtx.Unlock()
 				return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
@@ -390,11 +406,21 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 
 		// set the deadline for read and write
 		rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
-		conn = rawConn
+
+		// if peer authentication is enabled
+		if s.authHelper != nil {
+			authHandshaker, _ := auth.NewClientHandshaker(ctx, s.authHelper, rawConn)
+			conn, err = authHandshaker.ClientHandshake(ctx)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			conn = rawConn
+		}
 	}
 
 	defer func() {
-		if err != nil && s.tpCredentials != nil {
+		if err != nil && s.secureHelper != nil {
 			s.connPoolMtx.Lock()
 			defer s.connPoolMtx.Unlock()
 			conn.Close()

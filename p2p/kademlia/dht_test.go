@@ -14,7 +14,6 @@ import (
 	"github.com/otrv4/ed448"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/net/credentials"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
@@ -201,14 +200,15 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
 
 	secInfo := &alts.SecInfo{}
-	fakePastelClient := &FakePastelClient{
-		curve: ed448.NewCurve(),
-		pri:   TestPri,
-		pub:   TestPub,
-	}
-	transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
 
-	dht, err := NewDHT(ts.memStore, pastelClientMock, transportCredentials, options)
+	// fakePastelClient := &FakePastelClient{
+	// 	curve: ed448.NewCurve(),
+	// 	pri:   TestPri,
+	// 	pub:   TestPub,
+	// }
+	// transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
+
+	dht, err := NewDHT(ts.memStore, pastelClientMock, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -238,14 +238,15 @@ func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []
 	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
 
 	secInfo := &alts.SecInfo{}
-	fakePastelClient := &FakePastelClient{
-		curve: ed448.NewCurve(),
-		pri:   TestPri,
-		pub:   TestPub,
-	}
-	transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
 
-	dht, err := NewDHT(ts.dbStore, pastelClientMock, transportCredentials, options)
+	// fakePastelClient := &FakePastelClient{
+	// 	curve: ed448.NewCurve(),
+	// 	pri:   TestPri,
+	// 	pub:   TestPub,
+	// }
+	// transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
+
+	dht, err := NewDHT(ts.dbStore, pastelClientMock, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}

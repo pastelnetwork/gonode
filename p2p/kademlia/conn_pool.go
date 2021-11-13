@@ -102,7 +102,7 @@ type connWrapper struct {
 }
 
 // NewSecureClientConn do client handshake and return a secure connection
-func NewSecureClientConn(ctx context.Context, tpCredentials credentials.TransportCredentials, remoteAddr string) (net.Conn, error) {
+func NewSecureClientConn(ctx context.Context, secureHelper credentials.TransportCredentials, remoteAddr string) (net.Conn, error) {
 	// dial the remote address with udp network
 	rawConn, err := utp.DialContext(ctx, remoteAddr)
 	if err != nil {
@@ -112,7 +112,7 @@ func NewSecureClientConn(ctx context.Context, tpCredentials credentials.Transpor
 	// set the deadline for read and write
 	rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
 
-	conn, _, err := tpCredentials.ClientHandshake(ctx, "", rawConn)
+	conn, _, err := secureHelper.ClientHandshake(ctx, "", rawConn)
 	if err != nil {
 		rawConn.Close()
 		return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
@@ -125,8 +125,8 @@ func NewSecureClientConn(ctx context.Context, tpCredentials credentials.Transpor
 }
 
 // NewSecureServerConn do server handshake and create a secure connection
-func NewSecureServerConn(_ context.Context, tpCredentials credentials.TransportCredentials, rawConn net.Conn) (net.Conn, error) {
-	conn, _, err := tpCredentials.ServerHandshake(rawConn)
+func NewSecureServerConn(_ context.Context, secureHelper credentials.TransportCredentials, rawConn net.Conn) (net.Conn, error) {
+	conn, _, err := secureHelper.ServerHandshake(rawConn)
 	if err != nil {
 		return nil, errors.Errorf("server secure establish failed")
 	}

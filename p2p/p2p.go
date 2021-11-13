@@ -162,20 +162,8 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 	s.store = store
 
-	/*
-		// FIXME - use this code to enable secure connection
-		transportCredentials := credentials.NewClientCreds(s.pastelClient, s.secInfo)
-
-		// new a kademlia distributed hash table
-		dht, err := kademlia.NewDHT(store, s.pastelClient, transportCredentials, &kademlia.Options{
-			BootstrapNodes: []*kademlia.Node{},
-			IP:             s.config.ListenAddress,
-			Port:           s.config.Port,
-		})
-	*/
-
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, s.pastelClient, nil, &kademlia.Options{
+	dht, err := kademlia.NewDHT(store, s.pastelClient, s.secInfo, &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
