@@ -6,6 +6,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Store is a simple in-memory key/value store used for unit testing
@@ -116,4 +118,10 @@ func NewStore() *Store {
 		data:         make(map[string][]byte),
 		replications: make(map[string]time.Time),
 	}
+}
+
+// InitCleanup is suppossed to initiate grabage cleanup
+// not applicable on this test implementation
+func (s *Store) InitCleanup(ctx context.Context, _ time.Duration) {
+	log.WithContext(ctx).Error("s.InitCleanup not implemented")
 }
