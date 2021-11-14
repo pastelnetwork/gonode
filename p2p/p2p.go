@@ -3,6 +3,7 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -78,6 +79,8 @@ func (s *p2p) run(ctx context.Context) error {
 		return errors.Errorf("bootstrap the node: %w", err)
 	}
 	s.running = true
+
+	go s.store.InitCleanup(ctx, 5*time.Minute)
 
 	log.WithContext(ctx).Info("p2p service is started")
 
