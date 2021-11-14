@@ -21,7 +21,7 @@ const (
 	serverSide
 )
 
-// side identifies the party's role: client or server.
+// Side identifies the party's role: client or server.
 type Side int
 
 // Handshaker defines a ALTS handshaker interface.

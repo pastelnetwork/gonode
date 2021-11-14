@@ -138,14 +138,18 @@ func (ath *AuthHelper) isPeerInMasterNodes(ctx context.Context, authInfo *auth.P
 }
 
 func (ath *AuthHelper) unsafeRefreshAuthInfo(ctx context.Context) error {
+	// Prepare timestamp
 	newTimestamp := time.Now()
 	buf := new(bytes.Buffer)
 	_ = binary.Write(buf, binary.LittleEndian, newTimestamp.Unix())
+
+	// Sign timestamp
 	newSignature, err := ath.pastelClient.Sign(ctx, buf.Bytes(), ath.secInfo.PastelID, ath.secInfo.PassPhrase, ath.secInfo.Algorithm)
 	if err != nil {
 		return err
 	}
 
+	// Update new timestamp
 	ath.timestamp = newTimestamp
 	ath.signature = []byte(newSignature)
 

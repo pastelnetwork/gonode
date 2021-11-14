@@ -64,7 +64,7 @@ func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, _ s
 }
 
 // Verify
-func (c *FakePastelClient) MasterNodesExtra(ctx context.Context) (pastel.MasterNodes, error) {
+func (c *FakePastelClient) MasterNodesExtra(_ context.Context) (pastel.MasterNodes, error) {
 	return pastel.MasterNodes{
 		pastel.MasterNode{
 			ExtAddress: "127.0.0.1:1000",
