@@ -11,6 +11,14 @@ import (
 )
 
 const (
+	// pre-generate keys based on code :
+	// Create a preconfig keys, used in common package
+
+	// curve := ed448.NewCurve()
+	// pri, pub, _ := curve.GenerateKeys()
+	// fmt.Println(base64.StdEncoding.EncodeToString(pri[:]))
+	// fmt.Println(base64.StdEncoding.EncodeToString(pub[:]))
+
 	// B64PriKey - preconfig private key
 	B64PriKey = "MSTJkuJI7WV1H5UZ09FqCNCx8UNor18e89lSHxm3A7M1fuWTC7ED0e8Ss1t/KGzNfG3lz7dX8Rawc4aLFRchii2gRq049U/V3XXnV4zRRUZAb9hBx2XB+jF/YFQyT+gKfzfGjKkCb1EO+ee393yGPm/NSSmzvMv1brX5PfNeuCPtRZJAdvvxHCEw2rysJq9s"
 	// B64PubKey - preconfig public key
