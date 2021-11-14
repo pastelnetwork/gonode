@@ -97,11 +97,10 @@ func (ath *AuthHelper) VerifyPeer(ctx context.Context, authInfo *auth.PeerAuthIn
 }
 
 func (ath *AuthHelper) isPeerInMasterNodes(ctx context.Context, authInfo *auth.PeerAuthInfo) bool {
-	// try to refresh master nodes if need
-	ath.tryRefreshMasternodeList(ctx)
-
 	ath.masterNodesMtx.Lock()
 	defer ath.masterNodesMtx.Unlock()
+	// try to refresh master nodes if need
+	ath.tryRefreshMasternodeList(ctx)
 
 	if len(ath.masterNodes) == 0 {
 		log.WithContext(ctx).Error("empty master nodes")
@@ -157,8 +156,6 @@ func (ath *AuthHelper) unsafeRefreshAuthInfo(ctx context.Context) error {
 }
 
 func (ath *AuthHelper) tryRefreshMasternodeList(ctx context.Context) {
-	ath.masterNodesMtx.Lock()
-	defer ath.masterNodesMtx.Unlock()
 	if len(ath.masterNodes) == 0 || time.Now().After(ath.lastMasterNodesRefresh.Add(ath.masterNodesRefreshDuration)) {
 		if err := ath.unsafeRefreshMasternodeList(ctx); err != nil {
 			log.WithContext(ctx).WithError(err).Error("Update master node list failed")
