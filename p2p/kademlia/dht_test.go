@@ -34,6 +34,7 @@ func init() {
 
 // FakePastelClient - fake of pastel client to do sign/verify
 type FakePastelClient struct {
+	*pastelMock.Client
 	curve ed448.Curve
 	pri   [144]byte
 	pub   [56]byte
@@ -60,6 +61,16 @@ func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, _ s
 
 	ok = c.curve.Verify(copiedSignature, data, c.pub)
 	return ok, nil
+}
+
+// Verify
+func (c *FakePastelClient) MasterNodesExtra(ctx context.Context) (pastel.MasterNodes, error) {
+	return pastel.MasterNodes{
+		pastel.MasterNode{
+			ExtAddress: "127.0.0.1:1000",
+			ExtKey:     "",
+		},
+	}, nil
 }
 
 func TestSuite(t *testing.T) {
@@ -218,8 +229,9 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 
 func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
 	options := &Options{
-		IP:   ts.IP,
-		Port: port,
+		IP:       ts.IP,
+		Port:     port,
+		PeerAuth: true, // Enable peer authentication
 	}
 	if len(id) > 0 {
 		options.ID = id
@@ -237,16 +249,18 @@ func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []
 	pastelClientMock := pastelMock.NewMockClient(ts.t)
 	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
 
-	secInfo := &alts.SecInfo{}
+	secInfo := &alts.SecInfo{
+		PastelID: "",
+	}
 
-	// fakePastelClient := &FakePastelClient{
-	// 	curve: ed448.NewCurve(),
-	// 	pri:   TestPri,
-	// 	pub:   TestPub,
-	// }
-	// transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
+	fakePastelClient := &FakePastelClient{
+		Client: pastelClientMock,
+		curve:  ed448.NewCurve(),
+		pri:    TestPri,
+		pub:    TestPub,
+	}
 
-	dht, err := NewDHT(ts.dbStore, pastelClientMock, secInfo, options)
+	dht, err := NewDHT(ts.dbStore, fakePastelClient, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}

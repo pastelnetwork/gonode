@@ -226,8 +226,8 @@ func (s *authHandshaker) doServerHandshake(ctx context.Context) error {
 
 	// verify request
 	if err := s.peer.VerifyPeer(ctx, authInfo); err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to verify client public key")
-		err = fmt.Errorf("verify client public key: %w", err)
+		log.WithContext(ctx).WithError(err).Error("failed to authenticate peer")
+		err = fmt.Errorf("failed to authenticate peer: %w", err)
 		response := kexExchangeResponse{
 			Result: handshakeResultFailed,
 			ErrStr: err.Error(),

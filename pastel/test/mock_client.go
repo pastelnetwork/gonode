@@ -133,6 +133,16 @@ func (client *Client) AssertMasterNodesTopCall(expectedCalls int, arguments ...i
 	return client
 }
 
+// AssertMasterNodesExtra MasterNodesExtra call assertion
+func (client *Client) AssertMasterNodesExtra(expectedCalls int, arguments ...interface{}) *Client {
+	//don't check AssertCalled when expectedCall is 0. it become always fail
+	if expectedCalls > 0 {
+		client.AssertCalled(client.t, MasterNodesExtraMethod, arguments...)
+	}
+	client.AssertNumberOfCalls(client.t, MasterNodesExtraMethod, expectedCalls)
+	return client
+}
+
 // AssertStorageNetworkFeeCall StorageNetworkFee call assertion
 func (client *Client) AssertStorageNetworkFeeCall(expectedCalls int, arguments ...interface{}) *Client {
 	//don't check AssertCalled when expectedCall is 0. it become always fail

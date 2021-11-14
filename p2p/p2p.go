@@ -168,6 +168,7 @@ func (s *p2p) configure(ctx context.Context) error {
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
 		ID:             []byte(s.config.ID),
+		PeerAuth:       true, // Enable peer authentication
 	})
 
 	if err != nil {

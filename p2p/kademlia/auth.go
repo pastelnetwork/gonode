@@ -20,6 +20,7 @@ const (
 	timestampMarginDuration = 5 * time.Second
 )
 
+// AuthHelper define a authentication help - that provide helper functions for authentication handshaking
 type AuthHelper struct {
 	pastelClient pastel.Client
 	secInfo      *alts.SecInfo
@@ -35,7 +36,7 @@ type AuthHelper struct {
 	masterNodesRefreshDuration time.Duration
 }
 
-// NewAuthHelper returns a peer authHelper
+// NewAuthHelper returns a peer AuthHelper
 func NewAuthHelper(pastelClient pastel.Client, secInfo *alts.SecInfo) *AuthHelper {
 	return &AuthHelper{
 		pastelClient:               pastelClient,
@@ -46,7 +47,7 @@ func NewAuthHelper(pastelClient pastel.Client, secInfo *alts.SecInfo) *AuthHelpe
 	}
 }
 
-// GenAuthInfo generatue auth info of peer to show his finger print
+// GenAuthInfo generates auth info of peer to show his finger print
 func (ath *AuthHelper) GenAuthInfo(ctx context.Context) (*auth.PeerAuthInfo, error) {
 	ath.authMtx.Lock()
 	defer ath.authMtx.Unlock()
@@ -103,6 +104,7 @@ func (ath *AuthHelper) isPeerInMasterNodes(ctx context.Context, authInfo *auth.P
 	defer ath.masterNodesMtx.Unlock()
 
 	if len(ath.masterNodes) == 0 {
+		log.WithContext(ctx).Error("empty master nodes")
 		return false
 	}
 
@@ -124,7 +126,7 @@ func (ath *AuthHelper) isPeerInMasterNodes(ctx context.Context, authInfo *auth.P
 			}
 
 			// Check if peer address has same IP
-			if strings.HasSuffix(authInfo.Address, ip) {
+			if strings.HasPrefix(authInfo.Address, ip) {
 				return true
 			}
 
