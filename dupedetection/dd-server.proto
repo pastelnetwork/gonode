@@ -4,9 +4,9 @@
 
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/dupedetection";
-
 package dupedetection;
+
+option go_package = ".;dupedetection";
 
 service DupeDetectionServer {
     rpc ImageRarenessScore(RarenessScoreRequest) returns(ImageRarenessScoreReply);
@@ -18,17 +18,42 @@ message RarenessScoreRequest {
 
 message ImageRarenessScoreReply {
     string dupe_detection_system_version = 1;
-    bytes hash_of_candidate_image_file = 2;
+    string hash_of_candidate_image_file = 2;
     bool is_likely_dupe = 3;
-    float overall_average_rareness_score = 4;
-    bool is_rare_on_internet = 5;
-    uint32 matches_found_on_first_page = 6;
-    uint32 number_of_pages_of_results = 7;
-    string url_of_first_match_in_page = 8;
-    float open_nsfw_score = 9;
-    AltNsfwScores alternative_nsfw_scores = 10;
-    ImageHashes image_hashes = 11;
-    repeated float image_fingerprint_of_candidate_image_file = 12;
+    uint32 perceptual_hash_overlap_count = 4;
+    uint32 number_of_fingerprints_requiring_further_testing_1 = 5;
+    uint32 number_of_fingerprints_requiring_further_testing_2 = 6;
+    uint32 number_of_fingerprints_requiring_further_testing_3 = 7;
+    uint32 number_of_fingerprints_requiring_further_testing_4 = 8;
+    uint32 number_of_fingerprints_requiring_further_testing_5 = 9;
+    uint32 number_of_fingerprints_requiring_further_testing_6 = 10; 
+    uint32 number_of_fingerprints_of_suspected_dupes = 11;
+    float pearson_max = 12;
+    float spearman_max = 13;
+    float kendall_max = 14;
+    float hoeffding_max = 15;
+    float mutual_information_max = 16;
+    float hsic_max = 17;
+    float xgbimportance_max = 18;
+    float pearson_top_1_bps_percentile = 19;
+    float spearman_top_1_bps_percentile = 20;
+    float kendall_top_1_bps_percentile = 21;
+    float hoeffding_top_10_bps_percentile = 22;
+    float mutual_information_top_100_bps_percentile = 23;
+    float hsic_top_100_bps_percentile = 24;
+    float xgbimportance_top_100_bps_percentile = 25;
+    float combined_rareness_score = 26;
+    float xgboost_predicted_rareness_score = 27;
+    float nn_predicted_rareness_score = 28;
+    float overall_average_rareness_score = 29;
+    bool is_rare_on_internet = 30;
+    uint32 matches_found_on_first_page = 31;
+    uint32 number_of_pages_of_results = 32;
+    string url_of_first_match_in_page = 33;
+    float open_nsfw_score = 34;
+    AltNsfwScores alternative_nsfw_scores = 35;
+    PerceptualImageHashes image_hashes = 36;
+    repeated float image_fingerprint_of_candidate_image_file = 37;
 }
 
 message AltNsfwScores {
@@ -39,7 +64,7 @@ message AltNsfwScores {
     float sexy = 5;
 }
 
-message ImageHashes {
+message PerceptualImageHashes {
     string pdq_hash = 1;
     string perceptual_hash = 2;
     string average_hash = 3;
