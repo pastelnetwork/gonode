@@ -19,6 +19,7 @@ require (
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/rqlite/go-sqlite3 v1.22.0
 	github.com/stretchr/testify v1.7.0
+	github.com/tj/assert v0.0.3
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -45,7 +46,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/tj/assert v0.0.3 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	go.etcd.io/bbolt v1.3.5 // indirect
 	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
