@@ -19,11 +19,11 @@ import (
 const (
 	replicationPrefix = "r:"
 
-	// cleanupdiscardRatio to 0.5, thus indicating that a file be rewritten if half the space can be discarded.
+	// cleanupdiscardRatio of 0.5 would indicate that a file will be rewritten if half the space can be discarded.
 	// This results in a lifetime value log write amplification of 2 (1 from original write + 0.5 rewrite + 0.25 + 0.125 + ... = 2).
 	//  Setting it to higher value would result in fewer space reclaims, while setting it to a lower value would result in more space
 	//  reclaims at the cost of increased activity on the LSM tree. discardRatio must be in the range (0.0, 1.0)
-	cleanupDiscardRatio = 0.5
+	cleanupDiscardRatio = 0.35
 )
 
 // Badger defines a key/value database for store
