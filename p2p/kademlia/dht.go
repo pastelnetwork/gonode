@@ -183,6 +183,11 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	// replicate time for the key
 	replication := time.Now().Add(defaultReplicateTime)
 
+	retKey := base58.Encode(key)
+	if _, err := s.store.Retrieve(ctx, key); err == nil {
+		return retKey, nil
+	}
+
 	// store the key to local storage
 	if err := s.store.Store(ctx, key, data, replication); err != nil {
 		return "", fmt.Errorf("store data to local storage: %v", err)
@@ -193,7 +198,7 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 		return "", fmt.Errorf("iterative store data: %v", err)
 	}
 
-	return base58.Encode(key), nil
+	return retKey, nil
 }
 
 // Retrieve data from the networking using key. Key is the base58 encoded

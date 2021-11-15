@@ -3,6 +3,7 @@ package mem
 import (
 	"bytes"
 	"context"
+	"errors"
 	"sort"
 	"sync"
 	"time"
@@ -52,7 +53,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 
 	value, ok := s.data[string(key)]
 	if !ok {
-		return nil, nil
+		return nil, errors.New("not found")
 	}
 
 	return value, nil
