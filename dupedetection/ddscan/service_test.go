@@ -15,6 +15,7 @@ import (
 	"time"
 
 	fuzz "github.com/google/gofuzz"
+	"github.com/pastelnetwork/gonode/common/b85"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/db"
 	p2pMock "github.com/pastelnetwork/gonode/p2p/test"
@@ -184,7 +185,7 @@ func TestRunTaskSuccessful(t *testing.T) {
 	if err != nil {
 		t.Fatalf("faied to marshal, err: %s", err)
 	}
-	ticket.RegTicketData.NFTTicketData.AppTicket = b
+	ticket.RegTicketData.NFTTicketData.AppTicket = b85.Encode(b)
 
 	b, err = json.Marshal(ticket.RegTicketData.NFTTicketData)
 	if err != nil {
