@@ -4,6 +4,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
 
@@ -18,9 +19,10 @@ type Node struct {
 	NumberConnectedNodes       int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
 	PreburntTxMinConfirmations int `mapstructure:"preburnt_tx_min_confirmations" json:"preburnt_tx_min_confirmations,omitempty"`
 	// timeout in minute
-	PreburntTxConfirmationTimeout int                    `mapstructure:"preburnt_tx_confirmation_timeout" json:"preburnt_tx_confirmation_timeout,omitempty"`
-	ArtworkDownload               artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
-	UserdataProcess               userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
+	PreburntTxConfirmationTimeout int                     `mapstructure:"preburnt_tx_confirmation_timeout" json:"preburnt_tx_confirmation_timeout,omitempty"`
+	ArtworkDownload               artworkdownload.Config  `mapstructure:",squash" json:"artwork_download,omitempty"`
+	UserdataProcess               userdataprocess.Config  `mapstructure:",squash" json:"userdata_process,omitempty"`
+	StorageChallenge              storagechallenge.Config `mapstructure:",squash" json:"storage_challenge,omitempty"`
 }
 
 // NewNode returns a new Node instance

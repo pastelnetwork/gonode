@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 
 	"github.com/btcsuite/btcutil/base58"
@@ -81,12 +82,12 @@ func (s *NodeList) Less(i, j int) bool {
 	id := s.distance(s.Nodes[i].ID, s.Comparator)
 	jd := s.distance(s.Nodes[j].ID, s.Comparator)
 
-	return id.Cmp(jd) == -1
+	return id < jd
 }
 
-func (s *NodeList) distance(id1, id2 []byte) *big.Int {
+func (s *NodeList) distance(id1, id2 []byte) uint64 {
 	o1 := new(big.Int).SetBytes(id1)
 	o2 := new(big.Int).SetBytes(id2)
-
-	return new(big.Int).Xor(o1, o2)
+	xorDistanceAsUint64, _ := strconv.ParseUint(fmt.Sprint(new(big.Int).Xor(o1, o2)), 10, 64)
+	return xorDistanceAsUint64
 }

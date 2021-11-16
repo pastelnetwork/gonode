@@ -1,9 +1,12 @@
 package utils
 
 import (
+	"encoding/hex"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"golang.org/x/crypto/sha3"
 )
 
 // DiskStatus cotains info of disk storage
@@ -48,4 +51,10 @@ func GetExternalIPAddress() (externalIP string, err error) {
 	}
 
 	return string(body), nil
+}
+
+func GetHashFromString(inputString string) string {
+	h := sha3.New256()
+	h.Write([]byte(inputString))
+	return hex.EncodeToString(h.Sum(nil))
 }
