@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math"
+	"reflect"
 	"strings"
 	"unsafe"
 
@@ -45,7 +46,7 @@ func (fg Fingerprint) Bytes() []byte {
 func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) error {
 
 	//hash_of_candidate_image_file
-	if !bytes.Equal(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
+	if !reflect.DeepEqual(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
 		return errors.New("image hash do not match")
 	}
 

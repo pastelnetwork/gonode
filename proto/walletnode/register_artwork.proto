@@ -76,7 +76,7 @@ message ProbeImageReply {
     // version of dupde detection system
     string dupe_detection_version = 1;
     // hexstring of hash of candidate image
-    bytes hash_of_candidate_img = 2;
+    string hash_of_candidate_img = 2;
     float average_rareness_score = 3;
     bool is_rare_on_internet = 4;
     uint32 matches_found_on_first_page = 5;
@@ -86,6 +86,33 @@ message ProbeImageReply {
     bytes zstd_compressed_fingerprint = 9;
     AlternativeNSFWScore alternative_nsfw_score = 10;
     ImageHashes image_hashes = 11;
+    uint32 perceptual_hash_overlap_count = 12;
+    uint32 number_of_fingerprints_requiring_further_testing_1 = 13;
+    uint32 number_of_fingerprints_requiring_further_testing_2 = 14;
+    uint32 number_of_fingerprints_requiring_further_testing_3 = 15;
+    uint32 number_of_fingerprints_requiring_further_testing_4 = 16;
+    uint32 number_of_fingerprints_requiring_further_testing_5 = 17;
+    uint32 number_of_fingerprints_requiring_further_testing_6 = 18; 
+    uint32 number_of_fingerprints_of_suspected_dupes = 19;
+    float pearson_max = 20;
+    float spearman_max = 21;
+    float kendall_max = 22;
+    float hoeffding_max = 23;
+    float mutual_information_max = 24;
+    float hsic_max = 25;
+    float xgbimportance_max = 26;
+    float pearson_top_1_bps_percentile = 27;
+    float spearman_top_1_bps_percentile = 28;
+    float kendall_top_1_bps_percentile = 29;
+    float hoeffding_top_10_bps_percentile = 30;
+    float mutual_information_top_100_bps_percentile = 31;
+    float hsic_top_100_bps_percentile = 32;
+    float xgbimportance_top_100_bps_percentile = 33;
+    float combined_rareness_score = 34;
+    float xgboost_predicted_rareness_score = 35;
+    float nn_predicted_rareness_score = 36;
+    float overall_average_rareness_score = 37;
+    bool is_likely_dupe = 38;
 }
 
 message EncoderParameters {
