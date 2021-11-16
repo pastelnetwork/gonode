@@ -8,6 +8,7 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"time"
 
@@ -110,9 +111,9 @@ func NewServerHandshaker(_ context.Context, peer PeerAuthHelper, conn net.Conn) 
 // read and decode the handshake record
 func (s *authHandshaker) readHandshake(value interface{}) error {
 	hdr := make([]byte, handshakeHeader)
-	reader := bufio.NewReader(s.conn)
+
 	// read handshake header from connection
-	if _, err := reader.Read(hdr); err != nil {
+	if _, err := io.ReadFull(s.conn, hdr); err != nil {
 		return fmt.Errorf("read handshake header: %w", err)
 	}
 
@@ -121,7 +122,7 @@ func (s *authHandshaker) readHandshake(value interface{}) error {
 
 	body := make([]byte, n)
 	// read handshake body from connection
-	if _, err := reader.Read(body); err != nil {
+	if _, err := io.ReadFull(s.conn, body); err != nil {
 		return fmt.Errorf("read handshake body: %w", err)
 	}
 
@@ -148,7 +149,7 @@ func (s *authHandshaker) writeHandshake(value interface{}) error {
 	m := buf.Len()
 
 	d := make([]byte, handshakeHeader+m)
-	binary.BigEndian.PutUint16(d[0:], uint16(m))
+	binary.LittleEndian.PutUint16(d[0:], uint16(m))
 	copy(d[handshakeHeader:], buf.Bytes())
 
 	// write the handshake record
