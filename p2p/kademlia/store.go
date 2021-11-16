@@ -28,6 +28,9 @@ type Store interface {
 	// Close the store
 	Close(ctx context.Context)
 
-	// InitCleanup initiates grabage cleanup
+	// InitCleanup initiates grabage cleanup scheduler
 	InitCleanup(ctx context.Context, cleanupInterval time.Duration)
+
+	// Cleanup runs cleanup function on badger db
+	Cleanup(discardRatio float64) error
 }

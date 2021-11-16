@@ -35,6 +35,11 @@ type StoreRequest struct {
 	Value []byte `json:"value"`
 }
 
+// CleanupRequest indicates request structure of cleanup request
+type CleanupRequest struct {
+	DiscardRatio float64 `json:"discard_ratio"`
+}
+
 // StoreReply indicates reply structure of store request
 type StoreReply struct {
 	Key string `json:"key"`
@@ -61,6 +66,7 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 	router.HandleFunc("/p2p/stats", service.p2pStats).Methods(http.MethodGet)    // Return stats of p2p
 	router.HandleFunc("/p2p", service.p2pStore).Methods(http.MethodPost)         // store a data
 	router.HandleFunc("/p2p/{key}", service.p2pRetrieve).Methods(http.MethodGet) // retrieve a key
+	router.HandleFunc("/p2p/cleanup", service.p2pCleanup).Methods(http.MethodPost)
 
 	service.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.HTTPPort),
@@ -183,6 +189,29 @@ func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Reque
 	responseWithJSON(writer, http.StatusOK, &StoreReply{
 		Key: key,
 	})
+}
+
+func (service *Service) p2pCleanup(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+	log.WithContext(ctx).Info("p2pCleanup")
+
+	var cleanupRequest CleanupRequest
+	if err := json.NewDecoder(request.Body).Decode(&cleanupRequest); err != nil {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"message": "Invalid body"})
+		return
+	}
+	if cleanupRequest.DiscardRatio < 0.0 || cleanupRequest.DiscardRatio > 1.0 {
+		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"message": "discard_ratio must be in range 0.0 - 1.0"})
+		return
+	}
+
+	err := service.p2pClient.Cleanup(ctx, cleanupRequest.DiscardRatio)
+	if err != nil {
+		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+
+	responseWithJSON(writer, http.StatusOK, map[string]string{"message": "cleanup successfull"})
 }
 
 // Run start update stats of system periodically
