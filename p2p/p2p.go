@@ -135,6 +135,11 @@ func (s *p2p) Keys(ctx context.Context, offset int, limit int) []string {
 	return s.dht.Keys(ctx, offset, limit)
 }
 
+// Cleanup cleans up the files as per discardRatio
+func (s *p2p) Cleanup(_ context.Context, discardRatio float64) error {
+	return s.store.Cleanup(discardRatio)
+}
+
 // Stats return status of p2p
 func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	retStats := map[string]interface{}{}
