@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/anacrolix/utp"
-	"github.com/otrv4/ed448"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/auth"
@@ -29,8 +28,6 @@ func main() {
 		return
 	}
 
-	priKey, pubKey := common.GetKeys()
-
 	var conn net.Conn
 	var err error
 
@@ -48,14 +45,9 @@ func main() {
 	rawConn.SetDeadline(time.Now().Add(defaultConnDeadline))
 
 	secInfo := &alts.SecInfo{
-		PastelID: common.ClientPastelID,
+		PastelID: common.ClientB64PubKey,
 	}
-	fakePastelClient := &common.SecClient{
-		Client: nil,
-		Curve:  ed448.NewCurve(),
-		Pri:    priKey,
-		Pub:    pubKey,
-	}
+	fakePastelClient := common.NewSecClient()
 
 	authenticator := kademlia.NewAuthHelper(fakePastelClient, secInfo)
 	authHandshaker, _ := auth.NewClientHandshaker(ctx, authenticator, rawConn)
