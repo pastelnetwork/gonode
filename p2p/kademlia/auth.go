@@ -18,6 +18,7 @@ import (
 
 const (
 	timestampMarginDuration = 5 * time.Second
+	authAlgorithm           = "ed448"
 )
 
 // AuthHelper define a authentication help - that provide helper functions for authentication handshaking
@@ -86,7 +87,7 @@ func (ath *AuthHelper) VerifyPeer(ctx context.Context, authInfo *auth.PeerAuthIn
 	buf := new(bytes.Buffer)
 	_ = binary.Write(buf, binary.LittleEndian, authInfo.Timestamp.Unix())
 
-	if ok, err := ath.pastelClient.Verify(ctx, buf.Bytes(), string(authInfo.Signature), ath.secInfo.PastelID, ath.secInfo.Algorithm); err != nil || !ok {
+	if ok, err := ath.pastelClient.Verify(ctx, buf.Bytes(), string(authInfo.Signature), authInfo.PastelID, authAlgorithm); err != nil || !ok {
 		if err == nil {
 			err = errors.New("signature not match")
 		}
@@ -143,7 +144,7 @@ func (ath *AuthHelper) unsafeRefreshAuthInfo(ctx context.Context) error {
 	_ = binary.Write(buf, binary.LittleEndian, newTimestamp.Unix())
 
 	// Sign timestamp
-	newSignature, err := ath.pastelClient.Sign(ctx, buf.Bytes(), ath.secInfo.PastelID, ath.secInfo.PassPhrase, ath.secInfo.Algorithm)
+	newSignature, err := ath.pastelClient.Sign(ctx, buf.Bytes(), ath.secInfo.PastelID, ath.secInfo.PassPhrase, authAlgorithm)
 	if err != nil {
 		return err
 	}
