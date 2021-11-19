@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/base64"
 	"io"
+	"runtime/debug"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -128,8 +129,13 @@ func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectTo
 }
 
 // ProbeImage implements walletnode.RegisterArtworkServer.ProbeImage()
-func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageServer) error {
+func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageServer) (retErr error) {
 	ctx := stream.Context()
+
+	defer errors.Recover(func(recErr error) {
+		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenProbeImage")
+		retErr = recErr
+	})
 
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -234,8 +240,12 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 }
 
 // UploadImage implements walletnode.RegisterArtwork.UploadImageWithThumbnail
-func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) error {
+func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImageServer) (retErr error) {
 	ctx := stream.Context()
+	defer errors.Recover(func(recErr error) {
+		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenUploadImage")
+		retErr = recErr
+	})
 
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -360,7 +370,12 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 }
 
 // SendSignedNFTTicket implements walletnode.RegisterArtwork.SendSignedNFTTicket
-func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (*pb.SendSignedNFTTicketReply, error) {
+func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (retRes *pb.SendSignedNFTTicketReply, retErr error) {
+	defer errors.Recover(func(recErr error) {
+		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedNFTTicket")
+		retErr = recErr
+	})
+
 	log.WithContext(ctx).WithField("req", req).Debug("SignTicket request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -380,7 +395,12 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 }
 
 // SendPreBurntFeeTxid implements walletnode.RegisterArtwork.SendPreBurntFeeTxid
-func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (*pb.SendPreBurntFeeTxidReply, error) {
+func (service *RegisterArtwork) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (retRes *pb.SendPreBurntFeeTxidReply, retErr error) {
+	defer errors.Recover(func(recErr error) {
+		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicSendPreBurntFeeTxid")
+		retErr = recErr
+	})
+
 	log.WithContext(ctx).WithField("req", req).Debug("SendPreBurntFeeTxidRequest request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
