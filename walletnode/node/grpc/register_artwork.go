@@ -174,7 +174,7 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 			Porn:    resp.AlternativeNsfwScore.Porn,
 			Sexy:    resp.AlternativeNsfwScore.Sexy,
 		},
-		ImageHashes: pastel.ImageHashes{
+		PerceptualImageHashes: pastel.PerceptualImageHashes{
 			PerceptualHash: resp.ImageHashes.PerceptualHash,
 			AverageHash:    resp.ImageHashes.AverageHash,
 			DifferenceHash: resp.ImageHashes.DifferenceHash,

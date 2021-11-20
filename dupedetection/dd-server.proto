@@ -6,7 +6,7 @@ syntax = "proto3";
 
 package dupedetection;
 
-option go_package = ".;dupedetection";
+option go_package = "github.com/pastelnetwork/gonode/dupedetection";
 
 service DupeDetectionServer {
     rpc ImageRarenessScore(RarenessScoreRequest) returns(ImageRarenessScoreReply);
@@ -19,7 +19,7 @@ message RarenessScoreRequest {
 message ImageRarenessScoreReply {
     string dupe_detection_system_version = 1;
     string hash_of_candidate_image_file = 2;
-    bool is_likely_dupe = 3;
+    PerceptualImageHashes perceptual_image_hashes = 3;
     uint32 perceptual_hash_overlap_count = 4;
     uint32 number_of_fingerprints_requiring_further_testing_1 = 5;
     uint32 number_of_fingerprints_requiring_further_testing_2 = 6;
@@ -46,13 +46,13 @@ message ImageRarenessScoreReply {
     float xgboost_predicted_rareness_score = 27;
     float nn_predicted_rareness_score = 28;
     float overall_average_rareness_score = 29;
-    bool is_rare_on_internet = 30;
-    uint32 matches_found_on_first_page = 31;
-    uint32 number_of_pages_of_results = 32;
-    string url_of_first_match_in_page = 33;
-    float open_nsfw_score = 34;
-    AltNsfwScores alternative_nsfw_scores = 35;
-    PerceptualImageHashes image_hashes = 36;
+    bool is_likely_dupe = 30;
+    bool is_rare_on_internet = 31;
+    uint32 matches_found_on_first_page = 32;
+    uint32 number_of_pages_of_results = 33;
+    string url_of_first_match_in_page = 34;
+    float open_nsfw_score = 35;
+    AltNsfwScores alternative_nsfw_scores = 36;
     repeated float image_fingerprint_of_candidate_image_file = 37;
 }
 

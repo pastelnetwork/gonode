@@ -602,12 +602,12 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 			Porn:    ddResult.AlternateNSFWScores.Porn,
 			Sexy:    ddResult.AlternateNSFWScores.Sexy,
 		},
-		ImageHashes: pastel.ImageHashes{
-			PerceptualHash: ddResult.ImageHashes.PerceptualHash,
-			AverageHash:    ddResult.ImageHashes.AverageHash,
-			DifferenceHash: ddResult.ImageHashes.DifferenceHash,
-			PDQHash:        ddResult.ImageHashes.PDQHash,
-			NeuralHash:     ddResult.ImageHashes.NeuralHash,
+		PerceptualImageHashes: pastel.PerceptualImageHashes{
+			PerceptualHash: ddResult.PerceptualImageHashes.PerceptualHash,
+			AverageHash:    ddResult.PerceptualImageHashes.AverageHash,
+			DifferenceHash: ddResult.PerceptualImageHashes.DifferenceHash,
+			PDQHash:        ddResult.PerceptualImageHashes.PDQHash,
+			NeuralHash:     ddResult.PerceptualImageHashes.NeuralHash,
 		},
 		PerceptualHashOverlapCount:                   ddResult.PerceptualHashOverlapCount,
 		NumberOfFingerprintsRequiringFurtherTesting1: ddResult.NumberOfFingerprintsRequiringFurtherTesting1,
