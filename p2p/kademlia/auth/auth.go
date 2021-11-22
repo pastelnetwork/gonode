@@ -205,7 +205,6 @@ func (s *authHandshaker) ClientHandshake(ctx context.Context) (net.Conn, error) 
 	if err := s.doClientHandshake(ctx); err != nil {
 		return nil, fmt.Errorf("do client handshake: %w", err)
 	}
-	log.WithContext(ctx).Debugf("client handshake is complete")
 
 	return s.conn, nil
 }
@@ -265,7 +264,6 @@ func (s *authHandshaker) ServerHandshake(ctx context.Context) (net.Conn, error) 
 	if err := s.doServerHandshake(ctx); err != nil {
 		return nil, fmt.Errorf("do server handshake: %w", err)
 	}
-	log.WithContext(ctx).Debugf("server handshake is complete")
 
 	return s.conn, nil
 }

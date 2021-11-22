@@ -21,43 +21,43 @@ const (
 
 // DupeDetection is the dupe detection result which will be sent to the caller
 type DupeDetection struct {
-	DupeDetectionSystemVer                       string              `json:"dupe_detection_system_version"`
-	ImageHash                                    string              `json:"hash_of_candidate_image_file"`
-	PastelRarenessScore                          float32             `json:"overall_average_rareness_score"`
-	IsLikelyDupe                                 bool                `json:"is_likely_dupe"`
-	IsRareOnInternet                             bool                `json:"is_rare_on_internet"`
-	MatchesFoundOnFirstPage                      uint32              `json:"matches_found_on_first_page"`
-	NumberOfResultPages                          uint32              `json:"number_of_pages_of_results"`
-	FirstMatchURL                                string              `json:"url_of_first_match_in_page"`
-	OpenNSFWScore                                float32             `json:"open_nsfw_score"`
-	AlternateNSFWScores                          AlternateNSFWScores `json:"alternative_nsfw_scores"`
-	ImageHashes                                  ImageHashes         `json:"image_hashes"`
-	Fingerprints                                 []float32           `json:"image_fingerprint_of_candidate_image_file"`
-	PerceptualHashOverlapCount                   uint32              `json:"perceptual_hash_overlap_count"`
-	NumberOfFingerprintsRequiringFurtherTesting1 uint32              `json:"number_of_fingerprints_requiring_further_testing_1"`
-	NumberOfFingerprintsRequiringFurtherTesting2 uint32              `json:"number_of_fingerprints_requiring_further_testing_2"`
-	NumberOfFingerprintsRequiringFurtherTesting3 uint32              `json:"number_of_fingerprints_requiring_further_testing_3"`
-	NumberOfFingerprintsRequiringFurtherTesting4 uint32              `json:"number_of_fingerprints_requiring_further_testing_4"`
-	NumberOfFingerprintsRequiringFurtherTesting5 uint32              `json:"number_of_fingerprints_requiring_further_testing_5"`
-	NumberOfFingerprintsRequiringFurtherTesting6 uint32              `json:"number_of_fingerprints_requiring_further_testing_6"`
-	NumberOfFingerprintsOfSuspectedDupes         uint32              `json:"number_of_fingerprints_of_suspected_dupes"`
-	PearsonMax                                   float32             `json:"pearson_max"`
-	SpearmanMax                                  float32             `json:"spearman_max"`
-	KendallMax                                   float32             `json:"kendall_max"`
-	HoeffdingMax                                 float32             `json:"hoeffding_max"`
-	MutualInformationMax                         float32             `json:"mutual_information_max"`
-	HsicMax                                      float32             `json:"hsic_max"`
-	XgbimportanceMax                             float32             `json:"xgbimportance_max"`
-	PearsonTop1BpsPercentile                     float32             `json:"pearson_top_1_bps_percentile"`
-	SpearmanTop1BpsPercentile                    float32             `json:"spearman_top_1_bps_percentile"`
-	KendallTop1BpsPercentile                     float32             `json:"kendall_top_1_bps_percentile"`
-	HoeffdingTop10BpsPercentile                  float32             `json:"hoeffding_top_10_bps_percentile"`
-	MutualInformationTop100BpsPercentile         float32             `json:"mutual_information_top_100_bps_percentile"`
-	HsicTop100BpsPercentile                      float32             `json:"hsic_top_100_bps_percentile"`
-	XgbimportanceTop100BpsPercentile             float32             `json:"xgbimportance_top_100_bps_percentile"`
-	CombinedRarenessScore                        float32             `json:"combined_rareness_score"`
-	XgboostPredictedRarenessScore                float32             `json:"xgboost_predicted_rareness_score"`
-	NnPredictedRarenessScore                     float32             `json:"nn_predicted_rareness_score"`
+	DupeDetectionSystemVer                       string                `json:"dupe_detection_system_version"`
+	ImageHash                                    string                `json:"hash_of_candidate_image_file"`
+	PastelRarenessScore                          float32               `json:"overall_average_rareness_score"`
+	IsLikelyDupe                                 bool                  `json:"is_likely_dupe"`
+	IsRareOnInternet                             bool                  `json:"is_rare_on_internet"`
+	MatchesFoundOnFirstPage                      uint32                `json:"matches_found_on_first_page"`
+	NumberOfResultPages                          uint32                `json:"number_of_pages_of_results"`
+	FirstMatchURL                                string                `json:"url_of_first_match_in_page"`
+	OpenNSFWScore                                float32               `json:"open_nsfw_score"`
+	AlternateNSFWScores                          AlternateNSFWScores   `json:"alternative_nsfw_scores"`
+	PerceptualImageHashes                        PerceptualImageHashes `json:"perceptual_image_hashes"`
+	Fingerprints                                 []float32             `json:"image_fingerprint_of_candidate_image_file"`
+	PerceptualHashOverlapCount                   uint32                `json:"perceptual_hash_overlap_count"`
+	NumberOfFingerprintsRequiringFurtherTesting1 uint32                `json:"number_of_fingerprints_requiring_further_testing_1"`
+	NumberOfFingerprintsRequiringFurtherTesting2 uint32                `json:"number_of_fingerprints_requiring_further_testing_2"`
+	NumberOfFingerprintsRequiringFurtherTesting3 uint32                `json:"number_of_fingerprints_requiring_further_testing_3"`
+	NumberOfFingerprintsRequiringFurtherTesting4 uint32                `json:"number_of_fingerprints_requiring_further_testing_4"`
+	NumberOfFingerprintsRequiringFurtherTesting5 uint32                `json:"number_of_fingerprints_requiring_further_testing_5"`
+	NumberOfFingerprintsRequiringFurtherTesting6 uint32                `json:"number_of_fingerprints_requiring_further_testing_6"`
+	NumberOfFingerprintsOfSuspectedDupes         uint32                `json:"number_of_fingerprints_of_suspected_dupes"`
+	PearsonMax                                   float32               `json:"pearson_max"`
+	SpearmanMax                                  float32               `json:"spearman_max"`
+	KendallMax                                   float32               `json:"kendall_max"`
+	HoeffdingMax                                 float32               `json:"hoeffding_max"`
+	MutualInformationMax                         float32               `json:"mutual_information_max"`
+	HsicMax                                      float32               `json:"hsic_max"`
+	XgbimportanceMax                             float32               `json:"xgbimportance_max"`
+	PearsonTop1BpsPercentile                     float32               `json:"pearson_top_1_bps_percentile"`
+	SpearmanTop1BpsPercentile                    float32               `json:"spearman_top_1_bps_percentile"`
+	KendallTop1BpsPercentile                     float32               `json:"kendall_top_1_bps_percentile"`
+	HoeffdingTop10BpsPercentile                  float32               `json:"hoeffding_top_10_bps_percentile"`
+	MutualInformationTop100BpsPercentile         float32               `json:"mutual_information_top_100_bps_percentile"`
+	HsicTop100BpsPercentile                      float32               `json:"hsic_top_100_bps_percentile"`
+	XgbimportanceTop100BpsPercentile             float32               `json:"xgbimportance_top_100_bps_percentile"`
+	CombinedRarenessScore                        float32               `json:"combined_rareness_score"`
+	XgboostPredictedRarenessScore                float32               `json:"xgboost_predicted_rareness_score"`
+	NnPredictedRarenessScore                     float32               `json:"nn_predicted_rareness_score"`
 }
 
 // AlternateNSFWScores represents alternate NSFW scores in the output of dupe detection service
@@ -69,8 +69,8 @@ type AlternateNSFWScores struct {
 	Sexy     float32 `json:"sexy"`
 }
 
-// ImageHashes represents image hashes in the output of dupe detection service
-type ImageHashes struct {
+// PerceptualImageHashes represents image hashes in the output of dupe detection service
+type PerceptualImageHashes struct {
 	PDQHash        string `json:"pdq_hash"`
 	PerceptualHash string `json:"perceptual_hash"`
 	AverageHash    string `json:"average_hash"`
@@ -169,7 +169,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		UrlOfFirstMatchInPage                         string                 `protobuf:"bytes,33,opt,name=url_of_first_match_in_page,json=urlOfFirstMatchInPage,proto3" json:"url_of_first_match_in_page,omitempty"`
 		OpenNsfwScore                                 float32                `protobuf:"fixed32,34,opt,name=open_nsfw_score,json=openNsfwScore,proto3" json:"open_nsfw_score,omitempty"`
 		AlternativeNsfwScores                         *AltNsfwScores         `protobuf:"bytes,35,opt,name=alternative_nsfw_scores,json=alternativeNsfwScores,proto3" json:"alternative_nsfw_scores,omitempty"`
-		ImageHashes                                   *PerceptualImageHashes `protobuf:"bytes,36,opt,name=image_hashes,json=imageHashes,proto3" json:"image_hashes,omitempty"`
+		PerceptualImageHashes                         *PerceptualImageHashes `protobuf:"bytes,36,opt,name=image_hashes,json=imageHashes,proto3" json:"image_hashes,omitempty"`
 		ImageFingerprintOfCandidateImageFile          []float32              `protobuf:"fixed32,37,rep,packed,name=image_fingerprint_of_candidate_image_file,json=imageFingerprintOfCandidateImageFile,proto3" json:"image_fingerprint_of_candidate_image_file,omitempty"`
 	*/
 	output := &DupeDetection{
@@ -189,12 +189,12 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 			Porn:     res.AlternativeNsfwScores.Porn,
 			Sexy:     res.AlternativeNsfwScores.Sexy,
 		},
-		ImageHashes: ImageHashes{
-			PDQHash:        res.ImageHashes.PdqHash,
-			PerceptualHash: res.ImageHashes.PerceptualHash,
-			AverageHash:    res.ImageHashes.AverageHash,
-			DifferenceHash: res.ImageHashes.DifferenceHash,
-			NeuralHash:     res.ImageHashes.NeuralhashHash,
+		PerceptualImageHashes: PerceptualImageHashes{
+			PDQHash:        res.PerceptualImageHashes.PdqHash,
+			PerceptualHash: res.PerceptualImageHashes.PerceptualHash,
+			AverageHash:    res.PerceptualImageHashes.AverageHash,
+			DifferenceHash: res.PerceptualImageHashes.DifferenceHash,
+			NeuralHash:     res.PerceptualImageHashes.NeuralhashHash,
 		},
 		Fingerprints:                                 res.ImageFingerprintOfCandidateImageFile,
 		PerceptualHashOverlapCount:                   res.PerceptualHashOverlapCount,

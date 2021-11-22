@@ -111,6 +111,6 @@ type GetOperationStatusResult struct {
 type GetRawTransactionVerbose1Result struct {
 	// Other information are omitted here because we don't care
 	// They can be added later if there are business requirements
-	Txid          string `json:"string"`
+	Txid          string `json:"txid"`
 	Confirmations int64  `json:"confirmations"`
 }
