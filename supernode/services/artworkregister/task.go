@@ -407,7 +407,11 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 			case <-time.After(interval):
 				log.WithContext(ctx).Debugf("retry: %d", retry)
 				retry++
-				txResult, _ := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
+				txResult, err := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Warn("GetRawTransactionVerbose1 err")
+					continue
+				}
 				if txResult.Confirmations >= minConfirmation {
 					log.WithContext(ctx).Debug("transaction confirmed")
 					ch <- nil
