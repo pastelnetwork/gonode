@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
+	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -292,7 +293,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), task.config.PreburntTxConfirmationTimeout, 15*time.Second)
+		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), 15*time.Second)
 
 		// compare rqsymbols
 		if err = task.compareRQSymbolID(ctx); err != nil {
@@ -386,16 +387,19 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	return nftRegTxid, err
 }
 
-func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, timeout time.Duration, interval time.Duration) <-chan error {
+func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, interval time.Duration) <-chan error {
 	ch := make(chan error)
-	timeoutCh := make(chan struct{})
-	go func() {
-		time.Sleep(timeout)
-		close(timeoutCh)
-	}()
 
 	go func(ctx context.Context, txid string) {
 		defer close(ch)
+		blockTracker := blocktracker.New(task.pastelClient)
+		baseBlkCnt, err := blockTracker.GetBlockCount()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+			ch <- err
+			return
+		}
+
 		retry := 0
 		for {
 			select {
@@ -417,10 +421,19 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 					ch <- nil
 					return
 				}
-			case <-timeoutCh:
-				ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
-				return
+
+				currentBlkCnt, err := blockTracker.GetBlockCount()
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+					continue
+				}
+
+				if currentBlkCnt-baseBlkCnt >= int32(minConfirmation)+2 {
+					ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
+					return
+				}
 			}
+
 		}
 	}(ctx, txid)
 	return ch
