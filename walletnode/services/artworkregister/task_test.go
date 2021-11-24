@@ -1444,6 +1444,7 @@ func TestWaitTxnValid(t *testing.T) {
 			t.Parallel()
 
 			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.args.getRawTransactionVerbose1Ret,
 				tc.args.getRawTransactionVerbose1RetErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
@@ -1453,7 +1454,7 @@ func TestWaitTxnValid(t *testing.T) {
 				cancel()
 			}
 
-			err := tc.args.task.waitTxidValid(ctx, "txid", 5, time.Second, 500*time.Millisecond)
+			err := tc.args.task.waitTxidValid(ctx, "txid", 5, 500*time.Millisecond)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
