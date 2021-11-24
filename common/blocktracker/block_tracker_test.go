@@ -15,7 +15,7 @@ type fakePastelClient struct {
 	retErr      error
 }
 
-func (fake *fakePastelClient) GetBlockCount(ctx context.Context) (int32, error) {
+func (fake *fakePastelClient) GetBlockCount(_ context.Context) (int32, error) {
 	return fake.retBlockCnt, fake.retErr
 }
 
