@@ -400,7 +400,6 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 			return
 		}
 
-		retry := 0
 		for {
 			select {
 			case <-ctx.Done():
@@ -409,17 +408,15 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 				ch <- ctx.Err()
 				return
 			case <-time.After(interval):
-				log.WithContext(ctx).Debugf("retry: %d", retry)
-				retry++
 				txResult, err := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
 				if err != nil {
 					log.WithContext(ctx).WithError(err).Warn("GetRawTransactionVerbose1 err")
-					continue
-				}
-				if txResult.Confirmations >= minConfirmation {
-					log.WithContext(ctx).Debug("transaction confirmed")
-					ch <- nil
-					return
+				} else {
+					if txResult.Confirmations >= minConfirmation {
+						log.WithContext(ctx).Debug("transaction confirmed")
+						ch <- nil
+						return
+					}
 				}
 
 				currentBlkCnt, err := blockTracker.GetBlockCount()
