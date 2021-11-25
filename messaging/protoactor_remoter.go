@@ -9,12 +9,14 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+// Remoter struct
 type Remoter struct {
 	remoter *remote.Remote
 	context *actor.RootContext
 	mapPID  map[string]*actor.PID
 }
 
+// Send func
 func (r *Remoter) Send(ctx context.Context, pid *actor.PID, message proto.Message) error {
 	if actorContext := ctx.GetActorContext(); actorContext != nil {
 		actorContext.Send(pid, message)
@@ -24,6 +26,7 @@ func (r *Remoter) Send(ctx context.Context, pid *actor.PID, message proto.Messag
 	return nil
 }
 
+// RegisterActor func
 func (r *Remoter) RegisterActor(a actor.Actor, name string) (*actor.PID, error) {
 	pid, err := r.context.SpawnNamed(actor.PropsFromProducer(func() actor.Actor { return a }), name)
 	if err != nil {
@@ -33,6 +36,7 @@ func (r *Remoter) RegisterActor(a actor.Actor, name string) (*actor.PID, error) 
 	return pid, nil
 }
 
+// DeregisterActor func
 func (r *Remoter) DeregisterActor(name string) {
 	if r.mapPID[name] != nil {
 		r.context.Stop(r.mapPID[name])
@@ -40,10 +44,12 @@ func (r *Remoter) DeregisterActor(name string) {
 	delete(r.mapPID, name)
 }
 
+// Start func
 func (r *Remoter) Start() {
 	r.remoter.Start()
 }
 
+// GracefulStop func
 func (r *Remoter) GracefulStop() {
 	for name, pid := range r.mapPID {
 		r.context.StopFuture(pid).Wait()
@@ -51,6 +57,7 @@ func (r *Remoter) GracefulStop() {
 	}
 }
 
+// Config struct
 type Config struct {
 	Host              string                           `mapstructure:"host"`
 	Port              int                              `mapstructure:"port"`
@@ -58,16 +65,19 @@ type Config struct {
 	serverSecureCreds credentials.TransportCredentials `mapstructure:"-"`
 }
 
+// WithClientSecureCreds func
 func (c *Config) WithClientSecureCreds(s credentials.TransportCredentials) *Config {
 	c.clientSecureCreds = s
 	return c
 }
 
+// WithServerSecureCreds func
 func (c *Config) WithServerSecureCreds(s credentials.TransportCredentials) *Config {
 	c.serverSecureCreds = s
 	return c
 }
 
+// NewRemoter func
 func NewRemoter(system *actor.ActorSystem, cfg Config) *Remoter {
 	if cfg.Host == "" {
 		cfg.Host = "0.0.0.0"

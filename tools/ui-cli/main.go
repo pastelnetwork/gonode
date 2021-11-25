@@ -47,9 +47,9 @@ func doHTTP(scheme, host string, timeout int, debug bool) *cli.Client {
 	)
 }
 
-func registerTicket(client *cli.Client, artistId string, passphrase string, spendable_address string, imageId string) (string, error) {
+func registerTicket(client *cli.Client, artistID string, passphrase string, spendableAddress string, imageID string) (string, error) {
 	endpoint := client.Register()
-	payloadJson := fmt.Sprintf(
+	payloadJSON := fmt.Sprintf(
 		`{
 		  "artist_name": "Leonardo da Vinci",
 		  "artist_pastelid": "%s",
@@ -72,8 +72,8 @@ func registerTicket(client *cli.Client, artistId string, passphrase string, spen
 		    "top_left_y": 0
 		  },
 		  "youtube_url": "https://www.youtube.com/watch?v=0xl6Ufo4ZX0"
-		}`, artistId, passphrase, imageId, spendable_address)
-	payload, err := cli.BuildRegisterPayload(payloadJson)
+		}`, artistID, passphrase, imageID, spendableAddress)
+	payload, err := cli.BuildRegisterPayload(payloadJSON)
 	if err != nil {
 		return "", errors.Wrap(err, "error creating payload")
 	}
@@ -93,11 +93,11 @@ func registerTicket(client *cli.Client, artistId string, passphrase string, spen
 	return result.TaskID, nil
 }
 
-func watchStatus(client *cli.Client, taskId string) error {
+func watchStatus(client *cli.Client, taskID string) error {
 	endpoint := client.RegisterTaskState()
 
 	// create payload
-	payload, err := cli.BuildRegisterTaskStatePayload(taskId)
+	payload, err := cli.BuildRegisterTaskStatePayload(taskID)
 	if err != nil {
 		return errors.Wrap(err, "error creating payload")
 	}
@@ -129,21 +129,21 @@ func watchStatus(client *cli.Client, taskId string) error {
 
 func main() {
 	var (
-		imageId    = flag.String("imageid", "", "image id")
-		artistId   = flag.String("artist", "", "artist's pastelid")
+		imageID    = flag.String("imageiD", "", "image id")
+		artistID   = flag.String("artist", "", "artist's pastelid")
 		passphrase = flag.String("passphrase", "", "passphrase associated with artist pastelid")
 		addr       = flag.String("addr", "", "spendable addr")
 	)
 	//flag.Usage = usage
 	flag.Parse()
-	if *imageId == "" || *artistId == "" || *passphrase == "" || *addr == "" {
+	if *imageID == "" || *artistID == "" || *passphrase == "" || *addr == "" {
 		usage()
 		return
 	}
 	client := doHTTP("http", "localhost:8080", 100, true)
 
 	fmt.Println("****************Register Ticket*************************")
-	taskId, err := registerTicket(client, *artistId, *passphrase, *addr, *imageId)
+	taskID, err := registerTicket(client, *artistID, *passphrase, *addr, *imageID)
 	if err != nil {
 		fmt.Println(fmt.Errorf("error register ticket: %v", err))
 		os.Exit(-1)
@@ -151,7 +151,7 @@ func main() {
 	}
 
 	fmt.Println("****************Watch status*************************")
-	err = watchStatus(client, taskId)
+	err = watchStatus(client, taskID)
 	if err != nil {
 		fmt.Println(fmt.Errorf("error watch status: %v", err))
 		os.Exit(-1)

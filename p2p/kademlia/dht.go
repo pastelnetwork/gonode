@@ -286,7 +286,7 @@ func (s *DHT) Keys(ctx context.Context, offset int, limit int) []string {
 }
 
 // NClosestNodes returns a list of n closest masternode to a given string
-func (s *DHT) NClosestNodes(ctx context.Context, n int, key string) []*Node {
+func (s *DHT) NClosestNodes(_ context.Context, n int, key string) []*Node {
 	nodeList := s.ht.closestContacts(n, base58.Decode(key), []*Node{})
 	return nodeList.Nodes
 }

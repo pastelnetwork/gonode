@@ -54,7 +54,8 @@ func (d *domainActor) Receive(context actor.Context) {
 	}
 }
 
-func (s *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg *verifyStorageChallengeMsg) {
+// OnSendVerifyStorageChallengeMessage handle event sending verity storage challenge message
+func (d *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg *verifyStorageChallengeMsg) {
 	for _, verifyingMasternodePID := range msg.VerifierMasterNodesClientPIDs {
 		log.Debug(verifyingMasternodePID.String())
 		ctx.Send(verifyingMasternodePID, &dto.VerifyStorageChallengeRequest{
@@ -81,7 +82,8 @@ func (s *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg
 	}
 }
 
-func (s *domainActor) OnSendProcessStorageChallengeMessage(ctx actor.Context, msg *processStorageChallengeMsg) {
+// OnSendProcessStorageChallengeMessage handle event sending processing stotage challenge message
+func (d *domainActor) OnSendProcessStorageChallengeMessage(ctx actor.Context, msg *processStorageChallengeMsg) {
 	log.Debug(msg.ProcessingMasterNodesClientPID.String())
 	ctx.Send(msg.ProcessingMasterNodesClientPID, &dto.StorageChallengeRequest{
 		Data: &dto.StorageChallengeData{

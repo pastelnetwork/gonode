@@ -9,12 +9,18 @@ import (
 )
 
 type repository interface {
+	// ListKeys func
 	ListKeys(ctx context.Context) []string
+	// GetSymbolFileByKey func
 	GetSymbolFileByKey(ctx context.Context, key string) ([]byte, error)
+	// StoreSymbolFile func
 	StoreSymbolFile(ctx context.Context, data []byte) (key string, err error)
+	// RemoveSymbolFileByKey func
 	RemoveSymbolFileByKey(ctx context.Context, key string) error
+	// GetNClosestXORDistanceMasternodesToComparisionString func
 	GetNClosestXORDistanceMasternodesToComparisionString(ctx context.Context, n int, comparisonString string) []*kademlia.Node
-	GetNClosestXORDistanceFileHashToComparisonString(ctx context.Context, n int, comparisonString string, symbolFileKeys []string) []string
+	// GetNClosestXORDistanceFileHashesToComparisonString func
+	GetNClosestXORDistanceFileHashesToComparisonString(ctx context.Context, n int, comparisonString string, symbolFileKeys []string) []string
 }
 
 func newRepository(client p2p.Client) repository {
@@ -57,6 +63,6 @@ func (r *repo) GetNClosestXORDistanceMasternodesToComparisionString(ctx context.
 	return r.p2p.NClosestNodes(ctx, n, comparisonString)
 }
 
-func (r *repo) GetNClosestXORDistanceFileHashToComparisonString(ctx context.Context, n int, comparisonString string, symbolFileKeys []string) []string {
+func (r *repo) GetNClosestXORDistanceFileHashesToComparisonString(_ context.Context, n int, comparisonString string, symbolFileKeys []string) []string {
 	return xordistance.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, symbolFileKeys)
 }

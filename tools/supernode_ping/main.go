@@ -50,7 +50,6 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("Failed to ping")
 		return
-	} else {
-		log.Infof("Received ping reply: %s", res.Reply)
 	}
+	log.Infof("Received ping reply: %s", res.Reply)
 }

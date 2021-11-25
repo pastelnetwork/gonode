@@ -15,6 +15,11 @@ const (
 	defaultConnectTimeout = 5 * time.Second
 )
 
+// Client interface
+type Client interface {
+	Connect(ctx context.Context, address string) (*clientConn, error)
+}
+
 type client struct{}
 
 // Connect implements node.Client.Connect()
@@ -43,6 +48,6 @@ func (cl *client) Connect(ctx context.Context, address string) (*clientConn, err
 }
 
 // NewClient returns a new client instance.
-func NewClient() *client {
+func NewClient() Client {
 	return &client{}
 }

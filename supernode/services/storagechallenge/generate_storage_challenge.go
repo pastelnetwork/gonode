@@ -18,15 +18,15 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, currentBlockHas
 	symbolFileKeys := s.repository.ListKeys(ctx)
 
 	comparisonStringForFileHashSelection := currentBlockHash + challengingMasternodeID
-	sliceOfFileHashesToChallenge := s.repository.GetNClosestXORDistanceFileHashToComparisonString(ctx, challengesPerMasternodePerBlock, comparisonStringForFileHashSelection, symbolFileKeys)
+	sliceOfFileHashesToChallenge := s.repository.GetNClosestXORDistanceFileHashesToComparisonString(ctx, challengesPerMasternodePerBlock, comparisonStringForFileHashSelection, symbolFileKeys)
 
 	for idx, symbolFileHash := range sliceOfFileHashesToChallenge {
 		challengeDataSize := 0
 
 		comparisonStringForMasternodeSelection := currentBlockHash + symbolFileHash + s.nodeID + helper.GetHashFromString(fmt.Sprint(idx))
 		respondingMasternodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForMasternodeSelection)
-		challengeStatus := Status_PENDING
-		messageType := MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE
+		challengeStatus := statusPending
+		messageType := storageChallengeIssuanceMessage
 		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, currentBlockHash, challengingMasternodeID)
 		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + currentBlockHash
 		messageID := helper.GetHashFromString(messageIDInputData)
@@ -89,13 +89,13 @@ func (s *service) sendprocessStorageChallenge(ctx context.Context, challengeMess
 	return s.remoter.Send(ctx, s.domainActorID, &processStorageChallengeMsg{ProcessingMasterNodesClientPID: processingMasterNodesClientPID, ChallengeMessage: challengeMessage})
 }
 
-func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashString string, blockHashString string, challengingMasternodeId string) (int, int) {
+func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashString string, blockHashString string, challengingMasternodeID string) (int, int) {
 	blockHashStringAsInt, _ := strconv.ParseInt(blockHashString, 16, 64)
 	blockHashStringAsIntStr := fmt.Sprint(blockHashStringAsInt)
 	stepSizeForIndicesStr := blockHashStringAsIntStr[len(blockHashStringAsIntStr)-1:] + blockHashStringAsIntStr[0:1]
 	stepSizeForIndices, _ := strconv.ParseUint(stepSizeForIndicesStr, 10, 32)
 	stepSizeForIndicesAsInt := int(stepSizeForIndices)
-	comparisonString := blockHashString + fileHashString + challengingMasternodeId
+	comparisonString := blockHashString + fileHashString + challengingMasternodeID
 	sliceOfXorDistancesOfIndicesToBlockHash := make([]uint64, 0)
 	sliceOfIndicesWithStepSize := make([]int, 0)
 	totalDataLengthInBytesAsInt := int(totalDataLengthInBytes)
@@ -118,8 +118,8 @@ func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashStri
 }
 
 func minMax(array []int) (int, int) {
-	var max int = array[0]
-	var min int = array[0]
+	var max = array[0]
+	var min = array[0]
 	for _, value := range array {
 		if max < value {
 			max = value

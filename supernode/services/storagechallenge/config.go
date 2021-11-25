@@ -6,6 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 )
 
+// Config storage challenge config
 type Config struct {
 	common.Config                   `mapstructure:",squash" json:"-"`
 	StorageChallengeExpiredDuration time.Duration `mapstructure:"storage_challenge_expired_duration" json:"storage_challenge_expired_duration"`

@@ -53,6 +53,7 @@ func GetExternalIPAddress() (externalIP string, err error) {
 	return string(body), nil
 }
 
+// GetHashFromString generate sha256 hash from a given string
 func GetHashFromString(inputString string) string {
 	h := sha3.New256()
 	h.Write([]byte(inputString))

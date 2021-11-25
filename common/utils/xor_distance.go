@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// XORBytes returns xor 2 same length bytes data
 func XORBytes(a, b []byte) ([]byte, error) {
 	if len(a) != len(b) {
 		return nil, fmt.Errorf("length of byte slices is not equivalent: %d != %d", len(a), len(b))
@@ -18,12 +19,14 @@ func XORBytes(a, b []byte) ([]byte, error) {
 	return buf, nil
 }
 
-func BytesToInt(input_bytes []byte) *big.Int {
+// BytesToInt convert input bytes data to big.Int value
+func BytesToInt(inputBytes []byte) *big.Int {
 	z := new(big.Int)
-	z.SetBytes(input_bytes)
+	z.SetBytes(inputBytes)
 	return z
 }
 
+// ComputeXorDistanceBetweenTwoStrings func
 func ComputeXorDistanceBetweenTwoStrings(string1 string, string2 string) uint64 {
 	string1Hash := GetHashFromString(string1)
 	string2Hash := GetHashFromString(string2)
@@ -37,6 +40,7 @@ func ComputeXorDistanceBetweenTwoStrings(string1 string, string2 string) uint64 
 	return xorDistanceAsUint64
 }
 
+// GetNClosestXORDistanceStringToAGivenComparisonString func
 func GetNClosestXORDistanceStringToAGivenComparisonString(n int, comparisonString string, sliceOfComputingXORDistance []string) []string {
 	sliceOfXORDistance := make([]uint64, len(sliceOfComputingXORDistance))
 	XORDistanceToComputingStringMap := make(map[uint64]string)

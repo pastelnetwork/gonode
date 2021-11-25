@@ -31,16 +31,16 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 		return err
 	}
 	challengeResponseHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
-	challengeStatus := Status_RESPONDED
-	messageType := MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE
+	challengeStatus := statusResponded
+	messageType := storageChallengeResponseMessage
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.BlockHashWhenChallengeSent
 	messageID := helper.GetHashFromString(messageIDInputData)
 	timestampChallengeRespondedTo := time.Now().UnixMilli()
 
 	var outgoingChallengeMessage = &ChallengeMessage{
 		MessageID:                     messageID,
-		MessageType:                   MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE,
-		ChallengeStatus:               Status_RESPONDED,
+		MessageType:                   messageType,
+		ChallengeStatus:               challengeStatus,
 		TimestampChallengeSent:        incomingChallengeMessage.TimestampChallengeSent,
 		TimestampChallengeRespondedTo: timestampChallengeRespondedTo,
 		TimestampChallengeVerified:    0,
@@ -68,10 +68,10 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 }
 
 func (s *service) validateProcessingStorageChallengeIncommingData(incomingChallengeMessage *ChallengeMessage) error {
-	if incomingChallengeMessage.ChallengeStatus != Status_PENDING {
+	if incomingChallengeMessage.ChallengeStatus != statusPending {
 		return fmt.Errorf("incorrect status to processing storage challenge")
 	}
-	if incomingChallengeMessage.MessageType != MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE {
+	if incomingChallengeMessage.MessageType != storageChallengeIssuanceMessage {
 		return fmt.Errorf("incorrect message type to processing storage challenge")
 	}
 	return nil

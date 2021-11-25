@@ -29,7 +29,7 @@ func (srv *testService) ImageRarenessScore(_ context.Context, _ *pb.RarenessScor
 func startGrpcServer(t *testing.T, wg *sync.WaitGroup, port int, serviceHandler *testService) *grpc.Server {
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
-		panic(fmt.Sprintf("failed to listen: %v", err))
+		t.Fatalf("failed to listen: %v", err)
 	}
 	srv := grpc.NewServer()
 	pb.RegisterDupeDetectionServerServer(srv, serviceHandler)
@@ -45,7 +45,7 @@ func startGrpcServer(t *testing.T, wg *sync.WaitGroup, port int, serviceHandler 
 	return srv
 }
 
-// TestDDClientError
+// TestDDClientError func
 func TestDDClientError(t *testing.T) {
 	testErr := errors.New("error")
 	testReply := (*pb.ImageRarenessScoreReply)(nil)

@@ -3,27 +3,18 @@ package storagechallenge
 import dto "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
 
 var (
-	MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE     = dto.MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE.String()
-	MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE     = dto.MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE.String()
-	MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE = dto.MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE.String()
+	storageChallengeIssuanceMessage     = dto.MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE.String()
+	storageChallengeResponseMessage     = dto.MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE.String()
+	storageChallengeVerificationMessage = dto.MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE.String()
 
-	Status_PENDING                   = dto.Status_PENDING.String()
-	Status_RESPONDED                 = dto.Status_RESPONDED.String()
-	Status_SUCCEEDED                 = dto.Status_SUCCEEDED.String()
-	Status_FAILED_TIMEOUT            = dto.Status_FAILED_TIMEOUT.String()
-	Status_FAILED_INCORRECT_RESPONSE = dto.Status_FAILED_INCORRECT_RESPONSE.String()
+	statusPending                 = dto.Status_PENDING.String()
+	statusResponded               = dto.Status_RESPONDED.String()
+	statusSucceeded               = dto.Status_SUCCEEDED.String()
+	statusFailedTimeout           = dto.Status_FAILED_TIMEOUT.String()
+	statusFailedIncorrectResponse = dto.Status_FAILED_INCORRECT_RESPONSE.String()
 )
 
-type ChallengeAnalysisStatus int
-
-const (
-	ANALYSYS_STATUS_ISSUED ChallengeAnalysisStatus = iota
-	ANALYSIS_STATUS_RESPONDED_TO
-	ANALYSIS_STATUS_CORRECT
-	ALALYSIS_STATUS_INCORRECT
-	ALALYSIS_STATUS_TIMEOUT
-)
-
+// ChallengeMessage struct
 type ChallengeMessage struct {
 	MessageID                     string
 	MessageType                   string
@@ -42,6 +33,7 @@ type ChallengeMessage struct {
 	ChallengeID                   string
 }
 
+// Challenge struct
 type Challenge struct {
 	ChallengeID                    string
 	ChallengeStatus                string
@@ -59,43 +51,24 @@ type Challenge struct {
 	ChallengeResponseHash          string
 }
 
-type PastelBlock struct {
-	BlockHash                       string
-	BlockNumber                     uint
-	TotalChallengesIssued           uint
-	TotalChallengesRespondedTo      uint
-	TotalChallengesCorrect          uint
-	TotalChallengesIncorrect        uint
-	TotalChallengeTimeout           uint
-	ChallengeResponseSuccessRatePct float32 `gorm:"column:challenge_response_success_rate_pct"`
-}
+// type PastelBlock struct {
+// 	BlockHash                       string
+// 	BlockNumber                     uint
+// 	TotalChallengesIssued           uint
+// 	TotalChallengesRespondedTo      uint
+// 	TotalChallengesCorrect          uint
+// 	TotalChallengesIncorrect        uint
+// 	TotalChallengeTimeout           uint
+// 	ChallengeResponseSuccessRatePct float32 `gorm:"column:challenge_response_success_rate_pct"`
+// }
 
-type Masternode struct {
-	NodeID                          string
-	MasternodeIPAddress             string
-	TotalChallengesIssued           uint
-	TotalChallengesRespondedTo      uint
-	TotalChallengesCorrect          uint
-	TotalChallengesIncorrect        uint
-	TotalChallengeTimeout           uint
-	ChallengeResponseSuccessRatePct float32 `gorm:"column:challenge_response_success_rate_pct"`
-}
-
-type SymbolFile struct {
-	FileHash               string
-	FileLengthInBytes      uint
-	TotalChallengesForFile uint
-}
-
-type XORDistance struct {
-	XORDistanceID  string `gorm:"column:xor_distance_id"`
-	MasternodeID   string
-	SymbolFileHash string
-	XorDistance    uint64
-	Masternode     *Masternode `gorm:"foreignKey:MasternodeID;references:NodeID"`
-	SymbolFile     *SymbolFile `gorm:"foreignKey:SymbolFileHash;references:FileHash"`
-}
-
-func (XORDistance) TableName() string {
-	return "xor_distances"
-}
+// type Masternode struct {
+// 	NodeID                          string
+// 	MasternodeIPAddress             string
+// 	TotalChallengesIssued           uint
+// 	TotalChallengesRespondedTo      uint
+// 	TotalChallengesCorrect          uint
+// 	TotalChallengesIncorrect        uint
+// 	TotalChallengeTimeout           uint
+// 	ChallengeResponseSuccessRatePct float32 `gorm:"column:challenge_response_success_rate_pct"`
+// }

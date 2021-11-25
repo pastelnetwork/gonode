@@ -17,8 +17,12 @@ type service struct {
 	repository                            repository
 }
 
+// StorageChallenge interface
 type StorageChallenge interface {
+	// GenerateStorageChallenges func
 	GenerateStorageChallenges(ctx context.Context, blockHash, challengingMasternodeID string, challengesPerNodePerBlock int) error
+	// ProcessStorageChallenge func
 	ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error
+	// VerifyStorageChallenge func
 	VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error
 }
