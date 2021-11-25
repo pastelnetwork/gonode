@@ -143,10 +143,10 @@ func (task *Task) createAndHashThumbnail(srcImg image.Image, thumbnail thumbnail
 
 	log.Debugf("Encode with target size %d and quality %f", targetFileSize, quality)
 	encoderOptions, err := encoder.NewLossyEncoderOptions(encoder.PresetDefault, quality)
-	encoderOptions.TargetSize = targetFileSize
 	if err != nil {
 		return nil, errors.Errorf("create lossless encoder option %w", err)
 	}
+	encoderOptions.TargetSize = targetFileSize
 
 	if err := webp.Encode(previewFile, thumbnailImg, encoderOptions); err != nil {
 		return nil, errors.Errorf("encode to webp format: %w", err)

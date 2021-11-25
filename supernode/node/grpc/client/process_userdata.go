@@ -91,10 +91,14 @@ func (service *processUserdata) SendUserdataToPrimary(ctx context.Context, dataS
 		NodeID:             dataSigned.NodeID,
 	})
 
+	if err != nil {
+		return userdata.SuperNodeReply{}, err
+	}
+
 	return userdata.SuperNodeReply{
 		ResponseCode: resp.ResponseCode,
 		Detail:       resp.Detail,
-	}, err
+	}, nil
 }
 
 func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalUserdata userdata.ProcessRequestSigned) (userdata.SuperNodeReply, error) {
@@ -133,10 +137,14 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 	// Send the data
 	resp, err := service.client.SendUserdataToLeader(ctx, reqProto)
 
+	if err != nil {
+		return userdata.SuperNodeReply{}, err
+	}
+
 	return userdata.SuperNodeReply{
 		ResponseCode: resp.ResponseCode,
 		Detail:       resp.Detail,
-	}, err
+	}, nil
 }
 
 func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
