@@ -153,6 +153,8 @@ type ArtworkGetResponseBody struct {
 	PornNsfwScore *float32 `form:"porn_nsfw_score,omitempty" json:"porn_nsfw_score,omitempty" xml:"porn_nsfw_score,omitempty"`
 	// nsfw score
 	HentaiNsfwScore *float32 `form:"hentai_nsfw_score,omitempty" json:"hentai_nsfw_score,omitempty" xml:"hentai_nsfw_score,omitempty"`
+	// preview_ image
+	PreviewThumbnail []byte `form:"preview_thumbnail,omitempty" json:"preview_thumbnail,omitempty" xml:"preview_thumbnail,omitempty"`
 	// Thumbnail_1 image
 	Thumbnail1 []byte `form:"thumbnail_1,omitempty" json:"thumbnail_1,omitempty" xml:"thumbnail_1,omitempty"`
 	// Thumbnail_2 image
@@ -742,6 +744,7 @@ func NewArtworkGetResponseBody(res *artworks.ArtworkDetail) *ArtworkGetResponseB
 		SexyNsfwScore:         res.SexyNsfwScore,
 		PornNsfwScore:         res.PornNsfwScore,
 		HentaiNsfwScore:       res.HentaiNsfwScore,
+		PreviewThumbnail:      res.PreviewThumbnail,
 		Thumbnail1:            res.Thumbnail1,
 		Thumbnail2:            res.Thumbnail2,
 		Txid:                  res.Txid,
