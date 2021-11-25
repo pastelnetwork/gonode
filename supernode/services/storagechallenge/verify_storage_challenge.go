@@ -24,25 +24,25 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	challengeCorrectHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
 	messageType := storageChallengeVerificationMessage
 	TimestampChallengeVerified := time.Now().Unix()
-	TimeVerifyStorageChallengeInMilliSeconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, TimestampChallengeVerified)
+	TimeVerifyStorageChallengeInNanoseconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, TimestampChallengeVerified)
 	var challengeStatus string
 	// var analysisStatus = ALALYSIS_STATUS_TIMEOUT
 	// defer func() {
 	// 	s.saveChallengeAnalysis(ctx, incomingChallengeMessage.BlockHashWhenChallengeSent, incomingChallengeMessage.ChallengingMasternodeID, analysisStatus)
 	// }()
 
-	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (TimeVerifyStorageChallengeInMilliSeconds <= float64(s.storageChallengeExpiredAsMilliSeconds)) {
+	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (TimeVerifyStorageChallengeInNanoseconds <= s.storageChallengeExpiredAsNanoseconds) {
 		challengeStatus = statusSucceeded
 		// analysisStatus = ANALYSIS_STATUS_CORRECT
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug("masternode %s correctly responded in %d milliseconds to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, TimeVerifyStorageChallengeInMilliSeconds, incomingChallengeMessage.FileHashToChallenge)
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug(fmt.Sprintf("masternode %s correctly responded in %d milliseconds to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, TimeVerifyStorageChallengeInNanoseconds, incomingChallengeMessage.FileHashToChallenge))
 	} else if incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash {
 		challengeStatus = statusFailedTimeout
 		// analysisStatus = ALALYSIS_STATUS_TIMEOUT
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug("masternode %s  correctly responded in %d milliseconds to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingChallengeMessage.RespondingMasternodeID, TimeVerifyStorageChallengeInMilliSeconds, incomingChallengeMessage.FileHashToChallenge)
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug(fmt.Sprintf("masternode %s  correctly responded in %d milliseconds to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingChallengeMessage.RespondingMasternodeID, TimeVerifyStorageChallengeInNanoseconds, incomingChallengeMessage.FileHashToChallenge))
 	} else {
 		challengeStatus = statusFailedIncorrectResponse
 		// analysisStatus = ALALYSIS_STATUS_INCORRECT
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug("masternode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, incomingChallengeMessage.FileHashToChallenge)
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug(fmt.Sprintf("masternode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, incomingChallengeMessage.FileHashToChallenge))
 	}
 
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.BlockHashWhenChallengeSent
@@ -72,8 +72,8 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	// 	return err
 	// }
 
-	timeToRespondToStorageChallengeInSeconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
-	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug("masternode " + outgoingChallengeMessage.RespondingMasternodeID + " responded to storage challenge for file hash " + outgoingChallengeMessage.FileHashToChallenge + " in " + fmt.Sprint(timeToRespondToStorageChallengeInSeconds) + " seconds!")
+	timeToRespondToStorageChallengeInNanoseconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
+	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug("masternode " + outgoingChallengeMessage.RespondingMasternodeID + " responded to storage challenge for file hash " + outgoingChallengeMessage.FileHashToChallenge + " in " + fmt.Sprint(timeToRespondToStorageChallengeInNanoseconds) + " nano seconds!")
 
 	return nil
 }

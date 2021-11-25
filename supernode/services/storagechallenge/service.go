@@ -8,13 +8,13 @@ import (
 )
 
 type service struct {
-	remoter                               *messaging.Remoter
-	domainActorID                         *actor.PID
-	nodeID                                string
-	pclient                               pastel.Client
-	storageChallengeExpiredAsMilliSeconds int64
-	numberOfChallengeReplicas             int
-	repository                            repository
+	remoter                              *messaging.Remoter
+	domainActorID                        *actor.PID
+	nodeID                               string
+	pclient                              pastel.Client
+	storageChallengeExpiredAsNanoseconds int64
+	numberOfChallengeReplicas            int
+	repository                           repository
 }
 
 // StorageChallenge interface

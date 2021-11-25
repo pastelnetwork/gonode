@@ -35,7 +35,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	messageType := storageChallengeResponseMessage
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.BlockHashWhenChallengeSent
 	messageID := helper.GetHashFromString(messageIDInputData)
-	timestampChallengeRespondedTo := time.Now().UnixMilli()
+	timestampChallengeRespondedTo := time.Now().UnixNano()
 
 	var outgoingChallengeMessage = &ChallengeMessage{
 		MessageID:                     messageID,
@@ -61,8 +61,8 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	// 	return err
 	// }
 	// analysisStatus = ANALYSIS_STATUS_RESPONDED_TO
-	timeToRespondToStorageChallengeInSeconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
-	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug("masternode %s responded to storage challenge for file hash %s in %d milli second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, fmt.Sprint(timeToRespondToStorageChallengeInSeconds)+" seconds!")
+	timeToRespondToStorageChallengeInMilliSeconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
+	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, timeToRespondToStorageChallengeInMilliSeconds))
 
 	return s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage)
 }

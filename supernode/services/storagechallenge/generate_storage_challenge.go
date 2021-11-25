@@ -30,7 +30,7 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, currentBlockHas
 		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, currentBlockHash, challengingMasternodeID)
 		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + currentBlockHash
 		messageID := helper.GetHashFromString(messageIDInputData)
-		timestampChallengeSent := time.Now().UnixMilli()
+		timestampChallengeSent := time.Now().UnixNano()
 		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(timestampChallengeSent)
 		challengeID := helper.GetHashFromString(challengeIDInputData)
 		outgoinChallengeMessage := &ChallengeMessage{
@@ -68,7 +68,7 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, currentBlockHas
 func (s *service) sendprocessStorageChallenge(ctx context.Context, challengeMessage *ChallengeMessage) error {
 	masternodes, err := s.pclient.MasterNodesExtra(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "sendprocessStorageChallenge").Warn("could not get masternode info: %v", err.Error())
+		log.WithContext(ctx).WithField("method", "sendprocessStorageChallenge").Warn("could not get masternode info: ", err.Error())
 		return err
 	}
 
