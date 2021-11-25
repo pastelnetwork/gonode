@@ -79,7 +79,7 @@ func TestDDClientSuccess(t *testing.T) {
 	testErr := error(nil)
 	testReply := &pb.ImageRarenessScoreReply{
 		AlternativeNsfwScores: &pb.AltNsfwScores{},
-		ImageHashes:           &pb.PerceptualImageHashes{},
+		PerceptualImageHashes: &pb.PerceptualImageHashes{},
 	}
 	testPort := 50054
 	serviceHandler := &testService{
