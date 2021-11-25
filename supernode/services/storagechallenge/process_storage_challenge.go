@@ -25,20 +25,11 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	// 	s.saveChallengeAnalysis(ctx, incomingChallengeMessage.BlockHashWhenChallengeSent, incomingChallengeMessage.ChallengingMasternodeID, analysisStatus)
 	// }()
 
-	// TODO: replace with new repository implementation
-	// filePath, err := s.repository.GetFilePathFromFileHash(ctx, incomingChallengeMessage.FileHashToChallenge)
-	// if err != nil {
-	// 	log.With(actorLog.String("ACTOR", "ProcessStorageChallenge")).Error("could not get symbol file path from file hash", actorLog.String("s.repository.GetFilePathFromFileHash", err.Error()))
-	// 	return err
-	// }
-
-	// TODO: replace with kademlia storage
-	// challengeFileData, err := file.ReadFileIntoMemory(filePath)
-	// if err != nil {
-	// 	log.With(actorLog.String("ACTOR", "ProcessStorageChallenge")).Error("could not read file data in to memory", actorLog.String("file.ReadFileIntoMemory", err.Error()))
-	// 	return err
-	// }
-	var challengeFileData = []byte("")
+	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge)
+	if err != nil {
+		log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Error("could not read file data in to memory: ", err.Error())
+		return err
+	}
 	challengeResponseHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
 	challengeStatus := Status_RESPONDED
 	messageType := MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE
@@ -71,7 +62,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	// }
 	// analysisStatus = ANALYSIS_STATUS_RESPONDED_TO
 	timeToRespondToStorageChallengeInSeconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
-	log.WithField("method", "ProcessStorageChallenge").Debug("masternode %s responded to storage challenge for file hash %s in %d milli second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, fmt.Sprint(timeToRespondToStorageChallengeInSeconds)+" seconds!")
+	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug("masternode %s responded to storage challenge for file hash %s in %d milli second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, fmt.Sprint(timeToRespondToStorageChallengeInSeconds)+" seconds!")
 
 	return s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage)
 }
@@ -86,12 +77,11 @@ func (s *service) validateProcessingStorageChallengeIncommingData(incomingChalle
 	return nil
 }
 
-func (s *service) computeHashofFileSlice(file_data []byte, challenge_slice_start_index int, challenge_slice_end_index int) string {
-	challenge_data_slice := file_data[challenge_slice_start_index:challenge_slice_end_index]
+func (s *service) computeHashofFileSlice(fileData []byte, challengeSliceStartIndex int, challengeSliceEndIndex int) string {
+	challengeDataSlice := fileData[challengeSliceStartIndex:challengeSliceEndIndex]
 	algorithm := sha3.New256()
-	algorithm.Write(challenge_data_slice)
-	hash_of_data_slice := hex.EncodeToString(algorithm.Sum(nil))
-	return hash_of_data_slice
+	algorithm.Write(challengeDataSlice)
+	return hex.EncodeToString(algorithm.Sum(nil))
 }
 
 func (s *service) sendVerifyStorageChallenge(ctx context.Context, challengeMessage *ChallengeMessage) error {

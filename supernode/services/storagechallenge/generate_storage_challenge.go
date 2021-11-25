@@ -15,44 +15,23 @@ import (
 )
 
 func (s *service) GenerateStorageChallenges(ctx context.Context, currentBlockHash string, challengingMasternodeID string, challengesPerMasternodePerBlock int) error {
-	// TODO: replacing this with real repository implementation
-	// symbolFiles, err := s.repository.GetSymbolFiles(ctx)
-	// if err != nil {
-	// 	log.With(actorLog.String("ACTOR", "GenerateStorageChallenges")).Error("could not get symbol files", actorLog.String("s.repository.GetSymbolFiles", err.Error()))
-	// 	return err
-	// }
-	var symbolFiles = []*SymbolFile{}
-
-	var mapSymbolFileByFileHash = make(map[string]*SymbolFile)
-	for _, symbolFile := range symbolFiles {
-		mapSymbolFileByFileHash[symbolFile.FileHash] = symbolFile
-	}
+	symbolFileKeys := s.repository.ListKeys(ctx)
 
 	comparisonStringForFileHashSelection := currentBlockHash + challengingMasternodeID
-	sliceOfFileHashesToChallenge := xordistance.GetNClosestXORDistanceStringToAGivenComparisonString(challengesPerMasternodePerBlock, comparisonStringForFileHashSelection, _symbolFiles(symbolFiles).GetListXORDistanceString())
+	sliceOfFileHashesToChallenge := s.repository.GetNClosestXORDistanceFileHashToComparisonString(ctx, challengesPerMasternodePerBlock, comparisonStringForFileHashSelection, symbolFileKeys)
 
 	for idx, symbolFileHash := range sliceOfFileHashesToChallenge {
-		challengeDataSize := mapSymbolFileByFileHash[symbolFileHash].FileLengthInBytes
-
-		// TODO: replacing this with real repository implementation
-		// selecting n closest node excepting challenger (current node)
-		// xorDistances, err := s.repository.GetTopRankedXorDistanceMasternodeToFileHash(ctx, symbolFileHash, s.numberOfChallengeReplicas, s.nodeID)
-		// if err != nil {
-		// 	// ignore this file hash
-		// 	log.With(actorLog.String("ACTOR", "GenerateStorageChallenges")).Warn(fmt.Sprintf("could not get top %v ranked xor of distance masternodes id to file hash %s", s.numberOfChallengeReplicas, symbolFileHash), actorLog.String("s.repository.GetTopRankedXorDistanceMasternodeToFileHash", err.Error()))
-		// 	continue
-		// }
-		var xorDistances = []*XORDistance{}
+		challengeDataSize := 0
 
 		comparisonStringForMasternodeSelection := currentBlockHash + symbolFileHash + s.nodeID + helper.GetHashFromString(fmt.Sprint(idx))
-		respondingMasternodesID := xordistance.GetNClosestXORDistanceStringToAGivenComparisonString(1, comparisonStringForMasternodeSelection, _xorDistances(xorDistances).GetListXORDistanceString())
+		respondingMasternodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForMasternodeSelection)
 		challengeStatus := Status_PENDING
 		messageType := MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE
 		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, currentBlockHash, challengingMasternodeID)
-		messageIDInputData := challengingMasternodeID + respondingMasternodesID[0] + symbolFileHash + challengeStatus + messageType + currentBlockHash
+		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + currentBlockHash
 		messageID := helper.GetHashFromString(messageIDInputData)
 		timestampChallengeSent := time.Now().UnixMilli()
-		challengeIDInputData := challengingMasternodeID + respondingMasternodesID[0] + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(timestampChallengeSent)
+		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(timestampChallengeSent)
 		challengeID := helper.GetHashFromString(challengeIDInputData)
 		outgoinChallengeMessage := &ChallengeMessage{
 			MessageID:                     messageID,
@@ -63,7 +42,7 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, currentBlockHas
 			TimestampChallengeVerified:    0,
 			BlockHashWhenChallengeSent:    currentBlockHash,
 			ChallengingMasternodeID:       challengingMasternodeID,
-			RespondingMasternodeID:        respondingMasternodesID[0],
+			RespondingMasternodeID:        string(respondingMasternodes[0].ID),
 			FileHashToChallenge:           symbolFileHash,
 			ChallengeSliceStartIndex:      uint64(challengeSliceStartIndex),
 			ChallengeSliceEndIndex:        uint64(challengeSliceEndIndex),
@@ -108,28 +87,6 @@ func (s *service) sendprocessStorageChallenge(ctx context.Context, challengeMess
 	processingMasterNodesClientPID := actor.NewPID(mn.ExtAddress, "storage-challenge")
 
 	return s.remoter.Send(ctx, s.domainActorID, &processStorageChallengeMsg{ProcessingMasterNodesClientPID: processingMasterNodesClientPID, ChallengeMessage: challengeMessage})
-}
-
-type _symbolFiles []*SymbolFile
-
-func (s _symbolFiles) GetListXORDistanceString() []string {
-	ret := make([]string, len(s))
-	for idx, symbolFile := range s {
-		ret[idx] = symbolFile.FileHash
-	}
-
-	return ret
-}
-
-type _xorDistances []*XORDistance
-
-func (s _xorDistances) GetListXORDistanceString() []string {
-	ret := make([]string, len(s))
-	for idx, xorDistance := range s {
-		ret[idx] = xorDistance.MasternodeID
-	}
-
-	return ret
 }
 
 func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashString string, blockHashString string, challengingMasternodeId string) (int, int) {

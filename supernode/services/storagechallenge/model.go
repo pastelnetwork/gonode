@@ -85,7 +85,6 @@ type SymbolFile struct {
 	FileHash               string
 	FileLengthInBytes      uint
 	TotalChallengesForFile uint
-	OriginalFilePath       string
 }
 
 type XORDistance struct {

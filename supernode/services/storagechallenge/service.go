@@ -14,6 +14,7 @@ type service struct {
 	pclient                               pastel.Client
 	storageChallengeExpiredAsMilliSeconds int64
 	numberOfChallengeReplicas             int
+	repository                            repository
 }
 
 type StorageChallenge interface {

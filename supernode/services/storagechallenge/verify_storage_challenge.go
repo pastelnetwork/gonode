@@ -15,20 +15,11 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 		return err
 	}
 
-	// TODO: replace with new repository implementation
-	// filePath, err := s.repository.GetFilePathFromFileHash(ctx, incomingChallengeMessage.FileHashToChallenge)
-	// if err != nil {
-	// 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Error("could not get symbol file path from file hash", actorLog.String("s.repository.GetFilePathFromFileHash", err.Error()))
-	// 	return err
-	// }
-
-	// TODO: replace with read file data from kademlia
-	// challengeFileData, err := file.ReadFileIntoMemory(filePath)
-	// if err != nil {
-	// 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Error("could not read file data in to memory", "file.ReadFileIntoMemory", err.Error()))
-	// 	return err
-	// }
-	var challengeFileData = []byte("")
+	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge)
+	if err != nil {
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Error("could not read file data in to memory", "file.ReadFileIntoMemory", err.Error())
+		return err
+	}
 
 	challengeCorrectHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
 	messageType := MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE

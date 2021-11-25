@@ -3,7 +3,7 @@ module github.com/pastelnetwork/gonode/supernode
 go 1.17
 
 require (
-	github.com/AsynkronIT/protoactor-go v0.0.0-20211115123807-aa1fee2f52fc
+	github.com/AsynkronIT/protoactor-go v0.0.0-20211124041449-becb6dbfc022
 	github.com/DataDog/zstd v1.4.8
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/disintegration/imaging v1.6.2
@@ -19,7 +19,6 @@ require (
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0
 	github.com/pastelnetwork/storage-challenges v0.0.0-20211114033635-30e2c6008ab7
-	github.com/smartystreets/assertions v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/tj/assert v0.0.3
@@ -96,7 +95,7 @@ require (
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20211113001501-0c823b97ae02 // indirect
-	golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1 // indirect
+	golang.org/x/term v0.0.0-20210220032956-6a3ed077a48d // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gonum.org/v1/gonum v0.8.2 // indirect
 	google.golang.org/genproto v0.0.0-20211027162914-98a5263abeca // indirect

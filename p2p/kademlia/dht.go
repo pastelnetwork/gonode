@@ -203,7 +203,7 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 
 // Retrieve data from the networking using key. Key is the base58 encoded
 // identifier of the data.
-func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
+func (s *DHT) Retrieve(ctx context.Context, key string, localOnly ...bool) ([]byte, error) {
 	decoded := base58.Decode(key)
 	if len(decoded) != B/8 {
 		return nil, fmt.Errorf("invalid key: %v", key)
@@ -216,6 +216,11 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	}
 
 	log.WithContext(ctx).WithError(err).WithField("key", key).Debug("local store retrieve failed, trying to retrieve from peers...")
+
+	// if only retrieve from local option is setted
+	if len(localOnly) > 0 && localOnly[0] {
+		return nil, err
+	}
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
@@ -263,6 +268,12 @@ func (s *DHT) Keys(ctx context.Context, offset int, limit int) []string {
 	}
 
 	return keys
+}
+
+// NClosestNodes returns a list of n closest masternode to a given string
+func (s *DHT) NClosestNodes(ctx context.Context, n int, key string) []*Node {
+	nodeList := s.ht.closestContacts(n, base58.Decode(key), []*Node{})
+	return nodeList.Nodes
 }
 
 // new a message

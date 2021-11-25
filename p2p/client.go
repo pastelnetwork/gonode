@@ -2,13 +2,17 @@
 
 package p2p
 
-import "context"
+import (
+	"context"
+
+	"github.com/pastelnetwork/gonode/p2p/kademlia"
+)
 
 // Client exposes the interfaces for p2p service
 type Client interface {
 	// Retrieve retrieve data from the kademlia network by key, return nil if not found
 	// - key is the base58 encoded identifier of the data
-	Retrieve(ctx context.Context, key string) ([]byte, error)
+	Retrieve(ctx context.Context, key string, localOnly ...bool) ([]byte, error)
 	// Store store data to the network, which will trigger the iterative store message
 	// - the base58 encoded identifier will be returned
 	Store(ctx context.Context, data []byte) (string, error)
@@ -21,4 +25,7 @@ type Client interface {
 
 	// Keys return keys of p2p
 	Keys(ctx context.Context, offset int, limit int) []string
+
+	// NClosestNodes return n closest masternode to a given string
+	NClosestNodes(ctx context.Context, n int, key string) []*kademlia.Node
 }
