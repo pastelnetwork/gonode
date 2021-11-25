@@ -76,7 +76,7 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 	}
 
 	//image_hashes
-	if err := CompareImageHashes(&lhs.ImageHashes, &rhs.ImageHashes); err != nil {
+	if err := CompareImageHashes(&lhs.PerceptualImageHashes, &rhs.PerceptualImageHashes); err != nil {
 		return errors.Errorf("image hashes do not match: %w", err)
 	}
 
@@ -133,8 +133,8 @@ func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScore, rhs *AlternativeNSFW
 	return nil
 }
 
-// CompareImageHashes return nil if two ImageHashes are equal
-func CompareImageHashes(lhs *ImageHashes, rhs *ImageHashes) error {
+// CompareImageHashes return nil if two PerceptualImageHashes are equal
+func CompareImageHashes(lhs *PerceptualImageHashes, rhs *PerceptualImageHashes) error {
 	if !strings.EqualFold(lhs.PDQHash, rhs.PDQHash) {
 		return errors.Errorf("pdq_hash not matched: lhs(%s) != rhs(%s)", lhs.PDQHash, rhs.PDQHash)
 	}

@@ -588,12 +588,12 @@ func (task *Task) createArtTicket(_ context.Context) error {
 				Porn:    task.fingerprintAndScores.AlternativeNSFWScore.Porn,
 				Sexy:    task.fingerprintAndScores.AlternativeNSFWScore.Sexy,
 			},
-			ImageHashes: pastel.ImageHashes{
-				PerceptualHash: task.fingerprintAndScores.ImageHashes.PerceptualHash,
-				AverageHash:    task.fingerprintAndScores.ImageHashes.AverageHash,
-				DifferenceHash: task.fingerprintAndScores.ImageHashes.DifferenceHash,
-				PDQHash:        task.fingerprintAndScores.ImageHashes.PDQHash,
-				NeuralHash:     task.fingerprintAndScores.ImageHashes.NeuralHash,
+			PerceptualImageHashes: pastel.PerceptualImageHashes{
+				PerceptualHash: task.fingerprintAndScores.PerceptualImageHashes.PerceptualHash,
+				AverageHash:    task.fingerprintAndScores.PerceptualImageHashes.AverageHash,
+				DifferenceHash: task.fingerprintAndScores.PerceptualImageHashes.DifferenceHash,
+				PDQHash:        task.fingerprintAndScores.PerceptualImageHashes.PDQHash,
+				NeuralHash:     task.fingerprintAndScores.PerceptualImageHashes.NeuralHash,
 			},
 			IsRareOnInternet: task.fingerprintAndScores.IsRareOnInternet,
 			IsLikelyDupe:     task.fingerprintAndScores.IsLikelyDupe,

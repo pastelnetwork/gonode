@@ -11,13 +11,13 @@ import (
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
-	grpcCredentials "google.golang.org/grpc/credentials"
 )
 
 var (
@@ -40,6 +40,7 @@ type DHT struct {
 	pastelClient pastel.Client
 	externalIP   string
 	mtx          sync.Mutex
+	authHelper   *AuthHelper
 }
 
 // Options contains configuration options for the local node
@@ -58,10 +59,13 @@ type Options struct {
 
 	// PastelClient to retrieve p2p bootstrap addrs
 	PastelClient pastel.Client
+
+	// Authentication is required or not
+	PeerAuth bool
 }
 
 // NewDHT returns a new DHT node
-func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.TransportCredentials, options *Options) (*DHT, error) {
+func NewDHT(store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Options) (*DHT, error) {
 	// validate the options, if it's invalid, set them to default value
 	if options.IP == "" {
 		options.IP = defaultNetworkAddr
@@ -77,6 +81,11 @@ func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.Transpo
 		done:         make(chan struct{}),
 		cache:        memory.NewKeyValue(),
 	}
+
+	if options.PeerAuth {
+		s.authHelper = NewAuthHelper(pc, secInfo)
+	}
+
 	// new a hashtable with options
 	ht, err := NewHashTable(options)
 	if err != nil {
@@ -87,8 +96,14 @@ func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.Transpo
 	// add bad boostrap addresss
 	s.skipBadBootstrapAddrs()
 
+	/*
+		// FIXME - use this code to enable secure connection
+		secureHelper := credentials.NewClientCreds(s.pastelClient, s.secInfo)
+		network, err := NewNetwork(s, ht.self, secureHelper)
+	*/
+
 	// new network service for dht
-	network, err := NewNetwork(s, ht.self, tpCredentials)
+	network, err := NewNetwork(s, ht.self, nil, s.authHelper)
 	if err != nil {
 		return nil, fmt.Errorf("new network: %v", err)
 	}

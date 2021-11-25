@@ -11,7 +11,7 @@ const (
 
 	defaultConnectToNextNodeDelay = 200 * time.Millisecond
 	defaultAcceptNodesTimeout     = 30 * time.Second // = 3 * (2* ConnectToNodeTimeout)
-	defaultConnectToNodeTimeout   = time.Second * 10
+	defaultConnectToNodeTimeout   = time.Second * 15
 )
 
 // Config contains settings of the registering artwork.

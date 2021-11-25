@@ -28,4 +28,7 @@ type Client interface {
 
 	// NClosestNodes return n closest masternode to a given string
 	NClosestNodes(ctx context.Context, n int, key string) []*kademlia.Node
+
+	// Cleanup cleans up the files as per discardRatio
+	Cleanup(ctx context.Context, discardRatio float64) error
 }

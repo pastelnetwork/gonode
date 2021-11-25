@@ -135,6 +135,11 @@ func (s *p2p) Keys(ctx context.Context, offset int, limit int) []string {
 	return s.dht.Keys(ctx, offset, limit)
 }
 
+// Cleanup cleans up the files as per discardRatio
+func (s *p2p) Cleanup(_ context.Context, discardRatio float64) error {
+	return s.store.Cleanup(discardRatio)
+}
+
 // Stats return status of p2p
 func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	retStats := map[string]interface{}{}
@@ -170,24 +175,13 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 	s.store = store
 
-	/*
-		// FIXME - use this code to enable secure connection
-		transportCredentials := credentials.NewClientCreds(s.pastelClient, s.secInfo)
-
-		// new a kademlia distributed hash table
-		dht, err := kademlia.NewDHT(store, s.pastelClient, transportCredentials, &kademlia.Options{
-			BootstrapNodes: []*kademlia.Node{},
-			IP:             s.config.ListenAddress,
-			Port:           s.config.Port,
-		})
-	*/
-
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, s.pastelClient, nil, &kademlia.Options{
+	dht, err := kademlia.NewDHT(store, s.pastelClient, s.secInfo, &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
 		ID:             []byte(s.config.ID),
+		PeerAuth:       true, // Enable peer authentication
 	})
 
 	if err != nil {

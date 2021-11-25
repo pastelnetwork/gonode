@@ -166,9 +166,9 @@ func NewServerHandshaker(_ context.Context, conn net.Conn, opts *ServerHandshake
 // read and decode the handshake record
 func (s *altsHandshaker) readHandshake(value interface{}) error {
 	hdr := make([]byte, handshakeHeader)
-	reader := bufio.NewReader(s.conn)
+	// reader := bufio.NewReader(s.conn)
 	// read handshake header from connection
-	if _, err := reader.Read(hdr); err != nil {
+	if _, err := io.ReadFull(s.conn, hdr); err != nil {
 		return fmt.Errorf("read handshake header: %w", err)
 	}
 
@@ -177,7 +177,7 @@ func (s *altsHandshaker) readHandshake(value interface{}) error {
 
 	body := make([]byte, n)
 	// read handshake body from connection
-	if _, err := reader.Read(body); err != nil {
+	if _, err := io.ReadFull(s.conn, body); err != nil {
 		return fmt.Errorf("read handshake body: %w", err)
 	}
 
@@ -204,7 +204,7 @@ func (s *altsHandshaker) writeHandshake(value interface{}) error {
 	m := buf.Len()
 
 	d := make([]byte, handshakeHeader+m)
-	binary.BigEndian.PutUint16(d[0:], uint16(m))
+	binary.LittleEndian.PutUint16(d[0:], uint16(m))
 	copy(d[handshakeHeader:], buf.Bytes())
 
 	// write the handshake record

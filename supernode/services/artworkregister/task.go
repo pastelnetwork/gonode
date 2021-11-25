@@ -407,7 +407,11 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 			case <-time.After(interval):
 				log.WithContext(ctx).Debugf("retry: %d", retry)
 				retry++
-				txResult, _ := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
+				txResult, err := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Warn("GetRawTransactionVerbose1 err")
+					continue
+				}
 				if txResult.Confirmations >= minConfirmation {
 					log.WithContext(ctx).Debug("transaction confirmed")
 					ch <- nil
@@ -602,12 +606,12 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 			Porn:    ddResult.AlternateNSFWScores.Porn,
 			Sexy:    ddResult.AlternateNSFWScores.Sexy,
 		},
-		ImageHashes: pastel.ImageHashes{
-			PerceptualHash: ddResult.ImageHashes.PerceptualHash,
-			AverageHash:    ddResult.ImageHashes.AverageHash,
-			DifferenceHash: ddResult.ImageHashes.DifferenceHash,
-			PDQHash:        ddResult.ImageHashes.PDQHash,
-			NeuralHash:     ddResult.ImageHashes.NeuralHash,
+		PerceptualImageHashes: pastel.PerceptualImageHashes{
+			PerceptualHash: ddResult.PerceptualImageHashes.PerceptualHash,
+			AverageHash:    ddResult.PerceptualImageHashes.AverageHash,
+			DifferenceHash: ddResult.PerceptualImageHashes.DifferenceHash,
+			PDQHash:        ddResult.PerceptualImageHashes.PDQHash,
+			NeuralHash:     ddResult.PerceptualImageHashes.NeuralHash,
 		},
 		PerceptualHashOverlapCount:                   ddResult.PerceptualHashOverlapCount,
 		NumberOfFingerprintsRequiringFurtherTesting1: ddResult.NumberOfFingerprintsRequiringFurtherTesting1,

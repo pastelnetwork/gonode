@@ -126,3 +126,9 @@ func NewStore() *Store {
 func (s *Store) InitCleanup(ctx context.Context, _ time.Duration) {
 	log.WithContext(ctx).Error("s.InitCleanup not implemented")
 }
+
+// Cleanup is supposed to cleanup log files in badger
+// not applicable on this test implementation
+func (s *Store) Cleanup(_ float64) error {
+	return errors.New("func not implemented")
+}

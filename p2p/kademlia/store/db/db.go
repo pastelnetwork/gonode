@@ -234,10 +234,15 @@ func (s *Badger) InitCleanup(ctx context.Context, cleanupInterval time.Duration)
 			return
 		case <-time.After(cleanupInterval):
 			for {
-				if err := s.db.RunValueLogGC(cleanupDiscardRatio); err != nil {
+				if err := s.Cleanup(cleanupDiscardRatio); err != nil {
 					break
 				}
 			}
 		}
 	}
+}
+
+// Cleanup garbage collects the badger db. Nil err means somethin was cleaned up
+func (s *Badger) Cleanup(discardRatio float64) error {
+	return s.db.RunValueLogGC(discardRatio)
 }
