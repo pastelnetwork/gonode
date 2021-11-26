@@ -404,6 +404,17 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 		if mn.Fee > task.Request.MaximumFee {
 			continue
 		}
+
+		if mn.ExtKey == "" || mn.ExtAddress == "" {
+			continue
+		}
+
+		// Ensures that the PastelId(mn.ExtKey) of MN node is registered
+		_, err = task.pastelClient.FindTicketByID(ctx, mn.ExtKey)
+		if err != nil {
+			log.WithContext(ctx).WithField("mn", mn).Warn("FindTicketByID() failed")
+			continue
+		}
 		nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
 	}
 
