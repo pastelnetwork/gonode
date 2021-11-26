@@ -712,6 +712,10 @@ var ArtworkDetail = Type("ArtworkDetail", func() {
 		Example(1)
 	})
 
+	Attribute("preview_thumbnail", Bytes, func() {
+		Description("Preview Image")
+	})
+
 	Required("rareness_score", "nsfw_score")
 })
 

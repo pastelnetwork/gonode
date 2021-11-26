@@ -237,7 +237,6 @@ func (task *Task) restoreFile(ctx context.Context, nftRegTicket *pastel.RegTicke
 			symbol, err = task.p2pClient.Retrieve(ctx, id)
 			if err != nil {
 				log.WithContext(ctx).WithField("SymbolID", id).Warn("Could not retrieve symbol")
-				lastErr = errors.Errorf("retrieve symbol: %w", err)
 				task.UpdateStatus(StatusSymbolNotFound)
 				break
 			}
@@ -246,7 +245,6 @@ func (task *Task) restoreFile(ctx context.Context, nftRegTicket *pastel.RegTicke
 			h := sha3.Sum256(symbol)
 			storedID := base58.Encode(h[:])
 			if storedID != id {
-				lastErr = errors.New("symbol ID mismatched")
 				log.WithContext(ctx).Warnf("Symbol ID mismatched, expect %v, got %v", id, storedID)
 				task.UpdateStatus(StatusSymbolMismatched)
 				break

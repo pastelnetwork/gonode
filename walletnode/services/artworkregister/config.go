@@ -16,7 +16,7 @@ const (
 
 	defaultThumbnailSize = 224
 
-	defaultRegArtTxMinConfirmations = 10
+	defaultRegArtTxMinConfirmations = 12
 	defaultRegActTxMinConfirmations = 5
 )
 
