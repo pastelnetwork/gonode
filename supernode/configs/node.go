@@ -17,10 +17,9 @@ type Node struct {
 
 	NumberConnectedNodes       int `mapstructure:"number_connected_nodes" json:"number_connected_nodes,omitempty"`
 	PreburntTxMinConfirmations int `mapstructure:"preburnt_tx_min_confirmations" json:"preburnt_tx_min_confirmations,omitempty"`
-	// timeout in minute
-	PreburntTxConfirmationTimeout int                    `mapstructure:"preburnt_tx_confirmation_timeout" json:"preburnt_tx_confirmation_timeout,omitempty"`
-	ArtworkDownload               artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
-	UserdataProcess               userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
+
+	ArtworkDownload artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
+	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
 }
 
 // NewNode returns a new Node instance

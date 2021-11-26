@@ -10,6 +10,7 @@ import (
 
 	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
@@ -170,7 +171,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.waitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout, 15*time.Second); err != nil {
+	if err := task.waitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 
@@ -182,7 +183,7 @@ func (task *Task) run(ctx context.Context) error {
 	log.Debugf("reg-act-txid: %s", actTxid)
 
 	// Wait until actTxid is valid
-	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), task.config.RegActTxTimeout, 15*time.Second)
+	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
 	if err != nil {
 		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
@@ -212,16 +213,14 @@ func (task *Task) checkCurrentBalance(ctx context.Context, registrationFee float
 	return nil
 }
 
-func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, timeout time.Duration, interval time.Duration) error {
-	log.WithContext(ctx).Debugf("Need %d confirmation for txid %s, timeout %v", expectedConfirms, txID, timeout)
-
-	checkTimeout := func(checked chan<- struct{}) {
-		time.Sleep(timeout)
-		close(checked)
+func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, interval time.Duration) error {
+	log.WithContext(ctx).Debugf("Need %d confirmation for txid %s", expectedConfirms, txID)
+	blockTracker := blocktracker.New(task.pastelClient)
+	baseBlkCnt, err := blockTracker.GetBlockCount()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+		return err
 	}
-
-	timeoutCh := make(chan struct{})
-	go checkTimeout(timeoutCh)
 
 	for {
 		select {
@@ -250,8 +249,16 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 			} else {
 				return nil
 			}
-		case <-timeoutCh:
-			return errors.Errorf("timeout")
+
+			currentBlkCnt, err := blockTracker.GetBlockCount()
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+				continue
+			}
+
+			if currentBlkCnt-baseBlkCnt >= int32(expectedConfirms)+2 {
+				return errors.Errorf("timeout when wating for confirmation of transaction %s", txID)
+			}
 		}
 	}
 }

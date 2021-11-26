@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -188,10 +187,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	if config.PreburntTxMinConfirmations > 0 {
 		config.ArtworkRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
-	}
-
-	if config.PreburntTxConfirmationTimeout > 0 {
-		config.ArtworkRegister.PreburntTxConfirmationTimeout = time.Duration(config.PreburntTxConfirmationTimeout * int(time.Minute))
 	}
 
 	rqClient := rqgrpc.NewClient()
