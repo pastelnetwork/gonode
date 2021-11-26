@@ -472,9 +472,10 @@ func TestTaskPastelTopNodes(t *testing.T) {
 	}
 
 	type args struct {
-		ctx       context.Context
-		returnMn  pastel.MasterNodes
-		returnErr error
+		ctx             context.Context
+		returnMn        pastel.MasterNodes
+		returnMnTopErr  error
+		returnFindIDErr error
 	}
 
 	testCases := []struct {
@@ -495,7 +496,8 @@ func TestTaskPastelTopNodes(t *testing.T) {
 					pastel.MasterNode{Fee: 0.1, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
 					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
 				},
-				returnErr: nil,
+				returnMnTopErr:  nil,
+				returnFindIDErr: nil,
 			},
 			want: node.List{
 				newTestNode("127.0.0.1:4444", "1"),
@@ -514,17 +516,36 @@ func TestTaskPastelTopNodes(t *testing.T) {
 					pastel.MasterNode{Fee: 0.5, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
 					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
 				},
-				returnErr: nil,
+				returnMnTopErr:  nil,
+				returnFindIDErr: nil,
 			},
 			want: node.List{
 				newTestNode("127.0.0.1:4445", "2"),
 			},
 			assertion: assert.NoError,
 		}, {
+			fields: fields{
+				Request: &Request{
+					MaximumFee: 0.3,
+				},
+			},
 			args: args{
-				ctx:       context.Background(),
-				returnMn:  nil,
-				returnErr: fmt.Errorf("connection timeout"),
+				ctx: context.Background(),
+				returnMn: pastel.MasterNodes{
+					pastel.MasterNode{Fee: 0.5, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
+					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
+				},
+				returnMnTopErr:  nil,
+				returnFindIDErr: fmt.Errorf("connection timeout"),
+			},
+			want:      nil,
+			assertion: assert.NoError,
+		}, {
+			args: args{
+				ctx:             context.Background(),
+				returnMn:        nil,
+				returnMnTopErr:  fmt.Errorf("connection timeout"),
+				returnFindIDErr: nil,
 			},
 			want:      nil,
 			assertion: assert.Error,
@@ -539,7 +560,11 @@ func TestTaskPastelTopNodes(t *testing.T) {
 
 			//create new mock service
 			pastelClient := pastelMock.NewMockClient(t)
-			pastelClient.ListenOnMasterNodesTop(testCase.args.returnMn, testCase.args.returnErr)
+			pastelClient.ListenOnMasterNodesTop(testCase.args.returnMn, testCase.args.returnMnTopErr)
+			if testCase.args.returnMnTopErr == nil {
+				pastelClient.ListenOnFindTicketByID(&pastel.IDTicket{}, testCase.args.returnFindIDErr)
+			}
+
 			service := &Service{
 				pastelClient: pastelClient.Client,
 			}
@@ -2054,6 +2079,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("test-signature"), nil).
+				ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
 				ListenOnMasterNodesTop(tc.args.masterNodes, tc.args.masterNodesTopErr)
 
 			tc.args.task.Service.pastelClient = pastelClientMock
