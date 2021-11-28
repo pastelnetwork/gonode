@@ -35,18 +35,18 @@ func (service *StorageChallenge) GenerateStorageChallenges(ctx context.Context, 
 	return &pb.GenerateStorageChallengeReply{}, err
 }
 
-func (service *StorageChallenge) ProcessStorageChallenge(ctx context.Context, req *pb.StorageChallengeRequest) (resp *pb.StorageChallengeReply, err error) {
+func (service *StorageChallenge) ProcessStorageChallenge(ctx context.Context, req *pb.ProcessStorageChallengeRequest) (resp *pb.ProcessStorageChallengeRequest, err error) {
 	log.WithContext(ctx).WithField("grpc-server", "ProcessStorageChallenge").Debug("handled process storage challenge action")
 	// validate request body
 	es := validateStorageChallengeData(req.GetData(), "Data")
 	if err := validationErrorStackWrap(es); err != nil {
 		log.WithContext(ctx).WithField("grpc-server", "ProcessStorageChallenge").Errorf("[ProcessStorageChallenge][Validation Error] %s", es)
-		return &pb.StorageChallengeReply{Data: req.GetData()}, err
+		return &pb.ProcessStorageChallengeRequest{Data: req.GetData()}, err
 	}
 
 	// calling domain service to process bussiness logics
 	err = service.service.ProcessStorageChallenge(appcontext.FromContext(ctx), mapChallengeMessage(req.GetData()))
-	return &pb.StorageChallengeReply{Data: req.GetData()}, err
+	return &pb.ProcessStorageChallengeRequest{Data: req.GetData()}, err
 }
 
 func (service *StorageChallenge) VerifyStorageChallenge(ctx context.Context, req *pb.VerifyStorageChallengeRequest) (resp *pb.VerifyStorageChallengeReply, err error) {

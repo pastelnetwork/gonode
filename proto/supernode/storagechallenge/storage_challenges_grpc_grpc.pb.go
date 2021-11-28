@@ -19,8 +19,8 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StorageChallengeClient interface {
 	GenerateStorageChallenge(ctx context.Context, in *GenerateStorageChallengeRequest, opts ...grpc.CallOption) (*GenerateStorageChallengeReply, error)
-	ProcessStorageChallenge(ctx context.Context, in *StorageChallengeRequest, opts ...grpc.CallOption) (*StorageChallengeReply, error)
-	VerifyStorageChallenge(ctx context.Context, in *StorageChallengeRequest, opts ...grpc.CallOption) (*StorageChallengeReply, error)
+	ProcessStorageChallenge(ctx context.Context, in *ProcessStorageChallengeRequest, opts ...grpc.CallOption) (*ProcessStorageChallengeReply, error)
+	VerifyStorageChallenge(ctx context.Context, in *VerifyStorageChallengeRequest, opts ...grpc.CallOption) (*VerifyStorageChallengeReply, error)
 }
 
 type storageChallengeClient struct {
@@ -40,8 +40,8 @@ func (c *storageChallengeClient) GenerateStorageChallenge(ctx context.Context, i
 	return out, nil
 }
 
-func (c *storageChallengeClient) ProcessStorageChallenge(ctx context.Context, in *StorageChallengeRequest, opts ...grpc.CallOption) (*StorageChallengeReply, error) {
-	out := new(StorageChallengeReply)
+func (c *storageChallengeClient) ProcessStorageChallenge(ctx context.Context, in *ProcessStorageChallengeRequest, opts ...grpc.CallOption) (*ProcessStorageChallengeReply, error) {
+	out := new(ProcessStorageChallengeReply)
 	err := c.cc.Invoke(ctx, "/storagechallenge.StorageChallenge/ProcessStorageChallenge", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func (c *storageChallengeClient) ProcessStorageChallenge(ctx context.Context, in
 	return out, nil
 }
 
-func (c *storageChallengeClient) VerifyStorageChallenge(ctx context.Context, in *StorageChallengeRequest, opts ...grpc.CallOption) (*StorageChallengeReply, error) {
-	out := new(StorageChallengeReply)
+func (c *storageChallengeClient) VerifyStorageChallenge(ctx context.Context, in *VerifyStorageChallengeRequest, opts ...grpc.CallOption) (*VerifyStorageChallengeReply, error) {
+	out := new(VerifyStorageChallengeReply)
 	err := c.cc.Invoke(ctx, "/storagechallenge.StorageChallenge/VerifyStorageChallenge", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -63,8 +63,8 @@ func (c *storageChallengeClient) VerifyStorageChallenge(ctx context.Context, in 
 // for forward compatibility
 type StorageChallengeServer interface {
 	GenerateStorageChallenge(context.Context, *GenerateStorageChallengeRequest) (*GenerateStorageChallengeReply, error)
-	ProcessStorageChallenge(context.Context, *StorageChallengeRequest) (*StorageChallengeReply, error)
-	VerifyStorageChallenge(context.Context, *StorageChallengeRequest) (*StorageChallengeReply, error)
+	ProcessStorageChallenge(context.Context, *ProcessStorageChallengeRequest) (*ProcessStorageChallengeReply, error)
+	VerifyStorageChallenge(context.Context, *VerifyStorageChallengeRequest) (*VerifyStorageChallengeReply, error)
 	mustEmbedUnimplementedStorageChallengeServer()
 }
 
@@ -75,10 +75,10 @@ type UnimplementedStorageChallengeServer struct {
 func (UnimplementedStorageChallengeServer) GenerateStorageChallenge(context.Context, *GenerateStorageChallengeRequest) (*GenerateStorageChallengeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateStorageChallenge not implemented")
 }
-func (UnimplementedStorageChallengeServer) ProcessStorageChallenge(context.Context, *StorageChallengeRequest) (*StorageChallengeReply, error) {
+func (UnimplementedStorageChallengeServer) ProcessStorageChallenge(context.Context, *ProcessStorageChallengeRequest) (*ProcessStorageChallengeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessStorageChallenge not implemented")
 }
-func (UnimplementedStorageChallengeServer) VerifyStorageChallenge(context.Context, *StorageChallengeRequest) (*StorageChallengeReply, error) {
+func (UnimplementedStorageChallengeServer) VerifyStorageChallenge(context.Context, *VerifyStorageChallengeRequest) (*VerifyStorageChallengeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method VerifyStorageChallenge not implemented")
 }
 func (UnimplementedStorageChallengeServer) mustEmbedUnimplementedStorageChallengeServer() {}
@@ -113,7 +113,7 @@ func _StorageChallenge_GenerateStorageChallenge_Handler(srv interface{}, ctx con
 }
 
 func _StorageChallenge_ProcessStorageChallenge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StorageChallengeRequest)
+	in := new(ProcessStorageChallengeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -125,13 +125,13 @@ func _StorageChallenge_ProcessStorageChallenge_Handler(srv interface{}, ctx cont
 		FullMethod: "/storagechallenge.StorageChallenge/ProcessStorageChallenge",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageChallengeServer).ProcessStorageChallenge(ctx, req.(*StorageChallengeRequest))
+		return srv.(StorageChallengeServer).ProcessStorageChallenge(ctx, req.(*ProcessStorageChallengeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _StorageChallenge_VerifyStorageChallenge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StorageChallengeRequest)
+	in := new(VerifyStorageChallengeRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func _StorageChallenge_VerifyStorageChallenge_Handler(srv interface{}, ctx conte
 		FullMethod: "/storagechallenge.StorageChallenge/VerifyStorageChallenge",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageChallengeServer).VerifyStorageChallenge(ctx, req.(*StorageChallengeRequest))
+		return srv.(StorageChallengeServer).VerifyStorageChallenge(ctx, req.(*VerifyStorageChallengeRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

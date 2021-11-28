@@ -8,6 +8,6 @@ import "storage_challenges.proto";
 
 service StorageChallenge {
     rpc GenerateStorageChallenge(GenerateStorageChallengeRequest) returns (GenerateStorageChallengeReply);
-    rpc ProcessStorageChallenge(StorageChallengeRequest) returns (StorageChallengeReply);
-    rpc VerifyStorageChallenge(StorageChallengeRequest) returns (StorageChallengeReply);
+    rpc ProcessStorageChallenge(ProcessStorageChallengeRequest) returns (ProcessStorageChallengeReply);
+    rpc VerifyStorageChallenge(VerifyStorageChallengeRequest) returns (VerifyStorageChallengeReply);
 }

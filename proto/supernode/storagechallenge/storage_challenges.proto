@@ -49,11 +49,11 @@ message StorageChallengeData {
     string challenge_id = 13;
 }
 
-message StorageChallengeRequest {
+message ProcessStorageChallengeRequest {
     StorageChallengeData data = 1;
 }
 
-message StorageChallengeReply {
+message ProcessStorageChallengeReply {
     StorageChallengeData data = 1;
 }
 

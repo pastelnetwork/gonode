@@ -103,5 +103,5 @@ func (s *service) sendVerifyStorageChallenge(ctx context.Context, challengeMessa
 	}
 	verifierMasterNodesClientPIDs = append(verifierMasterNodesClientPIDs, actor.NewPID(mn.ExtAddress, "storage-challenge"))
 
-	return s.remoter.Send(ctx, s.domainActorID, &verifyStorageChallengeMsg{VerifierMasterNodesClientPIDs: verifierMasterNodesClientPIDs, ChallengeMessage: challengeMessage})
+	return s.remoter.Send(ctx, s.domainActorID, &sendVerifyStorageChallengeMsg{VerifierMasterNodesClientPIDs: verifierMasterNodesClientPIDs, ChallengeMessage: challengeMessage})
 }

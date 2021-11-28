@@ -54,9 +54,5 @@ type ProcessUserdata interface {
 	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.ProcessRequestSigned) (userdata.SuperNodeReply, error)
 }
 
-// ProcessUserdata represents an interaction stream with supernodes for sending userdata.
-type StorageChallenge interface {
-	GenerateStorageChallenge(ctx context.Context, req *storagechallenge.GenerateStorageChallengeRequest) (*storagechallenge.GenerateStorageChallengeReply, error)
-	ProcessStorageChallenge(ctx context.Context, req *storagechallenge.StorageChallengeRequest) (*storagechallenge.StorageChallengeReply, error)
-	VerifyStorageChallenge(ctx context.Context, req *storagechallenge.StorageChallengeRequest) (*storagechallenge.StorageChallengeReply, error)
-}
+// StorageChallenge represents an interaction stream with supernodes for sending userdata.
+type StorageChallenge storagechallenge.StorageChallengeClient
