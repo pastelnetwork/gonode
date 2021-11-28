@@ -23,6 +23,11 @@ func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)
 }
 
+// StorageChallenge implements node.Connection.StorageChallenge()
+func (conn *clientConn) StorageChallenge() node.StorageChallenge {
+	return newStorageChallenge(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

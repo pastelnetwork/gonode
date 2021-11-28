@@ -65,6 +65,10 @@ type Config struct {
 	serverSecureCreds credentials.TransportCredentials `mapstructure:"-"`
 }
 
+func NewConfig() *Config {
+	return &Config{Host: "0.0.0.0", Port: 9000}
+}
+
 // WithClientSecureCreds func
 func (c *Config) WithClientSecureCreds(s credentials.TransportCredentials) *Config {
 	c.clientSecureCreds = s
@@ -78,7 +82,10 @@ func (c *Config) WithServerSecureCreds(s credentials.TransportCredentials) *Conf
 }
 
 // NewRemoter func
-func NewRemoter(system *actor.ActorSystem, cfg Config) *Remoter {
+func NewRemoter(system *actor.ActorSystem, cfg *Config) *Remoter {
+	if cfg == nil {
+		cfg = NewConfig()
+	}
 	if cfg.Host == "" {
 		cfg.Host = "0.0.0.0"
 	}

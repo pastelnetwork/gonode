@@ -31,9 +31,11 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode"
+	grpcstoragechallenge "github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode/storagechallenge"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
+	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 )
 
@@ -220,8 +222,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	}
 
 	// ----Userdata Services----
-	userdataNodeClient := client.New(pastelClient, secInfo)
-	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient, database)
+	secClient := client.New(pastelClient, secInfo)
+	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, secClient, database)
+
+	// ----Storage Challenges----
+	stService := storagechallenge.NewService(nil, secClient, p2p)
 
 	// create stats manager
 	statsMngr := healthcheck_lib.NewStatsMngr(config.HealthCheck)
@@ -244,6 +249,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
 		healthcheck.NewHealthCheck(statsMngr),
+		grpcstoragechallenge.NewStorageChallenge(stService),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)

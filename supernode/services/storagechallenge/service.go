@@ -1,10 +1,15 @@
 package storagechallenge
 
 import (
+	"log"
+	"time"
+
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/messaging"
+	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
 type service struct {
@@ -25,4 +30,19 @@ type StorageChallenge interface {
 	ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error
 	// VerifyStorageChallenge func
 	VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error
+}
+
+func NewService(remoter *messaging.Remoter, secConn node.Client, p2p p2p.Client) StorageChallenge {
+	if remoter == nil {
+		remoter = messaging.NewRemoter(actor.NewActorSystem(), nil)
+	}
+	pid, err := remoter.RegisterActor(newDomainActor(secConn), "domain-actor")
+	if err != nil {
+		log.Panic(err)
+	}
+	return &service{
+		domainActorID:                        pid,
+		storageChallengeExpiredAsNanoseconds: int64(time.Minute.Nanoseconds()),
+		repository:                           newRepository(p2p),
+	}
 }

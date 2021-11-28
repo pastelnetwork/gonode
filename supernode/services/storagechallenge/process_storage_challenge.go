@@ -61,7 +61,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	// 	return err
 	// }
 	// analysisStatus = ANALYSIS_STATUS_RESPONDED_TO
-	timeToRespondToStorageChallengeInMilliSeconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
+	timeToRespondToStorageChallengeInMilliSeconds := computeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, timeToRespondToStorageChallengeInMilliSeconds))
 
 	return s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage)

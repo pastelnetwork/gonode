@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge;storagechallenge";
+
+package storagechallenge;
+
+import "storage_challenges.proto";
+
+service StorageChallenge {
+    rpc GenerateStorageChallenge(GenerateStorageChallengeRequest) returns (GenerateStorageChallengeReply);
+    rpc ProcessStorageChallenge(StorageChallengeRequest) returns (StorageChallengeReply);
+    rpc VerifyStorageChallenge(StorageChallengeRequest) returns (StorageChallengeReply);
+}

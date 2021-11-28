@@ -24,7 +24,7 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	challengeCorrectHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
 	messageType := storageChallengeVerificationMessage
 	TimestampChallengeVerified := time.Now().Unix()
-	TimeVerifyStorageChallengeInNanoseconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, TimestampChallengeVerified)
+	TimeVerifyStorageChallengeInNanoseconds := computeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, TimestampChallengeVerified)
 	var challengeStatus string
 	// var analysisStatus = ALALYSIS_STATUS_TIMEOUT
 	// defer func() {
@@ -72,7 +72,7 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	// 	return err
 	// }
 
-	timeToRespondToStorageChallengeInNanoseconds := helper.ComputeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
+	timeToRespondToStorageChallengeInNanoseconds := computeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
 	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug("masternode " + outgoingChallengeMessage.RespondingMasternodeID + " responded to storage challenge for file hash " + outgoingChallengeMessage.FileHashToChallenge + " in " + fmt.Sprint(timeToRespondToStorageChallengeInNanoseconds) + " nano seconds!")
 
 	return nil
@@ -86,6 +86,10 @@ func (s *service) validateVerifyingStorageChallengeIncommingData(incomingChallen
 		return fmt.Errorf("incorrect message type to verify storage challenge")
 	}
 	return nil
+}
+
+func computeElapsedTimeInSecondsBetweenTwoDatetimes(start, end int64) int64 {
+	return (end - start)
 }
 
 // func (s *service) saveChallengeAnalysis(ctx appcontext.Context, blockHash, challengingMasternodeID string, challengeAnalysisStatus ChallengeAnalysisStatus) error {

@@ -7,7 +7,9 @@ package node
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
 )
 
 // Client represents a base connection interface.
@@ -26,6 +28,8 @@ type Connection interface {
 	RegisterArtwork() RegisterArtwork
 	// ProcessUserdata returns a new ProcessUserdata stream.
 	ProcessUserdata() ProcessUserdata
+	// StorageChallenge returns a new StorageChallenge stream.
+	StorageChallenge() StorageChallenge
 }
 
 // RegisterArtwork represents an interaction stream with supernodes for registering artwork.
@@ -48,4 +52,11 @@ type ProcessUserdata interface {
 	SendUserdataToPrimary(ctx context.Context, dataSigned userdata.SuperNodeRequest) (userdata.SuperNodeReply, error)
 	// Send userdata to supernode with leader rqlite
 	SendUserdataToLeader(ctx context.Context, finalUserdata userdata.ProcessRequestSigned) (userdata.SuperNodeReply, error)
+}
+
+// ProcessUserdata represents an interaction stream with supernodes for sending userdata.
+type StorageChallenge interface {
+	GenerateStorageChallenge(ctx context.Context, req *storagechallenge.GenerateStorageChallengeRequest) (*storagechallenge.GenerateStorageChallengeReply, error)
+	ProcessStorageChallenge(ctx context.Context, req *storagechallenge.StorageChallengeRequest) (*storagechallenge.StorageChallengeReply, error)
+	VerifyStorageChallenge(ctx context.Context, req *storagechallenge.StorageChallengeRequest) (*storagechallenge.StorageChallengeReply, error)
 }

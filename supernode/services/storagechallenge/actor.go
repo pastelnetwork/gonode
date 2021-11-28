@@ -1,11 +1,13 @@
 package storagechallenge
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/pastelnetwork/gonode/common/log"
 	dto "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
+	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
 type verifyStorageChallengeMsg struct {
@@ -41,6 +43,7 @@ func (v *processStorageChallengeMsg) Reset() {
 func (v *processStorageChallengeMsg) ProtoMessage() {}
 
 type domainActor struct {
+	conn node.Client
 }
 
 func (d *domainActor) Receive(context actor.Context) {
@@ -50,7 +53,13 @@ func (d *domainActor) Receive(context actor.Context) {
 	case *processStorageChallengeMsg:
 		d.OnSendProcessStorageChallengeMessage(context, msg)
 	default:
-		log.WithField("actor", "domain actor").Debug("Un handled action", msg)
+		log.WithField("actor", "domain actor").Debug("Unhandled action", msg)
+	}
+}
+
+func newDomainActor(conn node.Client) actor.Actor {
+	return &domainActor{
+		conn: conn,
 	}
 }
 
@@ -58,7 +67,7 @@ func (d *domainActor) Receive(context actor.Context) {
 func (d *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg *verifyStorageChallengeMsg) {
 	for _, verifyingMasternodePID := range msg.VerifierMasterNodesClientPIDs {
 		log.Debug(verifyingMasternodePID.String())
-		ctx.Send(verifyingMasternodePID, &dto.VerifyStorageChallengeRequest{
+		storageChallengeReq := &dto.StorageChallengeRequest{
 			Data: &dto.StorageChallengeData{
 				MessageId:                     msg.MessageID,
 				MessageType:                   dto.StorageChallengeDataMessageType(dto.StorageChallengeDataMessageType_value[msg.MessageType]),
@@ -78,14 +87,23 @@ func (d *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg
 				ChallengeResponseHash:     msg.ChallengeResponseHash,
 				ChallengeId:               msg.ChallengeID,
 			},
-		})
+		}
+
+		// TODO: replace lines below with actor context
+		bgContext := context.Background()
+		conn, err := d.conn.Connect(bgContext, verifyingMasternodePID.GetAddress())
+		if err != nil {
+			return
+		}
+		conn.StorageChallenge().VerifyStorageChallenge(bgContext, storageChallengeReq)
+		// ctx.Send(verifyingMasternodePID, storageChallengeReq)
 	}
 }
 
 // OnSendProcessStorageChallengeMessage handle event sending processing stotage challenge message
 func (d *domainActor) OnSendProcessStorageChallengeMessage(ctx actor.Context, msg *processStorageChallengeMsg) {
 	log.Debug(msg.ProcessingMasterNodesClientPID.String())
-	ctx.Send(msg.ProcessingMasterNodesClientPID, &dto.StorageChallengeRequest{
+	storageChallengeReq := &dto.StorageChallengeRequest{
 		Data: &dto.StorageChallengeData{
 			MessageId:                     msg.MessageID,
 			MessageType:                   dto.StorageChallengeDataMessageType(dto.StorageChallengeDataMessageType_value[msg.MessageType]),
@@ -105,5 +123,13 @@ func (d *domainActor) OnSendProcessStorageChallengeMessage(ctx actor.Context, ms
 			ChallengeResponseHash:     "",
 			ChallengeId:               msg.ChallengeID,
 		},
-	})
+	}
+	// TODO: replace lines below with actor context
+	bgContext := context.Background()
+	conn, err := d.conn.Connect(bgContext, msg.ProcessingMasterNodesClientPID.GetAddress())
+	if err != nil {
+		return
+	}
+	conn.StorageChallenge().ProcessStorageChallenge(bgContext, storageChallengeReq)
+	// ctx.Send(msg.ProcessingMasterNodesClientPID, storageChallengeReq)
 }

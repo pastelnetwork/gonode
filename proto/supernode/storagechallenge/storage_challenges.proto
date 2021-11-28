@@ -7,6 +7,13 @@ option go_package = "github.com/pastelnetwork/gonode/proto/supernode/storagechal
 
 package storagechallenge;
 
+message SessionRequest {
+    string nodeID = 1;
+}
+message SessionReply {
+    string sessID = 1;
+}
+
 message StorageChallengeData {
     string message_id = 1;
     enum messageType {
