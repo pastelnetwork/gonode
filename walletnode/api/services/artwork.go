@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -12,6 +13,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/walletnode/api"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
@@ -160,6 +162,10 @@ func (service *Artwork) Download(ctx context.Context, p *artworks.ArtworkDownloa
 			return nil, artworks.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
 		case status := <-sub():
 			if status.IsFailure() {
+				if strings.Contains(utils.SafeErrStr(task.Error()), "ticket ownership") {
+					return nil, artworks.MakeBadRequest(errors.New("failed to verify ownership"))
+				}
+
 				return nil, artworks.MakeInternalServerError(task.Error())
 			}
 
