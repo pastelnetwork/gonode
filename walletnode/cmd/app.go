@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
 
@@ -148,16 +147,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		config.ArtworkRegister.RegArtTxMinConfirmations = config.RegArtTxMinConfirmations
 	}
 
-	if config.RegArtTxTimeout > 0 {
-		config.ArtworkRegister.RegArtTxTimeout = time.Duration(config.RegArtTxTimeout * int(time.Minute))
-	}
-
 	if config.RegActTxMinConfirmations > 0 {
 		config.ArtworkRegister.RegActTxMinConfirmations = config.RegActTxMinConfirmations
-	}
-
-	if config.RegActTxTimeout > 0 {
-		config.ArtworkRegister.RegActTxTimeout = time.Duration(config.RegActTxTimeout * int(time.Minute))
 	}
 
 	// business logic services
