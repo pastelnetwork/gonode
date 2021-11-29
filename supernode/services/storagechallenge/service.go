@@ -1,9 +1,6 @@
 package storagechallenge
 
 import (
-	"log"
-	"time"
-
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/messaging"
@@ -13,7 +10,7 @@ import (
 )
 
 type service struct {
-	remoter                              *messaging.Remoter
+	actor                                messaging.Actor
 	domainActorID                        *actor.PID
 	nodeID                               string
 	pclient                              pastel.Client
@@ -32,17 +29,22 @@ type StorageChallenge interface {
 	VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error
 }
 
-func NewService(remoter *messaging.Remoter, secConn node.Client, p2p p2p.Client) StorageChallenge {
-	if remoter == nil {
-		remoter = messaging.NewRemoter(actor.NewActorSystem(), nil)
+// NewService retuns new domain service instance with actor model
+func NewService(cfg *Config, secConn node.Client, p2p p2p.Client) (svc StorageChallenge, stopActor func()) {
+	if cfg == nil {
+		panic("domain service configuration not found")
 	}
-	pid, err := remoter.RegisterActor(newDomainActor(secConn), "domain-actor")
+	localActor := messaging.NewActor(actor.NewActorSystem())
+	pid, err := localActor.RegisterActor(newDomainActor(secConn), "domain-actor")
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 	return &service{
+		actor:                                localActor,
 		domainActorID:                        pid,
-		storageChallengeExpiredAsNanoseconds: int64(time.Minute.Nanoseconds()),
+		storageChallengeExpiredAsNanoseconds: cfg.StorageChallengeExpiredDuration.Nanoseconds(),
 		repository:                           newRepository(p2p),
-	}
+		nodeID:                               cfg.PastelID,
+		numberOfChallengeReplicas:            cfg.NumberOfChallengeReplicas,
+	}, localActor.Stop
 }

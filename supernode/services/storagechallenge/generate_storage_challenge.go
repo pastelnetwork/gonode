@@ -84,9 +84,9 @@ func (s *service) sendprocessStorageChallenge(ctx context.Context, challengeMess
 		log.WithContext(ctx).WithField("method", "sendprocessStorageChallenge").Warn(err.Error())
 		return err
 	}
-	processingMasterNodesClientPID := actor.NewPID(mn.ExtAddress, "storage-challenge")
+	processingMasternodeClientPID := actor.NewPID(mn.ExtAddress, "storage-challenge")
 
-	return s.remoter.Send(ctx, s.domainActorID, &sendProcessStorageChallengeMsg{ProcessingMasterNodesClientPID: processingMasterNodesClientPID, ChallengeMessage: challengeMessage})
+	return s.actor.Send(ctx, s.domainActorID, newSendProcessStorageChallengeMsg(ctx, processingMasternodeClientPID, challengeMessage))
 }
 
 func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashString string, blockHashString string, challengingMasternodeID string) (int, int) {

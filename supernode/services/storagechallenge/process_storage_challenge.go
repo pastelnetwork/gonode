@@ -95,13 +95,13 @@ func (s *service) sendVerifyStorageChallenge(ctx context.Context, challengeMessa
 		mapMasternodes[mn.ExtKey] = mn
 	}
 
-	verifierMasterNodesClientPIDs := []*actor.PID{}
+	verifierMasternodesClientPIDs := []*actor.PID{}
 	var mn pastel.MasterNode
 	var ok bool
 	if mn, ok = mapMasternodes[challengeMessage.RespondingMasternodeID]; !ok {
 		return fmt.Errorf("cannot get masternode info of masternode id %v", challengeMessage.RespondingMasternodeID)
 	}
-	verifierMasterNodesClientPIDs = append(verifierMasterNodesClientPIDs, actor.NewPID(mn.ExtAddress, "storage-challenge"))
+	verifierMasternodesClientPIDs = append(verifierMasternodesClientPIDs, actor.NewPID(mn.ExtAddress, "storage-challenge"))
 
-	return s.remoter.Send(ctx, s.domainActorID, &sendVerifyStorageChallengeMsg{VerifierMasterNodesClientPIDs: verifierMasterNodesClientPIDs, ChallengeMessage: challengeMessage})
+	return s.actor.Send(ctx, s.domainActorID, newSendVerifyStorageChallengeMsg(ctx, verifierMasternodesClientPIDs, challengeMessage))
 }

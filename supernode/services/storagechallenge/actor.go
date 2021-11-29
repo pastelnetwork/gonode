@@ -1,47 +1,45 @@
 package storagechallenge
 
 import (
-	"fmt"
-
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/messaging"
 	dto "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
 type sendVerifyStorageChallengeMsg struct {
+	*messaging.CommonProtoMsg
 	Context                       context.Context
-	VerifierMasterNodesClientPIDs []*actor.PID
+	VerifierMasternodesClientPIDs []*actor.PID
 	*ChallengeMessage
 }
 
-func (v *sendVerifyStorageChallengeMsg) String() string {
-	return fmt.Sprintf("%#v", v)
+func newSendVerifyStorageChallengeMsg(ctx context.Context, verifierMasternodesClientPIDs []*actor.PID, challengeMsg *ChallengeMessage) *sendVerifyStorageChallengeMsg {
+	return &sendVerifyStorageChallengeMsg{
+		CommonProtoMsg:                &messaging.CommonProtoMsg{},
+		Context:                       ctx,
+		VerifierMasternodesClientPIDs: verifierMasternodesClientPIDs,
+		ChallengeMessage:              challengeMsg,
+	}
 }
-
-func (v *sendVerifyStorageChallengeMsg) Reset() {
-	v.ChallengeMessage = nil
-	v.VerifierMasterNodesClientPIDs = nil
-}
-
-func (v *sendVerifyStorageChallengeMsg) ProtoMessage() {}
 
 type sendProcessStorageChallengeMsg struct {
-	ProcessingMasterNodesClientPID *actor.PID
+	*messaging.CommonProtoMsg
+	Context                       context.Context
+	ProcessingMasternodeClientPID *actor.PID
 	*ChallengeMessage
 }
 
-func (v *sendProcessStorageChallengeMsg) String() string {
-	return fmt.Sprintf("%#v", v)
+func newSendProcessStorageChallengeMsg(ctx context.Context, processingMasternodeClientPID *actor.PID, challengeMsg *ChallengeMessage) *sendProcessStorageChallengeMsg {
+	return &sendProcessStorageChallengeMsg{
+		CommonProtoMsg:                &messaging.CommonProtoMsg{},
+		Context:                       ctx,
+		ProcessingMasternodeClientPID: processingMasternodeClientPID,
+		ChallengeMessage:              challengeMsg,
+	}
 }
-
-func (v *sendProcessStorageChallengeMsg) Reset() {
-	v.ChallengeMessage = nil
-	v.ProcessingMasterNodesClientPID = nil
-}
-
-func (v *sendProcessStorageChallengeMsg) ProtoMessage() {}
 
 type domainActor struct {
 	conn node.Client
@@ -66,7 +64,7 @@ func newDomainActor(conn node.Client) actor.Actor {
 
 // OnSendVerifyStorageChallengeMessage handle event sending verity storage challenge message
 func (d *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg *sendVerifyStorageChallengeMsg) {
-	for _, verifyingMasternodePID := range msg.VerifierMasterNodesClientPIDs {
+	for _, verifyingMasternodePID := range msg.VerifierMasternodesClientPIDs {
 		log.Debug(verifyingMasternodePID.String())
 		storageChallengeReq := &dto.VerifyStorageChallengeRequest{
 			Data: &dto.StorageChallengeData{
@@ -103,7 +101,7 @@ func (d *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg
 
 // OnSendProcessStorageChallengeMessage handle event sending processing stotage challenge message
 func (d *domainActor) OnSendProcessStorageChallengeMessage(ctx actor.Context, msg *sendProcessStorageChallengeMsg) {
-	log.Debug(msg.ProcessingMasterNodesClientPID.String())
+	log.Debug(msg.ProcessingMasternodeClientPID.String())
 	storageChallengeReq := &dto.ProcessStorageChallengeRequest{
 		Data: &dto.StorageChallengeData{
 			MessageId:                     msg.MessageID,
@@ -127,7 +125,7 @@ func (d *domainActor) OnSendProcessStorageChallengeMessage(ctx actor.Context, ms
 	}
 	// TODO: replace lines below with actor context
 	bgContext := context.Background()
-	conn, err := d.conn.Connect(bgContext, msg.ProcessingMasterNodesClientPID.GetAddress())
+	conn, err := d.conn.Connect(bgContext, msg.ProcessingMasternodeClientPID.GetAddress())
 	if err != nil {
 		return
 	}

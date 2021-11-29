@@ -221,7 +221,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, secClient, database)
 
 	// ----Storage Challenges----
-	stService := storagechallenge.NewService(nil, secClient, p2p)
+	stService, stopDomainActor := storagechallenge.NewService(&config.StorageChallenge, secClient, p2p)
+	defer stopDomainActor()
 
 	// create stats manager
 	statsMngr := healthcheck_lib.NewStatsMngr(config.HealthCheck)
@@ -233,6 +234,8 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// Debug service
 	debugSerivce := debug.NewService(config.DebugService, p2p)
 
+	grpcStorageChallenge, stopActor := grpcstoragechallenge.NewStorageChallenge(stService)
+	defer stopActor()
 	// server
 	grpc := server.New(config.Server,
 		"service",
@@ -244,7 +247,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
 		healthcheck.NewHealthCheck(statsMngr),
-		grpcstoragechallenge.NewStorageChallenge(stService),
+		grpcStorageChallenge,
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)

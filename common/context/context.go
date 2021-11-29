@@ -9,6 +9,7 @@ import (
 // Context application context wrapping base context
 type Context interface {
 	context.Context
+	WithActorContext(actx actor.Context) Context
 	GetActorContext() actor.Context
 }
 
@@ -20,14 +21,17 @@ type appContext struct {
 	context.Context
 }
 
+// Background wrapping context.Background()
 func Background() Context {
 	return &appContext{context.Background()}
 }
 
+// TODO wrapping context.TODO()
 func TODO() Context {
 	return &appContext{context.TODO()}
 }
 
+// FromContext returns application context
 func FromContext(ctx context.Context) Context {
 	switch c := ctx.(type) {
 	case *appContext:

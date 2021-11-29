@@ -9,15 +9,14 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-// Remoter struct
-type Remoter struct {
+type remoteActor struct {
 	remoter *remote.Remote
 	context *actor.RootContext
 	mapPID  map[string]*actor.PID
 }
 
 // Send func
-func (r *Remoter) Send(ctx context.Context, pid *actor.PID, message proto.Message) error {
+func (r *remoteActor) Send(ctx context.Context, pid *actor.PID, message proto.Message) error {
 	if actorContext := ctx.GetActorContext(); actorContext != nil {
 		actorContext.Send(pid, message)
 	} else {
@@ -27,7 +26,7 @@ func (r *Remoter) Send(ctx context.Context, pid *actor.PID, message proto.Messag
 }
 
 // RegisterActor func
-func (r *Remoter) RegisterActor(a actor.Actor, name string) (*actor.PID, error) {
+func (r *remoteActor) RegisterActor(a actor.Actor, name string) (*actor.PID, error) {
 	pid, err := r.context.SpawnNamed(actor.PropsFromProducer(func() actor.Actor { return a }), name)
 	if err != nil {
 		return nil, err
@@ -37,7 +36,7 @@ func (r *Remoter) RegisterActor(a actor.Actor, name string) (*actor.PID, error) 
 }
 
 // DeregisterActor func
-func (r *Remoter) DeregisterActor(name string) {
+func (r *remoteActor) DeregisterActor(name string) {
 	if r.mapPID[name] != nil {
 		r.context.Stop(r.mapPID[name])
 	}
@@ -45,12 +44,12 @@ func (r *Remoter) DeregisterActor(name string) {
 }
 
 // Start func
-func (r *Remoter) Start() {
+func (r *remoteActor) Start() {
 	r.remoter.Start()
 }
 
 // GracefulStop func
-func (r *Remoter) GracefulStop() {
+func (r *remoteActor) GracefulStop() {
 	for name, pid := range r.mapPID {
 		r.context.StopFuture(pid).Wait()
 		delete(r.mapPID, name)
@@ -81,8 +80,8 @@ func (c *Config) WithServerSecureCreds(s credentials.TransportCredentials) *Conf
 	return c
 }
 
-// NewRemoter func
-func NewRemoter(system *actor.ActorSystem, cfg *Config) *Remoter {
+// NewRemoteActor func
+func NewRemoteActor(system *actor.ActorSystem, cfg *Config) Remoter {
 	if cfg == nil {
 		cfg = NewConfig()
 	}
@@ -102,7 +101,7 @@ func NewRemoter(system *actor.ActorSystem, cfg *Config) *Remoter {
 		serverCreds = append(serverCreds, grpc.Creds(cfg.serverSecureCreds))
 	}
 	remoterConfig = remoterConfig.WithServerOptions(serverCreds...).WithDialOptions(clientCreds...)
-	return &Remoter{
+	return &remoteActor{
 		remoter: remote.NewRemote(system, remoterConfig),
 		context: system.Root,
 		mapPID:  make(map[string]*actor.PID),
