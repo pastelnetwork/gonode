@@ -14,7 +14,6 @@ import (
 	"github.com/otrv4/ed448"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/net/credentials"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
@@ -35,6 +34,7 @@ func init() {
 
 // FakePastelClient - fake of pastel client to do sign/verify
 type FakePastelClient struct {
+	*pastelMock.Client
 	curve ed448.Curve
 	pri   [144]byte
 	pub   [56]byte
@@ -61,6 +61,16 @@ func (c *FakePastelClient) Verify(_ context.Context, data []byte, signature, _ s
 
 	ok = c.curve.Verify(copiedSignature, data, c.pub)
 	return ok, nil
+}
+
+// Verify
+func (c *FakePastelClient) MasterNodesExtra(_ context.Context) (pastel.MasterNodes, error) {
+	return pastel.MasterNodes{
+		pastel.MasterNode{
+			ExtAddress: "127.0.0.1:1000",
+			ExtKey:     "",
+		},
+	}, nil
 }
 
 func TestSuite(t *testing.T) {
@@ -146,7 +156,7 @@ func (ts *testSuite) SetupSuite() {
 // run before each test in the suite
 func (ts *testSuite) SetupTest() {
 	// make sure the store is empty
-	keys := ts.main.store.Keys(ts.ctx)
+	keys := ts.main.Keys(ts.ctx, 0, -1)
 	ts.Zero(len(keys))
 }
 
@@ -162,7 +172,7 @@ func (ts *testSuite) TearDownTest() {
 	ts.resetHashtable()
 
 	// reset the store
-	for _, key := range ts.main.store.Keys(ts.ctx) {
+	for _, key := range ts.main.store.Keys(ts.ctx, 0, -1) {
 		ts.main.store.Delete(ts.ctx, key)
 	}
 }
@@ -201,14 +211,15 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
 
 	secInfo := &alts.SecInfo{}
-	fakePastelClient := &FakePastelClient{
-		curve: ed448.NewCurve(),
-		pri:   TestPri,
-		pub:   TestPub,
-	}
-	transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
 
-	dht, err := NewDHT(ts.memStore, pastelClientMock, transportCredentials, options)
+	// fakePastelClient := &FakePastelClient{
+	// 	curve: ed448.NewCurve(),
+	// 	pri:   TestPri,
+	// 	pub:   TestPub,
+	// }
+	// transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
+
+	dht, err := NewDHT(ts.memStore, pastelClientMock, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -218,8 +229,9 @@ func (ts *testSuite) newDHTNodeWithMemStore(_ context.Context, port int, nodes [
 
 func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []*Node, id []byte) (*DHT, error) {
 	options := &Options{
-		IP:   ts.IP,
-		Port: port,
+		IP:       ts.IP,
+		Port:     port,
+		PeerAuth: true, // Enable peer authentication
 	}
 	if len(id) > 0 {
 		options.ID = id
@@ -237,15 +249,18 @@ func (ts *testSuite) newDHTNodeWithDBStore(_ context.Context, port int, nodes []
 	pastelClientMock := pastelMock.NewMockClient(ts.t)
 	pastelClientMock.ListenOnMasterNodesTop(pnodes, nil)
 
-	secInfo := &alts.SecInfo{}
-	fakePastelClient := &FakePastelClient{
-		curve: ed448.NewCurve(),
-		pri:   TestPri,
-		pub:   TestPub,
+	secInfo := &alts.SecInfo{
+		PastelID: "",
 	}
-	transportCredentials := credentials.NewClientCreds(fakePastelClient, secInfo)
 
-	dht, err := NewDHT(ts.dbStore, pastelClientMock, transportCredentials, options)
+	fakePastelClient := &FakePastelClient{
+		Client: pastelClientMock,
+		curve:  ed448.NewCurve(),
+		pri:    TestPri,
+		pub:    TestPub,
+	}
+
+	dht, err := NewDHT(ts.dbStore, fakePastelClient, secInfo, options)
 	if err != nil {
 		return nil, errors.Errorf("new dht: %w", err)
 	}
@@ -484,7 +499,7 @@ func (ts *testSuite) TestAddNodeForFull() {
 			IP:   ts.IP,
 			Port: ts.bootstrapPort + i + 1,
 		}
-		if removed := ts.main.addNode(node); removed != nil {
+		if removed := ts.main.addNode(context.Background(), node); removed != nil {
 			ts.Equal(false, ts.main.ht.hasNode(removed.ID))
 			full = true
 			break
@@ -510,7 +525,7 @@ func (ts *testSuite) TestAddNodeForRefresh() {
 			IP:   ts.IP,
 			Port: ts.bootstrapPort + i + 1,
 		}
-		ts.main.addNode(node)
+		ts.main.addNode(context.Background(), node)
 	}
 	ts.Equal(number, ts.main.ht.totalCount())
 
@@ -526,7 +541,7 @@ func (ts *testSuite) TestAddNodeForRefresh() {
 	first := bucket[0]
 
 	// refresh the hash table with the first node
-	ts.main.addNode(bucket[0])
+	ts.main.addNode(context.Background(), bucket[0])
 	bucket = ts.main.ht.routeTable[index]
 	ts.Equal(count, len(bucket))
 	ts.Equal(first.ID, bucket[len(bucket)-1].ID)
@@ -544,7 +559,7 @@ func (ts *testSuite) TestAddNodeForAppend() {
 			IP:   ts.IP,
 			Port: ts.bootstrapPort + i + 1,
 		}
-		ts.main.addNode(node)
+		ts.main.addNode(context.Background(), node)
 	}
 	ts.Equal(number, ts.main.ht.totalCount())
 
@@ -561,7 +576,7 @@ func (ts *testSuite) TestAddNodeForAppend() {
 		IP:   ts.IP,
 		Port: ts.bootstrapPort + number + 1,
 	}
-	ts.main.addNode(node)
+	ts.main.addNode(context.Background(), node)
 
 	bucket := ts.main.ht.routeTable[index]
 	ts.Equal(id, bucket[len(bucket)-1].ID)

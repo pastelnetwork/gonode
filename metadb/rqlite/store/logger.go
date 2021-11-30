@@ -90,7 +90,7 @@ func (logger *Logger) withFields(args []interface{}) log.Fields {
 		fields[i] = logger.fields[i]
 	}
 
-	for i := 0; i < len(args); i += 2 {
+	for i := 0; i < len(args); i = 2 {
 		key := args[i].(string)
 		fields[key] = args[i+1]
 	}

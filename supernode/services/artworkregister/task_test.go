@@ -831,7 +831,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 	type args struct {
 		task             *Task
 		txid             string
-		timeout          time.Duration
 		interval         time.Duration
 		minConfirmations int64
 		ctxTimeout       time.Duration
@@ -843,20 +842,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 		retRes  *pastel.GetRawTransactionVerbose1Result
 		retErr  error
 	}{
-		"timeout": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				interval:   200 * time.Millisecond,
-				timeout:    100 * time.Millisecond,
-				ctxTimeout: 500 * time.Millisecond,
-			},
-			wantErr: errors.New("timeout"),
-		},
 		"min-confirmations-timeout": {
 			args: args{
 				task: &Task{
@@ -866,13 +851,13 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Ticket: &pastel.NFTTicket{},
 				},
 				minConfirmations: 2,
-				timeout:          200 * time.Millisecond,
 				interval:         100 * time.Millisecond,
-				ctxTimeout:       500 * time.Millisecond,
+				ctxTimeout:       20 * time.Second,
 			},
 			retRes: &pastel.GetRawTransactionVerbose1Result{
 				Confirmations: 1,
 			},
+			retErr:  nil,
 			wantErr: errors.New("timeout"),
 		},
 		"success": {
@@ -884,7 +869,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Ticket: &pastel.NFTTicket{},
 				},
 				minConfirmations: 1,
-				timeout:          100 * time.Millisecond,
 				interval:         50 * time.Millisecond,
 				ctxTimeout:       500 * time.Millisecond,
 			},
@@ -902,8 +886,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Ticket: &pastel.NFTTicket{},
 				},
 				minConfirmations: 1,
-				timeout:          100 * time.Millisecond,
-				interval:         50 * time.Millisecond,
+				interval:         500 * time.Millisecond,
 				ctxTimeout:       10 * time.Millisecond,
 			},
 			retRes: &pastel.GetRawTransactionVerbose1Result{
@@ -920,11 +903,12 @@ func TestTaskWaitConfirmation(t *testing.T) {
 
 			ctx, cancel := context.WithTimeout(context.Background(), tc.args.ctxTimeout)
 			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnGetBlockCount(1, nil)
 			pastelClientMock.ListenOnGetRawTransactionVerbose1(tc.retRes, tc.retErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			err := <-tc.args.task.waitConfirmation(ctx, tc.args.txid,
-				tc.args.minConfirmations, tc.args.timeout, tc.args.interval)
+				tc.args.minConfirmations, tc.args.interval)
 			if tc.wantErr != nil {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.wantErr.Error())

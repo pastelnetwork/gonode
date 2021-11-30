@@ -9,13 +9,15 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/helpers"
 	"github.com/pastelnetwork/gonode/pastel"
 	"golang.org/x/crypto/sha3"
-	grpcCredentials "google.golang.org/grpc/credentials"
 )
 
 var (
@@ -23,8 +25,8 @@ var (
 	defaultNetworkPort   = 4445
 	defaultRefreshTime   = time.Second * 3600
 	defaultReplicateTime = time.Second * 3600
-	defaultPingTime      = time.Second * 5
-	defaultUpdateTime    = time.Minute * 1
+	defaultPingTime      = time.Second * 10
+	defaultUpdateTime    = time.Minute * 10 // FIXME : not sure how many is enough - but 1 is too small
 )
 
 // DHT represents the state of the local node in the distributed hash table
@@ -36,6 +38,9 @@ type DHT struct {
 	done         chan struct{}    // distributed hash table is done
 	cache        storage.KeyValue // store bad bootstrap addresses
 	pastelClient pastel.Client
+	externalIP   string
+	mtx          sync.Mutex
+	authHelper   *AuthHelper
 }
 
 // Options contains configuration options for the local node
@@ -54,10 +59,13 @@ type Options struct {
 
 	// PastelClient to retrieve p2p bootstrap addrs
 	PastelClient pastel.Client
+
+	// Authentication is required or not
+	PeerAuth bool
 }
 
 // NewDHT returns a new DHT node
-func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.TransportCredentials, options *Options) (*DHT, error) {
+func NewDHT(store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Options) (*DHT, error) {
 	// validate the options, if it's invalid, set them to default value
 	if options.IP == "" {
 		options.IP = defaultNetworkAddr
@@ -73,6 +81,11 @@ func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.Transpo
 		done:         make(chan struct{}),
 		cache:        memory.NewKeyValue(),
 	}
+
+	if options.PeerAuth {
+		s.authHelper = NewAuthHelper(pc, secInfo)
+	}
+
 	// new a hashtable with options
 	ht, err := NewHashTable(options)
 	if err != nil {
@@ -80,14 +93,44 @@ func NewDHT(store Store, pc pastel.Client, tpCredentials grpcCredentials.Transpo
 	}
 	s.ht = ht
 
+	// add bad boostrap addresss
+	s.skipBadBootstrapAddrs()
+
+	/*
+		// FIXME - use this code to enable secure connection
+		secureHelper := credentials.NewClientCreds(s.pastelClient, s.secInfo)
+		network, err := NewNetwork(s, ht.self, secureHelper)
+	*/
+
 	// new network service for dht
-	network, err := NewNetwork(s, ht.self, tpCredentials)
+	network, err := NewNetwork(s, ht.self, nil, s.authHelper)
 	if err != nil {
 		return nil, fmt.Errorf("new network: %v", err)
 	}
 	s.network = network
 
 	return s, nil
+}
+
+func (s *DHT) getExternalIP() (string, error) {
+	s.mtx.Lock()
+	defer s.mtx.Unlock()
+	// if listen IP is localhost - then return itself
+	if s.ht.self.IP == "127.0.0.1" || s.ht.self.IP == "localhost" {
+		return s.ht.self.IP, nil
+	}
+
+	if s.externalIP != "" {
+		return s.externalIP, nil
+	}
+
+	externalIP, err := utils.GetExternalIPAddress()
+	if err != nil {
+		return "", fmt.Errorf("get external ip addr: %s", err)
+	}
+
+	s.externalIP = externalIP
+	return externalIP, nil
 }
 
 // Start the distributed hash table
@@ -155,6 +198,11 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	// replicate time for the key
 	replication := time.Now().Add(defaultReplicateTime)
 
+	retKey := base58.Encode(key)
+	if _, err := s.store.Retrieve(ctx, key); err == nil {
+		return retKey, nil
+	}
+
 	// store the key to local storage
 	if err := s.store.Store(ctx, key, data, replication); err != nil {
 		return "", fmt.Errorf("store data to local storage: %v", err)
@@ -165,7 +213,7 @@ func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 		return "", fmt.Errorf("iterative store data: %v", err)
 	}
 
-	return base58.Encode(key), nil
+	return retKey, nil
 }
 
 // Retrieve data from the networking using key. Key is the base58 encoded
@@ -182,15 +230,27 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 		return value, nil
 	}
 
-	log.WithContext(ctx).WithError(err).Error("store retrive failed")
+	log.WithContext(ctx).WithError(err).WithField("key", key).Debug("local store retrieve failed, trying to retrieve from peers...")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.Errorf("retrieve from peer: %w", err)
 	}
 
 	return peerValue, nil
+}
+
+// Delete delete key in local node
+func (s *DHT) Delete(ctx context.Context, key string) error {
+	decoded := base58.Decode(key)
+	if len(decoded) != B/8 {
+		return fmt.Errorf("invalid key: %v", key)
+	}
+
+	s.store.Delete(ctx, decoded)
+
+	return nil
 }
 
 // Stats returns stats of DHT
@@ -209,10 +269,27 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return dhtStats, nil
 }
 
+// Keys return a list of keys with given offset + limit
+func (s *DHT) Keys(ctx context.Context, offset int, limit int) []string {
+	rawKeys := s.store.Keys(ctx, offset, limit)
+	keys := []string{}
+	for _, rawKey := range rawKeys {
+		keys = append(keys, base58.Encode(rawKey))
+	}
+
+	return keys
+}
+
 // new a message
 func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Message {
+	externalIP, _ := s.getExternalIP()
+	sender := &Node{
+		IP:   externalIP,
+		ID:   s.ht.self.ID,
+		Port: s.ht.self.Port,
+	}
 	return &Message{
-		Sender:      s.ht.self,
+		Sender:      sender,
 		Receiver:    receiver,
 		MessageType: messageType,
 		Data:        data,
@@ -333,21 +410,25 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		for response := range responses {
 			log.WithContext(ctx).Debugf("response: %v", response.String())
 			// add the target node to the bucket
-			s.addNode(response.Sender)
+			s.addNode(ctx, response.Sender)
 
 			switch response.MessageType {
 			case FindNode, StoreData:
-				v := response.Data.(*FindNodeResponse)
-				if len(v.Closest) > 0 {
-					nl.AddNodes(v.Closest)
+				v, ok := response.Data.(*FindNodeResponse)
+				if ok && v.Status.Result == ResultOk {
+					if len(v.Closest) > 0 {
+						nl.AddNodes(v.Closest)
+					}
 				}
 			case FindValue:
-				v := response.Data.(*FindValueResponse)
-				if v.Value != nil {
-					return v.Value, nil
-				}
-				if len(v.Closest) > 0 {
-					nl.AddNodes(v.Closest)
+				v, ok := response.Data.(*FindValueResponse)
+				if ok && v.Status.Result == ResultOk {
+					if v.Value != nil {
+						return v.Value, nil
+					}
+					if len(v.Closest) > 0 {
+						nl.AddNodes(v.Closest)
+					}
 				}
 			}
 		}
@@ -382,13 +463,13 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 						return nil, nil
 					}
 
-					data := &StoreDataRequest{Data: data}
-					// new a request message
-					request := s.newMessage(StoreData, n, data)
-					// send the request and receive the response
-					if _, err := s.network.Call(ctx, request); err != nil {
+					request := &StoreDataRequest{Data: data}
+					response, err := s.sendStoreData(ctx, n, request)
+					if err != nil {
 						// <TODO> need to remove the node ?
-						log.WithContext(ctx).WithError(err).Error("network call")
+						log.WithContext(ctx).WithField("node", n).WithError(err).Error("send store data failed")
+					} else if response.Status.Result != ResultOk {
+						log.WithContext(ctx).WithField("node", n).WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
 					}
 				}
 				return nil, nil
@@ -400,8 +481,32 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	}
 }
 
+func (s *DHT) sendStoreData(_ context.Context, n *Node, request *StoreDataRequest) (*StoreDataResponse, error) {
+	// new a request message
+	reqMsg := s.newMessage(StoreData, n, request)
+	// send the request and receive the response
+	// FIXME: context background
+	rspMsg, err := s.network.Call(context.Background(), reqMsg)
+	if err != nil {
+		return nil, errors.Errorf("network call: %w", err)
+	}
+
+	response, ok := rspMsg.Data.(*StoreDataResponse)
+	if !ok {
+		return nil, errors.New("invalid StoreDataResponse")
+	}
+
+	return response, nil
+}
+
 // add a node into the appropriate k bucket, return the removed node if it's full
-func (s *DHT) addNode(node *Node) *Node {
+func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
+	// ensure this is not itself address
+	if bytes.Equal(node.ID, s.ht.self.ID) {
+		log.WithContext(ctx).Error("trying to add itself")
+		return nil
+	}
+
 	// the bucket index for the node
 	index := s.ht.bucketIndex(s.ht.self.ID, node.ID)
 

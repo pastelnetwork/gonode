@@ -2,11 +2,17 @@ package store
 
 // DBConfig represents the configuration of the underlying SQLite database.
 type DBConfig struct {
-	DSN    string // Any custom DSN
-	Memory bool   // Whether the database is in-memory only.
+	// Whether the database is in-memory only.
+	Memory bool `json:"memory"`
+
+	// SQLite on-disk path
+	OnDiskPath string `json:"on_disk_path,omitempty"`
+
+	// Enforce Foreign Key constraints
+	FKConstraints bool `json:"fk_constraints"`
 }
 
 // NewDBConfig returns a new DB config instance.
-func NewDBConfig(dsn string, memory bool) *DBConfig {
-	return &DBConfig{DSN: dsn, Memory: memory}
+func NewDBConfig(memory bool) *DBConfig {
+	return &DBConfig{Memory: memory}
 }

@@ -10,14 +10,20 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcutil/base58"
-	"github.com/dgraph-io/badger/v2"
-	"github.com/dgraph-io/badger/v2/options"
+	"github.com/dgraph-io/badger/v3"
+	"github.com/dgraph-io/badger/v3/options"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 )
 
 const (
 	replicationPrefix = "r:"
+
+	// cleanupdiscardRatio of 0.5 would indicate that a file will be rewritten if half the space can be discarded.
+	// This results in a lifetime value log write amplification of 2 (1 from original write + 0.5 rewrite + 0.25 + 0.125 + ... = 2).
+	//  Setting it to higher value would result in fewer space reclaims, while setting it to a lower value would result in more space
+	//  reclaims at the cost of increased activity on the LSM tree. discardRatio must be in the range (0.0, 1.0)
+	cleanupDiscardRatio = 0.35
 )
 
 // Badger defines a key/value database for store
@@ -34,7 +40,7 @@ func NewStore(ctx context.Context, dataDir string) (*Badger, error) {
 
 	log.WithContext(ctx).Debugf("data dir: %v", dataDir)
 	// mkdir the data directory for badger
-	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+	if err := os.MkdirAll(dataDir, 0750); err != nil {
 		return nil, errors.Errorf("mkdir %q: %w", dataDir, err)
 	}
 	// init the badger options
@@ -121,9 +127,13 @@ func (s *Badger) Delete(ctx context.Context, key []byte) {
 	log.WithContext(ctx).Infof("delete key: %s", base58.Encode(key))
 }
 
-// Keys returns all the keys from the Store
-func (s *Badger) Keys(ctx context.Context) [][]byte {
+// Keys return a list of keys with given offset + limit
+func (s *Badger) Keys(ctx context.Context, offset int, limit int) [][]byte {
 	keys := [][]byte{}
+	if offset < 0 {
+		offset = 0
+	}
+	curIndex := 0
 
 	if err := s.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
@@ -136,7 +146,14 @@ func (s *Badger) Keys(ctx context.Context) [][]byte {
 			if bytes.HasPrefix(key, []byte(replicationPrefix)) {
 				continue
 			}
-			keys = append(keys, key)
+			if limit >= 0 && curIndex >= offset+limit {
+				break
+			}
+
+			if curIndex >= offset {
+				keys = append(keys, key)
+			}
+			curIndex = curIndex + 1
 		}
 		return nil
 	}); err != nil {
@@ -205,6 +222,27 @@ func (s *Badger) Stats(ctx context.Context) (map[string]interface{}, error) {
 	lsm, vlog := s.db.Size()
 	stats["log_size"] = vlog
 	stats["dir_size"] = lsm + vlog
-	stats["record_count"] = len(s.Keys(ctx))
+	stats["record_count"] = len(s.Keys(ctx, 0, -1))
 	return stats, nil
+}
+
+// InitCleanup garbage collects the badger db. This should always run in a separate go-routine
+func (s *Badger) InitCleanup(ctx context.Context, cleanupInterval time.Duration) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(cleanupInterval):
+			for {
+				if err := s.Cleanup(cleanupDiscardRatio); err != nil {
+					break
+				}
+			}
+		}
+	}
+}
+
+// Cleanup garbage collects the badger db. Nil err means somethin was cleaned up
+func (s *Badger) Cleanup(discardRatio float64) error {
+	return s.db.RunValueLogGC(discardRatio)
 }

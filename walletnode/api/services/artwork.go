@@ -53,9 +53,6 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 		case <-ctx.Done():
 			return nil
 		case status := <-sub():
-			if status.IsFinal() {
-				return nil
-			}
 			res := &artworks.TaskState{
 				Date:   status.CreatedAt.Format(time.RFC3339),
 				Status: status.String(),
@@ -64,6 +61,9 @@ func (service *Artwork) RegisterTaskState(ctx context.Context, p *artworks.Regis
 				return artworks.MakeInternalServerError(err)
 			}
 
+			if status.IsFinal() {
+				return nil
+			}
 		}
 	}
 }
@@ -150,13 +150,14 @@ func (service *Artwork) Download(ctx context.Context, p *artworks.ArtworkDownloa
 	ticket := fromDownloadPayload(p)
 	taskID := service.download.AddTask(ticket)
 	task := service.download.Task(taskID)
+	defer task.Cancel()
 
 	sub := task.SubscribeStatus()
 
 	for {
 		select {
 		case <-ctx.Done():
-			return nil, nil
+			return nil, artworks.MakeBadRequest(errors.Errorf("context done: %w", ctx.Err()))
 		case status := <-sub():
 			if status.IsFailure() {
 				return nil, artworks.MakeInternalServerError(task.Error())
@@ -194,6 +195,7 @@ func (service *Artwork) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 // ArtSearch searches for artwork & streams the result based on filters
 func (service *Artwork) ArtSearch(ctx context.Context, req *artworks.ArtSearchPayload, stream artworks.ArtSearchServerStream) error {
 	defer stream.Close()
+
 	searchReq := fromArtSearchRequest(req)
 	taskID := service.search.AddTask(searchReq)
 	task := service.search.Task(taskID)
@@ -235,7 +237,7 @@ func (service *Artwork) ArtworkGet(ctx context.Context, p *artworks.ArtworkGetPa
 	if err != nil {
 		return nil, artworks.MakeInternalServerError(err)
 	}
-	res.Thumbnail1 = data
+	res.PreviewThumbnail = data
 
 	return res, nil
 }

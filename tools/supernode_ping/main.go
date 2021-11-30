@@ -24,7 +24,7 @@ func main() {
 		flag.PrintDefaults()
 	}
 	// validate input
-	if len(*serverAddr) == 0 {
+	if *serverAddr == "" {
 		Usage()
 		return
 	}

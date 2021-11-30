@@ -1,7 +1,7 @@
 #!/bin/bash
 
-RQLITED=~/rqlite/src/github.com/rqlite/rqlite/cmd/rqlited/rqlited
-RQBENCH=~/rqlite/src/github.com/rqlite/rqlite/cmd/rqbench/rqbench
+RQLITED=~/rqlite/src/github.com/pastelnetwork/gonode/metadb/rqlite/cmd/rqlited/rqlited
+RQBENCH=~/rqlite/src/github.com/pastelnetwork/gonode/metadb/rqlite/cmd/rqbench/rqbench
 DATA_DIR=`mktemp -d`
 
 $RQLITED -raft-snap 13 -raft-snap-int=1s $DATA_DIR &

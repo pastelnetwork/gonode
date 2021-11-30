@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math"
+	"reflect"
 	"strings"
 	"unsafe"
 
@@ -45,8 +46,8 @@ func (fg Fingerprint) Bytes() []byte {
 func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) error {
 
 	//hash_of_candidate_image_file
-	if !bytes.Equal(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
-		return errors.Errorf("image hash do not match")
+	if !reflect.DeepEqual(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
+		return errors.New("image hash do not match")
 	}
 
 	//is_likely_dupe
@@ -75,7 +76,7 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 	}
 
 	//image_hashes
-	if err := CompareImageHashes(&lhs.ImageHashes, &rhs.ImageHashes); err != nil {
+	if err := CompareImageHashes(&lhs.PerceptualImageHashes, &rhs.PerceptualImageHashes); err != nil {
 		return errors.Errorf("image hashes do not match: %w", err)
 	}
 
@@ -93,14 +94,14 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 
 		lfg, err := FingerprintFromBytes(lhsFingerprint)
 		if err != nil {
-			return errors.Errorf("fingerprints corrupted")
+			return errors.New("fingerprints corrupted")
 		}
 		rfg, err := FingerprintFromBytes(lhsFingerprint)
 		if err != nil {
-			return errors.Errorf("fingerprints corrupted")
+			return errors.New("fingerprints corrupted")
 		}
 		if len(lfg) != len(rfg) {
-			return errors.Errorf("fingerprints do not match")
+			return errors.New("fingerprints do not match")
 		}
 		for i := range lfg {
 			if !compareFloatWithPrecision(lfg[i], rfg[i], 4.0) {
@@ -132,8 +133,8 @@ func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScore, rhs *AlternativeNSFW
 	return nil
 }
 
-// CompareImageHashes return nil if two ImageHashes are equal
-func CompareImageHashes(lhs *ImageHashes, rhs *ImageHashes) error {
+// CompareImageHashes return nil if two PerceptualImageHashes are equal
+func CompareImageHashes(lhs *PerceptualImageHashes, rhs *PerceptualImageHashes) error {
 	if !strings.EqualFold(lhs.PDQHash, rhs.PDQHash) {
 		return errors.Errorf("pdq_hash not matched: lhs(%s) != rhs(%s)", lhs.PDQHash, rhs.PDQHash)
 	}

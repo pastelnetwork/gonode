@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	defaultConnectToNodeTimeout = time.Second * 5
+	defaultConnectToNodeTimeout = time.Second * 15
 )
 
 // Nodes represents muptiple Nodes

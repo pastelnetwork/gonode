@@ -14,6 +14,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/pprof"
+	"os"
 	"runtime"
 	"strings"
 	"sync"
@@ -22,8 +23,13 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/command"
-	sql "github.com/pastelnetwork/gonode/metadb/rqlite/db"
+	"github.com/pastelnetwork/gonode/metadb/rqlite/command/encoding"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/store"
+)
+
+var (
+	// ErrLeaderNotFound is returned when a node cannot locate a leader
+	ErrLeaderNotFound = errors.New("leader not found")
 )
 
 // Database is the interface any queryable system must implement
@@ -32,17 +38,13 @@ type Database interface {
 	// to return rows. If timings is true, then timing information will
 	// be return. If tx is true, then either all queries will be executed
 	// successfully or it will as though none executed.
-	Execute(er *command.ExecuteRequest) ([]*sql.Result, error)
-
-	// ExecuteOrAbort performs the same function as Execute(), but ensures
-	// any transactions are aborted in case of any error.
-	ExecuteOrAbort(er *command.ExecuteRequest) ([]*sql.Result, error)
+	Execute(er *command.ExecuteRequest) ([]*command.ExecuteResult, error)
 
 	// Query executes a slice of queries, each of which returns rows. If
 	// timings is true, then timing information will be returned. If tx
 	// is true, then all queries will take place while a read transaction
 	// is held on the database.
-	Query(qr *command.QueryRequest) ([]*sql.Rows, error)
+	Query(qr *command.QueryRequest) ([]*command.QueryRows, error)
 }
 
 // Store is the interface the Raft-based database must implement.
@@ -73,7 +75,13 @@ type Store interface {
 // Cluster is the interface node API services must provide
 type Cluster interface {
 	// GetNodeAPIAddr returns the HTTP API URL for the node at the given Raft address.
-	GetNodeAPIAddr(nodeAddr string) (string, error)
+	GetNodeAPIAddr(nodeAddr string, timeout time.Duration) (string, error)
+
+	// Execute performs an Execute Request on a remote node.
+	Execute(er *command.ExecuteRequest, nodeAddr string, timeout time.Duration) ([]*command.ExecuteResult, error)
+
+	// Query performs an Query Request on a remote node.
+	Query(qr *command.QueryRequest, nodeAddr string, timeout time.Duration) ([]*command.QueryRows, error)
 
 	// Stats returns stats on the Cluster.
 	Stats() (map[string]interface{}, error)
@@ -93,14 +101,30 @@ type CredentialStore interface {
 
 // Statuser is the interface status providers must implement.
 type Statuser interface {
-	Stats() (interface{}, error)
+	Stats() (map[string]interface{}, error)
+}
+
+// DBResults stores either an Execute result or a Query result
+type DBResults struct {
+	ExecuteResult []*command.ExecuteResult
+	QueryRows     []*command.QueryRows
+}
+
+// MarshalJSON implements the JSON Marshaler interface.
+func (d *DBResults) MarshalJSON() ([]byte, error) {
+	if d.ExecuteResult != nil {
+		return encoding.JSONMarshal(d.ExecuteResult)
+	} else if d.QueryRows != nil {
+		return encoding.JSONMarshal(d.QueryRows)
+	}
+	return nil, fmt.Errorf("no DB results set")
 }
 
 // Response represents a response from the HTTP service.
 type Response struct {
-	Results interface{} `json:"results,omitempty"`
-	Error   string      `json:"error,omitempty"`
-	Time    float64     `json:"time,omitempty"`
+	Results *DBResults `json:"results,omitempty"`
+	Error   string     `json:"error,omitempty"`
+	Time    float64    `json:"time,omitempty"`
 
 	start time.Time
 	end   time.Time
@@ -110,13 +134,19 @@ type Response struct {
 var stats *expvar.Map
 
 const (
-	numExecutions = "executions"
-	numQueries    = "queries"
-	numBackups    = "backups"
-	numLoad       = "loads"
-	numJoins      = "joins"
-	numAuthOK     = "authOK"
-	numAuthFail   = "authFail"
+	numLeaderNotFound   = "leader_not_found"
+	numExecutions       = "executions"
+	numQueries          = "queries"
+	numRemoteExecutions = "remote_executions"
+	numRemoteQueries    = "remote_queries"
+	numBackups          = "backups"
+	numLoad             = "loads"
+	numJoins            = "joins"
+	numAuthOK           = "authOK"
+	numAuthFail         = "authFail"
+
+	// Default timeout for cluster communications.
+	defaultTimeout = 30 * time.Second
 
 	// PermAll means all actions permitted.
 	PermAll = "all"
@@ -130,6 +160,8 @@ const (
 	PermQuery = "query"
 	// PermStatus means user can retrieve node status.
 	PermStatus = "status"
+	// PermReady means user can retrieve ready status.
+	PermReady = "ready"
 	// PermBackup means user can backup node.
 	PermBackup = "backup"
 	// PermLoad means user can load a SQLite dump into a node.
@@ -137,12 +169,20 @@ const (
 
 	// VersionHTTPHeader is the HTTP header key for the version.
 	VersionHTTPHeader = "X-RQLITE-VERSION"
+
+	// ServedByHTTPHeader is the HTTP header used to report which
+	// node (by node Raft address) actually served the request if
+	// it wasn't served by this node.
+	ServedByHTTPHeader = "X-RQLITE-SERVED-BY"
 )
 
 func init() {
 	stats = expvar.NewMap("http")
+	stats.Add(numLeaderNotFound, 0)
 	stats.Add(numExecutions, 0)
 	stats.Add(numQueries, 0)
+	stats.Add(numRemoteExecutions, 0)
+	stats.Add(numRemoteQueries, 0)
 	stats.Add(numBackups, 0)
 	stats.Add(numLoad, 0)
 	stats.Add(numJoins, 0)
@@ -159,7 +199,8 @@ func (r *Response) SetTime() {
 // NewResponse returns a new instance of response.
 func NewResponse() *Response {
 	return &Response{
-		start: time.Now(),
+		Results: &DBResults{},
+		start:   time.Now(),
 	}
 }
 
@@ -197,13 +238,13 @@ type Service struct {
 // the service performs no authentication and authorization checks.
 func New(ctx context.Context, addr string, store Store, cluster Cluster, credentials CredentialStore) *Service {
 	return &Service{
-		ctx:             ctx,
 		addr:            addr,
 		store:           store,
 		cluster:         cluster,
 		start:           time.Now(),
 		statuses:        make(map[string]Statuser),
 		credentialStore: credentials,
+		ctx:             ctx,
 	}
 }
 
@@ -279,6 +320,8 @@ func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.handleStatus(w, r)
 	case strings.HasPrefix(r.URL.Path, "/nodes"):
 		s.handleNodes(w, r)
+	case strings.HasPrefix(r.URL.Path, "/readyz"):
+		s.handleReadyz(w, r)
 	case r.URL.Path == "/debug/vars" && s.Expvar:
 		s.handleExpvar(w, r)
 	case strings.HasPrefix(r.URL.Path, "/debug/pprof") && s.Pprof:
@@ -345,7 +388,8 @@ func (s *Service) handleJoin(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				stats.Add(numLeaderNotFound, 1)
+				http.Error(w, ErrLeaderNotFound.Error(), http.StatusServiceUnavailable)
 				return
 			}
 
@@ -397,7 +441,8 @@ func (s *Service) handleRemove(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				stats.Add(numLeaderNotFound, 1)
+				http.Error(w, ErrLeaderNotFound.Error(), http.StatusServiceUnavailable)
 				return
 			}
 
@@ -440,7 +485,8 @@ func (s *Service) handleBackup(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				stats.Add(numLeaderNotFound, 1)
+				http.Error(w, ErrLeaderNotFound.Error(), http.StatusServiceUnavailable)
 				return
 			}
 
@@ -470,7 +516,7 @@ func (s *Service) handleLoad(w http.ResponseWriter, r *http.Request) {
 
 	resp := NewResponse()
 
-	timings, err := timings(r)
+	timings, err := isTimings(r)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -487,12 +533,13 @@ func (s *Service) handleLoad(w http.ResponseWriter, r *http.Request) {
 	queries := []string{string(b)}
 	er := executeRequestFromStrings(queries, timings, false)
 
-	results, err := s.store.ExecuteOrAbort(er)
+	results, err := s.store.Execute(er)
 	if err != nil {
 		if errors.Is(err, store.ErrNotLeader) {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				stats.Add(numLeaderNotFound, 1)
+				http.Error(w, ErrLeaderNotFound.Error(), http.StatusServiceUnavailable)
 				return
 			}
 
@@ -502,7 +549,7 @@ func (s *Service) handleLoad(w http.ResponseWriter, r *http.Request) {
 		}
 		resp.Error = err.Error()
 	} else {
-		resp.Results = results
+		resp.Results.ExecuteResult = results
 	}
 	resp.end = time.Now()
 	s.writeResponse(w, r, resp)
@@ -524,7 +571,15 @@ func (s *Service) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 	storeStatus, err := s.store.Stats()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("store stats: %s", err.Error()),
+			http.StatusInternalServerError)
+		return
+	}
+
+	clusterStatus, err := s.cluster.Stats()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("cluster stats: %s", err.Error()),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -537,9 +592,24 @@ func (s *Service) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"version":       runtime.Version(),
 	}
 
+	oss := map[string]interface{}{
+		"pid":       os.Getpid(),
+		"ppid":      os.Getppid(),
+		"page_size": os.Getpagesize(),
+	}
+	executable, err := os.Executable()
+	if err == nil {
+		oss["executable"] = executable
+	}
+	hostname, err := os.Hostname()
+	if err == nil {
+		oss["hostname"] = hostname
+	}
+
 	httpStatus := map[string]interface{}{
-		"addr": s.Addr().String(),
-		"auth": prettyEnabled(s.credentialStore != nil),
+		"bind_addr": s.Addr().String(),
+		"auth":      prettyEnabled(s.credentialStore != nil),
+		"cluster":   clusterStatus,
 	}
 
 	nodeStatus := map[string]interface{}{
@@ -547,16 +617,10 @@ func (s *Service) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"uptime":     time.Since(s.start).String(),
 	}
 
-	clusterStatus, err := s.cluster.Stats()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	// Build the status response.
 	status := map[string]interface{}{
+		"os":      oss,
 		"runtime": rt,
-		"cluster": clusterStatus,
 		"store":   storeStatus,
 		"http":    httpStatus,
 		"node":    nodeStatus,
@@ -575,7 +639,8 @@ func (s *Service) handleStatus(w http.ResponseWriter, r *http.Request) {
 		for k, v := range s.statuses {
 			stat, err := v.Stats()
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("registered stats: %s", err.Error()),
+					http.StatusInternalServerError)
 				return
 			}
 			status[k] = stat
@@ -590,13 +655,15 @@ func (s *Service) handleStatus(w http.ResponseWriter, r *http.Request) {
 		b, err = json.Marshal(status)
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else {
-		_, err = w.Write([]byte(b))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+		http.Error(w, fmt.Sprintf("JSON marshal: %s", err.Error()),
+			http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write([]byte(b))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("write: %s", err.Error()),
+			http.StatusInternalServerError)
+		return
 	}
 }
 
@@ -616,7 +683,7 @@ func (s *Service) handleNodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	t, err := timeout(r, time.Duration(1))
+	timeout, err := timeoutParam(r, defaultTimeout)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -631,7 +698,8 @@ func (s *Service) handleNodes(w http.ResponseWriter, r *http.Request) {
 	// Get nodes in the cluster, and possibly filter out non-voters.
 	nodes, err := s.store.Nodes()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("store nodes: %s", err.Error()),
+			http.StatusInternalServerError)
 		return
 	}
 
@@ -645,29 +713,35 @@ func (s *Service) handleNodes(w http.ResponseWriter, r *http.Request) {
 
 	lAddr, err := s.store.LeaderAddr()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("leader address: %s", err.Error()),
+			http.StatusInternalServerError)
 		return
 	}
 
-	apiAddrs, err := s.checkNodesAPIAddr(filteredNodes, t)
+	nodesResp, err := s.checkNodes(filteredNodes, timeout)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("check nodes: %s", err.Error()),
+			http.StatusInternalServerError)
 		return
 	}
 
 	resp := make(map[string]struct {
-		APIAddr   string `json:"api_addr,omitempty"`
-		Addr      string `json:"addr,omitempty"`
-		Reachable bool   `json:"reachable"`
-		Leader    bool   `json:"leader"`
+		APIAddr   string  `json:"api_addr,omitempty"`
+		Addr      string  `json:"addr,omitempty"`
+		Reachable bool    `json:"reachable"`
+		Leader    bool    `json:"leader"`
+		Time      float64 `json:"time,omitempty"`
+		Error     string  `json:"error,omitempty"`
 	})
 
 	for _, n := range filteredNodes {
 		nn := resp[n.ID]
 		nn.Addr = n.Addr
 		nn.Leader = nn.Addr == lAddr
-		nn.APIAddr = apiAddrs[n.ID]
-		nn.Reachable = apiAddrs[n.ID] != ""
+		nn.APIAddr = nodesResp[n.ID].apiAddr
+		nn.Reachable = nodesResp[n.ID].reachable
+		nn.Time = nodesResp[n.ID].time.Seconds()
+		nn.Error = nodesResp[n.ID].error
 		resp[n.ID] = nn
 	}
 
@@ -680,13 +754,49 @@ func (s *Service) handleNodes(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-	} else {
-		_, err = w.Write([]byte(b))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	_, err = w.Write([]byte(b))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// handleReadyz returns whether the node is ready.
+func (s *Service) handleReadyz(w http.ResponseWriter, r *http.Request) {
+	if !s.CheckRequestPerm(r, PermReady) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if r.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	timeout, err := timeoutParam(r, defaultTimeout)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	lAddr, err := s.store.LeaderAddr()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("leader address: %s", err.Error()),
+			http.StatusInternalServerError)
+		return
+	}
+
+	if lAddr != "" {
+		if _, err := s.cluster.GetNodeAPIAddr(lAddr, timeout); err == nil {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("[+]leader ok"))
 			return
 		}
 	}
+
+	w.WriteHeader(http.StatusServiceUnavailable)
 }
 
 // handleExecute handles queries that modify the database.
@@ -705,15 +815,9 @@ func (s *Service) handleExecute(w http.ResponseWriter, r *http.Request) {
 
 	resp := NewResponse()
 
-	isTx, err := isTx(r)
+	timeout, isTx, timings, redirect, err := reqParams(r, defaultTimeout)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	timings, err := timings(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -738,22 +842,40 @@ func (s *Service) handleExecute(w http.ResponseWriter, r *http.Request) {
 		Timings: timings,
 	}
 
-	results, err := s.store.Execute(er)
-	if err != nil {
-		if errors.Is(err, store.ErrNotLeader) {
+	results, resultsErr := s.store.Execute(er)
+	if resultsErr != nil && errors.Is(resultsErr, store.ErrNotLeader) {
+		if redirect {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				stats.Add(numLeaderNotFound, 1)
+				http.Error(w, ErrLeaderNotFound.Error(), http.StatusServiceUnavailable)
 				return
 			}
-
-			redirect := s.FormRedirect(r, leaderAPIAddr)
-			http.Redirect(w, r, redirect, http.StatusMovedPermanently)
+			loc := s.FormRedirect(r, leaderAPIAddr)
+			http.Redirect(w, r, loc, http.StatusMovedPermanently)
 			return
 		}
-		resp.Error = err.Error()
+
+		addr, err := s.store.LeaderAddr()
+		if err != nil {
+			http.Error(w, fmt.Sprintf("leader address: %s", err.Error()),
+				http.StatusInternalServerError)
+			return
+		}
+		if addr == "" {
+			stats.Add(numLeaderNotFound, 1)
+			http.Error(w, ErrLeaderNotFound.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		results, resultsErr = s.cluster.Execute(er, addr, timeout)
+		stats.Add(numRemoteExecutions, 1)
+		w.Header().Add(ServedByHTTPHeader, addr)
+	}
+
+	if resultsErr != nil {
+		resp.Error = resultsErr.Error()
 	} else {
-		resp.Results = results
+		resp.Results.ExecuteResult = results
 	}
 	resp.end = time.Now()
 	s.writeResponse(w, r, resp)
@@ -775,13 +897,7 @@ func (s *Service) handleQuery(w http.ResponseWriter, r *http.Request) {
 
 	resp := NewResponse()
 
-	isTx, err := isTx(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	timings, err := timings(r)
+	timeout, isTx, timings, redirect, err := reqParams(r, defaultTimeout)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -816,22 +932,39 @@ func (s *Service) handleQuery(w http.ResponseWriter, r *http.Request) {
 		Freshness: frsh.Nanoseconds(),
 	}
 
-	results, err := s.store.Query(qr)
-	if err != nil {
-		if errors.Is(err, store.ErrNotLeader) {
+	results, resultsErr := s.store.Query(qr)
+	if resultsErr != nil && errors.Is(resultsErr, store.ErrNotLeader) {
+		if redirect {
 			leaderAPIAddr := s.LeaderAPIAddr()
 			if leaderAPIAddr == "" {
-				http.Error(w, err.Error(), http.StatusServiceUnavailable)
+				stats.Add(numLeaderNotFound, 1)
+				http.Error(w, ErrLeaderNotFound.Error(), http.StatusServiceUnavailable)
 				return
 			}
-
-			redirect := s.FormRedirect(r, leaderAPIAddr)
-			http.Redirect(w, r, redirect, http.StatusMovedPermanently)
+			loc := s.FormRedirect(r, leaderAPIAddr)
+			http.Redirect(w, r, loc, http.StatusMovedPermanently)
 			return
 		}
-		resp.Error = err.Error()
+
+		addr, err := s.store.LeaderAddr()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if addr == "" {
+			stats.Add(numLeaderNotFound, 1)
+			http.Error(w, ErrLeaderNotFound.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		results, resultsErr = s.cluster.Query(qr, addr, timeout)
+		stats.Add(numRemoteQueries, 1)
+		w.Header().Add(ServedByHTTPHeader, addr)
+	}
+
+	if resultsErr != nil {
+		resp.Error = resultsErr.Error()
 	} else {
-		resp.Results = results
+		resp.Results.QueryRows = results
 	}
 	resp.end = time.Now()
 	s.writeResponse(w, r, resp)
@@ -918,7 +1051,7 @@ func (s *Service) LeaderAPIAddr() string {
 		return ""
 	}
 
-	apiAddr, err := s.cluster.GetNodeAPIAddr(nodeAddr)
+	apiAddr, err := s.cluster.GetNodeAPIAddr(nodeAddr, defaultTimeout)
 
 	if err != nil {
 		return ""
@@ -926,16 +1059,22 @@ func (s *Service) LeaderAPIAddr() string {
 	return apiAddr
 }
 
-// checkNodesAPIAddr returns a map of node ID to API addresses, reachable
+type checkNodesResponse struct {
+	apiAddr   string
+	reachable bool
+	time      time.Duration
+	error     string
+}
+
+// checkNodes returns a map of node ID to node responsivness, reachable
 // being defined as node responds to a simple request over the network.
-func (s *Service) checkNodesAPIAddr(nodes []*store.Server, _ time.Duration) (map[string]string, error) {
+func (s *Service) checkNodes(nodes []*store.Server, timeout time.Duration) (map[string]*checkNodesResponse, error) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	apiAddrs := make(map[string]string)
+	resp := make(map[string]*checkNodesResponse)
 
-	// Assume unreachable
 	for _, n := range nodes {
-		apiAddrs[n.ID] = ""
+		resp[n.ID] = &checkNodesResponse{}
 	}
 
 	// Now confirm.
@@ -943,17 +1082,23 @@ func (s *Service) checkNodesAPIAddr(nodes []*store.Server, _ time.Duration) (map
 		wg.Add(1)
 		go func(id, raftAddr string) {
 			defer wg.Done()
-			apiAddr, err := s.cluster.GetNodeAPIAddr(raftAddr)
-			if err == nil {
-				mu.Lock()
-				apiAddrs[id] = apiAddr
-				mu.Unlock()
+			mu.Lock()
+			defer mu.Unlock()
+
+			start := time.Now()
+			apiAddr, err := s.cluster.GetNodeAPIAddr(raftAddr, timeout)
+			if err != nil {
+				resp[id].error = err.Error()
+				return
 			}
+			resp[id].reachable = true
+			resp[id].apiAddr = apiAddr
+			resp[id].time = time.Since(start)
 		}(n.ID, n.Addr)
 	}
 	wg.Wait()
 
-	return apiAddrs, nil
+	return resp, nil
 }
 
 // addBuildVersion adds the build version to the HTTP response.
@@ -982,7 +1127,7 @@ func (s *Service) writeResponse(w http.ResponseWriter, r *http.Request, j *Respo
 	var b []byte
 	var err error
 	pretty, _ := isPretty(r)
-	timings, _ := timings(r)
+	timings, _ := isTimings(r)
 
 	if timings {
 		j.SetTime()
@@ -1058,7 +1203,7 @@ func createTLSConfig(certFile, keyFile, caCertFile string, tls1011 bool) (*tls.C
 	return config, nil
 }
 
-// queryParam returns whether the given query param is set to true.
+// queryParam returns whether the given query param is present.
 func queryParam(req *http.Request, param string) (bool, error) {
 	err := req.ParseForm()
 	if err != nil {
@@ -1088,9 +1233,52 @@ func isPretty(req *http.Request) (bool, error) {
 	return queryParam(req, "pretty")
 }
 
+// isRedirect returns whether the HTTP request is requesting a explicit
+// redirect to the leader, if necessary.
+func isRedirect(req *http.Request) (bool, error) {
+	return queryParam(req, "redirect")
+}
+
+// timeoutParam returns the value, if any, set for timeout. If not set, it
+// returns the value passed in as a default.
+func timeoutParam(req *http.Request, def time.Duration) (time.Duration, error) {
+	q := req.URL.Query()
+	timeout := strings.TrimSpace(q.Get("timeout"))
+	if timeout == "" {
+		return def, nil
+	}
+	t, err := time.ParseDuration(timeout)
+	if err != nil {
+		return 0, err
+	}
+	return t, nil
+}
+
 // isTx returns whether the HTTP request is requesting a transaction.
 func isTx(req *http.Request) (bool, error) {
 	return queryParam(req, "transaction")
+}
+
+// reqParams is a convenience function to get a bunch of query params
+// in one function call.
+func reqParams(req *http.Request, def time.Duration) (timeout time.Duration, tx, timings, redirect bool, err error) {
+	timeout, err = timeoutParam(req, def)
+	if err != nil {
+		return 0, false, false, false, err
+	}
+	tx, err = isTx(req)
+	if err != nil {
+		return 0, false, false, false, err
+	}
+	timings, err = isTimings(req)
+	if err != nil {
+		return 0, false, false, false, err
+	}
+	redirect, err = isRedirect(req)
+	if err != nil {
+		return 0, false, false, false, err
+	}
+	return timeout, tx, timings, redirect, nil
 }
 
 // noLeader returns whether processing should skip the leader check.
@@ -1103,24 +1291,9 @@ func nonVoters(req *http.Request) (bool, error) {
 	return queryParam(req, "nonvoters")
 }
 
-// timings returns whether timings are requested.
-func timings(req *http.Request) (bool, error) {
+// isTimings returns whether timings are requested.
+func isTimings(req *http.Request) (bool, error) {
 	return queryParam(req, "timings")
-}
-
-// timeout returns the timeout included in the query, or the given default
-func timeout(req *http.Request, d time.Duration) (time.Duration, error) {
-	q := req.URL.Query()
-	tStr := q.Get("timeout")
-	if tStr == "" {
-		return d, nil
-	}
-
-	t, err := time.ParseDuration(tStr)
-	if err != nil {
-		return d, nil
-	}
-	return t, nil
 }
 
 // level returns the requested consistency level for a query

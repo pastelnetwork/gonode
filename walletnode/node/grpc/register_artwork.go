@@ -47,7 +47,7 @@ func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) err
 	req := &pb.SessionRequest{
 		IsPrimary: isPrimary,
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
+	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := stream.Send(req); err != nil {
 		return errors.Errorf("send Session request: %w", err)
@@ -64,7 +64,7 @@ func (service *registerArtwork) Session(ctx context.Context, isPrimary bool) err
 		}
 		return errors.Errorf("receive Session response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
 	service.sessID = resp.SessID
 
 	go func() {
@@ -85,13 +85,13 @@ func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.AcceptedNodesRequest{}
-	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
+	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
 	if err != nil {
 		return nil, errors.Errorf("request to accepted secondary nodes: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("AcceptedNodes response")
 
 	var ids []string
 	for _, peer := range resp.Peers {
@@ -109,13 +109,13 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 		NodeID: nodeID,
 		SessID: sessID,
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
+	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
 	resp, err := service.client.ConnectTo(ctx, req)
 	if err != nil {
 		return err
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("ConnectTo response")
 
 	return nil
 }
@@ -160,6 +160,7 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 		DupeDectectionSystemVersion: resp.DupeDetectionVersion,
 		HashOfCandidateImageFile:    resp.HashOfCandidateImg,
 		OverallAverageRarenessScore: resp.AverageRarenessScore,
+		IsLikelyDupe:                resp.IsLikelyDupe,
 		IsRareOnInternet:            resp.IsRareOnInternet,
 		NumberOfPagesOfResults:      resp.NumberOfPagesOfResults,
 		MatchesFoundOnFirstPage:     resp.MatchesFoundOnFirstPage,
@@ -173,13 +174,38 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 			Porn:    resp.AlternativeNsfwScore.Porn,
 			Sexy:    resp.AlternativeNsfwScore.Sexy,
 		},
-		ImageHashes: pastel.ImageHashes{
+		PerceptualImageHashes: pastel.PerceptualImageHashes{
 			PerceptualHash: resp.ImageHashes.PerceptualHash,
 			AverageHash:    resp.ImageHashes.AverageHash,
 			DifferenceHash: resp.ImageHashes.DifferenceHash,
 			PDQHash:        resp.ImageHashes.PDQHash,
 			NeuralHash:     resp.ImageHashes.NeuralHash,
 		},
+		PerceptualHashOverlapCount:                   resp.PerceptualHashOverlapCount,
+		NumberOfFingerprintsRequiringFurtherTesting1: resp.NumberOfFingerprintsRequiringFurtherTesting_1,
+		NumberOfFingerprintsRequiringFurtherTesting2: resp.NumberOfFingerprintsRequiringFurtherTesting_2,
+		NumberOfFingerprintsRequiringFurtherTesting3: resp.NumberOfFingerprintsRequiringFurtherTesting_3,
+		NumberOfFingerprintsRequiringFurtherTesting4: resp.NumberOfFingerprintsRequiringFurtherTesting_4,
+		NumberOfFingerprintsRequiringFurtherTesting5: resp.NumberOfFingerprintsRequiringFurtherTesting_5,
+		NumberOfFingerprintsRequiringFurtherTesting6: resp.NumberOfFingerprintsRequiringFurtherTesting_6,
+		NumberOfFingerprintsOfSuspectedDupes:         resp.NumberOfFingerprintsOfSuspectedDupes,
+		PearsonMax:                                   resp.PearsonMax,
+		SpearmanMax:                                  resp.SpearmanMax,
+		KendallMax:                                   resp.KendallMax,
+		HoeffdingMax:                                 resp.HoeffdingMax,
+		MutualInformationMax:                         resp.MutualInformationMax,
+		HsicMax:                                      resp.HsicMax,
+		XgbimportanceMax:                             resp.XgbimportanceMax,
+		PearsonTop1BpsPercentile:                     resp.PearsonTop_1BpsPercentile,
+		SpearmanTop1BpsPercentile:                    resp.SpearmanTop_1BpsPercentile,
+		KendallTop1BpsPercentile:                     resp.KendallTop_1BpsPercentile,
+		HoeffdingTop10BpsPercentile:                  resp.HoeffdingTop_10BpsPercentile,
+		MutualInformationTop100BpsPercentile:         resp.MutualInformationTop_100BpsPercentile,
+		HsicTop100BpsPercentile:                      resp.HsicTop_100BpsPercentile,
+		XgbimportanceTop100BpsPercentile:             resp.XgbimportanceTop_100BpsPercentile,
+		CombinedRarenessScore:                        resp.CombinedRarenessScore,
+		XgboostPredictedRarenessScore:                resp.XgboostPredictedRarenessScore,
+		NnPredictedRarenessScore:                     resp.NnPredictedRarenessScore,
 	}, nil
 }
 
@@ -208,7 +234,7 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 		n, err := file.Read(buffer)
 		payloadSize += n
 		if err != nil && err == io.EOF {
-			log.WithContext(ctx).WithField("Filename", file.Name()).Debugf("EOF")
+			log.WithContext(ctx).WithField("Filename", file.Name()).Debug("EOF")
 			lastPiece = true
 			break
 		} else if err != nil {

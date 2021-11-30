@@ -3,7 +3,7 @@ package common
 import "time"
 
 const (
-	defaultConnectToNodeTimeout = time.Second * 5
+	defaultConnectToNodeTimeout = time.Second * 15
 )
 
 // Config contains common configuration of the servcies.

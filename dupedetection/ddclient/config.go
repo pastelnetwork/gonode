@@ -1,6 +1,9 @@
 package ddclient
 
-import "fmt"
+import (
+	"fmt"
+	"path/filepath"
+)
 
 const (
 	errValidationStr = "ddserver client validation failed - missing val"
@@ -23,6 +26,13 @@ func NewConfig() *Config {
 	return &Config{}
 }
 
+// SetWorkDir update working dir
+func (config *Config) SetWorkDir(workDir string) {
+	if !filepath.IsAbs(config.DDFilesDir) {
+		config.DDFilesDir = filepath.Join(workDir, config.DDFilesDir)
+	}
+}
+
 // Validate raptorq configs
 func (config *Config) Validate() error {
 	if config.Host == "" {
@@ -32,7 +42,7 @@ func (config *Config) Validate() error {
 		return fmt.Errorf("%s: %s", errValidationStr, "port")
 	}
 
-	if len(config.DDFilesDir) == 0 {
+	if config.DDFilesDir == "" {
 		return fmt.Errorf("%s: %s", errValidationStr, "dd-temp-file-dir")
 	}
 

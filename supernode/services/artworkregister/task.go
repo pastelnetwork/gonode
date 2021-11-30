@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
+	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -66,7 +67,7 @@ func (task *Task) Run(ctx context.Context) error {
 	defer task.Cancel()
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status.String()).Debugf("States updated")
+		log.WithContext(ctx).WithField("status", status.String()).Debug("States updated")
 	})
 
 	defer task.removeArtifacts()
@@ -81,12 +82,12 @@ func (task *Task) Session(_ context.Context, isPrimary bool) error {
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if isPrimary {
-			log.WithContext(ctx).Debugf("Acts as primary node")
+			log.WithContext(ctx).Debug("Acts as primary node")
 			task.UpdateStatus(StatusPrimaryMode)
 			return nil
 		}
 
-		log.WithContext(ctx).Debugf("Acts as secondary node")
+		log.WithContext(ctx).Debug("Acts as secondary node")
 		task.UpdateStatus(StatusSecondaryMode)
 
 		return nil
@@ -101,7 +102,7 @@ func (task *Task) AcceptedNodes(serverCtx context.Context) (Nodes, error) {
 	}
 
 	<-task.NewAction(func(ctx context.Context) error {
-		log.WithContext(ctx).Debugf("Waiting for supernodes to connect")
+		log.WithContext(ctx).Debug("Waiting for supernodes to connect")
 
 		sub := task.SubscribeStatus()
 		for {
@@ -147,7 +148,7 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 		}
 		task.accepted.Add(node)
 
-		log.WithContext(ctx).WithField("nodeID", nodeID).Debugf("Accept secondary node")
+		log.WithContext(ctx).WithField("nodeID", nodeID).Debug("Accept secondary node")
 
 		if len(task.accepted) >= task.config.NumberConnectedNodes {
 			task.UpdateStatus(StatusConnected)
@@ -292,7 +293,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), task.config.PreburntTxConfirmationTimeout, 15*time.Second)
+		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), 15*time.Second)
 
 		// compare rqsymbols
 		if err = task.compareRQSymbolID(ctx); err != nil {
@@ -309,13 +310,13 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 			return nil
 		}
 
-		log.WithContext(ctx).Debugf("waiting for confimation")
+		log.WithContext(ctx).Debug("waiting for confimation")
 		if err = <-confirmationChn; err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
 			err = errors.Errorf("validate preburn transaction validation :%w", err)
 			return nil
 		}
-		log.WithContext(ctx).Debugf("confirmation done")
+		log.WithContext(ctx).Debug("confirmation done")
 
 		return nil
 	})
@@ -338,7 +339,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 					}
 					return nil
 				case <-task.allSignaturesReceived:
-					log.WithContext(ctx).Debugf("all signature received so start validation")
+					log.WithContext(ctx).Debug("all signature received so start validation")
 
 					if err = task.verifyPeersSingature(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
@@ -386,17 +387,19 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 	return nftRegTxid, err
 }
 
-func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, timeout time.Duration, interval time.Duration) <-chan error {
+func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, interval time.Duration) <-chan error {
 	ch := make(chan error)
-	timeoutCh := make(chan struct{})
-	go func() {
-		time.Sleep(timeout)
-		close(timeoutCh)
-	}()
 
 	go func(ctx context.Context, txid string) {
 		defer close(ch)
-		retry := 0
+		blockTracker := blocktracker.New(task.pastelClient)
+		baseBlkCnt, err := blockTracker.GetBlockCount()
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+			ch <- err
+			return
+		}
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -405,18 +408,29 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 				ch <- ctx.Err()
 				return
 			case <-time.After(interval):
-				log.WithContext(ctx).Debugf("retry: %d", retry)
-				retry++
-				txResult, _ := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
-				if txResult.Confirmations >= minConfirmation {
-					log.WithContext(ctx).Debugf("transaction confirmed")
-					ch <- nil
+				txResult, err := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Warn("GetRawTransactionVerbose1 err")
+				} else {
+					if txResult.Confirmations >= minConfirmation {
+						log.WithContext(ctx).Debug("transaction confirmed")
+						ch <- nil
+						return
+					}
+				}
+
+				currentBlkCnt, err := blockTracker.GetBlockCount()
+				if err != nil {
+					log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+					continue
+				}
+
+				if currentBlkCnt-baseBlkCnt >= int32(minConfirmation)+2 {
+					ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
 					return
 				}
-			case <-timeoutCh:
-				ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
-				return
 			}
+
 		}
 	}(ctx, txid)
 	return ch
@@ -442,7 +456,7 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 }
 
 func (task *Task) verifyPeersSingature(ctx context.Context) error {
-	log.WithContext(ctx).Debugf("all signature received so start validation")
+	log.WithContext(ctx).Debug("all signature received so start validation")
 
 	data, err := pastel.EncodeNFTTicket(task.Ticket)
 	if err != nil {
@@ -459,7 +473,7 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 }
 
 func (task *Task) registerArt(ctx context.Context) (string, error) {
-	log.WithContext(ctx).Debugf("all signature received so start validation")
+	log.WithContext(ctx).Debug("all signature received so start validation")
 
 	req := pastel.RegisterNFTRequest{
 		Ticket: &pastel.NFTTicket{
@@ -590,8 +604,8 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 		OverallAverageRarenessScore: ddResult.PastelRarenessScore,
 		IsLikelyDupe:                ddResult.IsLikelyDupe,
 		IsRareOnInternet:            ddResult.IsRareOnInternet,
-		MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
 		NumberOfPagesOfResults:      ddResult.NumberOfResultPages,
+		MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
 		URLOfFirstMatchInPage:       ddResult.FirstMatchURL,
 		OpenNSFWScore:               ddResult.OpenNSFWScore,
 		ZstdCompressedFingerprint:   nil,
@@ -602,13 +616,38 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 			Porn:    ddResult.AlternateNSFWScores.Porn,
 			Sexy:    ddResult.AlternateNSFWScores.Sexy,
 		},
-		ImageHashes: pastel.ImageHashes{
-			PerceptualHash: ddResult.ImageHashes.PerceptualHash,
-			AverageHash:    ddResult.ImageHashes.AverageHash,
-			DifferenceHash: ddResult.ImageHashes.DifferenceHash,
-			PDQHash:        ddResult.ImageHashes.PDQHash,
-			NeuralHash:     ddResult.ImageHashes.NeuralHash,
+		PerceptualImageHashes: pastel.PerceptualImageHashes{
+			PerceptualHash: ddResult.PerceptualImageHashes.PerceptualHash,
+			AverageHash:    ddResult.PerceptualImageHashes.AverageHash,
+			DifferenceHash: ddResult.PerceptualImageHashes.DifferenceHash,
+			PDQHash:        ddResult.PerceptualImageHashes.PDQHash,
+			NeuralHash:     ddResult.PerceptualImageHashes.NeuralHash,
 		},
+		PerceptualHashOverlapCount:                   ddResult.PerceptualHashOverlapCount,
+		NumberOfFingerprintsRequiringFurtherTesting1: ddResult.NumberOfFingerprintsRequiringFurtherTesting1,
+		NumberOfFingerprintsRequiringFurtherTesting2: ddResult.NumberOfFingerprintsRequiringFurtherTesting2,
+		NumberOfFingerprintsRequiringFurtherTesting3: ddResult.NumberOfFingerprintsRequiringFurtherTesting3,
+		NumberOfFingerprintsRequiringFurtherTesting4: ddResult.NumberOfFingerprintsRequiringFurtherTesting4,
+		NumberOfFingerprintsRequiringFurtherTesting5: ddResult.NumberOfFingerprintsRequiringFurtherTesting5,
+		NumberOfFingerprintsRequiringFurtherTesting6: ddResult.NumberOfFingerprintsRequiringFurtherTesting6,
+		NumberOfFingerprintsOfSuspectedDupes:         ddResult.NumberOfFingerprintsOfSuspectedDupes,
+		PearsonMax:                                   ddResult.PearsonMax,
+		SpearmanMax:                                  ddResult.SpearmanMax,
+		KendallMax:                                   ddResult.KendallMax,
+		HoeffdingMax:                                 ddResult.HoeffdingMax,
+		MutualInformationMax:                         ddResult.MutualInformationMax,
+		HsicMax:                                      ddResult.HsicMax,
+		XgbimportanceMax:                             ddResult.XgbimportanceMax,
+		PearsonTop1BpsPercentile:                     ddResult.PearsonTop1BpsPercentile,
+		SpearmanTop1BpsPercentile:                    ddResult.SpearmanTop1BpsPercentile,
+		KendallTop1BpsPercentile:                     ddResult.KendallTop1BpsPercentile,
+		HoeffdingTop10BpsPercentile:                  ddResult.HoeffdingTop10BpsPercentile,
+		MutualInformationTop100BpsPercentile:         ddResult.MutualInformationTop100BpsPercentile,
+		HsicTop100BpsPercentile:                      ddResult.HsicTop100BpsPercentile,
+		XgbimportanceTop100BpsPercentile:             ddResult.XgbimportanceTop100BpsPercentile,
+		CombinedRarenessScore:                        ddResult.CombinedRarenessScore,
+		XgboostPredictedRarenessScore:                ddResult.XgboostPredictedRarenessScore,
+		NnPredictedRarenessScore:                     ddResult.NnPredictedRarenessScore,
 	}
 	compressedFg, err := zstd.CompressLevel(nil, pastel.Fingerprint(fingerprint).Bytes(), 22)
 	if err != nil {

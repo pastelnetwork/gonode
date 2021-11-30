@@ -61,6 +61,37 @@
     ./supernode --log-level debug
     ```
 
+3. Do some quick debug on supernode's http debug service - default listen on port 9090
+    1. Get stats of p2p
+    ``` shell
+    $ curl -s  -H "Content-Type: application/json" "http://localhost:9090/p2p/stats"
+        # Output : 
+        {"config":{"listen_address":"0.0.0.0","port":6000,"data_dir":"/home/nvnguyen/.pastel/supernode/p2p-localnet-6000"},"dht":{"database":{"dir_size":2056071,"log_size":2050592,"record_count":55},"peers":[],"peers_count":0,"self":{"id":"fc+/CbE/r9YgnCgj/5Iet6Gc6MI=","ip":"0.0.0.0","port":6000}},"disk-info":{"all":250438021120,"used":209287962624,"free":41150058496}}
+    ```
+    2. Store a value to p2p
+    ``` shell
+    # Store string "Hello" - base64 encode is "SGVsbG8=" to p2p
+    $ curl -s -X POST -H "Content-Type: application/json" "http://localhost:9090/p2p" -d '{ "value": "SGVsbG8=" }'
+        # Output : 
+        {"key":"AU3GnD1W1zCxijnQPgNm895LkqwgQpYK8hYvF2WrPPcA"}
+    ```
+    3. Retrieve a key from p2p:
+    ``` shell
+    $curl -s  -H "Content-Type: application/json" "http://localhost:9090/p2p/AU3GnD1W1zCxijnQPgNm895LkqwgQpYK8hYvF2WrPPcA"
+        # Output : 
+        {"key":"AU3GnD1W1zCxijnQPgNm895LkqwgQpYK8hYvF2WrPPcA","value":"SGVsbG8="}
+    ```
+    4. Get list of keys:
+    ``` shell
+    curl -s  -H "Content-Type: application/json" "http://localhost:9090/p2p/get?offset=0&limit=3"
+    # Output :
+    {
+        "keys":["BpY5xbiAu8NTM5voZRWat1is3HJ9zurzE8AFnoTZQbP","9WhodxiYS13tuEQhTEjHL38Y4rJzJHh2BKL4vZk8XTj","BpY5xbiAu8NTM5voZRWat1is3HJ9zurzE8AFnoTZQbP"],
+        "len":3,
+        "limit":3,
+        "offset":0
+    }
+    ```
 
 ### CLI Options
 

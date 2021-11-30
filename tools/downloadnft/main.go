@@ -61,7 +61,7 @@ func main() {
 	//flag.Usage = usage
 	flag.Parse()
 
-	if len(*regNFTTxid) == 0 || len(*pastelID) == 0 || len(*passphrase) == 0 {
+	if *regNFTTxid == "" || *pastelID == "" || *passphrase == "" {
 		usage()
 		return
 	}

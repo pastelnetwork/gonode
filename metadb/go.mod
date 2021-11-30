@@ -17,8 +17,9 @@ require (
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/pastel v0.0.0-20210921141840-854e94914b9b
 	github.com/pastelnetwork/gonode/proto v0.0.0
-	github.com/rqlite/go-sqlite3 v1.20.4
+	github.com/rqlite/go-sqlite3 v1.22.0
 	github.com/stretchr/testify v1.7.0
+	github.com/tj/assert v0.0.3
 	golang.org/x/crypto v0.0.0-20210513164829-c07d793c2f9a // indirect
 	golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -52,7 +53,7 @@ require (
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 )
 
 replace github.com/pastelnetwork/gonode/pastel => ../pastel

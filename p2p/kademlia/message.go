@@ -23,11 +23,13 @@ const (
 )
 
 func init() {
+	gob.Register(&ResponseStatus{})
 	gob.Register(&FindNodeRequest{})
-	gob.Register(&FindValueRequest{})
-	gob.Register(&StoreDataRequest{})
 	gob.Register(&FindNodeResponse{})
+	gob.Register(&FindValueRequest{})
 	gob.Register(&FindValueResponse{})
+	gob.Register(&StoreDataRequest{})
+	gob.Register(&StoreDataResponse{})
 }
 
 // Message structure for kademlia network
@@ -42,9 +44,31 @@ func (m *Message) String() string {
 	return fmt.Sprintf("type: %v, sender: %v, receiver: %v, data type: %T", m.MessageType, m.Sender.String(), m.Receiver.String(), m.Data)
 }
 
+// ResultType specify success of message request
+type ResultType int
+
+const (
+	// ResultOk means request is ok
+	ResultOk ResultType = 0
+	// ResultFailed meas request got failed
+	ResultFailed ResultType = 1
+)
+
+// ResponseStatus defines the result of request
+type ResponseStatus struct {
+	Result ResultType
+	ErrMsg string
+}
+
 // FindNodeRequest defines the request data for find node
 type FindNodeRequest struct {
 	Target []byte
+}
+
+// FindNodeResponse defines the response data for find node
+type FindNodeResponse struct {
+	Status  ResponseStatus
+	Closest []*Node
 }
 
 // FindValueRequest defines the request data for find value
@@ -52,20 +76,21 @@ type FindValueRequest struct {
 	Target []byte
 }
 
+// FindValueResponse defines the response data for find value
+type FindValueResponse struct {
+	Status  ResponseStatus
+	Closest []*Node
+	Value   []byte
+}
+
 // StoreDataRequest defines the request data for store data
 type StoreDataRequest struct {
 	Data []byte
 }
 
-// FindNodeResponse defines the response data for find node
-type FindNodeResponse struct {
-	Closest []*Node
-}
-
-// FindValueResponse defines the response data for find value
-type FindValueResponse struct {
-	Closest []*Node
-	Value   []byte
+// StoreDataResponse defines the response data for store data
+type StoreDataResponse struct {
+	Status ResponseStatus
 }
 
 // encode the message

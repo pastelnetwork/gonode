@@ -41,8 +41,9 @@ func TestMux(t *testing.T) {
 
 		group, _ := errgroup.WithContext(context.Background())
 		for i := uint8(0); i < n; i++ {
-			i := i
-			ln := mux.Listen(byte(i))
+			j := i
+			ln := mux.Listen(byte(j))
+
 			group.Go(func() error {
 				// Wait for a connection for this listener.
 				conn, err := ln.Accept()
@@ -52,7 +53,7 @@ func TestMux(t *testing.T) {
 
 				// If there is no message or the header byte
 				// doesn't match then expect close.
-				if len(msg) == 0 || msg[0] != byte(i) {
+				if len(msg) == 0 || msg[0] != byte(j) {
 					if err == nil || err.Error() != "network connection closed" {
 						return fmt.Errorf("unexpected error: %s", err)
 					}
@@ -194,12 +195,6 @@ func TestTLSMux(t *testing.T) {
 func TestTLSMux_Fail(t *testing.T) {
 	tcpListener := mustTCPListener("127.0.0.1:0")
 	defer tcpListener.Close()
-
-	cert := x509.CertFile("")
-	defer os.Remove(cert)
-	key := x509.KeyFile("")
-	defer os.Remove(key)
-
 	_, err := NewTLSMux(context.TODO(), tcpListener, nil, "xxxx", "yyyy", "")
 	if err == nil {
 		t.Fatalf("created mux unexpectedly with bad resources")

@@ -17,4 +17,4 @@ assignees: ''
 
 **Please include the Status, Nodes, and Expvar output from each node (or at least the Leader!)**
 
-See https://github.com/rqlite/rqlite/blob/master/DOC/DIAGNOSTICS.md
+See https://github.com/pastelnetwork/gonode/metadb/rqlite/blob/master/DOC/DIAGNOSTICS.md

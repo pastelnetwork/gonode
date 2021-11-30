@@ -3,10 +3,10 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/common/net/credentials"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
@@ -72,9 +72,15 @@ func (s *p2p) run(ctx context.Context) error {
 
 	// join the kademlia network if bootstrap nodes is set
 	if err := s.dht.Bootstrap(ctx); err != nil {
+		// stop the node for kademlia network
+		s.dht.Stop(ctx)
+		// close the store of kademlia network
+		s.store.Close(ctx)
 		return errors.Errorf("bootstrap the node: %w", err)
 	}
 	s.running = true
+
+	go s.store.InitCleanup(ctx, 5*time.Minute)
 
 	log.WithContext(ctx).Info("p2p service is started")
 
@@ -113,6 +119,27 @@ func (s *p2p) Retrieve(ctx context.Context, key string) ([]byte, error) {
 	return s.dht.Retrieve(ctx, key)
 }
 
+// Delete delete key in local node
+func (s *p2p) Delete(ctx context.Context, key string) error {
+	ctx = log.ContextWithPrefix(ctx, logPrefix)
+
+	if !s.running {
+		return errors.New("p2p service is not running")
+	}
+
+	return s.dht.Delete(ctx, key)
+}
+
+// Keys return a list of keys with given offset + limit
+func (s *p2p) Keys(ctx context.Context, offset int, limit int) []string {
+	return s.dht.Keys(ctx, offset, limit)
+}
+
+// Cleanup cleans up the files as per discardRatio
+func (s *p2p) Cleanup(_ context.Context, discardRatio float64) error {
+	return s.store.Cleanup(discardRatio)
+}
+
 // Stats return status of p2p
 func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	retStats := map[string]interface{}{}
@@ -143,14 +170,15 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 	s.store = store
 
-	transportCredentials := credentials.NewClientCreds(s.pastelClient, s.secInfo)
-
 	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, s.pastelClient, transportCredentials, &kademlia.Options{
+	dht, err := kademlia.NewDHT(store, s.pastelClient, s.secInfo, &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
+		ID:             []byte(s.config.ID),
+		PeerAuth:       true, // Enable peer authentication
 	})
+
 	if err != nil {
 		return errors.Errorf("new kademlia dht: %w", err)
 	}

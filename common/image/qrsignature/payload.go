@@ -1,9 +1,10 @@
 package qrsignature
 
 import (
-	"encoding/base64"
 	"fmt"
 	"math"
+
+	"github.com/pastelnetwork/gonode/common/b85"
 
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -49,32 +50,41 @@ func (payload *Payload) Decode() error {
 	for _, qrCode := range payload.qrCodes {
 		text, err := qrCode.Decode()
 		if err != nil {
-			return errors.New(err)
+			return fmt.Errorf("qrDecode: %v", err)
 		}
 		data += text
 	}
 
-	raw, err := base64.StdEncoding.DecodeString(data)
+	raw, err := b85.Decode(data)
 	if err != nil {
-		return errors.Errorf("decode: %w", err)
+		return fmt.Errorf("b85Decode: %v", err)
 	}
 
-	raw, err = zstd.Decompress(nil, raw)
-	if err != nil {
-		return errors.Errorf("decompress: %w", err)
+	if !(payload.name == PayloadPostQuantumPubKey || payload.name == PayloadEd448PubKey) {
+		var err error
+		raw, err = zstd.Decompress(nil, raw)
+		if err != nil {
+			return errors.Errorf("decompress: %w", err)
+		}
 	}
 	payload.raw = raw
+
 	return nil
 }
 
 // Encode splits raw data into chunks and encodes them to QR code representation.
 func (payload *Payload) Encode() error {
-	raw, err := zstd.CompressLevel(nil, payload.raw, 22)
-	if err != nil {
-		return errors.Errorf("compress: %w", err)
+	raw := payload.raw
+	if !(payload.name == PayloadPostQuantumPubKey || payload.name == PayloadEd448PubKey) {
+		var err error
+		raw, err = zstd.CompressLevel(nil, payload.raw, 22)
+		if err != nil {
+			return errors.Errorf("compress: %w", err)
+		}
 	}
 
-	data := base64.StdEncoding.EncodeToString(raw)
+	data := b85.Encode(raw)
+
 	size := int(payloadQRCapacity)
 	total := int(math.Ceil(float64(len(data)) / float64(size)))
 

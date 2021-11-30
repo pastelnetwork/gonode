@@ -39,7 +39,7 @@ func (service *processUserdata) Session(ctx context.Context, isPrimary bool) err
 	req := &pb.MDLSessionRequest{
 		IsPrimary: isPrimary,
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
+	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
 	if err := stream.Send(req); err != nil {
 		return errors.Errorf("send Session request: %w", err)
@@ -56,7 +56,7 @@ func (service *processUserdata) Session(ctx context.Context, isPrimary bool) err
 		}
 		return errors.Errorf("receive Session response: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("Session response")
 	service.sessID = resp.SessID
 
 	go func() {
@@ -77,13 +77,13 @@ func (service *processUserdata) AcceptedNodes(ctx context.Context) (pastelIDs []
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.MDLAcceptedNodesRequest{}
-	log.WithContext(ctx).WithField("req", req).Debugf("AcceptedNodes request")
+	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
 	if err != nil {
 		return nil, errors.Errorf("request to accepted secondary nodes: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("AcceptedNodes response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("AcceptedNodes response")
 
 	var ids []string
 	for _, peer := range resp.Peers {
@@ -101,13 +101,13 @@ func (service *processUserdata) ConnectTo(ctx context.Context, nodeID, sessID st
 		NodeID: nodeID,
 		SessID: sessID,
 	}
-	log.WithContext(ctx).WithField("req", req).Debugf("ConnectTo request")
+	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
 	resp, err := service.client.ConnectTo(ctx, req)
 	if err != nil {
 		return errors.Errorf("request to connect to primary node: %w", err)
 	}
-	log.WithContext(ctx).WithField("resp", resp).Debugf("ConnectTo response")
+	log.WithContext(ctx).WithField("resp", resp).Debug("ConnectTo response")
 
 	return nil
 }

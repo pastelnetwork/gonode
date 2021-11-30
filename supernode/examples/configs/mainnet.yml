@@ -35,3 +35,6 @@ dd-server:
   host: "localhost"
   port: 50052
   dd-temp-file-dir: "dd-server"
+
+debug-service:
+  http-port: 9090

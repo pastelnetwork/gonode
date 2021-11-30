@@ -16,11 +16,8 @@ const (
 
 	defaultThumbnailSize = 224
 
-	defaultRegArtTxMinConfirmations = 10
-	defaultRegArtTxTimeout          = 26 * time.Minute
-
+	defaultRegArtTxMinConfirmations = 12
 	defaultRegActTxMinConfirmations = 5
-	defaultRegActTxTimeout          = 13 * time.Minute
 )
 
 // Config contains settings of the registering artwork.
@@ -38,11 +35,8 @@ type Config struct {
 	// BurnAddress
 	BurnAddress string `mapstructure:"-" json:"burn_address,omitempty"`
 
-	RegArtTxMinConfirmations int           `mapstructure:"-" json:"reg_art_tx_min_confirmations,omitempty"`
-	RegArtTxTimeout          time.Duration `mapstructure:"-" json:"reg_art_tx_timeout,omitempty"`
-
-	RegActTxMinConfirmations int           `mapstructure:"-" json:"reg_act_tx_min_confirmations,omitempty"`
-	RegActTxTimeout          time.Duration `mapstructure:"-" json:"reg_act_tx_timeout,omitempty"`
+	RegArtTxMinConfirmations int `mapstructure:"-" json:"reg_art_tx_min_confirmations,omitempty"`
+	RegActTxMinConfirmations int `mapstructure:"-" json:"reg_act_tx_min_confirmations,omitempty"`
 
 	// internal settings
 	connectToNextNodeDelay time.Duration
@@ -58,9 +52,7 @@ func NewConfig() *Config {
 		NumberSuperNodes:         defaultNumberSuperNodes,
 		NumberRQIDSFiles:         defaultNumberRQIDSFiles,
 		RegArtTxMinConfirmations: defaultRegArtTxMinConfirmations,
-		RegArtTxTimeout:          defaultRegArtTxTimeout,
 		RegActTxMinConfirmations: defaultRegActTxMinConfirmations,
-		RegActTxTimeout:          defaultRegActTxTimeout,
 		connectToNextNodeDelay:   defaultConnectToNextNodeDelay,
 		acceptNodesTimeout:       defaultAcceptNodesTimeout,
 		thumbnailSize:            defaultThumbnailSize,

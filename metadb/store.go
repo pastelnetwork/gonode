@@ -77,7 +77,7 @@ func (s *service) Write(_ context.Context, statement string) (*WriteResult, erro
 		Error:        firsts.Error,
 		Timing:       firsts.Time,
 		RowsAffected: firsts.RowsAffected,
-		LastInsertID: firsts.LastInsertID,
+		LastInsertID: firsts.LastInsertId,
 	}, nil
 }
 
@@ -123,10 +123,37 @@ func (s *service) Query(_ context.Context, statement string, level string) (*Que
 	}
 	first := rows[0]
 
+	vals := [][]interface{}{}
+	for _, v := range first.Values {
+		params := make([]interface{}, len(v.Parameters))
+
+		for j, k := range v.Parameters {
+			switch w := k.GetValue().(type) {
+			case *command.Parameter_I:
+				params[j] = w.I
+			case *command.Parameter_D:
+				params[j] = w.D
+			case *command.Parameter_B:
+				params[j] = w.B
+			case *command.Parameter_Y:
+				params[j] = w.Y
+			case *command.Parameter_S:
+				params[j] = w.S
+			case nil:
+				params[j] = nil
+			default:
+				return nil, errors.Errorf("query: unsupported type: %w", w)
+			}
+
+		}
+
+		vals = append(vals, params)
+	}
+
 	return &QueryResult{
 		columns:   first.Columns,
 		types:     first.Types,
-		values:    first.Values,
+		values:    vals,
 		rowNumber: -1,
 		Timing:    first.Time,
 	}, nil

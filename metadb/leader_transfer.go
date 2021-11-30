@@ -91,24 +91,32 @@ func (s *service) leadershipTransfer(ctx context.Context, interval time.Duration
 			}
 			log.WithContext(ctx).Infof("leadership transfer: transferring to: %s", address)
 
-			// transfer leadership to the next leader
-			if err := s.db.TransferLeadership(id, address); err != nil {
-				if errors.Is(err, store.ErrNotLeader) {
-					log.WithContext(ctx).Warn("leadershipTransfer called by non-leader node")
-					return
-				}
+			_ = s.transferLeadership(ctx, count, id, address)
 
-				log.WithContext(ctx).WithError(err).Error("leadershipTransfer - failed to transfer Leadership")
-			} else {
-				log.WithContext(ctx).WithField("next-leader", address).
-					Info("leadership transfer: leadership transfer successful.")
-
-				// we only want to update the count if leadership was transferred successfully
-				// otherwise it will wait again for the block interval to pass while still being leader
-				s.currentBlockCount = count
-			}
 		}
 	}
+}
+
+func (s *service) transferLeadership(ctx context.Context, blockcount int32, id, address string) error {
+	// transfer leadership to the next leader
+	if err := s.db.TransferLeadership(id, address); err != nil {
+		if errors.Is(err, store.ErrNotLeader) {
+			log.WithContext(ctx).Warn("leadershipTransfer called by non-leader node")
+			return errors.New(store.ErrNotLeader)
+		}
+
+		log.WithContext(ctx).WithError(err).Error("leadershipTransfer - failed to transfer Leadership")
+		return err
+	}
+
+	log.WithContext(ctx).WithField("next-leader", address).
+		Info("leadership transfer: leadership transfer successful.")
+
+	// we only want to update the count if leadership was transferred successfully
+	// otherwise it will wait again for the block interval to pass while still being leader
+	s.currentBlockCount = blockcount
+
+	return nil
 }
 
 func (s *service) getNextLeaderAddressAndID(ctx context.Context, nodes pastel.MasterNodes) (nodeID string, nodeAddress string, err error) {

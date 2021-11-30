@@ -10,6 +10,7 @@ import (
 
 	"github.com/DataDog/zstd"
 	"github.com/btcsuite/btcutil/base58"
+	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/image/qrsignature"
@@ -71,11 +72,11 @@ func (task *Task) Run(ctx context.Context) error {
 	ctx = log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, task.ID()))
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status).Debugf("States updated")
+		log.WithContext(ctx).WithField("status", status).Debug("States updated")
 	})
 
-	log.WithContext(ctx).Debugf("Start task")
-	defer log.WithContext(ctx).Debugf("End task")
+	log.WithContext(ctx).Debug("Start task")
+	defer log.WithContext(ctx).Debug("End task")
 
 	defer task.removeArtifacts()
 	if err := task.run(ctx); err != nil {
@@ -158,7 +159,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("pre-burnt ten percent of registration fee: %w", err)
 	}
 
-	log.WithContext(ctx).Debugf("close connections to supernodes")
+	log.WithContext(ctx).Debug("close connections to supernodes")
 	close(nodesDone)
 	for i := range task.nodes {
 		if err := task.nodes[i].Connection.Close(); err != nil {
@@ -171,7 +172,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// new context because the old context already cancelled
 	newCtx := context.Background()
-	if err := task.waitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), task.config.RegArtTxTimeout, 15*time.Second); err != nil {
+	if err := task.waitTxidValid(newCtx, task.regNFTTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 
@@ -183,9 +184,9 @@ func (task *Task) run(ctx context.Context) error {
 	log.Debugf("reg-act-txid: %s", actTxid)
 
 	// Wait until actTxid is valid
-	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), task.config.RegActTxTimeout, 15*time.Second)
+	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
 	if err != nil {
-		return errors.Errorf("reg-act ticket valid: %w", err)
+		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
 	log.Debugf("reg-act-tixd is confirmed")
 
@@ -213,16 +214,14 @@ func (task *Task) checkCurrentBalance(ctx context.Context, registrationFee float
 	return nil
 }
 
-func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, timeout time.Duration, interval time.Duration) error {
-	log.WithContext(ctx).Debugf("Need %d confirmation for txid %s, timeout %v", expectedConfirms, txID, timeout)
-
-	checkTimeout := func(checked chan<- struct{}) {
-		time.Sleep(timeout)
-		close(checked)
+func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, interval time.Duration) error {
+	log.WithContext(ctx).Debugf("Need %d confirmation for txid %s", expectedConfirms, txID)
+	blockTracker := blocktracker.New(task.pastelClient)
+	baseBlkCnt, err := blockTracker.GetBlockCount()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+		return err
 	}
-
-	timeoutCh := make(chan struct{})
-	go checkTimeout(timeoutCh)
 
 	for {
 		select {
@@ -234,7 +233,6 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 				defer cancel()
 
 				result, err := task.pastelClient.GetRawTransactionVerbose1(subCtx, txID)
-				log.WithContext(ctx).Debugf("getrawtransaction result: %s %v", txID, result)
 				if err != nil {
 					return errors.Errorf("get transaction: %w", err)
 				}
@@ -248,39 +246,56 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 
 			err := checkConfirms()
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("check confirmations failed")
+				log.WithContext(ctx).WithError(err).Warn("check confirmations failed")
 			} else {
 				return nil
 			}
-		case <-timeoutCh:
-			return errors.Errorf("timeout")
+
+			currentBlkCnt, err := blockTracker.GetBlockCount()
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Warn("failed to get block count")
+				continue
+			}
+
+			if currentBlkCnt-baseBlkCnt >= int32(expectedConfirms)+2 {
+				return errors.Errorf("timeout when wating for confirmation of transaction %s", txID)
+			}
 		}
 	}
 }
 
 func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img *artwork.File) error {
 	// Sign fingerprint
-	ed448PubKey := []byte(task.Request.ArtistPastelID)
+	ed448PubKey, err := getPubKey(task.Request.ArtistPastelID)
+	if err != nil {
+		return fmt.Errorf("encodeFingerprint: %v", err)
+	}
+
 	ed448Signature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign fingerprint: %w", err)
 	}
 
-	// TODO: Should be replaced with real data from the Pastel API.
 	ticket, err := task.pastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
 	if err != nil {
 		return errors.Errorf("find register ticket of artist pastel id(%s):%w", task.Request.ArtistPastelID, err)
 	}
+
 	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmLegRoast)
 	if err != nil {
 		return errors.Errorf("sign fingerprint with legroats: %w", err)
+	}
+
+	pqPubKey, err := getPubKey(ticket.PqKey)
+	if err != nil {
+		return fmt.Errorf("encodeFingerprint: %v", err)
 	}
 
 	// Encode data to the image.
 	encSig := qrsignature.New(
 		qrsignature.Fingerprint(fingerprint),
 		qrsignature.PostQuantumSignature(pqSignature),
-		qrsignature.PostQuantumPubKey([]byte(ticket.Signature)),
+		qrsignature.PostQuantumPubKey(pqPubKey),
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
@@ -289,29 +304,6 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	}
 	task.fingerprintSignature = ed448Signature
 
-	// TODO: check with the change in legroast
-	// Decode data from the image, to make sure their integrity.
-	// decSig := qrsignature.New()
-	// copyImage, _ := img.Copy()
-	// if err := copyImage.Decode(decSig); err != nil {
-	// 	return err
-	// }
-
-	// if !bytes.Equal(fingerprint, decSig.Fingerprint()) {
-	// 	return errors.Errorf("fingerprints do not match, original len:%d, decoded len:%d\n", len(fingerprint), len(decSig.Fingerprint()))
-	// }
-	// if !bytes.Equal(pqSignature, decSig.PostQuantumSignature()) {
-	// 	return errors.Errorf("post quantum signatures do not match, original len:%d, decoded len:%d\n", len(pqSignature), len(decSig.PostQuantumSignature()))
-	// }
-	// if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
-	// 	return errors.Errorf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
-	// }
-	// if !bytes.Equal(ed448Signature, decSig.Ed448Signature()) {
-	// 	return errors.Errorf("ed448 signatures do not match, original len:%d, decoded len:%d\n", len(ed448Signature), len(decSig.Ed448Signature()))
-	// }
-	// if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
-	// 	return errors.Errorf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
-	// }
 	return nil
 }
 
@@ -418,6 +410,17 @@ func (task *Task) pastelTopNodes(ctx context.Context) (node.List, error) {
 	}
 	for _, mn := range mns {
 		if mn.Fee > task.Request.MaximumFee {
+			continue
+		}
+
+		if mn.ExtKey == "" || mn.ExtAddress == "" {
+			continue
+		}
+
+		// Ensures that the PastelId(mn.ExtKey) of MN node is registered
+		_, err = task.pastelClient.FindTicketByID(ctx, mn.ExtKey)
+		if err != nil {
+			log.WithContext(ctx).WithField("mn", mn).Warn("FindTicketByID() failed")
 			continue
 		}
 		nodes = append(nodes, node.NewNode(task.Service.nodeClient, mn.ExtAddress, mn.ExtKey))
@@ -604,12 +607,12 @@ func (task *Task) createArtTicket(_ context.Context) error {
 				Porn:    task.fingerprintAndScores.AlternativeNSFWScore.Porn,
 				Sexy:    task.fingerprintAndScores.AlternativeNSFWScore.Sexy,
 			},
-			ImageHashes: pastel.ImageHashes{
-				PerceptualHash: task.fingerprintAndScores.ImageHashes.PerceptualHash,
-				AverageHash:    task.fingerprintAndScores.ImageHashes.AverageHash,
-				DifferenceHash: task.fingerprintAndScores.ImageHashes.DifferenceHash,
-				PDQHash:        task.fingerprintAndScores.ImageHashes.PDQHash,
-				NeuralHash:     task.fingerprintAndScores.ImageHashes.NeuralHash,
+			PerceptualImageHashes: pastel.PerceptualImageHashes{
+				PerceptualHash: task.fingerprintAndScores.PerceptualImageHashes.PerceptualHash,
+				AverageHash:    task.fingerprintAndScores.PerceptualImageHashes.AverageHash,
+				DifferenceHash: task.fingerprintAndScores.PerceptualImageHashes.DifferenceHash,
+				PDQHash:        task.fingerprintAndScores.PerceptualImageHashes.PDQHash,
+				NeuralHash:     task.fingerprintAndScores.PerceptualImageHashes.NeuralHash,
 			},
 			IsRareOnInternet: task.fingerprintAndScores.IsRareOnInternet,
 			IsLikelyDupe:     task.fingerprintAndScores.IsLikelyDupe,
@@ -688,7 +691,7 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 				return err
 			}
 			errs = errors.Append(errs, err)
-			log.WithContext(ctx).WithError(err).Warnf("Could not create a mesh of the nodes")
+			log.WithContext(ctx).WithError(err).Warn("Could not create a mesh of the nodes")
 			continue
 		}
 		break
@@ -712,7 +715,7 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 }
 
 func (task *Task) probeImage(ctx context.Context) error {
-	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debugf("probe image")
+	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debug("probe image")
 
 	// Send image to supernodes for probing.
 	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
@@ -749,7 +752,7 @@ func (task *Task) uploadImage(ctx context.Context) error {
 		return errors.Errorf("copy image to encode: %w", err)
 	}
 
-	log.WithContext(ctx).WithField("FileName", img1.Name()).Debugf("final image")
+	log.WithContext(ctx).WithField("FileName", img1.Name()).Debug("final image")
 	if err := task.encodeFingerprint(ctx, task.fingerprint, img1); err != nil {
 		return errors.Errorf("encode image with fingerprint: %w", err)
 	}

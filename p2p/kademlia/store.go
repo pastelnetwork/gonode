@@ -16,8 +16,8 @@ type Store interface {
 	// Delete a key/value pair from the store
 	Delete(ctx context.Context, key []byte)
 
-	// Keys returns all the keys from the store
-	Keys(ctx context.Context) [][]byte
+	// Keys returns the keys from the store with given offset + limit
+	Keys(ctx context.Context, offset int, limit int) [][]byte
 
 	// KeysForReplication returns the keys of all data to be replicated across the network
 	KeysForReplication(ctx context.Context) [][]byte
@@ -27,4 +27,10 @@ type Store interface {
 
 	// Close the store
 	Close(ctx context.Context)
+
+	// InitCleanup initiates grabage cleanup scheduler
+	InitCleanup(ctx context.Context, cleanupInterval time.Duration)
+
+	// Cleanup runs cleanup function on badger db
+	Cleanup(discardRatio float64) error
 }

@@ -23,7 +23,7 @@ func main() {
 	)
 	flag.Parse()
 
-	if len(*ip) == 0 || len(*port) == 0 {
+	if *ip == "" || *port == "" {
 		flag.PrintDefaults()
 		return
 	}

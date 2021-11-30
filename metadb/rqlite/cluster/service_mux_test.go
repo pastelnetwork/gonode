@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/pastelnetwork/gonode/metadb/rqlite/tcp"
 	"github.com/pastelnetwork/gonode/metadb/rqlite/testdata/x509"
@@ -16,7 +17,7 @@ func Test_NewServiceSetGetNodeAPIAddrMuxed(t *testing.T) {
 	go mux.Serve()
 	tn := mux.Listen(1) // Could be any byte value.
 
-	s := New(context.TODO(), tn)
+	s := New(context.TODO(), tn, mustNewMockDatabase())
 	if s == nil {
 		t.Fatalf("failed to create cluster service")
 	}
@@ -27,7 +28,9 @@ func Test_NewServiceSetGetNodeAPIAddrMuxed(t *testing.T) {
 
 	s.SetAPIAddr("foo")
 
-	addr, err := s.GetNodeAPIAddr(s.Addr())
+	c := NewClient(mustNewDialer(1, false, false))
+
+	addr, err := c.GetNodeAPIAddr(s.Addr(), 5*time.Second)
 	if err != nil {
 		t.Fatalf("failed to get node API address: %s", err)
 	}
@@ -48,7 +51,7 @@ func Test_NewServiceSetGetNodeAPIAddrMuxedTLS(t *testing.T) {
 	go mux.Serve()
 	tn := mux.Listen(1) // Could be any byte value.
 
-	s := New(context.TODO(), tn)
+	s := New(context.TODO(), tn, mustNewMockDatabase())
 	if s == nil {
 		t.Fatalf("failed to create cluster service")
 	}
@@ -59,7 +62,9 @@ func Test_NewServiceSetGetNodeAPIAddrMuxedTLS(t *testing.T) {
 
 	s.SetAPIAddr("foo")
 
-	addr, err := s.GetNodeAPIAddr(s.Addr())
+	c := NewClient(mustNewDialer(1, true, true))
+
+	addr, err := c.GetNodeAPIAddr(s.Addr(), 5*time.Second)
 	if err != nil {
 		t.Fatalf("failed to get node API address: %s", err)
 	}
@@ -107,4 +112,8 @@ func mustNewTLSMux(ctx context.Context) (net.Listener, *tcp.Mux) {
 	mux.InsecureSkipVerify = true
 
 	return ln, mux
+}
+
+func mustNewDialer(header byte, remoteEncrypted, skipVerify bool) *tcp.Dialer {
+	return tcp.NewDialer(header, remoteEncrypted, skipVerify)
 }

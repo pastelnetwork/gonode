@@ -89,7 +89,7 @@ func (s *service) startNodeMux(ctx context.Context, ln net.Listener, raftAdvAddr
 
 // start the cluster server
 func (s *service) startClusterService(ctx context.Context, tn cluster.Transport, httpAdvAddr string) (*cluster.Service, error) {
-	c := cluster.New(ctx, tn)
+	c := cluster.New(ctx, tn, s.db)
 
 	// set the api address
 	c.SetAPIAddr(httpAdvAddr)
@@ -104,7 +104,7 @@ func (s *service) startClusterService(ctx context.Context, tn cluster.Transport,
 // create and open the store of rqlite cluster
 func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer, externalAddress string) (*store.Store, error) {
 	// create and open the store, which is on disk
-	dbConf := store.NewDBConfig("", false)
+	dbConf := store.NewDBConfig(false)
 	db := store.New(ctx, raftTn, &store.Config{
 		DBConf: dbConf,
 		Dir:    s.config.DataDir,

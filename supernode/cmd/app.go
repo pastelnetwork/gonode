@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -25,6 +24,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	rqgrpc "github.com/pastelnetwork/gonode/raptorq/node/grpc"
 	"github.com/pastelnetwork/gonode/supernode/configs"
+	"github.com/pastelnetwork/gonode/supernode/debug"
 	healthcheck_lib "github.com/pastelnetwork/gonode/supernode/healthcheck"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server"
@@ -169,6 +169,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	// p2p service (currently using kademlia)
 	config.P2P.SetWorkDir(config.WorkDir)
+	config.P2P.ID = config.PastelID
 	p2p := p2p.New(config.P2P, pastelClient, secInfo)
 
 	// new metadb service
@@ -188,13 +189,10 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		config.ArtworkRegister.PreburntTxMinConfirmations = config.PreburntTxMinConfirmations
 	}
 
-	if config.PreburntTxConfirmationTimeout > 0 {
-		config.ArtworkRegister.PreburntTxConfirmationTimeout = time.Duration(config.PreburntTxConfirmationTimeout * int(time.Minute))
-	}
-
 	rqClient := rqgrpc.NewClient()
 
 	// prepare for dd client
+	config.DDServer.SetWorkDir(config.WorkDir)
 	ddClient := ddclient.NewDDServerClient(config.DDServer)
 	if err := os.MkdirAll(config.DDServer.DDFilesDir, os.ModePerm); err != nil {
 		return errors.Errorf("could not create dd-temp-file-dir %q, %w", config.DDServer.DDFilesDir, err)
@@ -227,6 +225,9 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	statsMngr.Add("pasteld", healthcheck_lib.NewPastelStatsClient(pastelClient))
 	statsMngr.Add("ddscan", ddScan)
 
+	// Debug service
+	debugSerivce := debug.NewService(config.DebugService, p2p)
+
 	// server
 	grpc := server.New(config.Server,
 		"service",
@@ -242,5 +243,5 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, ddScan, database, userdataProcess, statsMngr)
+	return runServices(ctx, metadb, grpc, p2p, artworkRegister, artworkDownload, ddScan, database, userdataProcess, statsMngr, debugSerivce)
 }
