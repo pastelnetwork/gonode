@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -91,6 +92,7 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 		group.Go(func() (err error) {
 			res, err := node.ProbeImage(ctx, file)
 			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", node).Error("probe image failed")
 				return errors.Errorf("node %s: %w", node.String(), err)
 			}
 			node.fingerprintAndScores = res
@@ -124,6 +126,7 @@ func (nodes *List) UploadImageWithThumbnail(ctx context.Context, file *artwork.F
 		group.Go(func() error {
 			hash1, hash2, hash3, err := node.UploadImageWithThumbnail(ctx, file, thumbnail)
 			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", node).Error("upload image with thumbnail failed")
 				return err
 			}
 			node.previewHash, node.mediumThumbnailHash, node.smallThumbnailHash = hash1, hash2, hash3
@@ -161,6 +164,7 @@ func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signat
 		group.Go(func() error {
 			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, rqids, encoderParams)
 			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", node).Error("send signed ticket failed")
 				return err
 			}
 			node.registrationFee = fee
@@ -189,6 +193,7 @@ func (nodes *List) SendPreBurntFeeTxid(ctx context.Context, txid string) error {
 		group.Go(func() error {
 			ticketTxid, err := node.SendPreBurntFeeTxid(ctx, txid)
 			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", node).Error("send pre-burnt fee txid failed")
 				return err
 			}
 			if !node.IsPrimary() && ticketTxid != "" {
