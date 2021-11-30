@@ -48,9 +48,9 @@ type domainActor struct {
 func (d *domainActor) Receive(context actor.Context) {
 	switch msg := context.Message().(type) {
 	case *sendVerifyStorageChallengeMsg:
-		d.OnSendVerifyStorageChallengeMessage(context, msg)
+		d.OnSendVerifyStorageChallengeMessage(msg)
 	case *sendProcessStorageChallengeMsg:
-		d.OnSendProcessStorageChallengeMessage(context, msg)
+		d.OnSendProcessStorageChallengeMessage(msg)
 	default:
 		log.WithField("actor", "domain actor").Debug("Unhandled action", msg)
 	}
@@ -63,7 +63,7 @@ func newDomainActor(conn node.Client) actor.Actor {
 }
 
 // OnSendVerifyStorageChallengeMessage handle event sending verity storage challenge message
-func (d *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg *sendVerifyStorageChallengeMsg) {
+func (d *domainActor) OnSendVerifyStorageChallengeMessage(msg *sendVerifyStorageChallengeMsg) {
 	for _, verifyingMasternodePID := range msg.VerifierMasternodesClientPIDs {
 		log.Debug(verifyingMasternodePID.String())
 		storageChallengeReq := &dto.VerifyStorageChallengeRequest{
@@ -88,19 +88,17 @@ func (d *domainActor) OnSendVerifyStorageChallengeMessage(ctx actor.Context, msg
 			},
 		}
 
-		// TODO: replace lines below with actor context
-		bgContext := context.Background()
-		conn, err := d.conn.Connect(bgContext, verifyingMasternodePID.GetAddress())
+		conn, err := d.conn.Connect(msg.Context, verifyingMasternodePID.GetAddress())
 		if err != nil {
 			return
 		}
-		conn.StorageChallenge().VerifyStorageChallenge(bgContext, storageChallengeReq)
+		conn.StorageChallenge().VerifyStorageChallenge(msg.Context, storageChallengeReq)
 		// ctx.Send(verifyingMasternodePID, storageChallengeReq)
 	}
 }
 
 // OnSendProcessStorageChallengeMessage handle event sending processing stotage challenge message
-func (d *domainActor) OnSendProcessStorageChallengeMessage(ctx actor.Context, msg *sendProcessStorageChallengeMsg) {
+func (d *domainActor) OnSendProcessStorageChallengeMessage(msg *sendProcessStorageChallengeMsg) {
 	log.Debug(msg.ProcessingMasternodeClientPID.String())
 	storageChallengeReq := &dto.ProcessStorageChallengeRequest{
 		Data: &dto.StorageChallengeData{
@@ -123,12 +121,10 @@ func (d *domainActor) OnSendProcessStorageChallengeMessage(ctx actor.Context, ms
 			ChallengeId:               msg.ChallengeID,
 		},
 	}
-	// TODO: replace lines below with actor context
-	bgContext := context.Background()
-	conn, err := d.conn.Connect(bgContext, msg.ProcessingMasternodeClientPID.GetAddress())
+	conn, err := d.conn.Connect(msg.Context, msg.ProcessingMasternodeClientPID.GetAddress())
 	if err != nil {
 		return
 	}
-	conn.StorageChallenge().ProcessStorageChallenge(bgContext, storageChallengeReq)
+	conn.StorageChallenge().ProcessStorageChallenge(msg.Context, storageChallengeReq)
 	// ctx.Send(msg.ProcessingMasterNodesClientPID, storageChallengeReq)
 }

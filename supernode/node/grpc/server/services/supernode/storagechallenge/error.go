@@ -17,7 +17,7 @@ const (
 type keys []string
 
 func (ks keys) String() string {
-	var ii []string = make([]string, len(ks))
+	var ii = make([]string, len(ks))
 	for i, k := range ks {
 		ii[i] = strings.ReplaceAll(k, " ", "_")
 	}
