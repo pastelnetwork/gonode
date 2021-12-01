@@ -124,7 +124,7 @@ func NewStore() *Store {
 // InitCleanup is suppossed to initiate grabage cleanup
 // not applicable on this test implementation
 func (s *Store) InitCleanup(ctx context.Context, _ time.Duration) {
-	log.WithContext(ctx).Error("s.InitCleanup not implemented")
+	log.P2P().WithContext(ctx).Error("s.InitCleanup not implemented")
 }
 
 // Cleanup is supposed to cleanup log files in badger

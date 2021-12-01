@@ -148,7 +148,7 @@ func (s *DHT) Start(ctx context.Context) error {
 				// refresh the bucket by iterative find node
 				id := s.ht.randomIDFromBucket(K)
 				if _, err := s.iterate(ctx, IterateFindNode, id, nil); err != nil {
-					log.WithContext(ctx).WithError(err).Error("iterate find node failed")
+					log.P2P().WithContext(ctx).WithError(err).Error("iterate find node failed")
 				}
 			}
 		}
@@ -158,13 +158,13 @@ func (s *DHT) Start(ctx context.Context) error {
 		for _, key := range replicationKeys {
 			value, err := s.store.Retrieve(ctx, key)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("store retrieve failed")
+				log.P2P().WithContext(ctx).WithError(err).Error("store retrieve failed")
 				continue
 			}
 			if value != nil {
 				// iteratve store the value
 				if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
-					log.WithContext(ctx).WithError(err).Error("iterate store data failed")
+					log.P2P().WithContext(ctx).WithError(err).Error("iterate store data failed")
 				}
 			}
 		}
@@ -230,7 +230,7 @@ func (s *DHT) Retrieve(ctx context.Context, key string) ([]byte, error) {
 		return value, nil
 	}
 
-	log.WithContext(ctx).WithError(err).WithField("key", key).Debug("local store retrieve failed, trying to retrieve from peers...")
+	log.P2P().WithContext(ctx).WithError(err).WithField("key", key).Debug("local store retrieve failed, trying to retrieve from peers...")
 
 	// if not found locally, iterative find value from kademlia network
 	peerValue, err := s.iterate(ctx, IterateFindValue, decoded, nil)
@@ -322,7 +322,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 			// update the running goroutines
 			number++
 
-			log.WithContext(ctx).Debugf("start work %v for node: %s", iterativeType, node.String())
+			log.P2P().WithContext(ctx).Debugf("start work %v for node: %s", iterativeType, node.String())
 
 			wg.Add(1)
 			// send and recive message concurrently
@@ -345,7 +345,7 @@ func (s *DHT) doMultiWorkers(ctx context.Context, iterativeType int, target []by
 				// send the request and receive the response
 				response, err := s.network.Call(ctx, request)
 				if err != nil {
-					log.WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
+					log.P2P().WithContext(ctx).WithError(err).Errorf("network call request %s failed", request.String())
 					// node is unreachable, remove the node
 					removedNodes = append(removedNodes, receiver)
 					return
@@ -382,14 +382,14 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 	if nl.Len() == 0 {
 		return nil, nil
 	}
-	log.WithContext(ctx).Infof("type: %v, target: %v, nodes: %v", iterativeType, base58.Encode(target), nl.String())
+	log.P2P().WithContext(ctx).Infof("type: %v, target: %v, nodes: %v", iterativeType, base58.Encode(target), nl.String())
 
 	// keep the closer node
 	closestNode := nl.Nodes[0]
 	// if it's find node, reset the refresh timer
 	if iterativeType == IterateFindNode {
 		bucket := s.ht.bucketIndex(target, s.ht.self.ID)
-		log.WithContext(ctx).Debugf("bucket for target: %v", base58.Encode(target))
+		log.P2P().WithContext(ctx).Debugf("bucket for target: %v", base58.Encode(target))
 
 		// reset the refresh time for the bucket
 		s.ht.resetRefreshTime(bucket)
@@ -408,7 +408,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		responses := s.doMultiWorkers(ctx, iterativeType, target, nl, contacted, searchRest)
 		// handle the response one by one
 		for response := range responses {
-			log.WithContext(ctx).Debugf("response: %v", response.String())
+			log.P2P().WithContext(ctx).Debugf("response: %v", response.String())
 			// add the target node to the bucket
 			s.addNode(ctx, response.Sender)
 
@@ -441,7 +441,7 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 		// sort the nodes for node list
 		sort.Sort(nl)
 
-		log.WithContext(ctx).Debugf("id: %v, iterate %d, sorted nodes: %v", base58.Encode(s.ht.self.ID), iterativeType, nl.String())
+		log.P2P().WithContext(ctx).Debugf("id: %v, iterate %d, sorted nodes: %v", base58.Encode(s.ht.self.ID), iterativeType, nl.String())
 
 		// if closestNode is unchanged
 		if bytes.Equal(nl.Nodes[0].ID, closestNode.ID) || searchRest {
@@ -467,9 +467,9 @@ func (s *DHT) iterate(ctx context.Context, iterativeType int, target []byte, dat
 					response, err := s.sendStoreData(ctx, n, request)
 					if err != nil {
 						// <TODO> need to remove the node ?
-						log.WithContext(ctx).WithField("node", n).WithError(err).Error("send store data failed")
+						log.P2P().WithContext(ctx).WithField("node", n).WithError(err).Error("send store data failed")
 					} else if response.Status.Result != ResultOk {
-						log.WithContext(ctx).WithField("node", n).WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
+						log.P2P().WithContext(ctx).WithField("node", n).WithError(errors.New(response.Status.ErrMsg)).Error("reply store data failed")
 					}
 				}
 				return nil, nil
@@ -503,7 +503,7 @@ func (s *DHT) sendStoreData(_ context.Context, n *Node, request *StoreDataReques
 func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 	// ensure this is not itself address
 	if bytes.Equal(node.ID, s.ht.self.ID) {
-		log.WithContext(ctx).Error("trying to add itself")
+		log.P2P().WithContext(ctx).Error("trying to add itself")
 		return nil
 	}
 
@@ -540,10 +540,10 @@ func (s *DHT) addNode(ctx context.Context, node *Node) *Node {
 			// need to reset the route table with the bucket
 			s.ht.routeTable[index] = bucket
 
-			log.WithContext(ctx).Debugf("bucket: %d, network call: %v: %v", index, request, err)
+			log.P2P().WithContext(ctx).Debugf("bucket: %d, network call: %v: %v", index, request, err)
 			return first
 		}
-		log.WithContext(ctx).Debugf("ping response: %v", response.String())
+		log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
 
 		// refresh the node to the end of bucket
 		bucket = bucket[1:]

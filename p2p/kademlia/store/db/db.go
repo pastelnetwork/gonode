@@ -38,7 +38,7 @@ func NewStore(ctx context.Context, dataDir string) (*Badger, error) {
 		done: make(chan struct{}),
 	}
 
-	log.WithContext(ctx).Debugf("data dir: %v", dataDir)
+	log.P2P().WithContext(ctx).Debugf("data dir: %v", dataDir)
 	// mkdir the data directory for badger
 	if err := os.MkdirAll(dataDir, 0750); err != nil {
 		return nil, errors.Errorf("mkdir %q: %w", dataDir, err)
@@ -121,10 +121,10 @@ func (s *Badger) Delete(ctx context.Context, key []byte) {
 		rk := replicationPrefix + base58.Encode(key)
 		return txn.Delete([]byte(rk))
 	}); err != nil {
-		log.WithContext(ctx).WithError(err).Error("badger delete failed")
+		log.P2P().WithContext(ctx).WithError(err).Error("badger delete failed")
 		return
 	}
-	log.WithContext(ctx).Infof("delete key: %s", base58.Encode(key))
+	log.P2P().WithContext(ctx).Infof("delete key: %s", base58.Encode(key))
 }
 
 // Keys return a list of keys with given offset + limit
@@ -157,7 +157,7 @@ func (s *Badger) Keys(ctx context.Context, offset int, limit int) [][]byte {
 		}
 		return nil
 	}); err != nil {
-		log.WithContext(ctx).WithError(err).Error("badger iterate keys failed")
+		log.P2P().WithContext(ctx).WithError(err).Error("badger iterate keys failed")
 	}
 	return keys
 }
@@ -192,7 +192,7 @@ func (s *Badger) findKeysWithPrefix(ctx context.Context, prefix string) [][]byte
 		}
 		return nil
 	}); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("badger iterate failed with prefix: %s", prefix)
+		log.P2P().WithContext(ctx).WithError(err).Errorf("badger iterate failed with prefix: %s", prefix)
 	}
 
 	return keys
@@ -210,7 +210,7 @@ func (s *Badger) Close(ctx context.Context) {
 	}
 	if s.db != nil {
 		if err := s.db.Close(); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("close badger failed")
+			log.P2P().WithContext(ctx).WithError(err).Errorf("close badger failed")
 		}
 	}
 }

@@ -81,7 +81,7 @@ func (s *Network) Stop(ctx context.Context) {
 	// close the socket
 	if s.socket != nil {
 		if err := s.socket.Close(); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("close socket failed")
+			log.P2P().WithContext(ctx).WithError(err).Errorf("close socket failed")
 		}
 	}
 
@@ -198,7 +198,7 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 		return s.encodeMesage(resMsg)
 	}
 
-	log.WithContext(ctx).Debugf("handle store data: %v", message.String())
+	log.P2P().WithContext(ctx).Debugf("handle store data: %v", message.String())
 
 	// add the sender to local hash table
 	s.dht.addNode(ctx, message.Sender)
@@ -249,7 +249,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 		conn, err = NewSecureServerConn(ctx, s.secureHelper, rawConn)
 		if err != nil {
 			rawConn.Close()
-			log.WithContext(ctx).WithError(err).Error("server secure establish failed")
+			log.P2P().WithContext(ctx).WithError(err).Error("server secure establish failed")
 			return
 		}
 	} else {
@@ -259,7 +259,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			conn, err = authHandshaker.ServerHandshake(ctx)
 			if err != nil {
 				rawConn.Close()
-				log.WithContext(ctx).WithError(err).Error("server authentication failed")
+				log.P2P().WithContext(ctx).WithError(err).Error("server authentication failed")
 				return
 			}
 		} else {
@@ -282,7 +282,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			if err == io.EOF {
 				return
 			}
-			log.WithContext(ctx).WithError(err).Error("read and decode failed")
+			log.P2P().WithContext(ctx).WithError(err).Error("read and decode failed")
 			return
 		}
 
@@ -291,7 +291,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 		case FindNode:
 			encoded, err := s.handleFindNode(ctx, request)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("handle find node request failed")
+				log.P2P().WithContext(ctx).WithError(err).Error("handle find node request failed")
 				return
 			}
 			response = encoded
@@ -299,14 +299,14 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			// handle the request for finding value
 			encoded, err := s.handleFindValue(ctx, request)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("handle find value request failed")
+				log.P2P().WithContext(ctx).WithError(err).Error("handle find value request failed")
 				return
 			}
 			response = encoded
 		case Ping:
 			encoded, err := s.handlePing(ctx, request)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("handle ping request failed")
+				log.P2P().WithContext(ctx).WithError(err).Error("handle ping request failed")
 				return
 			}
 			response = encoded
@@ -314,18 +314,18 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 			// handle the request for storing data
 			encoded, err := s.handleStoreData(ctx, request)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Error("handle store data request failed")
+				log.P2P().WithContext(ctx).WithError(err).Error("handle store data request failed")
 				return
 			}
 			response = encoded
 		default:
-			log.WithContext(ctx).Errorf("invalid message type: %v", request.MessageType)
+			log.P2P().WithContext(ctx).Errorf("invalid message type: %v", request.MessageType)
 			return
 		}
 
 		// write the response
 		if _, err := conn.Write(response); err != nil {
-			log.WithContext(ctx).WithError(err).Error("write failed")
+			log.P2P().WithContext(ctx).WithError(err).Error("write failed")
 			return
 		}
 	}
@@ -356,7 +356,7 @@ func (s *Network) serve(ctx context.Context) {
 				if max := 1 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				log.WithContext(ctx).WithError(err).Errorf("socket accept failed, retrying in %v", tempDelay)
+				log.P2P().WithContext(ctx).WithError(err).Errorf("socket accept failed, retrying in %v", tempDelay)
 
 				time.Sleep(tempDelay)
 				continue
@@ -365,10 +365,10 @@ func (s *Network) serve(ctx context.Context) {
 				return
 			}
 
-			log.WithContext(ctx).WithError(err).Error("socket accept failed")
+			log.P2P().WithContext(ctx).WithError(err).Error("socket accept failed")
 			return
 		}
-		log.WithContext(ctx).Debugf("%v: incomming connection: %v", s.self.String(), conn.RemoteAddr())
+		log.P2P().WithContext(ctx).Debugf("%v: incomming connection: %v", s.self.String(), conn.RemoteAddr())
 
 		// handle the connection requests
 		go s.handleConn(ctx, conn)
