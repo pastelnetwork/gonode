@@ -20,6 +20,7 @@ func TestStatusNames(t *testing.T) {
 				StatusImageProbed,
 				StatusImageAndThumbnailUploaded,
 				StatusGenRaptorQSymbols,
+				StatusPreburntRegistrationFee,
 				StatusTicketAccepted,
 				StatusTicketRegistered,
 				StatusTicketActivated,
