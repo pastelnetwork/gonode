@@ -78,6 +78,8 @@ func NewApp() *cli.App {
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
 		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the directory of dupe detection service - contains database file").SetValue(defaultDdWorkDir),
 		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
+		cli.NewFlag("metadb-log-level", &config.MetaDBLogLevel).SetUsage("Set the log `level` for metadb.").SetValue(config.MetaDBLogLevel),
+		cli.NewFlag("p2p-log-level", &config.P2PLogLevel).SetUsage("Set the log `level` for p2p.").SetValue(config.P2PLogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 	)
@@ -121,6 +123,14 @@ func NewApp() *cli.App {
 
 		if err := log.SetLevelName(config.LogLevel); err != nil {
 			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
+		}
+
+		if err := log.SetP2PLogLevelName(config.P2PLogLevel); err != nil {
+			return errors.Errorf("--p2p-log-level %q, %w", config.P2PLogLevel, err)
+		}
+
+		if err := log.SetMetaDBLogLevelName(config.MetaDBLogLevel); err != nil {
+			return errors.Errorf("--metadb-log-level %q, %w", config.MetaDBLogLevel, err)
 		}
 
 		if err := os.MkdirAll(config.TempDir, os.ModePerm); err != nil {

@@ -1,6 +1,7 @@
 package log
 
 import (
+	"io"
 	"sync"
 
 	"github.com/sirupsen/logrus"
@@ -18,12 +19,18 @@ func SetLevelName(name string) error {
 	if err != nil {
 		return err
 	}
+
 	currentDefaultLevel = level
 
 	return nil
 }
 
-// SetLevelName parses and sets the level for a subsystem with given name.
+// SetOutput sets the defaultLogger output.
+func SetOutput(output io.Writer) {
+	DefaultLogger.SetOutput(output)
+}
+
+// SetSubLevelName parses and sets the level for a subsystem with given name.
 func SetSubLevelName(subName string, levelName string) error {
 	level, err := logrus.ParseLevel(levelName)
 	if err != nil {

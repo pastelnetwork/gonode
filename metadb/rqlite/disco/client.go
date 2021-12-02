@@ -60,7 +60,7 @@ func (c *Client) Register(id, addr string) (*Response, error) {
 			return nil, err
 		}
 
-		log.WithContext(c.ctx).Infof("discovery client attempting registration of %s at %s", addr, url)
+		log.MetaDB().WithContext(c.ctx).Infof("discovery client attempting registration of %s at %s", addr, url)
 		resp, err := client.Post(url, "application-type/json", bytes.NewReader(b))
 		if err != nil {
 			return nil, err
@@ -78,11 +78,11 @@ func (c *Client) Register(id, addr string) (*Response, error) {
 			if err := json.Unmarshal(b, r); err != nil {
 				return nil, err
 			}
-			log.WithContext(c.ctx).Infof("discovery client successfully registered %s at %s", addr, url)
+			log.MetaDB().WithContext(c.ctx).Infof("discovery client successfully registered %s at %s", addr, url)
 			return r, nil
 		case http.StatusMovedPermanently:
 			url = resp.Header.Get("location")
-			log.WithContext(c.ctx).Infof("discovery client redirecting to: %s", url)
+			log.MetaDB().WithContext(c.ctx).Infof("discovery client redirecting to: %s", url)
 			continue
 		default:
 			return nil, errors.New(resp.Status)

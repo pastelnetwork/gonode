@@ -40,7 +40,7 @@ func (s *service) waitForConsensus(ctx context.Context, dbStore *store.Store) er
 		if defaultRaftWaitForLeader {
 			return errors.Errorf("leader did not appear within timeout: %w", err)
 		}
-		log.WithContext(ctx).Infof("ignoring error while waiting for leader")
+		log.MetaDB().WithContext(ctx).Infof("ignoring error while waiting for leader")
 	}
 	if err := dbStore.WaitForApplied(ctx, defaultRaftOpenTimeout); err != nil {
 		return errors.Errorf("store log not applied within timeout: %w", err)
@@ -127,7 +127,7 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer, externalAddr
 	if isNew {
 		bootstrap = true // new node, it needs to bootstrap
 	} else {
-		log.WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
+		log.MetaDB().WithContext(ctx).Infof("node is detected in: %v", s.config.DataDir)
 	}
 
 	httpAdvAddr := fmt.Sprintf("%s:%d", externalAddress, s.config.HTTPPort)
@@ -148,13 +148,13 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer, externalAddr
 
 	if len(joinIPAddresses) > 0 {
 		bootstrap = false
-		log.WithContext(ctx).Info("join addresses specified, node is not bootstrap")
+		log.MetaDB().WithContext(ctx).Info("join addresses specified, node is not bootstrap")
 	} else {
-		log.WithContext(ctx).Info("no join addresses")
+		log.MetaDB().WithContext(ctx).Info("no join addresses")
 	}
 	// join address supplied, but we don't need them
 	if !isNew && len(joinIPAddresses) > 0 {
-		log.WithContext(ctx).Info("node is already member of cluster")
+		log.MetaDB().WithContext(ctx).Info("node is already member of cluster")
 	}
 
 	// open store
@@ -165,7 +165,7 @@ func (s *service) initStore(ctx context.Context, raftTn *tcp.Layer, externalAddr
 
 	// execute any requested join operation
 	if len(joinIPAddresses) == 0 {
-		log.WithContext(ctx).Warn("No nearby nodes found. Not joining cluster")
+		log.MetaDB().WithContext(ctx).Warn("No nearby nodes found. Not joining cluster")
 		return db, nil
 	}
 
@@ -186,7 +186,7 @@ loop:
 				break loop
 			}
 
-			log.WithContext(ctx).WithError(err).Errorf("metdadb join cluster failure, retrying in %v s", defaultJoinClusterRetryInterval)
+			log.MetaDB().WithContext(ctx).WithError(err).Errorf("metdadb join cluster failure, retrying in %v s", defaultJoinClusterRetryInterval)
 		}
 	}
 
@@ -195,7 +195,7 @@ loop:
 
 func (s *service) joinCluster(ctx context.Context, joinAddrs []string, raftAdvAddr string) (err error) {
 
-	log.WithContext(ctx).Infof("join addresses are: %v", joinAddrs)
+	log.MetaDB().WithContext(ctx).Infof("join addresses are: %v", joinAddrs)
 
 	// join rqlite cluster
 	joinAddr, err := cluster.Join(ctx, "", joinAddrs, s.db.ID(), raftAdvAddr, !s.config.NoneVoter,
@@ -204,7 +204,7 @@ func (s *service) joinCluster(ctx context.Context, joinAddrs []string, raftAdvAd
 		return fmt.Errorf("join cluster at %v: %s", joinAddrs, err.Error())
 	}
 
-	log.WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
+	log.MetaDB().WithContext(ctx).Infof("successfully joined cluster at %v", joinAddr)
 	return nil
 }
 
@@ -259,7 +259,7 @@ func (s *service) startServer(ctx context.Context) error {
 	if err := s.waitForConsensus(ctx, db); err != nil {
 		return errors.Errorf("wait for consensus: %w", err)
 	}
-	log.WithContext(ctx).Info("store has reached consensus")
+	log.MetaDB().WithContext(ctx).Info("store has reached consensus")
 
 	// start the HTTP API server
 	if err := s.startHTTPServer(ctx, db, cs); err != nil {
@@ -273,22 +273,22 @@ func (s *service) startServer(ctx context.Context) error {
 		// do nothing, continue
 	}
 
-	log.WithContext(ctx).Info("metadb service is started")
+	log.MetaDB().WithContext(ctx).Info("metadb service is started")
 
 	// block until context is done
 	<-ctx.Done()
 
 	// close the rqlite store
 	if err := db.Close(true); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("close store failed")
+		log.MetaDB().WithContext(ctx).WithError(err).Errorf("close store failed")
 	}
 
 	// close the mux listener
 	if err := muxListener.Close(); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("Close mux listener failed")
+		log.MetaDB().WithContext(ctx).WithError(err).Errorf("Close mux listener failed")
 	}
 
-	log.WithContext(ctx).Info("metadb service is stopped")
+	log.MetaDB().WithContext(ctx).Info("metadb service is stopped")
 	return nil
 }
 

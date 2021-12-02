@@ -1,4 +1,6 @@
 log-level: 
+p2p-log-level: 
+metadb-log-level: 
 log-file:
 quiet: true
 temp-dir:

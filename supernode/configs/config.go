@@ -21,13 +21,15 @@ const (
 type Config struct {
 	DefaultDir string `json:"-"`
 
-	LogLevel   string `mapstructure:"log-level" json:"log-level,omitempty"`
-	LogFile    string `mapstructure:"log-file" json:"log-file,omitempty"`
-	Quiet      bool   `mapstructure:"quiet" json:"quiet"`
-	TempDir    string `mapstructure:"temp-dir" json:"temp-dir"`
-	WorkDir    string `mapstructure:"work-dir" json:"work-dir"`
-	RqFilesDir string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
-	DdWorkDir  string `mapstructure:"dd-service-dir" json:"dd-service-dir"`
+	LogLevel       string `mapstructure:"log-level" json:"log-level,omitempty"`
+	MetaDBLogLevel string `mapstructure:"metadb-log-level" json:"metadb-log-level,omitempty"`
+	P2PLogLevel    string `mapstructure:"p2p-log-level" json:"p2p-log-level,omitempty"`
+	LogFile        string `mapstructure:"log-file" json:"log-file,omitempty"`
+	Quiet          bool   `mapstructure:"quiet" json:"quiet"`
+	TempDir        string `mapstructure:"temp-dir" json:"temp-dir"`
+	WorkDir        string `mapstructure:"work-dir" json:"work-dir"`
+	RqFilesDir     string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
+	DdWorkDir      string `mapstructure:"dd-service-dir" json:"dd-service-dir"`
 
 	Node         `mapstructure:"node" json:"node,omitempty"`
 	Pastel       *pastel.Config          `mapstructure:"-" json:"-"`
@@ -50,15 +52,17 @@ func (config *Config) String() string {
 // New returns a new Config instance
 func New() *Config {
 	return &Config{
-		LogLevel:     defaultLogLevel,
-		Node:         NewNode(),
-		Pastel:       pastel.NewConfig(),
-		P2P:          p2p.NewConfig(),
-		MetaDB:       metadb.NewConfig(),
-		UserDB:       database.NewConfig(),
-		RaptorQ:      raptorq.NewConfig(),
-		DDServer:     ddclient.NewConfig(),
-		HealthCheck:  healthcheck_lib.NewConfig(),
-		DebugService: debug.NewConfig(),
+		LogLevel:       defaultLogLevel,
+		MetaDBLogLevel: defaultLogLevel,
+		P2PLogLevel:    defaultLogLevel,
+		Node:           NewNode(),
+		Pastel:         pastel.NewConfig(),
+		P2P:            p2p.NewConfig(),
+		MetaDB:         metadb.NewConfig(),
+		UserDB:         database.NewConfig(),
+		RaptorQ:        raptorq.NewConfig(),
+		DDServer:       ddclient.NewConfig(),
+		HealthCheck:    healthcheck_lib.NewConfig(),
+		DebugService:   debug.NewConfig(),
 	}
 }
