@@ -53,7 +53,7 @@ func SetP2PLogLevelName(levelName string) error {
 	return SetSubLevelName(p2pSubName, levelName)
 }
 
-// SetMetaDBLogLevel sets log level of metadb subsystem
+// SetMetaDBLogLevelName sets log level of metadb subsystem
 func SetMetaDBLogLevelName(levelName string) error {
 	return SetSubLevelName(metadbSubName, levelName)
 }

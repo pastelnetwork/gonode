@@ -40,6 +40,7 @@ type Config struct {
 	DebugService *debug.Config           `mapstructure:"debug-service" json:"debug-service,omitempty"`
 }
 
+// LogLevelConfig contains log configs for each subsystem
 type LogLevelConfig struct {
 	CommonLogLevel        string `mapstructure:"common" json:"common,omitempty"`
 	P2PLogLevel           string `mapstructure:"p2p" json:"p2p,omitempty"`
