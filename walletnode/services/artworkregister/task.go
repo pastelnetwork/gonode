@@ -154,9 +154,12 @@ func (task *Task) run(ctx context.Context) error {
 
 	// send preburn-txid to master node(s)
 	// master node will create reg-art ticket and returns transaction id
+	task.UpdateStatus(StatusPreburntRegistrationFee)
 	if err := task.preburntRegistrationFee(ctx); err != nil {
 		return errors.Errorf("pre-burnt ten percent of registration fee: %w", err)
 	}
+
+	task.UpdateStatus(StatusTicketAccepted)
 
 	log.WithContext(ctx).Debug("close connections to supernodes")
 	close(nodesDone)
@@ -175,6 +178,8 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("wait reg-nft ticket valid: %w", err)
 	}
 
+	task.UpdateStatus(StatusTicketRegistered)
+
 	// activate reg-art ticket at previous step
 	actTxid, err := task.registerActTicket(newCtx)
 	if err != nil {
@@ -187,6 +192,7 @@ func (task *Task) run(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("wait reg-act ticket valid: %w", err)
 	}
+	task.UpdateStatus(StatusTicketActivated)
 	log.Debugf("reg-act-tixd is confirmed")
 
 	return nil

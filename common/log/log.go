@@ -7,6 +7,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	metadbSubName = "metadb"
+	p2pSubName    = "p2p"
+	ddSubName     = "dd"
+)
+
 // DefaultLogger is logger with default settings
 var DefaultLogger = NewLogger()
 var subLevels = map[string]logrus.Level{}
@@ -44,12 +50,17 @@ func SetSubLevelName(subName string, levelName string) error {
 
 // SetP2PLogLevelName sets log level of p2p subsystem
 func SetP2PLogLevelName(levelName string) error {
-	return SetSubLevelName("p2p", levelName)
+	return SetSubLevelName(p2pSubName, levelName)
 }
 
 // SetMetaDBLogLevel sets log level of metadb subsystem
 func SetMetaDBLogLevelName(levelName string) error {
-	return SetSubLevelName("metadb", levelName)
+	return SetSubLevelName(metadbSubName, levelName)
+}
+
+// SetDDLogLevelName sets log level of dupe subsystem
+func SetDDLogLevelName(levelName string) error {
+	return SetSubLevelName(ddSubName, levelName)
 }
 
 func getSubLogLevel(subName string) logrus.Level {

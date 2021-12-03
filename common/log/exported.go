@@ -158,12 +158,17 @@ func WithSub(subName string) *Entry {
 	return NewEntry(DefaultLogger, getSubLogLevel(subName))
 }
 
-// P2P return a log entry - of p2p subdomain
+// P2P return a log entry - of p2p subsystem
 func P2P() *Entry {
-	return NewEntry(DefaultLogger, getSubLogLevel("p2p"))
+	return NewEntry(DefaultLogger, getSubLogLevel(p2pSubName))
 }
 
-// MetaDB return a log entry - of metadb subdomain
+// MetaDB return a log entry - of metadb subsystem
 func MetaDB() *Entry {
-	return NewEntry(DefaultLogger, getSubLogLevel("metadb"))
+	return NewEntry(DefaultLogger, getSubLogLevel(metadbSubName))
+}
+
+// DD return a log entry of dupe detection subsystem
+func DD() *Entry {
+	return NewEntry(DefaultLogger, getSubLogLevel(ddSubName))
 }

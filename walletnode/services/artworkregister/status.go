@@ -9,6 +9,7 @@ const (
 	StatusGenRaptorQSymbols
 
 	// Ticket
+	StatusPreburntRegistrationFee
 	StatusTicketAccepted
 	StatusTicketRegistered
 	StatusTicketActivated
@@ -28,6 +29,7 @@ var statusNames = map[Status]string{
 	StatusImageProbed:                   "Image Probed",
 	StatusImageAndThumbnailUploaded:     "Image And Thumbnail Uploaded",
 	StatusGenRaptorQSymbols:             "Status Gen ReptorQ Symbols",
+	StatusPreburntRegistrationFee:       "Preburn Registration Fee",
 	StatusTicketAccepted:                "Ticket Accepted",
 	StatusTicketRegistered:              "Ticket Registered",
 	StatusTicketActivated:               "Ticket Activated",

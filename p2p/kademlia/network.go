@@ -368,7 +368,6 @@ func (s *Network) serve(ctx context.Context) {
 			log.P2P().WithContext(ctx).WithError(err).Error("socket accept failed")
 			return
 		}
-		log.P2P().WithContext(ctx).Debugf("%v: incomming connection: %v", s.self.String(), conn.RemoteAddr())
 
 		// handle the connection requests
 		go s.handleConn(ctx, conn)
