@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -108,8 +107,8 @@ func NewApp() *cli.App {
 
 		if config.LogConfig.File != "" {
 			rotateHook := hooks.NewFileHook(config.LogConfig.File)
-			rotateHook.SetMaxSize(config.LogConfig.MaxSizeInMB * 1024 * 1024)
-			rotateHook.SetMaxAge(time.Duration(config.LogConfig.MaxAgeInDays) * 24 * time.Hour)
+			rotateHook.SetMaxSizeInMB(config.LogConfig.MaxSizeInMB)
+			rotateHook.SetMaxAgeInDays(config.LogConfig.MaxAgeInDays)
 			rotateHook.SetMaxBackups(config.LogConfig.MaxBackups)
 			rotateHook.SetCompress(config.LogConfig.Compress)
 			log.AddHook(rotateHook)

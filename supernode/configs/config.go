@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	defaultLogMaxAgeInDays   = 2
-	defaultLogMaxSizeInMB    = 10
+	defaultLogMaxAgeInDays   = 3
+	defaultLogMaxSizeInMB    = 100
 	defaultLogCompress       = true
-	defaultLogMaxBackups     = 20
+	defaultLogMaxBackups     = 10
 	defaultCommonLogLevel    = "info"
 	defaultSubSystemLogLevel = "error" // disable almost logs
 )

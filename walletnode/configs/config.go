@@ -8,17 +8,25 @@ import (
 )
 
 const (
-	defaultLogLevel = "info"
+	defaultLogMaxAgeInDays = 3
+	defaultLogMaxSizeInMB  = 100
+	defaultLogCompress     = true
+	defaultLogMaxBackups   = 10
+	defaultLogLevel        = "info"
 )
 
 // Config contains configuration of all components of the WalletNode.
 type Config struct {
-	LogLevel   string `mapstructure:"log-level" json:"log-level,omitempty"`
-	LogFile    string `mapstructure:"log-file" json:"log-file,omitempty"`
-	Quiet      bool   `mapstructure:"quiet" json:"quiet"`
-	TempDir    string `mapstructure:"temp-dir" json:"temp-dir"`
-	WorkDir    string `mapstructure:"work-dir" json:"work-dir"`
-	RqFilesDir string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
+	LogLevel        string `mapstructure:"log-level" json:"log-level,omitempty"`
+	LogFile         string `mapstructure:"log-file" json:"log-file,omitempty"`
+	LogCompress     bool   `mapstructure:"log-compress" json:"log-compress,omitempty"`
+	LogMaxSizeInMB  int    `mapstructure:"log-max-size-mb" json:"log-max-size-mb,omitempty"`
+	LogMaxAgeInDays int    `mapstructure:"log-max-age-days" json:"log-max-age-days,omitempty"`
+	LogMaxBackups   int    `mapstructure:"log-max-backups" json:"log-max-backups,omitempty"`
+	Quiet           bool   `mapstructure:"quiet" json:"quiet"`
+	TempDir         string `mapstructure:"temp-dir" json:"temp-dir"`
+	WorkDir         string `mapstructure:"work-dir" json:"work-dir"`
+	RqFilesDir      string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
 
 	Node    `mapstructure:"node" json:"node,omitempty"`
 	Pastel  *pastel.Config  `mapstructure:"-" json:"-"`
@@ -35,7 +43,11 @@ func (config *Config) String() string {
 // New returns a new Config instance
 func New() *Config {
 	return &Config{
-		LogLevel: defaultLogLevel,
+		LogLevel:        defaultLogLevel,
+		LogCompress:     defaultLogCompress,
+		LogMaxAgeInDays: defaultLogMaxAgeInDays,
+		LogMaxBackups:   defaultLogMaxBackups,
+		LogMaxSizeInMB:  defaultLogMaxSizeInMB,
 
 		Node:    NewNode(),
 		Pastel:  pastel.NewConfig(),

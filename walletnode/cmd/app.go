@@ -90,7 +90,12 @@ func NewApp() *cli.App {
 		}
 
 		if config.LogFile != "" {
-			log.AddHook(hooks.NewFileHook(config.LogFile))
+			rotateHook := hooks.NewFileHook(config.LogFile)
+			rotateHook.SetMaxSizeInMB(config.LogMaxSizeInMB)
+			rotateHook.SetMaxAgeInDays(config.LogMaxAgeInDays)
+			rotateHook.SetMaxBackups(config.LogMaxBackups)
+			rotateHook.SetCompress(config.LogCompress)
+			log.AddHook(rotateHook)
 		}
 		log.AddHook(hooks.NewDurationHook())
 

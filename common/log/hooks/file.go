@@ -34,10 +34,20 @@ func (hook *FileHook) SetMaxAge(maxAge time.Duration) {
 	hook.fileLogger.MaxAge = int(days)
 }
 
+// SetMaxAgeInDays sets the maximum duration(in days) to retain old log files based on the timestamp encoded in their filename.
+func (hook *FileHook) SetMaxAgeInDays(maxAgeInDays int) {
+	hook.fileLogger.MaxAge = maxAgeInDays
+}
+
 // SetMaxSize sets the maximum size in megabytes of the log file before it gets rotated.
 func (hook *FileHook) SetMaxSize(maxSize int) {
 	size := maxSize / 1048576 // to Megabytes
 	hook.fileLogger.MaxSize = size
+}
+
+// SetMaxSizeInMB sets the maximum size in megabytes of the log file before it gets rotated.
+func (hook *FileHook) SetMaxSizeInMB(maxSizeInMB int) {
+	hook.fileLogger.MaxSize = maxSizeInMB
 }
 
 // SetMaxBackups set the maximum number of old log files to retain.  The default
