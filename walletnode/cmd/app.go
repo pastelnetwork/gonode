@@ -61,8 +61,8 @@ func NewApp() *cli.App {
 		cli.NewFlag("pastel-config-file", &pastelConfigFile).SetUsage("Set `path` to the pastel config file.").SetValue(defaultPastelConfigFile),
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
-		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
-		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
+		cli.NewFlag("log-level", &config.LogConfig.Level).SetUsage("Set the log `level`.").SetValue(config.LogConfig.Level),
+		cli.NewFlag("log-file", &config.LogConfig.File).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 		// API
 		cli.NewFlag("swagger", &config.API.Swagger).SetUsage("Enable Swagger UI."),
@@ -89,18 +89,18 @@ func NewApp() *cli.App {
 			log.SetOutput(app.Writer)
 		}
 
-		if config.LogFile != "" {
-			rotateHook := hooks.NewFileHook(config.LogFile)
-			rotateHook.SetMaxSizeInMB(config.LogMaxSizeInMB)
-			rotateHook.SetMaxAgeInDays(config.LogMaxAgeInDays)
-			rotateHook.SetMaxBackups(config.LogMaxBackups)
-			rotateHook.SetCompress(config.LogCompress)
+		if config.LogConfig.File != "" {
+			rotateHook := hooks.NewFileHook(config.LogConfig.File)
+			rotateHook.SetMaxSizeInMB(config.LogConfig.MaxSizeInMB)
+			rotateHook.SetMaxAgeInDays(config.LogConfig.MaxAgeInDays)
+			rotateHook.SetMaxBackups(config.LogConfig.MaxBackups)
+			rotateHook.SetCompress(config.LogConfig.Compress)
 			log.AddHook(rotateHook)
 		}
 		log.AddHook(hooks.NewDurationHook())
 
-		if err := log.SetLevelName(config.LogLevel); err != nil {
-			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
+		if err := log.SetLevelName(config.LogConfig.Level); err != nil {
+			return errors.Errorf("--log-level %q, %w", config.LogConfig.Level, err)
 		}
 
 		if err := os.MkdirAll(config.TempDir, os.ModePerm); err != nil {

@@ -17,20 +17,25 @@ const (
 
 // Config contains configuration of all components of the WalletNode.
 type Config struct {
-	LogLevel        string `mapstructure:"log-level" json:"log-level,omitempty"`
-	LogFile         string `mapstructure:"log-file" json:"log-file,omitempty"`
-	LogCompress     bool   `mapstructure:"log-compress" json:"log-compress,omitempty"`
-	LogMaxSizeInMB  int    `mapstructure:"log-max-size-mb" json:"log-max-size-mb,omitempty"`
-	LogMaxAgeInDays int    `mapstructure:"log-max-age-days" json:"log-max-age-days,omitempty"`
-	LogMaxBackups   int    `mapstructure:"log-max-backups" json:"log-max-backups,omitempty"`
-	Quiet           bool   `mapstructure:"quiet" json:"quiet"`
-	TempDir         string `mapstructure:"temp-dir" json:"temp-dir"`
-	WorkDir         string `mapstructure:"work-dir" json:"work-dir"`
-	RqFilesDir      string `mapstructure:"rq-files-dir" json:"rq-files-dir"`
+	LogConfig  *LogConfig `mapstructure:"log-config" json:"log-config,omitempty"`
+	Quiet      bool       `mapstructure:"quiet" json:"quiet"`
+	TempDir    string     `mapstructure:"temp-dir" json:"temp-dir"`
+	WorkDir    string     `mapstructure:"work-dir" json:"work-dir"`
+	RqFilesDir string     `mapstructure:"rq-files-dir" json:"rq-files-dir"`
 
 	Node    `mapstructure:"node" json:"node,omitempty"`
 	Pastel  *pastel.Config  `mapstructure:"-" json:"-"`
 	RaptorQ *raptorq.Config `mapstructure:"raptorq" json:"raptorq,omitempty"`
+}
+
+// LogConfig contains log configs
+type LogConfig struct {
+	Level        string `mapstructure:"log-level" json:"log-level,omitempty"`
+	File         string `mapstructure:"log-file" json:"log-file,omitempty"`
+	Compress     bool   `mapstructure:"log-compress" json:"log-compress,omitempty"`
+	MaxSizeInMB  int    `mapstructure:"log-max-size-mb" json:"log-max-size-mb,omitempty"`
+	MaxAgeInDays int    `mapstructure:"log-max-age-days" json:"log-max-age-days,omitempty"`
+	MaxBackups   int    `mapstructure:"log-max-backups" json:"log-max-backups,omitempty"`
 }
 
 func (config *Config) String() string {
@@ -43,11 +48,13 @@ func (config *Config) String() string {
 // New returns a new Config instance
 func New() *Config {
 	return &Config{
-		LogLevel:        defaultLogLevel,
-		LogCompress:     defaultLogCompress,
-		LogMaxAgeInDays: defaultLogMaxAgeInDays,
-		LogMaxBackups:   defaultLogMaxBackups,
-		LogMaxSizeInMB:  defaultLogMaxSizeInMB,
+		LogConfig: &LogConfig{
+			Level:        defaultLogLevel,
+			Compress:     defaultLogCompress,
+			MaxAgeInDays: defaultLogMaxAgeInDays,
+			MaxBackups:   defaultLogMaxBackups,
+			MaxSizeInMB:  defaultLogMaxSizeInMB,
+		},
 
 		Node:    NewNode(),
 		Pastel:  pastel.NewConfig(),
