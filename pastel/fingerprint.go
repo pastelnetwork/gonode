@@ -4,11 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math"
-	"reflect"
 	"strings"
 	"unsafe"
-
-	"github.com/DataDog/zstd"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 )
@@ -42,13 +39,13 @@ func (fg Fingerprint) Bytes() []byte {
 	return output.Bytes()
 }
 
-// CompareFingerPrintAndScore returns nil if two FingerAndScores are equal
-func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) error {
-
-	//hash_of_candidate_image_file
+// CompareFingerPrintAndScore returns nil if two DDAndFingerprints are equal
+func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) error {
+	// -------------------WIP: PSL-142------------------------------------------------
+	/*//hash_of_candidate_image_file
 	if !reflect.DeepEqual(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
 		return errors.New("image hash do not match")
-	}
+	}*/
 
 	//is_likely_dupe
 	if lhs.IsLikelyDupe != rhs.IsLikelyDupe {
@@ -56,8 +53,8 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 	}
 
 	//overall_average_rareness_score
-	if !compareFloatWithPrecision(lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore, 7.0) {
-		return errors.Errorf("overall average rareness score do not match: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
+	if !compareFloatWithPrecision(lhs.Score.OverallAverageRarenessScore, rhs.Score.OverallAverageRarenessScore, 7.0) {
+		return errors.Errorf("overall average rareness score do not match: lhs(%f) != rhs(%f)", lhs.Score.OverallAverageRarenessScore, rhs.Score.OverallAverageRarenessScore)
 	}
 
 	//is_rare_on_internet
@@ -71,16 +68,18 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 	}
 
 	//alternative_nsfw_scores
-	if err := CompareAlternativeNSFWScore(&lhs.AlternativeNSFWScore, &rhs.AlternativeNSFWScore); err != nil {
+	if err := CompareAlternativeNSFWScore(lhs.AlternateNSFWScores, rhs.AlternateNSFWScores); err != nil {
 		return errors.Errorf("alternative nsfw score do not match: %w", err)
 	}
 
 	//image_hashes
-	if err := CompareImageHashes(&lhs.PerceptualImageHashes, &rhs.PerceptualImageHashes); err != nil {
+	if err := CompareImageHashes(lhs.PerceptualImageHashes, rhs.PerceptualImageHashes); err != nil {
 		return errors.Errorf("image hashes do not match: %w", err)
 	}
 
-	lhsFingerprint, err := zstd.Decompress(nil, lhs.ZstdCompressedFingerprint)
+	// -------------------WIP: PSL-142------------------------------------------------
+
+	/*lhsFingerprint, err := zstd.Decompress(nil, lhs.ZstdCompressedFingerprint)
 	if err != nil {
 		return errors.Errorf("decompress lhs fingerprint: %w", err)
 	}
@@ -109,6 +108,8 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 			}
 		}
 	}
+	*/
+
 	return nil
 }
 
