@@ -25,8 +25,8 @@ var statusNames = map[Status]string{
 	StatusSecondaryMode:                       "Secondary Mode",
 	StatusConnected:                           "Connected",
 	StatusImageProbed:                         "Image Probed",
-	StatusImageAndThumbnailCoordinateUploaded: "Imaged And Thumbnail Coordinate Uploaded",
-	StatusRegistrationFeeCalculated:           "Registration Fee Caculated",
+	StatusImageAndThumbnailCoordinateUploaded: "Image And Thumbnail Coordinate Uploaded",
+	StatusRegistrationFeeCalculated:           "Registration Fee Calculated",
 	StatusTaskCanceled:                        "Task Canceled",
 	StatusTaskCompleted:                       "Task Completed",
 }

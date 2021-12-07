@@ -36,7 +36,7 @@ func (client *client) MasterNodeConfig(ctx context.Context) (*MasterNodeConfig, 
 	if masterNodeConfig, ok := listConf["masternode"]; ok {
 		return &masterNodeConfig, nil
 	}
-	return nil, errors.New("not found masternode configuration")
+	return nil, errors.New("could not find masternode configuration")
 }
 
 // MasterNodesTop implements pastel.Client.MasterNodesTop
@@ -184,7 +184,7 @@ func (client *client) SendFromAddress(ctx context.Context, fromAddr string, toAd
 
 	res, err := client.CallWithContext(ctx, "z_sendmanywithchangetosender", fromAddr, amounts)
 	if err != nil {
-		return "", errors.Errorf("failed to call z_sendmany: %w", err)
+		return "", errors.Errorf("failed to call z_sendmanywithchangetosender: %w", err)
 	}
 
 	if res.Error != nil {

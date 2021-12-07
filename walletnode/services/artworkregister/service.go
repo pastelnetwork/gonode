@@ -37,7 +37,7 @@ type Service struct {
 func (service *Service) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
-	// NOTE: Before releasing, should be reomved (for testing). Used to bypass REST API.
+	// NOTE: Before releasing, should be removed (for testing). Used to bypass REST API.
 	if test := sys.GetStringEnv("TICKET", ""); test != "" {
 		ticket := struct {
 			Request

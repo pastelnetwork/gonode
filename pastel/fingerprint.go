@@ -47,32 +47,32 @@ func CompareFingerPrintAndScore(lhs *FingerAndScores, rhs *FingerAndScores) erro
 
 	//hash_of_candidate_image_file
 	if !reflect.DeepEqual(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {
-		return errors.New("image hash do not match")
+		return errors.New("image hash does not match")
 	}
 
 	//is_likely_dupe
 	if lhs.IsLikelyDupe != rhs.IsLikelyDupe {
-		return errors.Errorf("is likely dupe score do not match: lhs(%t) != rhs(%t)", lhs.IsLikelyDupe, rhs.IsLikelyDupe)
+		return errors.Errorf("is likely dupe score does not match: lhs(%t) != rhs(%t)", lhs.IsLikelyDupe, rhs.IsLikelyDupe)
 	}
 
 	//overall_average_rareness_score
 	if !compareFloatWithPrecision(lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore, 7.0) {
-		return errors.Errorf("overall average rareness score do not match: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
+		return errors.Errorf("overall average rareness score does not match: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
 	}
 
 	//is_rare_on_internet
 	if lhs.IsRareOnInternet != rhs.IsRareOnInternet {
-		return errors.Errorf("is rare on internet score do not match: lhs(%t) != rhs(%t)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
+		return errors.Errorf("is rare on internet score does not match: lhs(%t) != rhs(%t)", lhs.IsRareOnInternet, rhs.IsRareOnInternet)
 	}
 
 	//open_nsfw_score
 	if !compareFloatWithPrecision(lhs.OpenNSFWScore, rhs.OpenNSFWScore, 7.0) {
-		return errors.Errorf("open nsfw score do not match: lhs(%f) != rhs(%f)", lhs.OpenNSFWScore, rhs.OpenNSFWScore)
+		return errors.Errorf("open nsfw score does not match: lhs(%f) != rhs(%f)", lhs.OpenNSFWScore, rhs.OpenNSFWScore)
 	}
 
 	//alternative_nsfw_scores
 	if err := CompareAlternativeNSFWScore(&lhs.AlternativeNSFWScore, &rhs.AlternativeNSFWScore); err != nil {
-		return errors.Errorf("alternative nsfw score do not match: %w", err)
+		return errors.Errorf("alternative nsfw score does not match: %w", err)
 	}
 
 	//image_hashes

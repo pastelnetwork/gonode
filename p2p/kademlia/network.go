@@ -249,7 +249,7 @@ func (s *Network) handleConn(ctx context.Context, rawConn net.Conn) {
 		conn, err = NewSecureServerConn(ctx, s.secureHelper, rawConn)
 		if err != nil {
 			rawConn.Close()
-			log.P2P().WithContext(ctx).WithError(err).Error("server secure establish failed")
+			log.P2P().WithContext(ctx).WithError(err).Error("server secure connection failed to be established")
 			return
 		}
 	} else {
@@ -390,7 +390,7 @@ func (s *Network) Call(ctx context.Context, request *Message) (*Message, error) 
 			conn, err = NewSecureClientConn(ctx, s.secureHelper, remoteAddr)
 			if err != nil {
 				s.connPoolMtx.Unlock()
-				return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
+				return nil, errors.Errorf("client secure connection established %q: %w", remoteAddr, err)
 			}
 			s.connPool.Add(remoteAddr, conn)
 		}

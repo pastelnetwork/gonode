@@ -115,7 +115,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// get block height + hash
 	if err := task.getBlock(ctx); err != nil {
-		return errors.Errorf("get current block heigth: %w", err)
+		return errors.Errorf("get current block height: %w", err)
 	}
 
 	// probe image for rareness, nsfw and seen score
@@ -130,7 +130,7 @@ func (task *Task) run(ctx context.Context) error {
 
 	// connect to rq serivce to get rq symbols identifier
 	if err := task.genRQIdentifiersFiles(ctx); err != nil {
-		return errors.Errorf("gen RaptorQ symbols' identifiers: %w", err)
+		return errors.Errorf("generate RaptorQ symbol identifiers: %w", err)
 	}
 
 	if err := task.createArtTicket(ctx); err != nil {
@@ -204,7 +204,7 @@ func (task *Task) checkCurrentBalance(ctx context.Context, registrationFee float
 	}
 
 	if registrationFee > task.Request.MaximumFee {
-		return errors.Errorf("registration fee is to expensive - maximum-fee (%f) < registration-fee(%f)", task.Request.MaximumFee, registrationFee)
+		return errors.Errorf("registration fee is too expensive - maximum-fee (%f) < registration-fee(%f)", task.Request.MaximumFee, registrationFee)
 	}
 
 	balance, err := task.pastelClient.GetBalance(ctx, task.Request.SpendableAddress)
@@ -220,7 +220,7 @@ func (task *Task) checkCurrentBalance(ctx context.Context, registrationFee float
 }
 
 func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfirms int64, interval time.Duration) error {
-	log.WithContext(ctx).Debugf("Need %d confirmation for txid %s", expectedConfirms, txID)
+	log.WithContext(ctx).Debugf("Need %d confirmations for txid %s", expectedConfirms, txID)
 	blockTracker := blocktracker.New(task.pastelClient)
 	baseBlkCnt, err := blockTracker.GetBlockCount()
 	if err != nil {
@@ -263,7 +263,7 @@ func (task *Task) waitTxidValid(ctx context.Context, txID string, expectedConfir
 			}
 
 			if currentBlkCnt-baseBlkCnt >= int32(expectedConfirms)+2 {
-				return errors.Errorf("timeout when wating for confirmation of transaction %s", txID)
+				return errors.Errorf("timeout while waiting for confirmation of transaction %s", txID)
 			}
 		}
 	}
@@ -283,12 +283,12 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 
 	ticket, err := task.pastelClient.FindTicketByID(ctx, task.Request.ArtistPastelID)
 	if err != nil {
-		return errors.Errorf("find register ticket of artist pastel id(%s):%w", task.Request.ArtistPastelID, err)
+		return errors.Errorf("find register ticket of Creator's PastelID(%s):%w", task.Request.ArtistPastelID, err)
 	}
 
 	pqSignature, err := task.pastelClient.Sign(ctx, fingerprint, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmLegRoast)
 	if err != nil {
-		return errors.Errorf("sign fingerprint with legroats: %w", err)
+		return errors.Errorf("sign fingerprint with LegRoast: %w", err)
 	}
 
 	pqPubKey, err := getPubKey(ticket.PqKey)
@@ -322,7 +322,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	}
 
 	primary := nodes[primaryIndex]
-	log.WithContext(ctx).Debugf("Trying to connect to primary node %q", primary)
+	log.WithContext(ctx).Debugf("Trying to connect to primary supernode %q", primary)
 	if err := primary.Connect(ctx, task.config.ConnectToNodeTimeout, secInfo); err != nil {
 		return nil, err
 	}
@@ -367,7 +367,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
 						return
 					}
-					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
+					log.WithContext(ctx).Debugf("Secondary supernode %q connected to primary supernode", node)
 				}()
 			}
 		}
@@ -387,11 +387,11 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	secondariesMtx.Lock()
 	defer secondariesMtx.Unlock()
 	for _, pastelID := range accepted {
-		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
+		log.WithContext(ctx).Debugf("Primary supernode accepted %q secondary supernode", pastelID)
 
 		node := secondaries.FindByPastelID(pastelID)
 		if node == nil {
-			return nil, errors.New("not found accepted node")
+			return nil, errors.New("could not find accepted supernode")
 		}
 		meshNodes.Add(node)
 	}
@@ -440,7 +440,7 @@ func (task *Task) getBlock(ctx context.Context) error {
 	blockNum, err := task.pastelClient.GetBlockCount(ctx)
 	task.creatorBlockHeight = int(blockNum)
 	if err != nil {
-		return errors.Errorf("get block num: %w", err)
+		return errors.Errorf("get block number: %w", err)
 	}
 
 	// Get block hash string
@@ -468,7 +468,7 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 
 	content, err := task.imageEncodedWithFingerprints.Bytes()
 	if err != nil {
-		return errors.Errorf("read image content: %w", err)
+		return errors.Errorf("read image contents: %w", err)
 	}
 
 	rqService := conn.RaptorQ(&rqnode.Config{
@@ -480,7 +480,7 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 	// - check format of artis block hash should be base58 or not
 	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, task.creatorBlockHash, task.Request.ArtistPastelID)
 	if err != nil {
-		return errors.Errorf("generate RaptorQ symbols identifiers: %w", err)
+		return errors.Errorf("generate RaptorQ symbol identifiers: %w", err)
 	}
 
 	files := make(map[string][]byte)
@@ -730,12 +730,12 @@ func (task *Task) probeImage(ctx context.Context) error {
 	// Match fingerprints received from supernodes.
 	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
-		return errors.Errorf("fingerprints aren't matched :%w", err)
+		return errors.Errorf("fingerprints do not match :%w", err)
 	}
 	task.fingerprintAndScores = task.nodes.FingerAndScores()
 	task.UpdateStatus(StatusImageProbed)
 
-	// As we are going to store the the compressed figerprint to kamedila
+	// As we are going to store the the compressed figerprint to kademlia
 	// so we calculated the hash base on the compressed fingerprint print also
 	fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
 	if err != nil {
@@ -754,7 +754,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 func (task *Task) uploadImage(ctx context.Context) error {
 	img1, err := task.Request.Image.Copy()
 	if err != nil {
-		return errors.Errorf("copy image to encode: %w", err)
+		return errors.Errorf("copy image for encoding: %w", err)
 	}
 
 	log.WithContext(ctx).WithField("FileName", img1.Name()).Debug("final image")
@@ -779,7 +779,7 @@ func (task *Task) uploadImage(ctx context.Context) error {
 	// Match thumbnail hashes receiveed from supernodes
 	if err := task.nodes.MatchThumbnailHashes(); err != nil {
 		task.UpdateStatus(StatusErrorThumbnailHashsesNotMatch)
-		return errors.Errorf("thumbnail hash returns by supenodes not mached: %w", err)
+		return errors.Errorf("thumbnail hash returns by supenodes do not match: %w", err)
 	}
 	task.UpdateStatus(StatusImageAndThumbnailUploaded)
 
@@ -802,7 +802,7 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 	}
 
 	if err := task.nodes.MatchRegistrationFee(); err != nil {
-		return errors.Errorf("registration fees don't matched: %w", err)
+		return errors.Errorf("registration fees do not match: %w", err)
 	}
 
 	// check if fee is over-expection

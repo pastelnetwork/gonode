@@ -269,10 +269,10 @@ func (task *Task) SupernodeProcessUserdata(ctx context.Context, req *userdata.Pr
 					}
 					return nil
 				case <-task.allPeersSNDatasReceived:
-					log.WithContext(ctx).Debug("all SuperNodeRequest received so start validation")
+					log.WithContext(ctx).Debug("all SuperNodeRequest received, so start validation")
 					resp, err := task.verifyPeersUserdata(ctx)
 					if err != nil {
-						actionErr = errors.Errorf("fail to verifyPeersUserdata: %w", err)
+						actionErr = errors.Errorf("failed to verifyPeersUserdata: %w", err)
 					}
 					processResult = resp
 					return nil
@@ -331,7 +331,7 @@ func (task *Task) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.Su
 
 		task.peersSNDataSigned[snrequest.NodeID] = snrequest
 		if len(task.peersSNDataSigned) == len(task.accepted) {
-			log.WithContext(ctx).Debug("all signature received")
+			log.WithContext(ctx).Debug("all signatures received")
 			go func() {
 				close(task.allPeersSNDatasReceived)
 			}()
@@ -342,7 +342,7 @@ func (task *Task) AddPeerSNDataSigned(ctx context.Context, snrequest userdata.Su
 }
 
 func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResult, error) {
-	log.WithContext(ctx).Debugf("all supernode data signed received so start validation")
+	log.WithContext(ctx).Debugf("all supernode data signed received, so start validation")
 	successCount := 0
 	dataMatchingCount := 0
 	for _, sndata := range task.peersSNDataSigned {
@@ -360,7 +360,7 @@ func (task *Task) verifyPeersUserdata(ctx context.Context) (userdata.ProcessResu
 		}
 
 		if !ok {
-			log.WithContext(ctx).Debugf("signature of node %s mistmatch", sndata.NodeID)
+			log.WithContext(ctx).Debugf("signature of node %s does not match", sndata.NodeID)
 			continue
 		}
 
@@ -400,7 +400,7 @@ func (task *Task) validateUserdata(req *userdata.ProcessRequest) (userdata.Proce
 
 	// Biography validation
 	if len(req.Biography) > biographyTextLengthLimit {
-		result.Biography = fmt.Sprintf("Biography text length is greater than the limit %d characters", biographyTextLengthLimit)
+		result.Biography = fmt.Sprintf("Biography text length is greater than the limit of %d characters", biographyTextLengthLimit)
 		contentValidation = userdata.ErrorOnContent
 	}
 

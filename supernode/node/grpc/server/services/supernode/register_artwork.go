@@ -32,7 +32,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 
 	if sessID, ok := service.SessID(ctx); ok {
 		if task = service.Task(sessID); task == nil {
-			return errors.Errorf("not found %q task", sessID)
+			return errors.Errorf("could not find %q task", sessID)
 		}
 	} else {
 		task = service.NewTask()
@@ -53,7 +53,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 
 	req, err := stream.Recv()
 	if err != nil {
-		return errors.Errorf("receive handshake request: %w", err)
+		return errors.Errorf("received handshake request: %w", err)
 	}
 	log.WithContext(ctx).WithField("req", req).Debugf("Session request")
 
@@ -69,7 +69,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
-		return errors.Errorf("send handshake response: %w", err)
+		return errors.Errorf("sent handshake response: %w", err)
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debugf("Session response")
 

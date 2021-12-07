@@ -114,7 +114,7 @@ func (x *SessionReply) GetSessID() string {
 	return ""
 }
 
-type SendArtTicketSignatureRequest struct {
+type SendNftTicketSignatureRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -123,8 +123,8 @@ type SendArtTicketSignatureRequest struct {
 	Signature []byte `protobuf:"bytes,2,opt,name=signature,proto3" json:"signature,omitempty"`
 }
 
-func (x *SendArtTicketSignatureRequest) Reset() {
-	*x = SendArtTicketSignatureRequest{}
+func (x *SendNftTicketSignatureRequest) Reset() {
+	*x = SendNftTicketSignatureRequest{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_supernode_register_artwork_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -132,13 +132,13 @@ func (x *SendArtTicketSignatureRequest) Reset() {
 	}
 }
 
-func (x *SendArtTicketSignatureRequest) String() string {
+func (x *SendNftTicketSignatureRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendArtTicketSignatureRequest) ProtoMessage() {}
+func (*SendNftTicketSignatureRequest) ProtoMessage() {}
 
-func (x *SendArtTicketSignatureRequest) ProtoReflect() protoreflect.Message {
+func (x *SendNftTicketSignatureRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_supernode_register_artwork_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -150,33 +150,33 @@ func (x *SendArtTicketSignatureRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendArtTicketSignatureRequest.ProtoReflect.Descriptor instead.
-func (*SendArtTicketSignatureRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendNftTicketSignatureRequest.ProtoReflect.Descriptor instead.
+func (*SendNftTicketSignatureRequest) Descriptor() ([]byte, []int) {
 	return file_supernode_register_artwork_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *SendArtTicketSignatureRequest) GetNodeID() string {
+func (x *SendNftTicketSignatureRequest) GetNodeID() string {
 	if x != nil {
 		return x.NodeID
 	}
 	return ""
 }
 
-func (x *SendArtTicketSignatureRequest) GetSignature() []byte {
+func (x *SendNftTicketSignatureRequest) GetSignature() []byte {
 	if x != nil {
 		return x.Signature
 	}
 	return nil
 }
 
-type SendArtTicketSignatureReply struct {
+type SendNftTicketSignatureReply struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 }
 
-func (x *SendArtTicketSignatureReply) Reset() {
-	*x = SendArtTicketSignatureReply{}
+func (x *SendNftTicketSignatureReply) Reset() {
+	*x = SendNftTicketSignatureReply{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_supernode_register_artwork_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -184,13 +184,13 @@ func (x *SendArtTicketSignatureReply) Reset() {
 	}
 }
 
-func (x *SendArtTicketSignatureReply) String() string {
+func (x *SendNftTicketSignatureReply) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SendArtTicketSignatureReply) ProtoMessage() {}
+func (*SendNftTicketSignatureReply) ProtoMessage() {}
 
-func (x *SendArtTicketSignatureReply) ProtoReflect() protoreflect.Message {
+func (x *SendNftTicketSignatureReply) ProtoReflect() protoreflect.Message {
 	mi := &file_supernode_register_artwork_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -202,8 +202,8 @@ func (x *SendArtTicketSignatureReply) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendArtTicketSignatureReply.ProtoReflect.Descriptor instead.
-func (*SendArtTicketSignatureReply) Descriptor() ([]byte, []int) {
+// Deprecated: Use SendNftTicketSignatureReply.ProtoReflect.Descriptor instead.
+func (*SendNftTicketSignatureReply) Descriptor() ([]byte, []int) {
 	return file_supernode_register_artwork_proto_rawDescGZIP(), []int{3}
 }
 
@@ -260,14 +260,14 @@ var file_supernode_register_artwork_proto_msgTypes = make([]protoimpl.MessageInf
 var file_supernode_register_artwork_proto_goTypes = []interface{}{
 	(*SessionRequest)(nil),                // 0: supernode.SessionRequest
 	(*SessionReply)(nil),                  // 1: supernode.SessionReply
-	(*SendArtTicketSignatureRequest)(nil), // 2: supernode.SendArtTicketSignatureRequest
-	(*SendArtTicketSignatureReply)(nil),   // 3: supernode.SendArtTicketSignatureReply
+	(*SendNftTicketSignatureRequest)(nil), // 2: supernode.SendNftTicketSignatureRequest
+	(*SendNftTicketSignatureReply)(nil),   // 3: supernode.SendNftTicketSignatureReply
 }
 var file_supernode_register_artwork_proto_depIdxs = []int32{
 	0, // 0: supernode.RegisterArtwork.Session:input_type -> supernode.SessionRequest
-	2, // 1: supernode.RegisterArtwork.SendArtTicketSignature:input_type -> supernode.SendArtTicketSignatureRequest
+	2, // 1: supernode.RegisterArtwork.SendNftTicketSignature:input_type -> supernode.SendNftTicketSignatureRequest
 	1, // 2: supernode.RegisterArtwork.Session:output_type -> supernode.SessionReply
-	3, // 3: supernode.RegisterArtwork.SendArtTicketSignature:output_type -> supernode.SendArtTicketSignatureReply
+	3, // 3: supernode.RegisterArtwork.SendNftTicketSignature:output_type -> supernode.SendNftTicketSignatureReply
 	2, // [2:4] is the sub-list for method output_type
 	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
@@ -306,7 +306,7 @@ func file_supernode_register_artwork_proto_init() {
 			}
 		}
 		file_supernode_register_artwork_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendArtTicketSignatureRequest); i {
+			switch v := v.(*SendNftTicketSignatureRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -318,7 +318,7 @@ func file_supernode_register_artwork_proto_init() {
 			}
 		}
 		file_supernode_register_artwork_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SendArtTicketSignatureReply); i {
+			switch v := v.(*SendNftTicketSignatureReply); i {
 			case 0:
 				return &v.state
 			case 1:

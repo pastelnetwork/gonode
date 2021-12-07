@@ -40,7 +40,7 @@ func (s *DHT) parseNode(extP2P string, selfAddr string) (*Node, error) {
 	}
 
 	if _, err := s.cache.Get(extP2P); err == nil {
-		return nil, errors.New("configure: skip bad p2p boostrap addr")
+		return nil, errors.New("configure: skip bad p2p bootstrap addr")
 	}
 
 	addr := strings.Split(extP2P, ":")
@@ -64,7 +64,7 @@ func (s *DHT) parseNode(extP2P string, selfAddr string) (*Node, error) {
 	}, nil
 }
 
-// ConfigureBootstrapNodes connects with pastel client & gets p2p boostrap ip & port
+// ConfigureBootstrapNodes connects with pastel client & gets p2p bootstrap ip & port
 func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 	selfAddress, err := s.getExternalIP()
 	if err != nil {
@@ -97,28 +97,28 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 		return nodes, nil
 	}
 
-	boostrapNodes, err := get(ctx, s.pastelClient.MasterNodesExtra)
+	bootstrapNodes, err := get(ctx, s.pastelClient.MasterNodesExtra)
 	if err != nil {
 		return fmt.Errorf("masternodesTop failed: %s", err)
-	} else if len(boostrapNodes) == 0 {
-		boostrapNodes, err = get(ctx, s.pastelClient.MasterNodesTop)
+	} else if len(bootstrapNodes) == 0 {
+		bootstrapNodes, err = get(ctx, s.pastelClient.MasterNodesTop)
 		if err != nil {
 			return fmt.Errorf("masternodesExtra failed: %s", err)
-		} else if len(boostrapNodes) == 0 {
+		} else if len(bootstrapNodes) == 0 {
 			log.P2P().WithContext(ctx).Error("unable to fetch bootstrap ip. Missing extP2P")
 
 			return nil
 		}
 	}
 
-	for _, node := range boostrapNodes {
+	for _, node := range bootstrapNodes {
 		log.P2P().WithContext(ctx).WithFields(log.Fields{
-			"bootstap_ip":    node.IP,
+			"bootstrap_ip":   node.IP,
 			"bootstrap_port": node.Port,
 		}).Info("adding p2p bootstap node")
 	}
 
-	s.options.BootstrapNodes = append(s.options.BootstrapNodes, boostrapNodes...)
+	s.options.BootstrapNodes = append(s.options.BootstrapNodes, bootstrapNodes...)
 
 	return nil
 }
@@ -140,7 +140,7 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 		if len(node.ID) == 0 {
 			addr := fmt.Sprintf("%s:%v", node.IP, node.Port)
 			if _, err := s.cache.Get(addr); err == nil {
-				log.P2P().WithContext(ctx).WithField("addr", addr).Info("skip bad p2p boostrap addr")
+				log.P2P().WithContext(ctx).WithField("addr", addr).Info("skip bad p2p bootstrap addr")
 				continue
 			}
 

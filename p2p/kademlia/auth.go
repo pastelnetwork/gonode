@@ -80,7 +80,7 @@ func (ath *AuthHelper) VerifyPeer(ctx context.Context, authInfo *auth.PeerAuthIn
 
 	// check if peer from list
 	if !ath.isPeerInMasterNodes(ctx, authInfo) {
-		return errors.New("peer not in master nodes")
+		return errors.New("peer not in masternode list")
 	}
 
 	// verify signature
@@ -89,7 +89,7 @@ func (ath *AuthHelper) VerifyPeer(ctx context.Context, authInfo *auth.PeerAuthIn
 
 	if ok, err := ath.pastelClient.Verify(ctx, buf.Bytes(), string(authInfo.Signature), authInfo.PastelID, authAlgorithm); err != nil || !ok {
 		if err == nil {
-			err = errors.New("signature not match")
+			err = errors.New("signature does not match")
 		}
 		return errors.Errorf("signature verify: %w", err)
 	}
@@ -104,7 +104,7 @@ func (ath *AuthHelper) isPeerInMasterNodes(ctx context.Context, authInfo *auth.P
 	ath.tryRefreshMasternodeList(ctx)
 
 	if len(ath.masterNodes) == 0 {
-		log.P2P().WithContext(ctx).Error("empty master nodes")
+		log.P2P().WithContext(ctx).Error("empty masternode list")
 		return false
 	}
 
@@ -159,7 +159,7 @@ func (ath *AuthHelper) unsafeRefreshAuthInfo(ctx context.Context) error {
 func (ath *AuthHelper) tryRefreshMasternodeList(ctx context.Context) {
 	if len(ath.masterNodes) == 0 || time.Now().After(ath.lastMasterNodesRefresh.Add(ath.masterNodesRefreshDuration)) {
 		if err := ath.unsafeRefreshMasternodeList(ctx); err != nil {
-			log.P2P().WithContext(ctx).WithError(err).Error("Update master node list failed")
+			log.P2P().WithContext(ctx).WithError(err).Error("Update masternode list failed")
 			return
 		}
 		ath.lastMasterNodesRefresh = time.Now()

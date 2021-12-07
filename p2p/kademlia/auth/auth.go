@@ -257,7 +257,7 @@ func (s *authHandshaker) doServerHandshake(ctx context.Context) error {
 func (s *authHandshaker) ServerHandshake(ctx context.Context) (net.Conn, error) {
 
 	if s.side != serverSide {
-		return nil, errors.New("only handshakers created using NewServerHandshaker can perform a server handshaker")
+		return nil, errors.New("only handshakers created using NewServerHandshaker can perform a server handshake")
 	}
 
 	// do the server handshake

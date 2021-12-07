@@ -51,8 +51,8 @@ const (
 	// DownloadMethod represent Download name method
 	DownloadMethod = "Download"
 
-	// SendArtTicketSignatureMethod represent SendArtTicketSignature method
-	SendArtTicketSignatureMethod = "SendArtTicketSignature"
+	// SendNftTicketSignatureMethod represent SendNftTicketSignature method
+	SendNftTicketSignatureMethod = "SendNftTicketSignature"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -192,9 +192,9 @@ func (client *Client) ListenOnSession(returnErr error) *Client {
 	return client
 }
 
-// ListenOnSendArtTicketSignature listens on send art ticket signature
-func (client *Client) ListenOnSendArtTicketSignature(returnErr error) *Client {
-	client.RegisterArtwork.On(SendArtTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
+// ListenOnSendNftTicketSignature listens on send art ticket signature
+func (client *Client) ListenOnSendNftTicketSignature(returnErr error) *Client {
+	client.RegisterArtwork.On(SendNftTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 

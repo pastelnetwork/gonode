@@ -134,21 +134,21 @@ func (task *Task) SessionNode(_ context.Context, nodeID string) error {
 
 	<-task.NewAction(func(ctx context.Context) error {
 		if node := task.accepted.ByID(nodeID); node != nil {
-			log.WithContext(ctx).WithField("nodeID", nodeID).Errorf("node is already registered")
-			err = errors.Errorf("node %q is already registered", nodeID)
+			log.WithContext(ctx).WithField("nodeID", nodeID).Errorf("supernode is already registered")
+			err = errors.Errorf("supernode %q is already registered", nodeID)
 			return nil
 		}
 
 		var node *Node
 		node, err = task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
-			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("get node by extID")
-			err = errors.Errorf("get node by extID %s: %w", nodeID, err)
+			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("get supernode by extID")
+			err = errors.Errorf("get supernode by extID %s: %w", nodeID, err)
 			return nil
 		}
 		task.accepted.Add(node)
 
-		log.WithContext(ctx).WithField("nodeID", nodeID).Debug("Accept secondary node")
+		log.WithContext(ctx).WithField("nodeID", nodeID).Debug("Accept secondary supernode")
 
 		if len(task.accepted) >= task.config.NumberConnectedNodes {
 			task.UpdateStatus(StatusConnected)
@@ -170,17 +170,17 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 		var node *Node
 		node, err = task.pastelNodeByExtKey(ctx, nodeID)
 		if err != nil {
-			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("get node by extID")
+			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("get supernode by extID")
 			return nil
 		}
 
 		if err = node.connect(ctx); err != nil {
-			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("connect to node")
+			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("connect to supernode")
 			return nil
 		}
 
 		if err = node.Session(ctx, task.config.PastelID, sessID); err != nil {
-			log.WithContext(ctx).WithField("sessID", sessID).WithField("pastelID", task.config.PastelID).WithError(err).Errorf("handsake with peer")
+			log.WithContext(ctx).WithField("sessID", sessID).WithField("pastelID", task.config.PastelID).WithError(err).Errorf("handshake with peer")
 			return nil
 		}
 
@@ -205,8 +205,8 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 		task.ResampledArtwork = file
 		task.fingerAndScores, task.fingerprints, err = task.genFingerprintsData(ctx, task.ResampledArtwork)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
-			err = errors.Errorf("generate fingerprints data: %w", err)
+			log.WithContext(ctx).WithError(err).Errorf("generate fingerprint data")
+			err = errors.Errorf("generate fingerprint data: %w", err)
 			return nil
 		}
 		// NOTE: for testing Kademlia and should be removed before releasing.
@@ -230,7 +230,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, key1 string, key2 string, rqids map[string][]byte, oti []byte) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
-		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
+		return 0, errors.Errorf("required status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
 	}
 
 	task.Oti = oti
@@ -275,8 +275,8 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 
 		task.registrationFee, err = task.pastelClient.GetRegisterNFTFee(ctx, getFeeRequest)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("get register NFT fee")
-			err = errors.Errorf("get register NFT fee %w", err)
+			log.WithContext(ctx).WithError(err).Errorf("get NFT registration fee")
+			err = errors.Errorf("get NFT registration fee %w", err)
 		}
 		return nil
 	})
@@ -288,7 +288,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
 	var err error
 	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
-		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
+		return "", errors.Errorf("required status %s not satisfied", StatusRegistrationFeeCalculated)
 	}
 
 	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
@@ -304,13 +304,13 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.connectedTo == nil)
-		if err = task.signAndSendArtTicket(ctx, task.connectedTo == nil); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("signed and send NFT ticket")
-			err = errors.Errorf("signed and send NFT ticket")
+		if err = task.signAndSendNftTicket(ctx, task.connectedTo == nil); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("signed and sent NFT ticket")
+			err = errors.Errorf("signed and sent NFT ticket")
 			return nil
 		}
 
-		log.WithContext(ctx).Debug("waiting for confimation")
+		log.WithContext(ctx).Debug("waiting for confirmation")
 		if err = <-confirmationChn; err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
 			err = errors.Errorf("validate preburn transaction validation :%w", err)
@@ -339,17 +339,17 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 					}
 					return nil
 				case <-task.allSignaturesReceived:
-					log.WithContext(ctx).Debug("all signature received so start validation")
+					log.WithContext(ctx).Debug("all signatures received so start validation")
 
-					if err = task.verifyPeersSingature(ctx); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
-						err = errors.Errorf("peers' singature mismatched: %w", err)
+					if err = task.verifyPeersSignature(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("peer signatures do not match")
+						err = errors.Errorf("peer signatures do not match: %w", err)
 						return nil
 					}
 
 					nftRegTxid, err = task.registerArt(ctx)
 					if err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
+						log.WithContext(ctx).WithError(err).Errorf("peer signatures do not match")
 						err = errors.Errorf("register NFT: %w", err)
 						return nil
 					}
@@ -426,7 +426,7 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 				}
 
 				if currentBlkCnt-baseBlkCnt >= int32(minConfirmation)+2 {
-					ch <- errors.Errorf("timeout when wating for confirmation of transaction %s", txid)
+					ch <- errors.Errorf("timeout while wating for confirmation of transaction %s", txid)
 					return
 				}
 			}
@@ -437,7 +437,7 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 }
 
 // sign and send NFT ticket if not primary
-func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) error {
+func (task *Task) signAndSendNftTicket(ctx context.Context, isPrimary bool) error {
 	ticket, err := pastel.EncodeNFTTicket(task.Ticket)
 	if err != nil {
 		return errors.Errorf("serialize NFT ticket: %w", err)
@@ -447,16 +447,16 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 		return errors.Errorf("sign ticket: %w", err)
 	}
 	if !isPrimary {
-		log.WithContext(ctx).Debug("send signed articket to primary node")
-		if err := task.connectedTo.RegisterArtwork.SendArtTicketSignature(ctx, task.config.PastelID, task.ownSignature); err != nil {
-			return errors.Errorf("send signature to primary node %s at address %s: %w", task.connectedTo.ID, task.connectedTo.Address, err)
+		log.WithContext(ctx).Debug("send signed NFT ticket to primary supernode")
+		if err := task.connectedTo.RegisterArtwork.SendNftTicketSignature(ctx, task.config.PastelID, task.ownSignature); err != nil {
+			return errors.Errorf("send signature to primary supernode %s at address %s: %w", task.connectedTo.ID, task.connectedTo.Address, err)
 		}
 	}
 	return nil
 }
 
-func (task *Task) verifyPeersSingature(ctx context.Context) error {
-	log.WithContext(ctx).Debug("all signature received so start validation")
+func (task *Task) verifyPeersSignature(ctx context.Context) error {
+	log.WithContext(ctx).Debug("all signatures received, so starting validation")
 
 	data, err := pastel.EncodeNFTTicket(task.Ticket)
 	if err != nil {
@@ -464,16 +464,16 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 	}
 	for nodeID, signature := range task.peersArtTicketSignature {
 		if ok, err := task.pastelClient.Verify(ctx, data, string(signature), nodeID, pastel.SignAlgorithmED448); err != nil {
-			return errors.Errorf("verify signature %s of node %s", signature, nodeID)
+			return errors.Errorf("verify signature %s of supernode %s", signature, nodeID)
 		} else if !ok {
-			return errors.Errorf("signature of node %s mistmatch", nodeID)
+			return errors.Errorf("signature of supernode %s does not match", nodeID)
 		}
 	}
 	return nil
 }
 
 func (task *Task) registerArt(ctx context.Context) (string, error) {
-	log.WithContext(ctx).Debug("all signature received so start validation")
+	log.WithContext(ctx).Debug("all signature received, so starting validation")
 
 	req := pastel.RegisterNFTRequest{
 		Ticket: &pastel.NFTTicket{
@@ -543,7 +543,7 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 
 	for id, symbol := range encodeResp.Symbols {
 		if _, err := task.p2pClient.Store(ctx, symbol); err != nil {
-			return errors.Errorf("store symbolid %s into kamedila: %w", id, err)
+			return errors.Errorf("store symbolid %s into kademlia: %w", id, err)
 		}
 	}
 
@@ -560,13 +560,13 @@ func (task *Task) storeThumbnails(ctx context.Context) error {
 	}
 
 	if _, err := storeFn(ctx, task.PreviewThumbnail); err != nil {
-		return errors.Errorf("store preview thumbnail into kamedila: %w", err)
+		return errors.Errorf("store preview thumbnail into kademlia: %w", err)
 	}
 	if _, err := storeFn(ctx, task.MediumThumbnail); err != nil {
-		return errors.Errorf("store medium thumbnail into kamedila: %w", err)
+		return errors.Errorf("store medium thumbnail into kademlia: %w", err)
 	}
 	if _, err := storeFn(ctx, task.SmallThumbnail); err != nil {
-		return errors.Errorf("store small thumbnail into kamedila: %w", err)
+		return errors.Errorf("store small thumbnail into kademlia: %w", err)
 	}
 
 	return nil
@@ -579,7 +579,7 @@ func (task *Task) storeFingerprints(ctx context.Context) error {
 	}
 
 	if _, err := task.p2pClient.Store(ctx, compressFringerprints); err != nil {
-		return errors.Errorf("store fingerprints into kamedila")
+		return errors.Errorf("store fingerprints into kademlia")
 	}
 	return nil
 }
@@ -696,15 +696,15 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("decompress symbols id file: %w", err)
 	}
-	scaner := bufio.NewScanner(bytes.NewReader(rawData))
-	scaner.Split(bufio.ScanLines)
+	scanner := bufio.NewScanner(bytes.NewReader(rawData))
+	scanner.Split(bufio.ScanLines)
 	for i := 0; i < 3; i++ {
-		scaner.Scan()
-		if scaner.Err() != nil {
-			return errors.Errorf("failed when bypass headers: %w", err)
+		scanner.Scan()
+		if scanner.Err() != nil {
+			return errors.Errorf("failed when bypassing headers: %w", err)
 		}
 	}
-	scaner.Text()
+	scanner.Text()
 
 	// pick just one file generated to compare
 	var rawEncodeFile rqnode.RawSymbolIDFile
@@ -714,13 +714,13 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 	}
 
 	for i := range rawEncodeFile.SymbolIdentifiers {
-		scaner.Scan()
-		if scaner.Err() != nil {
+		scanner.Scan()
+		if scanner.Err() != nil {
 			return errors.Errorf("scan next symbol identifiers: %w", err)
 		}
-		symbolFromWalletNode := scaner.Text()
+		symbolFromWalletNode := scanner.Text()
 		if rawEncodeFile.SymbolIdentifiers[i] != symbolFromWalletNode {
-			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, symbolFromWalletNode, rawEncodeFile.SymbolIdentifiers[i])
+			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, supernode: %s", i, symbolFromWalletNode, rawEncodeFile.SymbolIdentifiers[i])
 		}
 	}
 
@@ -733,7 +733,7 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File, coordinate artwork.ThumbnailCoordinate) ([]byte, []byte, []byte, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageProbed); err != nil {
-		return nil, nil, nil, errors.Errorf("require status %s not satisfied", StatusImageProbed)
+		return nil, nil, nil, errors.Errorf("required status %s not satisfied", StatusImageProbed)
 	}
 
 	previewThumbnailHash := make([]byte, 0)
@@ -788,7 +788,7 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 
 		task.peersArtTicketSignature[nodeID] = signature
 		if len(task.peersArtTicketSignature) == len(task.accepted) {
-			log.WithContext(ctx).Debug("all signature received")
+			log.WithContext(ctx).Debug("all signatures received")
 			go func() {
 				close(task.allSignaturesReceived)
 			}()
@@ -800,7 +800,7 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 
 func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node, error) {
 	masterNodes, err := task.pastelClient.MasterNodesTop(ctx)
-	log.WithContext(ctx).Debugf("master node %v", masterNodes)
+	log.WithContext(ctx).Debugf("masternode %v", masterNodes)
 
 	if err != nil {
 		return nil, err
@@ -818,7 +818,7 @@ func (task *Task) pastelNodeByExtKey(ctx context.Context, nodeID string) (*Node,
 		return node, nil
 	}
 
-	return nil, errors.Errorf("node %q not found", nodeID)
+	return nil, errors.Errorf("masternode %q not found", nodeID)
 }
 
 func (task *Task) context(ctx context.Context) context.Context {

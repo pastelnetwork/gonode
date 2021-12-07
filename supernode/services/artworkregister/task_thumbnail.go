@@ -21,10 +21,10 @@ const (
 	// previewThumbnail is best effort webp image from the original artwork
 	previewThumbnail thumbnailType = iota
 
-	// mediumThumbnail is wepb imnage from cropped image
+	// mediumThumbnail is webp image from cropped image
 	mediumThumbnail
 
-	// smallhumbnail is snaller webp imnage from cropped image
+	// smallthumbnail is smaller webp image from cropped image
 	smallThumbnail
 
 	fileSizeLimit int = 400000
@@ -83,7 +83,7 @@ func determineSmallQuality(size int) float32 {
 func (task *Task) createAndHashThumbnails(coordinate artwork.ThumbnailCoordinate) (preview []byte, medium []byte, small []byte, err error) {
 	srcImg, err := task.Artwork.LoadImage()
 	if err != nil {
-		err = errors.Errorf("load image from artwork %s %w", task.Artwork.Name(), err)
+		err = errors.Errorf("load image from NFT %s %w", task.Artwork.Name(), err)
 		return
 	}
 

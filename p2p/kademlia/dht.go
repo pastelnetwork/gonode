@@ -93,7 +93,7 @@ func NewDHT(store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Optio
 	}
 	s.ht = ht
 
-	// add bad boostrap addresss
+	// add bad bootstrap addresss
 	s.skipBadBootstrapAddrs()
 
 	/*

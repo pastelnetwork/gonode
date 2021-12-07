@@ -43,7 +43,7 @@ func (s *p2p) Run(ctx context.Context) error {
 			if utils.IsContextErr(err) {
 				return err
 			}
-			log.P2P().WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
+			log.P2P().WithContext(ctx).WithError(err).Error("failed to run kademlia, retrying.")
 		} else {
 			return nil
 		}

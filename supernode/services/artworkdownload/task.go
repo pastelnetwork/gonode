@@ -41,7 +41,7 @@ func (task *Task) Run(ctx context.Context) error {
 	defer task.Cancel()
 
 	task.SetStatusNotifyFunc(func(status *state.Status) {
-		log.WithContext(ctx).WithField("status", status.String()).Debug("States updated")
+		log.WithContext(ctx).WithField("status", status.String()).Debug("Status updated")
 	})
 
 	return task.RunAction(ctx)
@@ -123,7 +123,7 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 
 			// Validate that Trade ticket with ttxid is in the list
 			if len(tradeTickets) == 0 {
-				err = errors.New("not found any available trade tickets")
+				err = errors.New("could not find any available trade tickets")
 				task.UpdateStatus(StatusTradeTicketsNotFound)
 				return nil
 			}
@@ -136,8 +136,8 @@ func (task *Task) Download(ctx context.Context, txid, timestamp, signature, ttxi
 				}
 			}
 			if !isTXIDValid {
-				log.WithContext(ctx).WithField("ttxid", ttxid).Errorf("not found trade ticket of transaction")
-				err = errors.Errorf("not found trade ticket of transaction %s", ttxid)
+				log.WithContext(ctx).WithField("ttxid", ttxid).Errorf("could not find trade ticket of transaction")
+				err = errors.Errorf("could not find trade ticket of transaction %s", ttxid)
 				task.UpdateStatus(StatusTradeTicketMismatched)
 				return nil
 			}

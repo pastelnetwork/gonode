@@ -45,7 +45,7 @@ func (server *Server) Run(ctx context.Context, config *Config) error {
 
 		srv.SetKeepAlivesEnabled(false)
 		if err := srv.Shutdown(ctx); err != nil {
-			errCh <- errors.Errorf("gracefully shutdown the server: %w", err)
+			errCh <- errors.Errorf("gracefully shut down the server: %w", err)
 		}
 		close(errCh)
 	}()

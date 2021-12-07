@@ -35,7 +35,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 
 	if sessID, ok := service.SessID(ctx); ok {
 		if task = service.Task(sessID); task == nil {
-			return errors.Errorf("not found %q task", sessID)
+			return errors.Errorf("Could not find %q task", sessID)
 		}
 	} else {
 		task = service.NewTask()
@@ -52,7 +52,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 
 	req, err := stream.Recv()
 	if err != nil {
-		return errors.Errorf("receieve handshake request: %w", err)
+		return errors.Errorf("receive handshake request: %w", err)
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")
 
@@ -87,7 +87,7 @@ func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pbwn.MDL
 	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 
 	if req == nil {
-		return nil, errors.Errorf("receive nil request")
+		return nil, errors.Errorf("received nil request")
 	}
 
 	task, err := service.TaskFromMD(ctx)
@@ -119,7 +119,7 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConn
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
 	if req == nil {
-		return nil, errors.Errorf("receive nil request")
+		return nil, errors.Errorf("received nil request")
 	}
 
 	task, err := service.TaskFromMD(ctx)
@@ -141,7 +141,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 	log.WithContext(ctx).WithField("req", req).Debug("SendUserdata request")
 
 	if req == nil {
-		return nil, errors.Errorf("receive nil request")
+		return nil, errors.Errorf("received nil request")
 	}
 
 	task, err := service.TaskFromMD(ctx)
@@ -178,7 +178,7 @@ func (service *ProcessUserdata) SendUserdata(ctx context.Context, req *pbwn.User
 
 	processResult, err := task.SupernodeProcessUserdata(ctx, &request)
 	if err != nil {
-		return nil, errors.Errorf("SupernodeProcessUserdata can not process %w", err)
+		return nil, errors.Errorf("SupernodeProcessUserdata cannot process %w", err)
 	}
 	if processResult.ResponseCode == userdata.ErrorOnContent {
 		return &pbwn.UserdataReply{

@@ -1782,7 +1782,7 @@ func TestTaskProbeImage(t *testing.T) {
 				task: &Task{
 					Service: &Service{
 						config: &Config{
-							thumbnailSize: 224,
+							thumbnailSize: 1000,
 						},
 					},
 					Request: &Request{
@@ -1803,7 +1803,7 @@ func TestTaskProbeImage(t *testing.T) {
 				task: &Task{
 					Service: &Service{
 						config: &Config{
-							thumbnailSize: 224,
+							thumbnailSize: 1000,
 						},
 					},
 					Request: &Request{

@@ -64,7 +64,7 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration, secInfo *a
 	return nil
 }
 
-// SetPrimary promotes a supernode to primary role which handle the write to Kamedila
+// SetPrimary promotes a supernode to primary role which handle the write to kademlia
 func (node *Node) SetPrimary(primary bool) {
 	node.isPrimary = primary
 }

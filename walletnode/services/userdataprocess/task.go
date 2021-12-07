@@ -125,7 +125,7 @@ func (task *Task) run(ctx context.Context) error {
 			return errors.Errorf("receive userdata")
 		}
 
-		log.WithContext(ctx).Debug("Finished retrieve userdata")
+		log.WithContext(ctx).Debug("Finished retrieving userdata")
 
 	} else {
 		// PROCESS TO SET/UPDATE USERDATA TO METADATA LAYER
@@ -212,7 +212,7 @@ func (task *Task) AggregateResult(_ context.Context, nodes node.List) (userdata.
 		if node.IsPrimary() {
 			result := node.Result
 			if result == nil {
-				return userdata.ProcessResult{}, errors.Errorf("Primary node have empty result")
+				return userdata.ProcessResult{}, errors.Errorf("Primary node has empty result")
 			}
 			return *result, nil
 		}
@@ -276,7 +276,7 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
 						return
 					}
-					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
+					log.WithContext(ctx).Debugf("Seconary supernode %q connected to primary supernode", node)
 				}()
 			}
 		}
@@ -295,11 +295,11 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 	secondariesMtx.Lock()
 	defer secondariesMtx.Unlock()
 	for _, pastelID := range accepted {
-		log.WithContext(ctx).Debugf("Primary accepted %q secondary node", pastelID)
+		log.WithContext(ctx).Debugf("Primary supernode accepted %q secondary supernode", pastelID)
 
 		node := secondaries.FindByPastelID(pastelID)
 		if node == nil {
-			return nil, errors.New("not found accepted node")
+			return nil, errors.New("could not find accepted supernode")
 		}
 		meshNodes.Add(node)
 	}

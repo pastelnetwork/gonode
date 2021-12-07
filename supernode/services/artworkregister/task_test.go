@@ -30,7 +30,7 @@ import (
 	"github.com/tj/assert"
 )
 
-func TestTaskSignAndSendArtTicket(t *testing.T) {
+func TestTasksignAndSendNftTicket(t *testing.T) {
 	type args struct {
 		task        *Task
 		signErr     error
@@ -94,7 +94,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			clientMock := test.NewMockClient(t)
-			clientMock.ListenOnSendArtTicketSignature(tc.args.sendArtErr).
+			clientMock.ListenOnSendNftTicketSignature(tc.args.sendArtErr).
 				ListenOnConnect("", nil).ListenOnRegisterArtwork()
 
 			tc.args.task.nodeClient = clientMock
@@ -102,7 +102,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 			err := tc.args.task.connectedTo.connect(context.Background())
 			assert.Nil(t, err)
 
-			err = tc.args.task.signAndSendArtTicket(context.Background(), tc.args.primary)
+			err = tc.args.task.signAndSendNftTicket(context.Background(), tc.args.primary)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -817,7 +817,7 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 			pastelClientMock.ListenOnVerify(tc.args.verifyRet, tc.args.verifyErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			err := tc.args.task.verifyPeersSingature(context.Background())
+			err := tc.args.task.verifyPeersSignature(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

@@ -115,7 +115,7 @@ func NewSecureClientConn(ctx context.Context, secureHelper credentials.Transport
 	conn, _, err := secureHelper.ClientHandshake(ctx, "", rawConn)
 	if err != nil {
 		rawConn.Close()
-		return nil, errors.Errorf("client secure establish %q: %w", remoteAddr, err)
+		return nil, errors.Errorf("client secure connection established %q: %w", remoteAddr, err)
 	}
 
 	return &connWrapper{
@@ -128,7 +128,7 @@ func NewSecureClientConn(ctx context.Context, secureHelper credentials.Transport
 func NewSecureServerConn(_ context.Context, secureHelper credentials.TransportCredentials, rawConn net.Conn) (net.Conn, error) {
 	conn, _, err := secureHelper.ServerHandshake(rawConn)
 	if err != nil {
-		return nil, errors.Errorf("server secure establish failed")
+		return nil, errors.Errorf("server secure connection failed to be established")
 	}
 
 	return &connWrapper{

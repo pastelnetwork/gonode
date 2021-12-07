@@ -7,6 +7,7 @@ package node
 
 import (
 	"context"
+
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 )
 
@@ -35,7 +36,7 @@ type RegisterArtwork interface {
 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 	// Send signature of ticket to primary supernode
-	SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error
+	SendNftTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }
 
 // ProcessUserdata represents an interaction stream with supernodes for sending userdata.

@@ -62,7 +62,7 @@ func TestWorkerTask(t *testing.T) {
 			want: &task{id: "2"},
 		},
 		{
-			name: "get not exist task",
+			name: "get nonexistent task",
 			fields: fields{
 				tasks: []Task{&task{id: "1"}, &task{id: "2"}},
 			},

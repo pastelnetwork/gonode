@@ -107,7 +107,7 @@ func (nodes *List) MatchFingerprintAndScores() error {
 	node := (*nodes)[0]
 	for i := 1; i < len(*nodes); i++ {
 		if err := pastel.CompareFingerPrintAndScore(node.fingerprintAndScores, (*nodes)[i].fingerprintAndScores); err != nil {
-			return errors.Errorf("node[%s] and node[%s] not matched: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
+			return errors.Errorf("node[%s] and node[%s] do not match: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
 		}
 	}
 	return nil

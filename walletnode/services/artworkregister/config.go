@@ -14,7 +14,7 @@ const (
 	defaultConnectToNextNodeDelay = 200 * time.Millisecond
 	defaultAcceptNodesTimeout     = 30 * time.Second // = 3 * (2* ConnectToNodeTimeout)
 
-	defaultThumbnailSize = 224
+	defaultThumbnailSize = 1000
 
 	defaultRegArtTxMinConfirmations = 12
 	defaultRegActTxMinConfirmations = 5

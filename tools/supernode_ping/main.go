@@ -14,7 +14,7 @@ import (
 
 func main() {
 	var (
-		serverAddr = flag.String("server_addr", "", "The server address in the format of host:port, like localhost:4444")
+		serverAddr = flag.String("server_addr", "", "The server address must be in the format of host:port, like localhost:4444")
 	)
 
 	flag.Parse()

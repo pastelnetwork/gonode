@@ -120,7 +120,7 @@ func TestDecodeFromPngFile(t *testing.T) {
 
 	if !bytes.Equal(msg, bitmessage) {
 		log.Println(string(msg))
-		log.Print("messages dont match")
+		log.Print("messages do not match")
 		t.FailNow()
 	}
 }
@@ -146,7 +146,7 @@ func TestDecodeFromJpgFile(t *testing.T) {
 
 	if !bytes.Equal(msg, bitmessage) {
 		log.Println(string(msg))
-		log.Print("messages dont match")
+		log.Print("messages do not match")
 		t.FailNow()
 	}
 }
@@ -194,7 +194,7 @@ func TestEncodeDecodeGeneratedSmallImage(t *testing.T) {
 
 	if !bytes.Equal(msg, []uint8{84, 84, 84}) {
 		log.Println(string(msg))
-		log.Print("messages dont match")
+		log.Print("messages do not match")
 		t.FailNow()
 	}
 }

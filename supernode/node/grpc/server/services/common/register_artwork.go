@@ -32,12 +32,12 @@ func (service *RegisterArtwork) SessID(ctx context.Context) (string, bool) {
 func (service *RegisterArtwork) TaskFromMD(ctx context.Context) (*artworkregister.Task, error) {
 	sessID, ok := service.SessID(ctx)
 	if !ok {
-		return nil, errors.New("not found sessID in metadata")
+		return nil, errors.New("could not find sessID in metadata")
 	}
 
 	task := service.Task(sessID)
 	if task == nil {
-		return nil, errors.Errorf("not found %q task", sessID)
+		return nil, errors.Errorf("could not find %q task", sessID)
 	}
 	return task, nil
 }

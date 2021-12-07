@@ -87,7 +87,7 @@ func (service *ProcessUserdata) SendUserdataToPrimary(ctx context.Context, req *
 	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdataToPrimary request")
 
 	if req == nil {
-		return nil, errors.Errorf("receive nil request")
+		return nil, errors.Errorf("received nil request")
 	}
 
 	task, err := service.TaskFromMD(ctx)
@@ -151,7 +151,7 @@ func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *p
 	log.WithContext(ctx).WithField("req", req).Debugf("SendUserdataToLeader request")
 
 	if req == nil {
-		return nil, errors.Errorf("receive nil request")
+		return nil, errors.Errorf("received nil request")
 	}
 
 	if service.databaseOps == nil {
@@ -161,7 +161,7 @@ func (service *ProcessUserdata) SendUserdataToLeader(ctx context.Context, req *p
 	// This code run in supernode contain leader rqlite db
 	// Process write the data to rqlite happen here
 	if err := service.databaseOps.WriteUserData(ctx, req); err != nil {
-		return nil, errors.Errorf("error occurs while writting to database: %w", err)
+		return nil, errors.Errorf("error occured while writting to database: %w", err)
 	}
 
 	return &pb.SuperNodeReply{
