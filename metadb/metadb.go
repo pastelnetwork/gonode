@@ -61,7 +61,7 @@ func (s *service) Run(ctx context.Context) error {
 			if utils.IsContextErr(err) {
 				return err
 			}
-			log.WithContext(ctx).WithError(err).Error("error starting metadb server,retrying.")
+			log.MetaDB().WithContext(ctx).WithError(err).Error("error starting metadb server,retrying.")
 			s.ready = make(chan struct{}, 5)
 		} else {
 			return nil

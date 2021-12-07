@@ -77,7 +77,10 @@ func NewApp() *cli.App {
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
 		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the directory of dupe detection service - contains database file").SetValue(defaultDdWorkDir),
-		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
+		cli.NewFlag("log-level", &config.LogLevel.CommonLogLevel).SetUsage("Set the log `level` of application services.").SetValue(config.LogLevel.CommonLogLevel),
+		cli.NewFlag("metadb-log-level", &config.LogLevel.MetaDBLogLevel).SetUsage("Set the log `level` for metadb.").SetValue(config.LogLevel.MetaDBLogLevel),
+		cli.NewFlag("p2p-log-level", &config.LogLevel.P2PLogLevel).SetUsage("Set the log `level` for p2p.").SetValue(config.LogLevel.P2PLogLevel),
+		cli.NewFlag("dd-log-level", &config.LogLevel.P2PLogLevel).SetUsage("Set the log `level` for dupedetection.").SetValue(config.LogLevel.DupeDetectionLogLevel),
 		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 	)
@@ -119,8 +122,20 @@ func NewApp() *cli.App {
 			return err
 		}
 
-		if err := log.SetLevelName(config.LogLevel); err != nil {
-			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
+		if err := log.SetLevelName(config.LogLevel.CommonLogLevel); err != nil {
+			return errors.Errorf("--log-level %q, %w", config.LogLevel.CommonLogLevel, err)
+		}
+
+		if err := log.SetP2PLogLevelName(config.LogLevel.P2PLogLevel); err != nil {
+			return errors.Errorf("--p2p-log-level %q, %w", config.LogLevel.P2PLogLevel, err)
+		}
+
+		if err := log.SetMetaDBLogLevelName(config.LogLevel.MetaDBLogLevel); err != nil {
+			return errors.Errorf("--metadb-log-level %q, %w", config.LogLevel.MetaDBLogLevel, err)
+		}
+
+		if err := log.SetDDLogLevelName(config.LogLevel.DupeDetectionLogLevel); err != nil {
+			return errors.Errorf("--dd-log-level %q, %w", config.LogLevel.DupeDetectionLogLevel, err)
 		}
 
 		if err := os.MkdirAll(config.TempDir, os.ModePerm); err != nil {

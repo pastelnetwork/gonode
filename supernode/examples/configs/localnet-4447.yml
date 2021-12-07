@@ -1,5 +1,9 @@
 # please provide pastel configs in pastel.conf
-log-level: info
+log-levels:
+  common: info
+  p2p: error
+  metadb: error
+  dd: error
 log-file:  # e.g: logs.json - by default, logs are only written to stdout
 quiet: false
 temp-dir:

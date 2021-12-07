@@ -46,13 +46,13 @@ func Join(ctx context.Context, srcIP string, joinAddr []string, id, addr string,
 				return j, nil
 			}
 
-			log.WithContext(ctx).Warnf("failed to join at %s: error: %s", a, err.Error())
+			log.MetaDB().WithContext(ctx).Warnf("failed to join at %s: error: %s", a, err.Error())
 		}
 
-		log.WithContext(ctx).Warnf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, utils.SafeErrStr(err), attemptInterval)
+		log.MetaDB().WithContext(ctx).Warnf("failed to join cluster at %s: %s, sleeping %s before retry", joinAddr, utils.SafeErrStr(err), attemptInterval)
 		time.Sleep(attemptInterval)
 	}
-	log.WithContext(ctx).Errorf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
+	log.MetaDB().WithContext(ctx).Errorf("failed to join cluster at %s, after %d attempts", joinAddr, numAttempts)
 
 	return "", ErrJoinFailed
 }
@@ -137,7 +137,7 @@ func join(ctx context.Context, srcIP, joinAddr, id, addr string, voter bool, tls
 				return "", fmt.Errorf("failed to join, node returned: %s: (%s)", resp.Status, string(b))
 			}
 
-			log.WithContext(ctx).Error("join via HTTP failed, trying via HTTPS")
+			log.MetaDB().WithContext(ctx).Error("join via HTTP failed, trying via HTTPS")
 			fullAddr = httpd.EnsureHTTPS(fullAddr)
 			continue
 		default:

@@ -270,17 +270,17 @@ func (s *Service) Start() error {
 		if err != nil {
 			return err
 		}
-		log.WithContext(s.ctx).Infof("secure HTTPS server enabled with cert %s, key %s", s.CertFile, s.KeyFile)
+		log.MetaDB().WithContext(s.ctx).Infof("secure HTTPS server enabled with cert %s, key %s", s.CertFile, s.KeyFile)
 	}
 	s.ln = ln
 
 	go func() {
 		err := server.Serve(s.ln)
 		if err != nil {
-			log.WithContext(s.ctx).WithError(err).Error("HTTP service Serve() returned")
+			log.MetaDB().WithContext(s.ctx).WithError(err).Error("HTTP service Serve() returned")
 		}
 	}()
-	log.WithContext(s.ctx).Infof("service listening on: %v", s.Addr())
+	log.MetaDB().WithContext(s.ctx).Infof("service listening on: %v", s.Addr())
 
 	return nil
 }
@@ -1145,7 +1145,7 @@ func (s *Service) writeResponse(w http.ResponseWriter, r *http.Request, j *Respo
 	}
 	_, err = w.Write(b)
 	if err != nil {
-		log.WithContext(s.ctx).WithError(err).Error("writing response failed")
+		log.MetaDB().WithContext(s.ctx).WithError(err).Error("writing response failed")
 	}
 }
 

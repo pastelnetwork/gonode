@@ -43,7 +43,7 @@ func (s *p2p) Run(ctx context.Context) error {
 			if utils.IsContextErr(err) {
 				return err
 			}
-			log.WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
+			log.P2P().WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
 		} else {
 			return nil
 		}
@@ -65,7 +65,7 @@ func (s *p2p) run(ctx context.Context) error {
 	}
 
 	if err := s.dht.ConfigureBootstrapNodes(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
+		log.P2P().WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
 
 		return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
 	}
@@ -82,7 +82,7 @@ func (s *p2p) run(ctx context.Context) error {
 
 	go s.store.InitCleanup(ctx, 5*time.Minute)
 
-	log.WithContext(ctx).Info("p2p service is started")
+	log.P2P().WithContext(ctx).Info("p2p service is started")
 
 	// block until context is done
 	<-ctx.Done()
@@ -93,7 +93,7 @@ func (s *p2p) run(ctx context.Context) error {
 	// close the store of kademlia network
 	s.store.Close(ctx)
 
-	log.WithContext(ctx).Info("p2p service is stopped")
+	log.P2P().WithContext(ctx).Info("p2p service is stopped")
 	return nil
 }
 

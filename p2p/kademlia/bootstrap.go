@@ -82,7 +82,7 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 		for _, mn := range mns {
 			node, err := s.parseNode(mn.ExtP2P, selfAddress)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).WithField("extP2P", mn.ExtP2P).Warn("Skip Bad Boostrap Address")
+				log.P2P().WithContext(ctx).WithError(err).WithField("extP2P", mn.ExtP2P).Warn("Skip Bad Boostrap Address")
 				continue
 			}
 
@@ -105,14 +105,14 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 		if err != nil {
 			return fmt.Errorf("masternodesExtra failed: %s", err)
 		} else if len(boostrapNodes) == 0 {
-			log.WithContext(ctx).Error("unable to fetch bootstrap ip. Missing extP2P")
+			log.P2P().WithContext(ctx).Error("unable to fetch bootstrap ip. Missing extP2P")
 
 			return nil
 		}
 	}
 
 	for _, node := range boostrapNodes {
-		log.WithContext(ctx).WithFields(log.Fields{
+		log.P2P().WithContext(ctx).WithFields(log.Fields{
 			"bootstap_ip":    node.IP,
 			"bootstrap_port": node.Port,
 		}).Info("adding p2p bootstap node")
@@ -140,7 +140,7 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 		if len(node.ID) == 0 {
 			addr := fmt.Sprintf("%s:%v", node.IP, node.Port)
 			if _, err := s.cache.Get(addr); err == nil {
-				log.WithContext(ctx).WithField("addr", addr).Info("skip bad p2p boostrap addr")
+				log.P2P().WithContext(ctx).WithField("addr", addr).Info("skip bad p2p boostrap addr")
 				continue
 			}
 
@@ -161,10 +161,10 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 					// So if bootstrap failed, should try to connect to node again for next bootstrap retry
 					// s.cache.SetWithExpiry(addr, []byte("true"), badAddrExpiryHours*time.Hour)
 
-					log.WithContext(ctx).WithError(err).Error("network call failed")
+					log.P2P().WithContext(ctx).WithError(err).Error("network call failed")
 					return
 				}
-				log.WithContext(ctx).Debugf("ping response: %v", response.String())
+				log.P2P().WithContext(ctx).Debugf("ping response: %v", response.String())
 
 				// add the node to the route table
 				s.addNode(ctx, response.Sender)
@@ -179,7 +179,7 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 	if s.ht.totalCount() > 0 {
 		// iterative find node from the nodes
 		if _, err := s.iterate(ctx, IterateFindNode, s.ht.self.ID, nil); err != nil {
-			log.WithContext(ctx).WithError(err).Error("iterative find node failed")
+			log.P2P().WithContext(ctx).WithError(err).Error("iterative find node failed")
 			return err
 		}
 	} else {
@@ -193,11 +193,11 @@ func (s *DHT) Bootstrap(ctx context.Context) error {
 
 func (s *DHT) retryBootstrap(ctx context.Context) {
 	if err := s.ConfigureBootstrapNodes(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("retry failed to get bootstap ip")
+		log.P2P().WithContext(ctx).WithError(err).Error("retry failed to get bootstap ip")
 	}
 
 	// join the kademlia network if bootstrap nodes is set
 	if err := s.Bootstrap(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("retry failed - bootstrap the node.")
+		log.P2P().WithContext(ctx).WithError(err).Error("retry failed - bootstrap the node.")
 	}
 }
