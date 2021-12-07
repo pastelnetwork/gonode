@@ -53,12 +53,12 @@ func TestEncode(t *testing.T) {
 		},
 		"complex": {
 			in:   []byte("test-string-complex-<*&%$@!+=*()[];:'"),
-			want: "FCfN8/TZ#SBl7Q8@rH4'Ch7iC4=V[(,X<M'4Xqj/>?s<O-NF,H",
+			want: "FCfN8/TZ#SBl7Q8@rH4'Ch7iC4=V[(,X<M'4Xqj/>?s<O-N",
 		},
 
 		"numeric": {
 			in:   []byte("1234567890"),
-			want: "0etOA2)[BQ3A:F5",
+			want: "0etOA2)[BQ3A:",
 		},
 	}
 
@@ -68,8 +68,13 @@ func TestEncode(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			encoded := Encode(tc.in)
-
 			assert.Equal(t, tc.want, encoded)
+
+			/*
+				decoded, err := Decode(encoded)
+				assert.Nil(t, err)
+				assert.Equal(t, tc.in, decoded)
+			*/
 		})
 	}
 }
@@ -86,7 +91,7 @@ func TestDecode(t *testing.T) {
 			want: []byte("test-string-to-be-b85encoded"),
 		},
 		"complex": {
-			in:   "FCfN8/TZ#SBl7Q8@rH4'Ch7iC4=V[(,X<M'4Xqj/>?s<O-NF,H",
+			in:   "FCfN8/TZ#SBl7Q8@rH4'Ch7iC4=V[(,X<M'4Xqj/>?s<O-N",
 			want: []byte("test-string-complex-<*&%$@!+=*()[];:'"),
 		},
 
