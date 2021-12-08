@@ -1,17 +1,17 @@
 package storagechallenge
 
-import dto "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
+import dto "github.com/pastelnetwork/gonode/proto/supernode"
 
 var (
-	storageChallengeIssuanceMessage     = dto.MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE.String()
-	storageChallengeResponseMessage     = dto.MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE.String()
-	storageChallengeVerificationMessage = dto.MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE.String()
+	storageChallengeIssuanceMessage     = dto.StorageChallengeData_MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE.String()
+	storageChallengeResponseMessage     = dto.StorageChallengeData_MessageType_STORAGE_CHALLENGE_RESPONSE_MESSAGE.String()
+	storageChallengeVerificationMessage = dto.StorageChallengeData_MessageType_STORAGE_CHALLENGE_VERIFICATION_MESSAGE.String()
 
-	statusPending                 = dto.Status_PENDING.String()
-	statusResponded               = dto.Status_RESPONDED.String()
-	statusSucceeded               = dto.Status_SUCCEEDED.String()
-	statusFailedTimeout           = dto.Status_FAILED_TIMEOUT.String()
-	statusFailedIncorrectResponse = dto.Status_FAILED_INCORRECT_RESPONSE.String()
+	statusPending                 = dto.StorageChallengeData_Status_PENDING.String()
+	statusResponded               = dto.StorageChallengeData_Status_RESPONDED.String()
+	statusSucceeded               = dto.StorageChallengeData_Status_SUCCEEDED.String()
+	statusFailedTimeout           = dto.StorageChallengeData_Status_FAILED_TIMEOUT.String()
+	statusFailedIncorrectResponse = dto.StorageChallengeData_Status_FAILED_INCORRECT_RESPONSE.String()
 )
 
 // ChallengeMessage struct
@@ -22,7 +22,7 @@ type ChallengeMessage struct {
 	TimestampChallengeSent        int64
 	TimestampChallengeRespondedTo int64
 	TimestampChallengeVerified    int64
-	BlockHashWhenChallengeSent    string
+	MerklerootWhenChallengeSent   string
 	ChallengingMasternodeID       string
 	RespondingMasternodeID        string
 	FileHashToChallenge           string
@@ -40,7 +40,7 @@ type Challenge struct {
 	TimestampChallengeSent         int64
 	TimestampChallengeRespondedTo  int64
 	TimestampChallengeVerified     int64
-	BlockHashWhenChallengeSent     string
+	MerklerootWhenChallengeSent    string
 	ChallengeResponseTimeInSeconds float64
 	ChallengingMasternodeID        string
 	RespondingMasternodeID         string

@@ -3,15 +3,14 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge;storagechallenge";
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode;supernode";
 
-package storagechallenge;
+package supernode;
 
-message SessionRequest {
-    string nodeID = 1;
-}
-message SessionReply {
-    string sessID = 1;
+service StorageChallenge {
+    rpc GenerateStorageChallenge(GenerateStorageChallengeRequest) returns (GenerateStorageChallengeReply);
+    rpc ProcessStorageChallenge(ProcessStorageChallengeRequest) returns (ProcessStorageChallengeReply);
+    rpc VerifyStorageChallenge(VerifyStorageChallengeRequest) returns (VerifyStorageChallengeReply);
 }
 
 message StorageChallengeData {
@@ -35,7 +34,7 @@ message StorageChallengeData {
     int64 timestamp_challenge_sent = 4;
     int64 timestamp_challenge_responded_to = 5;
     int64 timestamp_challenge_verified = 6;
-    string block_hash_when_challenge_sent = 7;
+    string merkleroot_when_challenge_sent = 7;
     string challenging_masternode_id = 8;
     string responding_masternode_id = 9;
     message challengeFile {
@@ -68,7 +67,7 @@ message VerifyStorageChallengeReply {
 message GenerateStorageChallengeRequest {
     string challenging_masternode_id = 1;
     int32 challenges_per_masternode_per_block = 2;
-    string current_block_hash = 3;
+    string merkleroot = 3;
 }
 
 message GenerateStorageChallengeReply {}

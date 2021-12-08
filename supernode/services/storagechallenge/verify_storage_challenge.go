@@ -28,7 +28,7 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	var challengeStatus string
 	// var analysisStatus = ALALYSIS_STATUS_TIMEOUT
 	// defer func() {
-	// 	s.saveChallengeAnalysis(ctx, incomingChallengeMessage.BlockHashWhenChallengeSent, incomingChallengeMessage.ChallengingMasternodeID, analysisStatus)
+	// 	s.saveChallengeAnalysis(ctx, incomingChallengeMessage.MerklerootWhenChallengeSent, incomingChallengeMessage.ChallengingMasternodeID, analysisStatus)
 	// }()
 
 	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (TimeVerifyStorageChallengeInNanoseconds <= s.storageChallengeExpiredAsNanoseconds) {
@@ -45,7 +45,7 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug(fmt.Sprintf("masternode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, incomingChallengeMessage.FileHashToChallenge))
 	}
 
-	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.BlockHashWhenChallengeSent
+	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent
 	messageID := helper.GetHashFromString(messageIDInputData)
 
 	var outgoingChallengeMessage = &ChallengeMessage{
@@ -55,7 +55,7 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 		TimestampChallengeSent:        incomingChallengeMessage.TimestampChallengeSent,
 		TimestampChallengeRespondedTo: incomingChallengeMessage.TimestampChallengeRespondedTo,
 		TimestampChallengeVerified:    TimestampChallengeVerified,
-		BlockHashWhenChallengeSent:    incomingChallengeMessage.BlockHashWhenChallengeSent,
+		MerklerootWhenChallengeSent:   incomingChallengeMessage.MerklerootWhenChallengeSent,
 		ChallengingMasternodeID:       incomingChallengeMessage.ChallengingMasternodeID,
 		RespondingMasternodeID:        incomingChallengeMessage.RespondingMasternodeID,
 		FileHashToChallenge:           incomingChallengeMessage.FileHashToChallenge,

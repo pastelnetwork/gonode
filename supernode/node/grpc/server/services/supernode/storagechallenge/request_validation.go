@@ -3,16 +3,16 @@ package storagechallenge
 import (
 	"fmt"
 
-	dto "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
+	dto "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
 func validateGenerateStorageChallengeData(req *dto.GenerateStorageChallengeRequest) validationErrorStack {
 	var key string
 	var es validationErrorStack = make([]*validationError, 0)
 
-	if req.GetCurrentBlockHash() == "" {
+	if req.GetMerkleroot() == "" {
 		es = append(es, &validationError{
-			keys:   []string{joinKeyPart(key, "CurrentBlockHash")},
+			keys:   []string{joinKeyPart(key, "GetMerkleroot")},
 			reason: reasonInvalidEmptyValue,
 		})
 	}

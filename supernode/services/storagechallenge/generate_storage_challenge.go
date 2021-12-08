@@ -14,21 +14,21 @@ import (
 	"github.com/pastelnetwork/storage-challenges/utils/xordistance"
 )
 
-func (s *service) GenerateStorageChallenges(ctx context.Context, currentBlockHash string, challengingMasternodeID string, challengesPerMasternodePerBlock int) error {
+func (s *service) GenerateStorageChallenges(ctx context.Context, merkleroot string, challengingMasternodeID string, challengesPerMasternodePerBlock int) error {
 	symbolFileKeys := s.repository.ListKeys(ctx)
 
-	comparisonStringForFileHashSelection := currentBlockHash + challengingMasternodeID
+	comparisonStringForFileHashSelection := merkleroot + challengingMasternodeID
 	sliceOfFileHashesToChallenge := s.repository.GetNClosestXORDistanceFileHashesToComparisonString(ctx, challengesPerMasternodePerBlock, comparisonStringForFileHashSelection, symbolFileKeys)
 
 	for idx, symbolFileHash := range sliceOfFileHashesToChallenge {
 		challengeDataSize := 0
 
-		comparisonStringForMasternodeSelection := currentBlockHash + symbolFileHash + s.nodeID + helper.GetHashFromString(fmt.Sprint(idx))
+		comparisonStringForMasternodeSelection := merkleroot + symbolFileHash + s.nodeID + helper.GetHashFromString(fmt.Sprint(idx))
 		respondingMasternodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForMasternodeSelection)
 		challengeStatus := statusPending
 		messageType := storageChallengeIssuanceMessage
-		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, currentBlockHash, challengingMasternodeID)
-		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + currentBlockHash
+		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, merkleroot, challengingMasternodeID)
+		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + merkleroot
 		messageID := helper.GetHashFromString(messageIDInputData)
 		timestampChallengeSent := time.Now().UnixNano()
 		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(timestampChallengeSent)
@@ -40,7 +40,7 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, currentBlockHas
 			TimestampChallengeSent:        timestampChallengeSent,
 			TimestampChallengeRespondedTo: 0,
 			TimestampChallengeVerified:    0,
-			BlockHashWhenChallengeSent:    currentBlockHash,
+			MerklerootWhenChallengeSent:   merkleroot,
 			ChallengingMasternodeID:       challengingMasternodeID,
 			RespondingMasternodeID:        string(respondingMasternodes[0].ID),
 			FileHashToChallenge:           symbolFileHash,
@@ -57,7 +57,7 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, currentBlockHas
 		// 	log.With(actorLog.String("ACTOR", "GenerateStorageChallenges")).Warn(fmt.Sprintf("could not update storage challenge into storage: %v", outgoinChallengeMessage), actorLog.String("s.repository.UpsertStorageChallengeMessage", err.Error()))
 		// 	continue
 		// }
-		// s.saveChallengeAnalysis(ctx, outgoinChallengeMessage.BlockHashWhenChallengeSent, outgoinChallengeMessage.ChallengingMasternodeID, ANALYSYS_STATUS_ISSUED)
+		// s.saveChallengeAnalysis(ctx, outgoinChallengeMessage.MerklerootWhenChallengeSent, outgoinChallengeMessage.ChallengingMasternodeID, ANALYSYS_STATUS_ISSUED)
 
 		s.sendprocessStorageChallenge(ctx, outgoinChallengeMessage)
 	}

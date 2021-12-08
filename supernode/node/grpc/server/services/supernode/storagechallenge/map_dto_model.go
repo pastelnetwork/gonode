@@ -1,7 +1,7 @@
 package storagechallenge
 
 import (
-	dto "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
+	dto "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 )
 
@@ -13,7 +13,7 @@ func mapChallengeMessage(dto *dto.StorageChallengeData) *storagechallenge.Challe
 		TimestampChallengeSent:        dto.GetTimestampChallengeSent(),
 		TimestampChallengeRespondedTo: dto.GetTimestampChallengeRespondedTo(),
 		TimestampChallengeVerified:    dto.GetTimestampChallengeVerified(),
-		BlockHashWhenChallengeSent:    dto.GetBlockHashWhenChallengeSent(),
+		MerklerootWhenChallengeSent:   dto.GetMerklerootWhenChallengeSent(),
 		ChallengingMasternodeID:       dto.GetChallengingMasternodeId(),
 		RespondingMasternodeID:        dto.GetRespondingMasternodeId(),
 		FileHashToChallenge:           dto.GetChallengeFile().GetFileHashToChallenge(),

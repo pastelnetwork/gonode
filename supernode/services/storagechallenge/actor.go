@@ -5,7 +5,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/messaging"
-	dto "github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
+	dto "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
@@ -74,7 +74,7 @@ func (d *domainActor) OnSendVerifyStorageChallengeMessage(msg *sendVerifyStorage
 				TimestampChallengeSent:        msg.TimestampChallengeSent,
 				TimestampChallengeRespondedTo: msg.TimestampChallengeRespondedTo,
 				TimestampChallengeVerified:    0,
-				BlockHashWhenChallengeSent:    msg.BlockHashWhenChallengeSent,
+				MerklerootWhenChallengeSent:   msg.MerklerootWhenChallengeSent,
 				ChallengingMasternodeId:       msg.ChallengingMasternodeID,
 				RespondingMasternodeId:        msg.RespondingMasternodeID,
 				ChallengeFile: &dto.StorageChallengeDataChallengeFile{
@@ -108,7 +108,7 @@ func (d *domainActor) OnSendProcessStorageChallengeMessage(msg *sendProcessStora
 			TimestampChallengeSent:        msg.TimestampChallengeSent,
 			TimestampChallengeRespondedTo: 0,
 			TimestampChallengeVerified:    0,
-			BlockHashWhenChallengeSent:    msg.BlockHashWhenChallengeSent,
+			MerklerootWhenChallengeSent:   msg.MerklerootWhenChallengeSent,
 			ChallengingMasternodeId:       msg.ChallengingMasternodeID,
 			RespondingMasternodeId:        msg.RespondingMasternodeID,
 			ChallengeFile: &dto.StorageChallengeDataChallengeFile{

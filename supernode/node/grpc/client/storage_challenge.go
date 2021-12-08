@@ -1,10 +1,10 @@
 package client
 
 import (
-	"github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
 func newStorageChallenge(conn *clientConn) node.StorageChallenge {
-	return storagechallenge.NewStorageChallengeClient(conn)
+	return pb.NewStorageChallengeClient(conn)
 }

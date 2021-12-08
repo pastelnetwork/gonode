@@ -9,7 +9,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	"github.com/pastelnetwork/gonode/proto/supernode/storagechallenge"
+	pb "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
 // Client represents a base connection interface.
@@ -55,4 +55,4 @@ type ProcessUserdata interface {
 }
 
 // StorageChallenge represents an interaction stream with supernodes for sending userdata.
-type StorageChallenge storagechallenge.StorageChallengeClient
+type StorageChallenge pb.StorageChallengeClient

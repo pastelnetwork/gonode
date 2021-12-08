@@ -22,7 +22,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	// analysisStatus := ALALYSIS_STATUS_TIMEOUT
 
 	// defer func() {
-	// 	s.saveChallengeAnalysis(ctx, incomingChallengeMessage.BlockHashWhenChallengeSent, incomingChallengeMessage.ChallengingMasternodeID, analysisStatus)
+	// 	s.saveChallengeAnalysis(ctx, incomingChallengeMessage.MerklerootWhenChallengeSent, incomingChallengeMessage.ChallengingMasternodeID, analysisStatus)
 	// }()
 
 	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge)
@@ -33,7 +33,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	challengeResponseHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
 	challengeStatus := statusResponded
 	messageType := storageChallengeResponseMessage
-	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.BlockHashWhenChallengeSent
+	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent
 	messageID := helper.GetHashFromString(messageIDInputData)
 	timestampChallengeRespondedTo := time.Now().UnixNano()
 
@@ -44,7 +44,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 		TimestampChallengeSent:        incomingChallengeMessage.TimestampChallengeSent,
 		TimestampChallengeRespondedTo: timestampChallengeRespondedTo,
 		TimestampChallengeVerified:    0,
-		BlockHashWhenChallengeSent:    incomingChallengeMessage.BlockHashWhenChallengeSent,
+		MerklerootWhenChallengeSent:   incomingChallengeMessage.MerklerootWhenChallengeSent,
 		ChallengingMasternodeID:       incomingChallengeMessage.ChallengingMasternodeID,
 		RespondingMasternodeID:        incomingChallengeMessage.RespondingMasternodeID,
 		FileHashToChallenge:           incomingChallengeMessage.FileHashToChallenge,

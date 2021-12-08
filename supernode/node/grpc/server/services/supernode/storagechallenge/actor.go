@@ -17,15 +17,15 @@ type generateStorageChallenge struct {
 	Context                         context.Context
 	ChallengingMasternodeID         string
 	ChallengesPerMasternodePerBlock int32
-	CurrentBlockHash                string
+	Merkleroot                      string
 }
 
-func newGenerateStorageChallengeMsg(ctx context.Context, currentBlockHash, challengingMasternodeID string, challengesPerMasternodePerBlock int32) *generateStorageChallenge {
+func newGenerateStorageChallengeMsg(ctx context.Context, merkleroot, challengingMasternodeID string, challengesPerMasternodePerBlock int32) *generateStorageChallenge {
 	return &generateStorageChallenge{
 		CommonProtoMsg:                  &messaging.CommonProtoMsg{},
 		Context:                         ctx,
 		ChallengingMasternodeID:         challengingMasternodeID,
-		CurrentBlockHash:                currentBlockHash,
+		Merkleroot:                      merkleroot,
 		ChallengesPerMasternodePerBlock: challengesPerMasternodePerBlock,
 	}
 }
@@ -101,7 +101,7 @@ func (a *applicationActor) Receive(ctx actor.Context) {
 	switch msg := ctx.Message().(type) {
 	case *generateStorageChallenge:
 		logger.Debugf("receive %#v action", msg)
-		err = a.domainService.GenerateStorageChallenges(appCtx, msg.CurrentBlockHash, msg.ChallengingMasternodeID, int(msg.ChallengesPerMasternodePerBlock))
+		err = a.domainService.GenerateStorageChallenges(appCtx, msg.Merkleroot, msg.ChallengingMasternodeID, int(msg.ChallengesPerMasternodePerBlock))
 	case *processStorageChallenge:
 		logger.Debugf("receive %#v action", msg)
 		err = a.domainService.ProcessStorageChallenge(appCtx, msg.ChallengeMessage)
