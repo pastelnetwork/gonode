@@ -79,8 +79,11 @@ func NewApp() *cli.App {
 		cli.NewFlag("temp-dir", &config.TempDir).SetUsage("Set `path` for storing temp data.").SetValue(defaultTempDir),
 		cli.NewFlag("rq-files-dir", &config.RqFilesDir).SetUsage("Set `path` for storing files for rqservice.").SetValue(defaultRqFilesDir),
 		cli.NewFlag("dd-service-dir", &config.DdWorkDir).SetUsage("Set `path` to the directory of dupe detection service - contains database file").SetValue(defaultDdWorkDir),
-		cli.NewFlag("log-level", &config.LogLevel).SetUsage("Set the log `level`.").SetValue(config.LogLevel),
-		cli.NewFlag("log-file", &config.LogFile).SetUsage("The log `file` to write to."),
+		cli.NewFlag("log-level", &config.LogConfig.Levels.CommonLogLevel).SetUsage("Set the log `level` of application services.").SetValue(config.LogConfig.Levels.CommonLogLevel),
+		cli.NewFlag("metadb-log-level", &config.LogConfig.Levels.MetaDBLogLevel).SetUsage("Set the log `level` for metadb.").SetValue(config.LogConfig.Levels.MetaDBLogLevel),
+		cli.NewFlag("p2p-log-level", &config.LogConfig.Levels.P2PLogLevel).SetUsage("Set the log `level` for p2p.").SetValue(config.LogConfig.Levels.P2PLogLevel),
+		cli.NewFlag("dd-log-level", &config.LogConfig.Levels.P2PLogLevel).SetUsage("Set the log `level` for dupedetection.").SetValue(config.LogConfig.Levels.DupeDetectionLogLevel),
+		cli.NewFlag("log-file", &config.LogConfig.File).SetUsage("The log `file` to write to."),
 		cli.NewFlag("quiet", &config.Quiet).SetUsage("Disallows log output to stdout.").SetAliases("q"),
 	)
 
@@ -104,8 +107,13 @@ func NewApp() *cli.App {
 			log.SetOutput(app.Writer)
 		}
 
-		if config.LogFile != "" {
-			log.AddHook(hooks.NewFileHook(config.LogFile))
+		if config.LogConfig.File != "" {
+			rotateHook := hooks.NewFileHook(config.LogConfig.File)
+			rotateHook.SetMaxSizeInMB(config.LogConfig.MaxSizeInMB)
+			rotateHook.SetMaxAgeInDays(config.LogConfig.MaxAgeInDays)
+			rotateHook.SetMaxBackups(config.LogConfig.MaxBackups)
+			rotateHook.SetCompress(config.LogConfig.Compress)
+			log.AddHook(rotateHook)
 		}
 		log.AddHook(hooks.NewDurationHook())
 
@@ -121,8 +129,20 @@ func NewApp() *cli.App {
 			return err
 		}
 
-		if err := log.SetLevelName(config.LogLevel); err != nil {
-			return errors.Errorf("--log-level %q, %w", config.LogLevel, err)
+		if err := log.SetLevelName(config.LogConfig.Levels.CommonLogLevel); err != nil {
+			return errors.Errorf("--log-level %q, %w", config.LogConfig.Levels.CommonLogLevel, err)
+		}
+
+		if err := log.SetP2PLogLevelName(config.LogConfig.Levels.P2PLogLevel); err != nil {
+			return errors.Errorf("--p2p-log-level %q, %w", config.LogConfig.Levels.P2PLogLevel, err)
+		}
+
+		if err := log.SetMetaDBLogLevelName(config.LogConfig.Levels.MetaDBLogLevel); err != nil {
+			return errors.Errorf("--metadb-log-level %q, %w", config.LogConfig.Levels.MetaDBLogLevel, err)
+		}
+
+		if err := log.SetDDLogLevelName(config.LogConfig.Levels.DupeDetectionLogLevel); err != nil {
+			return errors.Errorf("--dd-log-level %q, %w", config.LogConfig.Levels.DupeDetectionLogLevel, err)
 		}
 
 		if err := os.MkdirAll(config.TempDir, os.ModePerm); err != nil {

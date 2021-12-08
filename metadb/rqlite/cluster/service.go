@@ -147,7 +147,7 @@ func (s *Service) Execute(er *command.ExecuteRequest, _ string, _ time.Duration)
 // Open opens the Service.
 func (s *Service) Open() error {
 	go s.serve()
-	log.WithContext(s.ctx).Infof("service listening on: %v", s.tn.Addr())
+	log.MetaDB().WithContext(s.ctx).Infof("service listening on: %v", s.tn.Addr())
 	return nil
 }
 

@@ -151,3 +151,24 @@ func FatalAndExit(err error) {
 
 	fmt.Fprintf(os.Stderr, "ERROR: %s\n", err)
 }
+
+// WithSub return a log entry - with log level of given sub domain - using SetSubLevelName() to set sub level
+// but even with specific default level, but sub domain logs are also filtered by DefaultLogger's log level
+func WithSub(subName string) *Entry {
+	return NewEntry(DefaultLogger, getSubLogLevel(subName))
+}
+
+// P2P return a log entry - of p2p subsystem
+func P2P() *Entry {
+	return NewEntry(DefaultLogger, getSubLogLevel(p2pSubName))
+}
+
+// MetaDB return a log entry - of metadb subsystem
+func MetaDB() *Entry {
+	return NewEntry(DefaultLogger, getSubLogLevel(metadbSubName))
+}
+
+// DD return a log entry of dupe detection subsystem
+func DD() *Entry {
+	return NewEntry(DefaultLogger, getSubLogLevel(ddSubName))
+}

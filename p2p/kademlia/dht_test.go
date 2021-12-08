@@ -101,11 +101,11 @@ type testSuite struct {
 func (ts *testSuite) SetupSuite() {
 	// init the log level
 	if os.Getenv("LEVEL") == "debug" {
-		log.SetLevelName("debug")
+		log.SetP2PLogLevelName("debug")
 	} else if os.Getenv("LEVEL") == "info" {
-		log.SetLevelName("info")
+		log.SetP2PLogLevelName("info")
 	} else {
-		log.SetLevelName("warn")
+		log.SetP2PLogLevelName("warn")
 	}
 
 	ts.IP = "127.0.0.1"

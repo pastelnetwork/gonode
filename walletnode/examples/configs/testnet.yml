@@ -1,5 +1,10 @@
-log-level:
-log-file:
+log-config:
+  log-level:
+  log-file:
+  log-compress: true    # compress log or not
+  log-max-size-mb: 100   # maximum log file size before rotate to new file
+  log-max-age-days: 3   # maximum duration to retain old log files based on the timestamp encoded in their filename
+  log-max-backups: 10   # set the maximum number of old log files to retain
 quiet: false
 temp-dir:
 work-dir:

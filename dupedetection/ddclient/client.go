@@ -37,12 +37,12 @@ func (cl *client) Connect(ctx context.Context, address string) (*clientConn, err
 	if err != nil {
 		return nil, errors.Errorf("fail to dial: %w", err).WithField("address", address)
 	}
-	log.WithContext(ctx).Debugf("Connected to %s", address)
+	log.DD().WithContext(ctx).Debugf("Connected to %s", address)
 
 	conn := newClientConn(id, grpcConn)
 	go func() {
 		<-conn.Done()
-		log.WithContext(ctx).Debugf("Disconnected %s", grpcConn.Target())
+		log.DD().WithContext(ctx).Debugf("Disconnected %s", grpcConn.Target())
 	}()
 	return conn, nil
 }
