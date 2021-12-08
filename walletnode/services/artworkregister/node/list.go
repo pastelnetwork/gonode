@@ -90,7 +90,7 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			res, err := node.ProbeImage(ctx, file)
+			res, _, err := node.ProbeImage(ctx, file)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("probe image failed")
 				return errors.Errorf("node %s: %w", node.String(), err)
@@ -114,7 +114,7 @@ func (nodes *List) MatchFingerprintAndScores() error {
 }
 
 // FingerAndScores returns fingerprint of the image and dupedetection scores
-func (nodes *List) FingerAndScores() *pastel.FingerAndScores {
+func (nodes *List) FingerAndScores() *pastel.DDAndFingerprints {
 	return (*nodes)[0].fingerprintAndScores
 }
 
@@ -213,7 +213,7 @@ func (nodes *List) RegistrationFee() int64 {
 }
 
 // CompressedFingerAndScores returns compressed fingerprint and other scores
-func (nodes *List) CompressedFingerAndScores() *pastel.FingerAndScores {
+func (nodes *List) CompressedFingerAndScores() *pastel.DDAndFingerprints {
 	return (*nodes)[0].fingerprintAndScores
 }
 

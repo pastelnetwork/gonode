@@ -47,7 +47,7 @@ type RegisterArtwork interface {
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
 	ConnectTo(ctx context.Context, nodeKey, sessID string) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *artwork.File) (rep *pastel.FingerAndScores, err error)
+	ProbeImage(ctx context.Context, image *artwork.File) (rep *pastel.DDAndFingerprints, signature []byte, err error)
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
 	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (previewHash []byte, mediumThumbnailHash []byte, smallThumbnailHash []byte, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
