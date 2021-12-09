@@ -90,12 +90,14 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			res, _, err := node.ProbeImage(ctx, file)
+			res, sig, err := node.ProbeImage(ctx, file)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("probe image failed")
 				return errors.Errorf("node %s: %w", node.String(), err)
 			}
-			node.fingerprintAndScores = res
+			node.FingerprintAndScores = res
+			node.Signature = sig
+
 			return nil
 		})
 	}
@@ -106,7 +108,7 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 func (nodes *List) MatchFingerprintAndScores() error {
 	node := (*nodes)[0]
 	for i := 1; i < len(*nodes); i++ {
-		if err := pastel.CompareFingerPrintAndScore(node.fingerprintAndScores, (*nodes)[i].fingerprintAndScores); err != nil {
+		if err := pastel.CompareFingerPrintAndScore(node.FingerprintAndScores, (*nodes)[i].FingerprintAndScores); err != nil {
 			return errors.Errorf("node[%s] and node[%s] not matched: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
 		}
 	}
@@ -115,7 +117,7 @@ func (nodes *List) MatchFingerprintAndScores() error {
 
 // FingerAndScores returns fingerprint of the image and dupedetection scores
 func (nodes *List) FingerAndScores() *pastel.DDAndFingerprints {
-	return (*nodes)[0].fingerprintAndScores
+	return (*nodes)[0].FingerprintAndScores
 }
 
 // UploadImageWithThumbnail uploads the image with pqsignatured appended and thumbnail's coordinate to super nodes
@@ -214,7 +216,7 @@ func (nodes *List) RegistrationFee() int64 {
 
 // CompressedFingerAndScores returns compressed fingerprint and other scores
 func (nodes *List) CompressedFingerAndScores() *pastel.DDAndFingerprints {
-	return (*nodes)[0].fingerprintAndScores
+	return (*nodes)[0].FingerprintAndScores
 }
 
 // PreviewHash returns the hash of the preview thumbnail calculated by the first node

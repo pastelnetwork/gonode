@@ -20,7 +20,8 @@ type Node struct {
 
 	isPrimary            bool
 	activated            bool
-	fingerprintAndScores *pastel.DDAndFingerprints
+	FingerprintAndScores *pastel.DDAndFingerprints
+	Signature            []byte
 
 	// thumbnail hash
 	previewHash         []byte
