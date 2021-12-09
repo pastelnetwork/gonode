@@ -3,8 +3,12 @@ package artworkregister
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
+	"strconv"
 	"sync"
 	"time"
 
@@ -38,7 +42,7 @@ type Task struct {
 	// task data to create RegArt ticket
 	creatorBlockHeight           int
 	creatorBlockHash             string
-	fingerprintAndScores         *pastel.FingerAndScores
+	fingerprintAndScores         *pastel.DDAndFingerprints
 	fingerprintsHash             []byte
 	fingerprint                  []byte
 	imageEncodedWithFingerprints *artwork.File
@@ -47,6 +51,12 @@ type Task struct {
 	smallThumbnailHash           []byte
 	datahash                     []byte
 	rqids                        []string
+	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
+	signatures [][]byte
+
+	// redunantIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
+	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
+	redunantIDs []string
 
 	// TODO: call cNodeAPI to get the reall signature instead of the fake one
 	fingerprintSignature []byte
@@ -123,6 +133,11 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("probe image: %w", err)
 	}
 
+	// generateredundantIDs generate   number of RQ IDs
+	if err := task.generateRedundantIDs(); err != nil {
+		return errors.Errorf("probe image: %w", err)
+	}
+
 	// upload image and thumbnail coordinates to supernode(s)
 	if err := task.uploadImage(ctx); err != nil {
 		return errors.Errorf("upload image: %w", err)
@@ -194,6 +209,62 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusTicketActivated)
 	log.Debugf("reg-act-tixd is confirmed")
+
+	return nil
+}
+
+// generateRedundantIDs generates redundant IDs and assigns to task.redundantIDs
+func (task *Task) generateRedundantIDs() error {
+	ddDataJson, err := json.Marshal(task.fingerprintAndScores)
+	if err != nil {
+		return errors.Errorf("failed to marshal dd-data: %w", err)
+	}
+
+	ddEncoded := base64.RawURLEncoding.EncodeToString(ddDataJson)
+	signSN1 := base64.RawURLEncoding.EncodeToString(task.signatures[0])
+	signSN2 := base64.RawURLEncoding.EncodeToString(task.signatures[1])
+	signSN3 := base64.RawURLEncoding.EncodeToString(task.signatures[2])
+
+	const digitBytes = "0123456789"
+	b := make([]byte, 4)
+	for i := range b {
+		b[i] = digitBytes[rand.Intn(len(digitBytes))]
+	}
+	randNumStr := string(b)
+
+	randNum, err := strconv.Atoi(randNumStr)
+	if err != nil {
+		return errors.Errorf("invalid random 4 bytes number: %w", err)
+	}
+
+	var ids []string
+	for i := 0; i < task.config.DDAndFingerprintsMax; i++ {
+		var buffer bytes.Buffer
+		counter := randNum + i
+
+		buffer.WriteString(ddEncoded)
+		buffer.WriteString(".")
+		buffer.WriteString(signSN1)
+		buffer.WriteString(".")
+		buffer.WriteString(signSN2)
+		buffer.WriteString(".")
+		buffer.WriteString(signSN3)
+		buffer.WriteString(".")
+		buffer.WriteString(strconv.Itoa(counter))
+
+		compressed, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+		if err != nil {
+			return errors.Errorf("compress: %w", err)
+		}
+
+		hash, err := sha3256hash(compressed)
+		if err != nil {
+			return errors.Errorf("sha3256hash: %w", err)
+		}
+
+		ids = append(ids, base58.Encode(hash))
+	}
+	task.redunantIDs = ids
 
 	return nil
 }
@@ -598,7 +669,7 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			DataHash:                   task.datahash,
 			FingerprintsHash:           task.fingerprintsHash,
 			FingerprintsSignature:      task.fingerprintSignature,
-			DupeDetectionSystemVer:     task.fingerprintAndScores.DupeDectectionSystemVersion,
+			/*DupeDetectionSystemVer:     task.fingerprintAndScores.DupeDectectionSystemVersion,
 			MatchesFoundOnFirstPage:    int(task.fingerprintAndScores.MatchesFoundOnFirstPage),
 			NumberOfResultPages:        int(task.fingerprintAndScores.NumberOfPagesOfResults),
 			FirstMatchURL:              task.fingerprintAndScores.URLOfFirstMatchInPage,
@@ -611,7 +682,7 @@ func (task *Task) createArtTicket(_ context.Context) error {
 				Neutral: task.fingerprintAndScores.AlternativeNSFWScore.Neutral,
 				Porn:    task.fingerprintAndScores.AlternativeNSFWScore.Porn,
 				Sexy:    task.fingerprintAndScores.AlternativeNSFWScore.Sexy,
-			},
+			},*/
 			PerceptualImageHashes: pastel.PerceptualImageHashes{
 				PerceptualHash: task.fingerprintAndScores.PerceptualImageHashes.PerceptualHash,
 				AverageHash:    task.fingerprintAndScores.PerceptualImageHashes.AverageHash,
@@ -726,6 +797,27 @@ func (task *Task) probeImage(ctx context.Context) error {
 	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
 		return errors.Errorf("send image: %w", err)
 	}
+	signatures := [][]byte{}
+	// Match signatures received from supernodes.
+	for i := 0; i < len(task.nodes); i++ {
+		ddData, err := json.Marshal(task.nodes[i].FingerprintAndScores)
+		if err != nil {
+			return errors.Errorf("probeImage: marshal fingerprintAndScores %w", err)
+		}
+
+		verified, err := task.pastelClient.Verify(ctx, ddData, string(task.nodes[i].Signature), task.nodes[i].PastelID(), "ed448")
+		if err != nil {
+			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
+		}
+
+		if !verified {
+			task.UpdateStatus(StatusErrorSignaturesNotMatch)
+			return errors.Errorf("node[%s] signature doesn't match", task.nodes[i].PastelID())
+		}
+
+		signatures = append(signatures, task.nodes[i].Signature)
+	}
+	task.signatures = signatures
 
 	// Match fingerprints received from supernodes.
 	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
@@ -736,7 +828,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 	task.UpdateStatus(StatusImageProbed)
 
 	// As we are going to store the the compressed figerprint to kamedila
-	// so we calculated the hash base on the compressed fingerprint print also
+	// so we calculated the hash based on the compressed fingerprints as well
 	fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
 	if err != nil {
 		return errors.Errorf("hash zstd commpressed fingerprints: %w", err)
@@ -748,6 +840,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("decompress finger failed")
 	}
+
 	return nil
 }
 

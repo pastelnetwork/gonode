@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
@@ -77,9 +78,7 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 		return errors.Errorf("image hashes do not match: %w", err)
 	}
 
-	// -------------------WIP: PSL-142------------------------------------------------
-
-	/*lhsFingerprint, err := zstd.Decompress(nil, lhs.ZstdCompressedFingerprint)
+	lhsFingerprint, err := zstd.Decompress(nil, lhs.ZstdCompressedFingerprint)
 	if err != nil {
 		return errors.Errorf("decompress lhs fingerprint: %w", err)
 	}
@@ -108,7 +107,6 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 			}
 		}
 	}
-	*/
 
 	return nil
 }

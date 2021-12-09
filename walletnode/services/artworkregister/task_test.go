@@ -191,9 +191,9 @@ func TestTaskRun(t *testing.T) {
 				nodeClient.RegisterArtwork.Mock.On(test.SendPreBurntFeeTxidMethod, mock.Anything, mock.AnythingOfType("string")).Once().Return(preburnCustomHandler())
 
 				//need to remove generate thumbnail file
-				customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.FingerAndScores {
+				customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.DDAndFingerprints {
 					file.Remove()
-					return &pastel.FingerAndScores{ZstdCompressedFingerprint: testCase.args.fingerPrint}
+					return &pastel.DDAndFingerprints{ZstdCompressedFingerprint: testCase.args.fingerPrint}
 				}
 				nodeClient.ListenOnProbeImage(customProbeImageFunc, testCase.args.returnErr)
 
@@ -785,7 +785,7 @@ func TestTaskCreateTicket(t *testing.T) {
 						ArtistPastelID: "test-id",
 					},
 					Service:              &Service{},
-					fingerprintAndScores: &pastel.FingerAndScores{},
+					fingerprintAndScores: &pastel.DDAndFingerprints{},
 				},
 			},
 			wantErr: errEmptyRaptorQSymbols,
@@ -801,7 +801,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					mediumThumbnailHash:  []byte{},
 					previewHash:          []byte{},
 					datahash:             []byte{},
-					fingerprintAndScores: &pastel.FingerAndScores{},
+					fingerprintAndScores: &pastel.DDAndFingerprints{},
 					rqids:                []string{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
@@ -1831,11 +1831,11 @@ func TestTaskProbeImage(t *testing.T) {
 			assert.NoError(t, err)
 
 			//need to remove generate thumbnail file
-			customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.FingerAndScores {
+			customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.DDAndFingerprints {
 				file.Remove()
 				finger := pastel.Fingerprint{0.1}
 				compressedFinger, _ := zstd.Compress(nil, finger.Bytes())
-				fingerAndScore := pastel.FingerAndScores{
+				fingerAndScore := pastel.DDAndFingerprints{
 					ZstdCompressedFingerprint: compressedFinger,
 				}
 				return &fingerAndScore

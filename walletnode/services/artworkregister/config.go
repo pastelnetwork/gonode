@@ -18,6 +18,8 @@ const (
 
 	defaultRegArtTxMinConfirmations = 12
 	defaultRegActTxMinConfirmations = 5
+
+	defaultDDAndFingerprintsMax = 50
 )
 
 // Config contains settings of the registering artwork.
@@ -38,6 +40,7 @@ type Config struct {
 	RegArtTxMinConfirmations int `mapstructure:"-" json:"reg_art_tx_min_confirmations,omitempty"`
 	RegActTxMinConfirmations int `mapstructure:"-" json:"reg_act_tx_min_confirmations,omitempty"`
 
+	DDAndFingerprintsMax int
 	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration
@@ -56,5 +59,6 @@ func NewConfig() *Config {
 		connectToNextNodeDelay:   defaultConnectToNextNodeDelay,
 		acceptNodesTimeout:       defaultAcceptNodesTimeout,
 		thumbnailSize:            defaultThumbnailSize,
+		DDAndFingerprintsMax:     defaultDDAndFingerprintsMax,
 	}
 }
