@@ -62,10 +62,6 @@ type NFTTicket struct {
 
 // AppTicket represents pastel App ticket.
 type AppTicket struct {
-	AuthorPastelID string `json:"author_pastel_id"`
-	BlockTxID      string `json:"block_tx_id"`
-	BlockNum       int    `json:"block_num"`
-
 	CreatorName             string `json:"creator_name"`
 	CreatorWebsite          string `json:"creator_website"`
 	CreatorWrittenStatement string `json:"creator_written_statement"`
@@ -83,21 +79,15 @@ type AppTicket struct {
 
 	DataHash []byte `json:"data_hash"`
 
+	DDAndFingerprintsIc  int      `json:"dd_and_fingerprints_ic"`
+	DDAndFingerprintsMax int      `json:"dd_and_fingerprints_max"`
+	DDAndFingerprintsIDs []string `json:"dd_and_fingerprints_ids"`
+
 	FingerprintsHash      []byte `json:"fingerprints_hash"`
 	FingerprintsSignature []byte `json:"fingerprints_signature"`
 
-	DupeDetectionSystemVer  string                `json:"dupe_detection_system_version"`
-	MatchesFoundOnFirstPage int                   `json:"matches_found_on_first_page"`
-	NumberOfResultPages     int                   `json:"number_of_pages_of_results"`
-	FirstMatchURL           string                `json:"url_of_first_match_in_page"`
-	PastelRarenessScore     float32               `json:"pastel_rareness_score"`
-	InternetRarenessScore   float32               `json:"internet_rareness_score"`
-	OpenNSFWScore           float32               `json:"open_nsfw_score"`
-	AlternateNSFWScores     AlternateNSFWScores   `json:"alternate_nsfw_scores"`
-	PerceptualImageHashes   PerceptualImageHashes `json:"perceptual_image_hashes"`
-	IsLikelyDupe            bool                  `json:"is_likely_dupe"`
-	IsRareOnInternet        bool                  `json:"is_rare_on_internet"`
-
+	RQIc  int      `json:"rq_ic"`
+	RQMax int      `json:"rq_max"`
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
 }

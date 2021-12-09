@@ -651,7 +651,9 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyFingerprints,
@@ -670,7 +672,9 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyFingerprintsHash,
@@ -689,7 +693,9 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyFingerprintSignature,
@@ -708,7 +714,9 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyDatahash,
@@ -727,7 +735,9 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyPreviewHash,
@@ -746,7 +756,9 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyMediumThumbnailHash,
@@ -765,7 +777,9 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptySmallThumbnailHash,
@@ -784,7 +798,9 @@ func TestTaskCreateTicket(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service:              &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 					fingerprintAndScores: &pastel.DDAndFingerprints{},
 				},
 			},
@@ -808,7 +824,9 @@ func TestTaskCreateTicket(t *testing.T) {
 						ArtistName:     "test-name",
 						IssuedCopies:   10,
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: nil,
@@ -833,9 +851,6 @@ func TestTaskCreateTicket(t *testing.T) {
 				BlockNum: tc.args.task.creatorBlockHeight,
 				Copies:   tc.args.task.Request.IssuedCopies,
 				AppTicketData: pastel.AppTicket{
-					AuthorPastelID:             tc.args.task.Request.ArtistPastelID,
-					BlockTxID:                  tc.args.task.blockTxID,
-					BlockNum:                   0,
 					CreatorName:                tc.args.task.Request.ArtistName,
 					CreatorWebsite:             safeString(tc.args.task.Request.ArtistWebsiteURL),
 					CreatorWrittenStatement:    safeString(tc.args.task.Request.Description),
@@ -851,6 +866,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					FingerprintsSignature:      tc.args.task.fingerprintSignature,
 					RQIDs:                      tc.args.task.rqids,
 					RQOti:                      tc.args.task.rqEncodeParams.Oti,
+					DDAndFingerprintsMax:       tc.args.task.config.DDAndFingerprintsMax,
 				},
 			}
 
@@ -1836,6 +1852,10 @@ func TestTaskProbeImage(t *testing.T) {
 				finger := pastel.Fingerprint{0.1}
 				compressedFinger, _ := zstd.Compress(nil, finger.Bytes())
 				fingerAndScore := pastel.DDAndFingerprints{
+					Score:                     &pastel.DDScores{},
+					Percentile:                &pastel.DDPercentiles{},
+					AlternateNSFWScores:       &pastel.AlternativeNSFWScore{},
+					PerceptualImageHashes:     &pastel.PerceptualImageHashes{},
 					ZstdCompressedFingerprint: compressedFinger,
 				}
 				return &fingerAndScore
@@ -1845,7 +1865,12 @@ func TestTaskProbeImage(t *testing.T) {
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnProbeImage(customProbeImageFunc, tc.args.probeImgErr)
+				ListenOnProbeImage(customProbeImageFunc, []byte("sign"), tc.args.probeImgErr)
+
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnVerify(true, nil)
+
+			tc.args.task.Service.pastelClient = pastelClientMock
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
@@ -1862,6 +1887,9 @@ func TestTaskProbeImage(t *testing.T) {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
+				if err != nil {
+					fmt.Println(err)
+				}
 				assert.Nil(t, err)
 			}
 		})

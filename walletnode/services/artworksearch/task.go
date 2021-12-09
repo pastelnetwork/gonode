@@ -155,7 +155,8 @@ func (task *Task) run(ctx context.Context) error {
 
 // filterRegTicket filters ticket against request params & checks if its a match
 func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketSearch, matched bool) {
-	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),
+	// --------- WIP: PSL-142------------------
+	/* if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore),
 		task.request.MinRarenessScore, task.request.MaxRarenessScore) {
 		return srch, false
 	}
@@ -168,7 +169,7 @@ func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketS
 	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore),
 		task.request.MinInternetRarenessScore, task.request.MaxInternetRarenessScore) {
 		return srch, false
-	}
+	}*/
 
 	if !inIntRange(regTicket.RegTicketData.NFTTicketData.AppTicketData.TotalCopies,
 		task.request.MinCopies, task.request.MaxCopies) {

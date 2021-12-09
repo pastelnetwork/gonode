@@ -227,7 +227,7 @@ func TestNodesSendImage(t *testing.T) {
 				//client mock
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
-				client.ListenOnProbeImage(testCase.fingersAndScore, testCase.err)
+				client.ListenOnProbeImage(testCase.fingersAndScore, []byte("sig"), testCase.err)
 				clients = append(clients, client)
 
 				nodes.Add(&Node{
