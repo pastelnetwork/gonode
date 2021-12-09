@@ -220,10 +220,7 @@ func (task *Task) generateRedundantIDs() error {
 		return errors.Errorf("failed to marshal dd-data: %w", err)
 	}
 
-	ddEncoded := base64.RawURLEncoding.EncodeToString(ddDataJson)
-	signSN1 := base64.RawURLEncoding.EncodeToString(task.signatures[0])
-	signSN2 := base64.RawURLEncoding.EncodeToString(task.signatures[1])
-	signSN3 := base64.RawURLEncoding.EncodeToString(task.signatures[2])
+	ddEncoded := base64.StdEncoding.EncodeToString(ddDataJson)
 
 	const digitBytes = "0123456789"
 	b := make([]byte, 4)
@@ -244,11 +241,11 @@ func (task *Task) generateRedundantIDs() error {
 
 		buffer.WriteString(ddEncoded)
 		buffer.WriteString(".")
-		buffer.WriteString(signSN1)
+		buffer.Write(task.signatures[0])
 		buffer.WriteString(".")
-		buffer.WriteString(signSN2)
+		buffer.Write(task.signatures[1])
 		buffer.WriteString(".")
-		buffer.WriteString(signSN3)
+		buffer.Write(task.signatures[2])
 		buffer.WriteString(".")
 		buffer.WriteString(strconv.Itoa(counter))
 

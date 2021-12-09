@@ -111,7 +111,7 @@ func GetDDFingerprintsAndSigFromProbeImageReply(probeImageReply []byte) (*DDAndF
 		return nil, nil, errors.Errorf("decompress probe image reply: %w", err)
 	}
 
-	var ddData, sigEnc []byte
+	var ddData, signature []byte
 	for i := len(decompressedReply) - 1; i >= 0; i-- {
 		if decompressedReply[i] == separatorByte {
 			ddData = decompressedReply[:i]
@@ -119,26 +119,19 @@ func GetDDFingerprintsAndSigFromProbeImageReply(probeImageReply []byte) (*DDAndF
 				return nil, nil, errors.New("invalid probe image reply")
 			}
 
-			sigEnc = decompressedReply[i+1:]
+			signature = decompressedReply[i+1:]
 			break
 		}
 	}
 
-	ddDataJson := make([]byte, base64.RawURLEncoding.DecodedLen(len(ddData)))
-	signature := make([]byte, base64.RawURLEncoding.DecodedLen(len(sigEnc)))
-
-	_, err = base64.RawURLEncoding.Decode(ddDataJson, ddData)
+	ddDataJson := make([]byte, base64.StdEncoding.DecodedLen(len(ddData)))
+	n, err := base64.StdEncoding.Decode(ddDataJson, ddData)
 	if err != nil {
 		return nil, nil, errors.Errorf("b64URL decode dd-data failure: %w", err)
 	}
 
-	_, err = base64.RawURLEncoding.Decode(signature, sigEnc)
-	if err != nil {
-		return nil, nil, errors.Errorf("b64URL decode signature failure: %w", err)
-	}
-
 	ddDataAndFingerprints := &DDAndFingerprints{}
-	if err := json.Unmarshal(ddDataJson, ddDataAndFingerprints); err != nil {
+	if err := json.Unmarshal(ddDataJson[:n], ddDataAndFingerprints); err != nil {
 		return nil, nil, errors.Errorf("json decode dd_and_fingerprints: %w", err)
 	}
 
@@ -152,13 +145,11 @@ func GetProbeImageReply(ddData *DDAndFingerprints, signature []byte) ([]byte, er
 		return nil, errors.Errorf("GetProbeImageReply: failed to marshal dd-data: %w", err)
 	}
 
-	res := make([]byte, base64.RawURLEncoding.EncodedLen(len(ddDataJson)))
-	encodedDdSig := make([]byte, base64.RawURLEncoding.EncodedLen(len(signature)))
-	base64.RawURLEncoding.Encode(res, ddDataJson)
-	base64.RawURLEncoding.Encode(encodedDdSig, signature)
+	res := make([]byte, base64.StdEncoding.EncodedLen(len(ddDataJson)))
+	base64.StdEncoding.Encode(res, ddDataJson)
 
 	res = append(res, separatorByte)
-	res = append(res, encodedDdSig...)
+	res = append(res, signature...)
 
 	compressed, err := zstd.CompressLevel(nil, res, 22)
 	if err != nil {
