@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"encoding/base64"
+
 	"fmt"
 	"io"
 
@@ -121,19 +122,19 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) (*pastel.FingerAndScores, error) {
+func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) (*pastel.DDAndFingerprints, []byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, errors.Errorf("open stream: %w", err)
+		return nil, nil, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, errors.Errorf("open file %q: %w", file.Name(), err)
+		return nil, nil, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -148,65 +149,21 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return nil, errors.Errorf("send image data: %w", err)
+			return nil, nil, errors.Errorf("send image data: %w", err)
 		}
 	}
 
-	resp, err := stream.CloseAndRecv()
+	// -------------------- WIP: PSL-142 -----------------------------
+	// stream.CloseAndRecv() is supposed to return  a string response
+	var ddDataSignature string
+	/*resp, err := stream.CloseAndRecv()
 	if err != nil {
 		return nil, errors.Errorf("receive image response: %w", err)
 	}
-	return &pastel.FingerAndScores{
-		DupeDectectionSystemVersion: resp.DupeDetectionVersion,
-		HashOfCandidateImageFile:    resp.HashOfCandidateImg,
-		OverallAverageRarenessScore: resp.AverageRarenessScore,
-		IsLikelyDupe:                resp.IsLikelyDupe,
-		IsRareOnInternet:            resp.IsRareOnInternet,
-		NumberOfPagesOfResults:      resp.NumberOfPagesOfResults,
-		MatchesFoundOnFirstPage:     resp.MatchesFoundOnFirstPage,
-		URLOfFirstMatchInPage:       resp.UrlOfFirstMatchInPage,
-		OpenNSFWScore:               resp.OpenNsfwScore,
-		ZstdCompressedFingerprint:   resp.ZstdCompressedFingerprint,
-		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
-			Drawing: resp.AlternativeNsfwScore.Drawing,
-			Hentai:  resp.AlternativeNsfwScore.Hentai,
-			Neutral: resp.AlternativeNsfwScore.Neutral,
-			Porn:    resp.AlternativeNsfwScore.Porn,
-			Sexy:    resp.AlternativeNsfwScore.Sexy,
-		},
-		PerceptualImageHashes: pastel.PerceptualImageHashes{
-			PerceptualHash: resp.ImageHashes.PerceptualHash,
-			AverageHash:    resp.ImageHashes.AverageHash,
-			DifferenceHash: resp.ImageHashes.DifferenceHash,
-			PDQHash:        resp.ImageHashes.PDQHash,
-			NeuralHash:     resp.ImageHashes.NeuralHash,
-		},
-		PerceptualHashOverlapCount:                   resp.PerceptualHashOverlapCount,
-		NumberOfFingerprintsRequiringFurtherTesting1: resp.NumberOfFingerprintsRequiringFurtherTesting_1,
-		NumberOfFingerprintsRequiringFurtherTesting2: resp.NumberOfFingerprintsRequiringFurtherTesting_2,
-		NumberOfFingerprintsRequiringFurtherTesting3: resp.NumberOfFingerprintsRequiringFurtherTesting_3,
-		NumberOfFingerprintsRequiringFurtherTesting4: resp.NumberOfFingerprintsRequiringFurtherTesting_4,
-		NumberOfFingerprintsRequiringFurtherTesting5: resp.NumberOfFingerprintsRequiringFurtherTesting_5,
-		NumberOfFingerprintsRequiringFurtherTesting6: resp.NumberOfFingerprintsRequiringFurtherTesting_6,
-		NumberOfFingerprintsOfSuspectedDupes:         resp.NumberOfFingerprintsOfSuspectedDupes,
-		PearsonMax:                                   resp.PearsonMax,
-		SpearmanMax:                                  resp.SpearmanMax,
-		KendallMax:                                   resp.KendallMax,
-		HoeffdingMax:                                 resp.HoeffdingMax,
-		MutualInformationMax:                         resp.MutualInformationMax,
-		HsicMax:                                      resp.HsicMax,
-		XgbimportanceMax:                             resp.XgbimportanceMax,
-		PearsonTop1BpsPercentile:                     resp.PearsonTop_1BpsPercentile,
-		SpearmanTop1BpsPercentile:                    resp.SpearmanTop_1BpsPercentile,
-		KendallTop1BpsPercentile:                     resp.KendallTop_1BpsPercentile,
-		HoeffdingTop10BpsPercentile:                  resp.HoeffdingTop_10BpsPercentile,
-		MutualInformationTop100BpsPercentile:         resp.MutualInformationTop_100BpsPercentile,
-		HsicTop100BpsPercentile:                      resp.HsicTop_100BpsPercentile,
-		XgbimportanceTop100BpsPercentile:             resp.XgbimportanceTop_100BpsPercentile,
-		CombinedRarenessScore:                        resp.CombinedRarenessScore,
-		XgboostPredictedRarenessScore:                resp.XgboostPredictedRarenessScore,
-		NnPredictedRarenessScore:                     resp.NnPredictedRarenessScore,
-	}, nil
+	ddDataSignature = resp.ddDataSignature
+	*/
+
+	return pastel.GetDDFingerprintsAndSigFromProbeImageReply(ddDataSignature)
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
