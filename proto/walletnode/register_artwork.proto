@@ -16,6 +16,9 @@ service RegisterArtwork {
     // ConnectTo requests to connect to the primary supernode.
     rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
 
+    // MeshNodes informs to SNs other SNs on same meshNodes created for this registration request
+    rpc MeshNodes(MeshNodesRequest) returns (MeshNodesReply);
+
     // ProbeImage uploads the resampled image compute and return a fingerpirnt.
     rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
@@ -55,64 +58,23 @@ message ConnectToRequest {
 message ConnectToReply {
 }
 
+message MeshNodesRequest {
+    message Node  {
+     string sessID = 1;
+     string nodeID = 2;
+    }
+
+    repeated Node nodes = 1;
+}
+
+message MeshNodesReply {
+}
+
 message ProbeImageRequest {
     bytes payload = 1;
 }
 message ProbeImageReply {
-    message AlternativeNSFWScore {
-      float drawing = 1;
-      float hentai = 2;
-      float neutral = 3;
-      float porn = 4;
-      float sexy = 5;
-    }
-    message ImageHashes {
-      string perceptual_hash = 1;
-      string average_hash = 2;
-      string difference_hash = 3;
-      string PDQ_hash = 4;
-      string neural_hash = 5;
-    }
-    // version of dupde detection system
-    string dupe_detection_version = 1;
-    // hexstring of hash of candidate image
-    string hash_of_candidate_img = 2;
-    float average_rareness_score = 3;
-    bool is_rare_on_internet = 4;
-    uint32 matches_found_on_first_page = 5;
-    uint32 number_of_pages_of_results = 6;
-    string url_of_first_match_in_page = 7;
-    float open_nsfw_score = 8;
-    bytes zstd_compressed_fingerprint = 9;
-    AlternativeNSFWScore alternative_nsfw_score = 10;
-    ImageHashes image_hashes = 11;
-    uint32 perceptual_hash_overlap_count = 12;
-    uint32 number_of_fingerprints_requiring_further_testing_1 = 13;
-    uint32 number_of_fingerprints_requiring_further_testing_2 = 14;
-    uint32 number_of_fingerprints_requiring_further_testing_3 = 15;
-    uint32 number_of_fingerprints_requiring_further_testing_4 = 16;
-    uint32 number_of_fingerprints_requiring_further_testing_5 = 17;
-    uint32 number_of_fingerprints_requiring_further_testing_6 = 18; 
-    uint32 number_of_fingerprints_of_suspected_dupes = 19;
-    float pearson_max = 20;
-    float spearman_max = 21;
-    float kendall_max = 22;
-    float hoeffding_max = 23;
-    float mutual_information_max = 24;
-    float hsic_max = 25;
-    float xgbimportance_max = 26;
-    float pearson_top_1_bps_percentile = 27;
-    float spearman_top_1_bps_percentile = 28;
-    float kendall_top_1_bps_percentile = 29;
-    float hoeffding_top_10_bps_percentile = 30;
-    float mutual_information_top_100_bps_percentile = 31;
-    float hsic_top_100_bps_percentile = 32;
-    float xgbimportance_top_100_bps_percentile = 33;
-    float combined_rareness_score = 34;
-    float xgboost_predicted_rareness_score = 35;
-    float nn_predicted_rareness_score = 36;
-    float overall_average_rareness_score = 37;
-    bool is_likely_dupe = 38;
+    bytes compressedSignedDDAndFingerprints = 1;
 }
 
 message EncoderParameters {

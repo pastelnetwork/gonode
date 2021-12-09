@@ -26,6 +26,8 @@ type RegisterArtworkClient interface {
 	AcceptedNodes(ctx context.Context, in *AcceptedNodesRequest, opts ...grpc.CallOption) (*AcceptedNodesReply, error)
 	// ConnectTo requests to connect to the primary supernode.
 	ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error)
+	// MeshNodes informs to SNs other SNs on same meshNodes created for this registration request
+	MeshNodes(ctx context.Context, in *MeshNodesRequest, opts ...grpc.CallOption) (*MeshNodesReply, error)
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_ProbeImageClient, error)
 	// SendArtTicket sends a signed art-ticket to the supernode.
@@ -89,6 +91,15 @@ func (c *registerArtworkClient) AcceptedNodes(ctx context.Context, in *AcceptedN
 func (c *registerArtworkClient) ConnectTo(ctx context.Context, in *ConnectToRequest, opts ...grpc.CallOption) (*ConnectToReply, error) {
 	out := new(ConnectToReply)
 	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/ConnectTo", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *registerArtworkClient) MeshNodes(ctx context.Context, in *MeshNodesRequest, opts ...grpc.CallOption) (*MeshNodesReply, error) {
+	out := new(MeshNodesReply)
+	err := c.cc.Invoke(ctx, "/walletnode.RegisterArtwork/MeshNodes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -202,6 +213,8 @@ type RegisterArtworkServer interface {
 	AcceptedNodes(context.Context, *AcceptedNodesRequest) (*AcceptedNodesReply, error)
 	// ConnectTo requests to connect to the primary supernode.
 	ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error)
+	// MeshNodes informs to SNs other SNs on same meshNodes created for this registration request
+	MeshNodes(context.Context, *MeshNodesRequest) (*MeshNodesReply, error)
 	// ProbeImage uploads the resampled image compute and return a fingerpirnt.
 	ProbeImage(RegisterArtwork_ProbeImageServer) error
 	// SendArtTicket sends a signed art-ticket to the supernode.
@@ -227,6 +240,9 @@ func (UnimplementedRegisterArtworkServer) AcceptedNodes(context.Context, *Accept
 }
 func (UnimplementedRegisterArtworkServer) ConnectTo(context.Context, *ConnectToRequest) (*ConnectToReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConnectTo not implemented")
+}
+func (UnimplementedRegisterArtworkServer) MeshNodes(context.Context, *MeshNodesRequest) (*MeshNodesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MeshNodes not implemented")
 }
 func (UnimplementedRegisterArtworkServer) ProbeImage(RegisterArtwork_ProbeImageServer) error {
 	return status.Errorf(codes.Unimplemented, "method ProbeImage not implemented")
@@ -314,6 +330,24 @@ func _RegisterArtwork_ConnectTo_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RegisterArtworkServer).ConnectTo(ctx, req.(*ConnectToRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RegisterArtwork_MeshNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MeshNodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterArtworkServer).MeshNodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/walletnode.RegisterArtwork/MeshNodes",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterArtworkServer).MeshNodes(ctx, req.(*MeshNodesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -438,6 +472,10 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ConnectTo",
 			Handler:    _RegisterArtwork_ConnectTo_Handler,
+		},
+		{
+			MethodName: "MeshNodes",
+			Handler:    _RegisterArtwork_MeshNodes_Handler,
 		},
 		{
 			MethodName: "SendSignedNFTTicket",
