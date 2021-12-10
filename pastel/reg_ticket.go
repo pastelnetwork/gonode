@@ -79,8 +79,8 @@ type AppTicket struct {
 
 	DataHash []byte `json:"data_hash"`
 
-	DDAndFingerprintsIc  int      `json:"dd_and_fingerprints_ic"`
-	DDAndFingerprintsMax int      `json:"dd_and_fingerprints_max"`
+	DDAndFingerprintsIc  uint16   `json:"dd_and_fingerprints_ic"`
+	DDAndFingerprintsMax uint16   `json:"dd_and_fingerprints_max"`
 	DDAndFingerprintsIDs []string `json:"dd_and_fingerprints_ids"`
 
 	FingerprintsHash      []byte `json:"fingerprints_hash"`

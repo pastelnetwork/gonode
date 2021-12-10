@@ -54,7 +54,7 @@ type Task struct {
 	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
 	signatures [][]byte
 
-	ddAndFingerprintsIc int
+	ddAndFingerprintsIc uint16
 
 	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
 	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
@@ -233,12 +233,12 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 	if err != nil {
 		return errors.Errorf("invalid random 4 bytes number: %w", err)
 	}
-	task.ddAndFingerprintsIc = randNum
+	task.ddAndFingerprintsIc = uint16(randNum)
 
 	var ids []string
-	for i := 0; i < task.config.DDAndFingerprintsMax; i++ {
+	for i := uint16(0); i < task.config.DDAndFingerprintsMax; i++ {
 		var buffer bytes.Buffer
-		counter := randNum + i
+		counter := task.ddAndFingerprintsIc + i
 
 		buffer.WriteString(ddEncoded)
 		buffer.WriteString(".")
@@ -248,7 +248,7 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 		buffer.WriteString(".")
 		buffer.Write(task.signatures[2])
 		buffer.WriteString(".")
-		buffer.WriteString(strconv.Itoa(counter))
+		buffer.WriteString(strconv.Itoa(int(counter)))
 
 		compressed, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
 		if err != nil {

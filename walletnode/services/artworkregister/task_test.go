@@ -2146,3 +2146,65 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 		})
 	}
 }
+
+func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		task *Task
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{
+						config: NewConfig(),
+					},
+					signatures: make([][]byte, 3),
+					fingerprintAndScores: &pastel.DDAndFingerprints{
+						DupeDetectionSystemVersion: "1",
+						Block:                      "block-hash",
+						PastelRarenessScore:        0.55,
+						IsLikelyDupe:               true,
+						IsRareOnInternet:           true,
+						InternetRarenessScore:      0.111,
+						AlternateNSFWScores: &pastel.AlternativeNSFWScore{
+							Sexy:    0.234,
+							Hentai:  1.0,
+							Drawing: 0.131,
+							Porn:    0.9999,
+						},
+						Fingerprints: []float32{1.0, 2, 4, 3.3},
+						Score: &pastel.DDScores{
+							CombinedRarenessScore:         3.1,
+							XgboostPredictedRarenessScore: 0.4,
+						},
+					},
+				},
+			},
+			wantErr: nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			err := tc.args.task.generateDDAndFingerprintsIDs()
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
