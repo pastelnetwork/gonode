@@ -83,20 +83,7 @@ type AppTicket struct {
 
 	DataHash []byte `json:"data_hash"`
 
-	FingerprintsHash      []byte `json:"fingerprints_hash"`
-	FingerprintsSignature []byte `json:"fingerprints_signature"`
-
-	DupeDetectionSystemVer  string                `json:"dupe_detection_system_version"`
-	MatchesFoundOnFirstPage int                   `json:"matches_found_on_first_page"`
-	NumberOfResultPages     int                   `json:"number_of_pages_of_results"`
-	FirstMatchURL           string                `json:"url_of_first_match_in_page"`
-	PastelRarenessScore     float32               `json:"pastel_rareness_score"`
-	InternetRarenessScore   float32               `json:"internet_rareness_score"`
-	OpenNSFWScore           float32               `json:"open_nsfw_score"`
-	AlternateNSFWScores     AlternateNSFWScores   `json:"alternate_nsfw_scores"`
-	PerceptualImageHashes   PerceptualImageHashes `json:"perceptual_image_hashes"`
-	IsLikelyDupe            bool                  `json:"is_likely_dupe"`
-	IsRareOnInternet        bool                  `json:"is_rare_on_internet"`
+	// TODO: update later
 
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`

@@ -23,6 +23,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
@@ -432,7 +433,10 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 						secondaries.Add(node)
 					}()
 
-					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
+					if err := node.ConnectTo(ctx, types.MeshedSuperNode{
+						NodeID: primary.PastelID(),
+						SessID: primary.SessID(),
+					}); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
@@ -664,33 +668,35 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			Thumbnail1Hash:             task.mediumThumbnailHash,
 			Thumbnail2Hash:             task.smallThumbnailHash,
 			DataHash:                   task.datahash,
-			FingerprintsHash:           task.fingerprintsHash,
-			FingerprintsSignature:      task.fingerprintSignature,
-			/*DupeDetectionSystemVer:     task.fingerprintAndScores.DupeDectectionSystemVersion,
-			MatchesFoundOnFirstPage:    int(task.fingerprintAndScores.MatchesFoundOnFirstPage),
-			NumberOfResultPages:        int(task.fingerprintAndScores.NumberOfPagesOfResults),
-			FirstMatchURL:              task.fingerprintAndScores.URLOfFirstMatchInPage,
-			PastelRarenessScore:        task.fingerprintAndScores.OverallAverageRarenessScore,
-			InternetRarenessScore:      0, // FIXME
-			OpenNSFWScore:              task.fingerprintAndScores.OpenNSFWScore,
-			AlternateNSFWScores: pastel.AlternateNSFWScores{
-				Drawing: task.fingerprintAndScores.AlternativeNSFWScore.Drawing,
-				Hentai:  task.fingerprintAndScores.AlternativeNSFWScore.Hentai,
-				Neutral: task.fingerprintAndScores.AlternativeNSFWScore.Neutral,
-				Porn:    task.fingerprintAndScores.AlternativeNSFWScore.Porn,
-				Sexy:    task.fingerprintAndScores.AlternativeNSFWScore.Sexy,
-			},*/
-			PerceptualImageHashes: pastel.PerceptualImageHashes{
-				PerceptualHash: task.fingerprintAndScores.PerceptualImageHashes.PerceptualHash,
-				AverageHash:    task.fingerprintAndScores.PerceptualImageHashes.AverageHash,
-				DifferenceHash: task.fingerprintAndScores.PerceptualImageHashes.DifferenceHash,
-				PDQHash:        task.fingerprintAndScores.PerceptualImageHashes.PDQHash,
-				NeuralHash:     task.fingerprintAndScores.PerceptualImageHashes.NeuralHash,
-			},
-			IsRareOnInternet: task.fingerprintAndScores.IsRareOnInternet,
-			IsLikelyDupe:     task.fingerprintAndScores.IsLikelyDupe,
-			RQIDs:            task.rqids,
-			RQOti:            task.rqEncodeParams.Oti,
+			/*
+					FingerprintsHash:           task.fingerprintsHash,
+					FingerprintsSignature:      task.fingerprintSignature,
+					/*DupeDetectionSystemVer:     task.fingerprintAndScores.DupeDectectionSystemVersion,
+					MatchesFoundOnFirstPage:    int(task.fingerprintAndScores.MatchesFoundOnFirstPage),
+					NumberOfResultPages:        int(task.fingerprintAndScores.NumberOfPagesOfResults),
+					FirstMatchURL:              task.fingerprintAndScores.URLOfFirstMatchInPage,
+					PastelRarenessScore:        task.fingerprintAndScores.OverallAverageRarenessScore,
+					InternetRarenessScore:      0, // FIXME
+					OpenNSFWScore:              task.fingerprintAndScores.OpenNSFWScore,
+					AlternateNSFWScores: pastel.AlternateNSFWScores{
+						Drawing: task.fingerprintAndScores.AlternativeNSFWScore.Drawing,
+						Hentai:  task.fingerprintAndScores.AlternativeNSFWScore.Hentai,
+						Neutral: task.fingerprintAndScores.AlternativeNSFWScore.Neutral,
+						Porn:    task.fingerprintAndScores.AlternativeNSFWScore.Porn,
+						Sexy:    task.fingerprintAndScores.AlternativeNSFWScore.Sexy,
+					},
+				PerceptualImageHashes: pastel.PerceptualImageHashes{
+					PerceptualHash: task.fingerprintAndScores.PerceptualImageHashes.PerceptualHash,
+					AverageHash:    task.fingerprintAndScores.PerceptualImageHashes.AverageHash,
+					DifferenceHash: task.fingerprintAndScores.PerceptualImageHashes.DifferenceHash,
+					PDQHash:        task.fingerprintAndScores.PerceptualImageHashes.PDQHash,
+					NeuralHash:     task.fingerprintAndScores.PerceptualImageHashes.NeuralHash,
+				},
+				IsRareOnInternet: task.fingerprintAndScores.IsRareOnInternet,
+				IsLikelyDupe:     task.fingerprintAndScores.IsLikelyDupe,
+			*/
+			RQIDs: task.rqids,
+			RQOti: task.rqEncodeParams.Oti,
 		},
 	}
 
@@ -784,6 +790,22 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 	task.UpdateStatus(StatusConnected)
 	task.nodes = nodes
 
+	// Send all meshed supernode info to nodes - that will be used to node send info to other nodes
+	meshedSNInfo := []types.MeshedSuperNode{}
+	for _, node := range nodes {
+		meshedSNInfo = append(meshedSNInfo, types.MeshedSuperNode{
+			NodeID: node.PastelID(),
+			SessID: node.SessID(),
+		})
+	}
+
+	for _, node := range nodes {
+		err = node.MeshNodes(ctx, meshedSNInfo)
+		if err != nil {
+			nodes.DisconnectAll()
+			return errors.Errorf("could not send info of meshed nodes: %w", err)
+		}
+	}
 	return nil
 }
 

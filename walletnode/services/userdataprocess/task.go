@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pastelnetwork/gonode/common/types"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -273,7 +274,10 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 						secondaries.Add(node)
 					}()
 
-					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
+					if err := node.ConnectTo(ctx, types.MeshedSuperNode{
+						NodeID: primary.PastelID(),
+						SessID: primary.SessID(),
+					}); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)

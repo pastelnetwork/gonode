@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -16,6 +18,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -30,8 +33,13 @@ type Task struct {
 	Artwork          *artwork.File
 	imageSizeBytes   int
 
-	fingerAndScores *pastel.FingerAndScores
-	fingerprints    pastel.Fingerprint
+	meshedNodes []types.MeshedSuperNode
+
+	// DDAndFingerprints created by node its self
+	myDDAndFingerprints                   *pastel.DDAndFingerprints
+	calcualtedDDAndFingerprints           *pastel.DDAndFingerprints
+	fingerprints                          pastel.Fingerprint
+	allSignedDDAndFingerprintsReceivedChn chan struct{}
 
 	PreviewThumbnail *artwork.File
 	MediumThumbnail  *artwork.File
@@ -54,7 +62,7 @@ type Task struct {
 	// valid only for a task run as primary
 	peersArtTicketSignatureMtx *sync.Mutex
 	peersArtTicketSignature    map[string][]byte
-	allSignaturesReceived      chan struct{}
+	allSignaturesReceivedChn   chan struct{}
 
 	// valid only for secondary node
 	connectedTo *Node
@@ -191,8 +199,14 @@ func (task *Task) ConnectTo(_ context.Context, nodeID, sessID string) error {
 	return err
 }
 
-// ProbeImage uploads the resampled image compute and return a fingerpirnt.
-func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.FingerAndScores, error) {
+// MeshNodes to set info of all meshed supernodes - that will be to send
+func (task *Task) MeshNodes(_ context.Context, meshedNodes []types.MeshedSuperNode) {
+	task.meshedNodes = meshedNodes
+}
+
+// ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
+func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
+
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return nil, err
 	}
@@ -203,27 +217,72 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) (*pastel.Fin
 		task.UpdateStatus(StatusImageProbed)
 
 		task.ResampledArtwork = file
-		task.fingerAndScores, task.fingerprints, err = task.genFingerprintsData(ctx, task.ResampledArtwork)
+		task.myDDAndFingerprints, err = task.genFingerprintsData(ctx, task.ResampledArtwork)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("generate fingerprints data")
 			err = errors.Errorf("generate fingerprints data: %w", err)
 			return nil
 		}
-		// NOTE: for testing Kademlia and should be removed before releasing.
-		// data, err := file.Bytes()
-		// if err != nil {
-		// 	return err
-		// }
 
-		// id, err := task.p2pClient.Store(ctx, data)
-		// if err != nil {
-		// 	return err
-		// }
-		// log.WithContext(ctx).WithField("id", id).Debugf("Image stored into Kademlia")
+		// send signed DDAndFingerprints to other SNs
+		if task.meshedNodes == nil || len(task.meshedNodes) != 3 {
+			log.WithContext(ctx).Error("Not enough meshed SuperNodes")
+			err = errors.New("not enough meshed SuperNodes")
+			return nil
+		}
+
+		for _, nodeInfo := range task.meshedNodes {
+			// Don't send to itself
+			if nodeInfo.NodeID == task.config.PastelID {
+				continue
+			}
+
+			var node *Node
+			node, err = task.pastelNodeByExtKey(ctx, nodeInfo.NodeID)
+			if err != nil {
+				log.WithContext(ctx).WithFields(log.Fields{
+					"nodeID":  nodeInfo.NodeID,
+					"context": "SendDDAndFingerprints",
+				}).WithError(err).Errorf("get node by extID")
+				return nil
+			}
+
+			if err = node.connect(ctx); err != nil {
+				log.WithContext(ctx).WithFields(log.Fields{
+					"nodeID":  nodeInfo.NodeID,
+					"context": "SendDDAndFingerprints",
+				}).WithError(err).Errorf("connect to node")
+				return nil
+			}
+
+			if err = node.Session(ctx, task.config.PastelID, nodeInfo.SessID); err != nil {
+				log.WithContext(ctx).WithFields(log.Fields{
+					"nodeID":  nodeInfo.NodeID,
+					"sessID":  nodeInfo.SessID,
+					"context": "SendDDAndFingerprints",
+				}).WithError(err).Errorf("handsake with peer")
+				return nil
+			}
+
+			if err = node.SendSignedDDAndFingerprints(ctx, task.config.PastelID, task.myDDAndFingerprints.ZstdCompressedFingerprint); err != nil {
+				log.WithContext(ctx).WithFields(log.Fields{
+					"nodeID":  nodeInfo.NodeID,
+					"sessID":  nodeInfo.SessID,
+					"context": "SendDDAndFingerprints",
+				}).WithError(err).Errorf("send signed DDAndFingerprints failed")
+				return nil
+			}
+		}
+
+		// wait for other SNs shared their signed DDAndFingerprints
+
 		return nil
 	})
 
-	return task.fingerAndScores, err
+	if err != nil {
+		return nil, err
+	}
+	return task.calcualtedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
@@ -338,7 +397,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 						log.WithContext(ctx).Debug("waiting for signature from peers cancelled or timeout")
 					}
 					return nil
-				case <-task.allSignaturesReceived:
+				case <-task.allSignaturesReceivedChn:
 					log.WithContext(ctx).Debug("all signature received so start validation")
 
 					if err = task.verifyPeersSingature(ctx); err != nil {
@@ -584,78 +643,44 @@ func (task *Task) storeFingerprints(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (*pastel.FingerAndScores, pastel.Fingerprint, error) {
+func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (*pastel.DDAndFingerprints, error) {
 	img, err := file.Bytes()
 	if err != nil {
-		return nil, nil, errors.Errorf("get content of image %s: %w", file.Name(), err)
+		return nil, errors.Errorf("get content of image %s: %w", file.Name(), err)
 	}
 
-	ddResult, err := task.ddClient.ImageRarenessScore(ctx, img, file.Format().String())
+	// Get DDAndFingerprints
+	// FIXME: have to include creator pastelID
+	ddAndFingerprints, err := task.ddClient.ImageRarenessScore(ctx, img, file.Format().String())
 
 	if err != nil {
-		return nil, nil, errors.Errorf("get dupe detection result from dd-server: %w", err)
+		return nil, errors.Errorf("call ImageRarenessScore(): %w", err)
 	}
 
-	fingerprint := ddResult.Fingerprints
-
-	fingerprintAndScores := pastel.FingerAndScores{
-		DupeDectectionSystemVersion: ddResult.DupeDetectionSystemVer,
-		HashOfCandidateImageFile:    ddResult.ImageHash,
-		OverallAverageRarenessScore: ddResult.PastelRarenessScore,
-		IsLikelyDupe:                ddResult.IsLikelyDupe,
-		IsRareOnInternet:            ddResult.IsRareOnInternet,
-		NumberOfPagesOfResults:      ddResult.NumberOfResultPages,
-		MatchesFoundOnFirstPage:     ddResult.MatchesFoundOnFirstPage,
-		URLOfFirstMatchInPage:       ddResult.FirstMatchURL,
-		OpenNSFWScore:               ddResult.OpenNSFWScore,
-		ZstdCompressedFingerprint:   nil,
-		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
-			Drawing: ddResult.AlternateNSFWScores.Drawings,
-			Hentai:  ddResult.AlternateNSFWScores.Hentai,
-			Neutral: ddResult.AlternateNSFWScores.Neutral,
-			Porn:    ddResult.AlternateNSFWScores.Porn,
-			Sexy:    ddResult.AlternateNSFWScores.Sexy,
-		},
-		PerceptualImageHashes: pastel.PerceptualImageHashes{
-			PerceptualHash: ddResult.PerceptualImageHashes.PerceptualHash,
-			AverageHash:    ddResult.PerceptualImageHashes.AverageHash,
-			DifferenceHash: ddResult.PerceptualImageHashes.DifferenceHash,
-			PDQHash:        ddResult.PerceptualImageHashes.PDQHash,
-			NeuralHash:     ddResult.PerceptualImageHashes.NeuralHash,
-		},
-		PerceptualHashOverlapCount:                   ddResult.PerceptualHashOverlapCount,
-		NumberOfFingerprintsRequiringFurtherTesting1: ddResult.NumberOfFingerprintsRequiringFurtherTesting1,
-		NumberOfFingerprintsRequiringFurtherTesting2: ddResult.NumberOfFingerprintsRequiringFurtherTesting2,
-		NumberOfFingerprintsRequiringFurtherTesting3: ddResult.NumberOfFingerprintsRequiringFurtherTesting3,
-		NumberOfFingerprintsRequiringFurtherTesting4: ddResult.NumberOfFingerprintsRequiringFurtherTesting4,
-		NumberOfFingerprintsRequiringFurtherTesting5: ddResult.NumberOfFingerprintsRequiringFurtherTesting5,
-		NumberOfFingerprintsRequiringFurtherTesting6: ddResult.NumberOfFingerprintsRequiringFurtherTesting6,
-		NumberOfFingerprintsOfSuspectedDupes:         ddResult.NumberOfFingerprintsOfSuspectedDupes,
-		PearsonMax:                                   ddResult.PearsonMax,
-		SpearmanMax:                                  ddResult.SpearmanMax,
-		KendallMax:                                   ddResult.KendallMax,
-		HoeffdingMax:                                 ddResult.HoeffdingMax,
-		MutualInformationMax:                         ddResult.MutualInformationMax,
-		HsicMax:                                      ddResult.HsicMax,
-		XgbimportanceMax:                             ddResult.XgbimportanceMax,
-		PearsonTop1BpsPercentile:                     ddResult.PearsonTop1BpsPercentile,
-		SpearmanTop1BpsPercentile:                    ddResult.SpearmanTop1BpsPercentile,
-		KendallTop1BpsPercentile:                     ddResult.KendallTop1BpsPercentile,
-		HoeffdingTop10BpsPercentile:                  ddResult.HoeffdingTop10BpsPercentile,
-		MutualInformationTop100BpsPercentile:         ddResult.MutualInformationTop100BpsPercentile,
-		HsicTop100BpsPercentile:                      ddResult.HsicTop100BpsPercentile,
-		XgbimportanceTop100BpsPercentile:             ddResult.XgbimportanceTop100BpsPercentile,
-		CombinedRarenessScore:                        ddResult.CombinedRarenessScore,
-		XgboostPredictedRarenessScore:                ddResult.XgboostPredictedRarenessScore,
-		NnPredictedRarenessScore:                     ddResult.NnPredictedRarenessScore,
-	}
-	compressedFg, err := zstd.CompressLevel(nil, pastel.Fingerprint(fingerprint).Bytes(), 22)
+	// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
+	ddAndFingerprintsBytes, err := json.Marshal(ddAndFingerprints)
 	if err != nil {
-		return nil, nil, errors.Errorf("compress fingerprint data: %w", err)
+		return nil, errors.Errorf("marshal DDAndFingerprints: %w", err)
 	}
 
-	fingerprintAndScores.ZstdCompressedFingerprint = compressedFg
-	return &fingerprintAndScores, fingerprint, nil
+	// sign it
+	signature, err := task.pastelClient.Sign(ctx, ddAndFingerprintsBytes, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		return nil, errors.Errorf("sign DDAndFingerprints: %w", err)
+	}
+
+	// Join to created sign DDAndFingerprints
+	signedDDAndFingerprints := base64.StdEncoding.EncodeToString(ddAndFingerprintsBytes) + "." + string(signature)
+	log.WithContext(ctx).WithField("signedDDAndFingerprints", signedDDAndFingerprints).Debug("GenFingerprintsData")
+
+	// Compress it
+	compressedDDAndFingerprints, err := zstd.CompressLevel(nil, []byte(signedDDAndFingerprints), 22)
+	if err != nil {
+		return nil, errors.Errorf("compress fingerprint data: %w", err)
+	}
+
+	ddAndFingerprints.ZstdCompressedFingerprint = compressedDDAndFingerprints
+	return ddAndFingerprints, nil
 }
 
 func (task *Task) compareRQSymbolID(ctx context.Context) error {
@@ -790,7 +815,7 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 		if len(task.peersArtTicketSignature) == len(task.accepted) {
 			log.WithContext(ctx).Debug("all signature received")
 			go func() {
-				close(task.allSignaturesReceived)
+				close(task.allSignaturesReceivedChn)
 			}()
 		}
 		return nil
@@ -845,10 +870,11 @@ func (task *Task) removeArtifacts() {
 // NewTask returns a new Task instance.
 func NewTask(service *Service) *Task {
 	return &Task{
-		Task:                       task.New(StatusTaskStarted),
-		Service:                    service,
-		peersArtTicketSignatureMtx: &sync.Mutex{},
-		peersArtTicketSignature:    make(map[string][]byte),
-		allSignaturesReceived:      make(chan struct{}),
+		Task:                                  task.New(StatusTaskStarted),
+		Service:                               service,
+		peersArtTicketSignatureMtx:            &sync.Mutex{},
+		peersArtTicketSignature:               make(map[string][]byte),
+		allSignaturesReceivedChn:              make(chan struct{}),
+		allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
 	}
 }

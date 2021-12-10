@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
@@ -102,13 +103,13 @@ func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []
 }
 
 // ConnectTo implements node.RegisterArtwork.ConnectTo()
-func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID string) error {
+func (service *registerArtwork) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.ConnectToRequest{
-		NodeID: nodeID,
-		SessID: sessID,
+		NodeID: primaryNode.NodeID,
+		SessID: primaryNode.SessID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
@@ -122,14 +123,14 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 }
 
 // MeshNodes informs SNs which SNs are connected to do NFT request
-func (service *registerArtwork) MeshNodes(ctx context.Context, nodes []node.Node) error {
+func (service *registerArtwork) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
 	request := &pb.MeshNodesRequest{
 		Nodes: []*pb.MeshNodesRequest_Node{},
 	}
 
-	for _, node := range nodes {
+	for _, node := range meshedNodes {
 		request.Nodes = append(request.Nodes, &pb.MeshNodesRequest_Node{
-			SessID: node.SessionID,
+			SessID: node.SessID,
 			NodeID: node.NodeID,
 		})
 	}

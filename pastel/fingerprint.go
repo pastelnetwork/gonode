@@ -54,8 +54,8 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 	}
 
 	//overall_average_rareness_score
-	if !compareFloatWithPrecision(lhs.Score.OverallAverageRarenessScore, rhs.Score.OverallAverageRarenessScore, 7.0) {
-		return errors.Errorf("overall average rareness score do not match: lhs(%f) != rhs(%f)", lhs.Score.OverallAverageRarenessScore, rhs.Score.OverallAverageRarenessScore)
+	if !compareFloatWithPrecision(lhs.RarenessScores.OverallAverageRarenessScore, rhs.RarenessScores.OverallAverageRarenessScore, 7.0) {
+		return errors.Errorf("overall average rareness score do not match: lhs(%f) != rhs(%f)", lhs.RarenessScores.OverallAverageRarenessScore, rhs.RarenessScores.OverallAverageRarenessScore)
 	}
 
 	//is_rare_on_internet
@@ -69,7 +69,7 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 	}
 
 	//alternative_nsfw_scores
-	if err := CompareAlternativeNSFWScore(lhs.AlternateNSFWScores, rhs.AlternateNSFWScores); err != nil {
+	if err := CompareAlternativeNSFWScore(lhs.AlternativeNSFWScores, rhs.AlternativeNSFWScores); err != nil {
 		return errors.Errorf("alternative nsfw score do not match: %w", err)
 	}
 
@@ -112,10 +112,10 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 }
 
 // CompareAlternativeNSFWScore return nil if two AlternativeNSFWScore are equal
-func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScore, rhs *AlternativeNSFWScore) error {
+func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScores, rhs *AlternativeNSFWScores) error {
 
-	if !compareFloatWithPrecision(lhs.Drawing, rhs.Drawing, 5.0) {
-		return errors.Errorf("drawing score not matched: lhs(%f) != rhs(%f)", lhs.Drawing, rhs.Drawing)
+	if !compareFloatWithPrecision(lhs.Drawings, rhs.Drawings, 5.0) {
+		return errors.Errorf("drawings score not matched: lhs(%f) != rhs(%f)", lhs.Drawings, rhs.Drawings)
 	}
 	if !compareFloatWithPrecision(lhs.Hentai, rhs.Hentai, 5.0) {
 		return errors.Errorf("hentai score not matched: lhs(%f) != rhs(%f)", lhs.Hentai, rhs.Hentai)

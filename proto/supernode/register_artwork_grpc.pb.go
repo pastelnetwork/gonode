@@ -21,8 +21,8 @@ type RegisterArtworkClient interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
 	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterArtwork_SessionClient, error)
-	// GetSignedDDAndFingerprints request a SNs in returned its SignedDDAndFingerprints for verification
-	GetSignedDDAndFingerprints(ctx context.Context, in *GetSignedDDAndFingerprintsRequest, opts ...grpc.CallOption) (*GetSignedDDAndFingerprintsReply, error)
+	// SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
+	SendSignedDDAndFingerprints(ctx context.Context, in *SendSignedDDAndFingerprintsRequest, opts ...grpc.CallOption) (*SendSignedDDAndFingerprintsReply, error)
 	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
 	SendArtTicketSignature(ctx context.Context, in *SendArtTicketSignatureRequest, opts ...grpc.CallOption) (*SendArtTicketSignatureReply, error)
 }
@@ -66,9 +66,9 @@ func (x *registerArtworkSessionClient) Recv() (*SessionReply, error) {
 	return m, nil
 }
 
-func (c *registerArtworkClient) GetSignedDDAndFingerprints(ctx context.Context, in *GetSignedDDAndFingerprintsRequest, opts ...grpc.CallOption) (*GetSignedDDAndFingerprintsReply, error) {
-	out := new(GetSignedDDAndFingerprintsReply)
-	err := c.cc.Invoke(ctx, "/supernode.RegisterArtwork/GetSignedDDAndFingerprints", in, out, opts...)
+func (c *registerArtworkClient) SendSignedDDAndFingerprints(ctx context.Context, in *SendSignedDDAndFingerprintsRequest, opts ...grpc.CallOption) (*SendSignedDDAndFingerprintsReply, error) {
+	out := new(SendSignedDDAndFingerprintsReply)
+	err := c.cc.Invoke(ctx, "/supernode.RegisterArtwork/SendSignedDDAndFingerprints", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -91,8 +91,8 @@ type RegisterArtworkServer interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
 	Session(RegisterArtwork_SessionServer) error
-	// GetSignedDDAndFingerprints request a SNs in returned its SignedDDAndFingerprints for verification
-	GetSignedDDAndFingerprints(context.Context, *GetSignedDDAndFingerprintsRequest) (*GetSignedDDAndFingerprintsReply, error)
+	// SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
+	SendSignedDDAndFingerprints(context.Context, *SendSignedDDAndFingerprintsRequest) (*SendSignedDDAndFingerprintsReply, error)
 	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
 	SendArtTicketSignature(context.Context, *SendArtTicketSignatureRequest) (*SendArtTicketSignatureReply, error)
 	mustEmbedUnimplementedRegisterArtworkServer()
@@ -105,8 +105,8 @@ type UnimplementedRegisterArtworkServer struct {
 func (UnimplementedRegisterArtworkServer) Session(RegisterArtwork_SessionServer) error {
 	return status.Errorf(codes.Unimplemented, "method Session not implemented")
 }
-func (UnimplementedRegisterArtworkServer) GetSignedDDAndFingerprints(context.Context, *GetSignedDDAndFingerprintsRequest) (*GetSignedDDAndFingerprintsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetSignedDDAndFingerprints not implemented")
+func (UnimplementedRegisterArtworkServer) SendSignedDDAndFingerprints(context.Context, *SendSignedDDAndFingerprintsRequest) (*SendSignedDDAndFingerprintsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendSignedDDAndFingerprints not implemented")
 }
 func (UnimplementedRegisterArtworkServer) SendArtTicketSignature(context.Context, *SendArtTicketSignatureRequest) (*SendArtTicketSignatureReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendArtTicketSignature not implemented")
@@ -150,20 +150,20 @@ func (x *registerArtworkSessionServer) Recv() (*SessionRequest, error) {
 	return m, nil
 }
 
-func _RegisterArtwork_GetSignedDDAndFingerprints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSignedDDAndFingerprintsRequest)
+func _RegisterArtwork_SendSignedDDAndFingerprints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendSignedDDAndFingerprintsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterArtworkServer).GetSignedDDAndFingerprints(ctx, in)
+		return srv.(RegisterArtworkServer).SendSignedDDAndFingerprints(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/supernode.RegisterArtwork/GetSignedDDAndFingerprints",
+		FullMethod: "/supernode.RegisterArtwork/SendSignedDDAndFingerprints",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterArtworkServer).GetSignedDDAndFingerprints(ctx, req.(*GetSignedDDAndFingerprintsRequest))
+		return srv.(RegisterArtworkServer).SendSignedDDAndFingerprints(ctx, req.(*SendSignedDDAndFingerprintsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -194,8 +194,8 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*RegisterArtworkServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetSignedDDAndFingerprints",
-			Handler:    _RegisterArtwork_GetSignedDDAndFingerprints_Handler,
+			MethodName: "SendSignedDDAndFingerprints",
+			Handler:    _RegisterArtwork_SendSignedDDAndFingerprints_Handler,
 		},
 		{
 			MethodName: "SendArtTicketSignature",

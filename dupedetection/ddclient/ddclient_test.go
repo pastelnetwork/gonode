@@ -70,17 +70,14 @@ func TestDDClientError(t *testing.T) {
 	client := NewDDServerClient(config)
 	data := []byte{1, 2, 3, 4, 5}
 
-	_, err := client.ImageRarenessScore(context.Background(), data, "png")
+	_, err := client.ImageRarenessScore(context.Background(), data, "png", "testBlockHash", "testPastelID")
 	assert.NotNil(t, err)
 }
 
 // TestDDClientSuccess
 func TestDDClientSuccess(t *testing.T) {
 	testErr := error(nil)
-	testReply := &pb.ImageRarenessScoreReply{
-		AlternativeNsfwScores: &pb.AltNsfwScores{},
-		ImageHashes:           &pb.PerceptualImageHashes{},
-	}
+	testReply := &pb.ImageRarenessScoreReply{}
 	testPort := 50054
 	serviceHandler := &testService{
 		retError: testErr,
@@ -102,6 +99,6 @@ func TestDDClientSuccess(t *testing.T) {
 	client := NewDDServerClient(config)
 	data := []byte{1, 2, 3, 4, 5}
 
-	_, err := client.ImageRarenessScore(context.Background(), data, "png")
+	_, err := client.ImageRarenessScore(context.Background(), data, "png", "testBlockHash", "testPastelID")
 	assert.Nil(t, err)
 }

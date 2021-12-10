@@ -87,7 +87,7 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 }
 
-func (service *RegisterArtwork) GetSignedDDAndFingerprints(context.Context, *pb.GetSignedDDAndFingerprintsRequest) (*pb.GetSignedDDAndFingerprintsReply, error) {
+func (service *RegisterArtwork) SendSignedDDAndFingerprints(context.Context, *pb.SendSignedDDAndFingerprintsRequest) (*pb.SendSignedDDAndFingerprintsReply, error) {
 	return nil, errors.New("TODO")
 }
 
