@@ -87,6 +87,10 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 }
 
+func (service *RegisterArtwork) GetSignedDDAndFingerprints(context.Context, *pb.GetSignedDDAndFingerprintsRequest) (*pb.GetSignedDDAndFingerprintsReply, error) {
+	return nil, errors.New("TODO")
+}
+
 // SendArtTicketSignature implements supernode.RegisterArtworkServer.SendArtTicketSignature()
 func (service *RegisterArtwork) SendArtTicketSignature(ctx context.Context, req *pb.SendArtTicketSignatureRequest) (*pb.SendArtTicketSignatureReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SendArtTicketSignature request")

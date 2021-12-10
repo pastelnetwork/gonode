@@ -36,6 +36,11 @@ type Connection interface {
 	ProcessUserdata() ProcessUserdata
 }
 
+type Node struct {
+	SessionID string
+	NodeID    string
+}
+
 // RegisterArtwork contains methods for registering artwork.
 type RegisterArtwork interface {
 	// SessID returns the sessID received from the server during the handshake.
@@ -46,6 +51,7 @@ type RegisterArtwork interface {
 	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
 	ConnectTo(ctx context.Context, nodeKey, sessID string) error
+	MeshNodes(ctx context.Context, nodes []Node) error
 	// ProbeImage uploads image to supernode.
 	ProbeImage(ctx context.Context, image *artwork.File) (rep *pastel.DDAndFingerprints, signature []byte, err error)
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes

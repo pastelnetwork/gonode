@@ -121,6 +121,24 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 	return nil
 }
 
+// MeshNodes informs SNs which SNs are connected to do NFT request
+func (service *registerArtwork) MeshNodes(ctx context.Context, nodes []node.Node) error {
+	request := &pb.MeshNodesRequest{
+		Nodes: []*pb.MeshNodesRequest_Node{},
+	}
+
+	for _, node := range nodes {
+		request.Nodes = append(request.Nodes, &pb.MeshNodesRequest_Node{
+			SessID: node.SessionID,
+			NodeID: node.NodeID,
+		})
+	}
+
+	_, err := service.client.MeshNodes(ctx, request)
+
+	return err
+}
+
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
 func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) (*pastel.DDAndFingerprints, []byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)

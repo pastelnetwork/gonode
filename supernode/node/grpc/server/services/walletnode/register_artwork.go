@@ -128,6 +128,10 @@ func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
+func (service *RegisterArtwork) MeshNodes(ctx context.Context, request *MeshNodesRequest) (*MeshNodesReply, error) {
+	return nil, errors.New("TODo")
+}
+
 // ProbeImage implements walletnode.RegisterArtworkServer.ProbeImage()
 func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageServer) (retErr error) {
 	ctx := stream.Context()
