@@ -195,21 +195,21 @@ func TestNodesSendImage(t *testing.T) {
 		nodes                []nodeAttribute
 		args                 args
 		err                  error
-		fingersAndScore      *pastel.FingerAndScores
+		fingersAndScore      *pastel.DDAndFingerprints
 		numberProbeImageCall int
 	}{
 		{
 			nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
 			args:                 args{context.Background(), &artwork.File{}},
 			err:                  nil,
-			fingersAndScore:      &pastel.FingerAndScores{},
+			fingersAndScore:      &pastel.DDAndFingerprints{},
 			numberProbeImageCall: 1,
 		},
 		{
 			nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
 			args:                 args{context.Background(), &artwork.File{}},
 			err:                  fmt.Errorf("failed to open stream"),
-			fingersAndScore:      &pastel.FingerAndScores{},
+			fingersAndScore:      &pastel.DDAndFingerprints{},
 			numberProbeImageCall: 1,
 		},
 	}

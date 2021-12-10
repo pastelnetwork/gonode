@@ -1,6 +1,7 @@
 package pastel
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -47,19 +48,22 @@ func TestGetProbeImageReply(t *testing.T) {
 
 			gotDD, gotSig, err := GetDDFingerprintsAndSigFromProbeImageReply(reply)
 			assert.Nil(t, err)
-			assert.Equal(t, tc.sig, gotSig)
-			assert.Equal(t, tc.dd.Block, gotDD.Block)
-			assert.Equal(t, tc.dd.Score.XgboostPredictedRarenessScore, gotDD.Score.XgboostPredictedRarenessScore)
-			assert.Equal(t, tc.dd.Score.CombinedRarenessScore, gotDD.Score.CombinedRarenessScore)
-			assert.Equal(t, tc.dd.InternetRarenessScore, gotDD.InternetRarenessScore)
-			assert.Equal(t, tc.dd.IsLikelyDupe, gotDD.IsLikelyDupe)
-			assert.Equal(t, tc.dd.IsRareOnInternet, gotDD.IsRareOnInternet)
-			assert.Equal(t, tc.dd.DupeDetectionSystemVersion, gotDD.DupeDetectionSystemVersion)
-			assert.Equal(t, tc.dd.AlternateNSFWScores.Porn, gotDD.AlternateNSFWScores.Porn)
-			assert.Equal(t, tc.dd.AlternateNSFWScores.Hentai, gotDD.AlternateNSFWScores.Hentai)
-			assert.Equal(t, tc.dd.AlternateNSFWScores.Sexy, gotDD.AlternateNSFWScores.Sexy)
-			assert.Equal(t, tc.dd.AlternateNSFWScores.Drawing, gotDD.AlternateNSFWScores.Drawing)
-
+			if err == nil {
+				assert.Equal(t, tc.sig, gotSig)
+				assert.Equal(t, tc.dd.Block, gotDD.Block)
+				assert.Equal(t, tc.dd.Score.XgboostPredictedRarenessScore, gotDD.Score.XgboostPredictedRarenessScore)
+				assert.Equal(t, tc.dd.Score.CombinedRarenessScore, gotDD.Score.CombinedRarenessScore)
+				assert.Equal(t, tc.dd.InternetRarenessScore, gotDD.InternetRarenessScore)
+				assert.Equal(t, tc.dd.IsLikelyDupe, gotDD.IsLikelyDupe)
+				assert.Equal(t, tc.dd.IsRareOnInternet, gotDD.IsRareOnInternet)
+				assert.Equal(t, tc.dd.DupeDetectionSystemVersion, gotDD.DupeDetectionSystemVersion)
+				assert.Equal(t, tc.dd.AlternateNSFWScores.Porn, gotDD.AlternateNSFWScores.Porn)
+				assert.Equal(t, tc.dd.AlternateNSFWScores.Hentai, gotDD.AlternateNSFWScores.Hentai)
+				assert.Equal(t, tc.dd.AlternateNSFWScores.Sexy, gotDD.AlternateNSFWScores.Sexy)
+				assert.Equal(t, tc.dd.AlternateNSFWScores.Drawing, gotDD.AlternateNSFWScores.Drawing)
+			} else {
+				fmt.Println("err: ", err.Error())
+			}
 		})
 	}
 }

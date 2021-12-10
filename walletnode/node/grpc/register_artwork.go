@@ -173,7 +173,7 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 
 	// -------------------- WIP: PSL-142 -----------------------------
 	// stream.CloseAndRecv() is supposed to return  a string response
-	var ddDataSignature string
+	var ddDataSignature []byte
 	/*resp, err := stream.CloseAndRecv()
 	if err != nil {
 		return nil, errors.Errorf("receive image response: %w", err)

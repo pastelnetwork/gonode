@@ -32,6 +32,10 @@ type DDAndFingerprints struct {
 	Maxes                      *DDMaxes               `json:"maxes"`
 	Percentile                 *DDPercentiles         `json:"percentile"`
 	Score                      *DDScores              `json:"score"`
+
+	// DD-Server does not directly return these comporessed fingerprints
+	// We generate and assign to this field to avoid repeated operations
+	ZstdCompressedFingerprint []byte `json:"zstd_compressed_fingerprint"`
 }
 
 // AlternativeNSFWScore represents the not-safe-for-work of an image
@@ -101,21 +105,16 @@ type PerceptualImageHashes struct {
 // GetDDFingerprintsAndSigFromProbeImageReply decodes and decompresses
 // the probe image reply which is: Base64URL(compress(dd_and_fingerprints.signature))
 // and returns dd_and_fingerprints data and signature
-func GetDDFingerprintsAndSigFromProbeImageReply(probeImageReply string) (*DDAndFingerprints, []byte, error) {
-	decodedReply, err := base64.URLEncoding.DecodeString(probeImageReply)
-	if err != nil {
-		return nil, nil, errors.Errorf("b64url decode probe image reply: %w", err)
-	}
-
-	decompressedReply, err := zstd.Decompress(nil, decodedReply)
+func GetDDFingerprintsAndSigFromProbeImageReply(probeImageReply []byte) (*DDAndFingerprints, []byte, error) {
+	decompressedReply, err := zstd.Decompress(nil, probeImageReply)
 	if err != nil {
 		return nil, nil, errors.Errorf("decompress probe image reply: %w", err)
 	}
 
-	var ddDataJson, signature []byte
+	var ddData, signature []byte
 	for i := len(decompressedReply) - 1; i >= 0; i-- {
 		if decompressedReply[i] == separatorByte {
-			ddDataJson = decompressedReply[:i]
+			ddData = decompressedReply[:i]
 			if i+1 >= len(decompressedReply) {
 				return nil, nil, errors.New("invalid probe image reply")
 			}
@@ -125,28 +124,37 @@ func GetDDFingerprintsAndSigFromProbeImageReply(probeImageReply string) (*DDAndF
 		}
 	}
 
-	ddData := &DDAndFingerprints{}
-	if err := json.Unmarshal(ddDataJson, ddData); err != nil {
+	ddDataJson := make([]byte, base64.StdEncoding.DecodedLen(len(ddData)))
+	n, err := base64.StdEncoding.Decode(ddDataJson, ddData)
+	if err != nil {
+		return nil, nil, errors.Errorf("b64URL decode dd-data failure: %w", err)
+	}
+
+	ddDataAndFingerprints := &DDAndFingerprints{}
+	if err := json.Unmarshal(ddDataJson[:n], ddDataAndFingerprints); err != nil {
 		return nil, nil, errors.Errorf("json decode dd_and_fingerprints: %w", err)
 	}
 
-	return ddData, signature, nil
+	return ddDataAndFingerprints, signature, nil
 }
 
 // GetProbeImageReply returns Base64URL(compress(dd_and_fingerprints.signature))
-func GetProbeImageReply(ddData *DDAndFingerprints, signature []byte) (string, error) {
-	resp, err := json.Marshal(ddData)
+func GetProbeImageReply(ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
+	ddDataJson, err := json.Marshal(ddData)
 	if err != nil {
-		return "", errors.Errorf("GetProbeImageReply: failed to marshal dd-data: %w", err)
+		return nil, errors.Errorf("GetProbeImageReply: failed to marshal dd-data: %w", err)
 	}
 
-	resp = append(resp, separatorByte)
-	resp = append(resp, signature...)
+	res := make([]byte, base64.StdEncoding.EncodedLen(len(ddDataJson)))
+	base64.StdEncoding.Encode(res, ddDataJson)
 
-	compressed, err := zstd.CompressLevel(nil, resp, 22)
+	res = append(res, separatorByte)
+	res = append(res, signature...)
+
+	compressed, err := zstd.CompressLevel(nil, res, 22)
 	if err != nil {
-		return "", errors.Errorf("GetProbeImageReply: compress: %w", err)
+		return nil, errors.Errorf("GetProbeImageReply: compress: %w", err)
 	}
 
-	return base64.URLEncoding.EncodeToString(compressed), nil
+	return compressed, nil
 }
