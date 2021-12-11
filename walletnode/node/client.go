@@ -49,6 +49,8 @@ type RegisterArtwork interface {
 	ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error
 	// MeshNodes send to supernode all info of nodes are meshed together (include the received supernode)
 	MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error
+	// SendRegMetadata send metadata of registration to SNs for next steps
+	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
 	// ProbeImage uploads image to supernode.
 	ProbeImage(ctx context.Context, image *artwork.File) (rep *pastel.DDAndFingerprints, signature []byte, err error)
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes

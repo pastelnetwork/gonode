@@ -124,6 +124,8 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, primaryNode types
 
 // MeshNodes informs SNs which SNs are connected to do NFT request
 func (service *registerArtwork) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
 	request := &pb.MeshNodesRequest{
 		Nodes: []*pb.MeshNodesRequest_Node{},
 	}
@@ -137,6 +139,19 @@ func (service *registerArtwork) MeshNodes(ctx context.Context, meshedNodes []typ
 
 	_, err := service.client.MeshNodes(ctx, request)
 
+	return err
+}
+
+// SendRegMetadata send metadata of registration to SNs for next steps
+func (service *registerArtwork) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+	request := &pb.SendRegMetadataRequest{
+		BlockHash:       regMetadata.BlockHash,
+		CreatorPastelID: regMetadata.CreatorPastelID,
+	}
+
+	_, err := service.client.SendRegMetadata(ctx, request)
 	return err
 }
 

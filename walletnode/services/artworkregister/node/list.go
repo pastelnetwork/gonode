@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -82,6 +83,24 @@ func (nodes *List) FindByPastelID(id string) *Node {
 		}
 	}
 	return nil
+}
+
+// SendRegMetadata send metadata
+func (nodes *List) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() (err error) {
+			err = node.SendRegMetadata(ctx, regMetadata)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", node).Error("send registration metadata failed")
+				return errors.Errorf("node %s: %w", node.String(), err)
+			}
+
+			return nil
+		})
+	}
+	return group.Wait()
 }
 
 // ProbeImage sends the image to supernodes for image analysis, such as fingerprint, raraness score, NSWF.

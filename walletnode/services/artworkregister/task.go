@@ -129,6 +129,11 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("get current block heigth: %w", err)
 	}
 
+	// send registration metadata
+	if err := task.sendRegMetadata(ctx); err != nil {
+		return errors.Errorf("send registration metadata: %w", err)
+	}
+
 	// probe image for rareness, nsfw and seen score
 	if err := task.probeImage(ctx); err != nil {
 		return errors.Errorf("probe image: %w", err)
@@ -807,6 +812,23 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func (task *Task) sendRegMetadata(ctx context.Context) error {
+	if task.creatorBlockHash == "" {
+		return errors.New("empty current block hash")
+	}
+
+	if task.Request.ArtistPastelID == "" {
+		return errors.New("empty creator pastelID")
+	}
+
+	regMetadata := &types.NftRegMetadata{
+		BlockHash:       task.creatorBlockHash,
+		CreatorPastelID: task.Request.ArtistPastelID,
+	}
+
+	return task.nodes.SendRegMetadata(ctx, regMetadata)
 }
 
 func (task *Task) probeImage(ctx context.Context) error {

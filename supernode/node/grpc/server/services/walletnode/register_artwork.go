@@ -145,8 +145,26 @@ func (service *RegisterArtwork) MeshNodes(ctx context.Context, req *pb.MeshNodes
 		})
 	}
 
-	task.MeshNodes(ctx, meshedNodes)
-	return &pb.MeshNodesReply{}, nil
+	err = task.MeshNodes(ctx, meshedNodes)
+	return &pb.MeshNodesReply{}, err
+}
+
+// SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
+func (service *RegisterArtwork) SendRegMetadata(ctx context.Context, req *pb.SendRegMetadataRequest) (*pb.SendRegMetadataReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debug("SendRegMetadata request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reqMetadata := &types.NftRegMetadata{
+		BlockHash:       req.BlockHash,
+		CreatorPastelID: req.CreatorPastelID,
+	}
+
+	err = task.SendRegMetadata(ctx, reqMetadata)
+
+	return &pb.SendRegMetadataReply{}, err
 }
 
 // ProbeImage implements walletnode.RegisterArtworkServer.ProbeImage()

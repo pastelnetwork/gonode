@@ -24,8 +24,9 @@ message SessionReply {
 }
 
 message SendSignedDDAndFingerprintsRequest {
-    bytes zstd_compressed_fingerprint = 1;
+    string sessID = 1;
     string nodeID = 2;
+    bytes zstd_compressed_fingerprint = 3;
 }
 
 message SendSignedDDAndFingerprintsReply {

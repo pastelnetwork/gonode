@@ -36,7 +36,7 @@ type RegisterArtwork interface {
 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
 	Session(ctx context.Context, nodeID, sessID string) (err error)
 	// SendSignedDDAndFingerprints send compressedDDAndFingerprints from fromNodeID to target SN
-	SendSignedDDAndFingerprints(ctx context.Context, fromNodeID string, compressedDDAndFingerprints []byte) error
+	SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error
 	// Send signature of ticket to primary supernode
 	SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error
 }

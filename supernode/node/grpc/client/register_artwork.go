@@ -72,10 +72,11 @@ func (service *registerArtwork) Session(ctx context.Context, nodeID, sessID stri
 }
 
 // SendSignedDDAndFingerprints implements SendSignedDDAndFingerprints
-func (service *registerArtwork) SendSignedDDAndFingerprints(ctx context.Context, fromNodeID string, compressedDDAndFingerprints []byte) error {
+func (service *registerArtwork) SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 	_, err := service.client.SendSignedDDAndFingerprints(ctx, &pb.SendSignedDDAndFingerprintsRequest{
+		SessID:                    sessionID,
 		NodeID:                    fromNodeID,
 		ZstdCompressedFingerprint: compressedDDAndFingerprints,
 	})

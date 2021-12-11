@@ -19,6 +19,9 @@ service RegisterArtwork {
     // MeshNodes informs to SNs other SNs on same meshNodes created for this registration request
     rpc MeshNodes(MeshNodesRequest) returns (MeshNodesReply);
 
+    // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
+    rpc SendRegMetadata(SendRegMetadataRequest) returns (SendRegMetadataReply);
+
     // ProbeImage uploads the resampled image compute and return a fingerpirnt.
     rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
@@ -66,8 +69,15 @@ message MeshNodesRequest {
 
     repeated Node nodes = 1;
 }
-
 message MeshNodesReply {
+}
+
+message SendRegMetadataRequest {
+    string creatorPastelID = 1;
+    string blockHash = 2;
+}
+message SendRegMetadataReply {
+
 }
 
 message ProbeImageRequest {

@@ -158,17 +158,18 @@ func fromArtSearchRequest(req *artworks.ArtSearchPayload) *artworksearch.ArtSear
 
 func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 	return &artworks.ArtworkDetail{
-		Txid:                  ticket.TXID,
-		Title:                 ticket.RegTicketData.NFTTicketData.AppTicketData.NFTTitle,
-		Copies:                ticket.RegTicketData.NFTTicketData.Copies,
-		ArtistName:            ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorName,
-		YoutubeURL:            &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTCreationVideoYoutubeURL,
-		ArtistPastelID:        ticket.RegTicketData.NFTTicketData.AppTicketData.AuthorPastelID,
-		ArtistWebsiteURL:      &ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWebsite,
-		Description:           ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWrittenStatement,
-		Keywords:              &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTKeywordSet,
-		SeriesName:            &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName,
-		Royalty:               &ticket.RegTicketData.Royalty,
+		Txid:             ticket.TXID,
+		Title:            ticket.RegTicketData.NFTTicketData.AppTicketData.NFTTitle,
+		Copies:           ticket.RegTicketData.NFTTicketData.Copies,
+		ArtistName:       ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorName,
+		YoutubeURL:       &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTCreationVideoYoutubeURL,
+		ArtistPastelID:   ticket.RegTicketData.NFTTicketData.AppTicketData.AuthorPastelID,
+		ArtistWebsiteURL: &ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWebsite,
+		Description:      ticket.RegTicketData.NFTTicketData.AppTicketData.CreatorWrittenStatement,
+		Keywords:         &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTKeywordSet,
+		SeriesName:       &ticket.RegTicketData.NFTTicketData.AppTicketData.NFTSeriesName,
+		Royalty:          &ticket.RegTicketData.Royalty,
+		/* FIXME later
 		RarenessScore:         ticket.RegTicketData.NFTTicketData.AppTicketData.PastelRarenessScore,
 		NsfwScore:             ticket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore,
 		InternetRarenessScore: &ticket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore,
@@ -179,6 +180,7 @@ func toArtworkDetail(ticket *pastel.RegTicket) *artworks.ArtworkDetail {
 		NeutralNsfwScore:      &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Neutral,
 		PornNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Porn,
 		SexyNsfwScore:         &ticket.RegTicketData.NFTTicketData.AppTicketData.AlternateNSFWScores.Sexy,
+		*/
 	}
 }
 
