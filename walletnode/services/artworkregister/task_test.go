@@ -866,6 +866,7 @@ func TestTaskCreateTicket(t *testing.T) {
 					FingerprintsSignature:      tc.args.task.fingerprintSignature,
 					RQIDs:                      tc.args.task.rqids,
 					RQOti:                      tc.args.task.rqEncodeParams.Oti,
+					RQMax:                      tc.args.task.config.RQIDsMax,
 					DDAndFingerprintsMax:       tc.args.task.config.DDAndFingerprintsMax,
 				},
 			}
@@ -1001,7 +1002,9 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 				inFile: rqnode.RawSymbolIDFile{
 					ID:                uuid.New().String(),
@@ -1019,7 +1022,9 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 				signErr: errors.New(testErrStr),
 			},
@@ -1040,23 +1045,18 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 			for _, id := range tc.args.inFile.SymbolIdentifiers {
 				rawContent = appendStr(rawContent, id)
 			}
-			rawContent = append(rawContent, tc.wantSign...)
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			_, content, err := tc.args.task.convertToSymbolIDFile(context.Background(), tc.args.inFile)
+			err := tc.args.task.generateRQIDs(context.Background(), tc.args.inFile)
 
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), testErrStr))
 			} else {
 				assert.Nil(t, err)
-				compressContent, zstdErr := zstd.CompressLevel(nil, rawContent, 22)
-
-				assert.Nil(t, zstdErr)
-				assert.True(t, bytes.Equal(content, compressContent))
 			}
 		})
 	}
@@ -1691,8 +1691,7 @@ func TestTaskUploadImage(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1716,8 +1715,7 @@ func TestTaskUploadImage(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1804,8 +1802,7 @@ func TestTaskProbeImage(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1825,8 +1822,7 @@ func TestTaskProbeImage(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1914,26 +1910,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 		args    args
 		wantErr error
 	}{
-		"upload-err": {
-			args: args{
-				sendSignedTicketRetErr: errors.New("test"),
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
-				},
-				nodes: []nodeArg{
-					{"127.0.0.1", "1"},
-					{"127.0.0.2", "2"},
-				},
-			},
-			wantErr: errors.New("upload signed ticket"),
-		},
+
 		"success": {
 			args: args{
 				task: &Task{
@@ -1943,8 +1920,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1963,8 +1939,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -2045,8 +2020,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -2065,8 +2039,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -2085,8 +2058,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{NumberSuperNodes: 1},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},

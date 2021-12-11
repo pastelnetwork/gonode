@@ -86,8 +86,8 @@ type AppTicket struct {
 	FingerprintsHash      []byte `json:"fingerprints_hash"`
 	FingerprintsSignature []byte `json:"fingerprints_signature"`
 
-	RQIc  int      `json:"rq_ic"`
-	RQMax int      `json:"rq_max"`
+	RQIc  uint16   `json:"rq_ic"`
+	RQMax uint16   `json:"rq_max"`
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
 }

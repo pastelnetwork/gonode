@@ -3,6 +3,8 @@ package artworkregister
 import (
 	"bytes"
 	"io"
+	"math/rand"
+	"strconv"
 
 	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -43,4 +45,19 @@ func getPubKey(in string) (key []byte, err error) {
 	}
 
 	return dec[2:], nil
+}
+
+func gen4bytesRandomNum() int {
+	const digitBytes = "0123456789"
+	b := make([]byte, 4)
+	for i := range b {
+		b[i] = digitBytes[rand.Intn(len(digitBytes))]
+	}
+
+	randNum, err := strconv.Atoi(string(b))
+	if err != nil {
+		return 4107
+	}
+
+	return randNum
 }
