@@ -13,7 +13,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
@@ -52,7 +51,7 @@ type RegisterArtwork interface {
 	// SendRegMetadata send metadata of registration to SNs for next steps
 	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *artwork.File) (rep *pastel.DDAndFingerprints, signature []byte, err error)
+	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, err error)
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
 	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (previewHash []byte, mediumThumbnailHash []byte, smallThumbnailHash []byte, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode

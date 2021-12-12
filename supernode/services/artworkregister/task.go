@@ -4,11 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -293,7 +291,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 			return nil
 		case <-task.allSignedDDAndFingerprintsReceivedChn:
 			log.WithContext(ctx).Debug("all DDAndFingerprints received so start calculate final DDAndFingerprints")
-			// TODO: add verification here
+			// TODO: add calculation here to determine final calculatedDDAndFingerprints from task.allDDAndFingerprints
 			task.calculatedDDAndFingerprints = task.myDDAndFingerprints
 			return nil
 		case <-time.After(30 * time.Second):
@@ -704,17 +702,12 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 		return nil, errors.Errorf("sign DDAndFingerprints: %w", err)
 	}
 
-	// Join to created sign DDAndFingerprints
-	signedDDAndFingerprints := base64.StdEncoding.EncodeToString(ddAndFingerprintsBytes) + "." + string(signature)
-	log.WithContext(ctx).WithField("signedDDAndFingerprints", signedDDAndFingerprints).Debug("GenFingerprintsData")
-
-	// Compress it
-	compressedSignedDDAndFingerprints, err := zstd.CompressLevel(nil, []byte(signedDDAndFingerprints), 22)
+	compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddAndFingerprints, signature)
 	if err != nil {
-		return nil, errors.Errorf("compress fingerprint data: %w", err)
+		return nil, errors.Errorf("compress SignedDDAndFingerprints: %w", err)
 	}
 
-	ddAndFingerprints.ZstdCompressedFingerprint = compressedSignedDDAndFingerprints
+	ddAndFingerprints.ZstdCompressedFingerprint = compressed
 	return ddAndFingerprints, nil
 }
 
@@ -827,6 +820,20 @@ func (task *Task) UploadImageWithThumbnail(_ context.Context, file *artwork.File
 	return previewThumbnailHash, mediumThumbnailHash, smallThumbnailHash, err
 }
 
+func (task *Task) checkNodeInMeshedNodes(nodeID string) error {
+	if task.meshedNodes == nil {
+		return errors.New("nil meshedNodes")
+	}
+
+	for _, node := range task.meshedNodes {
+		if node.NodeID == nodeID {
+			return nil
+		}
+	}
+
+	return errors.New("nodeID not found")
+}
+
 func (task *Task) AddSignedDDAndFingerprints(nodeID string, compressedSignedDDAndFingerprints []byte) error {
 	task.ddMtx.Lock()
 	defer task.ddMtx.Unlock()
@@ -839,51 +846,35 @@ func (task *Task) AddSignedDDAndFingerprints(nodeID string, compressedSignedDDAn
 
 	<-task.NewAction(func(ctx context.Context) error {
 		log.WithContext(ctx).Debugf("receive compressedSignedDDAndFingerprints from node %s", nodeID)
-		// TODO: check if nodeID in task.meshedNodes
-		// extracts
-		var signedDDAndFingerprintsBytes []byte
-		signedDDAndFingerprintsBytes, err = zstd.Decompress(nil, compressedSignedDDAndFingerprints)
+		// Check nodeID should in task.meshedNodes
+		err = task.checkNodeInMeshedNodes(nodeID)
 		if err != nil {
-			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("decompress compressedSignedDDAndFingerprints failed")
+			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("check if node existed in meshedNodes failed")
 			return nil
 		}
 
-		// split into ddAndFingerprintsBytes & signature
-		fields := strings.Split(string(signedDDAndFingerprintsBytes), ".")
-		if len(fields) != 2 {
-			err = errors.Errorf("invalid signedDDAndFingerprintsBytes - not joined by dot: %s", string(signedDDAndFingerprintsBytes))
-			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("split signedDDAndFingerprints failed")
-			return nil
-		}
-
-		// unmarshal back dAndFingerprints
+		// extract data
+		var ddAndFingerprints *pastel.DDAndFingerprints
 		var ddAndFingerprintsBytes []byte
-		ddAndFingerprintsBytes, err = base64.StdEncoding.DecodeString(fields[0])
+		var signature []byte
+
+		ddAndFingerprints, ddAndFingerprintsBytes, signature, err = pastel.ExtractCompressSignedDDAndFingerprints(compressedSignedDDAndFingerprints)
 		if err != nil {
-			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("decode ddAndFingerprintsBytes failed")
+			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("extract compressedSignedDDAndFingerprints failed")
 			return nil
 		}
 
-		// Verify data vs signature
-		signature := fields[1]
-		ok := false
-		ok, err = task.pastelClient.Verify(ctx, ddAndFingerprintsBytes, signature, nodeID, pastel.SignAlgorithmED448)
+		var ok bool
+		ok, err = task.pastelClient.Verify(ctx, ddAndFingerprintsBytes, string(signature), nodeID, pastel.SignAlgorithmED448)
 		if err != nil || !ok {
 			err = errors.New("signature verification failed")
 			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("verify signature of ddAndFingerprintsBytes failed")
 			return nil
 		}
 
-		ddAndFingerprints := &pastel.DDAndFingerprints{}
-		err = json.Unmarshal(ddAndFingerprintsBytes, ddAndFingerprints)
-		if err != nil {
-			log.WithContext(ctx).WithField("nodeID", nodeID).WithError(err).Errorf("unmarshal ddAndFingerprints failed")
-			return nil
-		}
-
 		task.allDDAndFingerprints[nodeID] = ddAndFingerprints
 
-		// if enough ddAndFingerprints received, not include from itself
+		// if enough ddAndFingerprints received (not include from itself)
 		if len(task.allDDAndFingerprints) == 2 {
 			log.WithContext(ctx).Debug("all ddAndFingerprints received")
 			go func() {

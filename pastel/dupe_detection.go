@@ -3,6 +3,7 @@ package pastel
 import (
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -107,58 +108,54 @@ type PerceptualImageHashes struct {
 	NeuralHash     string `json:"neuralhash_hash"`
 }
 
-// GetDDFingerprintsAndSigFromProbeImageReply decodes and decompresses
+// ExtractCompressSignedDDAndFingerprints  decompresses & decodes
 // the probe image reply which is: Base64URL(compress(dd_and_fingerprints.signature))
-// and returns dd_and_fingerprints data and signature
-func GetDDFingerprintsAndSigFromProbeImageReply(probeImageReply []byte) (*DDAndFingerprints, []byte, error) {
-	decompressedReply, err := zstd.Decompress(nil, probeImageReply)
+// and returns :
+//- DDAndFingerprints structure data
+//- JSON bytes of DDAndFingerprints struct (due to float value, so marshal might different on different platform)
+//- signature, signature returned is base64 string of signature
+func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprints, []byte, []byte, error) {
+	// Decompress compressedSignedDDAndFingerprints
+	signedDDAndFingerprintsBytes, err := zstd.Decompress(nil, compressed)
 	if err != nil {
-		return nil, nil, errors.Errorf("decompress probe image reply: %w", err)
+		return nil, nil, nil, errors.Errorf("decompress: %w", err)
 	}
 
-	var ddData, signature []byte
-	for i := len(decompressedReply) - 1; i >= 0; i-- {
-		if decompressedReply[i] == separatorByte {
-			ddData = decompressedReply[:i]
-			if i+1 >= len(decompressedReply) {
-				return nil, nil, errors.New("invalid probe image reply")
-			}
-
-			signature = decompressedReply[i+1:]
-			break
-		}
+	// split into ddAndFingerprintsBytes & signature
+	fields := strings.Split(string(signedDDAndFingerprintsBytes), ".")
+	if len(fields) != 2 {
+		return nil, nil, nil, errors.Errorf("split joined string %s failed", string(signedDDAndFingerprintsBytes))
 	}
 
-	ddDataJson := make([]byte, base64.StdEncoding.DecodedLen(len(ddData)))
-	n, err := base64.StdEncoding.Decode(ddDataJson, ddData)
+	// decode ddAndFingerprintsBytes
+	ddAndFingerprintsBytes, err := base64.StdEncoding.DecodeString(fields[0])
 	if err != nil {
-		return nil, nil, errors.Errorf("b64URL decode dd-data failure: %w", err)
+		return nil, nil, nil, errors.Errorf("decode %s failed: %w", string(signedDDAndFingerprintsBytes), err)
 	}
 
-	ddDataAndFingerprints := &DDAndFingerprints{}
-	if err := json.Unmarshal(ddDataJson[:n], ddDataAndFingerprints); err != nil {
-		return nil, nil, errors.Errorf("json decode dd_and_fingerprints: %w", err)
+	// umarshal
+	ddData := &DDAndFingerprints{}
+	err = json.Unmarshal(ddAndFingerprintsBytes, ddData)
+	if err != nil {
+		return nil, nil, nil, errors.Errorf("unmarshal %s failed: %w", string(ddAndFingerprintsBytes), err)
 	}
 
-	return ddDataAndFingerprints, signature, nil
+	return ddData, ddAndFingerprintsBytes, []byte(fields[1]), nil
 }
 
-// GetProbeImageReply returns Base64URL(compress(dd_and_fingerprints.signature))
-func GetProbeImageReply(ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
-	ddDataJson, err := json.Marshal(ddData)
+func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
+	ddAndFingerprintsBytes, err := json.Marshal(ddData)
 	if err != nil {
-		return nil, errors.Errorf("GetProbeImageReply: failed to marshal dd-data: %w", err)
+		return nil, errors.Errorf("marshal: %w", err)
 	}
 
-	res := make([]byte, base64.StdEncoding.EncodedLen(len(ddDataJson)))
-	base64.StdEncoding.Encode(res, ddDataJson)
+	// Join to created sign DDAndFingerprints
+	signedDDAndFingerprints := base64.StdEncoding.EncodeToString(ddAndFingerprintsBytes) + "." + string(signature)
 
-	res = append(res, separatorByte)
-	res = append(res, signature...)
-
-	compressed, err := zstd.CompressLevel(nil, res, 22)
+	// Compress it
+	compressed, err := zstd.CompressLevel(nil, []byte(signedDDAndFingerprints), 22)
 	if err != nil {
-		return nil, errors.Errorf("GetProbeImageReply: compress: %w", err)
+		return nil, errors.Errorf("compress fingerprint data: %w", err)
 	}
 
 	return compressed, nil

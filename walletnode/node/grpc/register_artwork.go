@@ -11,7 +11,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -156,19 +155,19 @@ func (service *registerArtwork) SendRegMetadata(ctx context.Context, regMetadata
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) (*pastel.DDAndFingerprints, []byte, error) {
+func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, nil, errors.Errorf("open stream: %w", err)
+		return nil, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, nil, errors.Errorf("open file %q: %w", file.Name(), err)
+		return nil, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -183,21 +182,16 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return nil, nil, errors.Errorf("send image data: %w", err)
+			return nil, errors.Errorf("send image data: %w", err)
 		}
 	}
 
-	// -------------------- WIP: PSL-142 -----------------------------
-	// stream.CloseAndRecv() is supposed to return  a string response
-	var ddDataSignature []byte
-	/*resp, err := stream.CloseAndRecv()
+	resp, err := stream.CloseAndRecv()
 	if err != nil {
 		return nil, errors.Errorf("receive image response: %w", err)
 	}
-	ddDataSignature = resp.ddDataSignature
-	*/
 
-	return pastel.GetDDFingerprintsAndSigFromProbeImageReply(ddDataSignature)
+	return resp.CompressedSignedDDAndFingerprints, nil
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()

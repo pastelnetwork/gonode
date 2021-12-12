@@ -332,13 +332,14 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		nftTicketData, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
+		_, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
 
-		fingerprintsHash := string(nftTicketData.AppTicketData.FingerprintsHash)
+		//fingerprintsHash := string(nftTicketData.AppTicketData.FingerprintsHash)
+		fingerprintsHash := "TBD"
 		compressedFingerprintBytes, err := s.p2pClient.Retrieve(ctx, fingerprintsHash)
 		if err != nil {
 			log.WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to retrieve fingerprint")

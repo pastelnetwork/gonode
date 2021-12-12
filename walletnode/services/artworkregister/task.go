@@ -841,12 +841,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 	signatures := [][]byte{}
 	// Match signatures received from supernodes.
 	for i := 0; i < len(task.nodes); i++ {
-		ddData, err := json.Marshal(task.nodes[i].FingerprintAndScores)
-		if err != nil {
-			return errors.Errorf("probeImage: marshal fingerprintAndScores %w", err)
-		}
-
-		verified, err := task.pastelClient.Verify(ctx, ddData, string(task.nodes[i].Signature), task.nodes[i].PastelID(), "ed448")
+		verified, err := task.pastelClient.Verify(ctx, task.nodes[i].FingerprintAndScoresBytes, string(task.nodes[i].Signature), task.nodes[i].PastelID(), pastel.SignAlgorithmED448)
 		if err != nil {
 			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
 		}
@@ -865,22 +860,23 @@ func (task *Task) probeImage(ctx context.Context) error {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
 		return errors.Errorf("fingerprints aren't matched :%w", err)
 	}
+
 	task.fingerprintAndScores = task.nodes.FingerAndScores()
 	task.UpdateStatus(StatusImageProbed)
 
-	// As we are going to store the the compressed figerprint to kamedila
-	// so we calculated the hash based on the compressed fingerprints as well
-	fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
-	if err != nil {
-		return errors.Errorf("hash zstd commpressed fingerprints: %w", err)
-	}
-	task.fingerprintsHash = []byte(base58.Encode(fingerprintsHash))
+	// // As we are going to store the the compressed figerprint to kamedila
+	// // so we calculated the hash based on the compressed fingerprints as well
+	// fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
+	// if err != nil {
+	// 	return errors.Errorf("hash zstd commpressed fingerprints: %w", err)
+	// }
+	// task.fingerprintsHash = []byte(base58.Encode(fingerprintsHash))
 
-	// Decompress the fingerprint as bytes for later use
-	task.fingerprint, err = zstd.Decompress(nil, task.fingerprintAndScores.ZstdCompressedFingerprint)
-	if err != nil {
-		return errors.Errorf("decompress finger failed")
-	}
+	// // Decompress the fingerprint as bytes for later use
+	// task.fingerprint, err = zstd.Decompress(nil, task.fingerprintAndScores.ZstdCompressedFingerprint)
+	// if err != nil {
+	// 	return errors.Errorf("decompress finger failed")
+	// }
 
 	return nil
 }

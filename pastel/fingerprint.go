@@ -42,6 +42,7 @@ func (fg Fingerprint) Bytes() []byte {
 
 // CompareFingerPrintAndScore returns nil if two DDAndFingerprints are equal
 func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) error {
+	return nil
 	// -------------------WIP: PSL-142------------------------------------------------
 	/*//hash_of_candidate_image_file
 	if !reflect.DeepEqual(lhs.HashOfCandidateImageFile, rhs.HashOfCandidateImageFile) {

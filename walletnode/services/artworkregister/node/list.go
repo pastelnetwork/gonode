@@ -109,13 +109,17 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			res, sig, err := node.ProbeImage(ctx, file)
+			compress, err := node.ProbeImage(ctx, file)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("probe image failed")
-				return errors.Errorf("node %s: %w", node.String(), err)
+				return errors.Errorf("node %s: probe failed :%w", node.String(), err)
 			}
-			node.FingerprintAndScores = res
-			node.Signature = sig
+
+			node.FingerprintAndScores, node.FingerprintAndScoresBytes, node.Signature, err = pastel.ExtractCompressSignedDDAndFingerprints(compress)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", node).Error("extract compressed signed DDAandFingerprints failed")
+				return errors.Errorf("node %s: extract failed: %w", node.String(), err)
+			}
 
 			return nil
 		})
@@ -125,6 +129,17 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 
 // MatchFingerprintAndScores matches fingerprints.
 func (nodes *List) MatchFingerprintAndScores() error {
+	// verify signatures of FingerprintAndScoresBytes
+	/*
+		for i := 1; i < len(*nodes); i++ {
+			node := (*nodes)[i]
+			ok, err := pastelClient.Verify(context.Background(), node.FingerprintAndScoresBytes, string(node.Signature), node.PastelID(), pastel.SignAlgorithmED448)
+			if err != nil || !ok {
+				return errors.Errorf("node[%s] returned invalid signature : %w", node.PastelID(), err)
+			}
+		}
+	*/
+
 	node := (*nodes)[0]
 	for i := 1; i < len(*nodes); i++ {
 		if err := pastel.CompareFingerPrintAndScore(node.FingerprintAndScores, (*nodes)[i].FingerprintAndScores); err != nil {

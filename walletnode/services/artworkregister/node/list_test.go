@@ -191,26 +191,99 @@ func TestNodesSendImage(t *testing.T) {
 		returnErr error
 	}
 
+	fingerAndScores := &pastel.DDAndFingerprints{
+		Block:                      "Block",
+		Principal:                  "Principal",
+		DupeDetectionSystemVersion: "v1.0",
+
+		IsLikelyDupe:     true,
+		IsRareOnInternet: true,
+
+		RarenessScores: &pastel.RarenessScores{
+			CombinedRarenessScore:         0,
+			XgboostPredictedRarenessScore: 0,
+			NnPredictedRarenessScore:      0,
+			OverallAverageRarenessScore:   0,
+		},
+		InternetRareness: &pastel.InternetRareness{
+			MatchesFoundOnFirstPage: 0,
+			NumberOfPagesOfResults:  0,
+			UrlOfFirstMatchInPage:   "",
+		},
+
+		OpenNSFWScore: 0.1,
+		AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
+			Drawings: 0.1,
+			Hentai:   0.2,
+			Neutral:  0.3,
+			Porn:     0.4,
+			Sexy:     0.5,
+		},
+
+		ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+		FingerprintsStat: &pastel.FingerprintsStat{
+			NumberOfFingerprintsRequiringFurtherTesting1: 1,
+			NumberOfFingerprintsRequiringFurtherTesting2: 2,
+			NumberOfFingerprintsRequiringFurtherTesting3: 3,
+			NumberOfFingerprintsRequiringFurtherTesting4: 4,
+			NumberOfFingerprintsRequiringFurtherTesting5: 5,
+			NumberOfFingerprintsRequiringFurtherTesting6: 6,
+			NumberOfFingerprintsOfSuspectedDupes:         7,
+		},
+
+		HashOfCandidateImageFile: "HashOfCandidateImageFile",
+		PerceptualImageHashes: &pastel.PerceptualImageHashes{
+			PDQHash:        "PdqHash",
+			PerceptualHash: "PerceptualHash",
+			AverageHash:    "AverageHash",
+			DifferenceHash: "DifferenceHash",
+			NeuralHash:     "NeuralhashHash",
+		},
+		PerceptualHashOverlapCount: 1,
+
+		Maxes: &pastel.Maxes{
+			PearsonMax:           1.0,
+			SpearmanMax:          2.0,
+			KendallMax:           3.0,
+			HoeffdingMax:         4.0,
+			MutualInformationMax: 5.0,
+			HsicMax:              6.0,
+			XgbimportanceMax:     7.0,
+		},
+		Percentile: &pastel.Percentile{
+			PearsonTop1BpsPercentile:             1.0,
+			SpearmanTop1BpsPercentile:            2.0,
+			KendallTop1BpsPercentile:             3.0,
+			HoeffdingTop10BpsPercentile:          4.0,
+			MutualInformationTop100BpsPercentile: 5.0,
+			HsicTop100BpsPercentile:              6.0,
+			XgbimportanceTop100BpsPercentile:     7.0,
+		},
+	}
+
+	testCompressedFingerAndScores, genErr := pastel.ToCompressSignedDDAndFingerprints(fingerAndScores, []byte("testSignature"))
+	assert.Nil(t, genErr)
+
 	testCases := []struct {
-		nodes                []nodeAttribute
-		args                 args
-		err                  error
-		fingersAndScore      *pastel.DDAndFingerprints
-		numberProbeImageCall int
+		nodes                     []nodeAttribute
+		args                      args
+		err                       error
+		compressedFingersAndScore []byte
+		numberProbeImageCall      int
 	}{
 		{
-			nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
-			args:                 args{context.Background(), &artwork.File{}},
-			err:                  nil,
-			fingersAndScore:      &pastel.DDAndFingerprints{},
-			numberProbeImageCall: 1,
+			nodes:                     []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", nil}},
+			args:                      args{context.Background(), &artwork.File{}},
+			err:                       nil,
+			compressedFingersAndScore: testCompressedFingerAndScores,
+			numberProbeImageCall:      1,
 		},
 		{
-			nodes:                []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
-			args:                 args{context.Background(), &artwork.File{}},
-			err:                  fmt.Errorf("failed to open stream"),
-			fingersAndScore:      &pastel.DDAndFingerprints{},
-			numberProbeImageCall: 1,
+			nodes:                     []nodeAttribute{{"127.0.0.1:4444", nil}, {"127.0.0.1:4445", fmt.Errorf("failed to open stream")}},
+			args:                      args{context.Background(), &artwork.File{}},
+			err:                       fmt.Errorf("failed to open stream"),
+			compressedFingersAndScore: testCompressedFingerAndScores,
+			numberProbeImageCall:      1,
 		},
 	}
 
@@ -227,7 +300,7 @@ func TestNodesSendImage(t *testing.T) {
 				//client mock
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
-				client.ListenOnProbeImage(testCase.fingersAndScore, testCase.err)
+				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.err)
 				clients = append(clients, client)
 
 				nodes.Add(&Node{
@@ -237,10 +310,10 @@ func TestNodesSendImage(t *testing.T) {
 			}
 
 			err := nodes.ProbeImage(testCase.args.ctx, testCase.args.file)
-			if err != nil {
+			if testCase.err != nil {
 				assert.True(t, strings.Contains(err.Error(), testCase.err.Error()))
 			} else {
-				assert.Equal(t, err, testCase.err)
+				assert.Nil(t, err)
 			}
 
 			//mock assertion each client
