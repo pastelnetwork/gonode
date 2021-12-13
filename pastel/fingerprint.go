@@ -295,7 +295,7 @@ func compareFloatWithPrecision(l float32, r float32, prec float64) bool {
 		return true
 	}
 	multiplier := math.Pow(10, prec)
-	return math.Round(float64(l)*multiplier)/multiplier == math.Round(float64(l)*multiplier)/multiplier
+	return math.Round(float64(l)*multiplier)/multiplier == math.Round(float64(r)*multiplier)/multiplier
 }
 
 func compareFloatsWithPrecision(l []float32, r []float32, prec float64) bool {
