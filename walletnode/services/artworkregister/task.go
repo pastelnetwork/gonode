@@ -643,9 +643,6 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	if task.fingerprint == nil {
 		return errEmptyFingerprints
 	}
-	if task.fingerprintsHash == nil {
-		return errEmptyFingerprintsHash
-	}
 	if task.datahash == nil {
 		return errEmptyDatahash
 	}
