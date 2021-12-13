@@ -62,6 +62,11 @@ type Task struct {
 	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
 	ddAndFingerprintsIDs []string
 
+	// ddAndFpFile is Base64(compressed(Base64(dd_and_fingerprints).Base64(signatureSN1).Base64(signatureSN3)))
+	ddAndFpFile []byte
+	// rqIDsFile is Base64(compress(Base64(rq_ids).Base64(signature)))
+	rqIDsFile []byte
+
 	// TODO: call cNodeAPI to get the following info
 	burnTxid        string
 	regNFTTxid      string
@@ -217,20 +222,33 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 	}
 
 	ddEncoded := base64.StdEncoding.EncodeToString(ddDataJson)
-	task.ddAndFingerprintsIc = rand.Uint32()
 
+	var buffer bytes.Buffer
+	buffer.WriteString(ddEncoded)
+	buffer.WriteString(".")
+	buffer.Write(task.signatures[0])
+	buffer.WriteString(".")
+	buffer.Write(task.signatures[1])
+	buffer.WriteString(".")
+	buffer.Write(task.signatures[2])
+	ddFpFile := buffer.Bytes()
+
+	comp, err := zstd.CompressLevel(nil, ddFpFile, 22)
+	if err != nil {
+		return errors.Errorf("compress: %w", err)
+	}
+
+	res := make([]byte, base64.StdEncoding.EncodedLen(len(comp)))
+	base64.StdEncoding.Encode(res, comp)
+	task.ddAndFpFile = res
+
+	task.ddAndFingerprintsIc = rand.Uint32()
 	var ids []string
 	for i := uint32(0); i < task.config.DDAndFingerprintsMax; i++ {
 		var buffer bytes.Buffer
 		counter := task.ddAndFingerprintsIc + i
 
-		buffer.WriteString(ddEncoded)
-		buffer.WriteString(".")
-		buffer.Write(task.signatures[0])
-		buffer.WriteString(".")
-		buffer.Write(task.signatures[1])
-		buffer.WriteString(".")
-		buffer.Write(task.signatures[2])
+		buffer.Write(ddFpFile)
 		buffer.WriteString(".")
 		buffer.WriteString(strconv.Itoa(int(counter)))
 
@@ -579,16 +597,28 @@ func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDF
 	encfile := make([]byte, base64.StdEncoding.EncodedLen(len(content)))
 	base64.StdEncoding.Encode(encfile, content)
 
-	task.rqIDsIc = rand.Uint32()
+	var buffer bytes.Buffer
+	buffer.Write(encfile)
+	buffer.WriteString(".")
+	buffer.Write(encSign)
+	rqIDFile := buffer.Bytes()
 
+	comp, err := zstd.CompressLevel(nil, rqIDFile, 22)
+	if err != nil {
+		return errors.Errorf("compress: %w", err)
+	}
+
+	res := make([]byte, base64.StdEncoding.EncodedLen(len(comp)))
+	base64.StdEncoding.Encode(res, comp)
+	task.rqIDsFile = res
+
+	task.rqIDsIc = rand.Uint32()
 	ids := []string{}
 	for i := uint32(0); i < task.config.RQIDsMax; i++ {
 		var buffer bytes.Buffer
 		counter := task.rqIDsIc + i
 
-		buffer.Write(encfile)
-		buffer.WriteString(".")
-		buffer.Write(encSign)
+		buffer.Write(rqIDFile)
 		buffer.WriteString(".")
 		buffer.WriteString(strconv.Itoa(int(counter)))
 
@@ -860,10 +890,9 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 	}
 	log.Debug(string(buf))
 
-	// --------------- WIP: PSL-142 --------------------------------
-	/*if err := task.nodes.UploadSignedTicket(ctx, buf, task.creatorSignature, task.rqSymbolIDFiles, task.rqEncodeParams); err != nil {
+	if err := task.nodes.UploadSignedTicket(ctx, buf, task.creatorSignature, task.rqIDsFile, task.ddAndFpFile, task.rqEncodeParams); err != nil {
 		return errors.Errorf("upload signed ticket: %w", err)
-	}*/
+	}
 
 	if err := task.nodes.MatchRegistrationFee(); err != nil {
 		return errors.Errorf("registration fees don't matched: %w", err)
