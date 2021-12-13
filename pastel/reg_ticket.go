@@ -79,15 +79,12 @@ type AppTicket struct {
 
 	DataHash []byte `json:"data_hash"`
 
-	DDAndFingerprintsIc  uint16   `json:"dd_and_fingerprints_ic"`
-	DDAndFingerprintsMax uint16   `json:"dd_and_fingerprints_max"`
+	DDAndFingerprintsIc  uint32   `json:"dd_and_fingerprints_ic"`
+	DDAndFingerprintsMax uint32   `json:"dd_and_fingerprints_max"`
 	DDAndFingerprintsIDs []string `json:"dd_and_fingerprints_ids"`
 
-	FingerprintsHash      []byte `json:"fingerprints_hash"`
-	FingerprintsSignature []byte `json:"fingerprints_signature"`
-
-	RQIc  uint16   `json:"rq_ic"`
-	RQMax uint16   `json:"rq_max"`
+	RQIc  uint32   `json:"rq_ic"`
+	RQMax uint32   `json:"rq_max"`
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
 }

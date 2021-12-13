@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"sync"
 	"time"
@@ -54,15 +55,12 @@ type Task struct {
 	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
 	signatures [][]byte
 
-	ddAndFingerprintsIc uint16
-	rqIDsIc             uint16
+	ddAndFingerprintsIc uint32
+	rqIDsIc             uint32
 
 	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
 	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
 	ddAndFingerprintsIDs []string
-
-	// TODO: call cNodeAPI to get the reall signature instead of the fake one
-	fingerprintSignature []byte
 
 	// TODO: call cNodeAPI to get the following info
 	burnTxid        string
@@ -219,10 +217,10 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 	}
 
 	ddEncoded := base64.StdEncoding.EncodeToString(ddDataJson)
-	task.ddAndFingerprintsIc = uint16(gen4bytesRandomNum())
+	task.ddAndFingerprintsIc = rand.Uint32()
 
 	var ids []string
-	for i := uint16(0); i < task.config.DDAndFingerprintsMax; i++ {
+	for i := uint32(0); i < task.config.DDAndFingerprintsMax; i++ {
 		var buffer bytes.Buffer
 		counter := task.ddAndFingerprintsIc + i
 
@@ -362,7 +360,6 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	if err := img.Encode(encSig); err != nil {
 		return err
 	}
-	task.fingerprintSignature = ed448Signature
 
 	return nil
 }
@@ -582,10 +579,10 @@ func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDF
 	encfile := make([]byte, base64.StdEncoding.EncodedLen(len(content)))
 	base64.StdEncoding.Encode(encfile, content)
 
-	task.rqIDsIc = uint16(gen4bytesRandomNum())
+	task.rqIDsIc = rand.Uint32()
 
 	ids := []string{}
-	for i := uint16(0); i < task.config.RQIDsMax; i++ {
+	for i := uint32(0); i < task.config.RQIDsMax; i++ {
 		var buffer bytes.Buffer
 		counter := task.rqIDsIc + i
 
@@ -618,9 +615,6 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	}
 	if task.fingerprintsHash == nil {
 		return errEmptyFingerprintsHash
-	}
-	if task.fingerprintSignature == nil {
-		return errEmptyFingerprintSignature
 	}
 	if task.datahash == nil {
 		return errEmptyDatahash
@@ -663,8 +657,6 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			Thumbnail1Hash:             task.mediumThumbnailHash,
 			Thumbnail2Hash:             task.smallThumbnailHash,
 			DataHash:                   task.datahash,
-			FingerprintsHash:           task.fingerprintsHash,
-			FingerprintsSignature:      task.fingerprintSignature,
 			DDAndFingerprintsIc:        task.ddAndFingerprintsIc,
 			DDAndFingerprintsMax:       task.config.DDAndFingerprintsMax,
 			DDAndFingerprintsIDs:       task.ddAndFingerprintsIDs,

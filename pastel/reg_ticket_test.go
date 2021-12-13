@@ -10,12 +10,10 @@ import (
 
 func TestEncodeNFTTicket(t *testing.T) {
 	inputAppData := AppTicket{
-		PreviewHash:           []byte{1},
-		Thumbnail1Hash:        []byte{2},
-		Thumbnail2Hash:        []byte{3},
-		DataHash:              []byte{4},
-		FingerprintsHash:      []byte{6},
-		FingerprintsSignature: []byte{7},
+		PreviewHash:    []byte{1},
+		Thumbnail1Hash: []byte{2},
+		Thumbnail2Hash: []byte{3},
+		DataHash:       []byte{4},
 
 		RQIDs: []string{"9", "10"},
 	}

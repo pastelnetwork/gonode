@@ -642,12 +642,11 @@ func TestTaskCreateTicket(t *testing.T) {
 		"fingerprint-error": {
 			args: args{
 				task: &Task{
-					fingerprintSignature: []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					previewHash:          []byte{},
-					rqids:                []string{},
-					datahash:             []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					previewHash:         []byte{},
+					rqids:               []string{},
+					datahash:            []byte{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -662,13 +661,12 @@ func TestTaskCreateTicket(t *testing.T) {
 		"fingerprint-hash-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintSignature: []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					previewHash:          []byte{},
-					rqids:                []string{},
-					datahash:             []byte{},
+					fingerprint:         []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					previewHash:         []byte{},
+					rqids:               []string{},
+					datahash:            []byte{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -704,13 +702,12 @@ func TestTaskCreateTicket(t *testing.T) {
 		"data-hash-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					previewHash:          []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					rqids:                []string{},
+					fingerprint:         []byte{},
+					fingerprintsHash:    []byte{},
+					previewHash:         []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					rqids:               []string{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -725,13 +722,12 @@ func TestTaskCreateTicket(t *testing.T) {
 		"preview-hash-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					datahash:             []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					rqids:                []string{},
+					fingerprint:         []byte{},
+					fingerprintsHash:    []byte{},
+					datahash:            []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					rqids:               []string{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -746,13 +742,12 @@ func TestTaskCreateTicket(t *testing.T) {
 		"medium-thumbnail-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					previewHash:          []byte{},
-					datahash:             []byte{},
-					smallThumbnailHash:   []byte{},
-					rqids:                []string{},
+					fingerprint:        []byte{},
+					fingerprintsHash:   []byte{},
+					previewHash:        []byte{},
+					datahash:           []byte{},
+					smallThumbnailHash: []byte{},
+					rqids:              []string{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -767,13 +762,12 @@ func TestTaskCreateTicket(t *testing.T) {
 		"small-thumbnail-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					mediumThumbnailHash:  []byte{},
-					previewHash:          []byte{},
-					datahash:             []byte{},
-					rqids:                []string{},
+					fingerprint:         []byte{},
+					fingerprintsHash:    []byte{},
+					mediumThumbnailHash: []byte{},
+					previewHash:         []byte{},
+					datahash:            []byte{},
+					rqids:               []string{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -788,13 +782,12 @@ func TestTaskCreateTicket(t *testing.T) {
 		"raptorQ-symbols-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					previewHash:          []byte{},
-					datahash:             []byte{},
+					fingerprint:         []byte{},
+					fingerprintsHash:    []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					previewHash:         []byte{},
+					datahash:            []byte{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
@@ -812,7 +805,6 @@ func TestTaskCreateTicket(t *testing.T) {
 				task: &Task{
 					fingerprint:          []byte{},
 					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
 					smallThumbnailHash:   []byte{},
 					mediumThumbnailHash:  []byte{},
 					previewHash:          []byte{},
@@ -862,8 +854,6 @@ func TestTaskCreateTicket(t *testing.T) {
 					Thumbnail1Hash:             tc.args.task.mediumThumbnailHash,
 					Thumbnail2Hash:             tc.args.task.smallThumbnailHash,
 					DataHash:                   tc.args.task.datahash,
-					FingerprintsHash:           tc.args.task.fingerprintsHash,
-					FingerprintsSignature:      tc.args.task.fingerprintSignature,
 					RQIDs:                      tc.args.task.rqids,
 					RQOti:                      tc.args.task.rqEncodeParams.Oti,
 					RQMax:                      tc.args.task.config.RQIDsMax,

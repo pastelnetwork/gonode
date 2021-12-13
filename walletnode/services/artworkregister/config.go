@@ -41,8 +41,8 @@ type Config struct {
 	RegArtTxMinConfirmations int `mapstructure:"-" json:"reg_art_tx_min_confirmations,omitempty"`
 	RegActTxMinConfirmations int `mapstructure:"-" json:"reg_act_tx_min_confirmations,omitempty"`
 
-	DDAndFingerprintsMax uint16 `mapstructure:"dd_and_fingerprints_max" json:"dd_and_fingerprints_max,omitempty"`
-	RQIDsMax             uint16 `mapstructure:"rq_ids_max" json:"rq_ids_max,omitempty"`
+	DDAndFingerprintsMax uint32 `mapstructure:"dd_and_fingerprints_max" json:"dd_and_fingerprints_max,omitempty"`
+	RQIDsMax             uint32 `mapstructure:"rq_ids_max" json:"rq_ids_max,omitempty"`
 	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration
