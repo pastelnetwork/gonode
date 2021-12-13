@@ -54,9 +54,11 @@ type Task struct {
 	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
 	signatures [][]byte
 
-	// redunantIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
+	ddAndFingerprintsIc uint16
+
+	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
 	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
-	redunantIDs []string
+	ddAndFingerprintsIDs []string
 
 	// TODO: call cNodeAPI to get the reall signature instead of the fake one
 	fingerprintSignature []byte
@@ -66,7 +68,6 @@ type Task struct {
 	rqEncodeParams  rqnode.EncoderParameters
 
 	// TODO: call cNodeAPI to get the following info
-	blockTxID       string
 	burnTxid        string
 	regNFTTxid      string
 	registrationFee int64
@@ -134,7 +135,7 @@ func (task *Task) run(ctx context.Context) error {
 	}
 
 	// generateredundantIDs generate   number of RQ IDs
-	if err := task.generateRedundantIDs(); err != nil {
+	if err := task.generateDDAndFingerprintsIDs(); err != nil {
 		return errors.Errorf("probe image: %w", err)
 	}
 
@@ -213,8 +214,8 @@ func (task *Task) run(ctx context.Context) error {
 	return nil
 }
 
-// generateRedundantIDs generates redundant IDs and assigns to task.redundantIDs
-func (task *Task) generateRedundantIDs() error {
+// generateDDAndFingerprintsIDs generates redundant IDs and assigns to task.redundantIDs
+func (task *Task) generateDDAndFingerprintsIDs() error {
 	ddDataJson, err := json.Marshal(task.fingerprintAndScores)
 	if err != nil {
 		return errors.Errorf("failed to marshal dd-data: %w", err)
@@ -227,17 +228,17 @@ func (task *Task) generateRedundantIDs() error {
 	for i := range b {
 		b[i] = digitBytes[rand.Intn(len(digitBytes))]
 	}
-	randNumStr := string(b)
 
-	randNum, err := strconv.Atoi(randNumStr)
+	randNum, err := strconv.Atoi(string(b))
 	if err != nil {
 		return errors.Errorf("invalid random 4 bytes number: %w", err)
 	}
+	task.ddAndFingerprintsIc = uint16(randNum)
 
 	var ids []string
-	for i := 0; i < task.config.DDAndFingerprintsMax; i++ {
+	for i := uint16(0); i < task.config.DDAndFingerprintsMax; i++ {
 		var buffer bytes.Buffer
-		counter := randNum + i
+		counter := task.ddAndFingerprintsIc + i
 
 		buffer.WriteString(ddEncoded)
 		buffer.WriteString(".")
@@ -247,7 +248,7 @@ func (task *Task) generateRedundantIDs() error {
 		buffer.WriteString(".")
 		buffer.Write(task.signatures[2])
 		buffer.WriteString(".")
-		buffer.WriteString(strconv.Itoa(counter))
+		buffer.WriteString(strconv.Itoa(int(counter)))
 
 		compressed, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
 		if err != nil {
@@ -261,7 +262,7 @@ func (task *Task) generateRedundantIDs() error {
 
 		ids = append(ids, base58.Encode(hash))
 	}
-	task.redunantIDs = ids
+	task.ddAndFingerprintsIDs = ids
 
 	return nil
 }
@@ -648,9 +649,6 @@ func (task *Task) createArtTicket(_ context.Context) error {
 		Royalty:   0,     // Not supported yet by cNode
 		Green:     false, // Not supported yet by cNode
 		AppTicketData: pastel.AppTicket{
-			AuthorPastelID:             task.Request.ArtistPastelID,
-			BlockTxID:                  task.blockTxID,
-			BlockNum:                   task.creatorBlockHeight,
 			CreatorName:                task.Request.ArtistName,
 			CreatorWebsite:             safeString(task.Request.ArtistWebsiteURL),
 			CreatorWrittenStatement:    safeString(task.Request.Description),
@@ -666,31 +664,11 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			DataHash:                   task.datahash,
 			FingerprintsHash:           task.fingerprintsHash,
 			FingerprintsSignature:      task.fingerprintSignature,
-			/*DupeDetectionSystemVer:     task.fingerprintAndScores.DupeDectectionSystemVersion,
-			MatchesFoundOnFirstPage:    int(task.fingerprintAndScores.MatchesFoundOnFirstPage),
-			NumberOfResultPages:        int(task.fingerprintAndScores.NumberOfPagesOfResults),
-			FirstMatchURL:              task.fingerprintAndScores.URLOfFirstMatchInPage,
-			PastelRarenessScore:        task.fingerprintAndScores.OverallAverageRarenessScore,
-			InternetRarenessScore:      0, // FIXME
-			OpenNSFWScore:              task.fingerprintAndScores.OpenNSFWScore,
-			AlternateNSFWScores: pastel.AlternateNSFWScores{
-				Drawing: task.fingerprintAndScores.AlternativeNSFWScore.Drawing,
-				Hentai:  task.fingerprintAndScores.AlternativeNSFWScore.Hentai,
-				Neutral: task.fingerprintAndScores.AlternativeNSFWScore.Neutral,
-				Porn:    task.fingerprintAndScores.AlternativeNSFWScore.Porn,
-				Sexy:    task.fingerprintAndScores.AlternativeNSFWScore.Sexy,
-			},*/
-			PerceptualImageHashes: pastel.PerceptualImageHashes{
-				PerceptualHash: task.fingerprintAndScores.PerceptualImageHashes.PerceptualHash,
-				AverageHash:    task.fingerprintAndScores.PerceptualImageHashes.AverageHash,
-				DifferenceHash: task.fingerprintAndScores.PerceptualImageHashes.DifferenceHash,
-				PDQHash:        task.fingerprintAndScores.PerceptualImageHashes.PDQHash,
-				NeuralHash:     task.fingerprintAndScores.PerceptualImageHashes.NeuralHash,
-			},
-			IsRareOnInternet: task.fingerprintAndScores.IsRareOnInternet,
-			IsLikelyDupe:     task.fingerprintAndScores.IsLikelyDupe,
-			RQIDs:            task.rqids,
-			RQOti:            task.rqEncodeParams.Oti,
+			DDAndFingerprintsIc:        task.ddAndFingerprintsIc,
+			DDAndFingerprintsMax:       task.config.DDAndFingerprintsMax,
+			DDAndFingerprintsIDs:       task.ddAndFingerprintsIDs,
+			RQIDs:                      task.rqids,
+			RQOti:                      task.rqEncodeParams.Oti,
 		},
 	}
 
