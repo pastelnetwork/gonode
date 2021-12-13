@@ -56,11 +56,6 @@ func fakeRegiterTicket() pastel.RegTicket {
 		Thumbnail1Hash:             []byte("thumbnail1_hash"),
 		Thumbnail2Hash:             []byte("thumbnail2_hash"),
 		DataHash:                   []byte("data_hash"),
-		FingerprintsHash:           []byte("fingerprints_hash"),
-		FingerprintsSignature:      []byte("fingerprints_signature"),
-		PastelRarenessScore:        0.8,
-		OpenNSFWScore:              0.08,
-		InternetRarenessScore:      0.4,
 		RQIDs:                      []string{"raptorq ID1", "raptorq ID2"},
 		RQOti:                      []byte("rq_oti"),
 	}
