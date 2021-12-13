@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -51,21 +50,17 @@ type Task struct {
 	smallThumbnailHash           []byte
 	datahash                     []byte
 	rqids                        []string
+	rqEncodeParams               rqnode.EncoderParameters
+
 	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
 	signatures [][]byte
 
-	ddAndFingerprintsIc uint16
+	ddAndFingerprintsIc uint32
+	rqIDsIc             uint32
 
 	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
 	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
 	ddAndFingerprintsIDs []string
-
-	// TODO: call cNodeAPI to get the reall signature instead of the fake one
-	fingerprintSignature []byte
-
-	// TODO: need to update rqservice code to return the following info
-	rqSymbolIDFiles map[string][]byte
-	rqEncodeParams  rqnode.EncoderParameters
 
 	// TODO: call cNodeAPI to get the following info
 	burnTxid        string
@@ -222,21 +217,10 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 	}
 
 	ddEncoded := base64.StdEncoding.EncodeToString(ddDataJson)
-
-	const digitBytes = "0123456789"
-	b := make([]byte, 4)
-	for i := range b {
-		b[i] = digitBytes[rand.Intn(len(digitBytes))]
-	}
-
-	randNum, err := strconv.Atoi(string(b))
-	if err != nil {
-		return errors.Errorf("invalid random 4 bytes number: %w", err)
-	}
-	task.ddAndFingerprintsIc = uint16(randNum)
+	task.ddAndFingerprintsIc = rand.Uint32()
 
 	var ids []string
-	for i := uint16(0); i < task.config.DDAndFingerprintsMax; i++ {
+	for i := uint32(0); i < task.config.DDAndFingerprintsMax; i++ {
 		var buffer bytes.Buffer
 		counter := task.ddAndFingerprintsIc + i
 
@@ -376,7 +360,6 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 	if err := img.Encode(encSig); err != nil {
 		return err
 	}
-	task.fingerprintSignature = ed448Signature
 
 	return nil
 }
@@ -552,30 +535,26 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 		return errors.Errorf("generate RaptorQ symbols identifiers: %w", err)
 	}
 
-	files := make(map[string][]byte)
+	files := 0
 	for _, rawSymbolIDFile := range encodeInfo.SymbolIDFiles {
-		name, content, err := task.convertToSymbolIDFile(ctx, rawSymbolIDFile)
+		err := task.generateRQIDs(ctx, rawSymbolIDFile)
 		if err != nil {
 			task.UpdateStatus(StatusErrorGenRaptorQSymbolsFailed)
 			return errors.Errorf("create rqids file :%w", err)
 		}
-		files[name] = content
+		files++
+		break
 	}
 
-	if len(files) < 1 {
+	if files != 1 {
 		return errors.Errorf("number of raptorq symbol identifiers files must be greater than 1")
 	}
-	for k := range files {
-		log.WithContext(ctx).Debugf("symbol file identifier %s", k)
-		task.rqids = append(task.rqids, k)
-	}
-
-	task.rqSymbolIDFiles = files
 	task.rqEncodeParams = encodeInfo.EncoderParam
+
 	return nil
 }
 
-func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawSymbolIDFile) (string, []byte, error) {
+func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDFile) error {
 	var content []byte
 	appendStr := func(b []byte, s string) []byte {
 		b = append(b, []byte(s)...)
@@ -583,32 +562,51 @@ func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawS
 		return b
 	}
 
-	content = appendStr(content, rawFile.ID)
 	content = appendStr(content, rawFile.BlockHash)
 	content = appendStr(content, rawFile.PastelID)
 	for _, id := range rawFile.SymbolIdentifiers {
 		content = appendStr(content, id)
 	}
 
-	// log.WithContext(ctx).Debugf("%s", content)
 	signature, err := task.pastelClient.Sign(ctx, content, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
-		return "", nil, errors.Errorf("sign identifiers file: %w", err)
+		return errors.Errorf("sign identifiers file: %w", err)
 	}
-	content = append(content, signature...)
 
-	// read all content of the data b
-	// compress the contente of the file
-	compressedData, err := zstd.CompressLevel(nil, content, 22)
-	if err != nil {
-		return "", nil, errors.Errorf("compress identifiers file: %w", err)
+	encSign := make([]byte, base64.StdEncoding.EncodedLen(len(signature)))
+	base64.StdEncoding.Encode(encSign, signature)
+
+	encfile := make([]byte, base64.StdEncoding.EncodedLen(len(content)))
+	base64.StdEncoding.Encode(encfile, content)
+
+	task.rqIDsIc = rand.Uint32()
+
+	ids := []string{}
+	for i := uint32(0); i < task.config.RQIDsMax; i++ {
+		var buffer bytes.Buffer
+		counter := task.rqIDsIc + i
+
+		buffer.Write(encfile)
+		buffer.WriteString(".")
+		buffer.Write(encSign)
+		buffer.WriteString(".")
+		buffer.WriteString(strconv.Itoa(int(counter)))
+
+		compressedData, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+		if err != nil {
+			return errors.Errorf("compress identifiers file: %w", err)
+		}
+
+		hash, err := sha3256hash(compressedData)
+		if err != nil {
+			return errors.Errorf("sha3256hash: %w", err)
+		}
+
+		ids = append(ids, base58.Encode(hash))
 	}
-	hasher := sha3.New256()
-	src := bytes.NewReader(compressedData)
-	if _, err := io.Copy(hasher, src); err != nil {
-		return "", nil, errors.Errorf("hash identifiers file: %w", err)
-	}
-	return base58.Encode(hasher.Sum(nil)), compressedData, nil
+	task.rqids = ids
+
+	return nil
 }
 
 func (task *Task) createArtTicket(_ context.Context) error {
@@ -617,9 +615,6 @@ func (task *Task) createArtTicket(_ context.Context) error {
 	}
 	if task.fingerprintsHash == nil {
 		return errEmptyFingerprintsHash
-	}
-	if task.fingerprintSignature == nil {
-		return errEmptyFingerprintSignature
 	}
 	if task.datahash == nil {
 		return errEmptyDatahash
@@ -662,11 +657,11 @@ func (task *Task) createArtTicket(_ context.Context) error {
 			Thumbnail1Hash:             task.mediumThumbnailHash,
 			Thumbnail2Hash:             task.smallThumbnailHash,
 			DataHash:                   task.datahash,
-			FingerprintsHash:           task.fingerprintsHash,
-			FingerprintsSignature:      task.fingerprintSignature,
 			DDAndFingerprintsIc:        task.ddAndFingerprintsIc,
 			DDAndFingerprintsMax:       task.config.DDAndFingerprintsMax,
 			DDAndFingerprintsIDs:       task.ddAndFingerprintsIDs,
+			RQIc:                       task.rqIDsIc,
+			RQMax:                      task.config.RQIDsMax,
 			RQIDs:                      task.rqids,
 			RQOti:                      task.rqEncodeParams.Oti,
 		},
@@ -865,9 +860,10 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 	}
 	log.Debug(string(buf))
 
-	if err := task.nodes.UploadSignedTicket(ctx, buf, task.creatorSignature, task.rqSymbolIDFiles, task.rqEncodeParams); err != nil {
+	// --------------- WIP: PSL-142 --------------------------------
+	/*if err := task.nodes.UploadSignedTicket(ctx, buf, task.creatorSignature, task.rqSymbolIDFiles, task.rqEncodeParams); err != nil {
 		return errors.Errorf("upload signed ticket: %w", err)
-	}
+	}*/
 
 	if err := task.nodes.MatchRegistrationFee(); err != nil {
 		return errors.Errorf("registration fees don't matched: %w", err)
