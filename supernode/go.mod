@@ -18,7 +18,6 @@ require (
 	github.com/pastelnetwork/gonode/pastel v0.0.0
 	github.com/pastelnetwork/gonode/proto v0.0.0
 	github.com/pastelnetwork/gonode/raptorq v0.0.0
-	github.com/pastelnetwork/storage-challenges v0.0.0-20211114033635-30e2c6008ab7
 	github.com/stretchr/testify v1.7.0
 	github.com/tj/assert v0.0.3
 	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871

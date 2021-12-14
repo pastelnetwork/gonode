@@ -8,8 +8,8 @@ import (
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/storage-challenges/utils/helper"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -34,7 +34,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	challengeStatus := statusResponded
 	messageType := storageChallengeResponseMessage
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent
-	messageID := helper.GetHashFromString(messageIDInputData)
+	messageID := utils.GetHashFromString(messageIDInputData)
 	timestampChallengeRespondedTo := time.Now().UnixNano()
 
 	var outgoingChallengeMessage = &ChallengeMessage{

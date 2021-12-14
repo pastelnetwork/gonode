@@ -6,7 +6,7 @@ import (
 
 	appcontext "github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/storage-challenges/utils/helper"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallengeMessage *ChallengeMessage) error {
@@ -46,7 +46,7 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	}
 
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent
-	messageID := helper.GetHashFromString(messageIDInputData)
+	messageID := utils.GetHashFromString(messageIDInputData)
 
 	var outgoingChallengeMessage = &ChallengeMessage{
 		MessageID:                     messageID,

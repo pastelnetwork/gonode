@@ -9,9 +9,8 @@ import (
 	"github.com/mkmik/argsort"
 	"github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
-	"github.com/pastelnetwork/storage-challenges/utils/helper"
-	"github.com/pastelnetwork/storage-challenges/utils/xordistance"
 )
 
 func (s *service) GenerateStorageChallenges(ctx context.Context, merkleroot string, challengingMasternodeID string, challengesPerMasternodePerBlock int) error {
@@ -23,16 +22,16 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, merkleroot stri
 	for idx, symbolFileHash := range sliceOfFileHashesToChallenge {
 		challengeDataSize := 0
 
-		comparisonStringForMasternodeSelection := merkleroot + symbolFileHash + s.nodeID + helper.GetHashFromString(fmt.Sprint(idx))
+		comparisonStringForMasternodeSelection := merkleroot + symbolFileHash + s.nodeID + utils.GetHashFromString(fmt.Sprint(idx))
 		respondingMasternodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForMasternodeSelection)
 		challengeStatus := statusPending
 		messageType := storageChallengeIssuanceMessage
 		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, merkleroot, challengingMasternodeID)
 		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + merkleroot
-		messageID := helper.GetHashFromString(messageIDInputData)
+		messageID := utils.GetHashFromString(messageIDInputData)
 		timestampChallengeSent := time.Now().UnixNano()
 		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(timestampChallengeSent)
-		challengeID := helper.GetHashFromString(challengeIDInputData)
+		challengeID := utils.GetHashFromString(challengeIDInputData)
 		outgoinChallengeMessage := &ChallengeMessage{
 			MessageID:                     messageID,
 			MessageType:                   messageType,
@@ -101,7 +100,7 @@ func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashStri
 	totalDataLengthInBytesAsInt := int(totalDataLengthInBytes)
 	for j := 0; j <= totalDataLengthInBytesAsInt; j += stepSizeForIndicesAsInt {
 		jAsString := fmt.Sprintf("%d", j)
-		currentXorDistance := xordistance.ComputeXorDistanceBetweenTwoStrings(jAsString, comparisonString)
+		currentXorDistance := utils.ComputeXorDistanceBetweenTwoStrings(jAsString, comparisonString)
 		sliceOfXorDistancesOfIndicesToBlockHash = append(sliceOfXorDistancesOfIndicesToBlockHash, currentXorDistance)
 		sliceOfIndicesWithStepSize = append(sliceOfIndicesWithStepSize, j)
 	}

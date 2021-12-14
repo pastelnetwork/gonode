@@ -3,9 +3,9 @@ package storagechallenge
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
-	"github.com/pastelnetwork/storage-challenges/utils/xordistance"
 )
 
 type repository interface {
@@ -64,5 +64,5 @@ func (r *repo) GetNClosestXORDistanceMasternodesToComparisionString(ctx context.
 }
 
 func (r *repo) GetNClosestXORDistanceFileHashesToComparisonString(_ context.Context, n int, comparisonString string, symbolFileKeys []string) []string {
-	return xordistance.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, symbolFileKeys)
+	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, symbolFileKeys)
 }
