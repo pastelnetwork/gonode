@@ -12,19 +12,19 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/walletnode/api"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/openapi/server"
-	"github.com/pastelnetwork/gonode/walletnode/api/gen/openapi"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	goahttp "goa.design/goa/v3/http"
 )
 
-type OpenAPI struct {
+type Sense struct {
 	*Common
 	imageTTL time.Duration
 }
 
 // Mount onfigures the mux to serve the OpenAPI enpoints.
-func (service *OpenAPI) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
-	endpoints := openapi.NewEndpoints(service)
+func (service *Sense) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Server {
+	endpoints := sense.NewEndpoints(service)
 
 	srv := server.New(
 		endpoints,
@@ -45,23 +45,37 @@ func (service *OpenAPI) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Se
 }
 
 // UploadImage - Uploads an image to the blockchain.
-func (service *OpenAPI) UploadImage(_ context.Context, p *openapi.UploadImagePayload) (res *openapi.Image, err error) {
+func (service *Sense) UploadImage(_ context.Context, p *sense.UploadImagePayload) (res *sense.ImageUploadResult, err error) {
 	if p.Filename == nil {
-		return nil, openapi.MakeBadRequest(errors.New("file not specified"))
+		return nil, sense.MakeBadRequest(errors.New("file not specified"))
 	}
 
-	// TODO: Process the image
-	txid, _ := random.String(64, random.Base62Chars)
+	// TODO: Register task_id
+	task_id, _ := random.String(64, random.Base62Chars)
 
-	res = &openapi.Image{
-		Txid: txid,
+	res = &sense.ImageUploadResult{
+		TaskID: task_id,
 	}
 	return res, nil
 }
 
+// StartTask - Starts a action data task
+func (service *Sense) StartTask(_ context.Context, p *sense.StartTaskPayload) (res *sense.StartActionDataResult, err error) {
+	// Validate payload
+
+	// Process data
+
+	// Return data
+	res = &sense.StartActionDataResult{
+		EstimatedFee: 100,
+	}
+
+	return res, nil
+}
+
 // NewOpenAPI returns the swagger OpenAPI implementation.
-func NewOpenAPI() *OpenAPI {
-	return &OpenAPI{
+func NewOpenAPI() *Sense {
+	return &Sense{
 		Common:   NewCommon(),
 		imageTTL: defaultImageTTL,
 	}
@@ -69,9 +83,9 @@ func NewOpenAPI() *OpenAPI {
 
 // OpenApiUploadImageDecoderFunc implements the multipart decoder for service "artworks" endpoint "UploadImage".
 // The decoder must populate the argument p after encoding.
-func OpenApiUploadImageDecoderFunc(ctx context.Context, service *OpenAPI) server.OpenapiUploadImageDecoderFunc {
-	return func(reader *multipart.Reader, p **openapi.UploadImagePayload) error {
-		var res openapi.UploadImagePayload
+func OpenApiUploadImageDecoderFunc(ctx context.Context, service *Sense) server.SenseUploadImageDecoderFunc {
+	return func(reader *multipart.Reader, p **sense.UploadImagePayload) error {
+		var res sense.UploadImagePayload
 
 		for {
 			part, err := reader.NextPart()
@@ -79,7 +93,7 @@ func OpenApiUploadImageDecoderFunc(ctx context.Context, service *OpenAPI) server
 				if err == io.EOF {
 					break
 				}
-				return openapi.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
+				return sense.MakeInternalServerError(errors.Errorf("could not read next part: %w", err))
 			}
 
 			if part.FormName() != imagePartName {
@@ -88,11 +102,11 @@ func OpenApiUploadImageDecoderFunc(ctx context.Context, service *OpenAPI) server
 
 			contentType, _, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
 			if err != nil {
-				return openapi.MakeBadRequest(errors.Errorf("could not parse Content-Type: %w", err))
+				return sense.MakeBadRequest(errors.Errorf("could not parse Content-Type: %w", err))
 			}
 
 			if !strings.HasPrefix(contentType, contentTypePrefix) {
-				return openapi.MakeBadRequest(errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix))
+				return sense.MakeBadRequest(errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix))
 			}
 
 			// TODO: doing something with the uploaded image
