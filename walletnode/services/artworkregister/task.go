@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"strconv"
 	"sync"
 	"time"
 
@@ -22,10 +21,10 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
-	"golang.org/x/crypto/sha3"
 )
 
 // Task is the task of registering new artwork.
@@ -225,11 +224,11 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 
 	var buffer bytes.Buffer
 	buffer.WriteString(ddEncoded)
-	buffer.WriteString(".")
+	buffer.WriteByte(pastel.SeparatorByte)
 	buffer.Write(task.signatures[0])
-	buffer.WriteString(".")
+	buffer.WriteByte(pastel.SeparatorByte)
 	buffer.Write(task.signatures[1])
-	buffer.WriteString(".")
+	buffer.WriteByte(pastel.SeparatorByte)
 	buffer.Write(task.signatures[2])
 	ddFpFile := buffer.Bytes()
 
@@ -238,33 +237,13 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 		return errors.Errorf("compress: %w", err)
 	}
 
-	res := make([]byte, base64.StdEncoding.EncodedLen(len(comp)))
-	base64.StdEncoding.Encode(res, comp)
-	task.ddAndFpFile = res
+	task.ddAndFpFile = utils.B64Encode(comp)
 
 	task.ddAndFingerprintsIc = rand.Uint32()
-	var ids []string
-	for i := uint32(0); i < task.config.DDAndFingerprintsMax; i++ {
-		var buffer bytes.Buffer
-		counter := task.ddAndFingerprintsIc + i
-
-		buffer.Write(ddFpFile)
-		buffer.WriteString(".")
-		buffer.WriteString(strconv.Itoa(int(counter)))
-
-		compressed, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
-		if err != nil {
-			return errors.Errorf("compress: %w", err)
-		}
-
-		hash, err := sha3256hash(compressed)
-		if err != nil {
-			return errors.Errorf("sha3256hash: %w", err)
-		}
-
-		ids = append(ids, base58.Encode(hash))
+	task.ddAndFingerprintsIDs, err = pastel.GetIDFiles(ddFpFile, task.ddAndFingerprintsIc, task.config.DDAndFingerprintsMax)
+	if err != nil {
+		return fmt.Errorf("get ID Files: %w", err)
 	}
-	task.ddAndFingerprintsIDs = ids
 
 	return nil
 }
@@ -545,7 +524,6 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 		RqFilesDir: task.Service.config.RqFilesDir,
 	})
 
-	log.WithContext(ctx).Debugf("Image hash %x", sha3.Sum256(content))
 	// FIXME :
 	// - check format of artis block hash should be base58 or not
 	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, task.creatorBlockHash, task.Request.ArtistPastelID)
@@ -591,11 +569,8 @@ func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDF
 		return errors.Errorf("sign identifiers file: %w", err)
 	}
 
-	encSign := make([]byte, base64.StdEncoding.EncodedLen(len(signature)))
-	base64.StdEncoding.Encode(encSign, signature)
-
-	encfile := make([]byte, base64.StdEncoding.EncodedLen(len(content)))
-	base64.StdEncoding.Encode(encfile, content)
+	encSign := utils.B64Encode(signature)
+	encfile := utils.B64Encode(content)
 
 	var buffer bytes.Buffer
 	buffer.Write(encfile)
@@ -608,33 +583,13 @@ func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDF
 		return errors.Errorf("compress: %w", err)
 	}
 
-	res := make([]byte, base64.StdEncoding.EncodedLen(len(comp)))
-	base64.StdEncoding.Encode(res, comp)
-	task.rqIDsFile = res
-
+	task.rqIDsFile = utils.B64Encode(comp)
 	task.rqIDsIc = rand.Uint32()
-	ids := []string{}
-	for i := uint32(0); i < task.config.RQIDsMax; i++ {
-		var buffer bytes.Buffer
-		counter := task.rqIDsIc + i
 
-		buffer.Write(rqIDFile)
-		buffer.WriteString(".")
-		buffer.WriteString(strconv.Itoa(int(counter)))
-
-		compressedData, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
-		if err != nil {
-			return errors.Errorf("compress identifiers file: %w", err)
-		}
-
-		hash, err := sha3256hash(compressedData)
-		if err != nil {
-			return errors.Errorf("sha3256hash: %w", err)
-		}
-
-		ids = append(ids, base58.Encode(hash))
+	task.rqids, err = pastel.GetIDFiles(rqIDFile, task.rqIDsIc, task.config.RQIDsMax)
+	if err != nil {
+		return fmt.Errorf("get ID Files: %w", err)
 	}
-	task.rqids = ids
 
 	return nil
 }
@@ -672,12 +627,12 @@ func (task *Task) createArtTicket(_ context.Context) error {
 		Green:     false, // Not supported yet by cNode
 		AppTicketData: pastel.AppTicket{
 			CreatorName:                task.Request.ArtistName,
-			CreatorWebsite:             safeString(task.Request.ArtistWebsiteURL),
-			CreatorWrittenStatement:    safeString(task.Request.Description),
-			NFTTitle:                   safeString(&task.Request.Name),
-			NFTSeriesName:              safeString(task.Request.SeriesName),
-			NFTCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
-			NFTKeywordSet:              safeString(task.Request.Keywords),
+			CreatorWebsite:             utils.SafeString(task.Request.ArtistWebsiteURL),
+			CreatorWrittenStatement:    utils.SafeString(task.Request.Description),
+			NFTTitle:                   utils.SafeString(&task.Request.Name),
+			NFTSeriesName:              utils.SafeString(task.Request.SeriesName),
+			NFTCreationVideoYoutubeURL: utils.SafeString(task.Request.YoutubeURL),
+			NFTKeywordSet:              utils.SafeString(task.Request.Keywords),
 			NFTType:                    nftType,
 			TotalCopies:                task.Request.IssuedCopies,
 			PreviewHash:                task.previewHash,
@@ -826,7 +781,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 
 	// As we are going to store the the compressed figerprint to kamedila
 	// so we calculated the hash based on the compressed fingerprints as well
-	fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
+	fingerprintsHash, err := utils.Sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
 	if err != nil {
 		return errors.Errorf("hash zstd commpressed fingerprints: %w", err)
 	}
@@ -858,7 +813,7 @@ func (task *Task) uploadImage(ctx context.Context) error {
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
 
-	if task.datahash, err = sha3256hash(imgBytes); err != nil {
+	if task.datahash, err = utils.Sha3256hash(imgBytes); err != nil {
 		return errors.Errorf("hash encoded image: %w", err)
 	}
 
