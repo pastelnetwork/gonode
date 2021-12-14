@@ -4,6 +4,7 @@ package walletnode
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -470,5 +471,5 @@ var RegisterArtwork_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "walletnode/register_artwork.proto",
+	Metadata: "register_artwork.proto",
 }
