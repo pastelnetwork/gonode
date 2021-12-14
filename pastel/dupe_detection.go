@@ -9,9 +9,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 )
 
-// separatorByte is the separator in dd_and_fingerprints.signature i.e. '.'
-var separatorByte byte = 46
-
 // DDAndFingerprints represents  the dd & fingerprints data returned by dd-service & SN
 type DDAndFingerprints struct {
 	Block                      string `json:"block"`

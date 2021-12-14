@@ -220,9 +220,29 @@ func (task *Task) SendRegMetadata(_ context.Context, regMetadata *types.NftRegMe
 	return nil
 }
 
+func (task *Task) compressSignedDDAndFingerprints(ctx context.Context, ddData *pastel.DDAndFingerprints) ([]byte, error) {
+	// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
+	ddDataBytes, err := json.Marshal(ddData)
+	if err != nil {
+		return nil, errors.Errorf("marshal DDAndFingerprints: %w", err)
+	}
+
+	// sign it
+	signature, err := task.pastelClient.Sign(ctx, ddDataBytes, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
+	if err != nil {
+		return nil, errors.Errorf("sign DDAndFingerprints: %w", err)
+	}
+
+	compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddData, signature)
+	if err != nil {
+		return nil, errors.Errorf("compress SignedDDAndFingerprints: %w", err)
+	}
+
+	return compressed, nil
+}
+
 // ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
 func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
-
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return nil, err
 	}
@@ -291,16 +311,58 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 			return nil
 		case <-task.allSignedDDAndFingerprintsReceivedChn:
 			log.WithContext(ctx).Debug("all DDAndFingerprints received so start calculate final DDAndFingerprints")
-			// TODO: add calculation here to determine final calculatedDDAndFingerprints from task.allDDAndFingerprints
-			task.calculatedDDAndFingerprints = task.myDDAndFingerprints
+			task.allDDAndFingerprints[task.config.PastelID] = task.myDDAndFingerprints
+
+			// get list of DDAndFingerprints in order of node rank
+			dDAndFingerprintsList := []*pastel.DDAndFingerprints{}
+			for _, node := range task.meshedNodes {
+				v, ok := task.allDDAndFingerprints[node.NodeID]
+				if !ok {
+					err = errors.Errorf("not found DDAndFingerprints of node : %s", node.NodeID)
+					log.WithContext(ctx).WithFields(log.Fields{
+						"nodeID": node.NodeID,
+					}).Errorf("DDAndFingerprints of node not found")
+					return nil
+				}
+				dDAndFingerprintsList = append(dDAndFingerprintsList, v)
+			}
+
+			// calculate final result from DdDAndFingerprints from all SNs node
+			if len(dDAndFingerprintsList) != 3 {
+				err = errors.Errorf("not enough DDAndFingerprints, len: %d", len(dDAndFingerprintsList))
+				log.WithContext(ctx).WithFields(log.Fields{
+					"list": dDAndFingerprintsList,
+				}).Errorf("not enough DDAndFingerprints")
+				return nil
+			}
+
+			task.calculatedDDAndFingerprints, err = pastel.CombineFingerPrintAndScores(
+				dDAndFingerprintsList[0],
+				dDAndFingerprintsList[1],
+				dDAndFingerprintsList[2],
+			)
+
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("call CombineFingerPrintAndScores() failed")
+				return nil
+			}
+
+			// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
+			var compressed []byte
+			compressed, err = task.compressSignedDDAndFingerprints(ctx, task.calculatedDDAndFingerprints)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).Errorf("compress combine DDAndFingerPrintAndScore failed")
+
+				err = errors.Errorf("compress combine DDAndFingerPrintAndScore failed: %w", err)
+				return nil
+			}
+			task.calculatedDDAndFingerprints.ZstdCompressedFingerprint = compressed
 			return nil
 		case <-time.After(30 * time.Second):
 			log.WithContext(ctx).Debug("waiting for DDAndFingerprints from peers timeout")
 			err = errors.New("waiting for DDAndFingerprints timeout")
 			return nil
 		}
-
-		return nil
 	})
 
 	if err != nil {
@@ -691,20 +753,9 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 	}
 
 	// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
-	ddAndFingerprintsBytes, err := json.Marshal(ddAndFingerprints)
+	compressed, err := task.compressSignedDDAndFingerprints(ctx, task.calculatedDDAndFingerprints)
 	if err != nil {
-		return nil, errors.Errorf("marshal DDAndFingerprints: %w", err)
-	}
-
-	// sign it
-	signature, err := task.pastelClient.Sign(ctx, ddAndFingerprintsBytes, task.config.PastelID, task.config.PassPhrase, pastel.SignAlgorithmED448)
-	if err != nil {
-		return nil, errors.Errorf("sign DDAndFingerprints: %w", err)
-	}
-
-	compressed, err := pastel.ToCompressSignedDDAndFingerprints(ddAndFingerprints, signature)
-	if err != nil {
-		return nil, errors.Errorf("compress SignedDDAndFingerprints: %w", err)
+		return nil, errors.Errorf("call compressSignedDDAndFingerprints failed: %w", err)
 	}
 
 	ddAndFingerprints.ZstdCompressedFingerprint = compressed

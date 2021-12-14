@@ -42,6 +42,9 @@ func (fg Fingerprint) Bytes() []byte {
 
 // CompareFingerPrintAndScore returns nil if two DDAndFingerprints are equal
 func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) error {
+	if lhs == nil || rhs == nil {
+		return errors.New("nil input")
+	}
 
 	// Block
 	if !strings.EqualFold(lhs.Block, rhs.Block) {
@@ -79,7 +82,7 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 	}
 
 	//open_nsfw_score
-	if !compareFloatWithPrecision(lhs.OpenNSFWScore, rhs.OpenNSFWScore, 7.0) {
+	if !compareFloat(lhs.OpenNSFWScore, rhs.OpenNSFWScore) {
 		return errors.Errorf("open_nsfw_score do not match: lhs(%f) != rhs(%f)", lhs.OpenNSFWScore, rhs.OpenNSFWScore)
 	}
 
@@ -89,7 +92,7 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 	}
 
 	// ImageFingerprintOfCandidateImageFile
-	if !compareFloatsWithPrecision(lhs.ImageFingerprintOfCandidateImageFile, rhs.ImageFingerprintOfCandidateImageFile, 5.0) {
+	if !compareFloats(lhs.ImageFingerprintOfCandidateImageFile, rhs.ImageFingerprintOfCandidateImageFile) {
 		return errors.New("image_fingerprint_of_candidate_image_file nsfw score do not match")
 	}
 
@@ -128,19 +131,23 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 
 // CompareRarenessScores  return nil if two RarenessScores are equal
 func CompareRarenessScores(lhs *RarenessScores, rhs *RarenessScores) error {
-	if !compareFloatWithPrecision(lhs.CombinedRarenessScore, rhs.CombinedRarenessScore, 5.0) {
+	if lhs == nil || rhs == nil {
+		return errors.New("nil rareness_scores")
+	}
+
+	if !compareFloat(lhs.CombinedRarenessScore, rhs.CombinedRarenessScore) {
 		return errors.Errorf("combined_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.CombinedRarenessScore, rhs.CombinedRarenessScore)
 	}
 
-	if !compareFloatWithPrecision(lhs.XgboostPredictedRarenessScore, rhs.XgboostPredictedRarenessScore, 5.0) {
+	if !compareFloat(lhs.XgboostPredictedRarenessScore, rhs.XgboostPredictedRarenessScore) {
 		return errors.Errorf("xgboost_predicted_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.XgboostPredictedRarenessScore, rhs.XgboostPredictedRarenessScore)
 	}
 
-	if !compareFloatWithPrecision(lhs.NnPredictedRarenessScore, rhs.NnPredictedRarenessScore, 5.0) {
+	if !compareFloat(lhs.NnPredictedRarenessScore, rhs.NnPredictedRarenessScore) {
 		return errors.Errorf("nn_predicted_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.NnPredictedRarenessScore, rhs.NnPredictedRarenessScore)
 	}
 
-	if !compareFloatWithPrecision(lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore, 5.0) {
+	if !compareFloat(lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore) {
 		return errors.Errorf("overall_average_rareness_score not matched: lhs(%f) != rhs(%f)", lhs.OverallAverageRarenessScore, rhs.OverallAverageRarenessScore)
 	}
 
@@ -149,6 +156,10 @@ func CompareRarenessScores(lhs *RarenessScores, rhs *RarenessScores) error {
 
 // CompareInternetRareness return nil if two InternetRareness are equal
 func CompareInternetRareness(lhs *InternetRareness, rhs *InternetRareness) error {
+	if lhs == nil || rhs == nil {
+		return errors.New("nil internet_rareness")
+	}
+
 	if lhs.MatchesFoundOnFirstPage != rhs.MatchesFoundOnFirstPage {
 		return errors.Errorf("matches_found_on_first_page not matched: lhs(%d) != rhs(%d)", lhs.MatchesFoundOnFirstPage, rhs.MatchesFoundOnFirstPage)
 	}
@@ -165,20 +176,23 @@ func CompareInternetRareness(lhs *InternetRareness, rhs *InternetRareness) error
 
 // CompareAlternativeNSFWScore return nil if two AlternativeNSFWScore are equal
 func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScores, rhs *AlternativeNSFWScores) error {
+	if lhs == nil || rhs == nil {
+		return errors.New("nil alternative_nsfw_scores")
+	}
 
-	if !compareFloatWithPrecision(lhs.Drawings, rhs.Drawings, 5.0) {
+	if !compareFloat(lhs.Drawings, rhs.Drawings) {
 		return errors.Errorf("drawings score not matched: lhs(%f) != rhs(%f)", lhs.Drawings, rhs.Drawings)
 	}
-	if !compareFloatWithPrecision(lhs.Hentai, rhs.Hentai, 5.0) {
+	if !compareFloat(lhs.Hentai, rhs.Hentai) {
 		return errors.Errorf("hentai score not matched: lhs(%f) != rhs(%f)", lhs.Hentai, rhs.Hentai)
 	}
-	if !compareFloatWithPrecision(lhs.Neutral, rhs.Neutral, 5.0) {
+	if !compareFloat(lhs.Neutral, rhs.Neutral) {
 		return errors.Errorf("neutral score not matched: lhs(%f) != rhs(%f)", lhs.Neutral, rhs.Neutral)
 	}
-	if !compareFloatWithPrecision(lhs.Porn, rhs.Porn, 5.0) {
+	if !compareFloat(lhs.Porn, rhs.Porn) {
 		return errors.Errorf("porn score not matched: lhs(%f) != rhs(%f)", lhs.Porn, rhs.Porn)
 	}
-	if !compareFloatWithPrecision(lhs.Sexy, rhs.Sexy, 5.0) {
+	if !compareFloat(lhs.Sexy, rhs.Sexy) {
 		return errors.Errorf("sexy score not matched: lhs(%f) != rhs(%f)", lhs.Sexy, rhs.Sexy)
 	}
 	return nil
@@ -186,6 +200,10 @@ func CompareAlternativeNSFWScore(lhs *AlternativeNSFWScores, rhs *AlternativeNSF
 
 // CompareFingerprintsStat compares two FingerprintsStat
 func CompareFingerprintsStat(lhs *FingerprintsStat, rhs *FingerprintsStat) error {
+	if lhs == nil || rhs == nil {
+		return errors.New("nil fingerprints_stat")
+	}
+
 	if lhs.NumberOfFingerprintsRequiringFurtherTesting1 != rhs.NumberOfFingerprintsRequiringFurtherTesting1 {
 		return errors.Errorf("number_of_fingerprints_requiring_further_testing_1 not matched: lhs(%d) != rhs(%d)", lhs.NumberOfFingerprintsRequiringFurtherTesting1, rhs.NumberOfFingerprintsRequiringFurtherTesting1)
 	}
@@ -218,6 +236,10 @@ func CompareFingerprintsStat(lhs *FingerprintsStat, rhs *FingerprintsStat) error
 
 // ComparePerceptualImageHashes return nil if two PerceptualImageHashes are equal
 func ComparePerceptualImageHashes(lhs *PerceptualImageHashes, rhs *PerceptualImageHashes) error {
+	if lhs == nil || rhs == nil {
+		return errors.New("nil perceptual_image_hashes")
+	}
+
 	if !strings.EqualFold(lhs.PDQHash, rhs.PDQHash) {
 		return errors.Errorf("pdq_hash not matched: lhs(%s) != rhs(%s)", lhs.PDQHash, rhs.PDQHash)
 	}
@@ -238,26 +260,29 @@ func ComparePerceptualImageHashes(lhs *PerceptualImageHashes, rhs *PerceptualIma
 
 // CompareMaxes return nil if two Maxes are equal
 func CompareMaxes(lhs *Maxes, rhs *Maxes) error {
+	if lhs == nil || rhs == nil {
+		return errors.New("nil maxes")
+	}
 
-	if !compareFloatWithPrecision(lhs.PearsonMax, rhs.PearsonMax, 5.0) {
+	if !compareFloat(lhs.PearsonMax, rhs.PearsonMax) {
 		return errors.Errorf("pearson_max not matched: lhs(%f) != rhs(%f)", lhs.PearsonMax, rhs.PearsonMax)
 	}
-	if !compareFloatWithPrecision(lhs.SpearmanMax, rhs.SpearmanMax, 5.0) {
+	if !compareFloat(lhs.SpearmanMax, rhs.SpearmanMax) {
 		return errors.Errorf("spearman_max not matched: lhs(%f) != rhs(%f)", lhs.SpearmanMax, rhs.SpearmanMax)
 	}
-	if !compareFloatWithPrecision(lhs.KendallMax, rhs.KendallMax, 5.0) {
+	if !compareFloat(lhs.KendallMax, rhs.KendallMax) {
 		return errors.Errorf("kendall_max not matched: lhs(%f) != rhs(%f)", lhs.KendallMax, rhs.KendallMax)
 	}
-	if !compareFloatWithPrecision(lhs.HoeffdingMax, rhs.HoeffdingMax, 5.0) {
+	if !compareFloat(lhs.HoeffdingMax, rhs.HoeffdingMax) {
 		return errors.Errorf("hoeffding_maxnot matched: lhs(%f) != rhs(%f)", lhs.HoeffdingMax, rhs.HoeffdingMax)
 	}
-	if !compareFloatWithPrecision(lhs.MutualInformationMax, rhs.MutualInformationMax, 5.0) {
+	if !compareFloat(lhs.MutualInformationMax, rhs.MutualInformationMax) {
 		return errors.Errorf("mutual_information_max not matched: lhs(%f) != rhs(%f)", lhs.MutualInformationMax, rhs.MutualInformationMax)
 	}
-	if !compareFloatWithPrecision(lhs.HsicMax, rhs.HsicMax, 5.0) {
+	if !compareFloat(lhs.HsicMax, rhs.HsicMax) {
 		return errors.Errorf("hsic_max not matched: lhs(%f) != rhs(%f)", lhs.HsicMax, rhs.HsicMax)
 	}
-	if !compareFloatWithPrecision(lhs.XgbimportanceMax, rhs.XgbimportanceMax, 5.0) {
+	if !compareFloat(lhs.XgbimportanceMax, rhs.XgbimportanceMax) {
 		return errors.Errorf("xgbimportance_max not matched: lhs(%f) != rhs(%f)", lhs.XgbimportanceMax, rhs.XgbimportanceMax)
 	}
 	return nil
@@ -265,29 +290,40 @@ func CompareMaxes(lhs *Maxes, rhs *Maxes) error {
 
 // ComparePercentile return nil if two Percentile are equal
 func ComparePercentile(lhs *Percentile, rhs *Percentile) error {
+	if lhs == nil || rhs == nil {
+		return errors.New("nil percentile")
+	}
 
-	if !compareFloatWithPrecision(lhs.PearsonTop1BpsPercentile, rhs.PearsonTop1BpsPercentile, 5.0) {
+	if !compareFloat(lhs.PearsonTop1BpsPercentile, rhs.PearsonTop1BpsPercentile) {
 		return errors.Errorf("pearson_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.PearsonTop1BpsPercentile, rhs.PearsonTop1BpsPercentile)
 	}
-	if !compareFloatWithPrecision(lhs.SpearmanTop1BpsPercentile, rhs.SpearmanTop1BpsPercentile, 5.0) {
+	if !compareFloat(lhs.SpearmanTop1BpsPercentile, rhs.SpearmanTop1BpsPercentile) {
 		return errors.Errorf("spearman_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.SpearmanTop1BpsPercentile, rhs.SpearmanTop1BpsPercentile)
 	}
-	if !compareFloatWithPrecision(lhs.KendallTop1BpsPercentile, rhs.KendallTop1BpsPercentile, 5.0) {
+	if !compareFloat(lhs.KendallTop1BpsPercentile, rhs.KendallTop1BpsPercentile) {
 		return errors.Errorf("kendall_top_1_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.KendallTop1BpsPercentile, rhs.KendallTop1BpsPercentile)
 	}
-	if !compareFloatWithPrecision(lhs.HoeffdingTop10BpsPercentile, rhs.HoeffdingTop10BpsPercentile, 5.0) {
+	if !compareFloat(lhs.HoeffdingTop10BpsPercentile, rhs.HoeffdingTop10BpsPercentile) {
 		return errors.Errorf("hoeffding_top_10_bps_percentile matched: lhs(%f) != rhs(%f)", lhs.HoeffdingTop10BpsPercentile, rhs.HoeffdingTop10BpsPercentile)
 	}
-	if !compareFloatWithPrecision(lhs.MutualInformationTop100BpsPercentile, rhs.MutualInformationTop100BpsPercentile, 5.0) {
+	if !compareFloat(lhs.MutualInformationTop100BpsPercentile, rhs.MutualInformationTop100BpsPercentile) {
 		return errors.Errorf("mutual_information_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.MutualInformationTop100BpsPercentile, rhs.MutualInformationTop100BpsPercentile)
 	}
-	if !compareFloatWithPrecision(lhs.HsicTop100BpsPercentile, rhs.HsicTop100BpsPercentile, 5.0) {
+	if !compareFloat(lhs.HsicTop100BpsPercentile, rhs.HsicTop100BpsPercentile) {
 		return errors.Errorf("hsic_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.HsicTop100BpsPercentile, rhs.HsicTop100BpsPercentile)
 	}
-	if !compareFloatWithPrecision(lhs.XgbimportanceTop100BpsPercentile, rhs.XgbimportanceTop100BpsPercentile, 5.0) {
+	if !compareFloat(lhs.XgbimportanceTop100BpsPercentile, rhs.XgbimportanceTop100BpsPercentile) {
 		return errors.Errorf("xgbimportance_top_100_bps_percentile not matched: lhs(%f) != rhs(%f)", lhs.XgbimportanceTop100BpsPercentile, rhs.XgbimportanceTop100BpsPercentile)
 	}
 	return nil
+}
+
+func compareFloat(l float32, r float32) bool {
+	if compareFloatWithPrecision(l, r, 5.0) {
+		return true
+	}
+
+	return compareFloatWithPrecision(l, r, 3.0)
 }
 
 func compareFloatWithPrecision(l float32, r float32, prec float64) bool {
@@ -298,13 +334,13 @@ func compareFloatWithPrecision(l float32, r float32, prec float64) bool {
 	return math.Round(float64(l)*multiplier)/multiplier == math.Round(float64(r)*multiplier)/multiplier
 }
 
-func compareFloatsWithPrecision(l []float32, r []float32, prec float64) bool {
+func compareFloats(l []float32, r []float32) bool {
 	if len(l) != len(r) {
 		return false
 	}
 
 	for i := 0; i < len(l); i = i + 1 {
-		if !compareFloatWithPrecision(l[i], r[i], prec) {
+		if !compareFloat(l[i], r[i]) {
 			return false
 		}
 	}
