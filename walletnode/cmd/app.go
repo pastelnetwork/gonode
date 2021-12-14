@@ -170,6 +170,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		services.NewArtwork(artworkRegister, artworkSearch, artworkDownload),
 		services.NewUserdata(userdataProcess),
 		services.NewSwagger(),
+		services.NewOpenAPI(),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
