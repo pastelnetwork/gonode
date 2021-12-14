@@ -232,11 +232,13 @@ func (s *service) startServer(ctx context.Context) error {
 	if err != nil {
 		return errors.Errorf("listen on %s: %w", raftListenAddr, err)
 	}
+	defer muxListener.Close()
 	mux, err := s.startNodeMux(ctx, muxListener, raftAdvAddr)
 	if err != nil {
 		return errors.Errorf("start node mux: %w", err)
 	}
 	raftTn := mux.Listen(cluster.MuxRaftHeader)
+	defer raftTn.Close()
 
 	// create cluster service, so nodes can learn information about each other.
 	// This can be started now since it doesn't require a functioning Store yet.
@@ -277,16 +279,6 @@ func (s *service) startServer(ctx context.Context) error {
 
 	// block until context is done
 	<-ctx.Done()
-
-	// close the rqlite store
-	if err := db.Close(true); err != nil {
-		log.MetaDB().WithContext(ctx).WithError(err).Errorf("close store failed")
-	}
-
-	// close the mux listener
-	if err := muxListener.Close(); err != nil {
-		log.MetaDB().WithContext(ctx).WithError(err).Errorf("Close mux listener failed")
-	}
 
 	log.MetaDB().WithContext(ctx).Info("metadb service is stopped")
 	return nil
