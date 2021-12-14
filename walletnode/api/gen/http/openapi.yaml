@@ -417,13 +417,52 @@ paths:
             $ref: '#/definitions/ArtworksArtSearchInternalServerErrorResponseBody'
       schemes:
       - ws
+  /openapi/sense/start/{task_id}:
+    post:
+      tags:
+      - sense
+      summary: Start Action Task
+      description: Start Action
+      operationId: sense#startTask
+      parameters:
+      - name: task_id
+        in: path
+        description: Task ID
+        required: true
+        type: string
+        maxLength: 64
+        minLength: 64
+      - name: StartTaskRequestBody
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/SenseStartTaskRequestBody'
+          required:
+          - app_pastelid
+          - action_data_hash
+          - action_data_signature
+      responses:
+        "201":
+          description: Created response.
+          schema:
+            $ref: '#/definitions/SenseStartTaskResponseBody'
+        "400":
+          description: Bad Request response.
+          schema:
+            $ref: '#/definitions/SenseStartTaskBadRequestResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/SenseStartTaskInternalServerErrorResponseBody'
+      schemes:
+      - http
   /openapi/sense/upload:
     post:
       tags:
-      - openapi
-      summary: Uploads an image
+      - sense
+      summary: Uploads Action Data (Image)
       description: Upload the image
-      operationId: openapi#uploadImage
+      operationId: sense#uploadImage
       consumes:
       - multipart/form-data
       parameters:
@@ -431,22 +470,22 @@ paths:
         in: formData
         required: true
         schema:
-          $ref: '#/definitions/OpenapiUploadImageRequestBody'
+          $ref: '#/definitions/SenseUploadImageRequestBody'
           required:
           - file
       responses:
         "201":
           description: Created response.
           schema:
-            $ref: '#/definitions/OpenapiUploadImageResponseBody'
+            $ref: '#/definitions/SenseUploadImageResponseBody'
         "400":
           description: Bad Request response.
           schema:
-            $ref: '#/definitions/OpenapiUploadImageBadRequestResponseBody'
+            $ref: '#/definitions/SenseUploadImageBadRequestResponseBody'
         "500":
           description: Internal Server Error response.
           schema:
-            $ref: '#/definitions/OpenapiUploadImageInternalServerErrorResponseBody'
+            $ref: '#/definitions/SenseUploadImageInternalServerErrorResponseBody'
       schemes:
       - http
   /userdatas/{pastelid}:
@@ -609,71 +648,58 @@ definitions:
         type: string
         description: Thumbnail_1 image
         example:
-        - 69
-        - 118
+        - 86
         - 101
-        - 110
+        - 108
+        - 32
+        - 111
+        - 100
         - 105
+        - 111
+        - 32
+        - 115
         - 101
-        - 116
+        - 100
         - 32
         - 97
-        - 117
-        - 116
-        - 32
-        - 101
-        - 116
-        - 32
-        - 117
-        - 116
-        - 32
-        - 99
-        - 117
-        - 109
+        - 108
+        - 105
         - 113
         - 117
-        - 101
-        - 32
         - 97
         - 109
-        - 101
-        - 116
         - 32
         - 100
-        - 101
-        - 98
-        - 105
-        - 116
-        - 105
-        - 115
+        - 111
+        - 108
+        - 111
+        - 114
+        - 117
+        - 109
         - 46
         format: byte
       thumbnail_2:
         type: string
         description: Thumbnail_2 image
         example:
-        - 65
-        - 112
-        - 101
-        - 114
-        - 105
+        - 81
+        - 117
         - 97
+        - 101
+        - 32
+        - 105
+        - 108
+        - 108
+        - 117
         - 109
         - 32
-        - 115
-        - 117
-        - 115
-        - 99
-        - 105
-        - 112
-        - 105
+        - 101
         - 116
         - 32
-        - 114
-        - 101
-        - 114
-        - 117
-        - 109
+        - 110
+        - 105
+        - 115
+        - 105
         - 46
         format: byte
       title:
@@ -704,79 +730,88 @@ definitions:
       keywords: Renaissance, sfumato, portrait
       series_name: Famous artist
       thumbnail_1:
-      - 86
+      - 65
+      - 100
       - 105
-      - 116
-      - 97
-      - 101
-      - 32
-      - 101
-      - 117
-      - 109
-      - 32
-      - 97
-      - 117
-      - 116
-      - 32
-      - 110
-      - 111
-      - 115
-      - 116
-      - 114
-      - 117
-      - 109
-      - 32
-      - 105
-      - 110
-      - 46
-      thumbnail_2:
-      - 83
-      - 105
-      - 110
-      - 116
-      - 32
-      - 114
-      - 101
-      - 114
-      - 117
-      - 109
-      - 32
-      - 110
+      - 112
       - 105
       - 115
+      - 99
       - 105
       - 32
-      - 109
+      - 100
       - 111
       - 108
+      - 111
+      - 114
       - 101
       - 115
-      - 116
-      - 105
-      - 97
-      - 101
       - 32
       - 113
       - 117
       - 105
-      - 100
-      - 101
-      - 109
       - 32
+      - 109
+      - 111
       - 100
+      - 105
+      - 32
+      - 112
       - 111
-      - 108
-      - 111
+      - 115
+      - 115
+      - 105
+      - 109
+      - 117
+      - 115
+      - 46
+      thumbnail_2:
+      - 65
+      - 116
+      - 32
+      - 97
+      - 109
+      - 101
+      - 116
+      - 32
       - 114
+      - 101
+      - 99
+      - 117
+      - 115
+      - 97
+      - 110
+      - 100
+      - 97
+      - 101
+      - 32
+      - 99
+      - 117
+      - 109
+      - 113
+      - 117
+      - 101
+      - 32
+      - 113
+      - 117
       - 105
       - 98
       - 117
       - 115
+      - 100
+      - 97
+      - 109
       - 32
       - 113
       - 117
       - 111
-      - 100
+      - 32
+      - 109
+      - 105
+      - 110
+      - 105
+      - 109
+      - 97
       - 46
       title: Mona Lisa
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1035,7 +1070,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -1051,19 +1086,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error temporary?
         example: false
     description: artSearch_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -1098,7 +1133,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: artSearch_InternalServerError_response_body result type (default
       view)
     example:
@@ -1106,8 +1141,8 @@ definitions:
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: true
-      timeout: false
+      temporary: false
+      timeout: true
     required:
     - name
     - id
@@ -1125,7 +1160,7 @@ definitions:
         type: integer
         description: Sort index of the match based on score.This must be used to sort
           results on UI.
-        example: 5330761874689937150
+        example: 5869169039146088596
         format: int64
       matches:
         type: array
@@ -1133,18 +1168,34 @@ definitions:
           $ref: '#/definitions/FuzzyMatchResponseBody'
         description: Match result details
         example:
-        - field_type: keyword
+        - field_type: series
           matched_indexes:
-          - 3296871063441268122
-          - 1275827989906040522
-          score: 153082285827655130
-          str: Tempora non culpa voluptatibus rerum est.
-        - field_type: keyword
+          - 9078378930419597568
+          - 1911770415124590258
+          - 3694884688988449367
+          score: 7629427366626674880
+          str: Iste sunt.
+        - field_type: series
           matched_indexes:
-          - 3296871063441268122
-          - 1275827989906040522
-          score: 153082285827655130
-          str: Tempora non culpa voluptatibus rerum est.
+          - 9078378930419597568
+          - 1911770415124590258
+          - 3694884688988449367
+          score: 7629427366626674880
+          str: Iste sunt.
+        - field_type: series
+          matched_indexes:
+          - 9078378930419597568
+          - 1911770415124590258
+          - 3694884688988449367
+          score: 7629427366626674880
+          str: Iste sunt.
+        - field_type: series
+          matched_indexes:
+          - 9078378930419597568
+          - 1911770415124590258
+          - 3694884688988449367
+          score: 7629427366626674880
+          str: Iste sunt.
     example:
       artwork:
         artist_name: Leonardo da Vinci
@@ -1157,83 +1208,74 @@ definitions:
         keywords: Renaissance, sfumato, portrait
         series_name: Famous artist
         thumbnail_1:
-        - 81
-        - 117
-        - 105
-        - 97
-        - 32
-        - 101
-        - 105
-        - 117
-        - 115
-        - 32
-        - 99
-        - 117
-        - 109
-        - 32
-        - 104
-        - 97
-        - 114
-        - 117
-        - 109
-        - 32
-        - 105
-        - 108
-        - 108
-        - 117
-        - 109
-        - 32
-        - 118
-        - 101
-        - 108
-        - 105
-        - 116
-        - 46
-        thumbnail_2:
-        - 70
-        - 97
-        - 99
-        - 101
-        - 114
-        - 101
-        - 32
-        - 110
+        - 86
         - 111
-        - 110
-        - 32
-        - 113
+        - 108
         - 117
+        - 112
+        - 116
+        - 97
+        - 116
         - 105
         - 98
         - 117
         - 115
-        - 100
-        - 97
+        - 32
+        - 114
+        - 101
+        - 114
+        - 117
         - 109
+        - 46
+        thumbnail_2:
+        - 78
+        - 117
+        - 108
+        - 108
+        - 97
+        - 32
+        - 97
+        - 114
+        - 99
+        - 104
+        - 105
+        - 116
+        - 101
+        - 99
+        - 116
+        - 111
+        - 32
+        - 115
+        - 117
+        - 110
+        - 116
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-      match_index: 5869169039146088596
+      match_index: 4435663208617381020
       matches:
-      - field_type: keyword
+      - field_type: series
         matched_indexes:
-        - 3296871063441268122
-        - 1275827989906040522
-        score: 153082285827655130
-        str: Tempora non culpa voluptatibus rerum est.
-      - field_type: keyword
+        - 9078378930419597568
+        - 1911770415124590258
+        - 3694884688988449367
+        score: 7629427366626674880
+        str: Iste sunt.
+      - field_type: series
         matched_indexes:
-        - 3296871063441268122
-        - 1275827989906040522
-        score: 153082285827655130
-        str: Tempora non culpa voluptatibus rerum est.
-      - field_type: keyword
+        - 9078378930419597568
+        - 1911770415124590258
+        - 3694884688988449367
+        score: 7629427366626674880
+        str: Iste sunt.
+      - field_type: series
         matched_indexes:
-        - 3296871063441268122
-        - 1275827989906040522
-        score: 153082285827655130
-        str: Tempora non culpa voluptatibus rerum est.
+        - 9078378930419597568
+        - 1911770415124590258
+        - 3694884688988449367
+        score: 7629427366626674880
+        str: Iste sunt.
     required:
     - artwork
     - matches
@@ -1261,14 +1303,14 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error temporary?
         example: false
     description: artworkGet_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
@@ -1288,7 +1330,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -1304,7 +1346,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error temporary?
@@ -1316,7 +1358,7 @@ definitions:
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -1355,12 +1397,12 @@ definitions:
         example: true
     description: artworkGet_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: true
-      timeout: true
+      temporary: false
+      timeout: false
     required:
     - name
     - id
@@ -1473,45 +1515,27 @@ definitions:
         type: string
         description: Preview Image
         example:
-        - 73
-        - 109
-        - 112
+        - 68
         - 101
-        - 100
-        - 105
-        - 116
-        - 32
-        - 116
+        - 115
         - 101
+        - 114
+        - 117
         - 110
-        - 101
         - 116
-        - 117
-        - 114
         - 32
-        - 104
-        - 97
-        - 114
+        - 113
         - 117
-        - 109
-        - 32
-        - 109
-        - 111
-        - 108
-        - 101
-        - 115
-        - 116
         - 105
-        - 97
-        - 115
         - 32
-        - 116
+        - 100
         - 101
-        - 109
-        - 112
-        - 111
+        - 115
+        - 101
         - 114
-        - 101
+        - 117
+        - 110
+        - 116
         - 46
         format: byte
       rareness_score:
@@ -1523,7 +1547,7 @@ definitions:
       royalty:
         type: number
         description: how much artist should get on all future resales
-        example: 0.356131402063653
+        example: 0.7438450012259081
         format: double
       series_name:
         type: string
@@ -1545,41 +1569,45 @@ definitions:
         type: string
         description: Thumbnail_1 image
         example:
-        - 69
-        - 118
+        - 80
         - 101
-        - 110
-        - 105
-        - 101
-        - 116
-        - 32
-        - 117
-        - 116
-        - 32
-        - 101
-        - 120
+        - 114
+        - 115
         - 112
-        - 101
-        - 100
         - 105
-        - 116
-        - 97
-        - 32
         - 99
-        - 117
-        - 109
-        - 113
-        - 117
-        - 101
-        - 32
-        - 113
-        - 117
+        - 105
         - 97
-        - 109
+        - 116
+        - 105
+        - 115
         - 32
         - 101
+        - 116
+        - 32
+        - 105
         - 115
         - 116
+        - 101
+        - 32
+        - 97
+        - 99
+        - 99
+        - 117
+        - 115
+        - 97
+        - 110
+        - 116
+        - 105
+        - 117
+        - 109
+        - 32
+        - 97
+        - 32
+        - 101
+        - 105
+        - 117
+        - 115
         - 46
         format: byte
       thumbnail_2:
@@ -1587,41 +1615,15 @@ definitions:
         description: Thumbnail_2 image
         example:
         - 69
-        - 115
         - 116
         - 32
-        - 105
-        - 112
-        - 115
-        - 97
-        - 109
-        - 32
-        - 109
-        - 97
-        - 120
-        - 105
-        - 109
-        - 101
-        - 32
-        - 101
         - 118
         - 101
-        - 110
-        - 105
-        - 101
-        - 116
-        - 32
-        - 99
-        - 117
         - 108
-        - 112
-        - 97
         - 32
-        - 110
-        - 111
-        - 110
-        - 32
-        - 101
+        - 113
+        - 117
+        - 105
         - 97
         - 46
         format: byte
@@ -1655,7 +1657,7 @@ definitions:
         writer Leonardo da Vinci. Likely completed in 1506, the piece features a portrait
         of a seated woman set against an imaginary landscape.
       drawing_nsfw_score: 1
-      green_address: false
+      green_address: true
       hentai_nsfw_score: 1
       internet_rareness_score: 1
       keywords: Renaissance, sfumato, portrait
@@ -1663,10 +1665,109 @@ definitions:
       nsfw_score: 1
       porn_nsfw_score: 1
       preview_thumbnail:
-      - 69
-      - 97
+      - 73
+      - 108
+      - 108
+      - 117
+      - 109
+      - 32
       - 113
       - 117
+      - 105
+      - 32
+      - 99
+      - 111
+      - 110
+      - 115
+      - 101
+      - 113
+      - 117
+      - 97
+      - 116
+      - 117
+      - 114
+      - 32
+      - 108
+      - 97
+      - 98
+      - 111
+      - 114
+      - 101
+      - 46
+      rareness_score: 1
+      royalty: 0.8424837448419771
+      series_name: Famous artist
+      sexy_nsfw_score: 1
+      storage_fee: 100
+      thumbnail_1:
+      - 83
+      - 97
+      - 101
+      - 112
+      - 101
+      - 32
+      - 99
+      - 111
+      - 110
+      - 115
+      - 101
+      - 113
+      - 117
+      - 97
+      - 116
+      - 117
+      - 114
+      - 32
+      - 114
+      - 101
+      - 112
+      - 117
+      - 100
+      - 105
+      - 97
+      - 110
+      - 100
+      - 97
+      - 101
+      - 46
+      thumbnail_2:
+      - 78
+      - 97
+      - 116
+      - 117
+      - 115
+      - 32
+      - 111
+      - 100
+      - 105
+      - 116
+      - 32
+      - 99
+      - 111
+      - 110
+      - 115
+      - 101
+      - 113
+      - 117
+      - 97
+      - 116
+      - 117
+      - 114
+      - 32
+      - 97
+      - 115
+      - 115
+      - 117
+      - 109
+      - 101
+      - 110
+      - 100
+      - 97
+      - 32
+      - 115
+      - 97
+      - 101
+      - 112
       - 101
       - 32
       - 108
@@ -1680,93 +1781,10 @@ definitions:
       - 97
       - 109
       - 32
-      - 113
-      - 117
-      - 105
-      - 115
-      - 113
-      - 117
-      - 97
-      - 109
-      - 32
-      - 97
-      - 99
-      - 99
-      - 117
-      - 115
-      - 97
-      - 109
-      - 117
-      - 115
-      - 46
-      rareness_score: 1
-      royalty: 0.5419404027606691
-      series_name: Famous artist
-      sexy_nsfw_score: 1
-      storage_fee: 100
-      thumbnail_1:
-      - 68
-      - 101
-      - 115
-      - 101
-      - 114
       - 117
       - 110
-      - 116
-      - 32
-      - 113
-      - 117
-      - 105
-      - 32
       - 100
       - 101
-      - 115
-      - 101
-      - 114
-      - 117
-      - 110
-      - 116
-      - 46
-      thumbnail_2:
-      - 80
-      - 101
-      - 114
-      - 115
-      - 112
-      - 105
-      - 99
-      - 105
-      - 97
-      - 116
-      - 105
-      - 115
-      - 32
-      - 101
-      - 116
-      - 32
-      - 105
-      - 115
-      - 116
-      - 101
-      - 32
-      - 97
-      - 99
-      - 99
-      - 117
-      - 115
-      - 97
-      - 110
-      - 116
-      - 105
-      - 117
-      - 109
-      - 32
-      - 97
-      - 32
-      - 101
-      - 105
-      - 117
-      - 115
       - 46
       title: Mona Lisa
       txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1788,7 +1806,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -1808,14 +1826,14 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: download_InternalServerError_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -1847,19 +1865,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
     description: download_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: true
-      timeout: false
+      temporary: false
+      timeout: true
     required:
     - name
     - id
@@ -1875,59 +1893,53 @@ definitions:
         type: string
         description: File downloaded
         example:
-        - 65
-        - 115
-        - 115
-        - 117
-        - 109
-        - 101
-        - 110
-        - 100
-        - 97
+        - 83
+        - 105
+        - 116
         - 32
-        - 115
-        - 97
-        - 101
-        - 112
-        - 101
-        - 32
+        - 118
+        - 111
         - 108
-        - 97
-        - 98
-        - 111
-        - 114
-        - 105
-        - 111
-        - 115
-        - 97
-        - 109
-        - 32
         - 117
-        - 110
-        - 100
-        - 101
-        - 32
+        - 112
+        - 116
         - 97
-        - 98
-        - 32
-        - 105
-        - 110
+        - 116
+        - 117
+        - 109
         - 46
         format: byte
     example:
       file:
-      - 83
-      - 105
-      - 110
+      - 86
+      - 111
+      - 108
+      - 117
+      - 112
       - 116
+      - 97
+      - 116
+      - 101
+      - 109
       - 32
-      - 99
-      - 111
-      - 109
-      - 109
-      - 111
       - 100
+      - 111
+      - 108
+      - 111
+      - 114
+      - 32
+      - 113
+      - 117
       - 105
+      - 32
+      - 112
+      - 111
+      - 115
+      - 115
+      - 105
+      - 109
+      - 117
+      - 115
       - 46
     required:
     - file
@@ -1938,7 +1950,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -1954,14 +1966,14 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error temporary?
         example: true
     description: register_BadRequest_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
@@ -1981,7 +1993,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -2001,10 +2013,10 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
     description: register_InternalServerError_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
@@ -2185,7 +2197,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: registerTask_InternalServerError_response_body result type (default
       view)
     example:
@@ -2194,7 +2206,7 @@ definitions:
       message: bad_request
       name: bad_request
       temporary: false
-      timeout: false
+      timeout: true
     required:
     - name
     - id
@@ -2225,19 +2237,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: registerTask_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -2265,8 +2277,6 @@ definitions:
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
       status:
         type: string
         description: JOb ID of the registration process
@@ -2285,8 +2295,6 @@ definitions:
     example:
       id: n6Qn6TFM
       states:
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
@@ -2342,7 +2350,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error temporary?
@@ -2350,7 +2358,7 @@ definitions:
     description: registerTaskState_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
@@ -2390,7 +2398,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: registerTaskState_NotFound_response_body result type (default view)
     example:
       fault: true
@@ -2463,11 +2471,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
     description: registerTasks_InternalServerError_response_body result type (default
       view)
     example:
@@ -2475,7 +2483,7 @@ definitions:
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -2499,6 +2507,30 @@ definitions:
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
+      status: n6Qn6TFM
+      ticket:
+        artist_name: n6Qn6TFM
+        artist_pastelid: n6Qn6TFM
+        artist_pastelid_passphrase: n6Qn6TFM
+        artist_website_url: n6Qn6TFM
+        description: n6Qn6TFM
+        green: false
+        issued_copies: 1
+        keywords: n6Qn6TFM
+        maximum_fee: 100
+        name: n6Qn6TFM
+        royalty: 100
+        series_name: n6Qn6TFM
+        spendable_address: n6Qn6TFM
+        thumbnail_coordinate:
+          bottom_right_x: 0
+          bottom_right_y: 0
+          top_left_x: 0
+          top_left_y: 0
+        youtube_url: n6Qn6TFM
+      txid: n6Qn6TFM
+    - id: n6Qn6TFM
+      states:
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
@@ -2531,10 +2563,6 @@ definitions:
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
       status: n6Qn6TFM
       ticket:
         artist_name: n6Qn6TFM
@@ -2559,42 +2587,6 @@ definitions:
       txid: n6Qn6TFM
     - id: n6Qn6TFM
       states:
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
-      status: n6Qn6TFM
-      ticket:
-        artist_name: n6Qn6TFM
-        artist_pastelid: n6Qn6TFM
-        artist_pastelid_passphrase: n6Qn6TFM
-        artist_website_url: n6Qn6TFM
-        description: n6Qn6TFM
-        green: false
-        issued_copies: 1
-        keywords: n6Qn6TFM
-        maximum_fee: 100
-        name: n6Qn6TFM
-        royalty: 100
-        series_name: n6Qn6TFM
-        spendable_address: n6Qn6TFM
-        thumbnail_coordinate:
-          bottom_right_x: 0
-          bottom_right_y: 0
-          top_left_x: 0
-          top_left_y: 0
-        youtube_url: n6Qn6TFM
-      txid: n6Qn6TFM
-    - id: n6Qn6TFM
-      states:
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
-      - date: 2006-01-02T15:04:05Z07:00
-        status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
         status: Task Started
       - date: 2006-01-02T15:04:05Z07:00
@@ -2644,18 +2636,18 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error temporary?
         example: true
     description: uploadImage_BadRequest_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: false
     required:
     - name
@@ -2687,7 +2679,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error temporary?
@@ -2695,12 +2687,12 @@ definitions:
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -2716,44 +2708,43 @@ definitions:
         type: string
         description: File to upload
         example:
-        - 81
-        - 117
+        - 68
         - 105
-        - 32
-        - 97
+        - 103
+        - 110
+        - 105
         - 115
         - 115
-        - 117
+        - 105
         - 109
-        - 101
-        - 110
-        - 100
-        - 97
-        - 32
-        - 110
         - 111
         - 115
+        - 32
+        - 115
+        - 105
+        - 110
         - 116
+        - 32
+        - 114
+        - 101
         - 114
         - 117
         - 109
         - 32
-        - 109
+        - 110
         - 105
-        - 110
-        - 117
         - 115
+        - 105
         - 32
-        - 110
+        - 109
         - 111
+        - 108
+        - 101
         - 115
         - 116
-        - 114
-        - 117
-        - 109
-        - 32
-        - 101
+        - 105
         - 97
+        - 101
         - 46
         format: byte
       filename:
@@ -2761,11 +2752,20 @@ definitions:
         description: For internal use
     example:
       file:
-      - 83
-      - 101
+      - 68
+      - 111
+      - 108
+      - 111
+      - 114
+      - 105
+      - 98
+      - 117
+      - 115
+      - 32
       - 113
       - 117
-      - 105
+      - 111
+      - 100
       - 32
       - 118
       - 111
@@ -2777,6 +2777,15 @@ definitions:
       - 116
       - 101
       - 109
+      - 32
+      - 100
+      - 101
+      - 115
+      - 101
+      - 114
+      - 117
+      - 110
+      - 116
       - 46
     required:
     - file
@@ -2810,7 +2819,7 @@ definitions:
       field_type:
         type: string
         description: Field that is matched
-        example: artist_name
+        example: series
         enum:
         - artist_name
         - art_title
@@ -2821,31 +2830,31 @@ definitions:
         type: array
         items:
           type: integer
-          example: 7394052911326624750
+          example: 7472276034679766581
           format: int64
         description: The indexes of matched characters. Useful for highlighting matches
         example:
-        - 3443314961496485335
-        - 1359507437102536265
-        - 4008581283873467619
-        - 4649323458023906464
+        - 364861546338565853
+        - 5930381235010961448
+        - 6023536009084724053
+        - 3284732415239782508
       score:
         type: integer
         description: Score used to rank matches
-        example: 576952885438216633
+        example: 6559797959060159981
         format: int64
       str:
         type: string
         description: String that is matched
-        example: Culpa vel odio sed aliquam.
+        example: Veniam voluptas rerum impedit vero enim magni.
     example:
-      field_type: artist_name
+      field_type: descr
       matched_indexes:
-      - 1215297699271328573
-      - 4771960422190605602
-      score: 1915557611931404356
-      str: Qui modi possimus labore at.
-  OpenapiUploadImageBadRequestResponseBody:
+      - 4092675770515322829
+      - 6070753215404967656
+      score: 6670197476391329992
+      str: Tenetur harum molestias tempore.
+  SenseStartTaskBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -2872,8 +2881,52 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
-    description: uploadImage_BadRequest_response_body result type (default view)
+        example: false
+    description: startTask_BadRequest_response_body result type (default view)
+    example:
+      fault: true
+      id: bad_request
+      message: bad_request
+      name: bad_request
+      temporary: true
+      timeout: false
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseStartTaskInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      id:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      message:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+    description: startTask_InternalServerError_response_body result type (default
+      view)
     example:
       fault: true
       id: bad_request
@@ -2888,7 +2941,174 @@ definitions:
     - temporary
     - timeout
     - fault
-  OpenapiUploadImageInternalServerErrorResponseBody:
+  SenseStartTaskRequestBody:
+    title: SenseStartTaskRequestBody
+    type: object
+    properties:
+      action_data_hash:
+        type: string
+        description: Hash (SHA3-256) of the Action Data
+        example:
+        - 69
+        - 116
+        - 32
+        - 116
+        - 101
+        - 110
+        - 101
+        - 116
+        - 117
+        - 114
+        - 46
+        format: byte
+      action_data_signature:
+        type: string
+        description: The signature of the Action Data
+        example:
+        - 78
+        - 101
+        - 109
+        - 111
+        - 32
+        - 101
+        - 117
+        - 109
+        - 32
+        - 97
+        - 108
+        - 105
+        - 113
+        - 117
+        - 105
+        - 100
+        - 46
+        format: byte
+      app_pastelid:
+        type: string
+        description: 3rd party app's PastelID
+        example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        pattern: ^[a-zA-Z0-9]+$
+        minLength: 86
+        maxLength: 86
+    example:
+      action_data_hash:
+      - 73
+      - 110
+      - 32
+      - 110
+      - 111
+      - 115
+      - 116
+      - 114
+      - 117
+      - 109
+      - 32
+      - 111
+      - 99
+      - 99
+      - 97
+      - 101
+      - 99
+      - 97
+      - 116
+      - 105
+      - 46
+      action_data_signature:
+      - 68
+      - 101
+      - 108
+      - 101
+      - 110
+      - 105
+      - 116
+      - 105
+      - 32
+      - 97
+      - 117
+      - 116
+      - 101
+      - 109
+      - 32
+      - 113
+      - 117
+      - 105
+      - 32
+      - 97
+      - 117
+      - 116
+      - 32
+      - 101
+      - 97
+      - 32
+      - 115
+      - 117
+      - 110
+      - 116
+      - 46
+      app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+    required:
+    - app_pastelid
+    - action_data_hash
+    - action_data_signature
+  SenseStartTaskResponseBody:
+    title: 'Mediatype identifier: application/sense.start-action; view=default'
+    type: object
+    properties:
+      estimated_fee:
+        type: number
+        description: Estimated fee
+        default: 1
+        example: 100
+        minimum: 1e-05
+    description: StartTaskResponseBody result type (default view)
+    example:
+      estimated_fee: 100
+    required:
+    - estimated_fee
+  SenseUploadImageBadRequestResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      id:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      message:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+    description: uploadImage_BadRequest_response_body result type (default view)
+    example:
+      fault: false
+      id: bad_request
+      message: bad_request
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseUploadImageInternalServerErrorResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
     properties:
@@ -2919,11 +3139,11 @@ definitions:
     description: uploadImage_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -2932,58 +3152,22 @@ definitions:
     - temporary
     - timeout
     - fault
-  OpenapiUploadImageRequestBody:
-    title: OpenapiUploadImageRequestBody
+  SenseUploadImageRequestBody:
+    title: SenseUploadImageRequestBody
     type: object
     properties:
       file:
         type: string
         description: File to upload
         example:
-        - 69
-        - 117
-        - 109
-        - 32
-        - 109
-        - 97
-        - 103
-        - 110
-        - 105
-        - 32
-        - 97
-        - 108
-        - 105
-        - 113
-        - 117
-        - 97
-        - 109
-        - 32
-        - 109
-        - 111
-        - 108
-        - 108
-        - 105
-        - 116
-        - 105
-        - 97
-        - 32
-        - 102
-        - 117
-        - 103
-        - 105
-        - 97
-        - 116
-        - 32
-        - 105
+        - 79
         - 100
-        - 32
-        - 100
-        - 101
-        - 98
         - 105
         - 116
+        - 32
+        - 104
         - 105
-        - 115
+        - 99
         - 46
         format: byte
       filename:
@@ -2991,33 +3175,25 @@ definitions:
         description: For internal use
     example:
       file:
-      - 86
-      - 111
-      - 108
-      - 117
-      - 112
+      - 69
+      - 115
       - 116
-      - 97
-      - 116
+      - 32
+      - 118
       - 101
-      - 32
-      - 99
-      - 117
-      - 109
-      - 32
-      - 114
-      - 101
-      - 114
-      - 117
-      - 109
-      - 32
-      - 97
       - 108
       - 105
+      - 116
+      - 32
+      - 109
+      - 105
+      - 110
+      - 117
+      - 115
+      - 32
       - 113
       - 117
-      - 97
-      - 109
+      - 105
       - 32
       - 111
       - 99
@@ -3029,27 +3205,33 @@ definitions:
       - 116
       - 105
       - 32
-      - 97
-      - 117
+      - 118
+      - 101
+      - 114
+      - 105
       - 116
+      - 97
+      - 116
+      - 105
+      - 115
       - 46
     required:
     - file
-  OpenapiUploadImageResponseBody:
-    title: 'Mediatype identifier: application/json; view=default'
+  SenseUploadImageResponseBody:
+    title: 'Mediatype identifier: application/sense.upload-image; view=default'
     type: object
     properties:
-      txid:
+      task_id:
         type: string
-        description: txid
+        description: Task ID
         example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
         minLength: 64
         maxLength: 64
     description: UploadImageResponseBody result type (default view)
     example:
-      txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      task_id: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
     required:
-    - txid
+    - task_id
   TaskResponseTiny:
     title: 'Mediatype identifier: application/vnd.artwork.register.task; view=default'
     type: object
@@ -3301,7 +3483,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -3317,11 +3499,11 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
     description: createUserdata_BadRequest_response_body result type (default view)
     example:
       fault: false
@@ -3344,7 +3526,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -3360,19 +3542,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: createUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -3547,7 +3729,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -3563,19 +3745,19 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error temporary?
         example: true
     description: getUserdata_BadRequest_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: true
-      timeout: true
+      temporary: false
+      timeout: false
     required:
     - name
     - id
@@ -3590,7 +3772,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -3614,12 +3796,12 @@ definitions:
     description: getUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -3634,7 +3816,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -3657,11 +3839,11 @@ definitions:
         example: true
     description: getUserdata_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
+      temporary: true
       timeout: true
     required:
     - name
@@ -3776,7 +3958,7 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: updateUserdata_BadRequest_response_body result type (default view)
     example:
       fault: false
@@ -3815,7 +3997,7 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       timeout:
         type: boolean
         description: Is the error temporary?
@@ -3827,7 +4009,7 @@ definitions:
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: false
     required:
     - name
