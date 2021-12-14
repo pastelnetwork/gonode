@@ -156,7 +156,7 @@ func (nodes *List) MatchThumbnailHashes() error {
 }
 
 // UploadSignedTicket uploads regart ticket and its signature to super nodes
-func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) error {
+func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqidsFile []byte, ddFpFile []byte, encoderParams rqnode.EncoderParameters) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
@@ -164,7 +164,7 @@ func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signat
 		key1 := "key1-" + uuid.New().String()
 		key2 := "key2-" + uuid.New().String()
 		group.Go(func() error {
-			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, rqids, encoderParams)
+			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, rqidsFile, ddFpFile, encoderParams)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("send signed ticket failed")
 				return err

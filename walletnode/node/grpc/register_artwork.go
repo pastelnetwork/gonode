@@ -263,7 +263,7 @@ func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) contex
 }
 
 // SendSignedTicket
-func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error) {
+func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids []byte, ddFp []byte, encoderParams rqnode.EncoderParameters) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -275,7 +275,9 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 		EncodeParameters: &pb.EncoderParameters{
 			Oti: encoderParams.Oti,
 		},
-		EncodeFiles: rqids,
+
+		// ----- WIP: PSL-142-------------Waiting for contract update
+		//EncodeFiles: rqids,
 	}
 
 	rsp, err := service.client.SendSignedNFTTicket(ctx, &req)

@@ -658,47 +658,6 @@ func TestTaskCreateTicket(t *testing.T) {
 			wantErr: errEmptyFingerprints,
 			want:    nil,
 		},
-		"fingerprint-hash-error": {
-			args: args{
-				task: &Task{
-					fingerprint:         []byte{},
-					smallThumbnailHash:  []byte{},
-					mediumThumbnailHash: []byte{},
-					previewHash:         []byte{},
-					rqids:               []string{},
-					datahash:            []byte{},
-					Request: &Request{
-						ArtistPastelID: "test-id",
-					},
-					Service: &Service{
-						config: NewConfig(),
-					},
-				},
-			},
-			wantErr: errEmptyFingerprintsHash,
-			want:    nil,
-		},
-		"fingerprint-signature-error": {
-			args: args{
-				task: &Task{
-					fingerprint:         []byte{},
-					fingerprintsHash:    []byte{},
-					previewHash:         []byte{},
-					smallThumbnailHash:  []byte{},
-					mediumThumbnailHash: []byte{},
-					rqids:               []string{},
-					datahash:            []byte{},
-					Request: &Request{
-						ArtistPastelID: "test-id",
-					},
-					Service: &Service{
-						config: NewConfig(),
-					},
-				},
-			},
-			wantErr: errEmptyFingerprintSignature,
-			want:    nil,
-		},
 		"data-hash-error": {
 			args: args{
 				task: &Task{
@@ -1972,6 +1931,9 @@ func TestTaskSendSignedTicket(t *testing.T) {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
+				if err != nil {
+					fmt.Println("err: ", err.Error())
+				}
 				assert.Nil(t, err)
 			}
 		})
