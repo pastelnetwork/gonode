@@ -338,7 +338,8 @@ func (s *service) runTask(ctx context.Context) error {
 			continue
 		}
 
-		//fingerprintsHash := string(nftTicketData.AppTicketData.FingerprintsHash)
+		// fingerprintsHash := string(nftTicketData.AppTicketData.FingerprintsHash)
+		// https://pastel-network.atlassian.net/browse/PSL-155 - update it
 		fingerprintsHash := "TBD"
 		compressedFingerprintBytes, err := s.p2pClient.Retrieve(ctx, fingerprintsHash)
 		if err != nil {
