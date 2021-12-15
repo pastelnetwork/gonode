@@ -1195,10 +1195,10 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 					},
 					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
 					Ticket: &pastel.NFTTicket{
+						Author: "author-id-b",
 						AppTicketData: pastel.AppTicket{
-							AuthorPastelID: "author-id-b",
-							CreatorName:    "Andy",
-							NFTTitle:       "alantic",
+							CreatorName: "Andy",
+							NFTTitle:    "alantic",
 						},
 					},
 				},
@@ -1214,10 +1214,10 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 					},
 					Task: task.New(StatusConnected),
 					Ticket: &pastel.NFTTicket{
+						Author: "author-id-b",
 						AppTicketData: pastel.AppTicket{
-							AuthorPastelID: "author-id-b",
-							CreatorName:    "Andy",
-							NFTTitle:       "alantic",
+							CreatorName: "Andy",
+							NFTTitle:    "alantic",
 						},
 					},
 				},
@@ -1232,10 +1232,10 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 					},
 					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
 					Ticket: &pastel.NFTTicket{
+						Author: "author-id-b",
 						AppTicketData: pastel.AppTicket{
-							AuthorPastelID: "author-id-b",
-							CreatorName:    "Andy",
-							NFTTitle:       "alantic",
+							CreatorName: "Andy",
+							NFTTitle:    "alantic",
 						},
 					},
 				},

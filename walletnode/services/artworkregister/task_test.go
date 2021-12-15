@@ -643,41 +643,23 @@ func TestTaskCreateTicket(t *testing.T) {
 		"fingerprint-error": {
 			args: args{
 				task: &Task{
-					fingerprintSignature: []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					previewHash:          []byte{},
-					rqids:                []string{},
-					datahash:             []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					previewHash:         []byte{},
+					rqids:               []string{},
+					datahash:            []byte{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyFingerprints,
 			want:    nil,
 		},
-		"fingerprint-hash-error": {
-			args: args{
-				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintSignature: []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					previewHash:          []byte{},
-					rqids:                []string{},
-					datahash:             []byte{},
-					Request: &Request{
-						ArtistPastelID: "test-id",
-					},
-					Service: &Service{},
-				},
-			},
-			wantErr: errEmptyFingerprintsHash,
-			want:    nil,
-		},
-		"fingerprint-signature-error": {
+		"data-hash-error": {
 			args: args{
 				task: &Task{
 					fingerprint:         []byte{},
@@ -686,30 +668,12 @@ func TestTaskCreateTicket(t *testing.T) {
 					smallThumbnailHash:  []byte{},
 					mediumThumbnailHash: []byte{},
 					rqids:               []string{},
-					datahash:            []byte{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
-				},
-			},
-			wantErr: errEmptyFingerprintSignature,
-			want:    nil,
-		},
-		"data-hash-error": {
-			args: args{
-				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					previewHash:          []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					rqids:                []string{},
-					Request: &Request{
-						ArtistPastelID: "test-id",
+					Service: &Service{
+						config: NewConfig(),
 					},
-					Service: &Service{},
 				},
 			},
 			wantErr: errEmptyDatahash,
@@ -718,17 +682,18 @@ func TestTaskCreateTicket(t *testing.T) {
 		"preview-hash-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					datahash:             []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					rqids:                []string{},
+					fingerprint:         []byte{},
+					fingerprintsHash:    []byte{},
+					datahash:            []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					rqids:               []string{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyPreviewHash,
@@ -737,17 +702,18 @@ func TestTaskCreateTicket(t *testing.T) {
 		"medium-thumbnail-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					previewHash:          []byte{},
-					datahash:             []byte{},
-					smallThumbnailHash:   []byte{},
-					rqids:                []string{},
+					fingerprint:        []byte{},
+					fingerprintsHash:   []byte{},
+					previewHash:        []byte{},
+					datahash:           []byte{},
+					smallThumbnailHash: []byte{},
+					rqids:              []string{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptyMediumThumbnailHash,
@@ -756,17 +722,18 @@ func TestTaskCreateTicket(t *testing.T) {
 		"small-thumbnail-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					mediumThumbnailHash:  []byte{},
-					previewHash:          []byte{},
-					datahash:             []byte{},
-					rqids:                []string{},
+					fingerprint:         []byte{},
+					fingerprintsHash:    []byte{},
+					mediumThumbnailHash: []byte{},
+					previewHash:         []byte{},
+					datahash:            []byte{},
+					rqids:               []string{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: errEmptySmallThumbnailHash,
@@ -775,17 +742,18 @@ func TestTaskCreateTicket(t *testing.T) {
 		"raptorQ-symbols-error": {
 			args: args{
 				task: &Task{
-					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
-					smallThumbnailHash:   []byte{},
-					mediumThumbnailHash:  []byte{},
-					previewHash:          []byte{},
-					datahash:             []byte{},
+					fingerprint:         []byte{},
+					fingerprintsHash:    []byte{},
+					smallThumbnailHash:  []byte{},
+					mediumThumbnailHash: []byte{},
+					previewHash:         []byte{},
+					datahash:            []byte{},
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service:              &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 					fingerprintAndScores: &pastel.DDAndFingerprints{},
 				},
 			},
@@ -797,7 +765,6 @@ func TestTaskCreateTicket(t *testing.T) {
 				task: &Task{
 					fingerprint:          []byte{},
 					fingerprintsHash:     []byte{},
-					fingerprintSignature: []byte{},
 					smallThumbnailHash:   []byte{},
 					mediumThumbnailHash:  []byte{},
 					previewHash:          []byte{},
@@ -809,7 +776,9 @@ func TestTaskCreateTicket(t *testing.T) {
 						ArtistName:     "test-name",
 						IssuedCopies:   10,
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 			},
 			wantErr: nil,
@@ -834,9 +803,6 @@ func TestTaskCreateTicket(t *testing.T) {
 				BlockNum: tc.args.task.creatorBlockHeight,
 				Copies:   tc.args.task.Request.IssuedCopies,
 				AppTicketData: pastel.AppTicket{
-					AuthorPastelID:             tc.args.task.Request.ArtistPastelID,
-					BlockTxID:                  tc.args.task.blockTxID,
-					BlockNum:                   0,
 					CreatorName:                tc.args.task.Request.ArtistName,
 					CreatorWebsite:             safeString(tc.args.task.Request.ArtistWebsiteURL),
 					CreatorWrittenStatement:    safeString(tc.args.task.Request.Description),
@@ -848,11 +814,10 @@ func TestTaskCreateTicket(t *testing.T) {
 					Thumbnail1Hash:             tc.args.task.mediumThumbnailHash,
 					Thumbnail2Hash:             tc.args.task.smallThumbnailHash,
 					DataHash:                   tc.args.task.datahash,
-					// TODO: fix later
-					//FingerprintsHash:           tc.args.task.fingerprintsHash,
-					//FingerprintsSignature:      tc.args.task.fingerprintSignature,
-					RQIDs: tc.args.task.rqids,
-					RQOti: tc.args.task.rqEncodeParams.Oti,
+					RQIDs:                      tc.args.task.rqids,
+					RQOti:                      tc.args.task.rqEncodeParams.Oti,
+					RQMax:                      tc.args.task.config.RQIDsMax,
+					DDAndFingerprintsMax:       tc.args.task.config.DDAndFingerprintsMax,
 				},
 			}
 
@@ -987,7 +952,9 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 				inFile: rqnode.RawSymbolIDFile{
 					ID:                uuid.New().String(),
@@ -1005,7 +972,9 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "test-id",
 					},
-					Service: &Service{},
+					Service: &Service{
+						config: NewConfig(),
+					},
 				},
 				signErr: errors.New(testErrStr),
 			},
@@ -1026,23 +995,18 @@ func TestTaskConvertToSymbolIdFile(t *testing.T) {
 			for _, id := range tc.args.inFile.SymbolIdentifiers {
 				rawContent = appendStr(rawContent, id)
 			}
-			rawContent = append(rawContent, tc.wantSign...)
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			_, content, err := tc.args.task.convertToSymbolIDFile(context.Background(), tc.args.inFile)
+			err := tc.args.task.generateRQIDs(context.Background(), tc.args.inFile)
 
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), testErrStr))
 			} else {
 				assert.Nil(t, err)
-				compressContent, zstdErr := zstd.CompressLevel(nil, rawContent, 22)
-
-				assert.Nil(t, zstdErr)
-				assert.True(t, bytes.Equal(content, compressContent))
 			}
 		})
 	}
@@ -1677,8 +1641,7 @@ func TestTaskUploadImage(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1702,8 +1665,7 @@ func TestTaskUploadImage(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1863,8 +1825,7 @@ func TestTaskProbeImage(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1885,8 +1846,7 @@ func TestTaskProbeImage(t *testing.T) {
 					Request: &Request{
 						ArtistPastelID: "testid",
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1939,6 +1899,9 @@ func TestTaskProbeImage(t *testing.T) {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
+				if err != nil {
+					fmt.Println(err)
+				}
 				assert.Nil(t, err)
 			}
 		})
@@ -1963,26 +1926,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 		args    args
 		wantErr error
 	}{
-		"upload-err": {
-			args: args{
-				sendSignedTicketRetErr: errors.New("test"),
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
-				},
-				nodes: []nodeArg{
-					{"127.0.0.1", "1"},
-					{"127.0.0.2", "2"},
-				},
-			},
-			wantErr: errors.New("upload signed ticket"),
-		},
+
 		"success": {
 			args: args{
 				task: &Task{
@@ -1992,8 +1936,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -2012,8 +1955,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -2056,6 +1998,9 @@ func TestTaskSendSignedTicket(t *testing.T) {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
 			} else {
+				if err != nil {
+					fmt.Println("err: ", err.Error())
+				}
 				assert.Nil(t, err)
 			}
 		})
@@ -2094,8 +2039,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -2114,8 +2058,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -2134,8 +2077,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 					Service: &Service{
 						config: &Config{NumberSuperNodes: 1},
 					},
-					ticket:          &pastel.NFTTicket{},
-					rqSymbolIDFiles: map[string][]byte{},
+					ticket: &pastel.NFTTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -2193,6 +2135,118 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
+	t.Parallel()
+
+	type args struct {
+		task *Task
+	}
+
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				task: &Task{
+					Request: &Request{
+						ArtistPastelID: "test-id",
+					},
+					Service: &Service{
+						config: NewConfig(),
+					},
+					signatures: make([][]byte, 3),
+					fingerprintAndScores: &pastel.DDAndFingerprints{
+						Block:                      "Block",
+						Principal:                  "Principal",
+						DupeDetectionSystemVersion: "v1.0",
+
+						IsLikelyDupe:     true,
+						IsRareOnInternet: true,
+
+						RarenessScores: &pastel.RarenessScores{
+							CombinedRarenessScore:         0,
+							XgboostPredictedRarenessScore: 0,
+							NnPredictedRarenessScore:      0,
+							OverallAverageRarenessScore:   0,
+						},
+						InternetRareness: &pastel.InternetRareness{
+							MatchesFoundOnFirstPage: 0,
+							NumberOfPagesOfResults:  0,
+							UrlOfFirstMatchInPage:   "",
+						},
+
+						OpenNSFWScore: 0.1,
+						AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
+							Drawings: 0.1,
+							Hentai:   0.2,
+							Neutral:  0.3,
+							Porn:     0.4,
+							Sexy:     0.5,
+						},
+
+						ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+						FingerprintsStat: &pastel.FingerprintsStat{
+							NumberOfFingerprintsRequiringFurtherTesting1: 1,
+							NumberOfFingerprintsRequiringFurtherTesting2: 2,
+							NumberOfFingerprintsRequiringFurtherTesting3: 3,
+							NumberOfFingerprintsRequiringFurtherTesting4: 4,
+							NumberOfFingerprintsRequiringFurtherTesting5: 5,
+							NumberOfFingerprintsRequiringFurtherTesting6: 6,
+							NumberOfFingerprintsOfSuspectedDupes:         7,
+						},
+
+						HashOfCandidateImageFile: "HashOfCandidateImageFile",
+						PerceptualImageHashes: &pastel.PerceptualImageHashes{
+							PDQHash:        "PdqHash",
+							PerceptualHash: "PerceptualHash",
+							AverageHash:    "AverageHash",
+							DifferenceHash: "DifferenceHash",
+							NeuralHash:     "NeuralhashHash",
+						},
+						PerceptualHashOverlapCount: 1,
+
+						Maxes: &pastel.Maxes{
+							PearsonMax:           1.0,
+							SpearmanMax:          2.0,
+							KendallMax:           3.0,
+							HoeffdingMax:         4.0,
+							MutualInformationMax: 5.0,
+							HsicMax:              6.0,
+							XgbimportanceMax:     7.0,
+						},
+						Percentile: &pastel.Percentile{
+							PearsonTop1BpsPercentile:             1.0,
+							SpearmanTop1BpsPercentile:            2.0,
+							KendallTop1BpsPercentile:             3.0,
+							HoeffdingTop10BpsPercentile:          4.0,
+							MutualInformationTop100BpsPercentile: 5.0,
+							HsicTop100BpsPercentile:              6.0,
+							XgbimportanceTop100BpsPercentile:     7.0,
+						},
+					},
+				},
+			},
+			wantErr: nil,
+		},
+	}
+
+	for name, tc := range testCases {
+		tc := tc
+
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			t.Parallel()
+
+			err := tc.args.task.generateDDAndFingerprintsIDs()
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
 			} else {
 				assert.Nil(t, err)
 			}

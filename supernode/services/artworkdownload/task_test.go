@@ -41,9 +41,6 @@ func fakeRQIDsData(isValid bool) ([]byte, []string) {
 
 func fakeRegiterTicket() pastel.RegTicket {
 	appTicketData := pastel.AppTicket{
-		AuthorPastelID:             "pastelID",
-		BlockTxID:                  "block_tx_id",
-		BlockNum:                   10,
 		CreatorName:                "artist_name",
 		CreatorWebsite:             "artist_website",
 		CreatorWrittenStatement:    "artist_written_statement",
@@ -418,7 +415,7 @@ func TestTaskDownload(t *testing.T) {
 			pastelClient.AssertExpectations(t)
 			pastelClient.AssertRegTicketCall(testCase.numberRegTicket, mock.Anything, testCase.args.txid)
 			pastelClient.AssertListAvailableTradeTicketsCall(testCase.numberListAvailableTradeTickets, mock.Anything)
-			pastelID := testCase.args.regTicket.RegTicketData.NFTTicketData.AppTicketData.AuthorPastelID
+			pastelID := testCase.args.regTicket.RegTicketData.NFTTicketData.Author
 			for _, trade := range testCase.args.tradeTickets {
 				if trade.TXID == testCase.args.ttxid {
 					pastelID = trade.Ticket.PastelID

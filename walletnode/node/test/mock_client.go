@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
 	"github.com/stretchr/testify/mock"
 )
@@ -97,7 +96,7 @@ func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Clien
 // ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
 func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
 	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }
 
@@ -194,7 +193,7 @@ func (client *Client) ListenOnMeshNodes(arguments ...interface{}) *Client {
 
 // ListenOnProbeImage listening ProbeImage call and returns args value
 func (client *Client) ListenOnProbeImage(arguments ...interface{}) *Client {
-	client.RegisterArtwork.On(ProbeImageMethod, mock.Anything, mock.IsType(&artwork.File{})).Return(arguments...)
+	client.RegisterArtwork.On(ProbeImageMethod, mock.Anything, mock.Anything).Return(arguments...)
 	return client
 }
 

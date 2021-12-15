@@ -10,7 +10,6 @@ import (
 
 func TestEncodeNFTTicket(t *testing.T) {
 	inputAppData := AppTicket{
-		BlockNum:       10,
 		PreviewHash:    []byte{1},
 		Thumbnail1Hash: []byte{2},
 		Thumbnail2Hash: []byte{3},
@@ -44,7 +43,6 @@ func TestEncodeNFTTicket(t *testing.T) {
 	assert.Equal(t, inputTicket.Royalty, outputTicket.Royalty)
 	assert.Equal(t, inputTicket.Green, outputTicket.Green)
 
-	assert.Equal(t, inputAppData.BlockNum, outputAppData.BlockNum)
 	assert.Equal(t, inputAppData.PreviewHash, outputAppData.PreviewHash)
 	assert.Equal(t, inputAppData.Thumbnail1Hash, outputAppData.Thumbnail1Hash)
 	assert.Equal(t, inputAppData.DataHash, outputAppData.DataHash)

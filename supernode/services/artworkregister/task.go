@@ -401,7 +401,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 			Ticket: task.Ticket,
 			Signatures: &pastel.TicketSignatures{
 				Creator: map[string]string{
-					task.Ticket.AppTicketData.AuthorPastelID: string(creatorSignature),
+					task.Ticket.Author: string(creatorSignature),
 				},
 				Mn2: map[string]string{
 					task.Service.config.PastelID: string(creatorSignature),
@@ -633,7 +633,7 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 		},
 		Signatures: &pastel.TicketSignatures{
 			Creator: map[string]string{
-				task.Ticket.AppTicketData.AuthorPastelID: string(task.creatorSignature),
+				task.Ticket.Author: string(task.creatorSignature),
 			},
 			Mn1: map[string]string{
 				task.config.PastelID: string(task.ownSignature),
@@ -783,7 +783,7 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 		return errors.Errorf("no symbols identifiers file")
 	}
 
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.RQIDS)), hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.AppTicketData.AuthorPastelID)
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.RQIDS)), hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.Author)
 
 	if err != nil {
 		return errors.Errorf("generate RaptorQ symbols' identifiers: %w", err)

@@ -62,10 +62,6 @@ type NFTTicket struct {
 
 // AppTicket represents pastel App ticket.
 type AppTicket struct {
-	AuthorPastelID string `json:"author_pastel_id"`
-	BlockTxID      string `json:"block_tx_id"`
-	BlockNum       int    `json:"block_num"`
-
 	CreatorName             string `json:"creator_name"`
 	CreatorWebsite          string `json:"creator_website"`
 	CreatorWrittenStatement string `json:"creator_written_statement"`
@@ -83,8 +79,12 @@ type AppTicket struct {
 
 	DataHash []byte `json:"data_hash"`
 
-	// TODO: update later
+	DDAndFingerprintsIc  uint32   `json:"dd_and_fingerprints_ic"`
+	DDAndFingerprintsMax uint32   `json:"dd_and_fingerprints_max"`
+	DDAndFingerprintsIDs []string `json:"dd_and_fingerprints_ids"`
 
+	RQIc  uint32   `json:"rq_ic"`
+	RQMax uint32   `json:"rq_max"`
 	RQIDs []string `json:"rq_ids"`
 	RQOti []byte   `json:"rq_oti"`
 }
