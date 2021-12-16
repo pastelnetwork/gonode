@@ -161,10 +161,10 @@ func (task *Task) filterRegTicket(regTicket *pastel.RegTicket) (srch *RegTicketS
 		return srch, false
 	}
 
-	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore),
-		task.request.MinNsfwScore, task.request.MaxNsfwScore) {
-		return srch, false
-	}
+		if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.OpenNSFWScore),
+			task.request.MinNsfwScore, task.request.MaxNsfwScore) {
+			return srch, false
+		}
 
 	if !inFloatRange(float64(regTicket.RegTicketData.NFTTicketData.AppTicketData.InternetRarenessScore),
 		task.request.MinInternetRarenessScore, task.request.MaxInternetRarenessScore) {

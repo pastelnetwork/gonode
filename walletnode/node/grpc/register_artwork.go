@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
-	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -102,13 +102,13 @@ func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []
 }
 
 // ConnectTo implements node.RegisterArtwork.ConnectTo()
-func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID string) error {
+func (service *registerArtwork) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.ConnectToRequest{
-		NodeID: nodeID,
-		SessID: sessID,
+		NodeID: primaryNode.NodeID,
+		SessID: primaryNode.SessID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
@@ -121,20 +121,53 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 	return nil
 }
 
+// MeshNodes informs SNs which SNs are connected to do NFT request
+func (service *registerArtwork) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+	request := &pb.MeshNodesRequest{
+		Nodes: []*pb.MeshNodesRequest_Node{},
+	}
+
+	for _, node := range meshedNodes {
+		request.Nodes = append(request.Nodes, &pb.MeshNodesRequest_Node{
+			SessID: node.SessID,
+			NodeID: node.NodeID,
+		})
+	}
+
+	_, err := service.client.MeshNodes(ctx, request)
+
+	return err
+}
+
+// SendRegMetadata send metadata of registration to SNs for next steps
+func (service *registerArtwork) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+	request := &pb.SendRegMetadataRequest{
+		BlockHash:       regMetadata.BlockHash,
+		CreatorPastelID: regMetadata.CreatorPastelID,
+	}
+
+	_, err := service.client.SendRegMetadata(ctx, request)
+	return err
+}
+
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) (*pastel.DDAndFingerprints, []byte, error) {
+func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, nil, errors.Errorf("open stream: %w", err)
+		return nil, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, nil, errors.Errorf("open file %q: %w", file.Name(), err)
+		return nil, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -149,21 +182,16 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
-			return nil, nil, errors.Errorf("send image data: %w", err)
+			return nil, errors.Errorf("send image data: %w", err)
 		}
 	}
 
-	// -------------------- WIP: PSL-142 -----------------------------
-	// stream.CloseAndRecv() is supposed to return  a string response
-	var ddDataSignature []byte
-	/*resp, err := stream.CloseAndRecv()
+	resp, err := stream.CloseAndRecv()
 	if err != nil {
 		return nil, errors.Errorf("receive image response: %w", err)
 	}
-	ddDataSignature = resp.ddDataSignature
-	*/
 
-	return pastel.GetDDFingerprintsAndSigFromProbeImageReply(ddDataSignature)
+	return resp.CompressedSignedDDAndFingerprints, nil
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()

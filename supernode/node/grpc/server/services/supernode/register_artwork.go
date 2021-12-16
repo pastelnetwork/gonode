@@ -87,6 +87,17 @@ func (service *RegisterArtwork) Session(stream pb.RegisterArtwork_SessionServer)
 	}
 }
 
+func (service *RegisterArtwork) SendSignedDDAndFingerprints(ctx context.Context, req *pb.SendSignedDDAndFingerprintsRequest) (*pb.SendSignedDDAndFingerprintsReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debugf("SendSignedDDAndFingerprints request")
+	task := service.Task(req.SessID)
+	if task == nil {
+		return nil, errors.Errorf("not found %q task", req.SessID)
+	}
+
+	return &pb.SendSignedDDAndFingerprintsReply{}, task.AddSignedDDAndFingerprints(req.NodeID, req.ZstdCompressedFingerprint)
+
+}
+
 // SendArtTicketSignature implements supernode.RegisterArtworkServer.SendArtTicketSignature()
 func (service *RegisterArtwork) SendArtTicketSignature(ctx context.Context, req *pb.SendArtTicketSignatureRequest) (*pb.SendArtTicketSignatureReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debugf("SendArtTicketSignature request")

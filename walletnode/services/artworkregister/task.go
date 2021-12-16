@@ -21,6 +21,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -126,6 +127,11 @@ func (task *Task) run(ctx context.Context) error {
 	// get block height + hash
 	if err := task.getBlock(ctx); err != nil {
 		return errors.Errorf("get current block heigth: %w", err)
+	}
+
+	// send registration metadata
+	if err := task.sendRegMetadata(ctx); err != nil {
+		return errors.Errorf("send registration metadata: %w", err)
 	}
 
 	// probe image for rareness, nsfw and seen score
@@ -412,7 +418,10 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 						secondaries.Add(node)
 					}()
 
-					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
+					if err := node.ConnectTo(ctx, types.MeshedSuperNode{
+						NodeID: primary.PastelID(),
+						SessID: primary.SessID(),
+					}); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
@@ -736,7 +745,40 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 	task.UpdateStatus(StatusConnected)
 	task.nodes = nodes
 
+	// Send all meshed supernode info to nodes - that will be used to node send info to other nodes
+	meshedSNInfo := []types.MeshedSuperNode{}
+	for _, node := range nodes {
+		meshedSNInfo = append(meshedSNInfo, types.MeshedSuperNode{
+			NodeID: node.PastelID(),
+			SessID: node.SessID(),
+		})
+	}
+
+	for _, node := range nodes {
+		err = node.MeshNodes(ctx, meshedSNInfo)
+		if err != nil {
+			nodes.DisconnectAll()
+			return errors.Errorf("could not send info of meshed nodes: %w", err)
+		}
+	}
 	return nil
+}
+
+func (task *Task) sendRegMetadata(ctx context.Context) error {
+	if task.creatorBlockHash == "" {
+		return errors.New("empty current block hash")
+	}
+
+	if task.Request.ArtistPastelID == "" {
+		return errors.New("empty creator pastelID")
+	}
+
+	regMetadata := &types.NftRegMetadata{
+		BlockHash:       task.creatorBlockHash,
+		CreatorPastelID: task.Request.ArtistPastelID,
+	}
+
+	return task.nodes.SendRegMetadata(ctx, regMetadata)
 }
 
 func (task *Task) probeImage(ctx context.Context) error {
@@ -749,12 +791,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 	signatures := [][]byte{}
 	// Match signatures received from supernodes.
 	for i := 0; i < len(task.nodes); i++ {
-		ddData, err := json.Marshal(task.nodes[i].FingerprintAndScores)
-		if err != nil {
-			return errors.Errorf("probeImage: marshal fingerprintAndScores %w", err)
-		}
-
-		verified, err := task.pastelClient.Verify(ctx, ddData, string(task.nodes[i].Signature), task.nodes[i].PastelID(), "ed448")
+		verified, err := task.pastelClient.Verify(ctx, task.nodes[i].FingerprintAndScoresBytes, string(task.nodes[i].Signature), task.nodes[i].PastelID(), pastel.SignAlgorithmED448)
 		if err != nil {
 			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
 		}
@@ -773,6 +810,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
 		return errors.Errorf("fingerprints aren't matched :%w", err)
 	}
+
 	task.fingerprintAndScores = task.nodes.FingerAndScores()
 	task.UpdateStatus(StatusImageProbed)
 
@@ -784,11 +822,11 @@ func (task *Task) probeImage(ctx context.Context) error {
 	}
 	task.fingerprintsHash = []byte(base58.Encode(fingerprintsHash))
 
-	// Decompress the fingerprint as bytes for later use
-	task.fingerprint, err = zstd.Decompress(nil, task.fingerprintAndScores.ZstdCompressedFingerprint)
-	if err != nil {
-		return errors.Errorf("decompress finger failed")
-	}
+	// // Decompress the fingerprint as bytes for later use
+	// task.fingerprint, err = zstd.Decompress(nil, task.fingerprintAndScores.ZstdCompressedFingerprint)
+	// if err != nil {
+	// 	return errors.Errorf("decompress finger failed")
+	// }
 
 	return nil
 }

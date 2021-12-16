@@ -25,6 +25,7 @@ import (
 	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -376,7 +377,7 @@ func TestTaskMeshNodes(t *testing.T) {
 			nodeClient.AssertAcceptedNodesCall(1, mock.Anything)
 			nodeClient.AssertSessIDCall(testCase.numSessIDCall)
 			nodeClient.AssertSessionCall(testCase.numSessionCall, mock.Anything, false)
-			nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, testCase.args.primaryPastelID, testCase.args.primarySessID)
+			nodeClient.AssertConnectToCall(testCase.numConnectToCall, mock.Anything, types.MeshedSuperNode{NodeID: testCase.args.primaryPastelID, SessID: testCase.args.primarySessID})
 			nodeClient.Client.AssertExpectations(t)
 			nodeClient.Connection.AssertExpectations(t)
 		})
@@ -1727,6 +1728,79 @@ func TestTaskUploadImage(t *testing.T) {
 }
 
 func TestTaskProbeImage(t *testing.T) {
+	fingerAndScores := &pastel.DDAndFingerprints{
+		Block:                      "Block",
+		Principal:                  "Principal",
+		DupeDetectionSystemVersion: "v1.0",
+
+		IsLikelyDupe:     true,
+		IsRareOnInternet: true,
+
+		RarenessScores: &pastel.RarenessScores{
+			CombinedRarenessScore:         0,
+			XgboostPredictedRarenessScore: 0,
+			NnPredictedRarenessScore:      0,
+			OverallAverageRarenessScore:   0,
+		},
+		InternetRareness: &pastel.InternetRareness{
+			MatchesFoundOnFirstPage: 0,
+			NumberOfPagesOfResults:  0,
+			UrlOfFirstMatchInPage:   "",
+		},
+
+		OpenNSFWScore: 0.1,
+		AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
+			Drawings: 0.1,
+			Hentai:   0.2,
+			Neutral:  0.3,
+			Porn:     0.4,
+			Sexy:     0.5,
+		},
+
+		ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+		FingerprintsStat: &pastel.FingerprintsStat{
+			NumberOfFingerprintsRequiringFurtherTesting1: 1,
+			NumberOfFingerprintsRequiringFurtherTesting2: 2,
+			NumberOfFingerprintsRequiringFurtherTesting3: 3,
+			NumberOfFingerprintsRequiringFurtherTesting4: 4,
+			NumberOfFingerprintsRequiringFurtherTesting5: 5,
+			NumberOfFingerprintsRequiringFurtherTesting6: 6,
+			NumberOfFingerprintsOfSuspectedDupes:         7,
+		},
+
+		HashOfCandidateImageFile: "HashOfCandidateImageFile",
+		PerceptualImageHashes: &pastel.PerceptualImageHashes{
+			PDQHash:        "PdqHash",
+			PerceptualHash: "PerceptualHash",
+			AverageHash:    "AverageHash",
+			DifferenceHash: "DifferenceHash",
+			NeuralHash:     "NeuralhashHash",
+		},
+		PerceptualHashOverlapCount: 1,
+
+		Maxes: &pastel.Maxes{
+			PearsonMax:           1.0,
+			SpearmanMax:          2.0,
+			KendallMax:           3.0,
+			HoeffdingMax:         4.0,
+			MutualInformationMax: 5.0,
+			HsicMax:              6.0,
+			XgbimportanceMax:     7.0,
+		},
+		Percentile: &pastel.Percentile{
+			PearsonTop1BpsPercentile:             1.0,
+			SpearmanTop1BpsPercentile:            2.0,
+			KendallTop1BpsPercentile:             3.0,
+			HoeffdingTop10BpsPercentile:          4.0,
+			MutualInformationTop100BpsPercentile: 5.0,
+			HsicTop100BpsPercentile:              6.0,
+			XgbimportanceTop100BpsPercentile:     7.0,
+		},
+	}
+
+	testCompressedFingerAndScores, genErr := pastel.ToCompressSignedDDAndFingerprints(fingerAndScores, []byte("testSignature"))
+	assert.Nil(t, genErr)
+
 	type nodeArg struct {
 		address  string
 		pastelID string
@@ -1758,6 +1832,7 @@ func TestTaskProbeImage(t *testing.T) {
 					{"127.0.0.1", "1"},
 					{"127.0.0.2", "2"},
 				},
+				probeImgErr: nil,
 			},
 			wantErr: nil,
 		},
@@ -1793,30 +1868,21 @@ func TestTaskProbeImage(t *testing.T) {
 			assert.NoError(t, err)
 
 			//need to remove generate thumbnail file
-			customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.DDAndFingerprints {
+			customProbeImageFunc := func(ctx context.Context, file *artwork.File) []byte {
 				file.Remove()
-				finger := pastel.Fingerprint{0.1}
-				compressedFinger, _ := zstd.Compress(nil, finger.Bytes())
-				fingerAndScore := pastel.DDAndFingerprints{
-					Score:                     &pastel.DDScores{},
-					Percentile:                &pastel.DDPercentiles{},
-					AlternateNSFWScores:       &pastel.AlternativeNSFWScore{},
-					PerceptualImageHashes:     &pastel.PerceptualImageHashes{},
-					ZstdCompressedFingerprint: compressedFinger,
-				}
-				return &fingerAndScore
+				return testCompressedFingerAndScores
 			}
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnVerify(true, nil)
+
+			tc.args.task.Service.pastelClient = pastelClientMock
+
 			tc.args.task.Task = task.New(&state.Status{})
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
 				ListenOnRegisterArtwork().
-				ListenOnProbeImage(customProbeImageFunc, []byte("sign"), tc.args.probeImgErr)
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnVerify(true, nil)
-
-			tc.args.task.Service.pastelClient = pastelClientMock
+				ListenOnProbeImage(customProbeImageFunc, tc.args.probeImgErr)
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
@@ -1829,6 +1895,7 @@ func TestTaskProbeImage(t *testing.T) {
 			tc.args.task.nodes = nodes
 
 			err = tc.args.task.probeImage(context.Background())
+
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -2048,6 +2115,10 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 				ListenOnSessID("").
 				ListenOnAcceptedNodes([]string{}, nil).
 				ListenOnClose(tc.wantErr)
+
+			if tc.wantErr == nil {
+				nodeClient.ListenOnMeshNodes(nil)
+			}
 			tc.args.task.Service.nodeClient = nodeClient
 
 			tc.args.task.Request.Image = artworkFile
@@ -2094,22 +2165,72 @@ func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
 					},
 					signatures: make([][]byte, 3),
 					fingerprintAndScores: &pastel.DDAndFingerprints{
-						DupeDetectionSystemVersion: "1",
-						Block:                      "block-hash",
-						PastelRarenessScore:        0.55,
-						IsLikelyDupe:               true,
-						IsRareOnInternet:           true,
-						InternetRarenessScore:      0.111,
-						AlternateNSFWScores: &pastel.AlternativeNSFWScore{
-							Sexy:    0.234,
-							Hentai:  1.0,
-							Drawing: 0.131,
-							Porn:    0.9999,
+						Block:                      "Block",
+						Principal:                  "Principal",
+						DupeDetectionSystemVersion: "v1.0",
+
+						IsLikelyDupe:     true,
+						IsRareOnInternet: true,
+
+						RarenessScores: &pastel.RarenessScores{
+							CombinedRarenessScore:         0,
+							XgboostPredictedRarenessScore: 0,
+							NnPredictedRarenessScore:      0,
+							OverallAverageRarenessScore:   0,
 						},
-						Fingerprints: []float32{1.0, 2, 4, 3.3},
-						Score: &pastel.DDScores{
-							CombinedRarenessScore:         3.1,
-							XgboostPredictedRarenessScore: 0.4,
+						InternetRareness: &pastel.InternetRareness{
+							MatchesFoundOnFirstPage: 0,
+							NumberOfPagesOfResults:  0,
+							UrlOfFirstMatchInPage:   "",
+						},
+
+						OpenNSFWScore: 0.1,
+						AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
+							Drawings: 0.1,
+							Hentai:   0.2,
+							Neutral:  0.3,
+							Porn:     0.4,
+							Sexy:     0.5,
+						},
+
+						ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+						FingerprintsStat: &pastel.FingerprintsStat{
+							NumberOfFingerprintsRequiringFurtherTesting1: 1,
+							NumberOfFingerprintsRequiringFurtherTesting2: 2,
+							NumberOfFingerprintsRequiringFurtherTesting3: 3,
+							NumberOfFingerprintsRequiringFurtherTesting4: 4,
+							NumberOfFingerprintsRequiringFurtherTesting5: 5,
+							NumberOfFingerprintsRequiringFurtherTesting6: 6,
+							NumberOfFingerprintsOfSuspectedDupes:         7,
+						},
+
+						HashOfCandidateImageFile: "HashOfCandidateImageFile",
+						PerceptualImageHashes: &pastel.PerceptualImageHashes{
+							PDQHash:        "PdqHash",
+							PerceptualHash: "PerceptualHash",
+							AverageHash:    "AverageHash",
+							DifferenceHash: "DifferenceHash",
+							NeuralHash:     "NeuralhashHash",
+						},
+						PerceptualHashOverlapCount: 1,
+
+						Maxes: &pastel.Maxes{
+							PearsonMax:           1.0,
+							SpearmanMax:          2.0,
+							KendallMax:           3.0,
+							HoeffdingMax:         4.0,
+							MutualInformationMax: 5.0,
+							HsicMax:              6.0,
+							XgbimportanceMax:     7.0,
+						},
+						Percentile: &pastel.Percentile{
+							PearsonTop1BpsPercentile:             1.0,
+							SpearmanTop1BpsPercentile:            2.0,
+							KendallTop1BpsPercentile:             3.0,
+							HoeffdingTop10BpsPercentile:          4.0,
+							MutualInformationTop100BpsPercentile: 5.0,
+							HsicTop100BpsPercentile:              6.0,
+							XgbimportanceTop100BpsPercentile:     7.0,
 						},
 					},
 				},
