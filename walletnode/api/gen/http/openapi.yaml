@@ -427,11 +427,11 @@ paths:
       parameters:
       - name: task_id
         in: path
-        description: Task ID
+        description: Task ID of uploaded image processing task
         required: true
         type: string
-        maxLength: 64
-        minLength: 64
+        maxLength: 8
+        minLength: 8
       - name: StartTaskRequestBody
         in: body
         required: true
@@ -3223,13 +3223,13 @@ definitions:
     properties:
       task_id:
         type: string
-        description: Task ID
-        example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
-        minLength: 64
-        maxLength: 64
+        description: Task ID of uploaded image processing task
+        example: n6Qn6TFM
+        minLength: 8
+        maxLength: 8
     description: UploadImageResponseBody result type (default view)
     example:
-      task_id: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      task_id: n6Qn6TFM
     required:
     - task_id
   TaskResponseTiny:

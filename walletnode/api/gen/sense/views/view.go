@@ -33,7 +33,7 @@ type StartActionDataResult struct {
 
 // ImageUploadResultView is a type that runs validations on a projected type.
 type ImageUploadResultView struct {
-	// Task ID
+	// Task ID of uploaded image processing task
 	TaskID *string
 }
 
@@ -92,13 +92,13 @@ func ValidateImageUploadResultView(result *ImageUploadResultView) (err error) {
 		err = goa.MergeErrors(err, goa.MissingFieldError("task_id", "result"))
 	}
 	if result.TaskID != nil {
-		if utf8.RuneCountInString(*result.TaskID) < 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 64, true))
+		if utf8.RuneCountInString(*result.TaskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, true))
 		}
 	}
 	if result.TaskID != nil {
-		if utf8.RuneCountInString(*result.TaskID) > 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 64, false))
+		if utf8.RuneCountInString(*result.TaskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, false))
 		}
 	}
 	return

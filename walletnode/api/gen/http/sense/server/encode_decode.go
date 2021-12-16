@@ -140,11 +140,11 @@ func DecodeStartTaskRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			params = mux.Vars(r)
 		)
 		taskID = params["task_id"]
-		if utf8.RuneCountInString(taskID) < 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 64, true))
+		if utf8.RuneCountInString(taskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
 		}
-		if utf8.RuneCountInString(taskID) > 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 64, false))
+		if utf8.RuneCountInString(taskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
 		}
 		if err != nil {
 			return nil, err

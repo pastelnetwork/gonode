@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
+	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 
 	"github.com/pastelnetwork/gonode/common/cli"
 	"github.com/pastelnetwork/gonode/common/configurer"
@@ -165,12 +166,15 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	userdataNodeClient := grpc.NewClient(pastelClient)
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, userdataNodeClient)
 
+	// Sense services
+	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, db)
+
 	// api service
 	server := api.NewServer(config.API,
 		services.NewArtwork(artworkRegister, artworkSearch, artworkDownload),
 		services.NewUserdata(userdataProcess),
 		services.NewSwagger(),
-		services.NewOpenAPI(),
+		services.NewSense(senseRegister),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
