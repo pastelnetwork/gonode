@@ -181,21 +181,21 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 	}
 
 	resp := &pb.ProbeImageReply{
-		DupeDetectionVersion:      fingerAndScores.DupeDectectionSystemVersion,
-		HashOfCandidateImg:        fingerAndScores.HashOfCandidateImageFile,
-		AverageRarenessScore:      fingerAndScores.OverallAverageRarenessScore,
+		//	DupeDetectionVersion:      fingerAndScores.DupeDectectionSystemVersion,
+		//	HashOfCandidateImg:        fingerAndScores.HashOfCandidateImageFile,
+		//	AverageRarenessScore:      fingerAndScores.OverallAverageRarenessScore,
 		IsRareOnInternet:          fingerAndScores.IsRareOnInternet,
 		MatchesFoundOnFirstPage:   fingerAndScores.MatchesFoundOnFirstPage,
 		NumberOfPagesOfResults:    fingerAndScores.NumberOfPagesOfResults,
 		UrlOfFirstMatchInPage:     fingerAndScores.URLOfFirstMatchInPage,
 		OpenNsfwScore:             fingerAndScores.OpenNSFWScore,
 		ZstdCompressedFingerprint: fingerAndScores.ZstdCompressedFingerprint,
-		AlternativeNsfwScore: &pb.ProbeImageReply_AlternativeNSFWScore{
-			Drawing: fingerAndScores.AlternativeNSFWScore.Drawing,
-			Hentai:  fingerAndScores.AlternativeNSFWScore.Hentai,
-			Neutral: fingerAndScores.AlternativeNSFWScore.Neutral,
-			Porn:    fingerAndScores.AlternativeNSFWScore.Porn,
-			Sexy:    fingerAndScores.AlternativeNSFWScore.Sexy,
+		AlternativeNsfwScore:      &pb.ProbeImageReply_AlternativeNSFWScore{
+			/*	Drawing: fingerAndScores.AlternativeNSFWScore.Drawing,
+				Hentai:  fingerAndScores.AlternativeNSFWScore.Hentai,
+				Neutral: fingerAndScores.AlternativeNSFWScore.Neutral,
+				Porn:    fingerAndScores.AlternativeNSFWScore.Porn,
+				Sexy:    fingerAndScores.AlternativeNSFWScore.Sexy,*/
 		},
 		ImageHashes: &pb.ProbeImageReply_ImageHashes{
 			PerceptualHash: fingerAndScores.PerceptualImageHashes.PerceptualHash,
@@ -204,8 +204,8 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 			PDQHash:        fingerAndScores.PerceptualImageHashes.PDQHash,
 			NeuralHash:     fingerAndScores.PerceptualImageHashes.NeuralHash,
 		},
-		PerceptualHashOverlapCount:                    fingerAndScores.PerceptualHashOverlapCount,
-		NumberOfFingerprintsRequiringFurtherTesting_1: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting1,
+		PerceptualHashOverlapCount: fingerAndScores.PerceptualHashOverlapCount,
+		/*NumberOfFingerprintsRequiringFurtherTesting_1: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting1,
 		NumberOfFingerprintsRequiringFurtherTesting_2: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting2,
 		NumberOfFingerprintsRequiringFurtherTesting_3: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting3,
 		NumberOfFingerprintsRequiringFurtherTesting_4: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting4,
@@ -230,7 +230,7 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		XgboostPredictedRarenessScore:                 fingerAndScores.XgboostPredictedRarenessScore,
 		NnPredictedRarenessScore:                      fingerAndScores.NnPredictedRarenessScore,
 		OverallAverageRarenessScore:                   fingerAndScores.OverallAverageRarenessScore,
-		IsLikelyDupe:                                  fingerAndScores.IsLikelyDupe,
+		*/IsLikelyDupe: fingerAndScores.IsLikelyDupe,
 	}
 
 	if err := stream.SendAndClose(resp); err != nil {
@@ -382,7 +382,7 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 		return nil, errors.Errorf("get task from metada %w", err)
 	}
 
-	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
+	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.RqFiles, req.DdFpFiles, req.EncodeParameters.Oti)
 	if err != nil {
 		return nil, errors.Errorf("get total storage fee %w", err)
 	}

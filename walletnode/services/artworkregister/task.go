@@ -232,18 +232,17 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 	buffer.Write(task.signatures[2])
 	ddFpFile := buffer.Bytes()
 
-	comp, err := zstd.CompressLevel(nil, ddFpFile, 22)
-	if err != nil {
-		return errors.Errorf("compress: %w", err)
-	}
-
-	task.ddAndFpFile = utils.B64Encode(comp)
-
 	task.ddAndFingerprintsIc = rand.Uint32()
 	task.ddAndFingerprintsIDs, err = pastel.GetIDFiles(ddFpFile, task.ddAndFingerprintsIc, task.config.DDAndFingerprintsMax)
 	if err != nil {
 		return fmt.Errorf("get ID Files: %w", err)
 	}
+
+	comp, err := zstd.CompressLevel(nil, ddFpFile, 22)
+	if err != nil {
+		return errors.Errorf("compress: %w", err)
+	}
+	task.ddAndFpFile = utils.B64Encode(comp)
 
 	return nil
 }
@@ -569,27 +568,25 @@ func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDF
 		return errors.Errorf("sign identifiers file: %w", err)
 	}
 
-	encSign := utils.B64Encode(signature)
 	encfile := utils.B64Encode(content)
 
 	var buffer bytes.Buffer
 	buffer.Write(encfile)
 	buffer.WriteString(".")
-	buffer.Write(encSign)
+	buffer.Write(signature)
 	rqIDFile := buffer.Bytes()
+
+	task.rqIDsIc = rand.Uint32()
+	task.rqids, err = pastel.GetIDFiles(rqIDFile, task.rqIDsIc, task.config.RQIDsMax)
+	if err != nil {
+		return fmt.Errorf("get ID Files: %w", err)
+	}
 
 	comp, err := zstd.CompressLevel(nil, rqIDFile, 22)
 	if err != nil {
 		return errors.Errorf("compress: %w", err)
 	}
-
 	task.rqIDsFile = utils.B64Encode(comp)
-	task.rqIDsIc = rand.Uint32()
-
-	task.rqids, err = pastel.GetIDFiles(rqIDFile, task.rqIDsIc, task.config.RQIDsMax)
-	if err != nil {
-		return fmt.Errorf("get ID Files: %w", err)
-	}
 
 	return nil
 }
