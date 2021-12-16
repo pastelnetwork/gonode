@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pastelnetwork/gonode/common/utils"
+
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -371,15 +373,73 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	return task.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
+func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, ticket *pastel.NFTTicket, rq []byte, dd []byte) error {
+	validate := func(ctx context.Context, ticket *pastel.NFTTicket, data []byte, ic uint32, max uint32, ids []string, length int) error {
+		dec, err := utils.B64Decode(data)
+		if err != nil {
+			return errors.Errorf("decode data: %w", err)
+		}
+
+		decData, err := zstd.Decompress(nil, dec)
+		if err != nil {
+			return errors.Errorf("decompress: %w", err)
+		}
+
+		splits := bytes.Split(decData, []byte{pastel.SeparatorByte})
+		if len(splits) != length {
+			return errors.New("invalid data")
+		}
+
+		file, err := utils.B64Decode(splits[0])
+		if err != nil {
+			errors.Errorf("decode file: %w", err)
+		}
+
+		verified, err := task.pastelClient.Verify(ctx, file, string(splits[1]), ticket.Author, pastel.SignAlgorithmED448)
+		if err != nil {
+			return errors.Errorf("verify file signature %w", err)
+		}
+
+		if !verified {
+			return errors.New("file verification failed.")
+		}
+
+		gotIDs, err := pastel.GetIDFiles(decData, ic, max)
+		if err != nil {
+			return errors.Errorf("get ids: %w", err)
+		}
+
+		if !utils.Equal(gotIDs, ids) {
+			return errors.Errorf("IDs don't match: %w", err)
+		}
+
+		return nil
+	}
+
+	if err := validate(ctx, ticket, dd, ticket.AppTicketData.DDAndFingerprintsIc,
+		ticket.AppTicketData.DDAndFingerprintsMax, ticket.AppTicketData.DDAndFingerprintsIDs, 4); err != nil {
+
+		return errors.Errorf("validate dd_and_fingerprints: %w", err)
+	}
+
+	if err := validate(ctx, ticket, dd, ticket.AppTicketData.RQIc, ticket.AppTicketData.RQMax,
+		ticket.AppTicketData.RQIDs, 2); err != nil {
+
+		errors.Errorf("validate rq_ids: %w", err)
+	}
+
+	return nil
+}
+
 // GetRegistrationFee get the fee to register artwork to bockchain
-func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, key1 string, key2 string, rqids map[string][]byte, oti []byte) (int64, error) {
+func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, key1 string, key2 string, rqidFiles []byte, ddFpFiles []byte, oti []byte) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
 		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
 	}
 
 	task.Oti = oti
-	task.RQIDS = rqids
+	//task.RQIDS = rqids
 	task.creatorSignature = creatorSignature
 	task.key1 = key1
 	task.key2 = key2
@@ -392,6 +452,25 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("decode NFT ticket")
 			err = errors.Errorf("decode NFT ticket %w", err)
+			return nil
+		}
+
+		verified, err := task.pastelClient.Verify(ctx, ticket, string(creatorSignature), task.Ticket.Author, pastel.SignAlgorithmED448)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("verify ticket signature")
+			err = errors.Errorf("verify ticket signature %w", err)
+			return nil
+		}
+
+		if !verified {
+			err = errors.New("ticket verification failed.")
+			log.WithContext(ctx).WithError(err).Errorf("verification failure")
+			return nil
+		}
+
+		if err := task.validateRqIDsAndDdFpIds(ctx, task.Ticket, rqidFiles, ddFpFiles); err != nil {
+			log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
+			err = errors.Errorf("validate rq & dd id files %w", err)
 			return nil
 		}
 
@@ -410,7 +489,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 					task.Service.config.PastelID: string(creatorSignature),
 				},
 			},
-			Mn1PastelID: task.Service.config.PastelID, // all ID has same lenght, so can use any id here
+			Mn1PastelID: task.Service.config.PastelID, // all ID has same length, so can use any id here
 			Passphrase:  task.config.PassPhrase,
 			Key1:        key1,
 			Key2:        key2,

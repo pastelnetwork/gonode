@@ -372,7 +372,7 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 		return nil, errors.Errorf("get task from metada %w", err)
 	}
 
-	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
+	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.RqFiles, req.DdFpFiles, req.EncodeParameters.Oti)
 	if err != nil {
 		return nil, errors.Errorf("get total storage fee %w", err)
 	}

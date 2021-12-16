@@ -26,6 +26,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/storage/fs"
 	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -804,10 +805,10 @@ func TestTaskCreateTicket(t *testing.T) {
 				Copies:   tc.args.task.Request.IssuedCopies,
 				AppTicketData: pastel.AppTicket{
 					CreatorName:                tc.args.task.Request.ArtistName,
-					CreatorWebsite:             safeString(tc.args.task.Request.ArtistWebsiteURL),
-					CreatorWrittenStatement:    safeString(tc.args.task.Request.Description),
-					NFTCreationVideoYoutubeURL: safeString(tc.args.task.Request.YoutubeURL),
-					NFTKeywordSet:              safeString(tc.args.task.Request.Keywords),
+					CreatorWebsite:             utils.SafeString(tc.args.task.Request.ArtistWebsiteURL),
+					CreatorWrittenStatement:    utils.SafeString(tc.args.task.Request.Description),
+					NFTCreationVideoYoutubeURL: utils.SafeString(tc.args.task.Request.YoutubeURL),
+					NFTKeywordSet:              utils.SafeString(tc.args.task.Request.Keywords),
 					NFTType:                    pastel.NFTTypeImage,
 					TotalCopies:                tc.args.task.Request.IssuedCopies,
 					PreviewHash:                tc.args.task.previewHash,

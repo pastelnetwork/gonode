@@ -303,9 +303,8 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 		EncodeParameters: &pb.EncoderParameters{
 			Oti: encoderParams.Oti,
 		},
-
-		// ----- WIP: PSL-142-------------Waiting for contract update
-		//EncodeFiles: rqids,
+		DdFpFiles: ddFp,
+		RqFiles:   rqids,
 	}
 
 	rsp, err := service.client.SendSignedNFTTicket(ctx, &req)

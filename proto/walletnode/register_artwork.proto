@@ -97,8 +97,10 @@ message SendSignedNFTTicketRequest {
     string key1 = 3;
     string key2 = 4;
     EncoderParameters encode_parameters = 5;
-    map<string, bytes> encode_files = 6;
+    bytes dd_fp_files = 7;
+    bytes rq_files = 8;
 }
+
 message SendSignedNFTTicketReply {
     int64 registration_fee = 1;
 }
