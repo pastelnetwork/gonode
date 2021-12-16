@@ -203,13 +203,6 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 }
 
 func combineBool(a, b, c bool) bool {
-	if a == b {
-		return a
-	}
-	if a == c {
-		return a
-	}
-
 	if b == c {
 		return b
 	}
@@ -218,13 +211,6 @@ func combineBool(a, b, c bool) bool {
 }
 
 func combineUint32(a, b, c uint32) uint32 {
-	if a == b {
-		return a
-	}
-	if a == c {
-		return a
-	}
-
 	if b == c {
 		return b
 	}

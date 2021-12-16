@@ -3,11 +3,13 @@ package pastel
 import (
 	"encoding/base64"
 	"encoding/json"
-	"strings"
 
 	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/errors"
 )
+
+// separatorByte is the separator in dd_and_fingerprints.signature i.e. '.'
+const separatorByte byte = 46
 
 // DDAndFingerprints represents  the dd & fingerprints data returned by dd-service & SN
 type DDAndFingerprints struct {
@@ -113,44 +115,52 @@ type PerceptualImageHashes struct {
 //- signature, signature returned is base64 string of signature
 func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprints, []byte, []byte, error) {
 	// Decompress compressedSignedDDAndFingerprints
-	signedDDAndFingerprintsBytes, err := zstd.Decompress(nil, compressed)
+	decompressedReply, err := zstd.Decompress(nil, compressed)
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("decompress: %w", err)
 	}
 
-	// split into ddAndFingerprintsBytes & signature
-	fields := strings.Split(string(signedDDAndFingerprintsBytes), ".")
-	if len(fields) != 2 {
-		return nil, nil, nil, errors.Errorf("split joined string %s failed", string(signedDDAndFingerprintsBytes))
+	var ddData, signature []byte
+	for i := len(decompressedReply) - 1; i >= 0; i-- {
+		if decompressedReply[i] == separatorByte {
+			ddData = decompressedReply[:i]
+			if i+1 >= len(decompressedReply) {
+				return nil, nil, nil, errors.New("invalid probe image reply")
+			}
+
+			signature = decompressedReply[i+1:]
+			break
+		}
 	}
 
-	// decode ddAndFingerprintsBytes
-	ddAndFingerprintsBytes, err := base64.StdEncoding.DecodeString(fields[0])
+	ddDataJson := make([]byte, base64.StdEncoding.DecodedLen(len(ddData)))
+	n, err := base64.StdEncoding.Decode(ddDataJson, ddData)
 	if err != nil {
-		return nil, nil, nil, errors.Errorf("decode %s failed: %w", string(signedDDAndFingerprintsBytes), err)
+		return nil, nil, nil, errors.Errorf("decode %s failed: %w", string(decompressedReply), err)
 	}
 
-	// umarshal
-	ddData := &DDAndFingerprints{}
-	err = json.Unmarshal(ddAndFingerprintsBytes, ddData)
-	if err != nil {
-		return nil, nil, nil, errors.Errorf("unmarshal %s failed: %w", string(ddAndFingerprintsBytes), err)
+	dDataAndFingerprints := &DDAndFingerprints{}
+	if err := json.Unmarshal(ddDataJson[:n], dDataAndFingerprints); err != nil {
+		return nil, nil, nil, errors.Errorf("json decode dd_and_fingerprints: %w", err)
 	}
-
-	return ddData, ddAndFingerprintsBytes, []byte(fields[1]), nil
+	return dDataAndFingerprints, ddDataJson[:n], signature, nil
 }
 
 func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
-	ddAndFingerprintsBytes, err := json.Marshal(ddData)
+	ddDataJson, err := json.Marshal(ddData)
+
 	if err != nil {
 		return nil, errors.Errorf("marshal: %w", err)
 	}
 
-	// Join to created sign DDAndFingerprints
-	signedDDAndFingerprints := base64.StdEncoding.EncodeToString(ddAndFingerprintsBytes) + "." + string(signature)
+	res := make([]byte, base64.StdEncoding.EncodedLen(len(ddDataJson)))
+	base64.StdEncoding.Encode(res, ddDataJson)
+
+	res = append(res, separatorByte)
+	res = append(res, signature...)
 
 	// Compress it
-	compressed, err := zstd.CompressLevel(nil, []byte(signedDDAndFingerprints), 22)
+	compressed, err := zstd.CompressLevel(nil, res, 22)
 	if err != nil {
 		return nil, errors.Errorf("compress fingerprint data: %w", err)
 	}
