@@ -1,15 +1,18 @@
 package pastel
 
 import (
-	"encoding/base64"
+	"bytes"
 	"encoding/json"
+	"strconv"
 
 	"github.com/DataDog/zstd"
+	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/utils"
 )
 
 // separatorByte is the separator in dd_and_fingerprints.signature i.e. '.'
-var separatorByte byte = 46
+var SeparatorByte byte = 46
 
 // DDAndFingerprints represents  the dd & fingerprints data returned by dd-service & SN
 type DDAndFingerprints struct {
@@ -113,7 +116,7 @@ func GetDDFingerprintsAndSigFromProbeImageReply(probeImageReply []byte) (*DDAndF
 
 	var ddData, signature []byte
 	for i := len(decompressedReply) - 1; i >= 0; i-- {
-		if decompressedReply[i] == separatorByte {
+		if decompressedReply[i] == SeparatorByte {
 			ddData = decompressedReply[:i]
 			if i+1 >= len(decompressedReply) {
 				return nil, nil, errors.New("invalid probe image reply")
@@ -124,14 +127,13 @@ func GetDDFingerprintsAndSigFromProbeImageReply(probeImageReply []byte) (*DDAndF
 		}
 	}
 
-	ddDataJson := make([]byte, base64.StdEncoding.DecodedLen(len(ddData)))
-	n, err := base64.StdEncoding.Decode(ddDataJson, ddData)
+	ddDataJson, err := utils.B64Decode(ddData)
 	if err != nil {
-		return nil, nil, errors.Errorf("b64URL decode dd-data failure: %w", err)
+		return nil, nil, errors.Errorf("b64 decode: %w", err)
 	}
 
 	ddDataAndFingerprints := &DDAndFingerprints{}
-	if err := json.Unmarshal(ddDataJson[:n], ddDataAndFingerprints); err != nil {
+	if err := json.Unmarshal(ddDataJson, ddDataAndFingerprints); err != nil {
 		return nil, nil, errors.Errorf("json decode dd_and_fingerprints: %w", err)
 	}
 
@@ -145,10 +147,9 @@ func GetProbeImageReply(ddData *DDAndFingerprints, signature []byte) ([]byte, er
 		return nil, errors.Errorf("GetProbeImageReply: failed to marshal dd-data: %w", err)
 	}
 
-	res := make([]byte, base64.StdEncoding.EncodedLen(len(ddDataJson)))
-	base64.StdEncoding.Encode(res, ddDataJson)
+	res := utils.B64Encode(ddDataJson)
 
-	res = append(res, separatorByte)
+	res = append(res, SeparatorByte)
 	res = append(res, signature...)
 
 	compressed, err := zstd.CompressLevel(nil, res, 22)
@@ -157,4 +158,32 @@ func GetProbeImageReply(ddData *DDAndFingerprints, signature []byte) ([]byte, er
 	}
 
 	return compressed, nil
+}
+
+// GetIDFiles is supposed to generates ID Files for dd_and_fingerprints files and rq_id files
+// file is b64 encoded file appended with signatures and compressed, ic is the initial counter
+// and max is the number of ids to generate
+func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, err error) {
+	for i := uint32(0); i < max; i++ {
+		var buffer bytes.Buffer
+		counter := ic + i
+
+		buffer.Write(file)
+		buffer.WriteByte(SeparatorByte)
+		buffer.WriteString(strconv.Itoa(int(counter)))
+
+		compressedData, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
+		if err != nil {
+			return ids, errors.Errorf("compress identifiers file: %w", err)
+		}
+
+		hash, err := utils.Sha3256hash(compressedData)
+		if err != nil {
+			return ids, errors.Errorf("sha3256hash: %w", err)
+		}
+
+		ids = append(ids, base58.Encode(hash))
+	}
+
+	return ids, nil
 }
