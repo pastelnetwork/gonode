@@ -114,7 +114,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 	hkey := hex.EncodeToString(key)
 
 	r := Record{}
-	err := s.db.Get(&r, `SELECT data FROM data WHERE key LIKE ?`, hkey)
+	err := s.db.Get(&r, `SELECT data FROM data WHERE key = ?`, hkey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get record by key %s: %w", hkey, err)
 	}
@@ -125,7 +125,7 @@ func (s *Store) Retrieve(_ context.Context, key []byte) ([]byte, error) {
 func (s *Store) Delete(ctx context.Context, key []byte) {
 	hkey := hex.EncodeToString(key)
 
-	res, err := s.db.Exec("DELETE FROM data WHERE key LIKE ?", hkey)
+	res, err := s.db.Exec("DELETE FROM data WHERE key = ?", hkey)
 	if err != nil {
 		log.P2P().WithContext(ctx).Errorf("cannot delete record by key %s: %v", hkey, err)
 	}

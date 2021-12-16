@@ -3,10 +3,7 @@ package sqlite
 import (
 	"context"
 	"crypto/rand"
-	"encoding/hex"
-	"log"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
@@ -30,25 +27,15 @@ func TestDB(t *testing.T) {
 	for i := 0; i < numberOfKeys; i++ {
 		key := make([]byte, 32)
 		rand.Read(key)
-		writeData := make([]byte, 50 /**1024*/)
+		writeData := make([]byte, 50*1024)
 		rand.Read(writeData)
 
-		if err := store.Store(ctx, key, writeData); err != nil {
-			log.Fatal("%w", err)
-		}
+		err = store.Store(ctx, key, writeData)
+		assert.Nil(t, err)
 
-		if readData, err := store.Retrieve(ctx, key); err != nil {
-			log.Fatal("%w", err)
-		} else if !reflect.DeepEqual(readData, writeData) {
-			log.Fatalf("Value of key %s are not equal (%d)", hex.EncodeToString(key), i)
-		}
-		//
-		//err = store.Store(ctx, key, writeData)
-		//assert.Nil(t, err)
-		//
-		//readData, err := store.Retrieve(ctx, key)
-		//assert.Nil(t, err)
-		//assert.Equal(t, writeData, readData)
+		readData, err := store.Retrieve(ctx, key)
+		assert.Nil(t, err)
+		assert.Equal(t, writeData, readData)
 	}
 
 	assert.Equal(t, 0, len(store.GetKeysForReplication(ctx)))
