@@ -36,7 +36,7 @@ type StartTaskRequestBody struct {
 // UploadImageResponseBody is the type of the "sense" service "uploadImage"
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
-	// Task ID
+	// Task ID of uploaded image processing task
 	TaskID *string `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
 }
 

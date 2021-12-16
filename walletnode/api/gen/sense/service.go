@@ -43,13 +43,13 @@ type UploadImagePayload struct {
 
 // ImageUploadResult is the result type of the sense service uploadImage method.
 type ImageUploadResult struct {
-	// Task ID
+	// Task ID of uploaded image processing task
 	TaskID string
 }
 
 // StartTaskPayload is the payload type of the sense service startTask method.
 type StartTaskPayload struct {
-	// Task ID
+	// Task ID of uploaded image processing task
 	TaskID *string
 	// 3rd party app's PastelID
 	PastelID string
