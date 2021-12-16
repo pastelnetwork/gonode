@@ -10,13 +10,13 @@ import (
 )
 
 type service struct {
-	actor                                messaging.Actor
-	domainActorID                        *actor.PID
-	nodeID                               string
-	pclient                              pastel.Client
-	storageChallengeExpiredAsNanoseconds int64
-	numberOfChallengeReplicas            int
-	repository                           repository
+	actor                         messaging.Actor
+	domainActorID                 *actor.PID
+	nodeID                        string
+	pclient                       pastel.Client
+	storageChallengeExpiredBlocks int32
+	numberOfChallengeReplicas     int
+	repository                    repository
 }
 
 // StorageChallenge interface
@@ -40,11 +40,11 @@ func NewService(cfg *Config, secConn node.Client, p2p p2p.Client) (svc StorageCh
 		panic(err)
 	}
 	return &service{
-		actor:                                localActor,
-		domainActorID:                        pid,
-		storageChallengeExpiredAsNanoseconds: cfg.StorageChallengeExpiredDuration.Nanoseconds(),
-		repository:                           newRepository(p2p),
-		nodeID:                               cfg.PastelID,
-		numberOfChallengeReplicas:            cfg.NumberOfChallengeReplicas,
+		actor:                         localActor,
+		domainActorID:                 pid,
+		storageChallengeExpiredBlocks: cfg.StorageChallengeExpiredBlocks,
+		repository:                    newRepository(p2p),
+		nodeID:                        cfg.PastelID,
+		numberOfChallengeReplicas:     cfg.NumberOfChallengeReplicas,
 	}, localActor.Stop
 }

@@ -68,15 +68,15 @@ func (d *domainActor) OnSendVerifyStorageChallengeMessage(msg *sendVerifyStorage
 		log.Debug(verifyingMasternodePID.String())
 		storageChallengeReq := &dto.VerifyStorageChallengeRequest{
 			Data: &dto.StorageChallengeData{
-				MessageId:                     msg.MessageID,
-				MessageType:                   dto.StorageChallengeDataMessageType(dto.StorageChallengeDataMessageType_value[msg.MessageType]),
-				ChallengeStatus:               dto.StorageChallengeDataStatus(dto.StorageChallengeDataStatus_value[msg.ChallengeStatus]),
-				TimestampChallengeSent:        msg.TimestampChallengeSent,
-				TimestampChallengeRespondedTo: msg.TimestampChallengeRespondedTo,
-				TimestampChallengeVerified:    0,
-				MerklerootWhenChallengeSent:   msg.MerklerootWhenChallengeSent,
-				ChallengingMasternodeId:       msg.ChallengingMasternodeID,
-				RespondingMasternodeId:        msg.RespondingMasternodeID,
+				MessageId:                    msg.MessageID,
+				MessageType:                  dto.StorageChallengeDataMessageType(dto.StorageChallengeDataMessageType_value[msg.MessageType]),
+				ChallengeStatus:              dto.StorageChallengeDataStatus(dto.StorageChallengeDataStatus_value[msg.ChallengeStatus]),
+				BlockNumChallengeSent:        msg.BlockNumChallengeSent,
+				BlockNumChallengeRespondedTo: msg.BlockNumChallengeRespondedTo,
+				BlockNumChallengeVerified:    0,
+				MerklerootWhenChallengeSent:  msg.MerklerootWhenChallengeSent,
+				ChallengingMasternodeId:      msg.ChallengingMasternodeID,
+				RespondingMasternodeId:       msg.RespondingMasternodeID,
 				ChallengeFile: &dto.StorageChallengeDataChallengeFile{
 					FileHashToChallenge:      msg.FileHashToChallenge,
 					ChallengeSliceStartIndex: int64(msg.ChallengeSliceStartIndex),
@@ -102,15 +102,15 @@ func (d *domainActor) OnSendProcessStorageChallengeMessage(msg *sendProcessStora
 	log.Debug(msg.ProcessingMasternodeClientPID.String())
 	storageChallengeReq := &dto.ProcessStorageChallengeRequest{
 		Data: &dto.StorageChallengeData{
-			MessageId:                     msg.MessageID,
-			MessageType:                   dto.StorageChallengeDataMessageType(dto.StorageChallengeDataMessageType_value[msg.MessageType]),
-			ChallengeStatus:               dto.StorageChallengeDataStatus(dto.StorageChallengeDataStatus_value[msg.ChallengeStatus]),
-			TimestampChallengeSent:        msg.TimestampChallengeSent,
-			TimestampChallengeRespondedTo: 0,
-			TimestampChallengeVerified:    0,
-			MerklerootWhenChallengeSent:   msg.MerklerootWhenChallengeSent,
-			ChallengingMasternodeId:       msg.ChallengingMasternodeID,
-			RespondingMasternodeId:        msg.RespondingMasternodeID,
+			MessageId:                    msg.MessageID,
+			MessageType:                  dto.StorageChallengeDataMessageType(dto.StorageChallengeDataMessageType_value[msg.MessageType]),
+			ChallengeStatus:              dto.StorageChallengeDataStatus(dto.StorageChallengeDataStatus_value[msg.ChallengeStatus]),
+			BlockNumChallengeSent:        msg.BlockNumChallengeSent,
+			BlockNumChallengeRespondedTo: 0,
+			BlockNumChallengeVerified:    0,
+			MerklerootWhenChallengeSent:  msg.MerklerootWhenChallengeSent,
+			ChallengingMasternodeId:      msg.ChallengingMasternodeID,
+			RespondingMasternodeId:       msg.RespondingMasternodeID,
 			ChallengeFile: &dto.StorageChallengeDataChallengeFile{
 				FileHashToChallenge:      msg.FileHashToChallenge,
 				ChallengeSliceStartIndex: int64(msg.ChallengeSliceStartIndex),

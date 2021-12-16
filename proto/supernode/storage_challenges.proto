@@ -31,9 +31,9 @@ message StorageChallengeData {
         Status_FAILED_INCORRECT_RESPONSE = 5;
     }
     status challenge_status = 3;
-    int64 timestamp_challenge_sent = 4;
-    int64 timestamp_challenge_responded_to = 5;
-    int64 timestamp_challenge_verified = 6;
+    int32 block_num_challenge_sent = 4;
+    int32 block_num_challenge_responded_to = 5;
+    int32 block_num_challenge_verified = 6;
     string merkleroot_when_challenge_sent = 7;
     string challenging_masternode_id = 8;
     string responding_masternode_id = 9;

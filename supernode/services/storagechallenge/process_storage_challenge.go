@@ -3,7 +3,6 @@ package storagechallenge
 import (
 	"encoding/hex"
 	"fmt"
-	"time"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/pastelnetwork/gonode/common/context"
@@ -27,7 +26,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 
 	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Error("could not read file data in to memory: ", err.Error())
+		log.WithContext(ctx).WithError(err).Error("could not read file data in to memory")
 		return err
 	}
 	challengeResponseHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
@@ -35,24 +34,28 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	messageType := storageChallengeResponseMessage
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent
 	messageID := utils.GetHashFromString(messageIDInputData)
-	timestampChallengeRespondedTo := time.Now().UnixNano()
+	blockNumChallengeRespondedTo, err := s.pclient.GetBlockCount(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get current block count")
+		return err
+	}
 
 	var outgoingChallengeMessage = &ChallengeMessage{
-		MessageID:                     messageID,
-		MessageType:                   messageType,
-		ChallengeStatus:               challengeStatus,
-		TimestampChallengeSent:        incomingChallengeMessage.TimestampChallengeSent,
-		TimestampChallengeRespondedTo: timestampChallengeRespondedTo,
-		TimestampChallengeVerified:    0,
-		MerklerootWhenChallengeSent:   incomingChallengeMessage.MerklerootWhenChallengeSent,
-		ChallengingMasternodeID:       incomingChallengeMessage.ChallengingMasternodeID,
-		RespondingMasternodeID:        incomingChallengeMessage.RespondingMasternodeID,
-		FileHashToChallenge:           incomingChallengeMessage.FileHashToChallenge,
-		ChallengeSliceStartIndex:      incomingChallengeMessage.ChallengeSliceStartIndex,
-		ChallengeSliceEndIndex:        incomingChallengeMessage.ChallengeSliceEndIndex,
-		ChallengeSliceCorrectHash:     "",
-		ChallengeResponseHash:         challengeResponseHash,
-		ChallengeID:                   incomingChallengeMessage.ChallengeID,
+		MessageID:                    messageID,
+		MessageType:                  messageType,
+		ChallengeStatus:              challengeStatus,
+		BlockNumChallengeSent:        incomingChallengeMessage.BlockNumChallengeSent,
+		BlockNumChallengeRespondedTo: blockNumChallengeRespondedTo,
+		BlockNumChallengeVerified:    0,
+		MerklerootWhenChallengeSent:  incomingChallengeMessage.MerklerootWhenChallengeSent,
+		ChallengingMasternodeID:      incomingChallengeMessage.ChallengingMasternodeID,
+		RespondingMasternodeID:       incomingChallengeMessage.RespondingMasternodeID,
+		FileHashToChallenge:          incomingChallengeMessage.FileHashToChallenge,
+		ChallengeSliceStartIndex:     incomingChallengeMessage.ChallengeSliceStartIndex,
+		ChallengeSliceEndIndex:       incomingChallengeMessage.ChallengeSliceEndIndex,
+		ChallengeSliceCorrectHash:    "",
+		ChallengeResponseHash:        challengeResponseHash,
+		ChallengeID:                  incomingChallengeMessage.ChallengeID,
 	}
 
 	// TODO: replace with new repository implementation
@@ -61,8 +64,8 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	// 	return err
 	// }
 	// analysisStatus = ANALYSIS_STATUS_RESPONDED_TO
-	timeToRespondToStorageChallengeInMilliSeconds := computeElapsedTimeInSecondsBetweenTwoDatetimes(incomingChallengeMessage.TimestampChallengeSent, outgoingChallengeMessage.TimestampChallengeRespondedTo)
-	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, timeToRespondToStorageChallengeInMilliSeconds))
+	blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
+	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, blocksToRespondToStorageChallenge))
 
 	return s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage)
 }

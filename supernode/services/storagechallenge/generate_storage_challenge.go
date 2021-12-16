@@ -3,7 +3,6 @@ package storagechallenge
 import (
 	"fmt"
 	"strconv"
-	"time"
 
 	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/mkmik/argsort"
@@ -29,25 +28,29 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, merkleroot stri
 		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, merkleroot, challengingMasternodeID)
 		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + merkleroot
 		messageID := utils.GetHashFromString(messageIDInputData)
-		timestampChallengeSent := time.Now().UnixNano()
-		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(timestampChallengeSent)
+		blockNumChallengeSent, err := s.pclient.GetBlockCount(ctx)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("could not get current block count")
+			return err
+		}
+		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(blockNumChallengeSent)
 		challengeID := utils.GetHashFromString(challengeIDInputData)
 		outgoinChallengeMessage := &ChallengeMessage{
-			MessageID:                     messageID,
-			MessageType:                   messageType,
-			ChallengeStatus:               challengeStatus,
-			TimestampChallengeSent:        timestampChallengeSent,
-			TimestampChallengeRespondedTo: 0,
-			TimestampChallengeVerified:    0,
-			MerklerootWhenChallengeSent:   merkleroot,
-			ChallengingMasternodeID:       challengingMasternodeID,
-			RespondingMasternodeID:        string(respondingMasternodes[0].ID),
-			FileHashToChallenge:           symbolFileHash,
-			ChallengeSliceStartIndex:      uint64(challengeSliceStartIndex),
-			ChallengeSliceEndIndex:        uint64(challengeSliceEndIndex),
-			ChallengeSliceCorrectHash:     "",
-			ChallengeResponseHash:         "",
-			ChallengeID:                   challengeID,
+			MessageID:                    messageID,
+			MessageType:                  messageType,
+			ChallengeStatus:              challengeStatus,
+			BlockNumChallengeSent:        blockNumChallengeSent,
+			BlockNumChallengeRespondedTo: 0,
+			BlockNumChallengeVerified:    0,
+			MerklerootWhenChallengeSent:  merkleroot,
+			ChallengingMasternodeID:      challengingMasternodeID,
+			RespondingMasternodeID:       string(respondingMasternodes[0].ID),
+			FileHashToChallenge:          symbolFileHash,
+			ChallengeSliceStartIndex:     uint64(challengeSliceStartIndex),
+			ChallengeSliceEndIndex:       uint64(challengeSliceEndIndex),
+			ChallengeSliceCorrectHash:    "",
+			ChallengeResponseHash:        "",
+			ChallengeID:                  challengeID,
 		}
 
 		// TODO: replacing this with real repository implementation

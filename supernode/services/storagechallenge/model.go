@@ -16,30 +16,30 @@ var (
 
 // ChallengeMessage struct
 type ChallengeMessage struct {
-	MessageID                     string
-	MessageType                   string
-	ChallengeStatus               string
-	TimestampChallengeSent        int64
-	TimestampChallengeRespondedTo int64
-	TimestampChallengeVerified    int64
-	MerklerootWhenChallengeSent   string
-	ChallengingMasternodeID       string
-	RespondingMasternodeID        string
-	FileHashToChallenge           string
-	ChallengeSliceStartIndex      uint64
-	ChallengeSliceEndIndex        uint64
-	ChallengeSliceCorrectHash     string
-	ChallengeResponseHash         string
-	ChallengeID                   string
+	MessageID                    string
+	MessageType                  string
+	ChallengeStatus              string
+	BlockNumChallengeSent        int32
+	BlockNumChallengeRespondedTo int32
+	BlockNumChallengeVerified    int32
+	MerklerootWhenChallengeSent  string
+	ChallengingMasternodeID      string
+	RespondingMasternodeID       string
+	FileHashToChallenge          string
+	ChallengeSliceStartIndex     uint64
+	ChallengeSliceEndIndex       uint64
+	ChallengeSliceCorrectHash    string
+	ChallengeResponseHash        string
+	ChallengeID                  string
 }
 
 // Challenge struct
 type Challenge struct {
 	ChallengeID                    string
 	ChallengeStatus                string
-	TimestampChallengeSent         int64
-	TimestampChallengeRespondedTo  int64
-	TimestampChallengeVerified     int64
+	BlockNumChallengeSent          int32
+	BlockNumChallengeRespondedTo   int32
+	BlockNumChallengeVerified      int32
 	MerklerootWhenChallengeSent    string
 	ChallengeResponseTimeInSeconds float64
 	ChallengingMasternodeID        string
