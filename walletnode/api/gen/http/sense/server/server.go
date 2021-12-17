@@ -20,10 +20,10 @@ import (
 
 // Server lists the sense service endpoint HTTP handlers.
 type Server struct {
-	Mounts      []*MountPoint
-	UploadImage http.Handler
-	StartTask   http.Handler
-	CORS        http.Handler
+	Mounts        []*MountPoint
+	UploadImage   http.Handler
+	ActionDetails http.Handler
+	CORS          http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -65,13 +65,13 @@ func New(
 	return &Server{
 		Mounts: []*MountPoint{
 			{"UploadImage", "POST", "/openapi/sense/upload"},
-			{"StartTask", "POST", "/openapi/sense/start/{task_id}"},
+			{"ActionDetails", "POST", "/openapi/sense/details/{image_id}"},
 			{"CORS", "OPTIONS", "/openapi/sense/upload"},
-			{"CORS", "OPTIONS", "/openapi/sense/start/{task_id}"},
+			{"CORS", "OPTIONS", "/openapi/sense/details/{image_id}"},
 		},
-		UploadImage: NewUploadImageHandler(e.UploadImage, mux, NewSenseUploadImageDecoder(mux, senseUploadImageDecoderFn), encoder, errhandler, formatter),
-		StartTask:   NewStartTaskHandler(e.StartTask, mux, decoder, encoder, errhandler, formatter),
-		CORS:        NewCORSHandler(),
+		UploadImage:   NewUploadImageHandler(e.UploadImage, mux, NewSenseUploadImageDecoder(mux, senseUploadImageDecoderFn), encoder, errhandler, formatter),
+		ActionDetails: NewActionDetailsHandler(e.ActionDetails, mux, decoder, encoder, errhandler, formatter),
+		CORS:          NewCORSHandler(),
 	}
 }
 
@@ -81,14 +81,14 @@ func (s *Server) Service() string { return "sense" }
 // Use wraps the server handlers with the given middleware.
 func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UploadImage = m(s.UploadImage)
-	s.StartTask = m(s.StartTask)
+	s.ActionDetails = m(s.ActionDetails)
 	s.CORS = m(s.CORS)
 }
 
 // Mount configures the mux to serve the sense endpoints.
 func Mount(mux goahttp.Muxer, h *Server) {
 	MountUploadImageHandler(mux, h.UploadImage)
-	MountStartTaskHandler(mux, h.StartTask)
+	MountActionDetailsHandler(mux, h.ActionDetails)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -143,21 +143,21 @@ func NewUploadImageHandler(
 	})
 }
 
-// MountStartTaskHandler configures the mux to serve the "sense" service
-// "startTask" endpoint.
-func MountStartTaskHandler(mux goahttp.Muxer, h http.Handler) {
+// MountActionDetailsHandler configures the mux to serve the "sense" service
+// "actionDetails" endpoint.
+func MountActionDetailsHandler(mux goahttp.Muxer, h http.Handler) {
 	f, ok := handleSenseOrigin(h).(http.HandlerFunc)
 	if !ok {
 		f = func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		}
 	}
-	mux.Handle("POST", "/openapi/sense/start/{task_id}", f)
+	mux.Handle("POST", "/openapi/sense/details/{image_id}", f)
 }
 
-// NewStartTaskHandler creates a HTTP handler which loads the HTTP request and
-// calls the "sense" service "startTask" endpoint.
-func NewStartTaskHandler(
+// NewActionDetailsHandler creates a HTTP handler which loads the HTTP request
+// and calls the "sense" service "actionDetails" endpoint.
+func NewActionDetailsHandler(
 	endpoint goa.Endpoint,
 	mux goahttp.Muxer,
 	decoder func(*http.Request) goahttp.Decoder,
@@ -166,13 +166,13 @@ func NewStartTaskHandler(
 	formatter func(err error) goahttp.Statuser,
 ) http.Handler {
 	var (
-		decodeRequest  = DecodeStartTaskRequest(mux, decoder)
-		encodeResponse = EncodeStartTaskResponse(encoder)
-		encodeError    = EncodeStartTaskError(encoder, formatter)
+		decodeRequest  = DecodeActionDetailsRequest(mux, decoder)
+		encodeResponse = EncodeActionDetailsResponse(encoder)
+		encodeError    = EncodeActionDetailsError(encoder, formatter)
 	)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
-		ctx = context.WithValue(ctx, goa.MethodKey, "startTask")
+		ctx = context.WithValue(ctx, goa.MethodKey, "actionDetails")
 		ctx = context.WithValue(ctx, goa.ServiceKey, "sense")
 		payload, err := decodeRequest(r)
 		if err != nil {
@@ -205,7 +205,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 		}
 	}
 	mux.Handle("OPTIONS", "/openapi/sense/upload", f)
-	mux.Handle("OPTIONS", "/openapi/sense/start/{task_id}", f)
+	mux.Handle("OPTIONS", "/openapi/sense/details/{image_id}", f)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

@@ -15,22 +15,22 @@ import (
 
 // Endpoints wraps the "sense" service endpoints.
 type Endpoints struct {
-	UploadImage goa.Endpoint
-	StartTask   goa.Endpoint
+	UploadImage   goa.Endpoint
+	ActionDetails goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "sense" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		UploadImage: NewUploadImageEndpoint(s),
-		StartTask:   NewStartTaskEndpoint(s),
+		UploadImage:   NewUploadImageEndpoint(s),
+		ActionDetails: NewActionDetailsEndpoint(s),
 	}
 }
 
 // Use applies the given middleware to all the "sense" service endpoints.
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UploadImage = m(e.UploadImage)
-	e.StartTask = m(e.StartTask)
+	e.ActionDetails = m(e.ActionDetails)
 }
 
 // NewUploadImageEndpoint returns an endpoint function that calls the method
@@ -42,21 +42,21 @@ func NewUploadImageEndpoint(s Service) goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		vres := NewViewedImageUploadResult(res, "default")
+		vres := NewViewedImage(res, "default")
 		return vres, nil
 	}
 }
 
-// NewStartTaskEndpoint returns an endpoint function that calls the method
-// "startTask" of service "sense".
-func NewStartTaskEndpoint(s Service) goa.Endpoint {
+// NewActionDetailsEndpoint returns an endpoint function that calls the method
+// "actionDetails" of service "sense".
+func NewActionDetailsEndpoint(s Service) goa.Endpoint {
 	return func(ctx context.Context, req interface{}) (interface{}, error) {
-		p := req.(*StartTaskPayload)
-		res, err := s.StartTask(ctx, p)
+		p := req.(*ActionDetailsPayload)
+		res, err := s.ActionDetails(ctx, p)
 		if err != nil {
 			return nil, err
 		}
-		vres := NewViewedStartActionDataResult(res, "default")
+		vres := NewViewedActionDetailResult(res, "default")
 		return vres, nil
 	}
 }

@@ -3,6 +3,7 @@ package senseregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
@@ -34,6 +35,33 @@ func (service *Service) AddTask(ticket *Request) string {
 	service.Worker.AddTask(task)
 
 	return task.ID()
+}
+
+// VerifyImageSignature verifies the signature of the image
+func (service *Service) VerifyImageSignature(ctx context.Context, file *artwork.File, signature string, pastelID string) error {
+	imgData, err := file.Bytes()
+	if err != nil {
+		return err
+	}
+
+	ok, err := service.pastelClient.Verify(ctx, imgData, signature, pastelID, pastel.SignAlgorithmED448)
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return errors.Errorf("signature verification failed")
+	}
+
+	return nil
+}
+
+// GetEstimatedFee returns the estimated fee for the given image
+func (service *Service) GetEstimatedFee(ctx context.Context, ticket *GetEstimatedFeeRequest) (float64, error) {
+
+	// TODO: call RPC: getactionfee
+
+	return 0, nil
 }
 
 // NewService returns a new Service instance

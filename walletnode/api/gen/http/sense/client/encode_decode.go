@@ -99,13 +99,13 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 			if err != nil {
 				return nil, goahttp.ErrDecodingError("sense", "uploadImage", err)
 			}
-			p := NewUploadImageImageUploadResultCreated(&body)
+			p := NewUploadImageImageCreated(&body)
 			view := "default"
-			vres := &senseviews.ImageUploadResult{Projected: p, View: view}
-			if err = senseviews.ValidateImageUploadResult(vres); err != nil {
+			vres := &senseviews.Image{Projected: p, View: view}
+			if err = senseviews.ValidateImage(vres); err != nil {
 				return nil, goahttp.ErrValidationError("sense", "uploadImage", err)
 			}
-			res := sense.NewImageUploadResult(vres)
+			res := sense.NewImage(vres)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
@@ -142,25 +142,23 @@ func DecodeUploadImageResponse(decoder func(*http.Response) goahttp.Decoder, res
 	}
 }
 
-// BuildStartTaskRequest instantiates a HTTP request object with method and
-// path set to call the "sense" service "startTask" endpoint
-func (c *Client) BuildStartTaskRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+// BuildActionDetailsRequest instantiates a HTTP request object with method and
+// path set to call the "sense" service "actionDetails" endpoint
+func (c *Client) BuildActionDetailsRequest(ctx context.Context, v interface{}) (*http.Request, error) {
 	var (
-		taskID string
+		imageID string
 	)
 	{
-		p, ok := v.(*sense.StartTaskPayload)
+		p, ok := v.(*sense.ActionDetailsPayload)
 		if !ok {
-			return nil, goahttp.ErrInvalidType("sense", "startTask", "*sense.StartTaskPayload", v)
+			return nil, goahttp.ErrInvalidType("sense", "actionDetails", "*sense.ActionDetailsPayload", v)
 		}
-		if p.TaskID != nil {
-			taskID = *p.TaskID
-		}
+		imageID = p.ImageID
 	}
-	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: StartTaskSensePath(taskID)}
+	u := &url.URL{Scheme: c.scheme, Host: c.host, Path: ActionDetailsSensePath(imageID)}
 	req, err := http.NewRequest("POST", u.String(), nil)
 	if err != nil {
-		return nil, goahttp.ErrInvalidURL("sense", "startTask", u.String(), err)
+		return nil, goahttp.ErrInvalidURL("sense", "actionDetails", u.String(), err)
 	}
 	if ctx != nil {
 		req = req.WithContext(ctx)
@@ -169,30 +167,30 @@ func (c *Client) BuildStartTaskRequest(ctx context.Context, v interface{}) (*htt
 	return req, nil
 }
 
-// EncodeStartTaskRequest returns an encoder for requests sent to the sense
-// startTask server.
-func EncodeStartTaskRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
+// EncodeActionDetailsRequest returns an encoder for requests sent to the sense
+// actionDetails server.
+func EncodeActionDetailsRequest(encoder func(*http.Request) goahttp.Encoder) func(*http.Request, interface{}) error {
 	return func(req *http.Request, v interface{}) error {
-		p, ok := v.(*sense.StartTaskPayload)
+		p, ok := v.(*sense.ActionDetailsPayload)
 		if !ok {
-			return goahttp.ErrInvalidType("sense", "startTask", "*sense.StartTaskPayload", v)
+			return goahttp.ErrInvalidType("sense", "actionDetails", "*sense.ActionDetailsPayload", v)
 		}
-		body := NewStartTaskRequestBody(p)
+		body := NewActionDetailsRequestBody(p)
 		if err := encoder(req).Encode(&body); err != nil {
-			return goahttp.ErrEncodingError("sense", "startTask", err)
+			return goahttp.ErrEncodingError("sense", "actionDetails", err)
 		}
 		return nil
 	}
 }
 
-// DecodeStartTaskResponse returns a decoder for responses returned by the
-// sense startTask endpoint. restoreBody controls whether the response body
+// DecodeActionDetailsResponse returns a decoder for responses returned by the
+// sense actionDetails endpoint. restoreBody controls whether the response body
 // should be restored after having been read.
-// DecodeStartTaskResponse may return the following errors:
+// DecodeActionDetailsResponse may return the following errors:
 //	- "BadRequest" (type *goa.ServiceError): http.StatusBadRequest
 //	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
 //	- error: internal error
-func DecodeStartTaskResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+func DecodeActionDetailsResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
 	return func(resp *http.Response) (interface{}, error) {
 		if restoreBody {
 			b, err := ioutil.ReadAll(resp.Body)
@@ -209,52 +207,52 @@ func DecodeStartTaskResponse(decoder func(*http.Response) goahttp.Decoder, resto
 		switch resp.StatusCode {
 		case http.StatusCreated:
 			var (
-				body StartTaskResponseBody
+				body ActionDetailsResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("sense", "startTask", err)
+				return nil, goahttp.ErrDecodingError("sense", "actionDetails", err)
 			}
-			p := NewStartTaskStartActionDataResultCreated(&body)
+			p := NewActionDetailsActionDetailResultCreated(&body)
 			view := "default"
-			vres := &senseviews.StartActionDataResult{Projected: p, View: view}
-			if err = senseviews.ValidateStartActionDataResult(vres); err != nil {
-				return nil, goahttp.ErrValidationError("sense", "startTask", err)
+			vres := &senseviews.ActionDetailResult{Projected: p, View: view}
+			if err = senseviews.ValidateActionDetailResult(vres); err != nil {
+				return nil, goahttp.ErrValidationError("sense", "actionDetails", err)
 			}
-			res := sense.NewStartActionDataResult(vres)
+			res := sense.NewActionDetailResult(vres)
 			return res, nil
 		case http.StatusBadRequest:
 			var (
-				body StartTaskBadRequestResponseBody
+				body ActionDetailsBadRequestResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("sense", "startTask", err)
+				return nil, goahttp.ErrDecodingError("sense", "actionDetails", err)
 			}
-			err = ValidateStartTaskBadRequestResponseBody(&body)
+			err = ValidateActionDetailsBadRequestResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("sense", "startTask", err)
+				return nil, goahttp.ErrValidationError("sense", "actionDetails", err)
 			}
-			return nil, NewStartTaskBadRequest(&body)
+			return nil, NewActionDetailsBadRequest(&body)
 		case http.StatusInternalServerError:
 			var (
-				body StartTaskInternalServerErrorResponseBody
+				body ActionDetailsInternalServerErrorResponseBody
 				err  error
 			)
 			err = decoder(resp).Decode(&body)
 			if err != nil {
-				return nil, goahttp.ErrDecodingError("sense", "startTask", err)
+				return nil, goahttp.ErrDecodingError("sense", "actionDetails", err)
 			}
-			err = ValidateStartTaskInternalServerErrorResponseBody(&body)
+			err = ValidateActionDetailsInternalServerErrorResponseBody(&body)
 			if err != nil {
-				return nil, goahttp.ErrValidationError("sense", "startTask", err)
+				return nil, goahttp.ErrValidationError("sense", "actionDetails", err)
 			}
-			return nil, NewStartTaskInternalServerError(&body)
+			return nil, NewActionDetailsInternalServerError(&body)
 		default:
 			body, _ := ioutil.ReadAll(resp.Body)
-			return nil, goahttp.ErrInvalidResponse("sense", "startTask", resp.StatusCode, string(body))
+			return nil, goahttp.ErrInvalidResponse("sense", "actionDetails", resp.StatusCode, string(body))
 		}
 	}
 }

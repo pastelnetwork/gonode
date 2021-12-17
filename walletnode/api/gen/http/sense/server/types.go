@@ -24,27 +24,29 @@ type UploadImageRequestBody struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
-// StartTaskRequestBody is the type of the "sense" service "startTask" endpoint
-// HTTP request body.
-type StartTaskRequestBody struct {
+// ActionDetailsRequestBody is the type of the "sense" service "actionDetails"
+// endpoint HTTP request body.
+type ActionDetailsRequestBody struct {
 	// 3rd party app's PastelID
 	PastelID *string `form:"app_pastelid,omitempty" json:"app_pastelid,omitempty" xml:"app_pastelid,omitempty"`
 	// Hash (SHA3-256) of the Action Data
-	ActionDataHash []byte `form:"action_data_hash,omitempty" json:"action_data_hash,omitempty" xml:"action_data_hash,omitempty"`
-	// The signature of the Action Data
-	ActionDataSignature []byte `form:"action_data_signature,omitempty" json:"action_data_signature,omitempty" xml:"action_data_signature,omitempty"`
+	ActionDataHash *string `form:"action_data_hash,omitempty" json:"action_data_hash,omitempty" xml:"action_data_hash,omitempty"`
+	// The signature (base64) of the Action Data
+	ActionDataSignature *string `form:"action_data_signature,omitempty" json:"action_data_signature,omitempty" xml:"action_data_signature,omitempty"`
 }
 
 // UploadImageResponseBody is the type of the "sense" service "uploadImage"
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
-	// Task ID of uploaded image processing task
-	TaskID string `form:"task_id" json:"task_id" xml:"task_id"`
+	// Uploaded image ID
+	ImageID string `form:"image_id" json:"image_id" xml:"image_id"`
+	// Uploaded image ID
+	ExpiresIn string `form:"expires_in" json:"expires_in" xml:"expires_in"`
 }
 
-// StartTaskResponseBody is the type of the "sense" service "startTask"
+// ActionDetailsResponseBody is the type of the "sense" service "actionDetails"
 // endpoint HTTP response body.
-type StartTaskResponseBody struct {
+type ActionDetailsResponseBody struct {
 	// Estimated fee
 	EstimatedFee float64 `form:"estimated_fee" json:"estimated_fee" xml:"estimated_fee"`
 }
@@ -86,9 +88,9 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// StartTaskBadRequestResponseBody is the type of the "sense" service
-// "startTask" endpoint HTTP response body for the "BadRequest" error.
-type StartTaskBadRequestResponseBody struct {
+// ActionDetailsBadRequestResponseBody is the type of the "sense" service
+// "actionDetails" endpoint HTTP response body for the "BadRequest" error.
+type ActionDetailsBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -104,9 +106,10 @@ type StartTaskBadRequestResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
-// StartTaskInternalServerErrorResponseBody is the type of the "sense" service
-// "startTask" endpoint HTTP response body for the "InternalServerError" error.
-type StartTaskInternalServerErrorResponseBody struct {
+// ActionDetailsInternalServerErrorResponseBody is the type of the "sense"
+// service "actionDetails" endpoint HTTP response body for the
+// "InternalServerError" error.
+type ActionDetailsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name string `form:"name" json:"name" xml:"name"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -124,17 +127,18 @@ type StartTaskInternalServerErrorResponseBody struct {
 
 // NewUploadImageResponseBody builds the HTTP response body from the result of
 // the "uploadImage" endpoint of the "sense" service.
-func NewUploadImageResponseBody(res *senseviews.ImageUploadResultView) *UploadImageResponseBody {
+func NewUploadImageResponseBody(res *senseviews.ImageView) *UploadImageResponseBody {
 	body := &UploadImageResponseBody{
-		TaskID: *res.TaskID,
+		ImageID:   *res.ImageID,
+		ExpiresIn: *res.ExpiresIn,
 	}
 	return body
 }
 
-// NewStartTaskResponseBody builds the HTTP response body from the result of
-// the "startTask" endpoint of the "sense" service.
-func NewStartTaskResponseBody(res *senseviews.StartActionDataResultView) *StartTaskResponseBody {
-	body := &StartTaskResponseBody{
+// NewActionDetailsResponseBody builds the HTTP response body from the result
+// of the "actionDetails" endpoint of the "sense" service.
+func NewActionDetailsResponseBody(res *senseviews.ActionDetailResultView) *ActionDetailsResponseBody {
+	body := &ActionDetailsResponseBody{
 		EstimatedFee: *res.EstimatedFee,
 	}
 	return body
@@ -168,10 +172,10 @@ func NewUploadImageInternalServerErrorResponseBody(res *goa.ServiceError) *Uploa
 	return body
 }
 
-// NewStartTaskBadRequestResponseBody builds the HTTP response body from the
-// result of the "startTask" endpoint of the "sense" service.
-func NewStartTaskBadRequestResponseBody(res *goa.ServiceError) *StartTaskBadRequestResponseBody {
-	body := &StartTaskBadRequestResponseBody{
+// NewActionDetailsBadRequestResponseBody builds the HTTP response body from
+// the result of the "actionDetails" endpoint of the "sense" service.
+func NewActionDetailsBadRequestResponseBody(res *goa.ServiceError) *ActionDetailsBadRequestResponseBody {
+	body := &ActionDetailsBadRequestResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -182,10 +186,10 @@ func NewStartTaskBadRequestResponseBody(res *goa.ServiceError) *StartTaskBadRequ
 	return body
 }
 
-// NewStartTaskInternalServerErrorResponseBody builds the HTTP response body
-// from the result of the "startTask" endpoint of the "sense" service.
-func NewStartTaskInternalServerErrorResponseBody(res *goa.ServiceError) *StartTaskInternalServerErrorResponseBody {
-	body := &StartTaskInternalServerErrorResponseBody{
+// NewActionDetailsInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "actionDetails" endpoint of the "sense" service.
+func NewActionDetailsInternalServerErrorResponseBody(res *goa.ServiceError) *ActionDetailsInternalServerErrorResponseBody {
+	body := &ActionDetailsInternalServerErrorResponseBody{
 		Name:      res.Name,
 		ID:        res.ID,
 		Message:   res.Message,
@@ -206,14 +210,15 @@ func NewUploadImagePayload(body *UploadImageRequestBody) *sense.UploadImagePaylo
 	return v
 }
 
-// NewStartTaskPayload builds a sense service startTask endpoint payload.
-func NewStartTaskPayload(body *StartTaskRequestBody, taskID string) *sense.StartTaskPayload {
-	v := &sense.StartTaskPayload{
+// NewActionDetailsPayload builds a sense service actionDetails endpoint
+// payload.
+func NewActionDetailsPayload(body *ActionDetailsRequestBody, imageID string) *sense.ActionDetailsPayload {
+	v := &sense.ActionDetailsPayload{
 		PastelID:            *body.PastelID,
-		ActionDataHash:      body.ActionDataHash,
-		ActionDataSignature: body.ActionDataSignature,
+		ActionDataHash:      *body.ActionDataHash,
+		ActionDataSignature: *body.ActionDataSignature,
 	}
-	v.TaskID = &taskID
+	v.ImageID = imageID
 
 	return v
 }
@@ -227,9 +232,9 @@ func ValidateUploadImageRequestBody(body *UploadImageRequestBody) (err error) {
 	return
 }
 
-// ValidateStartTaskRequestBody runs the validations defined on
-// StartTaskRequestBody
-func ValidateStartTaskRequestBody(body *StartTaskRequestBody) (err error) {
+// ValidateActionDetailsRequestBody runs the validations defined on
+// ActionDetailsRequestBody
+func ValidateActionDetailsRequestBody(body *ActionDetailsRequestBody) (err error) {
 	if body.PastelID == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("app_pastelid", "body"))
 	}
@@ -250,6 +255,32 @@ func ValidateStartTaskRequestBody(body *StartTaskRequestBody) (err error) {
 	if body.PastelID != nil {
 		if utf8.RuneCountInString(*body.PastelID) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelid", *body.PastelID, utf8.RuneCountInString(*body.PastelID), 86, false))
+		}
+	}
+	if body.ActionDataHash != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.action_data_hash", *body.ActionDataHash, "^[a-fA-F0-9]"))
+	}
+	if body.ActionDataHash != nil {
+		if utf8.RuneCountInString(*body.ActionDataHash) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_hash", *body.ActionDataHash, utf8.RuneCountInString(*body.ActionDataHash), 64, true))
+		}
+	}
+	if body.ActionDataHash != nil {
+		if utf8.RuneCountInString(*body.ActionDataHash) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_hash", *body.ActionDataHash, utf8.RuneCountInString(*body.ActionDataHash), 64, false))
+		}
+	}
+	if body.ActionDataSignature != nil {
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.action_data_signature", *body.ActionDataSignature, "^[a-fA-F0-9]"))
+	}
+	if body.ActionDataSignature != nil {
+		if utf8.RuneCountInString(*body.ActionDataSignature) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_signature", *body.ActionDataSignature, utf8.RuneCountInString(*body.ActionDataSignature), 64, true))
+		}
+	}
+	if body.ActionDataSignature != nil {
+		if utf8.RuneCountInString(*body.ActionDataSignature) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_signature", *body.ActionDataSignature, utf8.RuneCountInString(*body.ActionDataSignature), 64, false))
 		}
 	}
 	return

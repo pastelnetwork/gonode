@@ -15,34 +15,34 @@ import (
 
 // Client is the "sense" service client.
 type Client struct {
-	UploadImageEndpoint goa.Endpoint
-	StartTaskEndpoint   goa.Endpoint
+	UploadImageEndpoint   goa.Endpoint
+	ActionDetailsEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "sense" service client given the endpoints.
-func NewClient(uploadImage, startTask goa.Endpoint) *Client {
+func NewClient(uploadImage, actionDetails goa.Endpoint) *Client {
 	return &Client{
-		UploadImageEndpoint: uploadImage,
-		StartTaskEndpoint:   startTask,
+		UploadImageEndpoint:   uploadImage,
+		ActionDetailsEndpoint: actionDetails,
 	}
 }
 
 // UploadImage calls the "uploadImage" endpoint of the "sense" service.
-func (c *Client) UploadImage(ctx context.Context, p *UploadImagePayload) (res *ImageUploadResult, err error) {
+func (c *Client) UploadImage(ctx context.Context, p *UploadImagePayload) (res *Image, err error) {
 	var ires interface{}
 	ires, err = c.UploadImageEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*ImageUploadResult), nil
+	return ires.(*Image), nil
 }
 
-// StartTask calls the "startTask" endpoint of the "sense" service.
-func (c *Client) StartTask(ctx context.Context, p *StartTaskPayload) (res *StartActionDataResult, err error) {
+// ActionDetails calls the "actionDetails" endpoint of the "sense" service.
+func (c *Client) ActionDetails(ctx context.Context, p *ActionDetailsPayload) (res *ActionDetailResult, err error) {
 	var ires interface{}
-	ires, err = c.StartTaskEndpoint(ctx, p)
+	ires, err = c.ActionDetailsEndpoint(ctx, p)
 	if err != nil {
 		return
 	}
-	return ires.(*StartActionDataResult), nil
+	return ires.(*ActionDetailResult), nil
 }

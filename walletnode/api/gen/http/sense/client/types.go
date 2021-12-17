@@ -22,27 +22,29 @@ type UploadImageRequestBody struct {
 	Filename *string `form:"filename,omitempty" json:"filename,omitempty" xml:"filename,omitempty"`
 }
 
-// StartTaskRequestBody is the type of the "sense" service "startTask" endpoint
-// HTTP request body.
-type StartTaskRequestBody struct {
+// ActionDetailsRequestBody is the type of the "sense" service "actionDetails"
+// endpoint HTTP request body.
+type ActionDetailsRequestBody struct {
 	// 3rd party app's PastelID
 	PastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
 	// Hash (SHA3-256) of the Action Data
-	ActionDataHash []byte `form:"action_data_hash" json:"action_data_hash" xml:"action_data_hash"`
-	// The signature of the Action Data
-	ActionDataSignature []byte `form:"action_data_signature" json:"action_data_signature" xml:"action_data_signature"`
+	ActionDataHash string `form:"action_data_hash" json:"action_data_hash" xml:"action_data_hash"`
+	// The signature (base64) of the Action Data
+	ActionDataSignature string `form:"action_data_signature" json:"action_data_signature" xml:"action_data_signature"`
 }
 
 // UploadImageResponseBody is the type of the "sense" service "uploadImage"
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
-	// Task ID of uploaded image processing task
-	TaskID *string `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
+	// Uploaded image ID
+	ImageID *string `form:"image_id,omitempty" json:"image_id,omitempty" xml:"image_id,omitempty"`
+	// Image expiration
+	ExpiresIn *string `form:"expires_in,omitempty" json:"expires_in,omitempty" xml:"expires_in,omitempty"`
 }
 
-// StartTaskResponseBody is the type of the "sense" service "startTask"
+// ActionDetailsResponseBody is the type of the "sense" service "actionDetails"
 // endpoint HTTP response body.
-type StartTaskResponseBody struct {
+type ActionDetailsResponseBody struct {
 	// Estimated fee
 	EstimatedFee *float64 `form:"estimated_fee,omitempty" json:"estimated_fee,omitempty" xml:"estimated_fee,omitempty"`
 }
@@ -84,9 +86,9 @@ type UploadImageInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// StartTaskBadRequestResponseBody is the type of the "sense" service
-// "startTask" endpoint HTTP response body for the "BadRequest" error.
-type StartTaskBadRequestResponseBody struct {
+// ActionDetailsBadRequestResponseBody is the type of the "sense" service
+// "actionDetails" endpoint HTTP response body for the "BadRequest" error.
+type ActionDetailsBadRequestResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -102,9 +104,10 @@ type StartTaskBadRequestResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
-// StartTaskInternalServerErrorResponseBody is the type of the "sense" service
-// "startTask" endpoint HTTP response body for the "InternalServerError" error.
-type StartTaskInternalServerErrorResponseBody struct {
+// ActionDetailsInternalServerErrorResponseBody is the type of the "sense"
+// service "actionDetails" endpoint HTTP response body for the
+// "InternalServerError" error.
+type ActionDetailsInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -130,10 +133,10 @@ func NewUploadImageRequestBody(p *sense.UploadImagePayload) *UploadImageRequestB
 	return body
 }
 
-// NewStartTaskRequestBody builds the HTTP request body from the payload of the
-// "startTask" endpoint of the "sense" service.
-func NewStartTaskRequestBody(p *sense.StartTaskPayload) *StartTaskRequestBody {
-	body := &StartTaskRequestBody{
+// NewActionDetailsRequestBody builds the HTTP request body from the payload of
+// the "actionDetails" endpoint of the "sense" service.
+func NewActionDetailsRequestBody(p *sense.ActionDetailsPayload) *ActionDetailsRequestBody {
+	body := &ActionDetailsRequestBody{
 		PastelID:            p.PastelID,
 		ActionDataHash:      p.ActionDataHash,
 		ActionDataSignature: p.ActionDataSignature,
@@ -141,11 +144,12 @@ func NewStartTaskRequestBody(p *sense.StartTaskPayload) *StartTaskRequestBody {
 	return body
 }
 
-// NewUploadImageImageUploadResultCreated builds a "sense" service
-// "uploadImage" endpoint result from a HTTP "Created" response.
-func NewUploadImageImageUploadResultCreated(body *UploadImageResponseBody) *senseviews.ImageUploadResultView {
-	v := &senseviews.ImageUploadResultView{
-		TaskID: body.TaskID,
+// NewUploadImageImageCreated builds a "sense" service "uploadImage" endpoint
+// result from a HTTP "Created" response.
+func NewUploadImageImageCreated(body *UploadImageResponseBody) *senseviews.ImageView {
+	v := &senseviews.ImageView{
+		ImageID:   body.ImageID,
+		ExpiresIn: body.ExpiresIn,
 	}
 
 	return v
@@ -181,19 +185,19 @@ func NewUploadImageInternalServerError(body *UploadImageInternalServerErrorRespo
 	return v
 }
 
-// NewStartTaskStartActionDataResultCreated builds a "sense" service
-// "startTask" endpoint result from a HTTP "Created" response.
-func NewStartTaskStartActionDataResultCreated(body *StartTaskResponseBody) *senseviews.StartActionDataResultView {
-	v := &senseviews.StartActionDataResultView{
+// NewActionDetailsActionDetailResultCreated builds a "sense" service
+// "actionDetails" endpoint result from a HTTP "Created" response.
+func NewActionDetailsActionDetailResultCreated(body *ActionDetailsResponseBody) *senseviews.ActionDetailResultView {
+	v := &senseviews.ActionDetailResultView{
 		EstimatedFee: body.EstimatedFee,
 	}
 
 	return v
 }
 
-// NewStartTaskBadRequest builds a sense service startTask endpoint BadRequest
-// error.
-func NewStartTaskBadRequest(body *StartTaskBadRequestResponseBody) *goa.ServiceError {
+// NewActionDetailsBadRequest builds a sense service actionDetails endpoint
+// BadRequest error.
+func NewActionDetailsBadRequest(body *ActionDetailsBadRequestResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -206,9 +210,9 @@ func NewStartTaskBadRequest(body *StartTaskBadRequestResponseBody) *goa.ServiceE
 	return v
 }
 
-// NewStartTaskInternalServerError builds a sense service startTask endpoint
-// InternalServerError error.
-func NewStartTaskInternalServerError(body *StartTaskInternalServerErrorResponseBody) *goa.ServiceError {
+// NewActionDetailsInternalServerError builds a sense service actionDetails
+// endpoint InternalServerError error.
+func NewActionDetailsInternalServerError(body *ActionDetailsInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -269,9 +273,9 @@ func ValidateUploadImageInternalServerErrorResponseBody(body *UploadImageInterna
 	return
 }
 
-// ValidateStartTaskBadRequestResponseBody runs the validations defined on
-// startTask_BadRequest_response_body
-func ValidateStartTaskBadRequestResponseBody(body *StartTaskBadRequestResponseBody) (err error) {
+// ValidateActionDetailsBadRequestResponseBody runs the validations defined on
+// actionDetails_BadRequest_response_body
+func ValidateActionDetailsBadRequestResponseBody(body *ActionDetailsBadRequestResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}
@@ -293,9 +297,9 @@ func ValidateStartTaskBadRequestResponseBody(body *StartTaskBadRequestResponseBo
 	return
 }
 
-// ValidateStartTaskInternalServerErrorResponseBody runs the validations
-// defined on startTask_InternalServerError_response_body
-func ValidateStartTaskInternalServerErrorResponseBody(body *StartTaskInternalServerErrorResponseBody) (err error) {
+// ValidateActionDetailsInternalServerErrorResponseBody runs the validations
+// defined on actionDetails_InternalServerError_response_body
+func ValidateActionDetailsInternalServerErrorResponseBody(body *ActionDetailsInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

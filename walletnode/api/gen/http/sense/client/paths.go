@@ -16,7 +16,7 @@ func UploadImageSensePath() string {
 	return "/openapi/sense/upload"
 }
 
-// StartTaskSensePath returns the URL path to the sense service startTask HTTP endpoint.
-func StartTaskSensePath(taskID string) string {
-	return fmt.Sprintf("/openapi/sense/start/%v", taskID)
+// ActionDetailsSensePath returns the URL path to the sense service actionDetails HTTP endpoint.
+func ActionDetailsSensePath(imageID string) string {
+	return fmt.Sprintf("/openapi/sense/details/%v", imageID)
 }
