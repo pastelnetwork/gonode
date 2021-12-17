@@ -1,4 +1,4 @@
-package db
+package sqlite
 
 import (
 	"context"
@@ -15,7 +15,7 @@ func TestDB(t *testing.T) {
 	// new the local storage
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
-	store, err := NewStore(ctx, storePath)
+	store, err := NewStore(ctx, storePath, time.Second*10, time.Second*60)
 	assert.Nil(t, err)
 
 	defer func() {
@@ -30,7 +30,7 @@ func TestDB(t *testing.T) {
 		writeData := make([]byte, 50*1024)
 		rand.Read(writeData)
 
-		err = store.Store(ctx, key, writeData, time.Now())
+		err = store.Store(ctx, key, writeData)
 		assert.Nil(t, err)
 
 		readData, err := store.Retrieve(ctx, key)
@@ -38,9 +38,8 @@ func TestDB(t *testing.T) {
 		assert.Equal(t, writeData, readData)
 	}
 
-	assert.Equal(t, 1, len(store.Keys(ctx, 0, 1)))
-	assert.Equal(t, 10, len(store.Keys(ctx, 0, 10)))
-	assert.Equal(t, numberOfKeys, len(store.Keys(ctx, 0, -1)))
-	assert.Equal(t, 0, len(store.Keys(ctx, numberOfKeys, 1)))
-	assert.Equal(t, 0, len(store.Keys(ctx, numberOfKeys, -1)))
+	assert.Equal(t, 0, len(store.GetKeysForReplication(ctx)))
+	time.Sleep(time.Second * 10)
+	assert.Equal(t, numberOfKeys, len(store.GetKeysForReplication(ctx)))
+	assert.Equal(t, 0, len(store.GetKeysForReplication(ctx)))
 }

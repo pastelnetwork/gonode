@@ -21,12 +21,11 @@ import (
 )
 
 var (
-	defaultNetworkAddr   = "0.0.0.0"
-	defaultNetworkPort   = 4445
-	defaultRefreshTime   = time.Second * 3600
-	defaultReplicateTime = time.Second * 3600
-	defaultPingTime      = time.Second * 10
-	defaultUpdateTime    = time.Minute * 10 // FIXME : not sure how many is enough - but 1 is too small
+	defaultNetworkAddr = "0.0.0.0"
+	defaultNetworkPort = 4445
+	defaultRefreshTime = time.Second * 3600
+	defaultPingTime    = time.Second * 10
+	defaultUpdateTime  = time.Minute * 10 // FIXME : not sure how many is enough - but 1 is too small
 )
 
 // DHT represents the state of the local node in the distributed hash table
@@ -154,7 +153,7 @@ func (s *DHT) Start(ctx context.Context) error {
 		}
 
 		// replication
-		replicationKeys := s.store.KeysForReplication(ctx)
+		replicationKeys := s.store.GetKeysForReplication(ctx)
 		for _, key := range replicationKeys {
 			value, err := s.store.Retrieve(ctx, key)
 			if err != nil {
@@ -162,7 +161,7 @@ func (s *DHT) Start(ctx context.Context) error {
 				continue
 			}
 			if value != nil {
-				// iteratve store the value
+				// iterate store the value
 				if _, err := s.iterate(ctx, IterateStore, key, value); err != nil {
 					log.P2P().WithContext(ctx).WithError(err).Error("iterate store data failed")
 				}
@@ -195,16 +194,13 @@ func (s *DHT) hashKey(data []byte) []byte {
 func (s *DHT) Store(ctx context.Context, data []byte) (string, error) {
 	key := s.hashKey(data)
 
-	// replicate time for the key
-	replication := time.Now().Add(defaultReplicateTime)
-
 	retKey := base58.Encode(key)
 	if _, err := s.store.Retrieve(ctx, key); err == nil {
 		return retKey, nil
 	}
 
 	// store the key to local storage
-	if err := s.store.Store(ctx, key, data, replication); err != nil {
+	if err := s.store.Store(ctx, key, data); err != nil {
 		return "", fmt.Errorf("store data to local storage: %v", err)
 	}
 
@@ -267,17 +263,6 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 	dhtStats["database"] = dbStats
 
 	return dhtStats, nil
-}
-
-// Keys return a list of keys with given offset + limit
-func (s *DHT) Keys(ctx context.Context, offset int, limit int) []string {
-	rawKeys := s.store.Keys(ctx, offset, limit)
-	keys := []string{}
-	for _, rawKey := range rawKeys {
-		keys = append(keys, base58.Encode(rawKey))
-	}
-
-	return keys
 }
 
 // new a message
