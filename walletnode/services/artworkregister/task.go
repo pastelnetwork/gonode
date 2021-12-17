@@ -559,28 +559,20 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 }
 
 func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDFile) error {
-	var content []byte
-	appendStr := func(b []byte, s string) []byte {
-		b = append(b, []byte(s)...)
-		b = append(b, '\n')
-		return b
+	file, err := json.Marshal(rawFile)
+	if err != nil {
+		return fmt.Errorf("marshal rqID file")
 	}
 
-	content = appendStr(content, rawFile.BlockHash)
-	content = appendStr(content, rawFile.PastelID)
-	for _, id := range rawFile.SymbolIdentifiers {
-		content = appendStr(content, id)
-	}
-
-	signature, err := task.pastelClient.Sign(ctx, content, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
+	signature, err := task.pastelClient.Sign(ctx, file, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign identifiers file: %w", err)
 	}
 
-	encfile := utils.B64Encode(content)
+	encfile := base64.StdEncoding.EncodeToString(file)
 
 	var buffer bytes.Buffer
-	buffer.Write(encfile)
+	buffer.WriteString(encfile)
 	buffer.WriteString(".")
 	buffer.Write(signature)
 	rqIDFile := buffer.Bytes()
@@ -821,12 +813,6 @@ func (task *Task) probeImage(ctx context.Context) error {
 		return errors.Errorf("hash zstd commpressed fingerprints: %w", err)
 	}
 	task.fingerprintsHash = []byte(base58.Encode(fingerprintsHash))
-
-	// // Decompress the fingerprint as bytes for later use
-	// task.fingerprint, err = zstd.Decompress(nil, task.fingerprintAndScores.ZstdCompressedFingerprint)
-	// if err != nil {
-	// 	return errors.Errorf("decompress finger failed")
-	// }
 
 	return nil
 }

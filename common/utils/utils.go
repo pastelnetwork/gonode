@@ -90,17 +90,18 @@ func B64Decode(in []byte) (out []byte, err error) {
 	return out[:n], nil
 }
 
-// Equal tells whether a and b contain the same elements.
+// EqualStrList tells whether a and b contain the same elements.
 // A nil argument is equivalent to an empty slice.
-func Equal(a, b []string) bool {
+func EqualStrList(a, b []string) error {
 	if len(a) != len(b) {
-		return false
+		return errors.Errorf("unequal length: %d  & %d", len(a), len(b))
 	}
+
 	for i, v := range a {
 		if v != b[i] {
-			return false
+			return errors.Errorf("index %d mismatch, vals: %s   &  %s", i, v, b[i])
 		}
 	}
 
-	return true
+	return nil
 }

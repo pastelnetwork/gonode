@@ -1,7 +1,6 @@
 package artworkregister
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
@@ -52,8 +51,7 @@ type Task struct {
 	acceptedMu sync.Mutex
 	accepted   Nodes
 
-	RQIDS map[string][]byte
-	Oti   []byte
+	Oti []byte
 
 	// signature of ticket data signed by node's pateslID
 	ownSignature []byte
@@ -70,6 +68,8 @@ type Task struct {
 
 	// valid only for secondary node
 	connectedTo *Node
+
+	rawRqFile []byte
 }
 
 // Run starts the task
@@ -373,8 +373,16 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	return task.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
-func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, ticket *pastel.NFTTicket, rq []byte, dd []byte) error {
-	validate := func(ctx context.Context, ticket *pastel.NFTTicket, data []byte, ic uint32, max uint32, ids []string, length int) error {
+func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, rq []byte, dd []byte) error {
+	fileTypeRQ := "rq"
+	fileTypeDD := "dd"
+
+	validate := func(ctx context.Context, data []byte, ic uint32, max uint32, ids []string, fileType string) error {
+		length := 4
+		if fileType == fileTypeRQ {
+			length = 2
+		}
+
 		dec, err := utils.B64Decode(data)
 		if err != nil {
 			return errors.Errorf("decode data: %w", err)
@@ -394,14 +402,33 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, ticket *pastel.NF
 		if err != nil {
 			errors.Errorf("decode file: %w", err)
 		}
-
-		verified, err := task.pastelClient.Verify(ctx, file, string(splits[1]), ticket.Author, pastel.SignAlgorithmED448)
-		if err != nil {
-			return errors.Errorf("verify file signature %w", err)
+		if fileType == fileTypeRQ {
+			task.rawRqFile = file
 		}
 
-		if !verified {
-			return errors.New("file verification failed.")
+		verifications := 0
+		verifiedNodes := make(map[int]bool)
+		for i := 1; i < length; i++ {
+			for j := 0; j < len(task.meshedNodes); j++ {
+				if _, ok := verifiedNodes[j]; ok {
+					continue
+				}
+
+				verified, err := task.pastelClient.Verify(ctx, file, string(splits[i]), task.meshedNodes[j].NodeID, pastel.SignAlgorithmED448)
+				if err != nil {
+					return errors.Errorf("verify file signature %w", err)
+				}
+
+				if verified {
+					verifiedNodes[j] = true
+					verifications++
+					break
+				}
+			}
+		}
+
+		if verifications != length-1 { // need 1 verification for rq & 3 for dd_and_fp
+			return errors.Errorf("file verification failed: need %d verifications, got %d", length-1, verifications)
 		}
 
 		gotIDs, err := pastel.GetIDFiles(decData, ic, max)
@@ -409,21 +436,21 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, ticket *pastel.NF
 			return errors.Errorf("get ids: %w", err)
 		}
 
-		if !utils.Equal(gotIDs, ids) {
+		if err := utils.EqualStrList(gotIDs, ids); err != nil {
 			return errors.Errorf("IDs don't match: %w", err)
 		}
 
 		return nil
 	}
 
-	if err := validate(ctx, ticket, dd, ticket.AppTicketData.DDAndFingerprintsIc,
-		ticket.AppTicketData.DDAndFingerprintsMax, ticket.AppTicketData.DDAndFingerprintsIDs, 4); err != nil {
+	if err := validate(ctx, dd, task.Ticket.AppTicketData.DDAndFingerprintsIc, task.Ticket.AppTicketData.DDAndFingerprintsMax,
+		task.Ticket.AppTicketData.DDAndFingerprintsIDs, fileTypeDD); err != nil {
 
 		return errors.Errorf("validate dd_and_fingerprints: %w", err)
 	}
 
-	if err := validate(ctx, ticket, dd, ticket.AppTicketData.RQIc, ticket.AppTicketData.RQMax,
-		ticket.AppTicketData.RQIDs, 2); err != nil {
+	if err := validate(ctx, rq, task.Ticket.AppTicketData.RQIc, task.Ticket.AppTicketData.RQMax,
+		task.Ticket.AppTicketData.RQIDs, fileTypeRQ); err != nil {
 
 		errors.Errorf("validate rq_ids: %w", err)
 	}
@@ -432,14 +459,14 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, ticket *pastel.NF
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
-func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, key1 string, key2 string, rqidFiles []byte, ddFpFiles []byte, oti []byte) (int64, error) {
+func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, key1 string, key2 string, rqidFile []byte, ddFpFile []byte, oti []byte) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
 		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
 	}
 
 	task.Oti = oti
-	//task.RQIDS = rqids
+	task.rawRqFile = rqidFile
 	task.creatorSignature = creatorSignature
 	task.key1 = key1
 	task.key2 = key2
@@ -468,7 +495,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 			return nil
 		}
 
-		if err := task.validateRqIDsAndDdFpIds(ctx, task.Ticket, rqidFiles, ddFpFiles); err != nil {
+		if err := task.validateRqIDsAndDdFpIds(ctx, rqidFile, ddFpFile); err != nil {
 			log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
 			err = errors.Errorf("validate rq & dd id files %w", err)
 			return nil
@@ -599,6 +626,12 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 					if err = task.storeFingerprints(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("store fingerprints")
 						err = errors.Errorf("store fingerprints: %w", err)
+						return nil
+					}
+
+					if err = task.storeIDFiles(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("store id files")
+						err = errors.Errorf("store id files: %w", err)
 						return nil
 					}
 
@@ -759,12 +792,6 @@ func (task *Task) storeRaptorQSymbols(ctx context.Context) error {
 		return errors.Errorf("create raptorq symbol from image %s: %w", task.Artwork.Name(), err)
 	}
 
-	for name, data := range task.RQIDS {
-		if _, err := task.p2pClient.Store(ctx, data); err != nil {
-			return errors.Errorf("store raptorq symbols id files %s: %w", name, err)
-		}
-	}
-
 	for id, symbol := range encodeResp.Symbols {
 		if _, err := task.p2pClient.Store(ctx, symbol); err != nil {
 			return errors.Errorf("store symbolid %s into kamedila: %w", id, err)
@@ -791,6 +818,28 @@ func (task *Task) storeThumbnails(ctx context.Context) error {
 	}
 	if _, err := storeFn(ctx, task.SmallThumbnail); err != nil {
 		return errors.Errorf("store small thumbnail into kamedila: %w", err)
+	}
+
+	return nil
+}
+
+func (task *Task) storeIDFiles(ctx context.Context) error {
+	store := func(ctx context.Context, ids []string) error {
+		for _, idFile := range ids {
+			if _, err := task.p2pClient.Store(ctx, []byte(idFile)); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	if err := store(ctx, task.Ticket.AppTicketData.DDAndFingerprintsIDs); err != nil {
+		return fmt.Errorf("store ddAndFp files: %w", err)
+	}
+
+	if err := store(ctx, task.Ticket.AppTicketData.RQIDs); err != nil {
+		return fmt.Errorf("store rq_id files: %w", err)
 	}
 
 	return nil
@@ -858,53 +907,32 @@ func (task *Task) compareRQSymbolID(ctx context.Context) error {
 		RqFilesDir: task.Service.config.RqFilesDir,
 	})
 
-	if len(task.RQIDS) == 0 {
+	if len(task.Ticket.AppTicketData.RQIDs) == 0 {
 		return errors.Errorf("no symbols identifiers file")
 	}
 
-	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.RQIDS)), hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.Author)
-
+	encodeInfo, err := rqService.EncodeInfo(ctx, content, uint32(len(task.Ticket.AppTicketData.RQIDs)),
+		hex.EncodeToString([]byte(task.Ticket.BlockHash)), task.Ticket.Author)
 	if err != nil {
 		return errors.Errorf("generate RaptorQ symbols' identifiers: %w", err)
 	}
 
 	// pick just one file from wallnode to compare rq symbols
 	// the one send from walletnode is compressed so need to decompress first
-	var fromWalletNode []byte
-	for _, v := range task.RQIDS {
-		fromWalletNode = v
-		break
-	}
-	rawData, err := zstd.Decompress(nil, fromWalletNode)
-	if err != nil {
-		return errors.Errorf("decompress symbols id file: %w", err)
-	}
-	scaner := bufio.NewScanner(bytes.NewReader(rawData))
-	scaner.Split(bufio.ScanLines)
-	for i := 0; i < 3; i++ {
-		scaner.Scan()
-		if scaner.Err() != nil {
-			return errors.Errorf("failed when bypass headers: %w", err)
-		}
-	}
-	scaner.Text()
 
 	// pick just one file generated to compare
-	var rawEncodeFile rqnode.RawSymbolIDFile
+	var gotFile, haveFile rqnode.RawSymbolIDFile
 	for _, v := range encodeInfo.SymbolIDFiles {
-		rawEncodeFile = v
+		gotFile = v
 		break
 	}
 
-	for i := range rawEncodeFile.SymbolIdentifiers {
-		scaner.Scan()
-		if scaner.Err() != nil {
-			return errors.Errorf("scan next symbol identifiers: %w", err)
-		}
-		symbolFromWalletNode := scaner.Text()
-		if rawEncodeFile.SymbolIdentifiers[i] != symbolFromWalletNode {
-			return errors.Errorf("raptor symbol mismatched, index: %d, wallet:%s, super: %s", i, symbolFromWalletNode, rawEncodeFile.SymbolIdentifiers[i])
-		}
+	if err := json.Unmarshal(task.rawRqFile, &haveFile); err != nil {
+		return errors.Errorf("decode raw rq file: %w", err)
+	}
+
+	if err := utils.EqualStrList(gotFile.SymbolIdentifiers, haveFile.SymbolIdentifiers); err != nil {
+		return errors.Errorf("raptor symbol mismatched: %w", err)
 	}
 
 	return nil
