@@ -13,6 +13,10 @@ import (
 	_ "github.com/rqlite/go-sqlite3" //go-sqlite3
 )
 
+const (
+	dbName = "db.sqlite3"
+)
+
 // Store is a sqlite based storage
 type Store struct {
 	db                *sqlx.DB
@@ -44,7 +48,7 @@ func NewStore(ctx context.Context, dataDir string, replicate time.Duration, repu
 		return nil, fmt.Errorf("cannot create data folder: %w", err)
 	}
 
-	dbFile := path.Join(dataDir, "foo.db")
+	dbFile := path.Join(dataDir, dbName)
 	db, err := sqlx.Connect("sqlite3", dbFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot open sqlite database: %w", err)
