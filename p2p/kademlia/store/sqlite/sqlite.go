@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	dbName = "db.sqlite3"
+	dbName = "data001.sqlite3"
 )
 
 // Store is a sqlite based storage
