@@ -23,9 +23,9 @@ type Client struct {
 	// endpoint.
 	UploadImageDoer goahttp.Doer
 
-	// StartTask Doer is the HTTP client used to make requests to the startTask
-	// endpoint.
-	StartTaskDoer goahttp.Doer
+	// ActionDetails Doer is the HTTP client used to make requests to the
+	// actionDetails endpoint.
+	ActionDetailsDoer goahttp.Doer
 
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
@@ -55,7 +55,7 @@ func NewClient(
 ) *Client {
 	return &Client{
 		UploadImageDoer:     doer,
-		StartTaskDoer:       doer,
+		ActionDetailsDoer:   doer,
 		CORSDoer:            doer,
 		RestoreResponseBody: restoreBody,
 		scheme:              scheme,
@@ -89,15 +89,15 @@ func (c *Client) UploadImage(senseUploadImageEncoderFn SenseUploadImageEncoderFu
 	}
 }
 
-// StartTask returns an endpoint that makes HTTP requests to the sense service
-// startTask server.
-func (c *Client) StartTask() goa.Endpoint {
+// ActionDetails returns an endpoint that makes HTTP requests to the sense
+// service actionDetails server.
+func (c *Client) ActionDetails() goa.Endpoint {
 	var (
-		encodeRequest  = EncodeStartTaskRequest(c.encoder)
-		decodeResponse = DecodeStartTaskResponse(c.decoder, c.RestoreResponseBody)
+		encodeRequest  = EncodeActionDetailsRequest(c.encoder)
+		decodeResponse = DecodeActionDetailsResponse(c.decoder, c.RestoreResponseBody)
 	)
 	return func(ctx context.Context, v interface{}) (interface{}, error) {
-		req, err := c.BuildStartTaskRequest(ctx, v)
+		req, err := c.BuildActionDetailsRequest(ctx, v)
 		if err != nil {
 			return nil, err
 		}
@@ -105,9 +105,9 @@ func (c *Client) StartTask() goa.Endpoint {
 		if err != nil {
 			return nil, err
 		}
-		resp, err := c.StartTaskDoer.Do(req)
+		resp, err := c.ActionDetailsDoer.Do(req)
 		if err != nil {
-			return nil, goahttp.ErrRequestError("sense", "startTask", err)
+			return nil, goahttp.ErrRequestError("sense", "actionDetails", err)
 		}
 		return decodeResponse(resp)
 	}

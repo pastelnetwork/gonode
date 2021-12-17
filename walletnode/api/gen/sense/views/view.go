@@ -13,100 +13,105 @@ import (
 	goa "goa.design/goa/v3/pkg"
 )
 
-// ImageUploadResult is the viewed result type that is projected based on a
-// view.
-type ImageUploadResult struct {
+// Image is the viewed result type that is projected based on a view.
+type Image struct {
 	// Type to project
-	Projected *ImageUploadResultView
+	Projected *ImageView
 	// View to render
 	View string
 }
 
-// StartActionDataResult is the viewed result type that is projected based on a
+// ActionDetailResult is the viewed result type that is projected based on a
 // view.
-type StartActionDataResult struct {
+type ActionDetailResult struct {
 	// Type to project
-	Projected *StartActionDataResultView
+	Projected *ActionDetailResultView
 	// View to render
 	View string
 }
 
-// ImageUploadResultView is a type that runs validations on a projected type.
-type ImageUploadResultView struct {
-	// Task ID of uploaded image processing task
-	TaskID *string
+// ImageView is a type that runs validations on a projected type.
+type ImageView struct {
+	// Uploaded image ID
+	ImageID *string
+	// Image expiration
+	ExpiresIn *string
 }
 
-// StartActionDataResultView is a type that runs validations on a projected
-// type.
-type StartActionDataResultView struct {
+// ActionDetailResultView is a type that runs validations on a projected type.
+type ActionDetailResultView struct {
 	// Estimated fee
 	EstimatedFee *float64
 }
 
 var (
-	// ImageUploadResultMap is a map indexing the attribute names of
-	// ImageUploadResult by view name.
-	ImageUploadResultMap = map[string][]string{
+	// ImageMap is a map indexing the attribute names of Image by view name.
+	ImageMap = map[string][]string{
 		"default": {
-			"task_id",
+			"image_id",
+			"expires_in",
 		},
 	}
-	// StartActionDataResultMap is a map indexing the attribute names of
-	// StartActionDataResult by view name.
-	StartActionDataResultMap = map[string][]string{
+	// ActionDetailResultMap is a map indexing the attribute names of
+	// ActionDetailResult by view name.
+	ActionDetailResultMap = map[string][]string{
 		"default": {
 			"estimated_fee",
 		},
 	}
 )
 
-// ValidateImageUploadResult runs the validations defined on the viewed result
-// type ImageUploadResult.
-func ValidateImageUploadResult(result *ImageUploadResult) (err error) {
+// ValidateImage runs the validations defined on the viewed result type Image.
+func ValidateImage(result *Image) (err error) {
 	switch result.View {
 	case "default", "":
-		err = ValidateImageUploadResultView(result.Projected)
+		err = ValidateImageView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
 	}
 	return
 }
 
-// ValidateStartActionDataResult runs the validations defined on the viewed
-// result type StartActionDataResult.
-func ValidateStartActionDataResult(result *StartActionDataResult) (err error) {
+// ValidateActionDetailResult runs the validations defined on the viewed result
+// type ActionDetailResult.
+func ValidateActionDetailResult(result *ActionDetailResult) (err error) {
 	switch result.View {
 	case "default", "":
-		err = ValidateStartActionDataResultView(result.Projected)
+		err = ValidateActionDetailResultView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
 	}
 	return
 }
 
-// ValidateImageUploadResultView runs the validations defined on
-// ImageUploadResultView using the "default" view.
-func ValidateImageUploadResultView(result *ImageUploadResultView) (err error) {
-	if result.TaskID == nil {
-		err = goa.MergeErrors(err, goa.MissingFieldError("task_id", "result"))
+// ValidateImageView runs the validations defined on ImageView using the
+// "default" view.
+func ValidateImageView(result *ImageView) (err error) {
+	if result.ImageID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("image_id", "result"))
 	}
-	if result.TaskID != nil {
-		if utf8.RuneCountInString(*result.TaskID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, true))
+	if result.ExpiresIn == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("expires_in", "result"))
+	}
+	if result.ImageID != nil {
+		if utf8.RuneCountInString(*result.ImageID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, true))
 		}
 	}
-	if result.TaskID != nil {
-		if utf8.RuneCountInString(*result.TaskID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, false))
+	if result.ImageID != nil {
+		if utf8.RuneCountInString(*result.ImageID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.image_id", *result.ImageID, utf8.RuneCountInString(*result.ImageID), 8, false))
 		}
+	}
+	if result.ExpiresIn != nil {
+		err = goa.MergeErrors(err, goa.ValidateFormat("result.expires_in", *result.ExpiresIn, goa.FormatDateTime))
 	}
 	return
 }
 
-// ValidateStartActionDataResultView runs the validations defined on
-// StartActionDataResultView using the "default" view.
-func ValidateStartActionDataResultView(result *StartActionDataResultView) (err error) {
+// ValidateActionDetailResultView runs the validations defined on
+// ActionDetailResultView using the "default" view.
+func ValidateActionDetailResultView(result *ActionDetailResultView) (err error) {
 	if result.EstimatedFee == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("estimated_fee", "result"))
 	}

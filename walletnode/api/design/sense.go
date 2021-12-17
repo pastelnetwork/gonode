@@ -27,9 +27,9 @@ var _ = Service("sense", func() {
 		Meta("swagger:summary", "Uploads Action Data (Image)")
 
 		Payload(func() {
-			Extend(SenseImageUploadPayload)
+			Extend(ImageUploadPayload)
 		})
-		Result(SenseImageUploadResult)
+		Result(ImageUploadResult)
 
 		HTTP(func() {
 			POST("/upload")
@@ -42,19 +42,19 @@ var _ = Service("sense", func() {
 		})
 	})
 
-	Method("startTask", func() {
-		Description("Start Action")
-		Meta("swagger:summary", "Start Action Task")
+	Method("actionDetails", func() {
+		Description("Provide action details")
+		Meta("swagger:summary", "Provides action details")
 
 		Payload(func() {
-			Extend(SenseStartActionPayload)
+			Extend(ActionDetailsPayload)
 		})
-		Result(SenseStartActionResult)
+		Result(ActionDetailsResult)
 
 		HTTP(func() {
-			POST("/start/{task_id}")
+			POST("/details/{image_id}")
 			Params(func() {
-				Param("task_id", String)
+				Param("image_id", String)
 			})
 
 			// Define error HTTP statuses.
@@ -65,42 +65,14 @@ var _ = Service("sense", func() {
 	})
 })
 
-// SenseImageUploadPayload - Payload for uploading an image
-var SenseImageUploadPayload = Type("SenseImageUploadPayload", func() {
-	Description("Image upload payload")
-	Attribute("file", Bytes, func() {
-		Meta("struct:field:name", "Bytes")
-		Description("File to upload")
-	})
-	Attribute("filename", String, func() {
-		Meta("swagger:example", "false")
-		Description("For internal use")
-	})
-	Required("file")
-})
-
-// SenseImageUploadResult - result of the uploadImage method
-var SenseImageUploadResult = ResultType("application/sense.upload-image", func() {
-	TypeName("imageUploadResult")
-	Attributes(func() {
-		Attribute("task_id", String, func() {
-			Description("Task ID of uploaded image processing task")
-			MinLength(8)
-			MaxLength(8)
-			Example("n6Qn6TFM")
-		})
-	})
-	Required("task_id")
-})
-
-// SenseStartActionPayload - Payload for starting an action
-var SenseStartActionPayload = Type("SenseStartActionPayload", func() {
-	Description("Start Action Payload")
-	Attribute("task_id", String, func() {
-		Description("Task ID of uploaded image processing task")
+// ActionDetailsPayload - Payload for starting an action
+var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
+	Description("Provide Action Details Payload")
+	Attribute("image_id", String, func() {
+		Description("Uploaded image ID")
 		MinLength(8)
 		MaxLength(8)
-		Example("n6Qn6TFM")
+		Example("VK7mpAqZ")
 	})
 	Attribute("app_pastelid", String, func() {
 		Meta("struct:field:name", "PastelID")
@@ -110,21 +82,28 @@ var SenseStartActionPayload = Type("SenseStartActionPayload", func() {
 		Pattern(`^[a-zA-Z0-9]+$`)
 		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
 	})
-	Attribute("action_data_hash", Bytes, func() {
+	Attribute("action_data_hash", String, func() {
 		Meta("struct:field:name", "action_data_hash")
 		Description("Hash (SHA3-256) of the Action Data")
+		MinLength(64)
+		MaxLength(64)
+		Pattern(`^[a-fA-F0-9]`)
+		Example("7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265")
 	})
-	Attribute("action_data_signature", Bytes, func() {
+	Attribute("action_data_signature", String, func() {
 		Meta("struct:field:name", "action_data_signature")
-		Description("The signature of the Action Data")
+		Description("The signature (base64) of the Action Data")
+		MinLength(64)
+		MaxLength(64)
+		Pattern(`^[a-fA-F0-9]`)
 	})
 
-	Required("app_pastelid", "action_data_hash", "action_data_signature")
+	Required("image_id", "app_pastelid", "action_data_hash", "action_data_signature")
 })
 
-// SenseStartActionResult - result of the Start Action method
-var SenseStartActionResult = ResultType("application/sense.start-action", func() {
-	TypeName("startActionDataResult")
+// ActionDetailsResult - result of the Start Action method
+var ActionDetailsResult = ResultType("application/sense.start-action", func() {
+	TypeName("actionDetailResult")
 	Attributes(func() {
 		Attribute("estimated_fee", Float64, func() {
 			Description("Estimated fee")

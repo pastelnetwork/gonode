@@ -23,7 +23,7 @@ import (
 // sense uploadImage endpoint.
 func EncodeUploadImageResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(*senseviews.ImageUploadResult)
+		res := v.(*senseviews.Image)
 		enc := encoder(ctx, w)
 		body := NewUploadImageResponseBody(res.Projected)
 		w.WriteHeader(http.StatusCreated)
@@ -102,24 +102,24 @@ func EncodeUploadImageError(encoder func(context.Context, http.ResponseWriter) g
 	}
 }
 
-// EncodeStartTaskResponse returns an encoder for responses returned by the
-// sense startTask endpoint.
-func EncodeStartTaskResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
+// EncodeActionDetailsResponse returns an encoder for responses returned by the
+// sense actionDetails endpoint.
+func EncodeActionDetailsResponse(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, w http.ResponseWriter, v interface{}) error {
-		res := v.(*senseviews.StartActionDataResult)
+		res := v.(*senseviews.ActionDetailResult)
 		enc := encoder(ctx, w)
-		body := NewStartTaskResponseBody(res.Projected)
+		body := NewActionDetailsResponseBody(res.Projected)
 		w.WriteHeader(http.StatusCreated)
 		return enc.Encode(body)
 	}
 }
 
-// DecodeStartTaskRequest returns a decoder for requests sent to the sense
-// startTask endpoint.
-func DecodeStartTaskRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
+// DecodeActionDetailsRequest returns a decoder for requests sent to the sense
+// actionDetails endpoint.
+func DecodeActionDetailsRequest(mux goahttp.Muxer, decoder func(*http.Request) goahttp.Decoder) func(*http.Request) (interface{}, error) {
 	return func(r *http.Request) (interface{}, error) {
 		var (
-			body StartTaskRequestBody
+			body ActionDetailsRequestBody
 			err  error
 		)
 		err = decoder(r).Decode(&body)
@@ -129,35 +129,35 @@ func DecodeStartTaskRequest(mux goahttp.Muxer, decoder func(*http.Request) goaht
 			}
 			return nil, goa.DecodePayloadError(err.Error())
 		}
-		err = ValidateStartTaskRequestBody(&body)
+		err = ValidateActionDetailsRequestBody(&body)
 		if err != nil {
 			return nil, err
 		}
 
 		var (
-			taskID string
+			imageID string
 
 			params = mux.Vars(r)
 		)
-		taskID = params["task_id"]
-		if utf8.RuneCountInString(taskID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		imageID = params["image_id"]
+		if utf8.RuneCountInString(imageID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, true))
 		}
-		if utf8.RuneCountInString(taskID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		if utf8.RuneCountInString(imageID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, false))
 		}
 		if err != nil {
 			return nil, err
 		}
-		payload := NewStartTaskPayload(&body, taskID)
+		payload := NewActionDetailsPayload(&body, imageID)
 
 		return payload, nil
 	}
 }
 
-// EncodeStartTaskError returns an encoder for errors returned by the startTask
-// sense endpoint.
-func EncodeStartTaskError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
+// EncodeActionDetailsError returns an encoder for errors returned by the
+// actionDetails sense endpoint.
+func EncodeActionDetailsError(encoder func(context.Context, http.ResponseWriter) goahttp.Encoder, formatter func(err error) goahttp.Statuser) func(context.Context, http.ResponseWriter, error) error {
 	encodeError := goahttp.ErrorEncoder(encoder, formatter)
 	return func(ctx context.Context, w http.ResponseWriter, v error) error {
 		en, ok := v.(ErrorNamer)
@@ -172,7 +172,7 @@ func EncodeStartTaskError(encoder func(context.Context, http.ResponseWriter) goa
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewStartTaskBadRequestResponseBody(res)
+				body = NewActionDetailsBadRequestResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusBadRequest)
@@ -184,7 +184,7 @@ func EncodeStartTaskError(encoder func(context.Context, http.ResponseWriter) goa
 			if formatter != nil {
 				body = formatter(res)
 			} else {
-				body = NewStartTaskInternalServerErrorResponseBody(res)
+				body = NewActionDetailsInternalServerErrorResponseBody(res)
 			}
 			w.Header().Set("goa-error", res.ErrorName())
 			w.WriteHeader(http.StatusInternalServerError)

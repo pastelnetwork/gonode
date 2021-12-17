@@ -24,7 +24,7 @@ func BuildUploadImagePayload(senseUploadImageBody string) (*sense.UploadImagePay
 	{
 		err = json.Unmarshal([]byte(senseUploadImageBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"Vm9sdXB0YXMgdm9sdXB0YXRlcyB0b3RhbSBhdXQgc2VkIHF1byBjb25zZXF1YXR1ci4=\"\n   }'")
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"file\": \"UmVydW0gb21uaXMgcXVpIHF1byBldCBvZGlvLg==\"\n   }'")
 		}
 		if body.Bytes == nil {
 			err = goa.MergeErrors(err, goa.MissingFieldError("file", "body"))
@@ -41,21 +41,15 @@ func BuildUploadImagePayload(senseUploadImageBody string) (*sense.UploadImagePay
 	return v, nil
 }
 
-// BuildStartTaskPayload builds the payload for the sense startTask endpoint
-// from CLI flags.
-func BuildStartTaskPayload(senseStartTaskBody string, senseStartTaskTaskID string) (*sense.StartTaskPayload, error) {
+// BuildActionDetailsPayload builds the payload for the sense actionDetails
+// endpoint from CLI flags.
+func BuildActionDetailsPayload(senseActionDetailsBody string, senseActionDetailsImageID string) (*sense.ActionDetailsPayload, error) {
 	var err error
-	var body StartTaskRequestBody
+	var body ActionDetailsRequestBody
 	{
-		err = json.Unmarshal([]byte(senseStartTaskBody), &body)
+		err = json.Unmarshal([]byte(senseActionDetailsBody), &body)
 		if err != nil {
-			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"action_data_hash\": \"TmloaWwgcmVydW0gZXQu\",\n      \"action_data_signature\": \"TWFnbmkgZXN0IHF1aWRlbSBhZC4=\",\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
-		}
-		if body.ActionDataHash == nil {
-			err = goa.MergeErrors(err, goa.MissingFieldError("action_data_hash", "body"))
-		}
-		if body.ActionDataSignature == nil {
-			err = goa.MergeErrors(err, goa.MissingFieldError("action_data_signature", "body"))
+			return nil, fmt.Errorf("invalid JSON for body, \nerror: %s, \nexample of valid JSON:\n%s", err, "'{\n      \"action_data_hash\": \"7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265\",\n      \"action_data_signature\": \"4qd\",\n      \"app_pastelid\": \"jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS\"\n   }'")
 		}
 		err = goa.MergeErrors(err, goa.ValidatePattern("body.app_pastelid", body.PastelID, "^[a-zA-Z0-9]+$"))
 		if utf8.RuneCountInString(body.PastelID) < 86 {
@@ -64,29 +58,43 @@ func BuildStartTaskPayload(senseStartTaskBody string, senseStartTaskTaskID strin
 		if utf8.RuneCountInString(body.PastelID) > 86 {
 			err = goa.MergeErrors(err, goa.InvalidLengthError("body.app_pastelid", body.PastelID, utf8.RuneCountInString(body.PastelID), 86, false))
 		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.action_data_hash", body.ActionDataHash, "^[a-fA-F0-9]"))
+		if utf8.RuneCountInString(body.ActionDataHash) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_hash", body.ActionDataHash, utf8.RuneCountInString(body.ActionDataHash), 64, true))
+		}
+		if utf8.RuneCountInString(body.ActionDataHash) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_hash", body.ActionDataHash, utf8.RuneCountInString(body.ActionDataHash), 64, false))
+		}
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.action_data_signature", body.ActionDataSignature, "^[a-fA-F0-9]"))
+		if utf8.RuneCountInString(body.ActionDataSignature) < 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_signature", body.ActionDataSignature, utf8.RuneCountInString(body.ActionDataSignature), 64, true))
+		}
+		if utf8.RuneCountInString(body.ActionDataSignature) > 64 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_signature", body.ActionDataSignature, utf8.RuneCountInString(body.ActionDataSignature), 64, false))
+		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	var taskID string
+	var imageID string
 	{
-		taskID = senseStartTaskTaskID
-		if utf8.RuneCountInString(taskID) < 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, true))
+		imageID = senseActionDetailsImageID
+		if utf8.RuneCountInString(imageID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, true))
 		}
-		if utf8.RuneCountInString(taskID) > 8 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("taskID", taskID, utf8.RuneCountInString(taskID), 8, false))
+		if utf8.RuneCountInString(imageID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("imageID", imageID, utf8.RuneCountInString(imageID), 8, false))
 		}
 		if err != nil {
 			return nil, err
 		}
 	}
-	v := &sense.StartTaskPayload{
+	v := &sense.ActionDetailsPayload{
 		PastelID:            body.PastelID,
 		ActionDataHash:      body.ActionDataHash,
 		ActionDataSignature: body.ActionDataSignature,
 	}
-	v.TaskID = &taskID
+	v.ImageID = imageID
 
 	return v, nil
 }

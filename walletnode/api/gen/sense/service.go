@@ -17,9 +17,9 @@ import (
 // OpenAPI Sense service
 type Service interface {
 	// Upload the image
-	UploadImage(context.Context, *UploadImagePayload) (res *ImageUploadResult, err error)
-	// Start Action
-	StartTask(context.Context, *StartTaskPayload) (res *StartActionDataResult, err error)
+	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
+	// Provide action details
+	ActionDetails(context.Context, *ActionDetailsPayload) (res *ActionDetailResult, err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -30,7 +30,7 @@ const ServiceName = "sense"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"uploadImage", "startTask"}
+var MethodNames = [2]string{"uploadImage", "actionDetails"}
 
 // UploadImagePayload is the payload type of the sense service uploadImage
 // method.
@@ -41,27 +41,30 @@ type UploadImagePayload struct {
 	Filename *string
 }
 
-// ImageUploadResult is the result type of the sense service uploadImage method.
-type ImageUploadResult struct {
-	// Task ID of uploaded image processing task
-	TaskID string
+// Image is the result type of the sense service uploadImage method.
+type Image struct {
+	// Uploaded image ID
+	ImageID string
+	// Image expiration
+	ExpiresIn string
 }
 
-// StartTaskPayload is the payload type of the sense service startTask method.
-type StartTaskPayload struct {
-	// Task ID of uploaded image processing task
-	TaskID *string
+// ActionDetailsPayload is the payload type of the sense service actionDetails
+// method.
+type ActionDetailsPayload struct {
+	// Uploaded image ID
+	ImageID string
 	// 3rd party app's PastelID
 	PastelID string
 	// Hash (SHA3-256) of the Action Data
-	ActionDataHash []byte
-	// The signature of the Action Data
-	ActionDataSignature []byte
+	ActionDataHash string
+	// The signature (base64) of the Action Data
+	ActionDataSignature string
 }
 
-// StartActionDataResult is the result type of the sense service startTask
+// ActionDetailResult is the result type of the sense service actionDetails
 // method.
-type StartActionDataResult struct {
+type ActionDetailResult struct {
 	// Estimated fee
 	EstimatedFee float64
 }
@@ -93,56 +96,57 @@ func MakeInternalServerError(err error) *goa.ServiceError {
 	}
 }
 
-// NewImageUploadResult initializes result type ImageUploadResult from viewed
-// result type ImageUploadResult.
-func NewImageUploadResult(vres *senseviews.ImageUploadResult) *ImageUploadResult {
-	return newImageUploadResult(vres.Projected)
+// NewImage initializes result type Image from viewed result type Image.
+func NewImage(vres *senseviews.Image) *Image {
+	return newImage(vres.Projected)
 }
 
-// NewViewedImageUploadResult initializes viewed result type ImageUploadResult
-// from result type ImageUploadResult using the given view.
-func NewViewedImageUploadResult(res *ImageUploadResult, view string) *senseviews.ImageUploadResult {
-	p := newImageUploadResultView(res)
-	return &senseviews.ImageUploadResult{Projected: p, View: "default"}
+// NewViewedImage initializes viewed result type Image from result type Image
+// using the given view.
+func NewViewedImage(res *Image, view string) *senseviews.Image {
+	p := newImageView(res)
+	return &senseviews.Image{Projected: p, View: "default"}
 }
 
-// NewStartActionDataResult initializes result type StartActionDataResult from
-// viewed result type StartActionDataResult.
-func NewStartActionDataResult(vres *senseviews.StartActionDataResult) *StartActionDataResult {
-	return newStartActionDataResult(vres.Projected)
+// NewActionDetailResult initializes result type ActionDetailResult from viewed
+// result type ActionDetailResult.
+func NewActionDetailResult(vres *senseviews.ActionDetailResult) *ActionDetailResult {
+	return newActionDetailResult(vres.Projected)
 }
 
-// NewViewedStartActionDataResult initializes viewed result type
-// StartActionDataResult from result type StartActionDataResult using the given
-// view.
-func NewViewedStartActionDataResult(res *StartActionDataResult, view string) *senseviews.StartActionDataResult {
-	p := newStartActionDataResultView(res)
-	return &senseviews.StartActionDataResult{Projected: p, View: "default"}
+// NewViewedActionDetailResult initializes viewed result type
+// ActionDetailResult from result type ActionDetailResult using the given view.
+func NewViewedActionDetailResult(res *ActionDetailResult, view string) *senseviews.ActionDetailResult {
+	p := newActionDetailResultView(res)
+	return &senseviews.ActionDetailResult{Projected: p, View: "default"}
 }
 
-// newImageUploadResult converts projected type ImageUploadResult to service
-// type ImageUploadResult.
-func newImageUploadResult(vres *senseviews.ImageUploadResultView) *ImageUploadResult {
-	res := &ImageUploadResult{}
-	if vres.TaskID != nil {
-		res.TaskID = *vres.TaskID
+// newImage converts projected type Image to service type Image.
+func newImage(vres *senseviews.ImageView) *Image {
+	res := &Image{}
+	if vres.ImageID != nil {
+		res.ImageID = *vres.ImageID
+	}
+	if vres.ExpiresIn != nil {
+		res.ExpiresIn = *vres.ExpiresIn
 	}
 	return res
 }
 
-// newImageUploadResultView projects result type ImageUploadResult to projected
-// type ImageUploadResultView using the "default" view.
-func newImageUploadResultView(res *ImageUploadResult) *senseviews.ImageUploadResultView {
-	vres := &senseviews.ImageUploadResultView{
-		TaskID: &res.TaskID,
+// newImageView projects result type Image to projected type ImageView using
+// the "default" view.
+func newImageView(res *Image) *senseviews.ImageView {
+	vres := &senseviews.ImageView{
+		ImageID:   &res.ImageID,
+		ExpiresIn: &res.ExpiresIn,
 	}
 	return vres
 }
 
-// newStartActionDataResult converts projected type StartActionDataResult to
-// service type StartActionDataResult.
-func newStartActionDataResult(vres *senseviews.StartActionDataResultView) *StartActionDataResult {
-	res := &StartActionDataResult{}
+// newActionDetailResult converts projected type ActionDetailResult to service
+// type ActionDetailResult.
+func newActionDetailResult(vres *senseviews.ActionDetailResultView) *ActionDetailResult {
+	res := &ActionDetailResult{}
 	if vres.EstimatedFee != nil {
 		res.EstimatedFee = *vres.EstimatedFee
 	}
@@ -152,10 +156,10 @@ func newStartActionDataResult(vres *senseviews.StartActionDataResultView) *Start
 	return res
 }
 
-// newStartActionDataResultView projects result type StartActionDataResult to
-// projected type StartActionDataResultView using the "default" view.
-func newStartActionDataResultView(res *StartActionDataResult) *senseviews.StartActionDataResultView {
-	vres := &senseviews.StartActionDataResultView{
+// newActionDetailResultView projects result type ActionDetailResult to
+// projected type ActionDetailResultView using the "default" view.
+func newActionDetailResultView(res *ActionDetailResult) *senseviews.ActionDetailResultView {
+	vres := &senseviews.ActionDetailResultView{
 		EstimatedFee: &res.EstimatedFee,
 	}
 	return vres
