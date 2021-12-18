@@ -10,10 +10,11 @@ replace (
 require (
 	github.com/anacrolix/utp v0.1.0
 	github.com/btcsuite/btcutil v1.0.2
-	github.com/dgraph-io/badger/v3 v3.2103.2
+	github.com/jmoiron/sqlx v1.3.4
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/pastel v0.0.0-00010101000000-000000000000
+	github.com/rqlite/go-sqlite3 v1.22.0
 	github.com/stretchr/testify v1.7.0
 	github.com/tj/assert v0.0.3
 	go.uber.org/ratelimit v0.2.0
@@ -31,6 +32,7 @@ require (
 	github.com/cespare/xxhash v1.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.1.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgraph-io/badger/v3 v3.2103.2 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/go-errors/errors v1.1.1 // indirect
@@ -45,6 +47,7 @@ require (
 	github.com/klauspost/compress v1.12.3 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
+	github.com/mattn/go-sqlite3 v1.14.9 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.9.1 // indirect

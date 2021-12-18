@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -62,11 +61,9 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 
 	router := mux.NewRouter()
 
-	router.HandleFunc("/p2p/get", service.p2pGet).Methods(http.MethodGet)        // Return list of keys
 	router.HandleFunc("/p2p/stats", service.p2pStats).Methods(http.MethodGet)    // Return stats of p2p
 	router.HandleFunc("/p2p", service.p2pStore).Methods(http.MethodPost)         // store a data
 	router.HandleFunc("/p2p/{key}", service.p2pRetrieve).Methods(http.MethodGet) // retrieve a key
-	router.HandleFunc("/p2p/cleanup", service.p2pCleanup).Methods(http.MethodPost)
 
 	service.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.HTTPPort),
@@ -85,54 +82,6 @@ func responseWithJSON(writer http.ResponseWriter, status int, object interface{}
 
 func (service *Service) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, "debug-service")
-}
-
-func (service *Service) p2pGet(writer http.ResponseWriter, request *http.Request) {
-	ctx := service.contextWithLogPrefix(request.Context())
-	log.WithContext(ctx).Info("p2Get")
-	var err error
-
-	offset := 0
-	limit := defaultP2PLimit
-
-	if offsetQuery := request.URL.Query().Get("offset"); offsetQuery != "" {
-		offset, err = strconv.Atoi(offsetQuery)
-		if err != nil {
-			responseWithJSON(writer, http.StatusForbidden, map[string]string{"error": "Invalid offset input"})
-			return
-		}
-	}
-
-	if limitQuery := request.URL.Query().Get("limit"); limitQuery != "" {
-		limit, err = strconv.Atoi(limitQuery)
-		if err != nil {
-			responseWithJSON(writer, http.StatusForbidden, map[string]string{"error": "Invalid limit input"})
-			return
-		}
-	}
-
-	if limit > defaultP2PMaxLimit {
-		responseWithJSON(writer, http.StatusForbidden, map[string]string{"error": "limit out of range, maximum 100 is supported"})
-		return
-	}
-
-	log.WithContext(ctx).WithFields(log.Fields{
-		"limit":  limit,
-		"offset": offset,
-	}).Info("p2pGetParams")
-
-	keys := service.p2pClient.Keys(ctx, offset, limit)
-	if len(keys) == 0 {
-		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": "empty key list"})
-		return
-	}
-
-	responseWithJSON(writer, http.StatusOK, map[string]interface{}{
-		"len":    len(keys),
-		"offset": offset,
-		"limit":  limit,
-		"keys":   keys,
-	})
 }
 
 func (service *Service) p2pStats(writer http.ResponseWriter, request *http.Request) {
@@ -189,29 +138,6 @@ func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Reque
 	responseWithJSON(writer, http.StatusOK, &StoreReply{
 		Key: key,
 	})
-}
-
-func (service *Service) p2pCleanup(writer http.ResponseWriter, request *http.Request) {
-	ctx := service.contextWithLogPrefix(request.Context())
-	log.WithContext(ctx).Info("p2pCleanup")
-
-	var cleanupRequest CleanupRequest
-	if err := json.NewDecoder(request.Body).Decode(&cleanupRequest); err != nil {
-		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"message": "Invalid body"})
-		return
-	}
-	if cleanupRequest.DiscardRatio < 0.0 || cleanupRequest.DiscardRatio > 1.0 {
-		responseWithJSON(writer, http.StatusBadRequest, map[string]string{"message": "discard_ratio must be in range 0.0 - 1.0"})
-		return
-	}
-
-	err := service.p2pClient.Cleanup(ctx, cleanupRequest.DiscardRatio)
-	if err != nil {
-		responseWithJSON(writer, http.StatusInternalServerError, map[string]string{"error": err.Error()})
-		return
-	}
-
-	responseWithJSON(writer, http.StatusOK, map[string]string{"message": "cleanup successfull"})
 }
 
 // Run start update stats of system periodically

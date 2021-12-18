@@ -34,16 +34,16 @@ type repo struct {
 }
 
 func (r *repo) ListKeys(ctx context.Context) []string {
-	var offset, limit = 0, 30
+	// var offset, limit = 0, 30
 	var ret = make([]string, 0)
-	for {
-		keys := r.p2p.Keys(ctx, offset, limit)
-		ret = append(ret, keys...)
-		offset += limit
-		if len(keys) < limit {
-			break
-		}
-	}
+	// for {
+	// 	keys := r.p2p.Keys(ctx, offset, limit)
+	// 	ret = append(ret, keys...)
+	// 	offset += limit
+	// 	if len(keys) < limit {
+	// 		break
+	// 	}
+	// }
 	return ret
 }
 
