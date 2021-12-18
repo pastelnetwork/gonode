@@ -38,12 +38,12 @@ func TestInitLeadershipTransferTrigger(t *testing.T) {
 				leaderCheckInterval:     time.Microsecond,
 				blockCountCheckInterval: time.Microsecond,
 				masterNodes: pastel.MasterNodes{
-					pastel.MasterNode{ExtP2P: "0.0.0.0:1234", Address: "127.0.0.1:9090"},
-					pastel.MasterNode{ExtP2P: "0.0.0.0:8784", Address: "127.0.0.1:9190"},
+					pastel.MasterNode{ExtP2P: "0.0.0.0:1234", IPAddress: "127.0.0.1:9090"},
+					pastel.MasterNode{ExtP2P: "0.0.0.0:8784", IPAddress: "127.0.0.1:9190"},
 				},
 				masterNodesExtra: pastel.MasterNodes{
-					pastel.MasterNode{ExtP2P: "0.0.0.0:1111", Address: "127.0.0.1:9090"},
-					pastel.MasterNode{ExtP2P: "1.1.1.1:1919", Address: "127.0.0.1:9190"},
+					pastel.MasterNode{ExtP2P: "0.0.0.0:1111", IPAddress: "127.0.0.1:9090"},
+					pastel.MasterNode{ExtP2P: "1.1.1.1:1919", IPAddress: "127.0.0.1:9190"},
 				},
 				masterNodesErr: nil,
 				blockCountErr:  nil,
@@ -60,8 +60,8 @@ func TestInitLeadershipTransferTrigger(t *testing.T) {
 				blockCountCheckInterval: time.Microsecond,
 				masterNodesErr:          errors.New("test"),
 				masterNodes: pastel.MasterNodes{
-					pastel.MasterNode{ExtP2P: "0.0.0.0:1234", Address: "127.0.0.1:9090"},
-					pastel.MasterNode{ExtP2P: "0.0.0.0:8784", Address: "127.0.0.1:9190"},
+					pastel.MasterNode{ExtP2P: "0.0.0.0:1234", IPAddress: "127.0.0.1:9090"},
+					pastel.MasterNode{ExtP2P: "0.0.0.0:8784", IPAddress: "127.0.0.1:9190"},
 				},
 			},
 			service: &service{
@@ -76,8 +76,8 @@ func TestInitLeadershipTransferTrigger(t *testing.T) {
 				masterNodesErr:          nil,
 				blockCountErr:           errors.New("test"),
 				masterNodes: pastel.MasterNodes{
-					pastel.MasterNode{ExtP2P: "0.0.0.0:1234", Address: "127.0.0.1:9090"},
-					pastel.MasterNode{ExtP2P: "0.0.0.0:8784", Address: "127.0.0.1:9190"},
+					pastel.MasterNode{ExtP2P: "0.0.0.0:1234", IPAddress: "127.0.0.1:9090"},
+					pastel.MasterNode{ExtP2P: "0.0.0.0:8784", IPAddress: "127.0.0.1:9190"},
 				},
 			},
 			service: &service{
