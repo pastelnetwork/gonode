@@ -125,7 +125,7 @@ func (s *service) getNextLeaderAddressAndID(ctx context.Context, nodes pastel.Ma
 	}
 
 	for _, node := range nodes {
-		address := node.Address
+		address := node.IPAddress
 		segments := strings.Split(address, ":")
 		if len(segments) != 2 {
 			log.MetaDB().WithContext(ctx).WithField("address", address).Error("leadershipTransfer: malformed address")
