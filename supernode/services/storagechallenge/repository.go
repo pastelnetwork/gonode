@@ -6,11 +6,12 @@ import (
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
+	"github.com/pastelnetwork/gonode/pastel"
 )
 
 type repository interface {
 	// ListKeys func
-	ListKeys(ctx context.Context) []string
+	ListKeys(ctx context.Context) ([]string, error)
 	// GetSymbolFileByKey func
 	GetSymbolFileByKey(ctx context.Context, key string) ([]byte, error)
 	// StoreSymbolFile func
@@ -23,17 +24,19 @@ type repository interface {
 	GetNClosestXORDistanceFileHashesToComparisonString(ctx context.Context, n int, comparisonString string, symbolFileKeys []string) []string
 }
 
-func newRepository(client p2p.Client) repository {
+func newRepository(p2p p2p.Client, pClient pastel.Client) repository {
 	return &repo{
-		p2p: client,
+		p2p:     p2p,
+		pClient: pClient,
 	}
 }
 
 type repo struct {
-	p2p p2p.Client
+	p2p     p2p.Client
+	pClient pastel.Client
 }
 
-func (r *repo) ListKeys(ctx context.Context) []string {
+func (r *repo) ListKeys(ctx context.Context) ([]string, error) {
 	// var offset, limit = 0, 30
 	var ret = make([]string, 0)
 	// for {
@@ -44,7 +47,16 @@ func (r *repo) ListKeys(ctx context.Context) []string {
 	// 		break
 	// 	}
 	// }
-	return ret
+	regTickets, err := r.pClient.RegTickets(ctx)
+	if err != nil {
+		return ret, err
+	}
+	for _, regTicket := range regTickets {
+		for _, key := range regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs {
+			ret = append(ret, string(key))
+		}
+	}
+	return ret, nil
 }
 
 func (r *repo) GetSymbolFileByKey(ctx context.Context, key string) ([]byte, error) {

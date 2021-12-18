@@ -13,7 +13,11 @@ import (
 )
 
 func (s *service) GenerateStorageChallenges(ctx context.Context, merkleroot string, challengingMasternodeID string, challengesPerMasternodePerBlock int) error {
-	symbolFileKeys := s.repository.ListKeys(ctx)
+	symbolFileKeys, err := s.repository.ListKeys(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
+		return err
+	}
 
 	comparisonStringForFileHashSelection := merkleroot + challengingMasternodeID
 	sliceOfFileHashesToChallenge := s.repository.GetNClosestXORDistanceFileHashesToComparisonString(ctx, challengesPerMasternodePerBlock, comparisonStringForFileHashSelection, symbolFileKeys)
