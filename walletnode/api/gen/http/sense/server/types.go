@@ -271,16 +271,16 @@ func ValidateActionDetailsRequestBody(body *ActionDetailsRequestBody) (err error
 		}
 	}
 	if body.ActionDataSignature != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.action_data_signature", *body.ActionDataSignature, "^[a-fA-F0-9]"))
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.action_data_signature", *body.ActionDataSignature, "^[a-zA-Z0-9]+$"))
 	}
 	if body.ActionDataSignature != nil {
-		if utf8.RuneCountInString(*body.ActionDataSignature) < 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_signature", *body.ActionDataSignature, utf8.RuneCountInString(*body.ActionDataSignature), 64, true))
+		if utf8.RuneCountInString(*body.ActionDataSignature) < 152 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_signature", *body.ActionDataSignature, utf8.RuneCountInString(*body.ActionDataSignature), 152, true))
 		}
 	}
 	if body.ActionDataSignature != nil {
-		if utf8.RuneCountInString(*body.ActionDataSignature) > 64 {
-			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_signature", *body.ActionDataSignature, utf8.RuneCountInString(*body.ActionDataSignature), 64, false))
+		if utf8.RuneCountInString(*body.ActionDataSignature) > 152 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("body.action_data_signature", *body.ActionDataSignature, utf8.RuneCountInString(*body.ActionDataSignature), 152, false))
 		}
 	}
 	return
