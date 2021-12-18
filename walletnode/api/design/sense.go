@@ -80,7 +80,7 @@ var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
 		MinLength(86)
 		MaxLength(86)
 		Pattern(`^[a-zA-Z0-9]+$`)
-		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+		Example("jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY")
 	})
 	Attribute("action_data_hash", String, func() {
 		Meta("struct:field:name", "action_data_hash")
@@ -93,9 +93,10 @@ var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
 	Attribute("action_data_signature", String, func() {
 		Meta("struct:field:name", "action_data_signature")
 		Description("The signature (base64) of the Action Data")
-		MinLength(64)
-		MaxLength(64)
-		Pattern(`^[a-fA-F0-9]`)
+		MinLength(152)
+		MaxLength(152)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("be9XjyZuhKSlxoxRO4zj3s+hlzF8gWVCwaBFq44n92nONvclfXul/Bn8UgXOIbRGP6LNuzLfiU+ApSUxcaw7NuK0h1tXOmNTt78T/aNT9SiFbBx3wcDqZJtKNlI4a/p7wekDvGjlKfU8jn+RauYCvhEA")
 	})
 
 	Required("image_id", "app_pastelid", "action_data_hash", "action_data_signature")
