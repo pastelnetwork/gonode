@@ -18,10 +18,4 @@ type Client interface {
 
 	// Stats return status of p2p
 	Stats(ctx context.Context) (map[string]interface{}, error)
-
-	// Keys return keys of p2p
-	Keys(ctx context.Context, offset int, limit int) []string
-
-	// Cleanup cleans up the files as per discardRatio
-	Cleanup(ctx context.Context, discardRatio float64) error
 }

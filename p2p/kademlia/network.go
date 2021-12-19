@@ -206,10 +206,8 @@ func (s *Network) handleStoreData(ctx context.Context, message *Message) ([]byte
 	// format the key
 	key := s.dht.hashKey(request.Data)
 
-	// replication time for key
-	replication := time.Now().Add(defaultReplicateTime)
 	// store the data to local storage
-	if err := s.dht.store.Store(ctx, key, request.Data, replication); err != nil {
+	if err := s.dht.store.Store(ctx, key, request.Data); err != nil {
 		err = errors.Errorf("store the data: %w", err)
 		response := &StoreDataResponse{
 			Status: ResponseStatus{
