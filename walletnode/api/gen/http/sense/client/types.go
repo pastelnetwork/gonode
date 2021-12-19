@@ -46,7 +46,7 @@ type UploadImageResponseBody struct {
 // endpoint HTTP response body.
 type ActionDetailsResponseBody struct {
 	// Estimated fee
-	EstimatedFee *float64 `form:"estimated_fee,omitempty" json:"estimated_fee,omitempty" xml:"estimated_fee,omitempty"`
+	EstimatedFee *int64 `form:"estimated_fee,omitempty" json:"estimated_fee,omitempty" xml:"estimated_fee,omitempty"`
 }
 
 // UploadImageBadRequestResponseBody is the type of the "sense" service

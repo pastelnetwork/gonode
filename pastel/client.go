@@ -382,6 +382,27 @@ func (client *client) GetRegisterNFTFee(ctx context.Context, request GetRegister
 	return totalStorageFee.TotalStorageFee, nil
 }
 
+func (client *client) GetActionFee(ctx context.Context, actionType string, ImgSizeInMb int64) (int64, error) {
+	if actionType != "sense" && actionType != "cascade" {
+		return 0, errors.Errorf("invalid action type: %s", actionType)
+	}
+
+	var actionFee struct {
+		ActionFee int64 `json:"actionfee"`
+	}
+
+	params := []interface{}{}
+	params = append(params, "getactionfee")
+	params = append(params, actionType)
+	params = append(params, ImgSizeInMb)
+
+	if err := client.callFor(ctx, &actionFee, "storagefee", params...); err != nil {
+		return 0, errors.Errorf("failed to call getactionfee: %w", err)
+	}
+
+	return actionFee.ActionFee, nil
+}
+
 func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error) {
 	var txID struct {
 		TxID string `json:"txid"`

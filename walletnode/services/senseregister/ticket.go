@@ -7,8 +7,3 @@ type Request struct {
 	Name        string        `json:"name"`
 	Description *string       `json:"description"`
 }
-
-// GetEstimatedFeeRequest
-type GetEstimatedFeeRequest struct {
-	Image *artwork.File `json:"image"`
-}
