@@ -150,13 +150,13 @@ func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprin
 
 // ToCompressSignedDDAndFingerprints converts dd_and_fingerptints data to compress((b64(dd_and_fp).(sig)))
 func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
-	ddDataJson, err := json.Marshal(ddData)
+	ddDataJSON, err := json.Marshal(ddData)
 
 	if err != nil {
 		return nil, errors.Errorf("marshal: %w", err)
 	}
 
-	res := utils.B64Encode(ddDataJson)
+	res := utils.B64Encode(ddDataJSON)
 
 	res = append(res, SeparatorByte)
 	res = append(res, signature...)

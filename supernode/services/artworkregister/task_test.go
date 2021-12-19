@@ -1648,10 +1648,10 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 			tc.args.task.Service.pastelClient = pastelClientMock
 			var rq, dd []byte
 
-			ddJson, err := json.Marshal(tc.args.fg)
+			ddJSON, err := json.Marshal(tc.args.fg)
 			assert.Nil(t, err)
 
-			ddStr := base64.StdEncoding.EncodeToString(ddJson)
+			ddStr := base64.StdEncoding.EncodeToString(ddJSON)
 			ddStr = ddStr + "." + base64.StdEncoding.EncodeToString(tc.args.ddSig[0]) + "." +
 				base64.StdEncoding.EncodeToString(tc.args.ddSig[1]) + "." +
 				base64.StdEncoding.EncodeToString(tc.args.ddSig[2])
@@ -1660,9 +1660,9 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 			assert.Nil(t, err)
 			dd = utils.B64Encode(compressedDd)
 
-			rqJson, err := json.Marshal(tc.args.rqFile)
+			rqJSON, err := json.Marshal(tc.args.rqFile)
 			assert.Nil(t, err)
-			rqStr := base64.StdEncoding.EncodeToString(rqJson)
+			rqStr := base64.StdEncoding.EncodeToString(rqJSON)
 			rqStr = rqStr + "." + base64.StdEncoding.EncodeToString(tc.args.rqSig)
 			compressedRq, err := zstd.CompressLevel(nil, []byte(rqStr), 22)
 			assert.Nil(t, err)
