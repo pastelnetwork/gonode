@@ -3,7 +3,6 @@ package artworkregister
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -226,10 +225,10 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 		return errors.Errorf("failed to marshal dd-data: %w", err)
 	}
 
-	ddEncoded := base64.StdEncoding.EncodeToString(ddDataJSON)
+	ddEncoded := utils.B64Encode(ddDataJSON)
 
 	var buffer bytes.Buffer
-	buffer.WriteString(ddEncoded)
+	buffer.Write(ddEncoded)
 	buffer.WriteByte(pastel.SeparatorByte)
 	buffer.Write(task.signatures[0])
 	buffer.WriteByte(pastel.SeparatorByte)
@@ -239,7 +238,7 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 	ddFpFile := buffer.Bytes()
 
 	task.ddAndFingerprintsIc = rand.Uint32()
-	task.ddAndFingerprintsIDs, err = pastel.GetIDFiles(ddFpFile, task.ddAndFingerprintsIc, task.config.DDAndFingerprintsMax)
+	task.ddAndFingerprintsIDs, _, err = pastel.GetIDFiles(ddFpFile, task.ddAndFingerprintsIc, task.config.DDAndFingerprintsMax)
 	if err != nil {
 		return fmt.Errorf("get ID Files: %w", err)
 	}
@@ -556,25 +555,17 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 }
 
 func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDFile) error {
-	var content []byte
-	appendStr := func(b []byte, s string) []byte {
-		b = append(b, []byte(s)...)
-		b = append(b, '\n')
-		return b
+	file, err := json.Marshal(rawFile)
+	if err != nil {
+		return fmt.Errorf("marshal rqID file")
 	}
 
-	content = appendStr(content, rawFile.BlockHash)
-	content = appendStr(content, rawFile.PastelID)
-	for _, id := range rawFile.SymbolIdentifiers {
-		content = appendStr(content, id)
-	}
-
-	signature, err := task.pastelClient.Sign(ctx, content, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
+	signature, err := task.pastelClient.Sign(ctx, file, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
 		return errors.Errorf("sign identifiers file: %w", err)
 	}
 
-	encfile := utils.B64Encode(content)
+	encfile := utils.B64Encode(file)
 
 	var buffer bytes.Buffer
 	buffer.Write(encfile)
@@ -583,7 +574,7 @@ func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDF
 	rqIDFile := buffer.Bytes()
 
 	task.rqIDsIc = rand.Uint32()
-	task.rqids, err = pastel.GetIDFiles(rqIDFile, task.rqIDsIc, task.config.RQIDsMax)
+	task.rqids, _, err = pastel.GetIDFiles(rqIDFile, task.rqIDsIc, task.config.RQIDsMax)
 	if err != nil {
 		return fmt.Errorf("get ID Files: %w", err)
 	}
@@ -818,12 +809,6 @@ func (task *Task) probeImage(ctx context.Context) error {
 		return errors.Errorf("hash zstd commpressed fingerprints: %w", err)
 	}
 	task.fingerprintsHash = []byte(base58.Encode(fingerprintsHash))
-
-	// // Decompress the fingerprint as bytes for later use
-	// task.fingerprint, err = zstd.Decompress(nil, task.fingerprintAndScores.ZstdCompressedFingerprint)
-	// if err != nil {
-	// 	return errors.Errorf("decompress finger failed")
-	// }
 
 	return nil
 }
