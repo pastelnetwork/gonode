@@ -168,7 +168,7 @@ func (ddClient *ddServerClientImpl) callImageRarenessScore(ctx context.Context, 
 		InternetRareness: &pastel.InternetRareness{
 			MatchesFoundOnFirstPage: res.InternetRareness.MatchesFoundOnFirstPage,
 			NumberOfPagesOfResults:  res.InternetRareness.NumberOfPagesOfResults,
-			UrlOfFirstMatchInPage:   res.InternetRareness.UrlOfFirstMatchInPage,
+			URLOfFirstMatchInPage:   res.InternetRareness.UrlOfFirstMatchInPage,
 		},
 
 		OpenNSFWScore: res.OpenNsfwScore,
