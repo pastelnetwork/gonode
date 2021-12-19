@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,7 +16,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/mem"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
@@ -101,11 +101,11 @@ type testSuite struct {
 func (ts *testSuite) SetupSuite() {
 	// init the log level
 	if os.Getenv("LEVEL") == "debug" {
-		log.SetLevelName("debug")
+		log.SetP2PLogLevelName("debug")
 	} else if os.Getenv("LEVEL") == "info" {
-		log.SetLevelName("info")
+		log.SetP2PLogLevelName("info")
 	} else {
-		log.SetLevelName("warn")
+		log.SetP2PLogLevelName("warn")
 	}
 
 	ts.IP = "127.0.0.1"
@@ -125,10 +125,13 @@ func (ts *testSuite) SetupSuite() {
 	ts.ctx, ts.cancel = context.WithCancel(context.Background())
 	ts.ctx = log.ContextWithPrefix(ts.ctx, "p2p-test")
 
-	// init the db store
-	dbStore, err := db.NewStore(ts.ctx, filepath.Join(workDir, "badger"))
+	// init the badger store
+	defaultReplicateInterval := time.Second * 3600
+	defaultRepublishInterval := time.Second * 3600 * 24
+
+	dbStore, err := sqlite.NewStore(ts.ctx, filepath.Join(workDir, "p2p"), defaultReplicateInterval, defaultRepublishInterval)
 	if err != nil {
-		ts.T().Fatalf("new db store: %v", err)
+		ts.T().Fatalf("new sqlite store: %v", err)
 	}
 	ts.dbStore = dbStore
 	ts.memStore = mem.NewStore()
@@ -156,8 +159,8 @@ func (ts *testSuite) SetupSuite() {
 // run before each test in the suite
 func (ts *testSuite) SetupTest() {
 	// make sure the store is empty
-	keys := ts.main.Keys(ts.ctx, 0, -1)
-	ts.Zero(len(keys))
+	keys, _ := ts.main.store.Count(ts.ctx)
+	ts.Zero(keys)
 }
 
 // reset the hashtable
@@ -172,9 +175,7 @@ func (ts *testSuite) TearDownTest() {
 	ts.resetHashtable()
 
 	// reset the store
-	for _, key := range ts.main.store.Keys(ts.ctx, 0, -1) {
-		ts.main.store.Delete(ts.ctx, key)
-	}
+	_ = ts.main.store.DeleteAll(ts.ctx)
 }
 
 func (ts *testSuite) TearDownSuite() {

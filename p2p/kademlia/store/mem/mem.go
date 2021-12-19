@@ -1,27 +1,25 @@
 package mem
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"sort"
 	"sync"
 	"time"
-
-	"github.com/pastelnetwork/gonode/common/log"
 )
 
 // Store is a simple in-memory key/value store used for unit testing
 type Store struct {
-	mutex        sync.RWMutex
-	data         map[string][]byte
-	replications map[string]time.Time
+	mutex             sync.RWMutex
+	data              map[string][]byte
+	replications      map[string]time.Time
+	replicateInterval time.Duration
+	//republish time.Duration
 }
 
-// KeysForReplication should return the keys of all data to be
+// GetKeysForReplication should return the keys of all data to be
 // replicated across the network. Typically all data should be
 // replicated every tReplicate seconds.
-func (s *Store) KeysForReplication(_ context.Context) [][]byte {
+func (s *Store) GetKeysForReplication(_ context.Context) [][]byte {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
 
@@ -36,11 +34,11 @@ func (s *Store) KeysForReplication(_ context.Context) [][]byte {
 
 // Store will store a key/value pair for the local node with the given
 // replication and expiration times.
-func (s *Store) Store(_ context.Context, key []byte, value []byte, replication time.Time) error {
+func (s *Store) Store(_ context.Context, key []byte, value []byte) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	s.replications[string(key)] = replication
+	s.replications[string(key)] = time.Now().Add(s.replicateInterval).UTC()
 	s.data[string(key)] = value
 
 	return nil
@@ -67,68 +65,35 @@ func (s *Store) Delete(_ context.Context, key []byte) {
 	delete(s.data, string(key))
 }
 
-// Keys returns all the keys from the Store
-// return all keys of limit is -1
-func (s *Store) Keys(_ context.Context, offset int, limit int) [][]byte {
-	s.mutex.RLock()
-	defer s.mutex.RUnlock()
-
-	if offset < 0 {
-		offset = 0
-	}
-
-	if limit == -1 {
-		limit = len(s.data)
-	}
-
-	if offset >= len(s.data) {
-		return [][]byte{}
-	}
-
-	var keys [][]byte
-	for k := range s.data {
-		keys = append(keys, []byte(k))
-	}
-
-	// Sort keys
-	sort.SliceStable(keys, func(i, j int) bool {
-		return bytes.Compare(keys[i], keys[j]) < 0
-	})
-
-	if offset+limit > len(keys) {
-		return keys[offset:]
-	}
-
-	return keys[offset : offset+limit]
-}
-
 // Close the store
 func (s *Store) Close(_ context.Context) {
 }
 
 // Stats returns stats of store
-func (s *Store) Stats(ctx context.Context) (map[string]interface{}, error) {
+func (s *Store) Stats(_ context.Context) (map[string]interface{}, error) {
 	stats := map[string]interface{}{}
-	stats["record_count"] = len(s.Keys(ctx, 0, -1))
 	return stats, nil
+}
+
+// Count the records in store
+func (s *Store) Count(_ context.Context /*, type RecordType*/) (int, error) {
+	return len(s.data), nil
+}
+
+// DeleteAll the records in store
+func (s *Store) DeleteAll(_ context.Context /*, type RecordType*/) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	s.data = make(map[string][]byte)
+	s.replications = make(map[string]time.Time)
+	return nil
 }
 
 // NewStore returns a new memory store
 func NewStore() *Store {
 	return &Store{
-		data:         make(map[string][]byte),
-		replications: make(map[string]time.Time),
+		data:              make(map[string][]byte),
+		replications:      make(map[string]time.Time),
+		replicateInterval: time.Second * 3600,
 	}
-}
-
-// InitCleanup is suppossed to initiate grabage cleanup
-// not applicable on this test implementation
-func (s *Store) InitCleanup(ctx context.Context, _ time.Duration) {
-	log.WithContext(ctx).Error("s.InitCleanup not implemented")
-}
-
-// Cleanup is supposed to cleanup log files in badger
-// not applicable on this test implementation
-func (s *Store) Cleanup(_ float64) error {
-	return errors.New("func not implemented")
 }

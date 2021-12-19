@@ -123,7 +123,7 @@ func (db *Ops) run(ctx context.Context) error {
 	var err error
 
 	ctx = log.ContextWithPrefix(ctx, logPrefix)
-	log.WithContext(ctx).Info("start initialization")
+	log.MetaDB().WithContext(ctx).Info("start initialization")
 
 	content := schemaV1Content
 
@@ -150,10 +150,10 @@ func (db *Ops) run(ctx context.Context) error {
 		return errors.Errorf("error while parsing query template: %w", err)
 	}
 
-	log.WithContext(ctx).Info("done initialization")
+	log.MetaDB().WithContext(ctx).Info("done initialization")
 	// block until context is done
 	<-ctx.Done()
-	log.WithContext(ctx).Info("userdata service is stopped")
+	log.MetaDB().WithContext(ctx).Info("userdata service is stopped")
 	return nil
 }
 
@@ -164,7 +164,7 @@ func (db *Ops) Run(ctx context.Context) error {
 			if utils.IsContextErr(err) {
 				return err
 			}
-			log.WithContext(ctx).WithError(err).Error("error in starting rqlite database service, retrying.")
+			log.MetaDB().WithContext(ctx).WithError(err).Error("error in starting rqlite database service, retrying.")
 		} else {
 			return nil
 		}

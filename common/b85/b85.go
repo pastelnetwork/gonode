@@ -10,9 +10,9 @@ import (
 // Encode takes a byte array and returns a string of encoded data
 func Encode(inData []byte) string {
 	out := make([]byte, a85.MaxEncodedLen(len(inData)))
-	_ = a85.Encode(out, inData)
+	encodedBytes := a85.Encode(out, inData)
 
-	return string(out)
+	return string(out[:encodedBytes])
 }
 
 // Decode takes in a string of encoded data and returns a byte array of decoded data and an error

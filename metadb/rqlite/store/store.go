@@ -220,21 +220,21 @@ func New(ctx context.Context, ln Listener, c *Config) *Store {
 // operation after opening the Store.
 func (s *Store) Open(enableBootstrap bool) error {
 	s.openT = time.Now()
-	log.WithContext(s.ctx).Debugf("opening store with node ID %s", s.raftID)
+	log.MetaDB().WithContext(s.ctx).Debugf("opening store with node ID %s", s.raftID)
 
 	if !s.dbConf.Memory {
-		log.WithContext(s.ctx).Debugf("configured for an on-disk database at %s", s.dbPath)
+		log.MetaDB().WithContext(s.ctx).Debugf("configured for an on-disk database at %s", s.dbPath)
 		parentDir := filepath.Dir(s.dbPath)
-		log.WithContext(s.ctx).Debugf("ensuring directory at %s exists", s.raftDir)
+		log.MetaDB().WithContext(s.ctx).Debugf("ensuring directory at %s exists", s.raftDir)
 		err := os.MkdirAll(parentDir, 0755)
 		if err != nil {
 			return err
 		}
 	} else {
-		log.WithContext(s.ctx).Info("configured for an in-memory database")
+		log.MetaDB().WithContext(s.ctx).Info("configured for an in-memory database")
 	}
 
-	log.WithContext(s.ctx).Infof("ensuring directory at %s exists", s.raftDir)
+	log.MetaDB().WithContext(s.ctx).Infof("ensuring directory at %s exists", s.raftDir)
 	err := os.MkdirAll(filepath.Dir(s.peersPath), 0755)
 	if err != nil {
 		return err
@@ -259,7 +259,7 @@ func (s *Store) Open(enableBootstrap bool) error {
 	if err != nil {
 		return fmt.Errorf("list snapshots: %s", err)
 	}
-	log.WithContext(s.ctx).Debugf("%d preexisting snapshots present", len(snaps))
+	log.MetaDB().WithContext(s.ctx).Debugf("%d preexisting snapshots present", len(snaps))
 	s.snapsExistOnOpen = len(snaps) > 0
 
 	// Create the log store and stable store.
@@ -275,7 +275,7 @@ func (s *Store) Open(enableBootstrap bool) error {
 
 	// Request to recover node?
 	if pathExists(s.peersPath) {
-		log.WithContext(s.ctx).Infof("attempting node recovery using %s", s.peersPath)
+		log.MetaDB().WithContext(s.ctx).Infof("attempting node recovery using %s", s.peersPath)
 		config, err := raft.ReadConfigJSON(s.peersPath)
 		if err != nil {
 			return fmt.Errorf("failed to read peers file: %s", err.Error())
@@ -286,7 +286,7 @@ func (s *Store) Open(enableBootstrap bool) error {
 		if err := os.Rename(s.peersPath, s.peersInfoPath); err != nil {
 			return fmt.Errorf("failed to move %s after recovery: %s", s.peersPath, err.Error())
 		}
-		log.WithContext(s.ctx).Infof("node recovered successfully using %s", s.peersPath)
+		log.MetaDB().WithContext(s.ctx).Infof("node recovered successfully using %s", s.peersPath)
 		stats.Add(numRecoveries, 1)
 	}
 
@@ -294,7 +294,7 @@ func (s *Store) Open(enableBootstrap bool) error {
 	if err := s.setLogInfo(); err != nil {
 		return fmt.Errorf("set log info: %s", err)
 	}
-	log.WithContext(s.ctx).Debugf("first log index: %d, last log index: %d, last command log index: %d:",
+	log.MetaDB().WithContext(s.ctx).Debugf("first log index: %d, last log index: %d, last command log index: %d:",
 		s.firstIdxOnOpen, s.lastIdxOnOpen, s.lastCommandIdxOnOpen)
 
 	// If an on-disk database has been requested, and there are no snapshots, and
@@ -306,14 +306,14 @@ func (s *Store) Open(enableBootstrap bool) error {
 			return fmt.Errorf("failed to create on-disk database")
 		}
 		s.onDiskCreated = true
-		log.WithContext(s.ctx).Info("created on-disk database at open")
+		log.MetaDB().WithContext(s.ctx).Info("created on-disk database at open")
 	} else {
 		// We need an in-memory database, at least for bootstrapping purposes.
 		s.db, err = s.createInMemory(nil)
 		if err != nil {
 			return fmt.Errorf("failed to create in-memory database")
 		}
-		log.WithContext(s.ctx).Info("created in-memory database at open")
+		log.MetaDB().WithContext(s.ctx).Info("created in-memory database at open")
 	}
 
 	// Instantiate the Raft system.
@@ -323,7 +323,7 @@ func (s *Store) Open(enableBootstrap bool) error {
 	}
 
 	if enableBootstrap {
-		log.WithContext(s.ctx).Info("executing new cluster bootstrap")
+		log.MetaDB().WithContext(s.ctx).Info("executing new cluster bootstrap")
 		configuration := raft.Configuration{
 			Servers: []raft.Server{
 				{
@@ -334,7 +334,7 @@ func (s *Store) Open(enableBootstrap bool) error {
 		}
 		ra.BootstrapCluster(configuration)
 	} else {
-		log.WithContext(s.ctx).Info("no cluster bootstrap requested")
+		log.MetaDB().WithContext(s.ctx).Info("no cluster bootstrap requested")
 	}
 
 	s.raft = ra
@@ -373,7 +373,7 @@ func (s *Store) WaitForInitialLogs(ctx context.Context, timeout time.Duration) e
 	if timeout == 0 {
 		return nil
 	}
-	log.WithContext(s.ctx).Infof("waiting for up to %s for application of initial logs (lcIdx=%d)",
+	log.MetaDB().WithContext(s.ctx).Infof("waiting for up to %s for application of initial logs (lcIdx=%d)",
 		timeout, s.lastCommandIdxOnOpen)
 	if err := s.WaitForAppliedIndex(ctx, s.raft.LastIndex(), timeout); err != nil {
 		return errors.New(ErrOpenTimeout)
@@ -388,7 +388,7 @@ func (s *Store) WaitForApplied(ctx context.Context, timeout time.Duration) error
 	if timeout == 0 {
 		return nil
 	}
-	log.WithContext(s.ctx).Infof("waiting for up to %s for application of initial logs", timeout)
+	log.MetaDB().WithContext(s.ctx).Infof("waiting for up to %s for application of initial logs", timeout)
 	if err := s.WaitForAppliedIndex(ctx, s.raft.LastIndex(), timeout); err != nil {
 		return errors.New(ErrOpenTimeout)
 	}
@@ -803,14 +803,14 @@ func (s *Store) Backup(leader bool, fmt BackupFormat, dst io.Writer) error {
 // Join joins a node, identified by id and located at addr, to this store.
 // The node must be ready to respond to Raft communications at that address.
 func (s *Store) Join(id, addr string, voter bool) error {
-	log.WithContext(s.ctx).Infof("received request from node with ID %s, at %s, to join this node", id, addr)
+	log.MetaDB().WithContext(s.ctx).Infof("received request from node with ID %s, at %s, to join this node", id, addr)
 	if s.raft.State() != raft.Leader {
 		return errors.New(ErrNotLeader)
 	}
 
 	configFuture := s.raft.GetConfiguration()
 	if err := configFuture.Error(); err != nil {
-		log.WithContext(s.ctx).Errorf("failed to get raft configuration: %v", err)
+		log.MetaDB().WithContext(s.ctx).Errorf("failed to get raft configuration: %v", err)
 		return err
 	}
 
@@ -822,16 +822,16 @@ func (s *Store) Join(id, addr string, voter bool) error {
 			// join is actually needed.
 			if srv.Address == raft.ServerAddress(addr) && srv.ID == raft.ServerID(id) {
 				stats.Add(numIgnoredJoins, 1)
-				log.WithContext(s.ctx).Errorf("node %s at %s already member of cluster, ignoring join request", id, addr)
+				log.MetaDB().WithContext(s.ctx).Errorf("node %s at %s already member of cluster, ignoring join request", id, addr)
 				return nil
 			}
 
 			if err := s.remove(id); err != nil {
-				log.WithContext(s.ctx).Errorf("failed to remove node %s: %v", id, err)
+				log.MetaDB().WithContext(s.ctx).Errorf("failed to remove node %s: %v", id, err)
 				return err
 			}
 			stats.Add(numRemovedBeforeJoins, 1)
-			log.WithContext(s.ctx).Infof("removed node %s prior to rejoin with changed ID or address", id)
+			log.MetaDB().WithContext(s.ctx).Infof("removed node %s prior to rejoin with changed ID or address", id)
 		}
 	}
 
@@ -850,19 +850,19 @@ func (s *Store) Join(id, addr string, voter bool) error {
 	}
 
 	stats.Add(numJoins, 1)
-	log.WithContext(s.ctx).Infof("node with ID %s, at %s, joined successfully as %s", id, addr, prettyVoter(voter))
+	log.MetaDB().WithContext(s.ctx).Infof("node with ID %s, at %s, joined successfully as %s", id, addr, prettyVoter(voter))
 	return nil
 }
 
 // Remove removes a node from the store, specified by ID.
 func (s *Store) Remove(id string) error {
-	log.WithContext(s.ctx).Infof("received request to remove node %s", id)
+	log.MetaDB().WithContext(s.ctx).Infof("received request to remove node %s", id)
 	if err := s.remove(id); err != nil {
-		log.WithContext(s.ctx).Errorf("failed to remove node %s: %s", id, err.Error())
+		log.MetaDB().WithContext(s.ctx).Errorf("failed to remove node %s: %s", id, err.Error())
 		return err
 	}
 
-	log.WithContext(s.ctx).Infof("node %s removed successfully", id)
+	log.MetaDB().WithContext(s.ctx).Infof("node %s removed successfully", id)
 	return nil
 }
 
@@ -1008,12 +1008,12 @@ func (s *Store) Apply(l *raft.Log) (e interface{}) {
 			// opened.
 			s.appliedOnOpen++
 			if l.Index == s.lastCommandIdxOnOpen {
-				log.WithContext(s.ctx).Infof("%d committed log entries applied in %s, took %s since open",
+				log.MetaDB().WithContext(s.ctx).Infof("%d committed log entries applied in %s, took %s since open",
 					s.appliedOnOpen, time.Since(s.firstLogAppliedT), time.Since(s.openT))
 
 				// Last command log applied. Time to switch to on-disk database?
 				if s.dbConf.Memory {
-					log.WithContext(s.ctx).Info("continuing use of in-memory database")
+					log.MetaDB().WithContext(s.ctx).Info("continuing use of in-memory database")
 				} else {
 					// Since we're here, it means that a) an on-disk database was requested
 					// *and* there were commands in the log. A snapshot may or may not have
@@ -1035,7 +1035,7 @@ func (s *Store) Apply(l *raft.Log) (e interface{}) {
 						return
 					}
 					s.onDiskCreated = true
-					log.WithContext(s.ctx).Info("successfully switched to on-disk database")
+					log.MetaDB().WithContext(s.ctx).Info("successfully switched to on-disk database")
 				}
 			}
 		}
@@ -1091,7 +1091,7 @@ func (s *Store) Snapshot() (raft.FSMSnapshot, error) {
 	stats.Add(numSnaphots, 1)
 	stats.Get(snapshotCreateDuration).(*expvar.Int).Set(dur.Milliseconds())
 	stats.Get(snapshotDBSerializedSize).(*expvar.Int).Set(int64(len(fsm.database)))
-	log.WithContext(s.ctx).Infof("node snapshot created in %s", dur)
+	log.MetaDB().WithContext(s.ctx).Infof("node snapshot created in %s", dur)
 	return fsm, nil
 }
 
@@ -1106,7 +1106,7 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 		return fmt.Errorf("restore failed: %s", err.Error())
 	}
 	if b == nil {
-		log.WithContext(s.ctx).Info("no database data present in restored snapshot")
+		log.MetaDB().WithContext(s.ctx).Info("no database data present in restored snapshot")
 	}
 
 	if err := s.db.Close(); err != nil {
@@ -1124,7 +1124,7 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 			return fmt.Errorf("open on-disk file during restore: %s", err)
 		}
 		s.onDiskCreated = true
-		log.WithContext(s.ctx).Info("successfully switched to on-disk database due to restore")
+		log.MetaDB().WithContext(s.ctx).Info("successfully switched to on-disk database due to restore")
 	} else {
 		// Deserialize into an in-memory database because a) an in-memory database
 		// has been requested, or b) while there was a snapshot, there are also
@@ -1139,7 +1139,7 @@ func (s *Store) Restore(rc io.ReadCloser) error {
 	s.db = db
 
 	stats.Add(numRestores, 1)
-	log.WithContext(s.ctx).Infof("node restored in %s", time.Since(startT))
+	log.MetaDB().WithContext(s.ctx).Infof("node restored in %s", time.Since(startT))
 	return nil
 }
 
@@ -1214,7 +1214,7 @@ func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
 	defer func() {
 		dur := time.Since(f.startT)
 		stats.Get(snapshotPersistDuration).(*expvar.Int).Set(dur.Milliseconds())
-		log.WithContext(f.ctx).Infof("snapshot and persist took %s", dur)
+		log.MetaDB().WithContext(f.ctx).Infof("snapshot and persist took %s", dur)
 	}()
 
 	err := func() error {
@@ -1254,7 +1254,7 @@ func (f *fsmSnapshot) Persist(sink raft.SnapshotSink) error {
 			}
 			stats.Get(snapshotDBOnDiskSize).(*expvar.Int).Set(int64(len(cdb)))
 		} else {
-			log.WithContext(f.ctx).Info("no database data available for snapshot")
+			log.MetaDB().WithContext(f.ctx).Info("no database data available for snapshot")
 			err = writeUint64(b, uint64(0))
 			if err != nil {
 				return err
@@ -1320,7 +1320,7 @@ func RecoverNode(ctx context.Context, _ string, logs raft.LogStore, _ raft.Stabl
 	if err != nil {
 		return fmt.Errorf("failed to list snapshots: %v", err)
 	}
-	log.WithContext(ctx).Infof("recovery detected %d snapshots", len(snapshots))
+	log.MetaDB().WithContext(ctx).Infof("recovery detected %d snapshots", len(snapshots))
 
 	var b []byte
 	for _, snapshot := range snapshots {
@@ -1371,7 +1371,7 @@ func RecoverNode(ctx context.Context, _ string, logs raft.LogStore, _ raft.Stabl
 	if err != nil {
 		return fmt.Errorf("failed to find last log: %v", err)
 	}
-	log.Infof("recovery snapshot index is %d, last index is %d", snapshotIndex, lastLogIndex)
+	log.MetaDB().Infof("recovery snapshot index is %d, last index is %d", snapshotIndex, lastLogIndex)
 
 	for index := snapshotIndex + 1; index <= lastLogIndex; index++ {
 		var entry raft.Log
@@ -1398,7 +1398,7 @@ func RecoverNode(ctx context.Context, _ string, logs raft.LogStore, _ raft.Stabl
 	if err = sink.Close(); err != nil {
 		return fmt.Errorf("failed to finalize snapshot: %v", err)
 	}
-	log.Info("recovery snapshot created successfully")
+	log.MetaDB().Info("recovery snapshot created successfully")
 
 	// Compact the log so that we don't get bad interference from any
 	// configuration change log entries that might be there.

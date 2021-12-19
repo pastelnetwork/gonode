@@ -3,19 +3,23 @@ package p2p
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
-	"github.com/pastelnetwork/gonode/p2p/kademlia/store/db"
+	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 	"github.com/pastelnetwork/gonode/pastel"
+	"time"
 )
 
 const (
 	logPrefix = "p2p"
+)
+
+var (
+	defaultReplicateInterval = time.Second * 3600
+	defaultRepublishInterval = time.Second * 3600 * 24
 )
 
 // P2P represents the p2p service.
@@ -43,7 +47,7 @@ func (s *p2p) Run(ctx context.Context) error {
 			if utils.IsContextErr(err) {
 				return err
 			}
-			log.WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
+			log.P2P().WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
 		} else {
 			return nil
 		}
@@ -65,7 +69,7 @@ func (s *p2p) run(ctx context.Context) error {
 	}
 
 	if err := s.dht.ConfigureBootstrapNodes(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
+		log.P2P().WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
 
 		return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
 	}
@@ -80,9 +84,9 @@ func (s *p2p) run(ctx context.Context) error {
 	}
 	s.running = true
 
-	go s.store.InitCleanup(ctx, 5*time.Minute)
+	//go s.store.InitCleanup(ctx, 5*time.Minute)
 
-	log.WithContext(ctx).Info("p2p service is started")
+	log.P2P().WithContext(ctx).Info("p2p service is started")
 
 	// block until context is done
 	<-ctx.Done()
@@ -93,7 +97,7 @@ func (s *p2p) run(ctx context.Context) error {
 	// close the store of kademlia network
 	s.store.Close(ctx)
 
-	log.WithContext(ctx).Info("p2p service is stopped")
+	log.P2P().WithContext(ctx).Info("p2p service is stopped")
 	return nil
 }
 
@@ -130,16 +134,6 @@ func (s *p2p) Delete(ctx context.Context, key string) error {
 	return s.dht.Delete(ctx, key)
 }
 
-// Keys return a list of keys with given offset + limit
-func (s *p2p) Keys(ctx context.Context, offset int, limit int) []string {
-	return s.dht.Keys(ctx, offset, limit)
-}
-
-// Cleanup cleans up the files as per discardRatio
-func (s *p2p) Cleanup(_ context.Context, discardRatio float64) error {
-	return s.store.Cleanup(discardRatio)
-}
-
 // Stats return status of p2p
 func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 	retStats := map[string]interface{}{}
@@ -164,7 +158,7 @@ func (s *p2p) Stats(ctx context.Context) (map[string]interface{}, error) {
 // configure the distributed hash table for p2p service
 func (s *p2p) configure(ctx context.Context) error {
 	// new the local storage
-	store, err := db.NewStore(ctx, s.config.DataDir)
+	store, err := sqlite.NewStore(ctx, s.config.DataDir, defaultReplicateInterval, defaultRepublishInterval)
 	if err != nil {
 		return errors.Errorf("new kademlia store: %w", err)
 	}

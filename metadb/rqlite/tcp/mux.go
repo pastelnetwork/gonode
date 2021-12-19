@@ -141,7 +141,7 @@ func (mux *Mux) Serve() error {
 	if mux.tlsConfig != nil {
 		tlsStr = "TLS "
 	}
-	log.WithContext(mux.ctx).Infof("%smux serving on %s, advertising %s", tlsStr, mux.ln.Addr().String(), mux.addr)
+	log.MetaDB().WithContext(mux.ctx).Infof("%smux serving on %s, advertising %s", tlsStr, mux.ln.Addr().String(), mux.addr)
 
 	for {
 		// Wait for the next connection.
@@ -193,7 +193,7 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	// Set a read deadline so connections with no data don't timeout.
 	if err := conn.SetReadDeadline(time.Now().Add(mux.Timeout)); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).Infof("tcp.Mux: cannot set read deadline: %s", err)
+		log.MetaDB().WithContext(mux.ctx).Infof("tcp.Mux: cannot set read deadline: %s", err)
 		return
 	}
 
@@ -201,14 +201,14 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	var typ [1]byte
 	if _, err := io.ReadFull(conn, typ[:]); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).Infof("tcp.Mux: cannot read header byte: %s", err)
+		log.MetaDB().WithContext(mux.ctx).Infof("tcp.Mux: cannot read header byte: %s", err)
 		return
 	}
 
 	// Reset read deadline and let the listener handle that.
 	if err := conn.SetReadDeadline(time.Time{}); err != nil {
 		conn.Close()
-		log.WithContext(mux.ctx).Infof("tcp.Mux: cannot reset set read deadline: %s", err)
+		log.MetaDB().WithContext(mux.ctx).Infof("tcp.Mux: cannot reset set read deadline: %s", err)
 		return
 	}
 
@@ -217,7 +217,7 @@ func (mux *Mux) handleConn(conn net.Conn) {
 	if handler == nil {
 		conn.Close()
 		stats.Add(numUnregisteredHandlers, 1)
-		log.WithContext(mux.ctx).Infof("tcp.Mux: handler not registered for request from %s: %d (unsupported protocol?)",
+		log.MetaDB().WithContext(mux.ctx).Infof("tcp.Mux: handler not registered for request from %s: %d (unsupported protocol?)",
 			conn.RemoteAddr().String(), typ[0])
 		return
 	}

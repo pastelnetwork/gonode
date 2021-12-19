@@ -78,7 +78,7 @@ func (s *service) Run(ctx context.Context) error {
 			if utils.IsContextErr(err) {
 				return err
 			}
-			log.WithContext(ctx).WithError(err).Error("Failed to start dd-scan service, retrying.")
+			log.DD().WithContext(ctx).WithError(err).Error("Failed to start dd-scan service, retrying.")
 		} else {
 			return nil
 		}
@@ -90,13 +90,13 @@ func (s *service) run(ctx context.Context) error {
 	defer s.db.Close()
 
 	if err := s.waitSynchronization(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to initial wait synchronization")
+		log.DD().WithContext(ctx).WithError(err).Error("Failed to initial wait synchronization")
 	} else {
 		s.isMasterNodeSynced = true
 	}
 
 	if err := s.runTask(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Errorf("First runTask() failed")
+		log.DD().WithContext(ctx).WithError(err).Errorf("First runTask() failed")
 	}
 
 	for {
@@ -107,15 +107,15 @@ func (s *service) run(ctx context.Context) error {
 			// Check if node is synchronized or not
 			if !s.isMasterNodeSynced {
 				if err := s.checkSynchronized(ctx); err != nil {
-					log.WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
+					log.DD().WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
 					continue
 				} else {
-					log.WithContext(ctx).Debug("Done for waiting synchronization status")
+					log.DD().WithContext(ctx).Debug("Done for waiting synchronization status")
 					s.isMasterNodeSynced = true
 				}
 			}
 			if err := s.runTask(ctx); err != nil {
-				log.WithContext(ctx).WithError(err).Errorf("runTask() failed")
+				log.DD().WithContext(ctx).WithError(err).Errorf("runTask() failed")
 			}
 		}
 	}
@@ -154,9 +154,9 @@ func (s *service) waitSynchronization(ctx context.Context) error {
 		case <-time.After(synchronizationIntervalSec * time.Second):
 			err := s.checkSynchronized(ctx)
 			if err != nil {
-				log.WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
+				log.DD().WithContext(ctx).WithError(err).Warn("Failed to check synced status from master node")
 			} else {
-				log.WithContext(ctx).Info("Done for waiting synchronization status")
+				log.DD().WithContext(ctx).Info("Done for waiting synchronization status")
 				return nil
 			}
 		case <-timeoutCh:
@@ -189,7 +189,7 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 
 			val := values.GetParameters()[i].GetY()
 			if val == nil {
-				log.WithContext(ctx).Errorf("nil value at column: %s", row[0].Columns[i])
+				log.DD().WithContext(ctx).Errorf("nil value at column: %s", row[0].Columns[i])
 				continue
 			}
 
@@ -198,7 +198,7 @@ func (s *service) getLatestFingerprint(ctx context.Context) (*dupeDetectionFinge
 
 			var fp []float64
 			if err := npyio.Read(f, &fp); err != nil {
-				log.WithContext(ctx).WithError(err).Error("Failed to convert npy to float64")
+				log.DD().WithContext(ctx).WithError(err).Error("Failed to convert npy to float64")
 				continue
 			}
 
@@ -299,7 +299,8 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 
 	_, err = s.db.Execute(req, false)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
+		log.DD().WithContext(ctx).WithError(err).Error("Failed to insert fingerprint record")
+		return err
 	}
 	return nil
 }
@@ -307,9 +308,9 @@ func (s *service) storeFingerprint(ctx context.Context, input *dupeDetectionFing
 func (s *service) runTask(ctx context.Context) error {
 	/* // For debugging
 	if cnt, err := s.getRecordCount(ctx); err != nil {
-		log.WithContext(ctx).WithError(err).Error("Failed to get count")
+		log.DD().WithContext(ctx).WithError(err).Error("Failed to get count")
 	} else {
-		log.WithContext(ctx).WithField("cnt", cnt).Info("GetCount")
+		log.DD().WithContext(ctx).WithField("cnt", cnt).Info("GetCount")
 	}
 	*/
 
@@ -334,7 +335,7 @@ func (s *service) runTask(ctx context.Context) error {
 
 		_, err := pastel.DecodeNFTTicket(nftRegTickets[i].RegTicketData.NFTTicket)
 		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
+			log.DD().WithContext(ctx).WithError(err).Error("Failed to decode reg ticket")
 			continue
 		}
 
@@ -343,26 +344,26 @@ func (s *service) runTask(ctx context.Context) error {
 		fingerprintsHash := "TBD"
 		compressedFingerprintBytes, err := s.p2pClient.Retrieve(ctx, fingerprintsHash)
 		if err != nil {
-			log.WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to retrieve fingerprint")
+			log.DD().WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to retrieve fingerprint")
 			continue
 		}
 
 		fingerprintFromBytes, err := zstd.Decompress(nil, compressedFingerprintBytes)
 		if err != nil {
-			log.WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to decompress fingerprint")
+			log.DD().WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to decompress fingerprint")
 			continue
 		}
 
 		fingerprint, err := pastel.FingerprintFromBytes(fingerprintFromBytes)
 
 		if err != nil {
-			log.WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to convert fingerprint")
+			log.DD().WithContext(ctx).WithField("FingerprintsHash", fingerprintsHash).WithError(err).Error("Failed to convert fingerprint")
 			continue
 		}
 
 		size := len(fingerprint)
 		if size != fingerprintSizeModel {
-			log.WithContext(ctx).Errorf("invaild size fingerprint, size: %d", size)
+			log.DD().WithContext(ctx).Errorf("invaild size fingerprint, size: %d", size)
 			continue
 		}
 
@@ -394,7 +395,7 @@ func (s *service) runTask(ctx context.Context) error {
 			NumberOfBlock:                      nftRegTickets[i].Height,
 			DatetimeFingerprintAddedToDatabase: time.Now(),
 		}); err != nil {
-			log.WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
+			log.DD().WithContext(ctx).WithError(err).Error("Failed to store fingerprint")
 		}
 	}
 
