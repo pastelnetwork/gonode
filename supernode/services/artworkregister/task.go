@@ -213,6 +213,7 @@ func (task *Task) MeshNodes(_ context.Context, meshedNodes []types.MeshedSuperNo
 	return nil
 }
 
+// SendRegMetadata sends reg metadata
 func (task *Task) SendRegMetadata(_ context.Context, regMetadata *types.NftRegMetadata) error {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return err
@@ -370,6 +371,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
+
 	return task.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
@@ -410,7 +412,7 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, ticket *pastel.NF
 		}
 
 		if !utils.Equal(gotIDs, ids) {
-			return errors.Errorf("IDs don't match: %w", err)
+			return errors.Errorf("ids don't match: %w", err)
 		}
 
 		return nil
@@ -422,7 +424,7 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, ticket *pastel.NF
 		return errors.Errorf("validate dd_and_fingerprints: %w", err)
 	}
 
-	if err := validate(ctx, ticket, dd, ticket.AppTicketData.RQIc, ticket.AppTicketData.RQMax,
+	if err := validate(ctx, ticket, rq, ticket.AppTicketData.RQIc, ticket.AppTicketData.RQMax,
 		ticket.AppTicketData.RQIDs, 2); err != nil {
 
 		errors.Errorf("validate rq_ids: %w", err)
@@ -463,7 +465,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 		}
 
 		if !verified {
-			err = errors.New("ticket verification failed.")
+			err = errors.New("ticket verification failed")
 			log.WithContext(ctx).WithError(err).Errorf("verification failure")
 			return nil
 		}
@@ -964,6 +966,7 @@ func (task *Task) checkNodeInMeshedNodes(nodeID string) error {
 	return errors.New("nodeID not found")
 }
 
+// AddSignedDDAndFingerprints adds signed dd and fp
 func (task *Task) AddSignedDDAndFingerprints(nodeID string, compressedSignedDDAndFingerprints []byte) error {
 	task.ddMtx.Lock()
 	defer task.ddMtx.Unlock()

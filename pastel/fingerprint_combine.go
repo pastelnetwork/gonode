@@ -121,10 +121,10 @@ func CombineFingerPrintAndScores(first *DDAndFingerprints, second *DDAndFingerpr
 		second.InternetRareness.NumberOfPagesOfResults,
 		third.InternetRareness.NumberOfPagesOfResults,
 	)
-	finalResult.InternetRareness.UrlOfFirstMatchInPage = combineString(
-		first.InternetRareness.UrlOfFirstMatchInPage,
-		second.InternetRareness.UrlOfFirstMatchInPage,
-		third.InternetRareness.UrlOfFirstMatchInPage,
+	finalResult.InternetRareness.URLOfFirstMatchInPage = combineString(
+		first.InternetRareness.URLOfFirstMatchInPage,
+		second.InternetRareness.URLOfFirstMatchInPage,
+		third.InternetRareness.URLOfFirstMatchInPage,
 	)
 
 	//open_nsfw_score

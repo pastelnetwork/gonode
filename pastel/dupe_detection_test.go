@@ -32,7 +32,7 @@ func TestGetProbeImageReply(t *testing.T) {
 				InternetRareness: &InternetRareness{
 					MatchesFoundOnFirstPage: 0,
 					NumberOfPagesOfResults:  0,
-					UrlOfFirstMatchInPage:   "",
+					URLOfFirstMatchInPage:   "",
 				},
 
 				OpenNSFWScore: 0.1,

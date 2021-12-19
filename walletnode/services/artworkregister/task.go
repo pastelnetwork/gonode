@@ -221,12 +221,12 @@ func (task *Task) run(ctx context.Context) error {
 
 // generateDDAndFingerprintsIDs generates redundant IDs and assigns to task.redundantIDs
 func (task *Task) generateDDAndFingerprintsIDs() error {
-	ddDataJson, err := json.Marshal(task.fingerprintAndScores)
+	ddDataJSON, err := json.Marshal(task.fingerprintAndScores)
 	if err != nil {
 		return errors.Errorf("failed to marshal dd-data: %w", err)
 	}
 
-	ddEncoded := base64.StdEncoding.EncodeToString(ddDataJson)
+	ddEncoded := base64.StdEncoding.EncodeToString(ddDataJSON)
 
 	var buffer bytes.Buffer
 	buffer.WriteString(ddEncoded)
@@ -359,11 +359,8 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
-	if err := img.Encode(encSig); err != nil {
-		return err
-	}
 
-	return nil
+	return img.Encode(encSig)
 }
 
 // meshNodes establishes communication between supernodes.

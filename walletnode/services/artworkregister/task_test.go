@@ -1745,7 +1745,7 @@ func TestTaskProbeImage(t *testing.T) {
 		InternetRareness: &pastel.InternetRareness{
 			MatchesFoundOnFirstPage: 0,
 			NumberOfPagesOfResults:  0,
-			UrlOfFirstMatchInPage:   "",
+			URLOfFirstMatchInPage:   "",
 		},
 
 		OpenNSFWScore: 0.1,
@@ -2181,7 +2181,7 @@ func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
 						InternetRareness: &pastel.InternetRareness{
 							MatchesFoundOnFirstPage: 0,
 							NumberOfPagesOfResults:  0,
-							UrlOfFirstMatchInPage:   "",
+							URLOfFirstMatchInPage:   "",
 						},
 
 						OpenNSFWScore: 0.1,

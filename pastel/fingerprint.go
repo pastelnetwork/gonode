@@ -122,11 +122,7 @@ func CompareFingerPrintAndScore(lhs *DDAndFingerprints, rhs *DDAndFingerprints) 
 	}
 
 	//percentile
-	if err := ComparePercentile(lhs.Percentile, rhs.Percentile); err != nil {
-		return err
-	}
-
-	return nil
+	return ComparePercentile(lhs.Percentile, rhs.Percentile)
 }
 
 // CompareRarenessScores  return nil if two RarenessScores are equal
@@ -168,8 +164,8 @@ func CompareInternetRareness(lhs *InternetRareness, rhs *InternetRareness) error
 		return errors.Errorf("number_of_pages_of_results not matched: lhs(%d) != rhs(%d)", lhs.NumberOfPagesOfResults, rhs.NumberOfPagesOfResults)
 	}
 
-	if !strings.EqualFold(lhs.UrlOfFirstMatchInPage, rhs.UrlOfFirstMatchInPage) {
-		return errors.Errorf("url_of_first_match_in_page not matched: lhs(%s) != rhs(%s)", lhs.UrlOfFirstMatchInPage, rhs.UrlOfFirstMatchInPage)
+	if !strings.EqualFold(lhs.URLOfFirstMatchInPage, rhs.URLOfFirstMatchInPage) {
+		return errors.Errorf("url_of_first_match_in_page not matched: lhs(%s) != rhs(%s)", lhs.URLOfFirstMatchInPage, rhs.URLOfFirstMatchInPage)
 	}
 	return nil
 }

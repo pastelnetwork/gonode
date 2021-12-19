@@ -56,7 +56,7 @@ type RarenessScores struct {
 type InternetRareness struct {
 	MatchesFoundOnFirstPage uint32 `json:"matches_found_on_first_page"`
 	NumberOfPagesOfResults  uint32 `json:"number_of_pages_of_results"`
-	UrlOfFirstMatchInPage   string `json:"url_of_first_match_in_page"`
+	URLOfFirstMatchInPage   string `json:"url_of_first_match_in_page"`
 }
 
 // AlternativeNSFWScores represents the not-safe-for-work of an image
@@ -136,18 +136,19 @@ func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprin
 		}
 	}
 
-	ddDataJson, err := utils.B64Decode(ddData)
+	ddDataJSON, err := utils.B64Decode(ddData)
 	if err != nil {
 		return nil, nil, nil, errors.Errorf("decode %s failed: %w", string(decompressedReply), err)
 	}
 
 	dDataAndFingerprints := &DDAndFingerprints{}
-	if err := json.Unmarshal(ddDataJson, dDataAndFingerprints); err != nil {
+	if err := json.Unmarshal(ddDataJSON, dDataAndFingerprints); err != nil {
 		return nil, nil, nil, errors.Errorf("json decode dd_and_fingerprints: %w", err)
 	}
-	return dDataAndFingerprints, ddDataJson, signature, nil
+	return dDataAndFingerprints, ddDataJSON, signature, nil
 }
 
+// ToCompressSignedDDAndFingerprints converts dd_and_fingerptints data to compress((b64(dd_and_fp).(sig)))
 func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []byte) ([]byte, error) {
 	ddDataJson, err := json.Marshal(ddData)
 

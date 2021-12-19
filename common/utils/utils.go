@@ -73,6 +73,7 @@ func GetExternalIPAddress() (externalIP string, err error) {
 	return string(body), nil
 }
 
+// B64Encode base64 encodes
 func B64Encode(in []byte) (out []byte) {
 	out = make([]byte, base64.StdEncoding.EncodedLen(len(in)))
 	base64.StdEncoding.Encode(out, in)
@@ -80,6 +81,7 @@ func B64Encode(in []byte) (out []byte) {
 	return out
 }
 
+// B64Decode decode base64 input
 func B64Decode(in []byte) (out []byte, err error) {
 	out = make([]byte, base64.StdEncoding.DecodedLen(len(in)))
 	n, err := base64.StdEncoding.Decode(out, in)
