@@ -73,7 +73,7 @@ func (service *Sense) UploadImage(_ context.Context, p *sense.UploadImagePayload
 	return res, nil
 }
 
-// StartTask - Starts a action data task
+// ActionDetails - Starts a action data task
 func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsPayload) (res *sense.ActionDetailResult, err error) {
 	// get image filename from storage based on image_id
 	filename, err := service.db.Get(p.ImageID)
@@ -110,6 +110,35 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 	// Return data
 	res = &sense.ActionDetailResult{
 		EstimatedFee: fee,
+	}
+
+	return res, nil
+}
+
+// StartProcessing - Starts a processing image task
+func (service *Sense) StartProcessing(ctx context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
+	ticket := &senseregister.Request{
+		AppPastelID:           p.AppPastelID,
+		AppPastelIDPassphrase: p.AppPastelidPassphrase,
+	}
+
+	// get image filename from storage based on image_id
+	filename, err := service.db.Get(p.ImageID)
+	if err != nil {
+		return nil, sense.MakeInternalServerError(err)
+	}
+
+	// get image data from storage
+	file, err := service.register.Storage.File(string(filename))
+	if err != nil {
+		return nil, sense.MakeInternalServerError(err)
+	}
+	ticket.Image = file
+
+	// Create task
+	taskID := service.register.AddTask(ticket)
+	res = &sense.StartProcessingResult{
+		TaskID: taskID,
 	}
 
 	return res, nil

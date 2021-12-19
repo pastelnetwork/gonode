@@ -63,6 +63,29 @@ var _ = Service("sense", func() {
 			Response(StatusCreated)
 		})
 	})
+
+	Method("startProcessing", func() {
+		Description("Start processing the image")
+		Meta("swagger:summary", "Starts processing the image")
+
+		Payload(func() {
+			Extend(StartProcessingPayload)
+		})
+		Result(StartProcessingResult)
+
+		HTTP(func() {
+			POST("/start/{image_id}")
+			Params(func() {
+				Param("image_id", String)
+			})
+			Header("app_pastelid_passphrase")
+
+			// Define error HTTP statuses.
+			Response("BadRequest", StatusBadRequest)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusCreated)
+		})
+	})
 })
 
 // ActionDetailsPayload - Payload for posting action details
@@ -114,4 +137,50 @@ var ActionDetailsResult = ResultType("application/sense.start-action", func() {
 		})
 	})
 	Required("estimated_fee")
+})
+
+// StartProcessingPayload - Payload for starting processing
+var StartProcessingPayload = Type("StartProcessingPayload", func() {
+	Description("Start Processing Payload")
+	Attribute("image_id", String, func() {
+		Description("Uploaded image ID")
+		MinLength(8)
+		MaxLength(8)
+		Example("VK7mpAqZ")
+	})
+	Attribute("burn_txid", String, func() {
+		Description("Burn transaction ID")
+		MinLength(64)
+		MaxLength(64)
+		Example("576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58")
+	})
+	Attribute("app_pastelid", String, func() {
+		Meta("struct:field:name", "AppPastelID")
+		Description("App PastelID")
+		MinLength(86)
+		MaxLength(86)
+		Pattern(`^[a-zA-Z0-9]+$`)
+		Example("jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS")
+	})
+	Attribute("app_pastelid_passphrase", String, func() {
+		Meta("struct:field:name", "AppPastelidPassphrase")
+		Description("Passphrase of the App PastelID")
+		Example("qwerasdf1234")
+	})
+
+	Required("image_id", "burn_txid", "app_pastelid", "app_pastelid_passphrase")
+})
+
+// StartProcessingResult - result of starting processing
+var StartProcessingResult = ResultType("application/sense.start-processing", func() {
+	TypeName("startProcessingResult")
+	Attributes(func() {
+		Attribute("task_id", String, func() {
+			Description("Task ID of processing task")
+			MinLength(8)
+			MaxLength(8)
+			Example("VK7mpAqZ")
+		})
+	})
+	Required("task_id")
 })

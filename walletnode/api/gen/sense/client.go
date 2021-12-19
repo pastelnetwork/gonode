@@ -15,15 +15,17 @@ import (
 
 // Client is the "sense" service client.
 type Client struct {
-	UploadImageEndpoint   goa.Endpoint
-	ActionDetailsEndpoint goa.Endpoint
+	UploadImageEndpoint     goa.Endpoint
+	ActionDetailsEndpoint   goa.Endpoint
+	StartProcessingEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "sense" service client given the endpoints.
-func NewClient(uploadImage, actionDetails goa.Endpoint) *Client {
+func NewClient(uploadImage, actionDetails, startProcessing goa.Endpoint) *Client {
 	return &Client{
-		UploadImageEndpoint:   uploadImage,
-		ActionDetailsEndpoint: actionDetails,
+		UploadImageEndpoint:     uploadImage,
+		ActionDetailsEndpoint:   actionDetails,
+		StartProcessingEndpoint: startProcessing,
 	}
 }
 
@@ -45,4 +47,14 @@ func (c *Client) ActionDetails(ctx context.Context, p *ActionDetailsPayload) (re
 		return
 	}
 	return ires.(*ActionDetailResult), nil
+}
+
+// StartProcessing calls the "startProcessing" endpoint of the "sense" service.
+func (c *Client) StartProcessing(ctx context.Context, p *StartProcessingPayload) (res *StartProcessingResult, err error) {
+	var ires interface{}
+	ires, err = c.StartProcessingEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(*StartProcessingResult), nil
 }

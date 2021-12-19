@@ -15,15 +15,17 @@ import (
 
 // Endpoints wraps the "sense" service endpoints.
 type Endpoints struct {
-	UploadImage   goa.Endpoint
-	ActionDetails goa.Endpoint
+	UploadImage     goa.Endpoint
+	ActionDetails   goa.Endpoint
+	StartProcessing goa.Endpoint
 }
 
 // NewEndpoints wraps the methods of the "sense" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		UploadImage:   NewUploadImageEndpoint(s),
-		ActionDetails: NewActionDetailsEndpoint(s),
+		UploadImage:     NewUploadImageEndpoint(s),
+		ActionDetails:   NewActionDetailsEndpoint(s),
+		StartProcessing: NewStartProcessingEndpoint(s),
 	}
 }
 
@@ -31,6 +33,7 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UploadImage = m(e.UploadImage)
 	e.ActionDetails = m(e.ActionDetails)
+	e.StartProcessing = m(e.StartProcessing)
 }
 
 // NewUploadImageEndpoint returns an endpoint function that calls the method
@@ -57,6 +60,20 @@ func NewActionDetailsEndpoint(s Service) goa.Endpoint {
 			return nil, err
 		}
 		vres := NewViewedActionDetailResult(res, "default")
+		return vres, nil
+	}
+}
+
+// NewStartProcessingEndpoint returns an endpoint function that calls the
+// method "startProcessing" of service "sense".
+func NewStartProcessingEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*StartProcessingPayload)
+		res, err := s.StartProcessing(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedStartProcessingResult(res, "default")
 		return vres, nil
 	}
 }

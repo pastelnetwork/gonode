@@ -676,9 +676,9 @@ paths:
         schema:
           type: string
           description: Artist PastelID or special value; mine
-          example: 0my
+          example: 52e
           maxLength: 256
-        example: c5a
+        example: dc5
       - name: limit
         in: query
         description: Number of results to be return
@@ -699,8 +699,8 @@ paths:
         schema:
           type: string
           description: Query is search query entered by user
-          example: Vel est eligendi saepe veritatis ea.
-        example: Dolores aliquid aliquid placeat incidunt laboriosam iste.
+          example: Sunt magnam nemo nemo.
+        example: Est laborum eaque nemo ad et autem.
       - name: artist_name
         in: query
         description: Name of the artist
@@ -710,7 +710,7 @@ paths:
           description: Name of the artist
           default: true
           example: true
-        example: true
+        example: false
       - name: art_title
         in: query
         description: Title of artwork
@@ -719,7 +719,7 @@ paths:
           type: boolean
           description: Title of artwork
           default: true
-          example: true
+          example: false
         example: false
       - name: series
         in: query
@@ -730,7 +730,7 @@ paths:
           description: Artwork series name
           default: true
           example: false
-        example: false
+        example: true
       - name: descr
         in: query
         description: Artist written statement
@@ -740,7 +740,7 @@ paths:
           description: Artist written statement
           default: true
           example: true
-        example: true
+        example: false
       - name: keyword
         in: query
         description: Keyword that Artist assigns to Artwork
@@ -781,9 +781,9 @@ paths:
           type: integer
           description: Minimum blocknum
           default: 1
-          example: 4792877971017701161
+          example: 8643653550824050324
           minimum: 1
-        example: 1980295539567646722
+        example: 8858201797895052147
       - name: max_block
         in: query
         description: Maximum blocknum
@@ -791,9 +791,9 @@ paths:
         schema:
           type: integer
           description: Maximum blocknum
-          example: 8157473270176198966
+          example: 8321207843875254209
           minimum: 1
-        example: 1999272690723701067
+        example: 477267428401859995
       - name: min_rareness_score
         in: query
         description: Minimum pastel rareness score
@@ -1030,6 +1030,73 @@ paths:
                 $ref: '#/components/schemas/ActionDetailResult'
               example:
                 estimated_fee: 100
+        "400":
+          description: Bad Request response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+        "500":
+          description: Internal Server Error response.
+          content:
+            application/vnd.goa.error:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                id: 3F1FKVRR
+                message: Value of ID must be an integer
+                name: bad_request
+  /openapi/sense/start/{image_id}:
+    post:
+      tags:
+      - sense
+      summary: Starts processing the image
+      description: Start processing the image
+      operationId: sense#startProcessing
+      parameters:
+      - name: image_id
+        in: path
+        description: Uploaded image ID
+        required: true
+        schema:
+          type: string
+          description: Uploaded image ID
+          example: VK7mpAqZ
+          minLength: 8
+          maxLength: 8
+        example: VK7mpAqZ
+      - name: app_pastelid_passphrase
+        in: header
+        description: Passphrase of the App PastelID
+        allowEmptyValue: true
+        required: true
+        schema:
+          type: string
+          description: Passphrase of the App PastelID
+          example: qwerasdf1234
+        example: qwerasdf1234
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartProcessingRequestBody'
+            example:
+              app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+              burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      responses:
+        "201":
+          description: Created response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StartProcessingResult'
+              example:
+                task_id: VK7mpAqZ
         "400":
           description: Bad Request response.
           content:
@@ -1432,7 +1499,7 @@ components:
         green_address:
           type: boolean
           description: Green address
-          example: true
+          example: false
         hentai_nsfw_score:
           type: number
           description: nsfw score
@@ -1472,41 +1539,44 @@ components:
           type: string
           description: Preview Image
           example:
-          - 83
+          - 86
           - 111
           - 108
           - 117
+          - 112
           - 116
           - 97
-          - 32
+          - 116
           - 101
-          - 115
-          - 116
+          - 109
           - 32
-          - 97
+          - 115
           - 117
+          - 115
+          - 99
+          - 105
+          - 112
+          - 105
           - 116
           - 32
           - 113
           - 117
           - 105
+          - 100
+          - 101
+          - 109
           - 32
           - 100
           - 111
           - 108
           - 111
           - 114
+          - 32
+          - 114
           - 101
+          - 114
+          - 117
           - 109
-          - 32
-          - 101
-          - 115
-          - 116
-          - 32
-          - 105
-          - 108
-          - 108
-          - 111
           - 46
           format: binary
         rareness_score:
@@ -1518,7 +1588,7 @@ components:
         royalty:
           type: number
           description: how much artist should get on all future resales
-          example: 0.3440685173255087
+          example: 0.9422616945020184
           format: double
         series_name:
           type: string
@@ -1540,20 +1610,31 @@ components:
           type: string
           description: Thumbnail_1 image
           example:
-          - 65
-          - 114
-          - 99
-          - 104
-          - 105
+          - 69
           - 116
-          - 101
-          - 99
-          - 116
-          - 111
           - 32
           - 115
-          - 105
+          - 101
+          - 100
+          - 32
+          - 112
+          - 114
+          - 97
+          - 101
+          - 115
+          - 101
+          - 110
           - 116
+          - 105
+          - 117
+          - 109
+          - 32
+          - 101
+          - 116
+          - 32
+          - 101
+          - 111
+          - 115
           - 46
           format: binary
         thumbnail_2:
@@ -1561,22 +1642,14 @@ components:
           description: Thumbnail_2 image
           example:
           - 65
-          - 108
+          - 110
           - 105
-          - 113
-          - 117
-          - 97
           - 109
+          - 105
           - 32
+          - 101
+          - 117
           - 109
-          - 111
-          - 108
-          - 101
-          - 115
-          - 116
-          - 105
-          - 97
-          - 101
           - 46
           format: binary
         title:
@@ -1609,7 +1682,7 @@ components:
           and writer Leonardo da Vinci. Likely completed in 1506, the piece features
           a portrait of a seated woman set against an imaginary landscape.
         drawing_nsfw_score: 1
-        green_address: true
+        green_address: false
         hentai_nsfw_score: 1
         internet_rareness_score: 1
         keywords: Renaissance, sfumato, portrait
@@ -1618,42 +1691,12 @@ components:
         porn_nsfw_score: 1
         preview_thumbnail:
         - 65
-        - 115
-        - 112
-        - 101
-        - 114
-        - 110
-        - 97
-        - 116
-        - 117
-        - 114
-        - 32
-        - 118
-        - 111
         - 108
-        - 117
-        - 112
-        - 116
-        - 97
-        - 116
-        - 101
-        - 109
-        - 32
-        - 115
-        - 117
-        - 115
-        - 99
         - 105
-        - 112
-        - 105
-        - 116
-        - 32
         - 113
         - 117
         - 105
         - 100
-        - 101
-        - 109
         - 32
         - 100
         - 111
@@ -1661,47 +1704,133 @@ components:
         - 111
         - 114
         - 32
+        - 118
+        - 101
+        - 108
+        - 105
+        - 116
+        - 32
+        - 100
+        - 111
+        - 108
+        - 111
         - 114
         - 101
-        - 114
-        - 117
-        - 109
+        - 115
         - 32
         - 105
-        - 110
+        - 116
+        - 97
+        - 113
+        - 117
+        - 101
         - 46
         rareness_score: 1
-        royalty: 0.47479602552227784
+        royalty: 0.07964796361914224
         series_name: Famous artist
         sexy_nsfw_score: 1
         storage_fee: 100
         thumbnail_1:
         - 83
-        - 101
-        - 100
-        - 32
-        - 112
-        - 114
         - 97
         - 101
+        - 112
+        - 101
+        - 32
+        - 102
+        - 97
+        - 99
+        - 105
+        - 108
+        - 105
         - 115
+        - 32
+        - 114
+        - 101
+        - 112
+        - 101
+        - 108
+        - 108
         - 101
         - 110
-        - 116
-        - 105
+        - 100
         - 117
+        - 115
+        - 32
+        - 113
+        - 117
+        - 105
+        - 98
+        - 117
+        - 115
+        - 100
+        - 97
         - 109
+        - 32
+        - 109
+        - 97
+        - 103
+        - 110
+        - 105
+        - 32
+        - 101
+        - 116
+        - 32
+        - 118
+        - 101
+        - 108
         - 46
         thumbnail_2:
         - 69
-        - 111
+        - 108
+        - 105
+        - 103
+        - 101
+        - 110
+        - 100
+        - 105
+        - 32
+        - 115
+        - 97
+        - 101
+        - 112
+        - 101
+        - 32
+        - 118
+        - 101
+        - 114
+        - 105
+        - 116
+        - 97
+        - 116
+        - 105
         - 115
         - 32
         - 101
         - 97
-        - 114
+        - 32
+        - 105
+        - 116
+        - 97
+        - 113
         - 117
-        - 109
+        - 101
+        - 32
+        - 100
+        - 111
+        - 108
+        - 111
+        - 114
+        - 101
+        - 115
+        - 32
+        - 97
+        - 108
+        - 105
+        - 113
+        - 117
+        - 105
+        - 100
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -1745,7 +1874,7 @@ components:
           type: integer
           description: Sort index of the match based on score.This must be used to
             sort results on UI.
-          example: 7960850051491493017
+          example: 1439328255635298920
           format: int64
         matches:
           type: array
@@ -1753,18 +1882,6 @@ components:
             $ref: '#/components/schemas/FuzzyMatch'
           description: Match result details
           example:
-          - field_type: keyword
-            matched_indexes:
-            - 3296871063441268122
-            - 1275827989906040522
-            score: 153082285827655130
-            str: Tempora non culpa voluptatibus rerum est.
-          - field_type: keyword
-            matched_indexes:
-            - 3296871063441268122
-            - 1275827989906040522
-            score: 153082285827655130
-            str: Tempora non culpa voluptatibus rerum est.
           - field_type: keyword
             matched_indexes:
             - 3296871063441268122
@@ -1846,20 +1963,8 @@ components:
           title: Mona Lisa
           txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
           youtube_url: https://www.youtube.com/watch?v=0xl6Ufo4ZX0
-        match_index: 1239942254999570222
+        match_index: 3595481321820249541
         matches:
-        - field_type: keyword
-          matched_indexes:
-          - 3296871063441268122
-          - 1275827989906040522
-          score: 153082285827655130
-          str: Tempora non culpa voluptatibus rerum est.
-        - field_type: keyword
-          matched_indexes:
-          - 3296871063441268122
-          - 1275827989906040522
-          score: 153082285827655130
-          str: Tempora non culpa voluptatibus rerum est.
         - field_type: keyword
           matched_indexes:
           - 3296871063441268122
@@ -1924,26 +2029,36 @@ components:
           type: string
           description: Thumbnail_1 image
           example:
-          - 65
-          - 110
-          - 105
-          - 109
-          - 105
-          - 32
-          - 116
-          - 111
-          - 116
-          - 97
-          - 109
-          - 46
-          format: binary
-        thumbnail_2:
-          type: string
-          description: Thumbnail_2 image
-          example:
-          - 67
+          - 82
+          - 101
+          - 114
           - 117
           - 109
+          - 32
+          - 105
+          - 109
+          - 112
+          - 101
+          - 100
+          - 105
+          - 116
+          - 32
+          - 101
+          - 116
+          - 32
+          - 101
+          - 116
+          - 32
+          - 115
+          - 105
+          - 116
+          - 32
+          - 109
+          - 97
+          - 120
+          - 105
+          - 109
+          - 101
           - 32
           - 118
           - 111
@@ -1952,35 +2067,38 @@ components:
           - 112
           - 116
           - 97
-          - 115
-          - 32
-          - 117
           - 116
-          - 32
+          - 117
           - 109
+          - 46
+          format: binary
+        thumbnail_2:
+          type: string
+          description: Thumbnail_2 image
+          example:
+          - 86
           - 111
           - 108
-          - 108
-          - 105
+          - 117
+          - 112
           - 116
-          - 105
           - 97
+          - 116
+          - 101
           - 32
-          - 105
           - 110
-          - 99
+          - 111
+          - 115
+          - 116
+          - 114
+          - 117
+          - 109
+          - 32
+          - 113
+          - 117
           - 105
           - 100
-          - 117
-          - 110
-          - 116
-          - 32
-          - 97
-          - 112
           - 101
-          - 114
-          - 105
-          - 97
           - 109
           - 46
           format: binary
@@ -2013,59 +2131,54 @@ components:
         series_name: Famous artist
         thumbnail_1:
         - 69
-        - 116
-        - 32
-        - 99
-        - 111
         - 110
-        - 115
-        - 101
-        - 99
-        - 116
-        - 101
-        - 116
-        - 117
-        - 114
-        - 32
-        - 97
-        - 108
         - 105
+        - 109
+        - 32
+        - 101
+        - 117
+        - 109
+        - 32
+        - 101
+        - 110
+        - 105
+        - 109
+        - 46
+        thumbnail_2:
+        - 86
+        - 111
+        - 108
+        - 117
+        - 112
+        - 116
+        - 97
+        - 115
+        - 32
+        - 111
+        - 109
+        - 110
+        - 105
+        - 115
+        - 32
+        - 114
+        - 101
+        - 105
+        - 99
+        - 105
+        - 101
+        - 110
+        - 100
+        - 105
+        - 115
+        - 32
         - 113
         - 117
         - 105
-        - 100
-        - 46
-        thumbnail_2:
-        - 82
-        - 101
-        - 114
-        - 117
-        - 109
-        - 32
-        - 105
-        - 109
-        - 112
-        - 101
-        - 100
-        - 105
-        - 116
-        - 32
-        - 101
-        - 116
-        - 32
-        - 101
-        - 116
-        - 32
         - 115
-        - 105
-        - 116
-        - 32
-        - 109
+        - 113
+        - 117
         - 97
-        - 120
-        - 105
         - 109
-        - 101
         - 32
         - 118
         - 111
@@ -2075,8 +2188,18 @@ components:
         - 116
         - 97
         - 116
+        - 101
+        - 109
+        - 32
+        - 101
         - 117
         - 109
+        - 32
+        - 101
+        - 97
+        - 113
+        - 117
+        - 101
         - 46
         title: Mona Lisa
         txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
@@ -2292,45 +2415,57 @@ components:
           type: string
           description: File downloaded
           example:
-          - 69
-          - 117
-          - 109
-          - 32
-          - 118
-          - 111
+          - 80
           - 108
-          - 117
-          - 112
-          - 116
+          - 97
+          - 99
+          - 101
           - 97
           - 116
-          - 101
-          - 115
           - 32
+          - 105
+          - 110
+          - 99
+          - 105
+          - 100
+          - 117
+          - 110
+          - 116
+          - 32
+          - 108
+          - 97
+          - 98
+          - 111
           - 114
-          - 101
+          - 105
+          - 111
+          - 115
+          - 97
           - 109
           - 32
-          - 118
-          - 101
-          - 108
           - 105
+          - 115
           - 116
+          - 101
+          - 32
+          - 97
           - 46
           format: binary
       example:
         file:
-        - 68
-        - 111
-        - 108
-        - 111
-        - 114
-        - 32
-        - 118
-        - 101
-        - 108
-        - 105
+        - 65
+        - 117
         - 116
+        - 32
+        - 109
+        - 111
+        - 108
+        - 101
+        - 115
+        - 116
+        - 105
+        - 97
+        - 101
         - 46
       required:
       - file
@@ -2340,7 +2475,7 @@ components:
         fault:
           type: boolean
           description: Is the error a server-side fault?
-          example: true
+          example: false
         id:
           type: string
           description: ID is a unique identifier for this particular occurrence of
@@ -2358,7 +2493,7 @@ components:
         temporary:
           type: boolean
           description: Is the error temporary?
-          example: true
+          example: false
         timeout:
           type: boolean
           description: Is the error a timeout?
@@ -2380,7 +2515,7 @@ components:
         field_type:
           type: string
           description: Field that is matched
-          example: keyword
+          example: art_title
           enum:
           - artist_name
           - art_title
@@ -2391,31 +2526,31 @@ components:
           type: array
           items:
             type: integer
-            example: 7211199165924013851
+            example: 1239942254999570222
             format: int64
           description: The indexes of matched characters. Useful for highlighting
             matches
           example:
-          - 4595292647489791234
-          - 3609802110381760471
-          - 6640613663150422071
-          - 4849401125587699055
+          - 9142429405167948764
+          - 3173471941462179929
+          - 1357944961907966730
+          - 5201011680115786416
         score:
           type: integer
           description: Score used to rank matches
-          example: 7543885638831899864
+          example: 7260096901875516441
           format: int64
         str:
           type: string
           description: String that is matched
-          example: Nostrum quidem facere enim.
+          example: Qui esse qui praesentium exercitationem placeat.
       example:
-        field_type: series
+        field_type: artist_name
         matched_indexes:
-        - 514502817561103518
-        - 7523447731339215934
-        score: 3604469833714011899
-        str: Eaque ut qui qui.
+        - 7426989803577313845
+        - 7320921110623869219
+        score: 7701314416563881359
+        str: Qui dolorem est.
     Image:
       type: object
       properties:
@@ -2593,10 +2728,6 @@ components:
             status: Task Started
           - date: 2006-01-02T15:04:05Z07:00
             status: Task Started
-          - date: 2006-01-02T15:04:05Z07:00
-            status: Task Started
-          - date: 2006-01-02T15:04:05Z07:00
-            status: Task Started
         status:
           type: string
           description: JOb ID of the registration process
@@ -2615,8 +2746,6 @@ components:
       example:
         id: n6Qn6TFM
         states:
-        - date: 2006-01-02T15:04:05Z07:00
-          status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
           status: Task Started
         - date: 2006-01-02T15:04:05Z07:00
@@ -2647,6 +2776,41 @@ components:
       - id
       - status
       - ticket
+    StartProcessingRequestBody:
+      type: object
+      properties:
+        app_pastelid:
+          type: string
+          description: App PastelID
+          example: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+          pattern: ^[a-zA-Z0-9]+$
+          minLength: 86
+          maxLength: 86
+        burn_txid:
+          type: string
+          description: Burn transaction ID
+          example: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+          minLength: 64
+          maxLength: 64
+      example:
+        app_pastelid: jXYJud3rmrR1Sk2scvR47N4E4J5Vv48uCC6se2nzHrBRdjaKj3ybPoi1Y2VVoRqi1GnQrYKjSxQAC7NBtvtEdS
+        burn_txid: 576e7b824634a488a2f0baacf5a53b237d883029f205df25b300b87c8877ab58
+      required:
+      - burn_txid
+      - app_pastelid
+    StartProcessingResult:
+      type: object
+      properties:
+        task_id:
+          type: string
+          description: Task ID of processing task
+          example: VK7mpAqZ
+          minLength: 8
+          maxLength: 8
+      example:
+        task_id: VK7mpAqZ
+      required:
+      - task_id
     TaskResponseTiny:
       type: object
       properties:
@@ -2868,20 +3032,43 @@ components:
           type: string
           description: File to upload
           example:
-          - 83
-          - 105
-          - 110
+          - 86
+          - 111
+          - 108
+          - 117
+          - 112
           - 116
+          - 97
+          - 115
           - 32
           - 117
           - 116
           - 32
+          - 109
+          - 111
+          - 108
+          - 108
+          - 105
+          - 116
+          - 105
+          - 97
+          - 32
           - 105
           - 110
-          - 32
-          - 113
-          - 117
+          - 99
           - 105
+          - 100
+          - 117
+          - 110
+          - 116
+          - 32
+          - 97
+          - 112
+          - 101
+          - 114
+          - 105
+          - 97
+          - 109
           - 46
           format: binary
         filename:
@@ -2890,13 +3077,27 @@ components:
       example:
         file:
         - 69
-        - 97
+        - 116
+        - 32
+        - 99
+        - 111
+        - 110
+        - 115
+        - 101
+        - 99
+        - 116
+        - 101
+        - 116
+        - 117
+        - 114
         - 32
         - 97
-        - 116
+        - 108
+        - 105
         - 113
         - 117
-        - 101
+        - 105
+        - 100
         - 46
       required:
       - file

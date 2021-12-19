@@ -33,6 +33,15 @@ type ActionDetailsRequestBody struct {
 	ActionDataSignature string `form:"action_data_signature" json:"action_data_signature" xml:"action_data_signature"`
 }
 
+// StartProcessingRequestBody is the type of the "sense" service
+// "startProcessing" endpoint HTTP request body.
+type StartProcessingRequestBody struct {
+	// Burn transaction ID
+	BurnTxid string `form:"burn_txid" json:"burn_txid" xml:"burn_txid"`
+	// App PastelID
+	AppPastelID string `form:"app_pastelid" json:"app_pastelid" xml:"app_pastelid"`
+}
+
 // UploadImageResponseBody is the type of the "sense" service "uploadImage"
 // endpoint HTTP response body.
 type UploadImageResponseBody struct {
@@ -47,6 +56,13 @@ type UploadImageResponseBody struct {
 type ActionDetailsResponseBody struct {
 	// Estimated fee
 	EstimatedFee *float64 `form:"estimated_fee,omitempty" json:"estimated_fee,omitempty" xml:"estimated_fee,omitempty"`
+}
+
+// StartProcessingResponseBody is the type of the "sense" service
+// "startProcessing" endpoint HTTP response body.
+type StartProcessingResponseBody struct {
+	// Task ID of processing task
+	TaskID *string `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
 }
 
 // UploadImageBadRequestResponseBody is the type of the "sense" service
@@ -123,6 +139,43 @@ type ActionDetailsInternalServerErrorResponseBody struct {
 	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
 }
 
+// StartProcessingBadRequestResponseBody is the type of the "sense" service
+// "startProcessing" endpoint HTTP response body for the "BadRequest" error.
+type StartProcessingBadRequestResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// StartProcessingInternalServerErrorResponseBody is the type of the "sense"
+// service "startProcessing" endpoint HTTP response body for the
+// "InternalServerError" error.
+type StartProcessingInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
 // NewUploadImageRequestBody builds the HTTP request body from the payload of
 // the "uploadImage" endpoint of the "sense" service.
 func NewUploadImageRequestBody(p *sense.UploadImagePayload) *UploadImageRequestBody {
@@ -140,6 +193,16 @@ func NewActionDetailsRequestBody(p *sense.ActionDetailsPayload) *ActionDetailsRe
 		PastelID:            p.PastelID,
 		ActionDataHash:      p.ActionDataHash,
 		ActionDataSignature: p.ActionDataSignature,
+	}
+	return body
+}
+
+// NewStartProcessingRequestBody builds the HTTP request body from the payload
+// of the "startProcessing" endpoint of the "sense" service.
+func NewStartProcessingRequestBody(p *sense.StartProcessingPayload) *StartProcessingRequestBody {
+	body := &StartProcessingRequestBody{
+		BurnTxid:    p.BurnTxid,
+		AppPastelID: p.AppPastelID,
 	}
 	return body
 }
@@ -213,6 +276,46 @@ func NewActionDetailsBadRequest(body *ActionDetailsBadRequestResponseBody) *goa.
 // NewActionDetailsInternalServerError builds a sense service actionDetails
 // endpoint InternalServerError error.
 func NewActionDetailsInternalServerError(body *ActionDetailsInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewStartProcessingResultViewCreated builds a "sense" service
+// "startProcessing" endpoint result from a HTTP "Created" response.
+func NewStartProcessingResultViewCreated(body *StartProcessingResponseBody) *senseviews.StartProcessingResultView {
+	v := &senseviews.StartProcessingResultView{
+		TaskID: body.TaskID,
+	}
+
+	return v
+}
+
+// NewStartProcessingBadRequest builds a sense service startProcessing endpoint
+// BadRequest error.
+func NewStartProcessingBadRequest(body *StartProcessingBadRequestResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewStartProcessingInternalServerError builds a sense service startProcessing
+// endpoint InternalServerError error.
+func NewStartProcessingInternalServerError(body *StartProcessingInternalServerErrorResponseBody) *goa.ServiceError {
 	v := &goa.ServiceError{
 		Name:      *body.Name,
 		ID:        *body.ID,
@@ -300,6 +403,54 @@ func ValidateActionDetailsBadRequestResponseBody(body *ActionDetailsBadRequestRe
 // ValidateActionDetailsInternalServerErrorResponseBody runs the validations
 // defined on actionDetails_InternalServerError_response_body
 func ValidateActionDetailsInternalServerErrorResponseBody(body *ActionDetailsInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateStartProcessingBadRequestResponseBody runs the validations defined
+// on startProcessing_BadRequest_response_body
+func ValidateStartProcessingBadRequestResponseBody(body *StartProcessingBadRequestResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateStartProcessingInternalServerErrorResponseBody runs the validations
+// defined on startProcessing_InternalServerError_response_body
+func ValidateStartProcessingInternalServerErrorResponseBody(body *StartProcessingInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

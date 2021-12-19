@@ -27,6 +27,10 @@ type Client struct {
 	// actionDetails endpoint.
 	ActionDetailsDoer goahttp.Doer
 
+	// StartProcessing Doer is the HTTP client used to make requests to the
+	// startProcessing endpoint.
+	StartProcessingDoer goahttp.Doer
+
 	// CORS Doer is the HTTP client used to make requests to the  endpoint.
 	CORSDoer goahttp.Doer
 
@@ -56,6 +60,7 @@ func NewClient(
 	return &Client{
 		UploadImageDoer:     doer,
 		ActionDetailsDoer:   doer,
+		StartProcessingDoer: doer,
 		CORSDoer:            doer,
 		RestoreResponseBody: restoreBody,
 		scheme:              scheme,
@@ -108,6 +113,30 @@ func (c *Client) ActionDetails() goa.Endpoint {
 		resp, err := c.ActionDetailsDoer.Do(req)
 		if err != nil {
 			return nil, goahttp.ErrRequestError("sense", "actionDetails", err)
+		}
+		return decodeResponse(resp)
+	}
+}
+
+// StartProcessing returns an endpoint that makes HTTP requests to the sense
+// service startProcessing server.
+func (c *Client) StartProcessing() goa.Endpoint {
+	var (
+		encodeRequest  = EncodeStartProcessingRequest(c.encoder)
+		decodeResponse = DecodeStartProcessingResponse(c.decoder, c.RestoreResponseBody)
+	)
+	return func(ctx context.Context, v interface{}) (interface{}, error) {
+		req, err := c.BuildStartProcessingRequest(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		err = encodeRequest(req, v)
+		if err != nil {
+			return nil, err
+		}
+		resp, err := c.StartProcessingDoer.Do(req)
+		if err != nil {
+			return nil, goahttp.ErrRequestError("sense", "startProcessing", err)
 		}
 		return decodeResponse(resp)
 	}

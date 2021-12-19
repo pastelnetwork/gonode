@@ -40,8 +40,19 @@ func (task *Task) Run(ctx context.Context) error {
 	log.WithContext(ctx).Debug("Start task")
 	defer log.WithContext(ctx).Debug("End task")
 
-	// TODO: implement task logic
+	if err := task.run(ctx); err != nil {
+		task.UpdateStatus(StatusTaskRejected)
+		log.WithContext(ctx).WithErrorStack(err).Error("Task is rejected")
+		return nil
+	}
 
 	task.UpdateStatus(StatusTaskCompleted)
+	return nil
+}
+
+func (task *Task) run(ctx context.Context) error {
+	_, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	return nil
 }
