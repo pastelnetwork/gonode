@@ -436,20 +436,6 @@ func TestTaskCompareRQSymbolID(t *testing.T) {
 		args    args
 		wantErr error
 	}{
-		"decompress-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				connectErr:  nil,
-				fileErr:     nil,
-				assignRQIDS: true,
-			},
-			wantErr: errors.New("decompress"),
-		},
 		"conn-err": {
 			args: args{
 				task: &Task{
@@ -1687,13 +1673,13 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 			tc.args.task.Ticket.AppTicketData.RQIc = rand.Uint32()
 			tc.args.task.Ticket.AppTicketData.RQMax = 50
 
-			tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIDs, err = pastel.GetIDFiles([]byte(ddStr),
+			tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIDs, _, err = pastel.GetIDFiles([]byte(ddStr),
 				tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIc,
 				tc.args.task.Ticket.AppTicketData.DDAndFingerprintsMax)
 
 			assert.Nil(t, err)
 
-			tc.args.task.Ticket.AppTicketData.RQIDs, err = pastel.GetIDFiles([]byte(rqStr),
+			tc.args.task.Ticket.AppTicketData.RQIDs, _, err = pastel.GetIDFiles([]byte(rqStr),
 				tc.args.task.Ticket.AppTicketData.RQIc,
 				tc.args.task.Ticket.AppTicketData.RQMax)
 

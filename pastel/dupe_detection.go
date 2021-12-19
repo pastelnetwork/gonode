@@ -172,7 +172,8 @@ func ToCompressSignedDDAndFingerprints(ddData *DDAndFingerprints, signature []by
 // GetIDFiles is supposed to generates ID Files for dd_and_fingerprints files and rq_id files
 // file is b64 encoded file appended with signatures and compressed, ic is the initial counter
 // and max is the number of ids to generate
-func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, err error) {
+func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, files [][]byte, err error) {
+	var idFiles [][]byte
 	for i := uint32(0); i < max; i++ {
 		var buffer bytes.Buffer
 		counter := ic + i
@@ -183,16 +184,18 @@ func GetIDFiles(file []byte, ic uint32, max uint32) (ids []string, err error) {
 
 		compressedData, err := zstd.CompressLevel(nil, buffer.Bytes(), 22)
 		if err != nil {
-			return ids, errors.Errorf("compress identifiers file: %w", err)
+			return ids, idFiles, errors.Errorf("compress identifiers file: %w", err)
 		}
+
+		idFiles = append(idFiles, compressedData)
 
 		hash, err := utils.Sha3256hash(compressedData)
 		if err != nil {
-			return ids, errors.Errorf("sha3256hash: %w", err)
+			return ids, idFiles, errors.Errorf("sha3256hash: %w", err)
 		}
 
 		ids = append(ids, base58.Encode(hash))
 	}
 
-	return ids, nil
+	return ids, idFiles, nil
 }

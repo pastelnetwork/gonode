@@ -1,13 +1,15 @@
 package pastel
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetProbeImageReply(t *testing.T) {
+func TestToCompressSignedDDAndFingerprints(t *testing.T) {
 	t.Parallel()
 
 	tests := map[string]struct {
@@ -111,6 +113,106 @@ func TestGetProbeImageReply(t *testing.T) {
 				assert.Equal(t, tc.dd.AlternativeNSFWScores.Drawings, gotDD.AlternativeNSFWScores.Drawings)
 			} else {
 				fmt.Println("err: ", err.Error())
+			}
+		})
+	}
+}
+
+func TestGetIDFiles(t *testing.T) {
+	t.Parallel()
+
+	tests := map[string]struct {
+		dd      *DDAndFingerprints
+		wantErr error
+	}{
+		"simple": {
+			dd: &DDAndFingerprints{
+				Block:                      "Block",
+				Principal:                  "Principal",
+				DupeDetectionSystemVersion: "v1.0",
+
+				IsLikelyDupe:     true,
+				IsRareOnInternet: true,
+
+				RarenessScores: &RarenessScores{
+					CombinedRarenessScore:         0,
+					XgboostPredictedRarenessScore: 0,
+					NnPredictedRarenessScore:      0,
+					OverallAverageRarenessScore:   0,
+				},
+				InternetRareness: &InternetRareness{
+					MatchesFoundOnFirstPage: 0,
+					NumberOfPagesOfResults:  0,
+					UrlOfFirstMatchInPage:   "",
+				},
+
+				OpenNSFWScore: 0.1,
+				AlternativeNSFWScores: &AlternativeNSFWScores{
+					Drawings: 0.1,
+					Hentai:   0.2,
+					Neutral:  0.3,
+					Porn:     0.4,
+					Sexy:     0.5,
+				},
+
+				ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+				FingerprintsStat: &FingerprintsStat{
+					NumberOfFingerprintsRequiringFurtherTesting1: 1,
+					NumberOfFingerprintsRequiringFurtherTesting2: 2,
+					NumberOfFingerprintsRequiringFurtherTesting3: 3,
+					NumberOfFingerprintsRequiringFurtherTesting4: 4,
+					NumberOfFingerprintsRequiringFurtherTesting5: 5,
+					NumberOfFingerprintsRequiringFurtherTesting6: 6,
+					NumberOfFingerprintsOfSuspectedDupes:         7,
+				},
+
+				HashOfCandidateImageFile: "HashOfCandidateImageFile",
+				PerceptualImageHashes: &PerceptualImageHashes{
+					PDQHash:        "PdqHash",
+					PerceptualHash: "PerceptualHash",
+					AverageHash:    "AverageHash",
+					DifferenceHash: "DifferenceHash",
+					NeuralHash:     "NeuralhashHash",
+				},
+				PerceptualHashOverlapCount: 1,
+
+				Maxes: &Maxes{
+					PearsonMax:           1.0,
+					SpearmanMax:          2.0,
+					KendallMax:           3.0,
+					HoeffdingMax:         4.0,
+					MutualInformationMax: 5.0,
+					HsicMax:              6.0,
+					XgbimportanceMax:     7.0,
+				},
+				Percentile: &Percentile{
+					PearsonTop1BpsPercentile:             1.0,
+					SpearmanTop1BpsPercentile:            2.0,
+					KendallTop1BpsPercentile:             3.0,
+					HoeffdingTop10BpsPercentile:          4.0,
+					MutualInformationTop100BpsPercentile: 5.0,
+					HsicTop100BpsPercentile:              6.0,
+					XgbimportanceTop100BpsPercentile:     7.0,
+				},
+			},
+			wantErr: nil,
+		},
+	}
+
+	for name, tc := range tests {
+		tc := tc
+
+		ddJson, err := json.Marshal(tc.dd)
+		assert.Nil(t, err)
+
+		encoded := base64.StdEncoding.EncodeToString(ddJson)
+		data := encoded + ".Sig1.Sig2.Sig3"
+
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			_, _, err := GetIDFiles([]byte(data), 12, 50)
+			if tc.wantErr == nil {
+				assert.Nil(t, err)
 			}
 		})
 	}

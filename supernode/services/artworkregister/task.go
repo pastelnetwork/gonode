@@ -70,6 +70,8 @@ type Task struct {
 	connectedTo *Node
 
 	rawRqFile []byte
+	rqIDFiles [][]byte
+	ddFpFiles [][]byte
 }
 
 // Run starts the task
@@ -431,9 +433,15 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, rq []byte, dd []b
 			return errors.Errorf("file verification failed: need %d verifications, got %d", length-1, verifications)
 		}
 
-		gotIDs, err := pastel.GetIDFiles(decData, ic, max)
+		gotIDs, idFiles, err := pastel.GetIDFiles(decData, ic, max)
 		if err != nil {
 			return errors.Errorf("get ids: %w", err)
+		}
+
+		if fileType == fileTypeRQ {
+			task.rqIDFiles = idFiles
+		} else {
+			task.ddFpFiles = idFiles
 		}
 
 		if err := utils.EqualStrList(gotIDs, ids); err != nil {
@@ -466,7 +474,6 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 	}
 
 	task.Oti = oti
-	task.rawRqFile = rqidFile
 	task.creatorSignature = creatorSignature
 	task.key1 = key1
 	task.key2 = key2
@@ -824,9 +831,9 @@ func (task *Task) storeThumbnails(ctx context.Context) error {
 }
 
 func (task *Task) storeIDFiles(ctx context.Context) error {
-	store := func(ctx context.Context, ids []string) error {
-		for _, idFile := range ids {
-			if _, err := task.p2pClient.Store(ctx, []byte(idFile)); err != nil {
+	store := func(ctx context.Context, files [][]byte) error {
+		for _, idFile := range files {
+			if _, err := task.p2pClient.Store(ctx, idFile); err != nil {
 				return err
 			}
 		}
@@ -834,11 +841,11 @@ func (task *Task) storeIDFiles(ctx context.Context) error {
 		return nil
 	}
 
-	if err := store(ctx, task.Ticket.AppTicketData.DDAndFingerprintsIDs); err != nil {
+	if err := store(ctx, task.ddFpFiles); err != nil {
 		return fmt.Errorf("store ddAndFp files: %w", err)
 	}
 
-	if err := store(ctx, task.Ticket.AppTicketData.RQIDs); err != nil {
+	if err := store(ctx, task.rqIDFiles); err != nil {
 		return fmt.Errorf("store rq_id files: %w", err)
 	}
 
