@@ -1348,11 +1348,11 @@ components:
       type: object
       properties:
         estimated_fee:
-          type: number
+          type: integer
           description: Estimated fee
           default: 1
           example: 100
-          minimum: 1e-05
+          minimum: 1
       example:
         estimated_fee: 100
       required:

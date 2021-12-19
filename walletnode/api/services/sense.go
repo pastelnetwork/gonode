@@ -86,18 +86,22 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 		return nil, sense.MakeInternalServerError(err)
 	}
 
+	fileBytes, err := file.Bytes()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("read image file")
+		err = errors.Errorf("read image file: %w", err)
+		return nil, sense.MakeInternalServerError(err)
+	}
+
+	ImgSizeInMb := int64(len(fileBytes)) / (1024 * 1024)
+
 	// Validate image signature
 	err = service.register.VerifyImageSignature(ctx, file, p.ActionDataSignature, p.PastelID)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
 
-	// get estimated fee
-	ticket := senseregister.GetEstimatedFeeRequest{
-		Image: file,
-	}
-
-	fee, err := service.register.GetEstimatedFee(ctx, &ticket)
+	fee, err := service.register.GetEstimatedFee(ctx, ImgSizeInMb)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}

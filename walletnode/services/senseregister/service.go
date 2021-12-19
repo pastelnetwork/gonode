@@ -57,9 +57,7 @@ func (service *Service) VerifyImageSignature(ctx context.Context, file *artwork.
 }
 
 // GetEstimatedFee returns the estimated fee for the given image
-func (service *Service) GetEstimatedFee(ctx context.Context, ticket *GetEstimatedFeeRequest) (float64, error) {
-
-	// TODO: call RPC: getactionfee
+func (service *Service) GetEstimatedFee(ctx context.Context, ImgSizeInMb int64) (int64, error) {
 
 	return 0, nil
 }

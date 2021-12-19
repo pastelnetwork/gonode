@@ -65,7 +65,7 @@ var _ = Service("sense", func() {
 	})
 })
 
-// ActionDetailsPayload - Payload for starting an action
+// ActionDetailsPayload - Payload for posting action details
 var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
 	Description("Provide Action Details Payload")
 	Attribute("image_id", String, func() {
@@ -102,13 +102,13 @@ var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
 	Required("image_id", "app_pastelid", "action_data_hash", "action_data_signature")
 })
 
-// ActionDetailsResult - result of the Start Action method
+// ActionDetailsResult - result of posting action details
 var ActionDetailsResult = ResultType("application/sense.start-action", func() {
 	TypeName("actionDetailResult")
 	Attributes(func() {
-		Attribute("estimated_fee", Float64, func() {
+		Attribute("estimated_fee", Int64, func() {
 			Description("Estimated fee")
-			Minimum(0.00001)
+			Minimum(1)
 			Default(1)
 			Example(100)
 		})
