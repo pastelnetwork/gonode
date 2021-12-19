@@ -202,10 +202,10 @@ func TestGetIDFiles(t *testing.T) {
 	for name, tc := range tests {
 		tc := tc
 
-		ddJson, err := json.Marshal(tc.dd)
+		ddJSON, err := json.Marshal(tc.dd)
 		assert.Nil(t, err)
 
-		encoded := base64.StdEncoding.EncodeToString(ddJson)
+		encoded := base64.StdEncoding.EncodeToString(ddJSON)
 		data := encoded + ".Sig1.Sig2.Sig3"
 
 		t.Run(name, func(t *testing.T) {
