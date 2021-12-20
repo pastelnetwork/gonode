@@ -15,6 +15,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	artworks "github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/artworks/server"
+	goa "goa.design/goa/v3/pkg"
 
 	mdlserver "github.com/pastelnetwork/gonode/walletnode/api/gen/http/userdatas/server"
 	userdatas "github.com/pastelnetwork/gonode/walletnode/api/gen/userdatas"
@@ -31,9 +32,13 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 	return func(reader *multipart.Reader, p **artworks.UploadImagePayload) error {
 		var res artworks.UploadImagePayload
 
-		filename, err := handleUploadImage(ctx, reader, service.register.Storage)
+		filename, err_type, err := handleUploadImage(ctx, reader, service.register.Storage)
 		if err != nil {
-			return artworks.MakeBadRequest(err)
+			return &goa.ServiceError{
+				Name:    err_type,
+				ID:      goa.NewErrorID(),
+				Message: err.Error(),
+			}
 		}
 
 		res.Filename = &filename
@@ -43,7 +48,7 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 }
 
 // handleUploadImage -- save image to service storage
-func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *artwork.Storage) (string, error) {
+func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *artwork.Storage) (string, string, error) {
 	var filename string
 
 	for {
@@ -52,7 +57,7 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *a
 			if err == io.EOF {
 				break
 			}
-			return "", errors.Errorf("could not read next part: %w", err)
+			return "", "InternalServerError", errors.Errorf("could not read next part: %w", err)
 		}
 
 		if part.FormName() != imagePartName {
@@ -61,11 +66,11 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *a
 
 		contentType, _, err := mime.ParseMediaType(part.Header.Get("Content-Type"))
 		if err != nil {
-			return "", errors.Errorf("could not parse Content-Type: %w", err)
+			return "", "BadRequest", errors.Errorf("could not parse Content-Type: %w", err)
 		}
 
 		if !strings.HasPrefix(contentType, contentTypePrefix) {
-			return "", errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix)
+			return "", "BadRequest", errors.Errorf("wrong mediatype %q, only %q types are allowed", contentType, contentTypePrefix)
 		}
 
 		filename = part.FileName()
@@ -73,7 +78,7 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *a
 
 		image := storage.NewFile()
 		if err := image.SetFormatFromExtension(filepath.Ext(filename)); err != nil {
-			return "", errors.Errorf("could not set format from extension: %w", err)
+			return "", "BadRequest", errors.Errorf("could not set format from extension: %w", err)
 		}
 
 		//service.register.Storage.AddFile(image)
@@ -82,17 +87,17 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *a
 
 		fl, err := image.Create()
 		if err != nil {
-			return "", errors.Errorf("failed to create temp file %q: %w", filename, err)
+			return "", "InternalServerError", errors.Errorf("failed to create temp file %q: %w", filename, err)
 		}
 		defer fl.Close()
 
 		if _, err := io.Copy(fl, part); err != nil {
-			return "", errors.Errorf("failed to write data to %q: %w", filename, err)
+			return "", "InternalServerError", errors.Errorf("failed to write data to %q: %w", filename, err)
 		}
 		log.WithContext(ctx).Debugf("Uploaded image to %q", filename)
 	}
 
-	return filename, nil
+	return filename, "", nil
 }
 
 // UserdatasCreateUserdataDecoderFunc implements the multipart decoder for service "userdatas" endpoint "/create".
