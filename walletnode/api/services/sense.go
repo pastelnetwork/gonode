@@ -14,6 +14,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
+	"goa.design/goa"
 	goahttp "goa.design/goa/v3/http"
 )
 
@@ -77,26 +78,26 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 	// get image filename from storage based on image_id
 	filename, err := service.db.Get(p.ImageID)
 	if err != nil {
-		return nil, sense.MakeInternalServerError(err)
+		return nil, sense.MakeInternalServerError(errors.Errorf("get image filename: %w", err))
 	}
 
 	// get image data from storage
 	file, err := service.register.Storage.File(string(filename))
 	if err != nil {
-		return nil, sense.MakeInternalServerError(err)
+		return nil, sense.MakeInternalServerError(errors.Errorf("get image data: %w", err))
 	}
 
-	fileBytes, err := file.Bytes()
+	imgData, err := file.Bytes()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("read image file")
 		err = errors.Errorf("read image file: %w", err)
 		return nil, sense.MakeInternalServerError(err)
 	}
 
-	ImgSizeInMb := int64(len(fileBytes)) / (1024 * 1024)
+	ImgSizeInMb := int64(len(imgData)) / (1024 * 1024)
 
 	// Validate image signature
-	err = service.register.VerifyImageSignature(ctx, file, p.ActionDataSignature, p.PastelID)
+	err = service.register.VerifyImageSignature(ctx, imgData, p.ActionDataSignature, p.PastelID)
 	if err != nil {
 		return nil, sense.MakeInternalServerError(err)
 	}
@@ -130,9 +131,13 @@ func SenseUploadImageDecoderFunc(ctx context.Context, service *Sense) server.Sen
 	return func(reader *multipart.Reader, p **sense.UploadImagePayload) error {
 		var res sense.UploadImagePayload
 
-		filename, err := handleUploadImage(ctx, reader, service.register.Storage)
+		filename, err_type, err := handleUploadImage(ctx, reader, service.register.Storage)
 		if err != nil {
-			return sense.MakeBadRequest(err)
+			return &goa.ServiceError{
+				Name:    err_type,
+				ID:      goa.NewErrorID(),
+				Message: err.Error(),
+			}
 		}
 
 		res.Filename = &filename

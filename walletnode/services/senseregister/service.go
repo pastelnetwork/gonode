@@ -38,12 +38,7 @@ func (service *Service) AddTask(ticket *Request) string {
 }
 
 // VerifyImageSignature verifies the signature of the image
-func (service *Service) VerifyImageSignature(ctx context.Context, file *artwork.File, signature string, pastelID string) error {
-	imgData, err := file.Bytes()
-	if err != nil {
-		return err
-	}
-
+func (service *Service) VerifyImageSignature(ctx context.Context, imgData []byte, signature string, pastelID string) error {
 	ok, err := service.pastelClient.Verify(ctx, imgData, signature, pastelID, pastel.SignAlgorithmED448)
 	if err != nil {
 		return err
