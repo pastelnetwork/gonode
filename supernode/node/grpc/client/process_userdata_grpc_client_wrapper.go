@@ -27,7 +27,7 @@ type processUserdataClientWrapper struct {
 	actorSystem *actor.ActorSystem
 }
 
-func (p *processUserdataClientWrapper) SendUserdataToPrimary(ctx context.Context, in *pb.SuperNodeRequest, opts ...grpc.CallOption) (*pb.SuperNodeReply, error) {
+func (p *processUserdataClientWrapper) SendUserdataToPrimary(ctx context.Context, in *pb.SuperNodeRequest, _ ...grpc.CallOption) (*pb.SuperNodeReply, error) {
 	header := headerFromContextMetadata(ctx)
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
 	if err != nil {
@@ -44,7 +44,7 @@ func (p *processUserdataClientWrapper) SendUserdataToPrimary(ctx context.Context
 	return &pb.SuperNodeReply{}, nil
 }
 
-func (p *processUserdataClientWrapper) SendUserdataToLeader(ctx context.Context, in *pb.UserdataRequest, opts ...grpc.CallOption) (*pb.SuperNodeReply, error) {
+func (p *processUserdataClientWrapper) SendUserdataToLeader(ctx context.Context, in *pb.UserdataRequest, _ ...grpc.CallOption) (*pb.SuperNodeReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()

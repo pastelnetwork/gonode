@@ -15,7 +15,7 @@ type storageChallengeClientWrapper struct {
 	actorSystem *actor.ActorSystem
 }
 
-func (p *storageChallengeClientWrapper) GenerateStorageChallenges(ctx context.Context, in *pb.GenerateStorageChallengesRequest, opts ...grpc.CallOption) (*pb.GenerateStorageChallengesReply, error) {
+func (p *storageChallengeClientWrapper) GenerateStorageChallenges(ctx context.Context, in *pb.GenerateStorageChallengesRequest, _ ...grpc.CallOption) (*pb.GenerateStorageChallengesReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
@@ -33,7 +33,7 @@ func (p *storageChallengeClientWrapper) GenerateStorageChallenges(ctx context.Co
 	return &pb.GenerateStorageChallengesReply{}, nil
 }
 
-func (p *storageChallengeClientWrapper) ProcessStorageChallenge(ctx context.Context, in *pb.ProcessStorageChallengeRequest, opts ...grpc.CallOption) (*pb.ProcessStorageChallengeReply, error) {
+func (p *storageChallengeClientWrapper) ProcessStorageChallenge(ctx context.Context, in *pb.ProcessStorageChallengeRequest, _ ...grpc.CallOption) (*pb.ProcessStorageChallengeReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
@@ -51,7 +51,7 @@ func (p *storageChallengeClientWrapper) ProcessStorageChallenge(ctx context.Cont
 	return &pb.ProcessStorageChallengeReply{}, nil
 }
 
-func (p *storageChallengeClientWrapper) VerifyStorageChallenge(ctx context.Context, in *pb.VerifyStorageChallengeRequest, opts ...grpc.CallOption) (*pb.VerifyStorageChallengeReply, error) {
+func (p *storageChallengeClientWrapper) VerifyStorageChallenge(ctx context.Context, in *pb.VerifyStorageChallengeRequest, _ ...grpc.CallOption) (*pb.VerifyStorageChallengeReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
@@ -67,4 +67,12 @@ func (p *storageChallengeClientWrapper) VerifyStorageChallenge(ctx context.Conte
 		return reply, nil
 	}
 	return &pb.VerifyStorageChallengeReply{}, nil
+}
+
+func newStorageChallengeClientWrapper(client pb.StorageChallengeClient, actorSystem *actor.ActorSystem, actorReceiver *actor.PID) pb.StorageChallengeClient {
+	return &storageChallengeClientWrapper{
+		StorageChallengeClient: client,
+		actorSystem:            actorSystem,
+		receiver:               actorReceiver,
+	}
 }

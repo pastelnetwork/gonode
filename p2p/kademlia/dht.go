@@ -270,6 +270,7 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 	return dhtStats, nil
 }
 
+// NClosestNodes get n closets node to a key string
 func (s *DHT) NClosestNodes(_ context.Context, n int, key string) []*Node {
 	nodeList := s.ht.closestContacts(n, base58.Decode(key), []*Node{})
 	return nodeList.Nodes

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/messaging"
@@ -18,10 +17,9 @@ import (
 )
 
 type registerArtwork struct {
-	conn     *clientConn
-	actorCtx *actor.RootContext
-	client   pb.RegisterArtworkClient
-	sessID   string
+	conn   *clientConn
+	client pb.RegisterArtworkClient
+	sessID string
 }
 
 func (service *registerArtwork) SessID() string {

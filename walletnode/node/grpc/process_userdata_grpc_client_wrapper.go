@@ -15,7 +15,7 @@ type processUserdataClientWrapper struct {
 	actorSystem *actor.ActorSystem
 }
 
-func (p *processUserdataClientWrapper) AcceptedNodes(ctx context.Context, in *pb.AcceptedNodesRequest, opts ...grpc.CallOption) (*pb.AcceptedNodesReply, error) {
+func (p *processUserdataClientWrapper) AcceptedNodes(ctx context.Context, in *pb.AcceptedNodesRequest, _ ...grpc.CallOption) (*pb.AcceptedNodesReply, error) {
 	header := headerFromContextMetadata(ctx)
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
 	if err != nil {
@@ -32,7 +32,7 @@ func (p *processUserdataClientWrapper) AcceptedNodes(ctx context.Context, in *pb
 	return &pb.AcceptedNodesReply{}, nil
 }
 
-func (p *processUserdataClientWrapper) ConnectTo(ctx context.Context, in *pb.ConnectToRequest, opts ...grpc.CallOption) (*pb.ConnectToReply, error) {
+func (p *processUserdataClientWrapper) ConnectTo(ctx context.Context, in *pb.ConnectToRequest, _ ...grpc.CallOption) (*pb.ConnectToReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
@@ -50,7 +50,7 @@ func (p *processUserdataClientWrapper) ConnectTo(ctx context.Context, in *pb.Con
 	return &pb.ConnectToReply{}, nil
 }
 
-func (p *processUserdataClientWrapper) SendUserdata(ctx context.Context, in *pb.UserdataRequest, opts ...grpc.CallOption) (*pb.UserdataReply, error) {
+func (p *processUserdataClientWrapper) SendUserdata(ctx context.Context, in *pb.UserdataRequest, _ ...grpc.CallOption) (*pb.UserdataReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
@@ -68,7 +68,7 @@ func (p *processUserdataClientWrapper) SendUserdata(ctx context.Context, in *pb.
 	return &pb.UserdataReply{}, nil
 }
 
-func (p *processUserdataClientWrapper) ReceiveUserdata(ctx context.Context, in *pb.RetrieveRequest, opts ...grpc.CallOption) (*pb.UserdataRequest, error) {
+func (p *processUserdataClientWrapper) ReceiveUserdata(ctx context.Context, in *pb.RetrieveRequest, _ ...grpc.CallOption) (*pb.UserdataRequest, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()

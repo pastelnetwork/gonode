@@ -15,7 +15,7 @@ type registerArtworkClientWrapper struct {
 	actorSystem *actor.ActorSystem
 }
 
-func (p *registerArtworkClientWrapper) AcceptedNodes(ctx context.Context, in *pb.AcceptedNodesRequest, opts ...grpc.CallOption) (*pb.AcceptedNodesReply, error) {
+func (p *registerArtworkClientWrapper) AcceptedNodes(ctx context.Context, in *pb.AcceptedNodesRequest, _ ...grpc.CallOption) (*pb.AcceptedNodesReply, error) {
 	header := headerFromContextMetadata(ctx)
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
 	if err != nil {
@@ -32,7 +32,7 @@ func (p *registerArtworkClientWrapper) AcceptedNodes(ctx context.Context, in *pb
 	return &pb.AcceptedNodesReply{}, nil
 }
 
-func (p *registerArtworkClientWrapper) ConnectTo(ctx context.Context, in *pb.ConnectToRequest, opts ...grpc.CallOption) (*pb.ConnectToReply, error) {
+func (p *registerArtworkClientWrapper) ConnectTo(ctx context.Context, in *pb.ConnectToRequest, _ ...grpc.CallOption) (*pb.ConnectToReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
@@ -50,7 +50,7 @@ func (p *registerArtworkClientWrapper) ConnectTo(ctx context.Context, in *pb.Con
 	return &pb.ConnectToReply{}, nil
 }
 
-func (p *registerArtworkClientWrapper) SendSignedNFTTicket(ctx context.Context, in *pb.SendSignedNFTTicketRequest, opts ...grpc.CallOption) (*pb.SendSignedNFTTicketReply, error) {
+func (p *registerArtworkClientWrapper) SendSignedNFTTicket(ctx context.Context, in *pb.SendSignedNFTTicketRequest, _ ...grpc.CallOption) (*pb.SendSignedNFTTicketReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
@@ -68,7 +68,7 @@ func (p *registerArtworkClientWrapper) SendSignedNFTTicket(ctx context.Context, 
 	return &pb.SendSignedNFTTicketReply{}, nil
 }
 
-func (p *registerArtworkClientWrapper) SendPreBurntFeeTxid(ctx context.Context, in *pb.SendPreBurntFeeTxidRequest, opts ...grpc.CallOption) (*pb.SendPreBurntFeeTxidReply, error) {
+func (p *registerArtworkClientWrapper) SendPreBurntFeeTxid(ctx context.Context, in *pb.SendPreBurntFeeTxidRequest, _ ...grpc.CallOption) (*pb.SendPreBurntFeeTxidReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
@@ -86,7 +86,7 @@ func (p *registerArtworkClientWrapper) SendPreBurntFeeTxid(ctx context.Context, 
 	return &pb.SendPreBurntFeeTxidReply{}, nil
 }
 
-func (p *registerArtworkClientWrapper) SendTicket(ctx context.Context, in *pb.SendTicketRequest, opts ...grpc.CallOption) (*pb.SendTicketReply, error) {
+func (p *registerArtworkClientWrapper) SendTicket(ctx context.Context, in *pb.SendTicketRequest, _ ...grpc.CallOption) (*pb.SendTicketReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()

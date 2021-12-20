@@ -15,7 +15,7 @@ type registerArtworkClientWrapper struct {
 	actorSystem *actor.ActorSystem
 }
 
-func (p *registerArtworkClientWrapper) SendArtTicketSignature(ctx context.Context, in *pb.SendArtTicketSignatureRequest, opts ...grpc.CallOption) (*pb.SendArtTicketSignatureReply, error) {
+func (p *registerArtworkClientWrapper) SendArtTicketSignature(ctx context.Context, in *pb.SendArtTicketSignatureRequest, _ ...grpc.CallOption) (*pb.SendArtTicketSignatureReply, error) {
 	header := headerFromContextMetadata(ctx)
 
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()

@@ -27,7 +27,7 @@ type downloadArtworkClientWrapper struct {
 	actorSystem *actor.ActorSystem
 }
 
-func (p *downloadArtworkClientWrapper) AcceptedNodes(ctx context.Context, in *pb.AcceptedNodesRequest, opts ...grpc.CallOption) (*pb.AcceptedNodesReply, error) {
+func (p *downloadArtworkClientWrapper) AcceptedNodes(ctx context.Context, in *pb.AcceptedNodesRequest, _ ...grpc.CallOption) (*pb.AcceptedNodesReply, error) {
 	header := headerFromContextMetadata(ctx)
 	res, err := actor.NewRootContext(p.actorSystem, header).RequestFuture(p.receiver, in, time.Second*30).Result()
 	if err != nil {

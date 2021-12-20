@@ -82,6 +82,6 @@ func newDownloadArtwork(conn *clientConn, withActor ...bool) node.DownloadArtwor
 	}
 	return &downloadArtwork{
 		conn:   conn,
-		client: pb.NewDownloadArtworkClient(conn),
+		client: client,
 	}
 }
