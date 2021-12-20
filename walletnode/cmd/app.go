@@ -173,11 +173,11 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	server := api.NewServer(config.API,
 		services.NewArtwork(artworkRegister, artworkSearch, artworkDownload),
 		services.NewUserdata(userdataProcess),
-		services.NewSwagger(),
 		services.NewSense(senseRegister),
+		services.NewSwagger(),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload, userdataProcess)
+	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload, userdataProcess, senseRegister)
 }

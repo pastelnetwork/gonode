@@ -9,10 +9,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 )
 
-const (
-	logPrefix = "sense"
-)
-
 // Task represents a task for registering an artwork.
 type Task struct {
 	task.Task

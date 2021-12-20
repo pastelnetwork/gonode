@@ -118,6 +118,7 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 // StartProcessing - Starts a processing image task
 func (service *Sense) StartProcessing(ctx context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
 	ticket := &senseregister.Request{
+		BurnTxID:              p.BurnTxid,
 		AppPastelID:           p.AppPastelID,
 		AppPastelIDPassphrase: p.AppPastelidPassphrase,
 	}
