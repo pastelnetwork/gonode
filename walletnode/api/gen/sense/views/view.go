@@ -41,7 +41,7 @@ type ImageView struct {
 // ActionDetailResultView is a type that runs validations on a projected type.
 type ActionDetailResultView struct {
 	// Estimated fee
-	EstimatedFee *int64
+	EstimatedFee *float64
 }
 
 var (
@@ -116,8 +116,8 @@ func ValidateActionDetailResultView(result *ActionDetailResultView) (err error) 
 		err = goa.MergeErrors(err, goa.MissingFieldError("estimated_fee", "result"))
 	}
 	if result.EstimatedFee != nil {
-		if *result.EstimatedFee < 1 {
-			err = goa.MergeErrors(err, goa.InvalidRangeError("result.estimated_fee", *result.EstimatedFee, 1, true))
+		if *result.EstimatedFee < 1e-05 {
+			err = goa.MergeErrors(err, goa.InvalidRangeError("result.estimated_fee", *result.EstimatedFee, 1e-05, true))
 		}
 	}
 	return

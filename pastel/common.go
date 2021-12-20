@@ -114,3 +114,9 @@ type GetRawTransactionVerbose1Result struct {
 	Txid          string `json:"txid"`
 	Confirmations int64  `json:"confirmations"`
 }
+
+// GetActionFeeResult describes the result of "getactionfee getactionfees"
+type GetActionFeesResult struct {
+	SenseFee   float64 `json:"sensefee"`
+	CascadeFee float64 `json:"cascadefee"`
+}
