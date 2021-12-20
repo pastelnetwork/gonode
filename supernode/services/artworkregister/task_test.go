@@ -740,65 +740,6 @@ func TestTaskStoreThumbnails(t *testing.T) {
 	}
 }
 
-func TestTaskStoreFingerprints(t *testing.T) {
-	type args struct {
-		task     *Task
-		storeErr error
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				storeErr: nil,
-			},
-			wantErr: nil,
-		},
-
-		"store-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Ticket: &pastel.NFTTicket{},
-				},
-				storeErr: errors.New("test"),
-			},
-			wantErr: errors.New("store fingerprints"),
-		},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			p2pClient := p2pMock.NewMockClient(t)
-			p2pClient.ListenOnStore("", tc.args.storeErr)
-			tc.args.task.Service.p2pClient = p2pClient
-			tc.args.task.p2pClient = p2pClient
-
-			err := tc.args.task.storeFingerprints(context.Background())
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
 func TestTaskVerifyPeersSignature(t *testing.T) {
 	type args struct {
 		task      *Task

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -41,7 +40,6 @@ type Task struct {
 	creatorBlockHeight           int
 	creatorBlockHash             string
 	fingerprintAndScores         *pastel.DDAndFingerprints
-	fingerprintsHash             []byte
 	fingerprint                  []byte
 	imageEncodedWithFingerprints *artwork.File
 	previewHash                  []byte
@@ -138,7 +136,7 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("probe image: %w", err)
 	}
 
-	// generateredundantIDs generate   number of RQ IDs
+	// generateDDAndFingerprintsIDs generates dd & fp IDs
 	if err := task.generateDDAndFingerprintsIDs(); err != nil {
 		return errors.Errorf("probe image: %w", err)
 	}
@@ -801,14 +799,6 @@ func (task *Task) probeImage(ctx context.Context) error {
 
 	task.fingerprintAndScores = task.nodes.FingerAndScores()
 	task.UpdateStatus(StatusImageProbed)
-
-	// As we are going to store the the compressed figerprint to kamedila
-	// so we calculated the hash based on the compressed fingerprints as well
-	fingerprintsHash, err := utils.Sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
-	if err != nil {
-		return errors.Errorf("hash zstd commpressed fingerprints: %w", err)
-	}
-	task.fingerprintsHash = []byte(base58.Encode(fingerprintsHash))
 
 	return nil
 }

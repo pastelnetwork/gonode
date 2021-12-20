@@ -664,7 +664,6 @@ func TestTaskCreateTicket(t *testing.T) {
 			args: args{
 				task: &Task{
 					fingerprint:         []byte{},
-					fingerprintsHash:    []byte{},
 					previewHash:         []byte{},
 					smallThumbnailHash:  []byte{},
 					mediumThumbnailHash: []byte{},
@@ -684,7 +683,6 @@ func TestTaskCreateTicket(t *testing.T) {
 			args: args{
 				task: &Task{
 					fingerprint:         []byte{},
-					fingerprintsHash:    []byte{},
 					datahash:            []byte{},
 					smallThumbnailHash:  []byte{},
 					mediumThumbnailHash: []byte{},
@@ -704,7 +702,6 @@ func TestTaskCreateTicket(t *testing.T) {
 			args: args{
 				task: &Task{
 					fingerprint:        []byte{},
-					fingerprintsHash:   []byte{},
 					previewHash:        []byte{},
 					datahash:           []byte{},
 					smallThumbnailHash: []byte{},
@@ -724,7 +721,6 @@ func TestTaskCreateTicket(t *testing.T) {
 			args: args{
 				task: &Task{
 					fingerprint:         []byte{},
-					fingerprintsHash:    []byte{},
 					mediumThumbnailHash: []byte{},
 					previewHash:         []byte{},
 					datahash:            []byte{},
@@ -744,7 +740,6 @@ func TestTaskCreateTicket(t *testing.T) {
 			args: args{
 				task: &Task{
 					fingerprint:         []byte{},
-					fingerprintsHash:    []byte{},
 					smallThumbnailHash:  []byte{},
 					mediumThumbnailHash: []byte{},
 					previewHash:         []byte{},
@@ -765,7 +760,6 @@ func TestTaskCreateTicket(t *testing.T) {
 			args: args{
 				task: &Task{
 					fingerprint:          []byte{},
-					fingerprintsHash:     []byte{},
 					smallThumbnailHash:   []byte{},
 					mediumThumbnailHash:  []byte{},
 					previewHash:          []byte{},
