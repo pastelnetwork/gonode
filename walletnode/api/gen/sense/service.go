@@ -66,7 +66,7 @@ type ActionDetailsPayload struct {
 // method.
 type ActionDetailResult struct {
 	// Estimated fee
-	EstimatedFee int64
+	EstimatedFee float64
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.

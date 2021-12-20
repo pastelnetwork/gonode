@@ -56,10 +56,14 @@ func (service *Service) VerifyImageSignature(ctx context.Context, file *artwork.
 	return nil
 }
 
-// GetEstimatedFee returns the estimated fee for the given image
-func (service *Service) GetEstimatedFee(ctx context.Context, ImgSizeInMb int64) (int64, error) {
+// GetEstimatedFee returns the estimated sense fee for the given image
+func (service *Service) GetEstimatedFee(ctx context.Context, ImgSizeInMb int64) (float64, error) {
+	actionFees, err := service.pastelClient.GetActionFee(ctx, ImgSizeInMb)
+	if err != nil {
+		return 0, err
+	}
 
-	return 0, nil
+	return actionFees.SenseFee, nil
 }
 
 // NewService returns a new Service instance

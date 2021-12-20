@@ -106,9 +106,9 @@ var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
 var ActionDetailsResult = ResultType("application/sense.start-action", func() {
 	TypeName("actionDetailResult")
 	Attributes(func() {
-		Attribute("estimated_fee", Int64, func() {
+		Attribute("estimated_fee", Float64, func() {
 			Description("Estimated fee")
-			Minimum(1)
+			Minimum(0.00001)
 			Default(1)
 			Example(100)
 		})
