@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"crypto/rand"
+	"io/ioutil"
 	"os"
 	"testing"
 	"time"
@@ -11,7 +12,9 @@ import (
 )
 
 func TestDB(t *testing.T) {
-	storePath := "/tmp/testDb"
+	storePath, err := ioutil.TempDir("/tmp", "sqlitestoretest")
+	assert.Nil(t, err)
+
 	// new the local storage
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
@@ -23,7 +26,7 @@ func TestDB(t *testing.T) {
 		os.RemoveAll(storePath)
 	}()
 
-	numberOfKeys := 2000
+	numberOfKeys := 1500
 	for i := 0; i < numberOfKeys; i++ {
 		key := make([]byte, 32)
 		rand.Read(key)
