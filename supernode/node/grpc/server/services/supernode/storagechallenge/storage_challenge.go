@@ -31,18 +31,18 @@ func (service *appSc) Desc() *grpc.ServiceDesc {
 }
 
 // GenerateStorageChallenges gRPC handler
-func (service *appSc) GenerateStorageChallenges(ctx context.Context, req *pb.GenerateStorageChallengeRequest) (resp *pb.GenerateStorageChallengeReply, err error) {
+func (service *appSc) GenerateStorageChallenges(ctx context.Context, req *pb.GenerateStorageChallengesRequest) (resp *pb.GenerateStorageChallengesReply, err error) {
 	log.WithContext(ctx).WithField("grpc-server", "GenerateStorageChallenges").Debug("handled generate storage challenge action")
 	// validate request body
 	es := validateGenerateStorageChallengeData(req)
 	if err := validationErrorStackWrap(es); err != nil {
 		log.WithContext(ctx).WithField("grpc-server", "GenerateStorageChallenges").Errorf("[GenerateStorageChallenge][Validation Error] %s", es)
-		return &pb.GenerateStorageChallengeReply{}, err
+		return &pb.GenerateStorageChallengesReply{}, err
 	}
 	appCtx := appcontext.FromContext(ctx)
 	// calling async actor to process storage challenge
 	err = service.actor.Send(appCtx, service.appActorPID, newGenerateStorageChallengeMsg(appCtx, req.GetMerkleroot(), req.GetChallengingMasternodeId(), req.GetChallengesPerMasternodePerBlock()))
-	return &pb.GenerateStorageChallengeReply{}, err
+	return &pb.GenerateStorageChallengesReply{}, err
 }
 
 // ProcessStorageChallenge gRPC handler
@@ -78,7 +78,7 @@ func (service *appSc) VerifyStorageChallenge(ctx context.Context, req *pb.Verify
 }
 
 // NewStorageChallenge returns a new StorageChallenge instance.
-func NewStorageChallenge(domainService storagechallenge.StorageChallenge) (appSvc AppSvc, stopActor func()) {
+func NewStorageChallenge(domainService storagechallenge.StorageChallenge) (appSvc AppSvc, stopLocalActor func()) {
 	logger := log.DefaultLogger
 	localActor := messaging.NewActor(actor.NewActorSystem())
 	pid, err := localActor.RegisterActor(&applicationActor{

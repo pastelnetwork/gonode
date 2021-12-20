@@ -30,7 +30,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/huandu/xstrings v1.3.0 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/jmoiron/sqlx v1.3.4 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/kr/text v0.1.0 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect

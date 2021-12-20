@@ -7,6 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
@@ -91,9 +92,14 @@ func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {
+func newRegisterArtwork(conn *clientConn, withActor ...bool) node.RegisterArtwork {
+	var client = pb.NewRegisterArtworkClient(conn)
+	if len(withActor) > 0 && withActor[0] {
+		actorSystem := messaging.GetActorSystem()
+		client = newRegisterArtworkClientWrapper(client, actorSystem, conn.actorPID)
+	}
 	return &registerArtwork{
 		conn:   conn,
-		client: pb.NewRegisterArtworkClient(conn),
+		client: client,
 	}
 }

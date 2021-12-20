@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StorageChallengeClient interface {
-	GenerateStorageChallenge(ctx context.Context, in *GenerateStorageChallengeRequest, opts ...grpc.CallOption) (*GenerateStorageChallengeReply, error)
+	GenerateStorageChallenges(ctx context.Context, in *GenerateStorageChallengesRequest, opts ...grpc.CallOption) (*GenerateStorageChallengesReply, error)
 	ProcessStorageChallenge(ctx context.Context, in *ProcessStorageChallengeRequest, opts ...grpc.CallOption) (*ProcessStorageChallengeReply, error)
 	VerifyStorageChallenge(ctx context.Context, in *VerifyStorageChallengeRequest, opts ...grpc.CallOption) (*VerifyStorageChallengeReply, error)
 }
@@ -31,9 +31,9 @@ func NewStorageChallengeClient(cc grpc.ClientConnInterface) StorageChallengeClie
 	return &storageChallengeClient{cc}
 }
 
-func (c *storageChallengeClient) GenerateStorageChallenge(ctx context.Context, in *GenerateStorageChallengeRequest, opts ...grpc.CallOption) (*GenerateStorageChallengeReply, error) {
-	out := new(GenerateStorageChallengeReply)
-	err := c.cc.Invoke(ctx, "/supernode.StorageChallenge/GenerateStorageChallenge", in, out, opts...)
+func (c *storageChallengeClient) GenerateStorageChallenges(ctx context.Context, in *GenerateStorageChallengesRequest, opts ...grpc.CallOption) (*GenerateStorageChallengesReply, error) {
+	out := new(GenerateStorageChallengesReply)
+	err := c.cc.Invoke(ctx, "/supernode.StorageChallenge/GenerateStorageChallenges", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (c *storageChallengeClient) VerifyStorageChallenge(ctx context.Context, in 
 // All implementations must embed UnimplementedStorageChallengeServer
 // for forward compatibility
 type StorageChallengeServer interface {
-	GenerateStorageChallenge(context.Context, *GenerateStorageChallengeRequest) (*GenerateStorageChallengeReply, error)
+	GenerateStorageChallenges(context.Context, *GenerateStorageChallengesRequest) (*GenerateStorageChallengesReply, error)
 	ProcessStorageChallenge(context.Context, *ProcessStorageChallengeRequest) (*ProcessStorageChallengeReply, error)
 	VerifyStorageChallenge(context.Context, *VerifyStorageChallengeRequest) (*VerifyStorageChallengeReply, error)
 	mustEmbedUnimplementedStorageChallengeServer()
@@ -72,8 +72,8 @@ type StorageChallengeServer interface {
 type UnimplementedStorageChallengeServer struct {
 }
 
-func (UnimplementedStorageChallengeServer) GenerateStorageChallenge(context.Context, *GenerateStorageChallengeRequest) (*GenerateStorageChallengeReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GenerateStorageChallenge not implemented")
+func (UnimplementedStorageChallengeServer) GenerateStorageChallenges(context.Context, *GenerateStorageChallengesRequest) (*GenerateStorageChallengesReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateStorageChallenges not implemented")
 }
 func (UnimplementedStorageChallengeServer) ProcessStorageChallenge(context.Context, *ProcessStorageChallengeRequest) (*ProcessStorageChallengeReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessStorageChallenge not implemented")
@@ -94,20 +94,20 @@ func RegisterStorageChallengeServer(s grpc.ServiceRegistrar, srv StorageChalleng
 	s.RegisterService(&StorageChallenge_ServiceDesc, srv)
 }
 
-func _StorageChallenge_GenerateStorageChallenge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GenerateStorageChallengeRequest)
+func _StorageChallenge_GenerateStorageChallenges_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateStorageChallengesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StorageChallengeServer).GenerateStorageChallenge(ctx, in)
+		return srv.(StorageChallengeServer).GenerateStorageChallenges(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/supernode.StorageChallenge/GenerateStorageChallenge",
+		FullMethod: "/supernode.StorageChallenge/GenerateStorageChallenges",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageChallengeServer).GenerateStorageChallenge(ctx, req.(*GenerateStorageChallengeRequest))
+		return srv.(StorageChallengeServer).GenerateStorageChallenges(ctx, req.(*GenerateStorageChallengesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -156,8 +156,8 @@ var StorageChallenge_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*StorageChallengeServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GenerateStorageChallenge",
-			Handler:    _StorageChallenge_GenerateStorageChallenge_Handler,
+			MethodName: "GenerateStorageChallenges",
+			Handler:    _StorageChallenge_GenerateStorageChallenges_Handler,
 		},
 		{
 			MethodName: "ProcessStorageChallenge",

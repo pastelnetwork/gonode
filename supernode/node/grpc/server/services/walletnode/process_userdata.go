@@ -60,7 +60,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 		return err
 	}
 
-	resp := &pbwn.MDLSessionReply{
+	resp := &pbwn.SessionReply{
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
@@ -83,7 +83,7 @@ func (service *ProcessUserdata) Session(stream pbwn.ProcessUserdata_SessionServe
 }
 
 // AcceptedNodes implements walletnode.ProcessUserdataServer.AcceptedNodes()
-func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pbwn.MDLAcceptedNodesRequest) (*pbwn.MDLAcceptedNodesReply, error) {
+func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pbwn.AcceptedNodesRequest) (*pbwn.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 
 	if req == nil {
@@ -100,14 +100,14 @@ func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pbwn.MDL
 		return nil, err
 	}
 
-	var peers []*pbwn.MDLAcceptedNodesReply_Peer
+	var peers []*pbwn.AcceptedNodesReply_Peer
 	for _, node := range nodes {
-		peers = append(peers, &pbwn.MDLAcceptedNodesReply_Peer{
+		peers = append(peers, &pbwn.AcceptedNodesReply_Peer{
 			NodeID: node.ID,
 		})
 	}
 
-	resp := &pbwn.MDLAcceptedNodesReply{
+	resp := &pbwn.AcceptedNodesReply{
 		Peers: peers,
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debug("AcceptedNodes response")
@@ -115,7 +115,7 @@ func (service *ProcessUserdata) AcceptedNodes(ctx context.Context, req *pbwn.MDL
 }
 
 // ConnectTo implements walletnode.ProcessUserdataServer.ConnectTo()
-func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConnectToRequest) (*pbwn.MDLConnectToReply, error) {
+func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.ConnectToRequest) (*pbwn.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
 	if req == nil {
@@ -131,7 +131,7 @@ func (service *ProcessUserdata) ConnectTo(ctx context.Context, req *pbwn.MDLConn
 		return nil, err
 	}
 
-	resp := &pbwn.MDLConnectToReply{}
+	resp := &pbwn.ConnectToReply{}
 	log.WithContext(ctx).WithField("resp", resp).Debug("ConnectTo response")
 	return resp, nil
 }

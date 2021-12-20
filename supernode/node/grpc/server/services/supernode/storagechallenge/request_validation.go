@@ -6,7 +6,7 @@ import (
 	dto "github.com/pastelnetwork/gonode/proto/supernode"
 )
 
-func validateGenerateStorageChallengeData(req *dto.GenerateStorageChallengeRequest) validationErrorStack {
+func validateGenerateStorageChallengeData(req *dto.GenerateStorageChallengesRequest) validationErrorStack {
 	var key string
 	var es validationErrorStack = make([]*validationError, 0)
 

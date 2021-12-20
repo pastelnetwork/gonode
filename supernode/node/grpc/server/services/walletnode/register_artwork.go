@@ -289,8 +289,8 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 				}
 			} else {
 				if metaData := req.GetMetaData(); metaData != nil {
-					if metaData.Size != imageSize {
-						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size, imageSize)
+					if metaData.Size_ != imageSize {
+						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size_, imageSize)
 					}
 
 					cordinates := metaData.GetThumbnail()

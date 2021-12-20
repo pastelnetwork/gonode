@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
@@ -269,7 +270,7 @@ func (service *registerArtwork) UploadImageWithThumbnail(ctx context.Context, im
 		Payload: &pb.UploadImageRequest_MetaData_{
 			MetaData: &pb.UploadImageRequest_MetaData{
 				Hash:   hash[:],
-				Size:   int64(payloadSize),
+				Size_:  int64(payloadSize),
 				Format: image.Format().String(),
 				Thumbnail: &pb.UploadImageRequest_Coordinate{
 					TopLeftX:     thumbnail.TopLeftX,
@@ -347,9 +348,13 @@ func (service *registerArtwork) SendPreBurntFeeTxid(ctx context.Context, txid st
 	return rsp.NFTRegTxid, nil
 }
 
-func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {
+func newRegisterArtwork(conn *clientConn, withActor ...bool) node.RegisterArtwork {
+	client := pb.NewRegisterArtworkClient(conn)
+	if len(withActor) > 0 && withActor[0] {
+		client = newRegisterArtworkClientWrapper(client, messaging.GetActorSystem(), conn.actorPID)
+	}
 	return &registerArtwork{
 		conn:   conn,
-		client: pb.NewRegisterArtworkClient(conn),
+		client: client,
 	}
 }

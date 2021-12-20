@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
@@ -38,7 +39,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 		return errors.Errorf("open Health stream: %w", err)
 	}
 
-	req := &pb.MDLSessionRequest{
+	req := &pb.SessionRequest{
 		NodeID: nodeID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")
@@ -147,9 +148,14 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 	}, nil
 }
 
-func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
+func newProcessUserdata(conn *clientConn, withActor ...bool) node.ProcessUserdata {
+	var client = pb.NewProcessUserdataClient(conn)
+	if len(withActor) > 0 && withActor[0] {
+		actorSystem := messaging.GetActorSystem()
+		client = newProcessUserdataClientWrapper(client, actorSystem, conn.actorPID)
+	}
 	return &processUserdata{
 		conn:   conn,
-		client: pb.NewProcessUserdataClient(conn),
+		client: client,
 	}
 }
