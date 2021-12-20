@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -36,7 +37,7 @@ func (service *processUserdata) Session(ctx context.Context, isPrimary bool) err
 		return errors.Errorf("open Health stream: %w", err)
 	}
 
-	req := &pb.MDLSessionRequest{
+	req := &pb.SessionRequest{
 		IsPrimary: isPrimary,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")
@@ -76,7 +77,7 @@ func (service *processUserdata) AcceptedNodes(ctx context.Context) (pastelIDs []
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := &pb.MDLAcceptedNodesRequest{}
+	req := &pb.AcceptedNodesRequest{}
 	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
@@ -97,7 +98,7 @@ func (service *processUserdata) ConnectTo(ctx context.Context, nodeID, sessID st
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := &pb.MDLConnectToRequest{
+	req := &pb.ConnectToRequest{
 		NodeID: nodeID,
 		SessID: sessID,
 	}
@@ -230,9 +231,14 @@ func (service *processUserdata) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
+func newProcessUserdata(conn *clientConn, withActor ...bool) node.ProcessUserdata {
+	client := pb.NewProcessUserdataClient(conn)
+	if len(withActor) > 0 && withActor[0] {
+		client = newProcessUserdataClientWrapper(client, messaging.GetActorSystem(), conn.actorPID)
+	}
+
 	return &processUserdata{
 		conn:   conn,
-		client: pb.NewProcessUserdataClient(conn),
+		client: client,
 	}
 }

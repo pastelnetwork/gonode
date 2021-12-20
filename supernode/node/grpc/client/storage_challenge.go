@@ -5,6 +5,6 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
-func newStorageChallenge(conn *clientConn) node.StorageChallenge {
+func newStorageChallenge(conn *clientConn, withActor ...bool) node.StorageChallenge {
 	return pb.NewStorageChallengeClient(conn)
 }

@@ -29,11 +29,11 @@ type Connection interface {
 	// Done returns a channel that's closed when connection is shutdown.
 	Done() <-chan struct{}
 	// RegisterArtwork returns a new RegisterArtwork stream.
-	RegisterArtwork() RegisterArtwork
+	RegisterArtwork(withActor ...bool) RegisterArtwork
 	// DownloadArtwork returns a new DownloadArtwork stream.
-	DownloadArtwork() DownloadArtwork
+	DownloadArtwork(withActor ...bool) DownloadArtwork
 	// ProcessUserdata returns a new ProcessUserdata stream.
-	ProcessUserdata() ProcessUserdata
+	ProcessUserdata(withActor ...bool) ProcessUserdata
 }
 
 // RegisterArtwork contains methods for registering artwork.

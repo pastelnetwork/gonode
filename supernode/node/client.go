@@ -25,11 +25,11 @@ type Connection interface {
 	// Done returns a channel that's closed when connection is shutdown.
 	Done() <-chan struct{}
 	// RegisterArtwork returns a new RegisterArtwork stream.
-	RegisterArtwork() RegisterArtwork
+	RegisterArtwork(withActor ...bool) RegisterArtwork
 	// ProcessUserdata returns a new ProcessUserdata stream.
-	ProcessUserdata() ProcessUserdata
+	ProcessUserdata(withActor ...bool) ProcessUserdata
 	// StorageChallenge returns a new StorageChallenge stream.
-	StorageChallenge() StorageChallenge
+	StorageChallenge(withActor ...bool) StorageChallenge
 }
 
 // RegisterArtwork represents an interaction stream with supernodes for registering artwork.
