@@ -129,23 +129,13 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 
 // MatchFingerprintAndScores matches fingerprints.
 func (nodes *List) MatchFingerprintAndScores() error {
-	// verify signatures of FingerprintAndScoresBytes
-	/*
-		for i := 1; i < len(*nodes); i++ {
-			node := (*nodes)[i]
-			ok, err := pastelClient.Verify(context.Background(), node.FingerprintAndScoresBytes, string(node.Signature), node.PastelID(), pastel.SignAlgorithmED448)
-			if err != nil || !ok {
-				return errors.Errorf("node[%s] returned invalid signature : %w", node.PastelID(), err)
-			}
-		}
-	*/
-
 	node := (*nodes)[0]
 	for i := 1; i < len(*nodes); i++ {
 		if err := pastel.CompareFingerPrintAndScore(node.FingerprintAndScores, (*nodes)[i].FingerprintAndScores); err != nil {
 			return errors.Errorf("node[%s] and node[%s] not matched: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
 		}
 	}
+
 	return nil
 }
 

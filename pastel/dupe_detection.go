@@ -145,6 +145,7 @@ func ExtractCompressSignedDDAndFingerprints(compressed []byte) (*DDAndFingerprin
 	if err := json.Unmarshal(ddDataJSON, dDataAndFingerprints); err != nil {
 		return nil, nil, nil, errors.Errorf("json decode dd_and_fingerprints: %w", err)
 	}
+
 	return dDataAndFingerprints, ddDataJSON, signature, nil
 }
 

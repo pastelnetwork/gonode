@@ -40,7 +40,6 @@ type Task struct {
 	myDDAndFingerprints                   *pastel.DDAndFingerprints
 	calculatedDDAndFingerprints           *pastel.DDAndFingerprints
 	allDDAndFingerprints                  map[string]*pastel.DDAndFingerprints
-	fingerprints                          pastel.Fingerprint
 	allSignedDDAndFingerprintsReceivedChn chan struct{}
 	ddMtx                                 sync.Mutex
 
@@ -410,29 +409,40 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, rq []byte, dd []b
 			task.rawRqFile = file
 		}
 
-		verifications := 0
-		verifiedNodes := make(map[int]bool)
-		for i := 1; i < length; i++ {
-			for j := 0; j < len(task.meshedNodes); j++ {
-				if _, ok := verifiedNodes[j]; ok {
-					continue
-				}
+		if fileType == fileTypeRQ {
+			verified, err := task.pastelClient.Verify(ctx, file, string(splits[1]), task.Ticket.Author, pastel.SignAlgorithmED448)
+			if err != nil {
+				return errors.Errorf("verify file signature %w", err)
+			}
 
-				verified, err := task.pastelClient.Verify(ctx, file, string(splits[i]), task.meshedNodes[j].NodeID, pastel.SignAlgorithmED448)
-				if err != nil {
-					return errors.Errorf("verify file signature %w", err)
-				}
+			if !verified {
+				return errors.New("rq file not verified")
+			}
+		} else {
+			verifications := 0
+			verifiedNodes := make(map[int]bool)
+			for i := 1; i < length; i++ {
+				for j := 0; j < len(task.meshedNodes); j++ {
+					if _, ok := verifiedNodes[j]; ok {
+						continue
+					}
 
-				if verified {
-					verifiedNodes[j] = true
-					verifications++
-					break
+					verified, err := task.pastelClient.Verify(ctx, file, string(splits[i]), task.meshedNodes[j].NodeID, pastel.SignAlgorithmED448)
+					if err != nil {
+						return errors.Errorf("verify file signature %w", err)
+					}
+
+					if verified {
+						verifiedNodes[j] = true
+						verifications++
+						break
+					}
 				}
 			}
-		}
 
-		if verifications != length-1 { // need 1 verification for rq & 3 for dd_and_fp
-			return errors.Errorf("file verification failed: need %d verifications, got %d", length-1, verifications)
+			if verifications != 3 {
+				return errors.Errorf("file verification failed: need %d verifications, got %d", 3, verifications)
+			}
 		}
 
 		gotIDs, idFiles, err := pastel.GetIDFiles(decData, ic, max)
@@ -629,12 +639,6 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 					if err = task.storeThumbnails(ctx); err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("store thumbnails")
 						err = errors.Errorf("store thumbnails: %w", err)
-						return nil
-					}
-
-					if err = task.storeFingerprints(ctx); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("store fingerprints")
-						err = errors.Errorf("store fingerprints: %w", err)
 						return nil
 					}
 
@@ -851,18 +855,6 @@ func (task *Task) storeIDFiles(ctx context.Context) error {
 		return fmt.Errorf("store rq_id files: %w", err)
 	}
 
-	return nil
-}
-
-func (task *Task) storeFingerprints(ctx context.Context) error {
-	compressFringerprints, err := zstd.CompressLevel(nil, pastel.Fingerprint(task.fingerprints).Bytes(), 22)
-	if err != nil {
-		return errors.Errorf("compress fingerprint")
-	}
-
-	if _, err := task.p2pClient.Store(ctx, compressFringerprints); err != nil {
-		return errors.Errorf("store fingerprints into kamedila")
-	}
 	return nil
 }
 
