@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	nodeTest "github.com/pastelnetwork/gonode/walletnode/node/test"
@@ -262,7 +263,8 @@ func TestTask_meshNodes(t *testing.T) {
 				ListenOnSessionUserdata(tt.args.returnErr).
 				ListenOnConnectToUserdata(tt.args.returnErr).
 				ListenOnSessIDUserdata(tt.args.primarySessID).
-				ListenOnAcceptedNodesUserdata(tt.args.pastelIDS, tt.args.acceptNodeErr)
+				ListenOnAcceptedNodesUserdata(tt.args.pastelIDS, tt.args.acceptNodeErr).
+				ListenOnMeshNodes(nil)
 
 			nodes := node.List{}
 			for _, n := range tt.args.nodes {
@@ -281,7 +283,7 @@ func TestTask_meshNodes(t *testing.T) {
 			nodeClient.AssertAcceptedNodesCallUserdata(1, mock.Anything)
 			nodeClient.AssertSessIDCallUserdata(tt.numSessIDCall)
 			nodeClient.AssertSessionCallUserdata(tt.numSessionCall, mock.Anything, false)
-			nodeClient.AssertConnectToCallUserdata(tt.numConnectToCall, mock.Anything, tt.args.primaryPastelID, tt.args.primarySessID)
+			nodeClient.AssertConnectToCallUserdata(tt.numConnectToCall, mock.Anything, types.MeshedSuperNode{NodeID: tt.args.primaryPastelID, SessID: tt.args.primarySessID})
 			nodeClient.Client.AssertExpectations(t)
 			nodeClient.Connection.AssertExpectations(t)
 		})

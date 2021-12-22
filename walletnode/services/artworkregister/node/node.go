@@ -18,9 +18,11 @@ type Node struct {
 	node.RegisterArtwork
 	node.Connection
 
-	isPrimary            bool
-	activated            bool
-	fingerprintAndScores *pastel.FingerAndScores
+	isPrimary                 bool
+	activated                 bool
+	FingerprintAndScores      *pastel.DDAndFingerprints
+	FingerprintAndScoresBytes []byte // JSON bytes of FingerprintAndScores
+	Signature                 []byte
 
 	// thumbnail hash
 	previewHash         []byte

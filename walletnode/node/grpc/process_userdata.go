@@ -8,6 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -93,13 +94,13 @@ func (service *processUserdata) AcceptedNodes(ctx context.Context) (pastelIDs []
 }
 
 // ConnectTo implements node.ProcessUserdata.ConnectTo()
-func (service *processUserdata) ConnectTo(ctx context.Context, nodeID, sessID string) error {
+func (service *processUserdata) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.MDLConnectToRequest{
-		NodeID: nodeID,
-		SessID: sessID,
+		NodeID: primaryNode.NodeID,
+		SessID: primaryNode.SessID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 

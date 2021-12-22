@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
 	"github.com/stretchr/testify/mock"
 )
@@ -24,6 +23,9 @@ const (
 
 	// DoneMethod represent Done call
 	DoneMethod = "Done"
+
+	// MeshNodesMethod represent MeshNodes name method
+	MeshNodesMethod = "MeshNodes"
 
 	// ProbeImageMethod represent ProbeImage name method
 	ProbeImageMethod = "ProbeImage"
@@ -94,7 +96,7 @@ func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Clien
 // ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
 func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
 	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }
 
@@ -183,9 +185,15 @@ func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}
 	return client
 }
 
+// ListenOnMeshNodes listening MeshNodes call and returns args value
+func (client *Client) ListenOnMeshNodes(arguments ...interface{}) *Client {
+	client.RegisterArtwork.On(MeshNodesMethod, mock.Anything, mock.Anything).Return(arguments...)
+	return client
+}
+
 // ListenOnProbeImage listening ProbeImage call and returns args value
 func (client *Client) ListenOnProbeImage(arguments ...interface{}) *Client {
-	client.RegisterArtwork.On(ProbeImageMethod, mock.Anything, mock.IsType(&artwork.File{})).Return(arguments...)
+	client.RegisterArtwork.On(ProbeImageMethod, mock.Anything, mock.Anything).Return(arguments...)
 	return client
 }
 
@@ -236,7 +244,7 @@ func (client *Client) AssertAcceptedNodesCall(expectedCalls int, arguments ...in
 
 // ListenOnConnectTo listening ConnectTo call and returns error from args
 func (client *Client) ListenOnConnectTo(returnErr error) *Client {
-	client.RegisterArtwork.On(ConnectToMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string(""))).Return(returnErr)
+	client.RegisterArtwork.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 
@@ -343,7 +351,7 @@ func (client *Client) AssertAcceptedNodesCallUserdata(expectedCalls int, argumen
 
 // ListenOnConnectToUserdata listening ConnectTo call and returns error from args
 func (client *Client) ListenOnConnectToUserdata(returnErr error) *Client {
-	client.ProcessUserdata.On(ConnectToMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string(""))).Return(returnErr)
+	client.ProcessUserdata.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 

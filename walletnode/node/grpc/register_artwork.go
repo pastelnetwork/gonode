@@ -3,13 +3,14 @@ package grpc
 import (
 	"context"
 	"encoding/base64"
+
 	"fmt"
 	"io"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
-	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -101,13 +102,13 @@ func (service *registerArtwork) AcceptedNodes(ctx context.Context) (pastelIDs []
 }
 
 // ConnectTo implements node.RegisterArtwork.ConnectTo()
-func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID string) error {
+func (service *registerArtwork) ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := &pb.ConnectToRequest{
-		NodeID: nodeID,
-		SessID: sessID,
+		NodeID: primaryNode.NodeID,
+		SessID: primaryNode.SessID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 
@@ -120,8 +121,41 @@ func (service *registerArtwork) ConnectTo(ctx context.Context, nodeID, sessID st
 	return nil
 }
 
+// MeshNodes informs SNs which SNs are connected to do NFT request
+func (service *registerArtwork) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+	request := &pb.MeshNodesRequest{
+		Nodes: []*pb.MeshNodesRequest_Node{},
+	}
+
+	for _, node := range meshedNodes {
+		request.Nodes = append(request.Nodes, &pb.MeshNodesRequest_Node{
+			SessID: node.SessID,
+			NodeID: node.NodeID,
+		})
+	}
+
+	_, err := service.client.MeshNodes(ctx, request)
+
+	return err
+}
+
+// SendRegMetadata send metadata of registration to SNs for next steps
+func (service *registerArtwork) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+	request := &pb.SendRegMetadataRequest{
+		BlockHash:       regMetadata.BlockHash,
+		CreatorPastelID: regMetadata.CreatorPastelID,
+	}
+
+	_, err := service.client.SendRegMetadata(ctx, request)
+	return err
+}
+
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) (*pastel.FingerAndScores, error) {
+func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -156,57 +190,8 @@ func (service *registerArtwork) ProbeImage(ctx context.Context, image *artwork.F
 	if err != nil {
 		return nil, errors.Errorf("receive image response: %w", err)
 	}
-	return &pastel.FingerAndScores{
-		DupeDectectionSystemVersion: resp.DupeDetectionVersion,
-		HashOfCandidateImageFile:    resp.HashOfCandidateImg,
-		OverallAverageRarenessScore: resp.AverageRarenessScore,
-		IsLikelyDupe:                resp.IsLikelyDupe,
-		IsRareOnInternet:            resp.IsRareOnInternet,
-		NumberOfPagesOfResults:      resp.NumberOfPagesOfResults,
-		MatchesFoundOnFirstPage:     resp.MatchesFoundOnFirstPage,
-		URLOfFirstMatchInPage:       resp.UrlOfFirstMatchInPage,
-		OpenNSFWScore:               resp.OpenNsfwScore,
-		ZstdCompressedFingerprint:   resp.ZstdCompressedFingerprint,
-		AlternativeNSFWScore: pastel.AlternativeNSFWScore{
-			Drawing: resp.AlternativeNsfwScore.Drawing,
-			Hentai:  resp.AlternativeNsfwScore.Hentai,
-			Neutral: resp.AlternativeNsfwScore.Neutral,
-			Porn:    resp.AlternativeNsfwScore.Porn,
-			Sexy:    resp.AlternativeNsfwScore.Sexy,
-		},
-		PerceptualImageHashes: pastel.PerceptualImageHashes{
-			PerceptualHash: resp.ImageHashes.PerceptualHash,
-			AverageHash:    resp.ImageHashes.AverageHash,
-			DifferenceHash: resp.ImageHashes.DifferenceHash,
-			PDQHash:        resp.ImageHashes.PDQHash,
-			NeuralHash:     resp.ImageHashes.NeuralHash,
-		},
-		PerceptualHashOverlapCount:                   resp.PerceptualHashOverlapCount,
-		NumberOfFingerprintsRequiringFurtherTesting1: resp.NumberOfFingerprintsRequiringFurtherTesting_1,
-		NumberOfFingerprintsRequiringFurtherTesting2: resp.NumberOfFingerprintsRequiringFurtherTesting_2,
-		NumberOfFingerprintsRequiringFurtherTesting3: resp.NumberOfFingerprintsRequiringFurtherTesting_3,
-		NumberOfFingerprintsRequiringFurtherTesting4: resp.NumberOfFingerprintsRequiringFurtherTesting_4,
-		NumberOfFingerprintsRequiringFurtherTesting5: resp.NumberOfFingerprintsRequiringFurtherTesting_5,
-		NumberOfFingerprintsRequiringFurtherTesting6: resp.NumberOfFingerprintsRequiringFurtherTesting_6,
-		NumberOfFingerprintsOfSuspectedDupes:         resp.NumberOfFingerprintsOfSuspectedDupes,
-		PearsonMax:                                   resp.PearsonMax,
-		SpearmanMax:                                  resp.SpearmanMax,
-		KendallMax:                                   resp.KendallMax,
-		HoeffdingMax:                                 resp.HoeffdingMax,
-		MutualInformationMax:                         resp.MutualInformationMax,
-		HsicMax:                                      resp.HsicMax,
-		XgbimportanceMax:                             resp.XgbimportanceMax,
-		PearsonTop1BpsPercentile:                     resp.PearsonTop_1BpsPercentile,
-		SpearmanTop1BpsPercentile:                    resp.SpearmanTop_1BpsPercentile,
-		KendallTop1BpsPercentile:                     resp.KendallTop_1BpsPercentile,
-		HoeffdingTop10BpsPercentile:                  resp.HoeffdingTop_10BpsPercentile,
-		MutualInformationTop100BpsPercentile:         resp.MutualInformationTop_100BpsPercentile,
-		HsicTop100BpsPercentile:                      resp.HsicTop_100BpsPercentile,
-		XgbimportanceTop100BpsPercentile:             resp.XgbimportanceTop_100BpsPercentile,
-		CombinedRarenessScore:                        resp.CombinedRarenessScore,
-		XgboostPredictedRarenessScore:                resp.XgboostPredictedRarenessScore,
-		NnPredictedRarenessScore:                     resp.NnPredictedRarenessScore,
-	}, nil
+
+	return resp.CompressedSignedDDAndFingerprints, nil
 }
 
 // UploadImageWithThumbnail implements node.RegisterArtwork.UploadImageWithThumbnail()
@@ -306,7 +291,7 @@ func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) contex
 }
 
 // SendSignedTicket
-func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error) {
+func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqids []byte, ddFp []byte, encoderParams rqnode.EncoderParameters) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -318,7 +303,8 @@ func (service *registerArtwork) SendSignedTicket(ctx context.Context, ticket []b
 		EncodeParameters: &pb.EncoderParameters{
 			Oti: encoderParams.Oti,
 		},
-		EncodeFiles: rqids,
+		DdFpFiles: ddFp,
+		RqFiles:   rqids,
 	}
 
 	rsp, err := service.client.SendSignedNFTTicket(ctx, &req)

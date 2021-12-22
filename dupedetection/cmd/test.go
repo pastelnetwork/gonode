@@ -27,7 +27,7 @@ func main() {
 		panic("read file error" + err.Error())
 	}
 
-	res, err := client.ImageRarenessScore(context.Background(), data, "png")
+	res, err := client.ImageRarenessScore(context.Background(), data, "png", "testBlockHash", "testPastelID")
 	if err != nil {
 		panic("do ImageRarenessScore() error" + err.Error())
 	}
