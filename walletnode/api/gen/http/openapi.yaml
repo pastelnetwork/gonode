@@ -499,6 +499,39 @@ paths:
             $ref: '#/definitions/SenseStartProcessingInternalServerErrorResponseBody'
       schemes:
       - http
+  /openapi/sense/start/{taskId}/state:
+    get:
+      tags:
+      - sense
+      summary: Streams state by task ID
+      description: Streams the state of the registration process.
+      operationId: sense#registerTaskState
+      parameters:
+      - name: taskId
+        in: path
+        description: Task ID of the registration process
+        required: true
+        type: string
+        maxLength: 8
+        minLength: 8
+      responses:
+        "101":
+          description: Switching Protocols response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateResponseBody'
+            required:
+            - date
+            - status
+        "404":
+          description: Not Found response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateNotFoundResponseBody'
+        "500":
+          description: Internal Server Error response.
+          schema:
+            $ref: '#/definitions/SenseRegisterTaskStateInternalServerErrorResponseBody'
+      schemes:
+      - ws
   /openapi/sense/upload:
     post:
       tags:
@@ -3028,20 +3061,20 @@ definitions:
       action_data_signature:
         type: string
         description: The signature (base64) of the Action Data
-        example: be9XjyZuhKSlxoxRO4zj3s+hlzF8gWVCwaBFq44n92nONvclfXul/Bn8UgXOIbRGP6LNuzLfiU+ApSUxcaw7NuK0h1tXOmNTt78T/aNT9SiFbBx3wcDqZJtKNlI4a/p7wekDvGjlKfU8jn+RauYCvhEA
-        pattern: ^[a-zA-Z0-9]+$
+        example: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
+        pattern: ^[a-zA-Z0-9\/+]
         minLength: 152
         maxLength: 152
       app_pastelid:
         type: string
         description: 3rd party app's PastelID
         example: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
-        pattern: ^[a-zA-Z0-9]+$
+        pattern: ^[a-zA-Z0-9]
         minLength: 86
         maxLength: 86
     example:
       action_data_hash: 7ae3874ff2df92df38cce7586c08fe8f3687884edf3b0543f8d9420f4df31265
-      action_data_signature: be9XjyZuhKSlxoxRO4zj3s+hlzF8gWVCwaBFq44n92nONvclfXul/Bn8UgXOIbRGP6LNuzLfiU+ApSUxcaw7NuK0h1tXOmNTt78T/aNT9SiFbBx3wcDqZJtKNlI4a/p7wekDvGjlKfU8jn+RauYCvhEA
+      action_data_signature: bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A
       app_pastelid: jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY
     required:
     - app_pastelid
@@ -3062,6 +3095,127 @@ definitions:
       estimated_fee: 100
     required:
     - estimated_fee
+  SenseRegisterTaskStateInternalServerErrorResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      id:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      message:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      timeout:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+    description: registerTaskState_InternalServerError_response_body result type (default
+      view)
+    example:
+      fault: false
+      id: bad_request
+      message: bad_request
+      name: bad_request
+      temporary: false
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseRegisterTaskStateNotFoundResponseBody:
+    title: 'Mediatype identifier: application/vnd.goa.error; view=default'
+    type: object
+    properties:
+      fault:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+      id:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      message:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      name:
+        type: string
+        description: Name is the name of this class of errors.
+        example: bad_request
+      temporary:
+        type: boolean
+        description: Is the error temporary?
+        example: false
+      timeout:
+        type: boolean
+        description: Is the error temporary?
+        example: true
+    description: registerTaskState_NotFound_response_body result type (default view)
+    example:
+      fault: true
+      id: bad_request
+      message: bad_request
+      name: bad_request
+      temporary: true
+      timeout: true
+    required:
+    - name
+    - id
+    - message
+    - temporary
+    - timeout
+    - fault
+  SenseRegisterTaskStateResponseBody:
+    title: SenseRegisterTaskStateResponseBody
+    type: object
+    properties:
+      date:
+        type: string
+        description: Date of the status creation
+        example: 2006-01-02T15:04:05Z07:00
+      status:
+        type: string
+        description: Status of the registration process
+        example: Task Started
+        enum:
+        - Task Started
+        - Connected
+        - Image Probed
+        - Image And Thumbnail Uploaded
+        - Status Gen ReptorQ Symbols
+        - Preburn Registration Fee
+        - Ticket Accepted
+        - Ticket Registered
+        - Ticket Activated
+        - Error Insufficient Fee
+        - Error Fingerprints Dont Match
+        - Error ThumbnailHashes Dont Match
+        - Error GenRaptorQ Symbols Failed
+        - Task Rejected
+        - Task Completed
+    example:
+      date: 2006-01-02T15:04:05Z07:00
+      status: Task Started
+    required:
+    - date
+    - status
   SenseStartProcessingBadRequestResponseBody:
     title: 'Mediatype identifier: application/vnd.goa.error; view=default'
     type: object
@@ -3651,7 +3805,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -3678,7 +3832,7 @@ definitions:
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: true
+      temporary: false
       timeout: true
     required:
     - name
@@ -3714,16 +3868,16 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: createUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: false
-      timeout: true
+      temporary: true
+      timeout: false
     required:
     - name
     - id
@@ -3917,10 +4071,10 @@ definitions:
       timeout:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
     description: getUserdata_BadRequest_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
@@ -3940,7 +4094,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -3984,7 +4138,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -4000,14 +4154,14 @@ definitions:
       temporary:
         type: boolean
         description: Is the error temporary?
-        example: true
+        example: false
       timeout:
         type: boolean
         description: Is the error temporary?
         example: false
     description: getUserdata_NotFound_response_body result type (default view)
     example:
-      fault: false
+      fault: true
       id: bad_request
       message: bad_request
       name: bad_request
@@ -4106,7 +4260,7 @@ definitions:
       fault:
         type: boolean
         description: Is the error temporary?
-        example: false
+        example: true
       id:
         type: string
         description: Name is the name of this class of errors.
@@ -4129,7 +4283,7 @@ definitions:
         example: true
     description: updateUserdata_BadRequest_response_body result type (default view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
@@ -4173,12 +4327,12 @@ definitions:
     description: updateUserdata_InternalServerError_response_body result type (default
       view)
     example:
-      fault: true
+      fault: false
       id: bad_request
       message: bad_request
       name: bad_request
-      temporary: true
-      timeout: false
+      temporary: false
+      timeout: true
     required:
     - name
     - id

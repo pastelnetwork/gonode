@@ -15,17 +15,19 @@ import (
 
 // Client is the "sense" service client.
 type Client struct {
-	UploadImageEndpoint     goa.Endpoint
-	ActionDetailsEndpoint   goa.Endpoint
-	StartProcessingEndpoint goa.Endpoint
+	UploadImageEndpoint       goa.Endpoint
+	ActionDetailsEndpoint     goa.Endpoint
+	StartProcessingEndpoint   goa.Endpoint
+	RegisterTaskStateEndpoint goa.Endpoint
 }
 
 // NewClient initializes a "sense" service client given the endpoints.
-func NewClient(uploadImage, actionDetails, startProcessing goa.Endpoint) *Client {
+func NewClient(uploadImage, actionDetails, startProcessing, registerTaskState goa.Endpoint) *Client {
 	return &Client{
-		UploadImageEndpoint:     uploadImage,
-		ActionDetailsEndpoint:   actionDetails,
-		StartProcessingEndpoint: startProcessing,
+		UploadImageEndpoint:       uploadImage,
+		ActionDetailsEndpoint:     actionDetails,
+		StartProcessingEndpoint:   startProcessing,
+		RegisterTaskStateEndpoint: registerTaskState,
 	}
 }
 
@@ -57,4 +59,15 @@ func (c *Client) StartProcessing(ctx context.Context, p *StartProcessingPayload)
 		return
 	}
 	return ires.(*StartProcessingResult), nil
+}
+
+// RegisterTaskState calls the "registerTaskState" endpoint of the "sense"
+// service.
+func (c *Client) RegisterTaskState(ctx context.Context, p *RegisterTaskStatePayload) (res RegisterTaskStateClientStream, err error) {
+	var ires interface{}
+	ires, err = c.RegisterTaskStateEndpoint(ctx, p)
+	if err != nil {
+		return
+	}
+	return ires.(RegisterTaskStateClientStream), nil
 }

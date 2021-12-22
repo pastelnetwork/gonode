@@ -5,12 +5,14 @@ import (
 	"mime/multipart"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/common/storage/memory"
 	"github.com/pastelnetwork/gonode/walletnode/api"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/artworks"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/http/sense/server"
 	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
@@ -35,6 +37,8 @@ func (service *Sense) Mount(ctx context.Context, mux goahttp.Muxer) goahttp.Serv
 		goahttp.RequestDecoder,
 		goahttp.ResponseEncoder,
 		api.ErrorHandler,
+		nil,
+		&websocket.Upgrader{},
 		nil,
 		SenseUploadImageDecoderFunc(ctx, service),
 	)
@@ -143,6 +147,37 @@ func (service *Sense) StartProcessing(ctx context.Context, p *sense.StartProcess
 	}
 
 	return res, nil
+}
+
+// RegisterTaskState - Registers a task state
+func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTaskStatePayload, stream sense.RegisterTaskStateServerStream) (err error) {
+	defer stream.Close()
+
+	task := service.register.Task(p.TaskID)
+	if task == nil {
+		return sense.MakeNotFound(errors.Errorf("invalid taskId: %s", p.TaskID))
+	}
+
+	sub := task.SubscribeStatus()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case status := <-sub():
+			res := &sense.TaskState{
+				Date:   status.CreatedAt.Format(time.RFC3339),
+				Status: status.String(),
+			}
+			if err := stream.Send(res); err != nil {
+				return artworks.MakeInternalServerError(err)
+			}
+
+			if status.IsFinal() {
+				return nil
+			}
+		}
+	}
 }
 
 // NewOpenAPI returns the swagger OpenAPI implementation.

@@ -65,6 +65,15 @@ type StartProcessingResponseBody struct {
 	TaskID *string `form:"task_id,omitempty" json:"task_id,omitempty" xml:"task_id,omitempty"`
 }
 
+// RegisterTaskStateResponseBody is the type of the "sense" service
+// "registerTaskState" endpoint HTTP response body.
+type RegisterTaskStateResponseBody struct {
+	// Date of the status creation
+	Date *string `form:"date,omitempty" json:"date,omitempty" xml:"date,omitempty"`
+	// Status of the registration process
+	Status *string `form:"status,omitempty" json:"status,omitempty" xml:"status,omitempty"`
+}
+
 // UploadImageBadRequestResponseBody is the type of the "sense" service
 // "uploadImage" endpoint HTTP response body for the "BadRequest" error.
 type UploadImageBadRequestResponseBody struct {
@@ -161,6 +170,43 @@ type StartProcessingBadRequestResponseBody struct {
 // service "startProcessing" endpoint HTTP response body for the
 // "InternalServerError" error.
 type StartProcessingInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RegisterTaskStateNotFoundResponseBody is the type of the "sense" service
+// "registerTaskState" endpoint HTTP response body for the "NotFound" error.
+type RegisterTaskStateNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID *string `form:"id,omitempty" json:"id,omitempty" xml:"id,omitempty"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message *string `form:"message,omitempty" json:"message,omitempty" xml:"message,omitempty"`
+	// Is the error temporary?
+	Temporary *bool `form:"temporary,omitempty" json:"temporary,omitempty" xml:"temporary,omitempty"`
+	// Is the error a timeout?
+	Timeout *bool `form:"timeout,omitempty" json:"timeout,omitempty" xml:"timeout,omitempty"`
+	// Is the error a server-side fault?
+	Fault *bool `form:"fault,omitempty" json:"fault,omitempty" xml:"fault,omitempty"`
+}
+
+// RegisterTaskStateInternalServerErrorResponseBody is the type of the "sense"
+// service "registerTaskState" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterTaskStateInternalServerErrorResponseBody struct {
 	// Name is the name of this class of errors.
 	Name *string `form:"name,omitempty" json:"name,omitempty" xml:"name,omitempty"`
 	// ID is a unique identifier for this particular occurrence of the problem.
@@ -328,6 +374,64 @@ func NewStartProcessingInternalServerError(body *StartProcessingInternalServerEr
 	return v
 }
 
+// NewRegisterTaskStateTaskStateOK builds a "sense" service "registerTaskState"
+// endpoint result from a HTTP "OK" response.
+func NewRegisterTaskStateTaskStateOK(body *RegisterTaskStateResponseBody) *sense.TaskState {
+	v := &sense.TaskState{
+		Date:   *body.Date,
+		Status: *body.Status,
+	}
+
+	return v
+}
+
+// NewRegisterTaskStateNotFound builds a sense service registerTaskState
+// endpoint NotFound error.
+func NewRegisterTaskStateNotFound(body *RegisterTaskStateNotFoundResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// NewRegisterTaskStateInternalServerError builds a sense service
+// registerTaskState endpoint InternalServerError error.
+func NewRegisterTaskStateInternalServerError(body *RegisterTaskStateInternalServerErrorResponseBody) *goa.ServiceError {
+	v := &goa.ServiceError{
+		Name:      *body.Name,
+		ID:        *body.ID,
+		Message:   *body.Message,
+		Temporary: *body.Temporary,
+		Timeout:   *body.Timeout,
+		Fault:     *body.Fault,
+	}
+
+	return v
+}
+
+// ValidateRegisterTaskStateResponseBody runs the validations defined on
+// RegisterTaskStateResponseBody
+func ValidateRegisterTaskStateResponseBody(body *RegisterTaskStateResponseBody) (err error) {
+	if body.Date == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("date", "body"))
+	}
+	if body.Status == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("status", "body"))
+	}
+	if body.Status != nil {
+		if !(*body.Status == "Task Started" || *body.Status == "Connected" || *body.Status == "Image Probed" || *body.Status == "Image And Thumbnail Uploaded" || *body.Status == "Status Gen ReptorQ Symbols" || *body.Status == "Preburn Registration Fee" || *body.Status == "Ticket Accepted" || *body.Status == "Ticket Registered" || *body.Status == "Ticket Activated" || *body.Status == "Error Insufficient Fee" || *body.Status == "Error Fingerprints Dont Match" || *body.Status == "Error ThumbnailHashes Dont Match" || *body.Status == "Error GenRaptorQ Symbols Failed" || *body.Status == "Task Rejected" || *body.Status == "Task Completed") {
+			err = goa.MergeErrors(err, goa.InvalidEnumValueError("body.status", *body.Status, []interface{}{"Task Started", "Connected", "Image Probed", "Image And Thumbnail Uploaded", "Status Gen ReptorQ Symbols", "Preburn Registration Fee", "Ticket Accepted", "Ticket Registered", "Ticket Activated", "Error Insufficient Fee", "Error Fingerprints Dont Match", "Error ThumbnailHashes Dont Match", "Error GenRaptorQ Symbols Failed", "Task Rejected", "Task Completed"}))
+		}
+	}
+	return
+}
+
 // ValidateUploadImageBadRequestResponseBody runs the validations defined on
 // uploadImage_BadRequest_response_body
 func ValidateUploadImageBadRequestResponseBody(body *UploadImageBadRequestResponseBody) (err error) {
@@ -451,6 +555,54 @@ func ValidateStartProcessingBadRequestResponseBody(body *StartProcessingBadReque
 // ValidateStartProcessingInternalServerErrorResponseBody runs the validations
 // defined on startProcessing_InternalServerError_response_body
 func ValidateStartProcessingInternalServerErrorResponseBody(body *StartProcessingInternalServerErrorResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRegisterTaskStateNotFoundResponseBody runs the validations defined
+// on registerTaskState_NotFound_response_body
+func ValidateRegisterTaskStateNotFoundResponseBody(body *RegisterTaskStateNotFoundResponseBody) (err error) {
+	if body.Name == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
+	}
+	if body.ID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("id", "body"))
+	}
+	if body.Message == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("message", "body"))
+	}
+	if body.Temporary == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("temporary", "body"))
+	}
+	if body.Timeout == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("timeout", "body"))
+	}
+	if body.Fault == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("fault", "body"))
+	}
+	return
+}
+
+// ValidateRegisterTaskStateInternalServerErrorResponseBody runs the
+// validations defined on registerTaskState_InternalServerError_response_body
+func ValidateRegisterTaskStateInternalServerErrorResponseBody(body *RegisterTaskStateInternalServerErrorResponseBody) (err error) {
 	if body.Name == nil {
 		err = goa.MergeErrors(err, goa.MissingFieldError("name", "body"))
 	}

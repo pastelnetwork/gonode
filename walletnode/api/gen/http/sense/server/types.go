@@ -67,6 +67,15 @@ type StartProcessingResponseBody struct {
 	TaskID string `form:"task_id" json:"task_id" xml:"task_id"`
 }
 
+// RegisterTaskStateResponseBody is the type of the "sense" service
+// "registerTaskState" endpoint HTTP response body.
+type RegisterTaskStateResponseBody struct {
+	// Date of the status creation
+	Date string `form:"date" json:"date" xml:"date"`
+	// Status of the registration process
+	Status string `form:"status" json:"status" xml:"status"`
+}
+
 // UploadImageBadRequestResponseBody is the type of the "sense" service
 // "uploadImage" endpoint HTTP response body for the "BadRequest" error.
 type UploadImageBadRequestResponseBody struct {
@@ -178,6 +187,43 @@ type StartProcessingInternalServerErrorResponseBody struct {
 	Fault bool `form:"fault" json:"fault" xml:"fault"`
 }
 
+// RegisterTaskStateNotFoundResponseBody is the type of the "sense" service
+// "registerTaskState" endpoint HTTP response body for the "NotFound" error.
+type RegisterTaskStateNotFoundResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
+// RegisterTaskStateInternalServerErrorResponseBody is the type of the "sense"
+// service "registerTaskState" endpoint HTTP response body for the
+// "InternalServerError" error.
+type RegisterTaskStateInternalServerErrorResponseBody struct {
+	// Name is the name of this class of errors.
+	Name string `form:"name" json:"name" xml:"name"`
+	// ID is a unique identifier for this particular occurrence of the problem.
+	ID string `form:"id" json:"id" xml:"id"`
+	// Message is a human-readable explanation specific to this occurrence of the
+	// problem.
+	Message string `form:"message" json:"message" xml:"message"`
+	// Is the error temporary?
+	Temporary bool `form:"temporary" json:"temporary" xml:"temporary"`
+	// Is the error a timeout?
+	Timeout bool `form:"timeout" json:"timeout" xml:"timeout"`
+	// Is the error a server-side fault?
+	Fault bool `form:"fault" json:"fault" xml:"fault"`
+}
+
 // NewUploadImageResponseBody builds the HTTP response body from the result of
 // the "uploadImage" endpoint of the "sense" service.
 func NewUploadImageResponseBody(res *senseviews.ImageView) *UploadImageResponseBody {
@@ -202,6 +248,16 @@ func NewActionDetailsResponseBody(res *senseviews.ActionDetailResultView) *Actio
 func NewStartProcessingResponseBody(res *senseviews.StartProcessingResultView) *StartProcessingResponseBody {
 	body := &StartProcessingResponseBody{
 		TaskID: *res.TaskID,
+	}
+	return body
+}
+
+// NewRegisterTaskStateResponseBody builds the HTTP response body from the
+// result of the "registerTaskState" endpoint of the "sense" service.
+func NewRegisterTaskStateResponseBody(res *sense.TaskState) *RegisterTaskStateResponseBody {
+	body := &RegisterTaskStateResponseBody{
+		Date:   res.Date,
+		Status: res.Status,
 	}
 	return body
 }
@@ -291,6 +347,35 @@ func NewStartProcessingInternalServerErrorResponseBody(res *goa.ServiceError) *S
 	return body
 }
 
+// NewRegisterTaskStateNotFoundResponseBody builds the HTTP response body from
+// the result of the "registerTaskState" endpoint of the "sense" service.
+func NewRegisterTaskStateNotFoundResponseBody(res *goa.ServiceError) *RegisterTaskStateNotFoundResponseBody {
+	body := &RegisterTaskStateNotFoundResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
+// NewRegisterTaskStateInternalServerErrorResponseBody builds the HTTP response
+// body from the result of the "registerTaskState" endpoint of the "sense"
+// service.
+func NewRegisterTaskStateInternalServerErrorResponseBody(res *goa.ServiceError) *RegisterTaskStateInternalServerErrorResponseBody {
+	body := &RegisterTaskStateInternalServerErrorResponseBody{
+		Name:      res.Name,
+		ID:        res.ID,
+		Message:   res.Message,
+		Temporary: res.Temporary,
+		Timeout:   res.Timeout,
+		Fault:     res.Fault,
+	}
+	return body
+}
+
 // NewUploadImagePayload builds a sense service uploadImage endpoint payload.
 func NewUploadImagePayload(body *UploadImageRequestBody) *sense.UploadImagePayload {
 	v := &sense.UploadImagePayload{
@@ -327,6 +412,15 @@ func NewStartProcessingPayload(body *StartProcessingRequestBody, imageID string,
 	return v
 }
 
+// NewRegisterTaskStatePayload builds a sense service registerTaskState
+// endpoint payload.
+func NewRegisterTaskStatePayload(taskID string) *sense.RegisterTaskStatePayload {
+	v := &sense.RegisterTaskStatePayload{}
+	v.TaskID = taskID
+
+	return v
+}
+
 // ValidateUploadImageRequestBody runs the validations defined on
 // UploadImageRequestBody
 func ValidateUploadImageRequestBody(body *UploadImageRequestBody) (err error) {
@@ -349,7 +443,7 @@ func ValidateActionDetailsRequestBody(body *ActionDetailsRequestBody) (err error
 		err = goa.MergeErrors(err, goa.MissingFieldError("action_data_signature", "body"))
 	}
 	if body.PastelID != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.app_pastelid", *body.PastelID, "^[a-zA-Z0-9]+$"))
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.app_pastelid", *body.PastelID, "^[a-zA-Z0-9]"))
 	}
 	if body.PastelID != nil {
 		if utf8.RuneCountInString(*body.PastelID) < 86 {
@@ -375,7 +469,7 @@ func ValidateActionDetailsRequestBody(body *ActionDetailsRequestBody) (err error
 		}
 	}
 	if body.ActionDataSignature != nil {
-		err = goa.MergeErrors(err, goa.ValidatePattern("body.action_data_signature", *body.ActionDataSignature, "^[a-zA-Z0-9]+$"))
+		err = goa.MergeErrors(err, goa.ValidatePattern("body.action_data_signature", *body.ActionDataSignature, "^[a-zA-Z0-9\\/+]"))
 	}
 	if body.ActionDataSignature != nil {
 		if utf8.RuneCountInString(*body.ActionDataSignature) < 152 {

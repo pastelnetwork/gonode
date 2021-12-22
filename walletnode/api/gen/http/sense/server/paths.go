@@ -25,3 +25,8 @@ func ActionDetailsSensePath(imageID string) string {
 func StartProcessingSensePath(imageID string) string {
 	return fmt.Sprintf("/openapi/sense/start/%v", imageID)
 }
+
+// RegisterTaskStateSensePath returns the URL path to the sense service registerTaskState HTTP endpoint.
+func RegisterTaskStateSensePath(taskID string) string {
+	return fmt.Sprintf("/openapi/sense/start/%v/state", taskID)
+}

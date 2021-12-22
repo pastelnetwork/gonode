@@ -22,6 +22,8 @@ type Service interface {
 	ActionDetails(context.Context, *ActionDetailsPayload) (res *ActionDetailResult, err error)
 	// Start processing the image
 	StartProcessing(context.Context, *StartProcessingPayload) (res *StartProcessingResult, err error)
+	// Streams the state of the registration process.
+	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -32,7 +34,23 @@ const ServiceName = "sense"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [3]string{"uploadImage", "actionDetails", "startProcessing"}
+var MethodNames = [4]string{"uploadImage", "actionDetails", "startProcessing", "registerTaskState"}
+
+// RegisterTaskStateServerStream is the interface a "registerTaskState"
+// endpoint server stream must satisfy.
+type RegisterTaskStateServerStream interface {
+	// Send streams instances of "TaskState".
+	Send(*TaskState) error
+	// Close closes the stream.
+	Close() error
+}
+
+// RegisterTaskStateClientStream is the interface a "registerTaskState"
+// endpoint client stream must satisfy.
+type RegisterTaskStateClientStream interface {
+	// Recv reads instances of "TaskState" from the stream.
+	Recv() (*TaskState, error)
+}
 
 // UploadImagePayload is the payload type of the sense service uploadImage
 // method.
@@ -89,6 +107,21 @@ type StartProcessingPayload struct {
 type StartProcessingResult struct {
 	// Task ID of processing task
 	TaskID string
+}
+
+// RegisterTaskStatePayload is the payload type of the sense service
+// registerTaskState method.
+type RegisterTaskStatePayload struct {
+	// Task ID of the registration process
+	TaskID string
+}
+
+// TaskState is the result type of the sense service registerTaskState method.
+type TaskState struct {
+	// Date of the status creation
+	Date string
+	// Status of the registration process
+	Status string
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.

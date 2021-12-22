@@ -4,6 +4,7 @@ import (
 
 	//revive:disable:dot-imports
 	//lint:ignore ST1001 disable warning dot import
+
 	. "goa.design/goa/v3/dsl"
 	//revive:enable:dot-imports
 
@@ -86,6 +87,23 @@ var _ = Service("sense", func() {
 			Response(StatusCreated)
 		})
 	})
+
+	Method("registerTaskState", func() {
+		Description("Streams the state of the registration process.")
+		Meta("swagger:summary", "Streams state by task ID")
+
+		Payload(func() {
+			Extend(RegisterTaskPayload)
+		})
+		StreamingResult(ArtworkRegisterTaskState)
+
+		HTTP(func() {
+			GET("/start/{taskId}/state")
+			Response("NotFound", StatusNotFound)
+			Response("InternalServerError", StatusInternalServerError)
+			Response(StatusOK)
+		})
+	})
 })
 
 // ActionDetailsPayload - Payload for posting action details
@@ -102,7 +120,7 @@ var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
 		Description("3rd party app's PastelID")
 		MinLength(86)
 		MaxLength(86)
-		Pattern(`^[a-zA-Z0-9]+$`)
+		Pattern(`^[a-zA-Z0-9]`)
 		Example("jXZqaS48TT6LFjxnf9P68hZNQVCFqY631FPz4CtM6VugDi5yLNB51ccy17kgKKCyFuL4qadQsXHH3QwHVuPVyY")
 	})
 	Attribute("action_data_hash", String, func() {
@@ -118,8 +136,8 @@ var ActionDetailsPayload = Type("ActionDetailsPayload", func() {
 		Description("The signature (base64) of the Action Data")
 		MinLength(152)
 		MaxLength(152)
-		Pattern(`^[a-zA-Z0-9]+$`)
-		Example("be9XjyZuhKSlxoxRO4zj3s+hlzF8gWVCwaBFq44n92nONvclfXul/Bn8UgXOIbRGP6LNuzLfiU+ApSUxcaw7NuK0h1tXOmNTt78T/aNT9SiFbBx3wcDqZJtKNlI4a/p7wekDvGjlKfU8jn+RauYCvhEA")
+		Pattern(`^[a-zA-Z0-9\/+]`)
+		Example("bTwvO6UZSvFqHb9qmXbAOg2VmupmP70wfhYsAvwFfeC61cuoL9KIXZtbdQ/Ek8FVNoTpCY5BuxcA6lNjkIOBh4w9/RWtuqF16IaJhAnZ4JbZm1MiDCGcf7x0UU/GNRSk6rNAHlPYkOPdhkha+JjCwD4A")
 	})
 
 	Required("image_id", "app_pastelid", "action_data_hash", "action_data_signature")

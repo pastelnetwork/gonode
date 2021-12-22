@@ -12,6 +12,7 @@ import (
 	"mime/multipart"
 	"net/http"
 
+	"github.com/gorilla/websocket"
 	sense "github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	goahttp "goa.design/goa/v3/http"
 	goa "goa.design/goa/v3/pkg"
@@ -20,11 +21,12 @@ import (
 
 // Server lists the sense service endpoint HTTP handlers.
 type Server struct {
-	Mounts          []*MountPoint
-	UploadImage     http.Handler
-	ActionDetails   http.Handler
-	StartProcessing http.Handler
-	CORS            http.Handler
+	Mounts            []*MountPoint
+	UploadImage       http.Handler
+	ActionDetails     http.Handler
+	StartProcessing   http.Handler
+	RegisterTaskState http.Handler
+	CORS              http.Handler
 }
 
 // ErrorNamer is an interface implemented by generated error structs that
@@ -61,21 +63,29 @@ func New(
 	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
 	errhandler func(context.Context, http.ResponseWriter, error),
 	formatter func(err error) goahttp.Statuser,
+	upgrader goahttp.Upgrader,
+	configurer *ConnConfigurer,
 	senseUploadImageDecoderFn SenseUploadImageDecoderFunc,
 ) *Server {
+	if configurer == nil {
+		configurer = &ConnConfigurer{}
+	}
 	return &Server{
 		Mounts: []*MountPoint{
 			{"UploadImage", "POST", "/openapi/sense/upload"},
 			{"ActionDetails", "POST", "/openapi/sense/details/{image_id}"},
 			{"StartProcessing", "POST", "/openapi/sense/start/{image_id}"},
+			{"RegisterTaskState", "GET", "/openapi/sense/start/{taskId}/state"},
 			{"CORS", "OPTIONS", "/openapi/sense/upload"},
 			{"CORS", "OPTIONS", "/openapi/sense/details/{image_id}"},
 			{"CORS", "OPTIONS", "/openapi/sense/start/{image_id}"},
+			{"CORS", "OPTIONS", "/openapi/sense/start/{taskId}/state"},
 		},
-		UploadImage:     NewUploadImageHandler(e.UploadImage, mux, NewSenseUploadImageDecoder(mux, senseUploadImageDecoderFn), encoder, errhandler, formatter),
-		ActionDetails:   NewActionDetailsHandler(e.ActionDetails, mux, decoder, encoder, errhandler, formatter),
-		StartProcessing: NewStartProcessingHandler(e.StartProcessing, mux, decoder, encoder, errhandler, formatter),
-		CORS:            NewCORSHandler(),
+		UploadImage:       NewUploadImageHandler(e.UploadImage, mux, NewSenseUploadImageDecoder(mux, senseUploadImageDecoderFn), encoder, errhandler, formatter),
+		ActionDetails:     NewActionDetailsHandler(e.ActionDetails, mux, decoder, encoder, errhandler, formatter),
+		StartProcessing:   NewStartProcessingHandler(e.StartProcessing, mux, decoder, encoder, errhandler, formatter),
+		RegisterTaskState: NewRegisterTaskStateHandler(e.RegisterTaskState, mux, decoder, encoder, errhandler, formatter, upgrader, configurer.RegisterTaskStateFn),
+		CORS:              NewCORSHandler(),
 	}
 }
 
@@ -87,6 +97,7 @@ func (s *Server) Use(m func(http.Handler) http.Handler) {
 	s.UploadImage = m(s.UploadImage)
 	s.ActionDetails = m(s.ActionDetails)
 	s.StartProcessing = m(s.StartProcessing)
+	s.RegisterTaskState = m(s.RegisterTaskState)
 	s.CORS = m(s.CORS)
 }
 
@@ -95,6 +106,7 @@ func Mount(mux goahttp.Muxer, h *Server) {
 	MountUploadImageHandler(mux, h.UploadImage)
 	MountActionDetailsHandler(mux, h.ActionDetails)
 	MountStartProcessingHandler(mux, h.StartProcessing)
+	MountRegisterTaskStateHandler(mux, h.RegisterTaskState)
 	MountCORSHandler(mux, h.CORS)
 }
 
@@ -251,6 +263,70 @@ func NewStartProcessingHandler(
 	})
 }
 
+// MountRegisterTaskStateHandler configures the mux to serve the "sense"
+// service "registerTaskState" endpoint.
+func MountRegisterTaskStateHandler(mux goahttp.Muxer, h http.Handler) {
+	f, ok := handleSenseOrigin(h).(http.HandlerFunc)
+	if !ok {
+		f = func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r)
+		}
+	}
+	mux.Handle("GET", "/openapi/sense/start/{taskId}/state", f)
+}
+
+// NewRegisterTaskStateHandler creates a HTTP handler which loads the HTTP
+// request and calls the "sense" service "registerTaskState" endpoint.
+func NewRegisterTaskStateHandler(
+	endpoint goa.Endpoint,
+	mux goahttp.Muxer,
+	decoder func(*http.Request) goahttp.Decoder,
+	encoder func(context.Context, http.ResponseWriter) goahttp.Encoder,
+	errhandler func(context.Context, http.ResponseWriter, error),
+	formatter func(err error) goahttp.Statuser,
+	upgrader goahttp.Upgrader,
+	configurer goahttp.ConnConfigureFunc,
+) http.Handler {
+	var (
+		decodeRequest = DecodeRegisterTaskStateRequest(mux, decoder)
+		encodeError   = EncodeRegisterTaskStateError(encoder, formatter)
+	)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ctx := context.WithValue(r.Context(), goahttp.AcceptTypeKey, r.Header.Get("Accept"))
+		ctx = context.WithValue(ctx, goa.MethodKey, "registerTaskState")
+		ctx = context.WithValue(ctx, goa.ServiceKey, "sense")
+		payload, err := decodeRequest(r)
+		if err != nil {
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		v := &sense.RegisterTaskStateEndpointInput{
+			Stream: &RegisterTaskStateServerStream{
+				upgrader:   upgrader,
+				configurer: configurer,
+				cancel:     cancel,
+				w:          w,
+				r:          r,
+			},
+			Payload: payload.(*sense.RegisterTaskStatePayload),
+		}
+		_, err = endpoint(ctx, v)
+		if err != nil {
+			if _, ok := err.(websocket.HandshakeError); ok {
+				return
+			}
+			if err := encodeError(ctx, w, err); err != nil {
+				errhandler(ctx, w, err)
+			}
+			return
+		}
+	})
+}
+
 // MountCORSHandler configures the mux to serve the CORS endpoints for the
 // service sense.
 func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
@@ -264,6 +340,7 @@ func MountCORSHandler(mux goahttp.Muxer, h http.Handler) {
 	mux.Handle("OPTIONS", "/openapi/sense/upload", f)
 	mux.Handle("OPTIONS", "/openapi/sense/details/{image_id}", f)
 	mux.Handle("OPTIONS", "/openapi/sense/start/{image_id}", f)
+	mux.Handle("OPTIONS", "/openapi/sense/start/{taskId}/state", f)
 }
 
 // NewCORSHandler creates a HTTP handler which returns a simple 200 response.

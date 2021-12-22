@@ -375,3 +375,107 @@ func DecodeStartProcessingResponse(decoder func(*http.Response) goahttp.Decoder,
 		}
 	}
 }
+
+// BuildRegisterTaskStateRequest instantiates a HTTP request object with method
+// and path set to call the "sense" service "registerTaskState" endpoint
+func (c *Client) BuildRegisterTaskStateRequest(ctx context.Context, v interface{}) (*http.Request, error) {
+	var (
+		taskID string
+	)
+	{
+		p, ok := v.(*sense.RegisterTaskStatePayload)
+		if !ok {
+			return nil, goahttp.ErrInvalidType("sense", "registerTaskState", "*sense.RegisterTaskStatePayload", v)
+		}
+		taskID = p.TaskID
+	}
+	scheme := c.scheme
+	switch c.scheme {
+	case "http":
+		scheme = "ws"
+	case "https":
+		scheme = "wss"
+	}
+	u := &url.URL{Scheme: scheme, Host: c.host, Path: RegisterTaskStateSensePath(taskID)}
+	req, err := http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, goahttp.ErrInvalidURL("sense", "registerTaskState", u.String(), err)
+	}
+	if ctx != nil {
+		req = req.WithContext(ctx)
+	}
+
+	return req, nil
+}
+
+// DecodeRegisterTaskStateResponse returns a decoder for responses returned by
+// the sense registerTaskState endpoint. restoreBody controls whether the
+// response body should be restored after having been read.
+// DecodeRegisterTaskStateResponse may return the following errors:
+//	- "NotFound" (type *goa.ServiceError): http.StatusNotFound
+//	- "InternalServerError" (type *goa.ServiceError): http.StatusInternalServerError
+//	- error: internal error
+func DecodeRegisterTaskStateResponse(decoder func(*http.Response) goahttp.Decoder, restoreBody bool) func(*http.Response) (interface{}, error) {
+	return func(resp *http.Response) (interface{}, error) {
+		if restoreBody {
+			b, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return nil, err
+			}
+			resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			defer func() {
+				resp.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+			}()
+		} else {
+			defer resp.Body.Close()
+		}
+		switch resp.StatusCode {
+		case http.StatusOK:
+			var (
+				body RegisterTaskStateResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("sense", "registerTaskState", err)
+			}
+			err = ValidateRegisterTaskStateResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("sense", "registerTaskState", err)
+			}
+			res := NewRegisterTaskStateTaskStateOK(&body)
+			return res, nil
+		case http.StatusNotFound:
+			var (
+				body RegisterTaskStateNotFoundResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("sense", "registerTaskState", err)
+			}
+			err = ValidateRegisterTaskStateNotFoundResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("sense", "registerTaskState", err)
+			}
+			return nil, NewRegisterTaskStateNotFound(&body)
+		case http.StatusInternalServerError:
+			var (
+				body RegisterTaskStateInternalServerErrorResponseBody
+				err  error
+			)
+			err = decoder(resp).Decode(&body)
+			if err != nil {
+				return nil, goahttp.ErrDecodingError("sense", "registerTaskState", err)
+			}
+			err = ValidateRegisterTaskStateInternalServerErrorResponseBody(&body)
+			if err != nil {
+				return nil, goahttp.ErrValidationError("sense", "registerTaskState", err)
+			}
+			return nil, NewRegisterTaskStateInternalServerError(&body)
+		default:
+			body, _ := ioutil.ReadAll(resp.Body)
+			return nil, goahttp.ErrInvalidResponse("sense", "registerTaskState", resp.StatusCode, string(body))
+		}
+	}
+}
