@@ -6,7 +6,7 @@ type MasterNodes []MasterNode
 // MasterNode represents pastel top masternode.
 type MasterNode struct {
 	Rank       string  `json:"rank"`
-	Address    string  `json:"address"`
+	IPAddress  string  `json:"IP:port"`
 	Payee      string  `json:"payee"`
 	Outpoint   string  `json:"outpoint"`
 	Fee        float64 `json:"fee"`
