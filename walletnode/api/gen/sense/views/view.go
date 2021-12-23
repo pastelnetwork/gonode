@@ -30,6 +30,15 @@ type ActionDetailResult struct {
 	View string
 }
 
+// StartProcessingResult is the viewed result type that is projected based on a
+// view.
+type StartProcessingResult struct {
+	// Type to project
+	Projected *StartProcessingResultView
+	// View to render
+	View string
+}
+
 // ImageView is a type that runs validations on a projected type.
 type ImageView struct {
 	// Uploaded image ID
@@ -42,6 +51,13 @@ type ImageView struct {
 type ActionDetailResultView struct {
 	// Estimated fee
 	EstimatedFee *float64
+}
+
+// StartProcessingResultView is a type that runs validations on a projected
+// type.
+type StartProcessingResultView struct {
+	// Task ID of processing task
+	TaskID *string
 }
 
 var (
@@ -57,6 +73,13 @@ var (
 	ActionDetailResultMap = map[string][]string{
 		"default": {
 			"estimated_fee",
+		},
+	}
+	// StartProcessingResultMap is a map indexing the attribute names of
+	// StartProcessingResult by view name.
+	StartProcessingResultMap = map[string][]string{
+		"default": {
+			"task_id",
 		},
 	}
 )
@@ -78,6 +101,18 @@ func ValidateActionDetailResult(result *ActionDetailResult) (err error) {
 	switch result.View {
 	case "default", "":
 		err = ValidateActionDetailResultView(result.Projected)
+	default:
+		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
+	}
+	return
+}
+
+// ValidateStartProcessingResult runs the validations defined on the viewed
+// result type StartProcessingResult.
+func ValidateStartProcessingResult(result *StartProcessingResult) (err error) {
+	switch result.View {
+	case "default", "":
+		err = ValidateStartProcessingResultView(result.Projected)
 	default:
 		err = goa.InvalidEnumValueError("view", result.View, []interface{}{"default"})
 	}
@@ -118,6 +153,25 @@ func ValidateActionDetailResultView(result *ActionDetailResultView) (err error) 
 	if result.EstimatedFee != nil {
 		if *result.EstimatedFee < 1e-05 {
 			err = goa.MergeErrors(err, goa.InvalidRangeError("result.estimated_fee", *result.EstimatedFee, 1e-05, true))
+		}
+	}
+	return
+}
+
+// ValidateStartProcessingResultView runs the validations defined on
+// StartProcessingResultView using the "default" view.
+func ValidateStartProcessingResultView(result *StartProcessingResultView) (err error) {
+	if result.TaskID == nil {
+		err = goa.MergeErrors(err, goa.MissingFieldError("task_id", "result"))
+	}
+	if result.TaskID != nil {
+		if utf8.RuneCountInString(*result.TaskID) < 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, true))
+		}
+	}
+	if result.TaskID != nil {
+		if utf8.RuneCountInString(*result.TaskID) > 8 {
+			err = goa.MergeErrors(err, goa.InvalidLengthError("result.task_id", *result.TaskID, utf8.RuneCountInString(*result.TaskID), 8, false))
 		}
 	}
 	return

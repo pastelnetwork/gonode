@@ -20,3 +20,13 @@ func UploadImageSensePath() string {
 func ActionDetailsSensePath(imageID string) string {
 	return fmt.Sprintf("/openapi/sense/details/%v", imageID)
 }
+
+// StartProcessingSensePath returns the URL path to the sense service startProcessing HTTP endpoint.
+func StartProcessingSensePath(imageID string) string {
+	return fmt.Sprintf("/openapi/sense/start/%v", imageID)
+}
+
+// RegisterTaskStateSensePath returns the URL path to the sense service registerTaskState HTTP endpoint.
+func RegisterTaskStateSensePath(taskID string) string {
+	return fmt.Sprintf("/openapi/sense/start/%v/state", taskID)
+}

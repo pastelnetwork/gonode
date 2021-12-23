@@ -20,6 +20,10 @@ type Service interface {
 	UploadImage(context.Context, *UploadImagePayload) (res *Image, err error)
 	// Provide action details
 	ActionDetails(context.Context, *ActionDetailsPayload) (res *ActionDetailResult, err error)
+	// Start processing the image
+	StartProcessing(context.Context, *StartProcessingPayload) (res *StartProcessingResult, err error)
+	// Streams the state of the registration process.
+	RegisterTaskState(context.Context, *RegisterTaskStatePayload, RegisterTaskStateServerStream) (err error)
 }
 
 // ServiceName is the name of the service as defined in the design. This is the
@@ -30,7 +34,23 @@ const ServiceName = "sense"
 // MethodNames lists the service method names as defined in the design. These
 // are the same values that are set in the endpoint request contexts under the
 // MethodKey key.
-var MethodNames = [2]string{"uploadImage", "actionDetails"}
+var MethodNames = [4]string{"uploadImage", "actionDetails", "startProcessing", "registerTaskState"}
+
+// RegisterTaskStateServerStream is the interface a "registerTaskState"
+// endpoint server stream must satisfy.
+type RegisterTaskStateServerStream interface {
+	// Send streams instances of "TaskState".
+	Send(*TaskState) error
+	// Close closes the stream.
+	Close() error
+}
+
+// RegisterTaskStateClientStream is the interface a "registerTaskState"
+// endpoint client stream must satisfy.
+type RegisterTaskStateClientStream interface {
+	// Recv reads instances of "TaskState" from the stream.
+	Recv() (*TaskState, error)
+}
 
 // UploadImagePayload is the payload type of the sense service uploadImage
 // method.
@@ -67,6 +87,41 @@ type ActionDetailsPayload struct {
 type ActionDetailResult struct {
 	// Estimated fee
 	EstimatedFee float64
+}
+
+// StartProcessingPayload is the payload type of the sense service
+// startProcessing method.
+type StartProcessingPayload struct {
+	// Uploaded image ID
+	ImageID string
+	// Burn transaction ID
+	BurnTxid string
+	// App PastelID
+	AppPastelID string
+	// Passphrase of the App PastelID
+	AppPastelidPassphrase string
+}
+
+// StartProcessingResult is the result type of the sense service
+// startProcessing method.
+type StartProcessingResult struct {
+	// Task ID of processing task
+	TaskID string
+}
+
+// RegisterTaskStatePayload is the payload type of the sense service
+// registerTaskState method.
+type RegisterTaskStatePayload struct {
+	// Task ID of the registration process
+	TaskID string
+}
+
+// TaskState is the result type of the sense service registerTaskState method.
+type TaskState struct {
+	// Date of the status creation
+	Date string
+	// Status of the registration process
+	Status string
 }
 
 // MakeBadRequest builds a goa.ServiceError from an error.
@@ -121,6 +176,20 @@ func NewViewedActionDetailResult(res *ActionDetailResult, view string) *sensevie
 	return &senseviews.ActionDetailResult{Projected: p, View: "default"}
 }
 
+// NewStartProcessingResult initializes result type StartProcessingResult from
+// viewed result type StartProcessingResult.
+func NewStartProcessingResult(vres *senseviews.StartProcessingResult) *StartProcessingResult {
+	return newStartProcessingResult(vres.Projected)
+}
+
+// NewViewedStartProcessingResult initializes viewed result type
+// StartProcessingResult from result type StartProcessingResult using the given
+// view.
+func NewViewedStartProcessingResult(res *StartProcessingResult, view string) *senseviews.StartProcessingResult {
+	p := newStartProcessingResultView(res)
+	return &senseviews.StartProcessingResult{Projected: p, View: "default"}
+}
+
 // newImage converts projected type Image to service type Image.
 func newImage(vres *senseviews.ImageView) *Image {
 	res := &Image{}
@@ -161,6 +230,25 @@ func newActionDetailResult(vres *senseviews.ActionDetailResultView) *ActionDetai
 func newActionDetailResultView(res *ActionDetailResult) *senseviews.ActionDetailResultView {
 	vres := &senseviews.ActionDetailResultView{
 		EstimatedFee: &res.EstimatedFee,
+	}
+	return vres
+}
+
+// newStartProcessingResult converts projected type StartProcessingResult to
+// service type StartProcessingResult.
+func newStartProcessingResult(vres *senseviews.StartProcessingResultView) *StartProcessingResult {
+	res := &StartProcessingResult{}
+	if vres.TaskID != nil {
+		res.TaskID = *vres.TaskID
+	}
+	return res
+}
+
+// newStartProcessingResultView projects result type StartProcessingResult to
+// projected type StartProcessingResultView using the "default" view.
+func newStartProcessingResultView(res *StartProcessingResult) *senseviews.StartProcessingResultView {
+	vres := &senseviews.StartProcessingResultView{
+		TaskID: &res.TaskID,
 	}
 	return vres
 }

@@ -3,12 +3,17 @@ package senseregister
 import (
 	"context"
 
+	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
+)
+
+const (
+	logPrefix = "sense"
 )
 
 // Service represents a service for the registration artwork.
@@ -24,9 +29,19 @@ type Service struct {
 
 // Run starts worker.
 func (service Service) Run(ctx context.Context) error {
-	// TODO: implement service run logic
+	group, ctx := errgroup.WithContext(ctx)
 
-	return nil
+	// Run storage service
+	group.Go(func() error {
+		return service.Storage.Run(ctx)
+	})
+
+	// Run worker service
+	group.Go(func() error {
+		return service.Worker.Run(ctx)
+	})
+
+	return group.Wait()
 }
 
 // AddTask adds a task to the worker.

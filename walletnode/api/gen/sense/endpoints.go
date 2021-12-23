@@ -15,15 +15,29 @@ import (
 
 // Endpoints wraps the "sense" service endpoints.
 type Endpoints struct {
-	UploadImage   goa.Endpoint
-	ActionDetails goa.Endpoint
+	UploadImage       goa.Endpoint
+	ActionDetails     goa.Endpoint
+	StartProcessing   goa.Endpoint
+	RegisterTaskState goa.Endpoint
+}
+
+// RegisterTaskStateEndpointInput holds both the payload and the server stream
+// of the "registerTaskState" method.
+type RegisterTaskStateEndpointInput struct {
+	// Payload is the method payload.
+	Payload *RegisterTaskStatePayload
+	// Stream is the server stream used by the "registerTaskState" method to send
+	// data.
+	Stream RegisterTaskStateServerStream
 }
 
 // NewEndpoints wraps the methods of the "sense" service with endpoints.
 func NewEndpoints(s Service) *Endpoints {
 	return &Endpoints{
-		UploadImage:   NewUploadImageEndpoint(s),
-		ActionDetails: NewActionDetailsEndpoint(s),
+		UploadImage:       NewUploadImageEndpoint(s),
+		ActionDetails:     NewActionDetailsEndpoint(s),
+		StartProcessing:   NewStartProcessingEndpoint(s),
+		RegisterTaskState: NewRegisterTaskStateEndpoint(s),
 	}
 }
 
@@ -31,6 +45,8 @@ func NewEndpoints(s Service) *Endpoints {
 func (e *Endpoints) Use(m func(goa.Endpoint) goa.Endpoint) {
 	e.UploadImage = m(e.UploadImage)
 	e.ActionDetails = m(e.ActionDetails)
+	e.StartProcessing = m(e.StartProcessing)
+	e.RegisterTaskState = m(e.RegisterTaskState)
 }
 
 // NewUploadImageEndpoint returns an endpoint function that calls the method
@@ -58,5 +74,28 @@ func NewActionDetailsEndpoint(s Service) goa.Endpoint {
 		}
 		vres := NewViewedActionDetailResult(res, "default")
 		return vres, nil
+	}
+}
+
+// NewStartProcessingEndpoint returns an endpoint function that calls the
+// method "startProcessing" of service "sense".
+func NewStartProcessingEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		p := req.(*StartProcessingPayload)
+		res, err := s.StartProcessing(ctx, p)
+		if err != nil {
+			return nil, err
+		}
+		vres := NewViewedStartProcessingResult(res, "default")
+		return vres, nil
+	}
+}
+
+// NewRegisterTaskStateEndpoint returns an endpoint function that calls the
+// method "registerTaskState" of service "sense".
+func NewRegisterTaskStateEndpoint(s Service) goa.Endpoint {
+	return func(ctx context.Context, req interface{}) (interface{}, error) {
+		ep := req.(*RegisterTaskStateEndpointInput)
+		return nil, s.RegisterTaskState(ctx, ep.Payload, ep.Stream)
 	}
 }
