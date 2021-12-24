@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
+
+package walletnode;
+
+service RegisterSense {
+    // Session informs the supernode its position (primary/secondary).
+    // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
+    // The stream is used by the parties to inform each other about the cancellation of the task.
+    rpc Session(stream SenseSessionRequest) returns (stream SenseSessionReply);
+
+    // AcceptedNodes returns peers of the secondary supernodes connected to it.
+    rpc AcceptedNodes(SenseAcceptedNodesRequest) returns (SenseAcceptedNodesReply);
+
+    // ConnectTo requests to connect to the primary supernode.
+    rpc ConnectTo(SenseConnectToRequest) returns (SenseConnectToReply);
+
+    // MeshNodes informs to SNs other SNs on same meshNodes created for this registration request
+    rpc MeshNodes(SenseMeshNodesRequest) returns (SenseMeshNodesReply);
+
+    // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
+    rpc SendRegMetadata(SenseSendRegMetadataRequest) returns (SenseSendRegMetadataReply);
+
+    // ProbeImage uploads the resampled image compute and return a fingerpirnt.
+    rpc ProbeImage(stream SenseProbeImageRequest) returns (SenseProbeImageReply);
+
+    // SendArtTicket sends a signed art-ticket to the supernode.
+    rpc SendSignedNFTTicket(SenseSendSignedNFTTicketRequest) returns (SenseSendSignedNFTTicketReply);
+
+    // SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
+    rpc SendPreBurntFeeTxid(SenseSendPreBurntFeeTxidRequest) returns (SenseSendPreBurntFeeTxidReply);
+
+    // SendTicket sends a ticket to the supernode.
+    rpc SendTicket(SenseSendTicketRequest) returns (SenseSendTicketReply);
+}
+
+message SenseSessionRequest {
+    bool is_primary = 1;
+}
+message SenseSessionReply {
+    string sessID = 1;
+}
+
+message SenseAcceptedNodesRequest {
+}
+message SenseAcceptedNodesReply {
+    message Peer {
+        string nodeID = 1;
+    }
+    repeated Peer peers = 1;
+}
+
+message SenseConnectToRequest {
+    string sessID = 1;
+    string nodeID = 2;
+}
+message SenseConnectToReply {
+}
+
+message SenseMeshNodesRequest {
+    message Node  {
+     string sessID = 1;
+     string nodeID = 2;
+    }
+
+    repeated Node nodes = 1;
+}
+message SenseMeshNodesReply {
+}
+
+message SenseSendRegMetadataRequest {
+    string creatorPastelID = 1;
+    string blockHash = 2;
+}
+message SenseSendRegMetadataReply {
+
+}
+
+message SenseProbeImageRequest {
+    bytes payload = 1;
+}
+message SenseProbeImageReply {
+    bytes compressedSignedDDAndFingerprints = 1;
+}
+
+message SenseEncoderParameters {
+  bytes oti = 1;   //12 bytes
+}
+
+message SenseSendSignedNFTTicketRequest {
+    bytes nft_ticket = 1;
+    bytes creator_signature = 2;
+    string key1 = 3;
+    string key2 = 4;
+    SenseEncoderParameters encode_parameters = 5;
+    bytes dd_fp_files = 7;
+    bytes rq_files = 8;
+}
+
+message SenseSendSignedNFTTicketReply {
+    int64 registration_fee = 1;
+}
+
+message SenseSendPreBurntFeeTxidRequest {
+    string txid = 1;
+}
+message SenseSendPreBurntFeeTxidReply {
+    string NFT_reg_txid = 1;
+}
+
+message SenseSendTicketRequest {
+    bytes ticket = 1;
+    string ticket_signature = 2;
+    string fgpt= 3;
+    string fgpt_signature = 4;
+    string fee_txid = 5;
+    bytes thumbnail = 6;
+}
+message SenseSendTicketReply {
+    string ticket_txid = 1;
+}
+

@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
+
+package supernode;
+
+service RegisterSense {
+    // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
+    // The stream is used by the parties to inform each other about the cancellation of the task.
+    rpc Session(stream SenseSessionRequest) returns (stream SenseSessionReply);
+
+    // SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
+    rpc SendSignedDDAndFingerprints(SenseSendSignedDDAndFingerprintsRequest) returns (SenseSendSignedDDAndFingerprintsReply);
+
+    // SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
+    rpc SendArtTicketSignature(SenseSendArtTicketSignatureRequest) returns (SenseSendArtTicketSignatureReply);
+}
+
+message SenseSessionRequest {
+    string nodeID = 1;
+}
+message SenseSessionReply {
+    string sessID = 1;
+}
+
+message SenseSendSignedDDAndFingerprintsRequest {
+    string sessID = 1;
+    string nodeID = 2;
+    bytes zstd_compressed_fingerprint = 3;
+}
+
+message SenseSendSignedDDAndFingerprintsReply {
+
+}
+
+message SenseSendArtTicketSignatureRequest {
+    string nodeID = 1;
+    bytes  signature = 2;
+}
+message SenseSendArtTicketSignatureReply {
+}
+
+
+
