@@ -17,9 +17,11 @@ const (
 type Config struct {
 	common.Config `mapstructure:",squash" json:"-"`
 
-	NumberSuperNodes       int           `mapstructure:"number_supernodes" json:"number_supernodes,omitempty"`
-	connectToNextNodeDelay time.Duration `mapstructure:"connect_to_next_node_delay" json:"connect_to_next_node_delay,omitempty"`
-	acceptNodesTimeout     time.Duration `mapstructure:"accept_nodes_timeout" json:"accept_nodes_timeout,omitempty"`
+	NumberSuperNodes int `mapstructure:"number_supernodes" json:"number_supernodes,omitempty"`
+
+	// internal settings
+	connectToNextNodeDelay time.Duration
+	acceptNodesTimeout     time.Duration
 }
 
 func NewConfig() *Config {
