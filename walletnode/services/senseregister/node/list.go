@@ -3,7 +3,6 @@ package node
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -147,11 +146,8 @@ func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signat
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
-		// TODO: Fix this when method to generate key1 and key2 are finalized
-		key1 := "key1-" + uuid.New().String()
-		key2 := "key2-" + uuid.New().String()
 		group.Go(func() error {
-			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, ddFpFile)
+			fee, err := node.SendSignedTicket(ctx, ticket, signature, ddFpFile)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("send signed ticket failed")
 				return err

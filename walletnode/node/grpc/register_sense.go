@@ -201,20 +201,14 @@ func (service *registerSense) contextWithLogPrefix(ctx context.Context) context.
 }
 
 // SendSignedTicket
-func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, ddFp []byte) (int64, error) {
+func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFp []byte) (int64, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	req := pb.SenseSendSignedNFTTicketRequest{
 		NftTicket:        ticket,
 		CreatorSignature: signature,
-		Key1:             key1,
-		Key2:             key2,
-		EncodeParameters: &pb.SenseEncoderParameters{
-			Oti: []byte("FIXME"),
-		},
-		DdFpFiles: ddFp,
-		RqFiles:   []byte("FIXME"),
+		DdFpFiles:        ddFp,
 	}
 
 	rsp, err := service.client.SendSignedNFTTicket(ctx, &req)

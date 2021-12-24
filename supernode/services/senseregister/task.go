@@ -47,8 +47,6 @@ type Task struct {
 	ownSignature []byte
 
 	creatorSignature []byte
-	key1             string
-	key2             string
 	registrationFee  int64
 
 	// valid only for a task run as primary
@@ -438,15 +436,13 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, dd []byte) error 
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
-func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, key1 string, key2 string, rqidFile []byte, ddFpFile []byte, oti []byte) (int64, error) {
+func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (int64, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
 		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
 	}
 
 	task.creatorSignature = creatorSignature
-	task.key1 = key1
-	task.key2 = key2
 
 	<-task.NewAction(func(ctx context.Context) error {
 		task.UpdateStatus(StatusRegistrationFeeCalculated)
@@ -495,8 +491,6 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 			},
 			Mn1PastelID: task.Service.config.PastelID, // all ID has same length, so can use any id here
 			Passphrase:  task.config.PassPhrase,
-			Key1:        key1,
-			Key2:        key2,
 			Fee:         0, // fake data
 			ImgSizeInMb: int64(task.imageSizeBytes) / (1024 * 1024),
 		}
@@ -711,10 +705,7 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 		},
 		Mn1PastelID: task.config.PastelID,
 		Pasphase:    task.config.PassPhrase,
-		// TODO: fix this when how to get key1 and key2 are finalized
-		Key1: task.key1,
-		Key2: task.key2,
-		Fee:  task.registrationFee,
+		Fee:         task.registrationFee,
 	}
 
 	nftRegTxid, err := task.pastelClient.RegisterNFTTicket(ctx, req)

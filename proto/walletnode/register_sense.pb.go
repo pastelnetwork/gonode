@@ -564,71 +564,20 @@ func (x *SenseProbeImageReply) GetCompressedSignedDDAndFingerprints() []byte {
 	return nil
 }
 
-type SenseEncoderParameters struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Oti []byte `protobuf:"bytes,1,opt,name=oti,proto3" json:"oti,omitempty"` //12 bytes
-}
-
-func (x *SenseEncoderParameters) Reset() {
-	*x = SenseEncoderParameters{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[12]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *SenseEncoderParameters) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SenseEncoderParameters) ProtoMessage() {}
-
-func (x *SenseEncoderParameters) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[12]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SenseEncoderParameters.ProtoReflect.Descriptor instead.
-func (*SenseEncoderParameters) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *SenseEncoderParameters) GetOti() []byte {
-	if x != nil {
-		return x.Oti
-	}
-	return nil
-}
-
 type SenseSendSignedNFTTicketRequest struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	NftTicket        []byte                  `protobuf:"bytes,1,opt,name=nft_ticket,json=nftTicket,proto3" json:"nft_ticket,omitempty"`
-	CreatorSignature []byte                  `protobuf:"bytes,2,opt,name=creator_signature,json=creatorSignature,proto3" json:"creator_signature,omitempty"`
-	Key1             string                  `protobuf:"bytes,3,opt,name=key1,proto3" json:"key1,omitempty"`
-	Key2             string                  `protobuf:"bytes,4,opt,name=key2,proto3" json:"key2,omitempty"`
-	EncodeParameters *SenseEncoderParameters `protobuf:"bytes,5,opt,name=encode_parameters,json=encodeParameters,proto3" json:"encode_parameters,omitempty"`
-	DdFpFiles        []byte                  `protobuf:"bytes,7,opt,name=dd_fp_files,json=ddFpFiles,proto3" json:"dd_fp_files,omitempty"`
-	RqFiles          []byte                  `protobuf:"bytes,8,opt,name=rq_files,json=rqFiles,proto3" json:"rq_files,omitempty"`
+	NftTicket        []byte `protobuf:"bytes,1,opt,name=nft_ticket,json=nftTicket,proto3" json:"nft_ticket,omitempty"`
+	CreatorSignature []byte `protobuf:"bytes,2,opt,name=creator_signature,json=creatorSignature,proto3" json:"creator_signature,omitempty"`
+	DdFpFiles        []byte `protobuf:"bytes,3,opt,name=dd_fp_files,json=ddFpFiles,proto3" json:"dd_fp_files,omitempty"`
 }
 
 func (x *SenseSendSignedNFTTicketRequest) Reset() {
 	*x = SenseSendSignedNFTTicketRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[13]
+		mi := &file_walletnode_register_sense_proto_msgTypes[12]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -641,7 +590,7 @@ func (x *SenseSendSignedNFTTicketRequest) String() string {
 func (*SenseSendSignedNFTTicketRequest) ProtoMessage() {}
 
 func (x *SenseSendSignedNFTTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[13]
+	mi := &file_walletnode_register_sense_proto_msgTypes[12]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -654,7 +603,7 @@ func (x *SenseSendSignedNFTTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SenseSendSignedNFTTicketRequest.ProtoReflect.Descriptor instead.
 func (*SenseSendSignedNFTTicketRequest) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{13}
+	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SenseSendSignedNFTTicketRequest) GetNftTicket() []byte {
@@ -671,37 +620,9 @@ func (x *SenseSendSignedNFTTicketRequest) GetCreatorSignature() []byte {
 	return nil
 }
 
-func (x *SenseSendSignedNFTTicketRequest) GetKey1() string {
-	if x != nil {
-		return x.Key1
-	}
-	return ""
-}
-
-func (x *SenseSendSignedNFTTicketRequest) GetKey2() string {
-	if x != nil {
-		return x.Key2
-	}
-	return ""
-}
-
-func (x *SenseSendSignedNFTTicketRequest) GetEncodeParameters() *SenseEncoderParameters {
-	if x != nil {
-		return x.EncodeParameters
-	}
-	return nil
-}
-
 func (x *SenseSendSignedNFTTicketRequest) GetDdFpFiles() []byte {
 	if x != nil {
 		return x.DdFpFiles
-	}
-	return nil
-}
-
-func (x *SenseSendSignedNFTTicketRequest) GetRqFiles() []byte {
-	if x != nil {
-		return x.RqFiles
 	}
 	return nil
 }
@@ -717,7 +638,7 @@ type SenseSendSignedNFTTicketReply struct {
 func (x *SenseSendSignedNFTTicketReply) Reset() {
 	*x = SenseSendSignedNFTTicketReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[14]
+		mi := &file_walletnode_register_sense_proto_msgTypes[13]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -730,7 +651,7 @@ func (x *SenseSendSignedNFTTicketReply) String() string {
 func (*SenseSendSignedNFTTicketReply) ProtoMessage() {}
 
 func (x *SenseSendSignedNFTTicketReply) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[14]
+	mi := &file_walletnode_register_sense_proto_msgTypes[13]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -743,7 +664,7 @@ func (x *SenseSendSignedNFTTicketReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SenseSendSignedNFTTicketReply.ProtoReflect.Descriptor instead.
 func (*SenseSendSignedNFTTicketReply) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{14}
+	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SenseSendSignedNFTTicketReply) GetRegistrationFee() int64 {
@@ -764,7 +685,7 @@ type SenseSendPreBurntFeeTxidRequest struct {
 func (x *SenseSendPreBurntFeeTxidRequest) Reset() {
 	*x = SenseSendPreBurntFeeTxidRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[15]
+		mi := &file_walletnode_register_sense_proto_msgTypes[14]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -777,7 +698,7 @@ func (x *SenseSendPreBurntFeeTxidRequest) String() string {
 func (*SenseSendPreBurntFeeTxidRequest) ProtoMessage() {}
 
 func (x *SenseSendPreBurntFeeTxidRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[15]
+	mi := &file_walletnode_register_sense_proto_msgTypes[14]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -790,7 +711,7 @@ func (x *SenseSendPreBurntFeeTxidRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SenseSendPreBurntFeeTxidRequest.ProtoReflect.Descriptor instead.
 func (*SenseSendPreBurntFeeTxidRequest) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{15}
+	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *SenseSendPreBurntFeeTxidRequest) GetTxid() string {
@@ -811,7 +732,7 @@ type SenseSendPreBurntFeeTxidReply struct {
 func (x *SenseSendPreBurntFeeTxidReply) Reset() {
 	*x = SenseSendPreBurntFeeTxidReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[16]
+		mi := &file_walletnode_register_sense_proto_msgTypes[15]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -824,7 +745,7 @@ func (x *SenseSendPreBurntFeeTxidReply) String() string {
 func (*SenseSendPreBurntFeeTxidReply) ProtoMessage() {}
 
 func (x *SenseSendPreBurntFeeTxidReply) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[16]
+	mi := &file_walletnode_register_sense_proto_msgTypes[15]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -837,7 +758,7 @@ func (x *SenseSendPreBurntFeeTxidReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SenseSendPreBurntFeeTxidReply.ProtoReflect.Descriptor instead.
 func (*SenseSendPreBurntFeeTxidReply) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{16}
+	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *SenseSendPreBurntFeeTxidReply) GetNFTRegTxid() string {
@@ -863,7 +784,7 @@ type SenseSendTicketRequest struct {
 func (x *SenseSendTicketRequest) Reset() {
 	*x = SenseSendTicketRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[17]
+		mi := &file_walletnode_register_sense_proto_msgTypes[16]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -876,7 +797,7 @@ func (x *SenseSendTicketRequest) String() string {
 func (*SenseSendTicketRequest) ProtoMessage() {}
 
 func (x *SenseSendTicketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[17]
+	mi := &file_walletnode_register_sense_proto_msgTypes[16]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -889,7 +810,7 @@ func (x *SenseSendTicketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SenseSendTicketRequest.ProtoReflect.Descriptor instead.
 func (*SenseSendTicketRequest) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{17}
+	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *SenseSendTicketRequest) GetTicket() []byte {
@@ -945,7 +866,7 @@ type SenseSendTicketReply struct {
 func (x *SenseSendTicketReply) Reset() {
 	*x = SenseSendTicketReply{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[18]
+		mi := &file_walletnode_register_sense_proto_msgTypes[17]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -958,7 +879,7 @@ func (x *SenseSendTicketReply) String() string {
 func (*SenseSendTicketReply) ProtoMessage() {}
 
 func (x *SenseSendTicketReply) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[18]
+	mi := &file_walletnode_register_sense_proto_msgTypes[17]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -971,7 +892,7 @@ func (x *SenseSendTicketReply) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SenseSendTicketReply.ProtoReflect.Descriptor instead.
 func (*SenseSendTicketReply) Descriptor() ([]byte, []int) {
-	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{18}
+	return file_walletnode_register_sense_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *SenseSendTicketReply) GetTicketTxid() string {
@@ -992,7 +913,7 @@ type SenseAcceptedNodesReply_Peer struct {
 func (x *SenseAcceptedNodesReply_Peer) Reset() {
 	*x = SenseAcceptedNodesReply_Peer{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[19]
+		mi := &file_walletnode_register_sense_proto_msgTypes[18]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1005,7 +926,7 @@ func (x *SenseAcceptedNodesReply_Peer) String() string {
 func (*SenseAcceptedNodesReply_Peer) ProtoMessage() {}
 
 func (x *SenseAcceptedNodesReply_Peer) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[19]
+	mi := &file_walletnode_register_sense_proto_msgTypes[18]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1040,7 +961,7 @@ type SenseMeshNodesRequest_Node struct {
 func (x *SenseMeshNodesRequest_Node) Reset() {
 	*x = SenseMeshNodesRequest_Node{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_walletnode_register_sense_proto_msgTypes[20]
+		mi := &file_walletnode_register_sense_proto_msgTypes[19]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1053,7 +974,7 @@ func (x *SenseMeshNodesRequest_Node) String() string {
 func (*SenseMeshNodesRequest_Node) ProtoMessage() {}
 
 func (x *SenseMeshNodesRequest_Node) ProtoReflect() protoreflect.Message {
-	mi := &file_walletnode_register_sense_proto_msgTypes[20]
+	mi := &file_walletnode_register_sense_proto_msgTypes[19]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1138,28 +1059,16 @@ var file_walletnode_register_sense_proto_rawDesc = []byte{
 	0x6e, 0x65, 0x64, 0x44, 0x44, 0x41, 0x6e, 0x64, 0x46, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x70, 0x72,
 	0x69, 0x6e, 0x74, 0x73, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x21, 0x63, 0x6f, 0x6d, 0x70,
 	0x72, 0x65, 0x73, 0x73, 0x65, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x44, 0x44, 0x41, 0x6e,
-	0x64, 0x46, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x70, 0x72, 0x69, 0x6e, 0x74, 0x73, 0x22, 0x2a, 0x0a,
-	0x16, 0x53, 0x65, 0x6e, 0x73, 0x65, 0x45, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x72, 0x50, 0x61, 0x72,
-	0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x12, 0x10, 0x0a, 0x03, 0x6f, 0x74, 0x69, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x6f, 0x74, 0x69, 0x22, 0xa1, 0x02, 0x0a, 0x1f, 0x53, 0x65,
-	0x6e, 0x73, 0x65, 0x53, 0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64, 0x4e, 0x46, 0x54,
-	0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x1d, 0x0a,
-	0x0a, 0x6e, 0x66, 0x74, 0x5f, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28,
-	0x0c, 0x52, 0x09, 0x6e, 0x66, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x12, 0x2b, 0x0a, 0x11,
-	0x63, 0x72, 0x65, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x73, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72,
-	0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x10, 0x63, 0x72, 0x65, 0x61, 0x74, 0x6f, 0x72,
-	0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6b, 0x65, 0x79,
-	0x31, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6b, 0x65, 0x79, 0x31, 0x12, 0x12, 0x0a,
-	0x04, 0x6b, 0x65, 0x79, 0x32, 0x18, 0x04, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6b, 0x65, 0x79,
-	0x32, 0x12, 0x4f, 0x0a, 0x11, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x5f, 0x70, 0x61, 0x72, 0x61,
-	0x6d, 0x65, 0x74, 0x65, 0x72, 0x73, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x22, 0x2e, 0x77,
-	0x61, 0x6c, 0x6c, 0x65, 0x74, 0x6e, 0x6f, 0x64, 0x65, 0x2e, 0x53, 0x65, 0x6e, 0x73, 0x65, 0x45,
-	0x6e, 0x63, 0x6f, 0x64, 0x65, 0x72, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65, 0x72, 0x73,
-	0x52, 0x10, 0x65, 0x6e, 0x63, 0x6f, 0x64, 0x65, 0x50, 0x61, 0x72, 0x61, 0x6d, 0x65, 0x74, 0x65,
-	0x72, 0x73, 0x12, 0x1e, 0x0a, 0x0b, 0x64, 0x64, 0x5f, 0x66, 0x70, 0x5f, 0x66, 0x69, 0x6c, 0x65,
-	0x73, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x64, 0x64, 0x46, 0x70, 0x46, 0x69, 0x6c,
-	0x65, 0x73, 0x12, 0x19, 0x0a, 0x08, 0x72, 0x71, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x08,
-	0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x72, 0x71, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x22, 0x4a, 0x0a,
+	0x64, 0x46, 0x69, 0x6e, 0x67, 0x65, 0x72, 0x70, 0x72, 0x69, 0x6e, 0x74, 0x73, 0x22, 0x8d, 0x01,
+	0x0a, 0x1f, 0x53, 0x65, 0x6e, 0x73, 0x65, 0x53, 0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65,
+	0x64, 0x4e, 0x46, 0x54, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x12, 0x1d, 0x0a, 0x0a, 0x6e, 0x66, 0x74, 0x5f, 0x74, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x09, 0x6e, 0x66, 0x74, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74,
+	0x12, 0x2b, 0x0a, 0x11, 0x63, 0x72, 0x65, 0x61, 0x74, 0x6f, 0x72, 0x5f, 0x73, 0x69, 0x67, 0x6e,
+	0x61, 0x74, 0x75, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x10, 0x63, 0x72, 0x65,
+	0x61, 0x74, 0x6f, 0x72, 0x53, 0x69, 0x67, 0x6e, 0x61, 0x74, 0x75, 0x72, 0x65, 0x12, 0x1e, 0x0a,
+	0x0b, 0x64, 0x64, 0x5f, 0x66, 0x70, 0x5f, 0x66, 0x69, 0x6c, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x0c, 0x52, 0x09, 0x64, 0x64, 0x46, 0x70, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x22, 0x4a, 0x0a,
 	0x1d, 0x53, 0x65, 0x6e, 0x73, 0x65, 0x53, 0x65, 0x6e, 0x64, 0x53, 0x69, 0x67, 0x6e, 0x65, 0x64,
 	0x4e, 0x46, 0x54, 0x54, 0x69, 0x63, 0x6b, 0x65, 0x74, 0x52, 0x65, 0x70, 0x6c, 0x79, 0x12, 0x29,
 	0x0a, 0x10, 0x72, 0x65, 0x67, 0x69, 0x73, 0x74, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x5f, 0x66,
@@ -1260,7 +1169,7 @@ func file_walletnode_register_sense_proto_rawDescGZIP() []byte {
 	return file_walletnode_register_sense_proto_rawDescData
 }
 
-var file_walletnode_register_sense_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
+var file_walletnode_register_sense_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_walletnode_register_sense_proto_goTypes = []interface{}{
 	(*SenseSessionRequest)(nil),             // 0: walletnode.SenseSessionRequest
 	(*SenseSessionReply)(nil),               // 1: walletnode.SenseSessionReply
@@ -1274,43 +1183,41 @@ var file_walletnode_register_sense_proto_goTypes = []interface{}{
 	(*SenseSendRegMetadataReply)(nil),       // 9: walletnode.SenseSendRegMetadataReply
 	(*SenseProbeImageRequest)(nil),          // 10: walletnode.SenseProbeImageRequest
 	(*SenseProbeImageReply)(nil),            // 11: walletnode.SenseProbeImageReply
-	(*SenseEncoderParameters)(nil),          // 12: walletnode.SenseEncoderParameters
-	(*SenseSendSignedNFTTicketRequest)(nil), // 13: walletnode.SenseSendSignedNFTTicketRequest
-	(*SenseSendSignedNFTTicketReply)(nil),   // 14: walletnode.SenseSendSignedNFTTicketReply
-	(*SenseSendPreBurntFeeTxidRequest)(nil), // 15: walletnode.SenseSendPreBurntFeeTxidRequest
-	(*SenseSendPreBurntFeeTxidReply)(nil),   // 16: walletnode.SenseSendPreBurntFeeTxidReply
-	(*SenseSendTicketRequest)(nil),          // 17: walletnode.SenseSendTicketRequest
-	(*SenseSendTicketReply)(nil),            // 18: walletnode.SenseSendTicketReply
-	(*SenseAcceptedNodesReply_Peer)(nil),    // 19: walletnode.SenseAcceptedNodesReply.Peer
-	(*SenseMeshNodesRequest_Node)(nil),      // 20: walletnode.SenseMeshNodesRequest.Node
+	(*SenseSendSignedNFTTicketRequest)(nil), // 12: walletnode.SenseSendSignedNFTTicketRequest
+	(*SenseSendSignedNFTTicketReply)(nil),   // 13: walletnode.SenseSendSignedNFTTicketReply
+	(*SenseSendPreBurntFeeTxidRequest)(nil), // 14: walletnode.SenseSendPreBurntFeeTxidRequest
+	(*SenseSendPreBurntFeeTxidReply)(nil),   // 15: walletnode.SenseSendPreBurntFeeTxidReply
+	(*SenseSendTicketRequest)(nil),          // 16: walletnode.SenseSendTicketRequest
+	(*SenseSendTicketReply)(nil),            // 17: walletnode.SenseSendTicketReply
+	(*SenseAcceptedNodesReply_Peer)(nil),    // 18: walletnode.SenseAcceptedNodesReply.Peer
+	(*SenseMeshNodesRequest_Node)(nil),      // 19: walletnode.SenseMeshNodesRequest.Node
 }
 var file_walletnode_register_sense_proto_depIdxs = []int32{
-	19, // 0: walletnode.SenseAcceptedNodesReply.peers:type_name -> walletnode.SenseAcceptedNodesReply.Peer
-	20, // 1: walletnode.SenseMeshNodesRequest.nodes:type_name -> walletnode.SenseMeshNodesRequest.Node
-	12, // 2: walletnode.SenseSendSignedNFTTicketRequest.encode_parameters:type_name -> walletnode.SenseEncoderParameters
-	0,  // 3: walletnode.RegisterSense.Session:input_type -> walletnode.SenseSessionRequest
-	2,  // 4: walletnode.RegisterSense.AcceptedNodes:input_type -> walletnode.SenseAcceptedNodesRequest
-	4,  // 5: walletnode.RegisterSense.ConnectTo:input_type -> walletnode.SenseConnectToRequest
-	6,  // 6: walletnode.RegisterSense.MeshNodes:input_type -> walletnode.SenseMeshNodesRequest
-	8,  // 7: walletnode.RegisterSense.SendRegMetadata:input_type -> walletnode.SenseSendRegMetadataRequest
-	10, // 8: walletnode.RegisterSense.ProbeImage:input_type -> walletnode.SenseProbeImageRequest
-	13, // 9: walletnode.RegisterSense.SendSignedNFTTicket:input_type -> walletnode.SenseSendSignedNFTTicketRequest
-	15, // 10: walletnode.RegisterSense.SendPreBurntFeeTxid:input_type -> walletnode.SenseSendPreBurntFeeTxidRequest
-	17, // 11: walletnode.RegisterSense.SendTicket:input_type -> walletnode.SenseSendTicketRequest
-	1,  // 12: walletnode.RegisterSense.Session:output_type -> walletnode.SenseSessionReply
-	3,  // 13: walletnode.RegisterSense.AcceptedNodes:output_type -> walletnode.SenseAcceptedNodesReply
-	5,  // 14: walletnode.RegisterSense.ConnectTo:output_type -> walletnode.SenseConnectToReply
-	7,  // 15: walletnode.RegisterSense.MeshNodes:output_type -> walletnode.SenseMeshNodesReply
-	9,  // 16: walletnode.RegisterSense.SendRegMetadata:output_type -> walletnode.SenseSendRegMetadataReply
-	11, // 17: walletnode.RegisterSense.ProbeImage:output_type -> walletnode.SenseProbeImageReply
-	14, // 18: walletnode.RegisterSense.SendSignedNFTTicket:output_type -> walletnode.SenseSendSignedNFTTicketReply
-	16, // 19: walletnode.RegisterSense.SendPreBurntFeeTxid:output_type -> walletnode.SenseSendPreBurntFeeTxidReply
-	18, // 20: walletnode.RegisterSense.SendTicket:output_type -> walletnode.SenseSendTicketReply
-	12, // [12:21] is the sub-list for method output_type
-	3,  // [3:12] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	18, // 0: walletnode.SenseAcceptedNodesReply.peers:type_name -> walletnode.SenseAcceptedNodesReply.Peer
+	19, // 1: walletnode.SenseMeshNodesRequest.nodes:type_name -> walletnode.SenseMeshNodesRequest.Node
+	0,  // 2: walletnode.RegisterSense.Session:input_type -> walletnode.SenseSessionRequest
+	2,  // 3: walletnode.RegisterSense.AcceptedNodes:input_type -> walletnode.SenseAcceptedNodesRequest
+	4,  // 4: walletnode.RegisterSense.ConnectTo:input_type -> walletnode.SenseConnectToRequest
+	6,  // 5: walletnode.RegisterSense.MeshNodes:input_type -> walletnode.SenseMeshNodesRequest
+	8,  // 6: walletnode.RegisterSense.SendRegMetadata:input_type -> walletnode.SenseSendRegMetadataRequest
+	10, // 7: walletnode.RegisterSense.ProbeImage:input_type -> walletnode.SenseProbeImageRequest
+	12, // 8: walletnode.RegisterSense.SendSignedNFTTicket:input_type -> walletnode.SenseSendSignedNFTTicketRequest
+	14, // 9: walletnode.RegisterSense.SendPreBurntFeeTxid:input_type -> walletnode.SenseSendPreBurntFeeTxidRequest
+	16, // 10: walletnode.RegisterSense.SendTicket:input_type -> walletnode.SenseSendTicketRequest
+	1,  // 11: walletnode.RegisterSense.Session:output_type -> walletnode.SenseSessionReply
+	3,  // 12: walletnode.RegisterSense.AcceptedNodes:output_type -> walletnode.SenseAcceptedNodesReply
+	5,  // 13: walletnode.RegisterSense.ConnectTo:output_type -> walletnode.SenseConnectToReply
+	7,  // 14: walletnode.RegisterSense.MeshNodes:output_type -> walletnode.SenseMeshNodesReply
+	9,  // 15: walletnode.RegisterSense.SendRegMetadata:output_type -> walletnode.SenseSendRegMetadataReply
+	11, // 16: walletnode.RegisterSense.ProbeImage:output_type -> walletnode.SenseProbeImageReply
+	13, // 17: walletnode.RegisterSense.SendSignedNFTTicket:output_type -> walletnode.SenseSendSignedNFTTicketReply
+	15, // 18: walletnode.RegisterSense.SendPreBurntFeeTxid:output_type -> walletnode.SenseSendPreBurntFeeTxidReply
+	17, // 19: walletnode.RegisterSense.SendTicket:output_type -> walletnode.SenseSendTicketReply
+	11, // [11:20] is the sub-list for method output_type
+	2,  // [2:11] is the sub-list for method input_type
+	2,  // [2:2] is the sub-list for extension type_name
+	2,  // [2:2] is the sub-list for extension extendee
+	0,  // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_walletnode_register_sense_proto_init() }
@@ -1464,18 +1371,6 @@ func file_walletnode_register_sense_proto_init() {
 			}
 		}
 		file_walletnode_register_sense_proto_msgTypes[12].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SenseEncoderParameters); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_walletnode_register_sense_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SenseSendSignedNFTTicketRequest); i {
 			case 0:
 				return &v.state
@@ -1487,7 +1382,7 @@ func file_walletnode_register_sense_proto_init() {
 				return nil
 			}
 		}
-		file_walletnode_register_sense_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
+		file_walletnode_register_sense_proto_msgTypes[13].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SenseSendSignedNFTTicketReply); i {
 			case 0:
 				return &v.state
@@ -1499,7 +1394,7 @@ func file_walletnode_register_sense_proto_init() {
 				return nil
 			}
 		}
-		file_walletnode_register_sense_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
+		file_walletnode_register_sense_proto_msgTypes[14].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SenseSendPreBurntFeeTxidRequest); i {
 			case 0:
 				return &v.state
@@ -1511,7 +1406,7 @@ func file_walletnode_register_sense_proto_init() {
 				return nil
 			}
 		}
-		file_walletnode_register_sense_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+		file_walletnode_register_sense_proto_msgTypes[15].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SenseSendPreBurntFeeTxidReply); i {
 			case 0:
 				return &v.state
@@ -1523,7 +1418,7 @@ func file_walletnode_register_sense_proto_init() {
 				return nil
 			}
 		}
-		file_walletnode_register_sense_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+		file_walletnode_register_sense_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SenseSendTicketRequest); i {
 			case 0:
 				return &v.state
@@ -1535,7 +1430,7 @@ func file_walletnode_register_sense_proto_init() {
 				return nil
 			}
 		}
-		file_walletnode_register_sense_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+		file_walletnode_register_sense_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SenseSendTicketReply); i {
 			case 0:
 				return &v.state
@@ -1547,7 +1442,7 @@ func file_walletnode_register_sense_proto_init() {
 				return nil
 			}
 		}
-		file_walletnode_register_sense_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+		file_walletnode_register_sense_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SenseAcceptedNodesReply_Peer); i {
 			case 0:
 				return &v.state
@@ -1559,7 +1454,7 @@ func file_walletnode_register_sense_proto_init() {
 				return nil
 			}
 		}
-		file_walletnode_register_sense_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
+		file_walletnode_register_sense_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*SenseMeshNodesRequest_Node); i {
 			case 0:
 				return &v.state
@@ -1578,7 +1473,7 @@ func file_walletnode_register_sense_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_walletnode_register_sense_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   21,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
