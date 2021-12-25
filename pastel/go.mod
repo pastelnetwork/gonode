@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/DataDog/zstd v1.4.8
+	github.com/btcsuite/btcutil v1.0.2
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/onsi/gomega v1.11.0
 	github.com/pastelnetwork/gonode/common v0.0.0

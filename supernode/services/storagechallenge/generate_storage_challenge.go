@@ -12,19 +12,38 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-func (s *service) GenerateStorageChallenges(ctx context.Context, merkleroot string, challengingMasternodeID string, challengesPerMasternodePerBlock int) error {
+func (s *service) GenerateStorageChallenges(ctx context.Context, challengesPerMasternodePerBlock int) error {
 	symbolFileKeys, err := s.repository.ListKeys(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
 		return err
 	}
 
-	comparisonStringForFileHashSelection := merkleroot + challengingMasternodeID
-	sliceOfFileHashesToChallenge := s.repository.GetNClosestXORDistanceFileHashesToComparisonString(ctx, challengesPerMasternodePerBlock, comparisonStringForFileHashSelection, symbolFileKeys)
+	blockNumChallengeSent, err := s.pclient.GetBlockCount(ctx)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get current block count")
+		return err
+	}
 
-	for idx, symbolFileHash := range sliceOfFileHashesToChallenge {
+	blkVerbose1, err := s.pclient.GetBlockVerbose1(ctx, blockNumChallengeSent)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Error("could not get current block verbose 1")
+		return err
+	}
+
+	merkleroot := blkVerbose1.MerkleRoot
+
+	if len(symbolFileKeys) > 3 {
+		symbolFileKeys = s.repository.GetNClosestXORDistanceFileHashesToComparisonString(ctx, 3, merkleroot, symbolFileKeys)
+	}
+
+	for idx, symbolFileHash := range symbolFileKeys {
 		challengeDataSize := 0
-
+		challengingMasternode := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, symbolFileHash)
+		if len(challengingMasternode) == 0 {
+			continue
+		}
+		challengingMasternodeID := challengingMasternode[0].PastelID
 		comparisonStringForMasternodeSelection := merkleroot + symbolFileHash + s.nodeID + utils.GetHashFromString(fmt.Sprint(idx))
 		respondingMasternodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForMasternodeSelection)
 		challengeStatus := statusPending
@@ -32,11 +51,6 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, merkleroot stri
 		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, merkleroot, challengingMasternodeID)
 		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + merkleroot
 		messageID := utils.GetHashFromString(messageIDInputData)
-		blockNumChallengeSent, err := s.pclient.GetBlockCount(ctx)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Error("could not get current block count")
-			return err
-		}
 		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(blockNumChallengeSent)
 		challengeID := utils.GetHashFromString(challengeIDInputData)
 		outgoinChallengeMessage := &ChallengeMessage{
@@ -56,14 +70,6 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, merkleroot stri
 			ChallengeResponseHash:        "",
 			ChallengeID:                  challengeID,
 		}
-
-		// TODO: replacing this with real repository implementation
-		// err = s.repository.UpsertStorageChallengeMessage(ctx, outgoinChallengeMessage)
-		// if err != nil {
-		// 	log.With(actorLog.String("ACTOR", "GenerateStorageChallenges")).Warn(fmt.Sprintf("could not update storage challenge into storage: %v", outgoinChallengeMessage), actorLog.String("s.repository.UpsertStorageChallengeMessage", err.Error()))
-		// 	continue
-		// }
-		// s.saveChallengeAnalysis(ctx, outgoinChallengeMessage.MerklerootWhenChallengeSent, outgoinChallengeMessage.ChallengingMasternodeID, ANALYSYS_STATUS_ISSUED)
 
 		s.sendprocessStorageChallenge(ctx, outgoinChallengeMessage)
 	}

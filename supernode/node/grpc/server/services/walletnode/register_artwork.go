@@ -11,6 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/types"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkregister"
@@ -128,6 +129,44 @@ func (service *RegisterArtwork) ConnectTo(ctx context.Context, req *pb.ConnectTo
 	return resp, nil
 }
 
+// MeshNodes implements walletnode.RegisterArtworkServer.MeshNodes
+func (service *RegisterArtwork) MeshNodes(ctx context.Context, req *pb.MeshNodesRequest) (*pb.MeshNodesReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debug("MeshNodes request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	meshedNodes := []types.MeshedSuperNode{}
+	for _, node := range req.GetNodes() {
+		meshedNodes = append(meshedNodes, types.MeshedSuperNode{
+			NodeID: node.NodeID,
+			SessID: node.SessID,
+		})
+	}
+
+	err = task.MeshNodes(ctx, meshedNodes)
+	return &pb.MeshNodesReply{}, err
+}
+
+// SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
+func (service *RegisterArtwork) SendRegMetadata(ctx context.Context, req *pb.SendRegMetadataRequest) (*pb.SendRegMetadataReply, error) {
+	log.WithContext(ctx).WithField("req", req).Debug("SendRegMetadata request")
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reqMetadata := &types.NftRegMetadata{
+		BlockHash:       req.BlockHash,
+		CreatorPastelID: req.CreatorPastelID,
+	}
+
+	err = task.SendRegMetadata(ctx, reqMetadata)
+
+	return &pb.SendRegMetadataReply{}, err
+}
+
 // ProbeImage implements walletnode.RegisterArtworkServer.ProbeImage()
 func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageServer) (retErr error) {
 	ctx := stream.Context()
@@ -175,62 +214,13 @@ func (service *RegisterArtwork) ProbeImage(stream pb.RegisterArtwork_ProbeImageS
 		return errors.Errorf("add image format: %w", err)
 	}
 
-	fingerAndScores, err := task.ProbeImage(ctx, image)
+	compressedDDFingerAndScores, err := task.ProbeImage(ctx, image)
 	if err != nil {
 		return err
 	}
 
 	resp := &pb.ProbeImageReply{
-		DupeDetectionVersion:      fingerAndScores.DupeDectectionSystemVersion,
-		HashOfCandidateImg:        fingerAndScores.HashOfCandidateImageFile,
-		AverageRarenessScore:      fingerAndScores.OverallAverageRarenessScore,
-		IsRareOnInternet:          fingerAndScores.IsRareOnInternet,
-		MatchesFoundOnFirstPage:   fingerAndScores.MatchesFoundOnFirstPage,
-		NumberOfPagesOfResults:    fingerAndScores.NumberOfPagesOfResults,
-		UrlOfFirstMatchInPage:     fingerAndScores.URLOfFirstMatchInPage,
-		OpenNsfwScore:             fingerAndScores.OpenNSFWScore,
-		ZstdCompressedFingerprint: fingerAndScores.ZstdCompressedFingerprint,
-		AlternativeNsfwScore: &pb.ProbeImageReply_AlternativeNSFWScore{
-			Drawing: fingerAndScores.AlternativeNSFWScore.Drawing,
-			Hentai:  fingerAndScores.AlternativeNSFWScore.Hentai,
-			Neutral: fingerAndScores.AlternativeNSFWScore.Neutral,
-			Porn:    fingerAndScores.AlternativeNSFWScore.Porn,
-			Sexy:    fingerAndScores.AlternativeNSFWScore.Sexy,
-		},
-		ImageHashes: &pb.ProbeImageReply_ImageHashes{
-			PerceptualHash: fingerAndScores.PerceptualImageHashes.PerceptualHash,
-			AverageHash:    fingerAndScores.PerceptualImageHashes.AverageHash,
-			DifferenceHash: fingerAndScores.PerceptualImageHashes.DifferenceHash,
-			PDQHash:        fingerAndScores.PerceptualImageHashes.PDQHash,
-			NeuralHash:     fingerAndScores.PerceptualImageHashes.NeuralHash,
-		},
-		PerceptualHashOverlapCount:                    fingerAndScores.PerceptualHashOverlapCount,
-		NumberOfFingerprintsRequiringFurtherTesting_1: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting1,
-		NumberOfFingerprintsRequiringFurtherTesting_2: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting2,
-		NumberOfFingerprintsRequiringFurtherTesting_3: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting3,
-		NumberOfFingerprintsRequiringFurtherTesting_4: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting4,
-		NumberOfFingerprintsRequiringFurtherTesting_5: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting5,
-		NumberOfFingerprintsRequiringFurtherTesting_6: fingerAndScores.NumberOfFingerprintsRequiringFurtherTesting6,
-		NumberOfFingerprintsOfSuspectedDupes:          fingerAndScores.NumberOfFingerprintsOfSuspectedDupes,
-		PearsonMax:                                    fingerAndScores.PearsonMax,
-		SpearmanMax:                                   fingerAndScores.SpearmanMax,
-		KendallMax:                                    fingerAndScores.KendallMax,
-		HoeffdingMax:                                  fingerAndScores.HoeffdingMax,
-		MutualInformationMax:                          fingerAndScores.MutualInformationMax,
-		HsicMax:                                       fingerAndScores.HsicMax,
-		XgbimportanceMax:                              fingerAndScores.XgbimportanceMax,
-		PearsonTop_1BpsPercentile:                     fingerAndScores.PearsonTop1BpsPercentile,
-		SpearmanTop_1BpsPercentile:                    fingerAndScores.SpearmanTop1BpsPercentile,
-		KendallTop_1BpsPercentile:                     fingerAndScores.KendallTop1BpsPercentile,
-		HoeffdingTop_10BpsPercentile:                  fingerAndScores.HoeffdingTop10BpsPercentile,
-		MutualInformationTop_100BpsPercentile:         fingerAndScores.MutualInformationTop100BpsPercentile,
-		HsicTop_100BpsPercentile:                      fingerAndScores.HsicTop100BpsPercentile,
-		XgbimportanceTop_100BpsPercentile:             fingerAndScores.XgbimportanceTop100BpsPercentile,
-		CombinedRarenessScore:                         fingerAndScores.CombinedRarenessScore,
-		XgboostPredictedRarenessScore:                 fingerAndScores.XgboostPredictedRarenessScore,
-		NnPredictedRarenessScore:                      fingerAndScores.NnPredictedRarenessScore,
-		OverallAverageRarenessScore:                   fingerAndScores.OverallAverageRarenessScore,
-		IsLikelyDupe:                                  fingerAndScores.IsLikelyDupe,
+		CompressedSignedDDAndFingerprints: compressedDDFingerAndScores,
 	}
 
 	if err := stream.SendAndClose(resp); err != nil {
@@ -289,8 +279,8 @@ func (service *RegisterArtwork) UploadImage(stream pb.RegisterArtwork_UploadImag
 				}
 			} else {
 				if metaData := req.GetMetaData(); metaData != nil {
-					if metaData.Size_ != imageSize {
-						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size_, imageSize)
+					if metaData.Size != imageSize {
+						return errors.Errorf("incomplete payload, send = %d receive=%d", metaData.Size, imageSize)
 					}
 
 					cordinates := metaData.GetThumbnail()
@@ -382,7 +372,7 @@ func (service *RegisterArtwork) SendSignedNFTTicket(ctx context.Context, req *pb
 		return nil, errors.Errorf("get task from metada %w", err)
 	}
 
-	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.EncodeFiles, req.EncodeParameters.Oti)
+	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.Key1, req.Key2, req.RqFiles, req.DdFpFiles, req.EncodeParameters.Oti)
 	if err != nil {
 		return nil, errors.Errorf("get total storage fee %w", err)
 	}

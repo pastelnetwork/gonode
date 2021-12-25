@@ -4,7 +4,6 @@ go 1.17
 
 require (
 	github.com/DataDog/zstd v1.5.0
-	github.com/google/gofuzz v1.2.0
 	github.com/google/uuid v1.3.0
 	github.com/pastelnetwork/gonode/common v0.0.0
 	github.com/pastelnetwork/gonode/metadb v0.0.0-20210803173228-bd776aecea6a
@@ -30,6 +29,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-errors/errors v1.1.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/jmoiron/sqlx v1.3.4 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect

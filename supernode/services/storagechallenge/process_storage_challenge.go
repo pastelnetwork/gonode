@@ -18,12 +18,6 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 		return err
 	}
 
-	// analysisStatus := ALALYSIS_STATUS_TIMEOUT
-
-	// defer func() {
-	// 	s.saveChallengeAnalysis(ctx, incomingChallengeMessage.MerklerootWhenChallengeSent, incomingChallengeMessage.ChallengingMasternodeID, analysisStatus)
-	// }()
-
 	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not read file data in to memory")
@@ -58,12 +52,6 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 		ChallengeID:                  incomingChallengeMessage.ChallengeID,
 	}
 
-	// TODO: replace with new repository implementation
-	// if err := s.repository.UpsertStorageChallengeMessage(ctx, outgoingChallengeMessage); err != nil {
-	// 	log.With(actorLog.String("ACTOR", "ProcessStorageChallenge")).Error("could not update new storage challenge message in to database", actorLog.String("s.repository.UpsertStorageChallengeMessage", err.Error()))
-	// 	return err
-	// }
-	// analysisStatus = ANALYSIS_STATUS_RESPONDED_TO
 	blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, blocksToRespondToStorageChallenge))
 

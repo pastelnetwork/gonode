@@ -12,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/common/types"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
 
@@ -44,14 +44,18 @@ type RegisterArtwork interface {
 	Session(ctx context.Context, IsPrimary bool) (err error)
 	// AcceptedNodes requests information about connected secondary nodes.
 	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
-	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
-	ConnectTo(ctx context.Context, nodeKey, sessID string) error
+	// ConnectTo commands to connect to the primary node
+	ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error
+	// MeshNodes send to supernode all info of nodes are meshed together (include the received supernode)
+	MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error
+	// SendRegMetadata send metadata of registration to SNs for next steps
+	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *artwork.File) (rep *pastel.FingerAndScores, err error)
+	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, err error)
 	// UploadImageImageWithThumbnail uploads the image with pqsignature and its thumbnail to supernodes
 	UploadImageWithThumbnail(ctx context.Context, image *artwork.File, thumbnail artwork.ThumbnailCoordinate) (previewHash []byte, mediumThumbnailHash []byte, smallThumbnailHash []byte, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
-	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdis map[string][]byte, encoderParams rqnode.EncoderParameters) (int64, error)
+	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, key1 string, key2 string, rqdisFile []byte, ddFpFile []byte, encoderParams rqnode.EncoderParameters) (int64, error)
 	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
 	SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error)
 }
@@ -72,7 +76,7 @@ type ProcessUserdata interface {
 	// AcceptedNodes requests information about connected secondary nodes.
 	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
 	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
-	ConnectTo(ctx context.Context, nodeKey, sessID string) error
+	ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error
 	// SendUserdata send user specified data (with other generated info like signature, previous block hash, timestamp,...) to supernode.
 	SendUserdata(ctx context.Context, request *userdata.ProcessRequestSigned) (result *userdata.ProcessResult, err error)
 	// ReceiveUserdata get user specified data from supernode

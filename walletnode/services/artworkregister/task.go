@@ -3,13 +3,13 @@ package artworkregister
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
-	"io"
+	"math/rand"
 	"sync"
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/btcsuite/btcutil/base58"
 	"github.com/pastelnetwork/gonode/common/blocktracker"
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -19,10 +19,11 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
+	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
-	"golang.org/x/crypto/sha3"
 )
 
 // Task is the task of registering new artwork.
@@ -38,8 +39,7 @@ type Task struct {
 	// task data to create RegArt ticket
 	creatorBlockHeight           int
 	creatorBlockHash             string
-	fingerprintAndScores         *pastel.FingerAndScores
-	fingerprintsHash             []byte
+	fingerprintAndScores         *pastel.DDAndFingerprints
 	fingerprint                  []byte
 	imageEncodedWithFingerprints *artwork.File
 	previewHash                  []byte
@@ -47,16 +47,24 @@ type Task struct {
 	smallThumbnailHash           []byte
 	datahash                     []byte
 	rqids                        []string
+	rqEncodeParams               rqnode.EncoderParameters
 
-	// TODO: call cNodeAPI to get the reall signature instead of the fake one
-	fingerprintSignature []byte
+	// signatures from SN1, SN2 & SN3 over dd_and_fingerprints data from dd-server
+	signatures [][]byte
 
-	// TODO: need to update rqservice code to return the following info
-	rqSymbolIDFiles map[string][]byte
-	rqEncodeParams  rqnode.EncoderParameters
+	ddAndFingerprintsIc uint32
+	rqIDsIc             uint32
+
+	// ddAndFingerprintsIDs are Base58(SHA3_256(compressed(Base64URL(dd_and_fingerprints).
+	// Base64URL(signatureSN1).Base64URL(signatureSN2).Base64URL(signatureSN3).dd_and_fingerprints_ic)))
+	ddAndFingerprintsIDs []string
+
+	// ddAndFpFile is Base64(compressed(Base64(dd_and_fingerprints).Base64(signatureSN1).Base64(signatureSN3)))
+	ddAndFpFile []byte
+	// rqIDsFile is Base64(compress(Base64(rq_ids).Base64(signature)))
+	rqIDsFile []byte
 
 	// TODO: call cNodeAPI to get the following info
-	blockTxID       string
 	burnTxid        string
 	regNFTTxid      string
 	registrationFee int64
@@ -118,8 +126,18 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("get current block heigth: %w", err)
 	}
 
+	// send registration metadata
+	if err := task.sendRegMetadata(ctx); err != nil {
+		return errors.Errorf("send registration metadata: %w", err)
+	}
+
 	// probe image for rareness, nsfw and seen score
 	if err := task.probeImage(ctx); err != nil {
+		return errors.Errorf("probe image: %w", err)
+	}
+
+	// generateDDAndFingerprintsIDs generates dd & fp IDs
+	if err := task.generateDDAndFingerprintsIDs(); err != nil {
 		return errors.Errorf("probe image: %w", err)
 	}
 
@@ -194,6 +212,40 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusTicketActivated)
 	log.Debugf("reg-act-tixd is confirmed")
+
+	return nil
+}
+
+// generateDDAndFingerprintsIDs generates redundant IDs and assigns to task.redundantIDs
+func (task *Task) generateDDAndFingerprintsIDs() error {
+	ddDataJSON, err := json.Marshal(task.fingerprintAndScores)
+	if err != nil {
+		return errors.Errorf("failed to marshal dd-data: %w", err)
+	}
+
+	ddEncoded := utils.B64Encode(ddDataJSON)
+
+	var buffer bytes.Buffer
+	buffer.Write(ddEncoded)
+	buffer.WriteByte(pastel.SeparatorByte)
+	buffer.Write(task.signatures[0])
+	buffer.WriteByte(pastel.SeparatorByte)
+	buffer.Write(task.signatures[1])
+	buffer.WriteByte(pastel.SeparatorByte)
+	buffer.Write(task.signatures[2])
+	ddFpFile := buffer.Bytes()
+
+	task.ddAndFingerprintsIc = rand.Uint32()
+	task.ddAndFingerprintsIDs, _, err = pastel.GetIDFiles(ddFpFile, task.ddAndFingerprintsIc, task.config.DDAndFingerprintsMax)
+	if err != nil {
+		return fmt.Errorf("get ID Files: %w", err)
+	}
+
+	comp, err := zstd.CompressLevel(nil, ddFpFile, 22)
+	if err != nil {
+		return errors.Errorf("compress: %w", err)
+	}
+	task.ddAndFpFile = utils.B64Encode(comp)
 
 	return nil
 }
@@ -304,12 +356,8 @@ func (task *Task) encodeFingerprint(ctx context.Context, fingerprint []byte, img
 		qrsignature.Ed448Signature(ed448Signature),
 		qrsignature.Ed448PubKey(ed448PubKey),
 	)
-	if err := img.Encode(encSig); err != nil {
-		return err
-	}
-	task.fingerprintSignature = ed448Signature
 
-	return nil
+	return img.Encode(encSig)
 }
 
 // meshNodes establishes communication between supernodes.
@@ -364,7 +412,10 @@ func (task *Task) meshNodes(ctx context.Context, nodes node.List, primaryIndex i
 						secondaries.Add(node)
 					}()
 
-					if err := node.ConnectTo(ctx, primary.PastelID(), primary.SessID()); err != nil {
+					if err := node.ConnectTo(ctx, types.MeshedSuperNode{
+						NodeID: primary.PastelID(),
+						SessID: primary.SessID(),
+					}); err != nil {
 						return
 					}
 					log.WithContext(ctx).Debugf("Seconary %q connected to primary", node)
@@ -475,7 +526,6 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 		RqFilesDir: task.Service.config.RqFilesDir,
 	})
 
-	log.WithContext(ctx).Debugf("Image hash %x", sha3.Sum256(content))
 	// FIXME :
 	// - check format of artis block hash should be base58 or not
 	encodeInfo, err := rqService.EncodeInfo(ctx, content, task.config.NumberRQIDSFiles, task.creatorBlockHash, task.Request.ArtistPastelID)
@@ -483,74 +533,62 @@ func (task *Task) genRQIdentifiersFiles(ctx context.Context) error {
 		return errors.Errorf("generate RaptorQ symbols identifiers: %w", err)
 	}
 
-	files := make(map[string][]byte)
+	files := 0
 	for _, rawSymbolIDFile := range encodeInfo.SymbolIDFiles {
-		name, content, err := task.convertToSymbolIDFile(ctx, rawSymbolIDFile)
+		err := task.generateRQIDs(ctx, rawSymbolIDFile)
 		if err != nil {
 			task.UpdateStatus(StatusErrorGenRaptorQSymbolsFailed)
 			return errors.Errorf("create rqids file :%w", err)
 		}
-		files[name] = content
+		files++
+		break
 	}
 
-	if len(files) < 1 {
+	if files != 1 {
 		return errors.Errorf("number of raptorq symbol identifiers files must be greater than 1")
 	}
-	for k := range files {
-		log.WithContext(ctx).Debugf("symbol file identifier %s", k)
-		task.rqids = append(task.rqids, k)
-	}
-
-	task.rqSymbolIDFiles = files
 	task.rqEncodeParams = encodeInfo.EncoderParam
+
 	return nil
 }
 
-func (task *Task) convertToSymbolIDFile(ctx context.Context, rawFile rqnode.RawSymbolIDFile) (string, []byte, error) {
-	var content []byte
-	appendStr := func(b []byte, s string) []byte {
-		b = append(b, []byte(s)...)
-		b = append(b, '\n')
-		return b
-	}
-
-	content = appendStr(content, rawFile.ID)
-	content = appendStr(content, rawFile.BlockHash)
-	content = appendStr(content, rawFile.PastelID)
-	for _, id := range rawFile.SymbolIdentifiers {
-		content = appendStr(content, id)
-	}
-
-	// log.WithContext(ctx).Debugf("%s", content)
-	signature, err := task.pastelClient.Sign(ctx, content, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
+func (task *Task) generateRQIDs(ctx context.Context, rawFile rqnode.RawSymbolIDFile) error {
+	file, err := json.Marshal(rawFile)
 	if err != nil {
-		return "", nil, errors.Errorf("sign identifiers file: %w", err)
+		return fmt.Errorf("marshal rqID file")
 	}
-	content = append(content, signature...)
 
-	// read all content of the data b
-	// compress the contente of the file
-	compressedData, err := zstd.CompressLevel(nil, content, 22)
+	signature, err := task.pastelClient.Sign(ctx, file, task.Request.ArtistPastelID, task.Request.ArtistPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
-		return "", nil, errors.Errorf("compress identifiers file: %w", err)
+		return errors.Errorf("sign identifiers file: %w", err)
 	}
-	hasher := sha3.New256()
-	src := bytes.NewReader(compressedData)
-	if _, err := io.Copy(hasher, src); err != nil {
-		return "", nil, errors.Errorf("hash identifiers file: %w", err)
+
+	encfile := utils.B64Encode(file)
+
+	var buffer bytes.Buffer
+	buffer.Write(encfile)
+	buffer.WriteString(".")
+	buffer.Write(signature)
+	rqIDFile := buffer.Bytes()
+
+	task.rqIDsIc = rand.Uint32()
+	task.rqids, _, err = pastel.GetIDFiles(rqIDFile, task.rqIDsIc, task.config.RQIDsMax)
+	if err != nil {
+		return fmt.Errorf("get ID Files: %w", err)
 	}
-	return base58.Encode(hasher.Sum(nil)), compressedData, nil
+
+	comp, err := zstd.CompressLevel(nil, rqIDFile, 22)
+	if err != nil {
+		return errors.Errorf("compress: %w", err)
+	}
+	task.rqIDsFile = utils.B64Encode(comp)
+
+	return nil
 }
 
 func (task *Task) createArtTicket(_ context.Context) error {
 	if task.fingerprint == nil {
 		return errEmptyFingerprints
-	}
-	if task.fingerprintsHash == nil {
-		return errEmptyFingerprintsHash
-	}
-	if task.fingerprintSignature == nil {
-		return errEmptyFingerprintSignature
 	}
 	if task.datahash == nil {
 		return errEmptyDatahash
@@ -580,49 +618,26 @@ func (task *Task) createArtTicket(_ context.Context) error {
 		Royalty:   0,     // Not supported yet by cNode
 		Green:     false, // Not supported yet by cNode
 		AppTicketData: pastel.AppTicket{
-			AuthorPastelID:             task.Request.ArtistPastelID,
-			BlockTxID:                  task.blockTxID,
-			BlockNum:                   task.creatorBlockHeight,
 			CreatorName:                task.Request.ArtistName,
-			CreatorWebsite:             safeString(task.Request.ArtistWebsiteURL),
-			CreatorWrittenStatement:    safeString(task.Request.Description),
-			NFTTitle:                   safeString(&task.Request.Name),
-			NFTSeriesName:              safeString(task.Request.SeriesName),
-			NFTCreationVideoYoutubeURL: safeString(task.Request.YoutubeURL),
-			NFTKeywordSet:              safeString(task.Request.Keywords),
+			CreatorWebsite:             utils.SafeString(task.Request.ArtistWebsiteURL),
+			CreatorWrittenStatement:    utils.SafeString(task.Request.Description),
+			NFTTitle:                   utils.SafeString(&task.Request.Name),
+			NFTSeriesName:              utils.SafeString(task.Request.SeriesName),
+			NFTCreationVideoYoutubeURL: utils.SafeString(task.Request.YoutubeURL),
+			NFTKeywordSet:              utils.SafeString(task.Request.Keywords),
 			NFTType:                    nftType,
 			TotalCopies:                task.Request.IssuedCopies,
 			PreviewHash:                task.previewHash,
 			Thumbnail1Hash:             task.mediumThumbnailHash,
 			Thumbnail2Hash:             task.smallThumbnailHash,
 			DataHash:                   task.datahash,
-			FingerprintsHash:           task.fingerprintsHash,
-			FingerprintsSignature:      task.fingerprintSignature,
-			DupeDetectionSystemVer:     task.fingerprintAndScores.DupeDectectionSystemVersion,
-			MatchesFoundOnFirstPage:    int(task.fingerprintAndScores.MatchesFoundOnFirstPage),
-			NumberOfResultPages:        int(task.fingerprintAndScores.NumberOfPagesOfResults),
-			FirstMatchURL:              task.fingerprintAndScores.URLOfFirstMatchInPage,
-			PastelRarenessScore:        task.fingerprintAndScores.OverallAverageRarenessScore,
-			InternetRarenessScore:      0, // FIXME
-			OpenNSFWScore:              task.fingerprintAndScores.OpenNSFWScore,
-			AlternateNSFWScores: pastel.AlternateNSFWScores{
-				Drawing: task.fingerprintAndScores.AlternativeNSFWScore.Drawing,
-				Hentai:  task.fingerprintAndScores.AlternativeNSFWScore.Hentai,
-				Neutral: task.fingerprintAndScores.AlternativeNSFWScore.Neutral,
-				Porn:    task.fingerprintAndScores.AlternativeNSFWScore.Porn,
-				Sexy:    task.fingerprintAndScores.AlternativeNSFWScore.Sexy,
-			},
-			PerceptualImageHashes: pastel.PerceptualImageHashes{
-				PerceptualHash: task.fingerprintAndScores.PerceptualImageHashes.PerceptualHash,
-				AverageHash:    task.fingerprintAndScores.PerceptualImageHashes.AverageHash,
-				DifferenceHash: task.fingerprintAndScores.PerceptualImageHashes.DifferenceHash,
-				PDQHash:        task.fingerprintAndScores.PerceptualImageHashes.PDQHash,
-				NeuralHash:     task.fingerprintAndScores.PerceptualImageHashes.NeuralHash,
-			},
-			IsRareOnInternet: task.fingerprintAndScores.IsRareOnInternet,
-			IsLikelyDupe:     task.fingerprintAndScores.IsLikelyDupe,
-			RQIDs:            task.rqids,
-			RQOti:            task.rqEncodeParams.Oti,
+			DDAndFingerprintsIc:        task.ddAndFingerprintsIc,
+			DDAndFingerprintsMax:       task.config.DDAndFingerprintsMax,
+			DDAndFingerprintsIDs:       task.ddAndFingerprintsIDs,
+			RQIc:                       task.rqIDsIc,
+			RQMax:                      task.config.RQIDsMax,
+			RQIDs:                      task.rqids,
+			RQOti:                      task.rqEncodeParams.Oti,
 		},
 	}
 
@@ -716,7 +731,40 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 	task.UpdateStatus(StatusConnected)
 	task.nodes = nodes
 
+	// Send all meshed supernode info to nodes - that will be used to node send info to other nodes
+	meshedSNInfo := []types.MeshedSuperNode{}
+	for _, node := range nodes {
+		meshedSNInfo = append(meshedSNInfo, types.MeshedSuperNode{
+			NodeID: node.PastelID(),
+			SessID: node.SessID(),
+		})
+	}
+
+	for _, node := range nodes {
+		err = node.MeshNodes(ctx, meshedSNInfo)
+		if err != nil {
+			nodes.DisconnectAll()
+			return errors.Errorf("could not send info of meshed nodes: %w", err)
+		}
+	}
 	return nil
+}
+
+func (task *Task) sendRegMetadata(ctx context.Context) error {
+	if task.creatorBlockHash == "" {
+		return errors.New("empty current block hash")
+	}
+
+	if task.Request.ArtistPastelID == "" {
+		return errors.New("empty creator pastelID")
+	}
+
+	regMetadata := &types.NftRegMetadata{
+		BlockHash:       task.creatorBlockHash,
+		CreatorPastelID: task.Request.ArtistPastelID,
+	}
+
+	return task.nodes.SendRegMetadata(ctx, regMetadata)
 }
 
 func (task *Task) probeImage(ctx context.Context) error {
@@ -726,28 +774,32 @@ func (task *Task) probeImage(ctx context.Context) error {
 	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
 		return errors.Errorf("send image: %w", err)
 	}
+	signatures := [][]byte{}
+	// Match signatures received from supernodes.
+	for i := 0; i < len(task.nodes); i++ {
+		verified, err := task.pastelClient.Verify(ctx, task.nodes[i].FingerprintAndScoresBytes, string(task.nodes[i].Signature), task.nodes[i].PastelID(), pastel.SignAlgorithmED448)
+		if err != nil {
+			return errors.Errorf("probeImage: pastelClient.Verify %w", err)
+		}
+
+		if !verified {
+			task.UpdateStatus(StatusErrorSignaturesNotMatch)
+			return errors.Errorf("node[%s] signature doesn't match", task.nodes[i].PastelID())
+		}
+
+		signatures = append(signatures, task.nodes[i].Signature)
+	}
+	task.signatures = signatures
 
 	// Match fingerprints received from supernodes.
 	if err := task.nodes.MatchFingerprintAndScores(); err != nil {
 		task.UpdateStatus(StatusErrorFingerprintsNotMatch)
 		return errors.Errorf("fingerprints aren't matched :%w", err)
 	}
+
 	task.fingerprintAndScores = task.nodes.FingerAndScores()
 	task.UpdateStatus(StatusImageProbed)
 
-	// As we are going to store the the compressed figerprint to kamedila
-	// so we calculated the hash base on the compressed fingerprint print also
-	fingerprintsHash, err := sha3256hash(task.fingerprintAndScores.ZstdCompressedFingerprint)
-	if err != nil {
-		return errors.Errorf("hash zstd commpressed fingerprints: %w", err)
-	}
-	task.fingerprintsHash = []byte(base58.Encode(fingerprintsHash))
-
-	// Decompress the fingerprint as bytes for later use
-	task.fingerprint, err = zstd.Decompress(nil, task.fingerprintAndScores.ZstdCompressedFingerprint)
-	if err != nil {
-		return errors.Errorf("decompress finger failed")
-	}
 	return nil
 }
 
@@ -768,7 +820,7 @@ func (task *Task) uploadImage(ctx context.Context) error {
 		return errors.Errorf("convert image to byte stream %w", err)
 	}
 
-	if task.datahash, err = sha3256hash(imgBytes); err != nil {
+	if task.datahash, err = utils.Sha3256hash(imgBytes); err != nil {
 		return errors.Errorf("hash encoded image: %w", err)
 	}
 
@@ -797,7 +849,7 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 	}
 	log.Debug(string(buf))
 
-	if err := task.nodes.UploadSignedTicket(ctx, buf, task.creatorSignature, task.rqSymbolIDFiles, task.rqEncodeParams); err != nil {
+	if err := task.nodes.UploadSignedTicket(ctx, buf, task.creatorSignature, task.rqIDsFile, task.ddAndFpFile, task.rqEncodeParams); err != nil {
 		return errors.Errorf("upload signed ticket: %w", err)
 	}
 

@@ -26,7 +26,7 @@ func (s *DHT) skipBadBootstrapAddrs() {
 	s.cache.Set(skipAddress2, []byte("true"))
 }
 
-func (s *DHT) parseNode(extP2P string, selfAddr string) (*Node, error) {
+func (s *DHT) parseNode(extP2P string, selfAddr, extKey string) (*Node, error) {
 	if extP2P == "" {
 		return nil, errors.New("empty address")
 	}
@@ -59,8 +59,9 @@ func (s *DHT) parseNode(extP2P string, selfAddr string) (*Node, error) {
 	}
 
 	return &Node{
-		IP:   ip,
-		Port: port,
+		IP:       ip,
+		Port:     port,
+		PastelID: extKey,
 	}, nil
 }
 
@@ -80,7 +81,7 @@ func (s *DHT) ConfigureBootstrapNodes(ctx context.Context) error {
 
 		mapNodes := map[string]*Node{}
 		for _, mn := range mns {
-			node, err := s.parseNode(mn.ExtP2P, selfAddress)
+			node, err := s.parseNode(mn.ExtP2P, selfAddress, mn.ExtKey)
 			if err != nil {
 				log.P2P().WithContext(ctx).WithError(err).WithField("extP2P", mn.ExtP2P).Warn("Skip Bad Boostrap Address")
 				continue

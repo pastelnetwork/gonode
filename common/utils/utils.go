@@ -1,11 +1,15 @@
 package utils
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/hex"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -22,6 +26,23 @@ func SafeErrStr(err error) string {
 		return err.Error()
 	}
 
+	return ""
+}
+
+// Sha3256hash returns SHA-256 hash of input message
+func Sha3256hash(msg []byte) ([]byte, error) {
+	hasher := sha3.New256()
+	if _, err := io.Copy(hasher, bytes.NewReader(msg)); err != nil {
+		return nil, err
+	}
+	return hasher.Sum(nil), nil
+}
+
+// SafeString returns value of str ptr or empty string if ptr is nil
+func SafeString(ptr *string) string {
+	if ptr != nil {
+		return *ptr
+	}
 	return ""
 }
 
@@ -58,4 +79,39 @@ func GetHashFromString(inputString string) string {
 	h := sha3.New256()
 	h.Write([]byte(inputString))
 	return hex.EncodeToString(h.Sum(nil))
+}
+
+// B64Encode base64 encodes
+func B64Encode(in []byte) (out []byte) {
+	out = make([]byte, base64.StdEncoding.EncodedLen(len(in)))
+	base64.StdEncoding.Encode(out, in)
+
+	return out
+}
+
+// B64Decode decode base64 input
+func B64Decode(in []byte) (out []byte, err error) {
+	out = make([]byte, base64.StdEncoding.DecodedLen(len(in)))
+	n, err := base64.StdEncoding.Decode(out, in)
+	if err != nil {
+		return nil, errors.Errorf("b64 decode: %w", err)
+	}
+
+	return out[:n], nil
+}
+
+// EqualStrList tells whether a and b contain the same elements.
+// A nil argument is equivalent to an empty slice.
+func EqualStrList(a, b []string) error {
+	if len(a) != len(b) {
+		return errors.Errorf("unequal length: %d  & %d", len(a), len(b))
+	}
+
+	for i, v := range a {
+		if v != b[i] {
+			return errors.Errorf("index %d mismatch, vals: %s   &  %s", i, v, b[i])
+		}
+	}
+
+	return nil
 }

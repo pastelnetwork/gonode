@@ -9,7 +9,7 @@ import (
 const (
 	defaultNumberSuperNodes = 3
 
-	defaultNumberRQIDSFiles uint32 = 10
+	defaultNumberRQIDSFiles uint32 = 1
 
 	defaultConnectToNextNodeDelay = 200 * time.Millisecond
 	defaultAcceptNodesTimeout     = 30 * time.Second // = 3 * (2* ConnectToNodeTimeout)
@@ -18,6 +18,9 @@ const (
 
 	defaultRegArtTxMinConfirmations = 12
 	defaultRegActTxMinConfirmations = 5
+
+	defaultDDAndFingerprintsMax = 50
+	defaultRQIDsMax             = 50
 )
 
 // Config contains settings of the registering artwork.
@@ -38,6 +41,8 @@ type Config struct {
 	RegArtTxMinConfirmations int `mapstructure:"-" json:"reg_art_tx_min_confirmations,omitempty"`
 	RegActTxMinConfirmations int `mapstructure:"-" json:"reg_act_tx_min_confirmations,omitempty"`
 
+	DDAndFingerprintsMax uint32 `mapstructure:"dd_and_fingerprints_max" json:"dd_and_fingerprints_max,omitempty"`
+	RQIDsMax             uint32 `mapstructure:"rq_ids_max" json:"rq_ids_max,omitempty"`
 	// internal settings
 	connectToNextNodeDelay time.Duration
 	acceptNodesTimeout     time.Duration
@@ -56,5 +61,7 @@ func NewConfig() *Config {
 		connectToNextNodeDelay:   defaultConnectToNextNodeDelay,
 		acceptNodesTimeout:       defaultAcceptNodesTimeout,
 		thumbnailSize:            defaultThumbnailSize,
+		DDAndFingerprintsMax:     defaultDDAndFingerprintsMax,
+		RQIDsMax:                 defaultRQIDsMax,
 	}
 }

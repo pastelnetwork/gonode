@@ -9,7 +9,10 @@ service RegisterArtwork {
   // The stream is used by the parties to inform each other about the cancellation of the task.
   rpc Session(stream SessionRequest) returns (stream SessionReply);
 
-   // SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
+  // SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
+  rpc SendSignedDDAndFingerprints(SendSignedDDAndFingerprintsRequest) returns (SendSignedDDAndFingerprintsReply);
+
+  // SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
   rpc SendArtTicketSignature(SendArtTicketSignatureRequest) returns (SendArtTicketSignatureReply);
 }
 
@@ -18,6 +21,16 @@ message SessionRequest {
 }
 message SessionReply {
   string sessID = 1;
+}
+
+message SendSignedDDAndFingerprintsRequest {
+    string sessID = 1;
+    string nodeID = 2;
+    bytes zstd_compressed_fingerprint = 3;
+}
+
+message SendSignedDDAndFingerprintsReply {
+
 }
 
 message SendArtTicketSignatureRequest {

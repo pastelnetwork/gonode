@@ -3,7 +3,8 @@ package test
 import (
 	"testing"
 
-	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
+	"github.com/pastelnetwork/gonode/pastel"
+
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient/mocks"
 
 	"github.com/stretchr/testify/mock"
@@ -30,8 +31,8 @@ func NewMockClient(t *testing.T) *Client {
 }
 
 // ListenOnImageRarenessScore listening ImageRarenessScore call and returns channel from args
-func (client *Client) ListenOnImageRarenessScore(returnEnc *ddclient.DupeDetection, returnErr error) *Client {
-	client.DDServerClient.On(ImageRarenessScoreMethod, mock.Anything, mock.IsType([]byte{}), mock.Anything).Return(returnEnc, returnErr)
+func (client *Client) ListenOnImageRarenessScore(returnEnc *pastel.DDAndFingerprints, returnErr error) *Client {
+	client.DDServerClient.On(ImageRarenessScoreMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(returnEnc, returnErr)
 	return client
 }
 

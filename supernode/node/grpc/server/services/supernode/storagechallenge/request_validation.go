@@ -10,20 +10,6 @@ func validateGenerateStorageChallengeData(req *dto.GenerateStorageChallengesRequ
 	var key string
 	var es validationErrorStack = make([]*validationError, 0)
 
-	if req.GetMerkleroot() == "" {
-		es = append(es, &validationError{
-			keys:   []string{joinKeyPart(key, "GetMerkleroot")},
-			reason: reasonInvalidEmptyValue,
-		})
-	}
-
-	if req.GetChallengingMasternodeId() == "" {
-		es = append(es, &validationError{
-			keys:   []string{joinKeyPart(key, "ChallengingMasternodeId")},
-			reason: reasonInvalidEmptyValue,
-		})
-	}
-
 	if req.GetChallengesPerMasternodePerBlock() <= 0 {
 		es = append(es, &validationError{
 			keys:   []string{joinKeyPart(key, "ChallengesPerMasternodePerBlock")},

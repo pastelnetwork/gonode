@@ -27,6 +27,7 @@ require (
 	github.com/DataDog/zstd v1.4.8 // indirect
 	github.com/armon/go-metrics v0.0.0-20190430140413-ec5e00d3c878 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
+	github.com/btcsuite/btcutil v1.0.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/go-errors/errors v1.1.1 // indirect

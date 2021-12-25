@@ -28,8 +28,7 @@ func TestRunTask(t *testing.T) {
 		RegTicketData: pastel.RegTicketData{
 			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
-					AuthorPastelID: "author-id",
-					CreatorName:    "Alan Majchrowicz",
+					CreatorName: "Alan Majchrowicz",
 				},
 			},
 		},
@@ -40,9 +39,8 @@ func TestRunTask(t *testing.T) {
 		RegTicketData: pastel.RegTicketData{
 			NFTTicketData: pastel.NFTTicket{
 				AppTicketData: pastel.AppTicket{
-					AuthorPastelID: "author-id-b",
-					CreatorName:    "Andy",
-					NFTTitle:       "alantic",
+					CreatorName: "Andy",
+					NFTTitle:    "alantic",
 				},
 			},
 		},

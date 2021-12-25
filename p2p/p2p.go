@@ -3,6 +3,8 @@ package p2p
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
@@ -10,7 +12,6 @@ import (
 	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/p2p/kademlia/store/sqlite"
 	"github.com/pastelnetwork/gonode/pastel"
-	"time"
 )
 
 const (
@@ -172,6 +173,7 @@ func (s *p2p) configure(ctx context.Context) error {
 	// new a kademlia distributed hash table
 	dht, err := kademlia.NewDHT(store, s.pastelClient, s.secInfo, &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
+		PastelID:       s.secInfo.PastelID,
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
 		ID:             []byte(s.config.ID),

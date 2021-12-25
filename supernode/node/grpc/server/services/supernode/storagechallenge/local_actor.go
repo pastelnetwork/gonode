@@ -6,6 +6,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
+	"google.golang.org/grpc/metadata"
 )
 
 type containsAppContext interface {
@@ -15,17 +16,13 @@ type containsAppContext interface {
 type generateStorageChallenge struct {
 	*messaging.CommonProtoMsg
 	Context                         context.Context
-	ChallengingMasternodeID         string
 	ChallengesPerMasternodePerBlock int32
-	Merkleroot                      string
 }
 
-func newGenerateStorageChallengeMsg(ctx context.Context, merkleroot, challengingMasternodeID string, challengesPerMasternodePerBlock int32) *generateStorageChallenge {
+func newGenerateStorageChallengeMsg(ctx context.Context, challengesPerMasternodePerBlock int32) *generateStorageChallenge {
 	return &generateStorageChallenge{
 		CommonProtoMsg:                  &messaging.CommonProtoMsg{},
 		Context:                         ctx,
-		ChallengingMasternodeID:         challengingMasternodeID,
-		Merkleroot:                      merkleroot,
 		ChallengesPerMasternodePerBlock: challengesPerMasternodePerBlock,
 	}
 }
@@ -34,7 +31,11 @@ func (msg *generateStorageChallenge) getAppContext() context.Context {
 	if msg.Context == nil {
 		return context.Background()
 	}
-	return msg.Context
+
+	if md, ok := metadata.FromIncomingContext(msg.Context); ok {
+		return context.FromContext(metadata.NewOutgoingContext(context.Background(), md))
+	}
+	return context.Background()
 }
 
 type processStorageChallenge struct {
@@ -47,7 +48,11 @@ func (msg *processStorageChallenge) getAppContext() context.Context {
 	if msg.Context == nil {
 		return context.Background()
 	}
-	return msg.Context
+
+	if md, ok := metadata.FromIncomingContext(msg.Context); ok {
+		return context.FromContext(metadata.NewOutgoingContext(context.Background(), md))
+	}
+	return context.Background()
 }
 
 func newProcessStorageChallengeMsg(ctx context.Context, challengeMsg *storagechallenge.ChallengeMessage) *processStorageChallenge {
@@ -68,7 +73,11 @@ func (msg *verifyStorageChallenge) getAppContext() context.Context {
 	if msg.Context == nil {
 		return context.Background()
 	}
-	return msg.Context
+
+	if md, ok := metadata.FromIncomingContext(msg.Context); ok {
+		return context.FromContext(metadata.NewOutgoingContext(context.Background(), md))
+	}
+	return context.Background()
 }
 
 func newVerifyStorageChallengeMsg(ctx context.Context, challengeMsg *storagechallenge.ChallengeMessage) *verifyStorageChallenge {
@@ -101,7 +110,7 @@ func (a *applicationActor) Receive(ctx actor.Context) {
 	switch msg := ctx.Message().(type) {
 	case *generateStorageChallenge:
 		logger.Debugf("receive %#v action", msg)
-		err = a.domainService.GenerateStorageChallenges(appCtx, msg.Merkleroot, msg.ChallengingMasternodeID, int(msg.ChallengesPerMasternodePerBlock))
+		err = a.domainService.GenerateStorageChallenges(appCtx, int(msg.ChallengesPerMasternodePerBlock))
 	case *processStorageChallenge:
 		logger.Debugf("receive %#v action", msg)
 		err = a.domainService.ProcessStorageChallenge(appCtx, msg.ChallengeMessage)
@@ -110,7 +119,7 @@ func (a *applicationActor) Receive(ctx actor.Context) {
 		// calling domain service to process bussiness logics
 		err = a.domainService.VerifyStorageChallenge(appCtx, msg.ChallengeMessage)
 	default:
-		logger.Debugf("Unhandled action %#v", msg)
+		logger.WithField("actor", "application actor").Debugf("Unhandled action %#v", msg)
 	}
 
 	if err != nil {

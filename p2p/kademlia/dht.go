@@ -46,6 +46,8 @@ type DHT struct {
 type Options struct {
 	ID []byte
 
+	PastelID string
+
 	// The local IPv4 or IPv6 address
 	IP string
 
@@ -280,9 +282,10 @@ func (s *DHT) NClosestNodes(_ context.Context, n int, key string) []*Node {
 func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Message {
 	externalIP, _ := s.getExternalIP()
 	sender := &Node{
-		IP:   externalIP,
-		ID:   s.ht.self.ID,
-		Port: s.ht.self.Port,
+		IP:       externalIP,
+		ID:       s.ht.self.ID,
+		Port:     s.ht.self.Port,
+		PastelID: s.ht.self.PastelID,
 	}
 	return &Message{
 		Sender:      sender,

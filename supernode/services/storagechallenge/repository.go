@@ -37,26 +37,17 @@ type repo struct {
 }
 
 func (r *repo) ListKeys(ctx context.Context) ([]string, error) {
-	// var offset, limit = 0, 30
-	var ret = make([]string, 0)
-	// for {
-	// 	keys := r.p2p.Keys(ctx, offset, limit)
-	// 	ret = append(ret, keys...)
-	// 	offset += limit
-	// 	if len(keys) < limit {
-	// 		break
-	// 	}
-	// }
+	var keys = make([]string, 0)
 	regTickets, err := r.pClient.RegTickets(ctx)
 	if err != nil {
-		return ret, err
+		return keys, err
 	}
 	for _, regTicket := range regTickets {
 		for _, key := range regTicket.RegTicketData.NFTTicketData.AppTicketData.RQIDs {
-			ret = append(ret, string(key))
+			keys = append(keys, string(key))
 		}
 	}
-	return ret, nil
+	return keys, nil
 }
 
 func (r *repo) GetSymbolFileByKey(ctx context.Context, key string) ([]byte, error) {

@@ -25,6 +25,7 @@ func TestStatusNames(t *testing.T) {
 				StatusTicketRegistered,
 				StatusTicketActivated,
 				ErrorInsufficientFee,
+				StatusErrorSignaturesNotMatch,
 				StatusErrorFingerprintsNotMatch,
 				StatusErrorThumbnailHashsesNotMatch,
 				StatusErrorGenRaptorQSymbolsFailed,

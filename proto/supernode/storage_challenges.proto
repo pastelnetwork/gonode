@@ -65,9 +65,7 @@ message VerifyStorageChallengeReply {
 }
 
 message GenerateStorageChallengesRequest {
-  string challenging_masternode_id = 1;
-  int32 challenges_per_masternode_per_block = 2;
-  string merkleroot = 3;
+  int32 challenges_per_masternode_per_block = 1;
 }
 
 message GenerateStorageChallengesReply {}

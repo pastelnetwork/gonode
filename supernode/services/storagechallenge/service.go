@@ -27,7 +27,7 @@ type service struct {
 // StorageChallenge interface
 type StorageChallenge interface {
 	// GenerateStorageChallenges func
-	GenerateStorageChallenges(ctx context.Context, blockHash, challengingMasternodeID string, challengesPerNodePerBlock int) error
+	GenerateStorageChallenges(ctx context.Context, challengesPerNodePerBlock int) error
 	// ProcessStorageChallenge func
 	ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error
 	// VerifyStorageChallenge func
@@ -48,6 +48,7 @@ func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel
 		actor:                         localActor,
 		domainActorID:                 pid,
 		storageChallengeExpiredBlocks: cfg.StorageChallengeExpiredBlocks,
+		pclient:                       pClient,
 		repository:                    newRepository(p2p, pClient),
 		nodeID:                        cfg.PastelID,
 		numberOfChallengeReplicas:     cfg.NumberOfChallengeReplicas,
@@ -90,19 +91,9 @@ func (s *service) StartGenerateStorageChallengeCheckLoop(ctx context.Context) (c
 		select {
 		case _, ok := <-ticker.C:
 			if ok && s.checkNextBlockAvailable(ctx) {
-				merkleroot, err := s.getMerkleRoot(ctx, s.currentBlockCount)
-				if err != nil {
-					log.WithField("method", "StartGenerateStorageChallengeCheckLoop.getMerkleRoot.GetBlockVerbose1").WithError(err).Warn("could not get block verbose")
-					continue
-				}
-				nodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, merkleroot)
-				if len(nodes) != 1 {
-					log.WithField("method", "StartGenerateStorageChallengeCheckLoop.repository.GetNClosestXORDistanceMasternodesToComparisionString").Warn("got empty closets masternodes")
-					continue
-				}
 				newCtx := context.Background()
-				err = s.GenerateStorageChallenges(newCtx, merkleroot, string(nodes[0].ID), 1)
-				if len(nodes) != 1 {
+				err := s.GenerateStorageChallenges(newCtx, 1)
+				if err != nil {
 					log.WithField("method", "StartGenerateStorageChallengeCheckLoop.GenerateStorageChallenges").WithError(err).Warn("could not generate storage challenge")
 					continue
 				}

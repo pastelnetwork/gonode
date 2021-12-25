@@ -41,7 +41,7 @@ func (service *appSc) GenerateStorageChallenges(ctx context.Context, req *pb.Gen
 	}
 	appCtx := appcontext.FromContext(ctx)
 	// calling async actor to process storage challenge
-	err = service.actor.Send(appCtx, service.appActorPID, newGenerateStorageChallengeMsg(appCtx, req.GetMerkleroot(), req.GetChallengingMasternodeId(), req.GetChallengesPerMasternodePerBlock()))
+	err = service.actor.Send(appCtx, service.appActorPID, newGenerateStorageChallengeMsg(appCtx, req.GetChallengesPerMasternodePerBlock()))
 	return &pb.GenerateStorageChallengesReply{}, err
 }
 

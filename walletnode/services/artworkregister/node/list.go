@@ -9,6 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
+	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 )
@@ -84,18 +85,42 @@ func (nodes *List) FindByPastelID(id string) *Node {
 	return nil
 }
 
+// SendRegMetadata send metadata
+func (nodes *List) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
+	group, _ := errgroup.WithContext(ctx)
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() (err error) {
+			err = node.SendRegMetadata(ctx, regMetadata)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", node).Error("send registration metadata failed")
+				return errors.Errorf("node %s: %w", node.String(), err)
+			}
+
+			return nil
+		})
+	}
+	return group.Wait()
+}
+
 // ProbeImage sends the image to supernodes for image analysis, such as fingerprint, raraness score, NSWF.
 func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			res, err := node.ProbeImage(ctx, file)
+			compress, err := node.ProbeImage(ctx, file)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("probe image failed")
-				return errors.Errorf("node %s: %w", node.String(), err)
+				return errors.Errorf("node %s: probe failed :%w", node.String(), err)
 			}
-			node.fingerprintAndScores = res
+
+			node.FingerprintAndScores, node.FingerprintAndScoresBytes, node.Signature, err = pastel.ExtractCompressSignedDDAndFingerprints(compress)
+			if err != nil {
+				log.WithContext(ctx).WithError(err).WithField("node", node).Error("extract compressed signed DDAandFingerprints failed")
+				return errors.Errorf("node %s: extract failed: %w", node.String(), err)
+			}
+
 			return nil
 		})
 	}
@@ -106,16 +131,17 @@ func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 func (nodes *List) MatchFingerprintAndScores() error {
 	node := (*nodes)[0]
 	for i := 1; i < len(*nodes); i++ {
-		if err := pastel.CompareFingerPrintAndScore(node.fingerprintAndScores, (*nodes)[i].fingerprintAndScores); err != nil {
+		if err := pastel.CompareFingerPrintAndScore(node.FingerprintAndScores, (*nodes)[i].FingerprintAndScores); err != nil {
 			return errors.Errorf("node[%s] and node[%s] not matched: %w", node.PastelID(), (*nodes)[i].PastelID(), err)
 		}
 	}
+
 	return nil
 }
 
 // FingerAndScores returns fingerprint of the image and dupedetection scores
-func (nodes *List) FingerAndScores() *pastel.FingerAndScores {
-	return (*nodes)[0].fingerprintAndScores
+func (nodes *List) FingerAndScores() *pastel.DDAndFingerprints {
+	return (*nodes)[0].FingerprintAndScores
 }
 
 // UploadImageWithThumbnail uploads the image with pqsignatured appended and thumbnail's coordinate to super nodes
@@ -154,7 +180,7 @@ func (nodes *List) MatchThumbnailHashes() error {
 }
 
 // UploadSignedTicket uploads regart ticket and its signature to super nodes
-func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqids map[string][]byte, encoderParams rqnode.EncoderParameters) error {
+func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signature []byte, rqidsFile []byte, ddFpFile []byte, encoderParams rqnode.EncoderParameters) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
@@ -162,7 +188,7 @@ func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signat
 		key1 := "key1-" + uuid.New().String()
 		key2 := "key2-" + uuid.New().String()
 		group.Go(func() error {
-			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, rqids, encoderParams)
+			fee, err := node.SendSignedTicket(ctx, ticket, signature, key1, key2, rqidsFile, ddFpFile, encoderParams)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("send signed ticket failed")
 				return err
@@ -213,8 +239,8 @@ func (nodes *List) RegistrationFee() int64 {
 }
 
 // CompressedFingerAndScores returns compressed fingerprint and other scores
-func (nodes *List) CompressedFingerAndScores() *pastel.FingerAndScores {
-	return (*nodes)[0].fingerprintAndScores
+func (nodes *List) CompressedFingerAndScores() *pastel.DDAndFingerprints {
+	return (*nodes)[0].FingerprintAndScores
 }
 
 // PreviewHash returns the hash of the preview thumbnail calculated by the first node
