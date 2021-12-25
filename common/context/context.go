@@ -31,6 +31,7 @@ func TODO() Context {
 	return &appContext{context.TODO()}
 }
 
+// WithCancel wrapping context.WithCancel()
 func WithCancel(parent context.Context) (appCtx Context, cancel func()) {
 	if c, ok := parent.(*appContext); ok {
 		parent = c.Context
