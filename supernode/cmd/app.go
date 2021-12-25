@@ -161,12 +161,7 @@ func NewApp() *cli.App {
 			return errors.Errorf("could not create dd-service-dir %q, %w", config.DdWorkDir, err)
 		}
 
-		if err := runApp(ctx, config); err != nil {
-			log.WithContext(ctx).Error("failed run app", err)
-			return err
-		}
-
-		return nil
+		return runApp(ctx, config)
 	})
 
 	return app

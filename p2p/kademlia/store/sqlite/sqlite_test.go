@@ -46,35 +46,3 @@ func TestDB(t *testing.T) {
 	assert.Equal(t, numberOfKeys, len(store.GetKeysForReplication(ctx)))
 	assert.Equal(t, 0, len(store.GetKeysForReplication(ctx)))
 }
-
-// Run this test to remove 20% symbolfiles for storage challenge test
-// func TestRemoveKeysDB(t *testing.T) {
-// 	home := os.Getenv("HOME")
-// 	storePath := path.Join(home, ".pastel/p2p-data")
-// 	// new the local storage
-// 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-// 	defer cancel()
-// 	store, err := NewStore(ctx, storePath)
-// 	assert.Nil(t, err)
-
-// 	defer func() {
-// 		store.Close(ctx)
-// 	}()
-// 	var keys = make([][]byte, 0)
-// 	offset, limit, count := 0, 300, 0
-
-// 	for ; count <= limit; offset += count - 1 {
-// 		ks := store.Keys(ctx, offset, limit)
-// 		keys = append(keys, ks...)
-// 		count = len(ks)
-// 	}
-
-// 	for _, key := range keys {
-// 		if rd.Float64() < 0.8 {
-// 			// 80% keeps
-// 			continue
-// 		}
-// 		// 20% delete
-// 		store.Delete(ctx, key)
-// 	}
-// }

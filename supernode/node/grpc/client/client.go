@@ -6,6 +6,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/net/credentials"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/supernode/node"
@@ -29,9 +30,9 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	if client.secClient == nil || client.secInfo == nil {
 		return nil, errors.Errorf("secClient or secInfo don't initialize")
 	}
-	// altsTCClient := credentials.NewClientCreds(client.secClient, client.secInfo)
+	altsTCClient := credentials.NewClientCreds(client.secClient, client.secInfo)
 	grpcConn, err := grpc.DialContext(ctx, address,
-		// grpc.WithTransportCredentials(altsTCClient),
+		grpc.WithTransportCredentials(altsTCClient),
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)

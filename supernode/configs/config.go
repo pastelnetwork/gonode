@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 
 	"github.com/pastelnetwork/gonode/dupedetection/ddclient"
-	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/metadb"
 	"github.com/pastelnetwork/gonode/metadb/database"
 	"github.com/pastelnetwork/gonode/p2p"
@@ -35,7 +34,6 @@ type Config struct {
 
 	Node         `mapstructure:"node" json:"node,omitempty"`
 	Pastel       *pastel.Config          `mapstructure:"-" json:"-"`
-	Remoter      *messaging.Config       `mapstructure:"remoter" json:"remoter,omitempty"`
 	P2P          *p2p.Config             `mapstructure:"p2p" json:"p2p,omitempty"`
 	MetaDB       *metadb.Config          `mapstructure:"metadb" json:"metadb,omitempty"`
 	UserDB       *database.Config        `mapstructure:"userdb" json:"userdb,omitempty"`

@@ -50,25 +50,3 @@ type Challenge struct {
 	ChallengeSliceCorrectHash      string
 	ChallengeResponseHash          string
 }
-
-// type PastelBlock struct {
-// 	BlockHash                       string
-// 	BlockNumber                     uint
-// 	TotalChallengesIssued           uint
-// 	TotalChallengesRespondedTo      uint
-// 	TotalChallengesCorrect          uint
-// 	TotalChallengesIncorrect        uint
-// 	TotalChallengeTimeout           uint
-// 	ChallengeResponseSuccessRatePct float32 `gorm:"column:challenge_response_success_rate_pct"`
-// }
-
-// type Masternode struct {
-// 	NodeID                          string
-// 	MasternodeIPAddress             string
-// 	TotalChallengesIssued           uint
-// 	TotalChallengesRespondedTo      uint
-// 	TotalChallengesCorrect          uint
-// 	TotalChallengesIncorrect        uint
-// 	TotalChallengeTimeout           uint
-// 	ChallengeResponseSuccessRatePct float32 `gorm:"column:challenge_response_success_rate_pct"`
-// }

@@ -114,8 +114,6 @@ func (s *service) run(ctx context.Context) error {
 					log.DD().WithContext(ctx).Debug("Done for waiting synchronization status")
 					s.isMasterNodeSynced = true
 				}
-				log.WithContext(ctx).Debug("Done for waiting synchronization status")
-				s.isMasterNodeSynced = true
 			}
 			if err := s.runTask(ctx); err != nil {
 				log.DD().WithContext(ctx).WithError(err).Errorf("runTask() failed")
