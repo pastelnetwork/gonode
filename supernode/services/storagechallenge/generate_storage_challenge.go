@@ -12,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-func (s *service) GenerateStorageChallenges(ctx context.Context, challengesPerMasternodePerBlock int) error {
+func (s *service) GenerateStorageChallenges(ctx context.Context, _ int) error {
 	symbolFileKeys, err := s.repository.ListKeys(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")

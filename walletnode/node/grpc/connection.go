@@ -1,7 +1,6 @@
 package grpc
 
 import (
-	"github.com/AsynkronIT/protoactor-go/actor"
 	commongrpc "github.com/pastelnetwork/gonode/common/net/grpc"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"google.golang.org/grpc"
@@ -11,8 +10,7 @@ import (
 type clientConn struct {
 	*commongrpc.ClientConn
 
-	actorPID *actor.PID
-	id       string
+	id string
 }
 
 // RegisterArtwork implements node.Connection.RegisterArtwork()
