@@ -93,7 +93,6 @@ func (d *domainActor) OnSendVerifyStorageChallengeMessage(msg *sendVerifyStorage
 			return
 		}
 		conn.StorageChallenge().VerifyStorageChallenge(msg.Context, storageChallengeReq)
-		// ctx.Send(verifyingMasternodePID, storageChallengeReq)
 	}
 }
 
@@ -126,5 +125,4 @@ func (d *domainActor) OnSendProcessStorageChallengeMessage(msg *sendProcessStora
 		return
 	}
 	conn.StorageChallenge().ProcessStorageChallenge(msg.Context, storageChallengeReq)
-	// ctx.Send(msg.ProcessingMasterNodesClientPID, storageChallengeReq)
 }

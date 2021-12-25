@@ -1,6 +1,7 @@
 package storagechallenge
 
 import (
+	baseCtx "context"
 	"sync/atomic"
 	"time"
 
@@ -55,7 +56,7 @@ func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel
 	}, localActor.Stop
 }
 
-func (s *service) checkNextBlockAvailable(ctx context.Context) bool {
+func (s *service) checkNextBlockAvailable(ctx baseCtx.Context) bool {
 	blockCount, err := s.pclient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithField("method", "checkNextBlockAvailable.GetBlockCount").Warn("could not get block count")
@@ -69,24 +70,12 @@ func (s *service) checkNextBlockAvailable(ctx context.Context) bool {
 	return false
 }
 
-func (s *service) getMerkleRoot(ctx context.Context, blockHeight int32) (string, error) {
-	blockVerbose, err := s.pclient.GetBlockVerbose1(ctx, blockHeight)
-	if err != nil {
-		return "", err
-	}
+const defaultTimerBlockCheckDuration = 30 * time.Second
 
-	return blockVerbose.MerkleRoot, nil
-}
-
-const defaultTimerBlockCheckDuration = 10 * time.Second
-
-func (s *service) StartGenerateStorageChallengeCheckLoop(ctx context.Context) (cncl func()) {
+func (s *service) Run(ctx baseCtx.Context) {
 	ticker := time.NewTicker(defaultTimerBlockCheckDuration)
 	defer ticker.Stop()
-	var done = make(chan bool)
-	cncl = func() {
-		close(done)
-	}
+
 	for {
 		select {
 		case _, ok := <-ticker.C:
@@ -98,7 +87,7 @@ func (s *service) StartGenerateStorageChallengeCheckLoop(ctx context.Context) (c
 					continue
 				}
 			}
-		case <-done:
+		case <-ctx.Done():
 			return
 		}
 	}

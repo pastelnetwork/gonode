@@ -7,7 +7,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	"github.com/pastelnetwork/gonode/messaging"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
@@ -75,13 +74,9 @@ func (service *downloadArtwork) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newDownloadArtwork(conn *clientConn, withActor ...bool) node.DownloadArtwork {
-	client := pb.NewDownloadArtworkClient(conn)
-	if len(withActor) > 0 && withActor[0] {
-		client = newDownloadArtworkClientWrapper(client, messaging.GetActorSystem(), conn.actorPID)
-	}
+func newDownloadArtwork(conn *clientConn) node.DownloadArtwork {
 	return &downloadArtwork{
 		conn:   conn,
-		client: client,
+		client: pb.NewDownloadArtworkClient(conn),
 	}
 }

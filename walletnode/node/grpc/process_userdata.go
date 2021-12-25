@@ -9,7 +9,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	"github.com/pastelnetwork/gonode/walletnode/node"
@@ -232,14 +231,9 @@ func (service *processUserdata) contextWithLogPrefix(ctx context.Context) contex
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newProcessUserdata(conn *clientConn, withActor ...bool) node.ProcessUserdata {
-	client := pb.NewProcessUserdataClient(conn)
-	if len(withActor) > 0 && withActor[0] {
-		client = newProcessUserdataClientWrapper(client, messaging.GetActorSystem(), conn.actorPID)
-	}
-
+func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
 	return &processUserdata{
 		conn:   conn,
-		client: client,
+		client: pb.NewProcessUserdataClient(conn),
 	}
 }

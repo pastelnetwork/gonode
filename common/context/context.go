@@ -31,6 +31,16 @@ func TODO() Context {
 	return &appContext{context.TODO()}
 }
 
+func WithCancel(parent context.Context) (appCtx Context, cancel func()) {
+	if c, ok := parent.(*appContext); ok {
+		parent = c.Context
+	}
+	var base context.Context
+	base, cancel = context.WithCancel(parent)
+	appCtx = &appContext{Context: base}
+	return appCtx, cancel
+}
+
 // FromContext returns application context
 func FromContext(ctx context.Context) Context {
 	switch c := ctx.(type) {

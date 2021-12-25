@@ -8,7 +8,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
-	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
@@ -148,14 +147,9 @@ func (service *processUserdata) SendUserdataToLeader(ctx context.Context, finalU
 	}, nil
 }
 
-func newProcessUserdata(conn *clientConn, withActor ...bool) node.ProcessUserdata {
-	var client = pb.NewProcessUserdataClient(conn)
-	if len(withActor) > 0 && withActor[0] {
-		actorSystem := messaging.GetActorSystem()
-		client = newProcessUserdataClientWrapper(client, actorSystem, conn.actorPID)
-	}
+func newProcessUserdata(conn *clientConn) node.ProcessUserdata {
 	return &processUserdata{
 		conn:   conn,
-		client: client,
+		client: pb.NewProcessUserdataClient(conn),
 	}
 }

@@ -11,7 +11,6 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
-	"github.com/pastelnetwork/gonode/messaging"
 	"github.com/pastelnetwork/gonode/proto"
 	pb "github.com/pastelnetwork/gonode/proto/walletnode"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
@@ -334,13 +333,9 @@ func (service *registerArtwork) SendPreBurntFeeTxid(ctx context.Context, txid st
 	return rsp.NFTRegTxid, nil
 }
 
-func newRegisterArtwork(conn *clientConn, withActor ...bool) node.RegisterArtwork {
-	client := pb.NewRegisterArtworkClient(conn)
-	if len(withActor) > 0 && withActor[0] {
-		client = newRegisterArtworkClientWrapper(client, messaging.GetActorSystem(), conn.actorPID)
-	}
+func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {
 	return &registerArtwork{
 		conn:   conn,
-		client: client,
+		client: pb.NewRegisterArtworkClient(conn),
 	}
 }

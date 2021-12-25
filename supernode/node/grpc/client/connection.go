@@ -16,18 +16,18 @@ type clientConn struct {
 }
 
 // RegisterArtwork implements node.Connection.RegisterArtwork()
-func (conn *clientConn) RegisterArtwork(withActor ...bool) node.RegisterArtwork {
-	return newRegisterArtwork(conn, withActor...)
+func (conn *clientConn) RegisterArtwork() node.RegisterArtwork {
+	return newRegisterArtwork(conn)
 }
 
 // ProcessUserdata implements node.Connection.ProcessUserdata()
-func (conn *clientConn) ProcessUserdata(withActor ...bool) node.ProcessUserdata {
-	return newProcessUserdata(conn, withActor...)
+func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
+	return newProcessUserdata(conn)
 }
 
 // StorageChallenge implements node.Connection.StorageChallenge()
-func (conn *clientConn) StorageChallenge(withActor ...bool) node.StorageChallenge {
-	return newStorageChallenge(conn, withActor...)
+func (conn *clientConn) StorageChallenge() node.StorageChallenge {
+	return newStorageChallenge(conn)
 }
 
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
