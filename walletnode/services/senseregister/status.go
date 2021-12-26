@@ -15,6 +15,8 @@ const (
 	StatusTicketActivated
 	// Error
 	ErrorInsufficientFee
+	StatusErrorFindTopNodes
+	StatusErrorFindResponsdingSNs
 	StatusErrorSignaturesNotMatch
 	StatusErrorFingerprintsNotMatch
 	StatusErrorThumbnailHashsesNotMatch
@@ -35,6 +37,8 @@ var statusNames = map[Status]string{
 	StatusTicketRegistered:              "Ticket Registered",
 	StatusTicketActivated:               "Ticket Activated",
 	ErrorInsufficientFee:                "Error Insufficient Fee",
+	StatusErrorFindTopNodes:             "Error Find Top Nodes",
+	StatusErrorFindResponsdingSNs:       "Error Find Responsding SNs",
 	StatusErrorSignaturesNotMatch:       "Error Signatures Dont Match",
 	StatusErrorFingerprintsNotMatch:     "Error Fingerprints Dont Match",
 	StatusErrorThumbnailHashsesNotMatch: "Error ThumbnailHashes Dont Match",
