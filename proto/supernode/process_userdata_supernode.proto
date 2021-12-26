@@ -1,15 +1,15 @@
 syntax = "proto3";
 
 option go_package =
-    "github.com/pastelnetwork/gonode/proto/supernode";
+    "github.com/pastelnetwork/gonode/proto/supernode/process_userdata";
 
-package supernode;
+package process_userdata;
 
 service ProcessUserdata {
   // Session informs primary supernode about its `nodeID` and `sessID` it wants
   // to connect to. The stream is used by the parties to inform each other about
   // the cancellation of the task.
-  rpc Session(stream MDLSessionRequest) returns(stream MDLSessionReply);
+  rpc Session(stream SessionRequest) returns(stream SessionReply);
 
   // SendUserdataToPrimary send signed userdata from other supernodes to primary
   // supernode
@@ -19,8 +19,8 @@ service ProcessUserdata {
   rpc SendUserdataToLeader(UserdataRequest) returns(SuperNodeReply);
 }
 
-message MDLSessionRequest { string nodeID = 1; }
-message MDLSessionReply { string sessID = 1; }
+message SessionRequest { string nodeID = 1; }
+message SessionReply { string sessID = 1; }
 
 message SuperNodeRequest {
   // UserdataHash represents UserdataProcessRequest's hash value, to make sure

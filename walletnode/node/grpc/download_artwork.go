@@ -7,7 +7,7 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
-	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode/download_artwork"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 

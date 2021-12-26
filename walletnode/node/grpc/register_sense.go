@@ -11,7 +11,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/proto"
-	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode/register_sense"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -42,7 +42,7 @@ func (service *registerSense) Session(ctx context.Context, isPrimary bool) error
 		return errors.Errorf("open Session stream: %w", err)
 	}
 
-	req := &pb.SenseSessionRequest{
+	req := &pb.SessionRequest{
 		IsPrimary: isPrimary,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")
@@ -82,7 +82,7 @@ func (service *registerSense) AcceptedNodes(ctx context.Context) (pastelIDs []st
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := &pb.SenseAcceptedNodesRequest{}
+	req := &pb.AcceptedNodesRequest{}
 	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 
 	resp, err := service.client.AcceptedNodes(ctx, req)
@@ -103,7 +103,7 @@ func (service *registerSense) ConnectTo(ctx context.Context, primaryNode types.M
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := &pb.SenseConnectToRequest{
+	req := &pb.ConnectToRequest{
 		NodeID: primaryNode.NodeID,
 		SessID: primaryNode.SessID,
 	}
@@ -122,12 +122,12 @@ func (service *registerSense) ConnectTo(ctx context.Context, primaryNode types.M
 func (service *registerSense) MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
-	request := &pb.SenseMeshNodesRequest{
-		Nodes: []*pb.SenseMeshNodesRequest_Node{},
+	request := &pb.MeshNodesRequest{
+		Nodes: []*pb.MeshNodesRequest_Node{},
 	}
 
 	for _, node := range meshedNodes {
-		request.Nodes = append(request.Nodes, &pb.SenseMeshNodesRequest_Node{
+		request.Nodes = append(request.Nodes, &pb.MeshNodesRequest_Node{
 			SessID: node.SessID,
 			NodeID: node.NodeID,
 		})
@@ -142,7 +142,7 @@ func (service *registerSense) MeshNodes(ctx context.Context, meshedNodes []types
 func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
-	request := &pb.SenseSendRegMetadataRequest{
+	request := &pb.SendRegMetadataRequest{
 		BlockHash:       regMetadata.BlockHash,
 		CreatorPastelID: regMetadata.CreatorPastelID,
 	}
@@ -175,7 +175,7 @@ func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.Fil
 			break
 		}
 
-		req := &pb.SenseProbeImageRequest{
+		req := &pb.ProbeImageRequest{
 			Payload: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
@@ -205,7 +205,7 @@ func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byt
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := pb.SenseSendSignedNFTTicketRequest{
+	req := pb.SendSignedNFTTicketRequest{
 		NftTicket:        ticket,
 		CreatorSignature: signature,
 		DdFpFiles:        ddFp,
@@ -224,7 +224,7 @@ func (service *registerSense) SendPreBurntFeeTxid(ctx context.Context, txid stri
 	ctx = service.contextWithMDSessID(ctx)
 
 	log.WithContext(ctx).Debug("send burned txid to super node")
-	req := pb.SenseSendPreBurntFeeTxidRequest{
+	req := pb.SendPreBurntFeeTxidRequest{
 		Txid: txid,
 	}
 

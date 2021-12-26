@@ -8,7 +8,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/proto"
-	pb "github.com/pastelnetwork/gonode/proto/supernode"
+	pb "github.com/pastelnetwork/gonode/proto/supernode/register_sense"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -37,7 +37,7 @@ func (service *registerSense) Session(ctx context.Context, nodeID, sessID string
 		return errors.Errorf("open Health stream: %w", err)
 	}
 
-	req := &pb.SenseSessionRequest{
+	req := &pb.SessionRequest{
 		NodeID: nodeID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")
@@ -75,7 +75,7 @@ func (service *registerSense) Session(ctx context.Context, nodeID, sessID string
 func (service *registerSense) SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
-	_, err := service.client.SendSignedDDAndFingerprints(ctx, &pb.SenseSendSignedDDAndFingerprintsRequest{
+	_, err := service.client.SendSignedDDAndFingerprints(ctx, &pb.SendSignedDDAndFingerprintsRequest{
 		SessID:                    sessionID,
 		NodeID:                    fromNodeID,
 		ZstdCompressedFingerprint: compressedDDAndFingerprints,
@@ -88,7 +88,7 @@ func (service *registerSense) SendSignedDDAndFingerprints(ctx context.Context, s
 func (service *registerSense) SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
-	_, err := service.client.SendArtTicketSignature(ctx, &pb.SenseSendArtTicketSignatureRequest{
+	_, err := service.client.SendArtTicketSignature(ctx, &pb.SendArtTicketSignatureRequest{
 		NodeID:    nodeID,
 		Signature: signature,
 	})

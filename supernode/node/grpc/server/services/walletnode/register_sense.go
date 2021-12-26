@@ -9,7 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/types"
-	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode/register_sense"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/senseregister"
 	"google.golang.org/grpc"
@@ -59,7 +59,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 		return err
 	}
 
-	resp := &pb.SenseSessionReply{
+	resp := &pb.SessionReply{
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {
@@ -82,7 +82,7 @@ func (service *RegisterSense) Session(stream pb.RegisterSense_SessionServer) err
 }
 
 // AcceptedNodes implements walletnode.RegisterSenseServer.AcceptedNodes()
-func (service *RegisterSense) AcceptedNodes(ctx context.Context, req *pb.SenseAcceptedNodesRequest) (*pb.SenseAcceptedNodesReply, error) {
+func (service *RegisterSense) AcceptedNodes(ctx context.Context, req *pb.AcceptedNodesRequest) (*pb.AcceptedNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("AcceptedNodes request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -94,14 +94,14 @@ func (service *RegisterSense) AcceptedNodes(ctx context.Context, req *pb.SenseAc
 		return nil, err
 	}
 
-	var peers []*pb.SenseAcceptedNodesReply_Peer
+	var peers []*pb.AcceptedNodesReply_Peer
 	for _, node := range nodes {
-		peers = append(peers, &pb.SenseAcceptedNodesReply_Peer{
+		peers = append(peers, &pb.AcceptedNodesReply_Peer{
 			NodeID: node.ID,
 		})
 	}
 
-	resp := &pb.SenseAcceptedNodesReply{
+	resp := &pb.AcceptedNodesReply{
 		Peers: peers,
 	}
 	log.WithContext(ctx).WithField("resp", resp).Debug("AcceptedNodes response")
@@ -109,7 +109,7 @@ func (service *RegisterSense) AcceptedNodes(ctx context.Context, req *pb.SenseAc
 }
 
 // ConnectTo implements walletnode.RegisterSenseServer.ConnectTo()
-func (service *RegisterSense) ConnectTo(ctx context.Context, req *pb.SenseConnectToRequest) (*pb.SenseConnectToReply, error) {
+func (service *RegisterSense) ConnectTo(ctx context.Context, req *pb.ConnectToRequest) (*pb.ConnectToReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("ConnectTo request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -120,13 +120,13 @@ func (service *RegisterSense) ConnectTo(ctx context.Context, req *pb.SenseConnec
 		return nil, err
 	}
 
-	resp := &pb.SenseConnectToReply{}
+	resp := &pb.ConnectToReply{}
 	log.WithContext(ctx).WithField("resp", resp).Debug("ConnectTo response")
 	return resp, nil
 }
 
 // MeshNodes implements walletnode.RegisterSenseServer.MeshNodes
-func (service *RegisterSense) MeshNodes(ctx context.Context, req *pb.SenseMeshNodesRequest) (*pb.SenseMeshNodesReply, error) {
+func (service *RegisterSense) MeshNodes(ctx context.Context, req *pb.MeshNodesRequest) (*pb.MeshNodesReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("MeshNodes request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -142,11 +142,11 @@ func (service *RegisterSense) MeshNodes(ctx context.Context, req *pb.SenseMeshNo
 	}
 
 	err = task.MeshNodes(ctx, meshedNodes)
-	return &pb.SenseMeshNodesReply{}, err
+	return &pb.MeshNodesReply{}, err
 }
 
 // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
-func (service *RegisterSense) SendRegMetadata(ctx context.Context, req *pb.SenseSendRegMetadataRequest) (*pb.SenseSendRegMetadataReply, error) {
+func (service *RegisterSense) SendRegMetadata(ctx context.Context, req *pb.SendRegMetadataRequest) (*pb.SendRegMetadataReply, error) {
 	log.WithContext(ctx).WithField("req", req).Debug("SendRegMetadata request")
 	task, err := service.TaskFromMD(ctx)
 	if err != nil {
@@ -160,7 +160,7 @@ func (service *RegisterSense) SendRegMetadata(ctx context.Context, req *pb.Sense
 
 	err = task.SendRegMetadata(ctx, reqMetadata)
 
-	return &pb.SenseSendRegMetadataReply{}, err
+	return &pb.SendRegMetadataReply{}, err
 }
 
 // ProbeImage implements walletnode.RegisterSenseServer.ProbeImage()
@@ -215,7 +215,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 		return err
 	}
 
-	resp := &pb.SenseProbeImageReply{
+	resp := &pb.ProbeImageReply{
 		CompressedSignedDDAndFingerprints: compressedDDFingerAndScores,
 	}
 
@@ -226,7 +226,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 }
 
 // SendSignedNFTTicket implements walletnode.RegisterSense.SendSignedNFTTicket
-func (service *RegisterSense) SendSignedNFTTicket(ctx context.Context, req *pb.SenseSendSignedNFTTicketRequest) (retRes *pb.SenseSendSignedNFTTicketReply, retErr error) {
+func (service *RegisterSense) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (retRes *pb.SendSignedNFTTicketReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedNFTTicket")
 		retErr = recErr
@@ -243,7 +243,7 @@ func (service *RegisterSense) SendSignedNFTTicket(ctx context.Context, req *pb.S
 		return nil, errors.Errorf("get total storage fee %w", err)
 	}
 
-	rsp := pb.SenseSendSignedNFTTicketReply{
+	rsp := pb.SendSignedNFTTicketReply{
 		RegistrationFee: registrationFee,
 	}
 
@@ -251,7 +251,7 @@ func (service *RegisterSense) SendSignedNFTTicket(ctx context.Context, req *pb.S
 }
 
 // SendPreBurntFeeTxid implements walletnode.RegisterSense.SendPreBurntFeeTxid
-func (service *RegisterSense) SendPreBurntFeeTxid(ctx context.Context, req *pb.SenseSendPreBurntFeeTxidRequest) (retRes *pb.SenseSendPreBurntFeeTxidReply, retErr error) {
+func (service *RegisterSense) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (retRes *pb.SendPreBurntFeeTxidReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
 		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicSendPreBurntFeeTxid")
 		retErr = recErr
@@ -268,7 +268,7 @@ func (service *RegisterSense) SendPreBurntFeeTxid(ctx context.Context, req *pb.S
 		return nil, errors.Errorf("validate preburn transaction %w", err)
 	}
 
-	rsp := pb.SenseSendPreBurntFeeTxidReply{
+	rsp := pb.SendPreBurntFeeTxidReply{
 		NFTRegTxid: nftRegTxid,
 	}
 	return &rsp, nil

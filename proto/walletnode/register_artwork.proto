@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/proto/walletnode";
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode/register_artwork";
 
-package walletnode;
+package register_artwork;
 
 service RegisterArtwork {
     // Session informs the supernode its position (primary/secondary).
