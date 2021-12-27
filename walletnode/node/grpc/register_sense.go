@@ -145,6 +145,7 @@ func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *
 	request := &pb.SendRegMetadataRequest{
 		BlockHash:       regMetadata.BlockHash,
 		CreatorPastelID: regMetadata.CreatorPastelID,
+		BurnTxid:        regMetadata.BurnTxID,
 	}
 
 	_, err := service.client.SendRegMetadata(ctx, request)
@@ -152,7 +153,7 @@ func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.File, burn_txid string) ([]byte, bool, error) {
+func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
@@ -176,8 +177,7 @@ func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.Fil
 		}
 
 		req := &pb.ProbeImageRequest{
-			Image:    buffer[:n],
-			BurnTxid: burn_txid,
+			Image: buffer[:n],
 		}
 		if err := stream.Send(req); err != nil {
 			return nil, true, errors.Errorf("send image data: %w", err)

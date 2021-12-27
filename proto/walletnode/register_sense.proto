@@ -72,6 +72,7 @@ message MeshNodesReply {
 message SendRegMetadataRequest {
     string creatorPastelID = 1;
     string blockHash = 2;
+    string burn_txid = 3;
 }
 message SendRegMetadataReply {
 
@@ -79,7 +80,6 @@ message SendRegMetadataReply {
 
 message ProbeImageRequest {
     bytes image = 1;
-    string burn_txid = 2;
 }
 message ProbeImageReply {
     bool is_valid_burn_txid = 1;

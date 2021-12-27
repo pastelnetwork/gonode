@@ -10,4 +10,5 @@ type MeshedSuperNode struct {
 type NftRegMetadata struct {
 	CreatorPastelID string
 	BlockHash       string
+	BurnTxID        string
 }

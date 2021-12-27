@@ -101,12 +101,12 @@ func (nodes *List) SendRegMetadata(ctx context.Context, regMetadata *types.NftRe
 }
 
 // ProbeImage sends the image to supernodes for image analysis, such as fingerprint, raraness score, NSWF.
-func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File, burn_txid string) error {
+func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			compress, isValidBurnTxID, err := node.ProbeImage(ctx, file, burn_txid)
+			compress, isValidBurnTxID, err := node.ProbeImage(ctx, file)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("probe image failed")
 				return errors.Errorf("node %s: probe failed :%w", node.String(), err)

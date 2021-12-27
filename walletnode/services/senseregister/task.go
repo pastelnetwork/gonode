@@ -582,6 +582,7 @@ func (task *Task) sendRegMetadata(ctx context.Context) error {
 	regMetadata := &types.NftRegMetadata{
 		BlockHash:       task.creatorBlockHash,
 		CreatorPastelID: task.Request.AppPastelID,
+		BurnTxID:        task.Request.BurnTxID,
 	}
 
 	return task.nodes.SendRegMetadata(ctx, regMetadata)
@@ -625,7 +626,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debug("probe image")
 
 	// Send image to supernodes for probing.
-	if err := task.nodes.ProbeImage(ctx, task.Request.Image, task.Request.BurnTxID); err != nil {
+	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
 		return errors.Errorf("send image: %w", err)
 	}
 
