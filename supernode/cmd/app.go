@@ -231,7 +231,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 
 	ddScan, err := ddscan.NewService(ddScanConfig, pastelClient, p2p)
 	if err != nil {
-		return errors.Errorf("can not start dupe detection service, err: %w", err)
+		return fmt.Errorf("start ddscan: %w", err)
 	}
 
 	// ----Userdata Services----

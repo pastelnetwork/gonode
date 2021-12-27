@@ -162,7 +162,7 @@ func TestServiceNewTask(t *testing.T) {
 				p2pClient:    p2pClient.Client,
 				Worker:       task.NewWorker(),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			go service.Run(ctx)
 			task := service.NewTask()

@@ -61,6 +61,8 @@ type Options struct {
 
 	// Authentication is required or not
 	PeerAuth bool
+
+	ExternalIP string
 }
 
 // NewDHT returns a new DHT node
@@ -81,7 +83,11 @@ func NewDHT(store Store, pc pastel.Client, secInfo *alts.SecInfo, options *Optio
 		cache:        memory.NewKeyValue(),
 	}
 
-	if options.PeerAuth {
+	if options.ExternalIP != "" {
+		s.externalIP = options.ExternalIP
+	}
+
+	if options.PeerAuth && options.ExternalIP != "" {
 		s.authHelper = NewAuthHelper(pc, secInfo)
 	}
 
