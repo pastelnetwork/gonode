@@ -101,17 +101,18 @@ func (nodes *List) SendRegMetadata(ctx context.Context, regMetadata *types.NftRe
 }
 
 // ProbeImage sends the image to supernodes for image analysis, such as fingerprint, raraness score, NSWF.
-func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File) error {
+func (nodes *List) ProbeImage(ctx context.Context, file *artwork.File, burn_txid string) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
 		group.Go(func() (err error) {
-			compress, err := node.ProbeImage(ctx, file)
+			compress, isValidBurnTxID, err := node.ProbeImage(ctx, file, burn_txid)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("probe image failed")
 				return errors.Errorf("node %s: probe failed :%w", node.String(), err)
 			}
 
+			node.isValidBurnTxID = isValidBurnTxID
 			node.FingerprintAndScores, node.FingerprintAndScoresBytes, node.Signature, err = pastel.ExtractCompressSignedDDAndFingerprints(compress)
 			if err != nil {
 				log.WithContext(ctx).WithError(err).WithField("node", node).Error("extract compressed signed DDAandFingerprints failed")
@@ -134,6 +135,17 @@ func (nodes *List) MatchFingerprintAndScores() error {
 	}
 
 	return nil
+}
+
+// ValidBurnTxID returns whether the burn txid is valid
+func (nodes *List) ValidBurnTxID() bool {
+	for _, node := range *nodes {
+		if !node.isValidBurnTxID {
+			return false
+		}
+	}
+
+	return true
 }
 
 // FingerAndScores returns fingerprint of the image and dupedetection scores

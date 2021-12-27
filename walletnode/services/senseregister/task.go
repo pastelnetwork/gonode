@@ -86,7 +86,7 @@ func (task *Task) run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// Find tops supernodes and validate top 3 SNs
+	/* Step 3,4: Find tops supernodes and validate top 3 SNs and create mesh network of 3 SNs */
 	if err := task.connectToTopRankNodes(ctx); err != nil {
 		return errors.Errorf("connect to top rank nodes: %w", err)
 	}
@@ -100,17 +100,14 @@ func (task *Task) run(ctx context.Context) error {
 		return task.nodes.WaitConnClose(ctx, nodesDone)
 	})
 
-	// get block height + hash
-	if err := task.getBlock(ctx); err != nil {
-		return errors.Errorf("get current block heigth: %w", err)
-	}
+	/* Step 5: Send image, burn txid to SNs */
 
 	// send registration metadata
 	if err := task.sendRegMetadata(ctx); err != nil {
 		return errors.Errorf("send registration metadata: %w", err)
 	}
 
-	// probe image for rareness, nsfw and seen score
+	// probe image for average rareness, nsfw and seen score
 	if err := task.probeImage(ctx); err != nil {
 		return errors.Errorf("probe image: %w", err)
 	}
@@ -628,12 +625,20 @@ func (task *Task) probeImage(ctx context.Context) error {
 	log.WithContext(ctx).WithField("filename", task.Request.Image.Name()).Debug("probe image")
 
 	// Send image to supernodes for probing.
-	if err := task.nodes.ProbeImage(ctx, task.Request.Image); err != nil {
+	if err := task.nodes.ProbeImage(ctx, task.Request.Image, task.Request.BurnTxID); err != nil {
 		return errors.Errorf("send image: %w", err)
 	}
+
 	signatures := [][]byte{}
 	// Match signatures received from supernodes.
 	for i := 0; i < len(task.nodes); i++ {
+		// Validate burn_txid transaction with SNs
+		if !task.nodes.ValidBurnTxID() {
+			task.UpdateStatus(StatsuErrorInvalidBurnTxID)
+			return errors.New("invalid burn txid")
+		}
+
+		// Validate signatures received from supernodes.
 		verified, err := task.pastelClient.Verify(ctx, task.nodes[i].FingerprintAndScoresBytes, string(task.nodes[i].Signature), task.nodes[i].PastelID(), pastel.SignAlgorithmED448)
 		if err != nil {
 			return errors.Errorf("probeImage: pastelClient.Verify %w", err)

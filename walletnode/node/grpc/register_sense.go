@@ -152,19 +152,19 @@ func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *
 }
 
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
-func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, error) {
+func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.File, burn_txid string) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, errors.Errorf("open stream: %w", err)
+		return nil, true, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, errors.Errorf("open file %q: %w", file.Name(), err)
+		return nil, true, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 
@@ -176,19 +176,20 @@ func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.Fil
 		}
 
 		req := &pb.ProbeImageRequest{
-			Payload: buffer[:n],
+			Image:    buffer[:n],
+			BurnTxid: burn_txid,
 		}
 		if err := stream.Send(req); err != nil {
-			return nil, errors.Errorf("send image data: %w", err)
+			return nil, true, errors.Errorf("send image data: %w", err)
 		}
 	}
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		return nil, errors.Errorf("receive image response: %w", err)
+		return nil, true, errors.Errorf("receive image response: %w", err)
 	}
 
-	return resp.CompressedSignedDDAndFingerprints, nil
+	return resp.CompressedSignedDDAndFingerprints, resp.IsValidBurnTxid, nil
 }
 
 func (service *registerSense) contextWithMDSessID(ctx context.Context) context.Context {
