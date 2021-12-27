@@ -359,7 +359,7 @@ func (client *client) GetRegisterNFTFee(ctx context.Context, request GetRegister
 
 	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
 
-	signatures, err := EncodeSignatures(*request.Signatures)
+	signatures, err := EncodeRegSignatures(*request.Signatures)
 	if err != nil {
 		return 0, errors.Errorf("failed to encode signatures: %w", err)
 	}
@@ -407,7 +407,7 @@ func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFT
 	}
 	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
 
-	signatures, err := EncodeSignatures(*request.Signatures)
+	signatures, err := EncodeRegSignatures(*request.Signatures)
 	if err != nil {
 		return "", errors.Errorf("failed to encode signatures: %w", err)
 	}
@@ -424,6 +424,40 @@ func (client *client) RegisterNFTTicket(ctx context.Context, request RegisterNFT
 	params = append(params, fmt.Sprint(request.Fee))
 
 	// command : tickets register NFT "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee"
+	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
+		return "", errors.Errorf("failed to call register NFT ticket: %w", err)
+	}
+	return txID.TxID, nil
+}
+
+func (client *client) RegisterActionTicket(ctx context.Context, request RegisterActionRequest) (string, error) {
+	var txID struct {
+		TxID string `json:"txid"`
+	}
+
+	ticket, err := EncodeActionTicket(request.Ticket)
+	if err != nil {
+		return "", errors.Errorf("failed to encode ticket: %w", err)
+	}
+	ticketBlob := base64.StdEncoding.EncodeToString(ticket)
+
+	signatures, err := EncodeActionSignatures(*request.Signatures)
+	if err != nil {
+		return "", errors.Errorf("failed to encode signatures: %w", err)
+	}
+
+	params := []interface{}{}
+	params = append(params, "register")
+	params = append(params, "action")
+	params = append(params, string(ticketBlob))
+	params = append(params, string(signatures))
+	params = append(params, request.Mn1PastelID)
+	params = append(params, request.Pasphase)
+	params = append(params, request.Key1)
+	params = append(params, request.Key2)
+	params = append(params, fmt.Sprint(request.Fee))
+
+	// command : tickets register action "ticket" "{signatures}" "pastelid" "passphrase" "key1" "key2" "fee"
 	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
 		return "", errors.Errorf("failed to call register NFT ticket: %w", err)
 	}
