@@ -153,7 +153,7 @@ func (service *RegisterSense) SendRegMetadata(ctx context.Context, req *pb.SendR
 		return nil, err
 	}
 
-	reqMetadata := &types.NftRegMetadata{
+	reqMetadata := &types.ActionRegMetadata{
 		BlockHash:       req.BlockHash,
 		CreatorPastelID: req.CreatorPastelID,
 		BurnTxID:        req.BurnTxid,

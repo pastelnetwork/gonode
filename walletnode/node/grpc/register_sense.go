@@ -139,7 +139,7 @@ func (service *registerSense) MeshNodes(ctx context.Context, meshedNodes []types
 }
 
 // SendRegMetadata send metadata of registration to SNs for next steps
-func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
+func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 	request := &pb.SendRegMetadataRequest{
@@ -159,13 +159,13 @@ func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.Fil
 
 	stream, err := service.client.ProbeImage(ctx)
 	if err != nil {
-		return nil, true, errors.Errorf("open stream: %w", err)
+		return nil, false, errors.Errorf("open stream: %w", err)
 	}
 	defer stream.CloseSend()
 
 	file, err := image.Open()
 	if err != nil {
-		return nil, true, errors.Errorf("open file %q: %w", file.Name(), err)
+		return nil, false, errors.Errorf("open file %q: %w", file.Name(), err)
 	}
 	defer file.Close()
 

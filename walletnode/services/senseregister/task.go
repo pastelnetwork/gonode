@@ -103,7 +103,7 @@ func (task *Task) run(ctx context.Context) error {
 	/* Step 5: Send image, burn txid to SNs */
 
 	// send registration metadata
-	if err := task.sendRegMetadata(ctx); err != nil {
+	if err := task.sendActionMetadata(ctx); err != nil {
 		return errors.Errorf("send registration metadata: %w", err)
 	}
 
@@ -570,7 +570,7 @@ func (task *Task) connectToTopRankNodes(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) sendRegMetadata(ctx context.Context) error {
+func (task *Task) sendActionMetadata(ctx context.Context) error {
 	if task.creatorBlockHash == "" {
 		return errors.New("empty current block hash")
 	}
@@ -579,7 +579,7 @@ func (task *Task) sendRegMetadata(ctx context.Context) error {
 		return errors.New("empty creator pastelID")
 	}
 
-	regMetadata := &types.NftRegMetadata{
+	regMetadata := &types.ActionRegMetadata{
 		BlockHash:       task.creatorBlockHash,
 		CreatorPastelID: task.Request.AppPastelID,
 		BurnTxID:        task.Request.BurnTxID,

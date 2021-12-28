@@ -83,7 +83,7 @@ func (nodes *List) FindByPastelID(id string) *Node {
 }
 
 // SendRegMetadata send metadata
-func (nodes *List) SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error {
+func (nodes *List) SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error {
 	group, _ := errgroup.WithContext(ctx)
 	for _, node := range *nodes {
 		node := node
