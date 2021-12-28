@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode/register_artwork";
 
-package supernode;
+package register_artwork;
 
 service RegisterArtwork {
     // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.

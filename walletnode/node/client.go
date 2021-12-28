@@ -34,18 +34,30 @@ type Connection interface {
 	DownloadArtwork() DownloadArtwork
 	// ProcessUserdata returns a new ProcessUserdata stream.
 	ProcessUserdata() ProcessUserdata
+	// RegisterSense returns new RegisterSense stream
+	RegisterSense() RegisterSense
 }
 
 // SenseRegister contains methods for sense register
-type SenseRegister interface {
+type RegisterSense interface {
 	// SessID returns the sessID received from the server during the handshake.
 	SessID() (sessID string)
 	// Session sets up an initial connection with supernode, with given supernode mode primary/secondary.
 	Session(ctx context.Context, IsPrimary bool) (err error)
 	// AcceptedNodes requests information about connected secondary nodes.
 	AcceptedNodes(ctx context.Context) (pastelIDs []string, err error)
-	// ConnectTo commands to connect to the primary node, where nodeKey is primary key.
-	ConnectTo(ctx context.Context, nodeKey, sessID string) error
+	// ConnectTo commands to connect to the primary node
+	ConnectTo(ctx context.Context, primaryNode types.MeshedSuperNode) error
+	// MeshNodes send to supernode all info of nodes are meshed together (include the received supernode)
+	MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error
+	// SendRegMetadata send metadata of registration to SNs for next steps
+	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
+	// ProbeImage uploads image to supernode.
+	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, err error)
+	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
+	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (int64, error)
+	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
+	SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error)
 }
 
 // RegisterArtwork contains methods for registering artwork.

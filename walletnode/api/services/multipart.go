@@ -53,10 +53,10 @@ func handleUploadImage(ctx context.Context, reader *multipart.Reader, storage *a
 
 	for {
 		part, err := reader.NextPart()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
-			if err == io.EOF {
-				break
-			}
 			return "", "InternalServerError", errors.Errorf("could not read next part: %w", err)
 		}
 

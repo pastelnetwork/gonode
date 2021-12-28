@@ -1,5 +1,6 @@
 package senseregister
 
+// List of task statuses.
 const (
 	StatusTaskStarted Status = iota
 	StatusConnected
@@ -14,6 +15,7 @@ const (
 	StatusTicketActivated
 	// Error
 	ErrorInsufficientFee
+	StatusErrorSignaturesNotMatch
 	StatusErrorFingerprintsNotMatch
 	StatusErrorThumbnailHashsesNotMatch
 	StatusErrorGenRaptorQSymbolsFailed
@@ -33,6 +35,7 @@ var statusNames = map[Status]string{
 	StatusTicketRegistered:              "Ticket Registered",
 	StatusTicketActivated:               "Ticket Activated",
 	ErrorInsufficientFee:                "Error Insufficient Fee",
+	StatusErrorSignaturesNotMatch:       "Error Signatures Dont Match",
 	StatusErrorFingerprintsNotMatch:     "Error Fingerprints Dont Match",
 	StatusErrorThumbnailHashsesNotMatch: "Error ThumbnailHashes Dont Match",
 	StatusErrorGenRaptorQSymbolsFailed:  "Error GenRaptorQ Symbols Failed",
@@ -57,7 +60,7 @@ func (status Status) IsFinal() bool {
 
 // IsFailure returns true if the status is the failure.
 func (status Status) IsFailure() bool {
-	return status == ErrorInsufficientFee || status == StatusTaskRejected || status == StatusErrorFingerprintsNotMatch
+	return status == ErrorInsufficientFee || status == StatusTaskRejected || status == StatusErrorFingerprintsNotMatch || status == StatusErrorSignaturesNotMatch
 }
 
 // StatusNames returns a sorted list of status names.
