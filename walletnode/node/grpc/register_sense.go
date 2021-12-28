@@ -201,40 +201,22 @@ func (service *registerSense) contextWithLogPrefix(ctx context.Context) context.
 }
 
 // SendSignedTicket
-func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFp []byte) (int64, error) {
+func (service *registerSense) SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFp []byte) (string, error) {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 
-	req := pb.SendSignedNFTTicketRequest{
-		NftTicket:        ticket,
+	req := pb.SendSignedActionTicketRequest{
+		ActionTicket:     ticket,
 		CreatorSignature: signature,
 		DdFpFiles:        ddFp,
 	}
 
-	rsp, err := service.client.SendSignedNFTTicket(ctx, &req)
+	rsp, err := service.client.SendSignedActionTicket(ctx, &req)
 	if err != nil {
-		return -1, err
+		return "", err
 	}
 
-	return rsp.RegistrationFee, nil
-}
-
-func (service *registerSense) SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error) {
-	ctx = service.contextWithLogPrefix(ctx)
-	ctx = service.contextWithMDSessID(ctx)
-
-	log.WithContext(ctx).Debug("send burned txid to super node")
-	req := pb.SendPreBurntFeeTxidRequest{
-		Txid: txid,
-	}
-
-	rsp, err := service.client.SendPreBurntFeeTxid(ctx, &req)
-	if err != nil {
-		return "", errors.Errorf("send burned txid to super node: %w", err)
-	}
-
-	// TODO: response from sending preburned TxId should be the TxId of RegActTicket
-	return rsp.NFTRegTxid, nil
+	return rsp.ActionRegTxid, nil
 }
 
 func newRegisterSense(conn *clientConn) node.RegisterSense {

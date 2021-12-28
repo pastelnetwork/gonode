@@ -24,13 +24,8 @@ type Node struct {
 	FingerprintAndScoresBytes []byte // JSON bytes of FingerprintAndScores
 	Signature                 []byte
 
-	// thumbnail hash
-	previewHash         []byte
-	mediumThumbnailHash []byte
-	smallThumbnailHash  []byte
-
 	registrationFee int64
-	regNFTTxid      string
+	regActionTxid   string
 
 	address  string
 	pastelID string

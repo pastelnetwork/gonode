@@ -26,13 +26,7 @@ service RegisterSense {
     rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
     // SendArtTicket sends a signed art-ticket to the supernode.
-    rpc SendSignedNFTTicket(SendSignedNFTTicketRequest) returns (SendSignedNFTTicketReply);
-
-    // SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
-    rpc SendPreBurntFeeTxid(SendPreBurntFeeTxidRequest) returns (SendPreBurntFeeTxidReply);
-
-    // SendTicket sends a ticket to the supernode.
-    rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
+    rpc SendSignedActionTicket(SendSignedActionTicketRequest) returns (SendSignedActionTicketReply);
 }
 
 message SessionRequest {
@@ -85,33 +79,13 @@ message ProbeImageReply {
 }
 
 
-message SendSignedNFTTicketRequest {
-    bytes nft_ticket = 1;
+message SendSignedActionTicketRequest {
+    bytes action_ticket = 1;
     bytes creator_signature = 2;
     bytes dd_fp_files = 3;
 
 }
 
-message SendSignedNFTTicketReply {
-    int64 registration_fee = 1;
+message SendSignedActionTicketReply {
+    string action_reg_txid = 1;
 }
-
-message SendPreBurntFeeTxidRequest {
-    string txid = 1;
-}
-message SendPreBurntFeeTxidReply {
-    string NFT_reg_txid = 1;
-}
-
-message SendTicketRequest {
-    bytes ticket = 1;
-    string ticket_signature = 2;
-    string fgpt= 3;
-    string fgpt_signature = 4;
-    string fee_txid = 5;
-    bytes thumbnail = 6;
-}
-message SendTicketReply {
-    string ticket_txid = 1;
-}
-

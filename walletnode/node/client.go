@@ -55,9 +55,7 @@ type RegisterSense interface {
 	// ProbeImage uploads image to supernode.
 	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
-	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (int64, error)
-	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned
-	SendPreBurntFeeTxid(ctx context.Context, txid string) (string, error)
+	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (string, error)
 }
 
 // RegisterArtwork contains methods for registering artwork.
