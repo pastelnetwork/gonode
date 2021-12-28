@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/proto/supernode/register_artwork";
+option go_package = "github.com/pastelnetwork/gonode/proto/supernode/register_sense";
 
-package register_artwork;
+package register_sense;
 
-service RegisterArtwork {
+service RegisterSense {
     // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
     // The stream is used by the parties to inform each other about the cancellation of the task.
     rpc Session(stream SessionRequest) returns (stream SessionReply);

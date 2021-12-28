@@ -16,7 +16,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/metadb"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	pb "github.com/pastelnetwork/gonode/proto/supernode"
+	pb "github.com/pastelnetwork/gonode/proto/supernode/process_userdata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )

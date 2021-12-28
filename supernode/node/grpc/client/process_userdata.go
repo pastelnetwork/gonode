@@ -9,7 +9,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/service/userdata"
 	"github.com/pastelnetwork/gonode/proto"
-	pb "github.com/pastelnetwork/gonode/proto/supernode"
+	pb "github.com/pastelnetwork/gonode/proto/supernode/process_userdata"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -38,7 +38,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 		return errors.Errorf("open Health stream: %w", err)
 	}
 
-	req := &pb.MDLSessionRequest{
+	req := &pb.SessionRequest{
 		NodeID: nodeID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pastelnetwork/gonode/common/errors"
-	pb "github.com/pastelnetwork/gonode/proto/walletnode"
+	pb "github.com/pastelnetwork/gonode/proto/walletnode/download_artwork"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/artworkdownload"
 	"google.golang.org/grpc"

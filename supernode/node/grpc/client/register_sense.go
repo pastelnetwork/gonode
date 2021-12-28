@@ -8,25 +8,25 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/proto"
-	pb "github.com/pastelnetwork/gonode/proto/supernode/register_artwork"
+	pb "github.com/pastelnetwork/gonode/proto/supernode/register_sense"
 	"github.com/pastelnetwork/gonode/supernode/node"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-type registerArtwork struct {
+type registerSense struct {
 	conn   *clientConn
-	client pb.RegisterArtworkClient
+	client pb.RegisterSenseClient
 	sessID string
 }
 
-func (service *registerArtwork) SessID() string {
+func (service *registerSense) SessID() string {
 	return service.sessID
 }
 
 // Session implements node.RegisterArtwork.Session()
-func (service *registerArtwork) Session(ctx context.Context, nodeID, sessID string) error {
+func (service *registerSense) Session(ctx context.Context, nodeID, sessID string) error {
 	service.sessID = sessID
 
 	ctx = service.contextWithLogPrefix(ctx)
@@ -72,7 +72,7 @@ func (service *registerArtwork) Session(ctx context.Context, nodeID, sessID stri
 }
 
 // SendSignedDDAndFingerprints implements SendSignedDDAndFingerprints
-func (service *registerArtwork) SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error {
+func (service *registerSense) SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 	_, err := service.client.SendSignedDDAndFingerprints(ctx, &pb.SendSignedDDAndFingerprintsRequest{
@@ -85,7 +85,7 @@ func (service *registerArtwork) SendSignedDDAndFingerprints(ctx context.Context,
 }
 
 // SendArtTicketSignature implements SendArtTicketSignature
-func (service *registerArtwork) SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
+func (service *registerSense) SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error {
 	ctx = service.contextWithLogPrefix(ctx)
 	ctx = service.contextWithMDSessID(ctx)
 	_, err := service.client.SendArtTicketSignature(ctx, &pb.SendArtTicketSignatureRequest{
@@ -96,18 +96,18 @@ func (service *registerArtwork) SendArtTicketSignature(ctx context.Context, node
 	return err
 }
 
-func (service *registerArtwork) contextWithMDSessID(ctx context.Context) context.Context {
+func (service *registerSense) contextWithMDSessID(ctx context.Context) context.Context {
 	md := metadata.Pairs(proto.MetadataKeySessID, service.sessID)
 	return metadata.NewOutgoingContext(ctx, md)
 }
 
-func (service *registerArtwork) contextWithLogPrefix(ctx context.Context) context.Context {
+func (service *registerSense) contextWithLogPrefix(ctx context.Context) context.Context {
 	return log.ContextWithPrefix(ctx, fmt.Sprintf("%s-%s", logPrefix, service.conn.id))
 }
 
-func newRegisterArtwork(conn *clientConn) node.RegisterArtwork {
-	return &registerArtwork{
+func newRegisterSense(conn *clientConn) node.RegisterSense {
+	return &registerSense{
 		conn:   conn,
-		client: pb.NewRegisterArtworkClient(conn),
+		client: pb.NewRegisterSenseClient(conn),
 	}
 }

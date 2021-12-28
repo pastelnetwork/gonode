@@ -28,6 +28,11 @@ func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)
 }
 
+// RegisterSense implements node.Connection.RegisterSense()
+func (conn *clientConn) RegisterSense() node.RegisterSense {
+	return newRegisterSense(conn)
+}
+
 func newClientConn(id string, conn *grpc.ClientConn) node.Connection {
 	return &clientConn{
 		ClientConn: commongrpc.NewClientConn(conn),

@@ -28,10 +28,9 @@ type Service struct {
 }
 
 // Run starts worker.
-func (service Service) Run(ctx context.Context) error {
+func (service *Service) Run(ctx context.Context) error {
 	group, ctx := errgroup.WithContext(ctx)
 
-	// Run storage service
 	group.Go(func() error {
 		return service.Storage.Run(ctx)
 	})
@@ -40,11 +39,27 @@ func (service Service) Run(ctx context.Context) error {
 	group.Go(func() error {
 		return service.Worker.Run(ctx)
 	})
-
 	return group.Wait()
 }
 
-// AddTask adds a task to the worker.
+// Tasks returns all tasks.
+func (service *Service) Tasks() []*Task {
+	var tasks []*Task
+	for _, task := range service.Worker.Tasks() {
+		tasks = append(tasks, task.(*Task))
+	}
+	return tasks
+}
+
+// Task returns the task of the registration artwork by the given id.
+func (service *Service) Task(id string) *Task {
+	if t := service.Worker.Task(id); t != nil {
+		return t.(*Task)
+	}
+	return nil
+}
+
+// AddTask runs a new task of the registration artwork and returns its taskID.
 func (service *Service) AddTask(ticket *Request) string {
 	task := NewTask(service, ticket)
 	service.Worker.AddTask(task)
@@ -58,7 +73,6 @@ func (service *Service) VerifyImageSignature(ctx context.Context, imgData []byte
 	if err != nil {
 		return err
 	}
-
 	if !ok {
 		return errors.Errorf("signature verification failed")
 	}
@@ -72,7 +86,6 @@ func (service *Service) GetEstimatedFee(ctx context.Context, ImgSizeInMb int64) 
 	if err != nil {
 		return 0, err
 	}
-
 	return actionFees.SenseFee, nil
 }
 

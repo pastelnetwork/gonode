@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-option go_package = "github.com/pastelnetwork/gonode/proto/walletnode/register_artwork";
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode/register_sense";
 
-package register_artwork;
+package register_sense;
 
-service RegisterArtwork {
+service RegisterSense {
     // Session informs the supernode its position (primary/secondary).
     // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
     // The stream is used by the parties to inform each other about the cancellation of the task.
@@ -33,9 +33,6 @@ service RegisterArtwork {
 
     // SendTicket sends a ticket to the supernode.
     rpc SendTicket(SendTicketRequest) returns (SendTicketReply);
-
-    // Upload the image after pq signature is appended along with its thumbnail coordinates
-    rpc UploadImage(stream UploadImageRequest) returns (UploadImageReply);
 }
 
 message SessionRequest {
@@ -87,18 +84,12 @@ message ProbeImageReply {
     bytes compressedSignedDDAndFingerprints = 1;
 }
 
-message EncoderParameters {
-  bytes oti = 1;   //12 bytes
-}
 
 message SendSignedNFTTicketRequest {
     bytes nft_ticket = 1;
     bytes creator_signature = 2;
-    string key1 = 3;
-    string key2 = 4;
-    EncoderParameters encode_parameters = 5;
-    bytes dd_fp_files = 7;
-    bytes rq_files = 8;
+    bytes dd_fp_files = 3;
+
 }
 
 message SendSignedNFTTicketReply {
@@ -124,32 +115,3 @@ message SendTicketReply {
     string ticket_txid = 1;
 }
 
-message UploadImageRequest {
-    message Coordinate {
-      int64 top_left_x = 1;
-      int64 top_left_y = 2;
-      int64 bottom_right_x = 3;
-      int64 bottom_right_y = 4;
-    }
-    message MetaData {
-      // size of the image
-      int64 size = 1;
-      // valid image format such as jpeg, png ...
-      string format = 2;
-      // sha3-256 hash of the image
-      bytes hash = 3;
-      // thumbnail of the image
-      Coordinate thumbnail = 4;
-    }
-    oneof payload {
-      bytes image_piece = 1;
-      // Should be included in the last piece of image only
-      MetaData meta_data = 2;
-    }
-}
-
-message UploadImageReply {
-   bytes preview_thumbnail_hash = 1;
-   bytes medium_thumbnail_hash = 2;
-   bytes small_thumbnail_hash = 3;
-}

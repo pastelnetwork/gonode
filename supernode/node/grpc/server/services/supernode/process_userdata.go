@@ -12,7 +12,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/metadb/database"
-	pb "github.com/pastelnetwork/gonode/proto/supernode"
+	pb "github.com/pastelnetwork/gonode/proto/supernode/process_userdata"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/userdataprocess"
 	"google.golang.org/grpc"
@@ -64,7 +64,7 @@ func (service *ProcessUserdata) Session(stream pb.ProcessUserdata_SessionServer)
 		return err
 	}
 
-	resp := &pb.MDLSessionReply{
+	resp := &pb.SessionReply{
 		SessID: task.ID(),
 	}
 	if err := stream.Send(resp); err != nil {

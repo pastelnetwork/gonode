@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pastelnetwork/gonode/pastel"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
@@ -14,17 +15,27 @@ type Node struct {
 	mtx *sync.RWMutex
 
 	node.Client
+	node.RegisterSense
 	node.Connection
-	node.SenseRegister
 
-	isPrimary bool
-	activated bool
+	isPrimary                 bool
+	activated                 bool
+	FingerprintAndScores      *pastel.DDAndFingerprints
+	FingerprintAndScoresBytes []byte // JSON bytes of FingerprintAndScores
+	Signature                 []byte
+
+	// thumbnail hash
+	previewHash         []byte
+	mediumThumbnailHash []byte
+	smallThumbnailHash  []byte
+
+	registrationFee int64
+	regNFTTxid      string
 
 	address  string
 	pastelID string
 }
 
-// String returns node address.
 func (node *Node) String() string {
 	return node.address
 }
@@ -32,17 +43,6 @@ func (node *Node) String() string {
 // PastelID returns pastelID
 func (node *Node) PastelID() string {
 	return node.pastelID
-}
-
-// IsPrimary returns true if node is primary
-func (node *Node) IsPrimary() bool {
-
-	return node.isPrimary
-}
-
-// SetPrimary promotes a supernode to primary role which handle the write to Kamedila
-func (node *Node) SetPrimary(primary bool) {
-	node.isPrimary = primary
 }
 
 // Connect connects to supernode.
@@ -61,17 +61,32 @@ func (node *Node) Connect(ctx context.Context, timeout time.Duration, secInfo *a
 	if err != nil {
 		return err
 	}
-
 	node.Connection = conn
+	node.RegisterSense = conn.RegisterSense()
 	return nil
 }
 
-// NewNOde returns new Node instance
+// SetPrimary promotes a supernode to primary role which handle the write to Kamedila
+func (node *Node) SetPrimary(primary bool) {
+	node.isPrimary = primary
+}
+
+// IsPrimary returns true if this node has been promoted to primary in meshNode session
+func (node *Node) IsPrimary() bool {
+	return node.isPrimary
+}
+
+// Address returns address of node
+func (node *Node) Address() string {
+	return node.address
+}
+
+// NewNode returns a new Node instance.
 func NewNode(client node.Client, address, pastelID string) *Node {
 	return &Node{
-		mtx:      &sync.RWMutex{},
 		Client:   client,
 		address:  address,
 		pastelID: pastelID,
+		mtx:      &sync.RWMutex{},
 	}
 }

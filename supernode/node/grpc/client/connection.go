@@ -18,6 +18,11 @@ func (conn *clientConn) RegisterArtwork() node.RegisterArtwork {
 	return newRegisterArtwork(conn)
 }
 
+// RegisterSense implements node.Connection.RegisterSense()
+func (conn *clientConn) RegisterSense() node.RegisterSense {
+	return newRegisterSense(conn)
+}
+
 // ProcessUserdata implements node.Connection.ProcessUserdata()
 func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)
