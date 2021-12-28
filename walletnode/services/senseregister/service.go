@@ -1,19 +1,29 @@
 package senseregister
 
 import (
+	"bytes"
 	"context"
+	"image"
+	"time"
+
+	_ "image/jpeg"
+	_ "image/png"
 
 	"github.com/pastelnetwork/gonode/common/errgroup"
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
+	"github.com/pastelnetwork/gonode/common/random"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/storage"
 	"github.com/pastelnetwork/gonode/pastel"
+	"github.com/pastelnetwork/gonode/walletnode/api/gen/sense"
 	"github.com/pastelnetwork/gonode/walletnode/node"
 )
 
 const (
-	logPrefix = "sense"
+	logPrefix       = "sense"
+	defaultImageTTL = time.Second * 3600 // 1 hour
 )
 
 // Service represents a service for the registration artwork.
@@ -25,6 +35,8 @@ type Service struct {
 	pastelClient pastel.Client
 	nodeClient   node.Client
 	db           storage.KeyValue
+
+	imageTTL time.Duration
 }
 
 // Run starts worker.
@@ -59,12 +71,98 @@ func (service *Service) Task(id string) *Task {
 	return nil
 }
 
-// AddTask runs a new task of the registration artwork and returns its taskID.
-func (service *Service) AddTask(ticket *Request) string {
+// StoreImage stores the image in the db and storage and return image_id
+func (service *Service) StoreImage(ctx context.Context, p *sense.UploadImagePayload) (res *sense.Image, err error) {
+	// Detect image format
+	imgReader := bytes.NewReader(p.Bytes)
+	_, format, err := image.Decode(imgReader)
+	if err != nil {
+		return nil, errors.Errorf("decode image: %w", err)
+	}
+	log.WithContext(ctx).Debugf("image format: %s", format)
+
+	// Store image content to storage
+	image := service.Storage.NewFile()
+	if err := image.SetFormatFromExtension(format); err != nil {
+		return nil, errors.Errorf("set image format: %w", err)
+	}
+
+	log.WithContext(ctx).Debugf("writing image: %s to storage", image.Name())
+
+	fl, err := image.Create()
+	if err != nil {
+		return nil, errors.Errorf("create image file: %w", err)
+	}
+	defer fl.Close()
+
+	if _, err := fl.Write(p.Bytes); err != nil {
+		return nil, errors.Errorf("write image file: %w", err)
+	}
+
+	// Generate unique image_id and write to db
+	id, _ := random.String(8, random.Base62Chars)
+	if err := service.db.Set(id, []byte(image.Name())); err != nil {
+		return nil, errors.Errorf("store image in db: %w", err)
+	}
+
+	// Set storage expire time
+	image.RemoveAfter(service.imageTTL)
+
+	res = &sense.Image{
+		ImageID:   id,
+		ExpiresIn: time.Now().Add(service.imageTTL).Format(time.RFC3339),
+	}
+
+	return res, nil
+}
+
+// GetImgData returns the image data from the storage
+func (service *Service) GetImgData(imageID string) ([]byte, error) {
+	// get image filename from storage based on image_id
+	filename, err := service.db.Get(imageID)
+	if err != nil {
+		return nil, errors.Errorf("get image filename from db: %w", err)
+	}
+
+	// get image data from storage
+	file, err := service.Storage.File(string(filename))
+	if err != nil {
+		return nil, errors.Errorf("get image fd: %v", err)
+	}
+
+	imgData, err := file.Bytes()
+	if err != nil {
+		return nil, errors.Errorf("read image data: %w", err)
+	}
+
+	return imgData, nil
+}
+
+// AddTask create ticket request and start a new task with the given payload
+func (service *Service) AddTask(p *sense.StartProcessingPayload) (string, error) {
+	ticket := &Request{
+		BurnTxID:              p.BurnTxid,
+		AppPastelID:           p.AppPastelID,
+		AppPastelIDPassphrase: p.AppPastelidPassphrase,
+	}
+
+	// get image filename from storage based on image_id
+	filename, err := service.db.Get(p.ImageID)
+	if err != nil {
+		return "", errors.Errorf("get image filename from storage: %w", err)
+	}
+
+	// get image data from storage
+	file, err := service.Storage.File(string(filename))
+	if err != nil {
+		return "", errors.Errorf("get image data: %v", err)
+	}
+	ticket.Image = file
+
 	task := NewTask(service, ticket)
 	service.Worker.AddTask(task)
 
-	return task.ID()
+	return task.ID(), nil
 }
 
 // VerifyImageSignature verifies the signature of the image
@@ -104,5 +202,6 @@ func NewService(
 		nodeClient:   nodeClient,
 		Worker:       task.NewWorker(),
 		Storage:      artwork.NewStorage(fileStorage),
+		imageTTL:     defaultImageTTL,
 	}
 }
