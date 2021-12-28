@@ -506,6 +506,24 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 	return task.registrationFee, err
 }
 
+// ValidateBurnTxID - will validate the pre-burnt transaction ID created by 3rd party
+func (task *Task) ValidateBurnTxID(ctx context.Context) error {
+	var err error
+
+	confirmationChn := task.waitConfirmation(ctx, task.nftRegMetadata.BurnTxID, int64(task.config.PreburntTxMinConfirmations), 15*time.Second)
+
+	log.WithContext(ctx).Debug("waiting for confimation")
+	if err = <-confirmationChn; err != nil {
+		task.UpdateStatus(StatusErrorInvalidBurnTxID)
+		log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
+		err = errors.Errorf("validate preburn transaction validation :%w", err)
+		return err
+	}
+	log.WithContext(ctx).Debug("confirmation done")
+
+	return nil
+}
+
 // ValidatePreBurnTransaction will get pre-burnt transaction fee txid, wait until it's confirmations meet expectation.
 func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
 	var err error
