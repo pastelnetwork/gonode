@@ -15,9 +15,6 @@ type Node struct {
 	// id is a 32 byte unique identifier
 	ID []byte `json:"id,omitempty"`
 
-	// PastelID node related to pastelid
-	PastelID string `json:"pastel_id,omitempty"`
-
 	// ip address of the node
 	IP string `json:"ip,omitempty"`
 

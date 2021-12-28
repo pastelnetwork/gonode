@@ -2,9 +2,9 @@ package storagechallenge
 
 import (
 	"fmt"
+	"math/rand"
 	"strconv"
 
-	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/mkmik/argsort"
 	"github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/common/log"
@@ -32,28 +32,37 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, _ int) error {
 	}
 
 	merkleroot := blkVerbose1.MerkleRoot
+	log.WithContext(ctx).Infof("merkleRoot generate storage challenges: %s", merkleroot)
+	fileHashComparisonString := utils.GetHashFromString(merkleroot + fmt.Sprint(rand.Int63()))
 
 	if len(symbolFileKeys) > 3 {
-		symbolFileKeys = s.repository.GetNClosestXORDistanceFileHashesToComparisonString(ctx, 3, merkleroot, symbolFileKeys)
+		symbolFileKeys = s.repository.GetNClosestXORDistanceFileHashesToComparisonString(ctx, 3, fileHashComparisonString, symbolFileKeys)
 	}
+	log.WithContext(ctx).Infof("closest 3 symbol file keys: %v", symbolFileKeys)
 
-	for idx, symbolFileHash := range symbolFileKeys {
-		challengeDataSize := 0
-		challengingMasternode := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, symbolFileHash)
+	for _, symbolFileHash := range symbolFileKeys {
+		b, err := s.repository.GetSymbolFileByKey(ctx, symbolFileHash)
+		if err != nil {
+			log.WithContext(ctx).WithError(err).Error("could not symbolfile by key")
+			continue
+		}
+		challengeDataSize := len(b)
+		comparisonStringForChallengingMasternodeSelection := utils.GetHashFromString(merkleroot + symbolFileHash + fmt.Sprint(challengeDataSize) + fmt.Sprint(rand.Int63()))
+		challengingMasternode := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForChallengingMasternodeSelection, s.nodeID)
 		if len(challengingMasternode) == 0 {
 			continue
 		}
-		challengingMasternodeID := challengingMasternode[0].PastelID
-		comparisonStringForMasternodeSelection := merkleroot + symbolFileHash + s.nodeID + utils.GetHashFromString(fmt.Sprint(idx))
-		respondingMasternodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForMasternodeSelection)
+		challengingMasternodeID := challengingMasternode[0]
+		comparisonStringForRespondingMasternodeSelection := utils.GetHashFromString(merkleroot+symbolFileHash+challengingMasternodeID+fmt.Sprint(challengeDataSize)) + fmt.Sprint(rand.Int63())
+		respondingMasternodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForRespondingMasternodeSelection, challengingMasternodeID)
 		challengeStatus := statusPending
 		messageType := storageChallengeIssuanceMessage
 		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, merkleroot, challengingMasternodeID)
-		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + challengeStatus + messageType + merkleroot
+		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0]) + symbolFileHash + challengeStatus + messageType + merkleroot
 		messageID := utils.GetHashFromString(messageIDInputData)
-		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0].ID) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(blockNumChallengeSent)
+		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0]) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(blockNumChallengeSent)
 		challengeID := utils.GetHashFromString(challengeIDInputData)
-		outgoinChallengeMessage := &ChallengeMessage{
+		outgoingChallengeMessage := &ChallengeMessage{
 			MessageID:                    messageID,
 			MessageType:                  messageType,
 			ChallengeStatus:              challengeStatus,
@@ -62,7 +71,7 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, _ int) error {
 			BlockNumChallengeVerified:    0,
 			MerklerootWhenChallengeSent:  merkleroot,
 			ChallengingMasternodeID:      challengingMasternodeID,
-			RespondingMasternodeID:       string(respondingMasternodes[0].ID),
+			RespondingMasternodeID:       string(respondingMasternodes[0]),
 			FileHashToChallenge:          symbolFileHash,
 			ChallengeSliceStartIndex:     uint64(challengeSliceStartIndex),
 			ChallengeSliceEndIndex:       uint64(challengeSliceEndIndex),
@@ -71,7 +80,8 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, _ int) error {
 			ChallengeID:                  challengeID,
 		}
 
-		s.sendprocessStorageChallenge(ctx, outgoinChallengeMessage)
+		// s.sendStatictis(ctx, outgoingChallengeMessage, "sent")
+		s.sendprocessStorageChallenge(ctx, outgoingChallengeMessage)
 	}
 
 	return nil
@@ -80,7 +90,7 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, _ int) error {
 func (s *service) sendprocessStorageChallenge(ctx context.Context, challengeMessage *ChallengeMessage) error {
 	masternodes, err := s.pclient.MasterNodesExtra(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "sendprocessStorageChallenge").Warn("could not get masternode info: ", err.Error())
+		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeID).WithField("method", "sendprocessStorageChallenge").WithError(err).Warn("could not get masternode extra: ", err.Error())
 		return err
 	}
 
@@ -93,12 +103,12 @@ func (s *service) sendprocessStorageChallenge(ctx context.Context, challengeMess
 	var ok bool
 	if mn, ok = mapMasternodes[challengeMessage.ChallengingMasternodeID]; !ok {
 		err = fmt.Errorf("cannot get masternode info of masternode id %v", challengeMessage.ChallengingMasternodeID)
-		log.WithContext(ctx).WithField("method", "sendprocessStorageChallenge").Warn(err.Error())
+		log.WithContext(ctx).WithField("challengeID", challengeMessage.ChallengeID).WithField("method", "sendprocessStorageChallenge").Warn(err.Error())
 		return err
 	}
-	processingMasternodeClientPID := actor.NewPID(mn.ExtAddress, "storage-challenge")
+	processingMasternodeAddr := mn.ExtAddress
 
-	return s.actor.Send(ctx, s.domainActorID, newSendProcessStorageChallengeMsg(ctx, processingMasternodeClientPID, challengeMessage))
+	return s.actor.Send(ctx, s.domainActorID, newSendProcessStorageChallengeMsg(ctx, processingMasternodeAddr, challengeMessage))
 }
 
 func getStorageChallengeSliceIndices(totalDataLengthInBytes uint64, fileHashString string, blockHashString string, challengingMasternodeID string) (int, int) {

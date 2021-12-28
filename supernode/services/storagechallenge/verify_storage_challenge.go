@@ -9,14 +9,14 @@ import (
 )
 
 func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallengeMessage *ChallengeMessage) error {
-	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug(incomingChallengeMessage.MessageType)
+	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(incomingChallengeMessage.MessageType)
 	if err := s.validateVerifyingStorageChallengeIncommingData(incomingChallengeMessage); err != nil {
 		return err
 	}
 
 	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge)
 	if err != nil {
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Error("could not read file data in to memory", "file.ReadFileIntoMemory", err.Error())
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory", "file.ReadFileIntoMemory", err.Error())
 		return err
 	}
 
@@ -24,7 +24,7 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	messageType := storageChallengeVerificationMessage
 	blockNumChallengeVerified, err := s.pclient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get current block count")
+		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not get current block count")
 		return err
 	}
 
@@ -32,13 +32,16 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	var challengeStatus string
 	if (incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash) && (blocksVerifyStorageChallengeInNanoseconds <= s.storageChallengeExpiredBlocks) {
 		challengeStatus = statusSucceeded
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug(fmt.Sprintf("masternode %s correctly responded in %d milliseconds to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, blocksVerifyStorageChallengeInNanoseconds, incomingChallengeMessage.FileHashToChallenge))
+		// s.sendStatictis(ctx, incomingChallengeMessage, "succeeded")
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s correctly responded in %d milliseconds to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, blocksVerifyStorageChallengeInNanoseconds, incomingChallengeMessage.FileHashToChallenge))
 	} else if incomingChallengeMessage.ChallengeResponseHash == challengeCorrectHash {
 		challengeStatus = statusFailedTimeout
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug(fmt.Sprintf("masternode %s  correctly responded in %d milliseconds to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingChallengeMessage.RespondingMasternodeID, blocksVerifyStorageChallengeInNanoseconds, incomingChallengeMessage.FileHashToChallenge))
+		// s.sendStatictis(ctx, incomingChallengeMessage, "timeout")
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s  correctly responded in %d milliseconds to a storage challenge for file %s, but was too slow so failed the challenge anyway!", incomingChallengeMessage.RespondingMasternodeID, blocksVerifyStorageChallengeInNanoseconds, incomingChallengeMessage.FileHashToChallenge))
 	} else {
 		challengeStatus = statusFailedIncorrectResponse
-		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug(fmt.Sprintf("masternode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, incomingChallengeMessage.FileHashToChallenge))
+		// s.sendStatictis(ctx, incomingChallengeMessage, "failed")
+		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s failed by incorrectly responding to a storage challenge for file %s", incomingChallengeMessage.RespondingMasternodeID, incomingChallengeMessage.FileHashToChallenge))
 	}
 
 	messageIDInputData := incomingChallengeMessage.ChallengingMasternodeID + incomingChallengeMessage.RespondingMasternodeID + incomingChallengeMessage.FileHashToChallenge + challengeStatus + messageType + incomingChallengeMessage.MerklerootWhenChallengeSent
@@ -63,7 +66,7 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 	}
 
 	blocksToRespondToStorageChallengeInNanoseconds := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
-	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").Debug("masternode " + outgoingChallengeMessage.RespondingMasternodeID + " responded to storage challenge for file hash " + outgoingChallengeMessage.FileHashToChallenge + " in " + fmt.Sprint(blocksToRespondToStorageChallengeInNanoseconds) + " nano seconds!")
+	log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug("masternode " + outgoingChallengeMessage.RespondingMasternodeID + " responded to storage challenge for file hash " + outgoingChallengeMessage.FileHashToChallenge + " in " + fmt.Sprint(blocksToRespondToStorageChallengeInNanoseconds) + " nano seconds!")
 
 	return nil
 }

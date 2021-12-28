@@ -5,7 +5,6 @@ import (
 
 	"github.com/pastelnetwork/gonode/common/utils"
 	"github.com/pastelnetwork/gonode/p2p"
-	"github.com/pastelnetwork/gonode/p2p/kademlia"
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
@@ -19,9 +18,9 @@ type repository interface {
 	// RemoveSymbolFileByKey func
 	RemoveSymbolFileByKey(ctx context.Context, key string) error
 	// GetNClosestXORDistanceMasternodesToComparisionString func
-	GetNClosestXORDistanceMasternodesToComparisionString(ctx context.Context, n int, comparisonString string) []*kademlia.Node
+	GetNClosestXORDistanceMasternodesToComparisionString(ctx context.Context, n int, comparisonString string, ignores ...string) []string
 	// GetNClosestXORDistanceFileHashesToComparisonString func
-	GetNClosestXORDistanceFileHashesToComparisonString(ctx context.Context, n int, comparisonString string, symbolFileKeys []string) []string
+	GetNClosestXORDistanceFileHashesToComparisonString(ctx context.Context, n int, comparisonString string, symbolFileKeys []string, ignores ...string) []string
 }
 
 func newRepository(p2p p2p.Client, pClient pastel.Client) repository {
@@ -47,6 +46,14 @@ func (r *repo) ListKeys(ctx context.Context) ([]string, error) {
 			keys = append(keys, string(key))
 		}
 	}
+	// mock integration test, this should be removed after testing
+	// resp, err := httpClient.Get("http://helper:8088/store/keys")
+	// if err != nil {
+	// 	return keys, err
+	// }
+	// defer resp.Body.Close()
+	// return keys, json.NewDecoder(resp.Body).Decode(&keys)
+
 	return keys, nil
 }
 
@@ -62,10 +69,10 @@ func (r *repo) RemoveSymbolFileByKey(ctx context.Context, key string) error {
 	return r.p2p.Delete(ctx, key)
 }
 
-func (r *repo) GetNClosestXORDistanceMasternodesToComparisionString(ctx context.Context, n int, comparisonString string) []*kademlia.Node {
-	return r.p2p.NClosestNodes(ctx, n, comparisonString)
+func (r *repo) GetNClosestXORDistanceMasternodesToComparisionString(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
+	return r.p2p.NClosestNodes(ctx, n, comparisonString, ignores...)
 }
 
-func (r *repo) GetNClosestXORDistanceFileHashesToComparisonString(_ context.Context, n int, comparisonString string, symbolFileKeys []string) []string {
-	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, symbolFileKeys)
+func (r *repo) GetNClosestXORDistanceFileHashesToComparisonString(_ context.Context, n int, comparisonString string, symbolFileKeys []string, ignores ...string) []string {
+	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, symbolFileKeys, ignores...)
 }

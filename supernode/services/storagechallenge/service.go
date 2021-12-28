@@ -33,6 +33,8 @@ type StorageChallenge interface {
 	ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error
 	// VerifyStorageChallenge func
 	VerifyStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error
+	// Run service
+	Run(ctx baseCtx.Context) error
 }
 
 // NewService retuns new domain service instance with actor model
@@ -72,7 +74,7 @@ func (s *service) checkNextBlockAvailable(ctx baseCtx.Context) bool {
 
 const defaultTimerBlockCheckDuration = 30 * time.Second
 
-func (s *service) Run(ctx baseCtx.Context) {
+func (s *service) Run(ctx baseCtx.Context) error {
 	ticker := time.NewTicker(defaultTimerBlockCheckDuration)
 	defer ticker.Stop()
 
@@ -88,7 +90,7 @@ func (s *service) Run(ctx baseCtx.Context) {
 				}
 			}
 		case <-ctx.Done():
-			return
+			return nil
 		}
 	}
 }

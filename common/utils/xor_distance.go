@@ -41,12 +41,18 @@ func ComputeXorDistanceBetweenTwoStrings(string1 string, string2 string) uint64 
 }
 
 // GetNClosestXORDistanceStringToAGivenComparisonString func
-func GetNClosestXORDistanceStringToAGivenComparisonString(n int, comparisonString string, sliceOfComputingXORDistance []string) []string {
-	sliceOfXORDistance := make([]uint64, len(sliceOfComputingXORDistance))
+func GetNClosestXORDistanceStringToAGivenComparisonString(n int, comparisonString string, sliceOfComputingXORDistance []string, ignores ...string) []string {
+	sliceOfXORDistance := make([]uint64, 0)
 	XORDistanceToComputingStringMap := make(map[uint64]string)
-	for idx, currentComputing := range sliceOfComputingXORDistance {
+	for _, currentComputing := range sliceOfComputingXORDistance {
 		currentXORDistance := ComputeXorDistanceBetweenTwoStrings(currentComputing, comparisonString)
-		sliceOfXORDistance[idx] = currentXORDistance
+		for _, ignore := range ignores {
+			if ignore == currentComputing {
+				currentXORDistance = ^(uint64(0))
+				break
+			}
+		}
+		sliceOfXORDistance = append(sliceOfXORDistance, currentXORDistance)
 		XORDistanceToComputingStringMap[currentXORDistance] = currentComputing
 	}
 	sort.Slice(sliceOfXORDistance, func(i, j int) bool { return sliceOfXORDistance[i] < sliceOfXORDistance[j] })

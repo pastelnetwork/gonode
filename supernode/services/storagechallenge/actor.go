@@ -7,37 +7,60 @@ import (
 	"github.com/pastelnetwork/gonode/messaging"
 	dto "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/pastelnetwork/gonode/supernode/node"
+	"google.golang.org/grpc/metadata"
 )
 
 type sendVerifyStorageChallengeMsg struct {
 	*messaging.CommonProtoMsg
-	Context                       context.Context
-	VerifierMasternodesClientPIDs []*actor.PID
+	Context                 context.Context
+	VerifierMasternodesAddr []string
 	*ChallengeMessage
 }
 
-func newSendVerifyStorageChallengeMsg(ctx context.Context, verifierMasternodesClientPIDs []*actor.PID, challengeMsg *ChallengeMessage) *sendVerifyStorageChallengeMsg {
+func (s *sendVerifyStorageChallengeMsg) getAppContext() context.Context {
+	if s.Context == nil {
+		return context.Background()
+	}
+
+	if md, ok := metadata.FromIncomingContext(s.Context); ok {
+		return context.FromContext(metadata.NewOutgoingContext(context.Background(), md))
+	}
+	return context.Background()
+}
+
+func newSendVerifyStorageChallengeMsg(ctx context.Context, verifierMasternodesAddr []string, challengeMsg *ChallengeMessage) *sendVerifyStorageChallengeMsg {
 	return &sendVerifyStorageChallengeMsg{
-		CommonProtoMsg:                &messaging.CommonProtoMsg{},
-		Context:                       ctx,
-		VerifierMasternodesClientPIDs: verifierMasternodesClientPIDs,
-		ChallengeMessage:              challengeMsg,
+		CommonProtoMsg:          &messaging.CommonProtoMsg{},
+		Context:                 ctx,
+		VerifierMasternodesAddr: verifierMasternodesAddr,
+		ChallengeMessage:        challengeMsg,
 	}
 }
 
 type sendProcessStorageChallengeMsg struct {
 	*messaging.CommonProtoMsg
-	Context                       context.Context
-	ProcessingMasternodeClientPID *actor.PID
+	Context                  context.Context
+	ProcessingMasternodeAddr string
 	*ChallengeMessage
 }
 
-func newSendProcessStorageChallengeMsg(ctx context.Context, processingMasternodeClientPID *actor.PID, challengeMsg *ChallengeMessage) *sendProcessStorageChallengeMsg {
+func (s *sendProcessStorageChallengeMsg) getAppContext() context.Context {
+	if s.Context == nil {
+		return context.Background()
+	}
+
+	if md, ok := metadata.FromIncomingContext(s.Context); ok {
+		return context.FromContext(metadata.NewOutgoingContext(context.Background(), md))
+	}
+	return context.Background()
+}
+
+func newSendProcessStorageChallengeMsg(ctx context.Context, processingMasternodeAddr string, challengeMsg *ChallengeMessage) *sendProcessStorageChallengeMsg {
 	return &sendProcessStorageChallengeMsg{
-		CommonProtoMsg:                &messaging.CommonProtoMsg{},
-		Context:                       ctx,
-		ProcessingMasternodeClientPID: processingMasternodeClientPID,
-		ChallengeMessage:              challengeMsg,
+		CommonProtoMsg:           &messaging.CommonProtoMsg{},
+		Context:                  ctx,
+		ProcessingMasternodeAddr: processingMasternodeAddr,
+		ChallengeMessage:         challengeMsg,
 	}
 }
 
@@ -64,8 +87,9 @@ func newDomainActor(conn node.Client) actor.Actor {
 
 // OnSendVerifyStorageChallengeMessage handle event sending verity storage challenge message
 func (d *domainActor) OnSendVerifyStorageChallengeMessage(msg *sendVerifyStorageChallengeMsg) {
-	for _, verifyingMasternodePID := range msg.VerifierMasternodesClientPIDs {
-		log.Debug(verifyingMasternodePID.String())
+	appCtx := msg.getAppContext()
+	for _, verifyingMasternodeAddr := range msg.VerifierMasternodesAddr {
+		log.Debug(verifyingMasternodeAddr)
 		storageChallengeReq := &dto.VerifyStorageChallengeRequest{
 			Data: &dto.StorageChallengeData{
 				MessageId:                    msg.MessageID,
@@ -88,17 +112,20 @@ func (d *domainActor) OnSendVerifyStorageChallengeMessage(msg *sendVerifyStorage
 			},
 		}
 
-		conn, err := d.conn.Connect(msg.Context, verifyingMasternodePID.GetAddress())
+		conn, err := d.conn.Connect(msg.getAppContext(), verifyingMasternodeAddr)
 		if err != nil {
-			return
+			log.WithContext(appCtx).WithError(err).Errorf("could not connect to verifying masternode %s", verifyingMasternodeAddr)
+			continue
 		}
-		conn.StorageChallenge().VerifyStorageChallenge(msg.Context, storageChallengeReq)
+		if _, err = conn.StorageChallenge().VerifyStorageChallenge(msg.getAppContext(), storageChallengeReq); err != nil {
+			log.WithContext(appCtx).WithError(err).Errorf("could send verify storage challenge request to verifying masternode %s", verifyingMasternodeAddr)
+		}
 	}
 }
 
 // OnSendProcessStorageChallengeMessage handle event sending processing stotage challenge message
 func (d *domainActor) OnSendProcessStorageChallengeMessage(msg *sendProcessStorageChallengeMsg) {
-	log.Debug(msg.ProcessingMasternodeClientPID.String())
+	log.Debug(msg.ProcessingMasternodeAddr)
 	storageChallengeReq := &dto.ProcessStorageChallengeRequest{
 		Data: &dto.StorageChallengeData{
 			MessageId:                    msg.MessageID,
@@ -120,9 +147,13 @@ func (d *domainActor) OnSendProcessStorageChallengeMessage(msg *sendProcessStora
 			ChallengeId:               msg.ChallengeID,
 		},
 	}
-	conn, err := d.conn.Connect(msg.Context, msg.ProcessingMasternodeClientPID.GetAddress())
+	appCtx := msg.getAppContext()
+	conn, err := d.conn.Connect(appCtx, msg.ProcessingMasternodeAddr)
 	if err != nil {
+		log.WithContext(appCtx).WithError(err).Errorf("could not connect to challenging masternode %s", msg.ProcessingMasternodeAddr)
 		return
 	}
-	conn.StorageChallenge().ProcessStorageChallenge(msg.Context, storageChallengeReq)
+	if _, err = conn.StorageChallenge().ProcessStorageChallenge(appCtx, storageChallengeReq); err != nil {
+		log.WithContext(appCtx).WithError(err).Errorf("could send process storage challenge request to challenging masternode %s", msg.ProcessingMasternodeAddr)
+	}
 }

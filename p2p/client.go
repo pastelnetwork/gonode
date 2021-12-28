@@ -4,8 +4,6 @@ package p2p
 
 import (
 	"context"
-
-	"github.com/pastelnetwork/gonode/p2p/kademlia"
 )
 
 // Client exposes the interfaces for p2p service
@@ -24,5 +22,5 @@ type Client interface {
 	Stats(ctx context.Context) (map[string]interface{}, error)
 
 	// NClosestNodes return n closest masternode to a given string
-	NClosestNodes(ctx context.Context, n int, key string) []*kademlia.Node
+	NClosestNodes(ctx context.Context, n int, key string, ignores ...string) []string
 }

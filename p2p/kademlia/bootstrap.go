@@ -59,9 +59,9 @@ func (s *DHT) parseNode(extP2P string, selfAddr, extKey string) (*Node, error) {
 	}
 
 	return &Node{
-		IP:       ip,
-		Port:     port,
-		PastelID: extKey,
+		IP:   ip,
+		Port: port,
+		ID:   []byte(extKey),
 	}, nil
 }
 

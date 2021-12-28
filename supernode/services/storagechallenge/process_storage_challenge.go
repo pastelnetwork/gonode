@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/AsynkronIT/protoactor-go/actor"
 	"github.com/pastelnetwork/gonode/common/context"
 	"github.com/pastelnetwork/gonode/common/log"
 	"github.com/pastelnetwork/gonode/common/utils"
@@ -13,14 +12,14 @@ import (
 )
 
 func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error {
-	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug("Start processing storage challenge")
+	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug("Start processing storage challenge")
 	if err := s.validateProcessingStorageChallengeIncommingData(incomingChallengeMessage); err != nil {
 		return err
 	}
 
 	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not read file data in to memory")
+		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory")
 		return err
 	}
 	challengeResponseHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
@@ -30,7 +29,7 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	messageID := utils.GetHashFromString(messageIDInputData)
 	blockNumChallengeRespondedTo, err := s.pclient.GetBlockCount(ctx)
 	if err != nil {
-		log.WithContext(ctx).WithError(err).Error("could not get current block count")
+		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not get current block count")
 		return err
 	}
 
@@ -53,8 +52,8 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	}
 
 	blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
-	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, blocksToRespondToStorageChallenge))
-
+	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, blocksToRespondToStorageChallenge))
+	// s.sendStatictis(ctx, outgoingChallengeMessage, "respond")
 	return s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage)
 }
 
@@ -86,13 +85,13 @@ func (s *service) sendVerifyStorageChallenge(ctx context.Context, challengeMessa
 		mapMasternodes[mn.ExtKey] = mn
 	}
 
-	verifierMasternodesClientPIDs := []*actor.PID{}
+	verifierMasternodesAddr := []string{}
 	var mn pastel.MasterNode
 	var ok bool
 	if mn, ok = mapMasternodes[challengeMessage.RespondingMasternodeID]; !ok {
 		return fmt.Errorf("cannot get masternode info of masternode id %v", challengeMessage.RespondingMasternodeID)
 	}
-	verifierMasternodesClientPIDs = append(verifierMasternodesClientPIDs, actor.NewPID(mn.ExtAddress, "storage-challenge"))
+	verifierMasternodesAddr = append(verifierMasternodesAddr, mn.ExtAddress)
 
-	return s.actor.Send(ctx, s.domainActorID, newSendVerifyStorageChallengeMsg(ctx, verifierMasternodesClientPIDs, challengeMessage))
+	return s.actor.Send(ctx, s.domainActorID, newSendVerifyStorageChallengeMsg(ctx, verifierMasternodesAddr, challengeMessage))
 }

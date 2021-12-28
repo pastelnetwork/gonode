@@ -109,13 +109,10 @@ func (a *applicationActor) Receive(ctx actor.Context) {
 
 	switch msg := ctx.Message().(type) {
 	case *generateStorageChallenge:
-		logger.Debugf("receive %#v action", msg)
 		err = a.domainService.GenerateStorageChallenges(appCtx, int(msg.ChallengesPerMasternodePerBlock))
 	case *processStorageChallenge:
-		logger.Debugf("receive %#v action", msg)
 		err = a.domainService.ProcessStorageChallenge(appCtx, msg.ChallengeMessage)
 	case *verifyStorageChallenge:
-		logger.Debugf("receive %#v action", msg)
 		// calling domain service to process bussiness logics
 		err = a.domainService.VerifyStorageChallenge(appCtx, msg.ChallengeMessage)
 	default:

@@ -54,9 +54,9 @@ type HashTable struct {
 func NewHashTable(options *Options) (*HashTable, error) {
 	ht := &HashTable{
 		self: &Node{
-			IP:       options.IP,
-			Port:     options.Port,
-			PastelID: options.PastelID,
+			IP:   options.IP,
+			Port: options.Port,
+			ID:   []byte(options.ID),
 		},
 		refreshers: make([]time.Time, B),
 		routeTable: make([][]*Node, B),

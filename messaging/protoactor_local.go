@@ -13,11 +13,7 @@ type localActor struct {
 
 // Send func
 func (r *localActor) Send(ctx context.Context, pid *actor.PID, message proto.Message) error {
-	if actorContext := ctx.GetActorContext(); actorContext != nil {
-		actorContext.Send(pid, message)
-	} else {
-		r.context.Send(pid, message)
-	}
+	r.context.Send(pid, message)
 	return nil
 }
 

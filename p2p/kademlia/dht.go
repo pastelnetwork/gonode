@@ -273,8 +273,8 @@ func (s *DHT) Stats(ctx context.Context) (map[string]interface{}, error) {
 }
 
 // NClosestNodes get n closets node to a key string
-func (s *DHT) NClosestNodes(_ context.Context, n int, key string) []*Node {
-	nodeList := s.ht.closestContacts(n, base58.Decode(key), []*Node{})
+func (s *DHT) NClosestNodes(_ context.Context, n int, key string, ignores ...*Node) []*Node {
+	nodeList := s.ht.closestContacts(n, base58.Decode(key), ignores)
 	return nodeList.Nodes
 }
 
@@ -282,10 +282,9 @@ func (s *DHT) NClosestNodes(_ context.Context, n int, key string) []*Node {
 func (s *DHT) newMessage(messageType int, receiver *Node, data interface{}) *Message {
 	externalIP, _ := s.getExternalIP()
 	sender := &Node{
-		IP:       externalIP,
-		ID:       s.ht.self.ID,
-		Port:     s.ht.self.Port,
-		PastelID: s.ht.self.PastelID,
+		IP:   externalIP,
+		ID:   s.ht.self.ID,
+		Port: s.ht.self.Port,
 	}
 	return &Message{
 		Sender:      sender,
