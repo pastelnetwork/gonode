@@ -17,10 +17,14 @@ type repository interface {
 	StoreSymbolFile(ctx context.Context, data []byte) (key string, err error)
 	// RemoveSymbolFileByKey func
 	RemoveSymbolFileByKey(ctx context.Context, key string) error
-	// GetNClosestXORDistanceMasternodesToComparisionString func
-	GetNClosestXORDistanceMasternodesToComparisionString(ctx context.Context, n int, comparisonString string, ignores ...string) []string
-	// GetNClosestXORDistanceToComparisonString func
-	GetNClosestXORDistanceToComparisonString(ctx context.Context, n int, comparisonString string, listToCompare []string, ignores ...string) []string
+	// GetListOfMasternode func
+	GetListOfMasternode(ctx context.Context) ([]string, error)
+	// GetNClosestMasternodeIDsToComparisionString func
+	GetNClosestMasternodeIDsToComparisionString(ctx context.Context, n int, comparisonString string, listMasternodes []string, ignores ...string) []string
+	// GetNClosestMasternodesToAGivenFileUsingKademlia func
+	GetNClosestMasternodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores ...string) []string
+	// GetNClosestFileHashesToAGivenComparisonString func
+	GetNClosestFileHashesToAGivenComparisonString(ctx context.Context, n int, comparisonString string, listFileHashes []string, ignores ...string) []string
 }
 
 func newRepository(p2p p2p.Client, pClient pastel.Client) repository {
@@ -62,10 +66,28 @@ func (r *repo) RemoveSymbolFileByKey(ctx context.Context, key string) error {
 	return r.p2p.Delete(ctx, key)
 }
 
-func (r *repo) GetNClosestXORDistanceMasternodesToComparisionString(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
+func (r *repo) GetListOfMasternode(ctx context.Context) ([]string, error) {
+	var ret = make([]string, 0)
+	listMN, err := r.pClient.MasterNodesList(ctx)
+	if err != nil {
+		return ret, err
+	}
+
+	for _, node := range listMN {
+		ret = append(ret, node.ExtKey)
+	}
+
+	return ret, nil
+}
+
+func (r *repo) GetNClosestMasternodeIDsToComparisionString(_ context.Context, n int, comparisonString string, listMasternodes []string, ignores ...string) []string {
+	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listMasternodes, ignores...)
+}
+
+func (r *repo) GetNClosestMasternodesToAGivenFileUsingKademlia(ctx context.Context, n int, comparisonString string, ignores ...string) []string {
 	return r.p2p.NClosestNodes(ctx, n, comparisonString, ignores...)
 }
 
-func (r *repo) GetNClosestXORDistanceToComparisonString(_ context.Context, n int, comparisonString string, listToCompare []string, ignores ...string) []string {
-	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listToCompare, ignores...)
+func (r *repo) GetNClosestFileHashesToAGivenComparisonString(_ context.Context, n int, comparisonString string, listFileHashes []string, ignores ...string) []string {
+	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listFileHashes, ignores...)
 }

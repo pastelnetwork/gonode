@@ -13,10 +13,14 @@ import (
 
 func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallengeMessage *ChallengeMessage) error {
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug("Start processing storage challenge")
+
+	// incomming challenge message validation
 	if err := s.validateProcessingStorageChallengeIncommingData(incomingChallengeMessage); err != nil {
 		return err
 	}
 
+	/* ----------------------------------------------- */
+	/* ----- Main logic implementation goes here ----- */
 	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge, true)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory")
@@ -53,7 +57,8 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 
 	blocksToRespondToStorageChallenge := outgoingChallengeMessage.BlockNumChallengeRespondedTo - incomingChallengeMessage.BlockNumChallengeSent
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, blocksToRespondToStorageChallenge))
-	// s.sendStatictis(ctx, outgoingChallengeMessage, "respond")
+
+	// send to verifying masternode to validate challenge response hash
 	return s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage)
 }
 
