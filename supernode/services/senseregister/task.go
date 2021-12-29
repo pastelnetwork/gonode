@@ -671,7 +671,7 @@ func (task *Task) registerAction(ctx context.Context) (string, error) {
 			},
 		},
 		Mn1PastelID: task.config.PastelID,
-		Pasphase:    task.config.PassPhrase,
+		Passphrase:  task.config.PassPhrase,
 		Fee:         task.registrationFee,
 	}
 
