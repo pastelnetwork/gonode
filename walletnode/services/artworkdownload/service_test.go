@@ -10,7 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	"github.com/pastelnetwork/gonode/walletnode/node"
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_download"
 	"github.com/stretchr/testify/assert"
 )
 
