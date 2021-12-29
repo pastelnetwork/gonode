@@ -480,7 +480,7 @@ func (client *client) ActivateActionTicket(ctx context.Context, request Activate
 
 	// command : tickets activate action "txid-of-action-reg-ticket" called_at_height-from_action-reg-ticket fee "PastelID-of-the-caller" "passphrase"
 	if err := client.callFor(ctx, &txID, "tickets", params...); err != nil {
-		return "", errors.Errorf("failed to call activate NFT ticket: %w", err)
+		return "", errors.Errorf("failed to call activate action ticket: %w", err)
 	}
 	return txID.TxID, nil
 }
