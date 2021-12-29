@@ -188,7 +188,7 @@ type RegisterActionRequest struct {
 	Fee         int64
 }
 
-// ActivateActionRequest
+// ActivateActionRequest - represents request to activate an action ticket
 type ActivateActionRequest struct {
 	RegTxID    string
 	BlockNum   int
