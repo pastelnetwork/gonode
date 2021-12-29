@@ -32,8 +32,8 @@ func main() {
 		panic("do ImageRarenessScore() error" + err.Error())
 	}
 
-	dataJSON, _ := json.Marshal(res)
+	dataJson, _ := json.Marshal(res)
 
-	fmt.Println(string(dataJSON))
+	fmt.Println(string(dataJson))
 
 }

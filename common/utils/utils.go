@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/hex"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -78,7 +77,7 @@ func GetExternalIPAddress() (externalIP string, err error) {
 func GetHashFromString(inputString string) string {
 	h := sha3.New256()
 	h.Write([]byte(inputString))
-	return hex.EncodeToString(h.Sum(nil))
+	return base64.StdEncoding.EncodeToString(h.Sum(nil))
 }
 
 // B64Encode base64 encodes

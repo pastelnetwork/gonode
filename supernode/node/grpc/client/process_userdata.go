@@ -38,7 +38,7 @@ func (service *processUserdata) Session(ctx context.Context, nodeID, sessID stri
 		return errors.Errorf("open Health stream: %w", err)
 	}
 
-	req := &pb.SessionRequest{
+	req := &pb.MDLSessionRequest{
 		NodeID: nodeID,
 	}
 	log.WithContext(ctx).WithField("req", req).Debug("Session request")

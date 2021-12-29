@@ -36,7 +36,7 @@ func (client *Client) ListenOnImageRarenessScore(returnEnc *pastel.DDAndFingerpr
 	return client
 }
 
-// AssertImageRarenessScoreCall assertion ImageRarenessScore call
+// AssertEncodeCall assertion ImageRarenessScore call
 func (client *Client) AssertImageRarenessScoreCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.DDServerClient.AssertCalled(client.t, ImageRarenessScoreMethod, arguments...)

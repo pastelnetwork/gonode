@@ -46,8 +46,6 @@ type DHT struct {
 type Options struct {
 	ID []byte
 
-	PastelID string
-
 	// The local IPv4 or IPv6 address
 	IP string
 

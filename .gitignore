@@ -2,5 +2,3 @@
 **/.DS_Store
 **/mocks/
 **/vendor/
-supernodes_storage_challenge_tests
-p2p/p2p_simple.go

@@ -1,8 +1,6 @@
 package kademlia
 
-import (
-	"sort"
-)
+import "sort"
 
 func (s *testSuite) initIDWithValues(v byte) []byte {
 	id := [20]byte{}

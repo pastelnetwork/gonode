@@ -9,18 +9,18 @@ import (
 )
 
 type repository interface {
-	// ListKeys func
-	ListKeys(ctx context.Context) ([]string, error)
+	// ListSymbolFileKeysFromNFTTicket func
+	ListSymbolFileKeysFromNFTTicket(ctx context.Context) ([]string, error)
 	// GetSymbolFileByKey func
-	GetSymbolFileByKey(ctx context.Context, key string) ([]byte, error)
+	GetSymbolFileByKey(ctx context.Context, key string, getFromLocalOnly bool) ([]byte, error)
 	// StoreSymbolFile func
 	StoreSymbolFile(ctx context.Context, data []byte) (key string, err error)
 	// RemoveSymbolFileByKey func
 	RemoveSymbolFileByKey(ctx context.Context, key string) error
 	// GetNClosestXORDistanceMasternodesToComparisionString func
 	GetNClosestXORDistanceMasternodesToComparisionString(ctx context.Context, n int, comparisonString string, ignores ...string) []string
-	// GetNClosestXORDistanceFileHashesToComparisonString func
-	GetNClosestXORDistanceFileHashesToComparisonString(ctx context.Context, n int, comparisonString string, symbolFileKeys []string, ignores ...string) []string
+	// GetNClosestXORDistanceToComparisonString func
+	GetNClosestXORDistanceToComparisonString(ctx context.Context, n int, comparisonString string, listToCompare []string, ignores ...string) []string
 }
 
 func newRepository(p2p p2p.Client, pClient pastel.Client) repository {
@@ -35,7 +35,7 @@ type repo struct {
 	pClient pastel.Client
 }
 
-func (r *repo) ListKeys(ctx context.Context) ([]string, error) {
+func (r *repo) ListSymbolFileKeysFromNFTTicket(ctx context.Context) ([]string, error) {
 	var keys = make([]string, 0)
 	regTickets, err := r.pClient.RegTickets(ctx)
 	if err != nil {
@@ -46,19 +46,12 @@ func (r *repo) ListKeys(ctx context.Context) ([]string, error) {
 			keys = append(keys, string(key))
 		}
 	}
-	// mock integration test, this should be removed after testing
-	// resp, err := httpClient.Get("http://helper:8088/store/keys")
-	// if err != nil {
-	// 	return keys, err
-	// }
-	// defer resp.Body.Close()
-	// return keys, json.NewDecoder(resp.Body).Decode(&keys)
 
 	return keys, nil
 }
 
-func (r *repo) GetSymbolFileByKey(ctx context.Context, key string) ([]byte, error) {
-	return r.p2p.Retrieve(ctx, key, true)
+func (r *repo) GetSymbolFileByKey(ctx context.Context, key string, getFromLocalOnly bool) ([]byte, error) {
+	return r.p2p.Retrieve(ctx, key, getFromLocalOnly)
 }
 
 func (r *repo) StoreSymbolFile(ctx context.Context, data []byte) (key string, err error) {
@@ -73,6 +66,6 @@ func (r *repo) GetNClosestXORDistanceMasternodesToComparisionString(ctx context.
 	return r.p2p.NClosestNodes(ctx, n, comparisonString, ignores...)
 }
 
-func (r *repo) GetNClosestXORDistanceFileHashesToComparisonString(_ context.Context, n int, comparisonString string, symbolFileKeys []string, ignores ...string) []string {
-	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, symbolFileKeys, ignores...)
+func (r *repo) GetNClosestXORDistanceToComparisonString(_ context.Context, n int, comparisonString string, listToCompare []string, ignores ...string) []string {
+	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, comparisonString, listToCompare, ignores...)
 }

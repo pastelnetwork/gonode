@@ -254,7 +254,6 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// Debug service
 	debugSerivce := debug.NewService(config.DebugService, p2p)
 
-	grpcHealthCheck := healthcheck.NewHealthCheck(statsMngr)
 	grpcStorageChallenge, closeLocalActor := grpcstoragechallenge.NewStorageChallenge(stService)
 	defer closeLocalActor()
 	// server
@@ -267,7 +266,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 		walletnode.NewDownloadArtwork(artworkDownload),
 		walletnode.NewProcessUserdata(userdataProcess, database),
 		supernode.NewProcessUserdata(userdataProcess, database),
-		grpcHealthCheck,
+		healthcheck.NewHealthCheck(statsMngr),
 		grpcStorageChallenge,
 	)
 

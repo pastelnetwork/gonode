@@ -14,13 +14,13 @@ func (s *service) VerifyStorageChallenge(ctx appcontext.Context, incomingChallen
 		return err
 	}
 
-	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge)
+	challengeFileData, err := s.repository.GetSymbolFileByKey(ctx, incomingChallengeMessage.FileHashToChallenge, true)
 	if err != nil {
 		log.WithContext(ctx).WithField("method", "VerifyStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Error("could not read file data in to memory", "file.ReadFileIntoMemory", err.Error())
 		return err
 	}
 
-	challengeCorrectHash := s.computeHashofFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
+	challengeCorrectHash := s.computeHashOfFileSlice(challengeFileData, int(incomingChallengeMessage.ChallengeSliceStartIndex), int(incomingChallengeMessage.ChallengeSliceEndIndex))
 	messageType := storageChallengeVerificationMessage
 	blockNumChallengeVerified, err := s.pclient.GetBlockCount(ctx)
 	if err != nil {

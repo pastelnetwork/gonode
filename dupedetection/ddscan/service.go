@@ -20,7 +20,6 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-// Service interface
 type Service interface {
 	// Run starts task
 	Run(ctx context.Context) error
@@ -403,7 +402,7 @@ func (s *service) runTask(ctx context.Context) error {
 	return nil
 }
 
-func (s *service) getRecordCount(_ context.Context) (int64, error) {
+func (s *service) getRecordCount(ctx context.Context) (int64, error) {
 	statement := getNumberOfFingerprintsStatement
 	rows, err := s.db.QueryStringStmt(statement)
 	if err != nil {
@@ -440,11 +439,11 @@ func (s *service) Stats(ctx context.Context) (map[string]interface{}, error) {
 	stats["last_insert_time"] = lastItem.DatetimeFingerprintAddedToDatabase
 
 	// Get total of records
-	recordCount, err := s.getRecordCount(ctx)
+	record_count, err := s.getRecordCount(ctx)
 	if err != nil {
 		return nil, errors.Errorf("getRecordCount: %w", err)
 	}
-	stats["record_count"] = recordCount
+	stats["record_count"] = record_count
 
 	return stats, nil
 }

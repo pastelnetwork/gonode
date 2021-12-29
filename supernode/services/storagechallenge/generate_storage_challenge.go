@@ -13,12 +13,14 @@ import (
 )
 
 func (s *service) GenerateStorageChallenges(ctx context.Context, _ int) error {
-	symbolFileKeys, err := s.repository.ListKeys(ctx)
+	// list all symbol keys from nft ticket
+	symbolFileKeys, err := s.repository.ListSymbolFileKeysFromNFTTicket(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get list symbol file keys")
 		return err
 	}
 
+	// collect current block number
 	blockNumChallengeSent, err := s.pclient.GetBlockCount(ctx)
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Error("could not get current block count")
@@ -31,36 +33,37 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, _ int) error {
 		return err
 	}
 
+	// get merkle root from current block verbose
 	merkleroot := blkVerbose1.MerkleRoot
 	log.WithContext(ctx).Infof("merkleRoot generate storage challenges: %s", merkleroot)
 	fileHashComparisonString := utils.GetHashFromString(merkleroot + fmt.Sprint(rand.Int63()))
 
+	// the default of number of symbol keys that challenger will generate the challenge for is 3
 	if len(symbolFileKeys) > 3 {
-		symbolFileKeys = s.repository.GetNClosestXORDistanceFileHashesToComparisonString(ctx, 3, fileHashComparisonString, symbolFileKeys)
+		symbolFileKeys = s.repository.GetNClosestXORDistanceToComparisonString(ctx, 3, fileHashComparisonString, symbolFileKeys)
 	}
 	log.WithContext(ctx).Infof("closest 3 symbol file keys: %v", symbolFileKeys)
 
-	for _, symbolFileHash := range symbolFileKeys {
-		b, err := s.repository.GetSymbolFileByKey(ctx, symbolFileHash)
+	for _, symbolFileKey := range symbolFileKeys {
+		b, err := s.repository.GetSymbolFileByKey(ctx, symbolFileKey, false)
 		if err != nil {
 			log.WithContext(ctx).WithError(err).Error("could not symbolfile by key")
 			continue
 		}
 		challengeDataSize := len(b)
-		comparisonStringForChallengingMasternodeSelection := utils.GetHashFromString(merkleroot + symbolFileHash + fmt.Sprint(challengeDataSize) + fmt.Sprint(rand.Int63()))
-		challengingMasternode := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForChallengingMasternodeSelection, s.nodeID)
-		if len(challengingMasternode) == 0 {
+		listMasternodesSavingSymbolFileHash := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 6, symbolFileKey, s.nodeID)
+		closestMasternodesToMerkleRoot := s.repository.GetNClosestXORDistanceToComparisonString(ctx, 2, utils.GetHashFromString(merkleroot), listMasternodesSavingSymbolFileHash)
+		if len(closestMasternodesToMerkleRoot) < 2 {
 			continue
 		}
-		challengingMasternodeID := challengingMasternode[0]
-		comparisonStringForRespondingMasternodeSelection := utils.GetHashFromString(merkleroot+symbolFileHash+challengingMasternodeID+fmt.Sprint(challengeDataSize)) + fmt.Sprint(rand.Int63())
-		respondingMasternodes := s.repository.GetNClosestXORDistanceMasternodesToComparisionString(ctx, 1, comparisonStringForRespondingMasternodeSelection, challengingMasternodeID)
+		challengingMasternodeID := closestMasternodesToMerkleRoot[0]
+		respondingMasternodeID := closestMasternodesToMerkleRoot[1]
 		challengeStatus := statusPending
 		messageType := storageChallengeIssuanceMessage
-		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileHash, merkleroot, challengingMasternodeID)
-		messageIDInputData := challengingMasternodeID + string(respondingMasternodes[0]) + symbolFileHash + challengeStatus + messageType + merkleroot
+		challengeSliceStartIndex, challengeSliceEndIndex := getStorageChallengeSliceIndices(uint64(challengeDataSize), symbolFileKey, merkleroot, challengingMasternodeID)
+		messageIDInputData := challengingMasternodeID + respondingMasternodeID + symbolFileKey + challengeStatus + messageType + merkleroot
 		messageID := utils.GetHashFromString(messageIDInputData)
-		challengeIDInputData := challengingMasternodeID + string(respondingMasternodes[0]) + symbolFileHash + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(blockNumChallengeSent)
+		challengeIDInputData := challengingMasternodeID + respondingMasternodeID + symbolFileKey + fmt.Sprint(challengeSliceStartIndex) + fmt.Sprint(challengeSliceEndIndex) + fmt.Sprint(blockNumChallengeSent)
 		challengeID := utils.GetHashFromString(challengeIDInputData)
 		outgoingChallengeMessage := &ChallengeMessage{
 			MessageID:                    messageID,
@@ -71,8 +74,8 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, _ int) error {
 			BlockNumChallengeVerified:    0,
 			MerklerootWhenChallengeSent:  merkleroot,
 			ChallengingMasternodeID:      challengingMasternodeID,
-			RespondingMasternodeID:       string(respondingMasternodes[0]),
-			FileHashToChallenge:          symbolFileHash,
+			RespondingMasternodeID:       respondingMasternodeID,
+			FileHashToChallenge:          symbolFileKey,
 			ChallengeSliceStartIndex:     uint64(challengeSliceStartIndex),
 			ChallengeSliceEndIndex:       uint64(challengeSliceEndIndex),
 			ChallengeSliceCorrectHash:    "",

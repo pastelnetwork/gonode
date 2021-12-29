@@ -33,7 +33,6 @@ func (client *client) Connect(ctx context.Context, address string) (node.Connect
 	altsTCClient := credentials.NewClientCreds(client.secClient, client.secInfo)
 	grpcConn, err := grpc.DialContext(ctx, address,
 		grpc.WithTransportCredentials(altsTCClient),
-		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)
 	if err != nil {

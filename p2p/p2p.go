@@ -182,7 +182,6 @@ func (s *p2p) configure(ctx context.Context) error {
 	// new a kademlia distributed hash table
 	dht, err := kademlia.NewDHT(store, s.pastelClient, s.secInfo, &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
-		PastelID:       s.secInfo.PastelID,
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
 		ID:             []byte(s.config.ID),

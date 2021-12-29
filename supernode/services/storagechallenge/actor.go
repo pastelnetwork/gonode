@@ -112,11 +112,14 @@ func (d *domainActor) OnSendVerifyStorageChallengeMessage(msg *sendVerifyStorage
 			},
 		}
 
+		// connect to verifying masternode by gRPC
 		conn, err := d.conn.Connect(msg.getAppContext(), verifyingMasternodeAddr)
 		if err != nil {
 			log.WithContext(appCtx).WithError(err).Errorf("could not connect to verifying masternode %s", verifyingMasternodeAddr)
 			continue
 		}
+
+		// send gRPC response hash to verifying masternode
 		if _, err = conn.StorageChallenge().VerifyStorageChallenge(msg.getAppContext(), storageChallengeReq); err != nil {
 			log.WithContext(appCtx).WithError(err).Errorf("could send verify storage challenge request to verifying masternode %s", verifyingMasternodeAddr)
 		}
@@ -148,11 +151,13 @@ func (d *domainActor) OnSendProcessStorageChallengeMessage(msg *sendProcessStora
 		},
 	}
 	appCtx := msg.getAppContext()
+	// connect to processing masternode by gRPC
 	conn, err := d.conn.Connect(appCtx, msg.ProcessingMasternodeAddr)
 	if err != nil {
 		log.WithContext(appCtx).WithError(err).Errorf("could not connect to challenging masternode %s", msg.ProcessingMasternodeAddr)
 		return
 	}
+	// send gRPC process challenge request
 	if _, err = conn.StorageChallenge().ProcessStorageChallenge(appCtx, storageChallengeReq); err != nil {
 		log.WithContext(appCtx).WithError(err).Errorf("could send process storage challenge request to challenging masternode %s", msg.ProcessingMasternodeAddr)
 	}

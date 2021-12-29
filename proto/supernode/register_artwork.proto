@@ -5,22 +5,22 @@ option go_package = "github.com/pastelnetwork/gonode/proto/supernode";
 package supernode;
 
 service RegisterArtwork {
-  // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
-  // The stream is used by the parties to inform each other about the cancellation of the task.
-  rpc Session(stream SessionRequest) returns (stream SessionReply);
+    // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
+    // The stream is used by the parties to inform each other about the cancellation of the task.
+    rpc Session(stream SessionRequest) returns (stream SessionReply);
 
-  // SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
-  rpc SendSignedDDAndFingerprints(SendSignedDDAndFingerprintsRequest) returns (SendSignedDDAndFingerprintsReply);
+    // SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
+    rpc SendSignedDDAndFingerprints(SendSignedDDAndFingerprintsRequest) returns (SendSignedDDAndFingerprintsReply);
 
-  // SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
-  rpc SendArtTicketSignature(SendArtTicketSignatureRequest) returns (SendArtTicketSignatureReply);
+    // SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
+    rpc SendArtTicketSignature(SendArtTicketSignatureRequest) returns (SendArtTicketSignatureReply);
 }
 
 message SessionRequest {
-  string nodeID = 1;
+    string nodeID = 1;
 }
 message SessionReply {
-  string sessID = 1;
+    string sessID = 1;
 }
 
 message SendSignedDDAndFingerprintsRequest {
@@ -34,8 +34,11 @@ message SendSignedDDAndFingerprintsReply {
 }
 
 message SendArtTicketSignatureRequest {
-  string nodeID = 1;
-  bytes  signature = 2;
+    string nodeID = 1;
+    bytes  signature = 2;
 }
 message SendArtTicketSignatureReply {
 }
+
+
+
