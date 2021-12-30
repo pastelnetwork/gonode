@@ -162,6 +162,24 @@ func (nodes *List) UploadSignedTicket(ctx context.Context, ticket []byte, signat
 	return group.Wait()
 }
 
+// UploadActionAct uploads action act to primary node
+func (nodes *List) UploadActionAct(ctx context.Context) error {
+	group, _ := errgroup.WithContext(ctx)
+
+	for _, node := range *nodes {
+		node := node
+		group.Go(func() error {
+			if node.IsPrimary() {
+				return node.SendActionAct(ctx, node.regActionTxid)
+			}
+
+			return nil
+		})
+	}
+
+	return group.Wait()
+}
+
 // CompressedFingerAndScores returns compressed fingerprint and other scores
 func (nodes *List) CompressedFingerAndScores() *pastel.DDAndFingerprints {
 	return (*nodes)[0].FingerprintAndScores

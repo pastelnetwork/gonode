@@ -56,6 +56,8 @@ type RegisterSense interface {
 	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (string, error)
+	// SendActionAct send action act to SNs for next steps
+	SendActionAct(ctx context.Context, actionRegTxid string) error
 }
 
 // RegisterArtwork contains methods for registering artwork.

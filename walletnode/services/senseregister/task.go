@@ -167,6 +167,11 @@ func (task *Task) run(ctx context.Context) error {
 	task.UpdateStatus(StatusTicketActivated)
 	log.Debugf("Active txid is confirmed")
 
+	// Send ActionAct request to primary node
+	if err := task.nodes.UploadActionAct(newCtx); err != nil {
+		return errors.Errorf("upload action act: %w", err)
+	}
+
 	return nil
 }
 

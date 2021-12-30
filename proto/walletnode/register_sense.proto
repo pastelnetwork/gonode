@@ -27,6 +27,9 @@ service RegisterSense {
 
     // SendArtTicket sends a signed art-ticket to the supernode.
     rpc SendSignedActionTicket(SendSignedActionTicketRequest) returns (SendSignedActionTicketReply);
+
+    // SendActionAc informs to SN that walletnode activated action_reg
+    rpc SendActionAct(SendActionActRequest) returns (SendActionActReply);
 }
 
 message SessionRequest {
@@ -88,4 +91,11 @@ message SendSignedActionTicketRequest {
 
 message SendSignedActionTicketReply {
     string action_reg_txid = 1;
+}
+
+message SendActionActRequest {
+    string action_reg_txid = 1;
+}
+
+message SendActionActReply {
 }
