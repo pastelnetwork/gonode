@@ -14,6 +14,24 @@ import (
 	"github.com/pastelnetwork/gonode/supernode/node"
 )
 
+// UnimplementChallengeStateStorage struct
+type UnimplementChallengeStateStorage struct{}
+
+// OnSent saving challenge sent state
+func (*UnimplementChallengeStateStorage) OnSent(baseCtx.Context, string, string, int32) {}
+
+// OnSent saving challenge responded state
+func (*UnimplementChallengeStateStorage) OnResponded(baseCtx.Context, string, string, int32) {}
+
+// OnSent saving challenge succeeded state
+func (*UnimplementChallengeStateStorage) OnSucceeded(baseCtx.Context, string, string, int32) {}
+
+// OnSent saving challenge failed state
+func (*UnimplementChallengeStateStorage) OnFailed(baseCtx.Context, string, string, int32) {}
+
+// OnSent saving challenge timeout state
+func (*UnimplementChallengeStateStorage) OnTimeout(baseCtx.Context, string, string, int32) {}
+
 type service struct {
 	actor                         messaging.Actor
 	domainActorID                 *actor.PID
@@ -38,7 +56,7 @@ type StorageChallenge interface {
 }
 
 // NewService retuns new domain service instance with actor model
-func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel.Client) (svc StorageChallenge, stopActor func()) {
+func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel.Client, challengeStateStorage SaveChallengState) (svc StorageChallenge, stopActor func()) {
 	if cfg == nil {
 		panic("domain service configuration not found")
 	}
@@ -47,12 +65,15 @@ func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel
 	if err != nil {
 		panic(err)
 	}
+	if challengeStateStorage == nil {
+		challengeStateStorage = &UnimplementChallengeStateStorage{}
+	}
 	return &service{
 		actor:                         localActor,
 		domainActorID:                 pid,
 		storageChallengeExpiredBlocks: cfg.StorageChallengeExpiredBlocks,
 		pclient:                       pClient,
-		repository:                    newRepository(p2p, pClient),
+		repository:                    newRepository(p2p, pClient, challengeStateStorage),
 		nodeID:                        cfg.PastelID,
 		numberOfChallengeReplicas:     cfg.NumberOfChallengeReplicas,
 	}, localActor.Stop

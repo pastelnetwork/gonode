@@ -128,6 +128,8 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, challengesPerNo
 		}
 
 		s.sendprocessStorageChallenge(ctx, outgoingChallengeMessage)
+
+		s.repository.SaveChallengMessageState(ctx, "sent", challengeID, challengingMasternodeID, currentBlockCount)
 	}
 
 	return nil

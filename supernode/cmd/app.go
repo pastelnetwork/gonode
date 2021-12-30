@@ -241,7 +241,7 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	userdataProcess := userdataprocess.NewService(&config.UserdataProcess, pastelClient, secClient, database)
 
 	// ----Storage Challenges----
-	stService, stopDomainActor := storagechallenge.NewService(&config.StorageChallenge, secClient, p2p, pastelClient)
+	stService, stopDomainActor := storagechallenge.NewService(&config.StorageChallenge, secClient, p2p, pastelClient, nil)
 	defer stopDomainActor()
 
 	// create stats manager

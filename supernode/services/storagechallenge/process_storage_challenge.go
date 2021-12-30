@@ -59,7 +59,11 @@ func (s *service) ProcessStorageChallenge(ctx context.Context, incomingChallenge
 	log.WithContext(ctx).WithField("method", "ProcessStorageChallenge").WithField("challengeID", incomingChallengeMessage.ChallengeID).Debug(fmt.Sprintf("masternode %s responded to storage challenge for file hash %s in %v nano second!", outgoingChallengeMessage.RespondingMasternodeID, outgoingChallengeMessage.FileHashToChallenge, blocksToRespondToStorageChallenge))
 
 	// send to verifying masternode to validate challenge response hash
-	return s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage)
+	if err = s.sendVerifyStorageChallenge(ctx, outgoingChallengeMessage); err != nil {
+		return err
+	}
+	s.repository.SaveChallengMessageState(ctx, "respond", outgoingChallengeMessage.ChallengeID, outgoingChallengeMessage.ChallengingMasternodeID, outgoingChallengeMessage.BlockNumChallengeSent)
+	return nil
 }
 
 func (s *service) validateProcessingStorageChallengeIncommingData(incomingChallengeMessage *ChallengeMessage) error {

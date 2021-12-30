@@ -1,0 +1,70 @@
+version: "3.9"
+networks:
+  integration_test:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.0.0/16
+          gateway: 192.168.100.1
+
+services:
+  st-1:
+    image: storage-challenge-integration-test
+    container_name: st-1
+    environment:
+      - SERVICE_HOST=192.168.100.11
+      - SERVICE_ID=mn1key
+    networks:
+      integration_test:
+        ipv4_address: 192.168.100.11
+        aliases:
+          - st-1
+
+  st-2:
+    image: storage-challenge-integration-test
+    container_name: st-2
+    environment:
+      - SERVICE_HOST=192.168.100.12
+      - SERVICE_ID=mn2key
+    networks:
+      integration_test:
+        ipv4_address: 192.168.100.12
+        aliases:
+          - st-2
+
+  st-3:
+    image: storage-challenge-integration-test
+    container_name: st-3
+    environment:
+      - SERVICE_HOST=192.168.100.13
+      - SERVICE_ID=mn3key
+    networks:
+      integration_test:
+        ipv4_address: 192.168.100.13
+        aliases:
+          - st-3
+
+  st-4:
+    image: storage-challenge-integration-test
+    container_name: st-4
+    environment:
+      - SERVICE_HOST=192.168.100.14
+      - SERVICE_ID=mn4key
+    networks:
+      integration_test:
+        ipv4_address: 192.168.100.14
+        aliases:
+          - st-4
+
+  st-5:
+    image: storage-challenge-integration-test
+    container_name: st-5
+    environment:
+      - SERVICE_HOST=192.168.100.15
+      - SERVICE_ID=mn5key
+    networks:
+      integration_test:
+        ipv4_address: 192.168.100.15
+        aliases:
+          - st-5
