@@ -2,6 +2,7 @@
 //go:generate mockery --name=Connection
 //go:generate mockery --name=RegisterArtwork
 //go:generate mockery --name=ProcessUserdata
+//go:generate mockery --name=RegisterSense
 
 package node
 

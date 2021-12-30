@@ -25,7 +25,7 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
-	"github.com/pastelnetwork/gonode/supernode/node/test"
+	test "github.com/pastelnetwork/gonode/supernode/node/test/sense_register"
 	"github.com/tj/assert"
 )
 
@@ -94,7 +94,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 
 			clientMock := test.NewMockClient(t)
 			clientMock.ListenOnSendArtTicketSignature(tc.args.sendArtErr).
-				ListenOnConnect("", nil).ListenOnRegisterArtwork()
+				ListenOnConnect("", nil).ListenOnRegisterSense()
 
 			tc.args.task.nodeClient = clientMock
 			tc.args.task.connectedTo = &Node{client: clientMock}
@@ -858,7 +858,7 @@ func TestTaskGetRegistrationFee(t *testing.T) {
 			assert.Nil(t, err)
 
 			_, err = tc.args.task.GetRegistrationFee(context.Background(), artTicketBytes,
-				[]byte{}, "", "", []byte{}, []byte{}, []byte{})
+				[]byte{}, []byte{})
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

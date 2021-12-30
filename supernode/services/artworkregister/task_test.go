@@ -30,7 +30,7 @@ import (
 	rq "github.com/pastelnetwork/gonode/raptorq"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
-	"github.com/pastelnetwork/gonode/supernode/node/test"
+	test "github.com/pastelnetwork/gonode/supernode/node/test/artwork_register"
 	"github.com/tj/assert"
 )
 

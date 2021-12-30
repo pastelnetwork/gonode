@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/supernode/node/test"
+	test "github.com/pastelnetwork/gonode/supernode/node/test/sense_register"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -55,7 +55,7 @@ func TestNodeConnect(t *testing.T) {
 			clientMock := test.NewMockClient(t)
 
 			//listen needed method
-			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterArtwork()
+			clientMock.ListenOnConnect("", testCase.err).ListenOnRegisterSense()
 
 			//set up node client only
 			testCase.node.client = clientMock.Client
@@ -65,7 +65,7 @@ func TestNodeConnect(t *testing.T) {
 			//mock assertion
 			clientMock.Client.AssertExpectations(t)
 			clientMock.AssertConnectCall(testCase.numberConnectCall, mock.Anything, testCase.address)
-			clientMock.AssertRegisterArtworkCall(testCase.numberRegisterArtWorkCall)
+			clientMock.AssertRegisterSenseCall(testCase.numberRegisterArtWorkCall)
 		})
 	}
 }

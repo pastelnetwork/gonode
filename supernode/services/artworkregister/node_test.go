@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/supernode/node/test"
+	test "github.com/pastelnetwork/gonode/supernode/node/test/artwork_register"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
