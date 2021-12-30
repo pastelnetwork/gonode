@@ -142,6 +142,10 @@ type Client interface {
 	// Command `tickets find id <pastelid>`
 	FindTicketByID(ctx context.Context, pastelid string) (*IDTicket, error)
 
+	// FindActionActByActionRegTxid returns the action activation ticket by ActionReg ticket txid
+	// Command `tickets find action-act <action-reg-ticket-txid>`
+	FindActionActByActionRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error)
+
 	// GetBalance returns the amount of PSL stored at address
 	// Command `z_getbalance address`
 	GetBalance(ctx context.Context, address string) (float64, error)

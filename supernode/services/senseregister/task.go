@@ -537,18 +537,19 @@ func (task *Task) ValidateAndRegister(ctx context.Context, ticket []byte, creato
 						return nil
 					}
 
-					// confirmations := task.waitConfirmation(ctx, nftRegTxid, 10, 30*time.Second, 55)
-					// err = <-confirmations
-					// if err != nil {
-					// 	return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
-					// }
+					// Wait for action ticket to be activated by walletnode
+					confirmations := task.waitActionActivation(ctx, nftRegTxid, 10, 30*time.Second)
+					err = <-confirmations
+					if err != nil {
+						return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
+					}
 
-					// TODO: update in next step
-					// if err = task.storeIDFiles(ctx); err != nil {
-					// 	log.WithContext(ctx).WithError(err).Errorf("store id files")
-					// 	err = errors.Errorf("store id files: %w", err)
-					// 	return nil
-					// }
+					// Store dd_and_fingerprints into Kademlia
+					if err = task.storeIDFiles(ctx); err != nil {
+						log.WithContext(ctx).WithError(err).Errorf("store id files")
+						err = errors.Errorf("store id files: %w", err)
+						return nil
+					}
 
 					return nil
 				}
@@ -559,7 +560,7 @@ func (task *Task) ValidateAndRegister(ctx context.Context, ticket []byte, creato
 	return nftRegTxid, err
 }
 
-func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirmation int64, interval time.Duration) <-chan error {
+func (task *Task) waitActionActivation(ctx context.Context, txid string, minConfirmation int64, interval time.Duration) <-chan error {
 	ch := make(chan error)
 
 	go func(ctx context.Context, txid string) {
@@ -580,12 +581,12 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 				ch <- ctx.Err()
 				return
 			case <-time.After(interval):
-				txResult, err := task.pastelClient.GetRawTransactionVerbose1(ctx, txid)
+				txResult, err := task.pastelClient.FindActionActByActionRegTxid(ctx, txid)
 				if err != nil {
-					log.WithContext(ctx).WithError(err).Warn("GetRawTransactionVerbose1 err")
+					log.WithContext(ctx).WithError(err).Warn("FindActionActByActionRegTxid err")
 				} else {
-					if txResult.Confirmations >= minConfirmation {
-						log.WithContext(ctx).Debug("transaction confirmed")
+					if txResult != nil {
+						log.WithContext(ctx).Debug("action reg is activated")
 						ch <- nil
 						return
 					}

@@ -485,6 +485,21 @@ func (client *client) ActivateActionTicket(ctx context.Context, request Activate
 	return txID.TxID, nil
 }
 
+func (client *client) FindActionActByActionRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error) {
+	ticket := IDTicket{}
+
+	params := []interface{}{}
+	params = append(params, "find")
+	params = append(params, "action-act")
+	params = append(params, actionRegTxid)
+
+	if err := client.callFor(ctx, &ticket, "tickets", params...); err != nil {
+		return nil, errors.Errorf("failed to call find action-act <actionRegTxid> : %w", err)
+	}
+
+	return &ticket, nil
+}
+
 func (client *client) RegisterActTicket(ctx context.Context, regTicketTxid string, artistHeight int, fee int64, pastelID string, passphrase string) (string, error) {
 	var txID struct {
 		TxID string `json:"txid"`
