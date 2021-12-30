@@ -133,8 +133,49 @@ func (task *Task) run(ctx context.Context) error {
 	}
 	task.UpdateStatus(StatusTicketAccepted)
 
-	log.WithContext(ctx).Debug("close connections to supernodes")
+	// new context because the old context already cancelled
+	newCtx := context.Background()
+	if err := task.waitTxidValid(newCtx, task.regSenseTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
+		task.closeSNsConnections(ctx, nodesDone)
+		return errors.Errorf("wait reg-nft ticket valid: %w", err)
+	}
+
+	task.UpdateStatus(StatusTicketRegistered)
+
+	// activate reg-art ticket at previous step
+	activateTxID, err := task.activateActionTicket(newCtx)
+	if err != nil {
+		task.closeSNsConnections(ctx, nodesDone)
+		return errors.Errorf("active action ticket: %w", err)
+	}
+	log.Debugf("Active action ticket txid: %s", activateTxID)
+
+	// Wait until activateTxID is valid
+	err = task.waitTxidValid(newCtx, activateTxID, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
+	if err != nil {
+		task.closeSNsConnections(ctx, nodesDone)
+		return errors.Errorf("wait activate txid valid: %w", err)
+	}
+	task.UpdateStatus(StatusTicketActivated)
+	log.Debugf("Active txid is confirmed")
+
+	// Send ActionAct request to primary node
+	if err := task.nodes.UploadActionAct(newCtx); err != nil {
+		task.closeSNsConnections(ctx, nodesDone)
+		return errors.Errorf("upload action act: %w", err)
+	}
+
+	err = task.closeSNsConnections(ctx, nodesDone)
+	return err
+}
+
+func (task *Task) closeSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
+	var err error
+
 	close(nodesDone)
+
+	log.WithContext(ctx).Debug("close connections to supernodes")
+
 	for i := range task.nodes {
 		if err := task.nodes[i].Connection.Close(); err != nil {
 			log.WithContext(ctx).WithFields(log.Fields{
@@ -144,35 +185,7 @@ func (task *Task) run(ctx context.Context) error {
 		}
 	}
 
-	// new context because the old context already cancelled
-	newCtx := context.Background()
-	if err := task.waitTxidValid(newCtx, task.regSenseTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
-		return errors.Errorf("wait reg-nft ticket valid: %w", err)
-	}
-
-	task.UpdateStatus(StatusTicketRegistered)
-
-	// activate reg-art ticket at previous step
-	activateTxID, err := task.activateActionTicket(newCtx)
-	if err != nil {
-		return errors.Errorf("active action ticket: %w", err)
-	}
-	log.Debugf("Active action ticket txid: %s", activateTxID)
-
-	// Wait until activateTxID is valid
-	err = task.waitTxidValid(newCtx, activateTxID, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
-	if err != nil {
-		return errors.Errorf("wait activate txid valid: %w", err)
-	}
-	task.UpdateStatus(StatusTicketActivated)
-	log.Debugf("Active txid is confirmed")
-
-	// Send ActionAct request to primary node
-	if err := task.nodes.UploadActionAct(newCtx); err != nil {
-		return errors.Errorf("upload action act: %w", err)
-	}
-
-	return nil
+	return err
 }
 
 // generateDDAndFingerprintsIDs generates redundant IDs and assigns to task.redundantIDs
