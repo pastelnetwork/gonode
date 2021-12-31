@@ -36,7 +36,8 @@ type Service struct {
 	nodeClient   node.Client
 	db           storage.KeyValue
 
-	imageTTL time.Duration
+	imageTTL        time.Duration
+	registrationFee int64
 }
 
 // Run starts worker.
@@ -184,6 +185,9 @@ func (service *Service) GetEstimatedFee(ctx context.Context, ImgSizeInMb int64) 
 	if err != nil {
 		return 0, err
 	}
+
+	service.registrationFee = (int64)(actionFees.SenseFee)
+
 	return actionFees.SenseFee, nil
 }
 

@@ -8,8 +8,4 @@ type Request struct {
 	BurnTxID              string        `json:"burn_txid"`
 	AppPastelID           string        `json:"app_pastel_id"`
 	AppPastelIDPassphrase string        `json:"app_pastel_id_passphrase"`
-
-	// FIXME: change it later
-	SpendableAddress string  `json:"spendable_address"`
-	MaximumFee       float64 `json:"maximum_fee"`
 }

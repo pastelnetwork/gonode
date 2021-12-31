@@ -261,6 +261,23 @@ func (service *RegisterSense) SendSignedActionTicket(ctx context.Context, req *p
 	return &rsp, nil
 }
 
+// SendActionAc informs to SN that walletnode activated action_reg
+func (service *RegisterSense) SendActionAct(ctx context.Context, req *pb.SendActionActRequest) (retRes *pb.SendActionActReply, retErr error) {
+	defer errors.Recover(func(recErr error) {
+		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedActionTicket")
+		retErr = recErr
+	})
+
+	task, err := service.TaskFromMD(ctx)
+	if err != nil {
+		return &pb.SendActionActReply{}, err
+	}
+
+	err = task.ValidateActionActAndStore(ctx, req.ActionRegTxid)
+
+	return &pb.SendActionActReply{}, err
+}
+
 // Desc returns a description of the service.
 func (service *RegisterSense) Desc() *grpc.ServiceDesc {
 	return &pb.RegisterSense_ServiceDesc

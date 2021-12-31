@@ -38,6 +38,8 @@ type RegisterSenseClient interface {
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterSense_ProbeImageClient, error)
 	// SendArtTicket sends a signed art-ticket to the supernode.
 	SendSignedActionTicket(ctx context.Context, in *SendSignedActionTicketRequest, opts ...grpc.CallOption) (*SendSignedActionTicketReply, error)
+	// SendActionAc informs to SN that walletnode activated action_reg
+	SendActionAct(ctx context.Context, in *SendActionActRequest, opts ...grpc.CallOption) (*SendActionActReply, error)
 }
 
 type registerSenseClient struct {
@@ -158,6 +160,15 @@ func (c *registerSenseClient) SendSignedActionTicket(ctx context.Context, in *Se
 	return out, nil
 }
 
+func (c *registerSenseClient) SendActionAct(ctx context.Context, in *SendActionActRequest, opts ...grpc.CallOption) (*SendActionActReply, error) {
+	out := new(SendActionActReply)
+	err := c.cc.Invoke(ctx, "/register_sense.RegisterSense/SendActionAct", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RegisterSenseServer is the server API for RegisterSense service.
 // All implementations must embed UnimplementedRegisterSenseServer
 // for forward compatibility
@@ -178,6 +189,8 @@ type RegisterSenseServer interface {
 	ProbeImage(RegisterSense_ProbeImageServer) error
 	// SendArtTicket sends a signed art-ticket to the supernode.
 	SendSignedActionTicket(context.Context, *SendSignedActionTicketRequest) (*SendSignedActionTicketReply, error)
+	// SendActionAc informs to SN that walletnode activated action_reg
+	SendActionAct(context.Context, *SendActionActRequest) (*SendActionActReply, error)
 	mustEmbedUnimplementedRegisterSenseServer()
 }
 
@@ -205,6 +218,9 @@ func (UnimplementedRegisterSenseServer) ProbeImage(RegisterSense_ProbeImageServe
 }
 func (UnimplementedRegisterSenseServer) SendSignedActionTicket(context.Context, *SendSignedActionTicketRequest) (*SendSignedActionTicketReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendSignedActionTicket not implemented")
+}
+func (UnimplementedRegisterSenseServer) SendActionAct(context.Context, *SendActionActRequest) (*SendActionActReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendActionAct not implemented")
 }
 func (UnimplementedRegisterSenseServer) mustEmbedUnimplementedRegisterSenseServer() {}
 
@@ -361,6 +377,24 @@ func _RegisterSense_SendSignedActionTicket_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RegisterSense_SendActionAct_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendActionActRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RegisterSenseServer).SendActionAct(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/register_sense.RegisterSense/SendActionAct",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RegisterSenseServer).SendActionAct(ctx, req.(*SendActionActRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RegisterSense_ServiceDesc is the grpc.ServiceDesc for RegisterSense service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -387,6 +421,10 @@ var RegisterSense_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendSignedActionTicket",
 			Handler:    _RegisterSense_SendSignedActionTicket_Handler,
+		},
+		{
+			MethodName: "SendActionAct",
+			Handler:    _RegisterSense_SendActionAct_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

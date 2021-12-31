@@ -152,6 +152,18 @@ func (service *registerSense) SendRegMetadata(ctx context.Context, regMetadata *
 	return err
 }
 
+// SendActionAct send action act to SNs for next steps
+func (service *registerSense) SendActionAct(ctx context.Context, actionRegTxid string) error {
+	ctx = service.contextWithLogPrefix(ctx)
+	ctx = service.contextWithMDSessID(ctx)
+	request := &pb.SendActionActRequest{
+		ActionRegTxid: actionRegTxid,
+	}
+
+	_, err := service.client.SendActionAct(ctx, request)
+	return err
+}
+
 // ProbeImage implements node.RegisterArtwork.ProbeImage()
 func (service *registerSense) ProbeImage(ctx context.Context, image *artwork.File) ([]byte, bool, error) {
 	ctx = service.contextWithLogPrefix(ctx)

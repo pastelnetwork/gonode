@@ -182,8 +182,17 @@ type RegisterActionRequest struct {
 	Ticket      *ActionTicket
 	Signatures  *ActionTicketSignatures
 	Mn1PastelID string
-	Pasphase    string
+	Passphrase  string
 	Key1        string
 	Key2        string
 	Fee         int64
+}
+
+// ActivateActionRequest - represents request to activate an action ticket
+type ActivateActionRequest struct {
+	RegTxID    string
+	BlockNum   int
+	Fee        int64
+	PastelID   string
+	Passphrase string
 }

@@ -51,9 +51,7 @@ type Task struct {
 	ddAndFpFile []byte
 
 	// TODO: call cNodeAPI to get the following info
-	burnTxid        string
-	regSenseTxid    string
-	registrationFee int64
+	regSenseTxid string
 
 	// ticket
 	creatorSignature []byte
@@ -126,14 +124,55 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("sign sense ticket: %w", err)
 	}
 
-	// send signed ticket to supernodes to calculate registration fee
+	// send signed ticket to supernodes to validate and register action with the network
 	if err := task.sendSignedTicket(ctx); err != nil {
 		return errors.Errorf("send signed sense ticket: %w", err)
 	}
 	task.UpdateStatus(StatusTicketAccepted)
 
-	log.WithContext(ctx).Debug("close connections to supernodes")
+	// new context because the old context already cancelled
+	newCtx := context.Background()
+	if err := task.waitTxidValid(newCtx, task.regSenseTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
+		task.closeSNsConnections(ctx, nodesDone)
+		return errors.Errorf("wait reg-nft ticket valid: %w", err)
+	}
+
+	task.UpdateStatus(StatusTicketRegistered)
+
+	// activate reg-art ticket at previous step
+	activateTxID, err := task.activateActionTicket(newCtx)
+	if err != nil {
+		task.closeSNsConnections(ctx, nodesDone)
+		return errors.Errorf("active action ticket: %w", err)
+	}
+	log.Debugf("Active action ticket txid: %s", activateTxID)
+
+	// Wait until activateTxID is valid
+	err = task.waitTxidValid(newCtx, activateTxID, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
+	if err != nil {
+		task.closeSNsConnections(ctx, nodesDone)
+		return errors.Errorf("wait activate txid valid: %w", err)
+	}
+	task.UpdateStatus(StatusTicketActivated)
+	log.Debugf("Active txid is confirmed")
+
+	// Send ActionAct request to primary node
+	if err := task.nodes.UploadActionAct(newCtx); err != nil {
+		task.closeSNsConnections(ctx, nodesDone)
+		return errors.Errorf("upload action act: %w", err)
+	}
+
+	err = task.closeSNsConnections(ctx, nodesDone)
+	return err
+}
+
+func (task *Task) closeSNsConnections(ctx context.Context, nodesDone chan struct{}) error {
+	var err error
+
 	close(nodesDone)
+
+	log.WithContext(ctx).Debug("close connections to supernodes")
+
 	for i := range task.nodes {
 		if err := task.nodes[i].Connection.Close(); err != nil {
 			log.WithContext(ctx).WithFields(log.Fields{
@@ -143,30 +182,7 @@ func (task *Task) run(ctx context.Context) error {
 		}
 	}
 
-	// new context because the old context already cancelled
-	newCtx := context.Background()
-	if err := task.waitTxidValid(newCtx, task.regSenseTxid, int64(task.config.RegArtTxMinConfirmations), 15*time.Second); err != nil {
-		return errors.Errorf("wait reg-nft ticket valid: %w", err)
-	}
-
-	task.UpdateStatus(StatusTicketRegistered)
-
-	// activate reg-art ticket at previous step
-	actTxid, err := task.registerActTicket(newCtx)
-	if err != nil {
-		return errors.Errorf("register act ticket: %w", err)
-	}
-	log.Debugf("reg-act-txid: %s", actTxid)
-
-	// Wait until actTxid is valid
-	err = task.waitTxidValid(newCtx, actTxid, int64(task.config.RegActTxMinConfirmations), 15*time.Second)
-	if err != nil {
-		return errors.Errorf("wait reg-act ticket valid: %w", err)
-	}
-	task.UpdateStatus(StatusTicketActivated)
-	log.Debugf("reg-act-tixd is confirmed")
-
-	return nil
+	return err
 }
 
 // generateDDAndFingerprintsIDs generates redundant IDs and assigns to task.redundantIDs
@@ -199,27 +215,6 @@ func (task *Task) generateDDAndFingerprintsIDs() error {
 		return errors.Errorf("compress: %w", err)
 	}
 	task.ddAndFpFile = utils.B64Encode(comp)
-
-	return nil
-}
-
-func (task *Task) checkCurrentBalance(ctx context.Context, registrationFee float64) error {
-	if registrationFee == 0 {
-		return errors.Errorf("invalid registration fee: %f", registrationFee)
-	}
-
-	if registrationFee > task.Request.MaximumFee {
-		return errors.Errorf("registration fee is to expensive - maximum-fee (%f) < registration-fee(%f)", task.Request.MaximumFee, registrationFee)
-	}
-
-	balance, err := task.pastelClient.GetBalance(ctx, task.Request.SpendableAddress)
-	if err != nil {
-		return errors.Errorf("get balance of address(%s): %w", task.Request.SpendableAddress, err)
-	}
-
-	if balance < registrationFee {
-		return errors.Errorf("not enough PSL - balance(%f) < registration-fee(%f)", balance, registrationFee)
-	}
 
 	return nil
 }
@@ -453,8 +448,16 @@ func (task *Task) signTicket(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) registerActTicket(ctx context.Context) (string, error) {
-	return task.pastelClient.RegisterActTicket(ctx, task.regSenseTxid, task.creatorBlockHeight, task.registrationFee, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase)
+func (task *Task) activateActionTicket(ctx context.Context) (string, error) {
+	request := pastel.ActivateActionRequest{
+		RegTxID:    task.regSenseTxid,
+		BlockNum:   task.creatorBlockHeight,
+		Fee:        task.Service.registrationFee,
+		PastelID:   task.Request.AppPastelID,
+		Passphrase: task.Request.AppPastelIDPassphrase,
+	}
+
+	return task.pastelClient.ActivateActionTicket(ctx, request)
 }
 
 // NewTask returns a new Task instance.

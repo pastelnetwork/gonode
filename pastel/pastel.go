@@ -127,6 +127,12 @@ type Client interface {
 	// Return txid of transaction
 	RegisterActionTicket(ctx context.Context, request RegisterActionRequest) (string, error)
 
+	// ActivateActionTicket activate an action ticket
+	// Refer: https://pastel.wiki/en/Architecture/Components/PastelOpenAPITicketStructures
+	// Command `tickets activate action ...`
+	// Return txid of transaction
+	ActivateActionTicket(ctx context.Context, request ActivateActionRequest) (string, error)
+
 	// RegisterActTicket activates an registered NFT ticket
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
 	// Return txid of NFTActivateTicket
@@ -135,6 +141,10 @@ type Client interface {
 	// FindTicketByID returns the register ticket of pastelid
 	// Command `tickets find id <pastelid>`
 	FindTicketByID(ctx context.Context, pastelid string) (*IDTicket, error)
+
+	// FindActionActByActionRegTxid returns the action activation ticket by ActionReg ticket txid
+	// Command `tickets find action-act <action-reg-ticket-txid>`
+	FindActionActByActionRegTxid(ctx context.Context, actionRegTxid string) (*IDTicket, error)
 
 	// GetBalance returns the amount of PSL stored at address
 	// Command `z_getbalance address`

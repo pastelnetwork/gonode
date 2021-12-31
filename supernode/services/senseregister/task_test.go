@@ -48,7 +48,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				primary: true,
 			},
@@ -60,7 +60,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				signErr: errors.New("test"),
 				primary: true,
@@ -73,7 +73,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				sendArtErr: errors.New("test"),
 				signErr:    nil,
