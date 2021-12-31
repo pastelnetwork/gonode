@@ -115,7 +115,7 @@ func TestServiceRun(t *testing.T) {
 				Worker:       task.NewWorker(),
 				Storage:      artwork.NewStorage(nil),
 			}
-			ctx, cancel := context.WithTimeout(testCase.args.ctx, time.Second)
+			ctx, cancel := context.WithTimeout(testCase.args.ctx, 6*time.Second)
 			defer cancel()
 			err := service.Run(ctx)
 			assert.Equal(t, testCase.want, err)
