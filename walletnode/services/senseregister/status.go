@@ -15,7 +15,10 @@ const (
 	StatusTicketActivated
 	// Error
 	ErrorInsufficientFee
+	StatusErrorFindTopNodes
+	StatusErrorFindResponsdingSNs
 	StatusErrorSignaturesNotMatch
+	StatsuErrorInvalidBurnTxID
 	StatusErrorFingerprintsNotMatch
 	StatusErrorThumbnailHashsesNotMatch
 	StatusErrorGenRaptorQSymbolsFailed
@@ -35,7 +38,10 @@ var statusNames = map[Status]string{
 	StatusTicketRegistered:              "Ticket Registered",
 	StatusTicketActivated:               "Ticket Activated",
 	ErrorInsufficientFee:                "Error Insufficient Fee",
+	StatusErrorFindTopNodes:             "Error Find Top Nodes",
+	StatusErrorFindResponsdingSNs:       "Error Find Responsding SNs",
 	StatusErrorSignaturesNotMatch:       "Error Signatures Dont Match",
+	StatsuErrorInvalidBurnTxID:          "Error Invalid Burn TxID",
 	StatusErrorFingerprintsNotMatch:     "Error Fingerprints Dont Match",
 	StatusErrorThumbnailHashsesNotMatch: "Error ThumbnailHashes Dont Match",
 	StatusErrorGenRaptorQSymbolsFailed:  "Error GenRaptorQ Symbols Failed",

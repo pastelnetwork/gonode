@@ -51,9 +51,9 @@ type RegisterSense interface {
 	// MeshNodes send to supernode all info of nodes are meshed together (include the received supernode)
 	MeshNodes(ctx context.Context, meshedNodes []types.MeshedSuperNode) error
 	// SendRegMetadata send metadata of registration to SNs for next steps
-	SendRegMetadata(ctx context.Context, regMetadata *types.NftRegMetadata) error
+	SendRegMetadata(ctx context.Context, regMetadata *types.ActionRegMetadata) error
 	// ProbeImage uploads image to supernode.
-	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, err error)
+	ProbeImage(ctx context.Context, image *artwork.File) (compressedDDAndFingerprints []byte, isValidBurnTxID bool, err error)
 	// SendSignedTicket send a reg-art ticket signed by cNode to SuperNode
 	SendSignedTicket(ctx context.Context, ticket []byte, signature []byte, ddFpFile []byte) (int64, error)
 	// SendPreBurnedFreeTxId send TxId of the transaction in which 10% of registration fee is preburned

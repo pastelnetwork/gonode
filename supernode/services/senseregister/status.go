@@ -14,6 +14,9 @@ const (
 	StatusImageAndThumbnailCoordinateUploaded
 	StatusRegistrationFeeCalculated
 
+	// Error
+	StatusErrorInvalidBurnTxID
+
 	// Final
 	StatusTaskCanceled
 	StatusTaskCompleted
@@ -27,6 +30,7 @@ var statusNames = map[Status]string{
 	StatusImageProbed:                         "Image Probed",
 	StatusImageAndThumbnailCoordinateUploaded: "Imaged And Thumbnail Coordinate Uploaded",
 	StatusRegistrationFeeCalculated:           "Registration Fee Caculated",
+	StatusErrorInvalidBurnTxID:                "Error Invalid Burn TxID",
 	StatusTaskCanceled:                        "Task Canceled",
 	StatusTaskCompleted:                       "Task Completed",
 }

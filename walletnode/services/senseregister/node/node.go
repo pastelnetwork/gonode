@@ -20,6 +20,7 @@ type Node struct {
 
 	isPrimary                 bool
 	activated                 bool
+	isValidBurnTxID           bool
 	FingerprintAndScores      *pastel.DDAndFingerprints
 	FingerprintAndScoresBytes []byte // JSON bytes of FingerprintAndScores
 	Signature                 []byte

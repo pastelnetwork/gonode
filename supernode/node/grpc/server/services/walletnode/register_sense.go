@@ -153,9 +153,10 @@ func (service *RegisterSense) SendRegMetadata(ctx context.Context, req *pb.SendR
 		return nil, err
 	}
 
-	reqMetadata := &types.NftRegMetadata{
+	reqMetadata := &types.ActionRegMetadata{
 		BlockHash:       req.BlockHash,
 		CreatorPastelID: req.CreatorPastelID,
+		BurnTxID:        req.BurnTxid,
 	}
 
 	err = task.SendRegMetadata(ctx, reqMetadata)
@@ -200,7 +201,7 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 			return errors.Errorf("receive ProbeImage: %w", err)
 		}
 
-		if _, err := wr.Write(req.Payload); err != nil {
+		if _, err := wr.Write(req.Image); err != nil {
 			return errors.Errorf("write to file %q: %w", file.Name(), err)
 		}
 	}
@@ -210,13 +211,23 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 		return errors.Errorf("add image format: %w", err)
 	}
 
-	compressedDDFingerAndScores, err := task.ProbeImage(ctx, image)
-	if err != nil {
-		return err
+	// Validate burn_txid
+	isValidBurnTxID := false
+	var compressedDDFingerAndScores []byte
+
+	err = task.ValidateBurnTxID(ctx)
+	if err == nil {
+		isValidBurnTxID = true
+
+		compressedDDFingerAndScores, err = task.ProbeImage(ctx, image)
+		if err != nil {
+			return err
+		}
 	}
 
 	resp := &pb.ProbeImageReply{
 		CompressedSignedDDAndFingerprints: compressedDDFingerAndScores,
+		IsValidBurnTxid:                   isValidBurnTxID,
 	}
 
 	if err := stream.SendAndClose(resp); err != nil {

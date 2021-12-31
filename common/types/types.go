@@ -11,3 +11,10 @@ type NftRegMetadata struct {
 	CreatorPastelID string
 	BlockHash       string
 }
+
+// ActionRegMetadata represents action reg metadata
+type ActionRegMetadata struct {
+	CreatorPastelID string
+	BlockHash       string
+	BurnTxID        string
+}

@@ -22,7 +22,7 @@ service RegisterSense {
     // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
     rpc SendRegMetadata(SendRegMetadataRequest) returns (SendRegMetadataReply);
 
-    // ProbeImage uploads the resampled image compute and return a fingerpirnt.
+    // ProbeImage uploads the resampled image compute/burn txid and return a fingerpirnt and MN signature.
     rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
 
     // SendArtTicket sends a signed art-ticket to the supernode.
@@ -72,16 +72,18 @@ message MeshNodesReply {
 message SendRegMetadataRequest {
     string creatorPastelID = 1;
     string blockHash = 2;
+    string burn_txid = 3;
 }
 message SendRegMetadataReply {
 
 }
 
 message ProbeImageRequest {
-    bytes payload = 1;
+    bytes image = 1;
 }
 message ProbeImageReply {
-    bytes compressedSignedDDAndFingerprints = 1;
+    bool is_valid_burn_txid = 1;
+    bytes compressedSignedDDAndFingerprints = 2;
 }
 
 
