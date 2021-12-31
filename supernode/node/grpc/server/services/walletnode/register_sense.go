@@ -236,10 +236,10 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 	return nil
 }
 
-// SendSignedNFTTicket implements walletnode.RegisterSense.SendSignedNFTTicket
-func (service *RegisterSense) SendSignedNFTTicket(ctx context.Context, req *pb.SendSignedNFTTicketRequest) (retRes *pb.SendSignedNFTTicketReply, retErr error) {
+// SendSignedActionTicket implements walletnode.RegisterSense.SendSignedActionTicket
+func (service *RegisterSense) SendSignedActionTicket(ctx context.Context, req *pb.SendSignedActionTicketRequest) (retRes *pb.SendSignedActionTicketReply, retErr error) {
 	defer errors.Recover(func(recErr error) {
-		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedNFTTicket")
+		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicWhenSendSignedActionTicket")
 		retErr = recErr
 	})
 
@@ -249,39 +249,15 @@ func (service *RegisterSense) SendSignedNFTTicket(ctx context.Context, req *pb.S
 		return nil, errors.Errorf("get task from metada %w", err)
 	}
 
-	registrationFee, err := task.GetRegistrationFee(ctx, req.NftTicket, req.CreatorSignature, req.DdFpFiles)
+	actionRegTxid, err := task.ValidateAndRegister(ctx, req.ActionTicket, req.CreatorSignature, req.DdFpFiles)
 	if err != nil {
 		return nil, errors.Errorf("get total storage fee %w", err)
 	}
 
-	rsp := pb.SendSignedNFTTicketReply{
-		RegistrationFee: registrationFee,
+	rsp := pb.SendSignedActionTicketReply{
+		ActionRegTxid: actionRegTxid,
 	}
 
-	return &rsp, nil
-}
-
-// SendPreBurntFeeTxid implements walletnode.RegisterSense.SendPreBurntFeeTxid
-func (service *RegisterSense) SendPreBurntFeeTxid(ctx context.Context, req *pb.SendPreBurntFeeTxidRequest) (retRes *pb.SendPreBurntFeeTxidReply, retErr error) {
-	defer errors.Recover(func(recErr error) {
-		log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).Error("PanicSendPreBurntFeeTxid")
-		retErr = recErr
-	})
-
-	log.WithContext(ctx).WithField("req", req).Debug("SendPreBurntFeeTxidRequest request")
-	task, err := service.TaskFromMD(ctx)
-	if err != nil {
-		return nil, errors.Errorf("get task from meta data %w", err)
-	}
-
-	nftRegTxid, err := task.ValidatePreBurnTransaction(ctx, req.Txid)
-	if err != nil {
-		return nil, errors.Errorf("validate preburn transaction %w", err)
-	}
-
-	rsp := pb.SendPreBurntFeeTxidReply{
-		NFTRegTxid: nftRegTxid,
-	}
 	return &rsp, nil
 }
 

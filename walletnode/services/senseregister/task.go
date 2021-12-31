@@ -57,7 +57,7 @@ type Task struct {
 
 	// ticket
 	creatorSignature []byte
-	ticket           *pastel.NFTTicket
+	ticket           *pastel.ActionTicket
 }
 
 // Run starts the task
@@ -117,32 +117,19 @@ func (task *Task) run(ctx context.Context) error {
 		return errors.Errorf("probe image: %w", err)
 	}
 
-	if err := task.createArtTicket(ctx); err != nil {
+	if err := task.createSenseTicket(ctx); err != nil {
 		return errors.Errorf("create ticket: %w", err)
 	}
 
-	// sign ticket with artist signature
+	// sign ticket with creator signature
 	if err := task.signTicket(ctx); err != nil {
-		return errors.Errorf("sign NFT ticket: %w", err)
+		return errors.Errorf("sign sense ticket: %w", err)
 	}
 
 	// send signed ticket to supernodes to calculate registration fee
 	if err := task.sendSignedTicket(ctx); err != nil {
-		return errors.Errorf("send signed NFT ticket: %w", err)
+		return errors.Errorf("send signed sense ticket: %w", err)
 	}
-
-	// validate if address has enough psl
-	if err := task.checkCurrentBalance(ctx, float64(task.registrationFee)); err != nil {
-		return errors.Errorf("check current balance: %w", err)
-	}
-
-	// send preburn-txid to master node(s)
-	// master node will create reg-art ticket and returns transaction id
-	task.UpdateStatus(StatusPreburntRegistrationFee)
-	if err := task.preburntRegistrationFee(ctx); err != nil {
-		return errors.Errorf("pre-burnt ten percent of registration fee: %w", err)
-	}
-
 	task.UpdateStatus(StatusTicketAccepted)
 
 	log.WithContext(ctx).Debug("close connections to supernodes")
@@ -426,7 +413,7 @@ func (task *Task) getBlock(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) createArtTicket(_ context.Context) error {
+func (task *Task) createSenseTicket(_ context.Context) error {
 	if task.fingerprint == nil {
 		return errEmptyFingerprints
 	}
@@ -434,28 +421,14 @@ func (task *Task) createArtTicket(_ context.Context) error {
 		return errEmptyDatahash
 	}
 
-	nftType := pastel.NFTTypeImage
-
 	// TODO: fill all 0 and "TBD" value with real values when other API ready
-	ticket := &pastel.NFTTicket{
-		Version:   1,
-		Author:    task.Request.AppPastelID,
-		BlockNum:  task.creatorBlockHeight,
-		BlockHash: task.creatorBlockHash,
-		Copies:    0,
-		Royalty:   0,     // Not supported yet by cNode
-		Green:     false, // Not supported yet by cNode
-		AppTicketData: pastel.AppTicket{
-			CreatorName:                "FIXME-remove",
-			CreatorWebsite:             "FIXME-remove",
-			CreatorWrittenStatement:    "FIXME-remove",
-			NFTTitle:                   "FIXME-remove",
-			NFTSeriesName:              "FIXME-remove",
-			NFTCreationVideoYoutubeURL: "FIXME-remove",
-			NFTKeywordSet:              "FIXME-remove",
-			NFTType:                    nftType,
-			TotalCopies:                0,
-
+	ticket := &pastel.ActionTicket{
+		Version:    1,
+		Caller:     task.Request.AppPastelID,
+		BlockNum:   task.creatorBlockHeight,
+		BlockHash:  task.creatorBlockHash,
+		ActionType: pastel.ActionTypeSense,
+		ApiTicketData: &pastel.ApiSenseTicket{
 			DataHash:             task.datahash,
 			DDAndFingerprintsIc:  task.ddAndFingerprintsIc,
 			DDAndFingerprintsMax: task.config.DDAndFingerprintsMax,
@@ -468,14 +441,14 @@ func (task *Task) createArtTicket(_ context.Context) error {
 }
 
 func (task *Task) signTicket(ctx context.Context) error {
-	data, err := pastel.EncodeNFTTicket(task.ticket)
+	data, err := pastel.EncodeActionTicket(task.ticket)
 	if err != nil {
-		return errors.Errorf("encode ticket %w", err)
+		return errors.Errorf("encode sense ticket %w", err)
 	}
 
 	task.creatorSignature, err = task.pastelClient.Sign(ctx, data, task.Request.AppPastelID, task.Request.AppPastelIDPassphrase, pastel.SignAlgorithmED448)
 	if err != nil {
-		return errors.Errorf("sign ticket %w", err)
+		return errors.Errorf("sign sense ticket %w", err)
 	}
 	return nil
 }
@@ -667,7 +640,7 @@ func (task *Task) probeImage(ctx context.Context) error {
 }
 
 func (task *Task) sendSignedTicket(ctx context.Context) error {
-	buf, err := pastel.EncodeNFTTicket(task.ticket)
+	buf, err := pastel.EncodeActionTicket(task.ticket)
 	if err != nil {
 		return errors.Errorf("marshal ticket: %w", err)
 	}
@@ -677,38 +650,7 @@ func (task *Task) sendSignedTicket(ctx context.Context) error {
 		return errors.Errorf("upload signed ticket: %w", err)
 	}
 
-	if err := task.nodes.MatchRegistrationFee(); err != nil {
-		return errors.Errorf("registration fees don't matched: %w", err)
-	}
-
-	// check if fee is over-expection
-	task.registrationFee = task.nodes.RegistrationFee()
-
-	if task.registrationFee > int64(task.Request.MaximumFee) {
-		return errors.Errorf("fee too high: registration fee %d, maximum fee %d", task.registrationFee, int64(task.Request.MaximumFee))
-	}
-	task.registrationFee = task.nodes.RegistrationFee()
-
-	return nil
-}
-
-func (task *Task) preburntRegistrationFee(ctx context.Context) error {
-	if task.registrationFee <= 0 {
-		return errors.Errorf("invalid registration fee")
-	}
-
-	burnedAmount := float64(task.registrationFee) / 10
-	burnTxid, err := task.pastelClient.SendFromAddress(ctx, task.Request.SpendableAddress, task.config.BurnAddress, burnedAmount)
-	if err != nil {
-		return errors.Errorf("burn 10 percent of transaction fee: %w", err)
-	}
-	task.burnTxid = burnTxid
-	log.WithContext(ctx).Debugf("preburn txid: %s", task.burnTxid)
-
-	if err := task.nodes.SendPreBurntFeeTxid(ctx, task.burnTxid); err != nil {
-		return errors.Errorf("send pre-burn-txid: %s to supernode(s): %w", task.burnTxid, err)
-	}
-	task.regSenseTxid = task.nodes.RegArtTicketID()
+	task.regSenseTxid = task.nodes.RegActionTicketID()
 	if task.regSenseTxid == "" {
 		return errors.Errorf("empty regSenseTxid")
 	}

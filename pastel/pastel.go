@@ -119,6 +119,14 @@ type Client interface {
 	// Return txid of transaction
 	RegisterNFTTicket(ctx context.Context, request RegisterNFTRequest) (string, error)
 
+	// RegisterActionTicket register an action ticket
+	// Refer :
+	// -https://pastel.wiki/en/Architecture/OpenAPI/Sense
+	// - https://pastel.wiki/en/Architecture/Components/PastelOpenAPITicketStructures#sense-api-ticket
+	// Command `tickets register action ...`
+	// Return txid of transaction
+	RegisterActionTicket(ctx context.Context, request RegisterActionRequest) (string, error)
+
 	// RegisterActTicket activates an registered NFT ticket
 	// Command `tickets register act "reg-ticket-tnxid" "artist-height" "fee" "PastelID" "passphrase"`
 	// Return txid of NFTActivateTicket

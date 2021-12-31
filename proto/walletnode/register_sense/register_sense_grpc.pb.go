@@ -37,11 +37,7 @@ type RegisterSenseClient interface {
 	// ProbeImage uploads the resampled image compute/burn txid and return a fingerpirnt and MN signature.
 	ProbeImage(ctx context.Context, opts ...grpc.CallOption) (RegisterSense_ProbeImageClient, error)
 	// SendArtTicket sends a signed art-ticket to the supernode.
-	SendSignedNFTTicket(ctx context.Context, in *SendSignedNFTTicketRequest, opts ...grpc.CallOption) (*SendSignedNFTTicketReply, error)
-	// SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
-	SendPreBurntFeeTxid(ctx context.Context, in *SendPreBurntFeeTxidRequest, opts ...grpc.CallOption) (*SendPreBurntFeeTxidReply, error)
-	// SendTicket sends a ticket to the supernode.
-	SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error)
+	SendSignedActionTicket(ctx context.Context, in *SendSignedActionTicketRequest, opts ...grpc.CallOption) (*SendSignedActionTicketReply, error)
 }
 
 type registerSenseClient struct {
@@ -153,27 +149,9 @@ func (x *registerSenseProbeImageClient) CloseAndRecv() (*ProbeImageReply, error)
 	return m, nil
 }
 
-func (c *registerSenseClient) SendSignedNFTTicket(ctx context.Context, in *SendSignedNFTTicketRequest, opts ...grpc.CallOption) (*SendSignedNFTTicketReply, error) {
-	out := new(SendSignedNFTTicketReply)
-	err := c.cc.Invoke(ctx, "/register_sense.RegisterSense/SendSignedNFTTicket", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerSenseClient) SendPreBurntFeeTxid(ctx context.Context, in *SendPreBurntFeeTxidRequest, opts ...grpc.CallOption) (*SendPreBurntFeeTxidReply, error) {
-	out := new(SendPreBurntFeeTxidReply)
-	err := c.cc.Invoke(ctx, "/register_sense.RegisterSense/SendPreBurntFeeTxid", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *registerSenseClient) SendTicket(ctx context.Context, in *SendTicketRequest, opts ...grpc.CallOption) (*SendTicketReply, error) {
-	out := new(SendTicketReply)
-	err := c.cc.Invoke(ctx, "/register_sense.RegisterSense/SendTicket", in, out, opts...)
+func (c *registerSenseClient) SendSignedActionTicket(ctx context.Context, in *SendSignedActionTicketRequest, opts ...grpc.CallOption) (*SendSignedActionTicketReply, error) {
+	out := new(SendSignedActionTicketReply)
+	err := c.cc.Invoke(ctx, "/register_sense.RegisterSense/SendSignedActionTicket", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -199,11 +177,7 @@ type RegisterSenseServer interface {
 	// ProbeImage uploads the resampled image compute/burn txid and return a fingerpirnt and MN signature.
 	ProbeImage(RegisterSense_ProbeImageServer) error
 	// SendArtTicket sends a signed art-ticket to the supernode.
-	SendSignedNFTTicket(context.Context, *SendSignedNFTTicketRequest) (*SendSignedNFTTicketReply, error)
-	// SendPreBurntFeeTxid sends tx_id of 10% burnt transaction fee to the supernode.
-	SendPreBurntFeeTxid(context.Context, *SendPreBurntFeeTxidRequest) (*SendPreBurntFeeTxidReply, error)
-	// SendTicket sends a ticket to the supernode.
-	SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error)
+	SendSignedActionTicket(context.Context, *SendSignedActionTicketRequest) (*SendSignedActionTicketReply, error)
 	mustEmbedUnimplementedRegisterSenseServer()
 }
 
@@ -229,14 +203,8 @@ func (UnimplementedRegisterSenseServer) SendRegMetadata(context.Context, *SendRe
 func (UnimplementedRegisterSenseServer) ProbeImage(RegisterSense_ProbeImageServer) error {
 	return status.Errorf(codes.Unimplemented, "method ProbeImage not implemented")
 }
-func (UnimplementedRegisterSenseServer) SendSignedNFTTicket(context.Context, *SendSignedNFTTicketRequest) (*SendSignedNFTTicketReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendSignedNFTTicket not implemented")
-}
-func (UnimplementedRegisterSenseServer) SendPreBurntFeeTxid(context.Context, *SendPreBurntFeeTxidRequest) (*SendPreBurntFeeTxidReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendPreBurntFeeTxid not implemented")
-}
-func (UnimplementedRegisterSenseServer) SendTicket(context.Context, *SendTicketRequest) (*SendTicketReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendTicket not implemented")
+func (UnimplementedRegisterSenseServer) SendSignedActionTicket(context.Context, *SendSignedActionTicketRequest) (*SendSignedActionTicketReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendSignedActionTicket not implemented")
 }
 func (UnimplementedRegisterSenseServer) mustEmbedUnimplementedRegisterSenseServer() {}
 
@@ -375,56 +343,20 @@ func (x *registerSenseProbeImageServer) Recv() (*ProbeImageRequest, error) {
 	return m, nil
 }
 
-func _RegisterSense_SendSignedNFTTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendSignedNFTTicketRequest)
+func _RegisterSense_SendSignedActionTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendSignedActionTicketRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterSenseServer).SendSignedNFTTicket(ctx, in)
+		return srv.(RegisterSenseServer).SendSignedActionTicket(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/register_sense.RegisterSense/SendSignedNFTTicket",
+		FullMethod: "/register_sense.RegisterSense/SendSignedActionTicket",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterSenseServer).SendSignedNFTTicket(ctx, req.(*SendSignedNFTTicketRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RegisterSense_SendPreBurntFeeTxid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendPreBurntFeeTxidRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegisterSenseServer).SendPreBurntFeeTxid(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/register_sense.RegisterSense/SendPreBurntFeeTxid",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterSenseServer).SendPreBurntFeeTxid(ctx, req.(*SendPreBurntFeeTxidRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _RegisterSense_SendTicket_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SendTicketRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(RegisterSenseServer).SendTicket(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/register_sense.RegisterSense/SendTicket",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterSenseServer).SendTicket(ctx, req.(*SendTicketRequest))
+		return srv.(RegisterSenseServer).SendSignedActionTicket(ctx, req.(*SendSignedActionTicketRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -453,16 +385,8 @@ var RegisterSense_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _RegisterSense_SendRegMetadata_Handler,
 		},
 		{
-			MethodName: "SendSignedNFTTicket",
-			Handler:    _RegisterSense_SendSignedNFTTicket_Handler,
-		},
-		{
-			MethodName: "SendPreBurntFeeTxid",
-			Handler:    _RegisterSense_SendPreBurntFeeTxid_Handler,
-		},
-		{
-			MethodName: "SendTicket",
-			Handler:    _RegisterSense_SendTicket_Handler,
+			MethodName: "SendSignedActionTicket",
+			Handler:    _RegisterSense_SendSignedActionTicket_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -31,20 +31,20 @@ type RegTicket struct {
 
 // RegTicketData is Pastel Registration ticket structure
 type RegTicketData struct {
-	Type           string           `json:"type"`
-	Version        int              `json:"version"`
-	Signatures     TicketSignatures `json:"signatures"`
-	Key1           string           `json:"key1"`
-	Key2           string           `json:"key2"`
-	CreatorHeight  int              `json:"creator_height"`
-	TotalCopies    int              `json:"total_copies"`
-	Royalty        float64          `json:"royalty"`
-	RoyaltyAddress string           `json:"royalty_address"`
-	Green          bool             `json:"green"`
-	GreenAddress   string           `json:"green_address"`
-	StorageFee     int              `json:"storage_fee"`
-	NFTTicket      []byte           `json:"nft_ticket"`
-	NFTTicketData  NFTTicket        `json:"-"`
+	Type           string              `json:"type"`
+	Version        int                 `json:"version"`
+	Signatures     RegTicketSignatures `json:"signatures"`
+	Key1           string              `json:"key1"`
+	Key2           string              `json:"key2"`
+	CreatorHeight  int                 `json:"creator_height"`
+	TotalCopies    int                 `json:"total_copies"`
+	Royalty        float64             `json:"royalty"`
+	RoyaltyAddress string              `json:"royalty_address"`
+	Green          bool                `json:"green"`
+	GreenAddress   string              `json:"green_address"`
+	StorageFee     int                 `json:"storage_fee"`
+	NFTTicket      []byte              `json:"nft_ticket"`
+	NFTTicketData  NFTTicket           `json:"-"`
 }
 
 // NFTTicket is Pastel NFT Ticket
@@ -92,7 +92,7 @@ type AppTicket struct {
 // GetRegisterNFTFeeRequest represents a request to get registration fee
 type GetRegisterNFTFeeRequest struct {
 	Ticket      *NFTTicket
-	Signatures  *TicketSignatures
+	Signatures  *RegTicketSignatures
 	Mn1PastelID string
 	Passphrase  string
 	Key1        string
@@ -176,8 +176,8 @@ func DecodeNFTTicket(b []byte) (*NFTTicket, error) {
 	}, nil
 }
 
-// TicketSignatures represents signatures from parties
-type TicketSignatures struct {
+// RegTicketSignatures represents signatures from parties
+type RegTicketSignatures struct {
 	Creator map[string]string `json:"creator,omitempty"`
 	Mn1     map[string]string `json:"mn1,omitempty"`
 	Mn2     map[string]string `json:"mn2,omitempty"`
@@ -188,7 +188,7 @@ type TicketSignatures struct {
 // "ticket" "{signatures}" "jXYqZNPj21RVnwxnEJ654wEdzi7GZTZ5LAdiotBmPrF7pDMkpX1JegDMQZX55WZLkvy9fxNpZcbBJuE8QYUqBF" "passphrase", "key1", "key2", 100)")
 type RegisterNFTRequest struct {
 	Ticket      *NFTTicket
-	Signatures  *TicketSignatures
+	Signatures  *RegTicketSignatures
 	Mn1PastelID string
 	Pasphase    string
 	Key1        string
@@ -196,8 +196,8 @@ type RegisterNFTRequest struct {
 	Fee         int64
 }
 
-// EncodeSignatures encodes TicketSignatures into byte array
-func EncodeSignatures(signatures TicketSignatures) ([]byte, error) {
+// EncodeRegSignatures encodes RegTicketSignatures into byte array
+func EncodeRegSignatures(signatures RegTicketSignatures) ([]byte, error) {
 	// reset signatures of Mn1 if any
 	signatures.Mn1 = nil
 

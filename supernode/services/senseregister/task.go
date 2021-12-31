@@ -27,7 +27,7 @@ type Task struct {
 	*Service
 
 	nftRegMetadata *types.ActionRegMetadata
-	Ticket         *pastel.NFTTicket
+	Ticket         *pastel.ActionTicket
 	Artwork        *artwork.File
 	imageSizeBytes int
 
@@ -426,8 +426,13 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, dd []byte) error 
 		return nil
 	}
 
-	if err := validate(ctx, dd, task.Ticket.AppTicketData.DDAndFingerprintsIc, task.Ticket.AppTicketData.DDAndFingerprintsMax,
-		task.Ticket.AppTicketData.DDAndFingerprintsIDs); err != nil {
+	apiSenseTicket, err := task.Ticket.ApiSenseTicket()
+	if err != nil {
+		return errors.Errorf("invalid sense ticket: %w", err)
+	}
+
+	if err := validate(ctx, dd, apiSenseTicket.DDAndFingerprintsIc, apiSenseTicket.DDAndFingerprintsMax,
+		apiSenseTicket.DDAndFingerprintsIDs); err != nil {
 
 		return errors.Errorf("validate dd_and_fingerprints: %w", err)
 	}
@@ -436,74 +441,42 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, dd []byte) error 
 }
 
 // GetRegistrationFee get the fee to register artwork to bockchain
-func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (int64, error) {
+func (task *Task) validateSignedTicketFromWN(ctx context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) error {
 	var err error
-	if err = task.RequiredStatus(StatusImageAndThumbnailCoordinateUploaded); err != nil {
-		return 0, errors.Errorf("require status %s not satisfied", StatusImageAndThumbnailCoordinateUploaded)
-	}
-
 	task.creatorSignature = creatorSignature
 
-	<-task.NewAction(func(ctx context.Context) error {
-		task.UpdateStatus(StatusRegistrationFeeCalculated)
+	// TODO: fix this like how can we get the signature before calling cNode
+	task.Ticket, err = pastel.DecodeActionTicket(ticket)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("decode action ticket")
+		return errors.Errorf("decode action ticket: %w", err)
+	}
 
-		// TODO: fix this like how can we get the signature before calling cNode
-		task.Ticket, err = pastel.DecodeNFTTicket(ticket)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("decode NFT ticket")
-			err = errors.Errorf("decode NFT ticket %w", err)
-			return nil
-		}
+	// Verify ApiSenseTicket
+	_, err = task.Ticket.ApiSenseTicket()
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("invalid api sense ticket")
+		return errors.Errorf("invalid api sense ticket: %w", err)
+	}
 
-		verified, err := task.pastelClient.Verify(ctx, ticket, string(creatorSignature), task.Ticket.Author, pastel.SignAlgorithmED448)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("verify ticket signature")
-			err = errors.Errorf("verify ticket signature %w", err)
-			return nil
-		}
+	verified, err := task.pastelClient.Verify(ctx, ticket, string(creatorSignature), task.Ticket.Caller, pastel.SignAlgorithmED448)
+	if err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("verify ticket signature")
+		return errors.Errorf("verify ticket signature %w", err)
+	}
 
-		if !verified {
-			err = errors.New("ticket verification failed")
-			log.WithContext(ctx).WithError(err).Errorf("verification failure")
-			return nil
-		}
+	if !verified {
+		err = errors.New("ticket verification failed")
+		log.WithContext(ctx).WithError(err).Errorf("verification failure")
+		return err
+	}
 
-		if err := task.validateRqIDsAndDdFpIds(ctx, ddFpFile); err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
-			err = errors.Errorf("validate rq & dd id files %w", err)
-			return nil
-		}
+	if err := task.validateRqIDsAndDdFpIds(ctx, ddFpFile); err != nil {
+		log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
 
-		// Assume passphase is 16-bytes length
-
-		getFeeRequest := pastel.GetRegisterNFTFeeRequest{
-			Ticket: task.Ticket,
-			Signatures: &pastel.TicketSignatures{
-				Creator: map[string]string{
-					task.Ticket.Author: string(creatorSignature),
-				},
-				Mn2: map[string]string{
-					task.Service.config.PastelID: string(creatorSignature),
-				},
-				Mn3: map[string]string{
-					task.Service.config.PastelID: string(creatorSignature),
-				},
-			},
-			Mn1PastelID: task.Service.config.PastelID, // all ID has same length, so can use any id here
-			Passphrase:  task.config.PassPhrase,
-			Fee:         0, // fake data
-			ImgSizeInMb: int64(task.imageSizeBytes) / (1024 * 1024),
-		}
-
-		task.registrationFee, err = task.pastelClient.GetRegisterNFTFee(ctx, getFeeRequest)
-		if err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("get register NFT fee")
-			err = errors.Errorf("get register NFT fee %w", err)
-		}
-		return nil
-	})
-
-	return task.registrationFee, err
+		return errors.Errorf("validate rq & dd id files %w", err)
+	}
+	return nil
 }
 
 // ValidateBurnTxID - will validate the pre-burnt transaction ID created by 3rd party
@@ -527,16 +500,19 @@ func (task *Task) ValidateBurnTxID(ctx context.Context) error {
 	return err
 }
 
-// ValidatePreBurnTransaction will get pre-burnt transaction fee txid, wait until it's confirmations meet expectation.
-func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (string, error) {
+// ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
+func (task *Task) ValidateAndRegister(ctx context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (string, error) {
 	var err error
 	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
 		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
 	}
 
-	log.WithContext(ctx).Debugf("preburn-txid: %s", txid)
+	task.creatorSignature = creatorSignature
+
 	<-task.NewAction(func(ctx context.Context) error {
-		confirmationChn := task.waitConfirmation(ctx, txid, int64(task.config.PreburntTxMinConfirmations), 15*time.Second)
+		if err = task.validateSignedTicketFromWN(ctx, ticket, creatorSignature, ddFpFile); err != nil {
+			return nil
+		}
 
 		// sign the ticket if not primary node
 		log.WithContext(ctx).Debugf("isPrimary: %t", task.connectedTo == nil)
@@ -545,14 +521,6 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 			err = errors.Errorf("signed and send NFT ticket")
 			return nil
 		}
-
-		log.WithContext(ctx).Debug("waiting for confimation")
-		if err = <-confirmationChn; err != nil {
-			log.WithContext(ctx).WithError(err).Errorf("validate preburn transaction validation")
-			err = errors.Errorf("validate preburn transaction validation :%w", err)
-			return nil
-		}
-		log.WithContext(ctx).Debug("confirmation done")
 
 		return nil
 	})
@@ -583,7 +551,7 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 						return nil
 					}
 
-					nftRegTxid, err = task.registerArt(ctx)
+					nftRegTxid, err = task.registerAction(ctx)
 					if err != nil {
 						log.WithContext(ctx).WithError(err).Errorf("peers' singature mismatched")
 						err = errors.Errorf("register NFT: %w", err)
@@ -596,11 +564,12 @@ func (task *Task) ValidatePreBurnTransaction(ctx context.Context, txid string) (
 					// 	return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
 					// }
 
-					if err = task.storeIDFiles(ctx); err != nil {
-						log.WithContext(ctx).WithError(err).Errorf("store id files")
-						err = errors.Errorf("store id files: %w", err)
-						return nil
-					}
+					// TODO: update in next step
+					// if err = task.storeIDFiles(ctx); err != nil {
+					// 	log.WithContext(ctx).WithError(err).Errorf("store id files")
+					// 	err = errors.Errorf("store id files: %w", err)
+					// 	return nil
+					// }
 
 					return nil
 				}
@@ -662,7 +631,7 @@ func (task *Task) waitConfirmation(ctx context.Context, txid string, minConfirma
 
 // sign and send NFT ticket if not primary
 func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) error {
-	ticket, err := pastel.EncodeNFTTicket(task.Ticket)
+	ticket, err := pastel.EncodeActionTicket(task.Ticket)
 	if err != nil {
 		return errors.Errorf("serialize NFT ticket: %w", err)
 	}
@@ -682,7 +651,7 @@ func (task *Task) signAndSendArtTicket(ctx context.Context, isPrimary bool) erro
 func (task *Task) verifyPeersSingature(ctx context.Context) error {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
-	data, err := pastel.EncodeNFTTicket(task.Ticket)
+	data, err := pastel.EncodeActionTicket(task.Ticket)
 	if err != nil {
 		return errors.Errorf("encoded NFT ticket: %w", err)
 	}
@@ -696,23 +665,21 @@ func (task *Task) verifyPeersSingature(ctx context.Context) error {
 	return nil
 }
 
-func (task *Task) registerArt(ctx context.Context) (string, error) {
+func (task *Task) registerAction(ctx context.Context) (string, error) {
 	log.WithContext(ctx).Debug("all signature received so start validation")
 
-	req := pastel.RegisterNFTRequest{
-		Ticket: &pastel.NFTTicket{
+	req := pastel.RegisterActionRequest{
+		Ticket: &pastel.ActionTicket{
 			Version:       task.Ticket.Version,
-			Author:        task.Ticket.Author,
+			Caller:        task.Ticket.Caller,
 			BlockNum:      task.Ticket.BlockNum,
 			BlockHash:     task.Ticket.BlockHash,
-			Copies:        task.Ticket.Copies,
-			Royalty:       task.Ticket.Royalty,
-			Green:         task.Ticket.Green,
-			AppTicketData: task.Ticket.AppTicketData,
+			ActionType:    task.Ticket.ActionType,
+			ApiTicketData: task.Ticket.ApiTicketData,
 		},
-		Signatures: &pastel.TicketSignatures{
-			Creator: map[string]string{
-				task.Ticket.Author: string(task.creatorSignature),
+		Signatures: &pastel.ActionTicketSignatures{
+			Caller: map[string]string{
+				task.Ticket.Caller: string(task.creatorSignature),
 			},
 			Mn1: map[string]string{
 				task.config.PastelID: string(task.ownSignature),
@@ -729,9 +696,9 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 		Fee:         task.registrationFee,
 	}
 
-	nftRegTxid, err := task.pastelClient.RegisterNFTTicket(ctx, req)
+	nftRegTxid, err := task.pastelClient.RegisterActionTicket(ctx, req)
 	if err != nil {
-		return "", errors.Errorf("register NFT work: %w", err)
+		return "", errors.Errorf("register action ticket: %w", err)
 	}
 	return nftRegTxid, nil
 }

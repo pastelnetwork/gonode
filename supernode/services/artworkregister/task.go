@@ -524,7 +524,7 @@ func (task *Task) GetRegistrationFee(_ context.Context, ticket []byte, creatorSi
 
 		getFeeRequest := pastel.GetRegisterNFTFeeRequest{
 			Ticket: task.Ticket,
-			Signatures: &pastel.TicketSignatures{
+			Signatures: &pastel.RegTicketSignatures{
 				Creator: map[string]string{
 					task.Ticket.Author: string(creatorSignature),
 				},
@@ -756,7 +756,7 @@ func (task *Task) registerArt(ctx context.Context) (string, error) {
 			Green:         task.Ticket.Green,
 			AppTicketData: task.Ticket.AppTicketData,
 		},
-		Signatures: &pastel.TicketSignatures{
+		Signatures: &pastel.RegTicketSignatures{
 			Creator: map[string]string{
 				task.Ticket.Author: string(task.creatorSignature),
 			},
