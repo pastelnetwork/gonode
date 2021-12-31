@@ -22,6 +22,7 @@ func TestStatusNames(t *testing.T) {
 				StatusImageProbed,
 				StatusImageAndThumbnailCoordinateUploaded,
 				StatusRegistrationFeeCalculated,
+				StatusErrorInvalidBurnTxID,
 				StatusTaskCanceled,
 				StatusTaskCompleted,
 			},
