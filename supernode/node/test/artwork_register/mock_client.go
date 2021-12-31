@@ -47,8 +47,6 @@ const (
 
 	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method
 	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
-	// DownloadMethod represent Download name method
-	DownloadMethod = "Download"
 
 	// SendArtTicketSignatureMethod represent SendArtTicketSignature method
 	SendArtTicketSignatureMethod = "SendArtTicketSignature"
@@ -75,13 +73,6 @@ func NewMockClient(t *testing.T) *Client {
 // ListenOnRegisterArtwork listening RegisterArtwork call
 func (client *Client) ListenOnRegisterArtwork() *Client {
 	client.Connection.On(RegisterArtworkMethod).Return(client.RegisterArtwork)
-	return client
-}
-
-// ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
-func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
-	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }
 

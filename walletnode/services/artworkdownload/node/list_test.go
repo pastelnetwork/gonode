@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pastelnetwork/gonode/walletnode/node/test"
+	test "github.com/pastelnetwork/gonode/walletnode/node/test/artwork_download"
 	"github.com/stretchr/testify/assert"
 )
 

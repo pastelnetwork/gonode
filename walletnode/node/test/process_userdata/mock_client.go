@@ -1,10 +1,10 @@
-package test
+package process_data
 
 import (
 	"context"
 	"testing"
 
-	"github.com/pastelnetwork/gonode/supernode/node/mocks"
+	"github.com/pastelnetwork/gonode/walletnode/node/mocks"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -24,8 +24,8 @@ const (
 	// DoneMethod represent Done call
 	DoneMethod = "Done"
 
-	// ProbeImageMethod represent ProbeImage name method
-	ProbeImageMethod = "ProbeImage"
+	// MeshNodesMethod represent MeshNodes name method
+	MeshNodesMethod = "MeshNodes"
 
 	// RegisterArtworkMethod represent RegisterArtwork name method
 	RegisterArtworkMethod = "RegisterArtwork"
@@ -33,25 +33,14 @@ const (
 	// DownloadArtworkMethod represent DownloadArtwork name method
 	DownloadArtworkMethod = "DownloadArtwork"
 
+	// ProcessUserdataMethod represent ProcessUserdata name method
+	ProcessUserdataMethod = "ProcessUserdata"
+
 	// SessionMethod represent Session name method
 	SessionMethod = "Session"
 
 	// SessIDMethod represent SessID name method
 	SessIDMethod = "SessID"
-
-	// SendPreBurntFeeTxidMethod represent SendPreBurntFeeTxId method
-	SendPreBurntFeeTxidMethod = "SendPreBurntFeeTxid"
-
-	// SendSignedTicketMethod represent SendSignedTicket method
-	SendSignedTicketMethod = "SendSignedTicket"
-
-	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method
-	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
-	// DownloadMethod represent Download name method
-	DownloadMethod = "Download"
-
-	// SendArtTicketSignatureMethod represent SendArtTicketSignature method
-	SendArtTicketSignatureMethod = "SendArtTicketSignature"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -59,7 +48,7 @@ type Client struct {
 	t *testing.T
 	*mocks.Client
 	*mocks.Connection
-	*mocks.RegisterArtwork
+	*mocks.ProcessUserdata
 }
 
 // NewMockClient create new client mock
@@ -68,20 +57,13 @@ func NewMockClient(t *testing.T) *Client {
 		t:               t,
 		Client:          &mocks.Client{},
 		Connection:      &mocks.Connection{},
-		RegisterArtwork: &mocks.RegisterArtwork{},
+		ProcessUserdata: &mocks.ProcessUserdata{},
 	}
 }
 
 // ListenOnRegisterArtwork listening RegisterArtwork call
 func (client *Client) ListenOnRegisterArtwork() *Client {
-	client.Connection.On(RegisterArtworkMethod).Return(client.RegisterArtwork)
-	return client
-}
-
-// ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
-func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
-	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
-		mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
+	client.Connection.On(RegisterArtworkMethod).Return(nil)
 	return client
 }
 
@@ -91,6 +73,12 @@ func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...
 		client.Connection.AssertCalled(client.t, RegisterArtworkMethod, arguments...)
 	}
 	client.Connection.AssertNumberOfCalls(client.t, RegisterArtworkMethod, expectedCalls)
+	return client
+}
+
+// ListenOnDownloadArtwork listening DownloadArtwork call
+func (client *Client) ListenOnDownloadArtwork() *Client {
+	client.Connection.On(DownloadArtworkMethod).Return(client.DownloadArtwork)
 	return client
 }
 
@@ -106,9 +94,9 @@ func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...
 // ListenOnConnect listening Connect call and returns error from args
 func (client *Client) ListenOnConnect(addr string, returnErr error) *Client {
 	if addr == "" {
-		client.Client.On(ConnectMethod, mock.Anything, mock.IsType(string(""))).Return(client.Connection, returnErr)
+		client.Client.On(ConnectMethod, mock.Anything, mock.IsType(string("")), mock.Anything).Return(client.Connection, returnErr)
 	} else {
-		client.Client.On(ConnectMethod, mock.Anything, addr).Return(client.Connection, returnErr)
+		client.Client.On(ConnectMethod, mock.Anything, addr, mock.Anything).Return(client.Connection, returnErr)
 	}
 
 	return client
@@ -153,74 +141,89 @@ func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}
 	return client
 }
 
-// ListenOnSession listening Session call and returns error from args
-func (client *Client) ListenOnSession(returnErr error) *Client {
-	client.RegisterArtwork.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+// ListenOnMeshNodes listening MeshNodes call and returns args value
+func (client *Client) ListenOnMeshNodes(arguments ...interface{}) *Client {
+	client.ProcessUserdata.On(MeshNodesMethod, mock.Anything, mock.Anything).Return(arguments...)
 	return client
 }
 
-// ListenOnSendArtTicketSignature listens on send art ticket signature
-func (client *Client) ListenOnSendArtTicketSignature(returnErr error) *Client {
-	client.RegisterArtwork.On(SendArtTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
+// ListenOnProcessUserdata listening ProcessUserdata call
+func (client *Client) ListenOnProcessUserdata() *Client {
+	client.Connection.On(ProcessUserdataMethod).Return(client.ProcessUserdata)
 	return client
 }
 
-// AssertSessionCall assertion Session Call
-func (client *Client) AssertSessionCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertProcessUserdataCall assertion ProcessUserdata call
+func (client *Client) AssertProcessUserdataCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, SessionMethod, arguments...)
+		client.Connection.AssertCalled(client.t, ProcessUserdataMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
+	client.Connection.AssertNumberOfCalls(client.t, ProcessUserdataMethod, expectedCalls)
 	return client
 }
 
-// ListenOnAcceptedNodes listening AcceptedNodes call and returns pastelIDs and error from args.
-func (client *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error) *Client {
+// ListenOnSessionUserdata listening Session call and returns error from args
+func (client *Client) ListenOnSessionUserdata(returnErr error) *Client {
+	client.ProcessUserdata.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+	return client
+}
+
+// AssertSessionCallUserdata assertion Session Call
+func (client *Client) AssertSessionCallUserdata(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.ProcessUserdata.AssertCalled(client.t, SessionMethod, arguments...)
+	}
+	client.ProcessUserdata.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
+	return client
+}
+
+// ListenOnAcceptedNodesUserdata listening AcceptedNodes call and returns pastelIDs and error from args.
+func (client *Client) ListenOnAcceptedNodesUserdata(pastelIDs []string, returnErr error) *Client {
 	handleFunc := func(ctx context.Context) []string {
 		//need block operation until context is done
 		<-ctx.Done()
 		return pastelIDs
 	}
 
-	client.RegisterArtwork.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
+	client.ProcessUserdata.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
 	return client
 }
 
-// AssertAcceptedNodesCall assertion AcceptedNodes call
-func (client *Client) AssertAcceptedNodesCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertAcceptedNodesCallUserdata assertion AcceptedNodes call
+func (client *Client) AssertAcceptedNodesCallUserdata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
+		client.ProcessUserdata.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
+	client.ProcessUserdata.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
 	return client
 }
 
-// ListenOnConnectTo listening ConnectTo call and returns error from args
-func (client *Client) ListenOnConnectTo(returnErr error) *Client {
-	client.RegisterArtwork.On(ConnectToMethod, mock.Anything, mock.IsType(string("")), mock.IsType(string(""))).Return(returnErr)
+// ListenOnConnectToUserdata listening ConnectTo call and returns error from args
+func (client *Client) ListenOnConnectToUserdata(returnErr error) *Client {
+	client.ProcessUserdata.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 
-// AssertConnectToCall assertion ConnectTo call
-func (client *Client) AssertConnectToCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertConnectToCallUserdata assertion ConnectTo call
+func (client *Client) AssertConnectToCallUserdata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, ConnectToMethod, arguments...)
+		client.ProcessUserdata.AssertCalled(client.t, ConnectToMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
+	client.ProcessUserdata.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
 	return client
 }
 
-// ListenOnSessID listening SessID call and returns sessID from args
-func (client *Client) ListenOnSessID(sessID string) *Client {
-	client.RegisterArtwork.On(SessIDMethod).Return(sessID)
+// ListenOnSessIDUserdata listening SessID call and returns sessID from args
+func (client *Client) ListenOnSessIDUserdata(sessID string) *Client {
+	client.ProcessUserdata.On(SessIDMethod).Return(sessID)
 	return client
 }
 
-// AssertSessIDCall assertion SessID call
-func (client *Client) AssertSessIDCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertSessIDCallUserdata assertion SessID call
+func (client *Client) AssertSessIDCallUserdata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, SessIDMethod, arguments...)
+		client.ProcessUserdata.AssertCalled(client.t, SessIDMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
+	client.ProcessUserdata.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
 	return client
 }
