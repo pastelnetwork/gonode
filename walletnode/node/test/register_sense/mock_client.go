@@ -225,3 +225,33 @@ func (client *Client) AssertSessIDCall(expectedCalls int, arguments ...interface
 	client.RegisterSense.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
 	return client
 }
+
+// ListenOnSendRegMetadata listening SendRegMetadata call and returns error from args
+func (client *Client) ListenOnSendRegMetadata(returnErr error) *Client {
+	client.RegisterSense.On(SendRegMetadataMethod).Return(returnErr)
+	return client
+}
+
+// SendRegMetadata assertion SendRegMetadata call
+func (client *Client) AssertSendRegMetadata(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.RegisterSense.AssertCalled(client.t, SendRegMetadataMethod, arguments...)
+	}
+	client.RegisterSense.AssertNumberOfCalls(client.t, SendRegMetadataMethod, expectedCalls)
+	return client
+}
+
+// ListenOnSendActionAct listening SendActionAct call and returns error from args
+func (client *Client) ListenOnSendActionAct(returnErr error) *Client {
+	client.RegisterSense.On(SendActionActMethod).Return(returnErr)
+	return client
+}
+
+// AssertSendActionAct assertion SendActionAct call
+func (client *Client) AssertSendActionAct(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.RegisterSense.AssertCalled(client.t, SendActionActMethod, arguments...)
+	}
+	client.RegisterSense.AssertNumberOfCalls(client.t, SendActionActMethod, expectedCalls)
+	return client
+}

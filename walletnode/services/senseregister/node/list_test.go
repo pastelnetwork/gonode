@@ -268,6 +268,7 @@ func TestNodesSendImage(t *testing.T) {
 		nodes                     []nodeAttribute
 		args                      args
 		err                       error
+		validBurnTxID             bool
 		compressedFingersAndScore []byte
 		numberProbeImageCall      int
 	}{
@@ -300,7 +301,7 @@ func TestNodesSendImage(t *testing.T) {
 				//client mock
 				client := test.NewMockClient(t)
 				//listen on uploadImage call
-				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.err)
+				client.ListenOnProbeImage(testCase.compressedFingersAndScore, testCase.validBurnTxID, testCase.err)
 				clients = append(clients, client)
 
 				nodes.Add(&Node{
