@@ -37,8 +37,9 @@ func stopGenerateBlock() {
 	stopChan <- struct{}{}
 }
 
-func getBlockCount(w http.ResponseWriter, r *http.Request) {
+func getBlockCount(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte(fmt.Sprint(blockCount)))
+	w.WriteHeader(http.StatusOK)
 }
 
 func prepareMockFiles() {
@@ -73,7 +74,7 @@ func storeMockFiles() {
 	var mapKeys = make(map[string]map[string]string)
 	var keyList = make([]string, 0)
 	for j := 1; j < 6; j++ {
-		storageIPAddr = fmt.Sprintf("192.168.114.1%d", j)
+		storageIPAddr = fmt.Sprintf("192.168.100.1%d", j)
 		storageName = fmt.Sprintf("mn%dkey", j)
 		mapKeys[storageName] = make(map[string]string)
 		for i := 1; i <= 20; i++ {
@@ -133,27 +134,31 @@ func storeMockFiles() {
 	mockFileStored = true
 }
 
-func keyStoring(w http.ResponseWriter, r *http.Request) {
+func keyStoring(w http.ResponseWriter, _ *http.Request) {
 	if !mockFileStored {
 		storeMockFiles()
 	}
+	w.WriteHeader(http.StatusOK)
 }
 
-func listKeys(w http.ResponseWriter, r *http.Request) {
+func listKeys(w http.ResponseWriter, _ *http.Request) {
 	b, err := ioutil.ReadFile("p2pkeys.json")
 	if err != nil {
 		b = []byte("[]")
 	}
 
 	w.Write(b)
+	w.WriteHeader(http.StatusOK)
 }
 
 func main() {
 	go startGenerateblock()
 	defer stopGenerateBlock()
-	http.HandleFunc("/getblockcount", getBlockCount)
 
 	http.HandleFunc("/ws", wsHandler)
+
+	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {})
+	http.HandleFunc("/getblockcount", getBlockCount)
 
 	http.HandleFunc("/store/mocks", keyStoring)
 	http.HandleFunc("/store/keys", listKeys)
@@ -183,11 +188,11 @@ var mapStatictis = make(map[string]*statictis)
 var stopCh = make(chan struct{})
 
 type statictis struct {
-	Sent      int32
-	Responded int32
-	Succeeded int32
-	Failed    int32
-	Timeout   int32
+	Sent      int32 `json:"sent"`
+	Responded int32 `json:"respond"`
+	Succeeded int32 `json:"success"`
+	Failed    int32 `json:"failed"`
+	Timeout   int32 `json:"timeout"`
 }
 
 func challengeSent(w http.ResponseWriter, r *http.Request) {
@@ -210,6 +215,7 @@ func challengeSent(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&st.Sent, 1)
 	}
 	log.Println("handled challenge sent statictis", mapStatictis[nodeID])
+	w.WriteHeader(http.StatusOK)
 }
 
 func challengeVerified(w http.ResponseWriter, r *http.Request) {
@@ -224,6 +230,7 @@ func challengeVerified(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&st.Succeeded, 1)
 	}
 	log.Println("handled challenge succeeded statictis", mapStatictis[nodeID])
+	w.WriteHeader(http.StatusOK)
 }
 
 func challengeFailed(w http.ResponseWriter, r *http.Request) {
@@ -238,6 +245,7 @@ func challengeFailed(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&st.Failed, 1)
 	}
 	log.Println("handled challenge failed statictis", mapStatictis[nodeID])
+	w.WriteHeader(http.StatusOK)
 }
 
 func challengeResponded(w http.ResponseWriter, r *http.Request) {
@@ -248,6 +256,7 @@ func challengeResponded(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&st.Responded, 1)
 	}
 	log.Println("handled challenge respond statictis", mapStatictis[nodeID])
+	w.WriteHeader(http.StatusOK)
 }
 
 func challengeTimeout(w http.ResponseWriter, r *http.Request) {
@@ -262,6 +271,7 @@ func challengeTimeout(w http.ResponseWriter, r *http.Request) {
 		atomic.AddInt32(&st.Timeout, 1)
 	}
 	log.Println("handled challenge timeout statictis", mapStatictis[nodeID])
+	w.WriteHeader(http.StatusOK)
 }
 
 func verifyTimeout() {
@@ -272,7 +282,7 @@ func verifyTimeout() {
 		case <-stopCh:
 			return
 		case <-tc.C:
-			resp, err := (&http.Client{}).Get(fmt.Sprintf("http://%s/getblockcount", "192.168.114.10"))
+			resp, err := (&http.Client{}).Get(fmt.Sprintf("http://%s/getblockcount", "192.168.100.10"))
 			if err != nil {
 				log.Println("could not current getblockcount", err)
 				continue

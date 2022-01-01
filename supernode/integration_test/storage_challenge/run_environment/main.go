@@ -10,6 +10,7 @@ import (
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/client"
 	"github.com/pastelnetwork/gonode/supernode/node/grpc/server/middleware"
+	appst "github.com/pastelnetwork/gonode/supernode/node/grpc/server/services/supernode/storagechallenge"
 	"github.com/pastelnetwork/gonode/supernode/services/common"
 	"github.com/pastelnetwork/gonode/supernode/services/storagechallenge"
 	"google.golang.org/grpc"
@@ -31,7 +32,7 @@ func main() {
 	p2p := newMockP2P(pID)
 
 	nodeClient := client.New(pclient, secInfo)
-	domainSt, stopActorFunc := storagechallenge.NewService(&storagechallenge.Config{
+	domainSt, stopDomainActor := storagechallenge.NewService(&storagechallenge.Config{
 		Config: common.Config{
 			PastelID:   pID,
 			PassPhrase: rawID,
@@ -39,7 +40,10 @@ func main() {
 		StorageChallengeExpiredBlocks: 2,
 		NumberOfChallengeReplicas:     3,
 	}, nodeClient, p2p, pclient, &challengeStateStorage{})
-	defer stopActorFunc()
+	defer stopDomainActor()
+
+	appSt, stopAppActor := appst.NewStorageChallenge(domainSt)
+	defer stopAppActor()
 
 	ctx, cncl := context.WithCancel(context.Background())
 	defer cncl()
@@ -50,7 +54,8 @@ func main() {
 		middleware.AltsCredential(pclient, secInfo),
 	)
 	go p2p.Run(ctx)
-	go domainSt.Run(ctx)
+	grpcServer.RegisterService(appSt.Desc(), appSt)
+	// go domainSt.Run(ctx)
 	listener, err := net.Listen("tcp", fmt.Sprintf("%s:14444", host))
 	if err != nil {
 		panic(err)

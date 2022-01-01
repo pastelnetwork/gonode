@@ -45,17 +45,19 @@ func init() {
 	}), mock.MatchedBy(func(algorithm string) bool {
 		log.Println("MOCK PASTEL CLIENT -- Verify algorithm param:", algorithm)
 		return true
-	})).Return(true, nil)
+	})).Return(func(_ context.Context, _ []byte, signature, _, _ string) bool {
+		return signature == "mock signature"
+	}, nil)
 
 	mc.On("GetBlockCount", mock.Anything).Run(func(args mock.Arguments) {
 		log.Println("MOCK PASTEL CLIENT -- GetBlockHash")
-	}).Return(func(ctx context.Context) int32 {
+	}).Return(func(_ context.Context) int32 {
 		var ret int
 		res, _ := http.DefaultClient.Get("http://helper:8088/getblockcount")
 		b, _ := io.ReadAll(res.Body)
 		ret, _ = strconv.Atoi(string(b))
 		return int32(ret)
-	}, func(ctx context.Context) error { return nil })
+	}, func(_ context.Context) error { return nil })
 
 	mc.On("GetBlockHash", mock.Anything, mock.MatchedBy(func(blockHeight int32) bool {
 		log.Println("MOCK PASTEL CLIENT -- GetBlockHash blockHeight param:", blockHeight)
@@ -65,27 +67,27 @@ func init() {
 	mc.On("GetBlockVerbose1", mock.Anything, mock.MatchedBy(func(blockHeight int32) bool {
 		log.Println("MOCK PASTEL CLIENT -- GetBlockVerbose1 blockHeight param:", blockHeight)
 		return true
-	})).Return(func(ctx context.Context, blockHeight int32) *pastel.GetBlockVerbose1Result {
+	})).Return(func(_ context.Context, blockHeight int32) *pastel.GetBlockVerbose1Result {
 		return getBlockVerbose1(blockHeight)
-	}, func(ctx context.Context) error { return nil })
+	}, func(_ context.Context) error { return nil })
 
 	mc.On("MasterNodesExtra", mock.Anything).Run(func(args mock.Arguments) {
 		log.Println("MOCK PASTEL CLIENT -- MasterNodesExtra")
-	}).Return(func(ctx context.Context) pastel.MasterNodes {
+	}).Return(func(_ context.Context) pastel.MasterNodes {
 		return getMasternodeList()
-	}, func(ctx context.Context) error { return nil })
+	}, func(_ context.Context) error { return nil })
 
-	mc.On("MasterNodesList", mock.Anything).Run(func(args mock.Arguments) {
-		log.Println("MOCK PASTEL CLIENT -- MasterNodesList")
-	}).Return(func(ctx context.Context) pastel.MasterNodes {
+	mc.On("MasterNodeTop", mock.Anything).Run(func(args mock.Arguments) {
+		log.Println("MOCK PASTEL CLIENT -- MasterNodeTop")
+	}).Return(func(_ context.Context) pastel.MasterNodes {
 		return getMasternodeList()
-	}, func(ctx context.Context) error { return nil })
+	}, func(_ context.Context) error { return nil })
 
 	mc.On("RegTickets", mock.Anything).Run(func(args mock.Arguments) {
 		log.Println("MOCK PASTEL CLIENT -- RegTickets")
-	}).Return(func(ctx context.Context) pastel.RegTickets {
+	}).Return(func(_ context.Context) pastel.RegTickets {
 		return getRegTickets()
-	}, func(ctx context.Context) error { return nil })
+	}, func(_ context.Context) error { return nil })
 }
 
 func getBlockVerbose1(blkCount int32) *pastel.GetBlockVerbose1Result {
