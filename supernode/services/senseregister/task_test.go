@@ -2,6 +2,8 @@ package senseregister
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
@@ -9,8 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DataDog/zstd"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -875,7 +879,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Task:                     task.New(StatusRegistrationFeeCalculated),
+					Task:                     task.New(StatusImageProbed),
 					Ticket:                   &pastel.ActionTicket{},
 					allSignaturesReceivedChn: make(chan struct{}),
 				},
@@ -909,7 +913,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Task:                     task.New(StatusRegistrationFeeCalculated),
+					Task:                     task.New(StatusImageProbed),
 					Ticket:                   &pastel.ActionTicket{},
 					allSignaturesReceivedChn: make(chan struct{}),
 				},
@@ -927,7 +931,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 						config: &Config{},
 					},
 					allSignaturesReceivedChn: make(chan struct{}),
-					Task:                     task.New(StatusRegistrationFeeCalculated),
+					Task:                     task.New(StatusImageProbed),
 					Ticket:                   &pastel.ActionTicket{},
 				},
 				masterNodesErr: nil,
@@ -974,158 +978,149 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 	}
 }
 
-// func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
-// 	type args struct {
-// 		task   *Task
-// 		fg     *pastel.DDAndFingerprints
-// 		rqFile *rqnode.RawSymbolIDFile
-// 		ddSig  [][]byte
-// 		rqSig  []byte
-// 	}
+func TestTaskValidateDdFpIds(t *testing.T) {
+	type args struct {
+		task  *Task
+		fg    *pastel.DDAndFingerprints
+		ddSig [][]byte
+	}
 
-// 	testCases := map[string]struct {
-// 		args    args
-// 		wantErr error
-// 	}{
-// 		"success": {
-// 			args: args{
-// 				ddSig: [][]byte{[]byte("sig-1"), []byte("sig-2"), []byte("sig-3")},
-// 				rqSig: []byte("rq-sig"),
-// 				rqFile: &rqnode.RawSymbolIDFile{
-// 					ID:                "id",
-// 					SymbolIdentifiers: []string{"symbol-1", "symbol-2", "symbol-3", "symbol-4", "symbol-5"},
-// 					BlockHash:         "block-hash",
-// 					PastelID:          "author-pastelid",
-// 				},
+	testCases := map[string]struct {
+		args    args
+		wantErr error
+	}{
+		"success": {
+			args: args{
+				ddSig: [][]byte{[]byte("sig-1"), []byte("sig-2"), []byte("sig-3")},
 
-// 				fg: &pastel.DDAndFingerprints{
-// 					Block:                      "Block",
-// 					Principal:                  "Principal",
-// 					DupeDetectionSystemVersion: "v1.0",
+				fg: &pastel.DDAndFingerprints{
+					Block:                      "Block",
+					Principal:                  "Principal",
+					DupeDetectionSystemVersion: "v1.0",
 
-// 					IsLikelyDupe:     true,
-// 					IsRareOnInternet: true,
+					IsLikelyDupe:     true,
+					IsRareOnInternet: true,
 
-// 					RarenessScores: &pastel.RarenessScores{
-// 						CombinedRarenessScore:         0,
-// 						XgboostPredictedRarenessScore: 0,
-// 						NnPredictedRarenessScore:      0,
-// 						OverallAverageRarenessScore:   0,
-// 					},
-// 					InternetRareness: &pastel.InternetRareness{
-// 						MatchesFoundOnFirstPage: 0,
-// 						NumberOfPagesOfResults:  0,
-// 						URLOfFirstMatchInPage:   "",
-// 					},
+					RarenessScores: &pastel.RarenessScores{
+						CombinedRarenessScore:         0,
+						XgboostPredictedRarenessScore: 0,
+						NnPredictedRarenessScore:      0,
+						OverallAverageRarenessScore:   0,
+					},
+					InternetRareness: &pastel.InternetRareness{
+						MatchesFoundOnFirstPage: 0,
+						NumberOfPagesOfResults:  0,
+						URLOfFirstMatchInPage:   "",
+					},
 
-// 					OpenNSFWScore: 0.1,
-// 					AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
-// 						Drawings: 0.1,
-// 						Hentai:   0.2,
-// 						Neutral:  0.3,
-// 						Porn:     0.4,
-// 						Sexy:     0.5,
-// 					},
+					OpenNSFWScore: 0.1,
+					AlternativeNSFWScores: &pastel.AlternativeNSFWScores{
+						Drawings: 0.1,
+						Hentai:   0.2,
+						Neutral:  0.3,
+						Porn:     0.4,
+						Sexy:     0.5,
+					},
 
-// 					ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
-// 					FingerprintsStat: &pastel.FingerprintsStat{
-// 						NumberOfFingerprintsRequiringFurtherTesting1: 1,
-// 						NumberOfFingerprintsRequiringFurtherTesting2: 2,
-// 						NumberOfFingerprintsRequiringFurtherTesting3: 3,
-// 						NumberOfFingerprintsRequiringFurtherTesting4: 4,
-// 						NumberOfFingerprintsRequiringFurtherTesting5: 5,
-// 						NumberOfFingerprintsRequiringFurtherTesting6: 6,
-// 						NumberOfFingerprintsOfSuspectedDupes:         7,
-// 					},
+					ImageFingerprintOfCandidateImageFile: []float32{1, 2, 3},
+					FingerprintsStat: &pastel.FingerprintsStat{
+						NumberOfFingerprintsRequiringFurtherTesting1: 1,
+						NumberOfFingerprintsRequiringFurtherTesting2: 2,
+						NumberOfFingerprintsRequiringFurtherTesting3: 3,
+						NumberOfFingerprintsRequiringFurtherTesting4: 4,
+						NumberOfFingerprintsRequiringFurtherTesting5: 5,
+						NumberOfFingerprintsRequiringFurtherTesting6: 6,
+						NumberOfFingerprintsOfSuspectedDupes:         7,
+					},
 
-// 					HashOfCandidateImageFile: "HashOfCandidateImageFile",
-// 					PerceptualImageHashes: &pastel.PerceptualImageHashes{
-// 						PDQHash:        "PdqHash",
-// 						PerceptualHash: "PerceptualHash",
-// 						AverageHash:    "AverageHash",
-// 						DifferenceHash: "DifferenceHash",
-// 						NeuralHash:     "NeuralhashHash",
-// 					},
-// 					PerceptualHashOverlapCount: 1,
+					HashOfCandidateImageFile: "HashOfCandidateImageFile",
+					PerceptualImageHashes: &pastel.PerceptualImageHashes{
+						PDQHash:        "PdqHash",
+						PerceptualHash: "PerceptualHash",
+						AverageHash:    "AverageHash",
+						DifferenceHash: "DifferenceHash",
+						NeuralHash:     "NeuralhashHash",
+					},
+					PerceptualHashOverlapCount: 1,
 
-// 					Maxes: &pastel.Maxes{
-// 						PearsonMax:           1.0,
-// 						SpearmanMax:          2.0,
-// 						KendallMax:           3.0,
-// 						HoeffdingMax:         4.0,
-// 						MutualInformationMax: 5.0,
-// 						HsicMax:              6.0,
-// 						XgbimportanceMax:     7.0,
-// 					},
-// 					Percentile: &pastel.Percentile{
-// 						PearsonTop1BpsPercentile:             1.0,
-// 						SpearmanTop1BpsPercentile:            2.0,
-// 						KendallTop1BpsPercentile:             3.0,
-// 						HoeffdingTop10BpsPercentile:          4.0,
-// 						MutualInformationTop100BpsPercentile: 5.0,
-// 						HsicTop100BpsPercentile:              6.0,
-// 						XgbimportanceTop100BpsPercentile:     7.0,
-// 					},
-// 				},
-// 				task: &Task{
-// 					Service: &Service{
-// 						config: &Config{},
-// 					},
-// 					meshedNodes: []types.MeshedSuperNode{
-// 						types.MeshedSuperNode{NodeID: "node-1"},
-// 						types.MeshedSuperNode{NodeID: "node-2"},
-// 						types.MeshedSuperNode{NodeID: "node-3"},
-// 					},
-// 					Task: task.New(StatusImageProbed),
-// 					Ticket: &pastel.ActionTicket{
-// 						Caller:        "author-pastelid",
-// 						ActionType:    pastel.ActionTypeSense,
-// 						ApiTicketData: &pastel.ApiSenseTicket{},
-// 					},
-// 				},
-// 			},
+					Maxes: &pastel.Maxes{
+						PearsonMax:           1.0,
+						SpearmanMax:          2.0,
+						KendallMax:           3.0,
+						HoeffdingMax:         4.0,
+						MutualInformationMax: 5.0,
+						HsicMax:              6.0,
+						XgbimportanceMax:     7.0,
+					},
+					Percentile: &pastel.Percentile{
+						PearsonTop1BpsPercentile:             1.0,
+						SpearmanTop1BpsPercentile:            2.0,
+						KendallTop1BpsPercentile:             3.0,
+						HoeffdingTop10BpsPercentile:          4.0,
+						MutualInformationTop100BpsPercentile: 5.0,
+						HsicTop100BpsPercentile:              6.0,
+						XgbimportanceTop100BpsPercentile:     7.0,
+					},
+				},
+				task: &Task{
+					Service: &Service{
+						config: &Config{},
+					},
+					meshedNodes: []types.MeshedSuperNode{
+						types.MeshedSuperNode{NodeID: "node-1"},
+						types.MeshedSuperNode{NodeID: "node-2"},
+						types.MeshedSuperNode{NodeID: "node-3"},
+					},
+					Task: task.New(StatusImageProbed),
+					Ticket: &pastel.ActionTicket{
+						Caller:        "author-pastelid",
+						ActionType:    pastel.ActionTypeSense,
+						ApiTicketData: &pastel.ApiSenseTicket{},
+					},
+				},
+			},
 
-// 			wantErr: nil,
-// 		},
-// 	}
+			wantErr: nil,
+		},
+	}
 
-// 	for name, tc := range testCases {
-// 		tc := tc
+	for name, tc := range testCases {
+		tc := tc
 
-// 		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-// 			pastelClientMock := pastelMock.NewMockClient(t)
-// 			pastelClientMock.ListenOnVerify(true, nil)
-// 			tc.args.task.Service.pastelClient = pastelClientMock
-// 			var dd []byte
+		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
+			pastelClientMock := pastelMock.NewMockClient(t)
+			pastelClientMock.ListenOnVerify(true, nil)
+			tc.args.task.Service.pastelClient = pastelClientMock
+			var dd []byte
 
-// 			ddJSON, err := json.Marshal(tc.args.fg)
-// 			assert.Nil(t, err)
+			ddJSON, err := json.Marshal(tc.args.fg)
+			assert.Nil(t, err)
 
-// 			ddStr := base64.StdEncoding.EncodeToString(ddJSON)
-// 			ddStr = ddStr + "." + base64.StdEncoding.EncodeToString(tc.args.ddSig[0]) + "." +
-// 				base64.StdEncoding.EncodeToString(tc.args.ddSig[1]) + "." +
-// 				base64.StdEncoding.EncodeToString(tc.args.ddSig[2])
+			ddStr := base64.StdEncoding.EncodeToString(ddJSON)
+			ddStr = ddStr + "." + base64.StdEncoding.EncodeToString(tc.args.ddSig[0]) + "." +
+				base64.StdEncoding.EncodeToString(tc.args.ddSig[1]) + "." +
+				base64.StdEncoding.EncodeToString(tc.args.ddSig[2])
 
-// 			compressedDd, err := zstd.CompressLevel(nil, []byte(ddStr), 22)
-// 			assert.Nil(t, err)
-// 			dd = utils.B64Encode(compressedDd)
-// 			ticketData := &pastel.ApiSenseTicket{
-// 				DataHash: []byte{},
-// 			}
-// 			tc.args.task.Ticket.ApiTicketData = ticketData
+			compressedDd, err := zstd.CompressLevel(nil, []byte(ddStr), 22)
+			assert.Nil(t, err)
+			dd = utils.B64Encode(compressedDd)
+			ticketData := &pastel.ApiSenseTicket{
+				DataHash: []byte{},
+			}
+			tc.args.task.Ticket.ApiTicketData = ticketData
 
-// 			assert.Nil(t, err)
+			assert.Nil(t, err)
 
-// 			// err = tc.args.task.validateRqIDsAndDdFpIds(context.Background(), dd)
-// 			// if tc.wantErr != nil {
-// 			// 	assert.NotNil(t, err)
-// 			// 	assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-// 			// } else {
-// 			// 	if err != nil {
-// 			// 		fmt.Println("err: ", err.Error())
-// 			// 	}
-// 			// 	assert.Nil(t, err)
-// 			// }
-// 		})
-// 	}
-// }
+			err = tc.args.task.validateDdFpIds(context.Background(), dd)
+			if tc.wantErr != nil {
+				assert.NotNil(t, err)
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			} else {
+				if err != nil {
+					fmt.Println("err: ", err.Error())
+				}
+				assert.Nil(t, err)
+			}
+		})
+	}
+}

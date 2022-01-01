@@ -29,7 +29,6 @@ type Task struct {
 	nftRegMetadata *types.ActionRegMetadata
 	Ticket         *pastel.ActionTicket
 	Artwork        *artwork.File
-	imageSizeBytes int
 
 	meshedNodes []types.MeshedSuperNode
 
@@ -362,7 +361,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	return task.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
-func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, dd []byte) error {
+func (task *Task) validateDdFpIds(ctx context.Context, dd []byte) error {
 
 	validate := func(ctx context.Context, data []byte, ic uint32, max uint32, ids []string) error {
 		length := 4
@@ -471,7 +470,7 @@ func (task *Task) validateSignedTicketFromWN(ctx context.Context, ticket []byte,
 		return err
 	}
 
-	if err := task.validateRqIDsAndDdFpIds(ctx, ddFpFile); err != nil {
+	if err := task.validateDdFpIds(ctx, ddFpFile); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
 
 		return errors.Errorf("validate rq & dd id files %w", err)
@@ -503,8 +502,8 @@ func (task *Task) ValidateBurnTxID(ctx context.Context) error {
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
 func (task *Task) ValidateAndRegister(ctx context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (string, error) {
 	var err error
-	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
-		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
+	if err = task.RequiredStatus(StatusImageProbed); err != nil {
+		return "", errors.Errorf("require status %s not satisfied", StatusImageProbed)
 	}
 
 	task.creatorSignature = creatorSignature
@@ -826,13 +825,13 @@ func (task *Task) checkNodeInMeshedNodes(nodeID string) error {
 
 // AddSignedDDAndFingerprints adds signed dd and fp
 func (task *Task) AddSignedDDAndFingerprints(nodeID string, compressedSignedDDAndFingerprints []byte) error {
+	if err := task.RequiredStatus(StatusImageProbed); err != nil {
+		return err
+	}
+
 	task.ddMtx.Lock()
 	defer task.ddMtx.Unlock()
 
-	// TODO: update later
-	// if err := task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
-	// 	return err
-	// }
 	var err error
 
 	<-task.NewAction(func(ctx context.Context) error {
@@ -883,7 +882,7 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 	task.peersArtTicketSignatureMtx.Lock()
 	defer task.peersArtTicketSignatureMtx.Unlock()
 
-	if err := task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
+	if err := task.RequiredStatus(StatusImageProbed); err != nil {
 		return err
 	}
 
