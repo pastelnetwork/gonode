@@ -246,7 +246,7 @@ func (task *Task) compressSignedDDAndFingerprints(ctx context.Context, ddData *p
 }
 
 // ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
-func (task *Task) ProbeImage(ctx context.Context, file *artwork.File) ([]byte, error) {
+func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
 		return nil, err
 	}
