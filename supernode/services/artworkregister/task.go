@@ -1130,6 +1130,7 @@ func NewTask(service *Service) *Task {
 		peersArtTicketSignatureMtx:            &sync.Mutex{},
 		peersArtTicketSignature:               make(map[string][]byte),
 		allSignaturesReceivedChn:              make(chan struct{}),
+		allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
 		allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
 	}
 }
