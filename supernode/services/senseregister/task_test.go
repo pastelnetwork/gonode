@@ -592,8 +592,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 }
 
 func TestTaskProbeImage(t *testing.T) {
-	// TODO: update later
-	t.Skip()
 	genfingerAndScoresFunc := func() *pastel.DDAndFingerprints {
 		return &pastel.DDAndFingerprints{
 			Block:                      "Block",
@@ -673,6 +671,8 @@ func TestTaskProbeImage(t *testing.T) {
 		genResp *pastel.DDAndFingerprints
 	}
 
+	serviceCfg := NewConfig()
+	serviceCfg.PastelID = "PrimaryID"
 	testCases := map[string]struct {
 		args    args
 		wantErr error
@@ -684,12 +684,26 @@ func TestTaskProbeImage(t *testing.T) {
 				genResp: genfingerAndScoresFunc(),
 				task: &Task{
 					Service: &Service{
-						config: &Config{},
+						config: serviceCfg,
 					},
-					Task:                    task.New(StatusConnected),
-					Ticket:                  &pastel.ActionTicket{},
-					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					Task:   task.New(StatusConnected),
+					Ticket: &pastel.ActionTicket{},
+					meshedNodes: []types.MeshedSuperNode{
+						types.MeshedSuperNode{
+							NodeID: "PrimaryID",
+						},
+						types.MeshedSuperNode{
+							NodeID: "A",
+						},
+						types.MeshedSuperNode{
+							NodeID: "B",
+						},
+					},
+					allSignaturesReceivedChn:              make(chan struct{}),
+					allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
+					allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
+					accepted:                              Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
+					peersArtTicketSignature:               map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: nil,
@@ -701,10 +715,21 @@ func TestTaskProbeImage(t *testing.T) {
 				genResp: genfingerAndScoresFunc(),
 				task: &Task{
 					Service: &Service{
-						config: &Config{},
+						config: serviceCfg,
 					},
-					Task:                    task.New(StatusImageProbed),
-					Ticket:                  &pastel.ActionTicket{},
+					Task:   task.New(StatusImageProbed),
+					Ticket: &pastel.ActionTicket{},
+					meshedNodes: []types.MeshedSuperNode{
+						types.MeshedSuperNode{
+							NodeID: "PrimaryID",
+						},
+						types.MeshedSuperNode{
+							NodeID: "A",
+						},
+						types.MeshedSuperNode{
+							NodeID: "B",
+						},
+					},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -719,9 +744,20 @@ func TestTaskProbeImage(t *testing.T) {
 				task: &Task{
 					Task: task.New(StatusConnected),
 					Service: &Service{
-						config: &Config{},
+						config: serviceCfg,
 					},
-					Ticket:                  &pastel.ActionTicket{},
+					Ticket: &pastel.ActionTicket{},
+					meshedNodes: []types.MeshedSuperNode{
+						types.MeshedSuperNode{
+							NodeID: "PrimaryID",
+						},
+						types.MeshedSuperNode{
+							NodeID: "A",
+						},
+						types.MeshedSuperNode{
+							NodeID: "B",
+						},
+					},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -744,14 +780,12 @@ func TestTaskProbeImage(t *testing.T) {
 			file := artwork.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
-			//fingerprints := []float32{12.3, 34.4}
-			//tc.args.genResp.Fingerprints = fingerprints
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
 			tc.args.task.ddClient = ddmock
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnSign([]byte("signature"), nil)
+			pastelClientMock.ListenOnSign([]byte("signature"), nil).ListenOnVerify(true, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
 			tc.args.task.nftRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
@@ -761,6 +795,27 @@ func TestTaskProbeImage(t *testing.T) {
 
 			go tc.args.task.RunAction(ctx)
 
+			if tc.wantErr == nil {
+				clientMock := test.NewMockClient(t)
+				clientMock.ListenOnSendSignedDDAndFingerprints(nil).
+					ListenOnConnect("", nil).ListenOnRegisterSense()
+
+				tc.args.task.nodeClient = clientMock
+
+				nodes := pastel.MasterNodes{}
+				nodes = append(nodes, pastel.MasterNode{ExtKey: "PrimaryID"})
+				nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
+				nodes = append(nodes, pastel.MasterNode{ExtKey: "B"})
+
+				pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
+
+				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(genfingerAndScoresFunc(), []byte("signature"))
+				go func() {
+					time.Sleep(4 * time.Second)
+					tc.args.task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
+					tc.args.task.AddSignedDDAndFingerprints("B", peerDDAndFingerprints)
+				}()
+			}
 			_, err := tc.args.task.ProbeImage(context.Background(), file)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)

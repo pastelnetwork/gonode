@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -232,14 +233,18 @@ func (task *Task) compressSignedDDAndFingerprints(ctx context.Context, ddData *p
 }
 
 // ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
-func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
+func (task *Task) ProbeImage(ctx context.Context, file *artwork.File) ([]byte, error) {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
+		log.WithContext(ctx).WithField("CurrentStatus", task.Status()).Error("ProbeImage() failed with non-satisfied task status")
 		return nil, err
 	}
 
 	var err error
 
 	<-task.NewAction(func(ctx context.Context) error {
+		defer errors.Recover(func(recErr error) {
+			log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).WithError(recErr).Error("PanicWhenProbeImage")
+		})
 		task.UpdateStatus(StatusImageProbed)
 		task.Artwork = file
 		task.myDDAndFingerprints, err = task.genFingerprintsData(ctx, task.Artwork)
@@ -294,8 +299,9 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
+			log.WithContext(ctx).WithError(err).Error("ctx.Done()")
 			if err != nil {
-				log.WithContext(ctx).Debug("waiting for DDAndFingerprints from peers context cancelled")
+				log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers context cancelled")
 			}
 			return nil
 		case <-task.allSignedDDAndFingerprintsReceivedChn:
@@ -348,7 +354,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 			task.calculatedDDAndFingerprints.ZstdCompressedFingerprint = compressed
 			return nil
 		case <-time.After(30 * time.Second):
-			log.WithContext(ctx).Debug("waiting for DDAndFingerprints from peers timeout")
+			log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")
 			err = errors.New("waiting for DDAndFingerprints timeout")
 			return nil
 		}
@@ -801,7 +807,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 	}
 
 	// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
-	compressed, err := task.compressSignedDDAndFingerprints(ctx, task.calculatedDDAndFingerprints)
+	compressed, err := task.compressSignedDDAndFingerprints(ctx, ddAndFingerprints)
 	if err != nil {
 		return nil, errors.Errorf("call compressSignedDDAndFingerprints failed: %w", err)
 	}
@@ -826,16 +832,15 @@ func (task *Task) checkNodeInMeshedNodes(nodeID string) error {
 
 // AddSignedDDAndFingerprints adds signed dd and fp
 func (task *Task) AddSignedDDAndFingerprints(nodeID string, compressedSignedDDAndFingerprints []byte) error {
-	if err := task.RequiredStatus(StatusImageProbed); err != nil {
-		return err
-	}
-
 	task.ddMtx.Lock()
 	defer task.ddMtx.Unlock()
 
 	var err error
 
 	<-task.NewAction(func(ctx context.Context) error {
+		defer errors.Recover(func(recErr error) {
+			log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).WithError(recErr).Error("PanicWhenProbeImage")
+		})
 		log.WithContext(ctx).Debugf("receive compressedSignedDDAndFingerprints from node %s", nodeID)
 		// Check nodeID should in task.meshedNodes
 		err = task.checkNodeInMeshedNodes(nodeID)
@@ -957,6 +962,7 @@ func NewTask(service *Service) *Task {
 		peersArtTicketSignatureMtx:            &sync.Mutex{},
 		peersArtTicketSignature:               make(map[string][]byte),
 		allSignaturesReceivedChn:              make(chan struct{}),
+		allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
 		allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
 	}
 }
