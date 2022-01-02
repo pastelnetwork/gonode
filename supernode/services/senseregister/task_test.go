@@ -128,7 +128,7 @@ func TestTaskRegisterAction(t *testing.T) {
 					},
 					Ticket: &pastel.ActionTicket{
 						ActionType:    pastel.ActionTypeSense,
-						ApiTicketData: &pastel.ApiSenseTicket{},
+						APITicketData: &pastel.APISenseTicket{},
 					},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
@@ -144,7 +144,7 @@ func TestTaskRegisterAction(t *testing.T) {
 					},
 					Ticket: &pastel.ActionTicket{
 						ActionType:    pastel.ActionTypeSense,
-						ApiTicketData: &pastel.ApiSenseTicket{},
+						APITicketData: &pastel.APISenseTicket{},
 					},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
@@ -1075,7 +1075,7 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 					Ticket: &pastel.ActionTicket{
 						Caller:        "author-pastelid",
 						ActionType:    pastel.ActionTypeSense,
-						ApiTicketData: &pastel.ApiSenseTicket{},
+						APITicketData: &pastel.APISenseTicket{},
 					},
 				},
 			},
@@ -1104,10 +1104,10 @@ func TestTaskValidateDdFpIds(t *testing.T) {
 			compressedDd, err := zstd.CompressLevel(nil, []byte(ddStr), 22)
 			assert.Nil(t, err)
 			dd = utils.B64Encode(compressedDd)
-			ticketData := &pastel.ApiSenseTicket{
+			ticketData := &pastel.APISenseTicket{
 				DataHash: []byte{},
 			}
-			tc.args.task.Ticket.ApiTicketData = ticketData
+			tc.args.task.Ticket.APITicketData = ticketData
 
 			assert.Nil(t, err)
 

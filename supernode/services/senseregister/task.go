@@ -425,7 +425,7 @@ func (task *Task) validateDdFpIds(ctx context.Context, dd []byte) error {
 		return nil
 	}
 
-	apiSenseTicket, err := task.Ticket.ApiSenseTicket()
+	apiSenseTicket, err := task.Ticket.APISenseTicket()
 	if err != nil {
 		return errors.Errorf("invalid sense ticket: %w", err)
 	}
@@ -451,8 +451,8 @@ func (task *Task) validateSignedTicketFromWN(ctx context.Context, ticket []byte,
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 
-	// Verify ApiSenseTicket
-	_, err = task.Ticket.ApiSenseTicket()
+	// Verify APISenseTicket
+	_, err = task.Ticket.APISenseTicket()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("invalid api sense ticket")
 		return errors.Errorf("invalid api sense ticket: %w", err)
@@ -479,7 +479,7 @@ func (task *Task) validateSignedTicketFromWN(ctx context.Context, ticket []byte,
 }
 
 // ValidateBurnTxID - will validate the pre-burnt transaction ID created by 3rd party
-func (task *Task) ValidateBurnTxID(ctx context.Context) error {
+func (task *Task) ValidateBurnTxID(_ context.Context) error {
 	var err error
 
 	<-task.NewAction(func(ctx context.Context) error {
@@ -500,7 +500,7 @@ func (task *Task) ValidateBurnTxID(ctx context.Context) error {
 }
 
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
-func (task *Task) ValidateAndRegister(ctx context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (string, error) {
+func (task *Task) ValidateAndRegister(_ context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (string, error) {
 	var err error
 	if err = task.RequiredStatus(StatusImageProbed); err != nil {
 		return "", errors.Errorf("require status %s not satisfied", StatusImageProbed)
@@ -566,11 +566,12 @@ func (task *Task) ValidateAndRegister(ctx context.Context, ticket []byte, creato
 	return nftRegTxid, err
 }
 
-func (task *Task) ValidateActionActAndStore(ctx context.Context, actionRegTxId string) error {
+// ValidateActionActAndStore informs actionRegTxID to trigger store IDfiles in case of actionRegTxID was
+func (task *Task) ValidateActionActAndStore(ctx context.Context, actionRegTxID string) error {
 	var err error
 
 	// Wait for action ticket to be activated by walletnode
-	confirmations := task.waitActionActivation(ctx, actionRegTxId, 2, 30*time.Second)
+	confirmations := task.waitActionActivation(ctx, actionRegTxID, 2, 30*time.Second)
 	err = <-confirmations
 	if err != nil {
 		return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
@@ -730,7 +731,7 @@ func (task *Task) registerAction(ctx context.Context) (string, error) {
 			BlockNum:      task.Ticket.BlockNum,
 			BlockHash:     task.Ticket.BlockHash,
 			ActionType:    task.Ticket.ActionType,
-			ApiTicketData: task.Ticket.ApiTicketData,
+			APITicketData: task.Ticket.APITicketData,
 		},
 		Signatures: &pastel.ActionTicketSignatures{
 			Caller: map[string]string{

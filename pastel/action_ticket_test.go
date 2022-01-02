@@ -9,7 +9,7 @@ import (
 )
 
 func TestEncodeActionTicket(t *testing.T) {
-	inputApiData := &ApiSenseTicket{
+	inputAPIData := &APISenseTicket{
 		DataHash:             []byte{1, 2, 3},
 		DDAndFingerprintsIDs: []string{"hello"},
 		DDAndFingerprintsIc:  2,
@@ -23,7 +23,7 @@ func TestEncodeActionTicket(t *testing.T) {
 		BlockHash:  string([]byte{6, 7, 8}),
 		ActionType: ActionTypeSense,
 
-		ApiTicketData: inputApiData,
+		APITicketData: inputAPIData,
 	}
 
 	encoded, err := EncodeActionTicket(&inputTicket)
@@ -37,16 +37,16 @@ func TestEncodeActionTicket(t *testing.T) {
 	assert.Equal(t, inputTicket.BlockNum, outputTicket.BlockNum)
 	assert.Equal(t, inputTicket.BlockHash, outputTicket.BlockHash)
 	assert.Equal(t, inputTicket.ActionType, outputTicket.ActionType)
-	outputApiData, ok := outputTicket.ApiTicketData.(*ApiSenseTicket)
+	outputAPIData, ok := outputTicket.APITicketData.(*APISenseTicket)
 	assert.True(t, ok)
 
-	assert.Equal(t, inputApiData.DataHash, outputApiData.DataHash)
-	assert.Equal(t, inputApiData.DDAndFingerprintsIc, outputApiData.DDAndFingerprintsIc)
-	assert.Equal(t, inputApiData.DDAndFingerprintsMax, outputApiData.DDAndFingerprintsMax)
+	assert.Equal(t, inputAPIData.DataHash, outputAPIData.DataHash)
+	assert.Equal(t, inputAPIData.DDAndFingerprintsIc, outputAPIData.DDAndFingerprintsIc)
+	assert.Equal(t, inputAPIData.DDAndFingerprintsMax, outputAPIData.DDAndFingerprintsMax)
 }
 
-func TestApiSenseTicket(t *testing.T) {
-	inputApiData := &ApiSenseTicket{
+func TestAPISenseTicket(t *testing.T) {
+	inputAPIData := &APISenseTicket{
 		DataHash:             []byte{1, 2, 3},
 		DDAndFingerprintsIDs: []string{"hello"},
 		DDAndFingerprintsIc:  2,
@@ -60,22 +60,22 @@ func TestApiSenseTicket(t *testing.T) {
 		BlockHash:  string([]byte{6, 7, 8}),
 		ActionType: ActionTypeSense,
 
-		ApiTicketData: inputApiData,
+		APITicketData: inputAPIData,
 	}
 
-	_, err := inputTicket.ApiSenseTicket()
+	_, err := inputTicket.APISenseTicket()
 	assert.Nil(t, err)
 
-	_, err = inputTicket.ApiCascadeTicket()
+	_, err = inputTicket.APICascadeTicket()
 	assert.True(t, strings.Contains(err.Error(), "invalid action type"))
 
 	inputTicket.ActionType = ActionTypeCascade
-	_, err = inputTicket.ApiCascadeTicket()
+	_, err = inputTicket.APICascadeTicket()
 	assert.True(t, strings.Contains(err.Error(), "invalid type of api"))
 }
 
-func TestApiCascadeTicket(t *testing.T) {
-	inputApiData := &ApiCascadeTicket{
+func TestAPICascadeTicket(t *testing.T) {
+	inputAPIData := &APICascadeTicket{
 		DataHash: []byte{1, 2, 3},
 	}
 
@@ -86,16 +86,16 @@ func TestApiCascadeTicket(t *testing.T) {
 		BlockHash:  string([]byte{6, 7, 8}),
 		ActionType: ActionTypeCascade,
 
-		ApiTicketData: inputApiData,
+		APITicketData: inputAPIData,
 	}
 
-	_, err := inputTicket.ApiCascadeTicket()
+	_, err := inputTicket.APICascadeTicket()
 	assert.Nil(t, err)
 
-	_, err = inputTicket.ApiSenseTicket()
+	_, err = inputTicket.APISenseTicket()
 	assert.True(t, strings.Contains(err.Error(), "invalid action type"))
 
 	inputTicket.ActionType = ActionTypeSense
-	_, err = inputTicket.ApiSenseTicket()
+	_, err = inputTicket.APISenseTicket()
 	assert.True(t, strings.Contains(err.Error(), "invalid type of api"))
 }
