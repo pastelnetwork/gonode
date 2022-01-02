@@ -1,37 +1,32 @@
 package senseregister
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"image"
 	"image/png"
-	"io"
 	"os"
 	"sort"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
 	"github.com/DataDog/zstd"
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
-	"github.com/pastelnetwork/gonode/common/image/qrsignature"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/service/task/state"
 	stateMock "github.com/pastelnetwork/gonode/common/service/task/test"
 	"github.com/pastelnetwork/gonode/common/storage/fs"
-	storageMock "github.com/pastelnetwork/gonode/common/storage/test"
 	"github.com/pastelnetwork/gonode/common/types"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/register_sense"
-	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/senseregister/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -169,13 +164,8 @@ func TestTaskRun(t *testing.T) {
 					ListenOnSessID(testCase.args.primarySessID).
 					ListenOnAcceptedNodes(testCase.args.pastelIDS, testCase.args.returnErr).
 					ListenOnDone().
-					ListenOnSendSignedTicket(1, nil).
+					ListenOnSendSignedTicket("1", nil).
 					ListenOnClose(nil)
-
-				counter := &struct {
-					sync.Mutex
-					val int
-				}{}
 
 				//need to remove generate thumbnail file
 				customProbeImageFunc := func(ctx context.Context, file *artwork.File) *pastel.DDAndFingerprints {
@@ -542,24 +532,9 @@ func TestTaskCreateTicket(t *testing.T) {
 
 	testCases := map[string]struct {
 		args    args
-		want    *pastel.NFTTicket
+		want    *pastel.ActionTicket
 		wantErr error
 	}{
-		"fingerprint-error": {
-			args: args{
-				task: &Task{
-					datahash: []byte{},
-					Request: &Request{
-						AppPastelID: "test-id",
-					},
-					Service: &Service{
-						config: NewConfig(),
-					},
-				},
-			},
-			wantErr: errEmptyFingerprints,
-			want:    nil,
-		},
 		"data-hash-error": {
 			args: args{
 				task: &Task{
@@ -572,22 +547,6 @@ func TestTaskCreateTicket(t *testing.T) {
 				},
 			},
 			wantErr: errEmptyDatahash,
-			want:    nil,
-		},
-		"preview-hash-error": {
-			args: args{
-				task: &Task{
-					fingerprint: []byte{},
-					datahash:    []byte{},
-					Request: &Request{
-						AppPastelID: "test-id",
-					},
-					Service: &Service{
-						config: NewConfig(),
-					},
-				},
-			},
-			wantErr: errEmptyPreviewHash,
 			want:    nil,
 		},
 		"success": {
@@ -621,19 +580,21 @@ func TestTaskCreateTicket(t *testing.T) {
 				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			tc.want = &pastel.NFTTicket{
-				Version:  1,
-				Author:   tc.args.task.Request.AppPastelID,
-				BlockNum: tc.args.task.creatorBlockHeight,
-				AppTicketData: pastel.AppTicket{
-					NFTType:              pastel.NFTTypeImage,
+			tc.want = &pastel.ActionTicket{
+				Version:    1,
+				Caller:     tc.args.task.Request.AppPastelID,
+				BlockNum:   tc.args.task.creatorBlockHeight,
+				BlockHash:  tc.args.task.creatorBlockHash,
+				ActionType: pastel.ActionTypeSense,
+				ApiTicketData: &pastel.ApiSenseTicket{
 					DataHash:             tc.args.task.datahash,
-					RQMax:                tc.args.task.config.RQIDsMax,
+					DDAndFingerprintsIc:  tc.args.task.ddAndFingerprintsIc,
 					DDAndFingerprintsMax: tc.args.task.config.DDAndFingerprintsMax,
+					DDAndFingerprintsIDs: tc.args.task.ddAndFingerprintsIDs,
 				},
 			}
 
-			err := tc.args.task.createArtTicket(context.Background())
+			err := tc.args.task.createSenseTicket(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, tc.wantErr.Error(), err.Error())
@@ -642,7 +603,6 @@ func TestTaskCreateTicket(t *testing.T) {
 				assert.NotNil(t, tc.args.task.ticket)
 				assert.Equal(t, *tc.want, *tc.args.task.ticket)
 			}
-
 		})
 	}
 }
@@ -668,7 +628,7 @@ func TestTaskGetBlock(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "test-id",
+						AppPastelID: "test-id",
 					},
 					Service: &Service{},
 				},
@@ -684,7 +644,7 @@ func TestTaskGetBlock(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "test-id",
+						AppPastelID: "test-id",
 					},
 					Service: &Service{},
 				},
@@ -701,7 +661,7 @@ func TestTaskGetBlock(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "test-id",
+						AppPastelID: "test-id",
 					},
 					Service: &Service{},
 				},
@@ -742,369 +702,6 @@ func TestTaskGetBlock(t *testing.T) {
 	}
 }
 
-func TestTaskConvertToSymbolIdFile(t *testing.T) {
-	t.Parallel()
-
-	testErrStr := "test-err"
-	type args struct {
-		task    *Task
-		signErr error
-		inFile  rqnode.RawSymbolIDFile
-	}
-
-	testCases := map[string]struct {
-		args        args
-		wantContent []byte
-		wantErr     error
-		wantSign    []byte
-	}{
-		"success": {
-			args: args{
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "test-id",
-					},
-					Service: &Service{
-						config: NewConfig(),
-					},
-				},
-				inFile: rqnode.RawSymbolIDFile{
-					ID:                uuid.New().String(),
-					SymbolIdentifiers: []string{"test-s1", "test-s2"},
-					BlockHash:         "test-block-hash",
-					PastelID:          "test-pastel-id",
-				},
-			},
-			wantSign: []byte("test-signature"),
-			wantErr:  nil,
-		},
-		"error": {
-			args: args{
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "test-id",
-					},
-					Service: &Service{
-						config: NewConfig(),
-					},
-				},
-				signErr: errors.New(testErrStr),
-			},
-			wantErr: errors.New(testErrStr),
-		},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			var rawContent []byte
-			rawContent = appendStr(rawContent, tc.args.inFile.ID)
-			rawContent = appendStr(rawContent, tc.args.inFile.BlockHash)
-			rawContent = appendStr(rawContent, tc.args.inFile.PastelID)
-			for _, id := range tc.args.inFile.SymbolIdentifiers {
-				rawContent = appendStr(rawContent, id)
-			}
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnSign(tc.wantSign, tc.args.signErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
-
-			err := tc.args.task.generateRQIDs(context.Background(), tc.args.inFile)
-
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), testErrStr))
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
-func TestTaskGenRQIdentifiersFiles(t *testing.T) {
-	artworkFile, err := newTestImageFile()
-	assert.NoError(t, err)
-
-	type args struct {
-		task                *Task
-		connectErr          error
-		encodeInfoReturns   *rqnode.EncodeInfo
-		findTicketIDReturns *pastel.IDTicket
-		encodeInfoErr       error
-		readErr             error
-		signErr             error
-	}
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					imageEncodedWithFingerprints: artworkFile,
-				},
-				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-						"test-file": {
-							ID:                uuid.New().String(),
-							SymbolIdentifiers: []string{"test-s1, test-s2"},
-							BlockHash:         "test-block-hash",
-							PastelID:          "test-pastel-id",
-						},
-					},
-				},
-				findTicketIDReturns: &pastel.IDTicket{
-					TXID: "test-txid",
-				},
-				readErr: io.EOF,
-			},
-			wantErr: nil,
-		},
-		"connect-error": {
-			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					imageEncodedWithFingerprints: artworkFile,
-				},
-				readErr: io.EOF,
-				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
-				},
-				findTicketIDReturns: &pastel.IDTicket{
-					TXID: "test-txid",
-				},
-				connectErr: errors.New("test-err"),
-			},
-			wantErr: errors.New("test-err"),
-		},
-
-		"encode-info-error": {
-			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					imageEncodedWithFingerprints: artworkFile,
-				},
-				readErr: io.EOF,
-				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
-				},
-				findTicketIDReturns: &pastel.IDTicket{
-					TXID: "test-txid",
-				},
-				encodeInfoErr: errors.New("test-err"),
-			},
-			wantErr: errors.New("test-err"),
-		},
-		"read-error": {
-			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					imageEncodedWithFingerprints: artworkFile,
-				},
-				readErr: errors.New("test-err"),
-				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIDFiles: make(map[string]rqnode.RawSymbolIDFile),
-				},
-			},
-			wantErr: errors.New("read image"),
-		},
-		"sign-err": {
-			args: args{
-				task: &Task{
-					Task: task.New(StatusTaskStarted),
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					imageEncodedWithFingerprints: artworkFile,
-				},
-				encodeInfoReturns: &rqnode.EncodeInfo{
-					SymbolIDFiles: map[string]rqnode.RawSymbolIDFile{
-						"test-file": {
-							ID:                uuid.New().String(),
-							SymbolIdentifiers: []string{"test-s1, test-s2"},
-							BlockHash:         "test-block-hash",
-							PastelID:          "test-pastel-id",
-						},
-					},
-				},
-				findTicketIDReturns: &pastel.IDTicket{
-					TXID: "test-txid",
-				},
-				readErr: io.EOF,
-				signErr: errors.New("tes-err"),
-			},
-			wantErr: errors.New("rqids file"),
-		},
-	}
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnSign([]byte("test-signature"), tc.args.signErr)
-			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
-			tc.args.task.Service.pastelClient = pastelClientMock
-
-			rqClientMock := rqMock.NewMockClient(t)
-			rqClientMock.ListenOnEncodeInfo(tc.args.encodeInfoReturns, tc.args.encodeInfoErr)
-			rqClientMock.ListenOnRaptorQ().ListenOnClose(nil)
-			rqClientMock.ListenOnConnect(tc.args.connectErr)
-
-			tc.args.task.Service.rqClient = rqClientMock
-
-			fsMock := storageMock.NewMockFileStorage()
-			fileMock := storageMock.NewMockFile()
-			fileMock.ListenOnClose(nil).ListenOnRead(0, tc.args.readErr)
-
-			storage := artwork.NewStorage(fsMock)
-			tc.args.task.imageEncodedWithFingerprints = artwork.NewFile(storage, "test")
-			fsMock.ListenOnOpen(fileMock, nil)
-
-			tc.args.task.Request.Image = artwork.NewFile(storage, "test")
-
-			err := tc.args.task.genRQIdentifiersFiles(context.Background())
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				// TODO: fix this when the return error is define correctly
-				// assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
-func TestTaskEncodeFingerprint(t *testing.T) {
-	type args struct {
-		task                *Task
-		fingerprint         []byte
-		img                 *artwork.File
-		signReturns         []byte
-		findTicketIDReturns *pastel.IDTicket
-		signErr             error
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args: args{
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-					},
-					Service: &Service{},
-				},
-				img:         &artwork.File{},
-				signReturns: []byte("test-signature"),
-				fingerprint: []byte("test-fingerprint"),
-				findTicketIDReturns: &pastel.IDTicket{
-					TXID: "test-txid",
-					IDTicketProp: pastel.IDTicketProp{
-						PqKey: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-					},
-				},
-			},
-			wantErr: nil,
-		},
-	}
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnSign(tc.args.signReturns, tc.args.signErr)
-			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
-
-			tc.args.task.Service.pastelClient = pastelClientMock
-
-			file, err := newTestImageFile()
-			if err != nil {
-				t.Fatalf("err creating test file: %v", err)
-			}
-
-			ctx := context.Background()
-
-			err = tc.args.task.encodeFingerprint(ctx, tc.args.fingerprint, file)
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				assert.Nil(t, err)
-
-				ed448PubKey, err := getPubKey(tc.args.task.Request.ArtistPastelID)
-				assert.Nil(t, err)
-
-				pqPubKey, err := getPubKey(tc.args.findTicketIDReturns.PqKey)
-				assert.Nil(t, err)
-
-				decSig := qrsignature.New()
-				copyImage, _ := file.Copy()
-				copyImage.SetFormatFromExtension(".png")
-				copyImage.SetFormat(1)
-
-				if err := file.Decode(decSig); err != nil {
-					t.Fatal(err)
-				}
-
-				if !bytes.Equal(tc.args.fingerprint, decSig.Fingerprint()) {
-					t.Fatalf("fingerprints do not match, original len:%d, decoded len:%d\n", tc.args.fingerprint, len(decSig.Fingerprint()))
-				}
-
-				if !bytes.Equal(tc.args.signReturns, decSig.PostQuantumSignature()) {
-					t.Fatalf("post quantum signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.PostQuantumSignature()))
-				}
-
-				if !bytes.Equal(pqPubKey, decSig.PostQuantumPubKey()) {
-					t.Fatalf("post quantum public keys do not match, original len:%d, decoded len:%d\n", len(pqPubKey), len(decSig.PostQuantumPubKey()))
-				}
-				if !bytes.Equal(tc.args.signReturns, decSig.Ed448Signature()) {
-					t.Fatalf("ed448 signatures do not match, original len:%d, decoded len:%d\n", tc.args.signReturns, len(decSig.Ed448Signature()))
-				}
-				if !bytes.Equal(ed448PubKey, decSig.Ed448PubKey()) {
-					t.Fatalf("ed448 public keys do not match, original len:%d, decoded len:%d\n", len(ed448PubKey), len(decSig.Ed448PubKey()))
-				}
-			}
-		})
-	}
-}
-
 func TestTaskSignTicket(t *testing.T) {
 	type args struct {
 		task        *Task
@@ -1120,12 +717,12 @@ func TestTaskSignTicket(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket: &pastel.NFTTicket{},
+					ticket: &pastel.ActionTicket{},
 				},
 			},
 			wantErr: nil,
@@ -1134,12 +731,12 @@ func TestTaskSignTicket(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket: &pastel.NFTTicket{},
+					ticket: &pastel.ActionTicket{},
 				},
 				signErr: errors.New("test"),
 			},
@@ -1184,7 +781,7 @@ func TestWaitTxnValid(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
 					Service: &Service{
 						config: &Config{},
@@ -1198,7 +795,7 @@ func TestWaitTxnValid(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
 					Service: &Service{
 						config: &Config{},
@@ -1213,7 +810,7 @@ func TestWaitTxnValid(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
 					Service: &Service{
 						config: &Config{},
@@ -1228,7 +825,7 @@ func TestWaitTxnValid(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
 					Service: &Service{
 						config: &Config{},
@@ -1268,274 +865,6 @@ func TestWaitTxnValid(t *testing.T) {
 		})
 	}
 
-}
-
-func TestTaskPreburntRegistrationFee(t *testing.T) {
-	type nodeArg struct {
-		address  string
-		pastelID string
-	}
-
-	type args struct {
-		task                  *Task
-		sendFromAddressRetErr error
-		burnTxnIDRet          string
-		preBurntFeeRetTxID    string
-		preBurntFeeRetErr     error
-		nodes                 []nodeArg
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"reg-fee-err": {
-			args: args{
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket: &pastel.NFTTicket{},
-				},
-			},
-			wantErr: errors.New("registration fee"),
-		},
-		"send-from-address-err": {
-			args: args{
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket:          &pastel.NFTTicket{},
-					registrationFee: 40,
-				},
-				sendFromAddressRetErr: errors.New("test"),
-			},
-			wantErr: errors.New("burn"),
-		},
-		"send-preburnt-fee-err": {
-			args: args{
-				preBurntFeeRetErr: errors.New("test"),
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket:          &pastel.NFTTicket{},
-					registrationFee: 40,
-				},
-				nodes: []nodeArg{
-					{"127.0.0.1", "1"},
-					{"127.0.0.2", "2"},
-				},
-				sendFromAddressRetErr: nil,
-				burnTxnIDRet:          "test-id",
-			},
-			wantErr: errors.New("send pre-burn-txid"),
-		},
-		"regArtTxId-empty-err": {
-			args: args{
-				preBurntFeeRetTxID: "test-id",
-				preBurntFeeRetErr:  nil,
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket:          &pastel.NFTTicket{},
-					registrationFee: 40,
-				},
-				sendFromAddressRetErr: nil,
-				burnTxnIDRet:          "test-id",
-			},
-			wantErr: errors.New("empty regNFTTxid"),
-		},
-		"success": {
-			args: args{
-				preBurntFeeRetTxID: "test-id",
-				preBurntFeeRetErr:  nil,
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "testid",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket:          &pastel.NFTTicket{},
-					registrationFee: 40,
-				},
-				nodes: []nodeArg{
-					{"127.0.0.1", "1"},
-					{"127.0.0.2", "2"},
-				},
-				sendFromAddressRetErr: nil,
-				burnTxnIDRet:          "test-id",
-			},
-			wantErr: nil,
-		},
-	}
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnSendFromAddress(tc.args.burnTxnIDRet, tc.args.sendFromAddressRetErr)
-			tc.args.task.Service.pastelClient = pastelClientMock
-
-			nodeClient := test.NewMockClient(t)
-			nodeClient.
-				ListenOnConnect("", nil).
-				ListenOnRegisterArtwork().
-				ListenOnSession(nil).
-				ListenOnConnectTo(nil).
-				ListenOnSessID("").
-				ListenOnAcceptedNodes([]string{}, nil).
-				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
-
-			nodes := node.List{}
-			for _, n := range tc.args.nodes {
-				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
-				newNode.SetPrimary(true)
-				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
-
-				nodes.Add(newNode)
-			}
-			tc.args.task.nodes = nodes
-
-			err := tc.args.task.preburntRegistrationFee(context.Background())
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
-}
-
-func TestTaskUploadImage(t *testing.T) {
-	type nodeArg struct {
-		address  string
-		pastelID string
-	}
-	type args struct {
-		task                    *Task
-		nodes                   []nodeArg
-		findTicketIDReturns     *pastel.IDTicket
-		previewHash             []byte
-		mediumHash              []byte
-		smallHash               []byte
-		uploadImageThumbnailErr error
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args: args{
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket: &pastel.NFTTicket{},
-				},
-				nodes: []nodeArg{
-					{"127.0.0.1", "1"},
-					{"127.0.0.2", "2"},
-				},
-				findTicketIDReturns: &pastel.IDTicket{
-					TXID: "test-txid",
-					IDTicketProp: pastel.IDTicketProp{
-						PqKey: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-					},
-				},
-			},
-			wantErr: nil,
-		},
-		"upload-err": {
-			args: args{
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket: &pastel.NFTTicket{},
-				},
-				nodes: []nodeArg{
-					{"127.0.0.1", "1"},
-					{"127.0.0.2", "2"},
-				},
-				findTicketIDReturns: &pastel.IDTicket{
-					TXID: "test-txid",
-					IDTicketProp: pastel.IDTicketProp{
-						PqKey: "jXankFCpRjGmMCovfeSCiPeEWPt7P7KksvXSMQA6PqTpVg6Z4mk4JaszT1WSwP6gmwXr2gjgGSUsjrQ6Y34NFB",
-					},
-				},
-				uploadImageThumbnailErr: errors.New("test"),
-			},
-			wantErr: errors.New("upload encoded image "),
-		},
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-			artworkFile, err := newTestImageFile()
-			assert.NoError(t, err)
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnSign([]byte("test-signature"), nil)
-			pastelClientMock.ListenOnFindTicketByID(tc.args.findTicketIDReturns, nil)
-			tc.args.task.Service.pastelClient = pastelClientMock
-
-			tc.args.task.Task = task.New(&state.Status{})
-			nodeClient := test.NewMockClient(t)
-			nodeClient.
-				ListenOnConnect("", nil).
-				ListenOnRegisterArtwork().
-				ListenOnUploadImageWithThumbnail(tc.args.previewHash, tc.args.mediumHash,
-					tc.args.smallHash, tc.args.uploadImageThumbnailErr)
-
-			tc.args.task.Request.Image = artworkFile
-			nodes := node.List{}
-			for _, n := range tc.args.nodes {
-				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
-				newNode.SetPrimary(true)
-				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
-
-				nodes.Add(newNode)
-			}
-			tc.args.task.nodes = nodes
-
-			err = tc.args.task.uploadImage(context.Background())
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				assert.Nil(t, err)
-			}
-		})
-	}
 }
 
 func TestTaskProbeImage(t *testing.T) {
@@ -1617,9 +946,10 @@ func TestTaskProbeImage(t *testing.T) {
 		pastelID string
 	}
 	type args struct {
-		task        *Task
-		nodes       []nodeArg
-		probeImgErr error
+		task            *Task
+		nodes           []nodeArg
+		isValidBurnTxID bool
+		probeImgErr     error
 	}
 
 	testCases := map[string]struct {
@@ -1628,6 +958,7 @@ func TestTaskProbeImage(t *testing.T) {
 	}{
 		"success": {
 			args: args{
+				isValidBurnTxID: true,
 				task: &Task{
 					Service: &Service{
 						config: &Config{
@@ -1635,9 +966,9 @@ func TestTaskProbeImage(t *testing.T) {
 						},
 					},
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
-					ticket: &pastel.NFTTicket{},
+					ticket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1649,6 +980,7 @@ func TestTaskProbeImage(t *testing.T) {
 		},
 		"probe-img-err": {
 			args: args{
+				isValidBurnTxID: true,
 				task: &Task{
 					Service: &Service{
 						config: &Config{
@@ -1656,9 +988,9 @@ func TestTaskProbeImage(t *testing.T) {
 						},
 					},
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
-					ticket: &pastel.NFTTicket{},
+					ticket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1692,14 +1024,15 @@ func TestTaskProbeImage(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
-				ListenOnRegisterArtwork().
-				ListenOnProbeImage(customProbeImageFunc, tc.args.probeImgErr)
+				ListenOnRegisterSense().
+				ListenOnProbeImage(customProbeImageFunc, tc.args.isValidBurnTxID, tc.args.probeImgErr)
 
 			tc.args.task.Request.Image = artworkFile
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
 				newNode := node.NewNode(nodeClient.Client, n.address, n.pastelID)
 				newNode.SetPrimary(true)
+				newNode.SetValidBurnTxID(true)
 				assert.Nil(t, newNode.Connect(context.Background(), 1*time.Second, &alts.SecInfo{}))
 				nodes.Add(newNode)
 			}
@@ -1727,10 +1060,8 @@ func TestTaskSendSignedTicket(t *testing.T) {
 	}
 	type args struct {
 		task                   *Task
-		sendSignedTicketRet    int64
+		sendSignedTicketRet    string
 		sendSignedTicketRetErr error
-		preBurntFeeRetTxID     string
-		preBurntFeeRetErr      error
 		nodes                  []nodeArg
 	}
 
@@ -1741,14 +1072,16 @@ func TestTaskSendSignedTicket(t *testing.T) {
 
 		"success": {
 			args: args{
+				sendSignedTicketRet: "test",
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID:           "testid",
+						AppPastelIDPassphrase: "testpassphrase",
 					},
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket: &pastel.NFTTicket{},
+					ticket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1756,25 +1089,6 @@ func TestTaskSendSignedTicket(t *testing.T) {
 				},
 			},
 			wantErr: nil,
-		},
-		"reg-fee-err": {
-			args: args{
-				task: &Task{
-					Request: &Request{
-						ArtistPastelID: "testid",
-						MaximumFee:     -1,
-					},
-					Service: &Service{
-						config: &Config{},
-					},
-					ticket: &pastel.NFTTicket{},
-				},
-				nodes: []nodeArg{
-					{"127.0.0.1", "1"},
-					{"127.0.0.2", "2"},
-				},
-			},
-			wantErr: errors.New("registration fee"),
 		},
 	}
 
@@ -1787,13 +1101,12 @@ func TestTaskSendSignedTicket(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
-				ListenOnRegisterArtwork().
+				ListenOnRegisterSense().
 				ListenOnSession(nil).
 				ListenOnConnectTo(nil).
 				ListenOnSessID("").
 				ListenOnAcceptedNodes([]string{}, nil).
-				ListenOnSendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr).
-				ListenOnSendPreBurntFeeTxID(tc.args.preBurntFeeRetTxID, tc.args.preBurntFeeRetErr)
+				ListenOnSendSignedTicket(tc.args.sendSignedTicketRet, tc.args.sendSignedTicketRetErr)
 
 			nodes := node.List{}
 			for _, n := range tc.args.nodes {
@@ -1845,13 +1158,13 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 				},
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
-						MaximumFee:     1,
+						AppPastelID:           "testid",
+						AppPastelIDPassphrase: "testpassphrase",
 					},
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket: &pastel.NFTTicket{},
+					ticket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1865,12 +1178,12 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 				masterNodesTopErr: errors.New("test"),
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
 					Service: &Service{
 						config: &Config{},
 					},
-					ticket: &pastel.NFTTicket{},
+					ticket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1884,12 +1197,12 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 				masterNodesTopErr: nil,
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "testid",
+						AppPastelID: "testid",
 					},
 					Service: &Service{
 						config: &Config{NumberSuperNodes: 1},
 					},
-					ticket: &pastel.NFTTicket{},
+					ticket: &pastel.ActionTicket{},
 				},
 				nodes: []nodeArg{
 					{"127.0.0.1", "1"},
@@ -1910,6 +1223,8 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 
 			pastelClientMock := pastelMock.NewMockClient(t)
 			pastelClientMock.ListenOnSign([]byte("test-signature"), nil).
+				ListenOnGetBlockCount(100, nil).
+				ListenOnGetBlockVerbose1(&pastel.GetBlockVerbose1Result{}, nil).
 				ListenOnFindTicketByID(&pastel.IDTicket{}, nil).
 				ListenOnMasterNodesTop(tc.args.masterNodes, tc.args.masterNodesTopErr)
 
@@ -1920,7 +1235,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
-				ListenOnRegisterArtwork().
+				ListenOnRegisterSense().
 				ListenOnSession(nil).
 				ListenOnConnectTo(nil).
 				ListenOnSessID("").
@@ -1969,7 +1284,7 @@ func TestTaskGenerateDDAndFingerprintsIDs(t *testing.T) {
 			args: args{
 				task: &Task{
 					Request: &Request{
-						ArtistPastelID: "test-id",
+						AppPastelID: "test-id",
 					},
 					Service: &Service{
 						config: NewConfig(),

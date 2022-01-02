@@ -74,7 +74,7 @@ func (client *Client) ListenOnRegisterSense() *Client {
 }
 
 // ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
-func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
+func (client *Client) ListenOnSendSignedTicket(id string, err error) *Client {
 	client.RegisterSense.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client

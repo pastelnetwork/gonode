@@ -77,6 +77,11 @@ func (node *Node) Address() string {
 	return node.address
 }
 
+// SetValidBurnTxID sets whether the burn txid is valid
+func (node *Node) SetValidBurnTxID(valid bool) {
+	node.isValidBurnTxID = valid
+}
+
 // NewNode returns a new Node instance.
 func NewNode(client node.Client, address, pastelID string) *Node {
 	return &Node{
