@@ -1,4 +1,4 @@
-package artwork_download
+package artworkdownload
 
 import (
 	"testing"

@@ -1,4 +1,4 @@
-package sense_register
+package senseregister
 
 import (
 	"context"
@@ -232,7 +232,7 @@ func (client *Client) ListenOnSendRegMetadata(returnErr error) *Client {
 	return client
 }
 
-// SendRegMetadata assertion SendRegMetadata call
+// AssertSendRegMetadata assertion SendRegMetadata call
 func (client *Client) AssertSendRegMetadata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
 		client.RegisterSense.AssertCalled(client.t, SendRegMetadataMethod, arguments...)

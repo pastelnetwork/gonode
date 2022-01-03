@@ -1,4 +1,4 @@
-package artwork_register
+package artworkregister
 
 import (
 	"context"

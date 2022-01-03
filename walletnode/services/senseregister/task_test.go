@@ -413,25 +413,6 @@ func TestTaskPastelTopNodes(t *testing.T) {
 					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
 				},
 				returnMnTopErr:  nil,
-				returnFindIDErr: nil,
-			},
-			want: node.List{
-				newTestNode("127.0.0.1:4445", "2"),
-			},
-			assertion: assert.NoError,
-		}, {
-			fields: fields{
-				Request: &Request{
-					BurnTxID: "xdxdf",
-				},
-			},
-			args: args{
-				ctx: context.Background(),
-				returnMn: pastel.MasterNodes{
-					pastel.MasterNode{Fee: 0.5, ExtAddress: "127.0.0.1:4444", ExtKey: "1"},
-					pastel.MasterNode{Fee: 0.2, ExtAddress: "127.0.0.1:4445", ExtKey: "2"},
-				},
-				returnMnTopErr:  nil,
 				returnFindIDErr: fmt.Errorf("connection timeout"),
 			},
 			want:      nil,
