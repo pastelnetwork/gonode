@@ -2,8 +2,10 @@ package errgroup
 
 import (
 	"context"
+	"runtime/debug"
 
 	"github.com/pastelnetwork/gonode/common/errors"
+	"github.com/pastelnetwork/gonode/common/log"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -15,7 +17,10 @@ type Group struct {
 // Go calls the given function in a new goroutine and tries to recover from panics.
 func (group *Group) Go(fn func() error) {
 	group.Group.Go(func() (err error) {
-		defer errors.Recover(func(recErr error) { err = recErr })
+		defer errors.Recover(func(recErr error) {
+			log.WithField("stack-strace", string(debug.Stack())).WithError(recErr).Error("Panic")
+			err = recErr
+		})
 		return fn()
 	})
 }
