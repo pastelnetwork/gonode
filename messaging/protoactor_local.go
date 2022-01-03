@@ -43,10 +43,16 @@ func (r *localActor) Stop() {
 	}
 }
 
+var lActor *localActor
+
 // NewActor func
 func NewActor(system *actor.ActorSystem) Actor {
-	return &localActor{
-		context: system.Root,
-		mapPID:  make(map[string]*actor.PID),
+	if lActor == nil {
+		lActor = &localActor{
+			context: system.Root,
+			mapPID:  make(map[string]*actor.PID),
+		}
 	}
+
+	return lActor
 }

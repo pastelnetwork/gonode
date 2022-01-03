@@ -80,7 +80,7 @@ func (r *repo) RemoveSymbolFileByKey(ctx context.Context, key string) error {
 
 func (r *repo) GetListOfMasternode(ctx context.Context) ([]string, error) {
 	var ret = make([]string, 0)
-	listMN, err := r.pClient.MasterNodesList(ctx)
+	listMN, err := r.pClient.MasterNodesExtra(ctx)
 	if err != nil {
 		return ret, err
 	}
