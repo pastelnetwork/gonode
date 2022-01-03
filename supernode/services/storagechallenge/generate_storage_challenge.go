@@ -42,6 +42,7 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, challengesPerNo
 		log.WithContext(ctx).WithError(err).Error("could not get random challenging masternode from list")
 		return err
 	}
+
 	challengingMasternodeID := challengingMasternode[0]
 
 	/* ------------------------------------------------- */
@@ -77,15 +78,23 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, challengesPerNo
 	log.WithContext(ctx).Infof("Challenging Masternode %s is now selecting file hashes to challenge this block, and then for each one, selecting which Masternode to challenge...", challengingMasternodeID)
 
 	for idx1, currentFileHashToChallenge := range sliceOfFileHashesToChallenge {
-		sliceOfMasternodesStoringFileHash := s.repository.GetNClosestMasternodesToAGivenFileUsingKademlia(ctx, s.numberOfChallengeReplicas, currentFileHashToChallenge)
+		sliceOfMasternodesStoringFileHash := s.repository.GetNClosestMasternodesToAGivenFileUsingKademlia(ctx, s.numberOfChallengeReplicas, currentFileHashToChallenge, s.nodeID)
 		sliceOfMasternodesStoringFileHashExcludingChallenger := make([]string, 0)
+		ignoreIDX := -1
 		for idx, currentMasternodeID := range sliceOfMasternodesStoringFileHash {
 			if currentMasternodeID == challengingMasternodeID {
-				sliceOfMasternodesStoringFileHashExcludingChallenger = append(sliceOfMasternodesStoringFileHash[:idx], sliceOfMasternodesStoringFileHash[idx+1:]...)
+				ignoreIDX = idx
 			}
 		}
+		if ignoreIDX >= 0 {
+			sliceOfMasternodesStoringFileHashExcludingChallenger = append(sliceOfMasternodesStoringFileHash[:ignoreIDX], sliceOfMasternodesStoringFileHash[ignoreIDX+1:]...)
+		} else {
+			sliceOfMasternodesStoringFileHashExcludingChallenger = append(sliceOfMasternodesStoringFileHashExcludingChallenger, sliceOfMasternodesStoringFileHash...)
+		}
 		comparisonStringForMasternodeSelection := merkleroot + currentFileHashToChallenge + challengingMasternodeID + utils.GetHashFromString(fmt.Sprint(idx1))
+
 		respondingMasternodeIDs := s.repository.GetNClosestMasternodeIDsToComparisionString(ctx, 1, comparisonStringForMasternodeSelection, sliceOfMasternodesStoringFileHashExcludingChallenger)
+
 		sliceOfMasternodesToChallenge[idx1] = respondingMasternodeIDs[0]
 	}
 
@@ -127,7 +136,11 @@ func (s *service) GenerateStorageChallenges(ctx context.Context, challengesPerNo
 			ChallengeID:                  challengeID,
 		}
 
-		s.sendprocessStorageChallenge(ctx, outgoingChallengeMessage)
+		if err = s.sendprocessStorageChallenge(ctx, outgoingChallengeMessage); err != nil {
+			log.WithContext(ctx).WithError(err).Error("could not send process storage challenge")
+		}
+
+		s.repository.SaveChallengMessageState(ctx, "sent", challengeID, challengingMasternodeID, currentBlockCount)
 	}
 
 	return nil

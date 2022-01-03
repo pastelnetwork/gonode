@@ -109,7 +109,7 @@ func (r *repo) SaveChallengMessageState(ctx context.Context, status string, chal
 	switch status {
 	case "sent":
 		caller = r.stateStorage.OnSent
-	case "responded":
+	case "respond":
 		caller = r.stateStorage.OnResponded
 	case "succeeded":
 		caller = r.stateStorage.OnSucceeded
