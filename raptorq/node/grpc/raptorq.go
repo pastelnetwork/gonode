@@ -2,12 +2,12 @@ package grpc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -39,15 +39,6 @@ func writeFile(path string, data []byte) error {
 
 func readFile(path string) ([]byte, error) {
 	return ioutil.ReadFile(path)
-}
-
-func readFileLines(path string) ([]string, error) {
-	b, err := ioutil.ReadFile(path)
-
-	if err != nil {
-		return nil, errors.Errorf("read file: %w", err)
-	}
-	return strings.Split(string(b), "\n"), nil
 }
 
 func createTaskFolder(base string, subDirs ...string) (string, error) {
@@ -101,8 +92,8 @@ func createInputDecodeSymbols(base string, symbols map[string][]byte) (path stri
 }
 
 // scan symbol id files in "meta" folder, return map of file Ids & contents of file (as list of line)
-func scanSymbolIDFiles(dirPath string) (map[string][]string, error) {
-	filesMap := make(map[string][]string)
+func scanSymbolIDFiles(dirPath string) (map[string]node.RawSymbolIDFile, error) {
+	filesMap := make(map[string]node.RawSymbolIDFile)
 
 	err := filepath.Walk(dirPath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
@@ -116,12 +107,19 @@ func scanSymbolIDFiles(dirPath string) (map[string][]string, error) {
 
 		fileID := filepath.Base(path)
 
-		lines, err := readFileLines(path)
+		configFile, err := os.Open(path)
 		if err != nil {
-			return errors.Errorf("read file %s: %w", path, err)
+			return errors.Errorf("opening file: %s - err: %w", path, err)
+		}
+		defer configFile.Close()
+
+		file := node.RawSymbolIDFile{}
+		jsonParser := json.NewDecoder(configFile)
+		if err = jsonParser.Decode(&file); err != nil {
+			return errors.Errorf("parsing file: %s - err: %w", path, err)
 		}
 
-		filesMap[fileID] = lines
+		filesMap[fileID] = file
 
 		return nil
 	})
@@ -231,7 +229,6 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 	}
 
 	// scan return symbol Id files
-	symbolCnt := res.SymbolsCount
 	filesMap, err := scanSymbolIDFiles(res.Path)
 	if err != nil {
 		return nil, errors.Errorf("scan symbol id files folder %s: %w", res.Path, err)
@@ -241,24 +238,8 @@ func (service *raptorQ) EncodeInfo(ctx context.Context, data []byte, copies uint
 		return nil, errors.Errorf("symbol id files count not match: expect %d, output %d", copies, len(filesMap))
 	}
 
-	symbolIDFiles := make(map[string]node.RawSymbolIDFile)
-	for fileID, lines := range filesMap {
-		if len(lines) != int(symbolCnt+3) {
-			return nil, errors.Errorf("file length not match: file %s, expect %d, output %d", fileID, symbolCnt+3, len(lines))
-		}
-
-		symbolIDFiles[fileID] = node.RawSymbolIDFile{
-			ID:                lines[0],
-			BlockHash:         lines[1],
-			PastelID:          lines[2],
-			SymbolIdentifiers: lines[3:],
-		}
-
-		// TODO : validate Id, blockHash, pastelId
-	}
-
 	output := &node.EncodeInfo{
-		SymbolIDFiles: symbolIDFiles,
+		SymbolIDFiles: filesMap,
 		EncoderParam: node.EncoderParameters{
 			Oti: res.EncoderParameters,
 		},
