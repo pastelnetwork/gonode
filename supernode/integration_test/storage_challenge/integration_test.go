@@ -2,9 +2,11 @@ package storagechallenge
 
 import (
 	"context"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"os"
 	"testing"
@@ -14,6 +16,7 @@ import (
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/pastelnetwork/gonode/common/net/credentials"
 	"github.com/pastelnetwork/gonode/common/net/credentials/alts"
+	"github.com/pastelnetwork/gonode/common/utils"
 	pb "github.com/pastelnetwork/gonode/proto/supernode"
 	"github.com/stretchr/testify/suite"
 	"google.golang.org/grpc"
@@ -51,7 +54,6 @@ func TestMain(m *testing.M) {
 	}
 
 	networkResource, err := pool.CreateNetwork("st-integration", func(config *docker.CreateNetworkOptions) {
-		config.CheckDuplicate = true
 		config.Driver = "bridge"
 		config.IPAM = &docker.IPAMOptions{
 			Driver: "default",
@@ -137,105 +139,6 @@ func TestMain(m *testing.M) {
 	}
 }
 
-func purgeDockerResources(client *docker.Client, containers ...*docker.Container) []error {
-	var errs = make([]error, 0)
-	for _, container := range containers {
-		if err := client.RemoveContainer(docker.RemoveContainerOptions{
-			ID:            container.ID,
-			Force:         true,
-			RemoveVolumes: true,
-		}); err != nil {
-			errs = append(errs, err)
-		}
-	}
-
-	return errs
-}
-
-func createContainer(client *docker.Client, name string, image string, network *docker.Network, env []string, ipAddress string, noStart bool) (container *docker.Container, remove func(), err error) {
-	remove = func() {}
-	container, err = client.CreateContainer(docker.CreateContainerOptions{
-		Name: name,
-		Config: &docker.Config{
-			Image: image,
-			Env:   env,
-		},
-		HostConfig: &docker.HostConfig{
-			AutoRemove:    true,
-			RestartPolicy: docker.RestartPolicy{Name: "no"},
-		},
-		NetworkingConfig: &docker.NetworkingConfig{
-			EndpointsConfig: map[string]*docker.EndpointConfig{
-				network.Name: {
-					Aliases:   []string{name},
-					NetworkID: network.ID,
-					IPAMConfig: &docker.EndpointIPAMConfig{
-						IPv4Address: ipAddress,
-					},
-					IPAddress:   ipAddress,
-					IPPrefixLen: 16,
-					Gateway:     "192.168.100.1",
-				},
-			},
-		},
-	})
-	if err != nil {
-		return
-	}
-
-	remove = func() {
-		client.RemoveContainer(docker.RemoveContainerOptions{
-			ID:            container.ID,
-			Force:         true,
-			RemoveVolumes: true,
-		})
-	}
-
-	if noStart {
-		return
-	}
-
-	if err = client.StartContainer(container.ID, nil); err != nil {
-		return
-	}
-
-	remove = func() {
-		client.StopContainer(container.ID, 30)
-		client.RemoveContainer(docker.RemoveContainerOptions{
-			ID:            container.ID,
-			Force:         true,
-			RemoveVolumes: true,
-		})
-	}
-
-	container, err = client.InspectContainer(container.ID)
-
-	return
-}
-
-type mockSecClient struct{}
-
-func (*mockSecClient) Sign(_ context.Context, _ []byte, _, _, _ string) ([]byte, error) {
-	return []byte("mock signature"), nil
-}
-
-func (*mockSecClient) Verify(_ context.Context, _ []byte, signature, _, _ string) (bool, error) {
-	return signature == "mock signature", nil
-}
-
-type challengeStatusResult struct {
-	// number of challenge send to a challenging masternode from challenger masternode
-	NumberOfChallengeSent int `json:"sent"`
-	// number of challenge which is challenging masternode respond to verifying masternode
-	NumberOfChallengeRespondedTo int `json:"respond"`
-	// number of challenge which is challenging masternode respond to verifying masternode and verifying masternode successfully verified
-	NumverOfChallengeSuccess int `json:"success"`
-	// number of challenge which is challenging masternode respond to verifying masternode and verifying masternode says incorrect hash response
-	NumverOfChallengeFailed int `json:"failed"`
-	// number of challenge which is challenging masternode respond to verifying masternode and verifying masternode says the process take too long
-	NumverOfChallengeTimeout int `json:"timeout"`
-}
-
 type testSuite struct {
 	suite.Suite
 	conns        []*grpc.ClientConn
@@ -250,13 +153,8 @@ func (suite *testSuite) SetupTest() {
 		grpc.WithBlock(),
 	)
 	suite.Require().NoError(err, "cannot setup grpc client connection to node1")
-	conn2, err := grpc.Dial("192.168.100.12:14444",
-		grpc.WithTransportCredentials(credentials.NewClientCreds(&mockSecClient{}, &alts.SecInfo{PastelID: "test-pastel-id", PassPhrase: "test-passphrase"})),
-		grpc.WithBlock(),
-	)
-	suite.Require().NoError(err, "cannot setup grpc client connection to node2")
-	suite.conns = append(suite.conns, conn1, conn2)
-	suite.gRPCClients = append(suite.gRPCClients, pb.NewStorageChallengeClient(conn1), pb.NewStorageChallengeClient(conn2))
+	suite.conns = append(suite.conns, conn1)
+	suite.gRPCClients = append(suite.gRPCClients, pb.NewStorageChallengeClient(conn1))
 	suite.httpClient = http.DefaultClient
 	suite.dockerClient = dockerClient
 }
@@ -266,23 +164,37 @@ func (suite *testSuite) TearDownTest() {
 	for _, conn := range suite.conns {
 		conn.Close()
 	}
+	suite.gRPCClients = make([]pb.StorageChallengeClient, 0)
 }
+
 func (suite *testSuite) TestFullChallengeSucceeded() {
+	ctx := context.Background()
+	for i := 0; i < 10; i++ {
+		for _, client := range suite.gRPCClients {
+			client.GenerateStorageChallenges(ctx, &pb.GenerateStorageChallengesRequest{ChallengesPerMasternodePerBlock: 1})
+		}
+	}
+	time.Sleep(10 * time.Second)
 	// collect status of each masternode process storage challenge result
 	res, err := suite.httpClient.Get(fmt.Sprintf("http://%s:8088/sts/show", helperHost))
 	suite.Require().NoError(err, "failed to call http request to retrive storage challenge status")
 	defer res.Body.Close()
 	suite.Require().Equal(http.StatusOK, res.StatusCode)
+
 	var outputChalengeStatusResult map[string]*challengeStatusResult
 	err = json.NewDecoder(res.Body).Decode(&outputChalengeStatusResult)
 	suite.Require().NoError(err, "failed to decode storage challenge status response json")
+	suite.T().Logf("challengeStatus %+v", outputChalengeStatusResult)
 
+	sumaryChallengesSent := 0
 	for challengingMasternodeID, challengeStatus := range outputChalengeStatusResult {
+		sumaryChallengesSent += challengeStatus.NumberOfChallengeSent
 		suite.Require().Greaterf(challengeStatus.NumberOfChallengeSent, 0, "challenge sent must be greater than 0")
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeRespondedTo, challengeStatus.NumverOfChallengeSuccess+challengeStatus.NumverOfChallengeFailed+challengeStatus.NumverOfChallengeTimeout, "comparing challenges 'responded' and sumary of challenges 'success, failed and timeout' of node %s", challengingMasternodeID)
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeRespondedTo, "comparing challenges 'sent' and challenges 'responded' of node %s", challengingMasternodeID)
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumverOfChallengeSuccess, "comparing challenges 'sent' and challenges 'succeeded' of node %s", challengingMasternodeID)
+		suite.Require().Equalf(challengeStatus.NumberOfChallengeRespondedTo, challengeStatus.NumberOfChallengeSuccess+challengeStatus.NumberOfChallengeFailed+challengeStatus.NumberOfChallengeTimeout, "comparing challenges 'responded' and sumary of challenges 'success, failed and timeout' of node %s", challengingMasternodeID)
+		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeRespondedTo, "comparing challenges 'sent' equals to challenges 'responded' of node %s", challengingMasternodeID)
+		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeSuccess, "comparing challenges 'sent' equals to challenges 'succeeded' of node %s", challengingMasternodeID)
 	}
+	suite.Require().Equalf(10, sumaryChallengesSent, "sumary of challenge sent must be 10")
 }
 
 func (suite *testSuite) TestDishonestNodeByFailedOrTimeout() {
@@ -290,9 +202,50 @@ func (suite *testSuite) TestDishonestNodeByFailedOrTimeout() {
 	suite.Require().NoError(err, "failed start dishonest node")
 	defer suite.dockerClient.StopContainer(dishonestNode.ID, 30)
 
-	_, err = http.NewRequest("DELETE", fmt.Sprintf("http://%s:9090/p2p/0.2", "192.168.100.16"), nil)
-	if err != nil {
-		log.Fatalf("could not delete 20%% file hash to become dishonest node: %v", err)
+	_, err = removeKeys(suite.httpClient, "192.168.100.16")
+	suite.Require().NoError(err, "failed remove 20% of files to prepare dishonest node")
+	time.Sleep(3 * time.Second)
+
+	verifyNodeID := base32.StdEncoding.EncodeToString([]byte("mn1key"))
+	challengingNodeID := base32.StdEncoding.EncodeToString([]byte("mn6key"))
+
+	conn, err := grpc.Dial("192.168.100.16:14444",
+		grpc.WithTransportCredentials(credentials.NewClientCreds(&mockSecClient{}, &alts.SecInfo{PastelID: challengingNodeID, PassPhrase: "mock passphrase"})),
+		grpc.WithBlock(),
+	)
+	suite.Require().NoError(err, "cannot setup grpc client connection to node1")
+	suite.conns = append(suite.conns, conn)
+	grpcClient := pb.NewStorageChallengeClient(conn)
+	suite.gRPCClients = append(suite.gRPCClients, grpcClient)
+
+	keylist, err := getKeyList(suite.httpClient)
+	suite.Require().NoError(err, "failed retrive list of symbol file hash node")
+
+	blkHeight, err := getCurrentBlock(suite.httpClient)
+	suite.Require().NoError(err, "failed get current block")
+
+	ctx := context.Background()
+	for idx, fileHash := range keylist {
+		challengeID := utils.GetHashFromString(fmt.Sprintf("%f%d%s%s", rand.Float64(), idx, fileHash, "mock-challenge-id"))
+		err = prepareChallengeStatus(suite.httpClient, challengeID, challengingNodeID, fmt.Sprint(blkHeight))
+		suite.Require().NoError(err, "could not prepare challenge status")
+		grpcClient.ProcessStorageChallenge(ctx, &pb.ProcessStorageChallengeRequest{
+			Data: &pb.StorageChallengeData{
+				MessageId:                   utils.GetHashFromString(fmt.Sprintf("%f%d%s%s", rand.Float64(), idx, fileHash, "mock-message-id")),
+				MessageType:                 pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE,
+				ChallengeStatus:             pb.StorageChallengeData_Status_PENDING,
+				MerklerootWhenChallengeSent: utils.GetHashFromString(fmt.Sprintf("%f%d%s%s", rand.Float64(), idx, fileHash, "mock-merkle-root")),
+				BlockNumChallengeSent:       blkHeight,
+				ChallengingMasternodeId:     challengingNodeID,
+				RespondingMasternodeId:      verifyNodeID,
+				ChallengeFile: &pb.StorageChallengeDataChallengeFile{
+					FileHashToChallenge:      fileHash,
+					ChallengeSliceStartIndex: 0,
+					ChallengeSliceEndIndex:   20,
+				},
+				ChallengeId: challengeID,
+			},
+		})
 	}
 	time.Sleep(10 * time.Second)
 
@@ -301,25 +254,35 @@ func (suite *testSuite) TestDishonestNodeByFailedOrTimeout() {
 	suite.Require().NoError(err, "failed to call http request to retrive storage challenge status")
 	defer res.Body.Close()
 	suite.Require().Equal(http.StatusOK, res.StatusCode)
+
 	var outputChalengeStatusResult map[string]*challengeStatusResult
 	err = json.NewDecoder(res.Body).Decode(&outputChalengeStatusResult)
 	suite.Require().NoError(err, "failed to decode storage challenge status response json")
 
-	sumaryChallengesSent := 0
-	for challengingMasternodeID, challengeStatus := range outputChalengeStatusResult {
-		sumaryChallengesSent += challengeStatus.NumberOfChallengeSent
-		suite.Require().Greater(challengeStatus.NumberOfChallengeSent, 0, "challenge sent must be greater than 0")
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeRespondedTo, challengeStatus.NumverOfChallengeSuccess+challengeStatus.NumverOfChallengeFailed+challengeStatus.NumverOfChallengeTimeout, "comparing challenges 'responded' and sumary of challenges 'success, failed and timeout' of node %s", challengingMasternodeID)
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeRespondedTo, "comparing challenges 'sent' and challenges 'responded' of node %s", challengingMasternodeID)
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumverOfChallengeSuccess, "comparing challenges 'sent' greater than challenges 'succeeded' of node %s", challengingMasternodeID)
-		suite.Require().Greaterf(challengeStatus.NumverOfChallengeTimeout, 0, "comparing challenges 'timeout' greater than 0 of node %s", challengingMasternodeID)
-	}
+	challengeStatus, ok := outputChalengeStatusResult[challengingNodeID]
+	suite.T().Logf("challengeStatus %+v", challengeStatus)
+	suite.Require().True(ok, "challenge status of dishonest node must be availabe")
+
+	suite.Require().Greater(challengeStatus.NumberOfChallengeSent, 0, "challenge sent must be greater than 0")
+	suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeSuccess+challengeStatus.NumberOfChallengeTimeout, "comparing challenges 'sent' and sumary of challenges 'success, timeout' of node %s", challengingNodeID)
+	suite.Require().Greater(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeSuccess, "comparing challenges 'sent' greater than challenges 'succeeded' of node %s", challengingNodeID)
+	suite.Require().Greater(challengeStatus.NumberOfChallengeTimeout, 0, "challenge timeout from must be greater than 0")
 }
 
 func (suite *testSuite) TestIncrementalRQSymbolFileKey() {
-	// // insert incrementals files
-	// _, err := (&http.Client{}).Get("http://192.168.100.53:8088/store/incrementals")
-	// suite.Require().NoError(err, "failed to call http request to add incrementals symnbol file hashes")
+	// insert incrementals files
+	_, err := suite.httpClient.Get("http://192.168.100.53:8088/store/incrementals")
+	suite.Require().NoError(err, "failed to call http request to add incrementals symnbol file hashes")
+
+	keylist, err := getKeyList(suite.httpClient)
+	suite.Require().NoError(err, "failed retrive list of symbol file hash node")
+	suite.Require().Equal(14, len(keylist), "key list increasing from 10 to 14")
+	ctx := context.Background()
+	for i := 0; i < 14; i++ {
+		for _, client := range suite.gRPCClients {
+			client.GenerateStorageChallenges(ctx, &pb.GenerateStorageChallengesRequest{ChallengesPerMasternodePerBlock: 1})
+		}
+	}
 	time.Sleep(10 * time.Second)
 
 	// collect status of each masternode process storage challenge result
@@ -327,32 +290,69 @@ func (suite *testSuite) TestIncrementalRQSymbolFileKey() {
 	suite.Require().NoError(err, "failed to call http request to retrive storage challenge status")
 	defer res.Body.Close()
 	suite.Require().Equal(http.StatusOK, res.StatusCode)
+
 	var outputChalengeStatusResult map[string]*challengeStatusResult
 	err = json.NewDecoder(res.Body).Decode(&outputChalengeStatusResult)
 	suite.Require().NoError(err, "failed to decode storage challenge status response json")
+	suite.T().Logf("challengeStatus %+v", outputChalengeStatusResult)
 
 	sumaryChallengesSent := 0
-	log.Println(outputChalengeStatusResult)
 	for challengingMasternodeID, challengeStatus := range outputChalengeStatusResult {
 		sumaryChallengesSent += challengeStatus.NumberOfChallengeSent
 		suite.Require().Greater(challengeStatus.NumberOfChallengeSent, 0, "challenge sent must be greater than 0")
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeRespondedTo, challengeStatus.NumverOfChallengeSuccess+challengeStatus.NumverOfChallengeFailed+challengeStatus.NumverOfChallengeTimeout, "comparing challenges 'responded' and sumary of challenges 'success, failed and timeout' of node %s", challengingMasternodeID)
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeRespondedTo, "comparing challenges 'sent' and challenges 'responded' of node %s", challengingMasternodeID)
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumverOfChallengeSuccess, "comparing challenges 'sent' greater than challenges 'succeeded' of node %s", challengingMasternodeID)
+		suite.Require().Equalf(challengeStatus.NumberOfChallengeRespondedTo, challengeStatus.NumberOfChallengeSuccess+challengeStatus.NumberOfChallengeFailed+challengeStatus.NumberOfChallengeTimeout, "comparing challenges 'responded' and sumary of challenges 'success, failed and timeout' of node %s", challengingMasternodeID)
+		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeRespondedTo, "comparing challenges 'sent' equals to challenges 'responded' of node %s", challengingMasternodeID)
+		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeSuccess, "comparing challenges 'sent' equals to challenges 'succeeded' of node %s", challengingMasternodeID)
 	}
+	suite.Require().Equalf(14, sumaryChallengesSent, "sumary of challenge sent must be 14")
 }
 
 func (suite *testSuite) TestIncrementalMasternode() {
 	err := suite.dockerClient.StartContainer(incrementalNode.ID, nil)
-	suite.Require().NoError(err, "failed start dishonest node")
+	suite.Require().NoError(err, "failed start incremental node")
 	defer suite.dockerClient.StopContainer(incrementalNode.ID, 30)
 
-	// // wait for download and prepare images mock files to p2p network successfully
-	// _, err = http.DefaultClient.Get(fmt.Sprintf("http://%s:8088/store/mocks", "192.168.100.53"))
-	// if err != nil {
-	// 	log.Fatalf("generate mock image failed from helper image: %v", err)
-	// }
+	verifyNodeID := base32.StdEncoding.EncodeToString([]byte("mn1key"))
+	challengingNodeID := base32.StdEncoding.EncodeToString([]byte("mn5key"))
 
+	conn, err := grpc.Dial("192.168.100.15:14444",
+		grpc.WithTransportCredentials(credentials.NewClientCreds(&mockSecClient{}, &alts.SecInfo{PastelID: challengingNodeID, PassPhrase: "mock passphrase"})),
+		grpc.WithBlock(),
+	)
+	suite.Require().NoError(err, "cannot setup grpc client connection to node1")
+	suite.conns = append(suite.conns, conn)
+	grpcClient := pb.NewStorageChallengeClient(conn)
+	suite.gRPCClients = append(suite.gRPCClients, grpcClient)
+
+	keylist, err := getKeyList(suite.httpClient)
+	suite.Require().NoError(err, "failed retrive list of symbol file hash node")
+
+	blkHeight, err := getCurrentBlock(suite.httpClient)
+	suite.Require().NoError(err, "failed get current block")
+
+	ctx := context.Background()
+	for idx, fileHash := range keylist {
+		challengeID := utils.GetHashFromString(fmt.Sprintf("%f%d%s%s", rand.Float64(), idx, fileHash, "mock-challenge-id"))
+		err = prepareChallengeStatus(suite.httpClient, challengeID, challengingNodeID, fmt.Sprint(blkHeight))
+		suite.Require().NoError(err, "could not prepare challenge status")
+		grpcClient.ProcessStorageChallenge(ctx, &pb.ProcessStorageChallengeRequest{
+			Data: &pb.StorageChallengeData{
+				MessageId:                   utils.GetHashFromString(fmt.Sprintf("%f%d%s%s", rand.Float64(), idx, fileHash, "mock-message-id")),
+				MessageType:                 pb.StorageChallengeData_MessageType_STORAGE_CHALLENGE_ISSUANCE_MESSAGE,
+				ChallengeStatus:             pb.StorageChallengeData_Status_PENDING,
+				MerklerootWhenChallengeSent: utils.GetHashFromString(fmt.Sprintf("%f%d%s%s", rand.Float64(), idx, fileHash, "mock-merkle-root")),
+				BlockNumChallengeSent:       blkHeight,
+				ChallengingMasternodeId:     challengingNodeID,
+				RespondingMasternodeId:      verifyNodeID,
+				ChallengeFile: &pb.StorageChallengeDataChallengeFile{
+					FileHashToChallenge:      fileHash,
+					ChallengeSliceStartIndex: 0,
+					ChallengeSliceEndIndex:   20,
+				},
+				ChallengeId: challengeID,
+			},
+		})
+	}
 	time.Sleep(10 * time.Second)
 
 	// collect status of each masternode process storage challenge result
@@ -360,18 +360,21 @@ func (suite *testSuite) TestIncrementalMasternode() {
 	suite.Require().NoError(err, "failed to call http request to retrive storage challenge status")
 	defer res.Body.Close()
 	suite.Require().Equal(http.StatusOK, res.StatusCode)
+
 	var outputChalengeStatusResult map[string]*challengeStatusResult
 	err = json.NewDecoder(res.Body).Decode(&outputChalengeStatusResult)
 	suite.Require().NoError(err, "failed to decode storage challenge status response json")
 
+	challengeStatus, ok := outputChalengeStatusResult[challengingNodeID]
+	suite.T().Logf("challengeStatus %+v", challengeStatus)
+	suite.Require().True(ok, "challenge status of dishonest node must be availabe")
+
 	sumaryChallengesSent := 0
-	for challengingMasternodeID, challengeStatus := range outputChalengeStatusResult {
-		sumaryChallengesSent += challengeStatus.NumberOfChallengeSent
-		suite.Require().Greater(challengeStatus.NumberOfChallengeSent, 0, "challenge sent must be greater than 0")
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeRespondedTo, challengeStatus.NumverOfChallengeSuccess+challengeStatus.NumverOfChallengeFailed+challengeStatus.NumverOfChallengeTimeout, "comparing challenges 'responded' and sumary of challenges 'success, failed and timeout' of node %s", challengingMasternodeID)
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeRespondedTo, "comparing challenges 'sent' and challenges 'responded' of node %s", challengingMasternodeID)
-		suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumverOfChallengeSuccess, "comparing challenges 'sent' greater than challenges 'succeeded' of node %s", challengingMasternodeID)
-	}
+	sumaryChallengesSent += challengeStatus.NumberOfChallengeSent
+	suite.Require().Greater(challengeStatus.NumberOfChallengeSent, 0, "challenge sent must be greater than 0")
+	suite.Require().Equalf(challengeStatus.NumberOfChallengeRespondedTo, challengeStatus.NumberOfChallengeSuccess+challengeStatus.NumberOfChallengeFailed+challengeStatus.NumberOfChallengeTimeout, "comparing challenges 'responded' and sumary of challenges 'success, failed and timeout' of node %s", challengingNodeID)
+	suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeRespondedTo, "comparing challenges 'sent' and challenges 'responded' of node %s", challengingNodeID)
+	suite.Require().Equalf(challengeStatus.NumberOfChallengeSent, challengeStatus.NumberOfChallengeSuccess, "comparing challenges 'sent' equal to than challenges 'succeeded' of node %s", challengingNodeID)
 }
 
 func TestStorageChallengeTestSuite(t *testing.T) {

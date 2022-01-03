@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
 	"runtime"
 	"strconv"
@@ -18,12 +17,10 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/pastelnetwork/gonode/pastel"
-	"gopkg.in/yaml.v2"
 )
 
-var mockFileStored, imageDownloaded bool
 var blockCount int64 = 0
-var ticker = time.NewTicker(time.Second * 10)
+var ticker = time.NewTicker(time.Second * 3)
 var stopChan chan struct{}
 
 func startGenerateblock() {
@@ -48,82 +45,8 @@ func getBlockCount(w http.ResponseWriter, _ *http.Request) {
 func getMasternodeList(w http.ResponseWriter, _ *http.Request) {
 	json.NewEncoder(w).Encode(mnList)
 }
-func prepareMockFiles() {
-	urlMask := "https://picsum.photos/id/%d/60/90"
-	wg := sync.WaitGroup{}
-	for i := 1; i < 24; i++ {
-		wg.Add(1)
-		go func(i int, wg *sync.WaitGroup) {
-			defer wg.Done()
-			req, _ := http.NewRequest("GET", fmt.Sprintf(urlMask, 200+i), nil)
-			req.Close = true
-			resp, err := (&http.Client{}).Do(req)
-			if err != nil {
-				log.Fatal(err)
-			}
-			defer resp.Body.Close()
 
-			image, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = ioutil.WriteFile(fmt.Sprintf("/root/pastel/%d.jpg", i), image, 0644)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Printf("succeeded download test image %d.png\n", i)
-		}(i, &wg)
-		if math.Mod(float64(i), 5) == 0 {
-			wg.Wait()
-		}
-	}
-	imageDownloaded = true
-}
-
-func storeMockFiles() {
-	if !imageDownloaded {
-		prepareMockFiles()
-	}
-
-	var k int
-	var storageIPAddr, storageName string
-	var mapKeys = make(map[string]map[string]string)
-	var keyList = make([]string, 0)
-	for j := 1; j <= len(mapWsConn); j++ {
-		storageIPAddr = fmt.Sprintf("192.168.100.1%d", j)
-		storageName = fmt.Sprintf("mn%dkey", j)
-		mapKeys[storageName] = make(map[string]string)
-		for i := 1; i <= 4; i++ {
-			k = i + j*4
-
-			if k > 24 {
-				k -= 24
-			}
-			storeImageByID(k, storageName, storageIPAddr, mapKeys, &keyList)
-		}
-	}
-
-	b, err := yaml.Marshal(mapKeys)
-	if err != nil {
-		log.Fatal("yaml marshal", err)
-	}
-
-	if err = ioutil.WriteFile("p2pkeys.yml", b, 0644); err != nil {
-		log.Fatal("write yaml file", err)
-	}
-
-	b, err = json.Marshal(keyList)
-	if err != nil {
-		log.Fatal("yaml marshal key list", err)
-	}
-
-	if err = ioutil.WriteFile("p2pkeys.json", b, 0644); err != nil {
-		log.Fatal("write json file", err)
-	}
-	mockFileStored = true
-}
-
-func storeImageByID(k int, storageName, storageIPAddr string, mapKeys map[string]map[string]string, keyList *[]string) {
+func storeImageByID(k int, storageName, storageIPAddr string, keyList *[]string) {
 	b, err := ioutil.ReadFile(fmt.Sprintf("/root/pastel/%d.jpg", k))
 	if err != nil {
 		log.Fatal(k, "read image", err)
@@ -132,7 +55,7 @@ func storeImageByID(k int, storageName, storageIPAddr string, mapKeys map[string
 	if err != nil {
 		log.Fatal(k, "marshal", err)
 	}
-	req, _ := http.NewRequest("POST", fmt.Sprintf("http://%s:9090/p2p", storageIPAddr), bytes.NewReader(b))
+	req, _ := http.NewRequest("POST", fmt.Sprintf("http://%s/p2p", storageIPAddr), bytes.NewReader(b))
 	req.Header.Add("Content-Type", "application/json")
 	req.Close = true
 	resp, err := (&http.Client{}).Do(req)
@@ -147,7 +70,6 @@ func storeImageByID(k int, storageName, storageIPAddr string, mapKeys map[string
 		log.Fatal(k, "unmarshal", err)
 	}
 
-	mapKeys[storageName][fmt.Sprintf("%d.png", k)] = mapKey["key"]
 	*keyList = append(*keyList, mapKey["key"])
 
 	fmt.Println("Finish pushing file", k, "to p2p storage")
@@ -155,33 +77,18 @@ func storeImageByID(k int, storageName, storageIPAddr string, mapKeys map[string
 
 func incrementalKeyStoring(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("OK"))
-	b, _ := ioutil.ReadFile("p2pkeys.yml")
-	var mapKeys = make(map[string]map[string]string)
-	yaml.Unmarshal(b, &mapKeys)
 	var keyList = make([]string, 0)
-	b, _ = ioutil.ReadFile("p2pkeys.json")
+	b, _ := ioutil.ReadFile("p2pkeys.json")
 	json.Unmarshal(b, &keyList)
 	storageName := "mn1key"
-	storageIPAddr := "192.168.100.11"
-	for i := 20; i < 25; i++ {
-		storeImageByID(i, storageName, storageIPAddr, mapKeys, &keyList)
+	storageIPAddr := "192.168.100.14:9090"
+	for i := 1; i < 5; i++ {
+		storeImageByID(i, storageName, storageIPAddr, &keyList)
 	}
 
-	b, err := yaml.Marshal(mapKeys)
-	if err != nil {
-		log.Fatal("yaml marshal", err)
-	}
+	b, _ = json.Marshal(keyList)
 
-	if err = ioutil.WriteFile("p2pkeys.yml", b, 0644); err != nil {
-		log.Fatal("write yaml file", err)
-	}
-
-	b, err = json.Marshal(keyList)
-	if err != nil {
-		log.Fatal("yaml marshal key list", err)
-	}
-
-	if err = ioutil.WriteFile("p2pkeys.json", b, 0644); err != nil {
+	if err := ioutil.WriteFile("p2pkeys.json", b, 0644); err != nil {
 		log.Fatal("write json file", err)
 	}
 
@@ -194,13 +101,6 @@ func resetChallengeStatus(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("OK"))
 }
 
-func keyStoring(w http.ResponseWriter, _ *http.Request) {
-	if !mockFileStored {
-		storeMockFiles()
-	}
-	w.Write([]byte("OK"))
-}
-
 func listKeys(w http.ResponseWriter, _ *http.Request) {
 	b, err := ioutil.ReadFile("p2pkeys.json")
 	if err != nil {
@@ -208,7 +108,6 @@ func listKeys(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	w.Write(b)
-	w.WriteHeader(http.StatusOK)
 }
 
 func main() {
@@ -222,7 +121,6 @@ func main() {
 	http.HandleFunc("/getblockcount", getBlockCount)
 	http.HandleFunc("/mnlist", getMasternodeList)
 
-	http.HandleFunc("/store/mocks", keyStoring)
 	// store more incremental files
 	http.HandleFunc("/store/incrementals", incrementalKeyStoring)
 	http.HandleFunc("/store/keys", listKeys)
@@ -340,7 +238,7 @@ func challengeTimeout(w http.ResponseWriter, r *http.Request) {
 }
 
 func verifyTimeout() {
-	tc := time.NewTicker(time.Second * 10)
+	tc := time.NewTicker(time.Second * 6)
 	defer tc.Stop()
 	for {
 		select {
@@ -398,32 +296,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 2048,
 }
 
-var mnList = pastel.MasterNodes{
-	{
-		Rank:       "1",
-		IPAddress:  "192.168.100.11:18232",
-		ExtAddress: "192.168.100.11:14444",
-		ExtKey:     base32.StdEncoding.EncodeToString([]byte("mn1key")),
-	},
-	{
-		Rank:       "2",
-		IPAddress:  "192.168.100.12:18232",
-		ExtAddress: "192.168.100.12:14444",
-		ExtKey:     base32.StdEncoding.EncodeToString([]byte("mn2key")),
-	},
-	{
-		Rank:       "3",
-		IPAddress:  "192.168.100.13:18232",
-		ExtAddress: "192.168.100.13:14444",
-		ExtKey:     base32.StdEncoding.EncodeToString([]byte("mn3key")),
-	},
-	{
-		Rank:       "4",
-		IPAddress:  "192.168.100.14:18232",
-		ExtAddress: "192.168.100.14:14444",
-		ExtKey:     base32.StdEncoding.EncodeToString([]byte("mn4key")),
-	},
-}
+var mnList = pastel.MasterNodes{}
 
 type message struct {
 	Type string `json:"type"`
@@ -461,21 +334,39 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("required node id in header, but got empty")
 		return
 	}
-	if id == base32.StdEncoding.EncodeToString([]byte("mn5key")) {
+
+	var i int
+	switch id {
+	case base32.StdEncoding.EncodeToString([]byte("mn1key")):
+		i = 0
+	case base32.StdEncoding.EncodeToString([]byte("mn2key")):
+		i = 1
+	case base32.StdEncoding.EncodeToString([]byte("mn3key")):
+		i = 2
+	case base32.StdEncoding.EncodeToString([]byte("mn4key")):
+		i = 3
+	case base32.StdEncoding.EncodeToString([]byte("mn5key")):
+		i = 4
+	case base32.StdEncoding.EncodeToString([]byte("mn6key")):
+		i = 5
+	}
+
+	var needAdd = true
+	for _, mn := range mnList {
+		if mn.ExtKey == id {
+			needAdd = false
+			break
+		}
+	}
+	if needAdd {
 		mnList = append(mnList, pastel.MasterNode{
-			Rank:       "5",
-			IPAddress:  "192.168.100.15:18232",
-			ExtAddress: "192.168.100.15:14444",
-			ExtKey:     id,
-		})
-	} else if id == base32.StdEncoding.EncodeToString([]byte("mn6key")) {
-		mnList = append(mnList, pastel.MasterNode{
-			Rank:       "5",
-			IPAddress:  "192.168.100.16:18232",
-			ExtAddress: "192.168.100.16:14444",
+			Rank:       fmt.Sprint(i + 1),
+			IPAddress:  fmt.Sprintf("192.168.100.1%d:18232", i+1),
+			ExtAddress: fmt.Sprintf("192.168.100.1%d:14444", i+1),
 			ExtKey:     id,
 		})
 	}
+
 	_, msg, err := conn.ReadMessage()
 	if err != nil {
 		if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -495,10 +386,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		nodeList = append(nodeList, nodeID)
 	}
 	b, _ := json.Marshal(nodeList)
-	err = conn.WriteJSON(&message{Type: "registration", Data: b})
-	if err != nil {
-		log.Printf("could not reply registration message: %v", err)
-		return
+	for _, conn := range mapWsConn {
+		err = conn.WriteJSON(&message{Type: "registration", Data: b})
+		if err != nil {
+			log.Printf("could not reply registration message: %v", err)
+			return
+		}
 	}
 
 	for {
@@ -516,13 +409,12 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		switch messageData.Type {
 		case "store":
-			for nodeID, nodeConn := range mapWsConn {
+			for _, nodeConn := range mapWsConn {
 				err = nodeConn.WriteJSON(messageData)
 				if err != nil {
 					if nodeConn != nil {
 						nodeConn.Close()
 					}
-					deregistrationWs(nodeID)
 				}
 			}
 		}
@@ -537,7 +429,11 @@ func deregistrationWs(id string) {
 			break
 		}
 	}
-	mnList = append(mnList[:idx], mnList[idx+1:]...)
+	if len(mnList) > idx {
+		mnList = append(mnList[:idx], mnList[idx+1:]...)
+	}
+	removeConn := mapWsConn[id]
+	defer removeConn.Close()
 	delete(mapWsConn, id)
 	for _, conn := range mapWsConn {
 		conn.WriteJSON(&message{Type: "deregistration", Data: []byte(id)})

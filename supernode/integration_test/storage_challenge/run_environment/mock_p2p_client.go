@@ -67,6 +67,7 @@ func (s *mockP2P) registrationNode(ctx context.Context) error {
 				return err
 			}
 
+			log.P2P().Infof("Received Register P2P Nodes %v", string(msgData.Data))
 			if err = json.Unmarshal(msgData.Data, &s.Nodes); err != nil {
 				log.P2P().WithContext(ctx).WithError(err).Error("could not parse registration node list")
 				conn.Close()
@@ -115,13 +116,22 @@ func (s *mockP2P) Run(ctx context.Context) error {
 			}
 
 			switch msgData.Type {
-			case "deretistration":
+			case "registration":
+				log.P2P().Infof("Received Register P2P Nodes %v", string(msgData.Data))
+				if err = json.Unmarshal(msgData.Data, &s.Nodes); err != nil {
+					log.P2P().WithContext(ctx).WithError(err).Error("could not parse registration node list")
+					break
+				}
+			case "deregistration":
 				id := string(msgData.Data)
+				removalIDx := -1
 				for idx := 0; idx < len(s.Nodes); idx++ {
 					if s.Nodes[idx] == id {
-						s.Nodes = append(s.Nodes[:idx], s.Nodes[idx+1:]...)
-						break
+						removalIDx = idx
 					}
+				}
+				if removalIDx > -1 {
+					s.Nodes = append(s.Nodes[:removalIDx], s.Nodes[removalIDx+1:]...)
 				}
 				log.P2P().WithContext(ctx).Infof("node deregistration: %s", id)
 			case "store":
@@ -238,9 +248,38 @@ func (s *mockP2P) Stats(_ context.Context) (map[string]interface{}, error) {
 }
 
 func (s *mockP2P) NClosestNodes(ctx context.Context, n int, key string, ignores ...string) []string {
+	res, err := (&http.Client{}).Get("http://helper:8088/mnlist")
+	if err == nil {
+		defer res.Body.Close()
+		json.NewDecoder(res.Body).Decode(&s.Nodes)
+	}
 	return utils.GetNClosestXORDistanceStringToAGivenComparisonString(n, key, s.Nodes, ignores...)
 }
 
 func newMockP2P(id string) p2p.P2P {
 	return &mockP2P{ID: id}
+}
+
+func getLocalKeys(ctx context.Context) ([]string, error) {
+	db, err := sql.Open("sqlite3", dbName)
+	if err != nil {
+		log.P2P().WithContext(ctx).WithError(err).Error("cannot open sqlite database")
+		return nil, err
+	}
+	rows, err := db.QueryContext(ctx, "SELECT key FROM data")
+	if err != nil {
+		log.P2P().WithContext(ctx).WithError(err).Error("cannot select local keys")
+		return nil, err
+	}
+
+	var ret = make([]string, 0)
+	for rows.Next() {
+		var val string
+		err = rows.Scan(&val)
+		if err != nil {
+			continue
+		}
+		ret = append(ret, val)
+	}
+	return ret, nil
 }

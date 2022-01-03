@@ -44,7 +44,7 @@ func newDebugP2PService(p2pClient p2p.Client) *debugService {
 	router.HandleFunc("/p2p/{ratio}", service.p2pRemoveRandomFilesByGivenRatio).Methods(http.MethodDelete) // remove keys given ratio
 
 	service.httpServer = &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", "0.0.0.0", 9090),
+		Addr:    fmt.Sprintf("%s:%s", "0.0.0.0", rawPorts[1]),
 		Handler: router,
 	}
 
@@ -121,12 +121,26 @@ func (service *debugService) p2pRemoveRandomFilesByGivenRatio(writer http.Respon
 	if err != nil {
 		ratio = 0.2
 	}
+
+	localKeyList, err := getLocalKeys(ctx)
+	if err != nil {
+		writer.Write([]byte("local keys not found"))
+		writer.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	for _, key := range localKeyList {
+		service.localKeys[key] = true
+	}
+
+	log.WithContext(ctx).Infof("DELETE KEYS WITH RATIO %f FROM LOCAL KEYS %v", ratio, service.localKeys)
 	var removedKeys = make([]string, 0)
 	for key, ok := range service.localKeys {
 		if ok {
 			if rd := rand.Float64(); rd <= ratio {
 				err = service.p2pClient.Delete(ctx, key)
 				if err != nil {
+					log.WithContext(ctx).WithError(err).Errorf("could not delete key %s", key)
 					continue
 				}
 				removedKeys = append(removedKeys, key)
@@ -151,7 +165,7 @@ func (service *debugService) Run(ctx context.Context) error {
 
 	// start http service
 	go func() {
-		log.WithContext(ctx).WithField("port", 9090).Info("Http server started")
+		log.WithContext(ctx).WithField("port", rawPorts[1]).Info("Http server started")
 		err := service.httpServer.ListenAndServe()
 		log.WithContext(ctx).WithError(err).Info("Http server stopped")
 	}()
