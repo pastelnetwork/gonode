@@ -38,7 +38,7 @@ type StorageChallenge interface {
 }
 
 // NewService retuns new domain service instance with actor model
-func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel.Client) (svc StorageChallenge, stopActor func()) {
+func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel.Client, challengeStatusObserver SaveChallengeState) (svc StorageChallenge, stopActor func()) {
 	if cfg == nil {
 		panic("domain service configuration not found")
 	}
@@ -52,7 +52,7 @@ func NewService(cfg *Config, secConn node.Client, p2p p2p.Client, pClient pastel
 		domainActorID:                 pid,
 		storageChallengeExpiredBlocks: cfg.StorageChallengeExpiredBlocks,
 		pclient:                       pClient,
-		repository:                    newRepository(p2p, pClient),
+		repository:                    newRepository(p2p, pClient, challengeStatusObserver),
 		nodeID:                        cfg.PastelID,
 		numberOfChallengeReplicas:     cfg.NumberOfChallengeReplicas,
 	}, localActor.Stop

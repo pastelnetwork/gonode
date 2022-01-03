@@ -8,7 +8,20 @@ import (
 	"github.com/pastelnetwork/gonode/pastel"
 )
 
-type SaveChallengState interface {
+type unimplementSaveChallengeState struct{}
+
+func (unimplementSaveChallengeState) OnSent(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+}
+func (unimplementSaveChallengeState) OnResponded(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+}
+func (unimplementSaveChallengeState) OnSucceeded(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+}
+func (unimplementSaveChallengeState) OnFailed(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+}
+func (unimplementSaveChallengeState) OnTimeout(ctx context.Context, challengeID, nodeID string, sentBlock int32) {
+}
+
+type SaveChallengeState interface {
 	OnSent(ctx context.Context, challengeID, nodeID string, sentBlock int32)
 	OnResponded(ctx context.Context, challengeID, nodeID string, sentBlock int32)
 	OnSucceeded(ctx context.Context, challengeID, nodeID string, sentBlock int32)
@@ -37,7 +50,10 @@ type repository interface {
 	SaveChallengMessageState(ctx context.Context, status, challengeID, nodeID string, sentBlock int32)
 }
 
-func newRepository(p2p p2p.Client, pClient pastel.Client, challengeStateStorage SaveChallengState) repository {
+func newRepository(p2p p2p.Client, pClient pastel.Client, challengeStateStorage SaveChallengeState) repository {
+	if challengeStateStorage == nil {
+		challengeStateStorage = unimplementSaveChallengeState{}
+	}
 	return &repo{
 		p2p:          p2p,
 		pClient:      pClient,
@@ -48,7 +64,7 @@ func newRepository(p2p p2p.Client, pClient pastel.Client, challengeStateStorage 
 type repo struct {
 	p2p          p2p.Client
 	pClient      pastel.Client
-	stateStorage SaveChallengState
+	stateStorage SaveChallengeState
 }
 
 func (r *repo) ListSymbolFileKeysFromNFTTicket(ctx context.Context) ([]string, error) {
