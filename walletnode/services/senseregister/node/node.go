@@ -25,11 +25,9 @@ type Node struct {
 	FingerprintAndScoresBytes []byte // JSON bytes of FingerprintAndScores
 	Signature                 []byte
 
-	registrationFee int64
-	regActionTxid   string
-
-	address  string
-	pastelID string
+	regActionTxid string
+	address       string
+	pastelID      string
 }
 
 func (node *Node) String() string {

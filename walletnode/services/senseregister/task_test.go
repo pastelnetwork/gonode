@@ -31,12 +31,6 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func appendStr(b []byte, s string) []byte {
-	b = append(b, []byte(s)...)
-	b = append(b, '\n')
-	return b
-}
-
 func newTestNode(address, pastelID string) *node.Node {
 	return node.NewNode(nil, address, pastelID)
 }
