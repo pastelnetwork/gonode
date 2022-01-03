@@ -3,17 +3,21 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base32"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
+	"runtime"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/pastelnetwork/gonode/pastel"
 	"gopkg.in/yaml.v2"
 )
 
@@ -39,27 +43,39 @@ func stopGenerateBlock() {
 
 func getBlockCount(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte(fmt.Sprint(blockCount)))
-	w.WriteHeader(http.StatusOK)
 }
 
+func getMasternodeList(w http.ResponseWriter, _ *http.Request) {
+	json.NewEncoder(w).Encode(mnList)
+}
 func prepareMockFiles() {
-	urlMask := "https://picsum.photos/%d/60/90"
-	for i := 0; i < 500; i++ {
-		resp, err := http.Get(fmt.Sprint(urlMask, i))
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer resp.Body.Close()
+	urlMask := "https://picsum.photos/id/%d/60/90"
+	wg := sync.WaitGroup{}
+	for i := 1; i < 24; i++ {
+		wg.Add(1)
+		go func(i int, wg *sync.WaitGroup) {
+			defer wg.Done()
+			req, _ := http.NewRequest("GET", fmt.Sprintf(urlMask, 200+i), nil)
+			req.Close = true
+			resp, err := (&http.Client{}).Do(req)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer resp.Body.Close()
 
-		image, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
+			image, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = ioutil.WriteFile(fmt.Sprintf("/root/pastel/%d.jpg", i), image, 0644)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("succeeded download test image %d.png\n", i)
+		}(i, &wg)
+		if math.Mod(float64(i), 5) == 0 {
+			wg.Wait()
 		}
-		err = ioutil.WriteFile(fmt.Sprintf("/root/pastel/%d.jpg", i), image, 0644)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Printf("succeeded download test image %d.png", i)
 	}
 	imageDownloaded = true
 }
@@ -73,44 +89,17 @@ func storeMockFiles() {
 	var storageIPAddr, storageName string
 	var mapKeys = make(map[string]map[string]string)
 	var keyList = make([]string, 0)
-	for j := 1; j < 6; j++ {
+	for j := 1; j <= len(mapWsConn); j++ {
 		storageIPAddr = fmt.Sprintf("192.168.100.1%d", j)
 		storageName = fmt.Sprintf("mn%dkey", j)
 		mapKeys[storageName] = make(map[string]string)
-		for i := 1; i <= 20; i++ {
-			k = i + j*20
-			if k > 100 {
-				k -= 100
-			}
-			b, err := ioutil.ReadFile(fmt.Sprintf("/root/pastel/%d.jpg", k))
-			if err != nil {
-				log.Fatal(j, i, "read image", err)
-			}
-			b, err = json.Marshal(map[string]interface{}{"value": b})
-			if err != nil {
-				log.Fatal(j, i, "marshal", err)
-			}
-			resp, err := (&http.Client{}).Post(fmt.Sprintf("http://%s:9090/p2p", storageIPAddr), "application/json", bytes.NewReader(b))
-			if err != nil {
-				log.Fatal(j, i, "post p2p store", err)
-			}
-			defer resp.Body.Close()
+		for i := 1; i <= 4; i++ {
+			k = i + j*4
 
-			b, err = ioutil.ReadAll(resp.Body)
-			if err != nil {
-				log.Fatal(j, i, "read response", err)
+			if k > 24 {
+				k -= 24
 			}
-
-			var mapKey map[string]string
-			err = json.Unmarshal(b, &mapKey)
-			if err != nil {
-				log.Fatal(j, i, "unmarshal", err)
-			}
-
-			mapKeys[storageName][fmt.Sprintf("%d.png", k)] = mapKey["key"]
-			keyList = append(keyList, mapKey["key"])
-
-			fmt.Println("Finish pushing file", k, "to p2p storage", j)
+			storeImageByID(k, storageName, storageIPAddr, mapKeys, &keyList)
 		}
 	}
 
@@ -134,11 +123,82 @@ func storeMockFiles() {
 	mockFileStored = true
 }
 
+func storeImageByID(k int, storageName, storageIPAddr string, mapKeys map[string]map[string]string, keyList *[]string) {
+	b, err := ioutil.ReadFile(fmt.Sprintf("/root/pastel/%d.jpg", k))
+	if err != nil {
+		log.Fatal(k, "read image", err)
+	}
+	b, err = json.Marshal(map[string]interface{}{"value": b})
+	if err != nil {
+		log.Fatal(k, "marshal", err)
+	}
+	req, _ := http.NewRequest("POST", fmt.Sprintf("http://%s:9090/p2p", storageIPAddr), bytes.NewReader(b))
+	req.Header.Add("Content-Type", "application/json")
+	req.Close = true
+	resp, err := (&http.Client{}).Do(req)
+	if err != nil {
+		log.Fatal(k, "post p2p store", err)
+	}
+	defer resp.Body.Close()
+
+	var mapKey map[string]string
+	err = json.NewDecoder(resp.Body).Decode(&mapKey)
+	if err != nil {
+		log.Fatal(k, "unmarshal", err)
+	}
+
+	mapKeys[storageName][fmt.Sprintf("%d.png", k)] = mapKey["key"]
+	*keyList = append(*keyList, mapKey["key"])
+
+	fmt.Println("Finish pushing file", k, "to p2p storage")
+}
+
+func incrementalKeyStoring(w http.ResponseWriter, _ *http.Request) {
+	w.Write([]byte("OK"))
+	b, _ := ioutil.ReadFile("p2pkeys.yml")
+	var mapKeys = make(map[string]map[string]string)
+	yaml.Unmarshal(b, &mapKeys)
+	var keyList = make([]string, 0)
+	b, _ = ioutil.ReadFile("p2pkeys.json")
+	json.Unmarshal(b, &keyList)
+	storageName := "mn1key"
+	storageIPAddr := "192.168.100.11"
+	for i := 20; i < 25; i++ {
+		storeImageByID(i, storageName, storageIPAddr, mapKeys, &keyList)
+	}
+
+	b, err := yaml.Marshal(mapKeys)
+	if err != nil {
+		log.Fatal("yaml marshal", err)
+	}
+
+	if err = ioutil.WriteFile("p2pkeys.yml", b, 0644); err != nil {
+		log.Fatal("write yaml file", err)
+	}
+
+	b, err = json.Marshal(keyList)
+	if err != nil {
+		log.Fatal("yaml marshal key list", err)
+	}
+
+	if err = ioutil.WriteFile("p2pkeys.json", b, 0644); err != nil {
+		log.Fatal("write json file", err)
+	}
+
+	w.Write(b)
+}
+
+func resetChallengeStatus(w http.ResponseWriter, _ *http.Request) {
+	mapStatictis = make(map[string]*statictis)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+}
+
 func keyStoring(w http.ResponseWriter, _ *http.Request) {
 	if !mockFileStored {
 		storeMockFiles()
 	}
-	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
 }
 
 func listKeys(w http.ResponseWriter, _ *http.Request) {
@@ -152,15 +212,19 @@ func listKeys(w http.ResponseWriter, _ *http.Request) {
 }
 
 func main() {
+	runtime.GOMAXPROCS(5)
 	go startGenerateblock()
 	defer stopGenerateBlock()
 
 	http.HandleFunc("/ws", wsHandler)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {})
+	http.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) { w.Write([]byte("OK")) })
 	http.HandleFunc("/getblockcount", getBlockCount)
+	http.HandleFunc("/mnlist", getMasternodeList)
 
 	http.HandleFunc("/store/mocks", keyStoring)
+	// store more incremental files
+	http.HandleFunc("/store/incrementals", incrementalKeyStoring)
 	http.HandleFunc("/store/keys", listKeys)
 
 	http.HandleFunc("/sts/sent", challengeSent)
@@ -169,6 +233,7 @@ func main() {
 	http.HandleFunc("/sts/failed", challengeFailed)
 	http.HandleFunc("/sts/timeout", challengeTimeout)
 	http.HandleFunc("/sts/show", statictisShow)
+	http.HandleFunc("/sts/reset", resetChallengeStatus)
 
 	go verifyTimeout()
 	defer close(stopCh)
@@ -282,24 +347,7 @@ func verifyTimeout() {
 		case <-stopCh:
 			return
 		case <-tc.C:
-			resp, err := (&http.Client{}).Get(fmt.Sprintf("http://%s/getblockcount", "192.168.100.10"))
-			if err != nil {
-				log.Println("could not current getblockcount", err)
-				continue
-			}
-			defer resp.Body.Close()
-			b, _ := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				log.Println("could not read current getblockcount response", err)
-				continue
-			}
-			b = bytes.Trim(b, "\n")
-			blkCount, err := strconv.Atoi(string(b))
-			if err != nil {
-				log.Println("could not convert current getblockcount to integer", err)
-				continue
-			}
-			log.Println("current checking block count:", blkCount)
+			log.Println("current checking block count:", blockCount)
 			for nodeID, mapID := range sentMap {
 				for id, mapKey := range mapID {
 					sentBlkStr := mapKey["sent_block"]
@@ -313,7 +361,7 @@ func verifyTimeout() {
 					if err != nil {
 						continue
 					}
-					if blkCount > sentBlk+1 {
+					if blockCount > int64(sentBlk)+1 {
 						mtx.Lock()
 						delete(sentMap[nodeID], id)
 						mtx.Unlock()
@@ -348,6 +396,33 @@ var mapWsConn = make(map[string]*websocket.Conn)
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  2048,
 	WriteBufferSize: 2048,
+}
+
+var mnList = pastel.MasterNodes{
+	{
+		Rank:       "1",
+		IPAddress:  "192.168.100.11:18232",
+		ExtAddress: "192.168.100.11:14444",
+		ExtKey:     base32.StdEncoding.EncodeToString([]byte("mn1key")),
+	},
+	{
+		Rank:       "2",
+		IPAddress:  "192.168.100.12:18232",
+		ExtAddress: "192.168.100.12:14444",
+		ExtKey:     base32.StdEncoding.EncodeToString([]byte("mn2key")),
+	},
+	{
+		Rank:       "3",
+		IPAddress:  "192.168.100.13:18232",
+		ExtAddress: "192.168.100.13:14444",
+		ExtKey:     base32.StdEncoding.EncodeToString([]byte("mn3key")),
+	},
+	{
+		Rank:       "4",
+		IPAddress:  "192.168.100.14:18232",
+		ExtAddress: "192.168.100.14:14444",
+		ExtKey:     base32.StdEncoding.EncodeToString([]byte("mn4key")),
+	},
 }
 
 type message struct {
@@ -385,6 +460,21 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 	if id == "" {
 		log.Println("required node id in header, but got empty")
 		return
+	}
+	if id == base32.StdEncoding.EncodeToString([]byte("mn5key")) {
+		mnList = append(mnList, pastel.MasterNode{
+			Rank:       "5",
+			IPAddress:  "192.168.100.15:18232",
+			ExtAddress: "192.168.100.15:14444",
+			ExtKey:     id,
+		})
+	} else if id == base32.StdEncoding.EncodeToString([]byte("mn6key")) {
+		mnList = append(mnList, pastel.MasterNode{
+			Rank:       "5",
+			IPAddress:  "192.168.100.16:18232",
+			ExtAddress: "192.168.100.16:14444",
+			ExtKey:     id,
+		})
 	}
 	_, msg, err := conn.ReadMessage()
 	if err != nil {
@@ -440,6 +530,14 @@ func wsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func deregistrationWs(id string) {
+	var idx = 0
+	var mn pastel.MasterNode
+	for idx, mn = range mnList {
+		if mn.ExtKey == id {
+			break
+		}
+	}
+	mnList = append(mnList[:idx], mnList[idx+1:]...)
 	delete(mapWsConn, id)
 	for _, conn := range mapWsConn {
 		conn.WriteJSON(&message{Type: "deregistration", Data: []byte(id)})
