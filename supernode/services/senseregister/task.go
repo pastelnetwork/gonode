@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -29,7 +30,6 @@ type Task struct {
 	nftRegMetadata *types.ActionRegMetadata
 	Ticket         *pastel.ActionTicket
 	Artwork        *artwork.File
-	imageSizeBytes int
 
 	meshedNodes []types.MeshedSuperNode
 
@@ -233,14 +233,18 @@ func (task *Task) compressSignedDDAndFingerprints(ctx context.Context, ddData *p
 }
 
 // ProbeImage uploads the resampled image compute and return a compression of pastel.DDAndFingerprints
-func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, error) {
+func (task *Task) ProbeImage(ctx context.Context, file *artwork.File) ([]byte, error) {
 	if err := task.RequiredStatus(StatusConnected); err != nil {
+		log.WithContext(ctx).WithField("CurrentStatus", task.Status()).Error("ProbeImage() failed with non-satisfied task status")
 		return nil, err
 	}
 
 	var err error
 
 	<-task.NewAction(func(ctx context.Context) error {
+		defer errors.Recover(func(recErr error) {
+			log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).WithError(recErr).Error("PanicWhenProbeImage")
+		})
 		task.UpdateStatus(StatusImageProbed)
 		task.Artwork = file
 		task.myDDAndFingerprints, err = task.genFingerprintsData(ctx, task.Artwork)
@@ -295,8 +299,9 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 		select {
 		case <-ctx.Done():
 			err = ctx.Err()
+			log.WithContext(ctx).WithError(err).Error("ctx.Done()")
 			if err != nil {
-				log.WithContext(ctx).Debug("waiting for DDAndFingerprints from peers context cancelled")
+				log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers context cancelled")
 			}
 			return nil
 		case <-task.allSignedDDAndFingerprintsReceivedChn:
@@ -349,7 +354,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 			task.calculatedDDAndFingerprints.ZstdCompressedFingerprint = compressed
 			return nil
 		case <-time.After(30 * time.Second):
-			log.WithContext(ctx).Debug("waiting for DDAndFingerprints from peers timeout")
+			log.WithContext(ctx).Error("waiting for DDAndFingerprints from peers timeout")
 			err = errors.New("waiting for DDAndFingerprints timeout")
 			return nil
 		}
@@ -362,7 +367,7 @@ func (task *Task) ProbeImage(_ context.Context, file *artwork.File) ([]byte, err
 	return task.calculatedDDAndFingerprints.ZstdCompressedFingerprint, nil
 }
 
-func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, dd []byte) error {
+func (task *Task) validateDdFpIds(ctx context.Context, dd []byte) error {
 
 	validate := func(ctx context.Context, data []byte, ic uint32, max uint32, ids []string) error {
 		length := 4
@@ -426,7 +431,7 @@ func (task *Task) validateRqIDsAndDdFpIds(ctx context.Context, dd []byte) error 
 		return nil
 	}
 
-	apiSenseTicket, err := task.Ticket.ApiSenseTicket()
+	apiSenseTicket, err := task.Ticket.APISenseTicket()
 	if err != nil {
 		return errors.Errorf("invalid sense ticket: %w", err)
 	}
@@ -452,8 +457,8 @@ func (task *Task) validateSignedTicketFromWN(ctx context.Context, ticket []byte,
 		return errors.Errorf("decode action ticket: %w", err)
 	}
 
-	// Verify ApiSenseTicket
-	_, err = task.Ticket.ApiSenseTicket()
+	// Verify APISenseTicket
+	_, err = task.Ticket.APISenseTicket()
 	if err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("invalid api sense ticket")
 		return errors.Errorf("invalid api sense ticket: %w", err)
@@ -471,7 +476,7 @@ func (task *Task) validateSignedTicketFromWN(ctx context.Context, ticket []byte,
 		return err
 	}
 
-	if err := task.validateRqIDsAndDdFpIds(ctx, ddFpFile); err != nil {
+	if err := task.validateDdFpIds(ctx, ddFpFile); err != nil {
 		log.WithContext(ctx).WithError(err).Errorf("validate rq & dd id files")
 
 		return errors.Errorf("validate rq & dd id files %w", err)
@@ -480,7 +485,7 @@ func (task *Task) validateSignedTicketFromWN(ctx context.Context, ticket []byte,
 }
 
 // ValidateBurnTxID - will validate the pre-burnt transaction ID created by 3rd party
-func (task *Task) ValidateBurnTxID(ctx context.Context) error {
+func (task *Task) ValidateBurnTxID(_ context.Context) error {
 	var err error
 
 	<-task.NewAction(func(ctx context.Context) error {
@@ -501,10 +506,10 @@ func (task *Task) ValidateBurnTxID(ctx context.Context) error {
 }
 
 // ValidateAndRegister will get signed ticket from fee txid, wait until it's confirmations meet expectation.
-func (task *Task) ValidateAndRegister(ctx context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (string, error) {
+func (task *Task) ValidateAndRegister(_ context.Context, ticket []byte, creatorSignature []byte, ddFpFile []byte) (string, error) {
 	var err error
-	if err = task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
-		return "", errors.Errorf("require status %s not satisfied", StatusRegistrationFeeCalculated)
+	if err = task.RequiredStatus(StatusImageProbed); err != nil {
+		return "", errors.Errorf("require status %s not satisfied", StatusImageProbed)
 	}
 
 	task.creatorSignature = creatorSignature
@@ -567,11 +572,12 @@ func (task *Task) ValidateAndRegister(ctx context.Context, ticket []byte, creato
 	return nftRegTxid, err
 }
 
-func (task *Task) ValidateActionActAndStore(ctx context.Context, actionRegTxId string) error {
+// ValidateActionActAndStore informs actionRegTxID to trigger store IDfiles in case of actionRegTxID was
+func (task *Task) ValidateActionActAndStore(ctx context.Context, actionRegTxID string) error {
 	var err error
 
 	// Wait for action ticket to be activated by walletnode
-	confirmations := task.waitActionActivation(ctx, actionRegTxId, 2, 30*time.Second)
+	confirmations := task.waitActionActivation(ctx, actionRegTxID, 2, 30*time.Second)
 	err = <-confirmations
 	if err != nil {
 		return errors.Errorf("wait for confirmation of reg-art ticket %w", err)
@@ -731,7 +737,7 @@ func (task *Task) registerAction(ctx context.Context) (string, error) {
 			BlockNum:      task.Ticket.BlockNum,
 			BlockHash:     task.Ticket.BlockHash,
 			ActionType:    task.Ticket.ActionType,
-			ApiTicketData: task.Ticket.ApiTicketData,
+			APITicketData: task.Ticket.APITicketData,
 		},
 		Signatures: &pastel.ActionTicketSignatures{
 			Caller: map[string]string{
@@ -801,7 +807,7 @@ func (task *Task) genFingerprintsData(ctx context.Context, file *artwork.File) (
 	}
 
 	// Creates compress(Base64(dd_and_fingerprints).Base64(signature))
-	compressed, err := task.compressSignedDDAndFingerprints(ctx, task.calculatedDDAndFingerprints)
+	compressed, err := task.compressSignedDDAndFingerprints(ctx, ddAndFingerprints)
 	if err != nil {
 		return nil, errors.Errorf("call compressSignedDDAndFingerprints failed: %w", err)
 	}
@@ -829,13 +835,12 @@ func (task *Task) AddSignedDDAndFingerprints(nodeID string, compressedSignedDDAn
 	task.ddMtx.Lock()
 	defer task.ddMtx.Unlock()
 
-	// TODO: update later
-	// if err := task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
-	// 	return err
-	// }
 	var err error
 
 	<-task.NewAction(func(ctx context.Context) error {
+		defer errors.Recover(func(recErr error) {
+			log.WithContext(ctx).WithField("stack-strace", string(debug.Stack())).WithError(recErr).Error("PanicWhenProbeImage")
+		})
 		log.WithContext(ctx).Debugf("receive compressedSignedDDAndFingerprints from node %s", nodeID)
 		// Check nodeID should in task.meshedNodes
 		err = task.checkNodeInMeshedNodes(nodeID)
@@ -883,7 +888,7 @@ func (task *Task) AddPeerArticketSignature(nodeID string, signature []byte) erro
 	task.peersArtTicketSignatureMtx.Lock()
 	defer task.peersArtTicketSignatureMtx.Unlock()
 
-	if err := task.RequiredStatus(StatusRegistrationFeeCalculated); err != nil {
+	if err := task.RequiredStatus(StatusImageProbed); err != nil {
 		return err
 	}
 
@@ -957,6 +962,7 @@ func NewTask(service *Service) *Task {
 		peersArtTicketSignatureMtx:            &sync.Mutex{},
 		peersArtTicketSignature:               make(map[string][]byte),
 		allSignaturesReceivedChn:              make(chan struct{}),
+		allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
 		allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
 	}
 }

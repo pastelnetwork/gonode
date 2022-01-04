@@ -11,8 +11,6 @@ const (
 	// Process
 	StatusConnected
 	StatusImageProbed
-	StatusImageAndThumbnailCoordinateUploaded
-	StatusRegistrationFeeCalculated
 
 	// Error
 	StatusErrorInvalidBurnTxID
@@ -23,16 +21,14 @@ const (
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted:                         "Task started",
-	StatusPrimaryMode:                         "Primary Mode",
-	StatusSecondaryMode:                       "Secondary Mode",
-	StatusConnected:                           "Connected",
-	StatusImageProbed:                         "Image Probed",
-	StatusImageAndThumbnailCoordinateUploaded: "Imaged And Thumbnail Coordinate Uploaded",
-	StatusRegistrationFeeCalculated:           "Registration Fee Caculated",
-	StatusErrorInvalidBurnTxID:                "Error Invalid Burn TxID",
-	StatusTaskCanceled:                        "Task Canceled",
-	StatusTaskCompleted:                       "Task Completed",
+	StatusTaskStarted:          "Task started",
+	StatusPrimaryMode:          "Primary Mode",
+	StatusSecondaryMode:        "Secondary Mode",
+	StatusConnected:            "Connected",
+	StatusImageProbed:          "Image Probed",
+	StatusErrorInvalidBurnTxID: "Error Invalid Burn TxID",
+	StatusTaskCanceled:         "Task Canceled",
+	StatusTaskCompleted:        "Task Completed",
 }
 
 // Status represents status of the task

@@ -6,17 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math/rand"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/DataDog/zstd"
-	"github.com/pastelnetwork/gonode/common/utils"
-
 	"github.com/pastelnetwork/gonode/common/service/task"
 	"github.com/pastelnetwork/gonode/common/types"
+	"github.com/pastelnetwork/gonode/common/utils"
 
 	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/pastelnetwork/gonode/common/service/artwork"
@@ -24,7 +22,6 @@ import (
 	ddMock "github.com/pastelnetwork/gonode/dupedetection/ddclient/test"
 	"github.com/pastelnetwork/gonode/pastel"
 	pastelMock "github.com/pastelnetwork/gonode/pastel/test"
-	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	test "github.com/pastelnetwork/gonode/supernode/node/test/sense_register"
 	"github.com/tj/assert"
 )
@@ -112,7 +109,7 @@ func TestTaskSignAndSendArtTicket(t *testing.T) {
 	}
 }
 
-func TestTaskRegisterArt(t *testing.T) {
+func TestTaskRegisterAction(t *testing.T) {
 	type args struct {
 		task     *Task
 		regErr   error
@@ -129,7 +126,10 @@ func TestTaskRegisterArt(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{
+						ActionType:    pastel.ActionTypeSense,
+						APITicketData: &pastel.APISenseTicket{},
+					},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -142,7 +142,10 @@ func TestTaskRegisterArt(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{
+						ActionType:    pastel.ActionTypeSense,
+						APITicketData: &pastel.APISenseTicket{},
+					},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -158,11 +161,10 @@ func TestTaskRegisterArt(t *testing.T) {
 			t.Parallel()
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnRegisterArtTicket(tc.args.regRetID, tc.args.regErr).
-				ListenOnRegisterNFTTicket(tc.args.regRetID, tc.args.regErr)
+			pastelClientMock.ListenOnRegisterActionTicket(tc.args.regRetID, tc.args.regErr)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			id, err := tc.args.task.registerArt(context.Background())
+			id, err := tc.args.task.registerAction(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -267,7 +269,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ActionTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -283,7 +285,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ActionTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -299,7 +301,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ActionTicket{},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -325,7 +327,7 @@ func TestTaskGenFingerprintsData(t *testing.T) {
 			pastelClientMock.ListenOnSign([]byte("signature"), nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			tc.args.task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+			tc.args.task.nftRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
 
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
@@ -358,7 +360,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				masterNodesErr: nil,
 				nodeID:         "A",
@@ -371,7 +373,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				masterNodesErr: errors.New("test"),
 			},
@@ -383,7 +385,7 @@ func TestTaskPastelNodesByExtKey(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				nodeID:         "B",
 				masterNodesErr: nil,
@@ -436,7 +438,7 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ActionTicket{},
 					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
 				},
 				verifyRet: true,
@@ -450,7 +452,7 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ActionTicket{},
 					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
 				},
 				verifyRet: true,
@@ -464,7 +466,7 @@ func TestTaskVerifyPeersSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket:                  &pastel.ActionTicket{},
 					peersArtTicketSignature: map[string][]byte{"A": []byte("test")},
 				},
 				verifyRet: false,
@@ -515,7 +517,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				minConfirmations: 2,
 				interval:         100 * time.Millisecond,
@@ -533,7 +535,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				minConfirmations: 1,
 				interval:         50 * time.Millisecond,
@@ -550,7 +552,7 @@ func TestTaskWaitConfirmation(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				minConfirmations: 1,
 				interval:         500 * time.Millisecond,
@@ -590,8 +592,6 @@ func TestTaskWaitConfirmation(t *testing.T) {
 }
 
 func TestTaskProbeImage(t *testing.T) {
-	// TODO: update later
-	t.Skip()
 	genfingerAndScoresFunc := func() *pastel.DDAndFingerprints {
 		return &pastel.DDAndFingerprints{
 			Block:                      "Block",
@@ -671,6 +671,8 @@ func TestTaskProbeImage(t *testing.T) {
 		genResp *pastel.DDAndFingerprints
 	}
 
+	serviceCfg := NewConfig()
+	serviceCfg.PastelID = "PrimaryID"
 	testCases := map[string]struct {
 		args    args
 		wantErr error
@@ -682,12 +684,26 @@ func TestTaskProbeImage(t *testing.T) {
 				genResp: genfingerAndScoresFunc(),
 				task: &Task{
 					Service: &Service{
-						config: &Config{},
+						config: serviceCfg,
 					},
-					Task:                    task.New(StatusConnected),
-					Ticket:                  &pastel.NFTTicket{},
-					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
-					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
+					Task:   task.New(StatusConnected),
+					Ticket: &pastel.ActionTicket{},
+					meshedNodes: []types.MeshedSuperNode{
+						types.MeshedSuperNode{
+							NodeID: "PrimaryID",
+						},
+						types.MeshedSuperNode{
+							NodeID: "A",
+						},
+						types.MeshedSuperNode{
+							NodeID: "B",
+						},
+					},
+					allSignaturesReceivedChn:              make(chan struct{}),
+					allDDAndFingerprints:                  map[string]*pastel.DDAndFingerprints{},
+					allSignedDDAndFingerprintsReceivedChn: make(chan struct{}),
+					accepted:                              Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
+					peersArtTicketSignature:               map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
 			},
 			wantErr: nil,
@@ -699,10 +715,21 @@ func TestTaskProbeImage(t *testing.T) {
 				genResp: genfingerAndScoresFunc(),
 				task: &Task{
 					Service: &Service{
-						config: &Config{},
+						config: serviceCfg,
 					},
-					Task:                    task.New(StatusImageProbed),
-					Ticket:                  &pastel.NFTTicket{},
+					Task:   task.New(StatusImageProbed),
+					Ticket: &pastel.ActionTicket{},
+					meshedNodes: []types.MeshedSuperNode{
+						types.MeshedSuperNode{
+							NodeID: "PrimaryID",
+						},
+						types.MeshedSuperNode{
+							NodeID: "A",
+						},
+						types.MeshedSuperNode{
+							NodeID: "B",
+						},
+					},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -717,9 +744,20 @@ func TestTaskProbeImage(t *testing.T) {
 				task: &Task{
 					Task: task.New(StatusConnected),
 					Service: &Service{
-						config: &Config{},
+						config: serviceCfg,
 					},
-					Ticket:                  &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
+					meshedNodes: []types.MeshedSuperNode{
+						types.MeshedSuperNode{
+							NodeID: "PrimaryID",
+						},
+						types.MeshedSuperNode{
+							NodeID: "A",
+						},
+						types.MeshedSuperNode{
+							NodeID: "B",
+						},
+					},
 					accepted:                Nodes{&Node{ID: "A"}, &Node{ID: "B"}},
 					peersArtTicketSignature: map[string][]byte{"A": []byte{1, 2, 3}, "B": []byte{1, 2, 3}},
 				},
@@ -742,123 +780,43 @@ func TestTaskProbeImage(t *testing.T) {
 			file := artwork.NewFile(storage, "test")
 			fsMock.ListenOnOpen(fileMock, tc.args.fileErr)
 
-			//fingerprints := []float32{12.3, 34.4}
-			//tc.args.genResp.Fingerprints = fingerprints
 			ddmock := ddMock.NewMockClient(t)
 			ddmock.ListenOnImageRarenessScore(tc.args.genResp, tc.args.genErr)
 			tc.args.task.ddClient = ddmock
 
 			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnSign([]byte("signature"), nil)
+			pastelClientMock.ListenOnSign([]byte("signature"), nil).ListenOnVerify(true, nil)
 			tc.args.task.Service.pastelClient = pastelClientMock
 
-			tc.args.task.nftRegMetadata = &types.NftRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
+			tc.args.task.nftRegMetadata = &types.ActionRegMetadata{BlockHash: "testBlockHash", CreatorPastelID: "creatorPastelID"}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 
 			go tc.args.task.RunAction(ctx)
 
-			_, err := tc.args.task.ProbeImage(context.Background(), file)
-			if tc.wantErr != nil {
-				assert.NotNil(t, err)
-				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
-			} else {
-				assert.Nil(t, err)
+			if tc.wantErr == nil {
+				clientMock := test.NewMockClient(t)
+				clientMock.ListenOnSendSignedDDAndFingerprints(nil).
+					ListenOnConnect("", nil).ListenOnRegisterSense()
+
+				tc.args.task.nodeClient = clientMock
+
+				nodes := pastel.MasterNodes{}
+				nodes = append(nodes, pastel.MasterNode{ExtKey: "PrimaryID"})
+				nodes = append(nodes, pastel.MasterNode{ExtKey: "A"})
+				nodes = append(nodes, pastel.MasterNode{ExtKey: "B"})
+
+				pastelClientMock.ListenOnMasterNodesTop(nodes, nil)
+
+				peerDDAndFingerprints, _ := pastel.ToCompressSignedDDAndFingerprints(genfingerAndScoresFunc(), []byte("signature"))
+				go func() {
+					time.Sleep(4 * time.Second)
+					tc.args.task.AddSignedDDAndFingerprints("A", peerDDAndFingerprints)
+					tc.args.task.AddSignedDDAndFingerprints("B", peerDDAndFingerprints)
+				}()
 			}
-		})
-	}
-}
-
-func TestTaskGetRegistrationFee(t *testing.T) {
-	type args struct {
-		task   *Task
-		retFee int64
-		retErr error
-	}
-
-	testCases := map[string]struct {
-		args    args
-		wantErr error
-	}{
-		"success": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
-					Ticket: &pastel.NFTTicket{
-						Author: "author-id-b",
-						AppTicketData: pastel.AppTicket{
-							CreatorName: "Andy",
-							NFTTitle:    "alantic",
-						},
-					},
-				},
-			},
-			wantErr: nil,
-		},
-
-		"status-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Task: task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{
-						Author: "author-id-b",
-						AppTicketData: pastel.AppTicket{
-							CreatorName: "Andy",
-							NFTTitle:    "alantic",
-						},
-					},
-				},
-			},
-			wantErr: errors.New("require status"),
-		},
-		/*"fee-err": {
-			args: args{
-				task: &Task{
-					Service: &Service{
-						config: &Config{},
-					},
-					Task: task.New(StatusImageAndThumbnailCoordinateUploaded),
-					Ticket: &pastel.NFTTicket{
-						Author: "author-id-b",
-						AppTicketData: pastel.AppTicket{
-							CreatorName: "Andy",
-							NFTTitle:    "alantic",
-						},
-					},
-				},
-				retErr: errors.New("test"),
-			},
-			wantErr: errors.New("test"),
-		},*/
-	}
-
-	for name, tc := range testCases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("testCase-%v", name), func(t *testing.T) {
-			t.Parallel()
-
-			pastelClientMock := pastelMock.NewMockClient(t)
-			pastelClientMock.ListenOnGetRegisterNFTFee(tc.args.retFee, tc.args.retErr)
-			pastelClientMock.ListenOnVerify(true, nil)
-			tc.args.task.Service.pastelClient = pastelClientMock
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-
-			go tc.args.task.RunAction(ctx)
-			artTicketBytes, err := pastel.EncodeNFTTicket(tc.args.task.Ticket)
-			assert.Nil(t, err)
-
-			_, err = tc.args.task.GetRegistrationFee(context.Background(), artTicketBytes,
-				[]byte{}, []byte{})
+			_, err := tc.args.task.ProbeImage(context.Background(), file)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
@@ -887,7 +845,7 @@ func TestTaskSessionNode(t *testing.T) {
 						config: &Config{},
 					},
 					Task:   task.New(StatusPrimaryMode),
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				masterNodesErr: nil,
 				nodeID:         "A",
@@ -901,7 +859,7 @@ func TestTaskSessionNode(t *testing.T) {
 						config: &Config{},
 					},
 					Task:   task.New(StatusConnected),
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				masterNodesErr: nil,
 				nodeID:         "A",
@@ -915,7 +873,7 @@ func TestTaskSessionNode(t *testing.T) {
 						config: &Config{},
 					},
 					Task:   task.New(StatusPrimaryMode),
-					Ticket: &pastel.NFTTicket{},
+					Ticket: &pastel.ActionTicket{},
 				},
 				masterNodesErr: errors.New("test"),
 				nodeID:         "A",
@@ -976,8 +934,8 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Task:                     task.New(StatusRegistrationFeeCalculated),
-					Ticket:                   &pastel.NFTTicket{},
+					Task:                     task.New(StatusImageProbed),
+					Ticket:                   &pastel.ActionTicket{},
 					allSignaturesReceivedChn: make(chan struct{}),
 				},
 				masterNodesErr: nil,
@@ -994,7 +952,7 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 						config: &Config{},
 					},
 					Task:                     task.New(StatusConnected),
-					Ticket:                   &pastel.NFTTicket{},
+					Ticket:                   &pastel.ActionTicket{},
 					allSignaturesReceivedChn: make(chan struct{}),
 				},
 				masterNodesErr: nil,
@@ -1010,8 +968,8 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 					Service: &Service{
 						config: &Config{},
 					},
-					Task:                     task.New(StatusRegistrationFeeCalculated),
-					Ticket:                   &pastel.NFTTicket{},
+					Task:                     task.New(StatusImageProbed),
+					Ticket:                   &pastel.ActionTicket{},
 					allSignaturesReceivedChn: make(chan struct{}),
 				},
 				masterNodesErr: nil,
@@ -1028,8 +986,8 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 						config: &Config{},
 					},
 					allSignaturesReceivedChn: make(chan struct{}),
-					Task:                     task.New(StatusRegistrationFeeCalculated),
-					Ticket:                   &pastel.NFTTicket{},
+					Task:                     task.New(StatusImageProbed),
+					Ticket:                   &pastel.ActionTicket{},
 				},
 				masterNodesErr: nil,
 				nodeID:         "A",
@@ -1075,13 +1033,11 @@ func TestTaskAddPeerArticketSignature(t *testing.T) {
 	}
 }
 
-func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
+func TestTaskValidateDdFpIds(t *testing.T) {
 	type args struct {
-		task   *Task
-		fg     *pastel.DDAndFingerprints
-		rqFile *rqnode.RawSymbolIDFile
-		ddSig  [][]byte
-		rqSig  []byte
+		task  *Task
+		fg    *pastel.DDAndFingerprints
+		ddSig [][]byte
 	}
 
 	testCases := map[string]struct {
@@ -1091,13 +1047,6 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 		"success": {
 			args: args{
 				ddSig: [][]byte{[]byte("sig-1"), []byte("sig-2"), []byte("sig-3")},
-				rqSig: []byte("rq-sig"),
-				rqFile: &rqnode.RawSymbolIDFile{
-					ID:                "id",
-					SymbolIdentifiers: []string{"symbol-1", "symbol-2", "symbol-3", "symbol-4", "symbol-5"},
-					BlockHash:         "block-hash",
-					PastelID:          "author-pastelid",
-				},
 
 				fg: &pastel.DDAndFingerprints{
 					Block:                      "Block",
@@ -1178,9 +1127,10 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 						types.MeshedSuperNode{NodeID: "node-3"},
 					},
 					Task: task.New(StatusImageProbed),
-					Ticket: &pastel.NFTTicket{
-						Author:        "author-pastelid",
-						AppTicketData: pastel.AppTicket{},
+					Ticket: &pastel.ActionTicket{
+						Caller:        "author-pastelid",
+						ActionType:    pastel.ActionTypeSense,
+						APITicketData: &pastel.APISenseTicket{},
 					},
 				},
 			},
@@ -1209,19 +1159,14 @@ func TestTaskValidateRqIDsAndDdFpIds(t *testing.T) {
 			compressedDd, err := zstd.CompressLevel(nil, []byte(ddStr), 22)
 			assert.Nil(t, err)
 			dd = utils.B64Encode(compressedDd)
-
-			tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIc = rand.Uint32()
-			tc.args.task.Ticket.AppTicketData.DDAndFingerprintsMax = 50
-			tc.args.task.Ticket.AppTicketData.RQIc = rand.Uint32()
-			tc.args.task.Ticket.AppTicketData.RQMax = 50
-
-			tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIDs, _, err = pastel.GetIDFiles([]byte(ddStr),
-				tc.args.task.Ticket.AppTicketData.DDAndFingerprintsIc,
-				tc.args.task.Ticket.AppTicketData.DDAndFingerprintsMax)
+			ticketData := &pastel.APISenseTicket{
+				DataHash: []byte{},
+			}
+			tc.args.task.Ticket.APITicketData = ticketData
 
 			assert.Nil(t, err)
 
-			err = tc.args.task.validateRqIDsAndDdFpIds(context.Background(), dd)
+			err = tc.args.task.validateDdFpIds(context.Background(), dd)
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))

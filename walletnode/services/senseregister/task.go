@@ -423,7 +423,7 @@ func (task *Task) createSenseTicket(_ context.Context) error {
 		BlockNum:   task.creatorBlockHeight,
 		BlockHash:  task.creatorBlockHash,
 		ActionType: pastel.ActionTypeSense,
-		ApiTicketData: &pastel.ApiSenseTicket{
+		APITicketData: &pastel.APISenseTicket{
 			DataHash:             task.datahash,
 			DDAndFingerprintsIc:  task.ddAndFingerprintsIc,
 			DDAndFingerprintsMax: task.config.DDAndFingerprintsMax,
