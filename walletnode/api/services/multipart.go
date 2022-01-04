@@ -32,10 +32,10 @@ func UploadImageDecoderFunc(ctx context.Context, service *Artwork) server.Artwor
 	return func(reader *multipart.Reader, p **artworks.UploadImagePayload) error {
 		var res artworks.UploadImagePayload
 
-		filename, err_type, err := handleUploadImage(ctx, reader, service.register.Storage)
+		filename, errType, err := handleUploadImage(ctx, reader, service.register.Storage)
 		if err != nil {
 			return &goa.ServiceError{
-				Name:    err_type,
+				Name:    errType,
 				ID:      goa.NewErrorID(),
 				Message: err.Error(),
 			}

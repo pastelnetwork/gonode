@@ -30,7 +30,7 @@ require (
 )
 
 require (
-	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dimfeld/httppath v0.0.0-20170720192232-ee938bf73598 // indirect
 	github.com/dimfeld/httptreemux/v5 v5.4.0 // indirect
@@ -41,6 +41,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jpillora/longestcommon v0.0.0-20161227235612-adb9d91ee629 // indirect
 	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/makiuchi-d/gozxing v0.0.0-20210610151345-232d6193415d // indirect
@@ -48,23 +49,27 @@ require (
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.13 // indirect
 	github.com/mgutz/ansi v0.0.0-20200706080929-d51e80ef957d // indirect
+	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/otrv4/ed448 v0.0.0-20210127123821-203e597250c3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.7.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/rs/zerolog v1.18.0 // indirect
 	github.com/russross/blackfriday/v2 v2.0.1 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.3.0 // indirect
+	github.com/spf13/cobra v1.0.0 // indirect
 	github.com/spf13/jwalterweatherman v1.0.0 // indirect
 	github.com/spf13/viper v1.7.1 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/urfave/cli/v2 v2.3.0 // indirect
+	github.com/vektra/mockery/v2 v2.9.4 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2 // indirect
 	github.com/zach-klippenstein/goregen v0.0.0-20160303162051-795b5e3961ea // indirect
 	goa.design/goa v2.2.5+incompatible // indirect

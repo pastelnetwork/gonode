@@ -179,31 +179,41 @@ func (service *RegisterSense) ProbeImage(stream pb.RegisterSense_ProbeImageServe
 	}
 
 	image := service.Storage.NewFile()
-	file, err := image.Create()
-	if err != nil {
-		return errors.Errorf("open file %q: %w", file.Name(), err)
+
+	// Do file receiving
+	receiveFunc := func() error {
+		file, subErr := image.Create()
+		if subErr != nil {
+			return errors.Errorf("open file %q: %w", file.Name(), err)
+		}
+		defer file.Close()
+		log.WithContext(ctx).WithField("filename", file.Name()).Debug("ProbeImage request")
+
+		wr := bufio.NewWriter(file)
+		defer wr.Flush()
+
+		for {
+			req, subErr := stream.Recv()
+			if subErr != nil {
+				if err == io.EOF {
+					break
+				}
+				if status.Code(err) == codes.Canceled {
+					return errors.New("connection closed")
+				}
+				return errors.Errorf("receive ProbeImage: %w", err)
+			}
+
+			if _, subErr := wr.Write(req.Image); subErr != nil {
+				return errors.Errorf("write to file %q: %w", file.Name(), err)
+			}
+		}
+		return nil
 	}
-	defer file.Close()
-	log.WithContext(ctx).WithField("filename", file.Name()).Debug("ProbeImage request")
 
-	wr := bufio.NewWriter(file)
-	defer wr.Flush()
-
-	for {
-		req, err := stream.Recv()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			if status.Code(err) == codes.Canceled {
-				return errors.New("connection closed")
-			}
-			return errors.Errorf("receive ProbeImage: %w", err)
-		}
-
-		if _, err := wr.Write(req.Image); err != nil {
-			return errors.Errorf("write to file %q: %w", file.Name(), err)
-		}
+	err = receiveFunc()
+	if err != nil {
+		return err
 	}
 
 	err = image.UpdateFormat()

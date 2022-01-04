@@ -1,4 +1,4 @@
-package artworkregister
+package senseregister
 
 import (
 	"context"
@@ -30,14 +30,8 @@ const (
 	// ProbeImageMethod represent ProbeImage name method
 	ProbeImageMethod = "ProbeImage"
 
-	// RegisterArtworkMethod represent RegisterArtwork name method
-	RegisterArtworkMethod = "RegisterArtwork"
-
-	// DownloadArtworkMethod represent DownloadArtwork name method
-	DownloadArtworkMethod = "DownloadArtwork"
-
-	// ProcessUserdataMethod represent ProcessUserdata name method
-	ProcessUserdataMethod = "ProcessUserdata"
+	// RegisterSenseMethod represent RegisterSense name method
+	RegisterSenseMethod = "RegisterSense"
 
 	// SessionMethod represent Session name method
 	SessionMethod = "Session"
@@ -45,14 +39,14 @@ const (
 	// SessIDMethod represent SessID name method
 	SessIDMethod = "SessID"
 
-	// SendPreBurntFeeTxidMethod represent SendPreBurntFeeTxId method
-	SendPreBurntFeeTxidMethod = "SendPreBurntFeeTxid"
+	// SendActionActMethod represent SendActionAction method
+	SendActionActMethod = "SendActionAct"
+
+	// SendRegMetadataMethod represent SendRegMetadata method
+	SendRegMetadataMethod = "SendRegMetadata"
 
 	// SendSignedTicketMethod represent SendSignedTicket method
 	SendSignedTicketMethod = "SendSignedTicket"
-
-	// UploadImageWithThumbnailMethod represent UploadImageWithThumbnail method
-	UploadImageWithThumbnailMethod = "UploadImageWithThumbnail"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -60,70 +54,38 @@ type Client struct {
 	t *testing.T
 	*mocks.Client
 	*mocks.Connection
-	*mocks.RegisterArtwork
+	*mocks.RegisterSense
 }
 
 // NewMockClient create new client mock
 func NewMockClient(t *testing.T) *Client {
 	return &Client{
-		t:               t,
-		Client:          &mocks.Client{},
-		Connection:      &mocks.Connection{},
-		RegisterArtwork: &mocks.RegisterArtwork{},
+		t:             t,
+		Client:        &mocks.Client{},
+		Connection:    &mocks.Connection{},
+		RegisterSense: &mocks.RegisterSense{},
 	}
 }
 
-// ListenOnRegisterArtwork listening RegisterArtwork call
-func (client *Client) ListenOnRegisterArtwork() *Client {
-	client.Connection.On(RegisterArtworkMethod).Return(client.RegisterArtwork)
-	return client
-}
-
-// ListenOnSendPreBurntFeeTxID listening SendPreBurntFeeTxIdMethod call
-func (client *Client) ListenOnSendPreBurntFeeTxID(txid string, err error) *Client {
-	client.RegisterArtwork.On(SendPreBurntFeeTxidMethod, mock.Anything, mock.Anything).Return(txid, err)
+// ListenOnRegisterSense listening RegisterSense call
+func (client *Client) ListenOnRegisterSense() *Client {
+	client.Connection.On(RegisterSenseMethod).Return(client.RegisterSense)
 	return client
 }
 
 // ListenOnSendSignedTicket listening SendPreBurntFeeTxIdMethod call
-func (client *Client) ListenOnSendSignedTicket(id int64, err error) *Client {
-	client.RegisterArtwork.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
+func (client *Client) ListenOnSendSignedTicket(id string, err error) *Client {
+	client.RegisterSense.On(SendSignedTicketMethod, mock.Anything, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(id, err)
 	return client
 }
 
-// ListenOnUploadImageWithThumbnail listening UploadImageWithThumbnail call
-func (client *Client) ListenOnUploadImageWithThumbnail(retPreviewHash []byte,
-	retMediumThumbnailHash []byte, retsmallThumbnailHash []byte, retErr error) *Client {
-
-	client.RegisterArtwork.On(UploadImageWithThumbnailMethod, mock.Anything,
-		mock.Anything, mock.Anything).Return(retPreviewHash,
-		retMediumThumbnailHash, retsmallThumbnailHash, retErr)
-
-	return client
-}
-
-// AssertRegisterArtworkCall assertion RegisterArtwork call
-func (client *Client) AssertRegisterArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertRegisterSenseCall assertion RegisterSense call
+func (client *Client) AssertRegisterSenseCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Connection.AssertCalled(client.t, RegisterArtworkMethod, arguments...)
+		client.Connection.AssertCalled(client.t, RegisterSenseMethod, arguments...)
 	}
-	client.Connection.AssertNumberOfCalls(client.t, RegisterArtworkMethod, expectedCalls)
-	return client
-}
-
-// ListenOnDownloadArtwork listening DownloadArtwork call
-func (client *Client) ListenOnDownloadArtwork() *Client {
-	client.Connection.On(DownloadArtworkMethod).Return(nil)
-	return client
-}
-
-// AssertDownloadArtworkCall assertion DownloadArtwork call
-func (client *Client) AssertDownloadArtworkCall(expectedCalls int, arguments ...interface{}) *Client {
-	if expectedCalls > 0 {
-		client.Connection.AssertCalled(client.t, DownloadArtworkMethod, arguments...)
-	}
-	client.Connection.AssertNumberOfCalls(client.t, DownloadArtworkMethod, expectedCalls)
+	client.Connection.AssertNumberOfCalls(client.t, RegisterSenseMethod, expectedCalls)
 	return client
 }
 
@@ -179,37 +141,37 @@ func (client *Client) AssertDoneCall(expectedCalls int, arguments ...interface{}
 
 // ListenOnMeshNodes listening MeshNodes call and returns args value
 func (client *Client) ListenOnMeshNodes(arguments ...interface{}) *Client {
-	client.RegisterArtwork.On(MeshNodesMethod, mock.Anything, mock.Anything).Return(arguments...)
+	client.RegisterSense.On(MeshNodesMethod, mock.Anything, mock.Anything).Return(arguments...)
 	return client
 }
 
 // ListenOnProbeImage listening ProbeImage call and returns args value
 func (client *Client) ListenOnProbeImage(arguments ...interface{}) *Client {
-	client.RegisterArtwork.On(ProbeImageMethod, mock.Anything, mock.Anything).Return(arguments...)
+	client.RegisterSense.On(ProbeImageMethod, mock.Anything, mock.Anything).Return(arguments...)
 	return client
 }
 
 // AssertProbeImageCall assertion ProbeImage call
 func (client *Client) AssertProbeImageCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, ProbeImageMethod, arguments...)
+		client.RegisterSense.AssertCalled(client.t, ProbeImageMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, ProbeImageMethod, expectedCalls)
+	client.RegisterSense.AssertNumberOfCalls(client.t, ProbeImageMethod, expectedCalls)
 	return client
 }
 
 // ListenOnSession listening Session call and returns error from args
 func (client *Client) ListenOnSession(returnErr error) *Client {
-	client.RegisterArtwork.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
+	client.RegisterSense.On(SessionMethod, mock.Anything, mock.AnythingOfType("bool")).Return(returnErr)
 	return client
 }
 
 // AssertSessionCall assertion Session Call
 func (client *Client) AssertSessionCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, SessionMethod, arguments...)
+		client.RegisterSense.AssertCalled(client.t, SessionMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
+	client.RegisterSense.AssertNumberOfCalls(client.t, SessionMethod, expectedCalls)
 	return client
 }
 
@@ -221,60 +183,75 @@ func (client *Client) ListenOnAcceptedNodes(pastelIDs []string, returnErr error)
 		return pastelIDs
 	}
 
-	client.RegisterArtwork.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
+	client.RegisterSense.On(AcceptedNodesMethod, mock.Anything).Return(handleFunc, returnErr)
 	return client
 }
 
 // AssertAcceptedNodesCall assertion AcceptedNodes call
 func (client *Client) AssertAcceptedNodesCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
+		client.RegisterSense.AssertCalled(client.t, AcceptedNodesMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
+	client.RegisterSense.AssertNumberOfCalls(client.t, AcceptedNodesMethod, expectedCalls)
 	return client
 }
 
 // ListenOnConnectTo listening ConnectTo call and returns error from args
 func (client *Client) ListenOnConnectTo(returnErr error) *Client {
-	client.RegisterArtwork.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
+	client.RegisterSense.On(ConnectToMethod, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 
 // AssertConnectToCall assertion ConnectTo call
 func (client *Client) AssertConnectToCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, ConnectToMethod, arguments...)
+		client.RegisterSense.AssertCalled(client.t, ConnectToMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
+	client.RegisterSense.AssertNumberOfCalls(client.t, ConnectToMethod, expectedCalls)
 	return client
 }
 
 // ListenOnSessID listening SessID call and returns sessID from args
 func (client *Client) ListenOnSessID(sessID string) *Client {
-	client.RegisterArtwork.On(SessIDMethod).Return(sessID)
+	client.RegisterSense.On(SessIDMethod).Return(sessID)
 	return client
 }
 
 // AssertSessIDCall assertion SessID call
 func (client *Client) AssertSessIDCall(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.RegisterArtwork.AssertCalled(client.t, SessIDMethod, arguments...)
+		client.RegisterSense.AssertCalled(client.t, SessIDMethod, arguments...)
 	}
-	client.RegisterArtwork.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
+	client.RegisterSense.AssertNumberOfCalls(client.t, SessIDMethod, expectedCalls)
 	return client
 }
 
-// ListenOnProcessUserdata listening ProcessUserdata call
-func (client *Client) ListenOnProcessUserdata() *Client {
-	client.Connection.On(ProcessUserdataMethod).Return(nil)
+// ListenOnSendRegMetadata listening SendRegMetadata call and returns error from args
+func (client *Client) ListenOnSendRegMetadata(returnErr error) *Client {
+	client.RegisterSense.On(SendRegMetadataMethod).Return(returnErr)
 	return client
 }
 
-// AssertProcessUserdataCall assertion ProcessUserdata call
-func (client *Client) AssertProcessUserdataCall(expectedCalls int, arguments ...interface{}) *Client {
+// AssertSendRegMetadata assertion SendRegMetadata call
+func (client *Client) AssertSendRegMetadata(expectedCalls int, arguments ...interface{}) *Client {
 	if expectedCalls > 0 {
-		client.Connection.AssertCalled(client.t, ProcessUserdataMethod, arguments...)
+		client.RegisterSense.AssertCalled(client.t, SendRegMetadataMethod, arguments...)
 	}
-	client.Connection.AssertNumberOfCalls(client.t, ProcessUserdataMethod, expectedCalls)
+	client.RegisterSense.AssertNumberOfCalls(client.t, SendRegMetadataMethod, expectedCalls)
+	return client
+}
+
+// ListenOnSendActionAct listening SendActionAct call and returns error from args
+func (client *Client) ListenOnSendActionAct(returnErr error) *Client {
+	client.RegisterSense.On(SendActionActMethod).Return(returnErr)
+	return client
+}
+
+// AssertSendActionAct assertion SendActionAct call
+func (client *Client) AssertSendActionAct(expectedCalls int, arguments ...interface{}) *Client {
+	if expectedCalls > 0 {
+		client.RegisterSense.AssertCalled(client.t, SendActionActMethod, arguments...)
+	}
+	client.RegisterSense.AssertNumberOfCalls(client.t, SendActionActMethod, expectedCalls)
 	return client
 }
