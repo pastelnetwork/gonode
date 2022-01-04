@@ -96,13 +96,19 @@ func (mngr *StatsMngr) run(ctx context.Context) error {
 // Run start update stats of system periodically
 func (mngr *StatsMngr) Run(ctx context.Context) error {
 	for {
-		if err := mngr.run(ctx); err != nil {
-			if utils.IsContextErr(err) {
-				return err
-			}
-			log.WithContext(ctx).WithError(err).Error("failed to run stats manager, retrying.")
-		} else {
+		select {
+		case <-ctx.Done():
 			return nil
+		case <-time.After(5 * time.Second):
+			if err := mngr.run(ctx); err != nil {
+				if utils.IsContextErr(err) {
+					return err
+				}
+
+				log.P2P().WithContext(ctx).WithError(err).Error("failed to run stats manager, retrying.")
+			} else {
+				return nil
+			}
 		}
 	}
 }
