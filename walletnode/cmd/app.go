@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
+	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 
 	"github.com/pastelnetwork/gonode/common/cli"
@@ -169,15 +170,19 @@ func runApp(ctx context.Context, config *configs.Config) error {
 	// Sense services
 	senseRegister := senseregister.NewService(&config.SenseRegister, fileStorage, pastelClient, nodeClient, db)
 
+	// Cascade services
+	cascadeRegister := cascaderegister.NewService(&config.CascadeRegister, fileStorage, pastelClient, nodeClient, db)
+
 	// api service
 	server := api.NewServer(config.API,
 		services.NewArtwork(artworkRegister, artworkSearch, artworkDownload),
 		services.NewUserdata(userdataProcess),
 		services.NewSense(senseRegister),
+		services.NewCascade(cascadeRegister),
 		services.NewSwagger(),
 	)
 
 	log.WithContext(ctx).Infof("Config: %s", config)
 
-	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload, userdataProcess, senseRegister)
+	return runServices(ctx, server, artworkRegister, artworkSearch, artworkDownload, userdataProcess, senseRegister, cascadeRegister)
 }

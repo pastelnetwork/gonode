@@ -21,12 +21,12 @@ require (
 	goa.design/plugins/v3 v3.3.1
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
 	golang.org/x/image v0.0.0-20210216034530-4410531fe030 // indirect
-	golang.org/x/net v0.0.0-20211209124913-491a49abca63 // indirect
-	golang.org/x/sys v0.0.0-20211210111614-af8b64212486 // indirect
+	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 	golang.org/x/term v0.0.0-20210615171337-6886f2dfbf5b // indirect
 	golang.org/x/text v0.3.7 // indirect
-	google.golang.org/genproto v0.0.0-20211208223120-3a66f561d7aa // indirect
-	google.golang.org/grpc v1.42.0
+	google.golang.org/genproto v0.0.0-20211223182754-3ac035c7e7cb // indirect
+	google.golang.org/grpc v1.43.0
 )
 
 require (

@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+option go_package = "github.com/pastelnetwork/gonode/proto/walletnode/register_cascade";
+
+package register_cascade;
+
+service RegisterCascade {
+    // Session informs the supernode its position (primary/secondary).
+    // Returns `SessID` that are used by all other rpc methods to identify the task on the supernode. By sending `sessID` in the Metadata.
+    // The stream is used by the parties to inform each other about the cancellation of the task.
+    rpc Session(stream SessionRequest) returns (stream SessionReply);
+
+    // AcceptedNodes returns peers of the secondary supernodes connected to it.
+    rpc AcceptedNodes(AcceptedNodesRequest) returns (AcceptedNodesReply);
+
+    // ConnectTo requests to connect to the primary supernode.
+    rpc ConnectTo(ConnectToRequest) returns (ConnectToReply);
+
+    // MeshNodes informs to SNs other SNs on same meshNodes created for this registration request
+    rpc MeshNodes(MeshNodesRequest) returns (MeshNodesReply);
+
+    // SendRegMetadata informs to SNs metadata required for registration request like current block hash, creator,..
+    rpc SendRegMetadata(SendRegMetadataRequest) returns (SendRegMetadataReply);
+
+    // ProbeImage uploads the resampled image compute/burn txid and return a fingerpirnt and MN signature.
+    rpc ProbeImage(stream ProbeImageRequest) returns (ProbeImageReply);
+
+    // SendArtTicket sends a signed art-ticket to the supernode.
+    rpc SendSignedActionTicket(SendSignedActionTicketRequest) returns (SendSignedActionTicketReply);
+
+    // SendActionAc informs to SN that walletnode activated action_reg
+    rpc SendActionAct(SendActionActRequest) returns (SendActionActReply);
+}
+
+message SessionRequest {
+    bool is_primary = 1;
+}
+message SessionReply {
+    string sessID = 1;
+}
+
+message AcceptedNodesRequest {
+}
+message AcceptedNodesReply {
+    message Peer {
+        string nodeID = 1;
+    }
+    repeated Peer peers = 1;
+}
+
+message ConnectToRequest {
+    string sessID = 1;
+    string nodeID = 2;
+}
+message ConnectToReply {
+}
+
+message MeshNodesRequest {
+    message Node  {
+     string sessID = 1;
+     string nodeID = 2;
+    }
+
+    repeated Node nodes = 1;
+}
+message MeshNodesReply {
+}
+
+message SendRegMetadataRequest {
+    string creatorPastelID = 1;
+    string blockHash = 2;
+    string burn_txid = 3;
+}
+message SendRegMetadataReply {
+
+}
+
+message ProbeImageRequest {
+    bytes image = 1;
+}
+message ProbeImageReply {
+    bool is_valid_burn_txid = 1;
+    bytes compressedSignedDDAndFingerprints = 2;
+}
+
+
+message SendSignedActionTicketRequest {
+    bytes action_ticket = 1;
+    bytes creator_signature = 2;
+    bytes dd_fp_files = 3;
+
+}
+
+message SendSignedActionTicketReply {
+    string action_reg_txid = 1;
+}
+
+message SendActionActRequest {
+    string action_reg_txid = 1;
+}
+
+message SendActionActReply {
+}

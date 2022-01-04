@@ -5,6 +5,7 @@ import (
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkdownload"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworkregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/artworksearch"
+	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister"
 	"github.com/pastelnetwork/gonode/walletnode/services/senseregister"
 	"github.com/pastelnetwork/gonode/walletnode/services/userdataprocess"
 )
@@ -17,7 +18,8 @@ type Node struct {
 	ArtworkDownload artworkdownload.Config `mapstructure:",squash" json:"artwork_download,omitempty"`
 	API             *api.Config            `mapstructure:"api" json:"api,omitempty"`
 
-	SenseRegister senseregister.Config `mapstructure:"sense_register" json:"sense_register,omitempty"`
+	SenseRegister   senseregister.Config   `mapstructure:"sense_register" json:"sense_register,omitempty"`
+	CascadeRegister cascaderegister.Config `mapstructure:"cascade_register" json:"cascade_register,omitempty"`
 
 	UserdataProcess userdataprocess.Config `mapstructure:",squash" json:"userdata_process,omitempty"`
 	BurnAddress     string                 `mapstructure:"burn_address" json:"burn_address,omitempty"`
