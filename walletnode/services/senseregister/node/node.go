@@ -25,11 +25,9 @@ type Node struct {
 	FingerprintAndScoresBytes []byte // JSON bytes of FingerprintAndScores
 	Signature                 []byte
 
-	registrationFee int64
-	regActionTxid   string
-
-	address  string
-	pastelID string
+	regActionTxid string
+	address       string
+	pastelID      string
 }
 
 func (node *Node) String() string {
@@ -75,6 +73,11 @@ func (node *Node) IsPrimary() bool {
 // Address returns address of node
 func (node *Node) Address() string {
 	return node.address
+}
+
+// SetValidBurnTxID sets whether the burn txid is valid
+func (node *Node) SetValidBurnTxID(valid bool) {
+	node.isValidBurnTxID = valid
 }
 
 // NewNode returns a new Node instance.

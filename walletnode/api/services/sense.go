@@ -18,6 +18,7 @@ import (
 	goahttp "goa.design/goa/v3/http"
 )
 
+// Sense - Sense service
 type Sense struct {
 	*Common
 	register *senseregister.Service
@@ -90,7 +91,7 @@ func (service *Sense) ActionDetails(ctx context.Context, p *sense.ActionDetailsP
 }
 
 // StartProcessing - Starts a processing image task
-func (service *Sense) StartProcessing(ctx context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
+func (service *Sense) StartProcessing(_ context.Context, p *sense.StartProcessingPayload) (res *sense.StartProcessingResult, err error) {
 
 	taskID, err := service.register.AddTask(p)
 	if err != nil {
@@ -135,7 +136,7 @@ func (service *Sense) RegisterTaskState(ctx context.Context, p *sense.RegisterTa
 	}
 }
 
-// NewOpenAPI returns the swagger OpenAPI implementation.
+// NewSense returns the swagger OpenAPI implementation.
 func NewSense(register *senseregister.Service) *Sense {
 	return &Sense{
 		Common:   NewCommon(),

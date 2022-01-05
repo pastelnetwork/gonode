@@ -39,7 +39,7 @@ type Connection interface {
 	RegisterSense() RegisterSense
 }
 
-// SenseRegister contains methods for sense register
+// RegisterSense contains methods for sense register
 type RegisterSense interface {
 	// SessID returns the sessID received from the server during the handshake.
 	SessID() (sessID string)

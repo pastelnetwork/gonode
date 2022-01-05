@@ -1,4 +1,4 @@
-package process_data
+package processdata
 
 import (
 	"context"
