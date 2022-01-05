@@ -18,51 +18,51 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
-// RegisterSenseClient is the client API for RegisterSense service.
+// RegisterCascadeClient is the client API for RegisterCascade service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RegisterSenseClient interface {
+type RegisterCascadeClient interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
-	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterSense_SessionClient, error)
+	Session(ctx context.Context, opts ...grpc.CallOption) (RegisterCascade_SessionClient, error)
 	// SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
 	SendSignedDDAndFingerprints(ctx context.Context, in *SendSignedDDAndFingerprintsRequest, opts ...grpc.CallOption) (*SendSignedDDAndFingerprintsReply, error)
 	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
 	SendArtTicketSignature(ctx context.Context, in *SendArtTicketSignatureRequest, opts ...grpc.CallOption) (*SendArtTicketSignatureReply, error)
 }
 
-type registerSenseClient struct {
+type registerCascadeClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRegisterSenseClient(cc grpc.ClientConnInterface) RegisterSenseClient {
-	return &registerSenseClient{cc}
+func NewRegisterCascadeClient(cc grpc.ClientConnInterface) RegisterCascadeClient {
+	return &registerCascadeClient{cc}
 }
 
-func (c *registerSenseClient) Session(ctx context.Context, opts ...grpc.CallOption) (RegisterSense_SessionClient, error) {
-	stream, err := c.cc.NewStream(ctx, &RegisterSense_ServiceDesc.Streams[0], "/register_cascade.RegisterSense/Session", opts...)
+func (c *registerCascadeClient) Session(ctx context.Context, opts ...grpc.CallOption) (RegisterCascade_SessionClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RegisterCascade_ServiceDesc.Streams[0], "/register_cascade.RegisterCascade/Session", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &registerSenseSessionClient{stream}
+	x := &registerCascadeSessionClient{stream}
 	return x, nil
 }
 
-type RegisterSense_SessionClient interface {
+type RegisterCascade_SessionClient interface {
 	Send(*SessionRequest) error
 	Recv() (*SessionReply, error)
 	grpc.ClientStream
 }
 
-type registerSenseSessionClient struct {
+type registerCascadeSessionClient struct {
 	grpc.ClientStream
 }
 
-func (x *registerSenseSessionClient) Send(m *SessionRequest) error {
+func (x *registerCascadeSessionClient) Send(m *SessionRequest) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *registerSenseSessionClient) Recv() (*SessionReply, error) {
+func (x *registerCascadeSessionClient) Recv() (*SessionReply, error) {
 	m := new(SessionReply)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -70,83 +70,83 @@ func (x *registerSenseSessionClient) Recv() (*SessionReply, error) {
 	return m, nil
 }
 
-func (c *registerSenseClient) SendSignedDDAndFingerprints(ctx context.Context, in *SendSignedDDAndFingerprintsRequest, opts ...grpc.CallOption) (*SendSignedDDAndFingerprintsReply, error) {
+func (c *registerCascadeClient) SendSignedDDAndFingerprints(ctx context.Context, in *SendSignedDDAndFingerprintsRequest, opts ...grpc.CallOption) (*SendSignedDDAndFingerprintsReply, error) {
 	out := new(SendSignedDDAndFingerprintsReply)
-	err := c.cc.Invoke(ctx, "/register_cascade.RegisterSense/SendSignedDDAndFingerprints", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/register_cascade.RegisterCascade/SendSignedDDAndFingerprints", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *registerSenseClient) SendArtTicketSignature(ctx context.Context, in *SendArtTicketSignatureRequest, opts ...grpc.CallOption) (*SendArtTicketSignatureReply, error) {
+func (c *registerCascadeClient) SendArtTicketSignature(ctx context.Context, in *SendArtTicketSignatureRequest, opts ...grpc.CallOption) (*SendArtTicketSignatureReply, error) {
 	out := new(SendArtTicketSignatureReply)
-	err := c.cc.Invoke(ctx, "/register_cascade.RegisterSense/SendArtTicketSignature", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/register_cascade.RegisterCascade/SendArtTicketSignature", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RegisterSenseServer is the server API for RegisterSense service.
-// All implementations must embed UnimplementedRegisterSenseServer
+// RegisterCascadeServer is the server API for RegisterCascade service.
+// All implementations must embed UnimplementedRegisterCascadeServer
 // for forward compatibility
-type RegisterSenseServer interface {
+type RegisterCascadeServer interface {
 	// Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
 	// The stream is used by the parties to inform each other about the cancellation of the task.
-	Session(RegisterSense_SessionServer) error
+	Session(RegisterCascade_SessionServer) error
 	// SendSignedDDAndFingerprints send its SignedDDAndFingerprints to other node
 	SendSignedDDAndFingerprints(context.Context, *SendSignedDDAndFingerprintsRequest) (*SendSignedDDAndFingerprintsReply, error)
 	// SendArtTicketSignature send signature from supernodes mn2/mn3 for given reg NFT session id to primary supernode
 	SendArtTicketSignature(context.Context, *SendArtTicketSignatureRequest) (*SendArtTicketSignatureReply, error)
-	mustEmbedUnimplementedRegisterSenseServer()
+	mustEmbedUnimplementedRegisterCascadeServer()
 }
 
-// UnimplementedRegisterSenseServer must be embedded to have forward compatible implementations.
-type UnimplementedRegisterSenseServer struct {
+// UnimplementedRegisterCascadeServer must be embedded to have forward compatible implementations.
+type UnimplementedRegisterCascadeServer struct {
 }
 
-func (UnimplementedRegisterSenseServer) Session(RegisterSense_SessionServer) error {
+func (UnimplementedRegisterCascadeServer) Session(RegisterCascade_SessionServer) error {
 	return status.Errorf(codes.Unimplemented, "method Session not implemented")
 }
-func (UnimplementedRegisterSenseServer) SendSignedDDAndFingerprints(context.Context, *SendSignedDDAndFingerprintsRequest) (*SendSignedDDAndFingerprintsReply, error) {
+func (UnimplementedRegisterCascadeServer) SendSignedDDAndFingerprints(context.Context, *SendSignedDDAndFingerprintsRequest) (*SendSignedDDAndFingerprintsReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendSignedDDAndFingerprints not implemented")
 }
-func (UnimplementedRegisterSenseServer) SendArtTicketSignature(context.Context, *SendArtTicketSignatureRequest) (*SendArtTicketSignatureReply, error) {
+func (UnimplementedRegisterCascadeServer) SendArtTicketSignature(context.Context, *SendArtTicketSignatureRequest) (*SendArtTicketSignatureReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendArtTicketSignature not implemented")
 }
-func (UnimplementedRegisterSenseServer) mustEmbedUnimplementedRegisterSenseServer() {}
+func (UnimplementedRegisterCascadeServer) mustEmbedUnimplementedRegisterCascadeServer() {}
 
-// UnsafeRegisterSenseServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RegisterSenseServer will
+// UnsafeRegisterCascadeServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RegisterCascadeServer will
 // result in compilation errors.
-type UnsafeRegisterSenseServer interface {
-	mustEmbedUnimplementedRegisterSenseServer()
+type UnsafeRegisterCascadeServer interface {
+	mustEmbedUnimplementedRegisterCascadeServer()
 }
 
-func RegisterRegisterSenseServer(s grpc.ServiceRegistrar, srv RegisterSenseServer) {
-	s.RegisterService(&RegisterSense_ServiceDesc, srv)
+func RegisterRegisterCascadeServer(s grpc.ServiceRegistrar, srv RegisterCascadeServer) {
+	s.RegisterService(&RegisterCascade_ServiceDesc, srv)
 }
 
-func _RegisterSense_Session_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(RegisterSenseServer).Session(&registerSenseSessionServer{stream})
+func _RegisterCascade_Session_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RegisterCascadeServer).Session(&registerCascadeSessionServer{stream})
 }
 
-type RegisterSense_SessionServer interface {
+type RegisterCascade_SessionServer interface {
 	Send(*SessionReply) error
 	Recv() (*SessionRequest, error)
 	grpc.ServerStream
 }
 
-type registerSenseSessionServer struct {
+type registerCascadeSessionServer struct {
 	grpc.ServerStream
 }
 
-func (x *registerSenseSessionServer) Send(m *SessionReply) error {
+func (x *registerCascadeSessionServer) Send(m *SessionReply) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *registerSenseSessionServer) Recv() (*SessionRequest, error) {
+func (x *registerCascadeSessionServer) Recv() (*SessionRequest, error) {
 	m := new(SessionRequest)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -154,62 +154,62 @@ func (x *registerSenseSessionServer) Recv() (*SessionRequest, error) {
 	return m, nil
 }
 
-func _RegisterSense_SendSignedDDAndFingerprints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterCascade_SendSignedDDAndFingerprints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendSignedDDAndFingerprintsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterSenseServer).SendSignedDDAndFingerprints(ctx, in)
+		return srv.(RegisterCascadeServer).SendSignedDDAndFingerprints(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/register_cascade.RegisterSense/SendSignedDDAndFingerprints",
+		FullMethod: "/register_cascade.RegisterCascade/SendSignedDDAndFingerprints",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterSenseServer).SendSignedDDAndFingerprints(ctx, req.(*SendSignedDDAndFingerprintsRequest))
+		return srv.(RegisterCascadeServer).SendSignedDDAndFingerprints(ctx, req.(*SendSignedDDAndFingerprintsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RegisterSense_SendArtTicketSignature_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _RegisterCascade_SendArtTicketSignature_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SendArtTicketSignatureRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RegisterSenseServer).SendArtTicketSignature(ctx, in)
+		return srv.(RegisterCascadeServer).SendArtTicketSignature(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/register_cascade.RegisterSense/SendArtTicketSignature",
+		FullMethod: "/register_cascade.RegisterCascade/SendArtTicketSignature",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RegisterSenseServer).SendArtTicketSignature(ctx, req.(*SendArtTicketSignatureRequest))
+		return srv.(RegisterCascadeServer).SendArtTicketSignature(ctx, req.(*SendArtTicketSignatureRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// RegisterSense_ServiceDesc is the grpc.ServiceDesc for RegisterSense service.
+// RegisterCascade_ServiceDesc is the grpc.ServiceDesc for RegisterCascade service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RegisterSense_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "register_cascade.RegisterSense",
-	HandlerType: (*RegisterSenseServer)(nil),
+var RegisterCascade_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "register_cascade.RegisterCascade",
+	HandlerType: (*RegisterCascadeServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "SendSignedDDAndFingerprints",
-			Handler:    _RegisterSense_SendSignedDDAndFingerprints_Handler,
+			Handler:    _RegisterCascade_SendSignedDDAndFingerprints_Handler,
 		},
 		{
 			MethodName: "SendArtTicketSignature",
-			Handler:    _RegisterSense_SendArtTicketSignature_Handler,
+			Handler:    _RegisterCascade_SendArtTicketSignature_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Session",
-			Handler:       _RegisterSense_Session_Handler,
+			Handler:       _RegisterCascade_Session_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

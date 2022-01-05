@@ -3,7 +3,7 @@
 //go:generate mockery --name=RegisterArtwork
 //go:generate mockery --name=ProcessUserdata
 //go:generate mockery --name=RegisterSense
-
+//go:generate mockery --name=RegisterCascade
 package node
 
 import (
@@ -30,6 +30,8 @@ type Connection interface {
 	ProcessUserdata() ProcessUserdata
 	// RegisterSense returns a new RegisterSense stream
 	RegisterSense() RegisterSense
+	// RegisterCascade returns a new RegisterCascade stream
+	RegisterCascade() RegisterCascade
 }
 
 // RegisterArtwork represents an interaction stream with supernodes for registering artwork.
@@ -46,6 +48,18 @@ type RegisterArtwork interface {
 
 // RegisterSense represents an interaction stream with supernodes for registering sense.
 type RegisterSense interface {
+	// SessID returns the taskID received from the server during the handshake.
+	SessID() (taskID string)
+	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.
+	Session(ctx context.Context, nodeID, sessID string) (err error)
+	// SendSignedDDAndFingerprints send compressedDDAndFingerprints from fromNodeID to target SN
+	SendSignedDDAndFingerprints(ctx context.Context, sessionID string, fromNodeID string, compressedDDAndFingerprints []byte) error
+	// Send signature of ticket to primary supernode
+	SendArtTicketSignature(ctx context.Context, nodeID string, signature []byte) error
+}
+
+// RegisterCascade represents an interaction stream with supernodes for registering sense.
+type RegisterCascade interface {
 	// SessID returns the taskID received from the server during the handshake.
 	SessID() (taskID string)
 	// Session sets up an initial connection with primary supernode, by telling sessID and its own nodeID.

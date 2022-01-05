@@ -23,6 +23,11 @@ func (conn *clientConn) RegisterSense() node.RegisterSense {
 	return newRegisterSense(conn)
 }
 
+// RegisterCascade implements node.Connection.RegisterCascade()
+func (conn *clientConn) RegisterCascade() node.RegisterCascade {
+	return newRegisterCascade(conn)
+}
+
 // ProcessUserdata implements node.Connection.ProcessUserdata()
 func (conn *clientConn) ProcessUserdata() node.ProcessUserdata {
 	return newProcessUserdata(conn)

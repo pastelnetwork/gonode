@@ -11,10 +11,10 @@ func TestStatusNames(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		expectedStatues []Status
+		expectedStatuses []Status
 	}{
 		{
-			expectedStatues: []Status{
+			expectedStatuses: []Status{
 				StatusTaskStarted,
 				StatusConnected,
 				StatusImageProbed,
@@ -40,7 +40,7 @@ func TestStatusNames(t *testing.T) {
 			t.Parallel()
 
 			var expectedNames []string
-			for _, status := range testCase.expectedStatues {
+			for _, status := range testCase.expectedStatuses {
 				expectedNames = append(expectedNames, statusNames[status])
 			}
 

@@ -4,7 +4,7 @@ option go_package = "github.com/pastelnetwork/gonode/proto/supernode/register_ca
 
 package register_cascade;
 
-service RegisterSense {
+service RegisterCascade {
     // Session informs primary supernode about its `nodeID` and `sessID` it wants to connect to.
     // The stream is used by the parties to inform each other about the cancellation of the task.
     rpc Session(stream SessionRequest) returns (stream SessionReply);

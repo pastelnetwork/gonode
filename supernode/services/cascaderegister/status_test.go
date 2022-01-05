@@ -11,23 +11,17 @@ func TestStatusNames(t *testing.T) {
 	t.Parallel()
 
 	testCases := []struct {
-		expectedStatuses []Status
+		expectedStatues []Status
 	}{
 		{
-			expectedStatuses: []Status{
+			expectedStatues: []Status{
 				StatusTaskStarted,
+				StatusPrimaryMode,
+				StatusSecondaryMode,
 				StatusConnected,
 				StatusImageProbed,
-				StatusTicketAccepted,
-				StatusTicketRegistered,
-				StatusTicketActivated,
-				ErrorInsufficientFee,
-				StatusErrorFindTopNodes,
-				StatusErrorFindResponsdingSNs,
-				StatusErrorSignaturesNotMatch,
-				StatsuErrorInvalidBurnTxID,
-				StatusErrorFingerprintsNotMatch,
-				StatusTaskRejected,
+				StatusErrorInvalidBurnTxID,
+				StatusTaskCanceled,
 				StatusTaskCompleted,
 			},
 		},
@@ -40,7 +34,7 @@ func TestStatusNames(t *testing.T) {
 			t.Parallel()
 
 			var expectedNames []string
-			for _, status := range testCase.expectedStatuses {
+			for _, status := range testCase.expectedStatues {
 				expectedNames = append(expectedNames, statusNames[status])
 			}
 
@@ -61,38 +55,20 @@ func TestStatusString(t *testing.T) {
 			status:        StatusTaskStarted,
 			expectedValue: statusNames[StatusTaskStarted],
 		}, {
+			status:        StatusPrimaryMode,
+			expectedValue: statusNames[StatusPrimaryMode],
+		}, {
+			status:        StatusSecondaryMode,
+			expectedValue: statusNames[StatusSecondaryMode],
+		}, {
 			status:        StatusConnected,
 			expectedValue: statusNames[StatusConnected],
 		}, {
 			status:        StatusImageProbed,
 			expectedValue: statusNames[StatusImageProbed],
 		}, {
-			status:        StatusTicketAccepted,
-			expectedValue: statusNames[StatusTicketAccepted],
-		}, {
-			status:        StatusTicketRegistered,
-			expectedValue: statusNames[StatusTicketRegistered],
-		}, {
-			status:        StatusTicketActivated,
-			expectedValue: statusNames[StatusTicketActivated],
-		}, {
-			status:        ErrorInsufficientFee,
-			expectedValue: statusNames[ErrorInsufficientFee],
-		}, {
-			status:        StatusErrorFindResponsdingSNs,
-			expectedValue: statusNames[StatusErrorFindResponsdingSNs],
-		}, {
-			status:        StatsuErrorInvalidBurnTxID,
-			expectedValue: statusNames[StatsuErrorInvalidBurnTxID],
-		}, {
-			status:        StatusErrorFindTopNodes,
-			expectedValue: statusNames[StatusErrorFindTopNodes],
-		}, {
-			status:        StatusErrorFingerprintsNotMatch,
-			expectedValue: statusNames[StatusErrorFingerprintsNotMatch],
-		}, {
-			status:        StatusTaskRejected,
-			expectedValue: statusNames[StatusTaskRejected],
+			status:        StatusTaskCanceled,
+			expectedValue: statusNames[StatusTaskCanceled],
 		}, {
 			status:        StatusTaskCompleted,
 			expectedValue: statusNames[StatusTaskCompleted],
