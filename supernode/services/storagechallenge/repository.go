@@ -29,7 +29,7 @@ type SaveChallengeState interface {
 	OnTimeout(ctx context.Context, challengeID, nodeID string, sentBlock int32)
 }
 
-type repository interface {
+type Repository interface {
 	// ListSymbolFileKeysFromNFTTicket func
 	ListSymbolFileKeysFromNFTTicket(ctx context.Context) ([]string, error)
 	// GetSymbolFileByKey func
@@ -50,7 +50,7 @@ type repository interface {
 	SaveChallengMessageState(ctx context.Context, status, challengeID, nodeID string, sentBlock int32)
 }
 
-func newRepository(p2p p2p.Client, pClient pastel.Client, challengeStateStorage SaveChallengeState) repository {
+func newRepository(p2p p2p.Client, pClient pastel.Client, challengeStateStorage SaveChallengeState) Repository {
 	if challengeStateStorage == nil {
 		challengeStateStorage = unimplementSaveChallengeState{}
 	}
