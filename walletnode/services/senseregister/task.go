@@ -409,9 +409,6 @@ func (task *Task) getBlock(ctx context.Context) error {
 }
 
 func (task *Task) createSenseTicket(_ context.Context) error {
-	if task.fingerprint == nil {
-		return errEmptyFingerprints
-	}
 	if task.datahash == nil {
 		return errEmptyDatahash
 	}

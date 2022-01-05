@@ -5,11 +5,8 @@ const (
 	StatusTaskStarted Status = iota
 	StatusConnected
 	StatusImageProbed
-	StatusImageAndThumbnailUploaded
-	StatusGenRaptorQSymbols
 
 	// Ticket
-	StatusPreburntRegistrationFee
 	StatusTicketAccepted
 	StatusTicketRegistered
 	StatusTicketActivated
@@ -20,33 +17,26 @@ const (
 	StatusErrorSignaturesNotMatch
 	StatsuErrorInvalidBurnTxID
 	StatusErrorFingerprintsNotMatch
-	StatusErrorThumbnailHashsesNotMatch
-	StatusErrorGenRaptorQSymbolsFailed
 	// Final
 	StatusTaskRejected
 	StatusTaskCompleted
 )
 
 var statusNames = map[Status]string{
-	StatusTaskStarted:                   "Task Started",
-	StatusConnected:                     "Connected",
-	StatusImageProbed:                   "Image Probed",
-	StatusImageAndThumbnailUploaded:     "Image And Thumbnail Uploaded",
-	StatusGenRaptorQSymbols:             "Status Gen ReptorQ Symbols",
-	StatusPreburntRegistrationFee:       "Preburn Registration Fee",
-	StatusTicketAccepted:                "Ticket Accepted",
-	StatusTicketRegistered:              "Ticket Registered",
-	StatusTicketActivated:               "Ticket Activated",
-	ErrorInsufficientFee:                "Error Insufficient Fee",
-	StatusErrorFindTopNodes:             "Error Find Top Nodes",
-	StatusErrorFindResponsdingSNs:       "Error Find Responsding SNs",
-	StatusErrorSignaturesNotMatch:       "Error Signatures Dont Match",
-	StatsuErrorInvalidBurnTxID:          "Error Invalid Burn TxID",
-	StatusErrorFingerprintsNotMatch:     "Error Fingerprints Dont Match",
-	StatusErrorThumbnailHashsesNotMatch: "Error ThumbnailHashes Dont Match",
-	StatusErrorGenRaptorQSymbolsFailed:  "Error GenRaptorQ Symbols Failed",
-	StatusTaskRejected:                  "Task Rejected",
-	StatusTaskCompleted:                 "Task Completed",
+	StatusTaskStarted:               "Task Started",
+	StatusConnected:                 "Connected",
+	StatusImageProbed:               "Image Probed",
+	StatusTicketAccepted:            "Ticket Accepted",
+	StatusTicketRegistered:          "Ticket Registered",
+	StatusTicketActivated:           "Ticket Activated",
+	ErrorInsufficientFee:            "Error Insufficient Fee",
+	StatusErrorFindTopNodes:         "Error Find Top Nodes",
+	StatusErrorFindResponsdingSNs:   "Error Find Responsding SNs",
+	StatusErrorSignaturesNotMatch:   "Error Signatures Dont Match",
+	StatsuErrorInvalidBurnTxID:      "Error Invalid Burn TxID",
+	StatusErrorFingerprintsNotMatch: "Error Fingerprints Dont Match",
+	StatusTaskRejected:              "Task Rejected",
+	StatusTaskCompleted:             "Task Completed",
 }
 
 // Status represents status of the task
