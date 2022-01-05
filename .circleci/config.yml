@@ -1,3 +1,5 @@
+orbs:
+  go: circleci/go@1.5.0
 version: 2.1
 
 defaults: &defaults
@@ -276,7 +278,23 @@ jobs:
           root: .
           paths:
             - .
-
+  integration_tests:
+    machine:
+      image: ubuntu-2004:202010-01
+    environment:
+      INTEGRATION_TEST_ENV: "true"
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Download Dependencies
+          working_directory: ~/project/integration
+          command: go mod download -x
+      - run:
+          name: Run Integration Tests
+          working_directory: ~/project/integration
+          command: go test -v --timeout=10m
+  
   # Run automated tests
   test_common:
     <<: *defaults
@@ -294,7 +312,6 @@ jobs:
       - install_tensorflow
       - test:
           package: "pastel"
-
   test_p2p:
     <<: *defaults
     steps:
@@ -422,6 +439,9 @@ workflows:
           requires:
             - prepare_workspace
       - test_p2p:
+          requires:
+            - prepare_workspace
+      - integration_tests:
           requires:
             - prepare_workspace
       - test_metadb:

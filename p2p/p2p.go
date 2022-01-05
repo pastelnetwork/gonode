@@ -2,7 +2,6 @@ package p2p
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/pastelnetwork/gonode/common/errors"
@@ -44,13 +43,20 @@ type p2p struct {
 // Run the kademlia network
 func (s *p2p) Run(ctx context.Context) error {
 	for {
-		if err := s.run(ctx); err != nil {
-			if utils.IsContextErr(err) {
-				return err
-			}
-			log.P2P().WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
-		} else {
+		select {
+		case <-ctx.Done():
 			return nil
+		case <-time.After(5 * time.Second):
+			if err := s.run(ctx); err != nil {
+				if utils.IsContextErr(err) {
+					return err
+				}
+
+				log.P2P().WithContext(ctx).WithError(err).Error("failed to run kadmelia, retrying.")
+			} else {
+				log.P2P().WithContext(ctx).Info("kadmelia started successfully")
+				return nil
+			}
 		}
 	}
 }
@@ -69,14 +75,12 @@ func (s *p2p) run(ctx context.Context) error {
 		return errors.Errorf("start the kademlia network: %w", err)
 	}
 
-	if err := s.dht.ConfigureBootstrapNodes(ctx); err != nil {
+	if err := s.dht.ConfigureBootstrapNodes(ctx, s.config.BootstrapIPs); err != nil {
 		log.P2P().WithContext(ctx).WithError(err).Error("failed to get bootstap ip")
-
-		return fmt.Errorf("unable to get p2p bootstrap ip: %s", err)
 	}
 
 	// join the kademlia network if bootstrap nodes is set
-	if err := s.dht.Bootstrap(ctx); err != nil {
+	if err := s.dht.Bootstrap(ctx, s.config.BootstrapIPs); err != nil {
 		// stop the node for kademlia network
 		s.dht.Stop(ctx)
 		// close the store of kademlia network
@@ -179,14 +183,20 @@ func (s *p2p) configure(ctx context.Context) error {
 	}
 	s.store = store
 
-	// new a kademlia distributed hash table
-	dht, err := kademlia.NewDHT(store, s.pastelClient, s.secInfo, &kademlia.Options{
+	kadOpts := &kademlia.Options{
 		BootstrapNodes: []*kademlia.Node{},
 		IP:             s.config.ListenAddress,
 		Port:           s.config.Port,
 		ID:             []byte(s.config.ID),
 		PeerAuth:       true, // Enable peer authentication
-	})
+	}
+
+	if s.config.BootstrapIPs != "" && s.config.ExternalIP != "" {
+		kadOpts.ExternalIP = s.config.ExternalIP
+	}
+
+	// new a kademlia distributed hash table
+	dht, err := kademlia.NewDHT(store, s.pastelClient, s.secInfo, kadOpts)
 
 	if err != nil {
 		return errors.Errorf("new kademlia dht: %w", err)

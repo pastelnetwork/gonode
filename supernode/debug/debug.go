@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultListenAddr         = "127.0.0.1"
+	defaultListenAddr         = "0.0.0.0"
 	defaultPollDuration       = 10 * time.Minute
 	defaultP2PExpiresDuration = 15 * time.Minute
 	defaultP2PLimit           = 10
@@ -64,6 +64,7 @@ func NewService(config *Config, p2pClient p2p.Client) *Service {
 	router.HandleFunc("/p2p/stats", service.p2pStats).Methods(http.MethodGet)    // Return stats of p2p
 	router.HandleFunc("/p2p", service.p2pStore).Methods(http.MethodPost)         // store a data
 	router.HandleFunc("/p2p/{key}", service.p2pRetrieve).Methods(http.MethodGet) // retrieve a key
+	router.HandleFunc("/health", service.p2pHealth).Methods(http.MethodGet)
 
 	service.httpServer = &http.Server{
 		Addr:    fmt.Sprintf("%s:%d", defaultListenAddr, config.HTTPPort),
@@ -114,6 +115,13 @@ func (service *Service) p2pRetrieve(writer http.ResponseWriter, request *http.Re
 		Key:   key,
 		Value: value,
 	})
+}
+
+func (service *Service) p2pHealth(writer http.ResponseWriter, request *http.Request) {
+	ctx := service.contextWithLogPrefix(request.Context())
+	log.WithContext(ctx).Info("p2pHealth")
+
+	responseWithJSON(writer, http.StatusOK, "p2p")
 }
 
 func (service *Service) p2pStore(writer http.ResponseWriter, request *http.Request) {

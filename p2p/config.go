@@ -20,6 +20,11 @@ type Config struct {
 	// data directory for badger
 	DataDir string `mapstructure:"data_dir" json:"data_dir,omitempty"`
 
+	// BootstrapIPs is ONLY used for integration testing to inject a Node's IP address
+	BootstrapIPs string `mapstructure:"bootstrap_ips" json:"bootstrap_ips,omitempty"`
+	// ExternalIP is ONLY used for integration testing to assign a fixed IP address
+	ExternalIP string `mapstructure:"external_ip" json:"external_ip,omitempty"`
+
 	// ID of masternode to be used in P2P - Supposed to be the PastelID
 	ID string `mapstructure:"id" json:"-"`
 }
