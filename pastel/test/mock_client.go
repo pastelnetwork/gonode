@@ -65,6 +65,9 @@ const (
 
 	// MasterNodesExtraMethod represent MasterNodesExtra name method
 	MasterNodesExtraMethod = "MasterNodesExtra"
+
+	// RegisterActionTicketMethod represent RegisterActionTicket name method
+	RegisterActionTicketMethod = "RegisterActionTicket"
 )
 
 // Client implementing pastel.Client for testing purpose
@@ -260,6 +263,12 @@ func (client *Client) ListenOnVerify(isValid bool, returnErr error) *Client {
 // ListenOnRegisterArtTicket listenes register art ticket & return id & err
 func (client *Client) ListenOnRegisterArtTicket(retID string, retErr error) *Client {
 	client.On(RegisterArtTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
+	return client
+}
+
+// ListenOnRegisterActionTicket listenes register action ticket  return id & err
+func (client *Client) ListenOnRegisterActionTicket(retID string, retErr error) *Client {
+	client.On(RegisterActionTicketMethod, mock.Anything, mock.Anything).Return(retID, retErr)
 	return client
 }
 
