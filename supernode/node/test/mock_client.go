@@ -53,6 +53,9 @@ const (
 
 	// SendArtTicketSignatureMethod represent SendArtTicketSignature method
 	SendArtTicketSignatureMethod = "SendArtTicketSignature"
+
+	// SendSignedDDAndFingerprintsMethod represent SendSignedDDAndFingerprints method
+	SendSignedDDAndFingerprintsMethod = "SendSignedDDAndFingerprints"
 )
 
 // Client implementing node.Client mock for testing purpose
@@ -195,6 +198,12 @@ func (client *Client) ListenOnSession(returnErr error) *Client {
 // ListenOnSendArtTicketSignature listens on send art ticket signature
 func (client *Client) ListenOnSendArtTicketSignature(returnErr error) *Client {
 	client.RegisterArtwork.On(SendArtTicketSignatureMethod, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
+	return client
+}
+
+// ListenOnSendSignedDDAndFingerprints listens on send art ticket signature
+func (client *Client) ListenOnSendSignedDDAndFingerprints(returnErr error) *Client {
+	client.RegisterArtwork.On(SendSignedDDAndFingerprintsMethod, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(returnErr)
 	return client
 }
 
