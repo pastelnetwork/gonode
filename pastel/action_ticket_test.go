@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/pastelnetwork/gonode/common/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,56 +47,137 @@ func TestEncodeActionTicket(t *testing.T) {
 }
 
 func TestAPISenseTicket(t *testing.T) {
-	inputAPIData := &APISenseTicket{
-		DataHash:             []byte{1, 2, 3},
-		DDAndFingerprintsIDs: []string{"hello"},
-		DDAndFingerprintsIc:  2,
-		DDAndFingerprintsMax: 10,
+	t.Parallel()
+
+	tests := map[string]struct {
+		in      *ActionTicket
+		wantErr error
+	}{
+		"Success": {
+			in: &ActionTicket{
+				Version:    1,
+				Caller:     string([]byte{2, 3, 4}),
+				BlockNum:   5,
+				BlockHash:  string([]byte{6, 7, 8}),
+				ActionType: ActionTypeSense,
+
+				APITicketData: &APISenseTicket{
+					DataHash:             []byte{1, 2, 3},
+					DDAndFingerprintsIDs: []string{"hello"},
+					DDAndFingerprintsIc:  2,
+					DDAndFingerprintsMax: 10,
+				},
+			},
+			wantErr: nil,
+		},
+		"invalid action type": {
+			in: &ActionTicket{
+				Version:    1,
+				Caller:     string([]byte{2, 3, 4}),
+				BlockNum:   5,
+				BlockHash:  string([]byte{6, 7, 8}),
+				ActionType: ActionTypeCascade,
+
+				APITicketData: &APISenseTicket{
+					DataHash:             []byte{1, 2, 3},
+					DDAndFingerprintsIDs: []string{"hello"},
+					DDAndFingerprintsIc:  2,
+					DDAndFingerprintsMax: 10,
+				},
+			},
+			wantErr: errors.New("invalid action type"),
+		},
+		"invalid type of api": {
+			in: &ActionTicket{
+				Version:    1,
+				Caller:     string([]byte{2, 3, 4}),
+				BlockNum:   5,
+				BlockHash:  string([]byte{6, 7, 8}),
+				ActionType: ActionTypeSense,
+
+				APITicketData: &APICascadeTicket{},
+			},
+			wantErr: errors.New("invalid type of api"),
+		},
 	}
 
-	inputTicket := &ActionTicket{
-		Version:    1,
-		Caller:     string([]byte{2, 3, 4}),
-		BlockNum:   5,
-		BlockHash:  string([]byte{6, 7, 8}),
-		ActionType: ActionTypeSense,
+	for name, tc := range tests {
+		tc := tc
 
-		APITicketData: inputAPIData,
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := tc.in.APISenseTicket()
+			if tc.wantErr == nil {
+				assert.Nil(t, err)
+			} else {
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			}
+		})
 	}
-
-	_, err := inputTicket.APISenseTicket()
-	assert.Nil(t, err)
-
-	_, err = inputTicket.APICascadeTicket()
-	assert.True(t, strings.Contains(err.Error(), "invalid action type"))
-
-	inputTicket.ActionType = ActionTypeCascade
-	_, err = inputTicket.APICascadeTicket()
-	assert.True(t, strings.Contains(err.Error(), "invalid type of api"))
 }
 
 func TestAPICascadeTicket(t *testing.T) {
-	inputAPIData := &APICascadeTicket{
-		DataHash: []byte{1, 2, 3},
+	t.Parallel()
+
+	tests := map[string]struct {
+		in      *ActionTicket
+		wantErr error
+	}{
+		"Success": {
+			in: &ActionTicket{
+				Version:    1,
+				Caller:     string([]byte{2, 3, 4}),
+				BlockNum:   5,
+				BlockHash:  string([]byte{6, 7, 8}),
+				ActionType: ActionTypeCascade,
+
+				APITicketData: &APICascadeTicket{
+					DataHash: []byte{1, 2, 3},
+				},
+			},
+			wantErr: nil,
+		},
+		"invalid action type": {
+			in: &ActionTicket{
+				Version:    1,
+				Caller:     string([]byte{2, 3, 4}),
+				BlockNum:   5,
+				BlockHash:  string([]byte{6, 7, 8}),
+				ActionType: ActionTypeSense,
+
+				APITicketData: &APICascadeTicket{
+					DataHash: []byte{1, 2, 3},
+				},
+			},
+			wantErr: errors.New("invalid action type"),
+		},
+		"invalid type of api": {
+			in: &ActionTicket{
+				Version:    1,
+				Caller:     string([]byte{2, 3, 4}),
+				BlockNum:   5,
+				BlockHash:  string([]byte{6, 7, 8}),
+				ActionType: ActionTypeCascade,
+
+				APITicketData: &APISenseTicket{},
+			},
+			wantErr: errors.New("invalid type of api"),
+		},
 	}
 
-	inputTicket := &ActionTicket{
-		Version:    1,
-		Caller:     string([]byte{2, 3, 4}),
-		BlockNum:   5,
-		BlockHash:  string([]byte{6, 7, 8}),
-		ActionType: ActionTypeCascade,
+	for name, tc := range tests {
+		tc := tc
 
-		APITicketData: inputAPIData,
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := tc.in.APICascadeTicket()
+			if tc.wantErr == nil {
+				assert.Nil(t, err)
+			} else {
+				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
+			}
+		})
 	}
-
-	_, err := inputTicket.APICascadeTicket()
-	assert.Nil(t, err)
-
-	_, err = inputTicket.APISenseTicket()
-	assert.True(t, strings.Contains(err.Error(), "invalid action type"))
-
-	inputTicket.ActionType = ActionTypeSense
-	_, err = inputTicket.APISenseTicket()
-	assert.True(t, strings.Contains(err.Error(), "invalid type of api"))
 }
