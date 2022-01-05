@@ -162,7 +162,7 @@ func TestConfigureBootstrapNodes(t *testing.T) {
 				assert.Nil(t, err)
 			}
 
-			err := tc.args.s.ConfigureBootstrapNodes(context.Background())
+			err := tc.args.s.ConfigureBootstrapNodes(context.Background(), "")
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), tc.wantErr.Error()))
