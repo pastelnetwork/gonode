@@ -561,7 +561,7 @@ func TestTaskCreateTicket(t *testing.T) {
 				BlockNum:   tc.args.task.creatorBlockHeight,
 				BlockHash:  tc.args.task.creatorBlockHash,
 				ActionType: pastel.ActionTypeSense,
-				ApiTicketData: &pastel.ApiSenseTicket{
+				APITicketData: &pastel.APISenseTicket{
 					DataHash:             tc.args.task.datahash,
 					DDAndFingerprintsIc:  tc.args.task.ddAndFingerprintsIc,
 					DDAndFingerprintsMax: tc.args.task.config.DDAndFingerprintsMax,

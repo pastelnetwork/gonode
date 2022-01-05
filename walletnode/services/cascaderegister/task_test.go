@@ -26,7 +26,7 @@ import (
 	rqnode "github.com/pastelnetwork/gonode/raptorq/node"
 	rqMock "github.com/pastelnetwork/gonode/raptorq/node/test"
 	test "github.com/pastelnetwork/gonode/walletnode/node/test/register_cascade"
-	"github.com/pastelnetwork/gonode/walletnode/services/senseregister/node"
+	"github.com/pastelnetwork/gonode/walletnode/services/cascaderegister/node"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -152,7 +152,7 @@ func TestTaskRun(t *testing.T) {
 				nodeClient := test.NewMockClient(t)
 				nodeClient.
 					ListenOnConnect("", testCase.args.returnErr).
-					ListenOnRegisterSense().
+					ListenOnRegisterCascade().
 					ListenOnSession(testCase.args.returnErr).
 					ListenOnConnectTo(testCase.args.returnErr).
 					ListenOnSessID(testCase.args.primarySessID).
@@ -321,7 +321,7 @@ func TestTaskMeshNodes(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", testCase.args.returnErr).
-				ListenOnRegisterSense().
+				ListenOnRegisterCascade().
 				ListenOnSession(testCase.args.returnErr).
 				ListenOnConnectTo(testCase.args.returnErr).
 				ListenOnSessID(testCase.args.primarySessID).
@@ -560,16 +560,16 @@ func TestTaskCreateTicket(t *testing.T) {
 				Caller:     tc.args.task.Request.AppPastelID,
 				BlockNum:   tc.args.task.creatorBlockHeight,
 				BlockHash:  tc.args.task.creatorBlockHash,
-				ActionType: pastel.ActionTypeSense,
-				ApiTicketData: &pastel.ApiSenseTicket{
-					DataHash:             tc.args.task.datahash,
-					DDAndFingerprintsIc:  tc.args.task.ddAndFingerprintsIc,
-					DDAndFingerprintsMax: tc.args.task.config.DDAndFingerprintsMax,
-					DDAndFingerprintsIDs: tc.args.task.ddAndFingerprintsIDs,
-				},
+				ActionType: pastel.ActionTypeCascade,
+				// ApiTicketData: &pastel.APICascadeTicket{
+				// 	DataHash: tc.args.task.datahash,
+				// 	DDAndFingerprintsIc:  tc.args.task.ddAndFingerprintsIc,
+				// 	DDAndFingerprintsMax: tc.args.task.config.DDAndFingerprintsMax,
+				// 	DDAndFingerprintsIDs: tc.args.task.ddAndFingerprintsIDs,
+				// },
 			}
 
-			err := tc.args.task.createSenseTicket(context.Background())
+			err := tc.args.task.createCascadeTicket(context.Background())
 			if tc.wantErr != nil {
 				assert.NotNil(t, err)
 				assert.Equal(t, tc.wantErr.Error(), err.Error())
@@ -999,7 +999,7 @@ func TestTaskProbeImage(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
-				ListenOnRegisterSense().
+				ListenOnRegisterCascade().
 				ListenOnProbeImage(customProbeImageFunc, tc.args.isValidBurnTxID, tc.args.probeImgErr)
 
 			tc.args.task.Request.Image = artworkFile
@@ -1076,7 +1076,7 @@ func TestTaskSendSignedTicket(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
-				ListenOnRegisterSense().
+				ListenOnRegisterCascade().
 				ListenOnSession(nil).
 				ListenOnConnectTo(nil).
 				ListenOnSessID("").
@@ -1210,7 +1210,7 @@ func TestTaskConnectToTopRankNodes(t *testing.T) {
 			nodeClient := test.NewMockClient(t)
 			nodeClient.
 				ListenOnConnect("", nil).
-				ListenOnRegisterSense().
+				ListenOnRegisterCascade().
 				ListenOnSession(nil).
 				ListenOnConnectTo(nil).
 				ListenOnSessID("").
